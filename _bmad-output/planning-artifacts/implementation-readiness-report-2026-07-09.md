@@ -5,49 +5,49 @@
 
 **NEEDS WORK.**
 
-Le socle de planification est dense et globalement implémentable : les 25 FR, 14 AD et 48 stories/11 épics couvrent le chemin critique MVP (E1→E8), le graphe des 12 packages est acyclique, et la traçabilité FR→story (96 %) comme métrique→story (SM-1..SM-6 tous rattachés) est excellente. Le contexte est un **produit-développeur brownfield** : les épics fondations E1 (melos/CI/gate de compat) et E2 (contrats/codegen/injection) sont des habilitations légitimes, à condition d'expliciter leur valeur pour l'intégrateur. Cependant, trois défauts de sévérité **critique** empêchent une entrée en implémentation directe : (1) une contradiction PRD↔architecture sur la dépendance Riverpod du cœur qui menace la métrique primaire SM-2, (2) deux dépendances de phase inversées (MVP → post-MVP) non déclarées, (3) un secret (clé Google Maps) dont la révocation n'est capturée par aucune story. Aucun n'est rédhibitoire sur le fond — tous sont résolubles par des corrections ciblées de cohérence, quelques AC/stories manquantes et un action-item sécurité — d'où NEEDS WORK plutôt que NOT READY.
+Le corpus est mûr et implémentable : les 25 FR et les 16 AD sont tous rattachés à au moins une story, le graphe d'exécution est acyclique, le setup melos existe (E1-1) et le brownfield (migration DODLP en E7, lex_douane_admin en E8, adaptateurs ReflectableCodec/JsonSerializable en E2-6, révocation du secret Maps en E1-5) est solidement couvert. S'agissant d'un produit-développeur brownfield, les épics d'infrastructure E1/E2 portent une valeur d'intégrateur légitime et explicitée. Aucun défaut n'est bloquant au point de justifier un NOT READY : la couverture FR est quasi complète (24/25 pleinement, 1 partielle et résoluble) et aucune question ouverte ne bloque le MVP (E1–E8). En revanche, un défaut de cohérence documentaire **critique** (le substrat de réactivité étiqueté « Riverpod » contredit l'invariant adopté d'un cœur Flutter-native) et une douzaine de findings **majeurs** de cohérence/complétude doivent être corrigés avant de figer le séquencement de sprint et de lancer E3.
 
 ## 2. Inventaire des documents
 
 | Document | Présence | Statut |
 |---|---|---|
-| PRD (`prd.md`) | 1, pas de doublon | Complet, haute qualité intrinsèque |
-| Architecture (`architecture.md`) | 1, pas de doublon | 14 AD, 6 [ADOPTED] |
-| Épics (`epics.md`) | 1, pas de doublon | 11 épics / 48 stories |
-| Brief (`brief.md`) | Présent (grounding) | **Obsolète sur 2 points verrouillés** (freezed, packages) |
-| Inventaire technique (`technical-inventory.md`) | Présent (grounding) | Cohérent, mais ne référence pas zcrud_list/zcrud_riverpod |
-| Schéma canonique (`canonical-schema.md`) | Présent (grounding) | Source des modèles portés |
-| **Doc UX séparé** | **Absent** | WARNING défendable (produit-développeur, UX intégrée au PRD via FR-1/FR-3/FR-23 + AD-2/AD-13, thème hérité de l'app hôte). Acceptable **sous réserve** d'ajouter les AC a11y/RTL par-widget et les états d'interaction manquants (voir §6). |
+| PRD (`prd.md`) | 1 exemplaire, pas de doublon | Structurellement solide ; front-matter `status: draft`, titre « à confirmer », résidu `[NOTE FOR PM]` en §6.2 → à geler |
+| Architecture (`architecture.md`) | 1 exemplaire | 16 AD, table de traçabilité, ER diagram ; contient le diagramme AD-2 périmé (Riverpod) |
+| Épics (`epics.md`) | 1 exemplaire | 12 épics (E1–E11b, dont E11a intercalé), ~56 stories |
+| Brief (`brief.md`) | Grounding | Auto-incohérent (corps prescrit Riverpod vs sa propre section « Décisions verrouillées ») |
+| Inventaire technique (`technical-inventory.md`) | Grounding | §4.2/§5.2 prescrivent « Paradigme UNIQUE = Riverpod » — non réconcilié avec AD-15 |
+| Schéma canonique (`canonical-schema.md`) | Grounding | ZHierarchyNode/ZSemanticContext proéminents mais non repris en aval |
+| **UX (doc séparé)** | **Absent** | **Statut légitime** pour un produit-développeur : l'UX end-user pertinente (rebuild granulaire, RTL/a11y, structure de formulaire) est intégrée au PRD/architecture. Deux surfaces UX de librairie restent toutefois non planifiées (theming, doc intégrateur — cf. §6). |
 
 ## 3. Analyse PRD (FR/NFR)
 
-- **25 FR** (FR-1..FR-25), toutes numérotées globalement et dotées de « Conséquences (testables) » concrètes, tracées aux parcours UJ-1..4 et métriques SM-1..6.
-- **14 clusters NFR** : Annexe A (NFR-A1..A6 transverses), Annexe B (surface d'API, versionnage, budgets perf, politique deps), Annexe C (sécurité ×2 + contraintes cibles lex_douane/DODLP).
-- **6 métriques** SM-1..SM-6 + 2 contre-métriques ; 6 Non-Goals explicites ; 12 OQ (dont 3 résolues : OQ-1, OQ-7, OQ-11) ; 3 hypothèses indexées §9.
-- Qualité globale élevée (Glossaire verbatim, index des hypothèses, registre d'OQ), mais **défauts de testabilité/cohérence réels** :
-  - **FR-2 / SM-2 non testable** : parité sur « ~37 » types alors que le grounding chiffre « 37-40 ». Sans liste figée, le critère d'acceptation majeur (objectif produit n°1) est passer/échouer sur un nombre flou.
-  - **FR-14 contradiction interne** : format rich-text « figé et documenté » vs OQ-1 (résolu) « pluggable via ZCodec ».
-  - **FR-7 vs OQ-9** : pagination curseur affirmée « dans le contrat neutre » alors que OQ-9 pose la question comme non tranchée. « Champs pertinents » pour la recherche sans accents jamais défini (aucune propriété ZFieldSpec `searchable`).
-  - **NFR-A4 ambigu** : « cœur canonique Dart pur » non mappé à un package ; laisse croire à tort que zcrud_core (qui contient DynamicEdition Flutter) doit être sans Flutter.
-  - **FR-11** : une « conséquence testable » est en réalité une [HYPOTHÈSE] (@JsonSerializable pur).
-  - **FR vagues/adossées à OQ** : FR-4→OQ-4, FR-13→OQ-8, FR-15→OQ-6, FR-19→OQ-5/10 — pas prêtes au découpage tant que l'OQ n'est pas tranchée.
+- **FR total : 25** (FR-1 à FR-25), groupées par fonctionnalité, chacune assortie de « Conséquences (testables) » concrètes.
+- **NFR total : 13** — Annexe A : 6 (perf édition, rétro-compat sérialisation, offline-first, pureté des couches, RTL/a11y, zéro réflexion) ; Annexe B : 4 (surface API, versionnage, budgets perf, cibles runtime/deps) ; Annexe C : 3 (sécurité, contraintes lex_douane, contraintes DODLP).
+- **Autres :** 6 métriques de succès (SM-1..SM-6, 3 primaires) + 2 contre-métriques ; 12 OQ (6 résolues) ; 3 hypothèses ; 6 Non-Goals.
+
+**Qualité intrinsèque : bonne base, mais FR vagues / non chiffrées à corriger :**
+
+- **FR-2 (majeur)** — catalogue de types « figé » mais cardinalité imprécise et incohérente (« ~37 » dans le glossaire vs « union 37-40 » dans l'inventaire) ; il pilote pourtant la métrique primaire SM-2 (parité type-par-type). La validation transverse reste une liste ouverte (« required, min/max, email, url, match, **etc.** »).
+- **FR-15 (majeur)** — contradiction sur le moteur LaTeX : `flutter_math_fork` (conséquence FR-15) vs `flutter_tex`/`html_editor_enhanced` (§4.5 et Annexe B.4). Deux moteurs distincts (natif vs WebView) → impacte NFR-B4 (isolation deps).
+- **FR-8 (majeur)** — surchargée (ACL + sélection + corbeille + export) ; la « corbeille » n'a **aucune** conséquence testable, l'export est simultanément « optionnel ».
+- **Mineurs** : FR-13 (« cascade bornée », « débouncée », « best-effort » non chiffrés) ; FR-3 (grille 12 colonnes sans breakpoints testables) ; FR-7 (repli in-memory renvoyé à la doc) ; FR-18 (modes « défensifs » non définis) ; Annexe B.3 (budgets perf non chiffrés hors O(1)).
 
 ## 4. Traçabilité FR → Stories (matrice)
 
-| FR | Story | Statut |
+| FR | Story(ies) | Statut |
 |---|---|---|
 | FR-1 | E3-1, E3-2 | Couvert |
-| FR-2 | E3-3 (+E3-2) | Couvert |
+| FR-2 | E3-3a, E3-3b | **Partiel** — fichier/image/document, password, hidden, icon, inlineHtml non couverts par story |
 | FR-3 | E3-4 | Couvert |
-| FR-4 | E3-5 | Couvert (adossé OQ-4) |
+| FR-4 | E3-5 | Couvert |
 | FR-5 | E3-6 | Couvert |
-| FR-6 | E4-1, E4-2 | Couvert |
-| FR-7 | E4-3 (+E2-2) | Couvert (adossé OQ-9) |
-| FR-8 | E4-4 ; export E11-3 | Couvert (décalage de phase, cf. §7) |
+| FR-6 | E4-1, E4-2 (+E4-5) | Couvert |
+| FR-7 | E4-3 | Couvert |
+| FR-8 | E4-4 + E11a-3/E11b-3 (export) | Couvert |
 | FR-9 | E2-4, E2-5 | Couvert |
-| FR-10 | E2-3 (+E9-1, E10-1) | Couvert |
-| FR-11 | E2-6 | Couvert |
-| FR-12 | E2-2 (+E5-1) | Couvert |
+| FR-10 | E2-3, E2-5 | Couvert |
+| FR-11 | E2-6, E7-2, E8-1 | Couvert |
+| FR-12 | E2-2, E5-1 | Couvert |
 | FR-13 | E5-2, E5-3, E5-4 | Couvert |
 | FR-14 | E6-1, E6-2 | Couvert |
 | FR-15 | E6-3, E6-4 | Couvert |
@@ -55,129 +55,127 @@ Le socle de planification est dense et globalement implémentable : les 25 FR, 1
 | FR-17 | E9-2 | Couvert |
 | FR-18 | E9-3 | Couvert |
 | FR-19 | E10-1, E10-2, E10-3 | Couvert |
-| FR-20 | E11-1 | Couvert |
-| FR-21 | E11-2 | Couvert |
-| FR-22 | E2-7, E7-1 | Couvert |
-| **FR-23** | E2-8 (l10n/RTL) ; a11y widget en E8-2/E10-2 seulement | **Partiel** — a11y widget-level (Semantics, ≥48 dp, insets directionnels) sans AC en E3/E4 |
-| FR-24 | E1-1, E1-2 | Couvert |
-| FR-25 | E1-4 (+E8-3) | Couvert |
+| FR-20 | E11a-1, E11b-1 | Couvert |
+| FR-21 | E11a-2, E11b-2 | Couvert |
+| FR-22 | E2-7, E2-9 | Couvert |
+| FR-23 | E2-8 (+AC a11y E3/E8/E10) | Couvert |
+| FR-24 | E1-1, E1-2, E4-1 | Couvert |
+| FR-25 | E1-4, E8-3 | Couvert |
 
-**Statistiques de couverture :** 24/25 Couverts (96 %), 1/25 Partiel (FR-23, 4 %), **0 Manquant**. FR MVP (§6.1) toutes tracées ; FR différées FR-16..FR-21 tracées en E9/E10/E11.
+**Statistiques de couverture :** 24/25 pleinement couverts (**96 %**), 1 partiel (FR-2), 0 orphelin. Couverts au moins partiellement : **25/25 (100 %)**.
 
-**Stories orphelines (sans FR pilote) :** E4-5 (sous-listes/relations & onglets — capacité en prose §4.2 jamais promue en FR), E1-3 (lint/CI — infrastructure légitime mais non rattachée à un NFR/SM-6).
+**Hygiène de traçabilité :** 3 stories ancrées sur AD/SM/NFR plutôt que FR (E1-5 → AD-12/Annexe C ; E1-3, E2-10 → SM-6/AD-10) — légitime pour un produit-librairie mais à documenter. **E4-5 référence un « FR-6b » inexistant** (la capacité sous-listes/onglets vit en prose §4.2, non numérotée).
 
 ## 5. Couverture des décisions d'architecture (AD)
 
-| AD | Réalisation (story/FR) | Statut |
+| AD | Story / FR | Statut |
 |---|---|---|
-| AD-1 | E1-1, E1-2 | Couvert |
-| AD-2 | E3-1, E3-2, E6-1 (SM-1) | Couvert — **mais dépendance Riverpod du cœur non assumée (critique)** |
-| AD-3 | E2-4, E2-5 | Couvert |
-| AD-4 | E2-3, E9-1, E10-1 | Couvert |
-| AD-5 | E2-2, E5-1, E5-2 | Couvert |
-| AD-6 | E2-7, E7-1 | Couvert — nuance seams DI ≠ substrat d'état Riverpod |
-| AD-7 | E6-1, E6-2 | Couvert |
-| AD-8 | E4-1 | Couvert |
-| AD-9 | E5-3, E5-4, E9-2 | **Partiel** — clause « contenu publié cache-first + checksum » (ZPublishedDoc) sans story |
-| AD-10 | E2-3, E2-5 | Couvert — discipline « additif seulement » non testée |
-| AD-11 | E2-1, E2-2, E4, E5-1 | Couvert |
-| AD-12 | E11-1, E11-3 | Couvert (phase v1.x/v2) |
-| AD-13 | E2-8, E8-2, E10-2 | Couvert |
-| AD-14 | E2-1, E5-3, E9 | Couvert |
+| AD-1 (monorepo, graphe acyclique) | E1-1, E1-2 / FR-24, FR-25 | Couvert |
+| AD-2 (rebuilds granulaires, réactivité pur-Flutter) | E2-7, E3-1/2/5 / SM-1 | **Partiel — diagramme contradictoire** |
+| AD-3 (codegen, reflectable banni) | E2-4, E2-5, E1-3 | Couvert |
+| AD-4 (extension : ZExtension+extra par entité) | E2-3 / FR-10 | **Partiel — non câblé par entité** |
+| AD-5 (domaine backend-agnostique) | E2-2, E5-2 | Couvert |
+| AD-6 (injection pluggable) | E2-7, E2-9, E7-1 | Couvert |
+| AD-7 (rich-text Delta + ZCodec) | E6-1, E6-2 | Couvert |
+| AD-8 (Syncfusion isolé dans zcrud_list) | E4-1 / SM-5 | Couvert (pkg absent du grounding) |
+| AD-9 (offline-first LWW, SRS séparé) | E5-3/4, E9-2/4 | **Partiel — clause « contenu publié » orpheline** |
+| AD-10 (schéma additif, désérial. défensive) | E2-5, E2-10 | Couvert |
+| AD-11 (Either<ZFailure,T>, Stream nu) | E2-1, E2-2, E3-6 | Couvert |
+| AD-12 (zéro secret, pas de contournement TLS) | E1-5, E11a-1/3 | Couvert |
+| AD-13 (RTL/a11y/l10n injectable) | E2-8, E3-3/4, E10-2 | Couvert (Binds sous-estimé → FR-23 seul) |
+| AD-14 (pureté des couches) | E2-1, E1-2, E9-3/4 | Couvert |
+| AD-15 (multi-gestionnaire par bindings) | E2-9, E7-1, E8-1 | Couvert |
+| AD-16 (ACL + pagination curseur neutres) | E2-2, E4-3/4, E5-1 | Couvert |
 
-**Contradictions PRD↔architecture :**
-- **[CRITIQUE] Riverpod du cœur.** AD-2 place les ConsumerWidget + EditionFormNotifier (Riverpod) DANS zcrud_core (l.60-63, 213 ; inventaire §6 liste `flutter_riverpod` en dep de zcrud_core), alors que le paradigme dit « le cœur n'en dépend pas directement » (l.28), AD-6 « aucun conteneur d'injection » (l.82) et le PRD promet DODLP « migré sans Riverpod » (UJ-1 l.51, hypothèse §6.1 l.399) avec « bootstrap inchangé » (SM-2). Si le moteur est fait de ConsumerWidget/Notifier, DODLP doit intégrer flutter_riverpod + un ProviderScope — l'hypothèse « sans Riverpod » et **la métrique primaire SM-2** sont menacées.
-- **[MAJEUR] 7 FR sans AD gouvernante.** L'en-tête déclare « binds FR-1..FR-25 » mais FR-2, FR-4, FR-5, FR-7, FR-8, FR-21, FR-25 n'apparaissent dans le `Binds:` d'aucune AD. Des décisions non triviales restent sans invariant : ZAcl (FR-8), pagination curseur dans le contrat neutre (FR-7/OQ-9), enveloppe stepper (FR-4/OQ-4), budget assets (FR-21).
-- **[MAJEUR] freezed.** Le brief verrouille « freezed + json_serializable » (l.18, l.92) ; AD-3, FR-11 et canonique §5 imposent l'inverse (« freezed NON imposé » / « PAS de freezed »). Décision verrouillée renversée sans mise à jour du brief.
-- **[MAJEUR] graphite vs graphview.** Architecture/épics/inventaire spécifient `graphite ^1.2.1` (viewer) ; le canonique décrit ZMindmapView avec `graphview` + BuchheimWalker. Deux libs d'auto-layout sans arbitrage.
-- **[MINEUR] Grounding aval non répercuté.** zcrud_list et zcrud_riverpod (12 packages en arch/PRD/épics) absents du brief et de l'inventaire (10 packages).
+**Contradictions PRD ↔ Architecture :**
+- **[CRITIQUE]** Diagramme « Cycle réactif du formulaire (AD-2) » (architecture.md L216-225) étiquette `EditionFormNotifier (Riverpod)` et `ZFieldWidget (ConsumerWidget)` — reliquat pré-AD-15 qui contredit AD-2/AD-15 (aucun gestionnaire d'état dans zcrud_core). Un implémenteur suivant ce diagramme importerait Riverpod dans le cœur → casse SM-5/AD-1. Le même paradigme périmé irrigue le corps du Brief, l'inventaire §4.2/§5.2 et le glossaire PRD (ZcrudScope « + seams Riverpod »).
+- **[MAJEUR]** `zcrud_list` (AD-8) et les bindings `zcrud_riverpod/get/provider` (AD-15) sont absents de la liste de packages du Brief et de l'inventaire §6, qui placent Syncfusion dans zcrud_core.
+- **[MAJEUR]** AD-4 exige `extra`+`ZExtension?` sur chaque entité canonique, mais aucune AC ne l'impose sur ZFlashcard (E9-1), ZStudyFolder (E9-3), ZMindmapNode (E10-1).
+- **[MAJEUR]** ZHierarchyNode / ZSemanticContext (canonique §2.4, « le générique évident à factoriser », « à porter tel quel ») ont disparu de l'architecture/PRD/épics sans décision de report — contrairement à la génération LLM et Supabase, explicitement différées.
+- **[Mineurs]** Deferred renvoie la pagination curseur à AD-5 au lieu d'AD-16 ; double gouvernance FR-7/FR-8 dans la capability map ; invariant AD-9 « contenu publié distinct » sans FR/story.
 
 ## 6. Alignement UX
 
-L'absence de doc UX séparé est un **WARNING acceptable** pour un produit-développeur (UX intégrée au PRD, thème hérité de l'app hôte). Mais elle a laissé des trous d'AC concrets qui doivent être comblés :
+L'absence de doc UX séparé est **légitime** : l'UX end-user (rebuild granulaire sans jank, RTL/a11y, structure de formulaire) est correctement intégrée au PRD/architecture et couverte par des stories (E3-1/2, E2-8, E3-3/4, E10-2). Deux surfaces UX propres à un **produit-librairie** restent néanmoins **non planifiées** :
 
-- **A11y/RTL au niveau composant manquants** sur la surface UX principale : E3-3 (dispatcher + ~37 ZFieldWidget) et E3-4 (grille responsive) n'ont **aucun AC** RTL (EdgeInsetsDirectional/AlignmentDirectional/TextAlign.start), Semantics, cibles ≥48 dp — alors que l'a11y est « non négociable » (Annexe C), SM-3 la mesure, et FR-23 l'exige. La conformité n'est vérifiée qu'au plumbing l10n (E2-8), en intégration lex_douane (E8-2) et vue liste mindmap (E10-2, v1.x).
-- **États d'interaction non spécifiés** : DynamicList (loading, empty, no-results-après-filtre, error) et DynamicEdition (submit-in-progress, échec de soumission) n'ont aucune AC de rendu accessible, bien que AD-11 gère AsyncValue.error côté providers.
-- **Edge case UJ-2 non storié** : « perte de connexion pendant la saisie → l'état du formulaire n'est pas perdu » (distinct de l'offline-first données E5) sans AC sur le EditionFormNotifier.
+- **[MAJEUR] Theming / design-tokens injectables** — aucun FR ni story ne couvre la manière dont l'app hôte style le chrome CRUD. L'inventaire §7 identifie le couplage à casser (`kNavyColor`, `kFormInputDecorationTheme`) et §8.1-4 cite `ZcrudConfig/ThemeExtension`, mais rien n'est promu en FR/story. Le seam `config` de ZcrudScope reste vague.
+- **[MINEUR] Doc intégrateur + app example** — `example/` est listé en Structural Seed mais aucune story ne le produit ; aucun README/API-docs/guide de migration DODLP, alors qu'UJ-1 est une migration de ~180 fichiers.
 
 ## 7. Qualité des épics & stories
 
-**11 épics, 48 stories** (E1=4, E2=8, E3=6, E4=5, E5=4, E6=4, E7=4, E8=3, E9=4, E10=3, E11=3). Structure globalement saine : story de setup melos (E1-1), gate de compat (E1-4), stories brownfield DODLP (E7) / lex_douane_admin (E8) / additifs lex (E9-4, E10-3), 25 FR et 14 AD tous rattachés, beaucoup d'AC mesurables (E3-1, E5-1, E6-2).
-
-**Findings par sévérité :**
-
 **Critique**
-- **[C4-1] E7 (MVP) dépend de E11 (post-MVP).** La parité ~37 types + « export préservé » validées en E7-4 (métrique **primaire** SM-2) requièrent les widgets geo/téléphone/pays/adresse (zcrud_geo/zcrud_intl = E11-1/E11-2, FR-20/21) et l'export (zcrud_export = E11-3). E7 déclare « Dépend de E3, E4, E5, E6 » (omet E11), et E11 est séquencé APRÈS E7. **Preuve :** E7-4 AC + catalogue DODLP inventaire §3 + phasage §6.2.
+- Diagramme AD-2 « Riverpod/ConsumerWidget » (déjà détaillé §5) — trap de cohérence sur le chemin critique E3 et l'objectif produit n°1.
 
-**Majeur**
-- **[C4-2] E9 → E11 non déclarée.** zcrud_flashcard dépend de zcrud_export (architecture « FC → EXP », inventaire §6, canonique §2.7), mais E9 déclare seulement « E2, E5, E6 » et aucune arête E9→E11 dans le mermaid.
-- **[C3-1] E7-3 surdimensionnée** : re-pointer 180 imports + supprimer le code dupliqué de src/ = charge d'un épic, non complétable en une unité de sprint.
-- **[C3-2] E3-3 surdimensionnée** : dispatcher + ~37 widgets en une story ; son AC « aucun default silencieux sur tout le catalogue » est intenable dans les dépendances déclarées d'E3 (markdown en E6, geo/intl en E11).
-- **[C1-1] E2 « fourre-tout »** : 8 stories / 6 FR / 7 AD sur le chemin critique, contredit la note « prioriser E2 juste ce qu'il faut pour débloquer E3 » (E2-5 générateur complet déjà lourd).
+**Majeurs**
+- **Numérotation ≠ ordre d'exécution** — E7 (dépend E11a) et E9 (dépend E11a) requièrent un épic numéroté **après** eux (11 > 7, 11 > 9). Un plan de sprint ordonnancé par numéro casserait le build (parité DODLP géo/tél/export absente). Preuve : epics.md L119, L134.
+- **Graphe mermaid incohérent** — l'arête **E11a→E9 est absente** du diagramme alors que l'en-tête E9 et la note L46 l'affirment (« E7 et E9 dépendent de E11a »).
+- **E2-9 surdimensionnée** — « setup all bindings » livre 3 packages (zcrud_riverpod + get + provider) + test croisé en une seule story, malgré la revendication de « découpage des stories surdimensionnées » (L18).
+- **E2 méga-épic goulot** — 10 stories, aucune indépendamment expédiable, dépendance de 5 épics ; E2-5 (générateur complet : toMap/fromMap/copyWith + ZFieldSpec + enregistrement + enums + sentinelle + round-trip) est à lui seul un livrable majeur.
+- **UJ-4 sans métrique** — les widgets flashcards/mindmaps additifs pour lex_douane (besoin explicitement « chargé émotionnellement ») sont livrés par E9/E10 mais aucune SM ne valide l'intégration additive (paramétrage par entité hôte, non-remplacement du module Étude, offline-first préservé).
 
-**Mineur**
-- **AC de cas d'erreur manquants** (exigés par les AD) : E6-3/E6-4 (embed LaTeX/tableau malformé → repli sûr, AD-10), E5-4 (échec partiel de sync « best-effort », AD-9), E4-3 (curseur invalide/backend sans curseur), E9 (invariant canonique « SRS jamais dans le sous-arbre partageable, collection top-level » + dépôt offline-first ZFlashcard).
-- **Format Given/When/Then absent** partout (AC restent testables → mineur ; recommandé pour E3-1, E5-1, E6-2, E7-4).
-- **Valeur E1/E2** énoncée comme outillage sans résultat end-to-end (légitime mais à expliciter).
-- **FR-8 décalage de phase** : FR MVP (§6.1) dont la sous-exigence export est livrée en E11 (v1.x/v2) — à marquer explicitement différée.
+**Mineurs**
+- FR-23 omis du rollup d'en-tête de E2 (pourtant réalisé par E2-8).
+- E10-3 (éditeur outline) sous-spécifiée : une seule AC vague, pas d'ops indent/outdent/reorder, pas de FR rattaché.
+- Format « En tant que… je veux… » et Given/When/Then quasi absents (E4/E5/E8 = titres-tâches + puces).
+- E7-3 (migration ~180 fichiers DODLP) non bornée : pas de découpage de lots ni DoD par lot ni critère de complétude global (0 import legacy).
+- Cas d'erreur d'injection/ACL absents en E4-4, E7-1/2, E8-1/2 (effort inégal vs E4-3/E5-4/E6-3-4 qui les ont).
+- Incohérence de grounding : 6 types de flashcards (PRD/canonique) vs « 4 types » (Brief/inventaire §2.7).
+- E1-5 (révocation clé Maps) ignore le rollout cross-repo : la clé vit en clair dans DODLP **et** DLCFTI en prod → préférer la restriction + redéploiement coordonné à la révocation sèche.
 
 ## 8. Lacunes transverses & questions ouvertes bloquantes
 
-**OQ bloquant réellement le MVP :**
-- **OQ-4 (stepper) — la seule vraie tension MVP non tranchée.** Envelopper l'arbre stepper dans un unique conteneur `flutter_form_builder` entre en conflit latent avec AD-2 (un champ = ConsumerWidget, aucun setState de formulaire). La coexistence flutter_form_builder (GlobalKey<FormBuilderState>, listé au Stack) ↔ EditionFormNotifier granulaire n'est décrite nulle part (le diagramme du cycle réactif AD-2 ne mentionne pas form_builder). Touche E3-1/E3-2/E3-5. Risque : réintroduire le rebuild global (le bug historique).
+**OQ bloquant le MVP (E1–E8) : 0.** Aucune question ouverte ne bloque l'implémentation du MVP.
 
-**OQ non bloquantes (résolues ailleurs ou correctement déférées, mais PRD §8 obsolète) :** OQ-3 est ADOPTED par AD-6 ; OQ-8 (ZLocalStore) et OQ-9 (curseur) déférées avec stories (E4-2/E2-2/E4-3) ; OQ-5/OQ-10/OQ-12 déférées en v1.x. Le PRD §8 les liste encore « ouvertes » → à synchroniser.
+- **Réellement ouvertes mais non bloquantes :** OQ-2 (portée du/des registre(s) — touche le design d'E2-3, à trancher en tête d'E2 car conditionne la surface API publique) ; OQ-5 (level mindmap — v1.x, E10).
+- **Marquées « ouvertes » dans PRD §8 mais déjà tranchées en aval (PRD trompeur) :** OQ-6 (deps LaTeX optionnelles → FR-15/E6-4), OQ-8 (ZFieldSpec unique + ZLocalStore → FR-6/AD-5/E5-2), OQ-10 (reparentage mindmap → FR-19/E10-1), OQ-12 (casse → Consistency/Deferred). À re-synchroniser.
+- **Correction de prémisse :** OQ-3, OQ-4, OQ-9 sont marquées **✅ Résolu** dans le PRD (et non ouvertes).
+- **Modèles canoniques sans décision de scope :** ZHierarchyNode, ZSemanticContext (ni portés ni exclus — cf. §5).
 
-**Lacunes transverses :**
-- **Modèles canoniques abandonnés silencieusement** : ZHierarchyNode (« LE générique évident à factoriser ») et ZSemanticContext (archétype d'extension versionné) — canonique §3 « à porter » — absents de PRD/architecture/épics sans note de report. ZPublishedDoc/ZDownloadCache : distinction reconnue (AD-9) mais sans modèle ni story.
-- **Gate de test rétro-compat sérialisation absent** : AD-10 (« un champ absent/corrompu ne fait jamais échouer le parent ») affirmé en AC mais sans story de gate CI (seul SM-4/round-trip Markdown E6-2 en a un). OQ inventaire §9 #13 non résolue.
-- **SM-6 sans enforcement** : aucun lint/gate CI ne bannit reflectable dans le moteur, ne scanne les secrets, ni ne vérifie le 100 % codegen ; le volet « zéro secret » est de plus couplé à E11 (post-MVP).
+## 9. Findings priorisés (dédoublonnés)
 
-## 9. Findings priorisés (regroupés par sévérité, dédoublonnés)
+### Critique (1)
+1. **Substrat de réactivité « Riverpod » vs cœur Flutter-native** — diagramme AD-2 (architecture L216-225) + Brief + inventaire §4.2/§5.2 + glossaire PRD contredisent AD-2/AD-15. Impacte E3 (chemin critique, objectif n°1). *(fusion des findings agent-3 critique + agent-5 majeur)*
 
-### Critiques (3)
-1. **Riverpod dans zcrud_core vs « DODLP sans Riverpod »** (AD-2 ↔ AD-6/UJ-1/SM-2) — menace la métrique primaire SM-2. *(§5)*
-2. **E7 (MVP) → E11 (post-MVP)** : parité SM-2 + export dépendent de widgets/export post-MVP. *(§7)*
-3. **Clé Google Maps commitée en clair** : sa non-inclusion dans les packages est couverte (E11-1) mais sa **révocation/restriction** (« action immédiate ») n'a aucune story, ni owner, ni échéance, et E11 est post-MVP. *(brief l.109, inventaire §2.9/§7, AD-12, Annexe C)*
-
-### Majeurs (9)
-4. **FR-14** contradiction figé vs pluggable (OQ-1).
-5. **FR-2 / SM-2** parité « ~37 » non testable (liste non figée).
-6. **FR-7** pagination curseur affirmée vs OQ-9 non tranchée.
-7. **NFR-A4** « cœur canonique » ambigu vs package zcrud_core (Flutter).
-8. **FR-23 partiel** : a11y/RTL widget-level sans AC en E3/E4. *(dédup agents 2+5)*
-9. **7 FR sans AD gouvernante** (FR-2/4/5/7/8/21/25) malgré « binds FR-1..25 ».
-10. **freezed** : brief verrouille imposé vs PRD/arch/canonique non imposé. *(dédup agents 3+5)*
-11. **graphite vs graphview** : lib d'auto-layout mindmap divergente.
-12. **E9 → E11** graphe incohérent + **E7-3/E3-3 surdimensionnées** + **E2 fourre-tout** + **PRD §8 OQ obsolètes** + **OQ-4 stepper non tranchée** + **modèles canoniques manquants (ZHierarchyNode/ZSemanticContext/ZPublishedDoc)** + **gate test rétro-compat sérialisation absent**. *(regroupés — chacun majeur, cf. §7-8)*
+### Majeurs (11)
+2. **FR-2 partiel** — cardinalité imprécise (« ~37 » vs « 37-40 ») **et** types fichier/image/document, password, hidden, icon, inlineHtml sans story d'édition (l'architecture place pourtant le champ fichier dans zcrud_core, L301). Risque direct sur SM-2 (parité DODLP). *(fusion agent-1 + agent-2)*
+3. **FR-15** — contradiction moteur LaTeX (flutter_math_fork vs flutter_tex/html_editor_enhanced).
+4. **FR-8** — surchargée ; « corbeille » sans conséquence testable.
+5. **Numérotation épics ≠ ordre d'exécution** (E7/E9 dépendent d'E11a numéroté après).
+6. **Graphe mermaid** — arête E11a→E9 manquante.
+7. **E2-9 surdimensionnée** (3 bindings en 1 story).
+8. **E2 méga-épic goulot** + E2-5 découpage insuffisant.
+9. **zcrud_list & bindings absents du grounding** (Brief/inventaire placent Syncfusion dans le cœur).
+10. **AD-4 non câblé par entité** (extra/ZExtension? absents des AC E9-1/E9-3/E10-1).
+11. **ZHierarchyNode / ZSemanticContext** hors périmètre sans décision de report. *(fusion agent-3 + agent-5)*
+12. **UJ-4 sans métrique de succès** + **theming injectable non planifié** (deux lacunes de validation/UX produit-librairie).
 
 ### Mineurs (regroupés)
-- FR-7 « champs pertinents » non défini ; FR-11 conséquence hypothétique ; FR-4/13/15/19 adossées à OQ non résolues.
-- Stories orphelines E4-5 (sous-listes/onglets) et E1-3 (lint/CI).
-- AC de cas d'erreur manquants (E6-3/4, E5-4, E4-3, E9) ; format GWT absent ; valeur E1/E2 à expliciter ; FR-8 décalage de phase.
-- SM-6 sans gate CI ; états UI non spécifiés (DynamicList/DynamicEdition) ; edge case UJ-2 offline non storié.
-- Collision de nommage **SM-2** (métrique parité ↔ algo SuperMemo-2) ; debounce ~250 ms non tranché ; glossaire incomplet (ZChoice/ZFlashcardSource/ZSyncMeta ; ZStudySession* ; FR-16 omet isReadOnly/subFolderId) ; zcrud_riverpod sans story d'implémentation ; AD-9 clause « contenu publié » sans story ; flutter_form_builder rôle résiduel non précisé.
+- **PRD/grounding :** OQ-6/8/10/12 obsolètes en §8 ; glossaire incomplet (ZChoice, ZSyncMeta, ZSyncOrchestrator, ZcrudScope Riverpod-centré) ; 4 vs 6 types de flashcards ; résidus d'authoring (`status: draft`, `[NOTE FOR PM]`).
+- **FR non chiffrées :** FR-13 (cascade/debounce/best-effort), FR-3 (breakpoints), FR-7 (repli in-memory), FR-18 (modes « défensifs »), Annexe B.3 (budgets perf).
+- **Traçabilité :** E4-5 « FR-6b » inexistant ; FR-23 absent du rollup E2 ; Binds AD-13 sous-estimé ; double gouvernance FR-7/FR-8 ; références Deferred AD-5 vs AD-16 ; invariant AD-9 « contenu publié » orphelin ; SM ne couvrent qu'un sous-ensemble des FR.
+- **Épics :** E10-3 vague ; E7-3 non bornée ; format story/GWT absent ; cas d'erreur manquants (E4-4, E7, E8) ; debounce ~250ms/non-recompute décoration non repris en AC d'E3-2.
+- **Opérationnel :** E1-5 rollout cross-repo DODLP/DLCFTI non coordonné ; doc intégrateur + example app non planifiés.
 
 ## 10. Recommandations & prochaines étapes
 
-**Bloquants à traiter AVANT implémentation (ordre) :**
-1. **Sécurité — immédiat, hors séquencement produit :** révoquer + restreindre la clé Google Maps fuitée pendant E1, avec AC de vérification (la clé n'est plus valide). Découpler du volet E11.
-2. **Trancher la dépendance Riverpod du cœur :** documenter que zcrud_core DÉPEND de flutter_riverpod pour l'ÉTAT (Notifier), distinct d'un conteneur de DI (seams). Corriger le paradigme + AD-6, et reformuler UJ-1/§6.1/SM-2 (DODLP intègre flutter_riverpod + ProviderScope pour le formulaire, injection des services en mode locator via ZcrudScope). Réévaluer explicitement l'hypothèse « sans Riverpod ».
-3. **Réconcilier le séquencement de phase :** extraire un sous-ensemble « parité MVP DODLP » d'E11 (widgets geo/téléphone/pays/adresse + export DataGrid) séquencé AVANT E7 avec dépendance déclarée — OU statuer dans E7-4 que ces types restent servis par les widgets DODLP existants via ZTypeRegistry (parité par enregistrement) et ajuster SM-2. Idem trancher E9→E11 (export flashcard optionnel, ou dépendance déclarée). Aligner les deux graphes de dépendances.
-4. **Résoudre OQ-4 (stepper)** et préciser dans l'architecture le rôle de flutter_form_builder (validation seule vs source d'état) et sa cohabitation avec EditionFormNotifier, avant E3.
+**Bloquant avant de démarrer E3 (chemin critique) :**
+1. **Réécrire le diagramme AD-2** en ZFormController (ChangeNotifier) → ValueListenable par champ → ListenableBuilder ; supprimer toute mention Riverpod/ConsumerWidget. Annoter Brief, inventaire §4.2/§5.2 et glossaire PRD comme *superseded* par AD-15.
+2. **Ajouter les AC anti-rebuild à E3-2** : décision explicite sur le debounce (~250 ms ou non), non-recompute décoration/validateurs par frappe (Annexe A).
 
-**Corrections de cohérence documentaire :**
-5. Figer la **liste canonique exacte** des EditionFieldType (table inventaire §3), remplacer « ~37 » par un compte énuméré, faire de SM-2 un checklist type-par-type. Renommer la collision SM-2/SuperMemo-2.
-6. Reformuler **FR-14** (format par défaut documenté + surchargeable ZCodec), **FR-7** (au conditionnel + propriété `searchable`), **NFR-A4** (distinguer « modèles canoniques Dart pur » vs « package zcrud_core Flutter autorisé »).
-7. Mettre à jour le **brief** (freezed non imposé, reflectable banni sauf ReflectableCodec DODLP ; introduction de zcrud_list/zcrud_riverpod). Synchroniser **PRD §8** avec les AD/Deferred. Trancher **graphite vs graphview**.
-8. Ajouter les **AD/clauses manquantes** : ZAcl (FR-8), pagination curseur dans DataRequest neutre (FR-7), enveloppe stepper (FR-4), budget assets (FR-21) — ou corriger l'en-tête « binds FR-1..25 ».
-9. Décider et documenter le sort de **ZHierarchyNode/ZSemanticContext/ZPublishedDoc** (porter ou Deferred justifié).
+**Avant de figer le séquencement de sprint :**
+3. **Renuméroter** le lot parité (E11a) en position d'exécution réelle, ou le sortir de la série numérique (« Lot-Parité-DODLP »). **Ajouter l'arête E11a→E9** au mermaid (ou la marquer optionnelle).
+4. **Scinder E2** (contrats+données / codegen+extensibilité / bindings+réactivité) et **E2-9** (une story par binding + une story de conformité multi-binding). Découper E2-5.
 
-**Durcissement du backlog (avant de figer) :**
-10. Ajouter des **AC a11y/RTL par-widget** à E3-3/E3-4 (Semantics, ≥48 dp, insets directionnels) + test a11y de référence sur le catalogue.
-11. Ajouter les **AC de cas d'erreur** manquants (E6-3/4, E5-4, E4-3), une **story dépôt offline-first ZFlashcard** + invariant SRS top-level (E9), les **états UI** (E4/E3-6), l'edge case **UJ-2 offline** (E3-1).
-12. Créer une **story gate CI** : tests de désérialisation défensive + round-trip sur documents historiques/tronqués (AD-10, inventaire §9 #13), et gate SM-6 (lint anti-reflectable, scan de secrets, contrôle codegen) dans E1-3.
-13. **Découper** E7-3 (par lots, AC « app compile + tests verts après lot N »), E3-3 (par familles de champs), et documenter un ordre de sous-livraison intra-E2 pour débloquer E3 au plus tôt.
-14. **Promouvoir ou déprioriser** les stories orphelines (E4-5 en FR-6b ou hors MVP ; E1-3 rattachée à SM-6), expliciter la valeur habilitante d'E1/E2.
+**Avant de geler le PRD comme référence :**
+5. **Figer FR-2** : liste dénombrée et exhaustive des types (N exact) + liste close des validateurs ; **ajouter une story champ fichier/image/document + password/hidden/icon/inlineHtml** dans zcrud_core.
+6. **Trancher FR-15** (moteur LaTeX canonique) et **scinder FR-8** (isoler corbeille + AC testable, et export).
+7. **Aligner le grounding** : ajouter zcrud_list + bindings à la liste de packages ; harmoniser 6 types de flashcards ; compléter le glossaire.
 
-Une fois les 4 bloquants levés et les corrections de cohérence §5-8 appliquées, le backlog est implémentable ; le verdict passera à READY.
+**Complétude de périmètre / validation :**
+8. **Trancher ZHierarchyNode / ZSemanticContext** : Non-Goal explicite (§5) ou story de portage.
+9. **Ajouter une AC `extra`+`ZExtension?`** à chaque entité canonique (E9-1, E9-3, E10-1).
+10. **Ajouter SM-7 (UJ-4)** et **une FR/story theming injectable** (ThemeExtension/InputDecorationTheme via seam).
+11. **Synchroniser PRD §8** (marquer OQ-6/8/10/12 résolues) ; trancher OQ-2 (portée registre) en tête d'E2.
+
+**Opérationnel :**
+12. Reformuler E1-5 en restriction + redéploiement coordonné DODLP/DLCFTI ; planifier une story « example app + doc intégrateur/migration ».

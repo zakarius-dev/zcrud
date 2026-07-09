@@ -91,7 +91,7 @@ Deux propositions de valeur portent le produit. D'abord, il **corrige par concep
 - **ZFlashcard / ZFlashcardType / ZRepetitionInfo / ZSrsScheduler** — carte de révision canonique, son enum de types, l'état SRS **séparé** de la carte, et l'ordonnanceur SRS pluggable (SM-2 par défaut).
 - **ZMindmap / ZMindmapNode / ZMindmapTreeOps / ZMindmapView** — carte mentale (forêt), nœud d'arbre récursif (nesting + `level`), opérations d'arbre pures, et vue auto-layout.
 - **ZStudyFolder / ZStudySession** — container générique multi-type (rattachement inverse par `folderId`) et configuration/état d'une session de révision.
-- **ZcrudScope** — point d'injection framework-neutre (InheritedWidget + seams Riverpod) fournissant resolver, permissions, toast, config, l10n et codecs au moteur.
+- **ZcrudScope** — point d'injection framework-neutre (InheritedWidget + seams) fournissant resolver, permissions, toast, config, thème, l10n et codecs au moteur ; défaut zéro-dépendance, complété au besoin par un binding (`zcrud_riverpod`/`zcrud_get`/`zcrud_provider`).
 - **seam** — provider/point d'injection qui `throw` par défaut et doit être surchargé par l'app hôte (Riverpod `ProviderScope` ou `ZcrudScope`).
 - **Canonique** — schéma verrouillé partagé de zcrud, porté des modèles avancés de lex_douane, ouvert à l'extension.
 - **Consommateur** — application important zcrud (DODLP prioritaire, puis lex_douane, puis IFFD/DLCFTI).
@@ -313,6 +313,12 @@ Un développeur peut fournir/surcharger les libellés du chrome CRUD et obtenir 
 - Pas de singleton statique mutable de localisation ; accès via `of(context)`/provider.
 - Widgets `EdgeInsetsDirectional`/`AlignmentDirectional`/`TextAlign.start`, `Semantics` explicites, cibles ≥ 48 dp.
 
+#### FR-26 : Thème & design-tokens injectables
+Un développeur peut styler le chrome CRUD depuis l'app hôte sans que le package n'impose son propre thème.
+**Conséquences (testables) :**
+- Le style (couleurs, décorations d'input, rayons) est fourni via un `ZcrudTheme`/`ThemeExtension` injecté par `ZcrudScope` ; **aucun** style codé en dur dans le package (pas de `kNavyColor`/`kFormInputDecorationTheme`).
+- En l'absence de thème fourni, le moteur hérite du `Theme.of(context)` de l'app (aucune couleur en dur). Gouverné par AD-6, AD-13.
+
 ### 4.10 Monorepo melos & packaging
 
 **Description :** frontières de packages, versioning, isolation des dépendances lourdes. Un consommateur importe un sous-ensemble sans tirer les autres.
@@ -389,19 +395,19 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 - **OQ-3** ✅ *Résolu* : injection **multi-gestionnaire** par bindings — `ZcrudScope` (défaut) + `zcrud_riverpod`/`zcrud_get`/`zcrud_provider` (AD-15) ; réactivité du cœur Flutter-native.
 - **OQ-4** ✅ *Résolu* : le stepper sectionne le **même** `ZFormController` (pas de `FormBuilder` global comme état) — AD-2.
 - **OQ-5** : `level` du mindmap — cache maintenu vs dérivé à la volée (surtout pour le reparentage).
-- **OQ-6** : `flutter_tex`/`html_editor_enhanced` — optionnels derrière drapeau vs supprimés (impact multi-plateforme/WebView).
+- **OQ-6** ✅ *Résolu* : `flutter_tex`/`html_editor_enhanced` **optionnels derrière drapeau** (FR-15, E6-4).
 - **OQ-7** ✅ *Résolu* : **générateur zcrud** (`@ZcrudModel`/`@ZcrudField`) + conventions `@JsonSerializable` pur ; **reflectable banni, freezed non imposé**. (copyWith généré + sentinelle reset-null : détail d'architecture.)
-- **OQ-8** : Rendu liste vs édition — dériver `ZFieldSpec` unique ou définitions disjointes ; abstraction `ZLocalStore` dès le portage ?
+- **OQ-8** ✅ *Résolu* : `ZFieldSpec` **unique** (édition + liste, FR-6) ; `ZLocalStore` **abstrait** dès le portage, impl alternées (Isar/Drift) déférées (AD-5, E5-2).
 - **OQ-9** ✅ *Résolu* : curseur dans le **contrat neutre** `DataRequest` (impl `zcrud_firestore`) — AD-16.
-- **OQ-10** : Reparentage mindmap — zcrud l'implémente (en avance sur lex) vs attend le portage.
+- **OQ-10** ✅ *Résolu* : zcrud **implémente** move/indent/outdent (en avance sur lex) avec recalcul du `level` (E10-1).
 - **OQ-11** ✅ *Résolu* : **Syncfusion par défaut** pour la liste (licence commerciale actée), isolé dans `zcrud_list` derrière `ZListRenderer` (repli Material possible).
-- **OQ-12** : Uniformisation de la casse de sérialisation (mindmap camelCase vs education snake_case).
+- **OQ-12** ⏸ *Déféré* : uniformisation de la casse (mindmap camelCase vs education snake) gérée par `ZCodec` ; tranché à l'implémentation du générateur (Deferred architecture).
 
 ## 9. Index des hypothèses
 
 - §2.3 / §4.3 (FR-11) — `[HYPOTHÈSE]` La sérialisation propre à zcrud suit les conventions `@JsonSerializable` pur de lex_douane (snake_case persistance, enums camelCase, désérialisation défensive), en l'absence de freezed/reflectable imposés. À confirmer en Architecture (OQ-7).
 - §4.6 (FR-16) — `[HYPOTHÈSE]` Les modèles flashcards/mindmaps de lex_douane restent la référence canonique malgré le développement actif du module « Étude » ; un versionnage (`formatVersion`) absorbe leur évolution sans casser les consommateurs.
-- §6.1 — `[HYPOTHÈSE]` Le banc d'essai DODLP peut être migré sans Riverpod (mode locator) ; la couche adaptateur reflectable est suffisante pour préserver le bootstrap.
+- §6.1 — *(confirmé — AD-15)* Le banc d'essai DODLP est migré **sans Riverpod** via le binding `zcrud_get` (réactivité du cœur Flutter-native) ; l'adaptateur `ReflectableCodec` préserve le bootstrap. *(N'est plus une hypothèse.)*
 
 ---
 

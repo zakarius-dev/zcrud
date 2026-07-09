@@ -285,7 +285,7 @@ Validation transverse : `Map<String,dynamic> validators` -> `FormBuilderValidato
 
 ### 5.2 Gestion d'etat — Riverpod 3 codegen, rebuilds granulaires
 
-- **Paradigme UNIQUE = Riverpod** (`riverpod_annotation`/`riverpod_generator` ^4, aligne IFFD/lex_douane). Retirer flutter_clean_architecture Controller et GetX (Rx/service-locator/GetStorage) du moteur.
+- **Paradigme UNIQUE = Riverpod** (`riverpod_annotation`/`riverpod_generator` ^4, aligne IFFD/lex_douane). Retirer flutter_clean_architecture Controller et GetX (Rx/service-locator/GetStorage) du moteur. **⚠️ Superseded (architecture 2026-07-09, AD-15) :** la décision finale est une **réactivité Flutter-native** (`ChangeNotifier`/`ValueListenable`, aucun gestionnaire d'état dans le cœur) + **bindings multi-gestionnaire** (`zcrud_riverpod`/`zcrud_get`/`zcrud_provider`). Riverpod n'est donc **pas** imposé ; ce qui précède reste l'analyse du code existant.
 - **Superposition de providers** (modele IFFD `folder_providers.dart`) : repository providers -> stream providers -> providers derives -> Notifiers. `autoDispose` par defaut ; `keepAlive:true` reserve aux singletons ; family via parametres nommes requis pour le per-ressource.
 - **Rebuilds granulaires** : un champ = un `ConsumerWidget` qui `.select` sa tranche d'etat (cf. section 4.2).
 - **Injection framework-neutre** : DODLP n'a PAS Riverpod (GetX/get_it/provider). L'injection zcrud doit passer par des **seams** (providers qui `throw` par defaut, override dans `ProviderScope`, cf. `core_providers.dart:8` + `main.dart:150`) **ET** un mode `InheritedWidget`/locator pour DODLP. Prevoir `zcrud_riverpod` optionnel + adaptateur DODLP delegant a `getIt<DodlpController>()`.

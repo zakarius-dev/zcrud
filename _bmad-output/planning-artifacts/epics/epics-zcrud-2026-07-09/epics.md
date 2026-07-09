@@ -67,7 +67,7 @@ graph TD
 - **Story E2-5. Générateur build_runner.** AC : génère `toMap/fromMap/copyWith` + `ZFieldSpec[]` + enregistrement ; **zéro reflectable** ; enums `unknownEnumValue` ; snake_case/camelCase ; **copyWith avec sentinelle** (reset-null possible) ; round-trip testé (AD-3, AD-10) ; échec explicite si type non enregistré.
 - **Story E2-6. Adaptateurs de schéma existant (`ZCodec`/`ReflectableCodec`/`JsonSerializableAdapter`).** AC : expose une entité `@JsonSerializable` (lex_douane) ou reflectable (DODLP) comme `ZcrudModel` sans réécrire ; freezed non requis (FR-11).
 - **Story E2-7. Réactivité Flutter-native (`ZFormController`) + seams d'injection.** AC : `ZFormController` (`ChangeNotifier`) expose une `ValueListenable` par champ ; **aucun gestionnaire d'état importé** ; seams `throw` par défaut, résolus via `ZcrudScope` (InheritedWidget, défaut) ; cœur ne référence jamais `WidgetRef`/`Get.find`/`Provider.of` (AD-2, AD-6, AD-15).
-- **Story E2-8. l10n générique injectable + RTL.** AC : delegate générique sans ressources métier ; registre de libellés ; pas de singleton statique mutable ; zéro dépendance à `lex_localizations`/`go_router` (AD-13, FR-23).
+- **Story E2-8. l10n, thème & RTL injectables.** AC : delegate générique sans ressources métier ; registre de libellés ; pas de singleton statique mutable ; zéro dépendance à `lex_localizations`/`go_router` (AD-13, FR-23) ; **thème injectable** `ZcrudTheme`/`ThemeExtension` via `ZcrudScope`, **aucun** style codé en dur, repli sur `Theme.of(context)` (FR-26).
 - **Story E2-9. Bindings multi-gestionnaire (`zcrud_riverpod`, `zcrud_get`, `zcrud_provider`).** En tant qu'intégrateur, je branche l'injection/cycle de vie sur mon manager. AC : chaque binding fournit création/scoping/dispose du `ZFormController` et résolution des seams selon son idiome ; **un même controller + un test de rebuild granulaire identique** passe sous les 3 bindings **et** sous `ZcrudScope` seul (AD-15). Le cœur reste inchangé pour ajouter un manager.
 - **Story E2-10. Gate de test rétro-compatibilité de sérialisation (AD-10).** AC : suite CI de désérialisation défensive sur documents **historiques/tronqués/champs inconnus** — le parent ne casse jamais ; fait partie du gate de merge (rattaché à E1-3).
 
@@ -89,7 +89,7 @@ graph TD
 - **Story E4-2. Colonnes dérivées du schéma + vues (liste/DataGrid/custom) + états UI.** AC : colonnes issues du `ZFieldSpec[]` ; `itemBuilder`/`customView` ; **états accessibles** : `loading`, `empty`, `no-results-après-filtre`, `error`.
 - **Story E4-3. Recherche, filtres, tri, pagination curseur.** AC : recherche sans accents sur champs `searchable` ; filtres/tri via `DataRequest` ; pagination curseur (AD-16) ; **cas d'erreur** : curseur invalide ou backend sans curseur → repli in-memory documenté, pas de crash.
 - **Story E4-4. Actions ligne + `ZAcl`, sélection multiple, corbeille.** AC : actions filtrées par `ZAcl` (AD-16) ; sélection multiple fonctionnelle (bug corrigé) ; corbeille soft-delete.
-- **Story E4-5. Sous-listes/relations & onglets (réalise FR-6b).** AC : `ZSubListScreen` mini-CRUD imbriqué ; onglets de catégorisation. *(Capacité promue depuis §4.2 du PRD — FR-6 étendu.)*
+- **Story E4-5. Sous-listes/relations & onglets (étend FR-6).** AC : `ZSubListScreen` mini-CRUD imbriqué ; onglets de catégorisation. *(Capacité de §4.2 du PRD, rattachée à FR-6.)*
 
 ## E5 — Backend Firestore & offline-first (zcrud_firestore)
 **Objectif :** adaptateur Firestore débogué + patron offline-first. **Couvre :** FR-12, FR-13 · AD-5, AD-9, AD-11. **Dépend de :** E2 · **Phase :** MVP.
@@ -133,16 +133,16 @@ graph TD
 ## E9 — Flashcards (zcrud_flashcard) — v1.x
 **Objectif :** modèles canoniques SRS, additifs pour lex_douane. **Couvre :** FR-16..FR-18 · AD-4, AD-9, AD-10. **Dépend de :** E2, E5, E6, **E11a** (export flashcard PDF, optionnel) · **Phase :** v1.x.
 
-- **Story E9-1. `ZFlashcard` + `ZChoice` + `ZFlashcardType` + provenance registre.** AC : 6 types ; état SRS **hors** carte ; éphémère matérialisé par le dépôt ; variant « article » via `ZSourceRegistry` (AD-4).
+- **Story E9-1. `ZFlashcard` + `ZChoice` + `ZFlashcardType` + provenance registre.** AC : 6 types ; état SRS **hors** carte ; éphémère matérialisé par le dépôt ; variant « article » via `ZSourceRegistry` ; **porte les slots d'extension `extra` + `ZExtension?`** (AD-4).
 - **Story E9-2. SRS pluggable (`ZSrsScheduler`, SuperMemo-2 par défaut).** AC : `ZRepetitionInfo` séparé ; seule voie d'écriture `reviewCard()→apply` ; `ZSrsConfig` ; interface remplaçable (FR-17).
-- **Story E9-3. Dossiers & sessions d'étude.** AC : `ZStudyFolder` rattachement inverse (2 niveaux validés au repo) ; `ZStudySession` filtres mode/tags/types/count (FR-18).
+- **Story E9-3. Dossiers & sessions d'étude.** AC : `ZStudyFolder` rattachement inverse (2 niveaux validés au repo) ; `ZStudySession` filtres mode/tags/types/count (FR-18) ; `ZStudyFolder` **porte `extra` + `ZExtension?`** (AD-4).
 - **Story E9-4. Dépôt offline-first `ZFlashcard` + invariant SRS.** AC : offline-first (E5) ; **invariant** : le SRS (`ZRepetitionInfo`) est persisté en collection **top-level**, jamais dans le sous-arbre partageable de la carte (canonique §2.7, §7) ; **cas d'erreur** : carte éphémère sauvegardée sans dossier → `Left(DomainFailure)`.
 - **Story E9-5. Édition & widgets additifs pour lex_douane.** AC : widgets paramétrés par l'entité de l'app ; **ne remplace pas** le module « Étude » (UJ-4).
 
 ## E10 — Cartes mentales (zcrud_mindmap) — v1.x
 **Objectif :** modèle/tree-ops/vue, additifs pour lex_douane. **Couvre :** FR-19 · AD-4, AD-13. **Dépend de :** E2, E6 · **Phase :** v1.x.
 
-- **Story E10-1. `ZMindmapNode`/`ZMindmap` + `ZMindmapTreeOps`.** AC : arbre par nesting + `level` ; add/update/delete/find **+ move/indent/outdent** (ajoutés) avec recalcul de `level` (FR-19, OQ-5, OQ-10).
+- **Story E10-1. `ZMindmapNode`/`ZMindmap` + `ZMindmapTreeOps`.** AC : arbre par nesting + `level` ; add/update/delete/find **+ move/indent/outdent** (ajoutés) avec recalcul de `level` (FR-19, OQ-5, OQ-10) ; `ZMindmapNode` **porte `data`/`ZExtension?`** d'extension (AD-4).
 - **Story E10-2. `ZMindmapView` (graphite auto-layout + vue liste a11y).** AC : `graphite` auto-layout zoom/pan ; vue liste sémantique indentée = surface a11y ; `nodeContentBuilder` injectable (AD-13).
 - **Story E10-3. Éditeur outline corrigé.** AC : sauvegarde applique réellement les modifications (bug lex corrigé).
 

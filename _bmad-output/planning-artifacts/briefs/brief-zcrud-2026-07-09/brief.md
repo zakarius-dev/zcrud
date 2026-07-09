@@ -36,7 +36,7 @@ Un ensemble de packages Dart/Flutter modulaires, chacun importable indépendamme
 - **`zcrud_mindmap`**, **`zcrud_flashcard`** — affichage et édition de cartes mentales et de flashcards (répétition espacée SM-2), exposés comme widgets **paramétrables par l'entité de l'app hôte**.
 - **`zcrud_firestore`**, **`zcrud_geo`**, **`zcrud_export`**, **`zcrud_intl`** — adaptateurs et champs spécialisés isolant les dépendances lourdes (cloud_firestore, Google Maps, Syncfusion, téléphonie internationale).
 
-Au cœur du moteur : **un champ = un `ConsumerWidget` qui ne surveille que sa propre tranche d'état** (`ref.watch(...).select(...)`), avec `TextEditingController` et `key` stables. Un champ modifié ne reconstruit **que lui-même** — le bug de rafraîchissement disparaît par construction.
+Au cœur du moteur : **un champ = un widget qui n'écoute que sa propre tranche d'état** via une primitive **Flutter native** (`ZFormController`/`ValueListenableBuilder`, aucun gestionnaire d'état dans le cœur), avec `TextEditingController` et `key` stables. Un champ modifié ne reconstruit **que lui-même** — le bug de rafraîchissement disparaît par construction.
 
 ## Ce qui le distingue
 

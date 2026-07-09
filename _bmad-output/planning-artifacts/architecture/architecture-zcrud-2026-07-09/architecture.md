@@ -217,11 +217,11 @@ Cycle réactif du formulaire (AD-2) :
 
 ```mermaid
 graph LR
-  U[Frappe] --> N["EditionFormNotifier (Riverpod)"]
-  N --> S["state.values[name]"]
-  S -->|"select(name)"| W["ZFieldWidget (ConsumerWidget)"]
+  U[Frappe] --> N["ZFormController (ChangeNotifier, Flutter-natif)"]
+  N --> S["valueListenable(name)"]
+  S -->|"écoute name"| W["ZFieldWidget (ValueListenableBuilder)"]
   W -->|"rebuild ciblé"| W
-  N -->|"select(visibilité)"| L["Liste des champs"]
+  N -->|"écoute visibilité"| L["Liste des champs"]
 ```
 
 ## Capability → Architecture Map
@@ -250,4 +250,5 @@ graph LR
 - **`ZLocalStore` alternatifs** (Isar/Drift/SQLite) — port prévu (AD-5), impl différée ; Hive-JSON par défaut.
 - **copyWith avec sentinelle reset-null** & **uniformisation de casse** (OQ-12, mindmap camelCase vs education snake) — détail de génération, tranché à l'implémentation du generator.
 - **Pagination par curseur** — port dans `DataRequest` (AD-5) ; impl d'abord dans `zcrud_firestore`.
-- **Interface SRS FSRS/Leitner** — `ZSrsScheduler` déjà prévu (AD-9) ; seul SM-2 porté en MVP.
+- **Interface SRS FSRS/Leitner** — `ZSrsScheduler` déjà prévu (AD-9) ; seul SuperMemo-2 porté en MVP.
+- **`ZHierarchyNode` / `ZSemanticContext`** (canonique §2.4) — modèles génériques identifiés (« à factoriser »/« à porter ») mais **déférés par décision explicite** : aujourd'hui spécifiques au domaine lex/douane (nomenclatures SH/TEC, RAG) ; à porter dans zcrud quand un besoin d'arbre hiérarchique/contexte sémantique **générique** émerge. Pas un oubli.
