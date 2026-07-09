@@ -151,7 +151,7 @@ Un utilisateur peut soumettre le formulaire (create/update) après validation, e
 Un développeur peut afficher une collection en liste, tableau (DataGrid) ou vue personnalisée sans redéclarer les colonnes.
 **Conséquences (testables) :**
 - Les colonnes/cellules dérivent du `ZFieldSpec[]` (une seule définition pour édition et liste — cf. OQ-8).
-- Le rendu par défaut fonctionne sans dépendance Syncfusion via un backend Material `DataTable` (cf. OQ-12) ; le backend Syncfusion est optionnel.
+- Le moteur de liste par défaut est **Syncfusion `SfDataGrid`** (décision produit), derrière un `ZListRenderer` pluggable autorisant un backend Material `DataTable` alternatif. Le rendu Syncfusion vit dans `zcrud_list` (et non dans `zcrud_core`), afin qu'un consommateur n'important pas de liste (ex. `zcrud_markdown` seul) ne tire pas Syncfusion.
 
 #### FR-7 : Recherche, filtres, tri, pagination curseur
 Un utilisateur peut rechercher, filtrer, trier et paginer une collection.
@@ -379,17 +379,17 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 
 *Détail et options dans `docs/technical-inventory.md` §9 et `docs/canonical-schema.md` §8. Les décisions se prennent en phase Architecture.*
 
-- **OQ-1** : Format canonique du rich-text — Delta JSON (source de vérité) vs Markdown pur ? (incohérence actuelle : un champ `markdown` persiste du Delta JSON).
+- **OQ-1** ✅ *Résolu* : format de stockage rich-text **pluggable via `ZCodec`** (Delta en interne dans Quill, Markdown/HTML en surface/export) ; l'app choisit le format persisté.
 - **OQ-2** : Mécanisme d'extension — confirmer « composition + ZExtension versionné + extra + registre + enums ouverts » (recommandé) ; portée du/des registre(s) (global vs par axe).
 - **OQ-3** : Injection unique — `ZcrudScope` InheritedWidget + `zcrud_riverpod` optionnel suffisent-ils pour Riverpod (lex/IFFD) et locator (DODLP) ?
 - **OQ-4** : Stepper — envelopper l'arbre dans un unique conteneur de formulaire ; impact sur l'architecture de notifier par champ.
 - **OQ-5** : `level` du mindmap — cache maintenu vs dérivé à la volée (surtout pour le reparentage).
 - **OQ-6** : `flutter_tex`/`html_editor_enhanced` — optionnels derrière drapeau vs supprimés (impact multi-plateforme/WebView).
-- **OQ-7** : Sérialisation — confirmer « ni freezed ni reflectable imposés ; conventions `@JsonSerializable` pur ; copyWith généré ? avec sentinelle pour reset null ? ».
+- **OQ-7** ✅ *Résolu* : **générateur zcrud** (`@ZcrudModel`/`@ZcrudField`) + conventions `@JsonSerializable` pur ; **reflectable banni, freezed non imposé**. (copyWith généré + sentinelle reset-null : détail d'architecture.)
 - **OQ-8** : Rendu liste vs édition — dériver `ZFieldSpec` unique ou définitions disjointes ; abstraction `ZLocalStore` dès le portage ?
 - **OQ-9** : Pagination curseur — dans le contrat neutre `DataRequest` ou seulement `zcrud_firestore` ?
 - **OQ-10** : Reparentage mindmap — zcrud l'implémente (en avance sur lex) vs attend le portage.
-- **OQ-11** : Licence Syncfusion (`zcrud_export`/DataGrid) — acter la contrainte commerciale vs abstraction backend Material.
+- **OQ-11** ✅ *Résolu* : **Syncfusion par défaut** pour la liste (licence commerciale actée), isolé dans `zcrud_list` derrière `ZListRenderer` (repli Material possible).
 - **OQ-12** : Uniformisation de la casse de sérialisation (mindmap camelCase vs education snake_case).
 
 ## 9. Index des hypothèses
@@ -428,7 +428,7 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 
 ### B.4 Cibles runtime & politique de dépendances
 - Cibles : Flutter/Dart alignés sur lex_douane (Dart `^3.12.2`) ; Riverpod 3 comme paradigme d'état de référence (optionnel via seams).
-- **Interdits dans le cœur** : `reflectable`, `cloud_firestore` (isolé en `zcrud_firestore`), Google Maps (isolé en `zcrud_geo`), Syncfusion (isolé en `zcrud_export`/backend liste optionnel).
+- **Interdits dans le cœur `zcrud_core`** : `reflectable`, `cloud_firestore` (isolé en `zcrud_firestore`), Google Maps (isolé en `zcrud_geo`), Syncfusion (isolé en `zcrud_list`/`zcrud_export`). La liste Syncfusion par défaut vit dans `zcrud_list`, pas dans `zcrud_core` (qui n'expose que l'abstraction `ZListRenderer`).
 - Dépendances lourdes (Quill, flutter_tex, html_editor_enhanced) isolées et/ou optionnelles derrière des drapeaux.
 - **freezed non imposé** ; zcrud fournit ses annotations/générateur et n'exige pas une techno de (dé)sérialisation particulière côté app.
 
