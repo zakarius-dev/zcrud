@@ -1,0 +1,56 @@
+# Package de compat ISOLÉ (FR-25 / E1-4) — NE FAIT PAS PARTIE DU WORKSPACE.
+#
+# Rôle : matérialiser le MANIFESTE DE CONTRAINTES des dépendances lourdes
+# d'intégration (flutter_quill + awesome_select + analyzer) aux versions cibles
+# alignées sur le workspace lex_douane (le plus récent) / la table Stack, puis
+# prouver par `flutter pub get --dry-run` qu'elles CO-RÉSOLVENT sous Dart ^3.12.2
+# / Flutter cible. Le gate `scripts/ci/gate_compat_resolution.dart` l'exécute.
+#
+# ISOLATION (NON-NÉGOCIABLE — cf. story E1-4 §Décision structurante) :
+#   - ABSENT du bloc `workspace:` du root `pubspec.yaml` (lockfile propre, pas de
+#     pollution de la résolution partagée des 14 membres pur-Dart) ;
+#   - HORS du glob `packages: [packages/**]` de `melos.yaml` (non ciblé par melos) ;
+#   - HORS du scope de `scripts/dev/graph_proof.py` (qui n'itère que packages/*) ;
+#   - PAS de `resolution: workspace` ICI (sinon il rejoint la résolution racine et
+#     tire Flutter dans le lock partagé — INTERDIT, AD-15).
+# flutter_quill et awesome_select TIRENT le SDK Flutter : c'est pourquoi ce
+# package vit hors des 14 membres pur-Dart et se résout via `flutter pub get`.
+#
+# VERSIONS RETENUES (source + justification détaillées dans README.md) :
+#   - flutter_quill: ^11.5.0  → Stack (architecture.md#Stack : `flutter_quill ^11.5.x`).
+#                                Résout en 11.5.1. Rich-text E6 (ZCodec Delta).
+#   - awesome_select: ^6.0.0  → ABSENT de la table Stack. Dernière stable publiée
+#                                (6.0.0), compatible flutter_quill ^11.5.x / Flutter
+#                                cible. Champs de sélection E3. Résout en 6.0.0.
+#   - analyzer: ^8.0.0        → TOOLCHAIN RÉELLE du codegen E2-5. Remédiation
+#                                code-review E2-5 (M1) : `packages/zcrud_generator`
+#                                s'exécute sous analyzer ^8 / source_gen ^4 / build
+#                                ^3 (résolution partagée du workspace : test/
+#                                flutter_test → analyzer >=8). Le gate `gate:compat`
+#                                doit PROUVER cette chaîne réellement utilisée, pas
+#                                une ^7 périmée (FR-25 honnête). Résout en 8.x.
+# Cibles SDK/Flutter alignées lex_douane : Dart ^3.12.2 (autorité = architecture/PRD).
+name: zcrud_compat_check
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_quill: ^11.5.0
+  awesome_select: ^6.0.0
+  analyzer: ^8.0.0
+
+# Remédiation code-review E2-5 (M1) : le manifeste doit prouver la co-résolution
+# de la chaîne de codegen RÉELLEMENT utilisée par `packages/zcrud_generator`
+# (analyzer ^8 + source_gen ^4 + build ^3 + build_runner), sous Dart ^3.12.2 et
+# co-résolue avec flutter_quill ^11.5 + awesome_select ^6. On matérialise donc le
+# triplet pour que `gate:compat` le PROUVE (au lieu d'un simple claim README).
+dev_dependencies:
+  build_runner: ^2.5.0
+  build: ^3.0.0
+  source_gen: ^4.0.0
+  json_serializable: ^6.11.0

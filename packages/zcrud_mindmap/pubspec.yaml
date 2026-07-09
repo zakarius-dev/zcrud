@@ -1,0 +1,19 @@
+# zcrud_mindmap — membre du workspace zcrud (resolution: workspace).
+# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
+# dépendances inter-packages sont posées en E1-2.
+name: zcrud_mindmap
+description: >-
+  Cartes mentales ZMindmap + ZMindmapTreeOps + ZMindmapView.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+# AD-1 : composition mindmap -> markdown (rich-text) + cœur.
+dependencies:
+  zcrud_core: ^0.0.1
+  zcrud_markdown: ^0.0.1

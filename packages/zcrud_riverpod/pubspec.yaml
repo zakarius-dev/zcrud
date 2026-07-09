@@ -1,0 +1,34 @@
+# zcrud_riverpod — binding état/injection <-> Riverpod (E2-9, AD-15).
+#
+# INFLEXION E2-9 : la coquille pur-Dart (E1-2) acquiert le SDK Flutter + le SDK du
+# manager (`flutter_riverpod`, le binding Flutter de Riverpod) pour porter la
+# substance du binding lex_douane (cible E8) : `ZRiverpodResolver` (résolution des
+# seams via un `ProviderContainer`) + `ZcrudRiverpodScope` (monte un
+# `ProviderScope`, provider AUTO-DISPOSE du `ZFormController`, enveloppe d'un
+# `ZcrudScope` porteur du resolver manager-backed).
+#
+# INVARIANTS (AD-1/AD-15) : AUCUN autre `zcrud_*` que `zcrud_core` ; AUCUN backend
+# lourd. `flutter_riverpod` (et PAS `riverpod` seul ni `riverpod_annotation`/
+# codegen — hors périmètre) n'est pas un `zcrud_*` → CORE OUT=0 préservé.
+# Le code manager-spécifique (Riverpod) vit EXCLUSIVEMENT ici (AD-6/AD-15).
+name: zcrud_riverpod
+description: >-
+  Binding état/injection <-> Riverpod (optionnel) — cible lex_douane/IFFD.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  zcrud_core: ^0.0.1
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Harnais de parité dev/test-only partagé (E2-9) — non transitif pour les apps.
+  binding_conformance: ^0.0.1

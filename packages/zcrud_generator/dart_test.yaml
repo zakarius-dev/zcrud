@@ -1,0 +1,7 @@
+# Déclare le tag du slot de rétro-compat sérialisation (E2-10, AD-10) pour éviter
+# tout avertissement « tag non déclaré ». E2-5 sème le PREMIER test taggé ;
+# `scripts/ci/verify_serialization.dart` exécute `dart test --tags
+# serialization-compat` ici. Corpus complet = E2-10.
+tags:
+  serialization-compat:
+    description: "Round-trip / désérialisation défensive (AD-10)."

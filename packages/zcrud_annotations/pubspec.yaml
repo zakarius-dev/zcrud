@@ -1,0 +1,25 @@
+# zcrud_annotations — membre du workspace zcrud (resolution: workspace).
+# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
+# dépendances inter-packages sont posées en E1-2.
+name: zcrud_annotations
+description: >-
+  Annotations @ZcrudModel / @ZcrudField / @ZcrudId.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+dependencies:
+  zcrud_core: ^0.0.1
+
+# Tests pur-Dart (E2-4) : `package:test` seul. AUCUNE dépendance runtime lourde
+# (ni build_runner/source_gen/analyzer, ni gestionnaire d'état, ni Firebase,
+# ni Flutter direct) — cf. AC1. Les annotations n'importent que la surface
+# PURE `package:zcrud_core/edition.dart` (aucune fuite du SDK Flutter tiré par
+# la couche presentation du cœur) ⇒ ces tests tournent sous `dart test`.
+dev_dependencies:
+  test: ^1.25.0

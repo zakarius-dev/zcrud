@@ -1,0 +1,44 @@
+# binding_conformance — HARNAIS DE PARITÉ dev/test-only (E2-9, AD-15).
+#
+# Rôle : porter l'ORACLE COMMUN de rebuild granulaire
+# (`runZFormGranularRebuildParitySuite`) réutilisé À L'IDENTIQUE par les tests des
+# 3 bindings (`zcrud_get`/`zcrud_riverpod`/`zcrud_provider`) ET par la config de
+# référence `ZcrudScope` seul. Prouve SM-1/AD-15 : la granularité repose sur les
+# primitives Flutter de `zcrud_core` (ZFormController/ZFieldListenableBuilder) et
+# est IDENTIQUE quel que soit le gestionnaire d'état (le manager n'est présent que
+# dans le `wrap`).
+#
+# EMPLACEMENT (décision de conception E2-9 — orchestrateur) :
+#   - vit sous `tool/` (comme `tool/compat_check`), HORS du glob melos
+#     `packages/**` → `melos list` reste 14 (invariant produit préservé) ;
+#   - membre du bloc `workspace:` du root `pubspec.yaml` → résolution partagée
+#     propre (lockfile racine unique, siblings résolus par version) ;
+#   - nom SANS préfixe `zcrud_` → `scripts/dev/graph_proof.py` (regex `zcrud_*`)
+#     n'ajoute AUCUNE arête : le graphe reste identique à E1-2
+#     (seules arêtes `binding → zcrud_core`), CORE OUT=0 / ACYCLIQUE préservés ;
+#   - dev/test-only : référencé UNIQUEMENT en `dev_dependencies` des bindings →
+#     aucun poids runtime pour les apps hôtes (dev_deps non transitives).
+# AD-15 : `zcrud_core` reste STRICTEMENT inchangé (aucune modification pour
+# brancher un manager ni pour exposer l'oracle de parité).
+name: binding_conformance
+description: >-
+  Harnais de parité de rebuild granulaire (dev/test-only) réutilisé à l'identique
+  sous ZcrudScope et les 3 bindings (SM-1/AD-15). Hors packages/**.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+# `flutter_test` en dépendance RUNTIME (et non dev) : le harnais EXPOSE une suite
+# `testWidgets`/`expect` consommée par les tests des bindings ; ses symboles font
+# partie de son API publique. `zcrud_core` fournit ZFormController/
+# ZFieldListenableBuilder/ZcrudScope réutilisés tels quels (AD-15). Aucun manager,
+# aucun autre `zcrud_*`, aucun backend lourd.
+dependencies:
+  zcrud_core: ^0.0.1
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter

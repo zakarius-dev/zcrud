@@ -1,0 +1,42 @@
+# zcrud_get — binding état/injection <-> GetX + get_it (E2-9, AD-15).
+#
+# INFLEXION E2-9 : la coquille pur-Dart (E1-2) acquiert le SDK Flutter + le SDK du
+# manager (`get` + `get_it`) pour porter la substance du binding DODLP (cible E7) :
+# `ZGetResolver` (résolution des seams via le locator) + `ZcrudGetScope`
+# (création/scoping/dispose du `ZFormController` selon le lifecycle GetX/get_it,
+# puis enveloppe d'un `ZcrudScope` porteur du resolver manager-backed).
+#
+# INVARIANTS (AD-1/AD-15) : AUCUN autre `zcrud_*` que `zcrud_core` (out-degree
+# runtime = 1 vers le cœur) ; AUCUN backend lourd (Firebase/Syncfusion/Quill/Maps).
+# Le code manager-spécifique (get/get_it) vit EXCLUSIVEMENT ici (AD-6/AD-15) ;
+# `zcrud_core` reste STRICTEMENT inchangé.
+name: zcrud_get
+description: >-
+  Binding état/injection <-> GetX + get_it (optionnel) — cible DODLP.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+# Runtime : SDK Flutter + le cœur + le SDK du manager. `get`/`get_it` NE sont PAS
+# des `zcrud_*` → aucune arête comptée par graph_proof.py (CORE OUT=0 préservé).
+dependencies:
+  zcrud_core: ^0.0.1
+  flutter:
+    sdk: flutter
+  get: ^4.7.2
+  get_it: ^8.0.3
+  # E2-6 (FR-11/AD-3) : `reflectable` — adaptateur `ReflectableCodec` DODLP, au
+  # chemin allowlisté du gate. Ajouté à `zcrud_get` UNIQUEMENT (jamais au cœur).
+  # N'est PAS un `zcrud_*` → aucune arête comptée par graph_proof (CORE OUT=0
+  # inchangé). Le vrai `initializeReflectable()` vit dans l'app DODLP (E7-2).
+  reflectable: ^5.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Harnais de parité dev/test-only partagé (E2-9). dev_dependency => non
+  # transitif pour les apps hôtes ; résolu comme sibling du workspace par version.
+  binding_conformance: ^0.0.1

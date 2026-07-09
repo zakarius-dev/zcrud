@@ -1,0 +1,33 @@
+# zcrud_provider — binding état/injection <-> provider (E2-9, AD-15).
+#
+# INFLEXION E2-9 : la coquille pur-Dart (E1-2) acquiert le SDK Flutter + le SDK du
+# manager (`provider`) pour porter la substance du binding : `ZProviderResolver`
+# (résolution des seams via `context.read<T>()`) + `ZcrudProviderScope` (monte un
+# `ChangeNotifierProvider<ZFormController>` — dispose géré par `provider` — et
+# enveloppe d'un `ZcrudScope` porteur du resolver manager-backed). Complète la
+# matrice AD-15 (aucun consommateur MVP direct).
+#
+# INVARIANTS (AD-1/AD-15) : AUCUN autre `zcrud_*` que `zcrud_core` ; AUCUN backend
+# lourd. `provider` n'est pas un `zcrud_*` → CORE OUT=0 préservé. Le code
+# manager-spécifique (provider) vit EXCLUSIVEMENT ici (AD-6/AD-15).
+name: zcrud_provider
+description: >-
+  Binding état/injection <-> provider (optionnel) — matrice AD-15.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  zcrud_core: ^0.0.1
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Harnais de parité dev/test-only partagé (E2-9) — non transitif pour les apps.
+  binding_conformance: ^0.0.1

@@ -1,0 +1,14 @@
+# Configuration gitleaks (AD-12) — autorité CI du scan de secrets.
+# Hérite du jeu de règles par défaut de gitleaks (clés cloud, tokens, PEM…).
+[extend]
+useDefault = true
+
+# Allowlist : fichiers qui DÉFINISSENT/FABRIQUENT des motifs de secrets à des
+# fins de gate (pas de vrais secrets) — sinon gitleaks s'auto-déclencherait.
+[allowlist]
+description = "Definitions de motifs & harnais de preuve du gate secrets (E1-3)."
+paths = [
+  '''scripts/ci/gate_secret_scan\.dart''',
+  '''scripts/ci/prove_gates\.dart''',
+  '''scripts/ci/fixtures/.*''',
+]

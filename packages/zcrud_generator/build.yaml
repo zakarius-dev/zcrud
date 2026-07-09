@@ -1,0 +1,33 @@
+# Déclaration du builder `zcrud_model` (E2-5, AD-3).
+#
+# `SharedPartBuilder` source_gen : émet un fragment `.zcrud.g.part` par
+# bibliothèque annotée `@ZcrudModel`, agrégé par `source_gen|combining_builder`
+# dans le `part '<file>.g.dart'` (en-tête GENERATED CODE, gitignoré, régénéré).
+#
+# - `auto_apply: dependents` : un package CONSOMMATEUR (qui met zcrud_generator
+#   en dev_dependency) génère automatiquement ses `part`.
+# - Le bloc `targets.$default` active EN PLUS le builder sur `zcrud_generator`
+#   lui-même, restreint à `test/models/**` : c'est là que vit le modèle de
+#   PREUVE (fixture test-only — PAS un 15e package produit) dont le `.g.dart`
+#   réel active `gate:codegen` et les tests round-trip/défensifs.
+builders:
+  zcrud_model:
+    import: "package:zcrud_generator/builder.dart"
+    builder_factories:
+      - zcrudModelBuilder
+    build_extensions:
+      ".dart":
+        - ".zcrud.g.part"
+    auto_apply: dependents
+    build_to: cache
+    applies_builders:
+      - "source_gen|combining_builder"
+
+targets:
+  $default:
+    builders:
+      zcrud_generator|zcrud_model:
+        enabled: true
+        generate_for:
+          include:
+            - test/models/**

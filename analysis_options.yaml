@@ -1,0 +1,36 @@
+# Baseline de lint PARTAGÉE du monorepo zcrud (E1-3, SM-6).
+# Source unique des règles d'analyse : chaque `packages/<pkg>/analysis_options.yaml`
+# fait `include: ../../analysis_options.yaml`.
+#
+# Choix de baseline (cf. story E1-3 §Décision lints) : `package:lints/recommended.yaml`
+# — pur-Dart, PORTABLE. On NE tire PAS `flutter_lints` : les 14 packages sont
+# pur-Dart aujourd'hui et `flutter_lints` casserait `dart analyze` là où Flutter
+# est absent (AD-15 : ne pas imposer Flutter dans un package pur-Dart).
+# `lints` est déclaré une seule fois en `dev_dependencies` du root workspace
+# (package_config partagé sous pub workspaces) => résolvable depuis chaque membre.
+include: package:lints/recommended.yaml
+
+analyzer:
+  # Code généré (gitignoré, régénéré par build_runner) et fixtures CI de
+  # violation : JAMAIS analysés (cf. CLAUDE.md#gitignore-codegen).
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+    - "**/*.mocks.dart"
+    - "scripts/ci/fixtures/**"
+    # Package de compat ISOLÉ (E1-4, FR-25) : dépend du SDK Flutter et vit HORS
+    # des 14 membres pur-Dart. Jamais analysé par la baseline pur-Dart (défensif :
+    # `melos run analyze` cible packages/** ; ceci couvre un `dart analyze .` racine).
+    - "tool/**"
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Cohérence RTL / directionnel (AD-13) et hygiène d'imports.
+    - directives_ordering
+    - prefer_relative_imports
+    - always_declare_return_types
+    - unawaited_futures

@@ -1,0 +1,38 @@
+# zcrud_core — membre du workspace zcrud (resolution: workspace).
+# INFLEXION E2-7 : le cœur acquiert le SDK Flutter (AD-14). La réactivité
+# Flutter-native (AD-2/AD-15 : `ChangeNotifier`/`ValueListenable`/`InheritedWidget`)
+# vit sous `lib/src/presentation/`. La couche `lib/src/domain/` reste STRICTEMENT
+# pur-Dart (garde `test/purity/domain_purity_test.dart`). TOUJOURS interdits
+# (AD-1/AD-15) : aucun `zcrud_*` (out-degree 0), aucun gestionnaire d'état
+# (Riverpod/GetX/provider), aucun backend lourd (Firebase/Syncfusion/Quill/Maps).
+name: zcrud_core
+description: >-
+  Domaine pur + moteur d'édition + ports + ZFieldSpec + l10n + ZcrudScope. Aucune dépendance lourde.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+  # `flutter` (contrainte de version) volontairement OMIS : la contrainte Dart
+  # `sdk` ci-dessus suffit à borner la toolchain ; le SDK Flutter est tiré via
+  # `dependencies.flutter: {sdk: flutter}`. L'ajouter ici n'apporterait aucune
+  # garantie supplémentaire de résolution et figerait inutilement une borne.
+
+# Dépendances runtime du cœur. AD-1 : AUCUN `zcrud_*` (out-degree 0). AD-14 : le
+# cœur AUTORISE le SDK Flutter (primitives de réactivité `foundation`/`widgets`).
+# AD-15 : TOUJOURS aucun gestionnaire d'état. `flutter` (SDK) et `dartz` ne sont
+# pas des `zcrud_*` → n'ajoutent AUCUNE arête au graphe (`CORE OUT=0` préservé,
+# prouvé par `graph_proof.py` qui ne compte que les arêtes `zcrud_*`).
+dependencies:
+  dartz: ^0.10.1
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  # `flutter_test` : les tests `presentation/` (widgets) tournent sous `flutter
+  # test`. `test` CONSERVÉ : les ~80 tests pur-Dart E2-1/E2-2 tournent aussi sous
+  # `flutter test` (bâti au-dessus de `package:test`).
+  flutter_test:
+    sdk: flutter
+  test: ^1.25.0

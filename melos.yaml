@@ -1,0 +1,83 @@
+# Configuration melos du monorepo zcrud (melos ^7.0.0 — pub workspaces).
+# `melos bootstrap` délègue à `dart pub get` racine sous resolution: workspace.
+# Le `packages:` en glob sert le ciblage des scripts (melos run / melos exec) ;
+# le bloc `workspace:` du root pubspec.yaml reste la source de vérité de la résolution.
+name: zcrud
+
+packages:
+  - packages/**
+
+# E2-9 : le harnais dev/test-only `binding_conformance` (tool/, membre du
+# workspace pub) est EXCLU de la vue melos → `melos list` reste 14 (invariant
+# produit). ⚠️ Sous pub workspaces, melos dérive ses packages du bloc
+# `workspace:` du root pubspec.yaml ET applique cet `ignore`. Miroir du bloc
+# `melos.ignore` de pubspec.yaml (source de vérité).
+ignore:
+  - binding_conformance
+
+# ⚠️ SOURCE DE VÉRITÉ DES SCRIPTS = root `pubspec.yaml` (bloc `melos:`).
+# Sous melos >= 7 + pub workspaces, melos lit ses scripts depuis `pubspec.yaml`
+# et IGNORE le bloc `scripts:` ci-dessous. Il est conservé identique pour
+# lisibilité/compatibilité (AC 3) : toute modification de script DOIT être
+# répliquée dans `pubspec.yaml`, sinon elle est silencieusement sans effet.
+# ⚠️ M-1 : ce bloc DOIT rester identique au `melos.scripts` de `pubspec.yaml`.
+# Le gate CI `gate:melos` (scripts/ci/gate_melos_divergence.dart) échoue sinon.
+scripts:
+  generate:
+    description: Régénère le code (build_runner) sur chaque package annoté (no-op propre si aucun).
+    run: melos exec --depends-on build_runner -- dart run build_runner build --delete-conflicting-outputs
+
+  analyze:
+    description: Analyse statique de tous les packages.
+    exec: dart analyze .
+
+  test:dart:
+    description: Tests des packages PUR-DART (dart test ; exclut les packages Flutter).
+    run: melos exec --no-flutter --dir-exists test -- dart test
+
+  test:flutter:
+    description: Tests des packages FLUTTER (flutter test ; ex. zcrud_core depuis E2-7).
+    run: melos exec --flutter --dir-exists test -- flutter test
+
+  test:
+    description: Agrège les tests pur-Dart puis Flutter (route zcrud_core vers flutter test).
+    run: melos run test:dart && melos run test:flutter
+
+  gate:graph:
+    description: "Gate AD-1 : acyclicité du graphe de dépendances (deps + dev + overrides)."
+    run: python3 scripts/dev/graph_proof.py
+
+  gate:melos:
+    description: "Gate M-1 : anti-divergence des blocs scripts melos (pubspec vs melos.yaml)."
+    run: dart run scripts/ci/gate_melos_divergence.dart
+
+  gate:reflectable:
+    description: "Gate AD-3 : interdiction de reflectable dans le moteur (hors ReflectableCodec)."
+    run: dart run scripts/ci/gate_reflectable.dart
+
+  gate:secrets:
+    description: "Gate AD-12 : scan de secrets committés (repli local)."
+    run: dart run scripts/ci/gate_secret_scan.dart
+
+  gate:codegen:
+    description: "Gate AD-3 : aucun modèle annoté sans .g.dart généré."
+    run: dart run scripts/ci/gate_codegen.dart
+
+  gate:compat:
+    description: "Gate FR-25 (E1-4) : dry-run de compat de résolution (flutter_quill+awesome_select+analyzer) dans tool/compat_check. Exige la toolchain Flutter."
+    run: dart run scripts/ci/gate_compat_resolution.dart
+
+  verify:serialization:
+    description: "Slot E2-10 (AD-10) : rétro-compat de sérialisation. No-op documenté jusqu'à E2-10."
+    run: dart run scripts/ci/verify_serialization.dart
+
+  verify:
+    description: "Enchaîne tous les gates de merge localement (miroir de la CI)."
+    run: |
+      python3 scripts/dev/graph_proof.py && \
+      dart run scripts/ci/gate_melos_divergence.dart && \
+      dart run scripts/ci/gate_reflectable.dart && \
+      dart run scripts/ci/gate_secret_scan.dart && \
+      dart run scripts/ci/gate_codegen.dart && \
+      dart run scripts/ci/gate_compat_resolution.dart && \
+      dart run scripts/ci/verify_serialization.dart
