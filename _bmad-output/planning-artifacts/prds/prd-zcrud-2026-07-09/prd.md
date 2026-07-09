@@ -128,6 +128,7 @@ Un développeur peut structurer un formulaire en sections repliables, champs con
 - `displayCondition(item, state)` masque/affiche un champ sans déplacer le focus des autres (place réservée stable plutôt que retrait d'`Element`).
 - La visibilité est dérivée dans un sélecteur dédié : seul un changement de visibilité reconstruit la liste des champs, pas une frappe.
 - Le mode lecture (`readOnly`) rend chaque champ en présentation, avec option `showIfNull`.
+- La grille responsive à 12 colonnes reflow selon les breakpoints (xs/sm/md/lg/xl) : un champ de `span` donné occupe le nombre de colonnes attendu à chaque breakpoint (vérifiable par test de layout/golden à largeurs fixées).
 
 #### FR-4 : Stepper multi-étapes fonctionnel
 Un développeur peut regrouper des champs en étapes (stepper) avec validation par étape.
@@ -211,8 +212,8 @@ Un développeur peut consommer/fournir un `ZRepository<T>` sans dépendre d'un b
 #### FR-13 : Patron offline-first & orchestrateur de sync
 Un développeur peut activer un patron offline-first standard pour les données utilisateur.
 **Conséquences (testables) :**
-- Store local source de vérité, distant fire-and-forget, merge Last-Write-Wins sur `updatedAt`, soft-delete `is_deleted`, cascade bornée.
-- Un `ZSyncOrchestrator` déclenche `sync()` d'un ensemble de dépôts enregistrés (login/reconnexion débouncée), best-effort, séparant le *quand* du *comment*.
+- Store local source de vérité, distant fire-and-forget, merge Last-Write-Wins sur `updatedAt`, soft-delete `is_deleted`, cascade bornée (**≤ 450 écritures/lot**, aligné canonique).
+- Un `ZSyncOrchestrator` déclenche `sync()` d'un ensemble de dépôts enregistrés (login/reconnexion **débouncée ~400 ms**), best-effort (**un échec de dépôt n'arrête pas les autres ; aucun blocage du thread UI**), séparant le *quand* du *comment*.
 - Le store local est abstrait (`ZLocalStore`) pour permettre Hive/Isar/Drift sans toucher le domaine (cf. OQ-8).
 
 ### 4.5 Markdown & rich text (`zcrud_markdown`)
@@ -314,6 +315,7 @@ Un développeur peut fournir/surcharger les libellés du chrome CRUD et obtenir 
 - Widgets `EdgeInsetsDirectional`/`AlignmentDirectional`/`TextAlign.start`, `Semantics` explicites, cibles ≥ 48 dp.
 
 #### FR-26 : Thème & design-tokens injectables
+*(FR ajoutée après le contrôle de complétude ; numérotée 26 mais regroupée ici avec l'injection §4.9 — le périmètre compte bien **26 FR**, FR-1..FR-26.)*
 Un développeur peut styler le chrome CRUD depuis l'app hôte sans que le package n'impose son propre thème.
 **Conséquences (testables) :**
 - Le style (couleurs, décorations d'input, rayons) est fourni via un `ZcrudTheme`/`ThemeExtension` injecté par `ZcrudScope` ; **aucun** style codé en dur dans le package (pas de `kNavyColor`/`kFormInputDecorationTheme`).
@@ -405,7 +407,7 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 
 ## 9. Index des hypothèses
 
-- §2.3 / §4.3 (FR-11) — `[HYPOTHÈSE]` La sérialisation propre à zcrud suit les conventions `@JsonSerializable` pur de lex_douane (snake_case persistance, enums camelCase, désérialisation défensive), en l'absence de freezed/reflectable imposés. À confirmer en Architecture (OQ-7).
+- §2.3 / §4.3 (FR-11) — *(confirmé — OQ-7 résolu, AD-3)* La sérialisation propre à zcrud suit les conventions `@JsonSerializable` pur de lex_douane (snake_case persistance, enums camelCase, désérialisation défensive), sans freezed/reflectable imposés. *(N'est plus une hypothèse ouverte.)*
 - §4.6 (FR-16) — `[HYPOTHÈSE]` Les modèles flashcards/mindmaps de lex_douane restent la référence canonique malgré le développement actif du module « Étude » ; un versionnage (`formatVersion`) absorbe leur évolution sans casser les consommateurs.
 - §6.1 — *(confirmé — AD-15)* Le banc d'essai DODLP est migré **sans Riverpod** via le binding `zcrud_get` (réactivité du cœur Flutter-native) ; l'adaptateur `ReflectableCodec` préserve le bootstrap. *(N'est plus une hypothèse.)*
 

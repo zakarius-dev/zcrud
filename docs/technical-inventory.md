@@ -196,6 +196,8 @@ IFFD n'a rien de geo/pays/stepper ; `phoneNumber` dans l'enum sans widget.
 
 Base canonique = enum `EditionFieldTypes` de DODLP (union 37-40 valeurs). Colonne « Affichage liste » = capacite via `DynamicListField`.
 
+> **Frontière de parité (référence unique de SM-2).** Le catalogue **de parité DODLP** = exactement les types énumérés dans le tableau ci-dessous. Cas limites explicités : `icon` = **hors parité MVP** (non implémenté à la source) ; `hidden` = champ non rendu (comportement conservé, pas un widget) ; `password` = `text` + validateur (pas de widget dédié). La checklist SM-2 (parité type-par-type) pointe **ce tableau** comme source unique — pas le compte approximatif « ~37 ».
+
 | Type | Edition | Affichage liste | Config specialisee | Projets (implemente) |
 |---|---|---|---|---|
 | `text` / multiline | TextFormField (minLines/maxLines, formatters, suggestions Autocomplete) | valueToString | inputType | iffd, dodlp, dlcfti |

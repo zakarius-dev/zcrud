@@ -8,7 +8,7 @@ scope: "L'ensemble du monorepo zcrud : frontières des packages, moteur édition
 status: draft
 created: '2026-07-09'
 updated: '2026-07-09'
-binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25]
+binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26]
 sources:
   - _bmad-output/planning-artifacts/briefs/brief-zcrud-2026-07-09/brief.md
   - _bmad-output/planning-artifacts/prds/prd-zcrud-2026-07-09/prd.md
