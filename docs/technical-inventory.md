@@ -256,6 +256,8 @@ Validation transverse : `Map<String,dynamic> validators` -> `FormBuilderValidato
 
 ### 4.2 Prescription de conception (cible zcrud)
 
+> **⚠️ Superseded (architecture 2026-07-09, AD-2/AD-15).** La primitive de réactivité **retenue** est **Flutter-native** (`ZFormController`/`ValueListenable` + `ValueListenableBuilder`), **sans aucun gestionnaire d'état dans le cœur** ; l'injection est **multi-gestionnaire** par bindings (`zcrud_riverpod`/`zcrud_get`/`zcrud_provider` + `ZcrudScope`). Les mentions ci-dessous de `Notifier Riverpod`/`ConsumerWidget`/`ref.watch`/`WidgetRef` **illustrent le principe de granularité** issu de l'analyse initiale ; l'implémentation finale est framework-neutre (le même principe `.select`/tranche d'état se traduit en `ValueListenable` par champ).
+
 1. **Supprimer le `setState` global.** Deplacer `item`+`editionState` dans un Notifier Riverpod 3 codegen (`@riverpod class EditionForm extends _$EditionForm`), etat immuable freezed. Mutations via methodes du notifier, jamais via `setState` de la `State`.
 2. **Un champ = un `ConsumerWidget` top-level par type**, qui `ref.watch(editionFormProvider(formId).select((s) => s.values[name]))` : SEUL ce champ se reconstruit quand SA valeur change.
 3. **`TextEditingController` STABLE par champ** : cree une seule fois (initState du widget de champ / registre keye par `field.name`), jamais recree au rebuild. `onChanged` ecrit dans l'etat avec **debounce ~250ms** ; on ne re-injecte JAMAIS la valeur dans le controller (plus de reset selection).
