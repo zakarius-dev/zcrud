@@ -22,14 +22,15 @@ pubspec_overrides.yaml
 .melos_tool/
 
 # ------------------------------------------------------------------
-# Génération de code (build_runner) — régénérable
+# Génération de code (build_runner) — NON suivi par git (régénérable)
 # ------------------------------------------------------------------
-# NB: on VERSIONNE les .g.dart/.freezed.dart pour faciliter la consommation
-# du package. Décommenter pour les exclure si le CI les régénère.
-# *.g.dart
-# *.freezed.dart
-# *.gr.dart
-# *.mocks.dart
+# À régénérer après clone/pull ou après modif d'une annotation
+# (@ZcrudModel/@JsonSerializable/@riverpod). La CI exécute le codegen
+# avant analyze/test/build.
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.mocks.dart
 
 # ------------------------------------------------------------------
 # IDE & OS
