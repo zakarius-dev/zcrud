@@ -48,8 +48,8 @@ Deux propositions de valeur portent le produit. D'abord, il **corrige par concep
 
 - **UJ-1. Zakarius migre DODLP vers zcrud sans rien casser.**
   - **Persona + contexte :** mainteneur unique, DODLP en prod (reflectable + GetX + get_it + 2 apps Firebase), `data_crud` importé par 180 fichiers.
-  - **Parcours :** ajoute les packages `zcrud_*` au pubspec ; enveloppe l'app dans un `ZcrudScope` fournissant un `CrudResolver` délégant à `getIt<DodlpController>()` et un codec reflectable ; re-pointe les imports par lots ; supprime le code dupliqué de `src/`.
-  - **Climax :** l'app compile et tourne à parité fonctionnelle (~37 types de champs), et l'édition d'un long formulaire ne perd plus le focus.
+  - **Parcours :** ajoute les packages `zcrud_*` au pubspec ; branche le binding **`zcrud_get`** (+ `ZcrudScope`) fournissant un `CrudResolver` délégant à `getIt<DodlpController>()` et un `ReflectableCodec` ; re-pointe les imports par lots ; supprime le code dupliqué de `src/`.
+  - **Climax :** l'app compile et tourne à parité fonctionnelle (catalogue figé), **sans jamais ajouter Riverpod**, et l'édition d'un long formulaire ne perd plus le focus.
   - **Résolution :** une PR où ne changent que les imports + une fine couche adaptateur ; le bootstrap, reflectable et Firebase restent inchangés.
   - **Edge case :** un type de champ propre à DODLP absent du catalogue → enregistré via `ZTypeRegistry` sans forker le package.
 
@@ -116,7 +116,7 @@ Un utilisateur peut éditer n'importe quel champ d'un formulaire long sans que l
 - Chaque champ visible porte une `key` stable (`ValueKey(field.name)`, jamais `hashCode`).
 
 #### FR-2 : Catalogue de types de champs de référence
-Un développeur peut déclarer tout champ du catalogue de référence (~37 `EditionFieldType`) et obtenir son rendu d'édition et de liste.
+Un développeur peut déclarer tout champ du **catalogue de référence figé** (`EditionFieldType`, énuméré dans `docs/technical-inventory.md` §3) et obtenir son rendu d'édition et de liste.
 **Conséquences (testables) :**
 - Les types du catalogue DODLP (texte/multiligne, nombre/entier/flottant/devise, booléen, date/heure/timestamp, select/radio/checkbox/multi-select, relation `crudDataSelect`, sous-liste `subItems`, `dynamicItem`, fichier/image/document, géo/carte, téléphone international, pays/adresse, rating, slider, signature, couleur, markdown/html, stepper, tags, rowChips, widget libre, hidden, password) sont chacun rendus par un widget dédié — aucun type déclaré ne tombe dans un `default` silencieux.
 - Un type inconnu enregistré via `ZTypeRegistry` est rendu par le widget fourni par l'app, sans modification du package.
@@ -132,7 +132,7 @@ Un développeur peut structurer un formulaire en sections repliables, champs con
 #### FR-4 : Stepper multi-étapes fonctionnel
 Un développeur peut regrouper des champs en étapes (stepper) avec validation par étape.
 **Conséquences (testables) :**
-- L'arbre du stepper est enveloppé dans un unique conteneur de formulaire (correction du bug historique où la validation/liaison casse faute d'enveloppe). *(Voir Question ouverte OQ-4.)*
+- Le stepper sectionne le **même** `ZFormController` (pas de `FormBuilder` global comme source d'état) ; `form_builder_validators` sert la composition de validateurs par étape (OQ-4 résolu — AD-2, sans réintroduire le rebuild global).
 - La navigation entre étapes préserve l'état des champs déjà saisis.
 
 #### FR-5 : Soumission et détection dirty
@@ -156,9 +156,9 @@ Un développeur peut afficher une collection en liste, tableau (DataGrid) ou vue
 #### FR-7 : Recherche, filtres, tri, pagination curseur
 Un utilisateur peut rechercher, filtrer, trier et paginer une collection.
 **Conséquences (testables) :**
-- Recherche insensible aux accents sur les champs pertinents.
+- Recherche insensible aux accents sur les champs marqués `searchable` dans le `ZFieldSpec` (défaut : tous les champs texte).
 - Filtres/tri exprimés dans un `DataRequest` neutre traduisible côté backend.
-- La pagination par curseur (`startAfter`/curseur opaque) est disponible dans le contrat neutre (capacité absente des 3 sources — cf. OQ-9), avec repli in-memory documenté.
+- La pagination par curseur (`startAfter`/curseur opaque) est exprimée dans le contrat neutre `DataRequest` (OQ-9 résolu — AD-16 ; capacité absente des 3 sources), avec repli in-memory documenté.
 
 #### FR-8 : Actions par ligne avec ACL, sélection, corbeille, export
 Un utilisateur peut agir sur les lignes (CRUD) selon ses droits, sélectionner en masse, consulter la corbeille, et exporter.
@@ -193,7 +193,7 @@ Un développeur peut brancher zcrud sur des entités existantes (`@JsonSerializa
 **Conséquences (testables) :**
 - Un `ZCodec`/adaptateur permet d'exposer une entité `@JsonSerializable` existante comme `ZcrudModel` sans réécriture.
 - Un `ReflectableCodec` permet à DODLP de conserver sa réflexion sans lister ses modèles.
-- zcrud partage structure + invariants sans imposer la mécanique de (dé)sérialisation (ni freezed, ni reflectable). `[HYPOTHÈSE]` La sérialisation propre à zcrud suit les conventions `@JsonSerializable` pur observées dans lex_douane (snake_case persistance, enums camelCase, désérialisation défensive).
+- zcrud partage structure + invariants sans imposer la mécanique de (dé)sérialisation (ni freezed, ni reflectable). *(Conventions de sérialisation par défaut : voir §9, hypothèse indexée.)*
 
 ### 4.4 Couche données & backends
 
@@ -225,7 +225,7 @@ Un développeur peut activer un patron offline-first standard pour les données 
 Un utilisateur peut éditer et lire du contenu riche (gras, listes, titres, liens, tables, formules).
 **Conséquences (testables) :**
 - Round-trip fiable Delta ↔ Markdown testé sur : listes imbriquées, formules multi-lignes, tableaux, entités HTML.
-- Le format canonique de persistance du champ rich-text est figé et documenté (cf. OQ-1 ; aujourd'hui incohérent — un champ `markdown` persiste du Delta JSON).
+- Un format de persistance **par défaut** est documenté (ex. Delta JSON), **surchargeable via `ZCodec`** (Markdown/HTML) ; le round-trip est spécifié pour chaque format supporté (OQ-1 résolu).
 - Le champ rich-text possède son propre contrôleur isolé et ne remonte que par callback (patron `MarkdownEditionField`), conforme à FR-1.
 
 #### FR-15 : Embeds LaTeX et tableaux
@@ -236,7 +236,7 @@ Un utilisateur peut insérer et rendre des formules LaTeX et des tableaux dans l
 
 ### 4.6 Flashcards (`zcrud_flashcard`)
 
-**Description :** modèles canoniques portés de lex_douane — `ZFlashcard` (6 types), `ZFlashcardType`, `ZRepetitionInfo` **séparé** de la carte, `ZSrsScheduler` (SM-2 par défaut, pluggable), `ZStudyFolder`/`ZStudySession`, patron offline-first, pipeline de génération LLM optionnel. Réalise UJ-4.
+**Description :** modèles canoniques portés de lex_douane — `ZFlashcard` (6 types), `ZFlashcardType`, `ZRepetitionInfo` **séparé** de la carte, `ZSrsScheduler` (SuperMemo-2 par défaut, pluggable), `ZStudyFolder`/`ZStudySession`, patron offline-first, pipeline de génération LLM optionnel. Réalise UJ-4.
 
 **Functional Requirements :**
 
@@ -250,7 +250,7 @@ Un développeur peut créer/éditer des flashcards canoniques et une app peut é
 #### FR-17 : Répétition espacée pluggable
 Un utilisateur peut réviser en répétition espacée ; un développeur peut remplacer l'algorithme.
 **Conséquences (testables) :**
-- SM-2 par défaut (facteur de facilité borné, intervalles) exposé derrière `ZSrsScheduler.apply/simulate` + `ZSrsConfig`.
+- **SuperMemo-2** par défaut (facteur de facilité borné, intervalles) exposé derrière `ZSrsScheduler.apply/simulate` + `ZSrsConfig`.
 - La seule voie d'écriture de l'état SRS passe par `reviewCard()` → `scheduler.apply` (aucun setter brut).
 - L'ordonnanceur est remplaçable (FSRS/Leitner) sans toucher les modèles.
 
@@ -293,16 +293,18 @@ Un développeur peut utiliser des champs téléphone international, pays/état e
 
 ### 4.9 Intégration & injection framework-neutre
 
-**Description :** `ZcrudScope` (InheritedWidget) + seams Riverpod fournissent resolver, permissions, toast, config, l10n et codecs. Un `zcrud_riverpod` optionnel relie les seams à Riverpod ; un mode locator sert DODLP. l10n injectable sans dépendance au routing/l10n de l'app. Réalise UJ-1, UJ-3.
+**Description :** `ZcrudScope` (InheritedWidget) + seams fournissent resolver, permissions, toast, config, l10n et codecs. Des bindings optionnels (`zcrud_riverpod`, `zcrud_get`, `zcrud_provider`) relient injection et cycle de vie au gestionnaire d'état de l'app ; `ZcrudScope` seul suffit sans aucun manager. l10n injectable sans dépendance au routing/l10n de l'app. Réalise UJ-1, UJ-3, UJ-4.
 
 **Functional Requirements :**
 
-#### FR-22 : Injection satisfaisant Riverpod et locator
-Un développeur peut injecter les dépendances de zcrud aussi bien via Riverpod (lex_douane/IFFD) que via locator/InheritedWidget (DODLP).
+#### FR-22 : Injection & état multi-gestionnaire
+Un développeur peut brancher zcrud sur le gestionnaire d'état de son app (Riverpod, GetX, provider) ou sans aucun, sans que le cœur n'en dépende.
 **Conséquences (testables) :**
-- Les seams `throw` par défaut et sont surchargés dans `ProviderScope` (Riverpod) **ou** via `ZcrudScope` (locator).
-- `zcrud_core` ne dépend d'aucun conteneur d'injection ; `zcrud_riverpod` est optionnel.
-- Le code du package n'utilise jamais `ProviderScope.containerOf(context).read(...)` ; toujours `WidgetRef`.
+- La réactivité du moteur est **Flutter-native** (`ChangeNotifier`/`ValueListenable`) ; **aucun** gestionnaire d'état dans `zcrud_core`.
+- Injection/lifecycle fournis par un **binding au choix** : `ZcrudScope` (défaut, zéro-dépendance), `zcrud_riverpod`, `zcrud_get` (DODLP) ou `zcrud_provider` — un même `ZFormController` fonctionne sous les quatre.
+- `zcrud_core` ne dépend d'aucun conteneur ni gestionnaire d'état ; les bindings sont optionnels.
+- Le cœur ne référence jamais `WidgetRef`, `Get.find`/`Get.put` ni `Provider.of` ; l'accès passe par `ZcrudScope.of(context)` ou l'API du binding.
+- Ajouter un nouveau gestionnaire = un nouveau package de binding, sans modifier le cœur.
 
 #### FR-23 : l10n injectable et RTL/a11y
 Un développeur peut fournir/surcharger les libellés du chrome CRUD et obtenir un rendu RTL/accessible.
@@ -347,6 +349,9 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 - `zcrud_annotations` + `zcrud_generator` : codegen + extensibilité (FR-9, FR-10, FR-11).
 - `zcrud_markdown` : édition/lecture + embeds LaTeX/tables (FR-14, FR-15).
 - `zcrud_firestore` : adaptateur backend débogué + offline-first (FR-13).
+- `zcrud_list` : rendu liste/tableau Syncfusion par défaut derrière `ZListRenderer` (FR-6).
+- **Bindings d'état** : `zcrud_riverpod`, `zcrud_get` (DODLP), `zcrud_provider` (FR-22 ; AD-15). `ZcrudScope` (zéro-dépendance) est fourni par `zcrud_core`.
+- **Lot parité DODLP** (sous-ensemble avancé depuis E11 pour SM-2, requis avant l'intégration DODLP) : widgets géo/téléphone/pays/adresse (`zcrud_geo`/`zcrud_intl`) + export DataGrid (`zcrud_export`). *Alternative retenue au cas par cas : parité par enregistrement des widgets DODLP existants via `ZTypeRegistry`.*
 - **Intégration DODLP** (banc d'essai, UJ-1, UJ-2) et **formulaires riches `lex_douane_admin`** (UJ-3), avec gate de compatibilité (FR-25).
 - Découpage melos avec importation sélective (FR-24).
 
@@ -363,7 +368,7 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 
 **Primaires**
 - **SM-1** : Zéro rebuild global à l'édition — sur un formulaire de référence (≥ 30 champs, ≥ 3 sections), taper 100 caractères ne provoque aucun rebuild hors du champ courant et zéro perte de focus (test widget + profiling). Valide FR-1, FR-3.
-- **SM-2** : Parité d'intégration DODLP — DODLP compile et tourne en important zcrud, code dupliqué de `src/` supprimé, ~37 types de champs à parité, reflectable/Firebase/bootstrap inchangés. Valide FR-2, FR-9, FR-11, FR-22.
+- **SM-2** : Parité d'intégration DODLP *(métrique — à ne pas confondre avec l'algorithme SuperMemo-2)* — DODLP compile et tourne en important zcrud, code dupliqué de `src/` supprimé, **chaque type du catalogue figé** (inventaire §3) à parité *(checklist type-par-type)*, GetX/reflectable/Firebase/bootstrap inchangés (via binding `zcrud_get`, **sans ajouter Riverpod**). Les types géo/téléphone/pays sont servis à parité soit par le lot MVP de `zcrud_geo`/`zcrud_intl` (cf. §6.1), soit par enregistrement des widgets DODLP existants via `ZTypeRegistry`. Valide FR-2, FR-9, FR-11, FR-22.
 - **SM-3** : Rich forms lex_douane — ≥ 3 écrans d'édition `lex_douane_admin` migrés vers zcrud sans régression de résolution de dépendances (FR-25) ni d'a11y/RTL. Valide FR-14, FR-23, FR-25.
 
 **Secondaires**
@@ -381,13 +386,13 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 
 - **OQ-1** ✅ *Résolu* : format de stockage rich-text **pluggable via `ZCodec`** (Delta en interne dans Quill, Markdown/HTML en surface/export) ; l'app choisit le format persisté.
 - **OQ-2** : Mécanisme d'extension — confirmer « composition + ZExtension versionné + extra + registre + enums ouverts » (recommandé) ; portée du/des registre(s) (global vs par axe).
-- **OQ-3** : Injection unique — `ZcrudScope` InheritedWidget + `zcrud_riverpod` optionnel suffisent-ils pour Riverpod (lex/IFFD) et locator (DODLP) ?
-- **OQ-4** : Stepper — envelopper l'arbre dans un unique conteneur de formulaire ; impact sur l'architecture de notifier par champ.
+- **OQ-3** ✅ *Résolu* : injection **multi-gestionnaire** par bindings — `ZcrudScope` (défaut) + `zcrud_riverpod`/`zcrud_get`/`zcrud_provider` (AD-15) ; réactivité du cœur Flutter-native.
+- **OQ-4** ✅ *Résolu* : le stepper sectionne le **même** `ZFormController` (pas de `FormBuilder` global comme état) — AD-2.
 - **OQ-5** : `level` du mindmap — cache maintenu vs dérivé à la volée (surtout pour le reparentage).
 - **OQ-6** : `flutter_tex`/`html_editor_enhanced` — optionnels derrière drapeau vs supprimés (impact multi-plateforme/WebView).
 - **OQ-7** ✅ *Résolu* : **générateur zcrud** (`@ZcrudModel`/`@ZcrudField`) + conventions `@JsonSerializable` pur ; **reflectable banni, freezed non imposé**. (copyWith généré + sentinelle reset-null : détail d'architecture.)
 - **OQ-8** : Rendu liste vs édition — dériver `ZFieldSpec` unique ou définitions disjointes ; abstraction `ZLocalStore` dès le portage ?
-- **OQ-9** : Pagination curseur — dans le contrat neutre `DataRequest` ou seulement `zcrud_firestore` ?
+- **OQ-9** ✅ *Résolu* : curseur dans le **contrat neutre** `DataRequest` (impl `zcrud_firestore`) — AD-16.
 - **OQ-10** : Reparentage mindmap — zcrud l'implémente (en avance sur lex) vs attend le portage.
 - **OQ-11** ✅ *Résolu* : **Syncfusion par défaut** pour la liste (licence commerciale actée), isolé dans `zcrud_list` derrière `ZListRenderer` (repli Material possible).
 - **OQ-12** : Uniformisation de la casse de sérialisation (mindmap camelCase vs education snake_case).
@@ -405,7 +410,7 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 - **Performance d'édition** : budget de rebuild = O(1) par frappe (champ courant uniquement) ; aucun recalcul de décoration/validateurs de tous les champs à chaque frappe.
 - **Rétro-compatibilité de sérialisation** : un champ absent/corrompu ne fait jamais échouer la désérialisation du parent (`unknownEnumValue`, `defaultValue`, `fromJsonSafe → null`).
 - **Offline-first** : les données utilisateur restent éditables hors ligne ; sync best-effort non bloquante.
-- **Pureté des couches** : le cœur canonique est du Dart pur (aucune dépendance Flutter/Firebase/Hive) ; backends et UI en couches séparées.
+- **Pureté des couches** : la *couche modèles canoniques* (`zcrud_core/domain`) est du Dart pur (aucune dépendance Flutter/Firebase/Hive). Le package `zcrud_core` **autorise Flutter** (widgets du moteur) mais **interdit** Firebase/Syncfusion/Maps (cf. B.4). Backends et UI en couches séparées.
 - **RTL & a11y** : support RTL complet et cibles tactiles/`Semantics` conformes sur toutes les surfaces UI.
 - **Zéro réflexion runtime** dans le moteur ; tout par codegen.
 
@@ -427,7 +432,7 @@ Un développeur peut vérifier la compatibilité des versions avant intégration
 - Assets volumineux (pays/mccmnc) chargés paresseusement.
 
 ### B.4 Cibles runtime & politique de dépendances
-- Cibles : Flutter/Dart alignés sur lex_douane (Dart `^3.12.2`) ; Riverpod 3 comme paradigme d'état de référence (optionnel via seams).
+- Cibles : Flutter/Dart alignés sur lex_douane (Dart `^3.12.2`). **Réactivité du cœur = Flutter-native** (`ChangeNotifier`/`ValueListenable`) ; **support multi-gestionnaire** (Riverpod, GetX, provider) via bindings optionnels — aucun manager imposé (AD-15).
 - **Interdits dans le cœur `zcrud_core`** : `reflectable`, `cloud_firestore` (isolé en `zcrud_firestore`), Google Maps (isolé en `zcrud_geo`), Syncfusion (isolé en `zcrud_list`/`zcrud_export`). La liste Syncfusion par défaut vit dans `zcrud_list`, pas dans `zcrud_core` (qui n'expose que l'abstraction `ZListRenderer`).
 - Dépendances lourdes (Quill, flutter_tex, html_editor_enhanced) isolées et/ou optionnelles derrière des drapeaux.
 - **freezed non imposé** ; zcrud fournit ses annotations/générateur et n'exige pas une techno de (dé)sérialisation particulière côté app.

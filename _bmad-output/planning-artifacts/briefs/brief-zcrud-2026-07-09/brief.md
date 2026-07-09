@@ -43,7 +43,7 @@ Au cœur du moteur : **un champ = un `ConsumerWidget` qui ne surveille que sa pr
 - **Il règle le bug que personne n'a réglé.** La correction du rebuild de formulaire est l'objectif produit n°1, absent des trois apps sources.
 - **Modèle = source unique de vérité.** Les annotations génèrent à la fois la sérialisation et le schéma de formulaire, éliminant toute une classe de bugs de correspondance `name` ↔ propriété (aujourd'hui reliés par des clés `String`).
 - **Schéma canonique + extensible.** Les modèles partagés de zcrud sont **dérivés des entités les plus avancées de lex_douane** (module « Étude ») ; chaque application consommatrice **étend** ensuite librement modèles et fonctionnalités (champs, types, comportements) tout en bénéficiant du socle commun — un canonique verrouillé, ouvert à l'extension.
-- **Injection framework-neutre.** Le moteur fonctionne pour **DODLP** (GetX / get_it, sans Riverpod) via des *seams* / `InheritedWidget`, **et** pour **lex_douane / IFFD** (Riverpod natif) — un même cœur, deux modes d'injection.
+- **Injection & état multi-gestionnaire.** La réactivité du moteur est **Flutter-native** (aucun gestionnaire d'état dans le cœur) ; des bindings minces branchent **Riverpod** (lex_douane / IFFD), **GetX** (DODLP, sans jamais ajouter Riverpod) ou **provider** — un même cœur, plusieurs modes d'injection (dont `ZcrudScope`, sans dépendance).
 - **Backend-agnostique.** `cloud_firestore` est isolé dans `zcrud_firestore` ; le contrat `CrudRepository` reste exprimable ailleurs (l'intention multi-backend / Supabase d'IFFD devient tenable).
 - **Modularité melos.** Un projet n'importe que ce dont il a besoin : pas de Quill, Syncfusion ou Google Maps imposés à qui n'en veut pas.
 
@@ -88,8 +88,8 @@ Au cœur du moteur : **un champ = un `ConsumerWidget` qui ne surveille que sa pr
 ## Décisions verrouillées (session d'initialisation)
 
 - **Sources d'extraction** : les 3 modules `data_crud` — IFFD, DODLP, DLCFTI.
-- **Gestion d'état** : Riverpod 3 (codegen), rebuilds granulaires.
-- **Sérialisation** : freezed + json_serializable, abandon de `reflectable`.
+- **Gestion d'état** : réactivité **Flutter-native** (`ChangeNotifier`/`ValueListenable`) dans le cœur, **rebuilds granulaires** ; support **multi-gestionnaire** via bindings optionnels (Riverpod, GetX, provider) — le cœur n'impose aucun manager.
+- **Sérialisation** : **génération de code** (annotations zcrud) ; **`freezed` non imposé** ; `reflectable` banni (sauf adaptateur `ReflectableCodec` pour DODLP).
 - **Monorepo** : melos.
 - **Ordre des consommateurs** : DODLP (n°1), puis lex_douane (n°2).
 - **Catalogue de champs de référence** : celui de DODLP (~37 types).

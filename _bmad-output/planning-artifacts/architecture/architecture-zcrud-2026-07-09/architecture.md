@@ -50,6 +50,8 @@ graph TD
   INTL[zcrud_intl] --> CORE
   EXP --> CORE
   RIV[zcrud_riverpod] --> CORE
+  GET[zcrud_get] --> CORE
+  PROV[zcrud_provider] --> CORE
 ```
 
 ### AD-1 — Monorepo melos à direction de dépendance acyclique
@@ -57,10 +59,10 @@ graph TD
 - **Prevents:** cycles de dépendances ; contamination du cœur par des dépendances lourdes ; import forcé de features non désirées.
 - **Rule:** `zcrud_core` ne déclare **aucune** dépendance vers un autre package zcrud ni vers Firebase/Syncfusion/Quill/Maps. Tout package satellite dépend de `zcrud_core` (et éventuellement d'un autre satellite déjà en amont) ; jamais l'inverse. Toute nouvelle arête doit préserver l'acyclicité.
 
-### AD-2 — Rebuilds réactifs granulaires (objectif produit n°1) [ADOPTED]
-- **Binds:** FR-1, FR-3, SM-1
-- **Prevents:** le bug historique de reconstruction globale du formulaire à chaque frappe (jank, perte de focus, saut de curseur).
-- **Rule:** un champ = un `ConsumerWidget` top-level qui n'observe que sa tranche d'état (`ref.watch(editionForm(formId).select(...))`). Interdits : `setState` à l'échelle du formulaire ; construction des champs dans une closure locale de `build()` ; recréation de `TextEditingController` au rebuild ; ré-injection de la valeur dans le controller. Obligatoires : controller stable (cycle initState/dispose), `ValueKey(field.name)`, validateurs mémoïsés, `AutovalidateMode.onUserInteraction` par champ, place stable pour les champs conditionnels.
+### AD-2 — Rebuilds réactifs granulaires, réactivité Flutter-native (objectif produit n°1) [ADOPTED]
+- **Binds:** FR-1, FR-2, FR-3, FR-4, SM-1
+- **Prevents:** le bug historique de reconstruction globale du formulaire à chaque frappe (jank, perte de focus, saut de curseur) ; le couplage de la réactivité à un gestionnaire d'état précis.
+- **Rule:** l'état du formulaire vit dans un `ZFormController` **`Listenable`/`ChangeNotifier` pur-Flutter**, exposant une `ValueListenable` par champ ; un champ = un widget qui n'écoute que sa tranche via `ValueListenableBuilder`/`ListenableBuilder` (rebuild ciblé). **Aucun gestionnaire d'état n'est importé dans `zcrud_core`** (ni Riverpod, ni GetX, ni provider) : la granularité repose sur les primitives Flutter, donc identique quel que soit le manager de l'app hôte (cf. AD-15). Interdits : `setState` à l'échelle du formulaire ; construction des champs dans une closure locale de `build()` ; recréation de `TextEditingController` au rebuild ; ré-injection de la valeur dans le controller. Obligatoires : controller stable (cycle create/dispose), `ValueKey(field.name)`, validateurs mémoïsés, `AutovalidateMode.onUserInteraction` par champ, place stable pour les champs conditionnels. **Stepper** : les étapes regroupent des champs du **même** `ZFormController` (sectionnement) — pas de `FormBuilder` global comme source d'état ; `form_builder_validators` sert la composition de validateurs, jamais l'état (résout OQ-4, évite tout rebuild global).
 
 ### AD-3 — Modèle = source unique de vérité par codegen ; reflectable banni, freezed non imposé [ADOPTED]
 - **Binds:** FR-9, FR-10, FR-11, SM-6
@@ -77,10 +79,10 @@ graph TD
 - **Prevents:** la fuite de `cloud_firestore`/Hive (`Timestamp`, `Filter`, `FirebaseException`) dans le domaine ; l'enfermement Firestore-first.
 - **Rule:** les ports `ZRepository<T>`, `ZLocalStore`, `ZRemoteStore`, `ZQuery`/`DataRequest`, `ZDataState` vivent dans `zcrud_core` sans type backend. Les adapters concrets (Firestore, Hive) vivent dans `zcrud_firestore`. Le contrat reste exprimable hors Firestore (Supabase déféré, cf. Deferred).
 
-### AD-6 — Injection framework-neutre par seams [ADOPTED]
+### AD-6 — Injection & cycle de vie pluggables par bindings [ADOPTED]
 - **Binds:** FR-22, FR-23
-- **Prevents:** l'imposition de Riverpod à DODLP ; le couplage du package à un conteneur ; les accès d'état non réactifs.
-- **Rule:** les dépendances (resolver, permissions, toast, config, l10n, codecs) sont des **seams** qui `throw` par défaut, surchargés soit dans `ProviderScope` (Riverpod), soit via `ZcrudScope` (InheritedWidget, mode locator pour DODLP). `zcrud_core` ne dépend d'aucun conteneur ; `zcrud_riverpod` est optionnel. Interdit : `ProviderScope.containerOf(context).read(...)` dans le code du package (toujours `WidgetRef`).
+- **Prevents:** l'imposition d'un gestionnaire d'état/conteneur unique ; le couplage du package à un conteneur ; les accès d'état non réactifs.
+- **Rule:** les dépendances (resolver, permissions, toast, config, l10n, codecs) **et** le cycle de vie des controllers (`ZFormController`/`ZListController`) sont fournis via des **seams** résolus par un **binding** au choix de l'app — `ZcrudScope` (InheritedWidget, défaut zéro-dépendance), `zcrud_riverpod`, `zcrud_get` ou `zcrud_provider` (cf. AD-15). `zcrud_core` ne dépend d'aucun conteneur ni gestionnaire d'état. Interdit dans le cœur : référencer `WidgetRef`, `Get.find`/`Get.put` ou `Provider.of` — l'accès passe par `ZcrudScope.of(context)` ou l'API exposée par le binding.
 
 ### AD-7 — Rich-text : codec pluggable ZCodec [ADOPTED]
 - **Binds:** FR-14, FR-15
@@ -120,7 +122,17 @@ graph TD
 ### AD-14 — Pureté des couches ; invariants métier au repository
 - **Binds:** all
 - **Prevents:** l'infiltration de Flutter/Firebase/Hive dans le domaine ; la logique métier dispersée dans les entités.
-- **Rule:** le `domain/` de `zcrud_core` est du **Dart pur** (aucune dépendance Flutter/Firebase/Hive). Les invariants métier (matérialisation de l'éphémère, hiérarchie 2 niveaux, avancement SRS) sont portés par le **repository**, jamais par l'entité (entités = données + copyWith).
+- **Rule:** le `domain/` de `zcrud_core` est du **Dart pur** (aucune dépendance Flutter/Firebase/Hive). Les invariants métier (matérialisation de l'éphémère, hiérarchie 2 niveaux, avancement SRS) sont portés par le **repository**, jamais par l'entité (entités = données + copyWith). NB : `zcrud_core` **autorise Flutter** (widgets du moteur d'édition) ; c'est la *couche modèles canoniques* (`domain/`) qui est pur-Dart, pas tout le package.
+
+### AD-15 — Support multi-gestionnaire d'état par bindings [ADOPTED]
+- **Binds:** FR-1, FR-22, toute surface UI
+- **Prevents:** le couplage du cœur à un gestionnaire d'état unique ; l'imposition de Riverpod à DODLP (GetX) ou de GetX à lex_douane (Riverpod).
+- **Rule:** `zcrud_core` n'importe **aucun** gestionnaire d'état ; sa réactivité repose sur `Listenable`/`ValueListenable` (Flutter pur, cf. AD-2). Des **bindings optionnels** adaptent injection / cycle de vie / scoping du `ZFormController`/`ZListController` et des seams à chaque idiome — `zcrud_riverpod` (provider/Notifier, cible lex_douane/IFFD), `zcrud_get` (`GetxController`/`Bindings`/`get_it`, cible **DODLP**), `zcrud_provider` (`ChangeNotifierProvider`) — **sans** réimplémenter la réactivité. `ZcrudScope` (InheritedWidget) est le défaut zéro-dépendance. Un même controller fonctionne à l'identique sous les quatre. **Ajouter un manager = un nouveau package de binding, jamais une modification du cœur.**
+
+### AD-16 — ACL & pagination par curseur dans le contrat neutre
+- **Binds:** FR-7, FR-8
+- **Prevents:** des FR non triviales sans invariant gouvernant ; le couplage backend de la pagination/ACL.
+- **Rule:** le contrôle d'accès passe par un port `ZAcl` fourni par l'app (aucune règle métier dans le cœur). La **pagination par curseur** (`startAfter`/curseur opaque) est exprimée dans le contrat neutre `DataRequest`/`ZQuery` (repli in-memory documenté) ; l'implémentation vit dans l'adaptateur backend (`zcrud_firestore`). *(Résout OQ-9 : le curseur est dans le contrat neutre.)*
 
 ## Consistency Conventions
 
@@ -128,7 +140,7 @@ graph TD
 | --- | --- |
 | Nommage | Types publics préfixés `Z` (`ZFieldSpec`, `ZFlashcard`, `ZRepository`) ; packages `zcrud_<domaine>` ; fichiers snake_case ; barrel `lib/<pkg>.dart`, impl sous `lib/src/` ; enum canonique des champs = `EditionFieldType`. Corriger les typos d'API héritées (`searchInpuCtrl`, `childreen`, `crudActionsButtionsBuilder`) — rupture assumée, pas d'alias legacy. |
 | Données & formats | `id` = `String` opaque (nullable pour l'éphémère, non-null pour le persisté) ; dates ISO-8601 ; **persistance snake_case** (`fieldRename: snake`), **valeurs d'enum camelCase** (`jsonValue = name`) ; erreurs = `ZFailure` ; métadonnées de sync hors-entité `ZSyncMeta` (`updated_at`/`is_deleted`) ; double-wire via `ZCodec` nommés (persistance vs chat). |
-| État & transverse | Riverpod codegen (`@riverpod` / `@Riverpod(keepAlive:true)` pour repos & controllers-dispatchers) ; mutation via méthodes de Notifier, jamais `setState` de formulaire ; `WidgetRef` uniquement (jamais `containerOf`) ; config/permissions/toast/l10n via `ZcrudScope`/seams ; logging via port `ZLogger` (pas de `print`). |
+| État & transverse | Réactivité du moteur = `ChangeNotifier`/`ValueListenable` pur-Flutter (aucun gestionnaire d'état dans le cœur) ; mutation via méthodes du `ZFormController`, jamais `setState` de formulaire ; injection/lifecycle via `ZcrudScope` (défaut) ou un binding (`zcrud_riverpod`/`zcrud_get`/`zcrud_provider`) ; config/permissions/toast/l10n via seams ; logging via port `ZLogger` (pas de `print`). |
 
 ## Stack
 
@@ -138,8 +150,9 @@ graph TD
 | --- | --- |
 | Dart SDK | ^3.12.2 |
 | melos | ^7.0.0 |
-| flutter_riverpod / riverpod_annotation | ^3.1.0 / ^4.0.0 |
-| riverpod_generator | ^4.0.0 |
+| flutter_riverpod / riverpod_annotation (binding `zcrud_riverpod`) | ^3.1.0 / ^4.0.0 |
+| get (binding `zcrud_get`, cible DODLP) | ^4.7.x |
+| provider (binding `zcrud_provider`) | ^6.x |
 | json_serializable / json_annotation | ^6.11.2 / ^4.9.0 |
 | build_runner / source_gen | ^2.4.x / (via build) |
 | dartz | ^0.10.1 |
@@ -152,7 +165,10 @@ graph TD
 | hive (ZLocalStore par défaut) | ^2.x |
 | flutter_form_builder / form_builder_validators | (moteur édition) |
 
-> Note : `flutter_tex`, `html_editor_enhanced`, `google_maps_flutter`, `flutter_osm_plugin` sont des dépendances **optionnelles** confinées à leurs packages (`zcrud_markdown` optionnel, `zcrud_geo`).
+> Notes :
+> - **Réactivité du cœur** = `ChangeNotifier`/`ValueListenable` de Flutter (SDK) — **aucun** gestionnaire d'état dans `zcrud_core`. Riverpod/GetX/provider ne vivent que dans leurs packages de binding respectifs (AD-15).
+> - **Auto-layout mindmap** = `graphite` (`graphview` mentionné dans le canonique = superseded ; le portage cible `graphite`, pinné par lex_douane).
+> - `flutter_tex`, `html_editor_enhanced`, `google_maps_flutter`, `flutter_osm_plugin` sont des dépendances **optionnelles** confinées à leurs packages (`zcrud_markdown` optionnel, `zcrud_geo`).
 
 ## Structural Seed
 
@@ -174,7 +190,9 @@ zcrud/
     zcrud_geo/                # champs géo (adapters Google/OSM optionnels)
     zcrud_intl/               # téléphone/pays/devise (constantes en assets)
     zcrud_export/             # PDF/Excel (Syncfusion)
-    zcrud_riverpod/           # liaison seams <-> Riverpod (optionnel)
+    zcrud_riverpod/           # binding état/injection <-> Riverpod (optionnel)
+    zcrud_get/                # binding état/injection <-> GetX + get_it (cible DODLP, optionnel)
+    zcrud_provider/           # binding état/injection <-> provider (optionnel)
   example/                    # app de démonstration + banc d'intégration
 ```
 
@@ -219,7 +237,8 @@ graph LR
 | Flashcards + SRS (FR-16..FR-18) | `zcrud_flashcard` | AD-4, AD-9, AD-10 |
 | Mindmaps (FR-19) | `zcrud_mindmap` | AD-4, AD-13 |
 | Champs géo/intl (FR-20, FR-21) | `zcrud_geo`, `zcrud_intl` | AD-1, AD-12 |
-| Injection & l10n (FR-22, FR-23) | `zcrud_core` (seams) / `zcrud_riverpod` | AD-6, AD-13 |
+| État, injection & l10n (FR-22, FR-23) | `zcrud_core` (`ZFormController`+seams) / `zcrud_riverpod`, `zcrud_get`, `zcrud_provider` | AD-6, AD-13, AD-15 |
+| ACL & pagination curseur (FR-7, FR-8) | `zcrud_core` (ports `ZAcl`/`DataRequest`) / `zcrud_firestore` | AD-16, AD-5 |
 | Packaging & compat (FR-24, FR-25) | workspace melos | AD-1 |
 
 ## Deferred
