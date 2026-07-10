@@ -37,7 +37,11 @@ environment:
 # ZFieldListenableBuilder/ZcrudScope réutilisés tels quels (AD-15). Aucun manager,
 # aucun autre `zcrud_*`, aucun backend lourd.
 dependencies:
-  zcrud_core: ^0.0.1
+  # REL-1 (D2, sémantique caret 0.x) : bumpé ^0.0.1 → ^0.1.0 comme les 14 pubspecs
+  # packages/. `^0.0.1` ne résout plus contre zcrud_core 0.1.0 → le workspace
+  # (dont ce membre) casserait `dart pub get`. La VERSION propre du harnais reste
+  # 0.0.1 + `publish_to: none` (jamais publié) ; seule sa CONTRAINTE vers le cœur bouge.
+  zcrud_core: ^0.1.0
   flutter:
     sdk: flutter
   flutter_test:
