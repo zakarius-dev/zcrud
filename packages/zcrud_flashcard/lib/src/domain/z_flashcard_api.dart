@@ -10,8 +10,9 @@ import 'package:zcrud_markdown/zcrud_markdown.dart';
 abstract final class ZFlashcardApi {
   const ZFlashcardApi._();
 
-  /// Version de l'API publique au stade squelette.
-  static const String version = '0.0.1';
+  /// Version de l'API publique (E9-2 : sous-système SRS pluggable posé —
+  /// `ZRepetitionInfo` + `ZSrsScheduler`/`ZSm2Scheduler` + `ZSrsConfig`).
+  static const String version = '0.2.0';
 
   /// Rattache l'arête AD-1 `zcrud_flashcard -> zcrud_core`.
   static const String coreApiVersion = ZCoreApi.version;
