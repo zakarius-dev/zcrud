@@ -1,0 +1,615 @@
+/// Adaptateur **Firestore** concret du port neutre `ZRepository<T>` (E5-1).
+///
+/// origine: lex_core (module « Étude ») — repositories Firestore
+/// (`StudyFoldersRepository`/`FlashcardsRepository`/…) généralisés. Réunit les
+/// **corrections** des 3 bugs historiques des apps (DODLP/IFFD/DLCFTI) :
+/// réassignation de clause perdue, `catch(_){}` silencieux, `null` traité comme
+/// erreur, écritures partielles non committées.
+///
+/// **Isolation AD-5 (CRUCIAL)** : `cloud_firestore` est importé **uniquement**
+/// ici. Aucun type Firestore (`Query`/`Timestamp`/`DocumentSnapshot`/
+/// `CollectionReference`/`FirebaseException`/`Filter`) ne fuit dans une
+/// **signature publique** — toutes restent `ZResult<…>` / `Stream<List<T>>`
+/// **nues**. Les dates transitent en **ISO-8601 String** (jamais `Timestamp`).
+///
+/// **Frontières de story (ne PAS déborder)** : E5-1 = repo Firestore + traduction
+/// `ZDataRequest→Query` + curseur + soft-delete/restore + count + décodage
+/// défensif. Le `ZLocalStore` (Hive), l'offline-first LWW et l'orchestrateur
+/// sont E5-2/E5-3/E5-4.
+library;
+
+// `prefer_initializing_formals` est un FAUX POSITIF ici : les champs de config
+// sont **privés** et exposés en paramètres **nommés**. Or Dart interdit un
+// formal d'initialisation nommé privé (`this._x` n'est pas appelable comme
+// paramètre nommé `_x`) — l'assignation en liste d'initialisation est donc la
+// SEULE forme possible. La suggestion du lint est inapplicable ; on la désactive
+// au niveau fichier pour garder `analyze` à zéro info (gate melos fatal-infos).
+// ignore_for_file: prefer_initializing_formals
+
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+
+/// Journal minimal **neutre** de l'adaptateur (type public sans dépendance
+/// Firestore). Un document non décodable ou une erreur de flux est **loggé** ici
+/// puis écarté (AD-10) — jamais avalé silencieusement (bug #3).
+///
+/// Un port `ZLogger` de `zcrud_core` pourra s'y substituer additivement plus
+/// tard ; en attendant, l'adaptateur reste zéro-config (défaut : no-op).
+typedef ZFirestoreLog = void Function(
+  String message, {
+  Object? error,
+  StackTrace? stackTrace,
+});
+
+void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
+
+/// Adaptateur Firestore de [ZRepository] pour l'agrégat [T].
+///
+/// **Injection** (pas de singleton statique — testabilité) : une instance
+/// [FirebaseFirestore], le [collectionPath], le [kind] + le couple
+/// (dé)sérialisation typé (`fromMap`/`toMap`, ou la fabrique [fromRegistry]),
+/// un [ZFirestoreLog] optionnel, et une voie de décodage **défensive**
+/// optionnelle (`fromMapSafe`).
+///
+/// **Décodage DÉFENSIF (AD-10)** : la lecture route chaque document par une voie
+/// tolérante — `fromMapSafe` s'il est fourni (ex. `ZModelAdapter.fromMapSafe`),
+/// sinon une enveloppe locale de `fromMap`. Un document corrompu est **écarté +
+/// loggé**, jamais propagé en `throw` : une page de N documents dont 1 est
+/// corrompu retourne N-1 entités.
+///
+/// **Métadonnées de sync hors-entité** (AD-9/AD-16) : les clés `is_deleted` et
+/// `updated_at` (`ZSyncMeta`, snake_case, ISO-8601) sont **fusionnées** dans le
+/// document mais restent séparées côté modèle (aucun champ métier touché par
+/// [softDelete]/[restore]).
+///
+/// **Recherche accent-insensible — limite documentée (AC15)** : Firestore n'a ni
+/// `LIKE`, ni full-text, ni pliage diacritique natif. `ZDataRequest.search`
+/// n'est donc **pas** servi ici (préfixe/égalité ou champ normalisé pré-calculé
+/// requis côté app — voir E4/E7). Aucune normalisation NFD n'est appliquée.
+///
+/// **PRÉCONDITION — collection « zcrud-native » (MAJEUR-1 / MAJEUR-2)** : cet
+/// adaptateur suppose une collection gérée **exclusivement** par zcrud, où
+/// **tout** document écrit par [save] porte SYSTÉMATIQUEMENT (invariant
+/// **exécutoire**, garanti par [_encode] + [save]) :
+/// - un champ de **corps** `id` (= identité du document) — **clé de départage**
+///   du tri/curseur (AC12). En **prod**, `orderBy('id')` **exclut**
+///   silencieusement tout document DÉPOURVU de ce champ (sémantique Firestore) :
+///   un document hérité/non-zcrud sans corps `id` disparaît des lectures
+///   **triées/paginées**. Choix de la clé de corps `id` (option (b)) plutôt que
+///   `FieldPath.documentId` (option (a)) : voir la justification PROUVÉE dans
+///   [_buildQuery] (le backend de test rejette `startAfter` sur `documentId`).
+/// - un champ `is_deleted:false` (`ZSyncMeta`, hors-entité) — le filtre serveur
+///   `where('is_deleted', isEqualTo:false)` **exige la présence** du champ : un
+///   document sans `is_deleted` est **exclu de TOUS** les chemins de lecture
+///   (getById / getAll / watch) de façon **COHÉRENTE** (aucune divergence, cf.
+///   [_isVisible]).
+///
+/// Brancher l'adaptateur sur une collection **préexistante** (intégration E7)
+/// impose donc un **backfill d'onboarding** (`id` de corps + `is_deleted:false`
+/// sur chaque document) — sans quoi les documents non conformes sont exclus des
+/// lectures triées/paginées et filtrées, silencieusement, EN PROD.
+class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
+  /// Construit l'adaptateur à partir du couple (dé)sérialisation typé.
+  FirebaseZRepositoryImpl({
+    required FirebaseFirestore firestore,
+    required String collectionPath,
+    required String kind,
+    required T Function(Map<String, dynamic> map) fromMap,
+    required Map<String, dynamic> Function(T value) toMap,
+    T? Function(Map<String, dynamic> map)? fromMapSafe,
+    ZFirestoreLog? logger,
+  })  : _firestore = firestore,
+        _collectionPath = collectionPath,
+        _kind = kind,
+        _fromMap = fromMap,
+        _toMap = toMap,
+        _fromMapSafe = fromMapSafe,
+        _log = logger ?? _noopLog;
+
+  /// Construit l'adaptateur en dérivant `fromMap`/`toMap` d'un [ZcrudRegistry]
+  /// (voie stricte `decode`/`encode`). Le décodage reste **défensif** : la voie
+  /// stricte est enveloppée localement (option (a) de l'ambiguïté #1 — aucune
+  /// modification du contrat gelé `ZcrudRegistry`). Un `fromMapSafe` explicite
+  /// (ex. `ZModelAdapter.fromMapSafe`) peut être fourni pour une tolérance
+  /// portée par le modèle.
+  factory FirebaseZRepositoryImpl.fromRegistry({
+    required FirebaseFirestore firestore,
+    required String collectionPath,
+    required String kind,
+    required ZcrudRegistry registry,
+    T? Function(Map<String, dynamic> map)? fromMapSafe,
+    ZFirestoreLog? logger,
+  }) {
+    return FirebaseZRepositoryImpl<T>(
+      firestore: firestore,
+      collectionPath: collectionPath,
+      kind: kind,
+      fromMap: (map) => registry.decode(kind, map) as T,
+      toMap: (value) => registry.encode(kind, value),
+      fromMapSafe: fromMapSafe,
+      logger: logger,
+    );
+  }
+
+  final FirebaseFirestore _firestore;
+  final String _collectionPath;
+  final String _kind;
+  final T Function(Map<String, dynamic> map) _fromMap;
+  final Map<String, dynamic> Function(T value) _toMap;
+  final T? Function(Map<String, dynamic> map)? _fromMapSafe;
+  final ZFirestoreLog _log;
+
+  /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
+  static const String _kIsDeleted = 'is_deleted';
+
+  /// Clé snake_case de l'horodatage LWW (`ZSyncMeta`, ISO-8601).
+  static const String _kUpdatedAt = 'updated_at';
+
+  /// Clé logique d'identité injectée dans la map avant décodage.
+  static const String _kId = 'id';
+
+  /// Contrôleurs/abonnements ouverts par [watch]/[watchAll], fermés par [dispose].
+  final List<StreamController<List<T>>> _controllers =
+      <StreamController<List<T>>>[];
+  final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>> _subs =
+      <StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>[];
+
+  bool _disposed = false;
+
+  // ───────────────────────── Références (types Firestore PRIVÉS) ─────────────
+
+  /// Collection **brute** (`Map`) — voie de lecture défensive par document.
+  CollectionReference<Map<String, dynamic>> _rawCollection([String? path]) =>
+      _firestore.collection(path ?? _collectionPath);
+
+  /// Collection **typée** via `withConverter<T>` (AC1). `fromFirestore` re-décode
+  /// le document (injection de l'`id` du snapshot). Utilisée **UNIQUEMENT** pour
+  /// la **relecture round-trip** de [save] (preuve `save`→lecture restitue
+  /// l'entité égale).
+  ///
+  /// **LOW-3 (acté)** : `toFirestore` n'est **jamais** invoqué — [save] écrit en
+  /// `Map` **brute** (`batch.set` + [_encode]) et [getById]/les listes/flux
+  /// lisent en `Map` brute + [_decode] **DÉFENSIF**. C'est **délibéré** : un
+  /// `withConverter` ne peut pas renvoyer `null` pour écarter un document corrompu
+  /// (AD-10). Le converter est donc volontairement limité au round-trip de [save]
+  /// (chemin où un corps illisible EST une vraie erreur), pas aux lectures de
+  /// masse (où 1 corrompu ne doit jamais faire échouer les N-1 sains).
+  CollectionReference<T> _typedCollection([String? path]) =>
+      _rawCollection(path).withConverter<T>(
+        fromFirestore: (snap, _) => _fromMap(_inject(snap.id, snap.data())),
+        toFirestore: (value, _) => _encode(value),
+      );
+
+  // ───────────────────────── (Dé)codage ─────────────────────────────────────
+
+  /// Injecte l'`id` du document dans la [data] (le corps Firestore ne stocke pas
+  /// nécessairement `id`).
+  Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) =>
+      <String, dynamic>{...?data, _kId: id};
+
+  /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,
+  /// is_deleted=false) — jamais de `Timestamp` (AD-5).
+  Map<String, dynamic> _encode(T value) {
+    final map = Map<String, dynamic>.of(_toMap(value));
+    final meta = ZSyncMeta(updatedAt: DateTime.now().toUtc(), isDeleted: false)
+        .toJson();
+    map[_kUpdatedAt] = meta[_kUpdatedAt];
+    map[_kIsDeleted] = false;
+    return map;
+  }
+
+  /// Décodage **DÉFENSIF** (AD-10) : `fromMapSafe` s'il existe, sinon enveloppe
+  /// locale de `fromMap`. Un document non décodable → `null` (écarté + loggé),
+  /// jamais de `throw` propagé.
+  T? _decode(String id, Map<String, dynamic>? data) {
+    final map = _inject(id, data);
+    final safe = _fromMapSafe;
+    if (safe != null) {
+      final decoded = safe(map);
+      if (decoded == null) {
+        _log('document non décodable (kind=$_kind, id=$id) — écarté');
+      }
+      return decoded;
+    }
+    try {
+      return _fromMap(map);
+    } on Object catch (e, s) {
+      _log(
+        'document non décodable (kind=$_kind, id=$id) — écarté',
+        error: e,
+        stackTrace: s,
+      );
+      return null;
+    }
+  }
+
+  /// Un document est **VISIBLE** ssi `is_deleted == false` — sémantique **ALIGNÉE**
+  /// sur le filtre serveur `where('is_deleted', isEqualTo:false)` (MAJEUR-2). Un
+  /// champ `is_deleted` **ABSENT** (document non-zcrud-native) OU `== true`
+  /// (soft-deleted) est traité comme **non visible** de façon **COHÉRENTE** sur
+  /// TOUS les chemins de lecture (getById / getAll / watch) — voir la précondition
+  /// « collection zcrud-native » du dartdoc de classe. **Aucune divergence** get
+  /// vs getAll/watch pour un même document.
+  bool _isVisible(Map<String, dynamic> data) => data[_kIsDeleted] == false;
+
+  /// Décode une liste de documents en **écartant** les corrompus (défensif) et
+  /// les non-visibles (belt-and-suspenders : le filtre serveur `is_deleted ==
+  /// false` les exclut déjà — [_isVisible] réaligne la couche applicative sur la
+  /// MÊME sémantique, MAJEUR-2).
+  List<T> _decodeDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final out = <T>[];
+    for (final d in docs) {
+      final data = d.data();
+      if (!_isVisible(data)) continue;
+      final entity = _decode(d.id, data);
+      if (entity != null) out.add(entity);
+    }
+    return out;
+  }
+
+  // ───────────────────────── Traduction ZDataRequest → Query (AC6/7/12) ──────
+
+  /// Requête de base : **exclusion serveur des soft-deleted** via égalité
+  /// `is_deleted == false` (ambiguïté #2 tranchée : l'égalité — contrairement à
+  /// `isNotEqualTo` — n'impose PAS de premier `orderBy` et n'entre pas en
+  /// conflit avec le tie-break `id`, et laisse `count()` fonctionner).
+  ///
+  /// **MAJEUR-2** : l'égalité Firestore **exige la présence** du champ — un
+  /// document SANS `is_deleted` est exclu ICI (serveur) ; la couche applicative
+  /// [_isVisible] applique la MÊME sémantique (get/getAll/watch cohérents).
+  /// Précondition « collection zcrud-native » : tout document écrit par [save]
+  /// porte `is_deleted=false` (invariant exécutoire, cf. [_encode]).
+  Query<Map<String, dynamic>> _baseQuery([String? path]) =>
+      _rawCollection(path).where(_kIsDeleted, isEqualTo: false);
+
+  /// Applique les [filters] par **chaînage IMMUABLE** (réaffectation
+  /// systématique — corrige le bug #1 : une `Query` est immuable, `where(...)`
+  /// retourne une NOUVELLE `Query`).
+  Query<Map<String, dynamic>> _applyFilters(
+    Query<Map<String, dynamic>> base,
+    List<ZFilter> filters,
+  ) {
+    var q = base;
+    for (final f in filters) {
+      switch (f.op) {
+        case ZFilterOp.eq:
+          q = q.where(f.field, isEqualTo: f.value);
+        case ZFilterOp.neq:
+          q = q.where(f.field, isNotEqualTo: f.value);
+        case ZFilterOp.lt:
+          q = q.where(f.field, isLessThan: f.value);
+        case ZFilterOp.lte:
+          q = q.where(f.field, isLessThanOrEqualTo: f.value);
+        case ZFilterOp.gt:
+          q = q.where(f.field, isGreaterThan: f.value);
+        case ZFilterOp.gte:
+          q = q.where(f.field, isGreaterThanOrEqualTo: f.value);
+        case ZFilterOp.contains:
+          // Ambiguïté #4 : `arrayContains` (appartenance à un champ collection).
+          // La « sous-chaîne texte » n'est PAS supportée nativement (AC15).
+          q = q.where(f.field, arrayContains: f.value);
+        case ZFilterOp.isIn:
+          q = q.where(
+            f.field,
+            whereIn: (f.value is List)
+                ? (f.value! as List<Object?>)
+                : <Object?>[f.value],
+          );
+        case ZFilterOp.isNull:
+          q = q.where(f.field, isNull: true);
+      }
+    }
+    return q;
+  }
+
+  /// Construit la requête complète (filtres + tri + tie-break `id` + curseur +
+  /// limit) par **chaînage immuable** (AC7). Le tie-break final `orderBy(id)` sur
+  /// le **champ `id` logique** (stocké dans le corps de chaque document par
+  /// [_encode]/[save]) garantit un ordre **total et stable** aux clés de tri
+  /// égales (AC12), cohérent avec `ZCursor` (départage par `id`).
+  ///
+  /// **MAJEUR-1 — choix (b) `id` de corps vs (a) `FieldPath.documentId`, PROUVÉ.**
+  /// L'option (a) (tie-break `orderBy(FieldPath.documentId)`, toujours présent en
+  /// prod, donc SANS exclusion silencieuse) a été **testée et écartée** : le
+  /// backend de test `fake_cloud_firestore` **REJETTE** `startAfter([...values,
+  /// id])` quand un `orderBy` porte sur `documentId` — son évaluation interne
+  /// appelle `doc.get(FieldPath.documentId)` et lève `Invalid argument(s): key
+  /// must be String or FieldPath but found FieldPathType`. La pagination AC12
+  /// devient donc infaisable en test sous (a). On retient (b) — champ `id` de
+  /// corps — sous la **précondition « collection zcrud-native »** (dartdoc de
+  /// classe) : tout document écrit par [save] porte son `id` de corps (invariant
+  /// exécutoire). ⚠️ En **prod**, `orderBy('id')` **exclut** tout document
+  /// dépourvu de corps `id` (documents non-zcrud → backfill d'onboarding E7). NB:
+  /// le fake N'imite PAS cette exclusion (il classe le champ absent comme `null`),
+  /// donc un test ne peut prouver l'exclusion prod — il prouve l'invariant
+  /// [save]-écrit-`id` qui la neutralise (voir tests MAJEUR-1).
+  ///
+  /// **LOW-5 — index composites requis EN PROD.** Une requête combinant un
+  /// `where` d'inégalité (`>`, `>=`, `<`, `<=`) OU un `where(is_deleted==false)`
+  /// AVEC un `orderBy(champ)` + le tie-break `orderBy('id')` exige un **index
+  /// composite** Firestore (`firestore.indexes.json`), sinon la prod lève
+  /// `FAILED_PRECONDITION` → `ServerFailure`. `fake_cloud_firestore` n'exige aucun
+  /// index (faux vert). Les index sont à provisionner à l'intégration/déploiement
+  /// (E7) — non fournis par cette story (adaptateur backend-agnostique, AD-5).
+  Query<Map<String, dynamic>> _buildQuery(
+    Query<Map<String, dynamic>> base,
+    ZDataRequest req,
+  ) {
+    var q = _applyFilters(base, req.filters);
+
+    final hasSorts = req.sorts.isNotEmpty;
+    if (hasSorts) {
+      for (final s in req.sorts) {
+        q = q.orderBy(s.field, descending: s.direction == ZSortDirection.desc);
+      }
+    }
+    // Tie-break `id` systématique dès qu'un ordre est requis (tri OU pagination
+    // par curseur) — un `ZDataRequest()` vide reste SANS clause d'ordre (AC6).
+    if (hasSorts || req.startAfter != null) {
+      q = q.orderBy(_kId);
+    }
+
+    final cursor = req.startAfter;
+    if (cursor != null) {
+      // Valeurs alignées positionnellement sur `sorts` + `id` en tie-break final
+      // (curseur partiel accepté par Firestore si `id` absent).
+      final values = <Object?>[...cursor.values];
+      if (cursor.id != null) values.add(cursor.id);
+      q = q.startAfter(values);
+    }
+
+    final limit = req.limit;
+    if (limit != null) q = q.limit(limit);
+
+    return q;
+  }
+
+  // ───────────────────────── Enveloppe d'erreurs unique (AC9/10/11) ──────────
+
+  /// Enveloppe **unique** de toute opération : `FirebaseException → ServerFailure`
+  /// ; un `ZFailure` levé volontairement est repropagé ; toute autre erreur →
+  /// `ServerFailure` typé. **JAMAIS** de `catch(_){}` (bug #3). Le corps décide
+  /// lui-même des `Left`/`Right` métier (`null ≠ erreur` — bug #4).
+  Future<ZResult<R>> _guard<R>(Future<ZResult<R>> Function() body) async {
+    try {
+      return await body();
+    } on FirebaseException catch (e, s) {
+      _log('FirebaseException (kind=$_kind, code=${e.code})',
+          error: e, stackTrace: s);
+      return Left<ZFailure, R>(ServerFailure(e.message ?? e.code));
+    } on ZFailure catch (f) {
+      return Left<ZFailure, R>(f);
+    } on Object catch (e, s) {
+      _log('erreur inattendue (kind=$_kind)', error: e, stackTrace: s);
+      return Left<ZFailure, R>(ServerFailure(e.toString()));
+    }
+  }
+
+  // ───────────────────────── Lectures (AC2/3/4/10/11) ───────────────────────
+
+  @override
+  Stream<List<T>> watchAll() => _watchQuery(_baseQuery);
+
+  @override
+  Stream<List<T>> watch(ZDataRequest request) =>
+      _watchQuery(() => _buildQuery(_baseQuery(), request));
+
+  /// Flux **NU** (AD-11) : seed immédiat (état courant) puis mutations. Les
+  /// non-visibles/corrompus sont exclus. Une collection vide émet `[]` (AC10).
+  /// L'abonnement upstream est tracé pour [dispose].
+  ///
+  /// **MEDIUM-1 (AC9)** : la `Query` est construite par [build] **DANS**
+  /// `onListen`, sous garde `try/catch`. Un throw **SYNCHRONE** à la construction
+  /// (ex. `_firestore.collection(...)` lève une `FirebaseException`) ou à
+  /// l'abonnement est **poussé dans le canal du stream** ([StreamController.
+  /// addError]) — **jamais** relancé synchroniquement vers l'appelant. Les
+  /// erreurs **runtime** de `snapshots()` transitent par le même canal
+  /// (`onError`). Aucune exception ne remonte hors du flux.
+  Stream<List<T>> _watchQuery(Query<Map<String, dynamic>> Function() build) {
+    late final StreamController<List<T>> controller;
+    // MEDIUM-1 (parité E5-1) : l'abonnement source `snapshots()` est capturé
+    // pour être ANNULÉ à l'annulation du flux (`onCancel`) — pas seulement au
+    // `dispose()`. Sans cela, chaque `watch`/`watchAll` empilerait un contrôleur
+    // + un abonnement vivants (fuite non bornée sur un repo à longue durée de
+    // vie).
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? sub;
+    controller = StreamController<List<T>>(
+      onListen: () {
+        try {
+          sub = build().snapshots().listen(
+            (snap) {
+              // LOW-1 (parité) : une exception DANS le callback (`_decodeDocs`)
+              // est routée vers le canal d'erreur — miroir du `onError` — au lieu
+              // de devenir une erreur asynchrone non gérée.
+              try {
+                controller.add(_decodeDocs(snap.docs));
+              } on Object catch (e, s) {
+                _log('événement firestore en erreur (kind=$_kind)',
+                    error: e, stackTrace: s);
+                controller.addError(_toFailure(e));
+              }
+            },
+            onError: (Object e, StackTrace s) {
+              _log('flux firestore en erreur (kind=$_kind)',
+                  error: e, stackTrace: s);
+              controller.addError(_toFailure(e));
+            },
+          );
+          _subs.add(sub!);
+        } on Object catch (e, s) {
+          // Throw SYNCHRONE à la construction/abonnement de la Query : converti
+          // en erreur de FLUX (jamais d'exception qui remonte à l'appelant, AC9).
+          _log('construction du flux firestore en erreur (kind=$_kind)',
+              error: e, stackTrace: s);
+          controller.addError(_toFailure(e));
+        }
+      },
+      onCancel: () async {
+        // MEDIUM-1 (parité) : libère la souscription source + le contrôleur dès
+        // que le consommateur annule — sans attendre `dispose()`. Idempotent
+        // avec `dispose()` (retraits sur listes).
+        _controllers.remove(controller);
+        final s = sub;
+        sub = null;
+        if (s != null) {
+          _subs.remove(s);
+          await s.cancel();
+        }
+        if (!controller.isClosed) await controller.close();
+      },
+    );
+    _controllers.add(controller);
+    return controller.stream;
+  }
+
+  /// Mappe une erreur brute en [ZFailure] pour la voie **FLUX** — miroir de
+  /// [_guard] (`FirebaseException → ServerFailure`, `ZFailure` repropagé, reste →
+  /// `ServerFailure`).
+  ZFailure _toFailure(Object e) {
+    if (e is FirebaseException) return ServerFailure(e.message ?? e.code);
+    if (e is ZFailure) return e;
+    return ServerFailure(e.toString());
+  }
+
+  @override
+  Future<ZResult<List<T>>> getAll({ZDataRequest? request}) => _guard(() async {
+        final query = request == null
+            ? _baseQuery()
+            : _buildQuery(_baseQuery(), request);
+        final snap = await query.get();
+        return Right<ZFailure, List<T>>(_decodeDocs(snap.docs));
+      });
+
+  @override
+  Future<ZResult<T>> getById(String id) => _guard(() async {
+        final snap = await _rawCollection().doc(id).get();
+        if (!snap.exists) {
+          return Left<ZFailure, T>(
+            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+          );
+        }
+        final data = snap.data() ?? <String, dynamic>{};
+        // MAJEUR-2 : visibilité ALIGNÉE sur getAll/watch (`is_deleted == false`).
+        // Un `is_deleted` ABSENT (doc non-zcrud-native) est exclu ICI AUSSI, comme
+        // le filtre serveur l'exclut de getAll/watch → aucune divergence.
+        if (!_isVisible(data)) {
+          return Left<ZFailure, T>(
+            NotFoundFailure(
+              data[_kIsDeleted] == true
+                  ? 'Entité soft-deleted'
+                  : 'Entité non visible (is_deleted absent — hors invariant '
+                      'zcrud-native)',
+              id: id,
+              entity: _kind,
+            ),
+          );
+        }
+        final entity = _decode(id, data);
+        if (entity == null) {
+          return Left<ZFailure, T>(
+            NotFoundFailure('Document corrompu', id: id, entity: _kind),
+          );
+        }
+        return Right<ZFailure, T>(entity);
+      });
+
+  @override
+  Future<ZResult<int>> count({ZDataRequest? request}) => _guard(() async {
+        // Le tri/curseur/limit n'affectent pas un décompte : seuls les FILTRES
+        // (+ exclusion soft-deleted) comptent.
+        final query = _applyFilters(
+          _baseQuery(),
+          request?.filters ?? const <ZFilter>[],
+        );
+        final agg = await query.count().get();
+        return Right<ZFailure, int>(agg.count ?? 0);
+      });
+
+  // ───────────────────────── Écritures (AC1/5/8/10) ─────────────────────────
+
+  /// Persiste [item] en **écrasement TOTAL** (`batch.set`, JAMAIS un merge) puis
+  /// relit l'entité persistée (round-trip AC1).
+  ///
+  /// **LOW-4 — comportement full-write E5-1, INTENTIONNEL :**
+  /// - [_encode] réécrit **inconditionnellement** `is_deleted:false` +
+  ///   `updated_at=now` → re-sauver une entité **soft-deletée la RESSUSCITE**
+  ///   (redevient visible). Assumé (invariant « save ⇒ vivant »).
+  /// - tout champ hors [_toMap]/[_encode] présent sur le document existant est
+  ///   **écrasé** (`set` remplace le document entier) — aucune préservation de
+  ///   méta concurrente.
+  ///
+  /// Le **merge Last-Write-Wins** sur `updated_at` (offline-first, préservation
+  /// des écritures concurrentes) est la responsabilité d'**E5-3** — hors de cette
+  /// story.
+  @override
+  Future<ZResult<T>> save(T item, {String? collectionId}) => _guard(() async {
+        final collection = _rawCollection(collectionId);
+        // Matérialisation de l'éphémère (AD-14, invariant porté par le repo).
+        final id = item.id ?? collection.doc().id;
+        // Le corps porte TOUJOURS son `id` logique (clé du tie-break AC12) en
+        // plus des métadonnées `ZSyncMeta` fusionnées par [_encode].
+        final map = _encode(item)..[_kId] = id;
+
+        // Écriture ATOMIQUE via WriteBatch committé (AC8 — jamais partielle).
+        final batch = _firestore.batch();
+        batch.set(collection.doc(id), map);
+        await batch.commit();
+
+        // Round-trip fidèle (AC1) : relecture via la collection **typée**
+        // `withConverter<T>` — `fromFirestore` re-décode le document persisté.
+        final snap = await _typedCollection(collectionId).doc(id).get();
+        final decoded = snap.data();
+        if (decoded == null) {
+          return Left<ZFailure, T>(
+            DomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
+          );
+        }
+        return Right<ZFailure, T>(decoded);
+      });
+
+  @override
+  Future<ZResult<Unit>> softDelete(String id) =>
+      _setDeletedFlag(id, deleted: true);
+
+  @override
+  Future<ZResult<Unit>> restore(String id) =>
+      _setDeletedFlag(id, deleted: false);
+
+  /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché) via un
+  /// `WriteBatch` committé (AC8). `id` inconnu → `Left(NotFoundFailure)` (AC10).
+  Future<ZResult<Unit>> _setDeletedFlag(String id, {required bool deleted}) =>
+      _guard(() async {
+        final doc = _rawCollection().doc(id);
+        final snap = await doc.get();
+        if (!snap.exists) {
+          return Left<ZFailure, Unit>(
+            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+          );
+        }
+        final batch = _firestore.batch();
+        batch.update(doc, <String, dynamic>{
+          _kIsDeleted: deleted,
+          _kUpdatedAt: DateTime.now().toUtc().toIso8601String(),
+        });
+        await batch.commit();
+        return Right<ZFailure, Unit>(unit);
+      });
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    for (final sub in _subs) {
+      unawaited(sub.cancel());
+    }
+    _subs.clear();
+    for (final controller in _controllers) {
+      unawaited(controller.close());
+    }
+    _controllers.clear();
+  }
+}

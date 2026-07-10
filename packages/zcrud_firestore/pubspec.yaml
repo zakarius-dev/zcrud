@@ -1,6 +1,10 @@
 # zcrud_firestore — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E5-1 : devient un package FLUTTER et acquiert la SEULE arête Firebase du
+# graphe (`cloud_firestore`/`firebase_core`). C'est l'adaptateur concret du port
+# neutre `ZRepository<T>` (défini dans zcrud_core).
+# AD-5 : `cloud_firestore`/`firebase_core` vivent EXCLUSIVEMENT ici ; aucun type
+# Firestore ne fuit dans une signature publique. `zcrud_core` n'en dépend PAS.
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_firestore
 description: >-
   Adapters Firestore + Hive (offline-first).
@@ -11,7 +15,28 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # Stack de l'architecture — SEULE arête Firebase du graphe (AD-5).
+  cloud_firestore: ^6.0.0
+  firebase_core: ^4.0.0
+  # E5-2 : store LOCAL Hive (ZLocalStore par défaut, architecture.md). Hive vit
+  # EXCLUSIVEMENT ici (AD-5) ; aucun type Hive ne fuit dans une signature
+  # publique. `hive_flutter` fournit `Hive.initFlutter()` à l'app hôte (E7).
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Fidélité suffisante pour withConverter / where / orderBy / limit / startAfter
+  # / snapshots / count (E5-1). Aucune connexion réseau réelle. L'injection
+  # d'exception (AC9) se fait via une sous-classe `_ThrowingFirestore` qui lève
+  # une `FirebaseException` à `collection()` — cf. test ; `mock_exceptions`
+  # (indexé par identité d'objet) est structurellement inapplicable au fake qui
+  # renvoie une nouvelle instance de requête à chaque appel.
+  fake_cloud_firestore: ^4.0.0

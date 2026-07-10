@@ -62,6 +62,12 @@ export 'src/domain/extension/z_extension.dart';
 export 'src/domain/failures/z_failure.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
+// Ports bas-niveau offline-first (E5-2, AD-5/AD-9/AD-11) : store LOCAL source de
+// vérité `ZLocalStore<T>` + store DISTANT fire-and-forget `ZRemoteStore<T>`,
+// neutres (aucun type hive/cloud_firestore). Adaptateurs (Hive/Firestore) en
+// `zcrud_firestore`. Le merge LWW/orchestrateur (E5-3/E5-4) n'est PAS ici.
+export 'src/domain/ports/z_local_store.dart';
+export 'src/domain/ports/z_remote_store.dart';
 export 'src/domain/ports/z_repository.dart';
 // Registres ouverts d'extensibilité (E2-3, AD-3/AD-4) : container générique
 // `ZCodecRegistry<T>`, registre de modèles `ZcrudRegistry`/`ZModelCodec`

@@ -103,12 +103,15 @@ development_status:
   epic-4-retrospective: done
 
   # === E5 — Backend Firestore & offline-first (zcrud_firestore) (MVP + v1.x) ===
-  epic-5: backlog
-  e5-1-firebase-zrepository-impl: backlog
-  e5-2-zlocalstore-zremotestore: backlog
-  e5-3-offline-first-lww-soft-delete: backlog
-  e5-4-zsyncorchestrator: backlog
-  epic-5-retrospective: optional
+  # MVP LIVRE : e5-1 (FirebaseZRepositoryImpl) + e5-2 (ZLocalStore Hive / ZRemoteStore).
+  # e5-3 (merge LWW soft-delete) et e5-4 (ZSyncOrchestrator) = v1.x (cf. note epic) :
+  # DIFFERES hors du lot MVP 0.1.0 ; restent backlog jusqu'a la phase v1.x.
+  epic-5: done
+  e5-1-firebase-zrepository-impl: done
+  e5-2-zlocalstore-zremotestore: done
+  e5-3-offline-first-lww-soft-delete: backlog  # v1.x (différé hors MVP)
+  e5-4-zsyncorchestrator: backlog              # v1.x (différé hors MVP)
+  epic-5-retrospective: done
 
   # === E6 — Markdown & rich text (zcrud_markdown) (MVP) ===
   epic-6: backlog
@@ -174,7 +177,7 @@ development_status:
   # croit avec les epics (edition E3 -> liste E4 -> firestore E5 -> markdown E6 ->
   # geo/intl/export E11a). Sert de harnais de validation SM-1/SM-5/parite bindings.
   epic-ex: in-progress
-  ex-1-scaffold-edition-demo: ready-for-dev
+  ex-1-scaffold-edition-demo: done
   ex-2-list-demo: backlog
   ex-3-reste-features-demo: backlog
   epic-ex-retrospective: optional
