@@ -7,11 +7,18 @@
 # `ConstantReader`/`TypeChecker` (JAMAIS `reflectable`, JAMAIS d'exécution) et
 # émet `toMap`/`fromMap`/`copyWith` + `ZFieldSpec[]` + `register(ZcrudRegistry)`.
 name: zcrud_generator
-description: >-
-  Builder build_runner : (dé)sérialisation + ZFieldSpec + registre.
-version: 0.0.1
-publish_to: none
+description: "build_runner code generator for zcrud: (de)serialization, ZFieldSpec[] and registry from @ZcrudModel-annotated models."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_generator
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - code-generation
+  - build-runner
+  - serialization
+  - crud
 
 environment:
   sdk: ^3.12.2
@@ -22,8 +29,8 @@ environment:
 # `ZcrudRegistry` référencés par le code émis).
 # Toolchain codegen (autorisée ICI SEULEMENT — AD-1) : analyzer/build/source_gen.
 dependencies:
-  zcrud_core: ^0.0.1
-  zcrud_annotations: ^0.0.1
+  zcrud_core: ^0.1.0
+  zcrud_annotations: ^0.1.0
   # architecture.md cible analyzer ^7 ; la résolution PARTAGÉE du workspace
   # (flutter_test/test → analyzer >=8) impose ^8 ici. Variance assumée et
   # documentée (Dev Notes) : contrainte de résolution unique, pas un choix libre.

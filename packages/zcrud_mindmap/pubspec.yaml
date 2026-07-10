@@ -15,5 +15,5 @@ environment:
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 # AD-1 : composition mindmap -> markdown (rich-text) + cœur.
 dependencies:
-  zcrud_core: ^0.0.1
-  zcrud_markdown: ^0.0.1
+  zcrud_core: ^0.1.0
+  zcrud_markdown: ^0.1.0

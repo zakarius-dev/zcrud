@@ -6,11 +6,18 @@
 # Firestore ne fuit dans une signature publique. `zcrud_core` n'en dépend PAS.
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_firestore
-description: >-
-  Adapters Firestore + Hive (offline-first).
-version: 0.0.1
-publish_to: none
+description: "Firestore and Hive adapters for zcrud repositories: offline-first storage behind neutral, backend-agnostic ports."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_firestore
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - firestore
+  - firebase
+  - offline-first
+  - repository
 
 environment:
   sdk: ^3.12.2
@@ -28,7 +35,7 @@ dependencies:
   # publique. `hive_flutter` fournit `Hive.initFlutter()` à l'app hôte (E7).
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   flutter_test:

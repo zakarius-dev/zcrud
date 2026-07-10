@@ -9,11 +9,18 @@
 # tranche, ni dans l'API publique du barrel principal. ZÉRO clé/secret.
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_geo
-description: >-
-  Champs géo (modèle neutre + champ location/geoArea + carte OSM optionnelle).
-version: 0.0.1
-publish_to: none
+description: "Geo fields for zcrud: neutral location/geoArea model with an optional OpenStreetMap map adapter."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_geo
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - geolocation
+  - maps
+  - openstreetmap
+  - forms
 
 environment:
   sdk: ^3.12.2
@@ -27,7 +34,7 @@ dependencies:
   # (AD-1). Confiné à `src/presentation/adapters/` + entrée `lib/adapters/osm.dart`.
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   flutter_test:

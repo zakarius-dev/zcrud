@@ -11,5 +11,6 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+export 'src/data/z_export_api.dart' show ZExportApi;
 export 'src/data/z_export_table.dart' show ZExportTable;
 export 'src/data/z_exporter.dart' show ZExporter;

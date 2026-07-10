@@ -8,11 +8,19 @@
 # type Quill ne fuit ni dans `zcrud_core` ni dans la valeur exposée au form.
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_markdown
-description: >-
-  Édition/lecture Markdown riche (Quill + ZCodec + embeds LaTeX/tables).
-version: 0.0.1
-publish_to: none
+description: "Rich Markdown editing and reading for zcrud, built on Quill with a pluggable ZCodec and LaTeX/table embeds."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_markdown
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - markdown
+  - rich-text
+  - editor
+  - quill
+  - latex
 
 environment:
   sdk: ^3.12.2
@@ -39,7 +47,7 @@ dependencies:
   # (gate `math_lib_isolation_graph_test.dart`). Compat E1-4 : SDK `>=3.0.0 <4.0.0`
   # (satisfait par ^3.12.2) ; résolution workspace VERTE (`dart pub get --dry-run`).
   flutter_math_fork: ^0.7.4
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   flutter_test:

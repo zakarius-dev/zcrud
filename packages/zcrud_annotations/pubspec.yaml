@@ -2,11 +2,18 @@
 # Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
 # dépendances inter-packages sont posées en E1-2.
 name: zcrud_annotations
-description: >-
-  Annotations @ZcrudModel / @ZcrudField / @ZcrudId.
-version: 0.0.1
-publish_to: none
+description: "Annotations for the zcrud code generator: @ZcrudModel, @ZcrudField and @ZcrudId. Declare a model once, generate everything."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_annotations
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - annotations
+  - code-generation
+  - crud
+  - serialization
 
 environment:
   sdk: ^3.12.2
@@ -14,7 +21,7 @@ environment:
 # Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 # Tests pur-Dart (E2-4) : `package:test` seul. AUCUNE dépendance runtime lourde
 # (ni build_runner/source_gen/analyzer, ni gestionnaire d'état, ni Firebase,

@@ -8,11 +8,18 @@
 # AUCUNE clé/licence Syncfusion committée : l'enregistrement de licence est une
 # config plateforme de l'app hôte (Key Don'ts « never de secret dans un package »).
 name: zcrud_list
-description: >-
-  DynamicList (Syncfusion) derrière ZListRenderer.
-version: 0.0.1
-publish_to: none
+description: "DynamicList data-grid for zcrud powered by Syncfusion, isolated behind the neutral ZListRenderer port."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_list
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - datagrid
+  - table
+  - crud
+  - syncfusion
 
 environment:
   sdk: ^3.12.2
@@ -24,7 +31,7 @@ dependencies:
     sdk: flutter
   # Stack de l'architecture (^32.1.x) — SEULE arête Syncfusion du graphe (AD-8).
   syncfusion_flutter_datagrid: ^32.1.19
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   flutter_test:

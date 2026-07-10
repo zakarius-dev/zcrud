@@ -11,11 +11,18 @@
 # Le code manager-spécifique (get/get_it) vit EXCLUSIVEMENT ici (AD-6/AD-15) ;
 # `zcrud_core` reste STRICTEMENT inchangé.
 name: zcrud_get
-description: >-
-  Binding état/injection <-> GetX + get_it (optionnel) — cible DODLP.
-version: 0.0.1
-publish_to: none
+description: "GetX and get_it state and injection binding for zcrud (optional). Targets the DODLP host app."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_get
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - getx
+  - state-management
+  - crud
+  - forms
 
 environment:
   sdk: ^3.12.2
@@ -23,7 +30,7 @@ environment:
 # Runtime : SDK Flutter + le cœur + le SDK du manager. `get`/`get_it` NE sont PAS
 # des `zcrud_*` → aucune arête comptée par graph_proof.py (CORE OUT=0 préservé).
 dependencies:
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
   flutter:
     sdk: flutter
   get: ^4.7.2

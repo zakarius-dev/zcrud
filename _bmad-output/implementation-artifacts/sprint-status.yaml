@@ -180,13 +180,13 @@ development_status:
   epic-ex: in-progress
   ex-1-scaffold-edition-demo: done
   ex-2-list-demo: done
-  ex-3-reste-features-demo: backlog
+  ex-3-reste-features-demo: in-progress
   epic-ex-retrospective: optional
 
   # === REL — Publication pub.dev (consigne user 2026-07-10 ; publisher zakarius.com) ===
   # DIFFERE : APRES les packages MVP (E4/E5/E6/E11a complets). Licence MIT, versions
   # 0.1.0. Publication reelle = action Owner (dart pub login) ou feu vert explicite.
-  epic-rel: backlog
-  rel-1-prep-packages-publiables: backlog
+  epic-rel: in-progress
+  rel-1-prep-packages-publiables: done
   rel-2-dry-run-et-publication: backlog
   epic-rel-retrospective: optional

@@ -6,11 +6,19 @@
 # (AD-1/AD-15) : aucun `zcrud_*` (out-degree 0), aucun gestionnaire d'état
 # (Riverpod/GetX/provider), aucun backend lourd (Firebase/Syncfusion/Quill/Maps).
 name: zcrud_core
-description: >-
-  Domaine pur + moteur d'édition + ports + ZFieldSpec + l10n + ZcrudScope. Aucune dépendance lourde.
-version: 0.0.1
-publish_to: none
+description: "Pure domain and Flutter-native reactive edition engine for rich CRUD: ZFieldSpec, ports, l10n, ZcrudScope. No heavy dependencies."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_core
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - crud
+  - forms
+  - dynamic-forms
+  - state-management
 
 environment:
   sdk: ^3.12.2

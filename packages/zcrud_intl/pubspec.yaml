@@ -10,11 +10,18 @@
 # bundlé (`lib/assets/countries.json`), chargé paresseusement. ZÉRO clé/secret.
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
-description: >-
-  Champs téléphone / pays / adresse (valeurs neutres + assets pays paresseux).
-version: 0.0.1
-publish_to: none
+description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_intl
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - internationalization
+  - phone
+  - country
+  - forms
 
 environment:
   sdk: ^3.12.2
@@ -28,7 +35,7 @@ dependencies:
   # SANS clé API ni réseau (AD-12). SEULE arête téléphone du graphe (AD-1),
   # confinée à `src/presentation/z_phone_codec.dart`.
   phone_numbers_parser: ^9.0.23
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   flutter_test:

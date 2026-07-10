@@ -13,11 +13,18 @@
 # son bootstrap, jamais du package (Key Don'ts « never de secret dans un package »).
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export
-description: >-
-  Export tabulaire (DataGrid → Excel/PDF, Syncfusion) derrière une API neutre.
-version: 0.0.1
-publish_to: none
+description: "Tabular export for zcrud (DataGrid to Excel and PDF via Syncfusion) behind a neutral, byte-based API."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_export
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - export
+  - excel
+  - pdf
+  - datagrid
 
 environment:
   sdk: ^3.12.2
@@ -31,7 +38,7 @@ dependencies:
   # graphe (AD-8). Confinées à `lib/src/data/z_{excel,pdf}_exporter.dart`.
   syncfusion_flutter_xlsio: ^32.1.19
   syncfusion_flutter_pdf: ^32.1.19
-  zcrud_core: ^0.0.1
+  zcrud_core: ^0.1.0
 
 dev_dependencies:
   # Lecteur ZIP TEST-ONLY : ré-ouvre le `.xlsx` généré (un ZIP d'XML) pour
