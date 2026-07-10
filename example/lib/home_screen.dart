@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'demos/edition_demo_screen.dart';
+import 'demos/export_demo_screen.dart';
+import 'demos/geo_demo_screen.dart';
+import 'demos/intl_demo_screen.dart';
+import 'demos/list_demo_screen.dart';
+import 'demos/markdown_demo_screen.dart';
+import 'demos/offline_demo_screen.dart';
 
 /// Descripteur d'une entrée de démo par domaine (accueil, AC3/AC10).
 class _DemoEntry {
@@ -21,9 +27,12 @@ class _DemoEntry {
   final WidgetBuilder? onOpen;
 }
 
-/// Écran d'accueil : liste des démos PAR DOMAINE (AC3). Seule « Édition » est
-/// active en EX-1 ; les autres domaines (Liste/Firestore/Markdown/Geo·Intl·
-/// Export) sont présents mais DÉSACTIVÉS « à venir » (frontière EX-2/EX-3, AC10).
+/// Écran d'accueil : liste des démos PAR DOMAINE. Depuis EX-3 (CLÔTURE de l'epic
+/// EX), TOUTES les features MVP sont actives : Édition (EX-1), Liste (EX-2),
+/// Markdown (E6), Geo / Intl / Export (E11a) et Offline/Firestore (E5). Plus
+/// AUCUNE entrée « à venir » ne subsiste (flashcards E9 / mindmaps E10 = v1.x,
+/// hors périmètre — non listées). Regroupement (ambiguïté #6 tranchée) : entrées
+/// SÉPARÉES par feature (une démo dédiée chacune), plus lisibles qu'un hub.
 /// Porte aussi les bascules thème / langue / sens (RTL — AD-13).
 class HomeScreen extends StatelessWidget {
   /// Construit l'accueil avec l'état des bascules et leurs callbacks.
@@ -55,33 +64,6 @@ class HomeScreen extends StatelessWidget {
   /// Bascule clair↔sombre.
   final VoidCallback onToggleDark;
 
-  static const List<_DemoEntry> _staticEntries = <_DemoEntry>[
-    _DemoEntry(
-      title: 'Liste',
-      subtitle: 'DynamicList / Syncfusion — à venir (EX-2)',
-      icon: Icons.table_rows,
-      available: false,
-    ),
-    _DemoEntry(
-      title: 'Firestore / offline',
-      subtitle: 'Persistance offline-first — à venir (EX-3)',
-      icon: Icons.cloud_sync,
-      available: false,
-    ),
-    _DemoEntry(
-      title: 'Markdown',
-      subtitle: 'Éditeur riche Quill — à venir (EX-3)',
-      icon: Icons.notes,
-      available: false,
-    ),
-    _DemoEntry(
-      title: 'Geo / Intl / Export',
-      subtitle: 'Champs géo, téléphone, PDF/Excel — à venir (EX-3)',
-      icon: Icons.public,
-      available: false,
-    ),
-  ];
-
   List<_DemoEntry> get _entries => <_DemoEntry>[
         _DemoEntry(
           title: 'Édition',
@@ -90,7 +72,49 @@ class HomeScreen extends StatelessWidget {
           available: true,
           onOpen: (_) => const EditionDemoScreen(),
         ),
-        ..._staticEntries,
+        _DemoEntry(
+          title: 'Liste',
+          subtitle: 'DynamicList / Syncfusion : colonnes dérivées, '
+              'recherche/tri, actions, corbeille, onglets',
+          icon: Icons.table_rows,
+          available: true,
+          onOpen: (_) => const ListDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Markdown',
+          subtitle: 'ZMarkdownField : embeds LaTeX/tableau, codec Delta/Markdown',
+          icon: Icons.notes,
+          available: true,
+          onOpen: (_) => const MarkdownDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Geo',
+          subtitle: 'Champs location / geoArea via registre + carte OSM',
+          icon: Icons.map_outlined,
+          available: true,
+          onOpen: (_) => const GeoDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Intl',
+          subtitle: 'Téléphone (E.164) / pays / adresse via registre',
+          icon: Icons.public,
+          available: true,
+          onOpen: (_) => const IntlDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Export',
+          subtitle: 'ZExporter : Excel (.xlsx) / PDF via Syncfusion',
+          icon: Icons.file_download_outlined,
+          available: true,
+          onOpen: (_) => const ExportDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Offline / Firestore',
+          subtitle: 'CRUD offline via HiveZLocalStore (port ZLocalStore)',
+          icon: Icons.cloud_sync,
+          available: true,
+          onOpen: (_) => const OfflineDemoScreen(),
+        ),
       ];
 
   @override

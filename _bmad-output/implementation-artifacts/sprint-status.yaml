@@ -177,11 +177,11 @@ development_status:
   # App consommatrice (example/) demontrant TOUTES les fonctionnalites zcrud ;
   # croit avec les epics (edition E3 -> liste E4 -> firestore E5 -> markdown E6 ->
   # geo/intl/export E11a). Sert de harnais de validation SM-1/SM-5/parite bindings.
-  epic-ex: in-progress
+  epic-ex: done
   ex-1-scaffold-edition-demo: done
   ex-2-list-demo: done
-  ex-3-reste-features-demo: in-progress
-  epic-ex-retrospective: optional
+  ex-3-reste-features-demo: done
+  epic-ex-retrospective: done
 
   # === REL — Publication pub.dev (consigne user 2026-07-10 ; publisher zakarius.com) ===
   # DIFFERE : APRES les packages MVP (E4/E5/E6/E11a complets). Licence MIT, versions

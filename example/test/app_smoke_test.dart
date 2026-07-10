@@ -17,9 +17,14 @@ void main() {
     // Accueil monté avec la liste des domaines.
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Édition'), findsOneWidget);
-    // AC10 : domaines à venir présents mais désactivés (« à venir »).
     expect(find.text('Liste'), findsOneWidget);
-    expect(find.widgetWithText(Chip, 'à venir'), findsWidgets);
+    // EX-3 (AC9) : TOUTES les features MVP sont actives ; plus AUCUNE entrée
+    // « à venir » ne subsiste (l'epic EX est clôturé). Les 5 nouvelles démos
+    // sont présentes.
+    expect(find.widgetWithText(Chip, 'à venir'), findsNothing);
+    for (final title in <String>['Markdown', 'Geo', 'Intl', 'Export']) {
+      expect(find.text(title), findsOneWidget, reason: '$title attendu');
+    }
 
     // Navigation vers la démo Édition.
     await tester.tap(find.text('Édition'));

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_list/zcrud_list.dart';
 
+import 'demos/demo_registry.dart';
 import 'home_screen.dart';
 import 'support/demo_file_picker.dart';
 
@@ -24,6 +26,10 @@ class _ExampleAppState extends State<ExampleApp> {
   Locale _locale = const Locale('fr');
   bool _rtl = false;
   bool _dark = false;
+
+  /// Registre de widgets PEUPLÉ (géo/intl), construit UNE fois (AD-4 : jamais un
+  /// singleton mutable global) et injecté au `ZcrudScope` RACINE ci-dessous.
+  final ZWidgetRegistry _widgetRegistry = buildDemoWidgetRegistry();
 
   void _toggleLocale() => setState(
         () => _locale = _locale.languageCode == 'fr'
@@ -62,6 +68,26 @@ class _ExampleAppState extends State<ExampleApp> {
         final scoped = ZcrudScope(
           theme: _demoZcrudTheme,
           filePicker: const DemoFilePicker(),
+          // Backend Syncfusion de la LISTE injecté au NIVEAU RACINE (EX-2, AC5/
+          // AC8/AC9). C'est le SEUL point d'injection re-propagé sous chaque
+          // binding par `_BindingSeamForwarder` (il ne forwarde que
+          // `root.listRenderer`, cf. binding_selector.dart) : injecter plus bas
+          // masquerait le renderer sous get/riverpod/provider → `ZScopeError`
+          // sur 3 des 4 voies. À la racine = parité gratuite des 4 bindings.
+          // AD-8/SM-5 : Syncfusion vient EXCLUSIVEMENT de `zcrud_list`, tiré par
+          // l'APP (jamais `zcrud_core`).
+          listRenderer: const ZSfDataGridRenderer(),
+          // Registre géo/intl injecté au NIVEAU RACINE (EX-3, AC8/AC10). Comme
+          // `listRenderer`, c'est le SEUL point re-propagé sous chaque binding
+          // par `_BindingSeamForwarder` (il forwarde `root.widgetRegistry`,
+          // cf. binding_selector.dart:83). Injecter plus bas le masquerait sous
+          // get/riverpod/provider (`maybeOf` = plus proche) → les champs
+          // location/geoArea/phoneNumber/country/address retomberaient sur
+          // `ZUnsupportedFieldWidget` sur 3 des 4 voies. À la racine = parité
+          // gratuite des 4 bindings. SM-5 : flutter_map (OSM via l'entrée dédiée)
+          // et l'intl viennent des satellites tirés par l'APP, jamais de
+          // `zcrud_core`.
+          widgetRegistry: _widgetRegistry,
           child: child ?? const SizedBox.shrink(),
         );
         return _rtl

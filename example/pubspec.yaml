@@ -28,9 +28,14 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  # Cœur + les 3 bindings (parité AD-15). AUCUN package de démo E4/E5/E6/E11a
-  # (`zcrud_list`/`_firestore`/`_markdown`/`_geo`/`_intl`/`_export`) — frontière
-  # EX-1/EX-2/EX-3 (AC10), prouvée par `test/boundary_deps_test.dart`.
+  # Cœur + les 3 bindings (parité AD-15) + `zcrud_list` (démo LISTE EX-2 : tire
+  # transitivement `syncfusion_flutter_datagrid`, SM-5 — l'APP tire Syncfusion,
+  # jamais `zcrud_core`). Frontière EX-3 (CLÔTURE de l'epic EX) : les 5 satellites
+  # E5/E6/E11a (`_markdown`/`_geo`/`_intl`/`_export`/`_firestore`) sont désormais
+  # AUTORISÉS — la démo exerce Markdown (Quill), Geo (flutter_map OSM), Intl,
+  # Export (Syncfusion xlsio/pdf) et l'offline (Hive) via ces satellites, jamais
+  # via `zcrud_core` (SM-5). `zcrud_flashcard`/`zcrud_mindmap` (E9/E10) restent
+  # INTERDITS (v1.x), prouvé par `test/boundary_deps_test.dart`.
   zcrud_core:
     path: ../packages/zcrud_core
   zcrud_get:
@@ -39,11 +44,41 @@ dependencies:
     path: ../packages/zcrud_riverpod
   zcrud_provider:
     path: ../packages/zcrud_provider
+  zcrud_list:
+    path: ../packages/zcrud_list
+  zcrud_markdown:
+    path: ../packages/zcrud_markdown
+  zcrud_geo:
+    path: ../packages/zcrud_geo
+  zcrud_intl:
+    path: ../packages/zcrud_intl
+  zcrud_export:
+    path: ../packages/zcrud_export
+  zcrud_firestore:
+    path: ../packages/zcrud_firestore
+  # Transitifs via `zcrud_firestore` mais RÉFÉRENCÉS DIRECTEMENT par l'app
+  # (`depend_on_referenced_packages`) : `Hive.initFlutter()` (main.dart, démo
+  # offline AC7) et `Hive.init`/`Box` (test hermétique temp-dir). Aucun autre
+  # type Hive ne fuit (le port `ZLocalStore` reste neutre). Versions alignées
+  # sur `zcrud_firestore` (hive ^2.2.3 / hive_flutter ^1.1.0).
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  # Test-only : la démo LISTE (EX-2) vérifie que le rendu passe par le backend
+  # Syncfusion (colonnes dérivées, `SfDataGrid`) tiré via `zcrud_list`. Ce type
+  # est transitif ; on le déclare ici pour l'importer explicitement dans le test
+  # (`depend_on_referenced_packages`). Runtime : Syncfusion reste tiré via
+  # `zcrud_list` (SM-5), jamais `zcrud_core`.
+  syncfusion_flutter_datagrid: ^32.1.19
+
+# Icônes Material requises par l'app (AD-13) ET par le backend Syncfusion
+# (`zcrud_list`/`SfDataGrid` déclarent `uses-material-design: true`).
+flutter:
+  uses-material-design: true
 
 # Réconcilie la source path↔hosted des `zcrud_*` (les bindings déclarent
 # `zcrud_core: ^0.0.1` hosted). Réservé à l'app isolée ; n'affecte pas les 14.
@@ -56,3 +91,24 @@ dependency_overrides:
     path: ../packages/zcrud_riverpod
   zcrud_provider:
     path: ../packages/zcrud_provider
+  # `zcrud_list` déclare `resolution: workspace` + épingle `zcrud_core: ^0.0.1`
+  # hosted : l'override `path:` réconcilie source path↔hosted (voie standalone
+  # EX-1, aucun ajout au `workspace:` racine). Tire Syncfusion dans le lock
+  # PROPRE de l'app (jamais dans le lock racine des 14 — SM-5/AD-15).
+  zcrud_list:
+    path: ../packages/zcrud_list
+  # Frontière EX-3 : les 5 satellites déclarent `resolution: workspace` +
+  # épinglent `zcrud_core: ^0.1.0` hosted ; l'override `path:` réconcilie source
+  # path↔hosted (voie standalone, aucun ajout au `workspace:` racine). Tirent
+  # Quill / flutter_map+latlong2 / Syncfusion xlsio+pdf / cloud_firestore+
+  # firebase_core+hive dans le lock PROPRE de l'app (jamais le lock racine — SM-5).
+  zcrud_markdown:
+    path: ../packages/zcrud_markdown
+  zcrud_geo:
+    path: ../packages/zcrud_geo
+  zcrud_intl:
+    path: ../packages/zcrud_intl
+  zcrud_export:
+    path: ../packages/zcrud_export
+  zcrud_firestore:
+    path: ../packages/zcrud_firestore
