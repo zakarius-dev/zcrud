@@ -1,9 +1,16 @@
 # zcrud_geo — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E11a-1 : `zcrud_geo` devient un package FLUTTER (champ géo `location`/`geoArea`
+# servi via `ZWidgetRegistry`, patron AD-2) et acquiert la SEULE arête vers un
+# SDK carte du graphe : `flutter_map` (OSM, SANS clé API — AD-12) + `latlong2`.
+# AD-1/AD-12 : ces libs vivent EXCLUSIVEMENT ici (jamais dans `zcrud_core`) et
+# sont CONFINÉES à l'entrée adaptateur concret (`lib/adapters/osm.dart` →
+# `src/presentation/adapters/z_osm_map_adapter.dart`). Aucun type carte
+# (`LatLng`/`MapController`) ne fuit ni dans `zcrud_core`, ni dans la valeur de
+# tranche, ni dans l'API publique du barrel principal. ZÉRO clé/secret.
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_geo
 description: >-
-  Champs géo (adapters Google/OSM optionnels).
+  Champs géo (modèle neutre + champ location/geoArea + carte OSM optionnelle).
 version: 0.0.1
 publish_to: none
 resolution: workspace
@@ -11,7 +18,20 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # SDK carte OSM (sans clé API → alignement AD-12) — SEULE arête carte du graphe
+  # (AD-1). Confiné à `src/presentation/adapters/` + entrée `lib/adapters/osm.dart`.
+  flutter_map: ^8.3.1
+  latlong2: ^0.10.1
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

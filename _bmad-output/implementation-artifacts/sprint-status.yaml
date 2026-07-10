@@ -114,19 +114,20 @@ development_status:
   epic-5-retrospective: done
 
   # === E6 — Markdown & rich text (zcrud_markdown) (MVP) ===
-  epic-6: backlog
-  e6-1-editeur-quill-richtext-isole: backlog
-  e6-2-zcodec-pluggable: backlog
-  e6-3-embed-latex: backlog
+  epic-6: in-progress
+  e6-1-editeur-quill-richtext-isole: done
+  e6-2-zcodec-pluggable: done
+  e6-3-embed-latex: in-progress
   e6-4-embed-tableau: backlog
   epic-6-retrospective: optional
 
   # === E11a — Lot parite DODLP (sous-ensemble geo/intl/export) (MVP, precede E7) ===
-  epic-11a: backlog
-  e11a-1-zcrud-geo-champ-geo-carte: backlog
-  e11a-2-zcrud-intl-telephone-pays-adresse: backlog
-  e11a-3-zcrud-export-datagrid-excel-pdf: backlog
-  epic-11a-retrospective: optional
+  # Parallélisé avec E6 (packages disjoints : zcrud_geo/intl/export vs zcrud_markdown).
+  epic-11a: done
+  e11a-1-zcrud-geo-champ-geo-carte: done
+  e11a-2-zcrud-intl-telephone-pays-adresse: done
+  e11a-3-zcrud-export-datagrid-excel-pdf: done
+  epic-11a-retrospective: done
 
   # === E7 — Integration DODLP (banc d'essai prioritaire) (MVP) ===
   # DIFFERE (consigne user, 2026-07-10) : migration REELLE dans l'app DODLP (code
@@ -178,7 +179,7 @@ development_status:
   # geo/intl/export E11a). Sert de harnais de validation SM-1/SM-5/parite bindings.
   epic-ex: in-progress
   ex-1-scaffold-edition-demo: done
-  ex-2-list-demo: backlog
+  ex-2-list-demo: done
   ex-3-reste-features-demo: backlog
   epic-ex-retrospective: optional
 

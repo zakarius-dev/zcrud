@@ -1,9 +1,17 @@
 # zcrud_intl — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E11a-2 : `zcrud_intl` devient un package FLUTTER (champs téléphone/pays/adresse
+# servis via `ZWidgetRegistry`, patron AD-2) et acquiert la SEULE arête vers une
+# lib téléphone du graphe : `phone_numbers_parser` (pur-Dart, métadonnées
+# bundlées, SANS clé API ni réseau — AD-12).
+# AD-1/AD-12 : cette lib vit EXCLUSIVEMENT ici (jamais dans `zcrud_core`) et est
+# CONFINÉE à l'unique pont `src/presentation/z_phone_codec.dart`. Aucun type lib
+# (`PhoneNumber`/`IsoCode`) ne fuit ni dans `zcrud_core`, ni dans la valeur de
+# tranche, ni dans l'API publique du barrel. Le catalogue pays est un asset JSON
+# bundlé (`lib/assets/countries.json`), chargé paresseusement. ZÉRO clé/secret.
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
 description: >-
-  Téléphone / pays / devise (assets).
+  Champs téléphone / pays / adresse (valeurs neutres + assets pays paresseux).
 version: 0.0.1
 publish_to: none
 resolution: workspace
@@ -11,7 +19,23 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # Lib téléphone pur-Dart (parse/valide/formate E.164), métadonnées bundlées,
+  # SANS clé API ni réseau (AD-12). SEULE arête téléphone du graphe (AD-1),
+  # confinée à `src/presentation/z_phone_codec.dart`.
+  phone_numbers_parser: ^9.0.23
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  # Catalogue pays bundlé (FR-21) — chargé paresseusement via rootBundle.
+  assets:
+    - lib/assets/countries.json

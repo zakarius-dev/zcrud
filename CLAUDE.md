@@ -42,7 +42,7 @@ Chaque étape BMAD est exécutée via le tool **`Workflow`** avec un **script à
   | `retrospective` | **medium** |
 
 - ✅ **Modèle** : hérité de l'orchestrateur → paramètre `model` **OMIS** sur les `agent()` BMAD (planification **et** développement). Les tâches **hors BMAD** (exploration read-only, remédiations massives) → `model:'sonnet'`.
-- ✅ **Un seul stage `agent()` par étape**, un seul en vol à la fois (stories séquentielles ; jamais deux écritures concurrentes du sprint-status).
+- ✅ **Un seul stage `agent()` par étape**. Jusqu'à **3 étapes en vol simultanément**, mais UNIQUEMENT si elles relèvent de **stories/epics parallélisables à fichiers disjoints** (cf. règle parallélisation ci-dessous) ; jamais deux écritures concurrentes du sprint-status (sérialisées par l'orchestrateur).
 - ✅ Si le tool `Skill` n'est pas invocable dans l'agent de Workflow, bascule explicite sur le **fallback disque** (`.claude/skills/bmad-*/SKILL.md` + fichiers annexes), signalée dans le rapport. **Ne jamais simuler une étape de mémoire.**
 
 ## Surveillance des sous-agents en arrière-plan (NON-NÉGOCIABLE)
@@ -278,7 +278,7 @@ backlog → ready-for-dev → in-progress → review → done
 
 ### Règles générales (NON-NÉGOCIABLES)
 
-- 🚫 **Jamais** plusieurs stories en parallèle — une seule à la fois. **Exception encadrée** : deux stories **complètement indépendantes** (epics parallélisables, **fichiers disjoints**, aucune dépendance croisée, 2 max). En cas de doute → séquentiel. Les écritures du sprint-status restent **sérialisées et ciblées par l'orchestrateur** ; les sous-agents `dev-story`/`code-review` ne touchent PAS au sprint-status.
+- 🚫 **Jamais** plusieurs stories en parallèle par défaut — une seule à la fois. **Exception encadrée** : jusqu'à **3 stories complètement indépendantes** (epics parallélisables, **fichiers disjoints**, aucune dépendance croisée, **3 max**). En cas de doute → séquentiel. Garde-fous obligatoires quand on parallélise : (1) **packages de code disjoints** entre les stories en vol ; (2) le **seul point de contact possible = `zcrud_core`** — si plus d'une story doit y écrire, **re-séquencer ce fichier précis** (une seule story touche `zcrud_core` à la fois) ; (3) l'orchestrateur rejoue ses **vérifs vertes par package ciblé** pendant qu'un autre workstream écrit (pas de `melos test` global au milieu d'un dev actif), vérif globale seulement quand tous les workstreams sont au repos ; (4) **health-check** de chaque workstream. Les écritures du sprint-status restent **sérialisées et ciblées par l'orchestrateur** ; les sous-agents `dev-story`/`code-review` ne touchent PAS au sprint-status.
 - 🚫 **Jamais** sauter le `code-review` — même pour une story d'un paragraphe.
 - 🚫 **Jamais** committer au milieu d'une story — commit en fin d'epic.
 - 🚫 **Jamais** ignorer un finding critique/majeur — corriger ou justifier ; les MEDIUM corrigés dès que possible (sinon justifiés).

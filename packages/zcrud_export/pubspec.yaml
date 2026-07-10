@@ -1,9 +1,20 @@
 # zcrud_export — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E11a-3 : `zcrud_export` devient un package FLUTTER (les libs Syncfusion xlsio/pdf
+# exigent le SDK Flutter) et acquiert la SEULE arête vers les SDK d'export du
+# graphe : `syncfusion_flutter_xlsio` (Excel) + `syncfusion_flutter_pdf` (PDF).
+# AD-1/AD-8/SM-5 : ces libs vivent EXCLUSIVEMENT ici (jamais dans `zcrud_core`) et
+# sont CONFINÉES aux impls concrètes `lib/src/data/z_excel_exporter.dart` /
+# `z_pdf_exporter.dart`. Aucun type Syncfusion (`Workbook`/`PdfDocument`/…) ne
+# fuit dans `zcrud_core`, ni dans une signature publique de `ZExporter`, ni dans
+# le barrel : la sortie est en BYTES NEUTRES (`Uint8List`). Un consommateur qui
+# n'importe pas `zcrud_export` (ex. `zcrud_markdown`) ne tire NI Excel NI PDF.
+# AD-12 : ZÉRO clé/licence Syncfusion committée — l'enregistrement de licence
+# (`SyncfusionLicense.registerLicense`) est une config plateforme de l'app hôte à
+# son bootstrap, jamais du package (Key Don'ts « never de secret dans un package »).
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export
 description: >-
-  Export PDF / Excel (Syncfusion).
+  Export tabulaire (DataGrid → Excel/PDF, Syncfusion) derrière une API neutre.
 version: 0.0.1
 publish_to: none
 resolution: workspace
@@ -11,7 +22,25 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # Stack de l'architecture (^32.1.x) — SEULES arêtes Syncfusion d'export du
+  # graphe (AD-8). Confinées à `lib/src/data/z_{excel,pdf}_exporter.dart`.
+  syncfusion_flutter_xlsio: ^32.1.19
+  syncfusion_flutter_pdf: ^32.1.19
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  # Lecteur ZIP TEST-ONLY : ré-ouvre le `.xlsx` généré (un ZIP d'XML) pour
+  # vérifier le CONTENU réel des cellules (xlsio est write-only). Transitif de
+  # `syncfusion_flutter_xlsio` ; épinglé ici pour un import de test explicite.
+  # N'apparaît PAS en dépendance runtime → aucune fuite dans l'API publique.
+  archive: ^4.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
