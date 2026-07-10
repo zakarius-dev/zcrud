@@ -37,12 +37,18 @@ export 'src/domain/data/z_data_state.dart';
 // `ZValidatorSpec` (déclaratif, aucune closure), `ZFieldChoice`, `ZCondition`
 // (displayCondition déclarative, AD-2), base d'extension `ZFieldConfig` (+
 // configs triviales pur-cœur texte/nombre/date), stratégie `ZFieldRename`.
+export 'src/domain/edition/app_file.dart';
 export 'src/domain/edition/edition_field_type.dart';
 export 'src/domain/edition/z_condition.dart';
+// Évaluateur PUR de `ZCondition` contre l'état de formulaire (E3-4, AD-2) :
+// `evaluateZCondition` + helper `zIsTruthy` + extraction des champs de garde
+// `zGuardFieldsOf` (souscription CIBLÉE du sélecteur de visibilité — SM-1).
+export 'src/domain/edition/z_condition_evaluator.dart';
 export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_spec.dart';
+export 'src/domain/edition/z_sub_list_config.dart';
 export 'src/domain/edition/z_validator_spec.dart';
 // Slots d'extensibilité (E2-3, AD-4/AD-10) : slot type additif VERSIONNÉ
 // `ZExtension` (parsing défensif `guard`), mixin `ZExtensible` (`extension` +
@@ -50,6 +56,7 @@ export 'src/domain/edition/z_validator_spec.dart';
 export 'src/domain/extension/z_extensible.dart';
 export 'src/domain/extension/z_extension.dart';
 export 'src/domain/failures/z_failure.dart';
+export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
 export 'src/domain/ports/z_repository.dart';
 // Registres ouverts d'extensibilité (E2-3, AD-3/AD-4) : container générique
@@ -74,6 +81,70 @@ export 'src/domain/z_core_api.dart';
 // générique `ZcrudLocalizations`/`ZcrudLocalizationsDelegate` + registre
 // `ZcrudLabels` + helper `label(context, key)` ; `ZcrudTheme` (ThemeExtension,
 // repli `Theme.of`, aucun style codé en dur). Ordre alpha (directives_ordering).
+// Moteur d'édition granulaire (E3-1, AD-2/SM-1) : `DynamicEdition` (formulaire
+// de référence, `ListView.builder` + sections visuelles, écoute STRUCTURELLE
+// only) + `ZEditionField` (champ hôte scellé sur sa tranche via
+// `ZFieldListenableBuilder`, `TextEditingController` stable, saisie sens unique).
+// Dispatcher de champ par type + familles de base (E3-3a, AD-2/AD-13/FR-23) :
+// classification exhaustive `EditionFieldType → EditionFamily` (`familyOf`, 0
+// default), hôte-dispatcher `ZFieldWidget` (réutilise slice + stabilité E3-2),
+// widgets par famille (texte/nombre/date/booléen/select/relation) + repli
+// contrôlé `ZUnsupportedFieldWidget` (types servis ailleurs — E3-3b/E3-3c/
+// registre). Place stable garantie par `DynamicEdition` (KeyedSubtree, L3/AC7).
+export 'src/presentation/edition/dynamic_edition.dart';
+export 'src/presentation/edition/edition_field_family.dart';
+export 'src/presentation/edition/families/z_app_file_field_widget.dart';
+export 'src/presentation/edition/families/z_boolean_field_widget.dart';
+export 'src/presentation/edition/families/z_color_field_widget.dart';
+export 'src/presentation/edition/families/z_date_field_widget.dart';
+export 'src/presentation/edition/families/z_dynamic_item_field_widget.dart';
+export 'src/presentation/edition/families/z_free_widget_field_widget.dart';
+export 'src/presentation/edition/families/z_number_field_widget.dart';
+export 'src/presentation/edition/families/z_rating_field_widget.dart';
+export 'src/presentation/edition/families/z_relation_field_widget.dart';
+export 'src/presentation/edition/families/z_row_chips_field_widget.dart';
+export 'src/presentation/edition/families/z_select_field_widget.dart';
+export 'src/presentation/edition/families/z_signature_field_widget.dart';
+export 'src/presentation/edition/families/z_slider_field_widget.dart';
+export 'src/presentation/edition/families/z_sub_list_field_widget.dart';
+export 'src/presentation/edition/families/z_tags_field_widget.dart';
+export 'src/presentation/edition/families/z_text_field_widget.dart';
+export 'src/presentation/edition/families/z_unsupported_field_widget.dart';
+// Soumission agrégée + états UI + confirmation d'abandon (E3-6, AD-11/AD-2/AD-15) :
+// `ZEditionSubmitController` (validation agrégée toutes-étapes + seam `onSubmit`
+// `Either<ZFailure,T>`, états `ZSubmissionState` idle/inProgress/success/failure —
+// pont `AsyncValue.error` au binding, jamais dans le cœur), `ZSubmitButton`
+// (chrome accessible scellé sur l'état), `ZDiscardGuard` (PopScope-like, seam
+// `onConfirmDiscard`, aucune dép routing), `ZCrossFieldValidator` (inter-champs
+// `match`/`minKey`/`maxKey` en closures capturant le controller — report b).
+export 'src/presentation/edition/z_cross_field_validator.dart';
+export 'src/presentation/edition/z_discard_guard.dart';
+export 'src/presentation/edition/z_edition_field.dart';
+export 'src/presentation/edition/z_field_widget.dart';
+// Seam d'acquisition de fichier injecté (E3-3c, AD-1/AD-6) : interface `ZFilePicker`
+// (impl concrète image_picker/file_picker = app/binding E7, jamais le cœur).
+export 'src/presentation/edition/z_file_picker.dart';
+// Grille responsive 12 colonnes du moteur d'édition (E3-4, FR-3/AD-13) :
+// descripteur de span par breakpoint `ZResponsiveSpan`, seuils `ZBreakpoint`/
+// `ZResponsiveBreakpoints`, widget de disposition directionnel `ZResponsiveGrid`.
+export 'src/presentation/edition/z_responsive_grid.dart';
+// Assistant multi-étapes (E3-5, AD-2/AD-13/SM-1) : `ZStepperEdition` partitionne
+// le MÊME `ZFormController` en étapes séquencées (réutilise `DynamicEdition` par
+// étape) ; validation PAR ÉTAPE (gate « suivant » sur validateurs E3-2), état
+// préservé en va-et-vient (controller unique), chrome scellé sur des canaux
+// STRUCTURELS (SM-1). `ZEditionStep` = descripteur présentation (titre + noms).
+export 'src/presentation/edition/z_stepper_edition.dart';
+export 'src/presentation/edition/z_submission.dart';
+export 'src/presentation/edition/z_submit_button.dart';
+// Compilateur mémoïsable `ZValidatorSpec[] → FormFieldValidator` (E3-2, AD-2) :
+// projette la donnée déclarative en validateur EXÉCUTABLE champ-local via
+// `form_builder_validators` (jamais `flutter_form_builder`). Réutilisé par E3-5.
+export 'src/presentation/edition/z_validator_compiler.dart';
+// Registre de widgets d'édition injecté (E3-3b-1, AD-4) : `ZWidgetRegistry`
+// (instanciable, jamais un singleton statique) + `ZFieldWidgetContext`/
+// `ZFieldWidgetBuilder`. Sert les types dont le widget vit AILLEURS (markdown→E6,
+// géo/tél→E11a, `custom`→app) sans que le cœur importe ces packages (OUT=0).
+export 'src/presentation/edition/z_widget_registry.dart';
 export 'src/presentation/l10n/z_labels.dart';
 export 'src/presentation/l10n/z_localizations.dart';
 export 'src/presentation/theme/z_theme.dart';

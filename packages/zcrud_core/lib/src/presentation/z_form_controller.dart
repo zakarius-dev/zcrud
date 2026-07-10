@@ -44,6 +44,7 @@ class ZFormController extends ChangeNotifier {
     if (initialValues != null) {
       initialValues.forEach((name, value) {
         _slices[name] = ValueNotifier<Object?>(value);
+        _baseline[name] = value;
       });
     }
     final initial =
@@ -61,6 +62,34 @@ class ZFormController extends ChangeNotifier {
   /// signal qui déclenche `notifyListeners()` du contrôleur (voir
   /// [setVisibleFields]). Un [setValue] ne le modifie jamais.
   late final ValueNotifier<List<String>> _visibleFields;
+
+  /// Empreinte de l'**état initial** (baseline) servant à dériver [isDirty]
+  /// (E3-6, AC7). Capturée à la construction depuis `initialValues`, re-capturée
+  /// par [markPristine]/[reseed], restaurée par [reset]. Pur-données (jamais un
+  /// callback/Widget — AD-3).
+  final Map<String, Object?> _baseline = <String, Object?>{};
+
+  /// Ensemble des champs dont la valeur **s'écarte** de la baseline. [isDirty]
+  /// en est dérivé (`isNotEmpty`) — permet un toggle au **flip** uniquement (AC8).
+  final Set<String> _dirtyFields = <String>{};
+
+  /// Canal *dirty* **dédié** (E3-6, AC7/AC8) : ne notifie JAMAIS les tranches ni
+  /// le `notifyListeners()` global — un widget « bannière dirty » / « bouton
+  /// enregistrer » n'écoute QUE ce `ValueListenable<bool>` (SM-1 intact).
+  final ValueNotifier<bool> _isDirty = ValueNotifier<bool>(false);
+
+  /// Canal de **révélation d'erreurs** (E3-6, AC2) : époque incrémentée par la
+  /// soumission agrégée en échec de validation pour révéler les messages de
+  /// TOUTES les familles (y compris non-texte) SANS `Form`/`FormBuilder` global
+  /// (AD-2). N'est PAS le canal structurel `visibleFields` (aucun
+  /// `notifyListeners()` global). Remis à `0` par [reset].
+  final ValueNotifier<int> _reveal = ValueNotifier<int>(0);
+
+  /// Canal de **write-back externe** (E3-6, AC13) : révision incrémentée par
+  /// [reset]/[reseed] pour signaler aux widgets à buffer d'édition interne
+  /// (texte/signature/mini-CRUD/select bufferisé) de re-lire `valueOf` dans leur
+  /// buffer — **uniquement hors focus** (jamais pendant un geste/frappe, FR-1).
+  final ValueNotifier<int> _reseedRevision = ValueNotifier<int>(0);
 
   /// Retourne la **tranche réactive** du champ [name].
   ///
@@ -87,6 +116,92 @@ class ZFormController extends ChangeNotifier {
   /// est un no-op natif de [ValueNotifier] (pas de notification superflue).
   void setValue(String name, Object? value) {
     _slice(name).value = value;
+    _updateDirty(name, value);
+  }
+
+  /// Met à jour le suivi *dirty* pour le champ [name] passé à [value] et ne
+  /// **toggle** [_isDirty] que si le booléen agrégé **change** (AC8). N'émet
+  /// aucun `notifyListeners()` global ni notification de tranche tierce.
+  void _updateDirty(String name, Object? value) {
+    final differs = value != _baseline[name];
+    final was = _dirtyFields.contains(name);
+    if (differs && !was) {
+      _dirtyFields.add(name);
+    } else if (!differs && was) {
+      _dirtyFields.remove(name);
+    }
+    final now = _dirtyFields.isNotEmpty;
+    if (now != _isDirty.value) _isDirty.value = now;
+  }
+
+  /// Snapshot **immuable** des valeurs de toutes les tranches (`name → valeur`).
+  ///
+  /// Données **pures** (jamais un `Widget`/`callback`/`BuildContext` — AC3/AD-3) :
+  /// c'est cet objet qui est transmis au seam `onSubmit` (voir
+  /// `ZEditionSubmitController`), jamais le contrôleur ni une tranche.
+  Map<String, Object?> get values => Map<String, Object?>.unmodifiable(
+        <String, Object?>{
+          for (final e in _slices.entries) e.key: e.value.value,
+        },
+      );
+
+  /// `ValueListenable<bool>` *dirty* **dédié** (AC7) : `true` dès qu'au moins un
+  /// champ s'écarte de la baseline ; revient à `false` quand tous y reviennent
+  /// (ou après [reset]/[markPristine]). Écoute CIBLÉE (jamais le canal global).
+  ValueListenable<bool> get isDirty => _isDirty;
+
+  /// Canal de révélation d'erreurs (époque). Les champs l'observent pour révéler
+  /// leur message à une soumission agrégée en échec (AC2), texte comme non-texte.
+  ValueListenable<int> get reveal => _reveal;
+
+  /// Canal de write-back externe (révision) observé par les widgets à buffer
+  /// interne pour se re-amorcer **hors focus** sur [reset]/[reseed] (AC13).
+  ValueListenable<int> get reseedRevision => _reseedRevision;
+
+  /// Demande la **révélation** des erreurs de validation (incrémente l'époque).
+  /// Appelé par la soumission agrégée en échec de validation (AC1/AC2).
+  void revealErrors() => _reveal.value = _reveal.value + 1;
+
+  /// Re-capture la **baseline** depuis les valeurs courantes ⇒ [isDirty] repasse
+  /// à `false` (AC7). Appelé après une soumission réussie (`onSubmit` → `Right`).
+  /// N'affecte NI la révélation NI la révision de re-seed.
+  void markPristine() {
+    _baseline
+      ..clear()
+      ..addEntries(
+        _slices.entries.map((e) => MapEntry<String, Object?>(e.key, e.value.value)),
+      );
+    _dirtyFields.clear();
+    if (_isDirty.value) _isDirty.value = false;
+  }
+
+  /// **Réinitialise** le formulaire à sa baseline courante (AC13) : restaure la
+  /// valeur baseline de chaque tranche, efface l'état *dirty* et la révélation,
+  /// puis incrémente [reseedRevision] pour re-amorcer les widgets bufferisés
+  /// **hors focus**. Une saisie en cours (champ focalisé) n'est pas écrasée : le
+  /// re-amorçage est différé à la perte de focus par le widget (FR-1).
+  void reset() {
+    for (final entry in _slices.entries) {
+      entry.value.value = _baseline[entry.key];
+    }
+    _dirtyFields.clear();
+    if (_isDirty.value) _isDirty.value = false;
+    _reveal.value = 0;
+    _reseedRevision.value = _reseedRevision.value + 1;
+  }
+
+  /// **Recharge** des valeurs EXTERNES autoritaires (AC13, ambiguïté #3) : écrit
+  /// [values] dans les tranches, **re-définit la baseline** sur ces valeurs
+  /// (⇒ non-dirty), puis incrémente [reseedRevision] pour re-amorcer les widgets
+  /// bufferisés hors focus. Sert le chargement async d'un enregistrement (E7).
+  void reseed(Map<String, Object?> values) {
+    values.forEach((name, value) {
+      _slice(name).value = value;
+      _baseline[name] = value;
+    });
+    _dirtyFields.clear();
+    if (_isDirty.value) _isDirty.value = false;
+    _reseedRevision.value = _reseedRevision.value + 1;
   }
 
   /// Canal **structurel** : liste ordonnée des champs visibles.
@@ -114,6 +229,9 @@ class ZFormController extends ChangeNotifier {
     }
     _slices.clear();
     _visibleFields.dispose();
+    _isDirty.dispose();
+    _reveal.dispose();
+    _reseedRevision.dispose();
     super.dispose();
   }
 }

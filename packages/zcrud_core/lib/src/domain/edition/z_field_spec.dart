@@ -87,6 +87,41 @@ class ZFieldSpec {
   /// `true` si le champ porte `@ZcrudId` (clé d'identité opaque).
   final bool isId;
 
+  /// Copie la spec en surchargeant les champs fournis (identité de valeur
+  /// préservée pour les autres). Additif — sert notamment au **mode lecture
+  /// global** d'E3-4 (`spec.copyWith(readOnly: true)`), sans réécrire les
+  /// familles qui respectent déjà `field.readOnly`.
+  ZFieldSpec copyWith({
+    String? name,
+    EditionFieldType? type,
+    String? label,
+    List<ZValidatorSpec>? validators,
+    ZFieldConfig? config,
+    List<ZFieldChoice>? choices,
+    ZCondition? condition,
+    bool? searchable,
+    Object? defaultValue,
+    bool? readOnly,
+    bool? showIfNull,
+    bool? multiple,
+    bool? isId,
+  }) =>
+      ZFieldSpec(
+        name: name ?? this.name,
+        type: type ?? this.type,
+        label: label ?? this.label,
+        validators: validators ?? this.validators,
+        config: config ?? this.config,
+        choices: choices ?? this.choices,
+        condition: condition ?? this.condition,
+        searchable: searchable ?? this.searchable,
+        defaultValue: defaultValue ?? this.defaultValue,
+        readOnly: readOnly ?? this.readOnly,
+        showIfNull: showIfNull ?? this.showIfNull,
+        multiple: multiple ?? this.multiple,
+        isId: isId ?? this.isId,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

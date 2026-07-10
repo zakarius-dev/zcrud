@@ -79,16 +79,19 @@ development_status:
   epic-2-retrospective: done
 
   # === E3 — Moteur DynamicEdition a rebuilds granulaires (MVP) ===
-  epic-3: backlog
-  e3-1-rendu-champ-tranche: backlog
-  e3-2-controllers-keys-stables: backlog
-  e3-3a-dispatcher-familles-base: backlog
-  e3-3b-familles-avancees-sous-listes: backlog
-  e3-3c-champ-fichier-image-document: backlog
-  e3-4-sections-conditionnels-lecture-grille: backlog
-  e3-5-stepper-multi-etapes: backlog
-  e3-6-soumission-create-update-dirty: backlog
-  epic-3-retrospective: optional
+  epic-3: done
+  e3-1-rendu-champ-tranche: done
+  e3-2-controllers-keys-stables: done
+  e3-3a-dispatcher-familles-base: done
+  # E3-3b décomposée (XL, directive CLAUDE.md) en 3 sous-stories ; spec partagée : stories/e3-3b-familles-avancees-sous-listes.md (ACs balisés [→ -1/-2/-3])
+  e3-3b-1-registre-widgets-feuilles-simples: done
+  e3-3b-2-sous-listes-mini-crud: done
+  e3-3b-3-signature-widget-libre: done
+  e3-3c-champ-fichier-image-document: done
+  e3-4-sections-conditionnels-lecture-grille: done
+  e3-5-stepper-multi-etapes: done
+  e3-6-soumission-create-update-dirty: done
+  epic-3-retrospective: done
 
   # === E4 — Moteur DynamicList (zcrud_list, Syncfusion) (MVP) ===
   epic-4: backlog

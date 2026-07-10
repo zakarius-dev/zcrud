@@ -9,7 +9,10 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
+import 'edition/z_file_picker.dart';
+import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
@@ -26,7 +29,10 @@ import 'z_scope_error.dart';
 /// - [labels] : registre de libellés surchargeables (E2-8 ; défaut `null` →
 ///   résolution retombe sur `ZcrudLocalizations`) ;
 /// - [theme] : design-tokens injectés (E2-8 ; défaut `null` → `ZcrudTheme.of`
-///   retombe sur `Theme.of(context)`).
+///   retombe sur `Theme.of(context)`) ;
+/// - [widgetRegistry] : registre de widgets d'édition servis **ailleurs** (E3-3b,
+///   AD-4 ; défaut `null` → tout type `registryOrFallback` retombe sur le repli
+///   `ZUnsupportedFieldWidget`). Instanciable, jamais un singleton statique.
 ///
 /// Résolution via [of] / [maybeOf]. Le constructeur par défaut (zéro-config) est
 /// utilisable sans fournir de manager : il expose un [ZAllowAllAcl] et un
@@ -42,6 +48,9 @@ class ZcrudScope extends InheritedWidget {
     this.acl = const ZAllowAllAcl(),
     this.labels,
     this.theme,
+    this.widgetRegistry,
+    this.filePicker,
+    this.cloudStorage,
     super.key,
   });
 
@@ -56,6 +65,22 @@ class ZcrudScope extends InheritedWidget {
 
   /// Design-tokens injectés (E2-8, FR-26 ; défaut `null` → repli `Theme.of`).
   final ZcrudTheme? theme;
+
+  /// Registre de widgets d'édition servis **ailleurs** (E3-3b, AD-4 ; défaut
+  /// `null` → repli `ZUnsupportedFieldWidget`). Instanciable, injecté (jamais
+  /// un singleton statique mutable).
+  final ZWidgetRegistry? widgetRegistry;
+
+  /// Seam d'acquisition de fichiers (E3-3c, AD-1/AD-6 ; défaut `null` → actions
+  /// scan/caméra/galerie/picker désactivées proprement). Impl concrète
+  /// (image_picker/file_picker) fournie par l'app/binding (E7), jamais le cœur.
+  final ZFilePicker? filePicker;
+
+  /// Port de stockage cloud (E3-3c, AD-1/AD-5/AD-6 ; défaut `null` → fichier
+  /// reste `pending`, orchestration draft→cloud déférée à l'app/`onSubmit`).
+  /// Impl concrète (Firebase Storage) fournie par `zcrud_firestore` (E5),
+  /// jamais le cœur.
+  final CloudStorageRepository? cloudStorage;
 
   /// Retourne le [ZcrudScope] le plus proche.
   ///
@@ -82,5 +107,8 @@ class ZcrudScope extends InheritedWidget {
       !identical(resolver, oldWidget.resolver) ||
       !identical(acl, oldWidget.acl) ||
       !identical(labels, oldWidget.labels) ||
-      !identical(theme, oldWidget.theme);
+      !identical(theme, oldWidget.theme) ||
+      !identical(widgetRegistry, oldWidget.widgetRegistry) ||
+      !identical(filePicker, oldWidget.filePicker) ||
+      !identical(cloudStorage, oldWidget.cloudStorage);
 }

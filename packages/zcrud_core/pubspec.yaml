@@ -28,6 +28,15 @@ dependencies:
   dartz: ^0.10.1
   flutter:
     sdk: flutter
+  # E3-2 (AD-2, Stack « moteur édition ») : compilation des `ZValidatorSpec` en
+  # `FormFieldValidator` via `FormBuilderValidators.compose`. On tire UNIQUEMENT
+  # `form_builder_validators` (validateurs PURS `String? Function(String?)`,
+  # dépend d'`intl`) — JAMAIS `flutter_form_builder` (son `FormBuilder`/
+  # `FormBuilderState` est un ÉTAT de formulaire global, interdit par AD-2/AD-15).
+  # N'EST PAS un gestionnaire d'état ni une dép lourde (Firebase/Syncfusion/Quill/
+  # Maps) ; n'est PAS `zcrud_*` → n'ajoute AUCUNE arête (`CORE OUT=0` préservé,
+  # `graph_proof.py` ne compte que les arêtes `zcrud_*`).
+  form_builder_validators: ^11.0.0
 
 dev_dependencies:
   # `flutter_test` : les tests `presentation/` (widgets) tournent sous `flutter
