@@ -11,6 +11,18 @@ class _FakeResolver extends ZDependencyResolver {
   T resolve<T>() => value as T;
 }
 
+/// Faux `ZListRenderer` const (E4-1, AC3) — zéro Syncfusion.
+class _FakeListRenderer extends ZListRenderer {
+  const _FakeListRenderer();
+  @override
+  Widget build(
+    BuildContext context,
+    ZListRenderRequest request, {
+    ZListInteraction? interaction,
+  }) =>
+      const SizedBox();
+}
+
 void main() {
   testWidgets('of() sans scope dans l\'arbre lève ZScopeError (AC5)',
       (tester) async {
@@ -107,6 +119,27 @@ void main() {
     );
     expect(identical(scope.labels, labels), isTrue);
     expect(identical(scope.theme, theme), isTrue);
+  });
+
+  test('E4-1 : listRenderer null par défaut (zéro-config préservé, AC3)', () {
+    const scope = ZcrudScope(child: SizedBox());
+    expect(scope.listRenderer, isNull);
+  });
+
+  test('E4-1 : updateShouldNotify sensible à listRenderer (AC3)', () {
+    const child = SizedBox();
+    const renderer = _FakeListRenderer();
+    const base = ZcrudScope(listRenderer: renderer, child: child);
+    expect(
+      base.updateShouldNotify(
+        const ZcrudScope(listRenderer: renderer, child: child),
+      ),
+      isFalse,
+    );
+    expect(
+      base.updateShouldNotify(const ZcrudScope(child: child)),
+      isTrue,
+    );
   });
 
   test('E2-8 : updateShouldNotify sensible à labels/theme (AC9)', () {

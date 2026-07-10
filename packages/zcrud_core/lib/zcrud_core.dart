@@ -31,6 +31,10 @@ export 'src/domain/contracts/z_syncable.dart';
 export 'src/domain/data/z_cursor.dart';
 export 'src/domain/data/z_data_request.dart';
 export 'src/domain/data/z_data_state.dart';
+// Normalisation de texte NEUTRE pour la recherche SANS ACCENTS (E4-3, AD-10) :
+// helper pur-Dart `zFoldDiacritics` (table Latin documentée), réutilisable par
+// l'adaptateur Firestore (E5) et le moteur in-memory `zApplyListRequest`.
+export 'src/domain/data/z_search_text.dart';
 // Surface d'autorité du moteur déclaratif (E2-4, AD-1/AD-3/AD-4) : catalogue de
 // champs `EditionFieldType` (enum ouvert, `custom`) + types-valeur `const`
 // partagés authoring (`@ZcrudField`) ↔ runtime (`ZFieldSpec`, émis en E2-5) :
@@ -147,6 +151,51 @@ export 'src/presentation/edition/z_validator_compiler.dart';
 export 'src/presentation/edition/z_widget_registry.dart';
 export 'src/presentation/l10n/z_labels.dart';
 export 'src/presentation/l10n/z_localizations.dart';
+// Moteur de liste — hôte + port neutre + dérivation/vues/états (E4-1→E4-2,
+// AD-8/AD-11/AD-13/SM-5) : `DynamicList` (piloté par `ZListViewState`, dispatch
+// sur `ZListLayout` ; délègue au `ZListRenderer` injecté sur le chemin dataGrid,
+// `ZScopeError` actionnable si absent), port abstrait `ZListRenderer` (rendu
+// concret `SfDataGrid` dans `zcrud_list`, jamais dans le cœur), colonnes
+// **dérivées** `ZListColumn` + helper PUR `deriveColumns`/`ZColumnPolicy` (AC1),
+// variantes `ZListLayout` (dataGrid/builder/custom — builder/custom rendus dans
+// le cœur SANS Syncfusion), états `ZListViewState` (loading/empty/noResults/
+// error/ready, accessibles), modèles neutres `ZListRenderRequest`/`ZListRow`.
+export 'src/presentation/list/dynamic_list.dart';
+export 'src/presentation/list/z_list_column.dart';
+// Interrogation de liste (E4-3, AD-8/AD-10/AD-16/AD-2/AD-15) : contrôleur
+// réactif Flutter-native `ZListController` (tranche `ValueListenable<
+// ZListViewState>`, pagination curseur + repli in-memory, mapping empty/
+// noResults) + `ZListPaginationMode` ; moteur in-memory NEUTRE `zApplyListRequest`
+// (+ `ZListPage`, `zMatchesSearch`, `zDeriveCursor`) productionisant le repli
+// prouvé E2-2. Aucun Syncfusion/backend/gestionnaire d'état (SM-5).
+export 'src/presentation/list/z_list_controller.dart';
+// Liste ACTIONNABLE (E4-4, AD-16/AD-9/AD-11/AD-2/AD-13/SM-5) : actions de ligne
+// NEUTRES `ZRowAction<T>` (+ fabriques corbeille softDelete/restore/edit) filtrées
+// par `ZAcl`, résolues par ligne en `ZResolvedRowAction` (sans `T`) ; mode de
+// filtrage `ZActionAclMode` ; sélection multiple neutre `ZListSelectionController`
+// (+ `ZListSelectionMode`) keyée par `id` STABLE (bug historique corrigé) ; pont
+// neutre `ZListInteraction` (hors `ZListRenderRequest` pour préserver l'égalité de
+// valeur). Aucun Syncfusion/backend/gestionnaire d'état (SM-5).
+export 'src/presentation/list/z_list_interaction.dart';
+export 'src/presentation/list/z_list_layout.dart';
+export 'src/presentation/list/z_list_query.dart';
+export 'src/presentation/list/z_list_render_request.dart';
+export 'src/presentation/list/z_list_renderer.dart';
+export 'src/presentation/list/z_list_selection.dart';
+export 'src/presentation/list/z_list_tab.dart';
+export 'src/presentation/list/z_list_view_state.dart';
+export 'src/presentation/list/z_row_action.dart';
+// Composition de listes (E4-5, étend FR-6 · AD-8/AD-16/AD-2/AD-15/SM-5) :
+// `ZSubListScreen<T>` (sous-liste d'entités RELIÉES filtrée par la relation
+// neutre `ZFilter(parentField, eq, parentId)` en `baseFilters` PERSISTANTS ;
+// mini-CRUD réutilisant `ZListController`+`DynamicList`+actions/`ZAcl`/sélection/
+// corbeille E4-1..E4-4 sans duplication ; reset de sélection sur changement de
+// parent) ; onglets de catégorisation `ZTabbedList`+`ZListTab` (chrome pur-Flutter
+// Material, chaque onglet = une liste indépendante, état/sélection PRÉSERVÉS et
+// INDÉPENDANTS par onglet via keep-alive). Distinct du CHAMP d'édition inline
+// E3-3b-2 (`z_sub_list_field_widget.dart`). Aucun Syncfusion/backend (SM-5).
+export 'src/presentation/list/z_sub_list_screen.dart';
+export 'src/presentation/list/z_tabbed_list.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';

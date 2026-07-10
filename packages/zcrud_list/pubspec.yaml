@@ -1,6 +1,12 @@
 # zcrud_list — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E4-1 : `zcrud_list` devient un package FLUTTER et acquiert la SEULE arête vers
+# Syncfusion du graphe (`syncfusion_flutter_datagrid`). C'est le backend concret
+# `ZSfDataGridRenderer` du port neutre `ZListRenderer` (défini dans zcrud_core).
+# AD-8/SM-5 : Syncfusion vit EXCLUSIVEMENT ici ; un consommateur qui n'importe
+# pas zcrud_list (ex. zcrud_markdown) ne tire AUCUNE dépendance Syncfusion.
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
+# AUCUNE clé/licence Syncfusion committée : l'enregistrement de licence est une
+# config plateforme de l'app hôte (Key Don'ts « never de secret dans un package »).
 name: zcrud_list
 description: >-
   DynamicList (Syncfusion) derrière ZListRenderer.
@@ -11,7 +17,20 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # Stack de l'architecture (^32.1.x) — SEULE arête Syncfusion du graphe (AD-8).
+  syncfusion_flutter_datagrid: ^32.1.19
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# Syncfusion (`SfDataGrid`) utilise les icônes Material : requis pour un rendu
+# correct côté app hôte (silence le warning de résolution `uses-material-design`).
+flutter:
+  uses-material-design: true

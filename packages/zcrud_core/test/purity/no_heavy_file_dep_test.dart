@@ -7,7 +7,9 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// Packages lourds INTERDITS dans `zcrud_core` (acquisition/stockage fichier).
+/// Packages lourds INTERDITS dans `zcrud_core` (acquisition/stockage fichier +
+/// E4-1 : Syncfusion — pilier pubspec de SM-5, `zcrud_core` ne déclare AUCUNE
+/// dépendance `syncfusion*`, le rendu `SfDataGrid` vit dans `zcrud_list`).
 const _forbiddenPackages = <String>[
   'image_picker',
   'file_picker',
@@ -15,6 +17,7 @@ const _forbiddenPackages = <String>[
   'firebase_core',
   'cloud_firestore',
   'firebase',
+  'syncfusion',
 ];
 
 Directory _dir(String rel) {

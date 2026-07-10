@@ -64,17 +64,27 @@ void main() {
   var failed = false;
   for (final pkg in withTests) {
     final runner = _isFlutterPackage(pkg) ? 'flutter' : 'dart';
-    stdout.writeln(
-        'verify:serialization — ${pkg.path} (tag serialization-compat, runner: $runner)');
     final r = Process.runSync(
       runner,
       ['test', '--tags', 'serialization-compat'],
       workingDirectory: pkg.path,
     );
+    // exit 79 = "no tests ran" (aucun test taggé `serialization-compat`) =>
+    // toléré (dart ET flutter). On NE RELAIE PAS le stderr brut
+    // « ERROR: No tests match the requested tag selectors » : ce texte « ERROR »
+    // est TROMPEUR alors que le gate TOLÈRE explicitement ce cas (il a déjà
+    // induit un reviewer en erreur — LOW-4). On imprime à la place une ligne
+    // claire SKIP. RC global inchangé (0) ; sémantique du gate inchangée.
+    if (r.exitCode == 79) {
+      stdout.writeln(
+          'verify:serialization — ${pkg.path} : SKIP (aucun test serialization-compat)');
+      continue;
+    }
+    stdout.writeln(
+        'verify:serialization — ${pkg.path} (tag serialization-compat, runner: $runner)');
     stdout.write(r.stdout);
     stderr.write(r.stderr);
-    // exit 79 = "no tests ran" (aucun test taggé) => toléré (dart ET flutter).
-    if (r.exitCode != 0 && r.exitCode != 79) failed = true;
+    if (r.exitCode != 0) failed = true;
   }
   exit(failed ? 1 : 0);
 }

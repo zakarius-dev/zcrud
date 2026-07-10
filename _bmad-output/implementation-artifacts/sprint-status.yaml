@@ -94,13 +94,13 @@ development_status:
   epic-3-retrospective: done
 
   # === E4 — Moteur DynamicList (zcrud_list, Syncfusion) (MVP) ===
-  epic-4: backlog
-  e4-1-zlistrenderer-sfdatagrid: backlog
-  e4-2-colonnes-derivees-vues-etats: backlog
-  e4-3-recherche-filtres-tri-pagination: backlog
-  e4-4-actions-ligne-zacl-selection-corbeille: backlog
-  e4-5-sous-listes-relations-onglets: backlog
-  epic-4-retrospective: optional
+  epic-4: done
+  e4-1-zlistrenderer-sfdatagrid: done
+  e4-2-colonnes-derivees-vues-etats: done
+  e4-3-recherche-filtres-tri-pagination: done
+  e4-4-actions-ligne-zacl-selection-corbeille: done
+  e4-5-sous-listes-relations-onglets: done
+  epic-4-retrospective: done
 
   # === E5 — Backend Firestore & offline-first (zcrud_firestore) (MVP + v1.x) ===
   epic-5: backlog
@@ -126,6 +126,9 @@ development_status:
   epic-11a-retrospective: optional
 
   # === E7 — Integration DODLP (banc d'essai prioritaire) (MVP) ===
+  # DIFFERE (consigne user, 2026-07-10) : migration REELLE dans l'app DODLP (code
+  # app externe, hors de ce repo) -> Zakarius la fera dans une session dediee.
+  # Le cycle BMAD autonome SAUTE E7 ; reste en backlog jusqu'a cette session.
   epic-7: backlog
   e7-1-binding-zcrud-get-zcrudscope: backlog
   e7-2-reflectablecodec-zcrudregistry-bootstrap: backlog
@@ -134,6 +137,9 @@ development_status:
   epic-7-retrospective: optional
 
   # === E8 — Integration formulaires riches lex_douane_admin (MVP) ===
+  # DIFFERE (consigne user, 2026-07-10) : migration REELLE dans l'app lex_douane
+  # (code app externe, hors de ce repo) -> Zakarius la fera dans une session dediee.
+  # Le cycle BMAD autonome SAUTE E8 ; reste en backlog jusqu'a cette session.
   epic-8: backlog
   e8-1-binding-zcrud-riverpod-adaptateur: backlog
   e8-2-migration-ecrans-admin: backlog
@@ -162,3 +168,21 @@ development_status:
   e11b-2-zcrud-intl-complet: backlog
   e11b-3-zcrud-export-complet: backlog
   epic-11b-retrospective: optional
+
+  # === EX — Application exemple Flutter (consigne user 2026-07-10 ; readiness #5) ===
+  # App consommatrice (example/) demontrant TOUTES les fonctionnalites zcrud ;
+  # croit avec les epics (edition E3 -> liste E4 -> firestore E5 -> markdown E6 ->
+  # geo/intl/export E11a). Sert de harnais de validation SM-1/SM-5/parite bindings.
+  epic-ex: in-progress
+  ex-1-scaffold-edition-demo: ready-for-dev
+  ex-2-list-demo: backlog
+  ex-3-reste-features-demo: backlog
+  epic-ex-retrospective: optional
+
+  # === REL — Publication pub.dev (consigne user 2026-07-10 ; publisher zakarius.com) ===
+  # DIFFERE : APRES les packages MVP (E4/E5/E6/E11a complets). Licence MIT, versions
+  # 0.1.0. Publication reelle = action Owner (dart pub login) ou feu vert explicite.
+  epic-rel: backlog
+  rel-1-prep-packages-publiables: backlog
+  rel-2-dry-run-et-publication: backlog
+  epic-rel-retrospective: optional

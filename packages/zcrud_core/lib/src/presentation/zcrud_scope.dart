@@ -14,6 +14,7 @@ import '../domain/ports/z_acl.dart';
 import 'edition/z_file_picker.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
+import 'list/z_list_renderer.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
 import 'z_scope_error.dart';
@@ -51,6 +52,7 @@ class ZcrudScope extends InheritedWidget {
     this.widgetRegistry,
     this.filePicker,
     this.cloudStorage,
+    this.listRenderer,
     super.key,
   });
 
@@ -82,6 +84,15 @@ class ZcrudScope extends InheritedWidget {
   /// jamais le cœur.
   final CloudStorageRepository? cloudStorage;
 
+  /// Seam de rendu de liste (E4-1, AD-8/SM-5 ; défaut `null` → `DynamicList`
+  /// lève une [ZScopeError] actionnable tant qu'aucun backend n'est injecté).
+  /// `zcrud_core` ne fournit AUCUNE implémentation concrète : le rendu Syncfusion
+  /// (`ZSfDataGridRenderer`) vit dans `zcrud_list` et est injecté par l'app/le
+  /// binding (`ZcrudScope(listRenderer: const ZSfDataGridRenderer())`). Un
+  /// backend Material `DataTable` reste implémentable sur le même port. Jamais
+  /// un singleton statique mutable.
+  final ZListRenderer? listRenderer;
+
   /// Retourne le [ZcrudScope] le plus proche.
   ///
   /// Lève [ZScopeError] (message actionnable) si aucun scope n'est présent dans
@@ -110,5 +121,6 @@ class ZcrudScope extends InheritedWidget {
       !identical(theme, oldWidget.theme) ||
       !identical(widgetRegistry, oldWidget.widgetRegistry) ||
       !identical(filePicker, oldWidget.filePicker) ||
-      !identical(cloudStorage, oldWidget.cloudStorage);
+      !identical(cloudStorage, oldWidget.cloudStorage) ||
+      !identical(listRenderer, oldWidget.listRenderer);
 }
