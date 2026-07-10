@@ -12,7 +12,12 @@ abstract final class ZExportApi {
   const ZExportApi._();
 
   /// Version de l'API publique (marqueur ; distincte de la version du package).
-  static const String version = '0.0.1';
+  ///
+  /// Bump E11b-3 `0.0.1 → 0.1.0` : ajouts ADDITIFS (`ZPdfCreationService`,
+  /// `ZFileSaver`/`ZFileSaveResult`, `ZPdfExportOptions`/`ZPdfOrientation`). Le
+  /// **nom** du champ reste `version` (consommé par `zcrud_flashcard`) — jamais
+  /// renommé.
+  static const String version = '0.1.0';
 
   /// Rattache l'arête AD-1 `zcrud_export -> zcrud_core`.
   static const String coreApiVersion = ZCoreApi.version;

@@ -14,6 +14,8 @@
 library;
 
 export 'src/domain/z_geo_api.dart';
+export 'src/domain/z_geo_circle.dart';
+export 'src/domain/z_geo_field_config.dart' show ZGeoFieldConfig, ZGeoGeometry;
 export 'src/domain/z_geo_point.dart';
 export 'src/domain/z_geo_shape.dart';
 export 'src/presentation/z_geo_field_widget.dart';

@@ -38,6 +38,12 @@ dependencies:
   # graphe (AD-8). Confinées à `lib/src/data/z_{excel,pdf}_exporter.dart`.
   syncfusion_flutter_xlsio: ^32.1.19
   syncfusion_flutter_pdf: ^32.1.19
+  # E11b-3 : téléchargement navigateur (ZFileSaver web) via `package:web` +
+  # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage web-CONDITIONNEL
+  # (`z_file_saver_web.dart`, chargé seulement si `dart.library.js_interop`) : ne
+  # remonte JAMAIS dans une signature neutre ni dans `zcrud_core`. Léger, sans
+  # transitive lourde. N'affecte pas le graphe AD-1 (n'est pas un package zcrud_*).
+  web: ^1.1.0
   zcrud_core: ^0.1.0
 
 dev_dependencies:

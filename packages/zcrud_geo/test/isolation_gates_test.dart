@@ -38,6 +38,29 @@ void main() {
       final geo = _read('packages/zcrud_geo/pubspec.yaml');
       expect(geo.contains('flutter_map:'), isTrue);
       expect(geo.contains('latlong2:'), isTrue);
+      // E11b-1 : 2e adaptateur Google déclaré UNIQUEMENT ici (jamais zcrud_core).
+      expect(geo.contains('google_maps_flutter:'), isTrue);
+    });
+  });
+
+  group('AC9 (E11b-1) — confinement du SDK Google au seul adaptateur', () {
+    test('google_maps_flutter importé UNIQUEMENT dans z_google_map_adapter.dart',
+        () {
+      final libDir = Directory('packages/zcrud_geo/lib').existsSync()
+          ? Directory('packages/zcrud_geo/lib')
+          : Directory('lib');
+      final importRe = RegExp(
+        r'''import\s+['"]package:google_maps_flutter/''',
+      );
+      final offenders = <String>[];
+      for (final e in libDir.listSync(recursive: true).whereType<File>()) {
+        if (!e.path.endsWith('.dart')) continue;
+        if (importRe.hasMatch(e.readAsStringSync())) offenders.add(e.path);
+      }
+      expect(offenders, hasLength(1),
+          reason: 'google_maps_flutter ne doit être importé QUE dans '
+              'z_google_map_adapter.dart, trouvé : $offenders');
+      expect(offenders.single.endsWith('z_google_map_adapter.dart'), isTrue);
     });
   });
 
@@ -73,9 +96,10 @@ void main() {
           .join('\n');
       expect(directives.contains('flutter_map'), isFalse);
       expect(directives.contains('latlong2'), isFalse);
+      expect(directives.contains('google_maps_flutter'), isFalse);
       expect(directives.contains('adapters/'), isFalse,
-          reason: 'l\'adaptateur OSM (SDK confiné) est atteint par une entrée '
-              'dédiée, jamais par le barrel principal');
+          reason: 'les adaptateurs OSM/Google (SDK confiné) sont atteints par '
+              'une entrée dédiée, jamais par le barrel principal');
     });
   });
 

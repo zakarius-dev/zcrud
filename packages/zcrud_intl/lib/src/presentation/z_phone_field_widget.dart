@@ -19,6 +19,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../data/z_country_catalog.dart';
 import '../domain/z_country_info.dart';
+import '../domain/z_intl_field_config.dart';
 import '../domain/z_phone_number.dart';
 import 'z_country_picker_field.dart';
 import 'z_phone_codec.dart';
@@ -96,13 +97,22 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
 
   bool get _hasNumberFocus => _numberFocus.hasFocus;
 
+  /// Config additive intl du champ (`null` → chemin E11a-2, rétro-compat).
+  ZIntlFieldConfig? get _config {
+    final c = widget.ctx.field.config;
+    return c is ZIntlFieldConfig ? c : null;
+  }
+
   @override
   void initState() {
     super.initState();
     _numberController = TextEditingController();
     _numberFocus = FocusNode();
     final phone = _phoneOf(widget.ctx.value);
-    _iso = phone?.isoCode ?? widget.defaultIsoCode;
+    // AC1 (E11b-2) : le pays initial suit
+    // `slice?.isoCode ?? cfg?.defaultCountryIso ?? widget.defaultIsoCode`.
+    // Rétro-compat E11a-2 STRICTE : `config == null` → chemin identique.
+    _iso = phone?.isoCode ?? _config?.defaultCountryIso ?? widget.defaultIsoCode;
     // Nit E11a-2 : l'affichage du champ numéro est amorcé depuis `nationalNumber`.
     // [ZPhoneCodec.parse] renseigne toujours `nationalNumber` pour tout numéro
     // parsé, donc une valeur persistée par ce champ l'expose. Un `ZPhoneNumber`
@@ -188,6 +198,9 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
                     selectedIso: _iso,
                     readOnly: field.readOnly,
                     compact: true,
+                    preferredIsos:
+                        _config?.preferredCountryIsos ?? const <String>[],
+                    searchable: _config?.searchable ?? true,
                     semanticLabel: label(
                       context,
                       'intl.phone.country',

@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../domain/z_geo_circle.dart';
 import '../../domain/z_geo_point.dart';
 import '../../domain/z_geo_shape.dart';
 import '../z_map_adapter.dart';
@@ -59,10 +60,20 @@ class ZOsmMapAdapter implements ZMapAdapter {
     BuildContext context, {
     ZGeoPoint? center,
     ZGeoShape? shape,
+    ZGeoCircle? circle,
     ValueChanged<ZGeoPoint>? onTap,
     bool interactive = true,
+    String? tileUrlTemplate,
+    String? mapStyleJson, // ignoré (spécifique Google) — OSM n'a pas de style JSON
+    double? defaultZoom,
   }) {
-    final ZGeoPoint c = center ?? fallbackCenter;
+    // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
+    final String effectiveTiles = tileUrlTemplate ?? this.tileUrlTemplate;
+    final double effectiveZoom = defaultZoom ?? initialZoom;
+    // Centre effectif : priorité au centre explicite, puis au centre du cercle
+    // (si valide), enfin au repli neutre.
+    final ZGeoPoint c = center ??
+        (circle != null && circle.isValid ? circle.center : fallbackCenter);
     final LatLng initialCenter = LatLng(c.lat, c.lng);
 
     final List<LatLng> vertices = <LatLng>[
@@ -70,11 +81,15 @@ class ZOsmMapAdapter implements ZMapAdapter {
         for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
     ];
 
+    // E11b-1 : cercle rendu via `CircleLayer`/`CircleMarker` (rayon en mètres)
+    // uniquement si le cercle est valide (AD-10 : jamais un rayon ≤0/non fini).
+    final bool hasCircle = circle != null && circle.isValid;
+
     return FlutterMap(
       mapController: _controller,
       options: MapOptions(
         initialCenter: initialCenter,
-        initialZoom: initialZoom,
+        initialZoom: effectiveZoom,
         interactionOptions: InteractionOptions(
           flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
         ),
@@ -85,7 +100,7 @@ class ZOsmMapAdapter implements ZMapAdapter {
       ),
       children: <Widget>[
         TileLayer(
-          urlTemplate: tileUrlTemplate,
+          urlTemplate: effectiveTiles,
           userAgentPackageName: userAgentPackageName,
         ),
         if (vertices.length >= 3)
@@ -94,11 +109,33 @@ class ZOsmMapAdapter implements ZMapAdapter {
               Polygon(points: vertices),
             ],
           ),
+        if (hasCircle)
+          CircleLayer(
+            circles: <CircleMarker>[
+              CircleMarker(
+                point: LatLng(circle.center.lat, circle.center.lng),
+                radius: circle.radiusMeters,
+                useRadiusInMeter: true,
+                color: Theme.of(context).colorScheme.primary.withValues(
+                      alpha: 0.2,
+                    ),
+                borderColor: Theme.of(context).colorScheme.primary,
+                borderStrokeWidth: 2,
+              ),
+            ],
+          ),
         MarkerLayer(
           markers: <Marker>[
             if (center != null)
               Marker(
                 point: initialCenter,
+                width: 40,
+                height: 40,
+                child: const Icon(Icons.place),
+              ),
+            if (hasCircle && center == null)
+              Marker(
+                point: LatLng(circle.center.lat, circle.center.lng),
                 width: 40,
                 height: 40,
                 child: const Icon(Icons.place),

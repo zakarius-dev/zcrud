@@ -20,6 +20,27 @@ ZFieldSpec _areaField(String name) => ZFieldSpec(
       label: 'Zone',
     );
 
+// Champ cercle (E11b-1) : type `location` + config géométrie `circle` (la
+// géométrie passe par ZGeoFieldConfig, PAS par une nouvelle valeur d'enum).
+ZFieldSpec _circleField(String name) => ZFieldSpec(
+      name: name,
+      type: EditionFieldType.location,
+      label: 'Cercle',
+      config: const ZGeoFieldConfig(geometry: ZGeoGeometry.circle),
+    );
+
+// Champ avec surcharges par-champ (E11b-1 MEDIUM-1) : tuiles/style/zoom.
+ZFieldSpec _configuredField(String name) => ZFieldSpec(
+      name: name,
+      type: EditionFieldType.location,
+      label: 'Lieu configuré',
+      config: const ZGeoFieldConfig(
+        tileUrlTemplate: 'https://example.test/{z}/{x}/{y}.png',
+        mapStyleJson: '[{"stylers":[]}]',
+        defaultZoom: 9,
+      ),
+    );
+
 ZFormController _controller(String name, {Object? value}) => ZFormController(
       initialValues: <String, Object?>{name: value},
       visibleFields: <String>[name],
@@ -65,6 +86,24 @@ ZWidgetRegistry _registryFactory(
       ..register(kind, ZGeoFieldWidget.builder(adapterFactory: factory));
 
 void main() {
+  group('MEDIUM-1 (E11b-1) — surcharges par-champ RÉELLEMENT plombées', () {
+    testWidgets(
+        'tileUrlTemplate/mapStyleJson/defaultZoom de la config atteignent '
+        'buildMap (champs non morts)', (tester) async {
+      final c = _controller('geo');
+      final fake = FakeMapAdapter();
+      await tester.pumpWidget(
+        _appWithRegistry(c, _configuredField('geo'),
+            registry: _registry(adapter: fake)),
+      );
+      await tester.pump();
+
+      expect(fake.lastTileUrlTemplate, 'https://example.test/{z}/{x}/{y}.png');
+      expect(fake.lastMapStyleJson, '[{"stylers":[]}]');
+      expect(fake.lastDefaultZoom, 9);
+    });
+  });
+
   group('AC2 — champ servi via le registre', () {
     testWidgets('registre peuplé → widget géo rendu', (tester) async {
       final c = _controller('geo');
@@ -479,6 +518,253 @@ void main() {
         tester.widget<TextField>(find.byType(TextField).at(0)).controller!.text,
         '',
       );
+    });
+  });
+
+  group('E11b-1 — édition CERCLE (ZGeoFieldConfig geometry: circle)', () {
+    testWidgets('config circle → champ rayon présent (3 TextField)',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'), registry: _registry()),
+      );
+      expect(find.byType(ZGeoFieldWidget), findsOneWidget);
+      expect(find.byKey(const Key('z-geo-radius')), findsOneWidget);
+      // centre (lat/lng) + rayon.
+      expect(find.byType(TextField), findsNWidgets(3));
+    });
+
+    testWidgets('saisie centre + rayon → ZGeoCircle neutre dans la tranche',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'), registry: _registry()),
+      );
+      await tester.enterText(find.byType(TextField).at(0), '13.5');
+      await tester.enterText(find.byType(TextField).at(1), '2.1');
+      await tester.enterText(find.byKey(const Key('z-geo-radius')), '500');
+      await tester.pump();
+      expect(
+        c.valueOf('geo'),
+        equals(const ZGeoCircle(
+          center: ZGeoPoint(lat: 13.5, lng: 2.1),
+          radiusMeters: 500,
+        )),
+      );
+    });
+
+    testWidgets('rayon 0 → cercle non valide → tranche neutre (null)',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'), registry: _registry()),
+      );
+      await tester.enterText(find.byType(TextField).at(0), '13.5');
+      await tester.enterText(find.byType(TextField).at(1), '2.1');
+      await tester.enterText(find.byKey(const Key('z-geo-radius')), '0');
+      await tester.pump();
+      expect(c.valueOf('geo'), isNull);
+    });
+
+    testWidgets('rayon négatif (-5) → tranche neutre (null)', (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'), registry: _registry()),
+      );
+      await tester.enterText(find.byType(TextField).at(0), '13.5');
+      await tester.enterText(find.byType(TextField).at(1), '2.1');
+      await tester.enterText(find.byKey(const Key('z-geo-radius')), '-5');
+      await tester.pump();
+      expect(c.valueOf('geo'), isNull);
+    });
+
+    testWidgets('tap carte → fixe le centre, cercle recomposé (rayon conservé)',
+        (tester) async {
+      final c = _controller('geo');
+      final fake = FakeMapAdapter(tapPoint: const ZGeoPoint(lat: 5, lng: 6));
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'),
+            registry: _registry(adapter: fake)),
+      );
+      // Rayon d'abord saisi, puis tap carte fixe le centre.
+      await tester.enterText(find.byKey(const Key('z-geo-radius')), '250');
+      await tester.pump();
+      await tester.tap(find.byKey(FakeMapAdapter.mapKey));
+      await tester.pump();
+      expect(
+        c.valueOf('geo'),
+        equals(const ZGeoCircle(
+          center: ZGeoPoint(lat: 5, lng: 6),
+          radiusMeters: 250,
+        )),
+      );
+    });
+
+    testWidgets('valeur initiale ZGeoCircle → champs amorcés + reçu par la carte',
+        (tester) async {
+      const initial = ZGeoCircle(
+        center: ZGeoPoint(lat: 1, lng: 2),
+        radiusMeters: 100,
+      );
+      final c = _controller('geo', value: initial);
+      final fake = FakeMapAdapter();
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'),
+            registry: _registry(adapter: fake)),
+      );
+      expect(
+        tester.widget<TextField>(find.byType(TextField).at(0)).controller!.text,
+        '1.0',
+      );
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('z-geo-radius')))
+            .controller!
+            .text,
+        '100.0',
+      );
+      // La carte reçoit le cercle neutre (aucun type SDK).
+      expect(fake.lastCircle, equals(initial));
+    });
+
+    testWidgets('valeur cercle corrompue (rayon NaN via Map) → pas de throw',
+        (tester) async {
+      final c = _controller('geo', value: <String, Object?>{
+        'center': <String, Object?>{'lat': 1.0, 'lng': 2.0},
+        'radius_m': double.nan,
+      });
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'), registry: _registry()),
+      );
+      expect(tester.takeException(), isNull);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('z-geo-radius')))
+            .controller!
+            .text,
+        '',
+      );
+    });
+
+    testWidgets('SM-1 : frappe du rayon → State non recréé + focus préservé',
+        (tester) async {
+      final c = _controller('geo');
+      var initCount = 0;
+      final registry = ZWidgetRegistry()
+        ..register(
+          'location',
+          ZGeoFieldWidget.builder(
+            geometry: ZGeoGeometry.circle,
+            onInit: () => initCount++,
+          ),
+        );
+      await tester.pumpWidget(
+        _appWithRegistry(c, _locationField('geo'), registry: registry),
+      );
+      final radius = find.byKey(const Key('z-geo-radius'));
+      await tester.tap(radius);
+      await tester.pump();
+      await tester.enterText(radius, '5');
+      await tester.pump();
+      await tester.enterText(radius, '50');
+      await tester.pump();
+      expect(initCount, 1);
+      expect(tester.widget<TextField>(radius).focusNode!.hasFocus, isTrue);
+    });
+
+    testWidgets('rendu sous Directionality.rtl sans exception', (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'),
+            registry: _registry(), dir: TextDirection.rtl),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('z-geo-radius')), findsOneWidget);
+    });
+
+    testWidgets('dispose (unmount) → fake adapter disposed == true',
+        (tester) async {
+      final fake = FakeMapAdapter();
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _circleField('geo'),
+            registry: _registry(adapter: fake)),
+      );
+      expect(fake.disposed, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      expect(fake.disposed, isTrue);
+    });
+  });
+
+  group('E11b-1 — géométrie via builder override (sans config par-champ)', () {
+    testWidgets('builder(geometry: circle) sur type location → mode cercle',
+        (tester) async {
+      final c = _controller('geo');
+      final registry = ZWidgetRegistry()
+        ..register(
+          'location',
+          ZGeoFieldWidget.builder(geometry: ZGeoGeometry.circle),
+        );
+      await tester.pumpWidget(
+        _appWithRegistry(c, _locationField('geo'), registry: registry),
+      );
+      expect(find.byKey(const Key('z-geo-radius')), findsOneWidget);
+    });
+  });
+
+  group('E11b-1 — RÉTRO-COMPAT E11a-1 stricte (sans config → inchangé)', () {
+    testWidgets('location sans config → point (2 champs, pas de rayon)',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _locationField('geo'), registry: _registry()),
+      );
+      expect(find.byType(TextField), findsNWidgets(2));
+      expect(find.byKey(const Key('z-geo-radius')), findsNothing);
+      await tester.enterText(find.byType(TextField).at(0), '13.5');
+      await tester.enterText(find.byType(TextField).at(1), '2.1');
+      await tester.pump();
+      expect(c.valueOf('geo'), equals(const ZGeoPoint(lat: 13.5, lng: 2.1)));
+    });
+
+    testWidgets('geoArea sans config → polygone (bouton ajouter présent)',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _areaField('geo'),
+            registry: _registry(kind: 'geoArea')),
+      );
+      expect(find.byKey(const Key('z-geo-add-vertex')), findsOneWidget);
+      expect(find.byKey(const Key('z-geo-radius')), findsNothing);
+    });
+  });
+
+  group('E11b-1 — mapHeight surchargé par ZGeoFieldConfig', () {
+    testWidgets('config.mapHeight prime sur le défaut du widget',
+        (tester) async {
+      final c = _controller('geo');
+      final fake = FakeMapAdapter();
+      const field = ZFieldSpec(
+        name: 'geo',
+        type: EditionFieldType.location,
+        label: 'Cercle',
+        config: ZGeoFieldConfig(
+          geometry: ZGeoGeometry.circle,
+          mapHeight: 321,
+        ),
+      );
+      await tester.pumpWidget(
+        _appWithRegistry(c, field, registry: _registry(adapter: fake)),
+      );
+      final box = tester.widget<SizedBox>(
+        find
+            .ancestor(
+              of: find.byKey(FakeMapAdapter.mapKey),
+              matching: find.byType(SizedBox),
+            )
+            .first,
+      );
+      expect(box.height, 321);
     });
   });
 }

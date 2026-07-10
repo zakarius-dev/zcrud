@@ -86,4 +86,69 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('AC7 — OSM : rendu cercle (sans clé)', () {
+    testWidgets('buildMap(circle: …) rend un CircleLayer sans exception',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: Builder(
+                builder: (context) => adapter.buildMap(
+                  context,
+                  circle: const ZGeoCircle(
+                    center: ZGeoPoint(lat: 13.5, lng: 2.1),
+                    radiusMeters: 500,
+                  ),
+                  interactive: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      // Un CircleLayer flutter_map est présent (le SDK reste confiné : on ne le
+      // référence pas par type ici, on prouve seulement l'absence d'exception).
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('cercle invalide (rayon ≤0) → pas de rendu, pas d\'exception',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: Builder(
+                builder: (context) => adapter.buildMap(
+                  context,
+                  circle: const ZGeoCircle(
+                    center: ZGeoPoint(lat: 13.5, lng: 2.1),
+                    radiusMeters: 0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    test('tileUrlTemplate surchargeable (aucun endpoint privé imposé)', () {
+      final adapter = ZOsmMapAdapter(
+        tileUrlTemplate: 'https://tiles.example.org/{z}/{x}/{y}.png',
+      );
+      addTearDown(adapter.dispose);
+      expect(adapter.tileUrlTemplate, contains('example.org'));
+    });
+  });
 }

@@ -106,12 +106,12 @@ development_status:
   # MVP LIVRE : e5-1 (FirebaseZRepositoryImpl) + e5-2 (ZLocalStore Hive / ZRemoteStore).
   # e5-3 (merge LWW soft-delete) et e5-4 (ZSyncOrchestrator) = v1.x (cf. note epic) :
   # DIFFERES hors du lot MVP 0.1.0 ; restent backlog jusqu'a la phase v1.x.
-  epic-5: done
+  epic-5: done  # v1.x complet (E5-1..E5-4)
   e5-1-firebase-zrepository-impl: done
   e5-2-zlocalstore-zremotestore: done
-  e5-3-offline-first-lww-soft-delete: backlog  # v1.x (différé hors MVP)
-  e5-4-zsyncorchestrator: backlog              # v1.x (différé hors MVP)
-  epic-5-retrospective: done
+  e5-3-offline-first-lww-soft-delete: done  # v1.x
+  e5-4-zsyncorchestrator: done                 # v1.x
+  epic-5-retrospective: done  # v1.x — 5 action items A1..A5 (voir epic-5-retrospective.md)
 
   # === E6 — Markdown & rich text (zcrud_markdown) (MVP) ===
   epic-6: done
@@ -151,27 +151,27 @@ development_status:
   epic-8-retrospective: optional
 
   # === E9 — Flashcards (zcrud_flashcard) (v1.x) ===
-  epic-9: backlog
-  e9-1-zflashcard-zchoice-type-provenance: backlog
-  e9-2-srs-pluggable-zsrsscheduler: backlog
-  e9-3-dossiers-sessions-etude: backlog
-  e9-4-depot-offline-first-invariant-srs: backlog
-  e9-5-edition-widgets-additifs: backlog
-  epic-9-retrospective: optional
+  epic-9: done  # v1.x complet (E9-1..E9-5)
+  e9-1-zflashcard-zchoice-type-provenance: done
+  e9-2-srs-pluggable-zsrsscheduler: done
+  e9-3-dossiers-sessions-etude: done
+  e9-4-depot-offline-first-invariant-srs: done
+  e9-5-edition-widgets-additifs: done
+  epic-9-retrospective: done  # v1.x — 6 action items AI-E9-1..6 (voir epic-9-retrospective.md)
 
   # === E10 — Cartes mentales (zcrud_mindmap) (v1.x) ===
-  epic-10: backlog
-  e10-1-zmindmapnode-treeops: backlog
-  e10-2-zmindmapview-graphite: backlog
-  e10-3-editeur-outline-corrige: backlog
-  epic-10-retrospective: optional
+  epic-10: done  # v1.x complet (E10-1/2/3)
+  e10-1-zmindmapnode-treeops: done
+  e10-2-zmindmapview-graphite: done
+  e10-3-editeur-outline-corrige: done
+  epic-10-retrospective: done  # v1.x — 4 action items AI-E10-1..4 (voir epic-10-retrospective.md)
 
   # === E11b — Reste geo / intl / export (v1.x/v2) ===
-  epic-11b: backlog
-  e11b-1-zcrud-geo-complet: backlog
-  e11b-2-zcrud-intl-complet: backlog
-  e11b-3-zcrud-export-complet: backlog
-  epic-11b-retrospective: optional
+  epic-11b: done  # v1.x complet (E11b-1/2/3)
+  e11b-1-zcrud-geo-complet: done
+  e11b-2-zcrud-intl-complet: done
+  e11b-3-zcrud-export-complet: done
+  epic-11b-retrospective: done  # v1.x — 6 action items AI-E11b-1..6 (voir epic-11b-retrospective.md)
 
   # === EX — Application exemple Flutter (consigne user 2026-07-10 ; readiness #5) ===
   # App consommatrice (example/) demontrant TOUTES les fonctionnalites zcrud ;

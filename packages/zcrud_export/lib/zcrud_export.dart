@@ -9,8 +9,23 @@
 /// signatures publiques sont neutres (entrées `zcrud_core`, sorties `Uint8List`).
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
+///
+/// **E11b-3 (additif, jamais de retrait — leçon rétro : la suppression de
+/// `ZExportApi` en E11a-3 avait cassé `zcrud_flashcard`)** : au-delà de l'export
+/// tabulaire, ce barrel expose désormais aussi l'assemblage images→PDF
+/// ([ZPdfCreationService]), la sauvegarde cross-platform ([ZFileSaver] /
+/// [ZFileSaveResult]) et les options de mise en page PDF anti-rognage
+/// ([ZPdfExportOptions] / [ZPdfOrientation]). Tous NEUTRES (bytes/chaînes),
+/// Syncfusion/`dart:io`/`package:web` restant confinés hors du barrel.
 library;
 
+// --- API STABLE E11a-3 (ne JAMAIS retirer/renommer) ---
 export 'src/data/z_export_api.dart' show ZExportApi;
 export 'src/data/z_export_table.dart' show ZExportTable;
 export 'src/data/z_exporter.dart' show ZExporter;
+
+// --- Ajouts additifs E11b-3 ---
+export 'src/data/z_file_save_result.dart' show ZFileSaveResult;
+export 'src/data/z_file_saver.dart' show ZFileSaver;
+export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
+export 'src/data/z_pdf_export_options.dart' show ZPdfExportOptions, ZPdfOrientation;

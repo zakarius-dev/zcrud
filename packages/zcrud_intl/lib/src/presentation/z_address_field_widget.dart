@@ -15,17 +15,23 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../data/z_country_catalog.dart';
+import '../data/z_subdivision_catalog.dart';
 import '../domain/z_country_info.dart';
+import '../domain/z_intl_field_config.dart';
 import '../domain/z_postal_address.dart';
+import '../domain/z_subdivision.dart';
 import 'z_country_picker_field.dart';
+import 'z_option_picker_field.dart';
 
 /// Champ d'édition adresse (sous-formulaire structuré, patron AD-2).
 class ZAddressFieldWidget extends StatefulWidget {
   /// Construit le champ pour [ctx]. [catalog] alimente le sélecteur pays de
-  /// l'adresse (injecté par closure de [builder]).
+  /// l'adresse ; [subdivisionCatalog] (optionnel) bascule le sous-champ `region`
+  /// sur un sélecteur d'état/province quand le pays a des subdivisions (E11b-2).
   const ZAddressFieldWidget({
     required this.ctx,
     required this.catalog,
+    this.subdivisionCatalog,
     this.onInit,
     this.onBuild,
     super.key,
@@ -37,6 +43,10 @@ class ZAddressFieldWidget extends StatefulWidget {
 
   /// Catalogue pays (paresseux + caché) capturé par closure (AD-4).
   final ZCountryCatalog catalog;
+
+  /// Catalogue subdivisions (optionnel). `null` → le sous-champ `region` reste un
+  /// `TextField` libre **identique** à E11a-2 (rétro-compat stricte).
+  final ZSubdivisionCatalog? subdivisionCatalog;
 
   /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
   @visibleForTesting
@@ -51,15 +61,20 @@ class ZAddressFieldWidget extends StatefulWidget {
   /// montage crée SES contrôleurs de sous-champs (par-montage, MAJEUR-1).
   static ZFieldWidgetBuilder builder({
     ZCountryCatalog? catalog,
+    ZSubdivisionCatalog? subdivisionCatalog,
     VoidCallback? onInit,
     VoidCallback? onBuild,
   }) {
     // LOW-1 : sans `catalog` injecté, partage l'instance par défaut lazy pour
     // que les 3 kinds intl ne lisent l'asset qu'une seule fois (au lieu de 3).
     final cat = catalog ?? sharedDefaultCountryCatalog();
+    // `subdivisionCatalog` reste `null` par défaut → rétro-compat E11a-2 stricte
+    // (région = texte libre). L'app l'injecte explicitement pour activer les
+    // sélecteurs d'état/province.
     return (BuildContext context, ZFieldWidgetContext ctx) => ZAddressFieldWidget(
           ctx: ctx,
           catalog: cat,
+          subdivisionCatalog: subdivisionCatalog,
           onInit: onInit,
           onBuild: onBuild,
         );
@@ -92,8 +107,38 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
     _region = TextEditingController(text: addr?.region ?? '');
     _postal = TextEditingController(text: addr?.postalCode ?? '');
     _focusNodes = List<FocusNode>.generate(5, (_) => FocusNode());
-    _countryIso = addr?.countryCode;
+    // AC1/AC6 (E11b-2) : pays initial `addr?.countryCode ?? cfg?.defaultCountryIso`
+    // (rétro-compat E11a-2 : cfg == null → addr?.countryCode identique).
+    _countryIso = addr?.countryCode ?? _config?.defaultCountryIso;
+    _ensureSubdivisionsLoaded();
     widget.onInit?.call();
+  }
+
+  /// Config additive intl du champ (`null` → chemin E11a-2, rétro-compat).
+  ZIntlFieldConfig? get _config {
+    final c = widget.ctx.field.config;
+    return c is ZIntlFieldConfig ? c : null;
+  }
+
+  /// Charge paresseusement le catalogue subdivisions (si injecté + pays connu),
+  /// puis rebuild LOCAL une fois résolu (SM-1, jamais de rebuild global).
+  void _ensureSubdivisionsLoaded() {
+    final cat = widget.subdivisionCatalog;
+    if (cat != null && _countryIso != null && !cat.isLoaded) {
+      cat.load().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  /// Subdivisions disponibles pour le pays courant (vide si aucun catalogue
+  /// injecté / pays inconnu / non chargé). Une liste non vide bascule le
+  /// sous-champ `region` sur un sélecteur d'état/province (E11b-2).
+  List<ZSubdivision> get _regionSubdivisions {
+    final cat = widget.subdivisionCatalog;
+    final iso = _countryIso;
+    if (cat == null || iso == null) return const <ZSubdivision>[];
+    return cat.forCountry(iso);
   }
 
   @override
@@ -150,6 +195,14 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
 
   void _onCountrySelected(ZCountryInfo country) {
     setState(() => _countryIso = country.isoCode);
+    // Le pays a changé → recharger/rafraîchir les subdivisions disponibles.
+    _ensureSubdivisionsLoaded();
+    _emit();
+  }
+
+  void _onSubdivisionSelected(ZSubdivision s) {
+    // Voie unique : la région porte le code ISO 3166-2 (String neutre).
+    _region.text = s.code;
     _emit();
   }
 
@@ -197,13 +250,7 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
               readOnly,
             ),
             SizedBox(height: theme.gapS),
-            _line(
-              const Key('z-address-region'),
-              _region,
-              _focusNodes[3],
-              label(context, 'intl.address.region', fallback: 'Région'),
-              readOnly,
-            ),
+            _regionSlot(theme, readOnly),
             SizedBox(height: theme.gapS),
             _line(
               const Key('z-address-postal'),
@@ -217,6 +264,8 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
               catalog: widget.catalog,
               selectedIso: _countryIso,
               readOnly: readOnly,
+              preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
+              searchable: _config?.searchable ?? true,
               semanticLabel:
                   label(context, 'intl.address.country', fallback: 'Pays'),
               onSelected: _onCountrySelected,
@@ -224,6 +273,52 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Sous-champ `region` : sélecteur d'état/province **si** le pays a des
+  /// subdivisions au catalogue injecté ; sinon `TextField` libre **identique** à
+  /// E11a-2 (rétro-compat stricte — sans `subdivisionCatalog`, ce chemin est le
+  /// seul emprunté).
+  Widget _regionSlot(ZcrudTheme theme, bool readOnly) {
+    final subs = _regionSubdivisions;
+    final regionLabel =
+        label(context, 'intl.address.region', fallback: 'Région');
+    if (subs.isEmpty) {
+      return _line(
+        const Key('z-address-region'),
+        _region,
+        _focusNodes[3],
+        regionLabel,
+        readOnly,
+      );
+    }
+    final iso = _countryIso!;
+    final currentCode = _region.text.trim();
+    final selected = currentCode.isEmpty
+        ? null
+        : widget.subdivisionCatalog!.byCode(iso, currentCode);
+    return ZOptionPickerField<ZSubdivision>(
+      key: const Key('z-address-region-state'),
+      keyPrefix: 'z-address-state',
+      readOnly: readOnly,
+      searchable: _config?.searchable ?? true,
+      semanticLabel: regionLabel,
+      selectedTitle: selected?.name ?? (currentCode.isEmpty ? null : currentCode),
+      search: (q) {
+        final query = q.trim().toLowerCase();
+        if (query.isEmpty) return subs;
+        return <ZSubdivision>[
+          for (final s in subs)
+            if (s.code.toLowerCase().contains(query) ||
+                (s.name?.toLowerCase().contains(query) ?? false))
+              s,
+        ];
+      },
+      itemKey: (s) => s.code,
+      itemTitle: (s) => s.name ?? s.code,
+      itemTrailing: (s) => s.code,
+      onSelected: _onSubdivisionSelected,
     );
   }
 

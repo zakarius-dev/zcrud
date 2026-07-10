@@ -21,8 +21,14 @@ class FakeMapAdapter implements ZMapAdapter {
   /// Derniers paramètres neutres reçus (preuve : aucun type SDK).
   ZGeoPoint? lastCenter;
   ZGeoShape? lastShape;
+  ZGeoCircle? lastCircle;
   bool? lastInteractive;
   bool sawOnTap = false;
+
+  /// Dernières surcharges par-champ reçues (preuve du plombage config→buildMap).
+  String? lastTileUrlTemplate;
+  String? lastMapStyleJson;
+  double? lastDefaultZoom;
 
   /// Clé de la surface carte fake.
   static const Key mapKey = Key('fake-map');
@@ -32,13 +38,21 @@ class FakeMapAdapter implements ZMapAdapter {
     BuildContext context, {
     ZGeoPoint? center,
     ZGeoShape? shape,
+    ZGeoCircle? circle,
     ValueChanged<ZGeoPoint>? onTap,
     bool interactive = true,
+    String? tileUrlTemplate,
+    String? mapStyleJson,
+    double? defaultZoom,
   }) {
     buildCount++;
     lastCenter = center;
     lastShape = shape;
+    lastCircle = circle;
     lastInteractive = interactive;
+    lastTileUrlTemplate = tileUrlTemplate;
+    lastMapStyleJson = mapStyleJson;
+    lastDefaultZoom = defaultZoom;
     sawOnTap = onTap != null;
     return GestureDetector(
       key: mapKey,

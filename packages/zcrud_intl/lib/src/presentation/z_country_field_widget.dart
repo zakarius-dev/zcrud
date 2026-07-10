@@ -17,6 +17,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../data/z_country_catalog.dart';
 import '../domain/z_country_info.dart';
+import '../domain/z_intl_field_config.dart';
 import 'z_country_picker_field.dart';
 
 /// Champ d'édition pays (émet un code ISO `String`).
@@ -78,11 +79,22 @@ class _ZCountryFieldWidgetState extends State<ZCountryFieldWidget> {
     widget.onInit?.call();
   }
 
+  /// Config additive intl du champ (`null` → chemin E11a-2, rétro-compat).
+  ZIntlFieldConfig? get _config {
+    final c = widget.ctx.field.config;
+    return c is ZIntlFieldConfig ? c : null;
+  }
+
   /// Lecture défensive (AD-10) : la tranche `country` est un code ISO `String` ;
-  /// tout autre type → `null` (aucun pays sélectionné, jamais de crash).
+  /// tout autre type → `null`. AC1 (E11b-2) : si aucune valeur et un défaut de
+  /// config est posé, il **amorce l'affichage** (non émis tant que l'utilisateur
+  /// n'agit pas). Rétro-compat E11a-2 STRICTE : `config == null` + valeur `null`
+  /// → `null` (placeholder, chemin identique).
   String? get _selectedIso {
     final v = widget.ctx.value;
-    return v is String && v.isNotEmpty ? v : null;
+    if (v is String && v.isNotEmpty) return v;
+    final def = _config?.defaultCountryIso;
+    return (def != null && def.isNotEmpty) ? def : null;
   }
 
   @override
@@ -106,6 +118,8 @@ class _ZCountryFieldWidgetState extends State<ZCountryFieldWidget> {
               catalog: widget.catalog,
               selectedIso: _selectedIso,
               readOnly: field.readOnly,
+              preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
+              searchable: _config?.searchable ?? true,
               semanticLabel: resolvedLabel,
               onSelected: (ZCountryInfo c) =>
                   // Voie unique (AD-2) : émet le CODE ISO string neutre.

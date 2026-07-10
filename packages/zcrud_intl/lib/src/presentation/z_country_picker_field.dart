@@ -34,6 +34,8 @@ class ZCountryPickerField extends StatefulWidget {
     this.semanticLabel,
     this.placeholder,
     this.listMaxHeight = 240,
+    this.preferredIsos = const <String>[],
+    this.searchable = true,
     super.key,
   });
 
@@ -61,6 +63,14 @@ class ZCountryPickerField extends StatefulWidget {
 
   /// Hauteur max de la liste déployée (dimension injectable).
   final double listMaxHeight;
+
+  /// Codes ISO remontés **en tête** de la liste (surcharge par-champ via
+  /// [ZIntlFieldConfig.preferredCountryIsos]). `const []` → ordre catalogue
+  /// inchangé (rétro-compat E11a-2 stricte).
+  final List<String> preferredIsos;
+
+  /// Affiche la boîte de recherche (option neutre, défaut `true`).
+  final bool searchable;
 
   @override
   State<ZCountryPickerField> createState() => _ZCountryPickerFieldState();
@@ -118,8 +128,10 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
         _trigger(theme, selected),
         if (_open) ...<Widget>[
           SizedBox(height: theme.gapS),
-          _searchBox(theme),
-          SizedBox(height: theme.gapS),
+          if (widget.searchable) ...<Widget>[
+            _searchBox(theme),
+            SizedBox(height: theme.gapS),
+          ],
           _resultsList(theme),
         ],
       ],
@@ -200,8 +212,32 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
         onChanged: (_) => setState(() {}),
       );
 
+  /// Remonte les [ZCountryPickerField.preferredIsos] en tête (ordre déclaré),
+  /// puis le reste dans l'ordre catalogue. `preferredIsos` vide → identité
+  /// (rétro-compat E11a-2 stricte).
+  List<ZCountryInfo> _ordered(List<ZCountryInfo> results) {
+    final prefs = widget.preferredIsos;
+    if (prefs.isEmpty || results.isEmpty) return results;
+    final up = <String>{for (final p in prefs) p.toUpperCase()};
+    final head = <ZCountryInfo>[];
+    for (final iso in prefs) {
+      final u = iso.toUpperCase();
+      for (final c in results) {
+        if (c.isoCode.toUpperCase() == u) {
+          head.add(c);
+          break;
+        }
+      }
+    }
+    final tail = <ZCountryInfo>[
+      for (final c in results)
+        if (!up.contains(c.isoCode.toUpperCase())) c,
+    ];
+    return <ZCountryInfo>[...head, ...tail];
+  }
+
   Widget _resultsList(ZcrudTheme theme) {
-    final results = widget.catalog.search(_searchController.text);
+    final results = _ordered(widget.catalog.search(_searchController.text));
     if (results.isEmpty) {
       return Padding(
         padding: EdgeInsetsDirectional.symmetric(vertical: theme.gapS),

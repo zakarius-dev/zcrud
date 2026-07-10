@@ -30,10 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # SDK carte OSM (sans clé API → alignement AD-12) — SEULE arête carte du graphe
+  # SDK carte OSM (sans clé API → alignement AD-12) — arête carte du graphe
   # (AD-1). Confiné à `src/presentation/adapters/` + entrée `lib/adapters/osm.dart`.
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
+  # 2e adaptateur carte (E11b-1) : Google Maps. La clé API vit dans la CONFIG
+  # PLATEFORME de l'app hôte (manifest Android `com.google.android.geo.API_KEY` /
+  # `AppDelegate` iOS — E1-5), JAMAIS dans ce package (AD-12). SDK confiné à
+  # `src/presentation/adapters/z_google_map_adapter.dart` + entrée
+  # `lib/adapters/google.dart` ; jamais exporté par le barrel principal, jamais
+  # tiré dans `zcrud_core` (CORE OUT=0).
+  google_maps_flutter: ^2.9.0
   zcrud_core: ^0.1.0
 
 dev_dependencies:

@@ -1,9 +1,17 @@
-// AC9/AC10/AC11 — Gates d'isolation (AD-1/AD-12/AD-13), rejoués comme tests :
-//   - `zcrud_core/pubspec.yaml` ne tire AUCUNE lib intl/téléphone ;
-//   - la lib téléphone n'est déclarée qu'au `pubspec.yaml` de `zcrud_intl` ;
-//   - le barrel principal n'exporte AUCUN symbole de lib tierce (voie confinée) ;
+// AC9/AC10/AC11/AC12 — Gates d'isolation (AD-1/AD-12/AD-13), rejoués comme
+// tests. Étendus E11b-2 (AI-E10-2 : garde grep cwd-robuste + strip-comment,
+// denylist complète, couverture des nouveaux fichiers `z_currency_*`/`z_state_*`/
+// `z_subdivision_*`/`z_money*`/`z_option_picker_*`) :
+//   - `zcrud_core/pubspec.yaml` ne tire AUCUNE lib intl/téléphone/devise ;
+//   - la lib téléphone n'est déclarée qu'au `pubspec.yaml` de `zcrud_intl` et
+//     reste CONFINÉE à `z_phone_codec.dart` ;
+//   - AUCUNE nouvelle lib intl/devise lourde ajoutée (`intl`/`money2`/
+//     `currency_picker`…) ;
+//   - le barrel n'exporte AUCUN symbole de lib tierce (voie confinée) ;
 //   - aucun secret/clé/endpoint/`badCertificateCallback` dans `lib/` ;
-//   - aucun inset/alignement non directionnel (RTL, AD-13).
+//   - aucun inset/alignement/couleur non directionnel ou codé en dur (AD-13),
+//     comparé sur du source **dé-commenté** (strip-comment : un motif en
+//     commentaire ne déclenche PAS de faux positif).
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,8 +26,21 @@ const _intlLibs = <String>[
   'country_code_picker',
 ];
 
+/// Libs lourdes intl/devise/formatage à NE PAS ajouter (E11b-2, AD-1/AD-12) :
+/// devise/états sont servis par des assets JSON bundlés, pas par une dép runtime.
+const _bannedHeavyLibs = <String>[
+  'intl',
+  'money2',
+  'currency_picker',
+  'currency_text_input_formatter',
+  'flutter_money_formatter',
+  'world_countries',
+];
+
+/// Lecture **cwd-robuste** : le gate doit passer que `flutter test` soit lancé à
+/// la racine du workspace OU dans le dossier du package.
 String _read(String path) {
-  final candidates = <String>[path, '../../$path'];
+  final candidates = <String>[path, '../../$path', _underPackage(path)];
   for (final c in candidates) {
     final f = File(c);
     if (f.existsSync()) return f.readAsStringSync();
@@ -27,15 +48,39 @@ String _read(String path) {
   fail('Fichier introuvable pour le gate : $path');
 }
 
+/// Traduit un chemin repo-relatif en chemin package-relatif (cwd = package).
+String _underPackage(String repoPath) {
+  const prefix = 'packages/zcrud_intl/';
+  return repoPath.startsWith(prefix) ? repoPath.substring(prefix.length) : repoPath;
+}
+
 Directory _libDir() => Directory('packages/zcrud_intl/lib').existsSync()
     ? Directory('packages/zcrud_intl/lib')
     : Directory('lib');
 
+/// Supprime les commentaires Dart (`// …` et `/* … */`) pour que les gardes de
+/// motifs ne matchent PAS un exemple cité en commentaire (AI-E10-2).
+String _stripComments(String src) {
+  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
+  final buffer = StringBuffer();
+  for (final line in noBlock.split('\n')) {
+    final idx = line.indexOf('//');
+    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
+  }
+  return buffer.toString();
+}
+
+Iterable<File> _dartFiles() =>
+    _libDir().listSync(recursive: true).whereType<File>().where(
+          (e) => e.path.endsWith('.dart'),
+        );
+
 void main() {
-  group('AC9 — isolation : zcrud_core ne tire AUCUNE lib intl/téléphone', () {
+  group('AC11 — isolation : zcrud_core ne tire AUCUNE lib intl/téléphone/devise',
+      () {
     test('pubspec de zcrud_core sans dépendance intl/téléphone', () {
       final core = _read('packages/zcrud_core/pubspec.yaml');
-      for (final lib in _intlLibs) {
+      for (final lib in <String>[..._intlLibs, ..._bannedHeavyLibs]) {
         expect(core.contains('$lib:'), isFalse,
             reason: 'zcrud_core ne doit PAS dépendre de $lib (AD-1)');
       }
@@ -46,16 +91,30 @@ void main() {
       expect(intl.contains('phone_numbers_parser:'), isTrue);
     });
 
-    test('l\'asset countries.json n\'est déclaré qu\'au pubspec de zcrud_intl', () {
+    test('AUCUNE nouvelle lib intl/devise lourde ajoutée à zcrud_intl (E11b-2)',
+        () {
+      final intl = _read('packages/zcrud_intl/pubspec.yaml');
+      for (final lib in _bannedHeavyLibs) {
+        expect(RegExp('^\\s+$lib:', multiLine: true).hasMatch(intl), isFalse,
+            reason: 'zcrud_intl ne doit PAS ajouter $lib (assets JSON bundlés — '
+                'AD-1/AD-12)');
+      }
+    });
+
+    test('les assets intl ne sont déclarés qu\'au pubspec de zcrud_intl', () {
       final intl = _read('packages/zcrud_intl/pubspec.yaml');
       expect(intl.contains('assets/countries.json'), isTrue);
+      expect(intl.contains('assets/currencies.json'), isTrue);
+      expect(intl.contains('assets/subdivisions.json'), isTrue);
       final core = _read('packages/zcrud_core/pubspec.yaml');
       expect(core.contains('countries.json'), isFalse);
+      expect(core.contains('currencies.json'), isFalse);
+      expect(core.contains('subdivisions.json'), isFalse);
     });
   });
 
-  group('AC10 — signature : barrel principal sans symbole de lib tierce', () {
-    test('lib/zcrud_intl.dart n\'exporte/n\'importe aucune lib intl', () {
+  group('AC11 — signature : barrel principal sans symbole de lib tierce', () {
+    test('lib/zcrud_intl.dart n\'exporte/n\'importe aucune lib intl/devise', () {
       final barrel = _read('packages/zcrud_intl/lib/zcrud_intl.dart');
       final directives = barrel
           .split('\n')
@@ -64,18 +123,19 @@ void main() {
             return t.startsWith('export ') || t.startsWith('import ');
           })
           .join('\n');
-      for (final lib in _intlLibs) {
-        expect(directives.contains(lib), isFalse,
+      for (final lib in <String>[..._intlLibs, ..._bannedHeavyLibs]) {
+        expect(directives.contains('package:$lib'), isFalse,
             reason: 'le barrel ne doit pas exposer $lib (AD-1)');
       }
-      // Le pont confiné ne doit PAS être exporté (reste interne).
+      // Le pont confiné + le picker inline interne ne sont PAS exportés.
       expect(directives.contains('z_phone_codec'), isFalse);
+      expect(directives.contains('z_country_picker_field'), isFalse);
+      expect(directives.contains('z_option_picker_field'), isFalse);
     });
 
     test('un seul fichier importe phone_numbers_parser (confinement AD-1)', () {
       final importers = <String>[];
-      for (final e in _libDir().listSync(recursive: true).whereType<File>()) {
-        if (!e.path.endsWith('.dart')) continue;
+      for (final e in _dartFiles()) {
         final src = e.readAsStringSync();
         if (RegExp(r'''import\s+['"]package:phone_numbers_parser''')
             .hasMatch(src)) {
@@ -89,42 +149,56 @@ void main() {
     });
   });
 
-  group('AC11 — secrets : aucune clé/endpoint/badCertificate dans lib/', () {
+  group('AC12 — secrets : aucune clé/endpoint/badCertificate dans lib/', () {
     test('aucun secret ni badCertificateCallback', () {
       final googleKey = RegExp('AIza' r'[0-9A-Za-z_\-]{35}');
       final badCert = RegExp(r'badCertificateCallback\s*(=>|=)');
       final httpUrl = RegExp(r'https?://[a-zA-Z0-9.\-]+');
-      for (final e in _libDir().listSync(recursive: true).whereType<File>()) {
-        if (!e.path.endsWith('.dart')) continue;
-        final src = e.readAsStringSync();
+      for (final e in _dartFiles()) {
+        final src = _stripComments(e.readAsStringSync());
         expect(googleKey.hasMatch(src), isFalse,
             reason: 'clé Google en dur interdite dans ${e.path}');
         expect(badCert.hasMatch(src), isFalse,
             reason: 'badCertificateCallback interdit dans ${e.path}');
         expect(httpUrl.hasMatch(src), isFalse,
-            reason: 'endpoint réseau en dur interdit (MVP hors-ligne) dans '
+            reason: 'endpoint réseau en dur interdit (hors-ligne) dans '
                 '${e.path}');
       }
     });
   });
 
-  group('AD-13 — audit statique RTL (aucun inset/alignement non directionnel)',
-      () {
-    test('lib/ sans EdgeInsets.only(left/right) ni Alignment.centerLeft/Right',
-        () {
+  group('AD-13 — audit statique RTL/couleur (strip-comment, cwd-robuste)', () {
+    test('lib/ sans motif non directionnel ni couleur codée en dur', () {
       final banned = <RegExp>[
         RegExp(r'EdgeInsets\.only\([^)]*\b(left|right)\s*:'),
         RegExp(r'Alignment\.center(Left|Right)\b'),
         RegExp(r'TextAlign\.(left|right)\b'),
         RegExp(r'Positioned\([^)]*\b(left|right)\s*:'),
+        RegExp(r'\bColors\.'),
+        RegExp(r'Color\(0x'),
       ];
-      for (final e in _libDir().listSync(recursive: true).whereType<File>()) {
-        if (!e.path.endsWith('.dart')) continue;
-        final src = e.readAsStringSync();
+      for (final e in _dartFiles()) {
+        // strip-comment (AI-E10-2) : un motif cité en commentaire ne compte pas.
+        final src = _stripComments(e.readAsStringSync());
         for (final re in banned) {
           expect(re.hasMatch(src), isFalse,
-              reason: 'motif non directionnel (AD-13) dans ${e.path} : '
-                  '${re.pattern}');
+              reason: 'motif interdit (AD-13) dans ${e.path} : ${re.pattern}');
+        }
+      }
+    });
+
+    test('lib/ n\'importe aucun gestionnaire d\'état (AD-2/AD-15)', () {
+      final managers = <String>[
+        'package:flutter_riverpod',
+        'package:riverpod',
+        'package:get/',
+        'package:provider/',
+      ];
+      for (final e in _dartFiles()) {
+        final src = _stripComments(e.readAsStringSync());
+        for (final m in managers) {
+          expect(src.contains(m), isFalse,
+              reason: 'gestionnaire d\'état interdit dans ${e.path} : $m');
         }
       }
     });

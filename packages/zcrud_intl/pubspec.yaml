@@ -43,6 +43,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # Catalogue pays bundlé (FR-21) — chargé paresseusement via rootBundle.
+  # Catalogues bundlés (FR-21) — chargés paresseusement via rootBundle, offline,
+  # SANS clé/secret/réseau (AD-12). Devise = ISO 4217 ; subdivisions = ISO 3166-2
+  # (sous-ensemble curaté indexé par pays, injectable/extensible).
   assets:
     - lib/assets/countries.json
+    - lib/assets/currencies.json
+    - lib/assets/subdivisions.json

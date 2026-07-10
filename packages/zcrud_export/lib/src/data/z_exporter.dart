@@ -29,6 +29,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_excel_exporter.dart';
 import 'z_export_table.dart';
+import 'z_pdf_export_options.dart';
 import 'z_pdf_exporter.dart';
 
 /// Façade d'export neutre et immuable (`const`-constructible).
@@ -56,11 +57,16 @@ class ZExporter {
   ///
   /// Même contrat neutre que [toExcelBytes] : en-tête + `rows.length` lignes,
   /// valeurs = `col.format(...)`, [resolveHeader] optionnel, défensif AD-10.
+  ///
+  /// [options] (E11b-3, Axe C) paramètre la mise en page — orientation, titre,
+  /// en-tête répété — et corrige le rognage horizontal des tables larges (AC10).
+  /// **Rétro-compat (AC9)** : appel sans [options] = comportement E11a-3.
   Uint8List toPdfBytes(
     ZListRenderRequest request, {
     String Function(String headerKey)? resolveHeader,
+    ZPdfExportOptions? options,
   }) {
     final table = ZExportTable.fromRequest(request, resolveHeader: resolveHeader);
-    return buildPdfBytes(table);
+    return buildPdfBytes(table, options: options);
   }
 }

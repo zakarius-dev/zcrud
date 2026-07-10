@@ -21,6 +21,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../domain/z_geo_circle.dart';
 import '../domain/z_geo_point.dart';
 import '../domain/z_geo_shape.dart';
 
@@ -38,17 +39,35 @@ abstract class ZMapAdapter {
   /// - [center] : point de centrage initial (si `null`, l'implémentation choisit
   ///   un centre neutre par défaut) ;
   /// - [shape] : aire à surligner (sommets/polyligne) — optionnel ;
+  /// - [circle] : cercle à surligner (centre + rayon mètres) — optionnel
+  ///   (E11b-1, additif rétro-compatible : défaut `null` → aucun cercle) ;
   /// - [onTap] : remonté quand l'utilisateur tape la carte, en **coordonnées
   ///   neutres** ([ZGeoPoint]) — jamais un type SDK ;
-  /// - [interactive] : `false` pour un aperçu non manipulable (lecture seule).
+  /// - [interactive] : `false` pour un aperçu non manipulable (lecture seule) ;
+  /// - [tileUrlTemplate] : gabarit d'URL de tuiles **surchargeable par-champ**
+  ///   (honoré par l'adaptateur OSM ; ignoré par Google) — `null` → défaut de
+  ///   l'adaptateur (E11b-1, additif) ;
+  /// - [mapStyleJson] : style de carte **surchargeable par-champ** (honoré par
+  ///   l'adaptateur Google ; ignoré par OSM) — `null` → défaut de l'adaptateur ;
+  /// - [defaultZoom] : zoom initial **surchargeable par-champ** (honoré par les
+  ///   deux adaptateurs) — `null` → défaut de l'adaptateur.
   ///
   /// Retourne un `Widget` opaque : l'appelant ne voit AUCUN type carte.
+  ///
+  /// **Note compat (0.x)** : les ajouts [circle]/[tileUrlTemplate]/[mapStyleJson]/
+  /// [defaultZoom] sont des évolutions **mineures additives** du port ; les
+  /// appelants existants compilent inchangés ; un adaptateur externe recompile
+  /// (additif, non-cassant fonctionnellement).
   Widget buildMap(
     BuildContext context, {
     ZGeoPoint? center,
     ZGeoShape? shape,
+    ZGeoCircle? circle,
     ValueChanged<ZGeoPoint>? onTap,
     bool interactive = true,
+    String? tileUrlTemplate,
+    String? mapStyleJson,
+    double? defaultZoom,
   });
 
   /// Libère le contrôleur natif éventuel (learning E5). Idempotent : un second
