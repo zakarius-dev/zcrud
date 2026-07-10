@@ -60,5 +60,17 @@ class FirestoreZRemoteStore<T extends ZEntity> extends ZRemoteStore<T> {
   Stream<List<T>> watchAll() => _repository.watchAll();
 
   @override
+  Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() =>
+      _repository.syncEntriesAll();
+
+  @override
+  Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry) =>
+      _repository.writeMerged(entry);
+
+  @override
+  Future<ZResult<Unit>> applyMergedAll(List<ZSyncEntry<T>> entries) =>
+      _repository.applyMergedAll(entries);
+
+  @override
   void dispose() => _repository.dispose();
 }

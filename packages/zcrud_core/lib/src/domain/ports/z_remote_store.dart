@@ -11,6 +11,7 @@ import 'package:dartz/dartz.dart' show Unit;
 import '../contracts/z_entity.dart';
 import '../data/z_data_request.dart';
 import '../failures/z_failure.dart';
+import '../sync/z_sync_entry.dart';
 
 /// Contrat **abstrait** (port) du store **distant** d'un agrégat [T] — la moitié
 /// « best-effort » du patron offline-first (AD-9).
@@ -48,6 +49,32 @@ abstract class ZRemoteStore<T extends ZEntity> {
 
   /// Flux temps réel **nu** distant des éléments visibles (non soft-deleted).
   Stream<List<T>> watchAll();
+
+  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : lit **toutes** les entrées
+  /// distantes **y compris soft-deletées** (tombstones), chacune appariée à son
+  /// [ZSyncMeta]. **Contraste voulu avec [pull]** (qui exclut les tombstones) :
+  /// indispensable au merge Last-Write-Wins. Décodage **défensif** (AD-10) : une
+  /// entrée non décodable est écartée + loggée. Erreur d'accès distant →
+  /// `Left(ServerFailure)` (best-effort, assimilé à « offline » par le dépôt).
+  Future<ZResult<List<ZSyncEntry<T>>>> syncEntries();
+
+  /// **Écriture PRÉSERVANT la méta** (E5-3) d'une **seule** entrée : écrit
+  /// l'entité **et** son [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted`
+  /// conservés tels quels, **jamais** `now()`. Réservé au merge (défaire
+  /// l'estampille de `push` casserait le LWW). Un tombstone (`isDeleted:true`) est
+  /// propagé tel quel. Erreur distante → `Left(ServerFailure)`.
+  Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry);
+
+  /// **Propagation PAR LOT BORNÉE** (E5-3, AD-9) d'un changeset d'[entries]
+  /// (gagnants locaux d'un merge), chacune écrite **verbatim** (méta préservée,
+  /// jamais `now()`).
+  ///
+  /// La **borne** de découpage (≤ 450 écritures/lot, sûre sous la limite Firestore
+  /// de 500) est **backend-spécifique** et vit **exclusivement** dans l'adaptateur
+  /// (`zcrud_firestore`) — **jamais** dans ce port neutre (AD-5). Chaque lot est
+  /// **committé atomiquement** (aucune écriture partielle non-commit). Une liste
+  /// vide → `Right(unit)` (no-op). Erreur distante → `Left(ServerFailure)`.
+  Future<ZResult<Unit>> applyMergedAll(List<ZSyncEntry<T>> entries);
 
   /// Libère les ressources (abonnements, contrôleurs de flux).
   void dispose();

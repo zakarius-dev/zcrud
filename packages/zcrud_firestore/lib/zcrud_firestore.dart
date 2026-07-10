@@ -20,3 +20,7 @@ export 'src/data/firebase_z_repository_impl.dart';
 export 'src/data/firestore_z_remote_store.dart';
 export 'src/data/hive_z_local_store.dart';
 export 'src/data/z_firestore_api.dart';
+// E5-3 : dépôt offline-first `ZOfflineFirstRepository<T>` (compose local+distant,
+// merge Last-Write-Wins, soft-delete propagé, lot ≤ 450, `Right(unit)` si offline).
+// Signatures publiques NUES (aucun type hive/cloud_firestore).
+export 'src/data/z_offline_first_repository.dart';

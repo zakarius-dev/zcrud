@@ -11,6 +11,7 @@ import 'package:dartz/dartz.dart' show Unit;
 
 import '../contracts/z_entity.dart';
 import '../failures/z_failure.dart';
+import '../sync/z_sync_entry.dart';
 
 /// Contrat **abstrait** (port) du store **local** d'un agrégat [T] — la moitié
 /// « qui fait autorité » du patron offline-first (AD-9).
@@ -68,6 +69,31 @@ abstract class ZLocalStore<T extends ZEntity> {
   /// Restaure l'élément [id] soft-deleted (`is_deleted = false`). `id` absent →
   /// `Left(NotFoundFailure)`.
   Future<ZResult<Unit>> restore(String id);
+
+  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : lit **toutes** les entrées
+  /// **y compris soft-deletées** (tombstones), chacune appariée à son
+  /// [ZSyncMeta] (`updatedAt`/`isDeleted`). Un store vide → `Right(<ZSyncEntry>[])`.
+  ///
+  /// **Contraste voulu avec [getAll]** : [getAll] exclut les tombstones (lecture
+  /// « visible »), alors que [syncEntries] les **inclut** — indispensable au merge
+  /// Last-Write-Wins (E5-3), qui doit voir de **chaque côté** l'`updated_at` ET
+  /// l'`is_deleted` de toute entrée pour propager une suppression. Décodage
+  /// **défensif** (AD-10) : une entrée non décodable est **écartée + loggée**,
+  /// jamais un `throw`. Erreur d'accès (cache) → `Left(CacheFailure)`.
+  Future<ZResult<List<ZSyncEntry<T>>>> syncEntries();
+
+  /// **Écriture PRÉSERVANT la méta** (E5-3) : écrit l'entité **et** son
+  /// [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted` **conservés tels quels**,
+  /// **jamais** réestampillés `now()`.
+  ///
+  /// **RÉSERVÉ à l'application d'un résultat de merge** : [put] réestampille
+  /// `updated_at = now()` (vraie mutation utilisateur) ; l'appliquer à un gagnant
+  /// de merge casserait le LWW (le côté qui « adopte » paraîtrait toujours le plus
+  /// récent → ping-pong). [applyMerged] est donc la voie **sans `now()`**, hors
+  /// chemin d'écriture utilisateur. Écrire une [entry] `isDeleted:true` **propage
+  /// un tombstone** (soft-delete). Le corps persiste **toujours** son `id`
+  /// (invariant clé↔corps). Erreur d'accès → `Left(CacheFailure)`.
+  Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry);
 
   /// **Purge physique** de tout le cache local (maintenance/tests) — distincte
   /// du [softDelete] métier. À NE PAS utiliser comme voie de suppression d'une

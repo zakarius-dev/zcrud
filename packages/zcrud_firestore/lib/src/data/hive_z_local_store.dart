@@ -380,6 +380,58 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, T>(entity);
       });
 
+  // ───────────────────────── Sync offline-first (E5-3) ───────────────────────
+
+  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : renvoie **toutes** les
+  /// entrées **y compris soft-deletées** (tombstones), chacune appariée à son
+  /// [ZSyncMeta]. **NE PASSE PAS** par [_isVisible] (contraste voulu avec
+  /// [getAll], qui exclut les tombstones — indispensable au merge LWW pour
+  /// propager une suppression). Décodage **défensif** (AD-10) : une entrée
+  /// corrompue/non décodable est **écartée + loggée**, jamais un `throw`. Tri
+  /// stable par `id` (ordre total). Erreur d'accès → `Left(CacheFailure)`.
+  @override
+  Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() => _guard(() async {
+        final out = <ZSyncEntry<T>>[];
+        for (final key in _box.keys) {
+          final id = key.toString();
+          final map = _rawMap(id, _box.get(key));
+          if (map == null) continue; // corrompu → écarté + loggé par _rawMap
+          final entity = _decodeEntity(id, map);
+          if (entity == null) continue; // non décodable → écarté (AD-10)
+          out.add(
+            ZSyncEntry<T>(entity: entity, meta: ZSyncMeta.fromJson(map)),
+          );
+        }
+        out.sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
+        return Right<ZFailure, List<ZSyncEntry<T>>>(out);
+      });
+
+  /// **Écriture PRÉSERVANT la méta** (E5-3) : écrit l'entité **et** son
+  /// [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted` **conservés tels quels**
+  /// (jamais `now()`, contrairement à [put]). RÉSERVÉ à l'application d'un
+  /// résultat de merge (défaire l'estampille `now()` casserait le LWW). Le corps
+  /// porte **toujours** son `id` (invariant clé↔corps). Écrire une [entry]
+  /// `isDeleted:true` **propage un tombstone**. `box.watch()` réémet le flux.
+  @override
+  Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry) => _guard(() async {
+        final id = entry.entity.id;
+        if (id == null) {
+          return Left<ZFailure, Unit>(
+            DomainFailure(
+              'applyMerged requiert une entité matérialisée (id non-null) '
+              '(kind=$_kind)',
+            ),
+          );
+        }
+        final map = Map<String, dynamic>.of(_toMap(entry.entity));
+        map[_kId] = id; // invariant clé↔corps
+        final meta = entry.meta.toJson();
+        map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)
+        map[_kIsDeleted] = entry.meta.isDeleted; // verbatim (tombstone possible)
+        await _box.put(id, jsonEncode(map));
+        return Right<ZFailure, Unit>(unit);
+      });
+
   // ───────────────────────── Écritures (AC6/7/9) ─────────────────────────────
 
   /// Persiste [item] (écrasement JSON total keyé par son `id`) puis relit

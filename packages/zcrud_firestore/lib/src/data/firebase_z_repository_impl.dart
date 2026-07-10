@@ -150,6 +150,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// Clé logique d'identité injectée dans la map avant décodage.
   static const String _kId = 'id';
 
+  /// Borne SÛRE d'écritures par `WriteBatch` (E5-3, AD-9) : la limite Firestore
+  /// est **500** ; la borne canonique retenue est **450** (marge de sécurité).
+  /// Cette constante est **backend-spécifique** et vit donc **exclusivement** ici
+  /// (`zcrud_firestore`), **jamais** dans `zcrud_core` (AD-5).
+  static const int kMaxBatchWrites = 450;
+
   /// Contrôleurs/abonnements ouverts par [watch]/[watchAll], fermés par [dispose].
   final List<StreamController<List<T>>> _controllers =
       <StreamController<List<T>>>[];
@@ -598,6 +604,92 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         await batch.commit();
         return Right<ZFailure, Unit>(unit);
       });
+
+  // ───────────────────────── Sync offline-first (E5-3) ───────────────────────
+
+  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : lit **TOUS** les documents
+  /// **SANS** le filtre serveur `is_deleted == false` (tombstones **inclus**),
+  /// chacun apparié à son [ZSyncMeta] (lu depuis le corps). Contraste voulu avec
+  /// [getAll] (qui exclut les tombstones) — indispensable au merge LWW. Décodage
+  /// **défensif** (AD-10) : un document corrompu est **écarté + loggé**, jamais un
+  /// `throw`. `FirebaseException` → `Left(ServerFailure)` (best-effort).
+  Future<ZResult<List<ZSyncEntry<T>>>> syncEntriesAll() => _guard(() async {
+        final snap = await _rawCollection().get();
+        final out = <ZSyncEntry<T>>[];
+        for (final d in snap.docs) {
+          final data = d.data();
+          final entity = _decode(d.id, data);
+          if (entity == null) continue; // corrompu → écarté + loggé (AD-10)
+          out.add(
+            ZSyncEntry<T>(
+              entity: entity,
+              meta: ZSyncMeta.fromJson(_inject(d.id, data)),
+            ),
+          );
+        }
+        return Right<ZFailure, List<ZSyncEntry<T>>>(out);
+      });
+
+  /// **Écriture PRÉSERVANT la méta** (E5-3) d'une **seule** [entry] : `batch.set`
+  /// committé (jamais partiel) écrivant le corps + `updated_at`/`is_deleted`
+  /// **verbatim** (jamais `now()`, contrairement à [save]). Réservé au merge.
+  Future<ZResult<Unit>> writeMerged(ZSyncEntry<T> entry) => _guard(() async {
+        final id = entry.entity.id;
+        if (id == null) {
+          return Left<ZFailure, Unit>(
+            DomainFailure(
+              'writeMerged requiert une entité matérialisée (kind=$_kind)',
+            ),
+          );
+        }
+        final batch = _firestore.batch();
+        batch.set(_rawCollection().doc(id), _mergedMap(entry, id));
+        await batch.commit();
+        return Right<ZFailure, Unit>(unit);
+      });
+
+  /// **Propagation PAR LOT BORNÉE** (E5-3, AD-9) d'un changeset d'[entries],
+  /// chacune écrite **verbatim** (méta préservée, jamais `now()`). Le changeset
+  /// est **découpé** en lots de ≤ [kMaxBatchWrites] (**450**), chaque lot étant un
+  /// `WriteBatch` **committé atomiquement** (aucune écriture partielle non-commit).
+  /// Liste vide → `Right(unit)`. `FirebaseException` → `Left(ServerFailure)`.
+  Future<ZResult<Unit>> applyMergedAll(List<ZSyncEntry<T>> entries) =>
+      _guard(() async {
+        for (var start = 0;
+            start < entries.length;
+            start += kMaxBatchWrites) {
+          final end = (start + kMaxBatchWrites < entries.length)
+              ? start + kMaxBatchWrites
+              : entries.length;
+          final batch = _firestore.batch();
+          for (var i = start; i < end; i++) {
+            final entry = entries[i];
+            final id = entry.entity.id;
+            if (id == null) {
+              return Left<ZFailure, Unit>(
+                DomainFailure(
+                  'applyMergedAll: entité éphémère (id null) interdite '
+                  '(kind=$_kind)',
+                ),
+              );
+            }
+            batch.set(_rawCollection().doc(id), _mergedMap(entry, id));
+          }
+          await batch.commit();
+        }
+        return Right<ZFailure, Unit>(unit);
+      });
+
+  /// Construit la map d'écriture d'un merge : corps [_toMap] + corps `id` +
+  /// `updated_at`/`is_deleted` de la [entry] **verbatim** (jamais `now()`).
+  Map<String, dynamic> _mergedMap(ZSyncEntry<T> entry, String id) {
+    final map = Map<String, dynamic>.of(_toMap(entry.entity));
+    map[_kId] = id;
+    final meta = entry.meta.toJson();
+    map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)
+    map[_kIsDeleted] = entry.meta.isDeleted; // verbatim (tombstone possible)
+    return map;
+  }
 
   @override
   void dispose() {

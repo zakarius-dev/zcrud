@@ -69,6 +69,10 @@ export 'src/domain/ports/z_acl.dart';
 export 'src/domain/ports/z_local_store.dart';
 export 'src/domain/ports/z_remote_store.dart';
 export 'src/domain/ports/z_repository.dart';
+// Sur-port synchronisable (E5-3, AD-9/AD-11) : `ZSyncableRepository<T>` étend
+// `ZRepository<T>` d'un `sync()` one-shot (merge LWW ; `Right(unit)` si offline).
+// Le *quand* (débounce/multi-dépôts) reste E5-4.
+export 'src/domain/ports/z_syncable_repository.dart';
 // Registres ouverts d'extensibilité (E2-3, AD-3/AD-4) : container générique
 // `ZCodecRegistry<T>`, registre de modèles `ZcrudRegistry`/`ZModelCodec`
 // (consommé par E2-5), registres ouverts `ZTypeRegistry` (E3-3b) /
@@ -81,7 +85,20 @@ export 'src/domain/registry/z_registry_error.dart';
 export 'src/domain/registry/z_source_registry.dart';
 export 'src/domain/registry/z_type_registry.dart';
 export 'src/domain/registry/zcrud_registry.dart';
+// Contrats de synchronisation offline-first (E5-3, AD-5/AD-9/AD-16) : résolveur
+// Last-Write-Wins PUR `ZLwwResolver` (+ `ZLwwDecision`/`ZLwwAction`), entrée de
+// sync `ZSyncEntry<T>` (entité + `ZSyncMeta`, tombstones inclus), méta
+// hors-entité `ZSyncMeta`. Ordre alphabétique (directives_ordering).
+export 'src/domain/sync/z_lww_resolver.dart';
+export 'src/domain/sync/z_sync_entry.dart';
 export 'src/domain/sync/z_sync_meta.dart';
+// Orchestrateur de synchronisation (E5-4, AD-5/AD-9/AD-11/AD-15) : `ZSyncOrchestrator`
+// (le *quand* — registre multi-dépôts + débounce 400 ms login/reconnexion +
+// best-effort/échec partiel toléré + gate + couture connectivité), rapport agrégé
+// `ZSyncRunReport`, coutures `ZSyncTimerFactory`/`ZCancelableTimer`/
+// `ZSyncOrchestratorLog`. Dart PUR : n'appelle QUE `ZSyncableRepository.sync()`.
+export 'src/domain/sync/z_sync_orchestrator.dart';
+export 'src/domain/sync/z_sync_run_report.dart';
 export 'src/domain/z_core_api.dart';
 // Couche présentation (E2-7/E2-8, AD-2/AD-6/AD-13/AD-14/AD-15) : réactivité
 // Flutter-native (aucun gestionnaire d'état). `ZFormController` (tranches
