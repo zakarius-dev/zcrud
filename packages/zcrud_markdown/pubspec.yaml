@@ -1,6 +1,12 @@
 # zcrud_markdown — membre du workspace zcrud (resolution: workspace).
-# Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
-# dépendances inter-packages sont posées en E1-2.
+# E6-1 : `zcrud_markdown` devient un package FLUTTER et acquiert la SEULE arête
+# vers `flutter_quill` du graphe. C'est l'éditeur rich-text isolé (`ZMarkdownField`,
+# controller Quill isolé conforme AD-2) branché sur une tranche du `ZFormController`
+# via une VALEUR NEUTRE (Delta JSON), jamais un type Quill.
+# AD-1/AD-7 : `flutter_quill` vit EXCLUSIVEMENT ici ; un consommateur qui n'importe
+# pas zcrud_markdown (ex. zcrud_core) ne tire AUCUNE dépendance Quill — et aucun
+# type Quill ne fuit ni dans `zcrud_core` ni dans la valeur exposée au form.
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_markdown
 description: >-
   Édition/lecture Markdown riche (Quill + ZCodec + embeds LaTeX/tables).
@@ -11,7 +17,35 @@ resolution: workspace
 environment:
   sdk: ^3.12.2
 
-# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_core UNIQUEMENT.
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
+  flutter:
+    sdk: flutter
+  # Stack de l'architecture (^11.5.x) — SEULE arête Quill du graphe (AD-1/AD-7).
+  flutter_quill: ^11.5.0
+  # E6-2 (AD-7) : libs de conversion Delta↔Markdown du `ZMarkdownCodec`.
+  # ISOLÉES au SEUL pubspec zcrud_markdown (AD-1) — aucune ne fuit en signature
+  # publique (types de conversion cantonnés à l'implémentation).
+  # Compat vérifiée (E1-4) : `markdown_quill ^4.3.0` exige `flutter_quill ^11.0.0`
+  # (satisfait par ^11.5.x) et `markdown ^7.2.1` ; `dart_quill_delta ^10.x` tiré
+  # transitivement par flutter_quill est compatible. Résolution workspace VERTE.
+  markdown: ^7.2.2
+  markdown_quill: ^4.3.0
+  # E6-3 (AD-7/AD-1) : rendu des embeds LaTeX (`Math.tex` + `onErrorFallback`).
+  # ISOLÉE au SEUL pubspec zcrud_markdown (AD-1) — aucun type `flutter_math_fork`
+  # (`Math`/`SelectableMath`/`MathStyle`) ne fuit en signature publique ni dans la
+  # valeur de tranche (Delta JSON neutre). Absente de la fermeture de zcrud_core
+  # (gate `math_lib_isolation_graph_test.dart`). Compat E1-4 : SDK `>=3.0.0 <4.0.0`
+  # (satisfait par ^3.12.2) ; résolution workspace VERTE (`dart pub get --dry-run`).
+  flutter_math_fork: ^0.7.4
   zcrud_core: ^0.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# Quill utilise les icônes Material pour sa toolbar : requis pour un rendu correct
+# côté app hôte (silence le warning de résolution `uses-material-design`).
+flutter:
+  uses-material-design: true

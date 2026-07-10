@@ -114,12 +114,12 @@ development_status:
   epic-5-retrospective: done
 
   # === E6 — Markdown & rich text (zcrud_markdown) (MVP) ===
-  epic-6: in-progress
+  epic-6: done
   e6-1-editeur-quill-richtext-isole: done
   e6-2-zcodec-pluggable: done
-  e6-3-embed-latex: in-progress
-  e6-4-embed-tableau: backlog
-  epic-6-retrospective: optional
+  e6-3-embed-latex: done
+  e6-4-embed-tableau: done
+  epic-6-retrospective: done
 
   # === E11a — Lot parite DODLP (sous-ensemble geo/intl/export) (MVP, precede E7) ===
   # Parallélisé avec E6 (packages disjoints : zcrud_geo/intl/export vs zcrud_markdown).
