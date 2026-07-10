@@ -29,7 +29,7 @@
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import 'z_flashcard_type.dart';
 import 'z_review_mode.dart';

@@ -21,7 +21,7 @@
 /// (payload conservé, round-trip préservé), **jamais** de throw (AD-10).
 library;
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 /// Discriminant persisté du variant de provenance.
 const String _kKind = 'kind';

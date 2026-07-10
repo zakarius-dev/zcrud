@@ -38,7 +38,7 @@ library;
 // comme le dépôt offline-first d'E5 (`z_offline_first_repository.dart`).
 // ignore_for_file: prefer_initializing_formals
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import '../domain/z_flashcard.dart';
 import '../domain/z_repetition_info.dart';

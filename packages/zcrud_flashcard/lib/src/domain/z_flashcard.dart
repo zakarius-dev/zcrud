@@ -27,13 +27,13 @@
 /// (attribution avant écriture) est portée par le repository (E9-4), hors
 /// périmètre ici.
 ///
-/// Réutilise le cœur via `package:zcrud_core/zcrud_core.dart` (`ZEntity`,
+/// Réutilise le cœur via `package:zcrud_core/domain.dart` (`ZEntity`,
 /// `ZExtensible`, `ZExtension`, `ZSourceRegistry`, `ZFieldSpec`, `ZcrudRegistry`)
 /// — même convention d'import que `zcrud_mindmap` ; testé via `flutter test`.
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import 'z_choice.dart';
 import 'z_flashcard_source.dart';

@@ -1,4 +1,4 @@
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_markdown/zcrud_markdown.dart';
 
 /// Marqueur d'API publique de `zcrud_mindmap` (placeholder E1-2).

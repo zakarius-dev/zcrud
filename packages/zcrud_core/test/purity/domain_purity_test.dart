@@ -135,6 +135,37 @@ void main() {
         reason: 'Types backend en clair (AD-5):\n${offenders.join('\n')}');
   });
 
+  test('les points d\'entrée PURS (domain.dart, edition.dart) sans import Flutter',
+      () {
+    // Le barrel principal `zcrud_core.dart` tire Flutter (présentation) — normal.
+    // Mais les entrypoints PURS destinés aux couches domaine des satellites
+    // (AD-14) ne doivent JAMAIS exporter/importer un lib Flutter/backend/manager.
+    final offenders = <String>[];
+    for (final rel in <String>['lib/domain.dart', 'lib/edition.dart']) {
+      File? file;
+      for (final base in <String>['', 'packages/zcrud_core/']) {
+        final f = File('$base$rel');
+        if (f.existsSync()) {
+          file = f;
+          break;
+        }
+      }
+      if (file == null) continue;
+      for (final line in file.readAsLinesSync()) {
+        final trimmed = line.trimLeft();
+        if (!trimmed.startsWith('import ') && !trimmed.startsWith('export ')) {
+          continue;
+        }
+        for (final bad in _forbidden) {
+          if (trimmed.contains(bad)) offenders.add('$rel: $trimmed');
+        }
+      }
+    }
+    expect(offenders, isEmpty,
+        reason: 'Entrée pure avec dépendance Flutter/backend:\n'
+            '${offenders.join('\n')}');
+  });
+
   test('aucun identifiant de type non-Z fusionné (finding #15)', () {
     final offenders = <String>[];
     for (final ent in _domainDartFiles()) {

@@ -6,100 +6,13 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
-// Re-export CURATÉ de dartz (AD-11) — sous-ensemble minimal pour ne pas polluer
-// l'API publique. Pas d'export global de `package:dartz/dartz.dart`.
-export 'package:dartz/dartz.dart' show Either, Left, Right, Unit, unit;
+// Couche DOMAINE/DONNÉES **pur-Dart** (Flutter-free) : ré-exportée depuis le
+// point d'entrée dédié `package:zcrud_core/domain.dart`. Le barrel principal la
+// ré-expose (API publique INCHANGÉE) ET y ajoute la couche présentation
+// ci-dessous. Les satellites qui n'ont besoin QUE du domaine (leurs modèles)
+// importent `domain.dart` pour rester transitivement pur-Dart (AD-14).
+export 'domain.dart';
 
-// Couche DONNÉES — adaptateurs de schéma existant (E2-6, FR-11, AD-3/AD-4/AD-10) :
-// contrat `ZModelAdapter<T>` (adapte un modèle HÉRITÉ vers `ZcrudRegistry` sans
-// le repasser par le builder zcrud) + `JsonSerializableAdapter<T>` (cible
-// lex_douane `@JsonSerializable`, mode défensif `fromMapSafe`). Pur-Dart. Le
-// pendant DODLP `ReflectableCodec` (reflectable) vit dans `zcrud_get` (chemin
-// allowlisté du gate AD-3), jamais dans le cœur.
-export 'src/data/adapters/json_serializable_adapter.dart';
-export 'src/data/adapters/z_model_adapter.dart';
-
-// Contrats de domaine (E2-1) ; hiérarchie d'erreurs + `ZResult<T>` (AD-11) ;
-// métadonnées de sync hors-entité (AD-16) ; marqueur d'API (placeholder E1-2,
-// conservé pour les satellites). Ordre alphabétique (directives_ordering).
-// Ports & value objects de la couche données (E2-2, AD-5/AD-11/AD-16) :
-// `ZRepository<T>` (flux nus + CRUD `Either`), `ZDataRequest`/`ZFilter`/`ZSort`,
-// curseur neutre `ZCursor`, états `ZDataState` (sealed), port `ZAcl`.
-export 'src/domain/contracts/z_entity.dart';
-export 'src/domain/contracts/z_node.dart';
-export 'src/domain/contracts/z_syncable.dart';
-export 'src/domain/data/z_cursor.dart';
-export 'src/domain/data/z_data_request.dart';
-export 'src/domain/data/z_data_state.dart';
-// Normalisation de texte NEUTRE pour la recherche SANS ACCENTS (E4-3, AD-10) :
-// helper pur-Dart `zFoldDiacritics` (table Latin documentée), réutilisable par
-// l'adaptateur Firestore (E5) et le moteur in-memory `zApplyListRequest`.
-export 'src/domain/data/z_search_text.dart';
-// Surface d'autorité du moteur déclaratif (E2-4, AD-1/AD-3/AD-4) : catalogue de
-// champs `EditionFieldType` (enum ouvert, `custom`) + types-valeur `const`
-// partagés authoring (`@ZcrudField`) ↔ runtime (`ZFieldSpec`, émis en E2-5) :
-// `ZValidatorSpec` (déclaratif, aucune closure), `ZFieldChoice`, `ZCondition`
-// (displayCondition déclarative, AD-2), base d'extension `ZFieldConfig` (+
-// configs triviales pur-cœur texte/nombre/date), stratégie `ZFieldRename`.
-export 'src/domain/edition/app_file.dart';
-export 'src/domain/edition/edition_field_type.dart';
-export 'src/domain/edition/z_condition.dart';
-// Évaluateur PUR de `ZCondition` contre l'état de formulaire (E3-4, AD-2) :
-// `evaluateZCondition` + helper `zIsTruthy` + extraction des champs de garde
-// `zGuardFieldsOf` (souscription CIBLÉE du sélecteur de visibilité — SM-1).
-export 'src/domain/edition/z_condition_evaluator.dart';
-export 'src/domain/edition/z_field_choice.dart';
-export 'src/domain/edition/z_field_config.dart';
-export 'src/domain/edition/z_field_rename.dart';
-export 'src/domain/edition/z_field_spec.dart';
-export 'src/domain/edition/z_sub_list_config.dart';
-export 'src/domain/edition/z_validator_spec.dart';
-// Slots d'extensibilité (E2-3, AD-4/AD-10) : slot type additif VERSIONNÉ
-// `ZExtension` (parsing défensif `guard`), mixin `ZExtensible` (`extension` +
-// `extra`) porté par les entités E9/E10, helper `zExtraRead`.
-export 'src/domain/extension/z_extensible.dart';
-export 'src/domain/extension/z_extension.dart';
-export 'src/domain/failures/z_failure.dart';
-export 'src/domain/ports/cloud_storage_repository.dart';
-export 'src/domain/ports/z_acl.dart';
-// Ports bas-niveau offline-first (E5-2, AD-5/AD-9/AD-11) : store LOCAL source de
-// vérité `ZLocalStore<T>` + store DISTANT fire-and-forget `ZRemoteStore<T>`,
-// neutres (aucun type hive/cloud_firestore). Adaptateurs (Hive/Firestore) en
-// `zcrud_firestore`. Le merge LWW/orchestrateur (E5-3/E5-4) n'est PAS ici.
-export 'src/domain/ports/z_local_store.dart';
-export 'src/domain/ports/z_remote_store.dart';
-export 'src/domain/ports/z_repository.dart';
-// Sur-port synchronisable (E5-3, AD-9/AD-11) : `ZSyncableRepository<T>` étend
-// `ZRepository<T>` d'un `sync()` one-shot (merge LWW ; `Right(unit)` si offline).
-// Le *quand* (débounce/multi-dépôts) reste E5-4.
-export 'src/domain/ports/z_syncable_repository.dart';
-// Registres ouverts d'extensibilité (E2-3, AD-3/AD-4) : container générique
-// `ZCodecRegistry<T>`, registre de modèles `ZcrudRegistry`/`ZModelCodec`
-// (consommé par E2-5), registres ouverts `ZTypeRegistry` (E3-3b) /
-// `ZSourceRegistry` (E9-1) sur base `ZOpenRegistry`/`ZValueCodec`, erreurs de
-// config `ZUnregisteredTypeError`/`ZDuplicateRegistrationError` (Error, PAS
-// `ZFailure`).
-export 'src/domain/registry/z_codec_registry.dart';
-export 'src/domain/registry/z_open_registry.dart';
-export 'src/domain/registry/z_registry_error.dart';
-export 'src/domain/registry/z_source_registry.dart';
-export 'src/domain/registry/z_type_registry.dart';
-export 'src/domain/registry/zcrud_registry.dart';
-// Contrats de synchronisation offline-first (E5-3, AD-5/AD-9/AD-16) : résolveur
-// Last-Write-Wins PUR `ZLwwResolver` (+ `ZLwwDecision`/`ZLwwAction`), entrée de
-// sync `ZSyncEntry<T>` (entité + `ZSyncMeta`, tombstones inclus), méta
-// hors-entité `ZSyncMeta`. Ordre alphabétique (directives_ordering).
-export 'src/domain/sync/z_lww_resolver.dart';
-export 'src/domain/sync/z_sync_entry.dart';
-export 'src/domain/sync/z_sync_meta.dart';
-// Orchestrateur de synchronisation (E5-4, AD-5/AD-9/AD-11/AD-15) : `ZSyncOrchestrator`
-// (le *quand* — registre multi-dépôts + débounce 400 ms login/reconnexion +
-// best-effort/échec partiel toléré + gate + couture connectivité), rapport agrégé
-// `ZSyncRunReport`, coutures `ZSyncTimerFactory`/`ZCancelableTimer`/
-// `ZSyncOrchestratorLog`. Dart PUR : n'appelle QUE `ZSyncableRepository.sync()`.
-export 'src/domain/sync/z_sync_orchestrator.dart';
-export 'src/domain/sync/z_sync_run_report.dart';
-export 'src/domain/z_core_api.dart';
 // Couche présentation (E2-7/E2-8, AD-2/AD-6/AD-13/AD-14/AD-15) : réactivité
 // Flutter-native (aucun gestionnaire d'état). `ZFormController` (tranches
 // `ValueListenable`), seams d'injection (`ZDependencyResolver` défaut throw,

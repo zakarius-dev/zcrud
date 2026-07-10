@@ -1,4 +1,4 @@
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_export/zcrud_export.dart';
 import 'package:zcrud_markdown/zcrud_markdown.dart';
 

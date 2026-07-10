@@ -12,7 +12,7 @@
 /// Mixe `ZExtensible` (slots AD-4 au niveau carte) ; réutilise le cœur (AD-1).
 library;
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import 'z_mindmap_node.dart';
 import 'z_mindmap_tree_ops.dart';

@@ -53,7 +53,7 @@
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 part 'z_study_folder.g.dart';
 

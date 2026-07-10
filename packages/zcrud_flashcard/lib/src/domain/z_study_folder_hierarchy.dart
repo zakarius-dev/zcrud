@@ -12,7 +12,7 @@
 /// `DomainFailure`) — aucun nouveau type de failure (AD-1).
 library;
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import 'z_study_folder.dart';
 

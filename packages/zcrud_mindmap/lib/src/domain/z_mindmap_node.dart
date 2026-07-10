@@ -10,7 +10,7 @@
 /// réconciliation) et mixe `ZExtensible` (slots AD-4 : `extension`/`extra`).
 library;
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 /// Décodeur défensif OPTIONNEL d'une `ZExtension` concrète depuis sa map JSON.
 ///

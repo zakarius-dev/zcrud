@@ -30,7 +30,7 @@
 /// en mémoire, entièrement testables sans Firebase.
 library;
 
-import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_core/domain.dart';
 
 import '../domain/z_repetition_info.dart';
 
