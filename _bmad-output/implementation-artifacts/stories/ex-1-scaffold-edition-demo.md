@@ -4,7 +4,7 @@ baseline_commit: 868438a73868c75a837e71f8cb443dd75ed24fa8
 
 # Story EX.1 : Scaffold de l'application exemple Flutter + démo d'édition (E3)
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -60,42 +60,42 @@ Justification (chaque contrainte du prompt honorée) :
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — Scaffold du package application `example/` (AC1, AC2, AC8, AC9).**
-  - [ ] Créer `example/pubspec.yaml` : `name: zcrud_example`, `publish_to: none`, `environment.sdk: ^3.12.2`, `flutter` SDK ; deps `path:` vers `zcrud_core`, `zcrud_get`, `zcrud_riverpod`, `zcrud_provider` (AC7) ; **PAS** de `resolution: workspace` (app isolée) ; dev_deps `flutter_test`, `flutter_lints`/`lints`.
-  - [ ] Tenter `flutter pub get` réel. **Si** pub refuse le `path:` vers un membre `resolution: workspace` → appliquer le fallback (workspace member + `melos.ignore` dans pubspec.yaml ET melos.yaml, nom sans préfixe `zcrud_`), documenter la voie retenue.
-  - [ ] Vérifier `dart run melos list` = **14** et `graph_proof.py` vert (AC2).
-  - [ ] `example/lib/main.dart` : `main()` → `runApp(MaterialApp)`.
-  - [ ] `analysis_options.yaml` de l'app (hérite de la baseline ou `flutter_lints`).
-- [ ] **T2 — Coquille `MaterialApp` : thème, l10n, RTL, accueil (AC3).**
-  - [ ] Envelopper l'app dans un `ZcrudScope` racine (thème `ZcrudTheme` de démo, `ZcrudLabels` éventuels, `ZFilePicker` de démo injecté pour AC4).
-  - [ ] Câbler `localizationsDelegates: [ZcrudLocalizationsDelegate(), ...GlobalMaterialLocalizations...]`, `supportedLocales: ZcrudLocalizationsDelegate.supportedLocales`.
-  - [ ] Écran d'accueil `HomeScreen` : liste des domaines (Édition active ; Liste/Firestore/Markdown/Geo « à venir » désactivés — AC10).
-  - [ ] Toggle RTL (bascule `Locale`/`textDirection`), toggle thème clair/sombre optionnel. Usage **directionnel** partout (AD-13).
-- [ ] **T3 — Écran démo Édition : formulaire de référence (AC4, AC5).**
-  - [ ] Construire la liste `List<ZFieldSpec>` de référence couvrant les familles (T3 doit produire ≥ 30 champs / ≥ 3 sections pour rester fidèle au formulaire de référence SM-1).
-  - [ ] `ZFormController` stable (create `initState` / `dispose`), `DynamicEdition(controller, fields, sections, layout, ...)`.
-  - [ ] Sections repliables (`ZEditionSection`), ≥ 1 champ conditionnel (`ZCondition`), `layout` responsive (`ZResponsiveSpan`).
-  - [ ] Sous-liste inline `subItems` (mini-CRUD E3-3b-2) ; champ `signature` ; champ `file/image` via `ZFilePicker` de démo.
-  - [ ] Variante `ZStepperEdition` (mêmes `fields`, `steps`) accessible depuis la démo.
-  - [ ] Soumission : `ZEditionSubmitController(onSubmit: ... → Right(value))`, `ZSubmitButton`, bannière dirty (`ValueListenableBuilder(controller.isDirty)`), `ZDiscardGuard(onConfirmDiscard: dialogue)`.
-- [ ] **T4 — Visualisation SM-1 (AC6).**
-  - [ ] Indicateur de rebuild par champ (compteur incrémenté dans le `builder` du champ, ou flash). Ne PAS introduire de rebuild global pour l'afficher (chaque compteur écoute sa propre tranche).
-  - [ ] Panneau récapitulatif optionnel (n'écoute que des `ValueListenable` dédiés — jamais le `notifyListeners` global).
-- [ ] **T5 — Sélecteur de parité multi-binding (AC7).**
-  - [ ] Widget `BindingSelector` (enum {scope, get, riverpod, provider}).
-  - [ ] Fonction `wrapWithBinding(binding, child)` : `ZcrudScope` / `ZcrudGetScope` / `ZcrudRiverpodScope` / `ZcrudProviderScope`, la config de champs restant IDENTIQUE (le manager n'est que dans le wrap).
-  - [ ] Reconstruire proprement le sous-arbre au changement de binding (nouveau controller par wrap, dispose de l'ancien).
-- [ ] **T6 — Tests (AC1, AC4, AC6, AC7, AC10).**
-  - [ ] Smoke test : `pumpWidget(app)` démarre sans exception ; l'accueil s'affiche ; navigation vers la démo Édition monte l'écran.
-  - [ ] Test familles : l'écran Édition rend les widgets de familles attendus (aucun `ZUnsupportedFieldWidget` sur les types couverts).
-  - [ ] Test SM-1 : taper 100 caractères dans un champ → compteur voisin inchangé, focus conservé (`find.byType(Form) findsNothing` si pertinent).
-  - [ ] Test parité : monter le formulaire sous ≥ 2 wraps (défaut + 1 binding), asserter la parité de comportement observable.
-  - [ ] Test frontière : le `pubspec.yaml` de l'app ne dépend PAS de `zcrud_list`/`_firestore`/`_markdown`/`_geo`/`_intl`/`_export`.
-- [ ] **T7 — Vérif verte + gates (AC1, AC2, AC8, AC9).**
-  - [ ] `flutter analyze` (app) RC=0 ; `flutter test` (app) RC=0.
-  - [ ] `melos run generate` (no-op propre attendu — l'app n'a pas de modèle annoté en EX-1), `melos run analyze`, `melos run test` restent verts (les 14 packages).
-  - [ ] `melos list` = 14 ; `graph_proof.py` vert ; `gate:melos`/`gate:reflectable`/`gate:secrets`/`gate:codegen` verts.
-  - [ ] Confirmer `git diff` : `packages/zcrud_core` **inchangé** ; lock racine non pollué (AC9).
+- [x] **T1 — Scaffold du package application `example/` (AC1, AC2, AC8, AC9).**
+  - [x] Créer `example/pubspec.yaml` : `name: zcrud_example`, `publish_to: none`, `environment.sdk: ^3.12.2`, `flutter` SDK ; deps `path:` vers `zcrud_core`, `zcrud_get`, `zcrud_riverpod`, `zcrud_provider` (AC7) ; **PAS** de `resolution: workspace` (app isolée) ; dev_deps `flutter_test`, `flutter_lints`/`lints`.
+  - [x] Tenter `flutter pub get` réel. Voie STANDALONE retenue (aucun fallback workspace requis) : `dependency_overrides` `path:` réconcilie la source path↔hosted (les bindings épinglent `zcrud_core: ^0.0.1` hosted). Preuve : `flutter pub get` RC=0, lock PROPRE `example/pubspec.lock` (39 deps), root lock intact.
+  - [x] Vérifier `dart run melos list` = **14** et `graph_proof.py` vert (AC2).
+  - [x] `example/lib/main.dart` : `main()` → `runApp(MaterialApp)` (via `ExampleApp`).
+  - [x] `analysis_options.yaml` de l'app (`flutter_lints` + renforts const/directionnel).
+- [x] **T2 — Coquille `MaterialApp` : thème, l10n, RTL, accueil (AC3).**
+  - [x] Envelopper l'app dans un `ZcrudScope` racine (thème `ZcrudTheme` de démo — spacings only, couleurs null → repli `Theme.of` ; `ZFilePicker` de démo injecté pour AC4).
+  - [x] Câbler `localizationsDelegates: [ZcrudLocalizationsDelegate(), Global(Material|Widgets|Cupertino)Localizations...]`, `supportedLocales: ZcrudLocalizationsDelegate.supportedLocales`.
+  - [x] Écran d'accueil `HomeScreen` : liste des domaines (Édition active ; Liste/Firestore/Markdown/Geo « à venir » désactivés — AC10).
+  - [x] Toggle RTL (`Directionality` directionnel), toggle langue fr↔en, toggle thème clair/sombre. Usage **directionnel** partout (AD-13).
+- [x] **T3 — Écran démo Édition : formulaire de référence (AC4, AC5).**
+  - [x] Liste `List<ZFieldSpec>` de référence : **34 champs / 5 sections** couvrant toutes les familles E3 (`ReferenceForm`).
+  - [x] `ZFormController` stable (create `initState` / `dispose`), `DynamicEdition(controller, fields, sections, layout, fieldBuilder)`.
+  - [x] Sections repliables (`ZEditionSection`), champ conditionnel `premiumCode` (`ZCondition.truthy('active')`), `layout` responsive (`ZResponsiveSpan`).
+  - [x] Sous-liste inline `subItems` (`ZSubListConfig`) ; champ `signature` ; champs `file/image/document` via `ZFilePicker` de démo.
+  - [x] Variante `ZStepperEdition` (mêmes `fields`, `steps`) accessible depuis la démo (`EditionStepperDemo`).
+  - [x] Soumission : `ZEditionSubmitController(onSubmit: ... → Right(values))`, `ZSubmitButton`, bannière dirty (`ValueListenableBuilder(controller.isDirty)`), `ZDiscardGuard(onConfirmDiscard: dialogue)`.
+- [x] **T4 — Visualisation SM-1 (AC6).**
+  - [x] `RebuildBadge` par champ : compteur incrémenté dans le `builder` d'un `ZFieldListenableBuilder` scellé sur la MÊME tranche (granularité). Aucun rebuild global pour l'afficher.
+  - [x] `RebuildLog` partagé (n'écoute que des tranches dédiées ; jamais `notifyListeners` global).
+- [x] **T5 — Sélecteur de parité multi-binding (AC7).**
+  - [x] `BindingSelector` (enum `DemoBinding {scope, get, riverpod, provider}`).
+  - [x] `wrapWithBinding(binding, child)` : `ZcrudScope` / `ZcrudGetScope` / `ZcrudRiverpodScope` / `ZcrudProviderScope`, config de champs IDENTIQUE (manager confiné au wrap).
+  - [x] Remontage propre au changement de binding (`KeyedSubtree(ValueKey(binding))`, nouveau controller par wrap, dispose de l'ancien).
+- [x] **T6 — Tests (AC1, AC4, AC6, AC7, AC10).**
+  - [x] Smoke test : démarrage sans exception ; accueil affiché ; navigation Édition ; bascules RTL + langue.
+  - [x] Test familles : chaque champ de référence rendu par un widget de famille dédié (aucun `ZUnsupportedFieldWidget`) + couverture des types.
+  - [x] Test SM-1 : 100 caractères → compteur voisin inchangé, focus + curseur conservés, `find.byType(Form) findsNothing`.
+  - [x] Test parité : formulaire monté sous les **4** wraps (≥ 2 requis), parité de rendu + granularité + remontage au switch.
+  - [x] Test frontière : le `pubspec.yaml` ne déclare AUCUN `zcrud_list`/`_firestore`/`_markdown`/`_geo`/`_intl`/`_export`.
+- [x] **T7 — Vérif verte + gates (AC1, AC2, AC8, AC9).**
+  - [x] `flutter analyze` (app) RC=0 ; `flutter test` (app) RC=0 (14 tests) ; `flutter build web` RC=0 (compile réel).
+  - [x] `melos run analyze` vert (14) ; `melos run verify` RC=0 (graph/melos/reflectable/secrets/codegen/compat/serialization) ; `melos run generate` no-op (aucun modèle annoté dans l'app).
+  - [x] `melos list` = 14 ; `graph_proof.py` vert ; `gate:melos`/`gate:reflectable`/`gate:secrets`/`gate:codegen` verts.
+  - [x] `git status -- packages/` vide (aucun package touché par EX-1) ; root `pubspec.lock` inchangé (mtime pré-EX-1), aucune dep d'app (syncfusion/firebase) tirée par l'app dans le lock racine (AC9).
 
 ## Dev Notes
 
@@ -188,10 +188,47 @@ Fichiers potentiellement modifiés SEULEMENT dans la voie fallback (T1) : `pubsp
 
 ### Agent Model Used
 
+claude-opus-4-8 (BMAD dev-story, effort high).
+
 ### Debug Log References
+
+- `flutter pub get` (example) : ÉCHEC initial en `path:` pur (`zcrud_provider` dépend de `zcrud_core` HOSTED ↔ `example` le prend en `path` → source conflict), RÉSOLU par `dependency_overrides` `path:` sur les 4 `zcrud_*`. RC=0, `example/pubspec.lock` propre (39 deps).
+- `flutter analyze` (example) : RC=0, « No issues found! » (après retrait d'un import inutile + suppression du `test/widget_test.dart` généré par `flutter create`).
+- `flutter test` (example) : RC=0, **14 tests** passés.
+- `flutter build web` : RC=0 (« ✓ Built build/web ») — plateforme web ajoutée via `flutter create . --platforms web` (scaffolding `web/` + `.gitignore`/`.metadata`/`README.md`).
+- Invariants workspace : `melos list` = **14** ; `graph_proof.py` ACYCLIQUE OK / CORE OUT=0 ; `gate:melos`/`reflectable`/`secrets`/`codegen` verts ; `melos run analyze` (14) vert ; `melos run verify` RC=0.
+- Isolation : root `pubspec.lock` mtime inchangé (pré-EX-1) ; `git status -- packages/` vide.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created (create-story EX-1).
+- **Voie retenue = STANDALONE ISOLÉE** (aucun fallback workspace nécessaire) : app hors `workspace:` racine + hors glob melos `packages/**` + hors `graph_proof.py` → invariant « 14 packages produit » préservé AUTOMATIQUEMENT et PROUVÉ (`melos list = 14`). Lock propre `example/pubspec.lock` ⇒ les deps lourdes futures (EX-2 Syncfusion / EX-3 Firebase/Maps) ne pollueront jamais le lock racine des 14 membres.
+- **Décision technique** : `dependency_overrides` `path:` (au lieu de rejoindre le workspace) suffit à réconcilier la source path↔hosted des `zcrud_*` sans introduire `resolution: workspace` dans l'app — l'app reste vraiment isolée.
+- **SM-1 prouvé sous test** : 100 frappes → `rebuilds(fullName)` +100, `rebuilds(nickname)` inchangé, focus + curseur (offset 100) conservés, aucun `Form` global.
+- **Parité AD-15 prouvée** : le MÊME formulaire de référence rend les mêmes familles et conserve la granularité SM-1 sous les 4 mécanismes {scope, get, riverpod, provider} ; le manager est confiné au `wrap`.
+- **AD respectés** : AD-2 (controller stable, badges granulaires), AD-6/FR-26 (thème injecté, 0 couleur codée en dur), AD-13 (`EdgeInsetsDirectional`/`TextAlign.start`, toggle RTL réel, cibles ≥ 48 dp Material), AD-1/SM-5 (`zcrud_core` inchangé, lock racine non pollué), `ListView.builder` à l'accueil.
+- **Note frontière binding (documentée)** : sous un binding, le `ZcrudScope` interne du wrap masque le `filePicker` racine (résolution au scope le plus proche) → les familles `file/image/document` rendent le MÊME widget (`ZAppFileField`) mais avec actions de picker désactivées « proprement » ; le mode `scope` (défaut) conserve le `DemoFilePicker`. Comportement conforme au cœur (défaut `filePicker: null`).
 
 ### File List
+
+Tous les fichiers créés sont sous `example/` (CONSOMMATEUR only — aucun fichier `packages/**` modifié). Nouveaux :
+
+- `example/pubspec.yaml` — app STANDALONE (`name: zcrud_example`, `publish_to: none`, path deps + overrides).
+- `example/pubspec.lock` — lock PROPRE de l'app (isolé du lock racine).
+- `example/analysis_options.yaml` — lints (`flutter_lints` + renforts).
+- `example/lib/main.dart` — `main()` → `runApp(ExampleApp())`.
+- `example/lib/app.dart` — `MaterialApp` + `ZcrudScope` racine + l10n (fr/en) + bascules thème/langue/RTL.
+- `example/lib/home_screen.dart` — accueil (domaines ; Édition active, autres « à venir »), `ListView.builder`.
+- `example/lib/demos/reference_form.dart` — schéma de référence (34 champs / 5 sections, conditionnel, subItems, layout, steps).
+- `example/lib/demos/edition_demo_screen.dart` — `DynamicEdition` + SM-1 + soumission/dirty/`ZDiscardGuard` + sélecteur de binding.
+- `example/lib/demos/edition_stepper_demo.dart` — variante `ZStepperEdition`.
+- `example/lib/binding/binding_selector.dart` — enum `DemoBinding` + `wrapWithBinding` + `BindingSelector`.
+- `example/lib/support/demo_file_picker.dart` — impl de démo de `ZFilePicker`.
+- `example/lib/support/rebuild_indicator.dart` — `RebuildLog` + `RebuildBadge` (SM-1 granulaire).
+- `example/test/support/pump_helpers.dart` — helpers de montage de test.
+- `example/test/app_smoke_test.dart` — AC1/AC3 (démarrage, accueil, nav, RTL, langue).
+- `example/test/edition_families_test.dart` — AC4 (familles, ≥30 champs/≥3 sections, aucun unsupported).
+- `example/test/sm1_granular_rebuild_test.dart` — AC6/SM-1 (100 caractères, granularité, focus).
+- `example/test/binding_parity_test.dart` — AC7 (parité 4 bindings + remontage).
+- `example/test/boundary_deps_test.dart` — AC10 (frontière deps EX-1).
+- Scaffolding `flutter create --platforms web` : `example/web/*`, `example/.gitignore`, `example/.metadata`, `example/README.md` (`build/`, `.dart_tool/` gitignorés).

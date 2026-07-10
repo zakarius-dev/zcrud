@@ -1,0 +1,58 @@
+# Application exemple STANDALONE de zcrud (EX-1) — banc de démonstration et de
+# validation exécutable du cœur (SM-1, AD-2/AD-15) et harnais croissant (E4/E5/
+# E6/E11a viendront en EX-2/EX-3).
+#
+# ISOLATION (NON-NÉGOCIABLE — cf. story EX-1 §Décision structurante) — calquée
+# sur `tool/compat_check` :
+#   - ABSENTE du bloc `workspace:` du root `pubspec.yaml` (lock PROPRE ci-contre :
+#     `example/pubspec.lock`) → n'altère JAMAIS le lock partagé des 14 membres ;
+#   - HORS du glob melos `packages/**` → `melos list` reste 14 (invariant produit) ;
+#   - HORS du scope de `scripts/dev/graph_proof.py` (qui n'itère que `packages/*`) ;
+#   - PAS de `resolution: workspace` ICI (app isolée, résolution locale).
+# Les `dependency_overrides` pointent chaque `zcrud_*` consommé vers son `path:`
+# (les bindings épinglent `zcrud_core: ^0.0.1` HOSTED : l'override réconcilie la
+# source path↔hosted sans rejoindre le workspace). CONSOMMATEUR only : ne modifie
+# AUCUN package sous `packages/`. `zcrud_core` reste Syncfusion/Firebase/Maps-free
+# (SM-5) ; l'app a le droit de tout consommer (elle n'est pas un package produit).
+name: zcrud_example
+description: Application exemple STANDALONE de démonstration/validation de zcrud (EX-1).
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Cœur + les 3 bindings (parité AD-15). AUCUN package de démo E4/E5/E6/E11a
+  # (`zcrud_list`/`_firestore`/`_markdown`/`_geo`/`_intl`/`_export`) — frontière
+  # EX-1/EX-2/EX-3 (AC10), prouvée par `test/boundary_deps_test.dart`.
+  zcrud_core:
+    path: ../packages/zcrud_core
+  zcrud_get:
+    path: ../packages/zcrud_get
+  zcrud_riverpod:
+    path: ../packages/zcrud_riverpod
+  zcrud_provider:
+    path: ../packages/zcrud_provider
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+# Réconcilie la source path↔hosted des `zcrud_*` (les bindings déclarent
+# `zcrud_core: ^0.0.1` hosted). Réservé à l'app isolée ; n'affecte pas les 14.
+dependency_overrides:
+  zcrud_core:
+    path: ../packages/zcrud_core
+  zcrud_get:
+    path: ../packages/zcrud_get
+  zcrud_riverpod:
+    path: ../packages/zcrud_riverpod
+  zcrud_provider:
+    path: ../packages/zcrud_provider

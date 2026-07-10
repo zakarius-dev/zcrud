@@ -1,0 +1,10 @@
+# Lints de l'app exemple (isolée). `flutter_lints` recommandé + renforts alignés
+# sur les Key Don'ts zcrud (AD-13 directionnel, const, ListView.builder).
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    directives_ordering: true
+    use_key_in_widget_constructors: true
