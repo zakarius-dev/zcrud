@@ -15,5 +15,16 @@ environment:
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 # AD-1 : composition mindmap -> markdown (rich-text) + cœur.
 dependencies:
+  flutter:
+    sdk: flutter
   zcrud_core: ^0.1.0
   zcrud_markdown: ^0.1.0
+  graphite: ^1.2.1
+
+# E10-2 : le package devient PORTEUR D'UI (vue `ZMindmapView`) : il tire le SDK
+# Flutter et l'arête AD-1 AUTORISÉE `zcrud_mindmap -> graphite` (auto-layout de
+# graphe, superséde `graphview`). AUCUNE arête vers un gestionnaire d'état /
+# Firebase / Syncfusion (AD-1/AD-2/AD-15).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
