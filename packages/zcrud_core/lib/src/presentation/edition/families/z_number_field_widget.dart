@@ -27,9 +27,11 @@ import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
+import '../z_field_adornment_view.dart';
 
 /// Champ d'édition **numérique** (générique / entier / décimal).
 class ZNumberFieldWidget extends StatelessWidget {
@@ -71,6 +73,27 @@ class ZNumberFieldWidget extends StatelessWidget {
 
   bool get _isInteger => field.type == EditionFieldType.integer;
 
+  /// Config numérique éventuelle (`null` si absente/non conforme — repli neutre).
+  ZNumberConfig? get _numberConfig {
+    final c = field.config;
+    return c is ZNumberConfig ? c : null;
+  }
+
+  /// DP-17 (M17) — suffixe **lecture** NEUTRE (donnée, jamais un style FR-26) :
+  /// `%` pour un pourcentage ; le symbole monétaire (config `currencySymbol` ou
+  /// repli l10n `currencySuffix`) pour une devise. `null` si aucun formatage
+  /// spécial (rétro-compat : décor inchangé pour un `number` sans config).
+  String? _suffixText(BuildContext context) {
+    final cfg = _numberConfig;
+    if (cfg == null) return null;
+    if (cfg.isPercentage) return label(context, 'percentSuffix', fallback: '%');
+    if (cfg.isCurrency) {
+      return cfg.currencySymbol ??
+          label(context, 'currencySuffix', fallback: r'$');
+    }
+    return null;
+  }
+
   /// Formatters PURS filtrant la saisie non numérique (L-2) : entiers →
   /// chiffres seuls ; décimaux → chiffres + `.` + signe `-`.
   List<TextInputFormatter> get _formatters => _isInteger
@@ -81,9 +104,6 @@ class ZNumberFieldWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedLabel =
-        label(context, field.label ?? field.name, fallback: field.label ?? field.name);
-
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
@@ -95,11 +115,10 @@ class ZNumberFieldWidget extends StatelessWidget {
       style: ZcrudTheme.of(context).inputTextStyle,
       autovalidateMode: autovalidateMode,
       validator: validator,
-      decoration: ZcrudTheme.of(context).inputDecoration(
-        context,
-        label: bare ? null : resolvedLabel,
-        bare: bare,
-      ),
+      // DP-12 : label enrichi + hint/helper + ornements leading/prefix/suffix.
+      // DP-17 (M17) : suffixe devise/pourcentage NEUTRE lu depuis ZNumberConfig.
+      decoration: zFieldDecoration(context, field,
+          bare: bare, suffixText: _suffixText(context)),
       onChanged: (raw) => onChanged(_parse(raw)),
     );
   }

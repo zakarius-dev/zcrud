@@ -64,14 +64,25 @@ abstract class ZMapAdapter {
   ///   d'éditeur (DP-7 : type de carte, trafic, bâtiments, gestes, contrôles…) —
   ///   `null` (défaut) → comportement inchangé. Chaque adaptateur **honore ce
   ///   qu'il supporte, ignore le reste** (même contrat que [tileUrlTemplate]/
-  ///   [mapStyleJson]).
+  ///   [mapStyleJson]) ;
+  /// - [renderShapeAsPolyline] : quand `true`, [shape] est rendue en **tracé
+  ///   ouvert** (polyligne, 4e forme DP-21/M13) et non en polygone fermé — aucun
+  ///   segment de fermeture, aucun remplissage. `false` (défaut) → rendu polygone
+  ///   inchangé (rétro-compat E11a-1/E11b-1). Signal **neutre**, même contrat
+  ///   honoré-si-supporté que [mapOptions].
+  ///
+  /// **Style de forme (DP-21/M13)** : le rendu honore [ZGeoShape.style]
+  /// (couleurs ARGB neutres → `Color` SDK confiné, épaisseur/opacité/visibilité)
+  /// et [ZGeoShape.holes] (trous d'un polygone) **si l'adaptateur les supporte**,
+  /// avec repli sur le thème injecté (FR-26) quand une couleur est absente. Le
+  /// style est porté par la forme elle-même : aucun paramètre supplémentaire.
   ///
   /// Retourne un `Widget` opaque : l'appelant ne voit AUCUN type carte.
   ///
   /// **Note compat (0.x)** : les ajouts [circle]/[tileUrlTemplate]/[mapStyleJson]/
-  /// [defaultZoom]/[mapOptions] sont des évolutions **mineures additives** du
-  /// port ; les appelants existants compilent inchangés ; un adaptateur externe
-  /// recompile (additif, non-cassant fonctionnellement).
+  /// [defaultZoom]/[mapOptions]/[renderShapeAsPolyline] sont des évolutions
+  /// **mineures additives** du port ; les appelants existants compilent
+  /// inchangés ; un adaptateur externe recompile (additif, non-cassant).
   Widget buildMap(
     BuildContext context, {
     ZGeoPoint? center,
@@ -83,6 +94,7 @@ abstract class ZMapAdapter {
     String? mapStyleJson,
     double? defaultZoom,
     ZGeoMapOptions? mapOptions,
+    bool renderShapeAsPolyline = false,
   });
 
   /// Libère le contrôleur natif éventuel (learning E5). Idempotent : un second

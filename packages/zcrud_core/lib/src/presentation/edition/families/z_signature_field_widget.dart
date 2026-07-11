@@ -51,9 +51,11 @@ import 'package:flutter/material.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
+import 'z_signature_codec.dart';
 
-/// Version du format d'encodage des strokes (évolution additive — AD-3/AD-10).
-const int _kSignatureFormatVersion = 1;
+/// Codec `const` partagé (DP-18) — source unique de vérité (dé)sérialisation
+/// strokes ↔ valeur de tranche. Le widget délègue `decode`/`encode` ici.
+const ZSignatureCodec _kSignatureCodec = ZSignatureCodec();
 
 /// Hauteur de la zone de capture (token de mise en page, PAS une couleur).
 const double _kCanvasHeight = 160;
@@ -88,42 +90,15 @@ class ZSignatureFieldWidget extends StatefulWidget {
   /// AD-10 : type inattendu ⇒ liste vide, jamais de throw). Exposé pour les
   /// tests (round-trip encode/decode).
   @visibleForTesting
-  static List<List<Offset>> decode(Object? value) {
-    if (value is! Map) return <List<Offset>>[];
-    final raw = value['strokes'];
-    if (raw is! List) return <List<Offset>>[];
-    final strokes = <List<Offset>>[];
-    for (final stroke in raw) {
-      if (stroke is! List) continue;
-      final points = <Offset>[];
-      for (var i = 0; i + 1 < stroke.length; i += 2) {
-        final x = stroke[i];
-        final y = stroke[i + 1];
-        if (x is num && y is num) {
-          points.add(Offset(x.toDouble(), y.toDouble()));
-        }
-      }
-      if (points.isNotEmpty) strokes.add(points);
-    }
-    return strokes;
-  }
+  static List<List<Offset>> decode(Object? value) =>
+      _kSignatureCodec.strokesFromValue(value);
 
   /// Encode des strokes NORMALISÉS en `Map` versionnée sérialisable, ou `null`
-  /// si vide. Exposé pour les tests. Format documenté ci-dessus.
+  /// si vide. Exposé pour les tests. Format documenté ci-dessus (DP-18 : délègue
+  /// au `ZSignatureCodec` — source unique de vérité).
   @visibleForTesting
-  static Map<String, dynamic>? encode(List<List<Offset>> strokes) {
-    final nonEmpty = strokes.where((s) => s.isNotEmpty).toList();
-    if (nonEmpty.isEmpty) return null;
-    return <String, dynamic>{
-      'formatVersion': _kSignatureFormatVersion,
-      'strokes': <List<double>>[
-        for (final stroke in nonEmpty)
-          <double>[
-            for (final p in stroke) ...<double>[p.dx, p.dy],
-          ],
-      ],
-    };
-  }
+  static Map<String, dynamic>? encode(List<List<Offset>> strokes) =>
+      _kSignatureCodec.valueFromStrokes(strokes);
 
   @override
   State<ZSignatureFieldWidget> createState() => _ZSignatureFieldWidgetState();

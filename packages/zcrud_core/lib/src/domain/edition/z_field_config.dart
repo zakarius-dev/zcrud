@@ -61,6 +61,7 @@ class ZNumberConfig extends ZFieldConfig {
     this.maxValueKey,
     this.isCurrency = false,
     this.isPercentage = false,
+    this.currencySymbol,
   });
 
   /// Clé d'un autre champ fixant la borne minimale.
@@ -75,6 +76,13 @@ class ZNumberConfig extends ZFieldConfig {
   /// Formatage en pourcentage.
   final bool isPercentage;
 
+  /// DP-17 (M17) — **symbole monétaire NEUTRE** (donnée, pas un style — FR-26)
+  /// affiché en suffixe/préfixe quand [isCurrency] est `true`. `null` (défaut) ⇒
+  /// repli sur le libellé l10n `currencySuffix` (générique) : le symbole exact
+  /// (€/$/FCFA…) est **fourni par l'app** (jamais codé en dur dans le cœur —
+  /// AD-1/FR-26). Sans effet si [isCurrency] est `false`.
+  final String? currencySymbol;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -83,11 +91,59 @@ class ZNumberConfig extends ZFieldConfig {
           minValueKey == other.minValueKey &&
           maxValueKey == other.maxValueKey &&
           isCurrency == other.isCurrency &&
-          isPercentage == other.isPercentage;
+          isPercentage == other.isPercentage &&
+          currencySymbol == other.currencySymbol;
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, minValueKey, maxValueKey, isCurrency, isPercentage);
+  int get hashCode => Object.hash(runtimeType, minValueKey, maxValueKey,
+      isCurrency, isPercentage, currencySymbol);
+}
+
+/// DP-17 (M14) — Config additive `const` du champ **couleur** (`color`).
+///
+/// origine: `ColorFieldConfig`/`recentColors` DODLP (`flex_color_picker`). Le cœur
+/// reste **NEUTRE** (couleur = `int` ARGB 32 bits — donnée, jamais un style
+/// FR-26) et n'impose **aucune** dépendance de picker tierce lourde (AD-1) : la
+/// richesse (roue HSV/hex/opacité) est fournie soit par le **picker built-in
+/// neutre** (sliders pur-Flutter), soit par un **seam injecté**
+/// (`ZcrudScope.colorPicker`). Rétro-compat : un `color` **sans** cette config
+/// conserve exactement les 15 swatches E3-3b-1.
+class ZColorConfig extends ZFieldConfig {
+  /// Construit une config couleur `const`.
+  const ZColorConfig({
+    this.enableAlpha = false,
+    this.showPalette = true,
+    this.showRecent = true,
+    this.recentColors = const <int>[],
+  });
+
+  /// Autorise le réglage du canal **alpha/opacité** dans le picker (défaut
+  /// `false` ⇒ alpha plein, parité swatches historiques).
+  final bool enableAlpha;
+
+  /// Affiche la **palette de swatches** dérivée (défaut `true`, rétro-compat).
+  final bool showPalette;
+
+  /// Affiche la ligne des **couleurs récentes** [recentColors] (défaut `true`).
+  final bool showRecent;
+
+  /// Couleurs récentes **pré-remplies** (ARGB `int`) — pur-données `const`
+  /// (parité `recentColors` DODLP). Vide (défaut) ⇒ aucune ligne récente.
+  final List<int> recentColors;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZColorConfig &&
+          runtimeType == other.runtimeType &&
+          enableAlpha == other.enableAlpha &&
+          showPalette == other.showPalette &&
+          showRecent == other.showRecent &&
+          _listEquals(recentColors, other.recentColors);
+
+  @override
+  int get hashCode => Object.hash(runtimeType, enableAlpha, showPalette,
+      showRecent, Object.hashAll(recentColors));
 }
 
 /// Config triviale pur-cœur du champ **curseur** (`slider`, E3-3b).
@@ -225,10 +281,84 @@ class FileFieldConfig extends ZFieldConfig {
       );
 }
 
+/// Config du champ **select** (`select`/`radio`/`checkbox`, DP-15/M8+M22).
+/// Pur-données `const` : elle active le **modal de recherche** ([searchable] ou
+/// seuil [modalThreshold]) et déclare les **choix dynamiques cross-champ**
+/// ([choicesFromKey] = lecture directe d'une tranche portant les options, parité
+/// `stateChoiceItems` DODLP ; [choicesSourceKey] = source **calculée** résolue au
+/// runtime dans `ZChoicesSourceRegistry`, filtrée par [filterKeys]).
+///
+/// **const-safe (AD-3)** : aucune closure/`Function` (non émissibles par
+/// `ConstantReader`) — le calcul réel des choix vit hors du cœur (binding/app),
+/// résolu par [choicesSourceKey] au runtime. La **multiplicité** single/multiple
+/// s'appuie sur `ZFieldSpec.multiple` (source unique — **jamais** dupliquée ici).
+///
+/// Rétro-compat : un `select`/`radio`/`checkbox` **sans** cette config conserve
+/// exactement le dropdown/radio/checkbox statique E3-3a sur `choices`.
+class ZSelectConfig extends ZFieldConfig {
+  /// Construit une config select `const`.
+  const ZSelectConfig({
+    this.searchable = false,
+    this.modalThreshold,
+    this.choicesFromKey,
+    this.choicesSourceKey,
+    this.filterKeys = const <String>[],
+  });
+
+  /// Active le **modal de recherche** (filtrage client sur les libellés). `false`
+  /// (défaut) ⇒ dropdown natif (sauf si [modalThreshold] atteint).
+  final bool searchable;
+
+  /// Seuil de bascule automatique en modal : si `choices.length >=
+  /// modalThreshold`, le `select` passe en modal même si [searchable] est `false`.
+  /// `null` (défaut) ⇒ pas de seuil.
+  final int? modalThreshold;
+
+  /// Clé d'un **autre champ** dont la tranche porte une `List<ZFieldChoice>` qui
+  /// **remplace** `field.choices` (parité `stateChoiceItems` DODLP — recalcul
+  /// déclaratif pur-cœur). `null` ⇒ aucune lecture cross-champ. L'abonnement à
+  /// cette clé est **ciblé** (SM-1) — jamais un canal global.
+  final String? choicesFromKey;
+
+  /// Clé de résolution d'une `ZChoicesSource` **calculée** dans
+  /// `ZChoicesSourceRegistry` (choix arbitraires côté binding). `null` ⇒ pas de
+  /// source calculée. Priorité : [choicesSourceKey] > [choicesFromKey] >
+  /// `field.choices`.
+  final String? choicesSourceKey;
+
+  /// Clés des champs formant le `filterContext` cross-champ passé à
+  /// `ZChoicesSource.options(...)`. Vide ⇒ aucun filtre. L'abonnement à ces
+  /// tranches est **ciblé** (SM-1).
+  final List<String> filterKeys;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZSelectConfig &&
+          runtimeType == other.runtimeType &&
+          searchable == other.searchable &&
+          modalThreshold == other.modalThreshold &&
+          choicesFromKey == other.choicesFromKey &&
+          choicesSourceKey == other.choicesSourceKey &&
+          _listEquals(filterKeys, other.filterKeys);
+
+  @override
+  int get hashCode => Object.hash(
+        runtimeType,
+        searchable,
+        modalThreshold,
+        choicesFromKey,
+        choicesSourceKey,
+        Object.hashAll(filterKeys),
+      );
+}
+
 /// Config du champ **relation** (`relation`, ex-`crudDataSelect` DODLP — gap
 /// B7, DP-5). Pur-données `const` : elle porte SEULEMENT la **clé de source**
 /// dynamique (résolue au runtime dans `ZRelationSourceRegistry`), les **clés de
-/// champ** formant le filtre cross-champ, et l'activation du modal de recherche.
+/// champ** formant le filtre cross-champ, l'activation du modal de recherche, et
+/// (DP-15/M8) la **clé de handler CRUD inline** ([crudKey], résolue dans
+/// `ZRelationCrudRegistry`).
 ///
 /// **const-safe (AD-3)** : aucune closure/`Stream`/`Function` (non émissibles
 /// par `ConstantReader`) — la source réelle (repository/flux + filtre métier)
@@ -244,6 +374,7 @@ class ZRelationConfig extends ZFieldConfig {
     this.sourceKey,
     this.filterKeys = const <String>[],
     this.searchable = false,
+    this.crudKey,
   });
 
   /// Clé de résolution de la source dynamique dans `ZRelationSourceRegistry`
@@ -260,6 +391,12 @@ class ZRelationConfig extends ZFieldConfig {
   /// ⇒ sélection légère (dropdown en mono).
   final bool searchable;
 
+  /// Clé de résolution d'un `ZRelationCrudHandler` **CRUD inline** dans
+  /// `ZRelationCrudRegistry` (DP-15/M8, parité `showCrudButton` DODLP). `null`
+  /// (défaut) OU registre/handler absent ⇒ **aucun** bouton CRUD (rétro-compat
+  /// DP-5 stricte).
+  final String? crudKey;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -267,11 +404,17 @@ class ZRelationConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           sourceKey == other.sourceKey &&
           searchable == other.searchable &&
+          crudKey == other.crudKey &&
           _listEquals(filterKeys, other.filterKeys);
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, sourceKey, searchable, Object.hashAll(filterKeys));
+  int get hashCode => Object.hash(
+        runtimeType,
+        sourceKey,
+        searchable,
+        crudKey,
+        Object.hashAll(filterKeys),
+      );
 }
 
 /// Égalité **profonde** de deux listes (pur-Dart — évite `package:collection`,

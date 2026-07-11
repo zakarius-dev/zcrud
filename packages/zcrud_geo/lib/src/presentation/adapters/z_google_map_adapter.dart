@@ -36,7 +36,13 @@ import '../../domain/z_geo_circle.dart';
 import '../../domain/z_geo_map_options.dart';
 import '../../domain/z_geo_point.dart';
 import '../../domain/z_geo_shape.dart';
+import '../../domain/z_geo_shape_style.dart';
 import '../z_map_adapter.dart';
+
+/// Traduit un entier ARGB neutre (`0xAARRGGBB`) en `Color` SDK — **confiné** à
+/// cet adaptateur (AD-1 : aucune couleur SDK ne fuit dans le domaine). `null` →
+/// `null` (l'appelant retombe sur le thème injecté, FR-26).
+Color? _argb(int? argb) => argb == null ? null : Color(argb);
 
 /// Adaptateur carte Google Maps (clé API = config plateforme, jamais ici — AD-12).
 /// Possède un `GoogleMapController` natif disposé via [dispose] (learning E5).
@@ -77,6 +83,7 @@ class ZGoogleMapAdapter implements ZMapAdapter {
     String? mapStyleJson,
     double? defaultZoom,
     ZGeoMapOptions? mapOptions,
+    bool renderShapeAsPolyline = false,
   }) {
     // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
     final String? effectiveStyle = mapStyleJson ?? this.mapStyleJson;
@@ -99,13 +106,62 @@ class ZGoogleMapAdapter implements ZMapAdapter {
         ),
     };
 
+    // DP-21/M13 : style de forme neutre honoré (couleurs ARGB → `Color` confiné
+    // à ce fichier, AD-1). Repli sur les défauts SDK d'origine quand `style` est
+    // `null` → rétro-compat E11b-1 stricte (mêmes valeurs qu'auparavant).
+    const Color sdkDefault = Color(0xFF000000); // = Colors.black (défaut SDK)
+    final ZGeoShapeStyle? shapeStyle = shape?.style;
+    final Color fillColor = _argb(shapeStyle?.fillColorArgb) ?? sdkDefault;
+    final Color strokeColor = _argb(shapeStyle?.strokeColorArgb) ?? sdkDefault;
+    final int strokeWidth = shapeStyle?.strokeWidth ?? 10; // défaut SDK = 10
+    final bool geodesic = shapeStyle?.geodesic ?? false;
+    final bool visible = shapeStyle?.visible ?? true;
+    final int zIndex = shapeStyle?.zIndex ?? 0;
+    final bool consumeTapEvents = shapeStyle?.consumeTapEvents ?? false;
+
+    final List<LatLng> shapePoints = <LatLng>[
+      if (shape != null)
+        for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
+    ];
+
+    // DP-21/M13 : trous intérieurs du polygone (≥3 sommets par trou honoré).
+    final List<List<LatLng>> holes = <List<LatLng>>[
+      if (shape?.holes != null)
+        for (final List<ZGeoPoint> hole in shape!.holes!)
+          if (hole.length >= 3)
+            <LatLng>[for (final ZGeoPoint v in hole) LatLng(v.lat, v.lng)],
+    ];
+
+    // Polygone FERMÉ (≥3 sommets) sauf si `renderShapeAsPolyline` (DP-21).
     final Set<Polygon> polygons = <Polygon>{
-      if (shape != null && shape.vertices.length >= 3)
+      if (shape != null && !renderShapeAsPolyline && shapePoints.length >= 3)
         Polygon(
           polygonId: const PolygonId('z-geo-area'),
-          points: <LatLng>[
-            for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
-          ],
+          points: shapePoints,
+          holes: holes,
+          fillColor: fillColor,
+          strokeColor: strokeColor,
+          strokeWidth: strokeWidth,
+          geodesic: geodesic,
+          visible: visible,
+          zIndex: zIndex,
+          consumeTapEvents: consumeTapEvents,
+        ),
+    };
+
+    // DP-21/M13 : polyligne (tracé OUVERT, ≥2 sommets) quand demandé — pas de
+    // remplissage, pas de segment de fermeture (honoré-si-supporté).
+    final Set<Polyline> polylines = <Polyline>{
+      if (shape != null && renderShapeAsPolyline && shapePoints.length >= 2)
+        Polyline(
+          polylineId: const PolylineId('z-geo-polyline'),
+          points: shapePoints,
+          color: strokeColor,
+          width: strokeWidth,
+          geodesic: geodesic,
+          visible: visible,
+          zIndex: zIndex,
+          consumeTapEvents: consumeTapEvents,
         ),
     };
 
@@ -150,6 +206,7 @@ class ZGoogleMapAdapter implements ZMapAdapter {
               onTap(ZGeoPoint(lat: ll.latitude, lng: ll.longitude)),
       markers: markers,
       polygons: polygons,
+      polylines: polylines,
       circles: circles,
       // `interactive: false` → aperçu non manipulable (lecture seule). Rotation/
       // tilt sont en outre pilotables par la barre d'outils (DP-7) : gardés à

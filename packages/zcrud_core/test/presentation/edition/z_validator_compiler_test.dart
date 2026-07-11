@@ -122,22 +122,29 @@ void main() {
           valid: '2020-01-01', invalid: 'not-a-date', msg: 'E');
     });
 
-    test('address → street', () {
-      checks('address', const ZValidatorSpec.address(errorText: 'E'),
+    // M11 (DP-16) : `address` no-op par défaut ; format vérifié en opt-in seul.
+    test('address (enforceFormat: true) → street', () {
+      checks('address',
+          const ZValidatorSpec.address(enforceFormat: true, errorText: 'E'),
           valid: '123 Main Street', invalid: '@@@', msg: 'E');
     });
 
-    test('percentage → between(0,100)', () {
-      final validator = v(const ZValidatorSpec.percentage(errorText: 'E'));
+    // M11 (DP-16) : `percentage` no-op par défaut ; plage vérifiée en opt-in seul.
+    test('percentage (enforceRange: true) → between(0,100)', () {
+      final validator =
+          v(const ZValidatorSpec.percentage(enforceRange: true, errorText: 'E'));
       expect(validator('50'), isNull, reason: 'percentage : 50 dans [0,100]');
       expect(validator('0'), isNull, reason: 'percentage : borne basse incluse');
       expect(validator('100'), isNull, reason: 'percentage : borne haute incluse');
       expect(validator('150'), 'E', reason: 'percentage : 150 hors [0,100]');
     });
 
-    test('password', () {
+    // M10 (DP-16) : défaut password = politique DODLP (maj+min, ni chiffre ni
+    // spécial). `Abcdefgh` (valide DODLP) est ACCEPTÉ ; `abc` (trop court, pas de
+    // maj) est rejeté.
+    test('password (défaut DODLP)', () {
       checks('password', const ZValidatorSpec.password(errorText: 'E'),
-          valid: 'Passw0rd!', invalid: 'abc', msg: 'E');
+          valid: 'Abcdefgh', invalid: 'abc', msg: 'E');
     });
 
     test('pattern → match(RegExp)', () {
@@ -211,6 +218,163 @@ void main() {
       expect(validator, isNotNull);
       expect(validator!(''), 'R');
       expect(validator('x'), isNull);
+    });
+  });
+
+  // ── DP-16 : password paramétrable (M10) ────────────────────────────────────
+  group('ZValidatorCompiler — password défaut DODLP (M10, AC2)', () {
+    test('accepte un mot de passe DODLP-valide sans chiffre ni spécial', () {
+      final validator = v(const ZValidatorSpec.password(errorText: 'E'));
+      // 8 car., maj+min, ni chiffre ni spécial ⇒ VALIDE (parité DODLP restaurée).
+      expect(validator('Abcdefgh'), isNull);
+      // < 8 car.
+      expect(validator('Abcdefg'), 'E', reason: 'trop court (< 8)');
+      // > 20 car. (21).
+      expect(validator('Abcdefghijklmnopqrstu'), 'E', reason: 'trop long (> 20)');
+      // Sans majuscule.
+      expect(validator('abcdefgh'), 'E', reason: 'pas de majuscule');
+      // Sans minuscule.
+      expect(validator('ABCDEFGH'), 'E', reason: 'pas de minuscule');
+    });
+
+    test('DP-16-M1 : password NON requis laissé vide reste VALIDE', () {
+      // Parité DODLP « vide + non requis ⇒ null » : le validateur password ne
+      // porte PAS implicitement la présence (checkNullOrEmpty: false). La vacuité
+      // est gouvernée séparément par ZValidatorKind.required.
+      final validator = v(const ZValidatorSpec.password(errorText: 'E'));
+      expect(validator(''), isNull, reason: 'vide + non requis ⇒ valide');
+      expect(validator(null), isNull, reason: 'null + non requis ⇒ valide');
+      // La présence reste imposable via un `required` séparé.
+      final withRequired = ZValidatorCompiler.compile(const <ZValidatorSpec>[
+        ZValidatorSpec.required(errorText: 'R'),
+        ZValidatorSpec.password(errorText: 'E'),
+      ])!;
+      expect(withRequired(''), 'R', reason: 'required séparé ⇒ vide rejeté');
+    });
+  });
+
+  group('ZValidatorCompiler — password strict opt-in (M10, AC3)', () {
+    test('politique stricte rejette Abcdefgh et accepte un mdp fort', () {
+      final validator = v(const ZValidatorSpec.password(
+        minLength: 12,
+        requireDigit: true,
+        requireSpecial: true,
+        errorText: 'E',
+      ));
+      expect(validator('Abcdefgh'), 'E',
+          reason: 'trop court + sans chiffre/spécial');
+      expect(validator('Abcdefgh1!xy'), isNull,
+          reason: '12 car., maj+min+chiffre+spécial');
+    });
+  });
+
+  // ── DP-16 : address/percentage no-op par défaut (M11) ──────────────────────
+  group('ZValidatorCompiler — address no-op / opt-in (M11, AC4)', () {
+    test('défaut ⇒ compile null (aucune surcharge), toute valeur acceptée', () {
+      expect(
+        ZValidatorCompiler.compile(const <ZValidatorSpec>[
+          ZValidatorSpec.address(),
+        ]),
+        isNull,
+      );
+    });
+
+    test('enforceFormat: true ⇒ street (rejette @@@, accepte une rue)', () {
+      final validator = v(const ZValidatorSpec.address(
+        enforceFormat: true,
+        errorText: 'E',
+      ));
+      expect(validator('@@@'), 'E');
+      expect(validator('123 Main Street'), isNull);
+    });
+  });
+
+  group('ZValidatorCompiler — percentage no-op / opt-in (M11, AC5)', () {
+    test('défaut ⇒ compile null ; 150/-5/abc acceptés', () {
+      expect(
+        ZValidatorCompiler.compile(const <ZValidatorSpec>[
+          ZValidatorSpec.percentage(),
+        ]),
+        isNull,
+      );
+    });
+
+    test('enforceRange: true ⇒ between(0,100)', () {
+      final validator = v(const ZValidatorSpec.percentage(
+        enforceRange: true,
+        errorText: 'E',
+      ));
+      expect(validator('150'), 'E');
+      expect(validator('50'), isNull);
+      expect(validator('0'), isNull);
+      expect(validator('100'), isNull);
+    });
+
+    test('plage surchargée (min:10,max:90) rejette 95', () {
+      final validator = v(const ZValidatorSpec.percentage(
+        enforceRange: true,
+        min: 10,
+        max: 90,
+        errorText: 'E',
+      ));
+      expect(validator('95'), 'E');
+      expect(validator('50'), isNull);
+    });
+  });
+
+  // ── DP-16 : défensif (AC7) ─────────────────────────────────────────────────
+  group('ZValidatorCompiler — défensif, ne lève jamais (AC7)', () {
+    test('password(minLength: 30, maxLength: 10) ⇒ refuse proprement, pas de throw',
+        () {
+      late final String? Function(String?) validator;
+      expect(
+        () => validator = v(const ZValidatorSpec.password(
+          minLength: 30,
+          maxLength: 10,
+          errorText: 'E',
+        )),
+        returnsNormally,
+      );
+      // Toute valeur échoue (contrainte incohérente) mais sans exception.
+      expect(validator('Abcdefghij'), 'E');
+    });
+
+    test('percentage(enforceRange, min:100, max:0) ⇒ pas de throw', () {
+      late final String? Function(String?) validator;
+      expect(
+        () => validator = v(const ZValidatorSpec.percentage(
+          enforceRange: true,
+          min: 100,
+          max: 0,
+          errorText: 'E',
+        )),
+        returnsNormally,
+      );
+      expect(validator('50'), 'E', reason: 'plage inversée ⇒ refuse');
+    });
+
+    test('liste réduite à des no-op (address()/percentage()) ⇒ compile null', () {
+      expect(
+        ZValidatorCompiler.compile(const <ZValidatorSpec>[
+          ZValidatorSpec.address(),
+          ZValidatorSpec.percentage(),
+        ]),
+        isNull,
+      );
+    });
+  });
+
+  // ── DP-16 : composition (AC10) ─────────────────────────────────────────────
+  group('ZValidatorCompiler — composition avec password (AC10)', () {
+    test('[required, password] compose dans l\'ordre', () {
+      final validator = ZValidatorCompiler.compile(const <ZValidatorSpec>[
+        ZValidatorSpec.required(errorText: 'R'),
+        ZValidatorSpec.password(errorText: 'P'),
+      ]);
+      expect(validator, isNotNull);
+      expect(validator!(''), 'R', reason: 'required échoue en premier');
+      expect(validator('abc'), 'P', reason: 'puis password');
+      expect(validator('Abcdefgh'), isNull, reason: 'les deux satisfaits');
     });
   });
 }

@@ -21,8 +21,8 @@ import 'package:flutter/material.dart';
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
-import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
+import '../z_field_adornment_view.dart';
 
 /// Champ d'édition **texte** (mono-ligne / multi-ligne / masqué).
 class ZTextFieldWidget extends StatelessWidget {
@@ -69,8 +69,6 @@ class ZTextFieldWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMultiline = field.type == EditionFieldType.multiline;
     final isPassword = field.type == EditionFieldType.password;
-    final resolvedLabel =
-        label(context, field.label ?? field.name, fallback: field.label ?? field.name);
 
     // B2 (AC6/AC7) : `minLines`/`maxLines` effectifs lus depuis `ZTextConfig`
     // avec repli type-dépendant préservant le comportement historique.
@@ -107,11 +105,9 @@ class ZTextFieldWidget extends StatelessWidget {
       // Validation CIBLÉE PAR CHAMP (AD-2) — jamais de `Form` global.
       autovalidateMode: autovalidateMode,
       validator: validator,
-      decoration: ZcrudTheme.of(context).inputDecoration(
-        context,
-        label: bare ? null : resolvedLabel,
-        bare: bare,
-      ),
+      // DP-12 : label enrichi + hint/helper + ornements leading/prefix/suffix
+      // (répartis par `zFieldDecoration` selon `ZAdornmentKind`).
+      decoration: zFieldDecoration(context, field, bare: bare),
       onChanged: onChanged,
     );
   }

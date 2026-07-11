@@ -23,7 +23,13 @@ import '../../domain/z_geo_circle.dart';
 import '../../domain/z_geo_map_options.dart';
 import '../../domain/z_geo_point.dart';
 import '../../domain/z_geo_shape.dart';
+import '../../domain/z_geo_shape_style.dart';
 import '../z_map_adapter.dart';
+
+/// Traduit un entier ARGB neutre (`0xAARRGGBB`) en `Color` SDK — **confiné** à
+/// cet adaptateur (AD-1 : aucune couleur SDK ne fuit dans le domaine). `null` →
+/// `null` (l'appelant retombe sur le thème injecté, FR-26).
+Color? _argb(int? argb) => argb == null ? null : Color(argb);
 
 /// Adaptateur carte OSM (sans clé API). Possède un `MapController` natif disposé
 /// via [dispose] (learning E5).
@@ -72,6 +78,7 @@ class ZOsmMapAdapter implements ZMapAdapter {
     // ici (contrat « honoré-si-supporté, ignore le reste »). Le paramètre est
     // accepté pour l'uniformité du port ; un adaptateur raster ne le honore pas.
     ZGeoMapOptions? mapOptions,
+    bool renderShapeAsPolyline = false,
   }) {
     // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
     final String effectiveTiles = tileUrlTemplate ?? this.tileUrlTemplate;
@@ -86,6 +93,31 @@ class ZOsmMapAdapter implements ZMapAdapter {
       if (shape != null)
         for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
     ];
+
+    // DP-21/M13 : style de forme neutre honoré (couleurs ARGB → `Color` confiné
+    // à ce fichier, AD-1) avec repli sur le thème injecté (FR-26, aucune couleur
+    // en dur). `visible == false` → la forme n'est pas rendue.
+    final ZGeoShapeStyle? shapeStyle = shape?.style;
+    final bool shapeVisible = shapeStyle?.visible ?? true;
+    final Color themePrimary = Theme.of(context).colorScheme.primary;
+    final Color shapeStroke =
+        _argb(shapeStyle?.strokeColorArgb) ?? themePrimary;
+    final Color shapeFill = _argb(shapeStyle?.fillColorArgb) ??
+        themePrimary.withValues(alpha: 0.2);
+    final double shapeStrokeWidth =
+        (shapeStyle?.strokeWidth ?? 3).toDouble();
+
+    // DP-21/M13 : trous intérieurs du polygone (`holePointsList`), honorés si
+    // fournis et non triviaux (≥3 sommets par trou) ; sinon ignorés (AD-10).
+    final List<List<LatLng>>? holePointsList = (shape?.holes == null)
+        ? null
+        : <List<LatLng>>[
+            for (final List<ZGeoPoint> hole in shape!.holes!)
+              if (hole.length >= 3)
+                <LatLng>[
+                  for (final ZGeoPoint v in hole) LatLng(v.lat, v.lng),
+                ],
+          ];
 
     // E11b-1 : cercle rendu via `CircleLayer`/`CircleMarker` (rayon en mètres)
     // uniquement si le cercle est valide (AD-10 : jamais un rayon ≤0/non fini).
@@ -109,10 +141,29 @@ class ZOsmMapAdapter implements ZMapAdapter {
           urlTemplate: effectiveTiles,
           userAgentPackageName: userAgentPackageName,
         ),
-        if (vertices.length >= 3)
+        // DP-21/M13 : polyligne (tracé OUVERT, ≥2 sommets) quand demandé —
+        // aucun remplissage, aucun segment de fermeture.
+        if (shapeVisible && renderShapeAsPolyline && vertices.length >= 2)
+          PolylineLayer(
+            polylines: <Polyline>[
+              Polyline(
+                points: vertices,
+                color: shapeStroke,
+                strokeWidth: shapeStrokeWidth,
+              ),
+            ],
+          )
+        // Sinon polygone FERMÉ (≥3 sommets) : style + trous honorés (DP-21).
+        else if (shapeVisible && vertices.length >= 3)
           PolygonLayer(
             polygons: <Polygon>[
-              Polygon(points: vertices),
+              Polygon(
+                points: vertices,
+                holePointsList: holePointsList,
+                color: shapeFill,
+                borderColor: shapeStroke,
+                borderStrokeWidth: shapeStrokeWidth,
+              ),
             ],
           ),
         if (hasCircle)

@@ -177,6 +177,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   bool get _isArea => _geometry == ZGeoGeometry.polygon;
   bool get _isCircle => _geometry == ZGeoGeometry.circle;
 
+  /// Polyligne (tracé ouvert, DP-21/M13). Même collecte de sommets que le
+  /// polygone : seule la géométrie de rendu (ouverte) diffère côté adaptateur.
+  bool get _isPolyline => _geometry == ZGeoGeometry.polyline;
+
+  /// `true` pour les géométries qui **collectent une liste de sommets**
+  /// (polygone fermé OU polyligne ouverte) : elles partagent la même UI d'ajout/
+  /// retrait de sommet et le même état `ZGeoShape` « au fil de l'eau ».
+  bool get _collectsVertices => _isArea || _isPolyline;
+
   bool get _hasFieldFocus =>
       _latFocus.hasFocus || _lngFocus.hasFocus || _radiusFocus.hasFocus;
 
@@ -199,8 +208,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _mapAdapter = widget.adapterFactory?.call();
     switch (_geometry) {
       case ZGeoGeometry.polygon:
+      case ZGeoGeometry.polyline:
         // Champs texte = sommet CANDIDAT transitoire → pas d'amorçage depuis la
-        // tranche ; on amorce l'état d'aire « au fil de l'eau » (MEDIUM-3).
+        // tranche ; on amorce l'état de forme « au fil de l'eau » (MEDIUM-3).
         _workingShape = _shapeOf(widget.ctx.value);
       case ZGeoGeometry.circle:
         // Amorcer centre + rayon depuis la valeur initiale (une seule fois).
@@ -239,8 +249,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     super.didUpdateWidget(oldWidget);
     switch (_geometry) {
       case ZGeoGeometry.polygon:
-        // MEDIUM-3 : adopter une valeur d'aire EXTERNE (≠ celle qu'on a émise) ;
-        // notre propre écho (`ctx.value == _workingShape`) n'écrase rien.
+      case ZGeoGeometry.polyline:
+        // MEDIUM-3 : adopter une valeur de forme EXTERNE (≠ celle qu'on a
+        // émise) ; notre propre écho (`ctx.value == _workingShape`) n'écrase rien.
         final external = _shapeOf(widget.ctx.value);
         if (external != _workingShape) _workingShape = external;
       case ZGeoGeometry.circle:
@@ -374,7 +385,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _latController.clear();
     _lngController.clear();
     _radiusController.clear();
-    if (_isArea) _workingShape = ZGeoShape();
+    if (_collectsVertices) _workingShape = ZGeoShape();
     widget.ctx.onChanged(null);
   }
 
@@ -385,6 +396,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   void _undo() {
     switch (_geometry) {
       case ZGeoGeometry.polygon:
+      case ZGeoGeometry.polyline:
         final shape = _currentShape;
         if (shape.vertices.isEmpty) return; // rien à annuler → no-op silencieux
         _removeVertex(shape.vertices.length - 1);
@@ -411,6 +423,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     if (point == null || !point.isValid) return;
     switch (_geometry) {
       case ZGeoGeometry.polygon:
+      case ZGeoGeometry.polyline:
         _appendVertex(point);
       case ZGeoGeometry.circle:
         _setCircleCenterFromTap(point);
@@ -485,7 +498,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   ValueChanged<String>? get _coordOnChanged => switch (_geometry) {
         ZGeoGeometry.point => (_) => _emitPointFromFields(),
         ZGeoGeometry.circle => (_) => _emitCircleFromFields(),
-        ZGeoGeometry.polygon => null,
+        // Polygone/polyligne : les champs texte sont des sommets CANDIDATS
+        // (ajoutés via bouton), jamais réémis à la frappe (AD-2).
+        ZGeoGeometry.polygon || ZGeoGeometry.polyline => null,
       };
 
   // --- Rendu ------------------------------------------------------------------
@@ -513,7 +528,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
               SizedBox(height: theme.gapS),
               _radiusField(context),
             ],
-            if (_isArea) ...<Widget>[
+            if (_collectsVertices) ...<Widget>[
               SizedBox(height: theme.gapS),
               _addVertexButton(context),
               SizedBox(height: theme.gapS),
@@ -675,12 +690,12 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       // Repli AD-1 : aucun adaptateur → coordonnées-seules, jamais de crash.
       return const SizedBox.shrink();
     }
-    final ZGeoShape? areaShape = _isArea ? _currentShape : null;
+    final ZGeoShape? areaShape = _collectsVertices ? _currentShape : null;
     final ZGeoCircle? circle = _isCircle ? _circleOf(widget.ctx.value) : null;
     // Centre de carte : valeur courante, sinon repli sur le défaut surchargeable
     // de la config (neutre ; AD-12), sinon choix de l'adaptateur.
     final ZGeoPoint? center = switch (_geometry) {
-      ZGeoGeometry.polygon =>
+      ZGeoGeometry.polygon || ZGeoGeometry.polyline =>
         areaShape!.vertices.firstOrNull ?? _config?.defaultCenter,
       ZGeoGeometry.circle => circle?.center ?? _config?.defaultCenter,
       ZGeoGeometry.point =>
@@ -702,11 +717,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         // DP-7 : options de carte neutres pilotées par la barre (`null` si aucune
         // barre → comportement inchangé). Honoré-si-supporté par l'adaptateur.
         mapOptions: _mapOptions,
+        // DP-21/M13 : signal neutre « rendre la forme en tracé ouvert » ; `true`
+        // seulement en géométrie polyligne (honoré-si-supporté par l'adaptateur).
+        renderShapeAsPolyline: _isPolyline,
         onTap: widget.ctx.field.readOnly
             ? null
             : (ZGeoPoint point) {
                 switch (_geometry) {
                   case ZGeoGeometry.polygon:
+                  case ZGeoGeometry.polyline:
                     _appendVertex(point);
                   case ZGeoGeometry.circle:
                     _setCircleCenterFromTap(point);

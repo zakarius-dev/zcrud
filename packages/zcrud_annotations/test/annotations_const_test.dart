@@ -34,7 +34,8 @@ void main() {
       expect(f.searchable, isFalse);
       expect(f.defaultValue, isNull);
       expect(f.readOnly, isFalse);
-      expect(f.showIfNull, isTrue);
+      // DP-13 : défaut inversé à `false` (aligné sur `ZFieldSpec` + DODLP).
+      expect(f.showIfNull, isFalse);
       expect(f.name, isNull);
       expect(f.multiple, isFalse);
       expect(f.persistAs, ZPersistAs.iso8601); // défaut B14 (rétro-compat)

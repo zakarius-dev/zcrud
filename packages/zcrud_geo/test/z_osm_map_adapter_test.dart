@@ -5,6 +5,7 @@
 // `flutter_map` restant confiné à l'adaptateur (aucun type SDK ne fuit dans
 // l'API). Atteint via l'entrée dédiée `package:zcrud_geo/adapters/osm.dart`.
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_geo/adapters/osm.dart';
 import 'package:zcrud_geo/zcrud_geo.dart';
@@ -149,6 +150,119 @@ void main() {
       );
       addTearDown(adapter.dispose);
       expect(adapter.tileUrlTemplate, contains('example.org'));
+    });
+  });
+
+  group('DP-21/M13 — OSM : polyligne + style + holes honorés', () {
+    Future<void> pump(
+      WidgetTester tester,
+      Widget Function(BuildContext) build,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: Builder(builder: build),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final ZGeoShape triShape = ZGeoShape(
+      vertices: const <ZGeoPoint>[
+        ZGeoPoint(lat: 0, lng: 0),
+        ZGeoPoint(lat: 1, lng: 1),
+        ZGeoPoint(lat: 2, lng: 0),
+      ],
+    );
+
+    testWidgets('renderShapeAsPolyline: true → PolylineLayer, pas de PolygonLayer',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      await pump(
+        tester,
+        (context) => adapter.buildMap(
+          context,
+          center: triShape.vertices.first,
+          shape: triShape,
+          renderShapeAsPolyline: true,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(PolylineLayer), findsOneWidget);
+      expect(find.byType(PolygonLayer), findsNothing);
+    });
+
+    testWidgets('polygone (défaut) → PolygonLayer, pas de PolylineLayer',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      await pump(
+        tester,
+        (context) => adapter.buildMap(
+          context,
+          center: triShape.vertices.first,
+          shape: triShape,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(PolygonLayer), findsOneWidget);
+      expect(find.byType(PolylineLayer), findsNothing);
+    });
+
+    testWidgets('style visible:false → forme non rendue, aucune exception',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      final hidden = ZGeoShape(
+        vertices: triShape.vertices,
+        style: const ZGeoShapeStyle(visible: false),
+      );
+      await pump(
+        tester,
+        (context) => adapter.buildMap(
+          context,
+          center: hidden.vertices.first,
+          shape: hidden,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(PolygonLayer), findsNothing);
+    });
+
+    testWidgets('polygone stylé avec holes → rendu sans exception',
+        (tester) async {
+      final adapter = ZOsmMapAdapter();
+      addTearDown(adapter.dispose);
+      final styled = ZGeoShape(
+        vertices: triShape.vertices,
+        style: const ZGeoShapeStyle(
+          fillColorArgb: 0x33FF0000,
+          strokeColorArgb: 0xFF0000FF,
+          strokeWidth: 5,
+        ),
+        holes: const <List<ZGeoPoint>>[
+          <ZGeoPoint>[
+            ZGeoPoint(lat: 0.2, lng: 0.2),
+            ZGeoPoint(lat: 0.4, lng: 0.4),
+            ZGeoPoint(lat: 0.3, lng: 0.1),
+          ],
+        ],
+      );
+      await pump(
+        tester,
+        (context) => adapter.buildMap(
+          context,
+          center: styled.vertices.first,
+          shape: styled,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(PolygonLayer), findsOneWidget);
     });
   });
 }

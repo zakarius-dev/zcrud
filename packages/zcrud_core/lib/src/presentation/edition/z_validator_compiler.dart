@@ -117,14 +117,39 @@ abstract final class ZValidatorCompiler {
       case ZValidatorKind.dateString:
         return FormBuilderValidators.date(errorText: e);
       case ZValidatorKind.address:
-        // Pas de validateur `address` générique en form_builder_validators :
-        // `street` en est la projection champ-local la plus proche.
-        return FormBuilderValidators.street(errorText: e);
+        // M11 (parité DODLP) : **no-op par défaut** (rôle indice de clavier ;
+        // aucune surcharge de format). Format vérifié UNIQUEMENT en opt-in
+        // (`enforceFormat: true` ⇒ `street`, comportement historique).
+        return (spec.enforceFormat ?? false)
+            ? FormBuilderValidators.street(errorText: e)
+            : null;
       case ZValidatorKind.percentage:
-        // 0–100 inclusif (parse numérique interne ; non numérique ⇒ invalide).
-        return FormBuilderValidators.between<String>(0, 100, errorText: e);
+        // M11 (parité DODLP) : **no-op par défaut** (saisie numérique libre).
+        // Plage vérifiée UNIQUEMENT en opt-in (`enforceRange: true` ⇒ `between`,
+        // défaut 0–100 surchargeable). Non numérique ⇒ invalide (contrat between).
+        if (!(spec.enforceRange ?? false)) return null;
+        return FormBuilderValidators.between<String>(
+          spec.rangeMin ?? 0,
+          spec.rangeMax ?? 100,
+          errorText: e,
+        );
       case ZValidatorKind.password:
-        return FormBuilderValidators.password(errorText: e);
+        // M10 : politique paramétrable, défaut aligné DODLP (permissif). Un compte
+        // à 0 désactive l'exigence correspondante (`PasswordValidator` fbv-11.3).
+        // `checkNullOrEmpty: false` (DP-16-M1) : la VACUITÉ ne rend PAS le champ
+        // invalide — un password NON requis laissé vide reste valide (parité DODLP
+        // « vide + non requis ⇒ null »). La contrainte de présence est portée
+        // séparément par `ZValidatorKind.required`, jamais implicitement ici.
+        return FormBuilderValidators.password(
+          minLength: spec.passwordMinLength ?? 8,
+          maxLength: spec.passwordMaxLength ?? 20,
+          minUppercaseCount: (spec.requireUppercase ?? true) ? 1 : 0,
+          minLowercaseCount: (spec.requireLowercase ?? true) ? 1 : 0,
+          minNumberCount: (spec.requireDigit ?? false) ? 1 : 0,
+          minSpecialCharCount: (spec.requireSpecial ?? false) ? 1 : 0,
+          checkNullOrEmpty: false,
+          errorText: e,
+        );
       case ZValidatorKind.pattern:
         final p = spec.pattern;
         // `FormBuilderValidators.match` prend un RegExp (correspondance motif).

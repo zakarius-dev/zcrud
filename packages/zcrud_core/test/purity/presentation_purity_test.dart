@@ -36,14 +36,30 @@ const _allowedFlutter = <String>[
 /// par [_servicesImportAllowed] en amont.
 const _servicesUri = 'package:flutter/services.dart';
 
-/// Symboles PURS **sans état** autorisés en `show` sur `services.dart` (L-2,
-/// code-review E3-3a §3) — analogues à `form_builder_validators` (validateurs
-/// purs). `Clipboard`/`SystemChannels`/`rootBundle`… (état/plateforme) restent
-/// bannis (hors allowlist ⇒ rejet).
+/// Symboles autorisés en `show` sur `services.dart` (L-2 + DP-13). Base : les
+/// transformateurs PURS `TextInputFormatter`/… (L-2). **Élargissement DP-13
+/// (AC17)** : `Clipboard`/`ClipboardData` — **services Flutter natifs** requis
+/// par la fiche de lecture (copie presse-papier), admis en `zcrud_core` (PAS un
+/// gestionnaire d'état, aucune dépendance lourde). `SystemChannels`/`rootBundle`
+/// (plateforme/bundle) restent **bannis** (hors allowlist ⇒ rejet).
 const _allowedServicesSymbols = <String>[
   'TextInputFormatter',
   'FilteringTextInputFormatter',
   'TextInputType',
+  'Clipboard',
+  'ClipboardData',
+];
+
+/// URI de `semantics.dart` — traité comme `services.dart` (DP-13, AC17) :
+/// autorisé UNIQUEMENT avec une clause `show` restreinte à
+/// [_allowedSemanticsSymbols]. `SemanticsService.announce` est un **service
+/// d'accessibilité Flutter natif** (annonce lecteur d'écran), admis en
+/// `zcrud_core` (aucun état, aucune dépendance lourde).
+const _semanticsUri = 'package:flutter/semantics.dart';
+
+/// Symboles PURS autorisés en `show` sur `semantics.dart` (DP-13).
+const _allowedSemanticsSymbols = <String>[
+  'SemanticsService',
 ];
 
 /// Motifs d'import INTERDITS même sous `presentation/` (regex sur la ligne).
@@ -154,6 +170,16 @@ bool? _servicesImportAllowed(String rawLine) {
   return symbols.every(_allowedServicesSymbols.contains);
 }
 
+/// Décide si une ligne important `semantics.dart` est CONFORME (DP-13) :
+/// autorisée UNIQUEMENT avec une clause `show` restreinte à
+/// [_allowedSemanticsSymbols]. `null` si non concernée ; `true`/`false` sinon.
+bool? _semanticsImportAllowed(String rawLine) {
+  if (_importUri(rawLine) != _semanticsUri) return null;
+  final symbols = _showSymbols(rawLine);
+  if (symbols == null || symbols.isEmpty) return false; // nu → rejeté
+  return symbols.every(_allowedSemanticsSymbols.contains);
+}
+
 /// Reconstruit l'instruction d'import complète à partir de [lines] et de
 /// l'index [start], en concaténant les lignes jusqu'au `;` terminal (une
 /// directive peut porter sa clause `show` sur la ligne suivante).
@@ -186,6 +212,17 @@ void main() {
           final statement = _joinStatement(lines, i);
           if (!(_servicesImportAllowed(statement) ?? false)) {
             offenders.add('${file.path}:$lineNo: INTERDIT (services.dart sans '
+                '`show` pur ou symbole hors allowlist) → ${statement.trim()}');
+          }
+          continue;
+        }
+
+        // DP-13 : `semantics.dart` traité comme `services.dart` (allowlist par
+        // symbole `show` — `SemanticsService` uniquement).
+        if (uri == _semanticsUri) {
+          final statement = _joinStatement(lines, i);
+          if (!(_semanticsImportAllowed(statement) ?? false)) {
+            offenders.add('${file.path}:$lineNo: INTERDIT (semantics.dart sans '
                 '`show` pur ou symbole hors allowlist) → ${statement.trim()}');
           }
           continue;
@@ -265,20 +302,55 @@ void main() {
       _servicesImportAllowed("import 'package:flutter/services.dart';"),
       isFalse,
     );
-    // (c) symbole HORS allowlist → REJETÉ (même en `show`).
+    // (c) symbole HORS allowlist → REJETÉ (même en `show`). `SystemChannels`
+    // (plateforme) reste banni après l'élargissement DP-13.
     expect(
       _servicesImportAllowed(
-          "import 'package:flutter/services.dart' show Clipboard;"),
+          "import 'package:flutter/services.dart' show SystemChannels;"),
       isFalse,
     );
     expect(
       _servicesImportAllowed("import 'package:flutter/services.dart' "
-          'show TextInputFormatter, Clipboard;'),
+          'show TextInputFormatter, SystemChannels;'),
       isFalse,
     );
     // (d) un import NON-services n'est pas concerné (null).
     expect(
       _servicesImportAllowed("import 'package:flutter/material.dart';"),
+      isNull,
+    );
+  });
+
+  // ── DP-13 : Clipboard/ClipboardData (services) + SemanticsService (semantics)
+  //    admis en `show` restreint ; nu / hors-allowlist REJETÉ. ────────────────
+  test('DP-13 : Clipboard/ClipboardData AUTORISÉ en show ; SemanticsService '
+      'AUTORISÉ ; nu/hors-allowlist REJETÉ', () {
+    // Clipboard / ClipboardData admis (fiche de lecture — copie presse-papier).
+    expect(
+      _servicesImportAllowed("import 'package:flutter/services.dart' "
+          'show Clipboard, ClipboardData;'),
+      isTrue,
+    );
+    // SemanticsService admis en `show` restreint.
+    expect(
+      _semanticsImportAllowed("import 'package:flutter/semantics.dart' "
+          'show SemanticsService;'),
+      isTrue,
+    );
+    // semantics.dart NU → REJETÉ.
+    expect(
+      _semanticsImportAllowed("import 'package:flutter/semantics.dart';"),
+      isFalse,
+    );
+    // Symbole semantics HORS allowlist → REJETÉ.
+    expect(
+      _semanticsImportAllowed(
+          "import 'package:flutter/semantics.dart' show SemanticsNode;"),
+      isFalse,
+    );
+    // Un import NON-semantics n'est pas concerné (null).
+    expect(
+      _semanticsImportAllowed("import 'package:flutter/material.dart';"),
       isNull,
     );
   });

@@ -55,10 +55,15 @@ class ZcrudField {
     this.searchable = false,
     this.defaultValue,
     this.readOnly = false,
-    this.showIfNull = true,
+    this.showIfNull = false,
     this.name,
     this.multiple = false,
     this.persistAs = ZPersistAs.iso8601,
+    this.leading,
+    this.prefix,
+    this.suffix,
+    this.hintText,
+    this.helperText,
   });
 
   /// Libellé d'affichage (clé l10n ou littéral ; résolu côté UI en E3/E4).
@@ -92,8 +97,12 @@ class ZcrudField {
   /// Champ non éditable (mode lecture — DODLP `readOnly`).
   final bool readOnly;
 
-  /// En mode lecture, afficher le champ même si la valeur est `null`
-  /// (DODLP `showIfNull`).
+  /// En **mode lecture global**, afficher le champ même si sa valeur est
+  /// vide/nulle (DODLP `showIfNull`).
+  ///
+  /// **Défaut `false`** (DP-13, aligné sur `ZFieldSpec.showIfNull` et DODLP
+  /// `models.dart:843`) : un champ vide est **masqué** en lecture, sauf
+  /// `showIfNull: true` explicite. Sans effet hors mode lecture.
   final bool showIfNull;
 
   /// Override de la clé persistée. `null` ⇒ dérivée du nom Dart via
@@ -110,4 +119,26 @@ class ZcrudField {
   /// `Timestamp` natif (gap B14, AD-5 préservé). Sans effet hors du chemin
   /// Firestore distant.
   final ZPersistAs persistAs;
+
+  /// Ornement de **tête** (parité DODLP `leading`) — projeté dans
+  /// `ZFieldSpec.leading` (DP-12, M1). Pur-données ([ZFieldAdornment],
+  /// `text`/`icon`/`widget` — jamais une closure/`IconData`, AD-3/AD-14).
+  final ZFieldAdornment? leading;
+
+  /// Ornement **préfixe interne** (parité DODLP `preffix*`) — projeté dans
+  /// `ZFieldSpec.prefix` (DP-12, M1).
+  final ZFieldAdornment? prefix;
+
+  /// Ornement **suffixe interne** (parité DODLP `suffix*`) — projeté dans
+  /// `ZFieldSpec.suffix` (DP-12, M1). Le cas état-dépendant DODLP
+  /// (`suffix(editionState)`) passe par `ZFieldAdornment.widget(kind)`.
+  final ZFieldAdornment? suffix;
+
+  /// Texte indicatif (parité DODLP `hintText`) — projeté dans
+  /// `ZFieldSpec.hintText` (DP-12, M6). Clé l10n ou littéral.
+  final String? hintText;
+
+  /// Texte d'aide (parité DODLP `helperText`) — projeté dans
+  /// `ZFieldSpec.helperText` (DP-12, M6). Clé l10n ou littéral.
+  final String? helperText;
 }

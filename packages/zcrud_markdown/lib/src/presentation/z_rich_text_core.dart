@@ -19,6 +19,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../data/delta_neutral_ops.dart';
 import 'z_latex_embed.dart';
+import 'z_media_embed.dart';
+import 'z_rich_text_toolbar_config.dart';
 import 'z_table_embed.dart';
 
 /// Cible de tap minimale (AD-13) — dimensionne les boutons de la toolbar et sa
@@ -35,46 +37,78 @@ const double kZMinTapTarget = 48;
 const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZLatexEmbedBuilder(),
   ZTableEmbedBuilder(),
+  ZMediaEmbedBuilder(ZMediaKind.image),
+  ZMediaEmbedBuilder(ZMediaKind.video),
 ];
 
 /// Construit une [QuillSimpleToolbarConfig] STABLE (SM-1/AD-2) branchée sur les
-/// callbacks d'insertion d'embed [onInsertLatex]/[onInsertTable].
+/// callbacks d'insertion d'embed, PILOTÉE par une [ZRichTextToolbarConfig]
+/// granulaire (DP-22, M20) — chaque bouton (natif Quill ET custom
+/// LaTeX/table/image/vidéo) est activé/masqué au drapeau.
 ///
-/// [minimal] `true` ⇒ toolbar compacte (voie `inline` : moins de boutons, une
-/// seule rangée) ; `false` ⇒ toolbar complète (voie pleine-toolbar / plein-écran).
-/// La config DOIT être construite UNE FOIS par l'appelant (en `initState`) et
-/// HISSÉE en champ — jamais ré-allouée dans le chemin chaud de frappe.
+/// [config] traduit la granularité NEUTRE (aucun type Quill ne fuit à l'appelant)
+/// vers les `showXxx` de Quill + la liste `customButtons`. La config DOIT être
+/// construite UNE FOIS par l'appelant (en `initState`) et HISSÉE en champ —
+/// jamais ré-allouée dans le chemin chaud de frappe.
 QuillSimpleToolbarConfig buildZToolbarConfig({
   required VoidCallback onInsertLatex,
   required VoidCallback onInsertTable,
-  bool minimal = false,
+  VoidCallback? onInsertImage,
+  VoidCallback? onInsertVideo,
+  ZRichTextToolbarConfig config = ZRichTextToolbarConfig.full,
 }) =>
     QuillSimpleToolbarConfig(
       toolbarSize: kZMinTapTarget,
       multiRowsDisplay: false,
-      showAlignmentButtons: !minimal,
-      // Rendu compact (mode inline) : on masque les groupes lourds pour tenir
-      // sur une rangée, sans jamais retirer l'accès aux embeds (custom buttons).
-      showColorButton: !minimal,
-      showBackgroundColorButton: !minimal,
-      showClearFormat: !minimal,
-      showCodeBlock: !minimal,
-      showQuote: !minimal,
-      showIndent: !minimal,
-      showSearchButton: !minimal,
-      showSubscript: !minimal,
-      showSuperscript: !minimal,
+      showUndo: config.showUndoRedo,
+      showRedo: config.showUndoRedo,
+      showFontFamily: config.showFontFamily,
+      showFontSize: config.showFontSize,
+      showBoldButton: config.showBold,
+      showItalicButton: config.showItalic,
+      showUnderLineButton: config.showUnderline,
+      showStrikeThrough: config.showStrikethrough,
+      showInlineCode: config.showInlineCode,
+      showColorButton: config.showColor,
+      showBackgroundColorButton: config.showBackgroundColor,
+      showClearFormat: config.showClearFormat,
+      showHeaderStyle: config.showHeaderStyle,
+      showAlignmentButtons: config.showAlignment,
+      showListNumbers: config.showList,
+      showListBullets: config.showList,
+      showListCheck: config.showList,
+      showIndent: config.showIndent,
+      showQuote: config.showBlockQuote,
+      showCodeBlock: config.showCodeBlock,
+      showLink: config.showLink,
+      showSearchButton: config.showSearch,
+      showSubscript: config.showSubscript,
+      showSuperscript: config.showSuperscript,
       customButtons: <QuillToolbarCustomButtonOptions>[
-        QuillToolbarCustomButtonOptions(
-          icon: const Icon(Icons.functions),
-          tooltip: 'Insérer une formule',
-          onPressed: onInsertLatex,
-        ),
-        QuillToolbarCustomButtonOptions(
-          icon: const Icon(Icons.grid_on),
-          tooltip: 'Insérer un tableau',
-          onPressed: onInsertTable,
-        ),
+        if (config.showLatexButton)
+          QuillToolbarCustomButtonOptions(
+            icon: const Icon(Icons.functions),
+            tooltip: 'Insérer une formule',
+            onPressed: onInsertLatex,
+          ),
+        if (config.showTableButton)
+          QuillToolbarCustomButtonOptions(
+            icon: const Icon(Icons.grid_on),
+            tooltip: 'Insérer un tableau',
+            onPressed: onInsertTable,
+          ),
+        if (config.showImageButton && onInsertImage != null)
+          QuillToolbarCustomButtonOptions(
+            icon: const Icon(Icons.image_outlined),
+            tooltip: 'Insérer une image',
+            onPressed: onInsertImage,
+          ),
+        if (config.showVideoButton && onInsertVideo != null)
+          QuillToolbarCustomButtonOptions(
+            icon: const Icon(Icons.videocam_outlined),
+            tooltip: 'Insérer une vidéo',
+            onPressed: onInsertVideo,
+          ),
       ],
     );
 
@@ -195,6 +229,81 @@ _TableEmbedHit? _tableEmbedAtSelection(QuillController quill) {
     }
   }
   return null;
+}
+
+// ─────────────────────────────── Embed média (DP-22) ────────────────────────
+
+/// Ouvre le dialogue de saisie/édition d'une **source média** ([kind] image ou
+/// vidéo) puis insère (ou remplace) l'op embed `{insert:{image|video:<source>}}`
+/// au point d'insertion courant du [quill]. MIROIR EXACT du flux LaTeX/table,
+/// paramétré par la nature du média. SEAM NEUTRE : seule une source OPAQUE est
+/// portée — aucun upload/accès réseau n'est câblé (cf. `z_media_embed.dart`).
+Future<void> insertZMedia(
+  BuildContext context,
+  QuillController quill, {
+  required ZMediaKind kind,
+  required bool Function() isMounted,
+}) async {
+  final String embedType =
+      kind == ZMediaKind.image ? kImageEmbedType : kVideoEmbedType;
+  final _MediaEmbedHit? existing = _mediaEmbedAtSelection(quill, embedType);
+  final String? source = await showZMediaSourceDialog(
+    context,
+    kind: kind,
+    initial: existing?.source ?? '',
+  );
+  if (source == null || !isMounted()) return;
+  final Embeddable embed =
+      kind == ZMediaKind.image ? ZImageEmbed(source) : ZVideoEmbed(source);
+  if (existing != null) {
+    quill.replaceText(
+      existing.index,
+      1,
+      embed,
+      TextSelection.collapsed(offset: existing.index + 1),
+    );
+    return;
+  }
+  final TextSelection sel = quill.selection;
+  final int index =
+      sel.isValid ? sel.start : (quill.document.length - 1).clamp(0, 1 << 30);
+  final int length = sel.isValid ? sel.end - sel.start : 0;
+  quill.replaceText(
+    index,
+    length,
+    embed,
+    TextSelection.collapsed(offset: index + 1),
+  );
+}
+
+/// Détecte un embed média (`embedType`) sous/juste-avant le caret (édition).
+_MediaEmbedHit? _mediaEmbedAtSelection(QuillController quill, String embedType) {
+  final TextSelection sel = quill.selection;
+  if (!sel.isValid) return null;
+  final int caret = sel.baseOffset;
+  final List<Map<String, dynamic>> ops =
+      DeltaNeutralOps.encodeNeutral(quill.document);
+  var index = 0;
+  for (final Map<String, dynamic> op in ops) {
+    final Object? insert = op['insert'];
+    if (insert is Map && insert[embedType] is String) {
+      if (caret == index || caret == index + 1) {
+        return _MediaEmbedHit(index, insert[embedType] as String);
+      }
+      index += 1;
+    } else {
+      index += insert is String ? insert.length : 1;
+    }
+  }
+  return null;
+}
+
+/// Localisation d'un embed média dans le document (index Delta + source).
+class _MediaEmbedHit {
+  const _MediaEmbedHit(this.index, this.source);
+
+  final int index;
+  final String source;
 }
 
 /// Localisation d'un embed LaTeX dans le document (index Delta + source).

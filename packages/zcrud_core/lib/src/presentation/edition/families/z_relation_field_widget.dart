@@ -34,8 +34,11 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
+import '../../../domain/ports/z_relation_crud.dart';
 import '../../../domain/ports/z_relation_source.dart';
 import '../../l10n/z_localizations.dart';
+import '../z_field_adornment_view.dart';
+import '../z_field_label.dart';
 
 /// Champ d'édition **relation** (sélecteur d'entité liée, source dynamique
 /// injectable + filtre cross-champ + multi + modal recherche).
@@ -54,6 +57,7 @@ class ZRelationFieldWidget extends StatefulWidget {
     this.filterContext = const <String, Object?>{},
     this.multiple = false,
     this.searchable = false,
+    this.crudHandler,
     super.key,
   });
 
@@ -82,6 +86,13 @@ class ZRelationFieldWidget extends StatefulWidget {
 
   /// Active le modal de recherche (filtrage client sur les libellés).
   final bool searchable;
+
+  /// **CRUD inline** neutre injecté (DP-15/M8, parité `showCrudButton` DODLP ;
+  /// défaut `null` → aucun bouton créer/modifier/copier, modal DP-5 identique).
+  /// Résolu au runtime par le dispatcher (`ZRelationCrudRegistry` +
+  /// `ZRelationConfig.crudKey`). L'impl concrète (form + repository) vit hors du
+  /// cœur (binding/app E7).
+  final ZRelationCrudHandler? crudHandler;
 
   @override
   State<ZRelationFieldWidget> createState() => _ZRelationFieldWidgetState();
@@ -153,7 +164,12 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
     }
     final choices = _choices;
     if (widget.multiple) return _buildMulti(context, choices);
-    if (widget.searchable) return _buildSearchableMono(context, choices);
+    // DP-15 : un handler CRUD inline impose le chemin MODAL (mono searchable),
+    // seul endroit exposant les boutons Créer/Modifier/Copier (AC11). Sans
+    // handler ni `searchable`, le dropdown DP-5 reste inchangé.
+    if (widget.searchable || widget.crudHandler != null) {
+      return _buildSearchableMono(context, choices);
+    }
     return _buildDropdown(context, choices, loading: _isLoading);
   }
 
@@ -175,9 +191,15 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
       // (un `FormField` ne relit `initialValue` qu'à l'`initState`).
       key: ValueKey<Object?>(current),
       initialValue: current,
+      // DP-12 (M5/M6/M1) : label enrichi (astérisque requis) + helper + leading.
       decoration: InputDecoration(
-        labelText: _resolvedLabel,
+        label: ZFieldLabel(field: widget.field),
+        icon: resolveAdornment(context, widget.field.leading, field: widget.field),
         hintText: label(context, loading ? 'loading' : 'select'),
+        helperText: widget.field.helperText == null
+            ? null
+            : label(context, widget.field.helperText!,
+                fallback: widget.field.helperText!),
       ),
       items: <DropdownMenuItem<Object?>>[
         for (final option in choices)
@@ -300,9 +322,15 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         title: _resolvedLabel,
         choices: choices,
         multiple: multiple,
-        searchable: widget.searchable,
+        // DP-15 : un handler CRUD force la recherche (modal riche), même si la
+        // config `searchable` est absente.
+        searchable: widget.searchable || widget.crudHandler != null,
         initialSelection: initial,
         labelOf: (c) => label(sheetContext, c.label, fallback: c.label),
+        // DP-15 : CRUD inline neutre (create/edit/copy) + snapshot du filtre
+        // cross-champ pour pré-remplir la création. `null` ⇒ aucun bouton.
+        crudHandler: widget.crudHandler,
+        crudContext: widget.filterContext,
       ),
     );
     if (result == null) return; // annulé/fermé → aucune écriture.
@@ -384,6 +412,8 @@ class _RelationSelectSheet extends StatefulWidget {
     required this.searchable,
     required this.initialSelection,
     required this.labelOf,
+    this.crudHandler,
+    this.crudContext = const <String, Object?>{},
   });
 
   final String title;
@@ -392,6 +422,12 @@ class _RelationSelectSheet extends StatefulWidget {
   final bool searchable;
   final Set<Object?> initialSelection;
   final String Function(ZFieldChoice) labelOf;
+
+  /// CRUD inline neutre (DP-15) : `null` ⇒ aucun bouton créer/modifier/copier.
+  final ZRelationCrudHandler? crudHandler;
+
+  /// Snapshot du filtre cross-champ transmis à `crudHandler.create(...)`.
+  final Map<String, Object?> crudContext;
 
   @override
   State<_RelationSelectSheet> createState() => _RelationSelectSheetState();
@@ -402,10 +438,16 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
     ..removeWhere((e) => e == null);
   String _query = '';
 
+  /// Copie **mutable** des options : une entité créée/éditée/copiée via le CRUD
+  /// inline y est insérée pour apparaître immédiatement (avant que le flux live
+  /// ne la reflète).
+  late final List<ZFieldChoice> _choices =
+      List<ZFieldChoice>.from(widget.choices);
+
   List<ZFieldChoice> get _filtered {
-    if (_query.isEmpty) return widget.choices;
+    if (_query.isEmpty) return _choices;
     final q = _query.toLowerCase();
-    return widget.choices
+    return _choices
         .where((c) => widget.labelOf(c).toLowerCase().contains(q))
         .toList(growable: false);
   }
@@ -430,9 +472,55 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
     }
   }
 
+  /// Insère/actualise [choice] dans la liste locale (par valeur), puis
+  /// l'auto-sélectionne (mono → remplace + ferme ; multi → `addIfNotIn`).
+  /// [replaced] (édition) est retirée si sa valeur change.
+  void _selectResult(ZFieldChoice choice, {Object? replaced}) {
+    if (!mounted) return;
+    setState(() {
+      if (replaced != null && replaced != choice.value) {
+        _choices.removeWhere((c) => c.value == replaced);
+        _selection.remove(replaced);
+      }
+      final idx = _choices.indexWhere((c) => c.value == choice.value);
+      if (idx >= 0) {
+        _choices[idx] = choice;
+      } else {
+        _choices.add(choice);
+      }
+      if (widget.multiple) {
+        _selection.add(choice.value); // addIfNotIn (Set).
+      } else {
+        _selection
+          ..clear()
+          ..add(choice.value);
+      }
+    });
+    if (!widget.multiple) {
+      Navigator.of(context).pop(_selection.toList());
+    }
+  }
+
+  /// Exécute une opération CRUD **défensivement** (AD-10) : `Future` en
+  /// erreur/`null` ⇒ aucune écriture, aucun crash (équivalent `try/catch (_) {}`).
+  Future<void> _runCrud(
+    Future<ZFieldChoice?> Function() op, {
+    Object? replaced,
+  }) async {
+    ZFieldChoice? result;
+    try {
+      result = await op();
+    } catch (_) {
+      return; // AD-10 : échec silencieux, aucune écriture.
+    }
+    if (result == null) return; // annulé/échec → no-op.
+    _selectResult(result, replaced: replaced);
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
+    final crud = widget.crudHandler;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -444,9 +532,27 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
-              child: Text(widget.title,
-                  textAlign: TextAlign.start,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(widget.title,
+                        textAlign: TextAlign.start,
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  // DP-15 : action **Créer** (parité `showCrudButton` create).
+                  if (crud != null)
+                    ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(minHeight: 48, minWidth: 48),
+                      child: TextButton.icon(
+                        onPressed: () => _runCrud(
+                            () => crud.create(widget.crudContext)),
+                        icon: const Icon(Icons.add),
+                        label: Text(label(context, 'create')),
+                      ),
+                    ),
+                ],
+              ),
             ),
             if (widget.searchable)
               Padding(
@@ -484,6 +590,17 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                                 ListTileControlAffinity.leading,
                             title: Text(widget.labelOf(choice),
                                 textAlign: TextAlign.start),
+                            // DP-15 : affordances Modifier/Copier par option.
+                            secondary: crud == null
+                                ? null
+                                : _CrudRowActions(
+                                    onEdit: () => _runCrud(
+                                      () => crud.edit(choice.value),
+                                      replaced: choice.value,
+                                    ),
+                                    onCopy: () =>
+                                        _runCrud(() => crud.copy(choice.value)),
+                                  ),
                             onChanged: (_) => _toggle(choice.value),
                           );
                         },
@@ -511,6 +628,34 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Affordances **Modifier/Copier** par option (DP-15/M8) : icônes accessibles,
+/// cibles ≥ 48 dp, `Tooltip`/`Semantics`, l10n. Directionnel (AD-13).
+class _CrudRowActions extends StatelessWidget {
+  const _CrudRowActions({required this.onEdit, required this.onCopy});
+
+  final VoidCallback onEdit;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.edit),
+          tooltip: label(context, 'edit'),
+          onPressed: onEdit,
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy),
+          tooltip: label(context, 'copy'),
+          onPressed: onCopy,
+        ),
+      ],
     );
   }
 }

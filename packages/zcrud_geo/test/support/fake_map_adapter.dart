@@ -34,6 +34,9 @@ class FakeMapAdapter implements ZMapAdapter {
   /// barre d'outils → `buildMap`). `null` quand aucune barre d'outils.
   ZGeoMapOptions? lastMapOptions;
 
+  /// Dernier signal « rendre la forme en tracé ouvert » reçu (DP-21/M13).
+  bool? lastRenderShapeAsPolyline;
+
   /// Clé de la surface carte fake.
   static const Key mapKey = Key('fake-map');
 
@@ -49,6 +52,7 @@ class FakeMapAdapter implements ZMapAdapter {
     String? mapStyleJson,
     double? defaultZoom,
     ZGeoMapOptions? mapOptions,
+    bool renderShapeAsPolyline = false,
   }) {
     buildCount++;
     lastCenter = center;
@@ -59,6 +63,7 @@ class FakeMapAdapter implements ZMapAdapter {
     lastMapStyleJson = mapStyleJson;
     lastDefaultZoom = defaultZoom;
     lastMapOptions = mapOptions;
+    lastRenderShapeAsPolyline = renderShapeAsPolyline;
     sawOnTap = onTap != null;
     return GestureDetector(
       key: mapKey,

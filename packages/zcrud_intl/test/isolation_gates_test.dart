@@ -52,9 +52,12 @@ const _bannedNetworkLibs = <String>[
 
 /// DP-8 : fichiers domaine **pur-Dart** (codec + seam) — aucune lib lourde,
 /// aucun Flutter (AD-14).
+/// DP-20 : `z_national_phone_validator.dart` rejoint la denylist — validateur
+/// national **pur-Dart** (AD-14), aucun Flutter/`phone_numbers_parser` (AC8).
 const _pureDartDomainFiles = <String>[
   'z_address_codec.dart',
   'z_place_search_provider.dart',
+  'z_national_phone_validator.dart',
 ];
 
 /// Lecture **cwd-robuste** : le gate doit passer que `flutter test` soit lancé à

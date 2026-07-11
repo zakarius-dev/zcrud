@@ -93,6 +93,16 @@ class ZValidatorSpec {
     this.value,
     this.pattern,
     this.errorText,
+    this.passwordMinLength,
+    this.passwordMaxLength,
+    this.requireUppercase,
+    this.requireLowercase,
+    this.requireDigit,
+    this.requireSpecial,
+    this.enforceFormat,
+    this.enforceRange,
+    this.rangeMin,
+    this.rangeMax,
   });
 
   /// Valeur requise.
@@ -169,17 +179,55 @@ class ZValidatorSpec {
   const ZValidatorSpec.dateString({String? errorText})
       : this._(ZValidatorKind.dateString, errorText: errorText);
 
-  /// Adresse postale.
-  const ZValidatorSpec.address({String? errorText})
-      : this._(ZValidatorKind.address, errorText: errorText);
+  /// Adresse postale — **no-op par défaut** (parité DODLP M11 : rôle indice de
+  /// clavier, aucune validation de format). Le format n'est vérifié que si
+  /// [enforceFormat] est `true` (opt-in ⇒ `FormBuilderValidators.street`).
+  const ZValidatorSpec.address({bool enforceFormat = false, String? errorText})
+      : this._(
+          ZValidatorKind.address,
+          enforceFormat: enforceFormat,
+          errorText: errorText,
+        );
 
-  /// Pourcentage (0–100).
-  const ZValidatorSpec.percentage({String? errorText})
-      : this._(ZValidatorKind.percentage, errorText: errorText);
+  /// Pourcentage — **no-op par défaut** (parité DODLP M11 : indice/format
+  /// d'affichage, saisie numérique libre). La plage n'est vérifiée que si
+  /// [enforceRange] est `true` (opt-in ⇒ `between([min], [max])`, défaut 0–100).
+  const ZValidatorSpec.percentage({
+    bool enforceRange = false,
+    num min = 0,
+    num max = 100,
+    String? errorText,
+  }) : this._(
+          ZValidatorKind.percentage,
+          enforceRange: enforceRange,
+          rangeMin: min,
+          rangeMax: max,
+          errorText: errorText,
+        );
 
-  /// Politique de mot de passe.
-  const ZValidatorSpec.password({String? errorText})
-      : this._(ZValidatorKind.password, errorText: errorText);
+  /// Politique de mot de passe **paramétrable** — défauts alignés sur DODLP (M10,
+  /// permissif) : [minLength] `8`, [maxLength] `20`, [requireUppercase] &
+  /// [requireLowercase] `true`, [requireDigit] & [requireSpecial] `false`. La
+  /// politique stricte est **opt-in**
+  /// (`password(minLength: 12, requireDigit: true, requireSpecial: true, …)`).
+  const ZValidatorSpec.password({
+    int minLength = 8,
+    int maxLength = 20,
+    bool requireUppercase = true,
+    bool requireLowercase = true,
+    bool requireDigit = false,
+    bool requireSpecial = false,
+    String? errorText,
+  }) : this._(
+          ZValidatorKind.password,
+          passwordMinLength: minLength,
+          passwordMaxLength: maxLength,
+          requireUppercase: requireUppercase,
+          requireLowercase: requireLowercase,
+          requireDigit: requireDigit,
+          requireSpecial: requireSpecial,
+          errorText: errorText,
+        );
 
   /// Correspondance à l'expression régulière [pattern].
   const ZValidatorSpec.pattern(String pattern, {String? errorText})
@@ -206,6 +254,40 @@ class ZValidatorSpec {
   /// Message d'erreur (littéral ou clé l10n ; résolu en E3).
   final String? errorText;
 
+  /// Longueur minimale de la politique **mot de passe** ([ZValidatorKind.password]
+  /// ; défaut DODLP `8`). Distinct de [length] (min/maxLength de chaîne générique).
+  final int? passwordMinLength;
+
+  /// Longueur maximale de la politique **mot de passe** (défaut DODLP `20`).
+  final int? passwordMaxLength;
+
+  /// Politique password : exige au moins une **majuscule** (défaut `true`).
+  final bool? requireUppercase;
+
+  /// Politique password : exige au moins une **minuscule** (défaut `true`).
+  final bool? requireLowercase;
+
+  /// Politique password : exige au moins un **chiffre** (défaut DODLP `false`).
+  final bool? requireDigit;
+
+  /// Politique password : exige au moins un **caractère spécial** (défaut DODLP
+  /// `false`).
+  final bool? requireSpecial;
+
+  /// [ZValidatorKind.address] : `true` ⇒ valide le format (opt-in `street`) ;
+  /// `false` (défaut) ⇒ **no-op** (parité DODLP M11).
+  final bool? enforceFormat;
+
+  /// [ZValidatorKind.percentage] : `true` ⇒ valide la plage (opt-in `between`) ;
+  /// `false` (défaut) ⇒ **no-op** (parité DODLP M11).
+  final bool? enforceRange;
+
+  /// Borne basse de la plage `percentage` quand [enforceRange] (défaut `0`).
+  final num? rangeMin;
+
+  /// Borne haute de la plage `percentage` quand [enforceRange] (défaut `100`).
+  final num? rangeMax;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -217,11 +299,39 @@ class ZValidatorSpec {
           refKey == other.refKey &&
           value == other.value &&
           pattern == other.pattern &&
-          errorText == other.errorText;
+          errorText == other.errorText &&
+          passwordMinLength == other.passwordMinLength &&
+          passwordMaxLength == other.passwordMaxLength &&
+          requireUppercase == other.requireUppercase &&
+          requireLowercase == other.requireLowercase &&
+          requireDigit == other.requireDigit &&
+          requireSpecial == other.requireSpecial &&
+          enforceFormat == other.enforceFormat &&
+          enforceRange == other.enforceRange &&
+          rangeMin == other.rangeMin &&
+          rangeMax == other.rangeMax;
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, kind, length, bound, refKey, value, pattern, errorText);
+  int get hashCode => Object.hashAll(<Object?>[
+        runtimeType,
+        kind,
+        length,
+        bound,
+        refKey,
+        value,
+        pattern,
+        errorText,
+        passwordMinLength,
+        passwordMaxLength,
+        requireUppercase,
+        requireLowercase,
+        requireDigit,
+        requireSpecial,
+        enforceFormat,
+        enforceRange,
+        rangeMin,
+        rangeMax,
+      ]);
 
   @override
   String toString() => 'ZValidatorSpec(${kind.name})';

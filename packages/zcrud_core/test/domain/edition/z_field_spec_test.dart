@@ -12,7 +12,9 @@ void main() {
     expect(s.choices, isEmpty);
     expect(s.searchable, isFalse);
     expect(s.readOnly, isFalse);
-    expect(s.showIfNull, isTrue);
+    // DP-13 : défaut inversé à `false` (parité DODLP — masque les vides en
+    // lecture, sauf `showIfNull: true` explicite).
+    expect(s.showIfNull, isFalse);
     expect(s.multiple, isFalse);
     expect(s.isId, isFalse);
     expect(s.condition, isNull);

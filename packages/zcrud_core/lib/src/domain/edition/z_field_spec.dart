@@ -20,6 +20,7 @@ library;
 
 import 'edition_field_type.dart';
 import 'z_condition.dart';
+import 'z_field_adornment.dart';
 import 'z_field_choice.dart';
 import 'z_field_config.dart';
 import 'z_field_size.dart';
@@ -44,10 +45,15 @@ class ZFieldSpec {
     this.searchable = false,
     this.defaultValue,
     this.readOnly = false,
-    this.showIfNull = true,
+    this.showIfNull = false,
     this.multiple = false,
     this.isId = false,
     this.fieldSize = ZFieldSize.normal,
+    this.leading,
+    this.prefix,
+    this.suffix,
+    this.hintText,
+    this.helperText,
   });
 
   /// Clé persistée du champ (snake_case par défaut — AD-3).
@@ -80,7 +86,19 @@ class ZFieldSpec {
   /// Champ non éditable (mode lecture).
   final bool readOnly;
 
-  /// En mode lecture, afficher même si la valeur est `null`.
+  /// En **mode lecture global** (`DynamicEdition(readOnly: true)`), afficher le
+  /// champ **même si sa valeur est vide/nulle**.
+  ///
+  /// **Défaut `false`** (DP-13, parité DODLP `models.dart:843`) : un champ à
+  /// valeur vide est **masqué** en lecture, sauf déclaration explicite
+  /// `showIfNull: true`. Le flag est **inerte hors mode lecture** (édition/liste
+  /// non affectées) — c'est une **donnée** de présentation, jamais une logique.
+  ///
+  /// **BREAKING (mode lecture uniquement) — note de migration (DP-13)** : depuis
+  /// DP-13, le défaut est `false` (auparavant `true`). En mode lecture, les
+  /// champs vides sans `showIfNull` explicite sont désormais masqués. Pour forcer
+  /// l'affichage d'un champ vide en lecture, déclarer `showIfNull: true` (ou
+  /// `@ZcrudField(showIfNull: true)`). **Édition et listes : aucun changement.**
   final bool showIfNull;
 
   /// Multi-valeur (`List<…>` ou `multiple: true`).
@@ -94,6 +112,36 @@ class ZFieldSpec {
   /// Ajout **additif** rétro-compatible : une spec sans `fieldSize` conserve le
   /// rendu inline historique.
   final ZFieldSize fieldSize;
+
+  /// Ornement de **tête** (parité DODLP `leading`) — rendu hors bordure
+  /// (`InputDecoration.icon` en normal, slot `ZLargeFieldCard.leading` en large).
+  /// `null` par défaut (aucun slot). Pur-données (DP-12, M1).
+  final ZFieldAdornment? leading;
+
+  /// Ornement **préfixe interne** (parité DODLP `preffix`/`preffixText`/
+  /// `preffixIcon`) — `InputDecoration.prefix`/`prefixIcon`. `null` par défaut.
+  final ZFieldAdornment? prefix;
+
+  /// Ornement **suffixe interne** (parité DODLP `suffix`/`suffixText`/
+  /// `suffixIcon`) — `InputDecoration.suffix`/`suffixIcon` en normal, slot
+  /// `ZLargeFieldCard.suffix` en large. Le cas DODLP `suffix(editionState)`
+  /// (closure) passe par `ZFieldAdornment.widget(kind)` (seam registre). `null`
+  /// par défaut.
+  final ZFieldAdornment? suffix;
+
+  /// Texte indicatif (parité DODLP `hintText`) — clé l10n ou littéral, injecté
+  /// dans `InputDecoration.hintText`. `null` par défaut (DP-12, M6).
+  final String? hintText;
+
+  /// Texte d'aide sous le champ (parité DODLP `helperText`) — clé l10n ou
+  /// littéral, injecté dans `InputDecoration.helperText`. `null` par défaut.
+  final String? helperText;
+
+  /// `true` ssi ce champ porte un validateur [ZValidatorKind.required] (miroir
+  /// pur-Dart de `isFieldRequired` DODLP — DP-12, M5). Alimente l'astérisque «
+  /// requis » du label enrichi (`ZFieldLabel`), sans dépendance Flutter.
+  bool get isRequired =>
+      validators.any((v) => v.kind == ZValidatorKind.required);
 
   /// Copie la spec en surchargeant les champs fournis (identité de valeur
   /// préservée pour les autres). Additif — sert notamment au **mode lecture
@@ -114,6 +162,11 @@ class ZFieldSpec {
     bool? multiple,
     bool? isId,
     ZFieldSize? fieldSize,
+    ZFieldAdornment? leading,
+    ZFieldAdornment? prefix,
+    ZFieldAdornment? suffix,
+    String? hintText,
+    String? helperText,
   }) =>
       ZFieldSpec(
         name: name ?? this.name,
@@ -130,6 +183,11 @@ class ZFieldSpec {
         multiple: multiple ?? this.multiple,
         isId: isId ?? this.isId,
         fieldSize: fieldSize ?? this.fieldSize,
+        leading: leading ?? this.leading,
+        prefix: prefix ?? this.prefix,
+        suffix: suffix ?? this.suffix,
+        hintText: hintText ?? this.hintText,
+        helperText: helperText ?? this.helperText,
       );
 
   @override
@@ -149,6 +207,11 @@ class ZFieldSpec {
           multiple == other.multiple &&
           isId == other.isId &&
           fieldSize == other.fieldSize &&
+          leading == other.leading &&
+          prefix == other.prefix &&
+          suffix == other.suffix &&
+          hintText == other.hintText &&
+          helperText == other.helperText &&
           _listEquals(validators, other.validators) &&
           _listEquals(choices, other.choices);
 
@@ -167,6 +230,11 @@ class ZFieldSpec {
         multiple,
         isId,
         fieldSize,
+        leading,
+        prefix,
+        suffix,
+        hintText,
+        helperText,
         Object.hashAll(validators),
         Object.hashAll(choices),
       );

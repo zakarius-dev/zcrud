@@ -402,7 +402,28 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       }
       if (r.read('searchable').boolValue) parts.add('searchable: true');
       if (r.read('readOnly').boolValue) parts.add('readOnly: true');
-      if (!r.read('showIfNull').boolValue) parts.add('showIfNull: false');
+      // DP-13 : `showIfNull` a pour défaut `false` (côté annotation ET
+      // `ZFieldSpec`). On n'émet donc que la valeur NON-défaut (`true`) — sinon le
+      // flip du défaut serait silencieusement écrasé. `@ZcrudField()` (défaut
+      // false) ⇒ aucune émission ⇒ `ZFieldSpec` prend son défaut `false` (parité
+      // DODLP). Opt-in `@ZcrudField(showIfNull: true)` ⇒ `showIfNull: true` émis.
+      if (r.read('showIfNull').boolValue) parts.add('showIfNull: true');
+      // DP-12 : ornements déclaratifs (const AST re-émis 1:1) + hint/helper.
+      if (!r.read('leading').isNull) {
+        parts.add('leading: ${_emitConst(r.read('leading'))}');
+      }
+      if (!r.read('prefix').isNull) {
+        parts.add('prefix: ${_emitConst(r.read('prefix'))}');
+      }
+      if (!r.read('suffix').isNull) {
+        parts.add('suffix: ${_emitConst(r.read('suffix'))}');
+      }
+      if (!r.read('hintText').isNull) {
+        parts.add('hintText: ${_emitConst(r.read('hintText'))}');
+      }
+      if (!r.read('helperText').isNull) {
+        parts.add('helperText: ${_emitConst(r.read('helperText'))}');
+      }
     }
     if (f.multiple) parts.add('multiple: true');
     if (f.isId) parts.add('isId: true');

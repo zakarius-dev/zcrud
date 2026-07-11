@@ -44,6 +44,7 @@ export 'src/presentation/edition/families/z_rating_field_widget.dart';
 export 'src/presentation/edition/families/z_relation_field_widget.dart';
 export 'src/presentation/edition/families/z_row_chips_field_widget.dart';
 export 'src/presentation/edition/families/z_select_field_widget.dart';
+export 'src/presentation/edition/families/z_signature_codec.dart';
 export 'src/presentation/edition/families/z_signature_field_widget.dart';
 export 'src/presentation/edition/families/z_slider_field_widget.dart';
 export 'src/presentation/edition/families/z_sub_list_field_widget.dart';
@@ -60,6 +61,11 @@ export 'src/presentation/edition/families/z_unsupported_field_widget.dart';
 export 'src/presentation/edition/z_cross_field_validator.dart';
 export 'src/presentation/edition/z_discard_guard.dart';
 export 'src/presentation/edition/z_edition_field.dart';
+// Décoration de champ enrichie (DP-12, M1/M5/M6) : résolveur d'ornement neutre
+// `resolveAdornment`/`zFieldDecoration` (+ seam `ZAdornmentIconResolver`) et
+// libellé enrichi partagé `ZFieldLabel` (style thémé + astérisque requis).
+export 'src/presentation/edition/z_field_adornment_view.dart';
+export 'src/presentation/edition/z_field_label.dart';
 export 'src/presentation/edition/z_field_widget.dart';
 // Seam d'acquisition de fichier injecté (E3-3c, AD-1/AD-6) : interface `ZFilePicker`
 // (impl concrète image_picker/file_picker = app/binding E7, jamais le cœur).
@@ -67,6 +73,10 @@ export 'src/presentation/edition/z_file_picker.dart';
 // Décorateur Card de la variante `ZFieldSize.large` (DP-1/B1) : label au-dessus,
 // champ interne bare, mesures pilotées par les tokens `large*` de `ZcrudTheme`.
 export 'src/presentation/edition/z_large_field_card.dart';
+// Fiche de consultation du mode lecture (DP-13, M4) : `ZReadOnlyFieldCard`
+// (label/valeur + copie presse-papier accessible). Helpers de formatage/politique
+// (`zReadOnlyValueOf`/`zReadModeCardable`) restent `src`-privés (AC18).
+export 'src/presentation/edition/z_read_only_field_card.dart';
 // Grille responsive 12 colonnes du moteur d'édition (E3-4, FR-3/AD-13) :
 // descripteur de span par breakpoint `ZResponsiveSpan`, seuils `ZBreakpoint`/
 // `ZResponsiveBreakpoints`, widget de disposition directionnel `ZResponsiveGrid`.

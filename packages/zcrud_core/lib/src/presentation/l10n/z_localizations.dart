@@ -27,11 +27,16 @@ const _enLabels = <String, String>{
   'delete': 'Delete',
   'restore': 'Restore',
   'edit': 'Edit',
+  // DP-15 : CRUD inline sur relation (créer une entité liée). `copy`/`edit`
+  // réutilisés (déjà présents).
+  'create': 'Create',
   'add': 'Add',
   'confirm': 'Confirm',
   'search': 'Search',
   'required': 'This field is required',
   'invalidValue': 'Invalid value',
+  // DP-16 : message générique de politique mot de passe (repli défensif).
+  'invalidPassword': 'Invalid password',
   'loading': 'Loading…',
   'empty': 'Nothing to display',
   'retry': 'Retry',
@@ -55,6 +60,18 @@ const _enLabels = <String, String>{
   'addTag': 'Add tag',
   'removeTag': 'Remove tag',
   'selectColor': 'Select a color',
+  // DP-17 (M14) : picker couleur enrichi (built-in neutre).
+  'customColor': 'Custom color…',
+  'colorHue': 'Hue',
+  'colorSaturation': 'Saturation',
+  'colorBrightness': 'Brightness',
+  'colorOpacity': 'Opacity',
+  'colorHex': 'Hex code',
+  'colorRecent': 'Recent',
+  'apply': 'Apply',
+  // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
+  'percentSuffix': '%',
+  'currencySuffix': r'$',
   'rate': 'Rating',
   'addItem': 'Add item',
   'removeItem': 'Remove item',
@@ -67,6 +84,9 @@ const _enLabels = <String, String>{
   'deleteItem': 'Delete item',
   'confirmDeleteItem': 'Delete this item?',
   'noItems': 'No items',
+  // DP-19 (M18) : soft-delete/restore d'un item de sous-liste.
+  'restoreItem': 'Restore item',
+  'deletedItemBadge': '(deleted)',
   'signatureArea': 'Signature area',
   'signatureSigned': 'Signed',
   'signatureEmpty': 'Empty',
@@ -82,6 +102,10 @@ const _enLabels = <String, String>{
   'fileUploadFailed': 'Upload failed',
   'filePreviewAlt': 'File preview',
   'fileMaxReached': 'Maximum number of files reached; extra files were not added',
+  // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
+  'copy': 'Copy',
+  'copied': 'Value copied to clipboard',
+  'emptyValue': '—',
 };
 
 const _frLabels = <String, String>{
@@ -90,11 +114,15 @@ const _frLabels = <String, String>{
   'delete': 'Supprimer',
   'restore': 'Restaurer',
   'edit': 'Modifier',
+  // DP-15 : CRUD inline sur relation (créer une entité liée).
+  'create': 'Créer',
   'add': 'Ajouter',
   'confirm': 'Confirmer',
   'search': 'Rechercher',
   'required': 'Ce champ est requis',
   'invalidValue': 'Valeur invalide',
+  // DP-16 : message générique de politique mot de passe (repli défensif).
+  'invalidPassword': 'Mot de passe invalide',
   'loading': 'Chargement…',
   'empty': 'Aucun élément à afficher',
   'retry': 'Réessayer',
@@ -118,6 +146,18 @@ const _frLabels = <String, String>{
   'addTag': 'Ajouter une étiquette',
   'removeTag': 'Retirer l\'étiquette',
   'selectColor': 'Sélectionner une couleur',
+  // DP-17 (M14) : picker couleur enrichi (built-in neutre).
+  'customColor': 'Couleur personnalisée…',
+  'colorHue': 'Teinte',
+  'colorSaturation': 'Saturation',
+  'colorBrightness': 'Luminosité',
+  'colorOpacity': 'Opacité',
+  'colorHex': 'Code hexadécimal',
+  'colorRecent': 'Récentes',
+  'apply': 'Appliquer',
+  // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
+  'percentSuffix': '%',
+  'currencySuffix': r'$',
   'rate': 'Note',
   'addItem': 'Ajouter un élément',
   'removeItem': 'Retirer l\'élément',
@@ -130,6 +170,9 @@ const _frLabels = <String, String>{
   'deleteItem': 'Supprimer l\'élément',
   'confirmDeleteItem': 'Supprimer cet élément ?',
   'noItems': 'Aucun élément',
+  // DP-19 (M18) : soft-delete/restore d'un item de sous-liste.
+  'restoreItem': 'Restaurer l\'élément',
+  'deletedItemBadge': '(supprimé)',
   'signatureArea': 'Zone de signature',
   'signatureSigned': 'Signé',
   'signatureEmpty': 'Vide',
@@ -146,6 +189,10 @@ const _frLabels = <String, String>{
   'filePreviewAlt': 'Aperçu du fichier',
   'fileMaxReached':
       'Nombre maximal de fichiers atteint ; les fichiers en trop n\'ont pas été ajoutés',
+  // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
+  'copy': 'Copier',
+  'copied': 'Valeur copiée dans le presse-papier',
+  'emptyValue': '—',
 };
 
 /// Tables de libellés génériques par `languageCode` (baseline `en`/`fr`).

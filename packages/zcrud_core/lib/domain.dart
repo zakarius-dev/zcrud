@@ -38,6 +38,7 @@ export 'src/domain/edition/app_file.dart';
 export 'src/domain/edition/edition_field_type.dart';
 export 'src/domain/edition/z_condition.dart';
 export 'src/domain/edition/z_condition_evaluator.dart';
+export 'src/domain/edition/z_field_adornment.dart';
 export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
@@ -51,8 +52,16 @@ export 'src/domain/extension/z_extension.dart';
 export 'src/domain/failures/z_failure.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
+// Port neutre + registre de source d'options CALCULÉES du champ `select` (DP-15,
+// M22, AD-1/AD-4/AD-5) : `ZChoicesSource` (liste `List<ZFieldChoice>` SYNCHRONE,
+// impl hors cœur) + `ZChoicesSourceRegistry` (instanciable, injecté via `ZcrudScope`).
+export 'src/domain/ports/z_choices_source.dart';
 // Ports bas-niveau offline-first (E5-2) : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
+// Port neutre + registre du CRUD inline du champ `relation` (DP-15, M8,
+// AD-1/AD-4/AD-5) : `ZRelationCrudHandler` (create/edit/copy → `Future<ZFieldChoice?>`,
+// impl hors cœur) + `ZRelationCrudRegistry` (instanciable, injecté via `ZcrudScope`).
+export 'src/domain/ports/z_relation_crud.dart';
 // Port neutre + registre de source dynamique du champ `relation` (DP-5, gap B7,
 // AD-1/AD-4/AD-5) : `ZRelationSource` (flux `List<ZFieldChoice>` nu, impl hors
 // cœur) + `ZRelationSourceRegistry` (instanciable, injecté via `ZcrudScope`).

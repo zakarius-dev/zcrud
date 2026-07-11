@@ -63,6 +63,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.largeLeadingIconSize = 22,
     this.largeLeadingGap = 12,
     this.largeLabelGap = 4,
+    this.readCardMargin = const EdgeInsetsDirectional.only(bottom: 12),
+    this.readPadding = const EdgeInsetsDirectional.all(16),
+    this.readLabelGap = 8,
+    this.readLabelTextStyle,
+    this.readValueTextStyle = const TextStyle(fontWeight: FontWeight.w500),
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -164,6 +169,28 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Écart vertical entre le label et le champ en `large` (défaut `4`).
   final double largeLabelGap;
 
+  // ── Tokens du mode LECTURE (fiche `ZReadOnlyFieldCard` — DP-13, parité DODLP
+  //    `readOnlyWidget`). Aucune couleur : fond/bordure DÉRIVÉS du `ColorScheme`
+  //    (FR-26). Réutilise `inputRadius`/`inputBorderWidth` pour la forme. ───────
+
+  /// Marge basse **directionnelle** entre deux fiches de lecture (défaut
+  /// `only(bottom: 12)` — parité `margin: only(bottom:12)`).
+  final EdgeInsetsDirectional readCardMargin;
+
+  /// Padding interne **directionnel** de la fiche de lecture (défaut `all(16)`).
+  final EdgeInsetsDirectional readPadding;
+
+  /// Écart vertical entre le label et la valeur dans la fiche (défaut `8`).
+  final double readLabelGap;
+
+  /// Style **non-couleur** du label de la fiche (`color == null` → dérivé
+  /// `labelMedium`). Défaut `null`.
+  final TextStyle? readLabelTextStyle;
+
+  /// Style **non-couleur** de la valeur de la fiche (`color == null` → dérivé ;
+  /// défaut poids `w500`).
+  final TextStyle? readValueTextStyle;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -172,6 +199,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// En mode [bare] (usage interne à la Card `large`, AC4) : bordures `none`,
   /// `isDense`, padding zéro, non rempli, **sans** label/floating-label (le label
   /// est porté par la Card).
+  /// Paramètres **additifs DP-12 (M1/M5/M6)** — défauts préservant DP-1 :
+  /// - [labelWidget] : label **enrichi** (`ZFieldLabel`) ; s'il est fourni, il
+  ///   prime sur [label] (String) — mutuellement exclusifs côté Flutter (`label`
+  ///   Widget vs `labelText`). En `bare`, aucun label n'est posé (porté par la
+  ///   Card), quelle que soit la valeur ;
+  /// - [prefix]/[suffix] : ornements **texte** (`InputDecoration.prefix`/`suffix`)
+  ///   résolus depuis `ZFieldAdornment.text` ;
+  /// - [prefixIcon]/[suffixIcon] : ornements **icône** (déjà présents DP-1) ;
+  /// - [leadingIcon] : ornement de **tête** hors bordure (`InputDecoration.icon`)
+  ///   résolu depuis `ZFieldSpec.leading`.
+  ///
+  /// Aucune signature existante cassée ; aucune couleur en dur ajoutée (FR-26).
   InputDecoration inputDecoration(
     BuildContext context, {
     String? label,
@@ -181,9 +220,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     bool bare = false,
     Widget? prefixIcon,
     Widget? suffixIcon,
+    Widget? labelWidget,
+    Widget? prefix,
+    Widget? suffix,
+    Widget? leadingIcon,
+    String? suffixText,
   }) {
     final scheme = Theme.of(context).colorScheme;
     if (bare) {
+      // `bare` (Card large) : jamais de label propre (porté par la Card) ; les
+      // ornements internes prefix/suffix/icon restent portés si fournis (AC9).
       return InputDecoration(
         isDense: true,
         contentPadding: EdgeInsets.zero,
@@ -193,12 +239,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         errorBorder: InputBorder.none,
         focusedErrorBorder: InputBorder.none,
         filled: false,
+        icon: leadingIcon,
         hintText: hintText,
         hintStyle: hintTextStyle,
         helperText: helperText,
         helperMaxLines: helperMaxLines,
         errorText: errorText,
         errorMaxLines: helperMaxLines,
+        prefix: prefix,
+        suffix: suffix,
+        suffixText: suffixText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
       );
@@ -209,7 +259,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           borderSide: BorderSide(color: color, width: width),
         );
     return InputDecoration(
-      labelText: label,
+      // Label enrichi (Widget) prioritaire ; sinon `labelText` (String). Les deux
+      // sont mutuellement exclusifs côté Flutter.
+      label: labelWidget,
+      labelText: labelWidget == null ? label : null,
+      icon: leadingIcon,
       hintText: hintText,
       hintStyle: hintTextStyle,
       helperText: helperText,
@@ -222,6 +276,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       filled: inputFilled,
       fillColor: scheme.surfaceContainerHighest,
       contentPadding: inputContentPadding,
+      prefix: prefix,
+      suffix: suffix,
+      suffixText: suffixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       border: borderOf(scheme.outline, inputBorderWidth),
@@ -270,6 +327,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? largeLeadingIconSize,
     double? largeLeadingGap,
     double? largeLabelGap,
+    EdgeInsetsDirectional? readCardMargin,
+    EdgeInsetsDirectional? readPadding,
+    double? readLabelGap,
+    TextStyle? readLabelTextStyle,
+    TextStyle? readValueTextStyle,
   }) =>
       ZcrudTheme(
         fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
@@ -299,6 +361,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         largeLeadingIconSize: largeLeadingIconSize ?? this.largeLeadingIconSize,
         largeLeadingGap: largeLeadingGap ?? this.largeLeadingGap,
         largeLabelGap: largeLabelGap ?? this.largeLabelGap,
+        readCardMargin: readCardMargin ?? this.readCardMargin,
+        readPadding: readPadding ?? this.readPadding,
+        readLabelGap: readLabelGap ?? this.readLabelGap,
+        readLabelTextStyle: readLabelTextStyle ?? this.readLabelTextStyle,
+        readValueTextStyle: readValueTextStyle ?? this.readValueTextStyle,
       );
 
   @override
@@ -346,6 +413,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       largeLeadingGap:
           largeLeadingGap + (other.largeLeadingGap - largeLeadingGap) * t,
       largeLabelGap: largeLabelGap + (other.largeLabelGap - largeLabelGap) * t,
+      readCardMargin:
+          EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t) ??
+              readCardMargin,
+      readPadding:
+          EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t) ??
+              readPadding,
+      readLabelGap: readLabelGap + (other.readLabelGap - readLabelGap) * t,
+      readLabelTextStyle:
+          TextStyle.lerp(readLabelTextStyle, other.readLabelTextStyle, t),
+      readValueTextStyle:
+          TextStyle.lerp(readValueTextStyle, other.readValueTextStyle, t),
     );
   }
 }

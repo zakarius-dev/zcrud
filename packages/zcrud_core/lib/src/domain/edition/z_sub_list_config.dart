@@ -64,6 +64,10 @@ class ZSubListConfig extends ZFieldConfig {
     this.reorderable = true,
     this.displayMode = ZSubListDisplayMode.inline,
     this.summaryFields = const <String>[],
+    this.softDelete = false,
+    this.creationTemplates = const <ZSubListItemTemplate>[],
+    this.defaultNewItem = const <String, Object?>{},
+    this.createNewTextKey,
   });
 
   /// Sous-schéma `const` d'un item (projeté 1:1 en sous-formulaire imbriqué).
@@ -81,6 +85,30 @@ class ZSubListConfig extends ZFieldConfig {
   /// `DynamicSubListScreen`). Vide (défaut) → repli titre dérivé côté widget.
   final List<String> summaryFields;
 
+  /// DP-19 (M18) — **soft-delete/restore** : quand `true`, la suppression d'un
+  /// item (mode compact) le **marque supprimé** (exclu de l'agrégation parent)
+  /// **sans le retirer** de la session → une action **restaurer** le rétablit
+  /// (parité `soft-delete/restore` DODLP, AD-9). `false` (défaut) ⇒ suppression
+  /// **définitive** (comportement DP-6 strict, rétro-compat). Sans effet en mode
+  /// inline (suppression toujours définitive).
+  final bool softDelete;
+
+  /// DP-19 (M18) — **gabarits de création** (parité `popUpMenuOptions` DODLP).
+  /// Non vide ⇒ le bouton « ajouter » (mode compact) devient un **menu** offrant
+  /// un item par gabarit, chacun **pré-remplissant** le dialog de création avec
+  /// ses [ZSubListItemTemplate.defaults]. Vide (défaut) ⇒ un seul bouton
+  /// « ajouter » (rétro-compat DP-6).
+  final List<ZSubListItemTemplate> creationTemplates;
+
+  /// DP-19 (M19) — **valeurs par défaut** d'un nouvel item (pur-données `const`,
+  /// parité `defaultNewItem` DODLP). Amorce le `ZFormController` d'un item créé
+  /// (mode compact **et** inline). Vide (défaut) ⇒ item vide (rétro-compat).
+  final Map<String, Object?> defaultNewItem;
+
+  /// DP-19 (M19) — **clé l10n** du libellé du bouton de création (parité
+  /// `createNewText` DODLP). `null` (défaut) ⇒ libellé générique `addItem`.
+  final String? createNewTextKey;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -88,17 +116,74 @@ class ZSubListConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           reorderable == other.reorderable &&
           displayMode == other.displayMode &&
+          softDelete == other.softDelete &&
+          createNewTextKey == other.createNewTextKey &&
           _listEquals(itemFields, other.itemFields) &&
-          _listEquals(summaryFields, other.summaryFields);
+          _listEquals(summaryFields, other.summaryFields) &&
+          _listEquals(creationTemplates, other.creationTemplates) &&
+          _mapEquals(defaultNewItem, other.defaultNewItem);
 
   @override
   int get hashCode => Object.hash(
         runtimeType,
         reorderable,
         displayMode,
+        softDelete,
+        createNewTextKey,
         Object.hashAll(itemFields),
         Object.hashAll(summaryFields),
+        Object.hashAll(creationTemplates),
+        Object.hashAllUnordered(
+          defaultNewItem.entries.map((e) => Object.hash(e.key, e.value)),
+        ),
       );
+}
+
+/// DP-19 (M18) — **Gabarit de création** d'un item de sous-liste (parité d'une
+/// entrée de `popUpMenuOptions` DODLP). Pur-données `const` (AD-3/AD-14 : aucune
+/// closure) : [labelKey] (clé l10n du libellé de menu) + [defaults] (valeurs
+/// pré-remplies du nouvel item, fusionnées **par-dessus**
+/// `ZSubListConfig.defaultNewItem`).
+class ZSubListItemTemplate {
+  /// Construit un gabarit `const`.
+  const ZSubListItemTemplate({
+    required this.labelKey,
+    this.defaults = const <String, Object?>{},
+  });
+
+  /// Clé l10n (ou libellé brut en repli) de l'entrée de menu de création.
+  final String labelKey;
+
+  /// Valeurs pré-remplies du nouvel item (pur-données `const`).
+  final Map<String, Object?> defaults;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZSubListItemTemplate &&
+          runtimeType == other.runtimeType &&
+          labelKey == other.labelKey &&
+          _mapEquals(defaults, other.defaults);
+
+  @override
+  int get hashCode => Object.hash(
+        runtimeType,
+        labelKey,
+        Object.hashAllUnordered(
+          defaults.entries.map((e) => Object.hash(e.key, e.value)),
+        ),
+      );
+}
+
+/// Égalité **profonde** de deux maps (pur-Dart — évite `package:collection`,
+/// AD-1 out-degree 0).
+bool _mapEquals<K, V>(Map<K, V> a, Map<K, V> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (final entry in a.entries) {
+    if (!b.containsKey(entry.key) || b[entry.key] != entry.value) return false;
+  }
+  return true;
 }
 
 /// Égalité **profonde** de deux listes (pur-Dart — évite `package:collection`,

@@ -130,6 +130,10 @@ class _SubItem {
 
   final String id;
   final ZFormController controller;
+
+  /// DP-19 (M18) — soft-delete : `true` ⇒ item **marqué supprimé** (exclu de
+  /// l'agrégation parent) mais conservé pour **restauration** en session.
+  bool deleted = false;
 }
 
 class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
@@ -181,6 +185,35 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return config is ZSubListConfig ? config.summaryFields : const <String>[];
   }
 
+  /// DP-19 (M18) — soft-delete actif ? (défaut `false`, config absente/non conf.)
+  bool get _softDelete {
+    final config = widget.field.config;
+    return config is ZSubListConfig && config.softDelete;
+  }
+
+  /// DP-19 (M18) — gabarits de création (vide si config absente/non conforme).
+  List<ZSubListItemTemplate> get _creationTemplates {
+    final config = widget.field.config;
+    return config is ZSubListConfig
+        ? config.creationTemplates
+        : const <ZSubListItemTemplate>[];
+  }
+
+  /// DP-19 (M19) — valeurs par défaut d'un nouvel item (vide si config absente).
+  Map<String, Object?> get _defaultNewItem {
+    final config = widget.field.config;
+    return config is ZSubListConfig
+        ? config.defaultNewItem
+        : const <String, Object?>{};
+  }
+
+  /// DP-19 (M19) — libellé du bouton de création (repli `addItem`).
+  String _addLabel(BuildContext context) {
+    final config = widget.field.config;
+    final key = config is ZSubListConfig ? config.createNewTextKey : null;
+    return label(context, key ?? 'addItem', fallback: label(context, 'addItem'));
+  }
+
   /// Lecture **défensive** de la liste courante (`null`/type inattendu → `[]`).
   List<Map<String, dynamic>> _readList(Object? value) {
     if (value is List) {
@@ -225,16 +258,20 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// depuis un handler d'évènement (listener/bouton), JAMAIS pendant un `build`.
   void _syncToParent() {
     widget.onChanged(<Map<String, dynamic>>[
+      // DP-19 (M18) : un item soft-deleted est EXCLU de l'agrégation parent
+      // (retiré des données) mais conservé localement pour restauration.
       for (final item in _items)
-        <String, dynamic>{
-          for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
-        },
+        if (!item.deleted)
+          <String, dynamic>{
+            for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
+          },
     ]);
   }
 
   void _addItem() {
     setState(() {
-      _items.add(_makeItem(const <String, dynamic>{}));
+      // DP-19 (M19) : amorce le nouvel item avec `defaultNewItem` (défensif).
+      _items.add(_makeItem(Map<String, dynamic>.from(_defaultNewItem)));
     });
     _syncToParent();
   }
@@ -334,7 +371,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                 child: TextButton.icon(
                   onPressed: _addItem,
                   icon: const Icon(Icons.add),
-                  label: Text(label(context, 'addItem')),
+                  label: Text(_addLabel(context)),
                 ),
               ),
             ),
@@ -443,9 +480,17 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     );
   }
 
-  /// AC9 : ajout via dialog (item vide → **append** à la validation).
-  Future<void> _openAddDialog() async {
-    final result = await _showItemDialog(const <String, dynamic>{}, readOnly: false);
+  /// AC9 : ajout via dialog. DP-19 (M19) : l'item est amorcé de `defaultNewItem`
+  /// **fusionné** avec les [templateDefaults] d'un gabarit de création (M18) —
+  /// les valeurs du gabarit priment. Item vide par défaut (rétro-compat DP-6).
+  Future<void> _openAddDialog({
+    Map<String, Object?> templateDefaults = const <String, Object?>{},
+  }) async {
+    final seed = <String, dynamic>{
+      ..._defaultNewItem,
+      ...templateDefaults,
+    };
+    final result = await _showItemDialog(seed, readOnly: false);
     if (!mounted || result == null) return;
     setState(() => _items.add(_makeItem(result)));
     _syncToParent();
@@ -468,7 +513,9 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     await _showItemDialog(_itemData(item), readOnly: true);
   }
 
-  /// AC13 : suppression avec **dialog de confirmation** puis retrait.
+  /// AC13 : suppression avec **dialog de confirmation** puis retrait. DP-19
+  /// (M18) : en mode `softDelete`, l'item est **marqué supprimé** (restaurable)
+  /// au lieu d'être retiré définitivement.
   Future<void> _confirmDelete(_SubItem item) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -487,8 +534,47 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    if (_softDelete) {
+      setState(() => item.deleted = true);
+      _syncToParent();
+      return;
+    }
     final index = _items.indexOf(item);
     if (index >= 0) _removeAt(index);
+  }
+
+  /// DP-19 (M18) : restaure un item soft-deleted (réintègre l'agrégation parent).
+  void _restore(_SubItem item) {
+    setState(() => item.deleted = false);
+    _syncToParent();
+  }
+
+  /// DP-19 (M18) : contrôle d'ajout — **menu** de gabarits de création si
+  /// `creationTemplates` non vide (parité `popUpMenuOptions` DODLP), sinon simple
+  /// bouton `+` (rétro-compat DP-6). Chaque gabarit pré-remplit le dialog.
+  Widget _buildAddControl(BuildContext context) {
+    final templates = _creationTemplates;
+    if (templates.isEmpty) {
+      return IconButton(
+        icon: const Icon(Icons.add),
+        tooltip: _addLabel(context),
+        onPressed: () => _openAddDialog(),
+      );
+    }
+    return PopupMenuButton<int>(
+      icon: const Icon(Icons.add),
+      tooltip: _addLabel(context),
+      onSelected: (i) =>
+          _openAddDialog(templateDefaults: templates[i].defaults),
+      itemBuilder: (context) => <PopupMenuEntry<int>>[
+        for (var i = 0; i < templates.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: Text(label(context, templates[i].labelKey,
+                fallback: templates[i].labelKey)),
+          ),
+      ],
+    );
   }
 
   /// Rendu **compact** (DP-6) : en-tête + liste résumé keyée + actions gated ACL.
@@ -526,12 +612,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     textAlign: TextAlign.start,
                   ),
                 ),
-                if (canCreate)
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    tooltip: label(context, 'addItem'),
-                    onPressed: _openAddDialog,
-                  ),
+                if (canCreate) _buildAddControl(context),
               ],
             ),
           ),
@@ -557,15 +638,19 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                     borderColor: theme.fieldBorderColor,
                     radius: theme.radiusM,
                     summary: _summaryCells(item),
+                    deleted: item.deleted,
                     canView: canView,
                     canUpdate: canUpdate,
                     canDelete: canDelete,
                     viewLabel: label(context, 'viewItem'),
                     editLabel: label(context, 'editItem'),
                     deleteLabel: label(context, 'deleteItem'),
+                    restoreLabel: label(context, 'restoreItem'),
+                    deletedBadge: label(context, 'deletedItemBadge'),
                     onView: () => _openViewDialog(item),
                     onEdit: () => _openEditDialog(item),
                     onDelete: () => _confirmDelete(item),
+                    onRestore: () => _restore(item),
                   ),
                 );
               },
@@ -584,32 +669,62 @@ class _CompactRow extends StatelessWidget {
     required this.borderColor,
     required this.radius,
     required this.summary,
+    required this.deleted,
     required this.canView,
     required this.canUpdate,
     required this.canDelete,
     required this.viewLabel,
     required this.editLabel,
     required this.deleteLabel,
+    required this.restoreLabel,
+    required this.deletedBadge,
     required this.onView,
     required this.onEdit,
     required this.onDelete,
+    required this.onRestore,
   });
 
   final Color? borderColor;
   final Radius radius;
   final Widget summary;
+
+  /// DP-19 (M18) : item soft-deleted → résumé barré + badge + action restaurer.
+  final bool deleted;
   final bool canView;
   final bool canUpdate;
   final bool canDelete;
   final String viewLabel;
   final String editLabel;
   final String deleteLabel;
+  final String restoreLabel;
+  final String deletedBadge;
   final VoidCallback onView;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onRestore;
 
   @override
   Widget build(BuildContext context) {
+    // Résumé barré en état soft-deleted (a11y : badge textuel explicite).
+    final summaryContent = deleted
+        ? Row(
+            children: <Widget>[
+              Flexible(
+                child: DefaultTextStyle.merge(
+                  style: const TextStyle(
+                      decoration: TextDecoration.lineThrough),
+                  child: summary,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 0, 0),
+                child: Text(deletedBadge,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.start),
+              ),
+            ],
+          )
+        : summary;
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
       child: DecoratedBox(
@@ -621,25 +736,34 @@ class _CompactRow extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 4, 0),
           child: Row(
             children: <Widget>[
-              Expanded(child: summary),
-              if (canView)
+              Expanded(child: summaryContent),
+              // Item soft-deleted : seule l'action **restaurer** est offerte.
+              if (deleted)
                 IconButton(
-                  icon: const Icon(Icons.visibility),
-                  tooltip: viewLabel,
-                  onPressed: onView,
-                ),
-              if (canUpdate)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: editLabel,
-                  onPressed: onEdit,
-                ),
-              if (canDelete)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: deleteLabel,
-                  onPressed: onDelete,
-                ),
+                  icon: const Icon(Icons.restore_from_trash),
+                  tooltip: restoreLabel,
+                  onPressed: onRestore,
+                )
+              else ...<Widget>[
+                if (canView)
+                  IconButton(
+                    icon: const Icon(Icons.visibility),
+                    tooltip: viewLabel,
+                    onPressed: onView,
+                  ),
+                if (canUpdate)
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: editLabel,
+                    onPressed: onEdit,
+                  ),
+                if (canDelete)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: deleteLabel,
+                    onPressed: onDelete,
+                  ),
+              ],
             ],
           ),
         ),

@@ -22,5 +22,16 @@ export 'src/presentation/z_markdown_field.dart'
 export 'src/presentation/z_markdown_reader.dart' show ZMarkdownReader;
 export 'src/presentation/z_markdown_registration.dart'
     show registerZMarkdownFields;
+// DP-22 (M20) : seam NEUTRE de résolution de source média (image/vidéo). N'EXPOSE
+// QUE les symboles neutres (aucun type Quill) — les embeds `ZImageEmbed`/
+// `ZVideoEmbed`/`ZMediaEmbedBuilder` (qui étendent `Embeddable`/`EmbedBuilder`)
+// restent INTERNES à `lib/src/` (isolation AD-1/AD-7, cf. z_latex/z_table).
+export 'src/presentation/z_media_embed.dart'
+    show ZMediaEmbedScope, ZMediaResolver, ZMediaRef, ZMediaKind;
 export 'src/presentation/z_rich_text_fullscreen_dialog.dart'
     show showZRichTextFullscreenDialog, ZRichTextFullscreenDialog;
+// DP-22 (M20) : config granulaire par bouton de la toolbar rich-text (donnée
+// pure, aucun type Quill) — présets full/minimal/markdown, consommée par
+// `ZMarkdownField.toolbarConfig`.
+export 'src/presentation/z_rich_text_toolbar_config.dart'
+    show ZRichTextToolbarConfig;

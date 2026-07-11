@@ -195,7 +195,7 @@ development_status:
   # Objectif : migration DODLP structurellement fidèle. Stories = les 14 gaps
   # BLOQUANTS (ordre du rapport B1->B14, regroupés), puis les ~24 majeurs.
   # Source de vérité détaillée : docs/dodlp-edition-parity-gap.md.
-  epic-dp: done
+  epic-dp: done  # bloquants B1-B14 (commit a64e3b3) + majeurs M1-M22 (DP-12..DP-22) done. Mode accéléré : dev groupé + code-review adversarial groupé (A/B). Gates repo-wide verts.
   dp-1-layout-fieldsize-decoration: done           # B1 FieldSize + B2 minLines/maxLines + M2 thème/décoration
   dp-2-displaycondition-etendu: done              # B3
   dp-3-richtext-lecture-seule-modes: done          # B4 readonly + B6 inline/plein-écran
@@ -207,6 +207,19 @@ development_status:
   dp-9-stepperconfig-imbrique: done               # B11
   dp-10-dates-bornes-datetime: done               # B12 + B13 (DP-2 done)
   dp-11-timestamp-persistance-hint: done           # B14
-  # dp-12+ : lot des ~24 majeurs (M1..M20), planifié après les bloquants.
-  # Rétro E-DP done : 9 action items AI-DP-1..9 (voir epic-dp-retrospective.md).
+  # dp-12+ : lot des majeurs (ordre du rapport §3 MAJOR). Déjà couverts par les
+  # bloquants : M2 (DP-1 thème/décor), M12 (DP-9 validateOnNext), M16 (DP-9
+  # icon/subtitle), M20/M21/M23/M24 (B5/B6/B14/B11). Restants ~16 → DP-12..DP-22.
+  dp-12-decoration-champ-leading-suffix-label-hint: done      # M1+M5+M6 (core) — LOW DP-12-L1 corrigé (garde suffix/suffixText)
+  dp-13-mode-lecture-fiche-showifnull: done                   # M3+M4 (core) — flip showIfNull + companion generator, 0 finding
+  dp-14-acl-edition-etendu: done                              # M7 (core) — 0 finding
+  dp-15-select-modal-multi-crud-choix-dynamiques: done        # M8+M22 (core) — APPROVED
+  dp-16-validation-password-format-seul: done                 # M10+M11 (core) — MEDIUM DP-16-M1 corrigé (checkNullOrEmpty:false)
+  dp-17-number-devise-color-picker: done                      # M14+M17 (core) — APPROVED
+  dp-18-signature-codec-png: done                             # M15 (core) — APPROVED
+  dp-19-subitems-restore-dynamicitem-gabarits: done           # M18+M19 (core) — APPROVED (soft-delete session, LOW documenté)
+  dp-20-validateur-telephone-national: done                   # M9 (zcrud_intl) — APPROVED
+  dp-21-geo-formes-polyline-style-metadata: done              # M13 (zcrud_geo) — APPROVED
+  dp-22-markdown-embed-image-video-toolbar: done              # M20 (zcrud_markdown) — APPROVED (LOW l10n FR documenté)
+  # Rétro E-DP (bloquants) done : 9 action items AI-DP-1..9 (voir epic-dp-retrospective.md).
   epic-dp-retrospective: done

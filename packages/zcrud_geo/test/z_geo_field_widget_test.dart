@@ -361,6 +361,60 @@ void main() {
     });
   });
 
+  group('DP-21/M13 — géométrie POLYLIGNE (tracé ouvert)', () {
+    ZFieldSpec polylineField(String name) => ZFieldSpec(
+          name: name,
+          type: EditionFieldType.geoArea,
+          label: 'Tracé',
+          config: const ZGeoFieldConfig(geometry: ZGeoGeometry.polyline),
+        );
+
+    testWidgets('collecte de sommets (même UI que le polygone) → ZGeoShape',
+        (tester) async {
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, polylineField('geo'),
+            registry: _registry(kind: 'geoArea')),
+      );
+      // Le bouton d'ajout de sommet est présent (géométrie collectrice).
+      expect(find.byKey(const Key('z-geo-add-vertex')), findsOneWidget);
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '13.5');
+      await tester.enterText(fields.at(1), '2.1');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('z-geo-add-vertex')));
+      await tester.pump();
+      final value = c.valueOf('geo');
+      expect(value, isA<ZGeoShape>());
+      expect((value! as ZGeoShape).vertices, hasLength(1));
+    });
+
+    testWidgets('renderShapeAsPolyline: true plombé à l\'adaptateur',
+        (tester) async {
+      final fake = FakeMapAdapter();
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, polylineField('geo'),
+            registry: _registry(adapter: fake, kind: 'geoArea')),
+      );
+      await tester.pump();
+      // Le signal neutre « tracé ouvert » a bien été transmis (honoré-si-supporté).
+      expect(fake.lastRenderShapeAsPolyline, isTrue);
+    });
+
+    testWidgets('géométrie polygone → renderShapeAsPolyline reste false',
+        (tester) async {
+      final fake = FakeMapAdapter();
+      final c = _controller('geo');
+      await tester.pumpWidget(
+        _appWithRegistry(c, _areaField('geo'),
+            registry: _registry(adapter: fake, kind: 'geoArea')),
+      );
+      await tester.pump();
+      expect(fake.lastRenderShapeAsPolyline, isFalse);
+    });
+  });
+
   group('MAJEUR-1 — fabrique : une instance d\'adaptateur possédée par montage',
       () {
     testWidgets('2 champs géo montés simultanément → 2 instances DISTINCTES',

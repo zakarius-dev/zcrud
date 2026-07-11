@@ -56,8 +56,10 @@ import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
 import 'z_markdown_codec_scope.dart';
 import 'z_markdown_reader.dart';
+import 'z_media_embed.dart';
 import 'z_rich_text_core.dart';
 import 'z_rich_text_fullscreen_dialog.dart';
+import 'z_rich_text_toolbar_config.dart';
 
 /// Mode de présentation d'un champ rich-text servi par le registre (DP-3, B6).
 ///
@@ -111,6 +113,7 @@ class ZMarkdownField extends StatefulWidget {
     required ZFormController this.controller,
     required this.field,
     this.showToolbar = true,
+    this.toolbarConfig,
     this.codec,
     this.onInit,
     this.onBuild,
@@ -129,6 +132,7 @@ class ZMarkdownField extends StatefulWidget {
   ZMarkdownField.fromContext({
     required ZFieldWidgetContext this.ctx,
     required this.mode,
+    this.toolbarConfig,
     this.codec,
     this.onInit,
     this.onBuild,
@@ -151,6 +155,15 @@ class ZMarkdownField extends StatefulWidget {
 
   /// Affiche la **toolbar** Quill presets (voie `controller` ; défaut `true`).
   final bool showToolbar;
+
+  /// Configuration GRANULAIRE par bouton de la toolbar (DP-22, M20).
+  ///
+  /// RÉTRO-COMPAT : `null` (défaut) ⇒ comportement E6-1/DP-3 INCHANGÉ — préset
+  /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran,
+  /// [ZRichTextToolbarConfig.minimal] pour le mode `inline`. Fournie ⇒ pilote
+  /// chaque bouton (natif + custom LaTeX/table/image/vidéo). `showToolbar`
+  /// (voie `controller`) reste prioritaire pour AFFICHER/MASQUER toute la barre.
+  final ZRichTextToolbarConfig? toolbarConfig;
 
   /// `ZCodec` de (dé)sérialisation du **format persisté** (E6-2, AD-7).
   ///
@@ -279,6 +292,21 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       _renderMode == _RenderMode.fullEditor ||
       _renderMode == _RenderMode.inlineEditor;
 
+  /// Config de toolbar EFFECTIVE pilotant chaque bouton (DP-22, M20).
+  ///
+  /// RÉTRO-COMPAT (NON-NÉGOCIABLE) : si aucune [ZRichTextToolbarConfig] n'est
+  /// fournie, on retombe EXACTEMENT sur le comportement E6-1/DP-3 —
+  /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran
+  /// (`fullEditor`), [ZRichTextToolbarConfig.minimal] pour le mode `inline`
+  /// (`inlineEditor`). Fournie ⇒ elle pilote intégralement les boutons.
+  ZRichTextToolbarConfig get _effectiveToolbarConfig {
+    final provided = widget.toolbarConfig;
+    if (provided != null) return provided;
+    return _renderMode == _RenderMode.inlineEditor
+        ? ZRichTextToolbarConfig.minimal
+        : ZRichTextToolbarConfig.full;
+  }
+
   /// Résout le [ZCodec] effectif. Lecture de l'inherited scope SANS créer de
   /// dépendance ([BuildContext.getElementForInheritedWidgetOfExactType]).
   ZCodec _resolveCodec() {
@@ -323,7 +351,11 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           insertZLatex(context, quill, isMounted: () => mounted),
       onInsertTable: () =>
           insertZTable(context, quill, isMounted: () => mounted),
-      minimal: _renderMode == _RenderMode.inlineEditor,
+      onInsertImage: () => insertZMedia(context, quill,
+          kind: ZMediaKind.image, isMounted: () => mounted),
+      onInsertVideo: () => insertZMedia(context, quill,
+          kind: ZMediaKind.video, isMounted: () => mounted),
+      config: _effectiveToolbarConfig,
     );
   }
 

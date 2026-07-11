@@ -55,7 +55,10 @@ void main() {
       expect(deco.filled, isTrue);
       expect(deco.helperMaxLines, 2);
       expect(deco.floatingLabelStyle!.fontWeight, FontWeight.bold);
-      expect(deco.labelText, 'L');
+      // DP-12 : la famille passe désormais un label ENRICHI (`ZFieldLabel`) via
+      // `label:` (Widget), et non plus `labelText` (String nu) — AC7.
+      expect(deco.labelText, isNull);
+      expect(deco.label, isA<ZFieldLabel>());
     });
 
     testWidgets('couleurs dérivées du ColorScheme (outline/primary/error)',

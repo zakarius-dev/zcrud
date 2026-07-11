@@ -11,7 +11,11 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
+import '../domain/ports/z_choices_source.dart';
+import '../domain/ports/z_relation_crud.dart';
 import '../domain/ports/z_relation_source.dart';
+import 'edition/families/z_color_field_widget.dart';
+import 'edition/z_field_adornment_view.dart';
 import 'edition/z_file_picker.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
@@ -52,9 +56,13 @@ class ZcrudScope extends InheritedWidget {
     this.theme,
     this.widgetRegistry,
     this.relationSourceRegistry,
+    this.choicesSourceRegistry,
+    this.relationCrudRegistry,
     this.filePicker,
     this.cloudStorage,
     this.listRenderer,
+    this.iconResolver,
+    this.colorPicker,
     super.key,
   });
 
@@ -83,6 +91,21 @@ class ZcrudScope extends InheritedWidget {
   /// métier) vit hors du cœur (`zcrud_firestore`/app E7), jamais ici (AD-1).
   final ZRelationSourceRegistry? relationSourceRegistry;
 
+  /// Registre de sources d'options **calculées** du champ `select` (DP-15/M22,
+  /// AD-4 ; défaut `null` → tout `select` retombe sur `choicesFromKey` puis sur
+  /// le **dropdown statique** sur `choices` — repli universel rétro-compatible).
+  /// Instanciable, injecté (jamais un singleton statique mutable). L'impl concrète
+  /// de `ZChoicesSource` (calcul métier des options depuis l'état) vit hors du
+  /// cœur (binding/app E7), jamais ici (AD-1).
+  final ZChoicesSourceRegistry? choicesSourceRegistry;
+
+  /// Registre de handlers **CRUD inline** du champ `relation` (DP-15/M8, AD-4 ;
+  /// défaut `null` → aucun bouton créer/modifier/copier — modal DP-5 identique).
+  /// Instanciable, injecté (jamais un singleton statique mutable). L'impl concrète
+  /// de `ZRelationCrudHandler` (form d'édition + repository create/update/copy)
+  /// vit hors du cœur (app DODLP E7/`zcrud_firestore`), jamais ici (AD-1).
+  final ZRelationCrudRegistry? relationCrudRegistry;
+
   /// Seam d'acquisition de fichiers (E3-3c, AD-1/AD-6 ; défaut `null` → actions
   /// scan/caméra/galerie/picker désactivées proprement). Impl concrète
   /// (image_picker/file_picker) fournie par l'app/binding (E7), jamais le cœur.
@@ -102,6 +125,20 @@ class ZcrudScope extends InheritedWidget {
   /// backend Material `DataTable` reste implémentable sur le même port. Jamais
   /// un singleton statique mutable.
   final ZListRenderer? listRenderer;
+
+  /// Résolveur d'**icône d'ornement** host-fourni (DP-12, M1 ; défaut `null` →
+  /// le cœur retombe sur sa **table Material bornée** par défaut, puis `null` si
+  /// la clé reste inconnue — AD-10). Traduit une **clé neutre** (`String`) de
+  /// `ZFieldAdornment.icon(key)` en `IconData` **sans** que le domaine ne porte
+  /// jamais d'`IconData` (AD-3/AD-14). Instanciable, injecté (jamais un singleton).
+  final ZAdornmentIconResolver? iconResolver;
+
+  /// DP-17 (M14) — **Seam de picker de couleur** host-fourni (roue HSV/hex/
+  /// opacité tierce, ex. `flex_color_picker` ; défaut `null` → repli sur le
+  /// **picker built-in NEUTRE** du cœur). Le cœur ne dépend d'AUCUN package de
+  /// picker (AD-1) : l'impl concrète vit dans l'app/le binding. Instanciable,
+  /// injecté (jamais un singleton statique mutable).
+  final ZColorPicker? colorPicker;
 
   /// Retourne le [ZcrudScope] le plus proche.
   ///
@@ -131,7 +168,11 @@ class ZcrudScope extends InheritedWidget {
       !identical(theme, oldWidget.theme) ||
       !identical(widgetRegistry, oldWidget.widgetRegistry) ||
       !identical(relationSourceRegistry, oldWidget.relationSourceRegistry) ||
+      !identical(choicesSourceRegistry, oldWidget.choicesSourceRegistry) ||
+      !identical(relationCrudRegistry, oldWidget.relationCrudRegistry) ||
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||
-      !identical(listRenderer, oldWidget.listRenderer);
+      !identical(listRenderer, oldWidget.listRenderer) ||
+      !identical(iconResolver, oldWidget.iconResolver) ||
+      !identical(colorPicker, oldWidget.colorPicker);
 }

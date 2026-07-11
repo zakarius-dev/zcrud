@@ -25,13 +25,21 @@ class ZLargeFieldCard extends StatelessWidget {
   const ZLargeFieldCard({
     required this.label,
     required this.child,
+    this.labelWidget,
     this.leading,
     this.suffix,
     super.key,
   });
 
   /// Libellé sémantique affiché AU-DESSUS du champ (déjà résolu l10n par l'hôte).
+  /// Porte la sémantique conteneur (a11y) ET, à défaut de [labelWidget], le
+  /// rendu visible.
   final String label;
+
+  /// Libellé **enrichi** optionnel (`ZFieldLabel` : style thémé + astérisque
+  /// requis — DP-12, M5). S'il est fourni, il **remplace** le `Text(label)`
+  /// visible (l'a11y reste portée par [label] via le `Semantics` conteneur).
+  final Widget? labelWidget;
 
   /// Champ interne (rendu « bare » : sans bordure ni label propre).
   final Widget child;
@@ -54,10 +62,12 @@ class ZLargeFieldCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         // MEDIUM-2 (DP-1) : le label a11y est porté par le `Semantics` conteneur
-        // ci-dessous — le Text visible est exclu de la sémantique pour éviter une
-        // DOUBLE annonce au lecteur d'écran (AD-13).
+        // ci-dessous — le Text/label visible est exclu de la sémantique pour
+        // éviter une DOUBLE annonce au lecteur d'écran (AD-13). DP-12 : si un
+        // label enrichi est fourni, il remplace le `Text(label)` simple.
         ExcludeSemantics(
-          child: Text(label, style: labelStyle, textAlign: TextAlign.start),
+          child: labelWidget ??
+              Text(label, style: labelStyle, textAlign: TextAlign.start),
         ),
         SizedBox(height: tokens.largeLabelGap),
         child,

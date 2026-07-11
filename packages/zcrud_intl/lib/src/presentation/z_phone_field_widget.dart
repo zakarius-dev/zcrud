@@ -22,6 +22,7 @@ import '../domain/z_country_info.dart';
 import '../domain/z_intl_field_config.dart';
 import '../domain/z_phone_number.dart';
 import 'z_country_picker_field.dart';
+import 'z_national_phone_message.dart';
 import 'z_phone_codec.dart';
 
 /// Champ d'édition téléphone (patron AD-2 : contrôleur stable, rebuild ciblé).
@@ -176,6 +177,15 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
     final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
     final resolvedLabel = field.label ?? field.name;
+    // DP-20 (AC5) : erreur nationale **dérivée** (opt-in). `nationalPhone == null`
+    // → `null` → chemin E11a-2/E11b-2 identique. Recalcul en `build` seulement
+    // (aucun état, aucun contrôleur recréé — AD-2). La partie nationale validée
+    // est le texte courant du champ numéro (le validateur normalise selon sa
+    // politique `digitsOnly`).
+    final validator = _config?.nationalPhone;
+    final String? nationalErrorText = validator == null
+        ? null
+        : nationalPhoneErrorText(context, validator.validate(_numberController.text));
     return Semantics(
       container: true,
       label: resolvedLabel,
@@ -210,7 +220,7 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
                   ),
                 ),
                 SizedBox(width: theme.gapM),
-                Expanded(child: _numberField(field.readOnly)),
+                Expanded(child: _numberField(field.readOnly, nationalErrorText)),
               ],
             ),
           ],
@@ -224,7 +234,7 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
   // natives du `TextField` (valeur/curseur/édition inopérables au lecteur
   // d'écran). Le `TextField` porte sa propre sémantique de champ éditable ; son
   // libellé accessible provient de `InputDecoration.labelText`.
-  Widget _numberField(bool readOnly) => ConstrainedBox(
+  Widget _numberField(bool readOnly, [String? errorText]) => ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 48),
         child: TextField(
           key: const Key('z-phone-number'),
@@ -236,6 +246,9 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
           decoration: InputDecoration(
             isDense: true,
             labelText: label(context, 'intl.phone.number', fallback: 'Numéro'),
+            // DP-20 (AC4/AD-13) : message annoncé par le lecteur d'écran via la
+            // sémantique native du TextField. `null` = aucun message (opt-in).
+            errorText: errorText,
           ),
           // Voie SENS UNIQUE (AD-2) : la frappe écrit la tranche, jamais de
           // ré-injection pendant le focus.

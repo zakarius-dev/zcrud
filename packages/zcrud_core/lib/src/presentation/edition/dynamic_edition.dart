@@ -45,9 +45,56 @@ import 'package:flutter/material.dart';
 
 import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/ports/z_acl.dart';
+import '../l10n/z_localizations.dart';
 import '../z_form_controller.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
+
+/// Descripteur **présentation** d'une action de **niveau formulaire** (barre
+/// d'actions en-tête de `DynamicEdition`, DP-14, gap M7).
+///
+/// Porte les métadonnées d'UI (`label`/`icon`/`tooltip`) + la permission requise
+/// (`requiredPermission`, un [ZCrudAction] du port domaine — sens de dépendance
+/// présentation → domaine) + le handler `onInvoke`. **Aucune règle métier** : le
+/// gate se contente d'appeler `acl.can(requiredPermission, …)` (AD-16). Le
+/// filtrage est cohérent avec les actions de LIGNE (`ZRowAction`) et la sous-liste
+/// compacte (DP-6, mode `hide`).
+@immutable
+class ZFormAction {
+  /// Construit une action de formulaire.
+  ///
+  /// [label]/[tooltip] sont des **clés l10n ou des littéraux** (résolus via
+  /// `label(context, …)` — repli défensif sur la clé brute). À défaut, [tooltip]
+  /// reprend [label].
+  const ZFormAction({
+    required this.id,
+    required this.label,
+    required this.requiredPermission,
+    required this.onInvoke,
+    this.icon,
+    this.tooltip,
+  });
+
+  /// Identifiant stable (déterministe, pour les clés/tests).
+  final String id;
+
+  /// Libellé affiché (clé l10n ou littéral).
+  final String label;
+
+  /// Info-bulle (clé l10n ou littéral) ; à défaut, reprend [label].
+  final String? tooltip;
+
+  /// Icône optionnelle du bouton d'action.
+  final IconData? icon;
+
+  /// Permission requise, filtrée par `ZAcl` (AD-16). L'action est **masquée**
+  /// (mode `hide`, cohérent DP-6) si `acl.can(requiredPermission, …)` est `false`.
+  final ZCrudAction requiredPermission;
+
+  /// Handler invoqué au tap (déjà lié par l'app ; le cœur ne l'interprète pas).
+  final VoidCallback onInvoke;
+}
 
 /// Constructeur d'un widget de champ à partir de sa [ZFieldSpec] et du
 /// [ZFormController]. Seam d'extension : à défaut, [DynamicEdition] rend le
@@ -108,6 +155,9 @@ class DynamicEdition extends StatefulWidget {
     this.gridGutter = 8,
     this.conditionContext = const <String, Object?>{},
     this.manageVisibility = true,
+    this.acl = const ZAllowAllAcl(),
+    this.formActions = const <ZFormAction>[],
+    this.collectionId,
     this.onStructuralBuild,
     super.key,
   });
@@ -169,6 +219,24 @@ class DynamicEdition extends StatefulWidget {
   /// chemin actif (AD-2, single-writer) ; les zones d'étape imbriquées ne se
   /// battent alors jamais sur `visibleFields`.
   final bool manageVisibility;
+
+  /// **Port d'autorisation** (DP-14, gap M7) filtrant les [formActions] de niveau
+  /// formulaire. Défaut `const ZAllowAllAcl()` (permissif) ⇒ comportement
+  /// **strictement identique** à E3-1..E3-4/DP-2/DP-9 quand [formActions] est vide.
+  /// **Aucune règle métier** dans le cœur : le gate appelle `acl.can(…)` (AD-16).
+  final ZAcl acl;
+
+  /// **Actions de niveau formulaire** (barre d'actions en-tête, DP-14). Chaque
+  /// action est **masquée** (mode `hide`, cohérent DP-6) si son
+  /// `requiredPermission` n'est pas autorisé par [acl]. Défaut `const []` ⇒
+  /// **aucune zone d'actions rendue** (rétro-compat pixel). Le gate est évalué
+  /// **uniquement** dans la voie de build **structurel** (jamais par frappe —
+  /// SM-1) : voir [build].
+  final List<ZFormAction> formActions;
+
+  /// Identifiant de collection éventuel, propagé **tel quel** à
+  /// `acl.can(…, collectionId:)` (seam neutre, aucune règle métier — AD-16).
+  final String? collectionId;
 
   /// Hook d'instrumentation : appelé à chaque (re)build **structurel** — compteur
   /// de build de niveau formulaire pour SM-1 (reste inchangé pendant la saisie).
@@ -409,16 +477,62 @@ class _DynamicEditionState extends State<DynamicEdition> {
       widget.layout.isNotEmpty ||
       widget.sections.any((s) => s.collapsible);
 
+  /// Actions de formulaire **autorisées** (ACL), dans l'ordre déclaré. Évalué
+  /// UNIQUEMENT dans la voie structurelle (jamais par frappe — SM-1). Défensif
+  /// (AD-10) : une ACL app-supplied qui **lève** ⇒ action masquée (fail-closed),
+  /// jamais de crash du formulaire ; liste vide ⇒ `const []`.
+  List<ZFormAction> _permittedFormActions() {
+    final actions = widget.formActions;
+    if (actions.isEmpty) return const <ZFormAction>[];
+    final acl = widget.acl;
+    final result = <ZFormAction>[];
+    for (final a in actions) {
+      if (_can(acl, a.requiredPermission)) result.add(a);
+    }
+    return result;
+  }
+
+  bool _can(ZAcl acl, ZCrudAction action) {
+    try {
+      return acl.can(action, collectionId: widget.collectionId);
+    } catch (_) {
+      // Défensif (AD-10) : une ACL app-supplied défaillante ne plante jamais le
+      // formulaire — l'action est simplement non rendue.
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Canaux STRUCTURELS uniquement : ce builder ne se ré-exécute que lorsque
-    // l'ensemble visible OU l'état de repli change (jamais sur une frappe).
+    // l'ensemble visible OU l'état de repli change (jamais sur une frappe). Le
+    // gate ACL + la barre d'actions vivent DANS cette voie structurelle : une
+    // frappe ne les recalcule pas (SM-1, objectif produit n°1).
     return ListenableBuilder(
       listenable: _structural,
       builder: (context, _) {
         widget.onStructuralBuild?.call();
         final visible = widget.controller.visibleFields.value;
-        return _grouped ? _buildGrouped(visible) : _buildFlat(visible);
+        final list = _grouped ? _buildGrouped(visible) : _buildFlat(visible);
+
+        // Rétro-compat pixel : sans action AUTORISÉE (défaut `formActions` vide,
+        // ou toutes refusées par l'ACL), aucune zone d'actions n'est rendue — le
+        // rendu est strictement celui d'avant DP-14.
+        final actions = _permittedFormActions();
+        if (actions.isEmpty) return list;
+
+        // Barre d'actions en TÊTE + liste. En `shrinkWrap`, la liste garde sa
+        // hauteur intrinsèque (pas d'`Expanded`) ; sinon elle occupe l'espace
+        // restant (`Expanded`) — parent borné requis, cohérent avec l'usage
+        // habituel de `DynamicEdition`.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: widget.shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
+          children: <Widget>[
+            _FormActionBar(actions: actions),
+            if (widget.shrinkWrap) list else Expanded(child: list),
+          ],
+        );
       },
     );
   }
@@ -590,7 +704,14 @@ class _DynamicEditionState extends State<DynamicEdition> {
     final builder = widget.fieldBuilder;
     return builder != null
         ? builder(context, widget.controller, spec)
-        : ZFieldWidget(controller: widget.controller, field: spec);
+        // DP-13 : propage le mode lecture global → fiche de consultation pour les
+        // familles fiche-ables. `_effective` conserve `readOnly:true` (repli sûr
+        // des familles non fiche-ables). Le `fieldBuilder` custom reste prioritaire.
+        : ZFieldWidget(
+            controller: widget.controller,
+            field: spec,
+            readMode: widget.readOnly,
+          );
   }
 
   Widget _buildField(BuildContext context, ZFieldSpec spec) {
@@ -693,6 +814,69 @@ class _CollapsibleSectionHeader extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Barre d'actions de **niveau formulaire** (DP-14, gap M7). Rend les actions
+/// **déjà filtrées** par l'ACL (mode `hide`). Insets **directionnels** ; couleurs
+/// dérivées du thème (aucune couleur codée en dur — FR-26/AD-13).
+class _FormActionBar extends StatelessWidget {
+  const _FormActionBar({required this.actions});
+
+  final List<ZFormAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 8, 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: <Widget>[
+          for (final a in actions)
+            _FormActionButton(
+              key: ValueKey<String>('formAction:${a.id}'),
+              action: a,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bouton d'une action de formulaire : accessible (`Semantics(button)` + tooltip),
+/// cible tactile **≥ 48 dp**, style dérivé du thème (AD-13, FR-26).
+class _FormActionButton extends StatelessWidget {
+  const _FormActionButton({required this.action, super.key});
+
+  final ZFormAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelText = label(context, action.label);
+    final tip =
+        action.tooltip == null ? labelText : label(context, action.tooltip!);
+    final icon = action.icon;
+    return Semantics(
+      button: true,
+      label: labelText,
+      child: Tooltip(
+        message: tip,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          child: icon == null
+              ? TextButton(
+                  onPressed: action.onInvoke,
+                  child: Text(labelText),
+                )
+              : TextButton.icon(
+                  onPressed: action.onInvoke,
+                  icon: Icon(icon),
+                  label: Text(labelText),
+                ),
         ),
       ),
     );

@@ -32,11 +32,16 @@ enum ZGeoGeometry {
   /// Point unique (valeur de tranche = `ZGeoPoint`).
   point,
 
-  /// Polygone/aire (valeur de tranche = `ZGeoShape`).
+  /// Polygone/aire fermée (valeur de tranche = `ZGeoShape`).
   polygon,
 
   /// Cercle centre + rayon (valeur de tranche = `ZGeoCircle`).
   circle,
+
+  /// Polyligne : tracé **ouvert** (4e forme, DP-21/M13) — valeur de tranche =
+  /// `ZGeoShape` (mêmes sommets ordonnés qu'un polygone, mais rendus en tracé
+  /// non fermé : aucun segment de fermeture, aucune aire).
+  polyline,
 }
 
 /// Config additive `const` du champ géo (AD-4). Vit dans `zcrud_geo` ; aucune

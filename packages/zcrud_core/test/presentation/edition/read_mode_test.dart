@@ -20,7 +20,9 @@ const _fields = <ZFieldSpec>[
 ZFormController _controller() => ZFormController(
       initialValues: const <String, Object?>{
         'nom': 'Ada',
-        'note': '',
+        // DP-13 : `note` renseigné (sinon, défaut `showIfNull:false`, il serait
+        // masqué en lecture comme un champ vide).
+        'note': 'Note',
         'optionnel': '',
       },
       visibleFields: const <String>['nom', 'note', 'optionnel'],
@@ -42,17 +44,18 @@ Finder _editableOf(String name) => find.descendant(
     );
 
 void main() {
-  testWidgets('AC10 — readOnly global rend CHAQUE champ non éditable',
-      (tester) async {
+  testWidgets(
+      'AC10/DP-13 — readOnly global rend CHAQUE champ fiche-able en fiche '
+      '(non éditable, aucun EditableText)', (tester) async {
     final controller = _controller();
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller, readOnly: true));
     await tester.pumpAndSettle();
 
-    for (final name in <String>['nom', 'note']) {
-      final ed = tester.widget<EditableText>(_editableOf(name));
-      expect(ed.readOnly, isTrue, reason: '$name forcé en lecture');
-    }
+    // `nom` + `note` (renseignés) rendus en fiche de consultation ; `optionnel`
+    // (vide, showIfNull:false) masqué. Aucun champ éditable en mode lecture.
+    expect(find.byType(ZReadOnlyFieldCard), findsNWidgets(2));
+    expect(find.byType(EditableText), findsNothing);
   });
 
   testWidgets('AC10 — hors mode global, un champ reste éditable', (tester) async {
