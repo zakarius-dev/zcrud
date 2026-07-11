@@ -32,6 +32,12 @@ pubspec_overrides.yaml
 *.gr.dart
 *.mocks.dart
 
+# EXCEPTION distribution git-privée : `zcrud_flashcard` utilise du codegen
+# (`part '*.g.dart'`) et est consommé en dépendance **git** → son code généré
+# DOIT être versionné (un consommateur clone l'arbre git au tag et ne régénère
+# PAS le code d'une dépendance). Les autres packages restent gitignorés.
+!packages/zcrud_flashcard/lib/**/*.g.dart
+
 # ------------------------------------------------------------------
 # IDE & OS
 # ------------------------------------------------------------------

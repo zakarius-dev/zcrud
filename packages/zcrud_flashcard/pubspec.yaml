@@ -2,11 +2,18 @@
 # Squelette minimal (E1-1) : la résolution passe ; l'API/barrel et les
 # dépendances inter-packages sont posées en E1-2.
 name: zcrud_flashcard
-description: >-
-  Flashcards ZFlashcard + ZRepetitionInfo + ZSrsScheduler (SRS).
-version: 0.0.1
-publish_to: none
+description: "Spaced-repetition flashcards for zcrud: ZFlashcard/ZChoice models, a pluggable SuperMemo-2 scheduler, study folders/sessions and an offline-first repository."
+version: 0.1.0
 resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_flashcard
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flashcards
+  - spaced-repetition
+  - srs
+  - forms
 
 environment:
   sdk: ^3.12.2
