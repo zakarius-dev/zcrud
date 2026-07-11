@@ -13,6 +13,7 @@
 name: zcrud_provider
 description: "provider state and injection binding for zcrud (optional). Completes the multi-state-manager matrix."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

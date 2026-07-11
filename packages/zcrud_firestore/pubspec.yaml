@@ -8,6 +8,7 @@
 name: zcrud_firestore
 description: "Firestore and Hive adapters for zcrud repositories: offline-first storage behind neutral, backend-agnostic ports."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

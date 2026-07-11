@@ -13,6 +13,7 @@
 name: zcrud_get
 description: "GetX and get_it state and injection binding for zcrud (optional). Targets the DODLP host app."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

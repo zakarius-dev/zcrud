@@ -14,6 +14,7 @@
 name: zcrud_riverpod
 description: "Riverpod state and injection binding for zcrud (optional). Targets lex_douane / IFFD host apps."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

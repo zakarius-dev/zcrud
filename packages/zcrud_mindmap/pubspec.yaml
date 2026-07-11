@@ -4,6 +4,7 @@
 name: zcrud_mindmap
 description: "Mind maps for zcrud: immutable ZMindmap/ZMindmapNode tree with ZMindmapTreeOps, a graphite auto-layout view plus an accessible list surface, and an outline editor."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

@@ -15,6 +15,7 @@
 name: zcrud_export
 description: "Tabular export for zcrud (DataGrid to Excel and PDF via Syncfusion) behind a neutral, byte-based API."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud

@@ -12,6 +12,7 @@
 name: zcrud_intl
 description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
 version: 0.1.0
+publish_to: none
 resolution: workspace
 
 homepage: https://github.com/zakarius-dev/zcrud
