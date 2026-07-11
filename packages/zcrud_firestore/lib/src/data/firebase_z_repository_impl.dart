@@ -100,13 +100,15 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     required Map<String, dynamic> Function(T value) toMap,
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
+    Set<String> timestampFields = const <String>{},
   })  : _firestore = firestore,
         _collectionPath = collectionPath,
         _kind = kind,
         _fromMap = fromMap,
         _toMap = toMap,
         _fromMapSafe = fromMapSafe,
-        _log = logger ?? _noopLog;
+        _log = logger ?? _noopLog,
+        _timestampFields = timestampFields;
 
   /// Construit l'adaptateur en dérivant `fromMap`/`toMap` d'un [ZcrudRegistry]
   /// (voie stricte `decode`/`encode`). Le décodage reste **défensif** : la voie
@@ -121,6 +123,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     required ZcrudRegistry registry,
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
+    Set<String> timestampFields = const <String>{},
   }) {
     return FirebaseZRepositoryImpl<T>(
       firestore: firestore,
@@ -130,6 +133,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       toMap: (value) => registry.encode(kind, value),
       fromMapSafe: fromMapSafe,
       logger: logger,
+      timestampFields: timestampFields,
     );
   }
 
@@ -140,6 +144,17 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   final Map<String, dynamic> Function(T value) _toMap;
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final ZFirestoreLog _log;
+
+  /// Clés persistées (corps d'entité) à encoder en `Timestamp` Firestore natif
+  /// plutôt qu'en String ISO-8601 (gap B14, parité DODLP). Fourni par l'artefact
+  /// généré neutre `$XxxTimestampFields` (`Set<String>`), câblé app-side. Vide par
+  /// défaut ⇒ comportement historique **inchangé** (tout en ISO-8601).
+  ///
+  /// **Confinement AD-5** : le type `Timestamp` n'apparaît QUE dans la conversion
+  /// interne (`_encode`/[_inject]) ; la surface publique reste un `Set<String>`
+  /// nu. `is_deleted`/`updated_at` (`ZSyncMeta`) sont **exclus** — jamais dans cet
+  /// ensemble (AD-9 : merge LWW compare `updated_at` en ISO).
+  final Set<String> _timestampFields;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
   static const String _kIsDeleted = 'is_deleted';
@@ -191,19 +206,50 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   // ───────────────────────── (Dé)codage ─────────────────────────────────────
 
   /// Injecte l'`id` du document dans la [data] (le corps Firestore ne stocke pas
-  /// nécessairement `id`).
-  Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) =>
-      <String, dynamic>{...?data, _kId: id};
+  /// nécessairement `id`) **et normalise** les clés [_timestampFields] lues :
+  /// un `Timestamp` natif est reconverti en String ISO-8601 **avant** le `fromMap`
+  /// généré (qui ne connaît que `DateTime`/String via `_$asDateTime`). Une valeur
+  /// déjà String (ancien document ISO) est laissée telle quelle — **tolérance
+  /// bi-format** (`Timestamp` OU String, comme DODLP ; AD-10, gap B14).
+  Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) {
+    final map = <String, dynamic>{...?data, _kId: id};
+    if (_timestampFields.isEmpty) return map;
+    for (final key in _timestampFields) {
+      final value = map[key];
+      if (value is Timestamp) {
+        map[key] = value.toDate().toUtc().toIso8601String();
+      }
+    }
+    return map;
+  }
 
   /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,
-  /// is_deleted=false) — jamais de `Timestamp` (AD-5).
+  /// is_deleted=false — jamais de `Timestamp`, AD-9) puis applique le hint B14 :
+  /// chaque clé de [_timestampFields] portant une String ISO-8601 parsable est
+  /// remplacée par un `Timestamp` natif (confiné ici, AD-5).
   Map<String, dynamic> _encode(T value) {
     final map = Map<String, dynamic>.of(_toMap(value));
     final meta = ZSyncMeta(updatedAt: DateTime.now().toUtc(), isDeleted: false)
         .toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt];
     map[_kIsDeleted] = false;
+    _applyTimestampHints(map);
     return map;
+  }
+
+  /// Remplace, pour chaque clé de [_timestampFields] (jamais `ZSyncMeta`), une
+  /// String ISO-8601 **non nulle parsable** par `Timestamp.fromDate(...UTC)`.
+  /// Valeur `null` ⇒ reste `null` ; valeur non-String / non parsable ⇒ **laissée
+  /// inchangée** (défensif AD-10, jamais de `throw`).
+  void _applyTimestampHints(Map<String, dynamic> map) {
+    if (_timestampFields.isEmpty) return;
+    for (final key in _timestampFields) {
+      final value = map[key];
+      if (value is String && value.isNotEmpty) {
+        final parsed = DateTime.tryParse(value);
+        if (parsed != null) map[key] = Timestamp.fromDate(parsed.toUtc());
+      }
+    }
   }
 
   /// Décodage **DÉFENSIF** (AD-10) : `fromMapSafe` s'il existe, sinon enveloppe
@@ -682,12 +728,20 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
 
   /// Construit la map d'écriture d'un merge : corps [_toMap] + corps `id` +
   /// `updated_at`/`is_deleted` de la [entry] **verbatim** (jamais `now()`).
+  ///
+  /// MAJEUR-1 (DP-11) : applique AUSSI le hint B14 (`_applyTimestampHints`) sur
+  /// cette voie d'écriture (sync/merge offline-first), pas seulement `_encode`
+  /// (save). Sinon `created_at` finit en types MIXTES sur disque (Timestamp pour
+  /// les save en ligne, String ISO pour les save resync) → `orderBy`/plage
+  /// Firestore silencieusement incorrects. `_applyTimestampHints` est idempotent
+  /// et n'affecte JAMAIS `ZSyncMeta` (`updated_at`/`is_deleted` ∉ `_timestampFields`).
   Map<String, dynamic> _mergedMap(ZSyncEntry<T> entry, String id) {
     final map = Map<String, dynamic>.of(_toMap(entry.entity));
     map[_kId] = id;
     final meta = entry.meta.toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt]; // verbatim (peut être null)
     map[_kIsDeleted] = entry.meta.isDeleted; // verbatim (tombstone possible)
+    _applyTimestampHints(map);
     return map;
   }
 

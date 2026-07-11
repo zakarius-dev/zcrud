@@ -22,6 +22,7 @@ library;
 import 'package:flutter/widgets.dart';
 
 import '../domain/z_geo_circle.dart';
+import '../domain/z_geo_map_options.dart';
 import '../domain/z_geo_point.dart';
 import '../domain/z_geo_shape.dart';
 
@@ -29,6 +30,14 @@ import '../domain/z_geo_shape.dart';
 /// appel (MAJEUR-1). Le champ géo l'invoque **1× par montage** (`initState`) pour
 /// garantir « une instance par montage » — jamais d'instance partagée/aliasée.
 typedef ZMapAdapterFactory = ZMapAdapter Function();
+
+/// Seam **neutre** de résolution « ma position » (DP-7, gap B9). Renvoie un
+/// [ZGeoPoint] neutre (ou `null` si indisponible/refusée/erreur). **Aucun SDK de
+/// géolocalisation, aucune permission** n'est embarqué par `zcrud_geo` : l'app
+/// hôte injecte sa propre implémentation via `ZGeoFieldWidget.builder(
+/// locationResolver:)` (capturée par closure — AD-4, aucun slot `zcrud_core`).
+/// Le bouton « ma position » est masqué/désactivé si ce seam est absent.
+typedef ZGeoLocationResolver = Future<ZGeoPoint?> Function();
 
 /// Port de rendu carte en **types neutres uniquement**. Optionnel : si aucun
 /// adaptateur n'est injecté, le champ géo dégrade proprement (saisie
@@ -50,14 +59,19 @@ abstract class ZMapAdapter {
   /// - [mapStyleJson] : style de carte **surchargeable par-champ** (honoré par
   ///   l'adaptateur Google ; ignoré par OSM) — `null` → défaut de l'adaptateur ;
   /// - [defaultZoom] : zoom initial **surchargeable par-champ** (honoré par les
-  ///   deux adaptateurs) — `null` → défaut de l'adaptateur.
+  ///   deux adaptateurs) — `null` → défaut de l'adaptateur ;
+  /// - [mapOptions] : options de carte **neutres** pilotées par la barre d'outils
+  ///   d'éditeur (DP-7 : type de carte, trafic, bâtiments, gestes, contrôles…) —
+  ///   `null` (défaut) → comportement inchangé. Chaque adaptateur **honore ce
+  ///   qu'il supporte, ignore le reste** (même contrat que [tileUrlTemplate]/
+  ///   [mapStyleJson]).
   ///
   /// Retourne un `Widget` opaque : l'appelant ne voit AUCUN type carte.
   ///
   /// **Note compat (0.x)** : les ajouts [circle]/[tileUrlTemplate]/[mapStyleJson]/
-  /// [defaultZoom] sont des évolutions **mineures additives** du port ; les
-  /// appelants existants compilent inchangés ; un adaptateur externe recompile
-  /// (additif, non-cassant fonctionnellement).
+  /// [defaultZoom]/[mapOptions] sont des évolutions **mineures additives** du
+  /// port ; les appelants existants compilent inchangés ; un adaptateur externe
+  /// recompile (additif, non-cassant fonctionnellement).
   Widget buildMap(
     BuildContext context, {
     ZGeoPoint? center,
@@ -68,6 +82,7 @@ abstract class ZMapAdapter {
     String? tileUrlTemplate,
     String? mapStyleJson,
     double? defaultZoom,
+    ZGeoMapOptions? mapOptions,
   });
 
   /// Libère le contrôleur natif éventuel (learning E5). Idempotent : un second

@@ -190,3 +190,23 @@ development_status:
   rel-1-prep-packages-publiables: done
   rel-2-dry-run-et-publication: backlog
   epic-rel-retrospective: optional
+
+  # === E-DP — Parité migration DODLP (consigne user ; source : docs/dodlp-edition-parity-gap.md) ===
+  # Objectif : migration DODLP structurellement fidèle. Stories = les 14 gaps
+  # BLOQUANTS (ordre du rapport B1->B14, regroupés), puis les ~24 majeurs.
+  # Source de vérité détaillée : docs/dodlp-edition-parity-gap.md.
+  epic-dp: done
+  dp-1-layout-fieldsize-decoration: done           # B1 FieldSize + B2 minLines/maxLines + M2 thème/décoration
+  dp-2-displaycondition-etendu: done              # B3
+  dp-3-richtext-lecture-seule-modes: done          # B4 readonly + B6 inline/plein-écran
+  dp-4-champ-html-codec: done                     # B5
+  dp-5-relation-dynamique-cruddataselect: done    # B7
+  dp-6-subitems-compact-dialog: done              # B8
+  dp-7-geo-editor-toolbar: done                   # B9
+  dp-8-adresse-string-places: done                # B10
+  dp-9-stepperconfig-imbrique: done               # B11
+  dp-10-dates-bornes-datetime: done               # B12 + B13 (DP-2 done)
+  dp-11-timestamp-persistance-hint: done           # B14
+  # dp-12+ : lot des ~24 majeurs (M1..M20), planifié après les bloquants.
+  # Rétro E-DP done : 9 action items AI-DP-1..9 (voir epic-dp-retrospective.md).
+  epic-dp-retrospective: done

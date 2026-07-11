@@ -106,6 +106,8 @@ class DynamicEdition extends StatefulWidget {
     this.readOnly = false,
     this.layout = const <String, ZResponsiveSpan>{},
     this.gridGutter = 8,
+    this.conditionContext = const <String, Object?>{},
+    this.manageVisibility = true,
     this.onStructuralBuild,
     super.key,
   });
@@ -145,6 +147,29 @@ class DynamicEdition extends StatefulWidget {
   /// Gouttière (dp) de la grille responsive (quand [layout] est non vide).
   final double gridGutter;
 
+  /// **Contexte d'édition** (DP-2, B3) : clés externes au formulaire lues par les
+  /// feuilles `ZCondition` de source `ZValueSource.context` (`crud`/`mode`/
+  /// drapeaux applicatifs). Défaut vide ⇒ **rétro-compat totale** (une condition
+  /// `context` sur une clé absente résout `null`, défensif — AD-10).
+  ///
+  /// Convention : `crud` en `String` camelCase (`'read'`/`'create'`/`'update'`/
+  /// `'delete'`, miroir de l'enum `Crud` DODLP), `mode` en `String`, drapeaux en
+  /// `bool`. Un changement de contenu déclenche **un** recalcul structurel de
+  /// visibilité (via `didUpdateWidget`), **jamais** un abonnement par frappe :
+  /// seules les clés de `zContextGuardKeysOf` sont surveillées.
+  final Map<String, Object?> conditionContext;
+
+  /// **Pilotage de `visibleFields`** (DP-9, imbrication de steppers) : quand
+  /// `true` (défaut → comportement E3-1..E3-4 **inchangé**), ce formulaire GÈRE
+  /// `controller.visibleFields` (amorçage + souscription aux champs de garde +
+  /// `setVisibleFields`). Quand `false`, il n'écrit JAMAIS `visibleFields` et ne
+  /// s'abonne PAS aux gardes : il rend **passivement** l'intersection de
+  /// `controller.visibleFields` avec ses `fields`. Sert le nesting de steppers où
+  /// un **unique** propriétaire (le stepper RACINE) écrit la fenêtre = union du
+  /// chemin actif (AD-2, single-writer) ; les zones d'étape imbriquées ne se
+  /// battent alors jamais sur `visibleFields`.
+  final bool manageVisibility;
+
   /// Hook d'instrumentation : appelé à chaque (re)build **structurel** — compteur
   /// de build de niveau formulaire pour SM-1 (reste inchangé pendant la saisie).
   @visibleForTesting
@@ -161,13 +186,35 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// Index `name → titre de section` (pour l'interleave des en-têtes).
   late Map<String, String> _sectionByField;
 
-  /// Champs de **garde** : union des `field` référencés par les conditions. Le
-  /// sélecteur de visibilité s'abonne UNIQUEMENT à ceux-ci (AC3, SM-1).
+  /// Champs de **garde** : union des `field` de source `state` référencés par les
+  /// conditions. Le sélecteur de visibilité s'abonne UNIQUEMENT à ceux-ci (AC3,
+  /// SM-1) — les feuilles `persisted`/`context` en sont exclues (DP-2, B3).
   late Set<String> _guardFields;
+
+  /// Clés de **contexte** référencées par les conditions (source `context`). Un
+  /// changement de leur valeur dans `widget.conditionContext` déclenche **un**
+  /// recalcul structurel (jamais un abonnement par frappe — DP-2, B3).
+  late Set<String> _contextGuardKeys;
+
+  /// `true` s'il existe AU MOINS une condition (toutes sources confondues). Gate
+  /// du recalcul d'amorçage : sans condition on respecte l'ensemble visible fourni
+  /// par l'hôte (compat ascendante), même si `_guardFields` est vide (cas d'une
+  /// condition uniquement `context`/`persisted`).
+  late bool _hasConditions;
+
+  /// `true` s'il existe AU MOINS une feuille de source `persisted` (DP-2
+  /// MEDIUM-1). La baseline n'est pas immuable : `reseed`/`markPristine` la mutent
+  /// (le `reset` la restaure). Quand c'est vrai, la visibilité doit être
+  /// recalculée sur chaque `reseedRevision` (canal STRUCTUREL, hors SM-1).
+  late bool _hasPersistedGuard;
 
   /// Tranches réactives des champs de garde auxquelles [_onGuardChanged] est
   /// abonné (référence stable pour le retrait en `dispose`/`didUpdateWidget`).
   final List<Listenable> _guardListenables = <Listenable>[];
+
+  /// `reseedRevision` du controller courant auquel [_onReseed] est abonné
+  /// UNIQUEMENT si [_hasPersistedGuard] (référence stable pour le retrait).
+  Listenable? _reseedListenable;
 
   /// Canal STRUCTUREL local : titres des sections **repliées**. Piloté par les
   /// en-têtes ; orthogonal à `controller.visibleFields` (AC9). Vit dans le
@@ -184,14 +231,16 @@ class _DynamicEditionState extends State<DynamicEdition> {
     _collapsed = ValueNotifier<Set<String>>(_initialCollapsed());
     _rebuildIndexes();
     _bindGuards();
+    _bindReseed();
     _structural = Listenable.merge(<Listenable?>[
       widget.controller.visibleFields,
       _collapsed,
     ]);
-    // Amorçage : calcule la visibilité initiale depuis les valeurs du controller
-    // (uniquement s'il existe des conditions — sinon on respecte l'ensemble
-    // visible fourni par l'hôte, compat ascendante).
-    if (_guardFields.isNotEmpty) {
+    // Amorçage : calcule la visibilité initiale depuis les valeurs du controller,
+    // la baseline (persisted) et le contexte (uniquement s'il existe des
+    // conditions — sinon on respecte l'ensemble visible fourni par l'hôte, compat
+    // ascendante ; une condition `context`/`persisted` seule doit aussi amorcer).
+    if (widget.manageVisibility && _hasConditions) {
       _recomputeVisibility();
     }
   }
@@ -204,16 +253,41 @@ class _DynamicEditionState extends State<DynamicEdition> {
     if (controllerChanged || fieldsChanged) {
       _rebuildIndexes();
       _bindGuards();
+      _bindReseed();
       if (controllerChanged) {
         _structural = Listenable.merge(<Listenable?>[
           widget.controller.visibleFields,
           _collapsed,
         ]);
       }
-      if (_guardFields.isNotEmpty) {
+      if (widget.manageVisibility && _hasConditions) {
         _recomputeVisibility();
       }
+      return;
     }
+    // Changement de CONTEXTE d'édition (crud/mode/drapeaux) hors changement
+    // structurel de controller/fields : recalcul UNIQUE de la visibilité si une
+    // clé de contexte réellement surveillée a changé de valeur (DP-2, B3). Jamais
+    // un abonnement par frappe — le canal structurel `setVisibleFields` est no-op
+    // si l'ensemble visible est inchangé.
+    if (widget.manageVisibility &&
+        _contextGuardKeys.isNotEmpty &&
+        _contextChanged(oldWidget.conditionContext, widget.conditionContext)) {
+      _recomputeVisibility();
+    }
+  }
+
+  /// `true` si au moins une clé de [_contextGuardKeys] a changé de valeur entre
+  /// [before] et [after] (comparaison de contenu, `null`-safe).
+  bool _contextChanged(
+    Map<String, Object?> before,
+    Map<String, Object?> after,
+  ) {
+    if (identical(before, after)) return false;
+    for (final k in _contextGuardKeys) {
+      if (before[k] != after[k]) return true;
+    }
+    return false;
   }
 
   Set<String> _initialCollapsed() => <String>{
@@ -229,15 +303,25 @@ class _DynamicEditionState extends State<DynamicEdition> {
       for (final s in widget.sections)
         for (final n in s.fields) n: s.title,
     };
-    _guardFields = zGuardFieldsOf(widget.fields.map((f) => f.condition));
+    final conditions =
+        widget.fields.map((f) => f.condition).toList(growable: false);
+    _guardFields = zGuardFieldsOf(conditions);
+    _contextGuardKeys = zContextGuardKeysOf(conditions);
+    _hasPersistedGuard = zHasPersistedGuard(conditions);
+    _hasConditions = widget.fields.any((f) => f.condition != null);
   }
 
   /// (Ré)abonne [_onGuardChanged] aux tranches des champs de garde UNIQUEMENT.
+  ///
+  /// En mode passif (`manageVisibility == false`, DP-9 nesting) : aucun abonnement
+  /// — la fenêtre est pilotée par le stepper RACINE (single-writer), ce formulaire
+  /// ne recalcule ni n'écrit `visibleFields`.
   void _bindGuards() {
     for (final l in _guardListenables) {
       l.removeListener(_onGuardChanged);
     }
     _guardListenables.clear();
+    if (!widget.manageVisibility) return;
     for (final g in _guardFields) {
       final l = widget.controller.fieldListenable(g);
       l.addListener(_onGuardChanged);
@@ -247,15 +331,38 @@ class _DynamicEditionState extends State<DynamicEdition> {
 
   void _onGuardChanged() => _recomputeVisibility();
 
+  /// (Ré)abonne [_onReseed] à `controller.reseedRevision` UNIQUEMENT si une
+  /// feuille `persisted` existe (DP-2 MEDIUM-1). `reseed`/`markPristine` mutent la
+  /// baseline lue par les conditions `persisted` sans changer les tranches d'état
+  /// ni le contexte : sans cet abonnement, la visibilité resterait obsolète après
+  /// un chargement async (E7). Canal STRUCTUREL (par revision, jamais par frappe).
+  void _bindReseed() {
+    _reseedListenable?.removeListener(_onReseed);
+    _reseedListenable = null;
+    if (widget.manageVisibility && _hasPersistedGuard) {
+      final l = widget.controller.reseedRevision;
+      l.addListener(_onReseed);
+      _reseedListenable = l;
+    }
+  }
+
+  void _onReseed() => _recomputeVisibility();
+
   /// Recalcule l'ensemble visible = **ordre canonique** de [widget.fields] filtré
   /// par [evaluateZCondition], puis pilote `setVisibleFields` (no-op si inchangé
   /// — AC4). Préserve la PLACE ordinale (réinsertion à l'index canonique — AC5)
   /// et ne détruit JAMAIS de tranche (le controller conserve ses slices).
   void _recomputeVisibility() {
+    final ctx = widget.conditionContext;
     final next = <String>[
       for (final f in widget.fields)
         if (f.condition == null ||
-            evaluateZCondition(f.condition!, widget.controller.valueOf))
+            evaluateZCondition(
+              f.condition!,
+              widget.controller.valueOf,
+              persistedValueOf: widget.controller.baselineValueOf,
+              contextValueOf: (k) => ctx[k],
+            ))
           f.name,
     ];
     widget.controller.setVisibleFields(next);
@@ -267,6 +374,8 @@ class _DynamicEditionState extends State<DynamicEdition> {
       l.removeListener(_onGuardChanged);
     }
     _guardListenables.clear();
+    _reseedListenable?.removeListener(_onReseed);
+    _reseedListenable = null;
     _collapsed.dispose();
     super.dispose();
   }

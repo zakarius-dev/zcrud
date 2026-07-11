@@ -108,6 +108,16 @@ class ZFormController extends ChangeNotifier {
   /// Lit la valeur courante de la tranche [name] (`null` si jamais écrite).
   Object? valueOf(String name) => _slices[name]?.value;
 
+  /// Lit la valeur **baseline** (item d'origine persisté) de [name] — `null` si
+  /// absente (DP-2, Forme C). Lecture seule **pure** de [_baseline] : aucune
+  /// mutation, aucun canal réactif, aucun `notifyListeners()` (SM-1 intact).
+  ///
+  /// C'est la source de `persistedValueOf` pour `evaluateZCondition` : une
+  /// condition `source: ZValueSource.persisted` lit l'état **d'origine**,
+  /// indépendamment d'une saisie en cours sur le champ homonyme (reproduit
+  /// `item[...]` DODLP, distinct de `editionState[...]`).
+  Object? baselineValueOf(String name) => _baseline[name];
+
   /// Met à jour **exclusivement** la tranche du champ [name].
   ///
   /// Notifie UNIQUEMENT les listeners de `fieldListenable(name)` ; les autres

@@ -29,6 +29,7 @@ import 'package:flutter/services.dart'
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../../theme/z_theme.dart';
 
 /// Champ d'édition **numérique** (générique / entier / décimal).
 class ZNumberFieldWidget extends StatelessWidget {
@@ -40,6 +41,7 @@ class ZNumberFieldWidget extends StatelessWidget {
     required this.onChanged,
     this.validator,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.bare = false,
     super.key,
   });
 
@@ -62,6 +64,10 @@ class ZNumberFieldWidget extends StatelessWidget {
   /// stepper le bascule en `always` pour révéler les erreurs d'étape (AD-2, sans
   /// `Form` global).
   final AutovalidateMode autovalidateMode;
+
+  /// Rendu **bare** (borderless, sans label) pour le mode `large` (AC4) : le
+  /// décor est porté par la Card. Défaut `false`.
+  final bool bare;
 
   bool get _isInteger => field.type == EditionFieldType.integer;
 
@@ -86,9 +92,14 @@ class ZNumberFieldWidget extends StatelessWidget {
           ? const TextInputType.numberWithOptions(signed: true)
           : const TextInputType.numberWithOptions(signed: true, decimal: true),
       inputFormatters: _formatters,
+      style: ZcrudTheme.of(context).inputTextStyle,
       autovalidateMode: autovalidateMode,
       validator: validator,
-      decoration: InputDecoration(labelText: resolvedLabel),
+      decoration: ZcrudTheme.of(context).inputDecoration(
+        context,
+        label: bare ? null : resolvedLabel,
+        bare: bare,
+      ),
       onChanged: (raw) => onChanged(_parse(raw)),
     );
   }

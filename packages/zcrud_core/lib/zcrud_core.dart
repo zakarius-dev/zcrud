@@ -64,6 +64,9 @@ export 'src/presentation/edition/z_field_widget.dart';
 // Seam d'acquisition de fichier injecté (E3-3c, AD-1/AD-6) : interface `ZFilePicker`
 // (impl concrète image_picker/file_picker = app/binding E7, jamais le cœur).
 export 'src/presentation/edition/z_file_picker.dart';
+// Décorateur Card de la variante `ZFieldSize.large` (DP-1/B1) : label au-dessus,
+// champ interne bare, mesures pilotées par les tokens `large*` de `ZcrudTheme`.
+export 'src/presentation/edition/z_large_field_card.dart';
 // Grille responsive 12 colonnes du moteur d'édition (E3-4, FR-3/AD-13) :
 // descripteur de span par breakpoint `ZResponsiveSpan`, seuils `ZBreakpoint`/
 // `ZResponsiveBreakpoints`, widget de disposition directionnel `ZResponsiveGrid`.
@@ -73,6 +76,12 @@ export 'src/presentation/edition/z_responsive_grid.dart';
 // étape) ; validation PAR ÉTAPE (gate « suivant » sur validateurs E3-2), état
 // préservé en va-et-vient (controller unique), chrome scellé sur des canaux
 // STRUCTURELS (SM-1). `ZEditionStep` = descripteur présentation (titre + noms).
+// DP-9 (parité DODLP `StepperConfig`) : `ZStepperConfig` (+ enums
+// `ZStepOrientation`/`ZStepStyle`/`ZStepIndicatorPosition`, `left→start`
+// directionnel) configure style/orientation/position d'indicateur, icône +
+// sous-titre par étape, gate `validateOnNext` configurable, navigation par tap,
+// et steppers IMBRIQUÉS (single-writer racine de `visibleFields`).
+export 'src/presentation/edition/z_stepper_config.dart';
 export 'src/presentation/edition/z_stepper_edition.dart';
 export 'src/presentation/edition/z_submission.dart';
 export 'src/presentation/edition/z_submit_button.dart';

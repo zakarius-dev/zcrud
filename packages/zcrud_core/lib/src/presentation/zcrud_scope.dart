@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
+import '../domain/ports/z_relation_source.dart';
 import 'edition/z_file_picker.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
@@ -50,6 +51,7 @@ class ZcrudScope extends InheritedWidget {
     this.labels,
     this.theme,
     this.widgetRegistry,
+    this.relationSourceRegistry,
     this.filePicker,
     this.cloudStorage,
     this.listRenderer,
@@ -72,6 +74,14 @@ class ZcrudScope extends InheritedWidget {
   /// `null` → repli `ZUnsupportedFieldWidget`). Instanciable, injecté (jamais
   /// un singleton statique mutable).
   final ZWidgetRegistry? widgetRegistry;
+
+  /// Registre de sources dynamiques du champ `relation` (DP-5, gap B7, AD-4 ;
+  /// défaut `null` → tout champ `relation` retombe sur le **dropdown statique**
+  /// sur `choices` — repli universel rétro-compatible). Instanciable, injecté
+  /// (jamais un singleton statique mutable). L'impl concrète de `ZRelationSource`
+  /// (flux repository Firestore/Hive + mapping entité→`ZFieldChoice` + filtre
+  /// métier) vit hors du cœur (`zcrud_firestore`/app E7), jamais ici (AD-1).
+  final ZRelationSourceRegistry? relationSourceRegistry;
 
   /// Seam d'acquisition de fichiers (E3-3c, AD-1/AD-6 ; défaut `null` → actions
   /// scan/caméra/galerie/picker désactivées proprement). Impl concrète
@@ -120,6 +130,7 @@ class ZcrudScope extends InheritedWidget {
       !identical(labels, oldWidget.labels) ||
       !identical(theme, oldWidget.theme) ||
       !identical(widgetRegistry, oldWidget.widgetRegistry) ||
+      !identical(relationSourceRegistry, oldWidget.relationSourceRegistry) ||
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||
       !identical(listRenderer, oldWidget.listRenderer);

@@ -22,6 +22,7 @@ import 'edition_field_type.dart';
 import 'z_condition.dart';
 import 'z_field_choice.dart';
 import 'z_field_config.dart';
+import 'z_field_size.dart';
 import 'z_validator_spec.dart';
 
 /// Spécification `const` d'un champ du schéma `zcrud`, projetée depuis
@@ -46,6 +47,7 @@ class ZFieldSpec {
     this.showIfNull = true,
     this.multiple = false,
     this.isId = false,
+    this.fieldSize = ZFieldSize.normal,
   });
 
   /// Clé persistée du champ (snake_case par défaut — AD-3).
@@ -87,6 +89,12 @@ class ZFieldSpec {
   /// `true` si le champ porte `@ZcrudId` (clé d'identité opaque).
   final bool isId;
 
+  /// Variante de taille/layout du champ (défaut [ZFieldSize.normal] — parité
+  /// DODLP B1). `large` ⇒ rendu en Card (label au-dessus, champ interne bare).
+  /// Ajout **additif** rétro-compatible : une spec sans `fieldSize` conserve le
+  /// rendu inline historique.
+  final ZFieldSize fieldSize;
+
   /// Copie la spec en surchargeant les champs fournis (identité de valeur
   /// préservée pour les autres). Additif — sert notamment au **mode lecture
   /// global** d'E3-4 (`spec.copyWith(readOnly: true)`), sans réécrire les
@@ -105,6 +113,7 @@ class ZFieldSpec {
     bool? showIfNull,
     bool? multiple,
     bool? isId,
+    ZFieldSize? fieldSize,
   }) =>
       ZFieldSpec(
         name: name ?? this.name,
@@ -120,6 +129,7 @@ class ZFieldSpec {
         showIfNull: showIfNull ?? this.showIfNull,
         multiple: multiple ?? this.multiple,
         isId: isId ?? this.isId,
+        fieldSize: fieldSize ?? this.fieldSize,
       );
 
   @override
@@ -138,6 +148,7 @@ class ZFieldSpec {
           showIfNull == other.showIfNull &&
           multiple == other.multiple &&
           isId == other.isId &&
+          fieldSize == other.fieldSize &&
           _listEquals(validators, other.validators) &&
           _listEquals(choices, other.choices);
 
@@ -155,6 +166,7 @@ class ZFieldSpec {
         showIfNull,
         multiple,
         isId,
+        fieldSize,
         Object.hashAll(validators),
         Object.hashAll(choices),
       );

@@ -73,8 +73,10 @@ class Article {
   @ZcrudField(defaultValue: ArticleStatus.draft)
   final ArticleStatus status;
 
-  /// Date de création (ISO-8601).
-  @ZcrudField()
+  /// Date de création. Hint B14 `persistAs: timestamp` : persistée en `Timestamp`
+  /// Firestore natif (via `$ArticleTimestampFields`) ; reste ISO-8601 dans
+  /// `toMap` (la conversion `Timestamp` est exclusive au chemin Firestore).
+  @ZcrudField(persistAs: ZPersistAs.timestamp)
   final DateTime? createdAt;
 
   /// Étiquettes (multiple inféré depuis `List<String>`).

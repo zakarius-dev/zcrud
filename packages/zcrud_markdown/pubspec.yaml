@@ -41,6 +41,20 @@ dependencies:
   # transitivement par flutter_quill est compatible. Résolution workspace VERTE.
   markdown: ^7.2.2
   markdown_quill: ^4.3.0
+  # DP-4 (B5, AD-7/AD-1) : libs de conversion Delta↔HTML du `ZHtmlCodec`.
+  # ISOLÉES au SEUL pubspec zcrud_markdown (AD-1) — aucun de leurs types
+  # (`QuillDeltaToHtmlConverter`, `HtmlToDelta`, `Delta`) ne fuit en signature
+  # publique (cantonnés à l'implémentation de `z_html_codec.dart`, comme
+  # `markdown`/`markdown_quill` pour `ZMarkdownCodec`). Ce sont les MÊMES libs
+  # qu'utilise DODLP (`rich_text_editor_screen.dart`). AUCUNE dépendance WYSIWYG
+  # HTML natif (éditeur WebView / rendu HTML tiers) : l'édition passe par
+  # l'éditeur Delta isolé DP-3 (cf. gate d'isolation qui bannit ces libs).
+  # Compat vérifiée (E1-4) : `vsc_quill_delta_to_html ^1.0.5` (Dart pur, encode
+  # ops neutres → HTML) et `flutter_quill_delta_from_html ^1.5.3` (exige
+  # `dart_quill_delta ^10.8.3`, satisfait par la transitive de `flutter_quill
+  # ^11.5.x`). Résolution workspace VERTE (`dart pub get --dry-run`).
+  vsc_quill_delta_to_html: ^1.0.5
+  flutter_quill_delta_from_html: ^1.5.3
   # E6-3 (AD-7/AD-1) : rendu des embeds LaTeX (`Math.tex` + `onErrorFallback`).
   # ISOLÉE au SEUL pubspec zcrud_markdown (AD-1) — aucun type `flutter_math_fork`
   # (`Math`/`SelectableMath`/`MathStyle`) ne fuit en signature publique ni dans la

@@ -33,7 +33,10 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_field_config.dart';
+import '../../domain/edition/z_field_size.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../l10n/z_localizations.dart';
 import '../z_field_listenable_builder.dart';
 import '../z_form_controller.dart';
 import '../zcrud_scope.dart';
@@ -56,6 +59,7 @@ import 'families/z_tags_field_widget.dart';
 import 'families/z_text_field_widget.dart';
 import 'families/z_unsupported_field_widget.dart';
 import 'z_cross_field_validator.dart';
+import 'z_large_field_card.dart';
 import 'z_widget_registry.dart';
 
 /// Dispatcher de champ par type + hôte scellé sur la tranche `field.name`.
@@ -141,6 +145,17 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // Abonnement CIBLÉ aux champs référencés (inter-champs) — jamais global.
     for (final refKey in ZCrossFieldValidator.refKeysOf(widget.field.validators)) {
       _refListenables.add(widget.controller.fieldListenable(refKey));
+    }
+    // DP-5 : abonnement CIBLÉ aux `filterKeys` d'une relation dynamique — même
+    // canal que refKeys (jamais global, SM-1) : une frappe dans un filterKey
+    // recompute le `filterContext` de CE champ relation (ré-abonnement du flux),
+    // sans reconstruire le formulaire. `filterKeys` vide ⇒ aucun abonnement.
+    if (_family == EditionFamily.relation &&
+        widget.field.config is ZRelationConfig) {
+      final relCfg = widget.field.config! as ZRelationConfig;
+      for (final k in relCfg.filterKeys) {
+        _refListenables.add(widget.controller.fieldListenable(k));
+      }
     }
     _revealAndRefs = Listenable.merge(<Listenable>[
       widget.controller.reveal,
@@ -228,7 +243,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // Frontière de rebuild (AD-2) : la tranche du champ (frappe) reconstruit le
     // closure INTERNE ; le canal [_revealAndRefs] (révélation + champs référencés)
     // enveloppe SANS élargir la frontière à une frappe tierce (SM-1).
-    return ListenableBuilder(
+    final reactive = ListenableBuilder(
       listenable: _revealAndRefs,
       builder: (context, _) {
         final revealed = widget.autovalidateMode == AutovalidateMode.always ||
@@ -243,6 +258,19 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         );
       },
     );
+    // B1 (AC3/AC5) : la variante `large` enveloppe le RÉSULTAT du builder
+    // réactif dans une Card (label au-dessus) — le wrapper est STATIQUE (monté
+    // hors de la voie de frappe), il ne déplace JAMAIS la frontière de rebuild
+    // (AD-2/SM-1). `normal` (défaut) : aucun wrapper, rendu inline inchangé.
+    if (widget.field.fieldSize == ZFieldSize.large) {
+      final resolvedLabel = label(
+        context,
+        widget.field.label ?? widget.field.name,
+        fallback: widget.field.label ?? widget.field.name,
+      );
+      return ZLargeFieldCard(label: resolvedLabel, child: reactive);
+    }
+    return reactive;
   }
 
   /// Enveloppe un sous-arbre à **buffer interne** (mini-CRUD/signature) dans un
@@ -301,6 +329,9 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
 
   Widget _buildControl(BuildContext context, Object? value, bool revealed) {
     final field = widget.field;
+    // B1 (AC4) : en `large`, les familles décor-portantes rendent leur
+    // `InputDecoration` en mode « bare » (le décor est porté par la Card).
+    final bare = field.fieldSize == ZFieldSize.large;
     final autovalidate = revealed
         ? AutovalidateMode.always
         : (widget.autovalidateMode ?? AutovalidateMode.onUserInteraction);
@@ -313,6 +344,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           focusNode: _focus!,
           validator: _validator,
           autovalidateMode: autovalidate,
+          bare: bare,
           onChanged: (v) => widget.controller.setValue(field.name, v),
         );
       case EditionFamily.number:
@@ -323,13 +355,25 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           focusNode: _focus!,
           validator: _validator,
           autovalidateMode: autovalidate,
+          bare: bare,
           onChanged: (parsed) => widget.controller.setValue(field.name, parsed),
         );
       case EditionFamily.date:
+        // Seul point du cœur détenant le `ZFormController` : il résout les
+        // bornes (littéral > cross-champ) via des fermetures pur-Dart injectées
+        // au widget, évaluées AU TAP (D3/D5) — aucun abonnement réactif cross-
+        // champ, aucun rebuild global (AD-2). Le widget reste `StatelessWidget`
+        // pur, sans `ZFormController`.
+        final dateCfg =
+            field.config is ZDateConfig ? field.config! as ZDateConfig : null;
         return ZDateFieldWidget(
           field: field,
           value: value,
           onChanged: (iso) => widget.controller.setValue(field.name, iso),
+          firstDate: () =>
+              _resolveDateBound(dateCfg?.minDateIso, dateCfg?.firstDateKey),
+          lastDate: () =>
+              _resolveDateBound(dateCfg?.maxDateIso, dateCfg?.lastDateKey),
         );
       case EditionFamily.boolean:
         return ZBooleanFieldWidget(
@@ -341,12 +385,37 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         return ZSelectFieldWidget(
           field: field,
           value: value,
+          bare: bare,
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.relation:
+        // DP-5 : résout la source dynamique NEUTRE (via le registre injecté au
+        // scope + `sourceKey`) et bâtit le `filterContext` (snapshot des
+        // `filterKeys`). Aucun `ZRelationConfig`/registre/source → `source: null`
+        // ⇒ repli statique STRICT sur `choices` (AC7). Aucun backend dans le
+        // cœur : seule l'abstraction est résolue ici (AD-1/AD-5).
+        final relCfg =
+            field.config is ZRelationConfig ? field.config! as ZRelationConfig : null;
+        final sourceKey = relCfg?.sourceKey;
+        final source = sourceKey == null
+            ? null
+            : ZcrudScope.maybeOf(context)
+                ?.relationSourceRegistry
+                ?.trySourceFor(sourceKey);
+        final filterContext = <String, Object?>{};
+        if (relCfg != null) {
+          for (final k in relCfg.filterKeys) {
+            filterContext[k] = widget.controller.valueOf(k);
+          }
+        }
         return ZRelationFieldWidget(
           field: field,
           value: value,
+          options: field.choices,
+          source: source,
+          filterContext: filterContext,
+          multiple: field.multiple,
+          searchable: relCfg?.searchable ?? false,
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.tags:
@@ -419,6 +488,22 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         // STRUCTUREL, pas la tranche de valeur (SM-1 imbriqué, AD-2).
         return const SizedBox.shrink();
     }
+  }
+
+  /// Résout une borne de date (D4/D5) : le **littéral** [iso] (ISO-8601 parsé)
+  /// prime ; à défaut, la valeur **cross-champ** du champ [key] lue via
+  /// `ZFormController.valueOf` (String ISO parsée ou `DateTime` accepté tel
+  /// quel). Toute valeur absente/non parsable ⇒ `null` (le widget repliera sur
+  /// 1900/2100). **Jamais de throw** (AD-10).
+  DateTime? _resolveDateBound(String? iso, String? key) {
+    final literal = iso != null ? DateTime.tryParse(iso) : null;
+    if (literal != null) return literal;
+    if (key != null) {
+      final v = widget.controller.valueOf(key);
+      if (v is DateTime) return v;
+      if (v is String) return DateTime.tryParse(v);
+    }
+    return null;
   }
 
   /// Résout un type servi **ailleurs** (markdown/géo/tél/`icon`/`custom`) via le

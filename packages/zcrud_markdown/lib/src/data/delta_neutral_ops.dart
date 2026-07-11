@@ -134,6 +134,24 @@ abstract final class DeltaNeutralOps {
     return delta;
   }
 
+  /// Remplace chaque `insert` **embed** opaque (Map) par un **placeholder
+  /// TEXTUEL** `[embed:<type>]` (perte BORNÉE — HIGH-1 / DP-4 AC1), sur des ops
+  /// NEUTRES (`List<Map>`), sans passer par [Delta]. Réutilisé par les codecs
+  /// non-Delta (HTML) qui ne savent pas exprimer un embed opaque : seul l'embed
+  /// dégrade, le texte environnant SURVIT (jamais un document vidé). Les `insert`
+  /// texte sont conservés à l'identique (attributs inclus).
+  static List<Map<String, dynamic>> sanitizeEmbedsToPlaceholders(
+    List<Map<String, dynamic>> ops,
+  ) {
+    return <Map<String, dynamic>>[
+      for (final op in ops)
+        if (op['insert'] is Map)
+          <String, dynamic>{'insert': _embedPlaceholder(op['insert'] as Map)}
+        else
+          op,
+    ];
+  }
+
   /// Placeholder textuel d'un `insert` embed opaque (perte bornée — AC9). Le
   /// **type** de l'embed (1re clé de la Map, ex. `formula`/`z-table`) est conservé
   /// pour tracer QUELLE donnée a dégradé, sans jamais casser la conversion.

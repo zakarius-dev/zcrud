@@ -51,6 +51,35 @@ Future<void> _openPicker(WidgetTester tester, {int at = 0}) async {
   await tester.pump();
 }
 
+/// DP-8 — seam mocké (aucun réseau) : renvoie des prédictions figées puis un
+/// [ZPostalAddress] figé. Compte les appels pour prouver la voie unique.
+class _FakePlaceSearch implements ZPlaceSearchProvider {
+  _FakePlaceSearch(this.predictions, this.detailsResult);
+
+  final List<ZPlacePrediction> predictions;
+  final ZPostalAddress? detailsResult;
+  int searchCount = 0;
+  int detailsCount = 0;
+  String? lastCountryIso;
+
+  @override
+  Future<List<ZPlacePrediction>> search(
+    String query, {
+    String? countryIso,
+    String? sessionToken,
+  }) async {
+    searchCount++;
+    lastCountryIso = countryIso;
+    return predictions;
+  }
+
+  @override
+  Future<ZPostalAddress?> details(String placeId, {String? sessionToken}) async {
+    detailsCount++;
+    return detailsResult;
+  }
+}
+
 void main() {
   group('AC2 — champs servis via le registre', () {
     testWidgets('phoneNumber/country/address → widget intl rendu', (t) async {
@@ -400,6 +429,136 @@ void main() {
       // Plus masqué par ExcludeSemantics : le champ éditable est opérable.
       expect(node, isSemantics(isTextField: true));
       handle.dispose();
+    });
+  });
+
+  group('DP-8 — double kind address / addressSearchField (mapping n:1)', () {
+    testWidgets('les DEUX kinds résolvent vers ZAddressFieldWidget', (t) async {
+      final reg = ZWidgetRegistry();
+      registerZAddressFieldWidgets(reg, catalog: _fakeCatalog());
+      expect(reg.isRegistered('address'), isTrue);
+      expect(reg.isRegistered('addressSearchField'), isTrue);
+
+      for (final kind in <String>['address', 'addressSearchField']) {
+        final builder = reg.tryBuilderFor(kind)!;
+        final c = _controller('f');
+        await t.pumpWidget(MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => builder(
+                context,
+                ZFieldWidgetContext(
+                  field: _field('f', EditionFieldType.address),
+                  value: null,
+                  onChanged: (v) => c.setValue('f', v),
+                ),
+              ),
+            ),
+          ),
+        ));
+        expect(find.byType(ZAddressFieldWidget), findsOneWidget,
+            reason: 'kind "$kind" doit rendre ZAddressFieldWidget');
+      }
+    });
+  });
+
+  group('DP-8 — affordance de recherche géo (seam injecté)', () {
+    testWidgets('rétro-compat : SANS provider ⇒ aucun bouton de recherche', (t) async {
+      final c = _controller('f');
+      await t.pumpWidget(
+        _app(c, _field('f', EditionFieldType.address),
+            registry: _registry(_fakeCatalog())),
+      );
+      expect(find.byType(ZAddressFieldWidget), findsOneWidget);
+      expect(find.byKey(const Key('z-address-search-button')), findsNothing);
+    });
+
+    testWidgets('AVEC provider ⇒ bouton recherche ≥48dp', (t) async {
+      final reg = ZWidgetRegistry();
+      registerZAddressFieldWidgets(
+        reg,
+        catalog: _fakeCatalog(),
+        placeSearch: _FakePlaceSearch(const <ZPlacePrediction>[], null),
+      );
+      final c = _controller('f');
+      await t.pumpWidget(
+        _app(c, _field('f', EditionFieldType.address), registry: reg),
+      );
+      final btn = find.byKey(const Key('z-address-search-button'));
+      expect(btn, findsOneWidget);
+      expect(t.getSize(btn).height, greaterThanOrEqualTo(48));
+      expect(t.getSize(btn).width, greaterThanOrEqualTo(48));
+    });
+
+    testWidgets('sélection Places → UN SEUL ctx.onChanged (voie unique AD-2)',
+        (t) async {
+      final provider = _FakePlaceSearch(
+        const <ZPlacePrediction>[
+          ZPlacePrediction(placeId: 'p1', description: '12 rue X, Niamey'),
+        ],
+        const ZPostalAddress(
+          line1: '12 rue X',
+          city: 'Niamey',
+          countryCode: 'NE',
+          formatted: '12 rue X, Niamey, Niger',
+        ),
+      );
+      var emitCount = 0;
+      Object? lastValue;
+      await t.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ZAddressFieldWidget(
+            ctx: ZFieldWidgetContext(
+              field: _field('f', EditionFieldType.address),
+              value: null,
+              onChanged: (v) {
+                emitCount++;
+                lastValue = v;
+              },
+            ),
+            catalog: _fakeCatalog(),
+            placeSearch: provider,
+          ),
+        ),
+      ));
+
+      await t.tap(find.byKey(const Key('z-address-search-button')));
+      await t.pumpAndSettle();
+      await t.enterText(find.byKey(const Key('z-address-search-input')), 'rue X');
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('z-address-prediction-p1')), findsOneWidget);
+      expect(provider.searchCount, greaterThanOrEqualTo(1));
+
+      final emitBefore = emitCount;
+      await t.tap(find.byKey(const Key('z-address-prediction-p1')));
+      await t.pumpAndSettle();
+
+      // Voie unique (AD-2) : le remplissage n'émet QU'UNE fois.
+      expect(emitCount - emitBefore, 1);
+      expect(provider.detailsCount, 1);
+      expect(lastValue, isA<ZPostalAddress>());
+      final v = lastValue! as ZPostalAddress;
+      expect(v.line1, '12 rue X');
+      expect(v.city, 'Niamey');
+      expect(v.countryCode, 'NE');
+      expect(v.formatted, '12 rue X, Niamey, Niger');
+      expect(t.takeException(), isNull);
+    });
+  });
+
+  group('DP-8 — compat schéma String legacy (ingestion sans réécriture)', () {
+    testWidgets('valeur de tranche = String legacy → affichage formatted, pas de crash',
+        (t) async {
+      final c = _controller('f', value: 'Rond-point 6e, Niamey');
+      await t.pumpWidget(
+        _app(c, _field('f', EditionFieldType.address),
+            registry: _registry(_fakeCatalog())),
+      );
+      expect(t.takeException(), isNull);
+      expect(find.byType(ZAddressFieldWidget), findsOneWidget);
+      // La String legacy s'affiche dans un sous-champ (via `formatted`).
+      expect(find.byKey(const Key('z-address-formatted')), findsOneWidget);
+      expect(find.text('Rond-point 6e, Niamey'), findsOneWidget);
     });
   });
 }

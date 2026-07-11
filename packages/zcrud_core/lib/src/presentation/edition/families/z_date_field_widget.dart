@@ -15,10 +15,20 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 
 /// Champ d'édition **date/heure** (déclencheur de picker directionnel).
+///
+/// Mode effectif (D2) : [ZDateConfig.mode] s'il est fourni ; sinon dérivé du
+/// type (`time` → `time` ; sinon → `dateTime` combiné date+heure, fix B13).
+///
+/// Bornes (D3/D4) : le widget reste **pur et testable** — il n'accède JAMAIS au
+/// `ZFormController`. Le dispatcher lui injecte deux **résolveurs**
+/// [firstDate]/[lastDate] (`ValueGetter<DateTime?>?`, fermetures pur-Dart)
+/// appelés **au tap** (`_pick`) pour lire des bornes cross-champ **fraîches**
+/// sans abonnement réactif ni rebuild global (AD-2). `null` ⇒ repli 1900/2100.
 class ZDateFieldWidget extends StatelessWidget {
   /// Construit le champ date lié à [field], valeur courante [value] (ISO-8601
   /// ou `null`), notifiant [onChanged] avec la nouvelle valeur ISO.
@@ -26,6 +36,8 @@ class ZDateFieldWidget extends StatelessWidget {
     required this.field,
     required this.value,
     required this.onChanged,
+    this.firstDate,
+    this.lastDate,
     super.key,
   });
 
@@ -38,15 +50,35 @@ class ZDateFieldWidget extends StatelessWidget {
   /// Notifié avec la valeur **ISO-8601** choisie (`String`).
   final ValueChanged<String> onChanged;
 
-  bool get _isTime => field.type == EditionFieldType.time;
+  /// Résolveur **paresseux** de la borne basse (littéral > cross-champ), évalué
+  /// au tap. `null` ou retour `null` ⇒ repli `DateTime(1900)`.
+  final ValueGetter<DateTime?>? firstDate;
+
+  /// Résolveur **paresseux** de la borne haute (littéral > cross-champ), évalué
+  /// au tap. `null` ou retour `null` ⇒ repli `DateTime(2100)`.
+  final ValueGetter<DateTime?>? lastDate;
+
+  /// Mode d'édition effectif (D2) — jamais `null`.
+  ZDateMode get _mode {
+    final cfg = field.config;
+    if (cfg is ZDateConfig && cfg.mode != null) return cfg.mode!;
+    if (field.type == EditionFieldType.time) return ZDateMode.time;
+    return ZDateMode.dateTime;
+  }
 
   @override
   Widget build(BuildContext context) {
     final resolvedLabel =
         label(context, field.label ?? field.name, fallback: field.label ?? field.name);
     final current = value is String ? value! as String : '';
+    final placeholderKey = switch (_mode) {
+      ZDateMode.time => 'selectTime',
+      ZDateMode.dateTime => 'selectDateTime',
+      ZDateMode.date => 'selectDate',
+    };
+    // Repli défensif (AC10) : `selectDateTime` absent ⇒ retombe sur `selectDate`.
     final placeholder =
-        label(context, _isTime ? 'selectTime' : 'selectDate');
+        label(context, placeholderKey, fallback: label(context, 'selectDate'));
     final display = current.isEmpty ? placeholder : current;
 
     // UN SEUL nœud sémantique cohérent (L-1) : le wrapper porte rôle bouton +
@@ -76,7 +108,8 @@ class ZDateFieldWidget extends StatelessWidget {
   }
 
   Future<void> _pick(BuildContext context, String current) async {
-    if (_isTime) {
+    // --- Heure seule (comportement historique strictement préservé, AC7) ---
+    if (_mode == ZDateMode.time) {
       final initial = _parseTime(current) ?? TimeOfDay.now();
       final picked =
           await showTimePicker(context: context, initialTime: initial);
@@ -87,14 +120,55 @@ class ZDateFieldWidget extends StatelessWidget {
       }
       return;
     }
-    final initial = DateTime.tryParse(current) ?? DateTime.now();
-    final picked = await showDatePicker(
+
+    // --- Étape date (mode `date` ET `dateTime`), bornée (B12/AC4/AC8) ---
+    final currentDt = DateTime.tryParse(current);
+    // Bornes résolues (littéral > cross-champ, via résolveurs) puis repli.
+    var first = firstDate?.call() ?? DateTime(1900);
+    var last = lastDate?.call() ?? DateTime(2100);
+    // Défensif (AC8) : `firstDate > lastDate` déclencherait l'assertion Material
+    // ⇒ replier la borne basse sur la borne haute.
+    if (first.isAfter(last)) first = last;
+    // Date initiale = valeur courante sinon maintenant, clampée dans l'intervalle
+    // (parité DODLP `edition_screen.dart:3600` — jamais d'`initialDate` hors bornes).
+    var initialDate = currentDt ?? DateTime.now();
+    if (initialDate.isBefore(first)) initialDate = first;
+    if (initialDate.isAfter(last)) initialDate = last;
+
+    if (!context.mounted) return;
+    final pickedDate = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
+      initialDate: initialDate,
+      firstDate: first,
+      lastDate: last,
     );
-    if (picked != null) onChanged(picked.toIso8601String());
+    // Annulation de l'étape date ⇒ abandon complet (aucun `onChanged`).
+    if (pickedDate == null) return;
+
+    // Mode `date` seul ⇒ date à minuit, pas d'heure demandée (AC7).
+    if (_mode == ZDateMode.date) {
+      onChanged(pickedDate.toIso8601String());
+      return;
+    }
+
+    // --- Étape heure (mode `dateTime` combiné, B13/AC6) ---
+    // Heure préexistante conservée si présente, sinon minuit.
+    final preexistingTime =
+        currentDt != null ? TimeOfDay.fromDateTime(currentDt) : const TimeOfDay(hour: 0, minute: 0);
+    if (!context.mounted) return;
+    final pickedTime =
+        await showTimePicker(context: context, initialTime: preexistingTime);
+    // Annulation de l'étape heure ⇒ conserver la date choisie AVEC l'heure
+    // préexistante (jamais écrasée à minuit par erreur).
+    final effectiveTime = pickedTime ?? preexistingTime;
+    final combined = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      effectiveTime.hour,
+      effectiveTime.minute,
+    );
+    onChanged(combined.toIso8601String());
   }
 
   /// Parse une heure `HH:mm` en `TimeOfDay`, ou `null`.

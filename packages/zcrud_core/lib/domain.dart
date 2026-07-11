@@ -41,6 +41,7 @@ export 'src/domain/edition/z_condition_evaluator.dart';
 export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
+export 'src/domain/edition/z_field_size.dart';
 export 'src/domain/edition/z_field_spec.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
 export 'src/domain/edition/z_validator_spec.dart';
@@ -52,6 +53,10 @@ export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
 // Ports bas-niveau offline-first (E5-2) : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
+// Port neutre + registre de source dynamique du champ `relation` (DP-5, gap B7,
+// AD-1/AD-4/AD-5) : `ZRelationSource` (flux `List<ZFieldChoice>` nu, impl hors
+// cœur) + `ZRelationSourceRegistry` (instanciable, injecté via `ZcrudScope`).
+export 'src/domain/ports/z_relation_source.dart';
 export 'src/domain/ports/z_remote_store.dart';
 export 'src/domain/ports/z_repository.dart';
 // Sur-port synchronisable (E5-3) : `ZSyncableRepository<T>`.

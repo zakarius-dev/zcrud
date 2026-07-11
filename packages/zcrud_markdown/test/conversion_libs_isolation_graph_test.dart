@@ -16,7 +16,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Libs de conversion à isoler (directes + transitives éventuelles).
-const _conversionLibs = <String>['markdown_quill', 'markdown'];
+///
+/// DP-4 : ajout des libs de conversion **HTML** du `ZHtmlCodec`
+/// (`vsc_quill_delta_to_html` Delta→HTML, `flutter_quill_delta_from_html`
+/// HTML→Delta) — mêmes garanties d'isolation AD-1 que Markdown.
+const _conversionLibs = <String>[
+  'markdown_quill',
+  'markdown',
+  'vsc_quill_delta_to_html',
+  'flutter_quill_delta_from_html',
+];
 
 Directory _packagesDir() {
   for (final base in <String>['packages', '../../packages', '../packages']) {
@@ -161,6 +170,13 @@ void main() {
     expect(closure.contains('markdown_quill'), isTrue,
         reason: 'FAUX VERT si zcrud_markdown ne tirait pas markdown_quill. '
             'Fermeture: $closure');
+    // DP-4 : les libs de conversion HTML sont AUSSI des deps DIRECTES.
+    expect(closure.contains('vsc_quill_delta_to_html'), isTrue,
+        reason: 'FAUX VERT si zcrud_markdown ne tirait pas '
+            'vsc_quill_delta_to_html. Fermeture: $closure');
+    expect(closure.contains('flutter_quill_delta_from_html'), isTrue,
+        reason: 'FAUX VERT si zcrud_markdown ne tirait pas '
+            'flutter_quill_delta_from_html. Fermeture: $closure');
     if (usingResolved) {
       // `markdown` est tiré transitivement (par markdown_quill) : sa présence
       // dans la fermeture RÉSOLUE prouve le parcours des transitives externes.

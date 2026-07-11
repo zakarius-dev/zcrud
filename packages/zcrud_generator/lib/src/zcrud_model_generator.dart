@@ -88,7 +88,9 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
-      ..writeln(_emitRegister(className, kind, fields));
+      ..writeln(_emitRegister(className, kind, fields))
+      ..writeln()
+      ..writeln(_emitTimestampFields(className, fields));
 
     // Deux fragments : les helpers PARTAGÉS (dédupliqués par source_gen quand
     // plusieurs modèles vivent dans la même bibliothèque) + le code du modèle.
@@ -151,6 +153,14 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final annoMultiple =
         reader != null && reader.read('multiple').boolValue;
 
+    // Hint B14 : lecture STATIQUE de `persistAs` (revive accessor == 'timestamp')
+    // — jamais d'exécution/`reflectable`. Absent/`iso8601` ⇒ `false` (aucun champ
+    // collecté dans `$XxxTimestampFields`).
+    final persistAsTimestamp = reader != null &&
+        !reader.read('persistAs').isNull &&
+        reader.read('persistAs').revive().accessor.split('.').last ==
+            'timestamp';
+
     return _Field(
       dartName: dartName,
       key: key,
@@ -162,6 +172,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       isId: isId,
       fieldType: resolvedType,
       multiple: annoMultiple || category.isCollection,
+      persistAsTimestamp: persistAsTimestamp,
     );
   }
 
@@ -415,6 +426,34 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   // --------------------------------------------------------------------------
+  // Émission — artefact NEUTRE des clés persistées en Timestamp (gap B14).
+  // --------------------------------------------------------------------------
+
+  /// Émet `const Set<String> $XxxTimestampFields = <String>{ 'key', ... };`
+  /// listant les **clés persistées** (mêmes `f.key` que `toMap`/`_emitSpec`) des
+  /// champs `@ZcrudField(persistAs: ZPersistAs.timestamp)`.
+  ///
+  /// **Métadonnée neutre pur-Dart (AD-5)** : littéraux `String` uniquement —
+  /// aucun type `zcrud_core` ni `cloud_firestore`. `zcrud_firestore` la consomme
+  /// via un `Set<String>` nu (le hint ne transite PAS par `ZFieldSpec`/registre
+  /// pour éviter de toucher `zcrud_core`). Aucun champ hinté ⇒ `const <String>{}`.
+  String _emitTimestampFields(String className, List<_Field> fields) {
+    final keys = fields
+        .where((f) => f.persistAsTimestamp)
+        .map((f) => "'${f.key}'")
+        .toList();
+    final body = keys.isEmpty ? '<String>{}' : '<String>{\n  ${keys.join(',\n  ')},\n}';
+    return '/// Clés persistées à encoder en `Timestamp` Firestore natif '
+        '(gap B14, AD-5).\n'
+        '///\n'
+        '/// Métadonnée NEUTRE (littéraux `String`) : à passer au param '
+        '`timestampFields`\n'
+        '/// de `FirebaseZRepositoryImpl` — `Timestamp` reste confiné à '
+        '`zcrud_firestore`.\n'
+        'const Set<String> \$${className}TimestampFields = $body;';
+  }
+
+  // --------------------------------------------------------------------------
   // Reconstruction de littéraux `const` depuis les annotations (ConstantReader).
   // --------------------------------------------------------------------------
 
@@ -606,6 +645,7 @@ class _Field {
     required this.isId,
     required this.fieldType,
     required this.multiple,
+    required this.persistAsTimestamp,
   });
 
   final String dartName;
@@ -618,4 +658,8 @@ class _Field {
   final bool isId;
   final String fieldType;
   final bool multiple;
+
+  /// Hint B14 : le champ doit être persisté en `Timestamp` natif côté Firestore
+  /// (clé collectée dans `$XxxTimestampFields`). Défaut `false` (ISO-8601).
+  final bool persistAsTimestamp;
 }

@@ -11,6 +11,7 @@ library;
 // `EditionFieldType` + types-valeur via l'unique arête AD-1
 // `zcrud_annotations → zcrud_core` (cœur OUT=0). Ordre alphabétique
 // (directives_ordering).
+export 'src/domain/annotations/z_persist_as.dart';
 export 'src/domain/annotations/zcrud_field.dart';
 export 'src/domain/annotations/zcrud_id.dart';
 export 'src/domain/annotations/zcrud_model.dart';

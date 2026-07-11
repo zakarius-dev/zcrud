@@ -225,6 +225,55 @@ class FileFieldConfig extends ZFieldConfig {
       );
 }
 
+/// Config du champ **relation** (`relation`, ex-`crudDataSelect` DODLP — gap
+/// B7, DP-5). Pur-données `const` : elle porte SEULEMENT la **clé de source**
+/// dynamique (résolue au runtime dans `ZRelationSourceRegistry`), les **clés de
+/// champ** formant le filtre cross-champ, et l'activation du modal de recherche.
+///
+/// **const-safe (AD-3)** : aucune closure/`Stream`/`Function` (non émissibles
+/// par `ConstantReader`) — la source réelle (repository/flux + filtre métier)
+/// vit hors du cœur (binding/app), résolue par [sourceKey] au runtime. La
+/// **multiplicité** single/multiple s'appuie sur `ZFieldSpec.multiple` (source
+/// unique — jamais dupliquée ici).
+///
+/// Rétro-compat : un `ZFieldSpec(type: relation)` **sans** cette config (ou avec
+/// [sourceKey] `null`) conserve exactement le dropdown statique sur `choices`.
+class ZRelationConfig extends ZFieldConfig {
+  /// Construit une config relation `const`.
+  const ZRelationConfig({
+    this.sourceKey,
+    this.filterKeys = const <String>[],
+    this.searchable = false,
+  });
+
+  /// Clé de résolution de la source dynamique dans `ZRelationSourceRegistry`
+  /// (`null` ⇒ pas de source dynamique ⇒ repli statique sur `choices`).
+  final String? sourceKey;
+
+  /// Clés des champs formant le `filterContext` cross-champ passé à
+  /// `ZRelationSource.options(...)` (équivalent `ressourceFilter`). Vide ⇒
+  /// aucun filtre cross-champ (source non filtrée). L'abonnement à ces tranches
+  /// est **ciblé** (SM-1) — jamais un canal global.
+  final List<String> filterKeys;
+
+  /// Active le modal de recherche (filtrage **client** sur les libellés). `false`
+  /// ⇒ sélection légère (dropdown en mono).
+  final bool searchable;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZRelationConfig &&
+          runtimeType == other.runtimeType &&
+          sourceKey == other.sourceKey &&
+          searchable == other.searchable &&
+          _listEquals(filterKeys, other.filterKeys);
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, sourceKey, searchable, Object.hashAll(filterKeys));
+}
+
 /// Égalité **profonde** de deux listes (pur-Dart — évite `package:collection`,
 /// AD-1 out-degree 0).
 bool _listEquals<T>(List<T> a, List<T> b) {
@@ -236,20 +285,58 @@ bool _listEquals<T>(List<T> a, List<T> b) {
   return true;
 }
 
+/// Mode d'édition d'un champ **date/heure** (parité du sous-type DODLP
+/// `InputType.date`/`time`/`both`, orthogonal à `EditionFieldType`) — valeurs
+/// **camelCase** (canonique §5). Neutre, pur-Dart, **non persisté** (porté par
+/// la config `const`, jamais sérialisé) : la discipline `@JsonKey(unknownEnumValue:)`
+/// ne s'applique pas ici (DP-10, D2).
+enum ZDateMode {
+  /// Date seule (picker de date ; valeur à minuit).
+  date,
+
+  /// Date **et** heure combinées (picker date puis heure — fix B13).
+  dateTime,
+
+  /// Heure seule (picker d'heure ; valeur `HH:mm`).
+  time,
+}
+
 /// Config triviale pur-cœur des champs **date/heure** (`dateTime`/`time`).
 ///
-/// origine: `firstDateKey`/`lastDateKey` DODLP. Les bornes sont exprimées comme
-/// **clés d'autres champs** (neutres) ; aucune valeur `DateTime` littérale ne
-/// vit dans l'annotation `const`.
+/// origine: `firstDateKey`/`lastDateKey` **+ `minDate`/`maxDate`** DODLP
+/// (`models.dart:643-647`). Les bornes s'expriment soit comme **clés d'autres
+/// champs** ([firstDateKey]/[lastDateKey], résolution cross-champ), soit comme
+/// **littéraux ISO-8601** ([minDateIso]/[maxDateIso]).
+///
+/// **const-safe (D1)** : les bornes littérales sont des `String?` ISO-8601 (et
+/// **non** des `DateTime`, qui n'ont pas de constructeur `const`) ⇒ la config
+/// reste `const` et pur-données dans une annotation `@ZcrudField.config`. Le
+/// parsing est **défensif** au runtime (AD-10 : ISO invalide ⇒ borne ignorée).
 class ZDateConfig extends ZFieldConfig {
   /// Construit une config date `const`.
-  const ZDateConfig({this.firstDateKey, this.lastDateKey});
+  const ZDateConfig({
+    this.firstDateKey,
+    this.lastDateKey,
+    this.minDateIso,
+    this.maxDateIso,
+    this.mode,
+  });
 
-  /// Clé d'un autre champ fixant la date minimale sélectionnable.
+  /// Clé d'un autre champ fixant la date minimale sélectionnable (cross-champ).
   final String? firstDateKey;
 
-  /// Clé d'un autre champ fixant la date maximale sélectionnable.
+  /// Clé d'un autre champ fixant la date maximale sélectionnable (cross-champ).
   final String? lastDateKey;
+
+  /// Borne minimale **littérale** ISO-8601 (prime sur [firstDateKey], D4).
+  final String? minDateIso;
+
+  /// Borne maximale **littérale** ISO-8601 (prime sur [lastDateKey], D4).
+  final String? maxDateIso;
+
+  /// Mode d'édition explicite (`date`/`dateTime`/`time`). `null` ⇒ dérivé du
+  /// type du champ (`time` → time ; sinon → `dateTime` combiné).
+  final ZDateMode? mode;
 
   @override
   bool operator ==(Object other) =>
@@ -257,8 +344,18 @@ class ZDateConfig extends ZFieldConfig {
       other is ZDateConfig &&
           runtimeType == other.runtimeType &&
           firstDateKey == other.firstDateKey &&
-          lastDateKey == other.lastDateKey;
+          lastDateKey == other.lastDateKey &&
+          minDateIso == other.minDateIso &&
+          maxDateIso == other.maxDateIso &&
+          mode == other.mode;
 
   @override
-  int get hashCode => Object.hash(runtimeType, firstDateKey, lastDateKey);
+  int get hashCode => Object.hash(
+        runtimeType,
+        firstDateKey,
+        lastDateKey,
+        minDateIso,
+        maxDateIso,
+        mode,
+      );
 }

@@ -232,6 +232,59 @@ void main() {
       expect(c, isA<ZFieldConfig>());
       expect(c.firstDateKey, 'from');
       expect(c.lastDateKey, 'to');
+      // Rétro-compat : les nouveaux champs sont `null` par défaut (DP-10 AC1).
+      expect(c.minDateIso, isNull);
+      expect(c.maxDateIso, isNull);
+      expect(c.mode, isNull);
+    });
+
+    test('ZDateConfig enrichi (bornes littérales + mode) — const-safe (AC1)', () {
+      const c = ZDateConfig(
+        firstDateKey: 'from',
+        lastDateKey: 'to',
+        minDateIso: '2020-01-01T00:00:00.000',
+        maxDateIso: '2030-12-31T00:00:00.000',
+        mode: ZDateMode.dateTime,
+      );
+      expect(c, isA<ZFieldConfig>());
+      expect(c.minDateIso, '2020-01-01T00:00:00.000');
+      expect(c.maxDateIso, '2030-12-31T00:00:00.000');
+      expect(c.mode, ZDateMode.dateTime);
+    });
+
+    test('ZDateConfig == / hashCode intègrent les 5 champs (AC1)', () {
+      const a = ZDateConfig(
+        minDateIso: '2020-01-01',
+        maxDateIso: '2030-01-01',
+        mode: ZDateMode.date,
+      );
+      const b = ZDateConfig(
+        minDateIso: '2020-01-01',
+        maxDateIso: '2030-01-01',
+        mode: ZDateMode.date,
+      );
+      const diffMode = ZDateConfig(
+        minDateIso: '2020-01-01',
+        maxDateIso: '2030-01-01',
+        mode: ZDateMode.time,
+      );
+      const diffMin = ZDateConfig(
+        minDateIso: '2021-01-01',
+        maxDateIso: '2030-01-01',
+        mode: ZDateMode.date,
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+      expect(a, isNot(equals(diffMode)));
+      expect(a, isNot(equals(diffMin)));
+    });
+
+    test('ZDateMode — valeurs camelCase canoniques (AC2)', () {
+      expect(ZDateMode.values,
+          <ZDateMode>[ZDateMode.date, ZDateMode.dateTime, ZDateMode.time]);
+      expect(ZDateMode.date.name, 'date');
+      expect(ZDateMode.dateTime.name, 'dateTime');
+      expect(ZDateMode.time.name, 'time');
     });
   });
 }

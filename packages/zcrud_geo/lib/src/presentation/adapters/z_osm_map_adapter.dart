@@ -20,6 +20,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/z_geo_circle.dart';
+import '../../domain/z_geo_map_options.dart';
 import '../../domain/z_geo_point.dart';
 import '../../domain/z_geo_shape.dart';
 import '../z_map_adapter.dart';
@@ -66,6 +67,11 @@ class ZOsmMapAdapter implements ZMapAdapter {
     String? tileUrlTemplate,
     String? mapStyleJson, // ignoré (spécifique Google) — OSM n'a pas de style JSON
     double? defaultZoom,
+    // DP-7 : `flutter_map` (tuiles raster OSM) n'expose ni type satellite/hybride
+    // ni trafic/bâtiments/indoor/boussole natifs → `mapOptions` est **ignoré**
+    // ici (contrat « honoré-si-supporté, ignore le reste »). Le paramètre est
+    // accepté pour l'uniformité du port ; un adaptateur raster ne le honore pas.
+    ZGeoMapOptions? mapOptions,
   }) {
     // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
     final String effectiveTiles = tileUrlTemplate ?? this.tileUrlTemplate;

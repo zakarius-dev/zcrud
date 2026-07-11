@@ -156,6 +156,24 @@ graph TD
 
 ---
 
+## E-DP — Parité migration DODLP (post-v1.x)
+**Objectif :** rendre la migration de DODLP sur zcrud **structurellement fidèle** (rien ne devient structurellement différent). **Source de vérité détaillée (comportements DODLP réels + gaps + actions) :** `docs/dodlp-edition-parity-gap.md` (matrice ≈117 features : 14 bloquants, ~24 majeurs). **Couvre :** parité UJ-1/UJ-2/SM-2. **Dépend de :** E2, E3, E6, E11a/E11b (moteur d'édition + markdown + geo/intl livrés) · **Phase :** post-v1.x.
+
+Stories bloquantes (ordre du rapport B1→B14, regroupées) :
+- **DP-1. Layout & décoration de formulaire.** `ZFieldSize {normal, large}` sur `ZFieldSpec` + rendu variante Card (label au-dessus, minHeight 64, leading/suffix) ; câbler `ZTextConfig.minLines/maxLines` ; étendre `ZcrudTheme` avec les tokens de décoration **non-couleur** (OutlineInputBorder radius 12, focusedBorder width 2, contentPadding 16/16, filled, helperMaxLines, floatingLabel bold, styles texte) + fabrique centrale `inputDecoration`, overridable par l'app. [B1+B2+M2, zcrud_core]
+- **DP-2. `displayCondition` étendu.** `ZCondition` avec contexte externe (crud/mode), prédicats de forme/liste, item persisté distinct de l'état. [B3, zcrud_core]
+- **DP-3. Rich-text : lecture seule + modes.** `ZMarkdownField` honore `readOnly` (reader léger) + distinction `markdown` (bloc, dialog plein-écran) vs `inlineMarkdown` (compact) + toggle. [B4+B6, zcrud_markdown]
+- **DP-4. Champ HTML + `ZHtmlCodec`.** WYSIWYG HTML (ou mapping documenté) pour le type `html`. [B5, zcrud_markdown ou nouveau zcrud_html]
+- **DP-5. Relation dynamique `crudDataSelect`.** Port `ZRelationSource` (stream + filtre cross-champ) via binding + multi/modal. [B7, zcrud_core + binding]
+- **DP-6. `subItems` mode compact + dialog.** Liste résumé + dialog d'édition par item + ACL par action. [B8, zcrud_core]
+- **DP-7. Barre d'outils éditeur geo.** `ZGeoEditorToolbarConfig` (toggles/presets). [B9, zcrud_geo]
+- **DP-8. Adresse String + Places.** `ZAddressCodec` (compat schéma String) + seam `ZPlaceSearchProvider`. [B10, zcrud_intl]
+- **DP-9. `StepperConfig` + steppers imbriqués.** Style/orientation/icônes/subtitles sur `ZEditionStep` + nesting. [B11, zcrud_core]
+- **DP-10. Dates : bornes + `dateTime`.** Câbler `firstDateKey/lastDateKey` + `minDate/maxDate` ; picker combiné date+heure pour `dateTime`. [B12+B13, zcrud_core]
+- **DP-11. Hint de persistance `timestamp`.** `@ZcrudField(persistAs: timestamp)` consommé par `zcrud_firestore` (AD-5 préservé). [B14, zcrud_annotations/generator + zcrud_firestore]
+
+Puis **DP-12+** : lot des ~24 majeurs (M1..M20, cf. rapport §3).
+
 ## Notes de séquencement
 
 - **Chemin critique MVP :** E1 → E2 → (E3 ∥ E4 ∥ E5 ∥ E6 ∥ E11a) → E7 → E8.

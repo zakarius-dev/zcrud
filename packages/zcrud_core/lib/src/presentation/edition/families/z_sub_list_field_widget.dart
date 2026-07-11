@@ -34,12 +34,21 @@
 /// a11y/RTL (AD-13) : boutons add/remove/monter/descendre = `IconButton`
 /// (cibles ≥ 48 dp) + `Semantics`/tooltips ; insets **directionnels** ; aucune
 /// couleur codée en dur (bordure dérivée du `ZcrudTheme` — FR-26).
+///
+/// **DP-6 (parité DODLP, gap B8)** — mode **compact** additif : lorsque
+/// `config.displayMode == ZSubListDisplayMode.compact`, le widget rend une
+/// **liste résumé** (une ligne/valeurs de résumé par item, jamais les sous-champs
+/// éditables inline) + un **dialog d'édition PAR ITEM** (ajouter/consulter/
+/// modifier/supprimer), chaque action **filtrée par `ZAcl`**. Le mode `inline`
+/// (défaut) est **strictement préservé**. SM-1 dans le dialog : `ZFormController`
+/// PROPRE, `ZFieldWidget` réutilisé, aucun `Form` global.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/edition/z_sub_list_config.dart';
+import '../../../domain/ports/z_acl.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
@@ -57,15 +66,30 @@ typedef ZSubItemFieldBuilder = Widget Function(
   String itemId,
 );
 
+/// Seam de **présentation** (DP-6, AC12) : dérive un **titre/résumé** lisible
+/// d'un item (`Map`) — titre du dialog d'édition et repli de résumé de ligne en
+/// mode compact. Équivalent présentation de l'`itemTitleBuilder` DODLP. Vit en
+/// couche widget (JAMAIS dans la config domaine — garde `domain_purity_test`).
+typedef ZSubItemTitleBuilder = String Function(Map<String, dynamic> item);
+
 /// Champ d'édition d'une **sous-liste** d'items (`List<Map>` en tranche parente).
 class ZSubListFieldWidget extends StatefulWidget {
   /// Construit le champ sous-liste pour [field], valeur initiale [initialValue]
   /// (`List<Map>` ou `null`), agrégeant vers la tranche parente via [onChanged].
+  ///
+  /// DP-6 (additifs, rétro-compat) : [acl] filtre les actions du mode compact
+  /// (défaut `const ZAllowAllAcl()` = permissif → zéro régression) ;
+  /// [collectionId] est transmis à `ZAcl.can(..., collectionId:)` ;
+  /// [itemTitleBuilder] dérive le titre du dialog / résumé de ligne. Ces
+  /// paramètres sont **ignorés** en mode `inline` (comportement E3-3b-2 inchangé).
   const ZSubListFieldWidget({
     required this.field,
     required this.initialValue,
     required this.onChanged,
     this.itemFieldBuilder,
+    this.acl = const ZAllowAllAcl(),
+    this.collectionId,
+    this.itemTitleBuilder,
     super.key,
   });
 
@@ -84,6 +108,17 @@ class ZSubListFieldWidget extends StatefulWidget {
   /// Seam de test (voir [ZSubItemFieldBuilder]) ; `null` en production.
   @visibleForTesting
   final ZSubItemFieldBuilder? itemFieldBuilder;
+
+  /// Port d'autorisation (DP-6) consommé **uniquement** en mode compact pour
+  /// filtrer add/view/edit/delete. Défaut permissif (`const ZAllowAllAcl()`).
+  final ZAcl acl;
+
+  /// Discriminant de collection transmis à [ZAcl.can] (DP-6). `null` par défaut.
+  final String? collectionId;
+
+  /// Seam de titre d'item (DP-6, AC12), mode compact. `null` → titre dérivé des
+  /// `summaryFields`/champs + libellé du champ.
+  final ZSubItemTitleBuilder? itemTitleBuilder;
 
   @override
   State<ZSubListFieldWidget> createState() => _ZSubListFieldWidgetState();
@@ -130,6 +165,20 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   bool get _reorderable {
     final config = widget.field.config;
     return config is ZSubListConfig ? config.reorderable : true;
+  }
+
+  /// Mode de rendu (DP-6) — `inline` (défaut) si config absente/non conforme.
+  ZSubListDisplayMode get _displayMode {
+    final config = widget.field.config;
+    return config is ZSubListConfig
+        ? config.displayMode
+        : ZSubListDisplayMode.inline;
+  }
+
+  /// Champs résumé du mode compact (DP-6) — vide si config absente/non conforme.
+  List<String> get _summaryFields {
+    final config = widget.field.config;
+    return config is ZSubListConfig ? config.summaryFields : const <String>[];
   }
 
   /// Lecture **défensive** de la liste courante (`null`/type inattendu → `[]`).
@@ -218,6 +267,16 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // DP-6 : dispatch par mode de rendu, décidé UNE FOIS au build du conteneur
+    // (l'édition compacte vit dans le dialog → pas de rebuild par frappe).
+    if (_displayMode == ZSubListDisplayMode.compact) {
+      return _buildCompact(context);
+    }
+    return _buildInline(context);
+  }
+
+  /// Rendu **inline** historique (E3-3b-2) — STRICTEMENT préservé (AC4/AC19).
+  Widget _buildInline(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final resolvedLabel = label(
       context,
@@ -281,6 +340,406 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
             ),
         ],
       ),
+    );
+  }
+
+  // ── DP-6 : mode compact (liste résumé + dialog par item) ──────────────────
+
+  /// Représentation textuelle stable d'une valeur (`null`/vide → `''`, AD-10).
+  static String _stringOf(Object? value) => value == null ? '' : '$value';
+
+  /// Snapshot `Map` des valeurs courantes d'un item (lecture des tranches).
+  Map<String, dynamic> _itemData(_SubItem item) => <String, dynamic>{
+        for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
+      };
+
+  /// Applique **défensivement** le seam de titre (AD-10 : un builder hôte qui
+  /// throw ne fait jamais échouer le parent → repli `null`).
+  String? _safeTitle(ZSubItemTitleBuilder builder, Map<String, dynamic> data) {
+    try {
+      return builder(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Titre de résumé d'une ligne quand aucun `summaryFields` (AC8/AC12) :
+  /// `itemTitleBuilder` s'il est fourni, sinon **concaténation lisible** des
+  /// valeurs non nulles des `itemFields` (jamais un déballage éditable).
+  String _defaultTitle(_SubItem item) {
+    final data = _itemData(item);
+    final builder = widget.itemTitleBuilder;
+    if (builder != null) {
+      final t = _safeTitle(builder, data);
+      if (t != null && t.isNotEmpty) return t;
+    }
+    return <String>[
+      for (final f in _itemFields)
+        if (data[f.name] != null && _stringOf(data[f.name]).isNotEmpty)
+          _stringOf(data[f.name]),
+    ].join(' — ');
+  }
+
+  /// Titre du dialog d'édition (AC12) : `itemTitleBuilder(data)` s'il est fourni
+  /// et non vide, sinon le libellé du champ.
+  String _dialogTitle(BuildContext context, Map<String, dynamic> data) {
+    final builder = widget.itemTitleBuilder;
+    if (builder != null) {
+      final t = _safeTitle(builder, data);
+      if (t != null && t.isNotEmpty) return t;
+    }
+    return label(
+      context,
+      widget.field.label ?? widget.field.name,
+      fallback: widget.field.label ?? widget.field.name,
+    );
+  }
+
+  /// Contenu résumé d'une ligne (mode compact) : les `summaryFields` en lecture
+  /// (défilement horizontal encapsulé — AC6a) ou le titre dérivé (AC8).
+  Widget _summaryCells(_SubItem item) {
+    final summaryFields = _summaryFields;
+    if (summaryFields.isNotEmpty) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: <Widget>[
+            for (final name in summaryFields)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
+                child: Text(
+                  _stringOf(item.controller.valueOf(name)),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+    return Text(
+      _defaultTitle(item),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.start,
+    );
+  }
+
+  /// Ouvre le dialog d'édition d'un item. `initial` amorce le `ZFormController`
+  /// propre du dialog ; retourne le `Map` agrégé à la validation, `null` à
+  /// l'annulation/consultation.
+  Future<Map<String, dynamic>?> _showItemDialog(
+    Map<String, dynamic> initial, {
+    required bool readOnly,
+  }) {
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (dialogContext) => _ZSubItemEditDialog(
+        title: _dialogTitle(dialogContext, initial),
+        itemFields: _itemFields,
+        initial: initial,
+        readOnly: readOnly,
+        itemFieldBuilder: widget.itemFieldBuilder,
+      ),
+    );
+  }
+
+  /// AC9 : ajout via dialog (item vide → **append** à la validation).
+  Future<void> _openAddDialog() async {
+    final result = await _showItemDialog(const <String, dynamic>{}, readOnly: false);
+    if (!mounted || result == null) return;
+    setState(() => _items.add(_makeItem(result)));
+    _syncToParent();
+  }
+
+  /// AC10 : édition via dialog (remplace **à sa place** — identité stable
+  /// conservée en réécrivant les tranches du contrôleur de l'item).
+  Future<void> _openEditDialog(_SubItem item) async {
+    final result = await _showItemDialog(_itemData(item), readOnly: false);
+    if (!mounted || result == null) return;
+    for (final f in _itemFields) {
+      item.controller.setValue(f.name, result[f.name]);
+    }
+    setState(() {});
+    _syncToParent();
+  }
+
+  /// AC11 : consultation (dialog `readOnly`, sans Enregistrer).
+  Future<void> _openViewDialog(_SubItem item) async {
+    await _showItemDialog(_itemData(item), readOnly: true);
+  }
+
+  /// AC13 : suppression avec **dialog de confirmation** puis retrait.
+  Future<void> _confirmDelete(_SubItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        content: Text(label(dialogContext, 'confirmDeleteItem')),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(label(dialogContext, 'cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(label(dialogContext, 'delete')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    final index = _items.indexOf(item);
+    if (index >= 0) _removeAt(index);
+  }
+
+  /// Rendu **compact** (DP-6) : en-tête + liste résumé keyée + actions gated ACL.
+  Widget _buildCompact(BuildContext context) {
+    final theme = ZcrudTheme.of(context);
+    final resolvedLabel = label(
+      context,
+      widget.field.label ?? widget.field.name,
+      fallback: widget.field.label ?? widget.field.name,
+    );
+    final readOnly = widget.field.readOnly;
+    final cid = widget.collectionId;
+    final canCreate =
+        !readOnly && widget.acl.can(ZCrudAction.create, collectionId: cid);
+    final canView = widget.acl.can(ZCrudAction.view, collectionId: cid);
+    final canUpdate =
+        !readOnly && widget.acl.can(ZCrudAction.update, collectionId: cid);
+    final canDelete =
+        !readOnly && widget.acl.can(ZCrudAction.delete, collectionId: cid);
+
+    return Semantics(
+      container: true,
+      label: resolvedLabel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    resolvedLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                if (canCreate)
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: label(context, 'addItem'),
+                    onPressed: _openAddDialog,
+                  ),
+              ],
+            ),
+          ),
+          if (_items.isEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
+              child: Text(
+                label(context, 'noItems'),
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.start,
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _items.length,
+              itemBuilder: (context, i) {
+                final item = _items[i];
+                return KeyedSubtree(
+                  key: ValueKey<String>(item.id),
+                  child: _CompactRow(
+                    borderColor: theme.fieldBorderColor,
+                    radius: theme.radiusM,
+                    summary: _summaryCells(item),
+                    canView: canView,
+                    canUpdate: canUpdate,
+                    canDelete: canDelete,
+                    viewLabel: label(context, 'viewItem'),
+                    editLabel: label(context, 'editItem'),
+                    deleteLabel: label(context, 'deleteItem'),
+                    onView: () => _openViewDialog(item),
+                    onEdit: () => _openEditDialog(item),
+                    onDelete: () => _confirmDelete(item),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ligne résumé d'un item en mode **compact** (DP-6) : résumé + actions de fin
+/// de ligne accessibles (`IconButton` ≥ 48 dp, tooltips l10n), gated ACL en
+/// amont (rendues conditionnellement). Bordure dérivée du thème (FR-26).
+class _CompactRow extends StatelessWidget {
+  const _CompactRow({
+    required this.borderColor,
+    required this.radius,
+    required this.summary,
+    required this.canView,
+    required this.canUpdate,
+    required this.canDelete,
+    required this.viewLabel,
+    required this.editLabel,
+    required this.deleteLabel,
+    required this.onView,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Color? borderColor;
+  final Radius radius;
+  final Widget summary;
+  final bool canView;
+  final bool canUpdate;
+  final bool canDelete;
+  final String viewLabel;
+  final String editLabel;
+  final String deleteLabel;
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: borderColor == null ? null : Border.all(color: borderColor!),
+          borderRadius: BorderRadius.all(radius),
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 4, 0),
+          child: Row(
+            children: <Widget>[
+              Expanded(child: summary),
+              if (canView)
+                IconButton(
+                  icon: const Icon(Icons.visibility),
+                  tooltip: viewLabel,
+                  onPressed: onView,
+                ),
+              if (canUpdate)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: editLabel,
+                  onPressed: onEdit,
+                ),
+              if (canDelete)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: deleteLabel,
+                  onPressed: onDelete,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dialog d'édition PAR ITEM (DP-6, AC10/AC11) — héberge un `ZFormController`
+/// **PROPRE** amorcé du `Map` de l'item et rend les sous-champs via le
+/// dispatcher `ZFieldWidget` (réutilisation intégrale d'E3). **Aucun `Form`
+/// global** (AD-2). Le contrôleur est `dispose` à la fermeture (aucune fuite).
+/// SM-1 : taper dans un sous-champ ne reconstruit QUE ce champ (`ZFieldWidget`/
+/// `ZFieldListenableBuilder`), jamais le dialog ni la liste résumé. En lecture
+/// (`readOnly`) : chaque spec `copyWith(readOnly: true)`, pas de bouton
+/// Enregistrer (seul **Fermer**).
+class _ZSubItemEditDialog extends StatefulWidget {
+  const _ZSubItemEditDialog({
+    required this.title,
+    required this.itemFields,
+    required this.initial,
+    required this.readOnly,
+    this.itemFieldBuilder,
+  });
+
+  final String title;
+  final List<ZFieldSpec> itemFields;
+  final Map<String, dynamic> initial;
+  final bool readOnly;
+  final ZSubItemFieldBuilder? itemFieldBuilder;
+
+  @override
+  State<_ZSubItemEditDialog> createState() => _ZSubItemEditDialogState();
+}
+
+class _ZSubItemEditDialogState extends State<_ZSubItemEditDialog> {
+  /// Contrôleur PROPRE au dialog (create/dispose) — jamais partagé avec le
+  /// conteneur : taper ici n'affecte le parent qu'à **Enregistrer**.
+  late final ZFormController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ZFormController(
+      initialValues: <String, Object?>{
+        for (final f in widget.itemFields) f.name: widget.initial[f.name],
+      },
+      visibleFields: <String>[for (final f in widget.itemFields) f.name],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildField(ZFieldSpec field) {
+    final spec = widget.readOnly ? field.copyWith(readOnly: true) : field;
+    final custom = widget.itemFieldBuilder;
+    if (custom != null) {
+      return custom(context, _controller, spec, 'dialog');
+    }
+    return ZFieldWidget(controller: _controller, field: spec);
+  }
+
+  void _save() {
+    Navigator.of(context).pop(<String, dynamic>{
+      for (final f in widget.itemFields) f.name: _controller.valueOf(f.name),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final f in widget.itemFields)
+              KeyedSubtree(
+                key: ValueKey<String>('dialog/${f.name}'),
+                child: _buildField(f),
+              ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(label(context, widget.readOnly ? 'close' : 'cancel')),
+        ),
+        if (!widget.readOnly)
+          TextButton(
+            onPressed: _save,
+            child: Text(label(context, 'save')),
+          ),
+      ],
     );
   }
 }

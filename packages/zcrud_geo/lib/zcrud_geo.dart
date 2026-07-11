@@ -15,7 +15,10 @@ library;
 
 export 'src/domain/z_geo_api.dart';
 export 'src/domain/z_geo_circle.dart';
+export 'src/domain/z_geo_editor_toolbar_config.dart'
+    show ZGeoEditorToolbarConfig;
 export 'src/domain/z_geo_field_config.dart' show ZGeoFieldConfig, ZGeoGeometry;
+export 'src/domain/z_geo_map_options.dart' show ZGeoMapOptions, ZGeoMapType;
 export 'src/domain/z_geo_point.dart';
 export 'src/domain/z_geo_shape.dart';
 export 'src/presentation/z_geo_field_widget.dart';

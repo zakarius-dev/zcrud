@@ -37,6 +37,17 @@ void main() {
       expect(f.showIfNull, isTrue);
       expect(f.name, isNull);
       expect(f.multiple, isFalse);
+      expect(f.persistAs, ZPersistAs.iso8601); // défaut B14 (rétro-compat)
+    });
+
+    test('persistAs porté (hint B14) — const', () {
+      const f = ZcrudField(persistAs: ZPersistAs.timestamp);
+      expect(f.persistAs, ZPersistAs.timestamp);
+      // Enum neutre : valeurs pur-Dart, défaut = iso8601.
+      expect(ZPersistAs.values, <ZPersistAs>[
+        ZPersistAs.iso8601,
+        ZPersistAs.timestamp,
+      ]);
     });
 
     test('const avec CHAQUE paramètre simultanément (couverture de surface)', () {
@@ -63,6 +74,7 @@ void main() {
         showIfNull: false,
         name: 'title_key',
         multiple: true,
+        persistAs: ZPersistAs.timestamp,
       );
 
       expect(f.label, 'field.title');
@@ -79,6 +91,7 @@ void main() {
       expect(f.showIfNull, isFalse);
       expect(f.name, 'title_key');
       expect(f.multiple, isTrue);
+      expect(f.persistAs, ZPersistAs.timestamp);
     });
   });
 

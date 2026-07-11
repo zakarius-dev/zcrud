@@ -1,5 +1,7 @@
 import 'package:zcrud_core/edition.dart';
 
+import 'z_persist_as.dart';
+
 /// Annotation de **champ d'instance** déclarant la surface d'autorité d'un
 /// champ du schéma `zcrud` : un même schéma pilote formulaire (`DynamicEdition`,
 /// E3) **et** liste (`DynamicList`, E4).
@@ -23,6 +25,14 @@ import 'package:zcrud_core/edition.dart';
 /// | [defaultValue] | `defaultValue` | E3/E2-5 (`fromMap` défaut) |
 /// | [readOnly] / [showIfNull] | idem | E3 (mode lecture) |
 /// | [multiple] | `multiple` | E3 (multi-select) |
+/// | [persistAs] | *(métadonnée neutre `Set<String>` séparée)* | `zcrud_firestore` (encode `Timestamp`) |
+///
+/// **Hint de persistance (`persistAs`, gap B14)** : contrairement aux autres
+/// paramètres, [persistAs] n'est **pas** projeté dans le `ZFieldSpec` mais dans
+/// un artefact généré **neutre** (`const Set<String> $XxxTimestampFields`) — un
+/// ensemble de clés persistées consommé par l'adaptateur Firestore pour encoder
+/// ces champs en `Timestamp` natif (AD-5 : `Timestamp` reste confiné à
+/// `zcrud_firestore`).
 ///
 /// **N'entre PAS dans l'annotation** (exige une closure/valeur runtime,
 /// illisible par `ConstantReader`) — **attaché au runtime** :
@@ -48,6 +58,7 @@ class ZcrudField {
     this.showIfNull = true,
     this.name,
     this.multiple = false,
+    this.persistAs = ZPersistAs.iso8601,
   });
 
   /// Libellé d'affichage (clé l10n ou littéral ; résolu côté UI en E3/E4).
@@ -91,4 +102,12 @@ class ZcrudField {
 
   /// Multi-sélection (`multiple=true` — inventaire §3).
   final bool multiple;
+
+  /// Hint de **format de persistance** d'un champ date (défaut
+  /// [ZPersistAs.iso8601]). Avec [ZPersistAs.timestamp], le générateur collecte
+  /// la clé persistée du champ dans l'artefact neutre `$XxxTimestampFields`
+  /// (`Set<String>`) que `zcrud_firestore` consomme pour encoder le champ en
+  /// `Timestamp` natif (gap B14, AD-5 préservé). Sans effet hors du chemin
+  /// Firestore distant.
+  final ZPersistAs persistAs;
 }

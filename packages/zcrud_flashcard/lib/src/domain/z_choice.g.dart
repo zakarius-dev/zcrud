@@ -113,3 +113,9 @@ void registerZChoice(ZcrudRegistry registry) => registry.register<ZChoice>(
   toMap: (value) => value.toMap(),
   fieldSpecs: $ZChoiceFieldSpecs,
 );
+
+/// Clés persistées à encoder en `Timestamp` Firestore natif (gap B14, AD-5).
+///
+/// Métadonnée NEUTRE (littéraux `String`) : à passer au param `timestampFields`
+/// de `FirebaseZRepositoryImpl` — `Timestamp` reste confiné à `zcrud_firestore`.
+const Set<String> $ZChoiceTimestampFields = <String>{};

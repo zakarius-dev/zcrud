@@ -20,6 +20,7 @@ import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../../theme/z_theme.dart';
 
 /// Champ d'édition à **choix** (liste déroulante / radios / cases).
 class ZSelectFieldWidget extends StatelessWidget {
@@ -29,6 +30,7 @@ class ZSelectFieldWidget extends StatelessWidget {
     required this.field,
     required this.value,
     required this.onChanged,
+    this.bare = false,
     super.key,
   });
 
@@ -40,6 +42,10 @@ class ZSelectFieldWidget extends StatelessWidget {
 
   /// Notifié avec la valeur sélectionnée (unique) ou la `List` (multi).
   final ValueChanged<Object?> onChanged;
+
+  /// Rendu **bare** (borderless, sans label) du dropdown pour le mode `large`
+  /// (AC4) : le décor est porté par la Card. Défaut `false`.
+  final bool bare;
 
   String _label(BuildContext context, String key) =>
       label(context, key, fallback: key);
@@ -70,7 +76,11 @@ class ZSelectFieldWidget extends StatelessWidget {
       // borné par `ZFieldListenableBuilder`).
       key: ValueKey<Object?>(current),
       initialValue: current,
-      decoration: InputDecoration(labelText: resolvedLabel),
+      decoration: ZcrudTheme.of(context).inputDecoration(
+        context,
+        label: bare ? null : resolvedLabel,
+        bare: bare,
+      ),
       items: <DropdownMenuItem<Object?>>[
         for (final choice in field.choices)
           DropdownMenuItem<Object?>(

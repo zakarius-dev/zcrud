@@ -37,6 +37,26 @@ const _bannedHeavyLibs = <String>[
   'world_countries',
 ];
 
+/// DP-8 (gap B10) : libs réseau/géocodage à NE PAS ajouter — le seam
+/// [ZPlaceSearchProvider] est **vide de tout réseau** (l'implémentation vit hors
+/// package, AD-12 : ZÉRO clé/endpoint/réseau dans `zcrud_intl`).
+const _bannedNetworkLibs = <String>[
+  'http',
+  'dio',
+  'google_maps_webservice',
+  'flutter_google_places',
+  'google_places_flutter',
+  'google_maps_flutter',
+  'geocoding',
+];
+
+/// DP-8 : fichiers domaine **pur-Dart** (codec + seam) — aucune lib lourde,
+/// aucun Flutter (AD-14).
+const _pureDartDomainFiles = <String>[
+  'z_address_codec.dart',
+  'z_place_search_provider.dart',
+];
+
 /// Lecture **cwd-robuste** : le gate doit passer que `flutter test` soit lancé à
 /// la racine du workspace OU dans le dossier du package.
 String _read(String path) {
@@ -163,6 +183,53 @@ void main() {
         expect(httpUrl.hasMatch(src), isFalse,
             reason: 'endpoint réseau en dur interdit (hors-ligne) dans '
                 '${e.path}');
+      }
+    });
+  });
+
+  group('DP-8 — seam recherche géo : ZÉRO clé/endpoint/réseau (AD-12)', () {
+    test('pubspec de zcrud_intl ne déclare AUCUNE lib réseau/géocodage', () {
+      final intl = _read('packages/zcrud_intl/pubspec.yaml');
+      for (final lib in _bannedNetworkLibs) {
+        expect(RegExp('^\\s+$lib:', multiLine: true).hasMatch(intl), isFalse,
+            reason: 'zcrud_intl ne doit PAS ajouter $lib (le seam est vide de '
+                'tout réseau — AD-12)');
+      }
+    });
+
+    test('aucun fichier lib/ n\'importe une lib réseau/géocodage', () {
+      for (final e in _dartFiles()) {
+        final src = _stripComments(e.readAsStringSync());
+        for (final lib in _bannedNetworkLibs) {
+          expect(src.contains('package:$lib/'), isFalse,
+              reason: 'import réseau interdit ($lib) dans ${e.path} — le seam '
+                  'DP-8 reste agnostique (AD-12)');
+        }
+      }
+    });
+
+    test('le barrel n\'expose AUCUNE lib réseau/géocodage', () {
+      final barrel = _read('packages/zcrud_intl/lib/zcrud_intl.dart');
+      for (final lib in _bannedNetworkLibs) {
+        expect(barrel.contains('package:$lib'), isFalse,
+            reason: 'le barrel ne doit pas exposer $lib (AD-1/AD-12)');
+      }
+    });
+
+    test('codec + seam sont pur-Dart (aucun Flutter, AD-14)', () {
+      for (final name in _pureDartDomainFiles) {
+        final matches =
+            _dartFiles().where((e) => e.path.endsWith(name)).toList();
+        expect(matches, hasLength(1),
+            reason: 'fichier domaine DP-8 manquant : $name');
+        final src = _stripComments(matches.single.readAsStringSync());
+        expect(src.contains('package:flutter/'), isFalse,
+            reason: '$name (couche domaine) ne doit importer AUCUN Flutter '
+                '(AD-14)');
+        for (final lib in <String>[..._bannedNetworkLibs, ..._bannedHeavyLibs]) {
+          expect(src.contains('package:$lib/'), isFalse,
+              reason: '$name ne doit importer aucune lib lourde ($lib)');
+        }
       }
     });
   });

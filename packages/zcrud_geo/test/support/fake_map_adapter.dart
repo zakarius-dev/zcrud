@@ -30,6 +30,10 @@ class FakeMapAdapter implements ZMapAdapter {
   String? lastMapStyleJson;
   double? lastDefaultZoom;
 
+  /// Dernières options de carte neutres reçues (DP-7 : preuve du plombage
+  /// barre d'outils → `buildMap`). `null` quand aucune barre d'outils.
+  ZGeoMapOptions? lastMapOptions;
+
   /// Clé de la surface carte fake.
   static const Key mapKey = Key('fake-map');
 
@@ -44,6 +48,7 @@ class FakeMapAdapter implements ZMapAdapter {
     String? tileUrlTemplate,
     String? mapStyleJson,
     double? defaultZoom,
+    ZGeoMapOptions? mapOptions,
   }) {
     buildCount++;
     lastCenter = center;
@@ -53,6 +58,7 @@ class FakeMapAdapter implements ZMapAdapter {
     lastTileUrlTemplate = tileUrlTemplate;
     lastMapStyleJson = mapStyleJson;
     lastDefaultZoom = defaultZoom;
+    lastMapOptions = mapOptions;
     sawOnTap = onTap != null;
     return GestureDetector(
       key: mapKey,

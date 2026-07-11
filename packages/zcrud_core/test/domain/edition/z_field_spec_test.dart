@@ -37,4 +37,38 @@ void main() {
     expect(a.hashCode, b.hashCode);
     expect(a, isNot(equals(c)));
   });
+
+  // ── DP-1 / B1 : ZFieldSpec.fieldSize (additif, rétro-compatible, AC1/AC2) ──
+
+  test('fieldSize : défaut = normal (rétro-compat AC2)', () {
+    const s = ZFieldSpec(name: 'x', type: EditionFieldType.text);
+    expect(s.fieldSize, ZFieldSize.normal);
+  });
+
+  test('fieldSize : copyWith(fieldSize: large) surcharge ciblée (AC2)', () {
+    const s = ZFieldSpec(name: 'x', type: EditionFieldType.text);
+    final large = s.copyWith(fieldSize: ZFieldSize.large);
+    expect(large.fieldSize, ZFieldSize.large);
+    // Identité de valeur préservée pour les autres champs.
+    expect(large.copyWith(fieldSize: ZFieldSize.normal), equals(s));
+  });
+
+  test('fieldSize : entre dans == / hashCode (AC2)', () {
+    const normal = ZFieldSpec(name: 'x', type: EditionFieldType.text);
+    const large = ZFieldSpec(
+      name: 'x',
+      type: EditionFieldType.text,
+      fieldSize: ZFieldSize.large,
+    );
+    expect(normal, isNot(equals(large)));
+    expect(normal.hashCode, isNot(large.hashCode));
+    // Rétro-compat : une spec sans fieldSize == une spec fieldSize: normal.
+    const explicitNormal = ZFieldSpec(
+      name: 'x',
+      type: EditionFieldType.text,
+      fieldSize: ZFieldSize.normal,
+    );
+    expect(normal, equals(explicitNormal));
+    expect(normal.hashCode, explicitNormal.hashCode);
+  });
 }

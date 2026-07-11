@@ -11,32 +11,31 @@
 /// réimplémenté) — jamais un voisin, jamais le formulaire — et ne recrée JAMAIS
 /// le [QuillController] (focus + sélection/curseur préservés).
 ///
+/// DP-3 ajoute (SANS régresser E6) :
+/// - une voie d'intégration **`ctx`-native** ([ZMarkdownField.fromContext])
+///   pilotée par un [ZFieldWidgetContext] (`field`/`value`/`onChanged`) — pour
+///   le [ZWidgetRegistry] injecté (le builder ne reçoit PAS le `ZFormController`) ;
+/// - le respect de `field.readOnly` (rendu **lecteur** non éditable, [ZMarkdownReader]) ;
+/// - la distinction de **mode** ([ZMarkdownFieldMode]) : `inline` (éditeur
+///   compact + toggle plein-écran) vs `block` (aperçu lecteur + bouton
+///   « Rédiger »/« Modifier » ouvrant [ZRichTextFullscreenDialog]).
+///
 /// INVARIANTS (NON-NÉGOCIABLES) :
 /// - **AD-2** : [QuillController] + [FocusNode] + [ScrollController] créés UNE
 ///   SEULE fois en [State.initState], disposés en [State.dispose] ; l'abonnement
 ///   au flux de **mutations de document** (`document.changes`) est ANNULÉ au
-///   dispose (zéro fuite). Saisie à **sens unique**
-///   (`document change → controller.setValue`). Le flux `document.changes`
-///   n'émet QUE sur changement de CONTENU (jamais sur un simple déplacement de
-///   curseur/sélection) : aucun encodage O(taille doc) superflu au déplacement
-///   du caret. Aucune ré-injection écrasant la sélection pendant l'édition : la
-///   **sync guardée** ne reflète une valeur EXTERNE dans l'éditeur que **hors
-///   focus** et si elle diffère.
-/// - **AD-7/AD-1** : la valeur portée par la tranche est **NEUTRE** (Delta JSON
-///   = `List<Map<String, dynamic>>` JSON-safe) ; AUCUN type Quill
-///   ([QuillController]/[Document]/`Delta`) n'apparaît dans la signature
-///   publique ni dans la valeur du form. La conversion Delta↔JSON minimale passe
-///   par l'API native de Quill ([Document.fromJson] / `document.toDelta().toJson()`).
-///   Le `ZCodec` pluggable (format persisté Delta/Markdown/HTML — E6-2) opère
-///   **à la couture de (dé)sérialisation** : la tranche `ZFormController` RESTE
-///   TOUJOURS le Delta JSON neutre pendant l'édition (chemin chaud INCHANGÉ) ;
-///   le codec normalise la valeur INITIALE (seed) et expose la valeur PERSISTÉE
-///   (`codec.encode`) pour le `toMap` de l'app — jamais dans le flux de frappe.
+///   dispose (zéro fuite). Saisie à **sens unique**. Aucune ré-injection
+///   écrasant la sélection pendant l'édition : la **sync guardée** ne reflète
+///   une valeur EXTERNE que **hors focus**. En mode **lecture seule** ET en mode
+///   **block**, AUCUNE voie de frappe n'existe (ni controller mutant, ni
+///   abonnement, ni `setValue`).
+/// - **AD-7/AD-1** : la valeur portée par la tranche est **NEUTRE** (Delta JSON) ;
+///   AUCUN type Quill n'apparaît dans la signature publique.
 /// - **AD-10** : décodage **défensif** — valeur absente/vide/Delta corrompu →
 ///   document VIDE utilisable, **jamais** de throw.
-/// - **AD-13** : rendu directionnel (`Directionality`), [Semantics] explicites,
-///   cibles interactives de la toolbar ≥ 48 dp ; couleurs issues du thème injecté
-///   via `ZcrudScope` (repli `Theme.of`), **zéro** couleur codée en dur.
+/// - **AD-13/FR-26** : directionnel, [Semantics] explicites, cibles ≥ 48 dp,
+///   couleurs issues du thème injecté (repli `Theme.of`), **zéro** couleur codée
+///   en dur.
 ///
 /// L'assembleur DOIT poser `key: ValueKey(field.name)` (place stable — AD-2) ;
 /// sans quoi un rebuild externe pourrait voler l'état d'un voisin ou recréer le
@@ -55,9 +54,25 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
-import 'z_latex_embed.dart';
 import 'z_markdown_codec_scope.dart';
-import 'z_table_embed.dart';
+import 'z_markdown_reader.dart';
+import 'z_rich_text_core.dart';
+import 'z_rich_text_fullscreen_dialog.dart';
+
+/// Mode de présentation d'un champ rich-text servi par le registre (DP-3, B6).
+///
+/// - [inline] : éditeur **compact en place** (toolbar minimale, hauteur bornée)
+///   + bouton toggle plein-écran. Dérivé de `EditionFieldType.inlineMarkdown`.
+/// - [block] : **aperçu lecteur** + bouton « Rédiger »/« Modifier » ouvrant le
+///   dialog plein-écran (pas d'édition en place). Dérivé de
+///   `EditionFieldType.markdown`/`richText`.
+enum ZMarkdownFieldMode {
+  /// Éditeur compact en place + toggle plein-écran.
+  inline,
+
+  /// Aperçu lecteur + édition en dialog plein-écran.
+  block,
+}
 
 /// Fenêtre de test (AD-2 anti-fuite / efficacité MED-1) exposant l'état interne
 /// VÉRIFIABLE du champ, SANS divulguer le [State] privé ni un type Quill.
@@ -68,94 +83,94 @@ import 'z_table_embed.dart';
 abstract interface class ZMarkdownFieldDebug {
   /// Nombre de fois où le listener de **mutation de document** a effectivement
   /// tourné (⇒ un encodage neutre). N'augmente JAMAIS sur un simple
-  /// déplacement de curseur/sélection : le flux `document.changes` n'émet que
-  /// sur changement de CONTENU (preuve directe de MED-1).
+  /// déplacement de curseur/sélection.
   int get debugDocChangeCount;
 
   /// `true` tant que l'abonnement au flux `document.changes` est actif ;
   /// repasse à `false` après [State.dispose] — preuve DIRECTE du retrait de
-  /// l'abonnement (anti-fuite AC3, LOW-1).
+  /// l'abonnement (anti-fuite). Toujours `false` en lecture seule / mode block
+  /// (aucune voie de frappe).
   bool get debugDocSubscriptionActive;
 
-  /// Valeur PERSISTÉE courante = `codec.encode(<tranche Delta neutre>)` (E6-2,
-  /// AC6), calculée depuis le **document vivant** — hook de TEST uniquement.
-  ///
-  /// La voie de persistance de PRODUCTION est la méthode publique (non-debug)
-  /// [ZMarkdownField.persistedValueOf], à appeler au `toMap`/`onSubmit` de l'app.
-  /// Le codec n'entre PAS dans le chemin chaud : cette valeur n'est calculée qu'à
-  /// la demande (persistance), jamais à chaque frappe.
+  /// Valeur PERSISTÉE courante = `codec.encode(<tranche Delta neutre>)`.
   Object? get debugPersistedValue;
 }
 
-/// Champ d'édition **rich-text** (Quill) scellé sur la tranche `field.name` du
-/// [controller].
+/// Champ d'édition **rich-text** (Quill) scellé sur la tranche `field.name`.
 ///
 /// Expose/consomme une **valeur neutre** (Delta JSON `List<Map<String, dynamic>>`)
-/// — jamais un type Quill (AD-1/AD-7). Le `ZCodec` pluggable (E6-2), les embeds
-/// LaTeX (E6-3) et tableau (E6-4) sont hors périmètre E6-1.
+/// — jamais un type Quill (AD-1/AD-7).
 class ZMarkdownField extends StatefulWidget {
-  /// Construit le champ rich-text pour [field], lié à la tranche `field.name`
-  /// du [controller].
+  /// Construit le champ rich-text (voie **`controller`** — E6-1, INCHANGÉE) pour
+  /// [field], lié à la tranche `field.name` du [controller].
   ///
-  /// L'assembleur DOIT poser `key: ValueKey(field.name)` (place stable — AD-2).
+  /// Rendu par DÉFAUT : éditeur pleine-toolbar (mode « legacy » — le mode
+  /// inline/block ne s'applique qu'à la voie `ctx`/registre). `field.readOnly`
+  /// est honoré (rendu lecteur). L'assembleur DOIT poser `key: ValueKey(field.name)`.
   const ZMarkdownField({
-    required this.controller,
+    required ZFormController this.controller,
     required this.field,
     this.showToolbar = true,
     this.codec,
     this.onInit,
     this.onBuild,
     super.key,
-  });
+  })  : ctx = null,
+        mode = ZMarkdownFieldMode.inline;
 
-  /// Contrôleur détenant la tranche du champ (créé/possédé par l'hôte ; jamais
-  /// recréé dans un `build`).
-  final ZFormController controller;
+  /// Construit le champ rich-text (voie **`ctx`**/registre — DP-3) piloté par un
+  /// [ZFieldWidgetContext] (`field`/`value`/`onChanged`), SANS `ZFormController`.
+  ///
+  /// [mode] fixe la présentation (`inline` compact vs `block` aperçu+dialog).
+  /// `ctx.field.readOnly` est honoré (rendu lecteur, prioritaire sur le mode).
+  /// L'assembleur (dispatcher) rend ce widget DANS sa frontière de rebuild
+  /// value-in-slice : le `State` persiste (place stable) ⇒ le [QuillController]
+  /// n'est jamais recréé (SM-1/AD-2).
+  ZMarkdownField.fromContext({
+    required ZFieldWidgetContext this.ctx,
+    required this.mode,
+    this.codec,
+    this.onInit,
+    this.onBuild,
+    super.key,
+  })  : controller = null,
+        field = ctx.field,
+        showToolbar = true;
 
-  /// Spécification `const` du champ rendu (`name`/`label`/… — E2-4/E2-5).
+  /// Contrôleur détenant la tranche (voie `controller`) — `null` en voie `ctx`.
+  final ZFormController? controller;
+
+  /// Contexte value-in-slice (voie `ctx`/registre) — `null` en voie `controller`.
+  final ZFieldWidgetContext? ctx;
+
+  /// Spécification `const` du champ rendu.
   final ZFieldSpec field;
 
-  /// Affiche la **toolbar** Quill presets (activable ; défaut `true`). `false`
-  /// pour un rendu compact (l'éditeur reste pleinement fonctionnel).
+  /// Mode de présentation (voie `ctx`). Ignoré en voie `controller` (legacy).
+  final ZMarkdownFieldMode mode;
+
+  /// Affiche la **toolbar** Quill presets (voie `controller` ; défaut `true`).
   final bool showToolbar;
 
   /// `ZCodec` de (dé)sérialisation du **format persisté** (E6-2, AD-7).
   ///
-  /// Précédence de résolution : ce paramètre > [ZMarkdownCodecScope] hérité >
-  /// `ZDeltaCodec()` (défaut rétrocompatible E6-1). Le codec opère UNIQUEMENT à
-  /// la couture de persistance (seed + `debugPersistedValue`), jamais dans le
-  /// chemin chaud de frappe — la tranche `ZFormController` reste le Delta neutre.
+  /// Précédence : ce paramètre > [ZMarkdownCodecScope] hérité > `ZDeltaCodec()`.
   final ZCodec? codec;
 
-  /// Hook d'instrumentation : appelé UNE FOIS en [State.initState] (preuve de
-  /// non-recréation du [QuillController]/`State` via compteur == 1).
+  /// Hook d'instrumentation : appelé UNE FOIS en [State.initState].
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook d'instrumentation : appelé à chaque (re)build de la **tranche** (dans
-  /// le `builder` du slice) — compteur de build par champ pour SM-1 (AC2).
+  /// Hook d'instrumentation : appelé à chaque (re)build de la **tranche**.
   @visibleForTesting
   final VoidCallback? onBuild;
 
-  /// Valeur PERSISTÉE (format du [codec]) de la tranche du champ [name] portée
-  /// par [controller] — **voie de persistance PUBLIQUE** (AC6, AD-7), à appeler
-  /// au `toMap`/`onSubmit` de l'app pour sérialiser le champ rich-text.
-  ///
-  /// Contrairement à `ZMarkdownFieldDebug.debugPersistedValue`
-  /// (`@visibleForTesting`, réservé aux tests), cette API vise le CODE DE
-  /// PRODUCTION — l'appeler ne déclenche donc AUCUN lint
-  /// `invalid_use_of_visible_for_testing_member`.
+  /// Valeur PERSISTÉE (format du [codec]) de la tranche [name] portée par
+  /// [controller] — **voie de persistance PUBLIQUE** (AC6, AD-7).
   ///
   /// Le codec n'intervient QU'ICI (couture de persistance), jamais dans le
-  /// chemin chaud de frappe (AD-2/SM-1 préservés). L'implémentation est ROBUSTE
-  /// au type de la tranche : elle `decode` d'abord DÉFENSIVEMENT (AD-10) la
-  /// valeur — que la tranche soit déjà du Delta neutre (`List<Map>`, cas nominal
-  /// après montage/frappe) ou un seed persisté non encore normalisé (ex. `String`
-  /// Markdown) — PUIS `encode` vers le format persisté. Jamais de `TypeError`
-  /// (contrairement à un `codec.encode(tranche)` naïf sur un seed `String`).
-  ///
-  /// [codec] DOIT être le même que celui du champ (paramètre `codec` ou
-  /// `ZMarkdownCodecScope`) ; défaut identité (format persisté = Delta JSON).
+  /// chemin chaud de frappe. Robuste au type de la tranche (décode
+  /// défensivement — AD-10 — puis encode).
   static Object? persistedValueOf(
     ZFormController controller,
     String name, {
@@ -169,53 +184,53 @@ class ZMarkdownField extends StatefulWidget {
   State<ZMarkdownField> createState() => _ZMarkdownFieldState();
 }
 
+/// Ce que le champ DOIT rendre, dérivé de `field.readOnly` + voie + mode.
+enum _RenderMode {
+  /// `field.readOnly == true` (voie `controller` OU `ctx`) → lecteur exclusif.
+  reader,
+
+  /// Voie `controller` éditable → éditeur pleine-toolbar (E6-1 legacy).
+  fullEditor,
+
+  /// Voie `ctx` `inline` éditable → éditeur compact + toggle plein-écran.
+  inlineEditor,
+
+  /// Voie `ctx` `block` éditable → aperçu lecteur + bouton « Rédiger »/« Modifier ».
+  blockPreview,
+}
+
 class _ZMarkdownFieldState extends State<ZMarkdownField>
     implements ZMarkdownFieldDebug {
-  /// Controller Quill **isolé** — créé UNE FOIS, jamais recréé (AD-2). Son
-  /// document n'est réécrit QUE par la sync guardée hors focus (jamais dans la
-  /// voie de frappe).
-  late final QuillController _quill;
+  /// Controller Quill **isolé** — créé UNE FOIS, jamais recréé (AD-2). `null`
+  /// pour les rendus SANS voie d'édition en place (lecteur / block).
+  QuillController? _quill;
 
-  /// `FocusNode` **stable** — oracle « le champ a le focus ? » de la sync
-  /// guardée (AC2/AC10).
-  late final FocusNode _focus;
+  /// `FocusNode` **stable** — oracle « le champ a le focus ? » de la sync guardée.
+  FocusNode? _focus;
 
   /// `ScrollController` stable de l'éditeur.
-  late final ScrollController _scroll;
+  ScrollController? _scroll;
 
-  /// JSON canonique de la dernière valeur neutre **synchronisée** (poussée par
-  /// la frappe OU appliquée depuis l'extérieur). Sert à (a) éviter les
-  /// notifications superflues sur changement de sélection seule et (b) rendre la
-  /// sync guardée idempotente (jamais de ré-injection en boucle).
-  late String _lastValueJson;
+  /// JSON canonique de la dernière valeur neutre **synchronisée**.
+  String _lastValueJson = '[]';
 
-  /// Garde de ré-entrance : `true` pendant l'application d'une valeur EXTERNE
-  /// (`_quill.document = …`) pour NE PAS re-pousser dans le form (sens unique
-  /// préservé).
+  /// Garde de ré-entrance pendant l'application d'une valeur EXTERNE.
   bool _applyingExternal = false;
 
-  /// Abonnement au flux de **mutations de document** (`document.changes`) —
-  /// n'émet QUE sur changement de CONTENU (jamais sur déplacement de curseur).
-  /// ANNULÉ au [dispose] (anti-fuite). Ré-abonné après remplacement du document
-  /// par la sync guardée (`_quill.document = …` ne transfère PAS l'abonnement).
+  /// Abonnement au flux de **mutations de document** — ANNULÉ au [dispose].
   StreamSubscription<DocChange>? _docChangesSub;
 
-  /// Compteur d'invocations effectives du listener de mutation (⇒ encodages) —
-  /// preuve MED-1 (inchangé sur sélection seule) et wiring anti-fuite.
+  /// Compteur d'invocations effectives du listener de mutation.
   int _documentChangeCount = 0;
 
-  /// Codec de (dé)sérialisation du format persisté (E6-2). Résolu UNE FOIS en
-  /// [initState] selon la précédence `paramètre > ZMarkdownCodecScope > défaut`.
-  /// Config de persistance statique ⇒ lecture SANS dépendance d'inherited widget
-  /// (pas de re-seed au changement de scope : la tranche de travail prime).
+  /// Codec de (dé)sérialisation du format persisté (E6-2). Résolu UNE FOIS.
   late final ZCodec _codec;
 
-  /// Config de toolbar STABLE (SM-1/AD-2) — construite UNE FOIS en [initState].
-  /// Non-`const` car ses `customButtons` référencent les méthodes d'instance
-  /// [_promptAndInsertLatex] / [_promptAndInsertTable] ; HISSÉE en champ pour NE
-  /// PAS ré-allouer à chaque (re)build de tranche (aucune allocation dans le
-  /// chemin chaud de frappe).
-  late final QuillSimpleToolbarConfig _toolbarConfig;
+  /// Config de toolbar STABLE (SM-1/AD-2) — construite UNE FOIS si édition.
+  QuillSimpleToolbarConfig? _toolbarConfig;
+
+  /// Ce que le champ rend, calculé UNE FOIS en [initState].
+  late final _RenderMode _renderMode;
 
   @override
   int get debugDocChangeCount => _documentChangeCount;
@@ -224,19 +239,53 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   bool get debugDocSubscriptionActive => _docChangesSub != null;
 
   @override
-  Object? get debugPersistedValue =>
-      _codec.encode(DeltaNeutralOps.encodeNeutral(_quill.document));
+  Object? get debugPersistedValue {
+    final q = _quill;
+    if (q != null) {
+      return _codec.encode(DeltaNeutralOps.encodeNeutral(q.document));
+    }
+    // Lecteur / block : pas de controller mutant → dérive de la valeur courante.
+    return _codec.encode(_codec.decode(_readValue()));
+  }
 
-  String get _name => widget.field.name;
+  ZFieldSpec get _field => widget.field;
 
-  /// Résout le [ZCodec] effectif (AC4). Lecture de l'inherited scope SANS créer
-  /// de dépendance ([BuildContext.getElementForInheritedWidgetOfExactType]) —
-  /// autorisée en [initState], adaptée à une config de persistance statique.
+  String get _name => _field.name;
+
+  /// Lit la valeur COURANTE de la tranche (voie `controller` OU `ctx`).
+  Object? _readValue() => widget.controller != null
+      ? widget.controller!.valueOf(_name)
+      : widget.ctx!.value;
+
+  /// Écrit une nouvelle valeur (sens unique — voie `controller` OU `ctx`).
+  void _write(Object? value) {
+    if (widget.controller != null) {
+      widget.controller!.setValue(_name, value);
+    } else {
+      widget.ctx!.onChanged(value);
+    }
+  }
+
+  /// Résout le [_RenderMode] : `readOnly` prioritaire, puis voie + mode.
+  _RenderMode _resolveRenderMode() {
+    if (_field.readOnly) return _RenderMode.reader;
+    if (widget.controller != null) return _RenderMode.fullEditor;
+    return widget.mode == ZMarkdownFieldMode.inline
+        ? _RenderMode.inlineEditor
+        : _RenderMode.blockPreview;
+  }
+
+  bool get _needsEditingController =>
+      _renderMode == _RenderMode.fullEditor ||
+      _renderMode == _RenderMode.inlineEditor;
+
+  /// Résout le [ZCodec] effectif. Lecture de l'inherited scope SANS créer de
+  /// dépendance ([BuildContext.getElementForInheritedWidgetOfExactType]).
   ZCodec _resolveCodec() {
     final fromParam = widget.codec;
     if (fromParam != null) return fromParam;
-    final element = context
-        .getElementForInheritedWidgetOfExactType<ZMarkdownCodecScope>();
+    final element =
+        context.getElementForInheritedWidgetOfExactType<ZMarkdownCodecScope>();
     final fromScope = (element?.widget as ZMarkdownCodecScope?)?.codec;
     return fromScope ?? const ZDeltaCodec();
   }
@@ -245,180 +294,200 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   void initState() {
     super.initState();
     _codec = _resolveCodec();
-    final initial = widget.controller.valueOf(_name);
-    // COUTURE DE SEED (AC6) : le format persisté initial (Delta JSON OU String
-    // Markdown selon le codec) est normalisé en ops Delta neutres via le codec,
-    // PUIS décodé défensivement en Document (AD-10). Pour `ZDeltaCodec` (défaut),
-    // `decode` est l'identité défensive ⇒ comportement STRICTEMENT identique à
-    // E6-1.
-    final seededOps = _codec.decode(initial);
-    final document = DeltaNeutralOps.decodeDefensiveDocument(seededOps);
-    _quill = QuillController(
-      document: document,
-      selection: const TextSelection.collapsed(offset: 0),
-    );
-    _focus = FocusNode();
-    _scroll = ScrollController();
-    // Forme Delta NEUTRE canonique du seed (celle qu'une frappe produirait) —
-    // sert de référence de dédup ET de valeur de normalisation de tranche.
-    final neutralSeed = DeltaNeutralOps.encodeNeutral(document);
-    _lastValueJson = jsonEncode(neutralSeed);
-    // Abonnement au flux de mutations de CONTENU (AD-2, MED-1) : saisie à sens
-    // unique. `document.changes` n'émet PAS sur déplacement de curseur ⇒ aucun
-    // encodage O(taille doc) au seul mouvement du caret.
-    _subscribeToDocumentChanges();
-    // MEDIUM-1 : rend le TYPE de la tranche INVARIANT (`List<Map>`) dès le
-    // montage lorsqu'elle a été seedée au format persisté (ex. `String` Markdown).
-    _normalizeSliceIfNeeded(seededOps, neutralSeed, initial);
-    // Config toolbar STABLE (E6-3/E6-4, AC8/SM-1) : boutons d'insertion/édition
-    // de formule LaTeX (E6-3) et de tableau (E6-4) branchés sur les méthodes
-    // d'instance (références figées).
-    _toolbarConfig = QuillSimpleToolbarConfig(
-      toolbarSize: _kMinTapTarget,
-      multiRowsDisplay: false,
-      showAlignmentButtons: true,
-      customButtons: <QuillToolbarCustomButtonOptions>[
-        QuillToolbarCustomButtonOptions(
-          icon: const Icon(Icons.functions),
-          tooltip: 'Insérer une formule',
-          onPressed: _promptAndInsertLatex,
-        ),
-        QuillToolbarCustomButtonOptions(
-          icon: const Icon(Icons.grid_on),
-          tooltip: 'Insérer un tableau',
-          onPressed: _promptAndInsertTable,
-        ),
-      ],
-    );
+    _renderMode = _resolveRenderMode();
+    if (_needsEditingController) {
+      _initEditingController();
+    }
     widget.onInit?.call();
   }
 
-  /// MEDIUM-1 — Normalise la tranche vers la forme Delta NEUTRE (`List<Map>`)
-  /// pour que son TYPE soit INVARIANT (`List<Map>`) AVANT comme APRÈS la 1re
-  /// frappe : la voie de persistance publique ([ZMarkdownField.persistedValueOf])
-  /// et tout lecteur de la tranche voient TOUJOURS des ops neutres, jamais un
-  /// seed persisté brut (`String` Markdown) qui ferait échouer un `encode` naïf
-  /// ou renverrait un type incohérent (String avant / `List` après édition).
-  ///
-  /// N'écrit la tranche QUE si sa représentation courante DIFFÈRE de la forme
-  /// neutre (seed au format persisté `String`). Un seed déjà en Delta neutre
-  /// (défaut `ZDeltaCodec` / parité E6-1 STRICTE) ou vide/corrompu n'est PAS
-  /// retouché — aucune régression E6-1, aucun re-seed superflu. L'écriture est
-  /// DIFFÉRÉE en POST-FRAME : on ne notifie jamais une tranche pendant le build
-  /// de montage (interdiction Flutter du `setState`/notify pendant `build`).
+  /// Crée la voie d'édition (QuillController + focus + scroll + abonnement +
+  /// toolbar). Appelé UNIQUEMENT pour `fullEditor`/`inlineEditor`.
+  void _initEditingController() {
+    final initial = _readValue();
+    final seededOps = _codec.decode(initial);
+    final document = DeltaNeutralOps.decodeDefensiveDocument(seededOps);
+    final quill = QuillController(
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    _quill = quill;
+    _focus = FocusNode();
+    _scroll = ScrollController();
+    final neutralSeed = DeltaNeutralOps.encodeNeutral(document);
+    _lastValueJson = jsonEncode(neutralSeed);
+    _subscribeToDocumentChanges();
+    _normalizeSliceIfNeeded(seededOps, neutralSeed, initial);
+    _toolbarConfig = buildZToolbarConfig(
+      onInsertLatex: () =>
+          insertZLatex(context, quill, isMounted: () => mounted),
+      onInsertTable: () =>
+          insertZTable(context, quill, isMounted: () => mounted),
+      minimal: _renderMode == _RenderMode.inlineEditor,
+    );
+  }
+
+  /// MEDIUM-1 — Normalise la tranche vers la forme Delta NEUTRE (`List<Map>`).
   void _normalizeSliceIfNeeded(
     List<Map<String, dynamic>> seededOps,
     List<Map<String, dynamic>> neutralSeed,
     Object? initial,
   ) {
-    // Seed vide/corrompu ⇒ rien à normaliser (la tranche reste telle quelle).
     if (seededOps.isEmpty) return;
-    // Seed DÉJÀ en Delta neutre équivalent ⇒ ne pas retoucher (parité E6-1).
     final alreadyNeutral = initial is List &&
         jsonEncode(DeltaNeutralOps.decodeDefensiveOps(initial)) ==
             jsonEncode(neutralSeed);
     if (alreadyNeutral) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // La tranche devient la forme neutre canonique (== `_lastValueJson`) ⇒ le
-      // rebuild induit passe par `_syncFromExternal` en no-op (aucun swap de
-      // document, aucune boucle) ; chemin chaud INCHANGÉ (SM-1/AD-2 préservés).
-      widget.controller.setValue(_name, neutralSeed);
+      _write(neutralSeed);
     });
   }
 
   @override
   void dispose() {
-    // Anti-fuite (AC3, AI-E5-4, LOW-1) : annuler l'abonnement AVANT de disposer
-    // le controller (qui ferme le flux `document.changes`). `_docChangesSub` est
-    // remis à `null` ⇒ preuve directe du retrait (debugDocSubscriptionActive).
+    // Anti-fuite : annuler l'abonnement AVANT de disposer le controller.
     unawaited(_docChangesSub?.cancel());
     _docChangesSub = null;
-    _quill.dispose();
-    _focus.dispose();
-    _scroll.dispose();
+    _quill?.dispose();
+    _focus?.dispose();
+    _scroll?.dispose();
     super.dispose();
   }
 
   /// (Ré)abonne le listener au flux `document.changes` du document COURANT.
-  /// Requis après un remplacement de document (`_quill.document = …`), car le
-  /// setter Quill swappe l'instance de [Document] sans transférer l'abonnement.
   void _subscribeToDocumentChanges() {
+    final q = _quill;
+    if (q == null) return;
     unawaited(_docChangesSub?.cancel());
-    _docChangesSub =
-        _quill.document.changes.listen((_) => _onQuillChanged());
+    _docChangesSub = q.document.changes.listen((_) => _onQuillChanged());
   }
 
   /// Listener de mutation de CONTENU : pousse la valeur **neutre** courante dans
-  /// la tranche (sens unique). N'est appelé QUE sur changement de contenu (le
-  /// flux `document.changes` n'émet pas sur déplacement de curseur — MED-1).
-  /// Ignore (a) les émissions pendant l'application d'une valeur externe
-  /// (garde), et (b) une valeur neutre identique (dédup) — pas de setValue
-  /// superflu.
+  /// la tranche (sens unique).
   void _onQuillChanged() {
     _documentChangeCount++;
     if (_applyingExternal) return;
-    final neutral = DeltaNeutralOps.encodeNeutral(_quill.document);
+    final q = _quill;
+    if (q == null) return;
+    final neutral = DeltaNeutralOps.encodeNeutral(q.document);
     final neutralJson = jsonEncode(neutral);
     if (neutralJson == _lastValueJson) return;
     _lastValueJson = neutralJson;
-    widget.controller.setValue(_name, neutral);
+    _write(neutral);
   }
 
   @override
-  Widget build(BuildContext context) => ZFieldListenableBuilder(
-        controller: widget.controller,
-        name: _name,
-        // Frontière de rebuild : seul le changement de la tranche reconstruit ce
-        // closure (cœur de SM-1).
-        builder: (context, value, child) {
-          widget.onBuild?.call();
-          _syncFromExternal(value);
-          return _buildEditor(context);
-        },
-      );
+  Widget build(BuildContext context) {
+    switch (_renderMode) {
+      case _RenderMode.reader:
+        // Lecture seule : lecteur exclusif (aucune voie d'édition).
+        if (widget.controller != null) {
+          return ZFieldListenableBuilder(
+            controller: widget.controller!,
+            name: _name,
+            builder: (context, value, child) {
+              widget.onBuild?.call();
+              return _buildReader(value);
+            },
+          );
+        }
+        widget.onBuild?.call();
+        return _buildReader(widget.ctx!.value);
+      case _RenderMode.fullEditor:
+        // Voie `controller` (E6-1) : frontière de rebuild value-in-slice.
+        return ZFieldListenableBuilder(
+          controller: widget.controller!,
+          name: _name,
+          builder: (context, value, child) {
+            widget.onBuild?.call();
+            _syncFromExternal(value);
+            return _buildEditor(context, withFullscreenToggle: false);
+          },
+        );
+      case _RenderMode.inlineEditor:
+        // Voie `ctx` : la frontière value-in-slice est déjà posée par le
+        // dispatcher ⇒ on lit `ctx.value` directement.
+        widget.onBuild?.call();
+        _syncFromExternal(widget.ctx!.value);
+        return _buildEditor(context, withFullscreenToggle: true);
+      case _RenderMode.blockPreview:
+        widget.onBuild?.call();
+        return _buildBlockPreview(widget.ctx!.value);
+    }
+  }
 
   /// SYNC GUARDÉE (AC10, FR-1) : reflète une valeur EXTERNE dans l'éditeur
-  /// UNIQUEMENT hors focus et si elle diffère de l'état courant. Pendant
-  /// l'édition (`hasFocus`), priorité ABSOLUE à la saisie/au curseur : AUCUNE
-  /// ré-injection (sinon sélection écrasée / caret sauté). Pendant la frappe
-  /// locale, `value` égale déjà `_lastValueJson` ⇒ no-op (idempotent).
+  /// UNIQUEMENT hors focus et si elle diffère. Pendant l'édition, priorité
+  /// ABSOLUE à la saisie/au curseur (aucune ré-injection).
   void _syncFromExternal(Object? value) {
-    if (_focus.hasFocus) return;
-    // Sync guardée = reflet d'une valeur EXTERNE. Elle passe par `_codec.decode`
-    // pour accepter INDIFFÉREMMENT une tranche déjà Delta neutre (cas nominal, la
-    // frappe pousse du Delta) OU une valeur au format persisté du codec (seed /
-    // hydratation `fromMap`, ex. String Markdown). HORS chemin chaud : gardée par
-    // `!hasFocus` ⇒ jamais invoquée pendant la frappe (SM-1/AD-2 préservés). Pour
-    // `ZDeltaCodec` (défaut), `decode` est l'identité défensive ⇒ parité E6-1.
+    final q = _quill;
+    final f = _focus;
+    if (q == null || f == null) return;
+    if (f.hasFocus) return;
     final incomingOps = _codec.decode(value);
     final incoming = DeltaNeutralOps.decodeDefensiveDocument(incomingOps);
     final incomingJson = jsonEncode(DeltaNeutralOps.encodeNeutral(incoming));
     if (incomingJson == _lastValueJson) return;
     _applyingExternal = true;
-    // API native Quill : remplace le document SANS recréer le controller (AD-2).
-    // Le setter swappe l'instance de Document ⇒ il faut se ré-abonner au flux
-    // `document.changes` du NOUVEAU document (l'ancien abonnement deviendrait
-    // sourd aux frappes suivantes).
-    _quill.document = incoming;
+    q.document = incoming;
     _subscribeToDocumentChanges();
     _lastValueJson = incomingJson;
     _applyingExternal = false;
   }
 
-  Widget _buildEditor(BuildContext context) {
-    final zTheme = ZcrudTheme.of(context);
-    final borderColor = zTheme.fieldBorderColor ??
-        Theme.of(context).colorScheme.outline;
-    final label = widget.field.label ?? widget.field.name;
+  /// Applique EXPLICITEMENT une valeur neutre au document local (retour du
+  /// dialog plein-écran) — swap SANS recréer le controller (AD-2), indépendant
+  /// du focus (action utilisateur, pas une sync passive).
+  void _forceApplyNeutral(Object? value) {
+    final q = _quill;
+    if (q == null) return;
+    _applyingExternal = true;
+    final doc = DeltaNeutralOps.decodeDefensiveDocument(_codec.decode(value));
+    q.document = doc;
+    _subscribeToDocumentChanges();
+    _lastValueJson = jsonEncode(DeltaNeutralOps.encodeNeutral(doc));
+    _applyingExternal = false;
+  }
 
-    // LOW-3 (a11y AD-13) — INTENTIONNEL : ce nœud sémantique n'apporte QUE
-    // l'étiquette de champ (association label ↔ zone d'édition) et le rôle
-    // `textField`. `QuillEditor` fournit en dessous ses propres nœuds d'édition
-    // (navigation/sélection du contenu) : on ne les EXCLUT PAS (pas de
-    // `excludeSemantics`) pour préserver la lecture du contenu par le lecteur
-    // d'écran. Rendu vérifié sans exception (test « Semantics explicites »).
-    // Une passe TalkBack/VoiceOver réelle relève de la QA a11y d'intégration.
+  /// Valeur neutre la plus fraîche pour pré-remplir le dialog : le document
+  /// local vivant (édition en place) ou la valeur de tranche (block).
+  Object? _currentValueForDialog() {
+    final q = _quill;
+    return q != null
+        ? DeltaNeutralOps.encodeNeutral(q.document)
+        : _readValue();
+  }
+
+  /// Ouvre le dialog plein-écran ; à la validation, écrit la valeur éditée
+  /// (sens unique) et ré-hydrate l'éditeur en place s'il existe (inline).
+  Future<void> _openFullscreen() async {
+    final Object? result = await showZRichTextFullscreenDialog(
+      context,
+      initialValue: _currentValueForDialog(),
+      title: _field.label ?? _field.name,
+      codec: _codec,
+    );
+    if (result == null || !mounted) return;
+    _write(result);
+    _forceApplyNeutral(result);
+  }
+
+  Widget _buildReader(Object? value) => ZMarkdownReader(
+        value: value,
+        codec: _codec,
+        label: _field.label ?? _field.name,
+      );
+
+  Widget _buildEditor(
+    BuildContext context, {
+    required bool withFullscreenToggle,
+  }) {
+    final zTheme = ZcrudTheme.of(context);
+    final borderColor =
+        zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
+    final label = _field.label ?? _field.name;
+
     final editor = Semantics(
       textField: true,
       label: label,
@@ -430,53 +499,53 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         child: Padding(
           padding: zTheme.fieldPadding,
           child: QuillEditor(
-            controller: _quill,
-            focusNode: _focus,
-            scrollController: _scroll,
+            controller: _quill!,
+            focusNode: _focus!,
+            scrollController: _scroll!,
             config: const QuillEditorConfig(
-              // Non-scrollable : l'éditeur prend sa hauteur intrinsèque, l'hôte
-              // gère le défilement du formulaire (place stable AD-2).
               scrollable: false,
               padding: EdgeInsetsDirectional.zero,
-              // E6-3/E6-4 (AC2/AC8) : rendu des embeds LaTeX + tableau en
-              // édition ET lecture. Liste `const` STABLE (canonicalisée) ⇒ MÊME
-              // instance à chaque build de tranche : zéro allocation dans le
-              // chemin chaud (SM-1), les `EmbedBuilder` n'entrent jamais dans le
-              // flux `document.changes`.
-              embedBuilders: _kEmbedBuilders,
+              embedBuilders: kZEmbedBuilders,
             ),
           ),
         ),
       ),
     );
 
+    // Toolbar : montrée pour l'éditeur compact (inline) TOUJOURS ; pour la voie
+    // `controller` (legacy) selon `showToolbar` (parité E6-1 STRICTE).
+    final bool showToolbar = _renderMode == _RenderMode.inlineEditor
+        ? true
+        : widget.showToolbar;
+
     final column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (widget.showToolbar)
+        if (showToolbar)
           Semantics(
             container: true,
             label: '$label toolbar',
-            // Cible interactive ≥ 48 dp (AD-13) : la toolbar occupe au moins la
-            // hauteur de cible minimale, et ses boutons sont dimensionnés à
-            // `_kMinTapTarget` via `toolbarSize`.
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: _kMinTapTarget),
-              child: QuillSimpleToolbar(
-                controller: _quill,
-                config: _toolbarConfig,
-              ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(minHeight: kZMinTapTarget),
+                    child: QuillSimpleToolbar(
+                      controller: _quill!,
+                      config: _toolbarConfig!,
+                    ),
+                  ),
+                ),
+                if (withFullscreenToggle) _fullscreenToggleButton(label),
+              ],
             ),
           ),
         editor,
       ],
     );
 
-    // Injecte les localisations Quill requises (QuillEditor/QuillSimpleToolbar
-    // exigent `FlutterQuillLocalizations`) en s'ajoutant aux délégués hérités de
-    // l'app hôte (Material/Widgets restent disponibles). Rend le champ
-    // auto-suffisant sans imposer une config au consommateur.
     return Localizations.override(
       context: context,
       delegates: const <LocalizationsDelegate<dynamic>>[
@@ -486,193 +555,61 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     );
   }
 
-  // ───────────────────────────── Embed LaTeX (E6-3) ──────────────────────────
-
-  /// Ouvre le dialogue de saisie/édition d'une formule LaTeX puis insère (ou
-  /// remplace) l'op embed `{insert:{latex:...}}` au point d'insertion courant
-  /// (AC3). Si le caret est sur/juste après un embed LaTeX existant, le dialogue
-  /// est PRÉ-REMPLI et l'op est REMPLACÉE (édition) ; sinon insertion neuve.
-  ///
-  /// L'insertion passe par l'API native `replaceText` (le controller n'est jamais
-  /// recréé — AD-2) : la mutation de document déclenche `_onQuillChanged` qui
-  /// pousse l'op neutre dans la tranche (sens unique). Aucune (dé)sérialisation
-  /// custom : l'op est déjà Delta JSON neutre et opaque (round-trip E6-2 intact).
-  Future<void> _promptAndInsertLatex() async {
-    final _LatexEmbedHit? existing = _latexEmbedAtSelection();
-    final String? source =
-        await showZLatexDialog(context, initial: existing?.source ?? '');
-    // Annulation (null) ⇒ aucune mutation. Widget démonté ⇒ on n'écrit pas.
-    if (source == null || !mounted) return;
-    if (existing != null) {
-      // ÉDITION : remplace l'embed existant (longueur 1) par le nouveau.
-      _quill.replaceText(
-        existing.index,
-        1,
-        ZLatexEmbed(source),
-        TextSelection.collapsed(offset: existing.index + 1),
+  /// Bouton toggle plein-écran (mode inline) — cible ≥ 48 dp, `Semantics`.
+  Widget _fullscreenToggleButton(String label) => Semantics(
+        button: true,
+        label: 'Agrandir',
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: kZMinTapTarget,
+            minHeight: kZMinTapTarget,
+          ),
+          child: IconButton(
+            key: const Key('z-markdown-fullscreen-toggle'),
+            icon: const Icon(Icons.fullscreen),
+            tooltip: 'Agrandir',
+            onPressed: _openFullscreen,
+          ),
+        ),
       );
-      return;
-    }
-    // INSERTION : au point d'insertion courant (repli en fin de document si la
-    // sélection est invalide). Une sélection ÉTENDUE est remplacée par l'embed.
-    // (`sel` n'est lu QUE sur ce chemin d'insertion — F4.)
-    final TextSelection sel = _quill.selection;
-    final int index =
-        sel.isValid ? sel.start : (_quill.document.length - 1).clamp(0, 1 << 30);
-    final int length = sel.isValid ? sel.end - sel.start : 0;
-    _quill.replaceText(
-      index,
-      length,
-      ZLatexEmbed(source),
-      TextSelection.collapsed(offset: index + 1),
+
+  /// Mode block : aperçu lecteur + bouton « Rédiger »/« Modifier ».
+  Widget _buildBlockPreview(Object? value) {
+    final bool empty = _isValueEmpty(value);
+    final String actionLabel = empty ? 'Rédiger' : 'Modifier';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _buildReader(value),
+        const SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Semantics(
+            button: true,
+            label: actionLabel,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: kZMinTapTarget),
+              child: OutlinedButton.icon(
+                key: const Key('z-markdown-block-edit'),
+                icon: Icon(empty ? Icons.edit_note : Icons.edit),
+                label: Text(actionLabel),
+                onPressed: _openFullscreen,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  /// Détecte un embed LaTeX sous/juste-avant le caret (pour l'édition, AC3).
-  ///
-  /// Parcourt les ops NEUTRES du document (longueur d'un embed = 1) et renvoie
-  /// l'index + la source si le caret couvre l'embed (`caret == index` ou
-  /// `caret == index + 1`), sinon `null`. DÉFENSIF : sélection invalide → `null`.
-  _LatexEmbedHit? _latexEmbedAtSelection() {
-    final TextSelection sel = _quill.selection;
-    if (!sel.isValid) return null;
-    final int caret = sel.baseOffset;
-    final List<Map<String, dynamic>> ops =
-        DeltaNeutralOps.encodeNeutral(_quill.document);
-    var index = 0;
-    for (final Map<String, dynamic> op in ops) {
-      final Object? insert = op['insert'];
-      if (insert is Map && insert[kLatexEmbedType] is String) {
-        if (caret == index || caret == index + 1) {
-          return _LatexEmbedHit(index, insert[kLatexEmbedType] as String);
-        }
-        index += 1;
-      } else {
-        index += insert is String ? insert.length : 1;
-      }
-    }
-    return null;
+  /// `true` si la valeur (neutre / format persisté) rend un document VIDE.
+  bool _isValueEmpty(Object? value) {
+    final doc = DeltaNeutralOps.decodeDefensiveDocument(_codec.decode(value));
+    return doc.toPlainText().trim().isEmpty;
   }
-
-  // ───────────────────────────── Embed tableau (E6-4) ────────────────────────
-
-  /// Ouvre le dialogue de saisie/édition d'un tableau puis insère (ou remplace)
-  /// l'op embed `{insert:{table:...}}` au point d'insertion courant (AC3). Si le
-  /// caret est sur/juste après un embed tableau existant, le dialogue est
-  /// PRÉ-REMPLI et l'op est REMPLACÉE (édition) ; sinon insertion neuve.
-  ///
-  /// MIROIR EXACT de [_promptAndInsertLatex] : l'insertion passe par l'API native
-  /// `replaceText` (le controller n'est jamais recréé — AD-2) ; l'op est déjà
-  /// Delta JSON neutre et opaque (round-trip E6-2 intact).
-  Future<void> _promptAndInsertTable() async {
-    final _TableEmbedHit? existing = _tableEmbedAtSelection();
-    final Map<String, dynamic>? structure =
-        await showZTableDialog(context, initial: existing?.structure);
-    // Annulation (null) ⇒ aucune mutation. Widget démonté ⇒ on n'écrit pas.
-    if (structure == null || !mounted) return;
-    if (existing != null) {
-      // ÉDITION : remplace l'embed existant (longueur 1) par le nouveau.
-      _quill.replaceText(
-        existing.index,
-        1,
-        ZTableEmbed(structure),
-        TextSelection.collapsed(offset: existing.index + 1),
-      );
-      return;
-    }
-    // INSERTION : au point d'insertion courant (repli en fin de document si la
-    // sélection est invalide). Une sélection ÉTENDUE est remplacée par l'embed.
-    final TextSelection sel = _quill.selection;
-    final int index =
-        sel.isValid ? sel.start : (_quill.document.length - 1).clamp(0, 1 << 30);
-    final int length = sel.isValid ? sel.end - sel.start : 0;
-    _quill.replaceText(
-      index,
-      length,
-      ZTableEmbed(structure),
-      TextSelection.collapsed(offset: index + 1),
-    );
-  }
-
-  /// Détecte un embed tableau sous/juste-avant le caret (pour l'édition, AC3).
-  ///
-  /// Parcourt les ops NEUTRES du document (longueur d'un embed = 1) et renvoie
-  /// l'index + la structure si le caret couvre l'embed (`caret == index` ou
-  /// `caret == index + 1`), sinon `null`. DÉFENSIF : sélection invalide → `null`.
-  _TableEmbedHit? _tableEmbedAtSelection() {
-    final TextSelection sel = _quill.selection;
-    if (!sel.isValid) return null;
-    final int caret = sel.baseOffset;
-    final List<Map<String, dynamic>> ops =
-        DeltaNeutralOps.encodeNeutral(_quill.document);
-    var index = 0;
-    for (final Map<String, dynamic> op in ops) {
-      final Object? insert = op['insert'];
-      if (insert is Map && insert[kTableEmbedType] is Map) {
-        if (caret == index || caret == index + 1) {
-          return _TableEmbedHit(
-            index,
-            Map<String, dynamic>.from(insert[kTableEmbedType] as Map),
-          );
-        }
-        index += 1;
-      } else {
-        index += insert is String ? insert.length : 1;
-      }
-    }
-    return null;
-  }
-
-  // ─────────────────────────── Conversion neutre + défensif ──────────────────
-  //
-  // La normalisation neutre + le décodage défensif (AD-10) sont FACTORISÉS dans
-  // `DeltaNeutralOps` (`lib/src/data/delta_neutral_ops.dart`), PARTAGÉS avec les
-  // codecs E6-2 (`ZDeltaCodec`) SANS changer le comportement prouvé d'E6-1.
 }
-
-/// Localisation d'un embed LaTeX dans le document (index Delta + source) pour
-/// l'édition ciblée d'un embed existant (E6-3, AC3).
-class _LatexEmbedHit {
-  const _LatexEmbedHit(this.index, this.source);
-
-  /// Offset Delta de l'op embed (longueur 1).
-  final int index;
-
-  /// Source LaTeX courante (pré-remplit le dialogue d'édition).
-  final String source;
-}
-
-/// Localisation d'un embed tableau dans le document (index Delta + structure)
-/// pour l'édition ciblée d'un embed existant (E6-4, AC3).
-class _TableEmbedHit {
-  const _TableEmbedHit(this.index, this.structure);
-
-  /// Offset Delta de l'op embed (longueur 1).
-  final int index;
-
-  /// Structure JSON-safe courante (pré-remplit le dialogue d'édition).
-  final Map<String, dynamic> structure;
-}
-
-/// Cible de tap minimale (AD-13) — dimensionne les boutons de la toolbar et sa
-/// hauteur minimale.
-const double _kMinTapTarget = 48;
-
-/// `EmbedBuilder`s branchés sur `QuillEditorConfig.embedBuilders` (E6-3/E6-4, AC2).
-///
-/// Liste `const` (donc CANONICALISÉE → instance UNIQUE partagée par tous les
-/// builds) : la référence est STABLE, aucune allocation à chaque (re)build de
-/// tranche (SM-1/AD-2). MÊME liste pour LaTeX (E6-3) ET tableau (E6-4). Définie
-/// HORS de la région publique de `ZMarkdownField` (après la classe `State`) :
-/// n'introduit aucun nom de type Quill/math dans la surface publique scannée par
-/// le test d'isolation de signature (AC7).
-const List<EmbedBuilder> _kEmbedBuilders = <EmbedBuilder>[
-  ZLatexEmbedBuilder(),
-  ZTableEmbedBuilder(),
-];
 
 /// Codec de persistance par DÉFAUT (identité Delta JSON) de
-/// [ZMarkdownField.persistedValueOf]. Défini HORS de la région publique de
-/// `ZMarkdownField` (test d'isolation AC8 : substring `Delta`) — la surface
-/// publique n'expose aucun nom de type Quill/Delta en clair.
+/// [ZMarkdownField.persistedValueOf].
 const ZCodec _kDefaultPersistedCodec = ZDeltaCodec();

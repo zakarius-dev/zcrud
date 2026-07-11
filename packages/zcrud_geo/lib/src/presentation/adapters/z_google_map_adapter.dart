@@ -33,6 +33,7 @@ import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../domain/z_geo_circle.dart';
+import '../../domain/z_geo_map_options.dart';
 import '../../domain/z_geo_point.dart';
 import '../../domain/z_geo_shape.dart';
 import '../z_map_adapter.dart';
@@ -75,6 +76,7 @@ class ZGoogleMapAdapter implements ZMapAdapter {
     String? tileUrlTemplate, // ignoré (spécifique OSM) — Google n'a pas de tuiles URL
     String? mapStyleJson,
     double? defaultZoom,
+    ZGeoMapOptions? mapOptions,
   }) {
     // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
     final String? effectiveStyle = mapStyleJson ?? this.mapStyleJson;
@@ -116,7 +118,17 @@ class ZGoogleMapAdapter implements ZMapAdapter {
         ),
     };
 
+    // DP-7 : options de carte neutres → traduites vers le SDK Google (honoré-si-
+    // supporté). `null` → comportement inchangé (défauts du widget GoogleMap
+    // préservés via `?? <défaut widget>`).
     return GoogleMap(
+      mapType: _toGoogleMapType(mapOptions?.mapType),
+      trafficEnabled: mapOptions?.trafficEnabled ?? false,
+      buildingsEnabled: mapOptions?.buildingsEnabled ?? true,
+      indoorViewEnabled: mapOptions?.indoorViewEnabled ?? true,
+      compassEnabled: mapOptions?.compassEnabled ?? true,
+      zoomControlsEnabled: mapOptions?.zoomControlsEnabled ?? true,
+      mapToolbarEnabled: mapOptions?.mapToolbarEnabled ?? true,
       initialCameraPosition: CameraPosition(
         target: LatLng(c.lat, c.lng),
         zoom: effectiveZoom,
@@ -139,13 +151,27 @@ class ZGoogleMapAdapter implements ZMapAdapter {
       markers: markers,
       polygons: polygons,
       circles: circles,
-      // `interactive: false` → aperçu non manipulable (lecture seule).
+      // `interactive: false` → aperçu non manipulable (lecture seule). Rotation/
+      // tilt sont en outre pilotables par la barre d'outils (DP-7) : gardés à
+      // `interactive` quand aucune option n'est fournie (comportement inchangé),
+      // sinon `interactive && <toggle>`.
       zoomGesturesEnabled: interactive,
       scrollGesturesEnabled: interactive,
-      rotateGesturesEnabled: interactive,
-      tiltGesturesEnabled: interactive,
+      rotateGesturesEnabled:
+          interactive && (mapOptions?.rotateGesturesEnabled ?? true),
+      tiltGesturesEnabled:
+          interactive && (mapOptions?.tiltGesturesEnabled ?? true),
     );
   }
+
+  /// Traduit le type de carte **neutre** [ZGeoMapType] vers le `MapType` du SDK
+  /// Google (confiné à ce fichier — AD-1). `null` → `MapType.normal`.
+  MapType _toGoogleMapType(ZGeoMapType? type) => switch (type) {
+        ZGeoMapType.hybrid => MapType.hybrid,
+        ZGeoMapType.satellite => MapType.satellite,
+        ZGeoMapType.terrain => MapType.terrain,
+        ZGeoMapType.normal || null => MapType.normal,
+      };
 
   @override
   void dispose() {

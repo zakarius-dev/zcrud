@@ -24,6 +24,7 @@ library;
 
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_geo_editor_toolbar_config.dart';
 import 'z_geo_point.dart';
 
 /// Géométrie d'un champ géo (FR-20). Valeurs **camelCase** (canonique §5).
@@ -55,7 +56,11 @@ class ZGeoFieldConfig extends ZFieldConfig {
   /// - [tileUrlTemplate] : gabarit d'URL de tuiles OSM **surchargeable** (jamais
   ///   un endpoint privé en dur — AD-12) ;
   /// - [mapStyleJson] : style de carte Google **surchargeable** ;
-  /// - [interactive] : `false` pour un aperçu non manipulable.
+  /// - [interactive] : `false` pour un aperçu non manipulable ;
+  /// - [toolbarConfig] : config **additive** de la barre d'outils d'éditeur géo
+  ///   (DP-7, gap B9) ; `null` (défaut) → **aucune barre d'outils** rendue →
+  ///   rétro-compat E11a-1/E11b-1 **stricte** (un champ sans `toolbarConfig`
+  ///   rend exactement l'UI d'origine).
   const ZGeoFieldConfig({
     this.geometry,
     this.defaultCenter,
@@ -64,6 +69,7 @@ class ZGeoFieldConfig extends ZFieldConfig {
     this.tileUrlTemplate,
     this.mapStyleJson,
     this.interactive = true,
+    this.toolbarConfig,
   });
 
   /// Géométrie du champ (`null` → repli inférence par nom de type — E11a-1).
@@ -89,6 +95,35 @@ class ZGeoFieldConfig extends ZFieldConfig {
   /// Carte manipulable (`false` = aperçu lecture seule).
   final bool interactive;
 
+  /// Config **additive** de la barre d'outils d'éditeur géo (DP-7, gap B9).
+  /// `null` (défaut) → aucune barre d'outils → rétro-compat E11a-1/E11b-1
+  /// stricte. Portée par `ZGeoFieldConfig` (point d'extension AD-4), jamais par
+  /// `zcrud_core`.
+  final ZGeoEditorToolbarConfig? toolbarConfig;
+
+  /// Copie avec modifications ponctuelles (propage tous les champs, dont le
+  /// [toolbarConfig] additif).
+  ZGeoFieldConfig copyWith({
+    ZGeoGeometry? geometry,
+    ZGeoPoint? defaultCenter,
+    double? defaultZoom,
+    double? mapHeight,
+    String? tileUrlTemplate,
+    String? mapStyleJson,
+    bool? interactive,
+    ZGeoEditorToolbarConfig? toolbarConfig,
+  }) =>
+      ZGeoFieldConfig(
+        geometry: geometry ?? this.geometry,
+        defaultCenter: defaultCenter ?? this.defaultCenter,
+        defaultZoom: defaultZoom ?? this.defaultZoom,
+        mapHeight: mapHeight ?? this.mapHeight,
+        tileUrlTemplate: tileUrlTemplate ?? this.tileUrlTemplate,
+        mapStyleJson: mapStyleJson ?? this.mapStyleJson,
+        interactive: interactive ?? this.interactive,
+        toolbarConfig: toolbarConfig ?? this.toolbarConfig,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -100,7 +135,8 @@ class ZGeoFieldConfig extends ZFieldConfig {
           mapHeight == other.mapHeight &&
           tileUrlTemplate == other.tileUrlTemplate &&
           mapStyleJson == other.mapStyleJson &&
-          interactive == other.interactive;
+          interactive == other.interactive &&
+          toolbarConfig == other.toolbarConfig;
 
   @override
   int get hashCode => Object.hash(
@@ -112,5 +148,6 @@ class ZGeoFieldConfig extends ZFieldConfig {
         tileUrlTemplate,
         mapStyleJson,
         interactive,
+        toolbarConfig,
       );
 }

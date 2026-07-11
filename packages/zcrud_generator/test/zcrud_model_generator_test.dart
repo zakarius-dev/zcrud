@@ -252,4 +252,31 @@ void main() {
           throwsA(isA<ZUnregisteredTypeError>()));
     });
   });
+
+  group('artefact neutre \$XxxTimestampFields — hint B14 (AC3/AC7)', () {
+    test('champ persistAs:timestamp → clé persistée collectée (snake_case)', () {
+      // `createdAt` est hinté `persistAs: ZPersistAs.timestamp` : sa clé
+      // persistée snake_case `created_at` (identique à `toMap`) est collectée.
+      expect($ArticleTimestampFields, <String>{'created_at'});
+    });
+
+    test('artefact = Set<String> NEUTRE (aucun type backend/core)', () {
+      expect($ArticleTimestampFields, isA<Set<String>>());
+      // Mêmes clés que toMap (contrat de clé persistée partagé).
+      for (final key in $ArticleTimestampFields) {
+        expect(_sample().toMap().containsKey(key), isTrue);
+      }
+    });
+
+    test('modèle sans hint → ensemble VIDE émis (AC7, rétro-compat)', () {
+      // `Author` ne déclare aucun `persistAs` ⇒ const <String>{}.
+      expect($AuthorTimestampFields, isEmpty);
+    });
+
+    test('toMap reste ISO-8601 malgré le hint (conversion Firestore-only)', () {
+      // Le hint n'affecte PAS `toMap` : le champ hinté reste String ISO ici ;
+      // seul `zcrud_firestore` encode en Timestamp.
+      expect(_sample().toMap()['created_at'], '2026-07-09T10:30:00.000');
+    });
+  });
 }

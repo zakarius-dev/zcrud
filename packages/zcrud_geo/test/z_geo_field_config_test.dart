@@ -28,6 +28,8 @@ void main() {
       expect(cfg.tileUrlTemplate, isNull);
       expect(cfg.mapStyleJson, isNull);
       expect(cfg.interactive, isTrue);
+      // DP-7 : toolbarConfig additif, défaut null (rétro-compat stricte).
+      expect(cfg.toolbarConfig, isNull);
     });
 
     test('== et hashCode par valeur', () {
@@ -47,6 +49,45 @@ void main() {
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
       expect(a, isNot(equals(c)));
+    });
+  });
+
+  group('DP-7 (AC3) — toolbarConfig additif, rétro-compat stricte', () {
+    test('config sans toolbarConfig == config E11b-1 équivalente', () {
+      // Une config construite AVANT DP-7 (sans toolbarConfig) reste == à une
+      // config identique : l\'ajout du champ n\'a pas cassé l\'égalité.
+      const before = ZGeoFieldConfig(
+        geometry: ZGeoGeometry.circle,
+        defaultZoom: 10,
+      );
+      const after = ZGeoFieldConfig(
+        geometry: ZGeoGeometry.circle,
+        defaultZoom: 10,
+      );
+      expect(before, equals(after));
+      expect(before.hashCode, equals(after.hashCode));
+      expect(before.toolbarConfig, isNull);
+    });
+
+    test('toolbarConfig différencie l\'égalité', () {
+      const a = ZGeoFieldConfig();
+      const b = ZGeoFieldConfig(
+        toolbarConfig: ZGeoEditorToolbarConfig.standard,
+      );
+      expect(a, isNot(equals(b)));
+      expect(a.hashCode, isNot(equals(b.hashCode)));
+    });
+
+    test('copyWith propage toolbarConfig', () {
+      const base = ZGeoFieldConfig();
+      final withBar = base.copyWith(
+        toolbarConfig: ZGeoEditorToolbarConfig.full,
+      );
+      expect(withBar.toolbarConfig, ZGeoEditorToolbarConfig.full);
+      // Les autres champs restent intacts.
+      expect(withBar.interactive, isTrue);
+      // copyWith sans argument → identique.
+      expect(base.copyWith(), equals(base));
     });
   });
 
