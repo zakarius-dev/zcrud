@@ -149,11 +149,20 @@ class ZColorConfig extends ZFieldConfig {
 /// Config triviale pur-cœur du champ **curseur** (`slider`, E3-3b).
 ///
 /// origine: bornes/pas d'un `Slider` DODLP. Pur-données `const` : le mapping vers
-/// le widget `Slider` est E3-3b (`ZSliderFieldWidget`). Défauts sûrs (`0..1`,
-/// pas continu) si la config est absente.
+/// le widget `Slider` est E3-3b (`ZSliderFieldWidget`).
+///
+/// **MIN-2 (slider défauts, parité DODLP)** : la plage par défaut est **`0..100`**
+/// (alignée sur DODLP), et non plus `0..1`. C'est un **changement de défaut borné
+/// et entièrement paramétrable** — toute config qui déclare explicitement
+/// `min`/`max` conserve exactement ses bornes (aucune régression pour les specs
+/// authored). Seul un `slider` **sans** `ZSliderConfig` (ou avec un `ZSliderConfig`
+/// aux `min`/`max` omis) voit sa plage passer de `0..1` à `0..100`. Note de
+/// migration : un usage historique s'appuyant sur le défaut `0..1` implicite doit
+/// désormais déclarer `ZSliderConfig(max: 1)`.
 class ZSliderConfig extends ZFieldConfig {
-  /// Construit une config de curseur `const`.
-  const ZSliderConfig({this.min = 0, this.max = 1, this.divisions});
+  /// Construit une config de curseur `const`. Défauts **`0..100`** continu
+  /// (parité DODLP, MIN-2) — paramétrables champ par champ.
+  const ZSliderConfig({this.min = 0, this.max = 100, this.divisions});
 
   /// Borne minimale du curseur.
   final double min;
@@ -242,6 +251,8 @@ class FileFieldConfig extends ZFieldConfig {
     this.maxFiles,
     this.maxSizeBytes,
     this.allowedSources = _allFileSources,
+    this.allowedDocumentTypes = const <String, List<String>>{},
+    this.imageFallback = false,
   });
 
   /// Extensions acceptées (`['pdf', 'png']`) — vide = aucune contrainte.
@@ -259,6 +270,41 @@ class FileFieldConfig extends ZFieldConfig {
   /// Sources d'acquisition autorisées (défaut : toutes).
   final List<ZFileSource> allowedSources;
 
+  /// MIN-2 (parité DODLP `allowedDocumentTypes`) — extensions **groupées par
+  /// catégorie** (`{'images': ['png','jpg'], 'docs': ['pdf','docx']}`). Pur-données
+  /// `const` : permet de déclarer la granularité par **type de document** que
+  /// [acceptedExtensions] (liste plate) n'exprime pas. Le picker injecté
+  /// (`ZFilePicker`, seam E7) consomme [effectiveExtensions] (union de
+  /// [acceptedExtensions] et de toutes les valeurs de cette map). Vide (défaut) ⇒
+  /// **rétro-compat stricte** : [effectiveExtensions] == [acceptedExtensions].
+  final Map<String, List<String>> allowedDocumentTypes;
+
+  /// MIN-2 (parité DODLP « fallback image ») — quand `true`, un champ `image` dont
+  /// la valeur acquise **n'est pas** une image affiche malgré tout la
+  /// prévisualisation/l'icône **image** (repli visuel), au lieu de l'icône
+  /// document générique. Pur-données ; consommé par `ZAppFileField._iconFor`.
+  /// Défaut `false` ⇒ rendu E3-3c inchangé (icône dérivée du mime).
+  final bool imageFallback;
+
+  /// Extensions **effectives** acceptées (MIN-2) : union de [acceptedExtensions]
+  /// et de toutes les extensions déclarées par catégorie dans
+  /// [allowedDocumentTypes] (dédupliquées, ordre stable — plates d'abord). Sans
+  /// [allowedDocumentTypes] ⇒ exactement [acceptedExtensions] (rétro-compat).
+  List<String> get effectiveExtensions {
+    if (allowedDocumentTypes.isEmpty) return acceptedExtensions;
+    final seen = <String>{};
+    final out = <String>[];
+    for (final e in acceptedExtensions) {
+      if (seen.add(e)) out.add(e);
+    }
+    for (final list in allowedDocumentTypes.values) {
+      for (final e in list) {
+        if (seen.add(e)) out.add(e);
+      }
+    }
+    return List<String>.unmodifiable(out);
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -266,19 +312,38 @@ class FileFieldConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           maxFiles == other.maxFiles &&
           maxSizeBytes == other.maxSizeBytes &&
+          imageFallback == other.imageFallback &&
           _listEquals(acceptedExtensions, other.acceptedExtensions) &&
           _listEquals(acceptedMimeTypes, other.acceptedMimeTypes) &&
-          _listEquals(allowedSources, other.allowedSources);
+          _listEquals(allowedSources, other.allowedSources) &&
+          _docTypesEquals(allowedDocumentTypes, other.allowedDocumentTypes);
 
   @override
   int get hashCode => Object.hash(
         runtimeType,
         maxFiles,
         maxSizeBytes,
+        imageFallback,
         Object.hashAll(acceptedExtensions),
         Object.hashAll(acceptedMimeTypes),
         Object.hashAll(allowedSources),
+        Object.hashAllUnordered(
+          allowedDocumentTypes.entries
+              .map((e) => Object.hash(e.key, Object.hashAll(e.value))),
+        ),
       );
+}
+
+/// Égalité **profonde** de deux maps `catégorie → extensions` (pur-Dart, MIN-2).
+bool _docTypesEquals(
+    Map<String, List<String>> a, Map<String, List<String>> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (final entry in a.entries) {
+    final other = b[entry.key];
+    if (other == null || !_listEquals(entry.value, other)) return false;
+  }
+  return true;
 }
 
 /// Config du champ **select** (`select`/`radio`/`checkbox`, DP-15/M8+M22).
@@ -303,6 +368,7 @@ class ZSelectConfig extends ZFieldConfig {
     this.choicesFromKey,
     this.choicesSourceKey,
     this.filterKeys = const <String>[],
+    this.radioAsModal = false,
   });
 
   /// Active le **modal de recherche** (filtrage client sur les libellés). `false`
@@ -331,6 +397,12 @@ class ZSelectConfig extends ZFieldConfig {
   /// tranches est **ciblé** (SM-1).
   final List<String> filterKeys;
 
+  /// MIN-2 (parité DODLP « radio = en réalité modal S2 ») — quand `true`, un champ
+  /// `radio` est rendu comme un **déclencheur ouvrant un modal** de choix unique
+  /// (au lieu des `RadioListTile` inline). Sans effet sur `select`/`checkbox`.
+  /// Défaut `false` ⇒ rendu `RadioListTile` inline E3-3a inchangé (rétro-compat).
+  final bool radioAsModal;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -340,6 +412,7 @@ class ZSelectConfig extends ZFieldConfig {
           modalThreshold == other.modalThreshold &&
           choicesFromKey == other.choicesFromKey &&
           choicesSourceKey == other.choicesSourceKey &&
+          radioAsModal == other.radioAsModal &&
           _listEquals(filterKeys, other.filterKeys);
 
   @override
@@ -349,6 +422,7 @@ class ZSelectConfig extends ZFieldConfig {
         modalThreshold,
         choicesFromKey,
         choicesSourceKey,
+        radioAsModal,
         Object.hashAll(filterKeys),
       );
 }

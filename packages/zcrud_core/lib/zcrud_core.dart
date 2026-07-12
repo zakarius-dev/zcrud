@@ -81,6 +81,7 @@ export 'src/presentation/edition/z_read_only_field_card.dart';
 // descripteur de span par breakpoint `ZResponsiveSpan`, seuils `ZBreakpoint`/
 // `ZResponsiveBreakpoints`, widget de disposition directionnel `ZResponsiveGrid`.
 export 'src/presentation/edition/z_responsive_grid.dart';
+export 'src/presentation/edition/z_section_collapse_store.dart';
 // Assistant multi-étapes (E3-5, AD-2/AD-13/SM-1) : `ZStepperEdition` partitionne
 // le MÊME `ZFormController` en étapes séquencées (réutilise `DynamicEdition` par
 // étape) ; validation PAR ÉTAPE (gate « suivant » sur validateurs E3-2), état

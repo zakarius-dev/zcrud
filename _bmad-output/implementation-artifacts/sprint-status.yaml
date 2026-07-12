@@ -195,7 +195,7 @@ development_status:
   # Objectif : migration DODLP structurellement fidèle. Stories = les 14 gaps
   # BLOQUANTS (ordre du rapport B1->B14, regroupés), puis les ~24 majeurs.
   # Source de vérité détaillée : docs/dodlp-edition-parity-gap.md.
-  epic-dp: done  # bloquants B1-B14 (commit a64e3b3) + majeurs M1-M22 (DP-12..DP-22) done. Mode accéléré : dev groupé + code-review adversarial groupé (A/B). Gates repo-wide verts.
+  epic-dp: done  # parité DODLP COMPLÈTE : bloquants (a64e3b3) + majeurs (775f6f5) + mineurs (MIN-1/MIN-2). Gates repo-wide verts.
   dp-1-layout-fieldsize-decoration: done           # B1 FieldSize + B2 minLines/maxLines + M2 thème/décoration
   dp-2-displaycondition-etendu: done              # B3
   dp-3-richtext-lecture-seule-modes: done          # B4 readonly + B6 inline/plein-écran
@@ -221,5 +221,10 @@ development_status:
   dp-20-validateur-telephone-national: done                   # M9 (zcrud_intl) — APPROVED
   dp-21-geo-formes-polyline-style-metadata: done              # M13 (zcrud_geo) — APPROVED
   dp-22-markdown-embed-image-video-toolbar: done              # M20 (zcrud_markdown) — APPROVED (LOW l10n FR documenté)
+  # === Tranche MINEURS (§2/§3 MINOR du rapport), groupée au minimum (consigne user). ===
+  # Déjà couverts : geo holes (DP-21), phone national (DP-20), color recent + number
+  # currency (DP-17). Restants regroupés en 2 stories (markdown disjoint ∥ core).
+  min-1-markdown-mineurs: done                 # LaTeX/tableau/pertes/minmaxlines/limites/styles (zcrud_markdown) — APPROVED, 269 tests
+  min-2-core-mineurs: done                     # slider/file/date-clear/select/multiline/time/span/sections/password + doc non-parité (zcrud_core) — APPROVED, 884 tests
   # Rétro E-DP (bloquants) done : 9 action items AI-DP-1..9 (voir epic-dp-retrospective.md).
   epic-dp-retrospective: done

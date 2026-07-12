@@ -38,6 +38,7 @@ class ZDateFieldWidget extends StatelessWidget {
     required this.onChanged,
     this.firstDate,
     this.lastDate,
+    this.onCleared,
     super.key,
   });
 
@@ -57,6 +58,13 @@ class ZDateFieldWidget extends StatelessWidget {
   /// Résolveur **paresseux** de la borne haute (littéral > cross-champ), évalué
   /// au tap. `null` ou retour `null` ⇒ repli `DateTime(2100)`.
   final ValueGetter<DateTime?>? lastDate;
+
+  /// MIN-2 (parité DODLP « croix d'effacement ») — callback d'**effacement** de la
+  /// valeur (retour à `null`). Le dispatcher ne le fournit que pour un champ **non
+  /// requis** et éditable ; une **croix** accessible n'est rendue que si
+  /// [onCleared] est non `null` ET qu'une valeur est présente. `null` (défaut) ⇒
+  /// aucune croix (rendu antérieur strictement inchangé).
+  final VoidCallback? onCleared;
 
   /// Mode d'édition effectif (D2) — jamais `null`.
   ZDateMode get _mode {
@@ -81,10 +89,15 @@ class ZDateFieldWidget extends StatelessWidget {
         label(context, placeholderKey, fallback: label(context, 'selectDate'));
     final display = current.isEmpty ? placeholder : current;
 
+    // MIN-2 : croix d'effacement rendue seulement si un callback est fourni
+    // (champ non requis + éditable) ET qu'une valeur existe (rien à effacer sinon).
+    final showClear =
+        onCleared != null && !field.readOnly && current.isNotEmpty;
+
     // UN SEUL nœud sémantique cohérent (L-1) : le wrapper porte rôle bouton +
     // libellé + valeur + action de tap, et EXCLUT la sémantique descendante
     // (bouton Material + Text) pour éviter la double annonce du lecteur d'écran.
-    return Semantics(
+    final trigger = Semantics(
       button: true,
       enabled: !field.readOnly,
       label: resolvedLabel,
@@ -104,6 +117,21 @@ class ZDateFieldWidget extends StatelessWidget {
           child: Text('$resolvedLabel : $display'),
         ),
       ),
+    );
+
+    if (!showClear) return trigger;
+
+    // La croix vit HORS du nœud `excludeSemantics` du déclencheur → son propre
+    // rôle bouton + libellé (`clear`), cible ≥ 48 dp (AD-13), directionnel.
+    return Row(
+      children: <Widget>[
+        Expanded(child: trigger),
+        IconButton(
+          icon: const Icon(Icons.clear),
+          tooltip: label(context, 'clear'),
+          onPressed: onCleared,
+        ),
+      ],
     );
   }
 

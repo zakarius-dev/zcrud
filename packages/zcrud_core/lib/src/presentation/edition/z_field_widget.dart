@@ -456,6 +456,11 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
               _resolveDateBound(dateCfg?.minDateIso, dateCfg?.firstDateKey),
           lastDate: () =>
               _resolveDateBound(dateCfg?.maxDateIso, dateCfg?.lastDateKey),
+          // MIN-2 : croix d'effacement UNIQUEMENT pour un champ non requis et
+          // éditable (retour à `null`). Un champ requis ne l'affiche pas.
+          onCleared: (field.isRequired || field.readOnly)
+              ? null
+              : () => widget.controller.setValue(field.name, null),
         );
       case EditionFamily.boolean:
         return ZBooleanFieldWidget(
@@ -478,6 +483,12 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           modalThreshold: selCfg?.modalThreshold,
           multiple: field.multiple,
           bare: bare,
+          // MIN-2 : `radio` en modal (option config) + bouton reset (→ null) pour
+          // un select/radio MONO non requis et éditable (jamais en multi).
+          radioAsModal: selCfg?.radioAsModal ?? false,
+          onCleared: (field.multiple || field.isRequired || field.readOnly)
+              ? null
+              : () => widget.controller.setValue(field.name, null),
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.relation:

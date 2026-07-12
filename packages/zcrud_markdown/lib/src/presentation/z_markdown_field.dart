@@ -115,6 +115,9 @@ class ZMarkdownField extends StatefulWidget {
     this.showToolbar = true,
     this.toolbarConfig,
     this.codec,
+    this.minLines,
+    this.maxLines,
+    this.characterLimit,
     this.onInit,
     this.onBuild,
     super.key,
@@ -134,6 +137,9 @@ class ZMarkdownField extends StatefulWidget {
     required this.mode,
     this.toolbarConfig,
     this.codec,
+    this.minLines,
+    this.maxLines,
+    this.characterLimit,
     this.onInit,
     this.onBuild,
     super.key,
@@ -169,6 +175,21 @@ class ZMarkdownField extends StatefulWidget {
   ///
   /// Précédence : ce paramètre > [ZMarkdownCodecScope] hérité > `ZDeltaCodec()`.
   final ZCodec? codec;
+
+  /// Nombre MINIMAL de lignes de hauteur de l'éditeur (MIN-1). `null` ⇒ hauteur
+  /// intrinsèque (comportement E6-1 inchangé).
+  final int? minLines;
+
+  /// Nombre MAXIMAL de lignes de hauteur de l'éditeur (MIN-1, mode compact borné).
+  /// `null` ⇒ hauteur intrinsèque non bornée (comportement E6-1 inchangé). Quand
+  /// fourni, l'éditeur défile en interne au-delà de cette hauteur.
+  final int? maxLines;
+
+  /// Limite SOUPLE de caractères (texte brut) — MIN-1. `null` ⇒ aucune limite
+  /// (comportement E6-1 inchangé). Fournie ⇒ un compteur vivant est affiché et
+  /// la saisie au-delà de la limite est tronquée (best-effort, hors chemin chaud
+  /// pour les champs sans limite).
+  final int? characterLimit;
 
   /// Hook d'instrumentation : appelé UNE FOIS en [State.initState].
   @visibleForTesting
@@ -244,6 +265,13 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
   /// Ce que le champ rend, calculé UNE FOIS en [initState].
   late final _RenderMode _renderMode;
+
+  /// Styles Quill dérivés du thème (MIN-1) — mémoïsés (recalculés seulement si
+  /// les dépendances de thème changent, jamais dans le chemin chaud de frappe).
+  DefaultStyles? _themedStyles;
+
+  /// Garde de ré-entrance de l'application de la limite de caractères (MIN-1).
+  bool _enforcingLimit = false;
 
   @override
   int get debugDocChangeCount => _documentChangeCount;
@@ -329,6 +357,14 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     widget.onInit?.call();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // MIN-1 : (re)calcule les styles thémés quand le thème ambiant change —
+    // hors chemin chaud de frappe (le thème ne change pas à chaque caractère).
+    _themedStyles = zQuillThemedStyles(context);
+  }
+
   /// Crée la voie d'édition (QuillController + focus + scroll + abonnement +
   /// toolbar). Appelé UNIQUEMENT pour `fullEditor`/`inlineEditor`.
   void _initEditingController() {
@@ -402,11 +438,50 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     if (_applyingExternal) return;
     final q = _quill;
     if (q == null) return;
+    // MIN-1 : borne SOUPLE de caractères (best-effort, opt-in). La troncature
+    // émet une mutation imbriquée qui persistera la valeur bornée.
+    _enforceCharacterLimit();
     final neutral = DeltaNeutralOps.encodeNeutral(q.document);
     final neutralJson = jsonEncode(neutral);
     if (neutralJson == _lastValueJson) return;
     _lastValueJson = neutralJson;
     _write(neutral);
+  }
+
+  /// Longueur du texte BRUT (hors `\n` terminal Delta) du document courant.
+  int get _plainTextLength {
+    final q = _quill;
+    if (q == null) return 0;
+    final String plain = q.document.toPlainText();
+    final int raw = plain.length;
+    return plain.endsWith('\n') ? (raw - 1).clamp(0, raw) : raw;
+  }
+
+  /// MIN-1 — Applique la limite SOUPLE de caractères : tronque l'excédent juste
+  /// avant le `\n` terminal. Best-effort, DÉFENSIF (jamais de throw), gardé
+  /// contre la ré-entrance. No-op si aucune limite (chemin chaud intact).
+  void _enforceCharacterLimit() {
+    final int? limit = widget.characterLimit;
+    final q = _quill;
+    if (limit == null || q == null || _enforcingLimit) return;
+    final int len = _plainTextLength;
+    if (len <= limit) return;
+    final int overflow = len - limit;
+    // Position juste avant le `\n` terminal (document.length inclut ce `\n`).
+    final int deleteAt = (q.document.length - 1 - overflow).clamp(0, 1 << 30);
+    _enforcingLimit = true;
+    try {
+      q.replaceText(
+        deleteAt,
+        overflow,
+        '',
+        TextSelection.collapsed(offset: deleteAt),
+      );
+    } on Object catch (_) {
+      // AD-10 : une troncature qui échoue ne casse jamais l'éditeur.
+    } finally {
+      _enforcingLimit = false;
+    }
   }
 
   @override
@@ -520,6 +595,38 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
     final label = _field.label ?? _field.name;
 
+    // MIN-1 : hauteur bornée (mode compact) via minLines/maxLines. Quand une
+    // borne max est posée, l'éditeur défile en interne (scrollable) et sa
+    // hauteur est plafonnée ; sinon comportement E6-1 (intrinsèque, non-scroll).
+    final double lineHeight =
+        (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16) * 1.5;
+    final int? minLines = widget.minLines;
+    final int? maxLines = widget.maxLines;
+    final bool bounded = maxLines != null;
+
+    Widget quill = QuillEditor(
+      controller: _quill!,
+      focusNode: _focus!,
+      scrollController: _scroll!,
+      config: QuillEditorConfig(
+        // Borné ⇒ défilement interne ; sinon hauteur intrinsèque (E6-1).
+        scrollable: bounded,
+        padding: EdgeInsetsDirectional.zero,
+        embedBuilders: kZEmbedBuilders,
+        // MIN-1 : styles de titres dérivés du thème (FR-26, zéro couleur en dur).
+        customStyles: _themedStyles,
+      ),
+    );
+    if (minLines != null || maxLines != null) {
+      quill = ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: minLines != null ? minLines * lineHeight : 0.0,
+          maxHeight: maxLines != null ? maxLines * lineHeight : double.infinity,
+        ),
+        child: quill,
+      );
+    }
+
     final editor = Semantics(
       textField: true,
       label: label,
@@ -530,16 +637,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         ),
         child: Padding(
           padding: zTheme.fieldPadding,
-          child: QuillEditor(
-            controller: _quill!,
-            focusNode: _focus!,
-            scrollController: _scroll!,
-            config: const QuillEditorConfig(
-              scrollable: false,
-              padding: EdgeInsetsDirectional.zero,
-              embedBuilders: kZEmbedBuilders,
-            ),
-          ),
+          child: quill,
         ),
       ),
     );
@@ -575,6 +673,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
             ),
           ),
         editor,
+        if (widget.characterLimit != null) _characterCounter(context),
       ],
     );
 
@@ -584,6 +683,37 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         FlutterQuillLocalizations.delegate,
       ],
       child: column,
+    );
+  }
+
+  /// Compteur vivant de caractères (MIN-1) — affiché sous l'éditeur quand une
+  /// [characterLimit] est fournie. Couleur d'alerte issue du thème (FR-26) à
+  /// l'approche/au dépassement, `Semantics` lisible. Directionnel.
+  Widget _characterCounter(BuildContext context) {
+    final int limit = widget.characterLimit!;
+    final int len = _plainTextLength;
+    final bool atLimit = len >= limit;
+    final Color color = atLimit
+        ? (ZcrudTheme.of(context).errorColor ??
+            Theme.of(context).colorScheme.error)
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final String text = '$len / $limit';
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(top: 4, end: 4),
+      child: Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: Semantics(
+          label: 'Nombre de caractères : $len sur $limit',
+          child: Text(
+            text,
+            textAlign: TextAlign.end,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: color),
+          ),
+        ),
+      ),
     );
   }
 

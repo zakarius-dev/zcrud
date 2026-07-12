@@ -21,6 +21,7 @@ export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';
 export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_spec.dart';
+export 'src/domain/edition/z_time_codec.dart';
 export 'src/domain/edition/z_validator_spec.dart';
 export 'src/domain/registry/z_registry_error.dart';
 export 'src/domain/registry/zcrud_registry.dart';

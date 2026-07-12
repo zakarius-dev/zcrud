@@ -22,6 +22,24 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+/// MIN-2 (colocalisation span — **test de cohérence des clés `layout`**) : le
+/// `layout` de `DynamicEdition` est une `Map<String, ZResponsiveSpan>` dont les
+/// clés sont des **noms de champ** (non typés). Cette fonction pure retourne les
+/// clés du [layout] qui ne correspondent à **aucun** champ de [fieldNames] — une
+/// clé orpheline (typiquement un champ renommé) dont le span serait silencieusement
+/// ignoré au rendu. Permet à l'app/aux tests de **détecter la dérive** au lieu de
+/// la subir. Pur-Dart, ne lève jamais ; ensemble vide ⇒ layout cohérent.
+Set<String> zUnknownLayoutKeys(
+  Set<String> fieldNames,
+  Map<String, ZResponsiveSpan> layout,
+) {
+  final unknown = <String>{};
+  for (final key in layout.keys) {
+    if (!fieldNames.contains(key)) unknown.add(key);
+  }
+  return unknown;
+}
+
 /// Breakpoints responsives (style Bootstrap — cf. [ZResponsiveBreakpoints]).
 enum ZBreakpoint {
   /// Extra-small (téléphone portrait).

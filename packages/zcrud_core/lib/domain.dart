@@ -45,6 +45,7 @@ export 'src/domain/edition/z_field_rename.dart';
 export 'src/domain/edition/z_field_size.dart';
 export 'src/domain/edition/z_field_spec.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
+export 'src/domain/edition/z_time_codec.dart';
 export 'src/domain/edition/z_validator_spec.dart';
 // Slots d'extensibilité (E2-3, AD-4/AD-10) : `ZExtension`/`ZExtensible`.
 export 'src/domain/extension/z_extensible.dart';

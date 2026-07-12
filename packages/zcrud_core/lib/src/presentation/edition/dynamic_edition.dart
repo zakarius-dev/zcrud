@@ -43,6 +43,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/edition_field_type.dart';
 import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/ports/z_acl.dart';
@@ -50,6 +51,33 @@ import '../l10n/z_localizations.dart';
 import '../z_form_controller.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
+import 'z_section_collapse_store.dart';
+
+/// MIN-2 (parité DODLP `withSpaceer`) — **espacement inter-champ type-dépendant**.
+///
+/// DODLP insère un `SizedBox` (≈ 12 dp) APRÈS certains types de champ « blocs »
+/// (multi-ligne, sous-liste, fichier, signature…) pour aérer la densité, et rien
+/// après les champs compacts. Cette fonction **pure** projette cette règle : elle
+/// retourne [base] pour les types « blocs », et `0` sinon. `base` (défaut `0`) ⇒
+/// **aucun** espacement (rétro-compat pixel stricte) ; l'app/le formulaire l'active
+/// en passant `DynamicEdition.interFieldGap > 0`.
+double zFieldGapAfter(EditionFieldType type, {double base = 0}) {
+  if (base <= 0) return 0;
+  switch (type) {
+    case EditionFieldType.multiline:
+    case EditionFieldType.subItems:
+    case EditionFieldType.dynamicItem:
+    case EditionFieldType.signature:
+    case EditionFieldType.file:
+    case EditionFieldType.image:
+    case EditionFieldType.document:
+    case EditionFieldType.markdown:
+      return base;
+    // ignore: no_default_cases
+    default:
+      return 0;
+  }
+}
 
 /// Descripteur **présentation** d'une action de **niveau formulaire** (barre
 /// d'actions en-tête de `DynamicEdition`, DP-14, gap M7).
@@ -158,6 +186,9 @@ class DynamicEdition extends StatefulWidget {
     this.acl = const ZAllowAllAcl(),
     this.formActions = const <ZFormAction>[],
     this.collectionId,
+    this.collapseStore,
+    this.formId,
+    this.interFieldGap = 0,
     this.onStructuralBuild,
     super.key,
   });
@@ -237,6 +268,24 @@ class DynamicEdition extends StatefulWidget {
   /// Identifiant de collection éventuel, propagé **tel quel** à
   /// `acl.can(…, collectionId:)` (seam neutre, aucune règle métier — AD-16).
   final String? collectionId;
+
+  /// **Seam de persistance NEUTRE du repli des sections** (MIN-2, parité DODLP
+  /// GetStorage). `null` (défaut) ⇒ état de repli **en mémoire** uniquement
+  /// (comportement historique inchangé). Non `null` ⇒ l'état de repli est
+  /// (dé)chargé via ce port (impl GetStorage/shared_preferences déférée au
+  /// binding/app — AD-1). Voir [ZSectionCollapseStore].
+  final ZSectionCollapseStore? collapseStore;
+
+  /// Clé de portée passée telle quelle à [collapseStore] (`null` ⇒ portée
+  /// globale). Sert à distinguer l'état de repli de plusieurs formulaires.
+  final String? formId;
+
+  /// **Espacement inter-champ** (MIN-2, parité DODLP `withSpaceer`). `0` (défaut)
+  /// ⇒ **aucun** espace additionnel (rétro-compat pixel stricte). `> 0` ⇒ un
+  /// `SizedBox` type-dépendant ([zFieldGapAfter]) est inséré APRÈS les champs
+  /// « blocs » dans le rendu en colonne (jamais après un champ compact). Sans
+  /// effet en grille (l'espacement y est porté par [gridGutter]).
+  final double interFieldGap;
 
   /// Hook d'instrumentation : appelé à chaque (re)build **structurel** — compteur
   /// de build de niveau formulaire pour SM-1 (reste inchangé pendant la saisie).
@@ -358,10 +407,46 @@ class _DynamicEditionState extends State<DynamicEdition> {
     return false;
   }
 
-  Set<String> _initialCollapsed() => <String>{
-        for (final s in widget.sections)
-          if (s.collapsible && !s.initiallyExpanded) s.title,
-      };
+  /// État de repli initial. Défauts = sections `collapsible` déclarées
+  /// `initiallyExpanded: false`. MIN-2 : si un [DynamicEdition.collapseStore] est
+  /// fourni, l'état **persisté** est autoritaire (restreint aux titres repliables
+  /// courants) ; à défaut de persistance, les défauts sont **amorcés** dans le
+  /// store. Défensif (AD-10) : toute erreur du store ⇒ repli sur les défauts
+  /// mémoire, jamais un crash.
+  Set<String> _initialCollapsed() {
+    final defaults = <String>{
+      for (final s in widget.sections)
+        if (s.collapsible && !s.initiallyExpanded) s.title,
+    };
+    final store = widget.collapseStore;
+    if (store == null) return defaults;
+    final collapsibleTitles = <String>{
+      for (final s in widget.sections)
+        if (s.collapsible) s.title,
+    };
+    try {
+      final persisted = store.loadCollapsed(widget.formId);
+      if (persisted.isEmpty) {
+        // Aucune persistance encore : amorce le store avec les défauts.
+        if (defaults.isNotEmpty) store.saveCollapsed(widget.formId, defaults);
+        return defaults;
+      }
+      return persisted.intersection(collapsibleTitles);
+    } catch (_) {
+      return defaults;
+    }
+  }
+
+  /// Persiste l'état de repli courant via le store (défensif — AD-10).
+  void _persistCollapsed(Set<String> collapsed) {
+    final store = widget.collapseStore;
+    if (store == null) return;
+    try {
+      store.saveCollapsed(widget.formId, collapsed);
+    } catch (_) {
+      // Une impl de store fautive ne casse jamais le formulaire.
+    }
+  }
 
   void _rebuildIndexes() {
     _specByName = <String, ZFieldSpec>{
@@ -662,12 +747,22 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// `ValueKey(name)` (place stable NON contournable).
   Widget _membersLayout(List<ZFieldSpec> members) {
     if (widget.layout.isEmpty) {
+      // MIN-2 (`withSpaceer`) : insère un `SizedBox` type-dépendant APRÈS les
+      // champs « blocs » quand `interFieldGap > 0` (jamais après le dernier ;
+      // aucun espace si `interFieldGap == 0` — rétro-compat pixel stricte).
+      final children = <Widget>[];
+      for (var i = 0; i < members.length; i++) {
+        final spec = members[i];
+        children.add(_buildField(context, spec));
+        if (i < members.length - 1) {
+          final gap = zFieldGapAfter(spec.type, base: widget.interFieldGap);
+          if (gap > 0) children.add(SizedBox(height: gap));
+        }
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          for (final spec in members) _buildField(context, spec),
-        ],
+        children: children,
       );
     }
     // Grille : la place stable est portée par les CELLULES (enfants directs du
@@ -695,6 +790,8 @@ class _DynamicEditionState extends State<DynamicEdition> {
     final next = Set<String>.of(_collapsed.value);
     if (!next.remove(title)) next.add(title);
     _collapsed.value = next; // notifie → rebuild STRUCTUREL (jamais une frappe).
+    // MIN-2 : persiste l'état de repli (no-op si aucun store injecté).
+    _persistCollapsed(next);
   }
 
   /// Sous-arbre RENDU d'un champ (dispatcher par type ou `fieldBuilder` custom),

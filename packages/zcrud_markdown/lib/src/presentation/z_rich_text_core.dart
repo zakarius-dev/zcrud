@@ -36,10 +36,45 @@ const double kZMinTapTarget = 48;
 /// surface publique scannée par les tests d'isolation de signature.
 const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZLatexEmbedBuilder(),
+  ZLatexBlockEmbedBuilder(),
   ZTableEmbedBuilder(),
   ZMediaEmbedBuilder(ZMediaKind.image),
   ZMediaEmbedBuilder(ZMediaKind.video),
 ];
+
+/// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant (MIN-1,
+/// FR-26) : titres H1..H6 alignés sur les rôles typographiques du [TextTheme]
+/// (couleurs/tailles/graisses du thème), SANS couleur codée en dur.
+///
+/// Part de `DefaultStyles.getInstance(context)` (déjà thémé par Quill) et
+/// SURCHARGE les seuls styles de titre en fusionnant le rôle `TextTheme`
+/// correspondant (H1→headlineLarge … H6→titleSmall). Les rôles absents laissent
+/// le style Quill intact (dégradation sûre). Résultat NEUTRE côté API : ce type
+/// Quill (`DefaultStyles`) ne fuit JAMAIS dans le barrel — il n'est consommé que
+/// par les `QuillEditorConfig` internes (éditeur / lecteur / plein-écran).
+///
+/// AD-13 (documenté) : la parité DODLP (`QuillDefaultStylesHelper` + google_fonts
+/// + palette de couleurs figée) n'est PAS reproduite — pas de dépendance
+/// `google_fonts`, pas de couleur en dur. Seule la dérivation thème est portée.
+DefaultStyles zQuillThemedStyles(BuildContext context) {
+  final DefaultStyles base = DefaultStyles.getInstance(context);
+  final TextTheme tt = Theme.of(context).textTheme;
+  DefaultTextBlockStyle? merge(DefaultTextBlockStyle? proto, TextStyle? role) {
+    if (proto == null || role == null) return proto;
+    return proto.copyWith(style: proto.style.merge(role));
+  }
+
+  return base.merge(
+    DefaultStyles(
+      h1: merge(base.h1, tt.headlineLarge),
+      h2: merge(base.h2, tt.headlineMedium),
+      h3: merge(base.h3, tt.headlineSmall),
+      h4: merge(base.h4, tt.titleLarge),
+      h5: merge(base.h5, tt.titleMedium),
+      h6: merge(base.h6, tt.titleSmall),
+    ),
+  );
+}
 
 /// Construit une [QuillSimpleToolbarConfig] STABLE (SM-1/AD-2) branchée sur les
 /// callbacks d'insertion d'embed, PILOTÉE par une [ZRichTextToolbarConfig]
@@ -125,14 +160,21 @@ Future<void> insertZLatex(
   required bool Function() isMounted,
 }) async {
   final _LatexEmbedHit? existing = _latexEmbedAtSelection(quill);
-  final String? source =
-      await showZLatexDialog(context, initial: existing?.source ?? '');
-  if (source == null || !isMounted()) return;
+  final ZLatexInput? input = await showZLatexDialog(
+    context,
+    initial: existing?.source ?? '',
+    initialBlock: existing?.block ?? false,
+  );
+  if (input == null || !isMounted()) return;
+  // MIN-1 : bascule inline/bloc → embed `latex` (text) vs `latexBlock` (display).
+  final Embeddable embed = input.block
+      ? ZLatexBlockEmbed(input.source)
+      : ZLatexEmbed(input.source);
   if (existing != null) {
     quill.replaceText(
       existing.index,
       1,
-      ZLatexEmbed(source),
+      embed,
       TextSelection.collapsed(offset: existing.index + 1),
     );
     return;
@@ -144,12 +186,13 @@ Future<void> insertZLatex(
   quill.replaceText(
     index,
     length,
-    ZLatexEmbed(source),
+    embed,
     TextSelection.collapsed(offset: index + 1),
   );
 }
 
-/// Détecte un embed LaTeX sous/juste-avant le caret (pour l'édition, E6-3).
+/// Détecte un embed LaTeX (inline `latex` OU bloc `latexBlock`) sous/juste-avant
+/// le caret (pour l'édition, E6-3 + MIN-1). Retient le mode `block`.
 _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   final TextSelection sel = quill.selection;
   if (!sel.isValid) return null;
@@ -159,10 +202,16 @@ _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   var index = 0;
   for (final Map<String, dynamic> op in ops) {
     final Object? insert = op['insert'];
-    if (insert is Map && insert[kLatexEmbedType] is String) {
-      if (caret == index || caret == index + 1) {
-        return _LatexEmbedHit(index, insert[kLatexEmbedType] as String);
+    if (insert is Map) {
+      final bool isBlock = insert[kLatexBlockEmbedType] is String;
+      final bool isInline = insert[kLatexEmbedType] is String;
+      if ((isInline || isBlock) && (caret == index || caret == index + 1)) {
+        final String source =
+            (isBlock ? insert[kLatexBlockEmbedType] : insert[kLatexEmbedType])
+                as String;
+        return _LatexEmbedHit(index, source, block: isBlock);
       }
+      // Un embed (latex ou autre) occupe une position Delta.
       index += 1;
     } else {
       index += insert is String ? insert.length : 1;
@@ -306,12 +355,15 @@ class _MediaEmbedHit {
   final String source;
 }
 
-/// Localisation d'un embed LaTeX dans le document (index Delta + source).
+/// Localisation d'un embed LaTeX dans le document (index Delta + source + mode).
 class _LatexEmbedHit {
-  const _LatexEmbedHit(this.index, this.source);
+  const _LatexEmbedHit(this.index, this.source, {required this.block});
 
   final int index;
   final String source;
+
+  /// `true` si l'embed détecté est un `latexBlock` (display) — MIN-1.
+  final bool block;
 }
 
 /// Localisation d'un embed tableau dans le document (index Delta + structure).

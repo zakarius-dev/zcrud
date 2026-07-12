@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 
@@ -38,6 +39,46 @@ class ZRowChipsFieldWidget extends StatelessWidget {
   /// Notifié avec la valeur choisie (ou `null` si désélection).
   final ValueChanged<Object?> onChanged;
 
+  /// MIN-2 (parité DODLP « sous-titre rowChips ») — puce avec **sous-titre**
+  /// optionnel (`ZFieldChoice.subtitle`). Sans sous-titre ⇒ `ChoiceChip` simple
+  /// (rendu E3-3b inchangé) ; avec sous-titre ⇒ label sur deux lignes (titre +
+  /// ligne secondaire `bodySmall`) et `Tooltip` a11y portant le sous-titre.
+  Widget _chip(BuildContext context, ZFieldChoice choice) {
+    final title = label(context, choice.label, fallback: choice.label);
+    final sub = choice.subtitle == null
+        ? null
+        : label(context, choice.subtitle!, fallback: choice.subtitle!);
+    final selected = value == choice.value;
+    final onSelected = field.readOnly
+        ? null
+        : (bool s) => onChanged(s ? choice.value : null);
+
+    if (sub == null) {
+      return ChoiceChip(
+        label: Text(title),
+        selected: selected,
+        onSelected: onSelected,
+      );
+    }
+    return Tooltip(
+      message: sub,
+      child: ChoiceChip(
+        label: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(title, textAlign: TextAlign.start),
+            Text(sub,
+                textAlign: TextAlign.start,
+                style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        selected: selected,
+        onSelected: onSelected,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final resolvedLabel = label(context, field.label ?? field.name,
@@ -61,14 +102,7 @@ class ZRowChipsFieldWidget extends StatelessWidget {
               runSpacing: 4,
               children: <Widget>[
                 for (final choice in field.choices)
-                  ChoiceChip(
-                    label: Text(label(context, choice.label, fallback: choice.label)),
-                    selected: value == choice.value,
-                    onSelected: field.readOnly
-                        ? null
-                        : (selected) =>
-                            onChanged(selected ? choice.value : null),
-                  ),
+                  _chip(context, choice),
               ],
             ),
           ),

@@ -214,6 +214,9 @@ class _ZTableDialogState extends State<_ZTableDialog> {
   /// Largeur d'une colonne de saisie dans la grille du dialogue.
   static const double _kCellWidth = 96;
 
+  /// Largeur de la gouttière de menus LIGNE (MIN-1) — cible ≥ 48 dp.
+  static const double _kRowMenuWidth = 48;
+
   late int _rows;
   late int _columns;
 
@@ -308,6 +311,56 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
+  /// Insère une ligne VIDE à l'index [at] (0.._rows) — MIN-1 (menu ligne).
+  void _insertRowAt(int at) {
+    if (_rows >= _kMaxDim) return;
+    final int idx = at.clamp(0, _rows);
+    final List<TextEditingController> row = <TextEditingController>[
+      for (var c = 0; c < _columns; c++) TextEditingController(),
+    ];
+    setState(() {
+      _cells.insert(idx, row);
+      _rows += 1;
+    });
+  }
+
+  /// Supprime la ligne [at] (dispose ses contrôleurs) — MIN-1 (menu ligne).
+  /// No-op si on est déjà au minimum de lignes.
+  void _deleteRowAt(int at) {
+    if (_rows <= _kMinDim || at < 0 || at >= _rows) return;
+    setState(() {
+      for (final TextEditingController c in _cells[at]) {
+        c.dispose();
+      }
+      _cells.removeAt(at);
+      _rows -= 1;
+    });
+  }
+
+  /// Insère une colonne VIDE à l'index [at] (0.._columns) — MIN-1 (menu colonne).
+  void _insertColumnAt(int at) {
+    if (_columns >= _kMaxDim) return;
+    final int idx = at.clamp(0, _columns);
+    setState(() {
+      for (final List<TextEditingController> row in _cells) {
+        row.insert(idx, TextEditingController());
+      }
+      _columns += 1;
+    });
+  }
+
+  /// Supprime la colonne [at] (dispose ses contrôleurs) — MIN-1 (menu colonne).
+  /// No-op si on est déjà au minimum de colonnes.
+  void _deleteColumnAt(int at) {
+    if (_columns <= _kMinDim || at < 0 || at >= _columns) return;
+    setState(() {
+      for (final List<TextEditingController> row in _cells) {
+        row.removeAt(at).dispose();
+      }
+      _columns -= 1;
+    });
+  }
+
   /// Valide la saisie (AC3) : construit la structure JSON-safe depuis la grille.
   void _submit() {
     final List<List<String>> cells = <List<String>>[
@@ -351,6 +404,86 @@ class _ZTableDialogState extends State<_ZTableDialog> {
       ],
     );
   }
+
+  /// Menu contextuel d'une **ligne** [r] (MIN-1) : insérer au-dessus / en-dessous
+  /// / supprimer. Cible ≥ 48 dp (PopupMenuButton par défaut), `Semantics`.
+  Widget _rowMenu(int r) => Semantics(
+        button: true,
+        label: 'Menu ligne ${r + 1}',
+        child: PopupMenuButton<String>(
+          key: ValueKey<String>('ztable-row-menu-$r'),
+          tooltip: 'Menu ligne ${r + 1}',
+          icon: const Icon(Icons.more_vert),
+          onSelected: (String action) {
+            switch (action) {
+              case 'insertAbove':
+                _insertRowAt(r);
+              case 'insertBelow':
+                _insertRowAt(r + 1);
+              case 'delete':
+                _deleteRowAt(r);
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              key: ValueKey<String>('ztable-row-insert-above'),
+              value: 'insertAbove',
+              child: Text('Insérer une ligne au-dessus'),
+            ),
+            const PopupMenuItem<String>(
+              key: ValueKey<String>('ztable-row-insert-below'),
+              value: 'insertBelow',
+              child: Text('Insérer une ligne en-dessous'),
+            ),
+            PopupMenuItem<String>(
+              key: const ValueKey<String>('ztable-row-delete'),
+              value: 'delete',
+              enabled: _rows > _kMinDim,
+              child: const Text('Supprimer la ligne'),
+            ),
+          ],
+        ),
+      );
+
+  /// Menu contextuel d'une **colonne** [c] (MIN-1) : insérer avant / après /
+  /// supprimer. Cible ≥ 48 dp, `Semantics`.
+  Widget _columnMenu(int c) => Semantics(
+        button: true,
+        label: 'Menu colonne ${c + 1}',
+        child: PopupMenuButton<String>(
+          key: ValueKey<String>('ztable-col-menu-$c'),
+          tooltip: 'Menu colonne ${c + 1}',
+          icon: const Icon(Icons.more_horiz),
+          onSelected: (String action) {
+            switch (action) {
+              case 'insertBefore':
+                _insertColumnAt(c);
+              case 'insertAfter':
+                _insertColumnAt(c + 1);
+              case 'delete':
+                _deleteColumnAt(c);
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              key: ValueKey<String>('ztable-col-insert-before'),
+              value: 'insertBefore',
+              child: Text('Insérer une colonne avant'),
+            ),
+            const PopupMenuItem<String>(
+              key: ValueKey<String>('ztable-col-insert-after'),
+              value: 'insertAfter',
+              child: Text('Insérer une colonne après'),
+            ),
+            PopupMenuItem<String>(
+              key: const ValueKey<String>('ztable-col-delete'),
+              value: 'delete',
+              enabled: _columns > _kMinDim,
+              child: const Text('Supprimer la colonne'),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -396,10 +529,30 @@ class _ZTableDialogState extends State<_ZTableDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
+                    // En-tête : coin vide + un menu par COLONNE (MIN-1).
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const SizedBox(width: _kRowMenuWidth),
+                        for (var c = 0; c < _columns; c++)
+                          SizedBox(
+                            width: _kCellWidth,
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: _columnMenu(c),
+                            ),
+                          ),
+                      ],
+                    ),
+                    // Lignes : menu LIGNE en tête + cellules texte.
                     for (var r = 0; r < _rows; r++)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
+                          SizedBox(
+                            width: _kRowMenuWidth,
+                            child: _rowMenu(r),
+                          ),
                           for (var c = 0; c < _columns; c++)
                             Padding(
                               padding: const EdgeInsetsDirectional.only(

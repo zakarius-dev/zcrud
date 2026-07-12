@@ -31,21 +31,30 @@ import 'z_markdown_field.dart';
 /// | `richText`       | block   |
 ///
 /// `field.readOnly` est honoré par l'adaptateur (rendu lecteur, prioritaire).
+/// [minLines]/[maxLines] (MIN-1) bornent la hauteur de l'éditeur inline
+/// (mode compact) ; [characterLimit] (MIN-1) active un compteur + troncature
+/// souple. Tous OPTIONNELS : omis ⇒ comportement DP-3 INCHANGÉ.
 void registerZMarkdownFields(
   ZWidgetRegistry registry, {
   ZCodec? codec,
+  int? minLines,
+  int? maxLines,
+  int? characterLimit,
 }) {
   registry.register(
     'inlineMarkdown',
-    (context, ctx) => _build(ctx, ZMarkdownFieldMode.inline, codec),
+    (context, ctx) => _build(
+        ctx, ZMarkdownFieldMode.inline, codec, minLines, maxLines, characterLimit),
   );
   registry.register(
     'markdown',
-    (context, ctx) => _build(ctx, ZMarkdownFieldMode.block, codec),
+    (context, ctx) => _build(
+        ctx, ZMarkdownFieldMode.block, codec, minLines, maxLines, characterLimit),
   );
   registry.register(
     'richText',
-    (context, ctx) => _build(ctx, ZMarkdownFieldMode.block, codec),
+    (context, ctx) => _build(
+        ctx, ZMarkdownFieldMode.block, codec, minLines, maxLines, characterLimit),
   );
 }
 
@@ -53,6 +62,9 @@ Widget _build(
   ZFieldWidgetContext ctx,
   ZMarkdownFieldMode mode,
   ZCodec? codec,
+  int? minLines,
+  int? maxLines,
+  int? characterLimit,
 ) =>
     ZMarkdownField.fromContext(
       // Place stable (AD-2) : le `State` persiste ⇒ QuillController jamais recréé.
@@ -60,4 +72,7 @@ Widget _build(
       ctx: ctx,
       mode: mode,
       codec: codec,
+      minLines: minLines,
+      maxLines: maxLines,
+      characterLimit: characterLimit,
     );

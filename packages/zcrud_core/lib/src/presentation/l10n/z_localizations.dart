@@ -53,6 +53,8 @@ const _enLabels = <String, String>{
   'selectDateTime': 'Select a date and time',
   'close': 'Close',
   'reset': 'Reset',
+  // MIN-2 : croix d'effacement (date non requise).
+  'clear': 'Clear',
   'remove': 'Remove',
   'next': 'Next',
   'previous': 'Previous',
@@ -139,6 +141,8 @@ const _frLabels = <String, String>{
   'selectDateTime': 'Sélectionner une date et une heure',
   'close': 'Fermer',
   'reset': 'Réinitialiser',
+  // MIN-2 : croix d'effacement (date non requise).
+  'clear': 'Effacer',
   'remove': 'Retirer',
   'next': 'Suivant',
   'previous': 'Précédent',

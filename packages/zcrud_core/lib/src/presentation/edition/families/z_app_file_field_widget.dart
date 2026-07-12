@@ -39,6 +39,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/app_file.dart';
+import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
@@ -180,8 +181,15 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
     ]);
   }
 
-  IconData _iconFor(AppFile file) =>
-      file.isImage ? Icons.image_outlined : Icons.insert_drive_file_outlined;
+  IconData _iconFor(AppFile file) {
+    // MIN-2 (parité DODLP « fallback image ») : sur un champ `image` avec
+    // `imageFallback`, un fichier non-image affiche malgré tout l'icône image.
+    final imageFallback = _config.imageFallback &&
+        widget.field.type == EditionFieldType.image;
+    return (file.isImage || imageFallback)
+        ? Icons.image_outlined
+        : Icons.insert_drive_file_outlined;
+  }
 
   ({IconData icon, String labelKey}) _actionOf(ZFileSource source) {
     switch (source) {

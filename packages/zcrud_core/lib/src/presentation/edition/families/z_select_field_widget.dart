@@ -52,6 +52,8 @@ class ZSelectFieldWidget extends StatelessWidget {
     this.modalThreshold,
     this.multiple = false,
     this.bare = false,
+    this.radioAsModal = false,
+    this.onCleared,
     super.key,
   });
 
@@ -82,6 +84,18 @@ class ZSelectFieldWidget extends StatelessWidget {
   /// (AC4) : le décor est porté par la Card. Défaut `false`.
   final bool bare;
 
+  /// MIN-2 (parité DODLP « radio = modal S2 ») — rend un champ `radio` comme un
+  /// **déclencheur modal** de choix unique au lieu des `RadioListTile` inline.
+  /// Sans effet hors `radio`. Défaut `false` (rendu inline inchangé).
+  final bool radioAsModal;
+
+  /// MIN-2 (parité DODLP « réinitialisation sélection ») — callback de **remise à
+  /// `null`** de la sélection (mono seulement). Le dispatcher ne le fournit que
+  /// pour un `select`/`radio` **mono non requis** et éditable ; un bouton reset
+  /// accessible n'est rendu que si [onCleared] est non `null` ET qu'une valeur est
+  /// sélectionnée. `null` (défaut) ⇒ aucun bouton reset (rendu antérieur inchangé).
+  final VoidCallback? onCleared;
+
   /// Choix effectifs (dynamique cross-champ) ou repli statique `field.choices`.
   List<ZFieldChoice> get _choices => choices ?? field.choices;
 
@@ -105,6 +119,8 @@ class ZSelectFieldWidget extends StatelessWidget {
       return _buildCheckboxes(context, resolvedLabel);
     }
     if (field.type == EditionFieldType.radio) {
+      // MIN-2 : `radio` en modal (option) — sinon `RadioListTile` inline.
+      if (radioAsModal) return _buildModalMono(context, resolvedLabel);
       return _buildRadios(context, resolvedLabel);
     }
     // Famille `select`.
@@ -113,10 +129,36 @@ class ZSelectFieldWidget extends StatelessWidget {
     return _buildDropdown(context);
   }
 
+  /// MIN-2 — enveloppe un contrôle **mono** dans une `Row` ajoutant un bouton
+  /// **reset** (→ `null`) accessible quand [onCleared] est fourni et qu'une valeur
+  /// est présente. Sinon retourne [child] tel quel (rétro-compat pixel stricte).
+  Widget _withReset(BuildContext context, Widget child, {required bool hasValue}) {
+    if (onCleared == null || !hasValue || field.readOnly) return child;
+    return Row(
+      children: <Widget>[
+        Expanded(child: child),
+        IconButton(
+          icon: const Icon(Icons.clear),
+          tooltip: label(context, 'reset'),
+          onPressed: onCleared,
+        ),
+      ],
+    );
+  }
+
   Widget _buildDropdown(BuildContext context) {
     final choices = _choices;
     final values = choices.map((c) => c.value).toList(growable: false);
     final current = values.contains(value) ? value : null;
+    return _withReset(
+      context,
+      _buildDropdownField(context, choices, current),
+      hasValue: current != null,
+    );
+  }
+
+  Widget _buildDropdownField(
+      BuildContext context, List<ZFieldChoice> choices, Object? current) {
     return DropdownButtonFormField<Object?>(
       // L-3 : un `FormField` ne relit `initialValue` qu'à l'`initState`. Clé sur
       // la valeur COURANTE de la tranche pour que le contrôle recrée son état et
@@ -228,12 +270,17 @@ class ZSelectFieldWidget extends StatelessWidget {
   Widget _buildModalMono(BuildContext context, String resolvedLabel) {
     final choices = _choices;
     final selectedLabel = _labelForValue(context, choices, value);
-    return _ChoiceSelectionTrigger(
-      label: resolvedLabel,
-      valueText: selectedLabel ?? label(context, 'select'),
+    return _withReset(
+      context,
+      _ChoiceSelectionTrigger(
+        label: resolvedLabel,
+        valueText: selectedLabel ?? label(context, 'select'),
+        hasValue: selectedLabel != null,
+        enabled: !field.readOnly,
+        onTap: () =>
+            _openModal(context, resolvedLabel, choices, multiple: false),
+      ),
       hasValue: selectedLabel != null,
-      enabled: !field.readOnly,
-      onTap: () => _openModal(context, resolvedLabel, choices, multiple: false),
     );
   }
 

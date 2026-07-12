@@ -73,8 +73,19 @@ class ZTextFieldWidget extends StatelessWidget {
     // B2 (AC6/AC7) : `minLines`/`maxLines` effectifs lus depuis `ZTextConfig`
     // avec repli type-dépendant préservant le comportement historique.
     final config = field.config is ZTextConfig ? field.config! as ZTextConfig : null;
-    var effectiveMinLines = config?.minLines ?? (isMultiline ? 3 : 1);
-    var effectiveMaxLines = config?.maxLines ?? (isMultiline ? null : 1);
+    // MIN-2 — **règle de mapping `text` → multiligne** (parité DODLP, gap 2.2) :
+    // un champ `text` dont la config déclare `minLines > 1` se comporte comme un
+    // champ multiligne. Sans cette règle, le repli `maxLines = 1` (défaut mono-
+    // ligne) écraserait silencieusement un `minLines: 2` authored (min > max →
+    // clamp à 1 ligne). La règle n'affecte QUE le **défaut de `maxLines`** (rendu
+    // extensible au lieu de figé à 1) ; un `maxLines` explicite est toujours
+    // respecté tel quel. `password` reste mono-ligne (garde ci-dessous). Un `text`
+    // sans config (ou avec `maxLines` seul) conserve exactement le rendu antérieur.
+    final configWantsMultiline =
+        !isPassword && (config?.minLines != null && config!.minLines! > 1);
+    final treatAsMultiline = isMultiline || configWantsMultiline;
+    var effectiveMinLines = config?.minLines ?? (treatAsMultiline ? 3 : 1);
+    var effectiveMaxLines = config?.maxLines ?? (treatAsMultiline ? null : 1);
     // AC8 : garde `obscureText` — une saisie masquée multi-ligne est invalide
     // côté Flutter ; on force 1/1 (config multi-ligne ignorée sans throw).
     if (isPassword) {

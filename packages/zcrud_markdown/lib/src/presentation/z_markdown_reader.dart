@@ -153,7 +153,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
               controller: _quill,
               focusNode: _focus,
               scrollController: _scroll,
-              config: const QuillEditorConfig(
+              config: QuillEditorConfig(
                 // Non-scrollable : hauteur intrinsèque, l'hôte défile.
                 scrollable: false,
                 padding: EdgeInsetsDirectional.zero,
@@ -161,6 +161,8 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 // (controller readOnly). MÊMES embed builders qu'en édition.
                 showCursor: false,
                 embedBuilders: kZEmbedBuilders,
+                // MIN-1 : styles de titres dérivés du thème (FR-26).
+                customStyles: zQuillThemedStyles(context),
               ),
             ),
           );

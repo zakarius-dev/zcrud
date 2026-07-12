@@ -163,9 +163,11 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
                 controller: _quill,
                 focusNode: _focus,
                 scrollController: _scroll,
-                config: const QuillEditorConfig(
+                config: QuillEditorConfig(
                   padding: EdgeInsetsDirectional.zero,
                   embedBuilders: kZEmbedBuilders,
+                  // MIN-1 : styles de titres dérivés du thème (FR-26).
+                  customStyles: zQuillThemedStyles(context),
                 ),
               ),
             ),
