@@ -1,0 +1,12 @@
+# Déclare le tag du slot de rétro-compat sérialisation (AD-10) pour éviter tout
+# avertissement « tag non déclaré ». POINT D'ACCROCHE prêt (ES-1.4) : le corpus
+# de documents historiques du noyau d'étude est dû par **ES-3.5**.
+#
+# `scripts/ci/verify_serialization.dart` exécute ici `dart test --tags
+# serialization-compat` ; tant qu'aucun test n'est taggé, il SKIPPE BRUYAMMENT
+# (bannière nommant ce package). ES-3.5 sèmera le corpus puis activera
+# `ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1` en CI — sans toucher au script ni au
+# workflow.
+tags:
+  serialization-compat:
+    description: "Round-trip / désérialisation défensive (AD-10)."

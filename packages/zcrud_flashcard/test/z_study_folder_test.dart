@@ -54,6 +54,8 @@ void main() {
         ownerId: 'uid-42',
         archivedAt: DateTime.utc(2026, 3, 1, 10),
         createdAt: DateTime.utc(2026, 1, 1),
+        // Miroir de compat (AD-19) : exercé VOLONTAIREMENT (lecture legacy).
+        // ignore: deprecated_member_use
         updatedAt: DateTime.utc(2026, 2, 2),
       );
       final map = folder.toMap();
@@ -118,11 +120,19 @@ void main() {
     });
   });
 
-  group('ZStudyFolder — updatedAt DANS l\'entité (AC6, LWW)', () {
-    test('updatedAt round-trip zéro-perte', () {
-      final folder =
-          ZStudyFolder(title: 't', updatedAt: DateTime.utc(2026, 9, 9, 8, 7));
+  // ES-1.3 (AD-19) : `updatedAt` n'est plus « la clé LWW dans l'entité » mais un
+  // MIROIR DE COMPAT DÉPRÉCIÉ. L'autorité est `ZSyncMeta.updatedAt` (hors-entité,
+  // cf. `z_sync_meta_authority_test.dart` du kernel). Le round-trip du miroir
+  // reste garanti (lecture legacy, AD-10).
+  group('ZStudyFolder — updatedAt = miroir de compat déprécié (AD-19)', () {
+    test('updatedAt round-trip zéro-perte (lecture legacy préservée)', () {
+      final folder = ZStudyFolder(
+        title: 't',
+        // ignore: deprecated_member_use
+        updatedAt: DateTime.utc(2026, 9, 9, 8, 7),
+      );
       final back = ZStudyFolder.fromMap(folder.toMap());
+      // ignore: deprecated_member_use
       expect(back.updatedAt, DateTime.utc(2026, 9, 9, 8, 7));
     });
   });
@@ -218,6 +228,7 @@ void main() {
       expect(folder.parentId, isNull);
       expect(folder.archivedAt, isNull);
       expect(folder.createdAt, isNull);
+      // ignore: deprecated_member_use
       expect(folder.updatedAt, isNull);
       expect(folder.isPublic, isFalse);
       expect(folder.sharedWith, isEmpty);
@@ -260,6 +271,73 @@ void main() {
       final registry = ZcrudRegistry();
       registerZStudyFolder(registry);
       expect(registry.isRegistered('study_folder'), isTrue);
+    });
+  });
+
+  // ES-1.3 (AC4/AC5) — miroir du groupe de garde du kernel
+  // (`packages/zcrud_study_kernel/test/z_study_folder_test.dart`) : les deux
+  // copies évoluent ENSEMBLE (héritage ES-1.1).
+  group('ZStudyFolder — AD-19 : clés de sync hors-entité (ES-1.3)', () {
+    test('fromMap d\'une map de STORE : ni is_deleted ni updated_at dans extra',
+        () {
+      final folder = ZStudyFolder.fromMap(<String, dynamic>{
+        'id': 'f1',
+        'title': 't',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': true,
+        'related_topics': <String>['tva'],
+      });
+      expect(folder.extra.containsKey('is_deleted'), isFalse);
+      expect(folder.extra.containsKey('updated_at'), isFalse);
+      expect(folder.extra['related_topics'], <String>['tva']);
+      // ignore: deprecated_member_use
+      expect(folder.updatedAt, DateTime.utc(2026, 5, 5));
+    });
+
+    test('toMap() n\'émet JAMAIS is_deleted, même relu depuis une map de store',
+        () {
+      final folder = ZStudyFolder.fromMap(<String, dynamic>{
+        'title': 't',
+        'is_deleted': true,
+      });
+      expect(folder.toMap().containsKey('is_deleted'), isFalse);
+    });
+
+    test('convergence : fromMap(toMap(f)) == f (l\'== n\'est plus cassée)', () {
+      final fromStore = ZStudyFolder.fromMap(<String, dynamic>{
+        'id': 'f1',
+        'title': 't',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+        'country_code': 'NE',
+      });
+      final reread = ZStudyFolder.fromMap(fromStore.toMap());
+      expect(reread.extra, equals(fromStore.extra));
+      expect(reread, equals(fromStore));
+    });
+
+    test('round-trip LEGACY (updated_at présent, is_deleted absent) lisible', () {
+      final folder = ZStudyFolder.fromMap(<String, dynamic>{
+        'id': 'legacy-1',
+        'title': 'Dossier legacy',
+        'updated_at': DateTime.utc(2025, 3, 3).toIso8601String(),
+        'un_champ_futur_inconnu': 42,
+      });
+      // ignore: deprecated_member_use
+      expect(folder.updatedAt, DateTime.utc(2025, 3, 3));
+      expect(folder.extra['un_champ_futur_inconnu'], 42);
+      expect(folder.toMap()['un_champ_futur_inconnu'], 42);
+    });
+
+    test('map de sync corrompue ⇒ aucun throw, aucune pollution (AD-10)', () {
+      final folder = ZStudyFolder.fromMap(<String, dynamic>{
+        'title': 't',
+        'updated_at': 42,
+        'is_deleted': 'oui',
+      });
+      // ignore: deprecated_member_use
+      expect(folder.updatedAt, isNull);
+      expect(folder.extra, isEmpty);
     });
   });
 }

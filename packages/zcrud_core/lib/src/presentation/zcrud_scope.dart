@@ -20,6 +20,7 @@ import 'edition/z_file_picker.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
 import 'list/z_list_renderer.dart';
+import 'theme/z_color_key_resolver.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
 import 'z_scope_error.dart';
@@ -63,6 +64,7 @@ class ZcrudScope extends InheritedWidget {
     this.listRenderer,
     this.iconResolver,
     this.colorPicker,
+    this.colorKeyResolver,
     super.key,
   });
 
@@ -140,6 +142,25 @@ class ZcrudScope extends InheritedWidget {
   /// injecté (jamais un singleton statique mutable).
   final ZColorPicker? colorPicker;
 
+  /// Résolveur de **couleur de clé de palette** host-fourni (ES-1.2, D1, AC3).
+  ///
+  /// Traduit une **clé neutre** (`String`, ex. `ZColorPalette.resolveKey`) en
+  /// [ZColorPair] (fond + `on-` contrasté, AD-13) **sans** que le domaine
+  /// (`zcrud_study_kernel`) ne porte jamais de `Color` (AD-1/AD-3/SM-S5).
+  ///
+  /// Ce champ est le **premier maillon** de la chaîne implémentée par
+  /// [zResolveColorKey] / [zResolveColorKeyOrSlot] : seam hôte (ici) → repli du
+  /// cœur dérivé du `ColorScheme` ([zDefaultColorKeyResolver], vocabulaire de
+  /// rôles Material 3 uniquement) → slot déterministe ([zColorSlotPair]) ou
+  /// `null` — jamais de throw (AD-10). C'est **ici** qu'une app injecte sa
+  /// sémantique réelle (`success` en vert, `warning` en ambre… : Material 3 n'a
+  /// pas ces rôles, le cœur ne les invente pas — FR-26/NFR-S7).
+  ///
+  /// Jumeau réel d'[iconResolver] (même nullabilité, même priorité, même ligne
+  /// dans `updateShouldNotify`). Instanciable, injecté (jamais un singleton
+  /// statique mutable).
+  final ZColorKeyResolver? colorKeyResolver;
+
   /// Retourne le [ZcrudScope] le plus proche.
   ///
   /// Lève [ZScopeError] (message actionnable) si aucun scope n'est présent dans
@@ -174,5 +195,6 @@ class ZcrudScope extends InheritedWidget {
       !identical(cloudStorage, oldWidget.cloudStorage) ||
       !identical(listRenderer, oldWidget.listRenderer) ||
       !identical(iconResolver, oldWidget.iconResolver) ||
-      !identical(colorPicker, oldWidget.colorPicker);
+      !identical(colorPicker, oldWidget.colorPicker) ||
+      !identical(colorKeyResolver, oldWidget.colorKeyResolver);
 }

@@ -90,7 +90,7 @@ void main() {
 
     test('types vide ⇒ pas de filtre', () {
       final sel = const ZStudySessionSelector(
-        ZStudySessionConfig(types: <ZFlashcardType>[]),
+        ZStudySessionConfig(types: <String>[]),
       );
       expect(_qs(sel.selectFrom(cards)), <String>['a', 'b', 'c']);
     });
@@ -98,10 +98,7 @@ void main() {
     test('appartenance (config.types.contains(card.type))', () {
       final sel = const ZStudySessionSelector(
         ZStudySessionConfig(
-          types: <ZFlashcardType>[
-            ZFlashcardType.multipleChoice,
-            ZFlashcardType.openQuestion,
-          ],
+          types: <String>['multipleChoice', 'openQuestion'],
         ),
       );
       expect(_qs(sel.selectFrom(cards)), <String>['a', 'c']);
@@ -132,7 +129,7 @@ void main() {
         ZStudySessionConfig(
           folderId: 'f1',
           tagIds: <String>['x'],
-          types: <ZFlashcardType>[ZFlashcardType.multipleChoice],
+          types: <String>['multipleChoice'],
         ),
       );
       expect(_qs(sel.selectFrom(cards)), <String>['ok']);

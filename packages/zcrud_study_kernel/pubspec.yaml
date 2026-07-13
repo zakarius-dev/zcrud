@@ -1,0 +1,44 @@
+# zcrud_study_kernel — membre du workspace zcrud (resolution: workspace).
+# Noyau d'étude bas-niveau (ES-1.1) : source UNIQUE de `ZStudyFolder`, de la
+# hiérarchie 2 niveaux (`validatePlacement`), de `ZReviewMode`, de la config de
+# session `ZStudySessionConfig` et du sélecteur neutre `ZStudySessionSelector`
+# (opérant sur le port `ZSessionCandidate`). Remonté depuis `zcrud_flashcard`
+# pour que `zcrud_study`/`zcrud_document`/les futurs satellites accèdent au
+# dossier + à la config sans tirer tout `zcrud_flashcard` ni introduire de cycle.
+name: zcrud_study_kernel
+description: "Low-level study kernel for zcrud: ZStudyFolder, 2-level hierarchy validation, ZReviewMode, ZStudySessionConfig and a neutral ZSessionCandidate-based session selector. Depends only on zcrud_core."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_study_kernel
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - folders
+  - crud
+  - spaced-repetition
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe acyclique).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+# AD-1/AD-17 : le kernel ne dépend QUE du cœur (surface PURE-DART
+# `package:zcrud_core/domain.dart`, aucun SDK Flutter, aucune dép lourde) et des
+# annotations `const` (codegen). AUCUNE arête vers `zcrud_flashcard` (acyclicité).
+dependencies:
+  zcrud_core: ^0.1.0
+  zcrud_annotations: ^0.1.0
+
+# Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
+# (`auto_apply: dependents`) émet `z_study_folder.g.dart` /
+# `z_study_session_config.g.dart` (gitignorés, régénérés). Le noyau n'important
+# QUE la surface pur-Dart `package:zcrud_core/domain.dart` (aucune fuite du SDK
+# Flutter), ses tests tournent sous `dart test` (même convention que
+# `zcrud_annotations`). PAS de `build.yaml` : `auto_apply: dependents` suffit.
+dev_dependencies:
+  zcrud_generator: ^0.1.0
+  build_runner: ^2.5.0
+  test: ^1.25.0

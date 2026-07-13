@@ -1,7 +1,8 @@
 # Root du workspace zcrud (pub workspaces — resolution: workspace).
 # Source de vérité de la résolution partagée : un unique pubspec.lock racine.
-# Les 14 packages PRODUIT sont listés ci-dessous (ordre = Structural Seed AD-1),
-# suivis du harnais dev/test-only `binding_conformance` (E2-9, hors packages/**).
+# Les 15 packages PRODUIT sont listés ci-dessous (ordre = Structural Seed AD-1 ;
+# `zcrud_study_kernel` ajouté en ES-1.1), suivis des harnais dev/test-only
+# `binding_conformance` (E2-9) et `reserved_keys_gate` (ES-1.4), hors packages/**.
 name: zcrud_workspace
 publish_to: none
 
@@ -13,6 +14,10 @@ environment:
 workspace:
   - packages/zcrud_core
   - packages/zcrud_annotations
+  # ES-1.1 : noyau d'étude bas-niveau (dossier + config de session remontés
+  # depuis zcrud_flashcard). Dépend uniquement de zcrud_core + zcrud_annotations
+  # (acyclique flashcard -> study_kernel -> core).
+  - packages/zcrud_study_kernel
   - packages/zcrud_generator
   - packages/zcrud_markdown
   - packages/zcrud_list
@@ -26,10 +31,16 @@ workspace:
   - packages/zcrud_get
   - packages/zcrud_provider
   # Harnais de parité E2-9 : dev/test-only, HORS du glob melos `packages/**`
-  # (donc `melos list` reste 14) mais membre du workspace pour une résolution
+  # (donc `melos list` reste 15) mais membre du workspace pour une résolution
   # partagée propre. Nom sans préfixe `zcrud_` → invisible pour graph_proof.py
   # (CORE OUT=0 / ACYCLIQUE inchangés). Référencé en dev_dependency des 3 bindings.
   - tool/binding_conformance
+  # Harnais du gate AD-19.1 (ES-1.4) : dev/test-only, HORS du glob melos
+  # `packages/**` (`melos list` reste 15). PUITS du graphe (aucun `zcrud_*` ne
+  # dépend de lui) → zéro arête entrante, aucun cycle possible par construction.
+  # Exécuté par scripts/ci/gate_reserved_keys.dart, PAS par `melos run test`
+  # (cf. `melos.ignore` ci-dessous).
+  - tool/reserved_keys_gate
 
 dev_dependencies:
   melos: ^7.0.0
@@ -39,6 +50,13 @@ dev_dependencies:
   lints: ^5.0.0
   # Résolution garantie de `package:yaml` pour le gate M-1 (scripts/ci/gate_melos_divergence.dart).
   yaml: ^3.1.2
+  # ES-1.4 (H1) : `scripts/ci/gate_reserved_keys.dart` PARSE le Dart (AST) au lieu
+  # de le « grepper ». Une regex ligne-à-ligne était aveugle aux en-têtes enroulées
+  # par `dart format` et aux modificateurs Dart 3 (`final`/`base`/`sealed`/
+  # `interface class`) : une entité `ZExtensible` non sondée traversait le gate.
+  # Dépendance de SCRIPT (root, dev-only) — AD-1 intact : aucun package `zcrud_*`
+  # ne gagne `analyzer` (il reste confiné à `zcrud_generator`, seul autorisé).
+  analyzer: ^8.0.0
 
 # Configuration melos (melos >= 6 / pub workspaces la lit depuis le root
 # pubspec.yaml). ⚠️ CE BLOC EST LA SOURCE DE VÉRITÉ DES SCRIPTS melos : le
@@ -49,12 +67,15 @@ dev_dependencies:
 # (le gate `gate:melos` échoue sinon).
 melos:
   name: zcrud
-  # E2-9 : exclut le harnais dev/test-only `binding_conformance` (membre du
-  # workspace pub pour une résolution partagée propre, mais NON produit) de la
-  # VUE melos → `melos list` reste 14 (invariant produit). N'affecte PAS les
-  # scripts (gate M-1 ne compare que le bloc `scripts:`).
+  # E2-9 / ES-1.4 : exclut les harnais dev/test-only `binding_conformance` et
+  # `reserved_keys_gate` (membres du workspace pub pour une résolution partagée
+  # propre, mais NON produits) de la VUE melos → `melos list` reste 15 (invariant
+  # produit). N'affecte PAS les scripts (gate M-1 ne compare que le bloc `scripts:`).
+  # ⚠️ Corollaire : `melos run test` NE LANCE PAS leurs tests — `gate:reserved-keys`
+  # exécute donc EXPLICITEMENT `flutter test --tags reserved-keys` dans le harnais.
   ignore:
     - binding_conformance
+    - reserved_keys_gate
   scripts:
     generate:
       description: Régénère le code (build_runner) sur chaque package annoté (no-op propre si aucun).
@@ -68,6 +89,9 @@ melos:
     test:flutter:
       description: Tests des packages FLUTTER (flutter test ; ex. zcrud_core depuis E2-7).
       run: melos exec --flutter --dir-exists test -- flutter test
+    test:js:
+      description: "Gate ES-1.2/M1 : rejoue la suite pur-Dart de zcrud_study_kernel sur plateforme JS (dart test -p node) — prouve le déterminisme web de zFnv1a32. SKIP bruyant (RC=0) si Node est absent."
+      run: dart run scripts/ci/gate_web_determinism.dart
     test:
       description: Agrège les tests pur-Dart puis Flutter (route zcrud_core vers flutter test).
       run: melos run test:dart && melos run test:flutter
@@ -86,19 +110,28 @@ melos:
     gate:codegen:
       description: "Gate AD-3 : aucun modèle annoté sans .g.dart généré."
       run: dart run scripts/ci/gate_codegen.dart
+    gate:codegen-distribution:
+      description: "Gate ES-1/D1 : distribution git du code généré — tout `part` d'un `lib/` de packages/* doit désigner un fichier NON gitignoré (sinon un consommateur en dépendance git obtient un package sans son code généré). PRÉSUPPOSE rien (verdict par règles `git check-ignore --no-index`)."
+      run: dart run scripts/ci/gate_codegen_distribution.dart
     gate:compat:
       description: "Gate FR-25 (E1-4) : dry-run de compat de résolution (flutter_quill+awesome_select+analyzer) dans tool/compat_check. Exige la toolchain Flutter."
       run: dart run scripts/ci/gate_compat_resolution.dart
+    gate:reserved-keys:
+      description: "Gate AD-19.1 (ES-1.4) : clés de sync réservées — volet (A) comportemental (tool/reserved_keys_gate) + volet (B) syntaxique + contrôle de couverture. PRÉSUPPOSE le codegen (lit les *.g.dart)."
+      run: dart run scripts/ci/gate_reserved_keys.dart
     verify:serialization:
-      description: "Slot E2-10 (AD-10) : rétro-compat de sérialisation. No-op documenté jusqu'à E2-10."
+      description: "Slot E2-10/ES-3.5 (AD-10) : rétro-compat de sérialisation. SKIP BRUYANT tant qu'aucun test taggé `serialization-compat` n'existe ; ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1 le transforme en ÉCHEC."
       run: dart run scripts/ci/verify_serialization.dart
     verify:
-      description: "Enchaîne tous les gates de merge localement (miroir de la CI)."
+      description: "Enchaîne tous les gates de merge localement — MIROIR EXACT de la CI (.github/workflows/ci.yml exécute ce script en STEP UNIQUE : tout gate ajouté ici est en CI par construction)."
       run: |
         python3 scripts/dev/graph_proof.py && \
         dart run scripts/ci/gate_melos_divergence.dart && \
         dart run scripts/ci/gate_reflectable.dart && \
         dart run scripts/ci/gate_secret_scan.dart && \
         dart run scripts/ci/gate_codegen.dart && \
+        dart run scripts/ci/gate_codegen_distribution.dart && \
         dart run scripts/ci/gate_compat_resolution.dart && \
+        dart run scripts/ci/gate_web_determinism.dart && \
+        dart run scripts/ci/gate_reserved_keys.dart && \
         dart run scripts/ci/verify_serialization.dart

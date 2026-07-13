@@ -1,7 +1,18 @@
+@TestOn('vm')
 // E2-4 (AC1, AC pivot de l'épic) : `zcrud_annotations` ne déclare AUCUNE
 // dépendance runtime lourde et son `lib/` n'importe aucun package lourd. Sa
 // seule arête `zcrud_*` est `zcrud_core` (AD-1, cœur OUT=0). Test structurel :
 // inspection du `pubspec.yaml` + grep des imports de `lib/`.
+//
+// ⚠️ `@TestOn('vm')` (ES-1.4) : test STRUCTUREL qui inspecte le DISQUE
+// (`dart:io`) — inexécutable en JS par nature. `gate:web` (généralisé en ES-1.4 :
+// tout package pur-Dart avec `test/`) rejoue désormais cette suite sous
+// `dart test -p node` : sans ce tag, le chargement échoue (`Unsupported
+// operation: _Namespace`). Le tag est la réponse ATTENDUE (pas un opt-out de
+// confort du gate) : les tests de valeur (const/annotations) restent, eux,
+// rejoués en JS.
+library;
+
 import 'dart:io';
 
 import 'package:test/test.dart';

@@ -85,10 +85,7 @@ ZStudySessionConfig _$ZStudySessionConfigFromMap(Map<String, dynamic> map) =>
           ? (map['tag_ids'] as List).whereType<String>().toList()
           : null,
       types: map['types'] is List
-          ? (map['types'] as List)
-                .map((e) => _$enumFromName(ZFlashcardType.values, e))
-                .whereType<ZFlashcardType>()
-                .toList()
+          ? (map['types'] as List).whereType<String>().toList()
           : null,
       count: _$asInt(map['count']),
     );
@@ -99,7 +96,7 @@ extension ZStudySessionConfigZcrud on ZStudySessionConfig {
     'mode': this.mode.name,
     'folder_id': this.folderId,
     'tag_ids': this.tagIds,
-    'types': this.types?.map((e) => e.name).toList(),
+    'types': this.types,
     'count': this.count,
   };
 
@@ -118,9 +115,7 @@ extension ZStudySessionConfigZcrud on ZStudySessionConfig {
     tagIds: identical(tagIds, _$undefined)
         ? this.tagIds
         : tagIds as List<String>?,
-    types: identical(types, _$undefined)
-        ? this.types
-        : types as List<ZFlashcardType>?,
+    types: identical(types, _$undefined) ? this.types : types as List<String>?,
     count: identical(count, _$undefined) ? this.count : count as int?,
   );
 }
@@ -134,7 +129,7 @@ const List<ZFieldSpec> $ZStudySessionConfigFieldSpecs = <ZFieldSpec>[
   ),
   ZFieldSpec(name: 'folder_id', type: EditionFieldType.text),
   ZFieldSpec(name: 'tag_ids', type: EditionFieldType.text, multiple: true),
-  ZFieldSpec(name: 'types', type: EditionFieldType.select, multiple: true),
+  ZFieldSpec(name: 'types', type: EditionFieldType.text, multiple: true),
   ZFieldSpec(name: 'count', type: EditionFieldType.integer),
 ];
 

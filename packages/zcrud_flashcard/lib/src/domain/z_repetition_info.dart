@@ -218,11 +218,29 @@ class ZRepetitionInfo with ZExtensible {
     return ZExtension.guard<ZExtension?>(() => parser(map));
   }
 
-  /// Clés persistées **réservées** (champs générés + `extension`) — dérivées de
-  /// `$ZRepetitionInfoFieldSpecs` pour rester synchrones avec le codegen.
+  /// Clés persistées **réservées** (champs générés + `extension` + **clés de
+  /// sync `ZSyncMeta`**) — dérivées de `$ZRepetitionInfoFieldSpecs` pour rester
+  /// synchrones avec le codegen.
+  ///
+  /// **AD-19 (ES-1.3)** — le spread `...ZSyncMeta.reservedKeys` (`updated_at`,
+  /// `is_deleted`) est **essentiel** : `ZRepetitionInfo` est persistée top-level
+  /// (`study_repetitions/{cardId}`) et le store écrit ses métadonnées de sync
+  /// **dans le corps du document** (`hive_z_local_store.dart` `_encode` ;
+  /// `firebase_z_repository_impl.dart` `_encode`) puis passe la map **complète**
+  /// à [fromMap]. Sans ce spread, ces clés — qui appartiennent au **store**, pas
+  /// au domaine — atterriraient dans [extra] (AD-4 violé : `extra` = clés
+  /// *inconnues du domaine*) et seraient **réémises** par [toMap] (AD-16 violé :
+  /// le soft-delete doit rester hors-entité), cassant au passage `==` entre un
+  /// état SRS construit en mémoire et le même relu du store.
+  ///
+  /// `ZRepetitionInfo` ne déclarant **aucun** champ `updatedAt`/`isDeleted`,
+  /// c'est bien `ZSyncMeta.reservedKeys` — et lui seul — qui protège les **deux**
+  /// clés. C'est l'**exemplaire de référence** d'AD-19.1 : aucune clé LWW
+  /// in-entité, aucune capture des clés de sync.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZRepetitionInfoFieldSpecs) spec.name,
     'extension',
+    ...ZSyncMeta.reservedKeys,
   };
 
   /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).

@@ -36,12 +36,16 @@ Ces décisions priment sur les recommandations « option B / v1.x » de la synth
 
 4. **Apparence par défaut = IFFD** (`folder_study_tools_page.dart`), thème injecté (`ZcrudScope`/`ThemeExtension`), l10n de `zcrud_core`, réactivité Flutter-native (AD-2/AD-15), aucun gestionnaire d'état imposé.
 
-5. **Politique de modèle d'implémentation = TIERED** (Zakarius, 2026-07-12) — le travail est majoritairement du portage d'existant (IFFD/lex_douane), mais le risque vit aux frontières d'AD :
-   - **`dev-story` en Sonnet** pour les stories de **portage mécanique** (définitions d'entités `@ZcrudModel` ES-2.x, portage de widgets UI, repo impls suivant le pattern offline-first établi, réutilisation `zcrud_markdown`/`zcrud_mindmap` ES-6/7/8).
-   - **`dev-story` en Opus** pour les stories de **conception / haut-risque / rayon d'explosion** : **ES-1.1** (refactor `zcrud_flashcard` + remontée `ZStudyFolder`), **ES-3.1/3.2/3.3** (`ZStudyRepository<T>` générique + `ZFirestorePathResolver` bi-topologie + cascade déclarative), **ES-4.1** (convergence SM-2), **ES-5.1** (décomposition golden du layout IFFD, SM-1).
-   - **`bmad-code-review` en Opus pour TOUTES les stories** (filet de sécurité anti-régression d'AD).
-   - **Orchestration + vérifs vertes + gates repo-wide en Opus** (moi), quel que soit le modèle de la story.
-   - Effort par étape inchangé (CLAUDE.md) : dev-story **high**, code-review **high**, create-story **medium/high**.
+5. **Politique de modèle d'implémentation = TOUT-OPUS pour le cycle BMAD** (Zakarius, 2026-07-12 — **révision après retour d'expérience ES-1.2**) :
+   - **`create-story`, `dev-story`, `code-review`, `retrospective` → modèle HÉRITÉ (Opus)**, paramètre `model` **OMIS** sur les `agent()` BMAD. Effort par étape inchangé (CLAUDE.md) : dev-story **high**, code-review **high**, create-story **medium** (**high** si story complexe), retrospective **medium**.
+   - **Sonnet réservé au HORS-BMAD read-only** : exploration/reconnaissance (ex. les 12 agents de cartographie IFFD/lex_douane), recherches massives. Aucun code écrit ⇒ aucun risque de dégradation. C'est déjà la règle CLAUDE.md.
+   - **Orchestration + vérifs vertes + gates repo-wide → Opus** (l'orchestrateur), toujours.
+
+   **Pourquoi le TIERED (Sonnet pour le « portage mécanique ») a été ABANDONNÉ — preuve empirique ES-1.2 :**
+   - Bilan réel : `dev-story` Sonnet → code-review → **une passe de remédiation Opus complète** (4 MEDIUM). Soit **deux passes de dev au lieu d'une** ⇒ le tiered a coûté **plus** cher (tokens **et** temps), pas moins.
+   - Cause racine : **Sonnet suit la spec fidèlement, failles comprises.** Les findings M2/M3/M4 venaient du fait que **la story elle-même** prescrivait une signature de seam défectueuse (`typedef ZColorKeyResolver = Color? Function(String)` — qui ne compose pas, zéro appelant). Sonnet l'a implémentée telle quelle ; un dev Opus aurait remis la spec en cause. Idem M1 (vecteurs golden spécifiés sans exécution web ⇒ filet aveugle à la régression qu'il devait attraper).
+   - Le « portage mécanique » est **largement illusoire dans ce dépôt** : la *fonctionnalité* existe ailleurs (IFFD/lex_douane), mais la **traduction architecturale est de la conception neuve à chaque story** (retirer les fuites backend, rendre défensif AD-10, préserver l'acyclicité AD-1, zéro couleur en dur FR-26, rebuilds granulaires SM-1…). Presque **chaque story crée de la nouvelle API publique** dans un package partagé sous 28 invariants ⇒ presque aucune ne qualifie pour Sonnet sous une règle honnête.
+   - Coût caché : le **tri** lui-même. Se tromper **une seule fois** de classification = une remédiation complète. La règle simple (tout-Opus) supprime ce risque.
 
 ---
 

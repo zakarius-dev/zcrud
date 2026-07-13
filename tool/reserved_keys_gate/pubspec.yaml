@@ -1,0 +1,65 @@
+# reserved_keys_gate — HARNAIS DU GATE AD-19.1 dev/test-only (ES-1.4).
+#
+# Rôle : porter le VOLET (A) COMPORTEMENTAL du gate `reserved-keys`
+# (AD-19.1.c) — décoder une SONDE polluée (`updated_at`/`is_deleted` +
+# clé inconnue) pour CHAQUE entité du repo et prouver que :
+#   (a) aucune clé réservée `ZSyncMeta.reservedKeys` n'atterrit dans `extra` ;
+#   (b) le round-trip AD-4 des clés inconnues n'est PAS régressé (interdit de
+#       « passer le gate » en vidant `extra`) ;
+#   (c) l'encodage ne réémet JAMAIS `is_deleted` (aucune exception) ;
+#   (d) l'encodage ne réémet PAS `updated_at`, sauf miroirs legacy allowlistés.
+#
+# POURQUOI UN HARNAIS SOUS `tool/` (décision D2, story ES-1.4) :
+#   Les entités concernées vivent dans `zcrud_study_kernel`, `zcrud_flashcard`
+#   ET `zcrud_mindmap`. AUCUN package existant ne voit les trois, et créer une
+#   arête entre satellites (`zcrud_flashcard -> zcrud_mindmap`) violerait AD-1.
+#   Le harnais les voit tous les trois SANS toucher au graphe :
+#     1. `scripts/dev/graph_proof.py` n'itère que `glob('packages/*/pubspec.yaml')`
+#        → `tool/` est structurellement INVISIBLE pour le graphe AD-1
+#        (ACYCLIQUE / CORE OUT=0 inchangés) ;
+#     2. le harnais est un PUITS (sink) : AUCUN package `zcrud_*` ne dépend de
+#        lui (contrairement à `binding_conformance`, qui est dev_dependency des
+#        bindings) → ZÉRO arête entrante → aucun cycle possible par construction ;
+#     3. nom SANS préfixe `zcrud_` → même si le scan de graphe était élargi, la
+#        regex `^\s+(zcrud_[a-z_]+)\s*:` ne l'attraperait pas ;
+#     4. membre du bloc `workspace:` du root `pubspec.yaml` (résolution partagée,
+#        lockfile racine unique) mais HORS du glob melos `packages/**` et listé
+#        dans `melos.ignore` → `melos list` reste 15 (invariant produit).
+#
+# ⚠️ CONSÉQUENCE DE `melos.ignore` : `melos run test` NE LANCE PAS ces tests.
+#    C'est `scripts/ci/gate_reserved_keys.dart` qui les exécute EXPLICITEMENT
+#    (`flutter test --tags reserved-keys`), en traitant `exit 79` (aucun test
+#    exécuté) comme un ÉCHEC FATAL — sans quoi le gate serait un faux vert
+#    total, c'est-à-dire exactement le défaut qu'il est censé prévenir.
+#
+# ⚠️ `flutter test` (et non `dart test`) : `zcrud_core` est un package Flutter
+#    depuis E2-7 ; le harnais tire donc `flutter`/`flutter_test`.
+#
+# EXTENSION ES-2 : créer une entité study ⇒ 3 lignes dans
+# `lib/src/registrars.dart` (registrar + corps de sonde + décodeur de domaine).
+# L'OUBLIER NE PASSE PAS INAPERÇU : le contrôle de couverture de
+# `scripts/ci/gate_reserved_keys.dart` rend le gate ROUGE.
+name: reserved_keys_gate
+description: >-
+  Harnais du gate AD-19.1 (dev/test-only) : volet comportemental « clés de sync
+  réservées » sur toutes les entités du repo. Hors packages/**, puits du graphe.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+# `flutter_test` en dépendance RUNTIME (et non dev) : `lib/src/assertions.dart`
+# EXPOSE des assertions `expect(...)` réutilisées par le test du harnais ; ses
+# symboles font partie de son API publique (patron `binding_conformance`).
+dependencies:
+  # REL-1 : contraintes ^0.1.0 (versions courantes des 15 packages).
+  zcrud_core: ^0.1.0
+  zcrud_study_kernel: ^0.1.0
+  zcrud_flashcard: ^0.1.0
+  zcrud_mindmap: ^0.1.0
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter

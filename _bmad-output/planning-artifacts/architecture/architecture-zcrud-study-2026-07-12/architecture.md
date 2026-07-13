@@ -101,6 +101,107 @@ graph TD
 - **Prevents:** figer le canonique sur une convention de sync divergente (`ZMindmap` hors-entité vs `ZStudyFolder` in-entité) ; deux moteurs de merge incompatibles.
 - **Rule:** toute **nouvelle** entité study (`ZStudyDocument`, `ZSmartNote`, `ZExam`, `ZDocumentAnnotation`, `ZFlashcardTag`, `ZStudyPodcast`, entités de partage…) porte `updated_at` + `is_deleted` **hors-entité** via `ZSyncMeta` (AD-9/AD-16), alignée sur `ZMindmap`. Le **merge LWW se fait toujours sur `ZSyncMeta.updated_at`** (jamais sur un `T.updatedAt` interne). `ZStudyFolder`, qui portait historiquement `updatedAt` dans l'entité, est **aligné** : le champ interne devient un **miroir de compatibilité déprécié** que l'adapter maintient (pour les lectures legacy), mais qui **n'est plus l'autorité de merge** ; la divergence résiduelle est documentée explicitement, jamais laissée implicite. `ZDocumentAnnotation.isDeleted` inline (source lex) est extrait hors-entité.
 
+#### AD-19.1 — Règle normative (matérialisée en ES-1.3, OQ #3 / OQ-S2 **TRANCHÉE**)
+
+> **Toute NOUVELLE entité study porte `updated_at` + `is_deleted` HORS-ENTITÉ via `ZSyncMeta` ; le merge LWW se fait TOUJOURS sur `ZSyncMeta.updated_at`, JAMAIS sur un `T.updatedAt` interne.**
+
+**Entités ES-2 concernées (nommément)** : `ZStudyDocument`, `ZSmartNote`, `ZExam`, `ZFlashcardTag`, `ZDocumentAnnotation`, `ZStudyPodcast`, entités de partage (`ZStudyMembership`, `ZShareLink`, `ZPublicStudyFolder`, `ZStudyFolderReport`). Aucune ne déclare de champ `updatedAt`/`isDeleted`.
+
+**Exemplaire de référence** : `ZRepetitionInfo` (`packages/zcrud_flashcard/lib/src/domain/z_repetition_info.dart`) — **zéro `updatedAt`/`isDeleted` interne**, clé LWW exclusivement hors-entité, `_reservedKeys ⊇ ZSyncMeta.reservedKeys`. C'est la forme cible de toute entité ES-2.
+
+> ⚠️ **Correctif du code-review ES-1.3 (H1)** : à la rédaction initiale d'AD-19.1, cet « exemplaire » **n'était PAS conforme** — son `_reservedKeys` omettait `...ZSyncMeta.reservedKeys`, et n'ayant lui-même aucun champ `updatedAt`/`isDeleted`, il capturait **les deux** clés de sync dans `extra` et les **réémettait** via `toMap()`. Même défaut sur `ZStudySessionConfig` (noyau, H2). Les deux sont **corrigés** ; le statut d'exemplaire n'est valable **qu'avec** cette correction. Preuve : groupes « AD-19 — clés de sync hors-entité » dans `z_repetition_info_test.dart` et `z_study_session_config_test.dart` (kernel + miroir flashcard).
+
+**Définition MACHINE de la convention** (source unique, plus aucun littéral à redéclarer) — `packages/zcrud_core/lib/src/domain/sync/z_sync_meta.dart` :
+
+| Membre statique | Valeur / rôle |
+|---|---|
+| `ZSyncMeta.kUpdatedAt` | `'updated_at'` — clé LWW persistée |
+| `ZSyncMeta.kIsDeleted` | `'is_deleted'` — clé de soft-delete persistée |
+| `ZSyncMeta.reservedKeys` | `{updated_at, is_deleted}` — clés **réservées au store** : une entité ne les capture **jamais** dans `extra` (AD-4) et ne réémet **jamais** `is_deleted` |
+| `ZSyncMeta.stripReserved(map)` | helper pur/défensif retirant les clés réservées (ne mute jamais l'entrée) |
+
+**Obligation (toute entité annotée `@ZcrudModel` portant un `extra`)** :
+
+```dart
+static final Set<String> _reservedKeys = <String>{
+  for (final spec in $XxxFieldSpecs) spec.name,
+  'extension',
+  ...ZSyncMeta.reservedKeys,   // ← NON NÉGOCIABLE (AD-19.1)
+};
+```
+
+**Preuve exécutable** : `packages/zcrud_study_kernel/test/z_sync_meta_authority_test.dart` — miroir d'entité volontairement **mensonger** (contredisant la méta) ; si ce test tombe, quelqu'un a rebranché le merge sur un `T.updatedAt` ⇒ **AD-19 violé**.
+
+##### AD-19.1.a — Clés persistées RÉSERVÉES : aucun champ métier ne peut les porter (M4)
+
+> **Les clés persistées `updated_at` et `is_deleted` appartiennent au STORE. Aucun champ métier, sur aucune entité, ne peut être persisté sous l'une de ces clés.**
+
+Un horodatage **métier** légitime (« dernière édition par l'utilisateur », « publié le », « révisé le »…) est un **besoin réel** d'ES-2 (`ZSmartNote`, `ZStudyDocument`, `ZExam`). Le geste naturel — déclarer un champ `updatedAt` → clé persistée `updated_at` — **détruit silencieusement la donnée** : les stores écrivent la méta **APRÈS** le corps (`hive_z_local_store.dart` `_encode` ; `firebase_z_repository_impl.dart` `_encode`/`_mergedMap`), donc l'estampille du store **écrase inconditionnellement** la valeur métier à **chaque `put`**, sans erreur ni test rouge. Pour `ZStudyFolder` ce n'est qu'un miroir sans enjeu ; pour un champ métier c'est une **perte de donnée**.
+
+**Règle applicable sans ambiguïté par un dev d'ES-2 :**
+
+| Besoin | Interdit | À faire |
+|---|---|---|
+| Horodatage métier (édition, publication, révision…) | champ persisté sous `updated_at` | clé **distincte et parlante** : `edited_at`, `published_at`, `reviewed_at`, `content_updated_at` |
+| Drapeau métier de suppression/archivage | champ persisté sous `is_deleted` | clé **distincte** : `archived_at`, `is_archived`, `retired_at` — le **soft-delete de sync** reste `ZSyncMeta.isDeleted`, hors-entité (AD-16) |
+| Clé d'autorité de merge LWW | déclarer un `updatedAt` d'entité | **rien à déclarer** : la méta hors-entité `ZSyncMeta` la porte déjà |
+
+**Test de conformité mental** : `$XxxFieldSpecs.map((s) => s.name).toSet().intersection(ZSyncMeta.reservedKeys)` doit être **vide** pour toute nouvelle entité (les deux entités legacy `ZStudyFolder`/`ZFlashcard` sont les **seules** exceptions tolérées — miroirs de compat, cf. AD-19.2).
+
+##### AD-19.1.b — Interdiction du hint `persistAs: timestamp` sur une clé réservée (M2)
+
+Aucune clé de `ZSyncMeta.reservedKeys` ne peut entrer dans les `timestampFields` (gap B14). Convertir `updated_at` en `Timestamp` natif **neutraliserait** la clé LWW au décodage (`ZSyncMeta.fromJson` n'accepte qu'une String ISO ⇒ `updatedAt: null`) et **ferait dégénérer** `ZLwwResolver` en « le local gagne toujours » — perte d'écritures distantes, **silencieuse**. La règle est désormais **gardée par machine** (`FirebaseZRepositoryImpl` : `assert(timestampFields ∩ ZSyncMeta.reservedKeys == {})` + soustraction `difference(...)` effective en release), pas seulement écrite en commentaire.
+
+##### AD-19.1.c — Application MACHINE de la règle : gate repo-wide (M5, livrable ES-1.4)
+
+`ZSyncMeta.reservedKeys` est la définition machine de la convention, mais **rien ne casse** aujourd'hui si une entité oublie de la consommer : c'est **exactement** ce qui a laissé passer H1/H2 sous **1193 tests verts**. La vérif verte prouve l'autorité du **résolveur** ; **rien** ne prouve la propreté des **entités**. Le gate qui rend AD-19.1 **exécutoire** est un livrable **ES-1.4** (story des gates CI — c'est sa raison d'être). **Spécification FIGÉE ici ; ES-1.4 n'a plus qu'à l'implémenter.**
+
+**`gate:reserved-keys` — spécification normative (livrable ES-1.4)**
+
+*Objectif* : aucune entité du repo ne peut capturer/réémettre une clé de `ZSyncMeta.reservedKeys` — la CI casse si une entité d'ES-2 oublie `...ZSyncMeta.reservedKeys`.
+
+*Deux volets complémentaires (les deux sont requis)* :
+
+**(A) Volet COMPORTEMENTAL (autorité — ce qui décide du rouge/vert).** Test tagué `reserved-keys`, exécuté par `melos run verify`, indépendant de la syntaxe des entités :
+
+1. Pour **chaque `kind` enregistré** dans un `ZcrudRegistry` peuplé de **tous** les `registerXxx(...)` du repo (le gate doit échouer si un `kind` connu n'est pas enregistré — sinon il devient un faux vert par omission).
+2. Construire une map de sonde : `{...corpsMinimalValide(kind), 'updated_at': '2026-01-01T00:00:00.000Z', 'is_deleted': true, 'zz_cle_inconnue': 'gardee'}`.
+3. `final e = décoder(kind, sonde);` puis asserter :
+   - **(a)** si `e is ZExtensible` : `e.extra.keys.toSet().intersection(ZSyncMeta.reservedKeys)` est **vide** — les clés de sync ne polluent pas `extra` (AD-4) ;
+   - **(b)** si `e is ZExtensible` : `e.extra['zz_cle_inconnue'] == 'gardee'` — le round-trip AD-4 des clés **vraiment** inconnues n'est **pas** régressé (empêche de « passer le gate » en vidant `extra`) ;
+   - **(c)** `registry.encode(kind, e)` ne contient **pas** `is_deleted` (AD-16, soft-delete strictement hors-entité) — **aucune exception, aucun kind** ;
+   - **(d)** `registry.encode(kind, e)` ne contient **pas** `updated_at`, **sauf** pour les `kind` de l'**allowlist legacy explicite** `{'study_folder', 'flashcard'}` (miroirs de compat d'AD-19.2 pts 1-3). Toute nouvelle entrée dans cette allowlist exige une décision d'architecture — elle n'est **pas** un échappatoire de confort ; un **test de verrou** (`expect(kLegacyUpdatedAtMirrors, equals({…}))`) rend toute croissance/réduction **ROUGE**, et une entrée **morte** (kind qui n'émet plus `updated_at`, ou disparu) l'est aussi (anti-inertie).
+4. Les entités **non enregistrées** au registre mais portant un `extra` (aujourd'hui : `ZMindmap`, `ZMindmapNode` — `fromJson`/`toJson` manuels) sont couvertes par une **liste explicite de sondes** dans le même test (mêmes assertions (a)/(b)/(c)/(d), sans allowlist).
+
+> **CORRECTIONS RATIFIÉES À L'IMPLÉMENTATION (ES-1.4) — deux failles de la spec figée, constatées sur disque.**
+>
+> 1. **`(e as ZExtensible)` throw sur `ZChoice`.** `ZChoice` (kind `flashcard_choice`) est **enregistrée** mais **n'est PAS `ZExtensible`** (`class ZChoice {` — aucun `extra`). Le cast aveugle prescrit ci-dessus lève une `CastError` et rend le gate inexploitable. **Correction** : (a)/(b) sont **conditionnées à `e is ZExtensible`** (un kind sans `extra` n'est pas concerné par la pollution d'`extra`) ; **(c)/(d) restent applicables à TOUS les kinds** (un `toMap` qui émettrait `is_deleted` est fautif même sans `extra`). La couverture n'est pas affaiblie : le contrôle d'omission (pt.1) garantit que tout kind du disque est sondé.
+> 2. **`registry.decode(kind, …)` ne peuple PAS `extra`.** Les registrars **générés** câblent `fromMap: _$ZXxxFromMap` — la factory du **codegen**, qui ne connaît que les champs `@ZcrudField` et **ignore le canal hors-codegen `extra`** (peuplé, lui, par la factory de domaine `ZXxx.fromMap`). Décoder **uniquement** par le registre rendrait **(a) vacuellement verte** (`extra` toujours vide ⇒ le gate ne protégerait **rien**, pas même contre H1/H2) et **(b) structurellement rouge**. **Correction** : le volet (A) décode par la **voie de domaine** (`ZXxx.fromMap`, câblée explicitement par kind dans le harnais) — celle qui peuple `extra` et où vit `_reservedKeys` — puis **ré-encode via le registre** (`registry.encode`, qui exerce bien le `toMap` d'instance) pour (c)/(d). *Preuve empirique* : sous injection de régression, le test « décode par le registre » de `repetition_info` reste **VERT** tandis que le test « décode par le domaine » devient **ROUGE** — la lettre de la spec produisait un faux vert.
+>    **Dette ouverte DW-ES14-1** (hors périmètre ES-1.4) : `FirebaseZRepositoryImpl.fromRegistry` décode via `registry.decode` ⇒ sur **ce chemin**, `extra` est **DÉTRUIT** (round-trip AD-4 non préservé côté store). **Latent** (zéro appelant), mais **destructif dès la première adoption**. Correctif de fond = `zcrud_generator` (émettre `fromMap: ZXxx.fromMap`). **Mitigation posée en ES-1.4** : avertissement dartdoc impossible à rater sur la fabrique. **Détail complet, critère de clôture et interdiction de câblage : cf. § Deferred › DETTES OUVERTES › DW-ES14-1.** **Signalé, non masqué** : le gate ne prétend pas couvrir ce chemin.
+>
+> 3. **Le volet (B) ne peut PAS être un scan TEXTUEL** (correction du **cinquième faux vert** de l'epic, code-review ES-1.4 / **H1**). La v1 reconnaissait les classes `ZExtensible` par une **regex ligne-à-ligne** (`[abstract] class X … with … ZExtensible` sur UNE ligne). **Trois formes légales et banales lui échappaient** — l'**en-tête enroulée** que `dart format` **produit lui-même** au-delà de 80 colonnes, les **modificateurs Dart 3** (`final`/`base`/`sealed`/`interface class`), et l'alias `class X = Y with ZExtensible;`. Une entité d'ES-2 **écrite à la main** (cas `ZMindmap`/`ZMindmapNode`) dans l'une de ces formes traversait le contrôle de couverture **VERTE, sans jamais être sondée** : *le filet censé attraper « une entité que personne ne sonde » était lui-même aveugle*. **Correction STRUCTURELLE** (une regex « plus grosse » aurait reconduit la même fragilité) : `scripts/ci/gate_reserved_keys.dart` **PARSE** désormais le Dart avec **`package:analyzer`** (AST syntaxique) — les classes sont reconnues par leurs `extendsClause`/`withClause`/`implementsClause` (**indifférentes aux modificateurs, aux retours à la ligne et aux commentaires**), la présence de `ZSyncMeta.reservedKeys` est cherchée dans le **flux de jetons** (les commentaires en sont absents par construction), et le câblage du harnais est lu comme une **VALEUR** (éléments du littéral `kRegistrars`, clés de `kProbeBodies`, arguments `className:` de `kManualProbes`) et non comme une **mention textuelle**. Un fichier Dart **non parsable** est un **ÉCHEC** du gate, jamais un skip. `analyzer` est une dépendance de **script** (root `dev_dependencies`) : **AD-1 intact** — aucun package `zcrud_*` ne la gagne (elle reste confinée à `zcrud_generator`). **Non-régression gardée par machine** : `prove_gates.dart` porte 5 fixtures de couverture **isolées** (une par forme de déclaration), chacune **verte au volet (B)** pour que seule la règle `E_disk \ E_covered` puisse la faire rougir.
+
+*Implémentation (ES-1.4)* : le volet (A) vit dans le harnais **`tool/reserved_keys_gate/`** (patron `tool/binding_conformance`) — seul endroit qui puisse voir `zcrud_study_kernel` + `zcrud_flashcard` + `zcrud_mindmap` **sans créer d'arête entre satellites** (AD-1) : `graph_proof.py` n'itère que `packages/*`, et le harnais est un **puits** (zéro arête entrante). Étant dans `melos.ignore`, **`melos run test` ne l'exécute PAS** : `scripts/ci/gate_reserved_keys.dart` lance donc **explicitement** `flutter test --tags reserved-keys` et traite **`exit 79` (aucun test exécuté) comme FATAL** — sans quoi le gate serait un faux vert total, c'est-à-dire le défaut même qu'il combat.
+
+**(B) Volet SYNTAXIQUE (filet anti-oubli — message d'erreur pédagogique).** Scan repo-wide de `packages/*/lib/**/*.dart` (hors `*.g.dart`) : **toute** classe déclarant un champ `extra` (ou mixant `ZExtensible`) **doit**, dans le même fichier, soit contenir le texte `ZSyncMeta.reservedKeys`, soit figurer dans une allowlist **justifiée par écrit**. Ce volet ne remplace pas (A) — il transforme un échec comportemental cryptique en un message actionnable (« ajoutez `...ZSyncMeta.reservedKeys` à `_reservedKeys` »).
+
+*Inventaire de départ (6 classes, toutes conformes au moment d'écrire ES-1.4)* : `ZStudyFolder`, `ZStudySessionConfig` (kernel) ; `ZFlashcard`, `ZRepetitionInfo` (flashcard) ; `ZMindmap`, `ZMindmapNode` (mindmap). `ZSyncMeta.stripReserved` — sans appelant de production à ce jour (**L4**) — trouve naturellement son usage dans l'implémentation de ce gate.
+
+*Justification du report (M5)* : implémenter ce gate en ES-1.3 dupliquerait l'infrastructure de gates (`melos run verify`, tags, scripts `scripts/dev/`) qu'**ES-1.4 a précisément pour mission de poser**, et sortirait du périmètre d'une story dont les ACs portent sur la convention elle-même. Le risque de report est **borné** : les 6 entités existantes sont **conformes et testées** (groupes « AD-19 — clés de sync hors-entité »), et **aucune entité ES-2 n'est écrite avant ES-1.4**.
+
+#### AD-19.2 — Divergences résiduelles + failles corrigées (documentées, jamais implicites)
+
+1. **Le miroir n'est PAS un champ distinct** : `ZStudyFolder.updatedAt` est **la même clé persistée `updated_at`** que la méta. Il est maintenu **par collision de clé** — l'adapter écrit la méta **après** le corps (`hive_z_local_store.dart` `_encode` : `map = Map.of(_toMap(value))` **puis** `map[_kUpdatedAt] = …`), donc il **écrase** inconditionnellement le miroir à chaque `put`. Le miroir est ainsi **toujours convergent** avec la méta.
+2. **`ZStudyFolder.toMap()` émet `updated_at`** (valeur potentiellement périmée) — **sans effet** : la voie d'écriture du store l'écrase (point 1). Le miroir n'a **aucun pouvoir d'écriture** (prouvé, AC5-bis).
+3. **`ZFlashcard.updatedAt`** est un **miroir de même nature, NON déprécié en ES-1.3** (surface E9 consommée par la migration DODLP en cours) : dartdoc de miroir uniquement. Dépréciation formelle à re-statuer en ES-2/ES-11 (**dette DW-ES13-2**).
+4. **`ZRepetitionInfo`** ne porte **aucun** `updatedAt` : c'est l'exemplaire cible (cf. AD-19.1) — **après** le correctif H1 du code-review.
+5. **Redéclarations en dur — DETTE DW-ES13-1 SOLDÉE (ES-1.3, remédiation)** : les 4 sites qui redéclaraient les littéraux `'updated_at'`/`'is_deleted'` (`zcrud_firestore` : `hive_z_local_store.dart`, `firebase_z_repository_impl.dart` ; `zcrud_mindmap` : `z_mindmap.dart`, `z_mindmap_node.dart`) **consomment désormais** `ZSyncMeta.kUpdatedAt`/`kIsDeleted`/`reservedKeys`. Plus **aucun** littéral de clé de sync dans le repo hors `z_sync_meta.dart` ⇒ plus de dérive silencieuse possible si la méta gagne une clé.
+6. **FAILLE M3 (legacy DODLP `Timestamp`) — CORRIGÉE (ES-1.3, remédiation).** Elle ne figurait pas dans la version initiale d'AD-19.2, qui prétendait pourtant l'exhaustivité. **Symptôme** : un document **réellement écrit par DODLP** persiste ses dates en `Timestamp` Firestore **natif**, `updated_at` compris. `ZSyncMeta._parseIso` n'accepte qu'une `String` ⇒ `updatedAt: null` sur **toute** la donnée legacy ⇒ **la clé d'autorité du merge était perdue** et `ZLwwResolver` dégénérait en « le local gagne toujours » (`null` = jamais synchronisé = le plus ancien), **écrasant les écritures distantes sans aucun test rouge**. Le test STAR prouvait que la méta *prime* ; il ne prouvait pas qu'elle *survit au décodage*.
+   **Correctif, conforme AD-5** : `zcrud_core` **ne connaît toujours pas** `Timestamp` (`_parseIso` inchangé, ISO-8601 pur). La **normalisation** vit dans l'**adapter** `zcrud_firestore` — `FirebaseZRepositoryImpl._inject` normalise **inconditionnellement** les `ZSyncMeta.reservedKeys` (`Timestamp` natif, `DateTime`, ou forme sérialisée `{_seconds,_nanoseconds}`) **en String ISO-8601 avant** tout `fromMap`/`ZSyncMeta.fromJson`. La méta **SURVIT** donc au décodage d'un document legacy (et le miroir de compat est peuplé du même coup). Preuve : groupe « AD-19 (M3) — la méta SURVIT au décodage d'un document LEGACY » (`packages/zcrud_firestore/test/timestamp_hint_test.dart`), dont un test rejoue le **merge complet** (distant legacy `Timestamp` 2026 vs local 2020 ⇒ `adoptRemoteIntoLocal` ; avant correctif : le local gagnait).
+   **`HiveZLocalStore` est structurellement immun** : il persiste du **JSON** (`jsonEncode`/`jsonDecode`) — un `Timestamp` n'y est pas représentable — donc `updated_at` y est **toujours** une String ISO. Aucune normalisation n'y est nécessaire (documenté dans le fichier).
+7. **FAILLE M2 (hint `persistAs: timestamp` sur une clé réservée) — CORRIGÉE** : la garde n'était qu'une phrase de dartdoc. Elle est désormais **machine** (assert + `difference`) — cf. AD-19.1.b.
+8. **Dette M5 (application machine de la règle) — SOLDÉE (ES-1.4).** `gate:reserved-keys` (`scripts/ci/gate_reserved_keys.dart` + harnais `tool/reserved_keys_gate/`) est câblé dans `melos run verify` — donc en CI, puisque `.github/workflows/ci.yml` exécute désormais `verify` en **step unique** (plus de liste de gates dupliquée : la dérive « gate dans `verify`, absent de `ci.yml` » — avérée sur `gate:web` depuis ES-1.2 — est structurellement impossible). Prouvé **par injection de régression** sur `ZRepetitionInfo` **et** `ZStudySessionConfig` (ROUGE volets A+B, puis VERT après restauration). **L4 soldée** : `ZSyncMeta.stripReserved` a désormais un appelant — l'assertion (a) du gate (`tool/reserved_keys_gate/lib/src/assertions.dart`) en fait la **définition machine unique** du dépouillement des clés réservées (si `ZSyncMeta` gagne une clé, le gate la couvre sans édition).
+
 ### AD-20 — Dépôt d'étude générique + helper offline-first + résolveur de chemins bi-topologie
 - **Binds:** FR-S12, FR-S13, FR-S15, NFR-S3, SM-S5
 - **Prevents:** la ré-duplication du CRUD offline-first (~15× dans lex) ; la fuite de chemins de collection / `Timestamp` / `Box` / `WriteBatch` dans le domaine ; un `ZSyncOrchestrator` non générique entre IFFD et lex.
@@ -244,6 +345,19 @@ graph LR
 | Bindings & migration (FR-S33, FR-S34) | `zcrud_riverpod`, `zcrud_get` | AD-24, AD-27, AD-15 |
 
 ## Deferred
+
+### DETTES OUVERTES (à solder par une story dédiée)
+
+- **DW-ES14-1 — `registry.decode` DÉTRUIT `extra` (AD-4 cassé sur la voie registre). ⛔ BLOQUANT AVANT TOUT CÂBLAGE DU STORE (ES-3, couche data).**
+  - **Symptôme, PROUVÉ** (code-review ES-1.4, mesuré sur `ZStudyFolder`) : `registry.decode(kind, map)` rend **toujours** une entité à `extra == {}` ⇒ un round-trip `decode → encode` **efface** les clés métier inconnues du cœur (`zz_cle_metier_app` → `null`).
+  - **Cause racine** : `zcrud_generator` émet, dans le registrar généré (`*.g.dart`), `fromMap: _$ZXxxFromMap` — la factory du **codegen**, qui ne connaît que les champs `@ZcrudField` et **ignore le canal hors-codegen `extra`** (peuplé, lui, par la factory de **domaine** `ZXxx.fromMap`). Le `toMap` n'est **pas** affecté (le registrar câble `toMap: (value) => value.toMap()`, donc l'écriture délègue bien au domaine) : **seul le décodage est dégradé**.
+  - **Impact** : `FirebaseZRepositoryImpl.fromRegistry` (`packages/zcrud_firestore/lib/src/data/firebase_z_repository_impl.dart`) est une fabrique **PUBLIQUE**, présentée comme « la voie stricte ». Elle est **destructive dès sa première adoption** : chaque cycle lecture→écriture Firestore effacerait **silencieusement** l'échappatoire d'extension garanti par **AD-4**, de façon **irréversible**.
+  - **Aujourd'hui LATENT — et c'est la SEULE raison pour laquelle ce n'est pas une perte de données en production** : `fromRegistry` n'a **aucun appelant** dans le repo. Le constructeur nominal (auquel on passe `fromMap: ZXxx.fromMap`) **préserve** `extra`.
+  - **Mitigation posée en ES-1.4** (coût nul, périmètre respecté) : avertissement dartdoc **impossible à rater** sur `fromRegistry` (« cette voie DÉTRUIT `extra` ; ne pas câbler un store dessus »), qui renvoie ici et donne le contournement (constructeur nominal + factory de domaine).
+  - **CORRECTIF DE FOND (story dédiée, à ouvrir AVANT ES-3.x / l'intégration store)** : `zcrud_generator` doit émettre **`fromMap: ZXxx.fromMap`** (la factory de domaine, défensive AD-10 et qui peuple `extra`) **lorsque la classe annotée en définit une** — au lieu de `_$ZXxxFromMap`. Touche le générateur + ses tests + les 5 `*.g.dart` régénérés. **Critère de clôture** : un test de round-trip `registry.decode → registry.encode` préservant une clé inconnue, **pour chaque kind** — à câbler comme 5ᵉ assertion (e) du volet (A) de `gate:reserved-keys`, ce qui **supprimera du même coup la déviation `kDomainDecoders`** (le gate pourra alors décoder par le registre, comme le prescrivait la lettre d'AD-19.1.c).
+- **DW-ES13-2 — `ZFlashcard.updatedAt`** : miroir de compat `updated_at` non déprécié (surface E9 consommée par la migration DODLP). Dépréciation formelle à re-statuer en ES-2/ES-11 ⇒ sortie de `kLegacyUpdatedAtMirrors` (AD-19.2 pt.3).
+
+### AUTRES REPORTS
 
 - **Comparaison numérique exacte lex `Sm2` ↔ `ZSm2Scheduler`** (overdue-bonus, arrondis d'intervalle) — **résolution de tête d'ES-4** : critère = tests de planification identiques (mêmes entrées → mêmes intervalles) figés avant merge, divergence overdue documentée par écrit (AD-22). Non rejouable ici sans le code lex.
 - **Décomposabilité golden de `folder_study_tools_page.dart` (~1750 l.)** en sections paramétriques sans perte d'apparence — à valider par golden/design-review en ES-5 (AD-25).

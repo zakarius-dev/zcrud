@@ -1,10 +1,27 @@
-# CI zcrud (E1-3, SM-6) — gates de merge de qualité & d'architecture.
+# CI zcrud (E1-3, SM-6 ; refondue en ES-1.4) — gates de merge de qualité &
+# d'architecture.
 #
-# Ordre IMPOSÉ (CLAUDE.md, AC 3) : setup toolchain → résolution → CODEGEN →
-# ANALYZE → TEST → GATES (anti-reflectable AD-3, secrets AD-12, codegen AD-3,
-# acyclicité AD-1, anti-divergence melos M-1) → SLOT rétro-compat sérialisation
-# (E2-10, AD-10). Le codegen précède analyze/test (le généré est gitignoré et
-# régénéré). Toute violation fait échouer le merge.
+# Ordre IMPOSÉ (CLAUDE.md, AC 3) : setup toolchain (Flutter + **Node**) →
+# résolution → CODEGEN → ANALYZE → TEST → GATES. Le codegen précède analyze/test
+# (le généré est gitignoré et régénéré). Toute violation fait échouer le merge.
+#
+# ## ⚠️ LES GATES SONT EXÉCUTÉS PAR UN STEP UNIQUE : `melos run verify`
+#
+# Jusqu'à ES-1.4, ce workflow RE-LISTAIT les gates un par un — même classe de
+# dérive que celle que combat `gate:melos` (M-1). Le symptôme a été avéré :
+# `gate:web`, ajouté à `verify` en ES-1.2, n'a JAMAIS tourné en CI (il n'était
+# pas dans cette liste), et Node n'était même pas installé. **Faux vert pendant
+# toute une story.**
+#
+# Désormais : la CI appelle `dart run melos run verify` — l'agrégat défini dans
+# `pubspec.yaml` (`melos.scripts.verify`, miroir `melos.yaml`). Tout gate ajouté
+# à `verify` est en CI **PAR CONSTRUCTION** ; la dérive « gate dans verify mais
+# pas dans ci.yml » est structurellement IMPOSSIBLE. Ne JAMAIS réintroduire une
+# liste de gates ici.
+#
+# Restent des steps SÉPARÉS, car hors `verify` (CI-only par nature) :
+#   - `gitleaks` : autorité du scan de secrets sur l'HISTORIQUE git ;
+#   - `prove_gates.dart` : preuve « échoue sur violation, passe sinon » (fixtures).
 #
 # Runner : subosito/flutter-action (pérennité E3+ ; tant que Dart résolu = ^3.12.2).
 name: ci
@@ -31,10 +48,20 @@ jobs:
           flutter-version: 3.44.4
           channel: stable
 
+      # ES-1.4 — SANS Node, `gate:web` (dart test -p node) SKIPPE : le
+      # déterminisme web (vecteurs golden FNV-1a de zFnv1a32, cassés en JS par la
+      # variante naïve) n'était en fait JAMAIS vérifié en CI depuis ES-1.2.
+      # Ce step est ce qui rend `gate:web` réellement exécutoire.
+      - name: Setup Node (rend gate:web réellement exécutable — dart test -p node)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Résolution workspace (pub workspaces)
         run: dart pub get
 
-      # ---- CODEGEN (avant analyze/test) ----
+      # ---- CODEGEN (avant analyze/test/gates) ----
+      # `gate:codegen` ET `gate:reserved-keys` LISENT les *.g.dart (gitignorés).
       - name: Codegen (melos run generate)
         run: dart run melos run generate
 
@@ -45,51 +72,28 @@ jobs:
       # ---- TEST ----
       # `melos run test` = test:dart (--no-flutter → dart test) puis test:flutter
       # (--flutter → flutter test). Depuis E2-7, zcrud_core est un package Flutter
-      # et route vers `flutter test` ; la toolchain Flutter est déjà installée
-      # (subosito ci-dessus) → aucun setup supplémentaire requis.
+      # et route vers `flutter test` ; la toolchain Flutter est déjà installée.
+      # ⚠️ Les harnais `tool/*` sont dans `melos.ignore` : leurs tests ne tournent
+      # PAS ici — `gate:reserved-keys` (dans `verify`) lance explicitement celui
+      # de `tool/reserved_keys_gate`.
       - name: Test (melos run test)
         run: dart run melos run test
 
-      # ---- GATES d'architecture ----
-      - name: Gate AD-1 — acyclicité (graph_proof durci, dev_deps + overrides)
-        run: python3 scripts/dev/graph_proof.py
+      # ---- GATES d'architecture : STEP UNIQUE (anti-dérive, ES-1.4) ----
+      # graph (AD-1) · melos M-1 · reflectable (AD-3) · secrets (AD-12) ·
+      # codegen (AD-3) · compat (FR-25) · web (ES-1.2/M1) ·
+      # reserved-keys (AD-19.1) · verify:serialization (AD-10).
+      - name: Gates d'architecture (melos run verify — miroir exact du local)
+        run: dart run melos run verify
 
-      - name: Gate M-1 — anti-divergence des blocs scripts melos
-        run: dart run scripts/ci/gate_melos_divergence.dart
-
-      - name: Gate AD-3 — anti-reflectable (moteur, hors ReflectableCodec)
-        run: dart run scripts/ci/gate_reflectable.dart
-
-      - name: Gate AD-12 — scan de secrets (repli local reproductible)
-        run: dart run scripts/ci/gate_secret_scan.dart
-
-      # gitleaks = AUTORITÉ CI du scan de secrets (couvre l'historique git).
-      # Config/allowlist : .gitleaks.toml. Le repli Dart ci-dessus prouve le gate
-      # localement (hors réseau) et sert les fixtures.
+      # gitleaks = AUTORITÉ CI du scan de secrets (couvre l'HISTORIQUE git, ce que
+      # le repli Dart de `verify` ne peut pas faire). Config : .gitleaks.toml.
       - name: Gate AD-12 — gitleaks (autorité, historique git)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITLEAKS_CONFIG: .gitleaks.toml
 
-      - name: Gate AD-3 — contrôle codegen (aucun modèle annoté sans .g.dart)
-        run: dart run scripts/ci/gate_codegen.dart
-
-      # ---- Gate FR-25 (E1-4) : compat de résolution (voie manifeste, BLOQUANTE) ----
-      # Dry-run de résolution du triplet flutter_quill+awesome_select+analyzer dans
-      # le package ISOLÉ tool/compat_check (hors des 14 membres pur-Dart, hors du
-      # graphe AD-1). Flutter est déjà installé (subosito) => dry-run exécutable.
-      # La voie « workspace lex_douane réel » est informationnelle : LEX_WORKSPACE
-      # n'est pas fourni en CI => SKIP propre (le gate reste vert).
-      - name: Gate FR-25 — compat de résolution (voie manifeste, bloquant)
-        run: dart run scripts/ci/gate_compat_resolution.dart
-
       # ---- Preuve reproductible des gates (fixtures éphémères, AC 10) ----
-      - name: Preuve « échoue sur violation, passe sinon » (gates + compat FR-25)
+      # « Un gate qu'on n'a pas vu échouer n'est pas un gate. »
+      - name: Preuve « échoue sur violation, passe sinon » (gates + compat + reserved-keys)
         run: dart run scripts/ci/prove_gates.dart
-
-      # ---- SLOT E2-10 : rétro-compat de sérialisation (AD-10) ----
-      # Rattaché au gate de merge en E1-3. NO-OP vert aujourd'hui ; E2-10
-      # fournira les tests taggés `serialization-compat` SANS toucher ce workflow
-      # (le slot les auto-découvre via scripts/ci/verify_serialization.dart).
-      - name: Slot rétro-compat sérialisation (E2-10, no-op documenté)
-        run: dart run melos run verify:serialization

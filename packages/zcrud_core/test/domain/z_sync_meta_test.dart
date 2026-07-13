@@ -75,6 +75,58 @@ void main() {
     });
   });
 
+  group('ZSyncMeta — clés réservées AD-19 (ES-1.3, AC3)', () {
+    test('kUpdatedAt/kIsDeleted sont les clés snake_case canoniques', () {
+      expect(ZSyncMeta.kUpdatedAt, 'updated_at');
+      expect(ZSyncMeta.kIsDeleted, 'is_deleted');
+    });
+
+    test('reservedKeys = {updated_at, is_deleted} — définition machine AD-19',
+        () {
+      expect(ZSyncMeta.reservedKeys, {'updated_at', 'is_deleted'});
+    });
+
+    test('toJson n\'émet QUE les clés réservées', () {
+      final json = ZSyncMeta(updatedAt: ts, isDeleted: true).toJson();
+      expect(json.keys.toSet(), ZSyncMeta.reservedKeys);
+    });
+
+    test('stripReserved retire updated_at et is_deleted, garde le reste', () {
+      final stripped = ZSyncMeta.stripReserved(<String, dynamic>{
+        'title': 't',
+        'updated_at': ts.toIso8601String(),
+        'is_deleted': true,
+        'related_topics': <String>['x'],
+      });
+      expect(stripped.containsKey('updated_at'), isFalse);
+      expect(stripped.containsKey('is_deleted'), isFalse);
+      expect(stripped['title'], 't');
+      expect(stripped['related_topics'], <String>['x']);
+    });
+
+    test('stripReserved est pure : ne mute JAMAIS son entrée', () {
+      final source = <String, dynamic>{
+        'title': 't',
+        'updated_at': ts.toIso8601String(),
+        'is_deleted': false,
+      };
+      final stripped = ZSyncMeta.stripReserved(source);
+      // L'entrée reste intacte…
+      expect(source.keys.toSet(), {'title', 'updated_at', 'is_deleted'});
+      // …et la sortie est une NOUVELLE map (mutable, indépendante).
+      expect(identical(source, stripped), isFalse);
+      stripped['x'] = 1;
+      expect(source.containsKey('x'), isFalse);
+    });
+
+    test('stripReserved : map vide → map vide ; sans clé réservée → copie égale',
+        () {
+      expect(ZSyncMeta.stripReserved(<String, dynamic>{}), isEmpty);
+      final plain = <String, dynamic>{'a': 1, 'b': 'deux'};
+      expect(ZSyncMeta.stripReserved(plain), equals(plain));
+    });
+  });
+
   group('ZSyncMeta — copyWith (sentinelle reset-null)', () {
     test('omettre updatedAt conserve la valeur', () {
       final meta = ZSyncMeta(updatedAt: ts, isDeleted: true);

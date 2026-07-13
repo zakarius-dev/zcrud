@@ -69,10 +69,12 @@ class ZMindmap with ZExtensible {
   /// dans [extra] ni ré-émises par [toJson]. Garantit l'invariant AD-16 sur le
   /// chemin `fromJson→toJson`, même si la map d'entrée mêle des métadonnées de
   /// sync (le store est seul responsable de ces clés, hors périmètre E10-1).
-  static const Set<String> _reservedSyncKeys = <String>{
-    'updated_at',
-    'is_deleted',
-  };
+  ///
+  /// **AD-19 (ES-1.3)** — alias de la **définition machine unique**
+  /// `ZSyncMeta.reservedKeys` (`zcrud_core`) : plus aucun littéral redéclaré ici
+  /// (solde la dette DW-ES13-1). Si `ZSyncMeta` gagne une clé réservée, ce site
+  /// la reprend automatiquement — plus de dérive silencieuse possible.
+  static const Set<String> _reservedSyncKeys = ZSyncMeta.reservedKeys;
 
   /// Désérialisation **défensive** (AD-10) : ne **throw JAMAIS**.
   ///

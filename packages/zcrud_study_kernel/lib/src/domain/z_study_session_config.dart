@@ -13,13 +13,18 @@
 /// (`toMap`/`copyWith`), `$ZStudySessionConfigFieldSpecs` et
 /// `registerZStudySessionConfig(ZcrudRegistry)`.
 ///
-/// **`types` (liste d'enum) — codegen NATIF (AC7)** : le générateur zcrud
-/// (dé)sérialise nativement `List<ZFlashcardType>?` (catégorie `listEnum`) de
-/// façon **défensive** : à la lecture, chaque élément inconnu est **ignoré**
-/// (`_$enumFromName(...) → null`, filtré par `whereType`), le parent survivant
-/// toujours (AD-10) ; à l'écriture, chaque élément est sérialisé en `name`
-/// camelCase. Aucun câblage hors-codegen n'est donc requis pour `types`
-/// (comportement vérifié via `melos run generate` — chemin natif retenu).
+/// **`types` (liste de clés de type NEUTRES) — découplage AD-1/AD-17 (ES-1.1,
+/// AC6)** : le champ conserve le **nom `types`** (clé JSON `types` inchangée)
+/// mais son type d'élément est **neutre `String`** (`List<String>?`) — et non
+/// plus `List<ZFlashcardType>` (concept flashcard-spécifique, banni du noyau par
+/// AD-17). Les valeurs persistées restent les **noms d'enum camelCase**
+/// (ex. `"multipleChoice"`) ⇒ le wire est **byte-identique** à E9 (round-trip
+/// AD-10, gate `verify:serialization` préservé). Le générateur zcrud
+/// (dé)sérialise nativement `List<String>?` (mêmes défauts défensifs que
+/// `tag_ids` : non-liste → `null`, éléments non-`String` filtrés). L'ergonomie
+/// typée `ZFlashcardType` (mapping String↔enum, drop défensif des inconnus) est
+/// restituée **côté `zcrud_flashcard`** via une extension (`flashcardTypes` /
+/// `withFlashcardTypes`), jamais dans le noyau.
 ///
 /// **`mode` défensif → [ZReviewMode.spaced] (AC1)** via `defaultValue` : une
 /// valeur inconnue/absente retombe sur `spaced`, sans throw.
@@ -31,7 +36,6 @@ library;
 import 'package:zcrud_annotations/zcrud_annotations.dart';
 import 'package:zcrud_core/domain.dart';
 
-import 'z_flashcard_type.dart';
 import 'z_review_mode.dart';
 
 export 'z_review_mode.dart';
@@ -97,10 +101,12 @@ class ZStudySessionConfig with ZExtensible {
   @ZcrudField()
   final List<String>? tagIds;
 
-  /// Types filtrants (`null` ou vide = pas de filtre ; sinon appartenance —
-  /// AC8). Élément inconnu ignoré défensivement à la désérialisation (AD-10).
+  /// Types filtrants **neutres** (`null` ou vide = pas de filtre ; sinon
+  /// appartenance sur la clé opaque `ZSessionCandidate.typeKey` — AC6). Clés
+  /// camelCase (ex. `"multipleChoice"`) ; l'ergonomie typée `ZFlashcardType` est
+  /// restituée côté `zcrud_flashcard`.
   @ZcrudField()
-  final List<ZFlashcardType>? types;
+  final List<String>? types;
 
   /// Plafond du nombre de cartes (`null` = illimité ; `<= 0` = sélection vide —
   /// AC8).
@@ -152,7 +158,7 @@ class ZStudySessionConfig with ZExtensible {
             : tagIds as List<String>?,
         types: identical(types, _$undefined)
             ? this.types
-            : types as List<ZFlashcardType>?,
+            : types as List<String>?,
         count: identical(count, _$undefined) ? this.count : count as int?,
         extension: identical(extension, _$undefined)
             ? this.extension
@@ -173,11 +179,24 @@ class ZStudySessionConfig with ZExtensible {
     return ZExtension.guard<ZExtension?>(() => parser(map));
   }
 
-  /// Clés persistées **réservées** (champs générés + `extension`) — dérivées de
-  /// `$ZStudySessionConfigFieldSpecs`.
+  /// Clés persistées **réservées** (champs générés + `extension` + **clés de
+  /// sync `ZSyncMeta`**) — dérivées de `$ZStudySessionConfigFieldSpecs`.
+  ///
+  /// **AD-19 (ES-1.3)** — le spread `...ZSyncMeta.reservedKeys` (`updated_at`,
+  /// `is_deleted`) est **obligatoire pour toute entité annotée** : l'entité est
+  /// enregistrée au `ZcrudRegistry` (`kind: 'study_session_config'`) donc
+  /// persistable comme document autonome, et les stores écrivent leurs
+  /// métadonnées de sync **dans le corps** avant de passer la map **complète** à
+  /// [fromMap]. Sans ce spread, `updated_at`/`is_deleted` — propriété du
+  /// **store**, pas du domaine — atterriraient dans [extra] (AD-4) et seraient
+  /// **réémises** par [toMap] (AD-16 : soft-delete hors-entité).
+  ///
+  /// C'est le **patron canonique du noyau** : toute entité d'ES-2
+  /// (`ZStudyDocument`, `ZSmartNote`, `ZExam`, …) le reproduit à l'identique.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZStudySessionConfigFieldSpecs) spec.name,
     'extension',
+    ...ZSyncMeta.reservedKeys,
   };
 
   /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).

@@ -79,24 +79,35 @@ void main() {
   });
 
   group('ZStudySessionConfig — round-trip codegen (AC7)', () {
-    test('round-trip complet zéro-perte (snake_case)', () {
-      final config = ZStudySessionConfig(
+    test('round-trip complet zéro-perte (snake_case), types via ergonomie typée',
+        () {
+      // ES-1.1 : `types` est neutralisé en `List<String>` dans le noyau ;
+      // l'ergonomie typée `ZFlashcardType` passe par `withFlashcardTypes`
+      // (extension flashcard). Le wire reste byte-identique à E9.
+      final config = const ZStudySessionConfig(
         mode: ZReviewMode.learn,
         folderId: 'f1',
-        tagIds: const <String>['t1', 't2'],
-        types: const <ZFlashcardType>[
-          ZFlashcardType.multipleChoice,
-          ZFlashcardType.trueOrFalse,
-        ],
+        tagIds: <String>['t1', 't2'],
         count: 20,
-      );
+      ).withFlashcardTypes(const <ZFlashcardType>[
+        ZFlashcardType.multipleChoice,
+        ZFlashcardType.trueOrFalse,
+      ]);
       final map = config.toMap();
       expect(map['mode'], 'learn');
       expect(map['folder_id'], 'f1');
       expect(map['tag_ids'], <String>['t1', 't2']);
+      // Wire byte-identique à E9 : noms d'enum camelCase.
       expect(map['types'], <String>['multipleChoice', 'trueOrFalse']);
       expect(map['count'], 20);
+      // Round-trip : la config neutre porte des clés String.
+      expect(config.types, <String>['multipleChoice', 'trueOrFalse']);
       expect(ZStudySessionConfig.fromMap(map), config);
+      // Ergonomie typée restituée.
+      expect(config.flashcardTypes, <ZFlashcardType>[
+        ZFlashcardType.multipleChoice,
+        ZFlashcardType.trueOrFalse,
+      ]);
     });
 
     test('défauts : mode spaced, filtres null (= pas de filtre)', () {
@@ -108,11 +119,19 @@ void main() {
       expect(config.count, isNull);
     });
 
-    test('types avec élément inconnu → décodé défensivement (ignoré)', () {
+    test('types : clés neutres conservées ; flashcardTypes drop défensif (AD-10)',
+        () {
       final config = ZStudySessionConfig.fromMap(<String, dynamic>{
         'types': <dynamic>['multipleChoice', 'totallyUnknownType', 'exercise'],
       });
-      expect(config.types, <ZFlashcardType>[
+      // Noyau neutre : toutes les clés String survivent (round-trip zéro-perte).
+      expect(config.types, <String>[
+        'multipleChoice',
+        'totallyUnknownType',
+        'exercise',
+      ]);
+      // Ergonomie typée (flashcard) : les clés inconnues sont ignorées.
+      expect(config.flashcardTypes, <ZFlashcardType>[
         ZFlashcardType.multipleChoice,
         ZFlashcardType.exercise,
       ]);
@@ -202,6 +221,68 @@ void main() {
       final registry = ZcrudRegistry();
       registerZStudySessionConfig(registry);
       expect(registry.isRegistered('study_session_config'), isTrue);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AD-19 (ES-1.3, finding H2 du code-review) — MIROIR du groupe kernel.
+  // Les deux copies de ce test évoluent ENSEMBLE (héritage ES-1.1).
+  // ─────────────────────────────────────────────────────────────────────────
+  group('ZStudySessionConfig — AD-19 : clés de sync hors-entité (ES-1.3)', () {
+    test('fromMap d\'une map de STORE : ni is_deleted ni updated_at dans extra',
+        () {
+      final config = ZStudySessionConfig.fromMap(<String, dynamic>{
+        'mode': 'spaced',
+        'count': 20,
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+        'un_champ_inconnu': 'gardé',
+      });
+
+      expect(config.extra.containsKey('is_deleted'), isFalse);
+      expect(config.extra.containsKey('updated_at'), isFalse);
+      expect(config.extra['un_champ_inconnu'], 'gardé');
+      expect(config.count, 20);
+    });
+
+    test('toMap() ne RÉÉMET aucune clé de sync (AD-16, soft-delete hors-entité)',
+        () {
+      final config = ZStudySessionConfig.fromMap(<String, dynamic>{
+        'mode': 'spaced',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': true,
+      });
+
+      final map = config.toMap();
+      expect(map.containsKey('is_deleted'), isFalse);
+      expect(map.containsKey('updated_at'), isFalse);
+    });
+
+    test('convergence : fromMap(toMap(c)) == c', () {
+      final fromStore = ZStudySessionConfig.fromMap(<String, dynamic>{
+        'mode': 'spaced',
+        'folder_id': 'f1',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+      });
+      final reread = ZStudySessionConfig.fromMap(fromStore.toMap());
+
+      expect(reread.extra, equals(fromStore.extra));
+      expect(reread, equals(fromStore));
+      expect(fromStore.extra, isEmpty);
+    });
+
+    test('map de sync corrompue (is_deleted: "oui", updated_at: 42) ⇒ aucun '
+        'throw, aucune pollution (AD-10)', () {
+      final config = ZStudySessionConfig.fromMap(<String, dynamic>{
+        'mode': 'spaced',
+        'updated_at': 42,
+        'is_deleted': 'oui',
+      });
+
+      expect(config.mode, ZReviewMode.spaced);
+      expect(config.extra, isEmpty);
+      expect(config.toMap().containsKey('is_deleted'), isFalse);
     });
   });
 }

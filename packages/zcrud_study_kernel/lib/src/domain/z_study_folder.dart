@@ -27,10 +27,19 @@
 /// (`ZSyncMeta`, E5/E9-4) : cette entité ne déclare **AUCUN** champ
 /// `isDeleted`/`is_deleted`.
 ///
-/// **`updatedAt` DANS l'entité (AC6)** : champ de première classe = clé de merge
-/// LWW (E9-4). Divergence **assumée** vs `ZMindmap` (qui le porte hors-entité
-/// `ZSyncMeta`) — open question canonique #3 non tranchée ici, E9-3 reste fidèle
-/// à `StudyFolder`.
+/// **`updatedAt` : MIROIR DE COMPATIBILITÉ DÉPRÉCIÉ (AD-19, ES-1.3 — OQ #3
+/// TRANCHÉE)** : l'autorité de merge Last-Write-Wins est **exclusivement**
+/// `ZSyncMeta.updatedAt` (**hors-entité**, `zcrud_core`), jamais ce champ. Le
+/// champ interne subsiste, **déprécié**, uniquement pour les lectures **legacy**
+/// (documents écrits avant AD-19, consommateurs DODLP/IFFD) : il est maintenu
+/// **par l'adapter** via collision de clé `updated_at` (le store réécrit la clé
+/// à chaque `put` et la relit dans `fromMap`). La divergence antérieure vs
+/// `ZMindmap` (hors-entité) est donc **résolue en faveur du hors-entité**.
+///
+/// **Clés de sync RÉSERVÉES (AD-19)** : `updated_at` et `is_deleted`
+/// (`ZSyncMeta.reservedKeys`) ne sont **jamais** capturées dans [extra] et
+/// `is_deleted` n'est **jamais** réémis par [toMap] : ce sont des préoccupations
+/// de **store**, pas de domaine.
 ///
 /// **Bloc partage V2c déclaré mais INERTE (AC4)** : `isPublic`/`sharedWith`/
 /// `canBeJoinedWithLink`/`coWorkersCanInviteOthers`/`shareId` portent des
@@ -157,7 +166,20 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   @ZcrudField()
   final DateTime? createdAt;
 
-  /// Date de mise à jour (ISO-8601 ; **clé de merge LWW**, DANS l'entité — AC6).
+  /// **MIROIR DE COMPATIBILITÉ — DÉPRÉCIÉ (AD-19).**
+  ///
+  /// L'autorité de merge Last-Write-Wins est **exclusivement**
+  /// `ZSyncMeta.updatedAt` (**hors-entité**). Ce champ est **maintenu par
+  /// l'adapter** (collision de clé `updated_at` : le store réécrit la clé à
+  /// chaque `put` et la relit dans [ZStudyFolder.fromMap]), UNIQUEMENT pour que
+  /// les lectures **legacy** — documents écrits avant AD-19 et consommateurs
+  /// existants (DODLP/IFFD) — restent valides (AD-10, évolution additive).
+  /// **NE JAMAIS** l'utiliser pour décider d'un merge, d'un tri de sync ou
+  /// d'une résolution de conflit.
+  @Deprecated(
+    'Miroir de compat (AD-19). Autorité de merge = ZSyncMeta.updatedAt '
+    '(hors-entité). Ne jamais lire ce champ pour un merge/tri de sync.',
+  )
   @ZcrudField()
   final DateTime? updatedAt;
 
@@ -198,7 +220,14 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   ///
   /// Réutilise le `toMap()` **généré** (champs scalaires/dates/listes) puis
   /// superpose les deux canaux hors-codegen : [extra] (clés inconnues
-  /// préservées) et [extension]. Ne produit **aucune** clé `is_deleted` (AC5).
+  /// préservées) et [extension].
+  ///
+  /// Ne produit **JAMAIS** de clé `is_deleted` — désormais **garanti par
+  /// construction** (`_reservedKeys` ⊇ `ZSyncMeta.reservedKeys` : la clé ne peut
+  /// plus entrer dans [extra], donc plus en ressortir), et non plus « par
+  /// chance ». La clé `updated_at` **est** émise (miroir de compat déprécié)
+  /// mais **sans autorité** : l'adapter l'écrase inconditionnellement par
+  /// l'estampille `ZSyncMeta` à chaque `put`.
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       ...extra,
@@ -282,11 +311,21 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     return ZExtension.guard<ZExtension?>(() => parser(map));
   }
 
-  /// Clés persistées **réservées** (champs générés + `extension`) — dérivées de
-  /// `$ZStudyFolderFieldSpecs` pour rester synchrones avec le codegen.
+  /// Clés persistées **réservées** (champs générés + `extension` + **clés de
+  /// sync hors-entité AD-19**) — dérivées de `$ZStudyFolderFieldSpecs` pour
+  /// rester synchrones avec le codegen.
+  ///
+  /// `...ZSyncMeta.reservedKeys` (`updated_at`, `is_deleted`) est **essentiel** :
+  /// les stores écrivent ces clés **dans le corps** du document puis passent la
+  /// map **complète** à [ZStudyFolder.fromMap]. Sans cette réserve, `is_deleted`
+  /// (qui n'est **pas** un champ déclaré) atterrirait dans [extra] et serait
+  /// **réémis** par [toMap] — une préoccupation de store qui fuit dans le
+  /// domaine (AD-16), cassant au passage l'`==` entre une entité en mémoire et
+  /// la même relue du store.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZStudyFolderFieldSpecs) spec.name,
     'extension',
+    ...ZSyncMeta.reservedKeys,
   };
 
   /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).

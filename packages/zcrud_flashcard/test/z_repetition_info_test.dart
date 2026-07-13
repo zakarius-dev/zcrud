@@ -198,6 +198,107 @@ void main() {
       expect(info, isNot(isA<ZFlashcard>()));
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // AD-19 (ES-1.3, finding H1 du code-review) — NON-RÉGRESSION.
+  //
+  // ⚠️ SI CE GROUPE TOMBE : `_reservedKeys` a perdu `...ZSyncMeta.reservedKeys`.
+  // `ZRepetitionInfo` est l'EXEMPLAIRE DE RÉFÉRENCE d'AD-19.1 (zéro `updatedAt`
+  // interne) ET un document persisté top-level (`study_repetitions/{cardId}`)
+  // dont le store écrit la méta DANS LE CORPS avant de passer la map COMPLÈTE à
+  // `fromMap`. Ne déclarant AUCUN champ `updatedAt`/`isDeleted`, elle capturerait
+  // les DEUX clés réservées dans `extra` (AD-4) et les RÉÉMETTRAIT via `toMap()`
+  // (AD-16), cassant `==` entre un état SRS en mémoire et le même relu du store.
+  // ───────────────────────────────────────────────────────────────────────────
+  group('ZRepetitionInfo — AD-19 : clés de sync hors-entité (ES-1.3)', () {
+    test('fromMap d\'une map de STORE : ni is_deleted ni updated_at dans extra',
+        () {
+      final info = ZRepetitionInfo.fromMap(<String, dynamic>{
+        'flashcard_id': 'c1',
+        'folder_id': 'f1',
+        'interval': 3,
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+        'un_champ_inconnu': 'gardé',
+      });
+
+      expect(info.extra.containsKey('is_deleted'), isFalse);
+      expect(info.extra.containsKey('updated_at'), isFalse);
+      // Round-trip AD-4 des clés VRAIMENT inconnues : non régressé.
+      expect(info.extra['un_champ_inconnu'], 'gardé');
+      expect(info.interval, 3);
+    });
+
+    test('toMap() ne RÉÉMET aucune clé de sync (AD-16, soft-delete hors-entité)',
+        () {
+      final info = ZRepetitionInfo.fromMap(<String, dynamic>{
+        'flashcard_id': 'c1',
+        'folder_id': 'f1',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': true,
+      });
+
+      final map = info.toMap();
+      expect(map.containsKey('is_deleted'), isFalse);
+      expect(map.containsKey('updated_at'), isFalse);
+      expect(map.containsKey('isDeleted'), isFalse);
+    });
+
+    test('convergence : fromMap(toMap(i)) == i (l\'== n\'est plus cassée entre '
+        'un état SRS en mémoire et le même relu du store)', () {
+      final fromStore = ZRepetitionInfo.fromMap(<String, dynamic>{
+        'flashcard_id': 'c1',
+        'folder_id': 'f1',
+        'interval': 6,
+        'repetitions': 2,
+        'ease_factor': 2.36,
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+      });
+      final reread = ZRepetitionInfo.fromMap(fromStore.toMap());
+
+      expect(reread.extra, equals(fromStore.extra));
+      expect(reread, equals(fromStore));
+      expect(fromStore.extra, isEmpty);
+
+      // L'état SRS construit en mémoire par l'algorithme est ÉGAL au même état
+      // relu du store (c'était FAUX avant la correction : `extra` divergeait).
+      final inMemory = ZRepetitionInfo(
+        flashcardId: 'c1',
+        folderId: 'f1',
+        interval: 6,
+        repetitions: 2,
+        easeFactor: 2.36,
+      );
+      expect(fromStore, equals(inMemory));
+    });
+
+    test('map de sync corrompue (is_deleted: "oui", updated_at: 42) ⇒ aucun '
+        'throw, aucune pollution (AD-10)', () {
+      final info = ZRepetitionInfo.fromMap(<String, dynamic>{
+        'flashcard_id': 'c1',
+        'folder_id': 'f1',
+        'updated_at': 42,
+        'is_deleted': 'oui',
+      });
+
+      expect(info.flashcardId, 'c1');
+      expect(info.extra, isEmpty);
+      expect(info.toMap().containsKey('is_deleted'), isFalse);
+    });
+
+    test('AD-19.1 — exemplaire de référence : AUCUN champ updatedAt/isDeleted '
+        'déclaré (la clé LWW est EXCLUSIVEMENT hors-entité)', () {
+      final specNames =
+          $ZRepetitionInfoFieldSpecs.map((s) => s.name).toSet();
+      expect(
+        specNames.intersection(ZSyncMeta.reservedKeys),
+        isEmpty,
+        reason: 'ZRepetitionInfo ne doit déclarer NI updated_at NI is_deleted : '
+            'ces clés appartiennent au store (ZSyncMeta), pas au domaine.',
+      );
+    });
+  });
 }
 
 /// Extension de TEST (`ZExtension`) — vérifie le slot type additif versionné

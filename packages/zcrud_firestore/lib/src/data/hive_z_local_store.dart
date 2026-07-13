@@ -120,10 +120,21 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   final bool _ownsBox;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
-  static const String _kIsDeleted = 'is_deleted';
+  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  static const String _kIsDeleted = ZSyncMeta.kIsDeleted;
 
   /// Clé snake_case de l'horodatage LWW (`ZSyncMeta`, ISO-8601).
-  static const String _kUpdatedAt = 'updated_at';
+  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  ///
+  /// **Immunité structurelle au vecteur M3 (Timestamp legacy)** : ce store
+  /// persiste du **JSON** (`jsonEncode`/`jsonDecode`) — un `Timestamp` Firestore
+  /// n'y est pas représentable (`jsonEncode` lèverait). Toute valeur relue de la
+  /// box est donc un scalaire JSON, et `updated_at` y est **toujours** une String
+  /// ISO-8601 écrite par [_encode]/[applyMerged]/[_setDeletedFlag]. La
+  /// normalisation `Timestamp → ISO` d'AD-19/M3 est **inutile ici** ; elle vit
+  /// dans l'adapter Firestore (`firebase_z_repository_impl.dart` `_inject`), seul
+  /// chemin exposé aux documents legacy DODLP.
+  static const String _kUpdatedAt = ZSyncMeta.kUpdatedAt;
 
   /// Clé logique d'identité écrite dans le corps (invariant clé↔corps).
   static const String _kId = 'id';

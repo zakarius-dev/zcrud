@@ -193,6 +193,193 @@ void main() {
     });
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // AD-19 / ES-1.3 — findings M2 + M3 du code-review.
+  //
+  // Le test STAR du kernel prouve que la méta PRIME sur le miroir. Il ne prouve
+  // PAS qu'elle SURVIT au décodage. Ces tests ferment ce trou : une méta
+  // NEUTRALISÉE à `null` fait dégénérer le merge LWW en « le local gagne
+  // toujours » (écritures distantes perdues, silencieusement, sans test rouge).
+  //
+  // Deux vecteurs de neutralisation :
+  //  - M3 : un document LEGACY (DODLP) porte `updated_at` en `Timestamp` natif ;
+  //  - M2 : un dev annote `updated_at` en `persistAs: timestamp` (gap B14).
+  // ───────────────────────────────────────────────────────────────────────────
+  group('AD-19 (M3) — la méta SURVIT au décodage d\'un document LEGACY', () {
+    test(
+        'syncEntriesAll : `updated_at` en Timestamp natif ⇒ ZSyncMeta.updatedAt '
+        'PEUPLÉE (la clé d\'autorité du merge n\'est PAS perdue)', () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs); // aucun hint : cas DODLP « pur legacy »
+      final at = DateTime.utc(2026, 3, 1, 12);
+
+      // Document réellement écrit par DODLP : toutes les dates en `Timestamp`
+      // natif, `updated_at` COMPRIS (zcrud, lui, écrit de l'ISO-8601).
+      await fs.collection(_kPath).doc('legacy').set(<String, dynamic>{
+        'id': 'legacy',
+        'title': 'doc DODLP',
+        'created_at': Timestamp.fromDate(DateTime.utc(2026)),
+        'updated_at': Timestamp.fromDate(at), // ← clé d'AUTORITÉ du merge
+        'is_deleted': false,
+      });
+
+      final res = await repo.syncEntriesAll();
+      expect(res.isRight(), isTrue);
+      res.fold((f) => fail('gauche: $f'), (entries) {
+        final entry = entries.single;
+        expect(
+          entry.meta.updatedAt,
+          isNotNull,
+          reason: 'AVANT la correction M3, `_parseIso(Timestamp)` renvoyait '
+              '`null` : la clé LWW était PERDUE sur TOUTE la donnée legacy ⇒ '
+              'ZLwwResolver dégénérait en « le local gagne toujours ».',
+        );
+        expect(entry.meta.updatedAt, at);
+        expect(entry.meta.isDeleted, isFalse);
+        // `ZSyncEntry.updatedAt` est DÉRIVÉ de la méta : c'est l'autorité.
+        expect(entry.updatedAt, at);
+      });
+    });
+
+    test(
+        'le LWW ne DÉGÉNÈRE PAS : le distant legacy (Timestamp 2026) bat un '
+        'local daté 2020 (avant M3, le local gagnait toujours)', () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs);
+      final remoteAt = DateTime.utc(2026, 3, 1, 12);
+
+      await fs.collection(_kPath).doc('legacy').set(<String, dynamic>{
+        'id': 'legacy',
+        'title': 'version DISTANTE (la plus récente)',
+        'updated_at': Timestamp.fromDate(remoteAt),
+        'is_deleted': false,
+      });
+
+      final pulled = await repo.syncEntriesAll();
+      final remote = pulled.fold<List<ZSyncEntry<_Event>>>(
+        (f) => fail('gauche: $f'),
+        (entries) => entries,
+      ).single;
+
+      final local = ZSyncEntry<_Event>(
+        entity: const _Event(id: 'legacy', title: 'version LOCALE (périmée)'),
+        meta: ZSyncMeta(updatedAt: DateTime.utc(2020), isDeleted: false),
+      );
+
+      const resolver = ZLwwResolver();
+      final decision = resolver.resolve<_Event>(local, remote);
+
+      expect(
+        decision.action,
+        ZLwwAction.adoptRemoteIntoLocal,
+        reason: 'Méta distante `null` (bug M3) ⇒ « jamais synchronisé » ⇒ le '
+            'LOCAL aurait gagné et l\'écriture distante 2026 aurait été '
+            'ÉCRASÉE. La méta doit survivre au décodage.',
+      );
+      expect(decision.entry!.entity.title, 'version DISTANTE (la plus récente)');
+    });
+
+    test(
+        'forme SÉRIALISÉE d\'un Timestamp ({_seconds,_nanoseconds}) ⇒ méta '
+        'peuplée aussi (export/REST, cache JSON)', () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs);
+      final at = DateTime.utc(2026, 3, 1, 12);
+
+      await fs.collection(_kPath).doc('rest').set(<String, dynamic>{
+        'id': 'rest',
+        'title': 'export REST',
+        'updated_at': <String, dynamic>{
+          '_seconds': at.millisecondsSinceEpoch ~/ 1000,
+          '_nanoseconds': 0,
+        },
+        'is_deleted': false,
+      });
+
+      final res = await repo.syncEntriesAll();
+      res.fold(
+        (f) => fail('gauche: $f'),
+        (entries) => expect(entries.single.meta.updatedAt, at),
+      );
+    });
+
+    test(
+        'rétro-compat : un `updated_at` déjà en String ISO reste décodé à '
+        'l\'identique (tolérance bi-format, AD-10)', () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs);
+      final at = DateTime.utc(2026, 3, 1, 12);
+
+      await repo.save(const _Event(id: 'e1', title: 'zcrud-native'));
+      final raw = await _rawDoc(fs, 'e1');
+      expect(raw['updated_at'], isA<String>()); // écriture zcrud = ISO
+
+      await fs.collection(_kPath).doc('e2').set(<String, dynamic>{
+        'id': 'e2',
+        'title': 'iso',
+        'updated_at': at.toIso8601String(),
+        'is_deleted': false,
+      });
+
+      final res = await repo.syncEntriesAll();
+      res.fold((f) => fail('gauche: $f'), (entries) {
+        final iso = entries.firstWhere((e) => e.entity.id == 'e2');
+        expect(iso.meta.updatedAt, at);
+      });
+    });
+
+    test('valeur corrompue (`updated_at: 42`) ⇒ méta null, AUCUN throw (AD-10)',
+        () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs);
+
+      await fs.collection(_kPath).doc('bad').set(<String, dynamic>{
+        'id': 'bad',
+        'title': 'corrompu',
+        'updated_at': 42,
+        'is_deleted': false,
+      });
+
+      final res = await repo.syncEntriesAll();
+      res.fold((f) => fail('gauche: $f'), (entries) {
+        expect(entries.single.meta.updatedAt, isNull);
+        expect(entries.single.entity.title, 'corrompu');
+      });
+    });
+  });
+
+  group('AD-19 (M2) — une clé RÉSERVÉE ne peut pas être hintée `timestamp`', () {
+    test(
+        'timestampFields ∩ ZSyncMeta.reservedKeys ≠ {} ⇒ AssertionError '
+        '(garde MACHINE, plus une convention en commentaire)', () {
+      final fs = FakeFirebaseFirestore();
+
+      expect(
+        () => _repo(fs, timestampFields: <String>{'created_at', 'updated_at'}),
+        throwsA(isA<AssertionError>()),
+        reason: 'Hinter `updated_at` en Timestamp natif NEUTRALISERAIT la clé '
+            'LWW au décodage ⇒ merge dégénéré. Interdit par AD-19.1.',
+      );
+      expect(
+        () => _repo(fs, timestampFields: <String>{'is_deleted'}),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test(
+        'un hint LÉGITIME (clé de corps) reste accepté et opérant (aucune '
+        'régression B14)', () async {
+      final fs = FakeFirebaseFirestore();
+      final repo = _repo(fs, timestampFields: _kTsFields);
+      final at = DateTime.utc(2026, 7, 9, 10, 30);
+
+      await repo.save(const _Event(id: 'e1', title: 'T').copyWithAt(at));
+      final raw = await _rawDoc(fs, 'e1');
+      expect(raw['created_at'], isA<Timestamp>());
+      expect(raw['updated_at'], isA<String>()); // la méta reste ISO (AD-9)
+    });
+  });
+
   group('DP-11 — confinement AD-5 (AC6)', () {
     test('`Timestamp` absent hors zcrud_firestore/lib/src/data', () {
       // Localise la racine du package quel que soit le CWD.

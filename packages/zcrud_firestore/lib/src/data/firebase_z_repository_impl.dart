@@ -101,14 +101,25 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
     Set<String> timestampFields = const <String>{},
-  })  : _firestore = firestore,
+  })  : assert(
+          timestampFields.intersection(ZSyncMeta.reservedKeys).isEmpty,
+          'AD-19 : aucune clé RÉSERVÉE (ZSyncMeta.reservedKeys = '
+          'updated_at/is_deleted) ne peut être annotée `persistAs: timestamp`. '
+          'Convertir `updated_at` en Timestamp natif NEUTRALISERAIT la clé LWW '
+          'au décodage (ZSyncMeta.updatedAt → null) et le merge dégénérerait en '
+          '« le local gagne toujours ».',
+        ),
+        _firestore = firestore,
         _collectionPath = collectionPath,
         _kind = kind,
         _fromMap = fromMap,
         _toMap = toMap,
         _fromMapSafe = fromMapSafe,
         _log = logger ?? _noopLog,
-        _timestampFields = timestampFields;
+        // Garde EXÉCUTOIRE (pas seulement en debug) : les clés réservées sont
+        // retirées de l'ensemble hinté quoi qu'il arrive (l'`assert` ci-dessus
+        // ne vit qu'en debug/test — la soustraction, elle, tient en release).
+        _timestampFields = timestampFields.difference(ZSyncMeta.reservedKeys);
 
   /// Construit l'adaptateur en dérivant `fromMap`/`toMap` d'un [ZcrudRegistry]
   /// (voie stricte `decode`/`encode`). Le décodage reste **défensif** : la voie
@@ -116,6 +127,56 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// modification du contrat gelé `ZcrudRegistry`). Un `fromMapSafe` explicite
   /// (ex. `ZModelAdapter.fromMapSafe`) peut être fourni pour une tolérance
   /// portée par le modèle.
+  ///
+  /// ---
+  ///
+  /// # ⚠️⚠️ DW-ES14-1 — CETTE VOIE **DÉTRUIT** `extra` (AD-4). NE PAS CÂBLER UN
+  /// STORE DESSUS AVANT CORRECTION DU GÉNÉRATEUR. ⚠️⚠️
+  ///
+  /// **Défaut PROUVÉ** (code-review ES-1.4, mesuré sur `ZStudyFolder`) :
+  ///
+  /// ```text
+  /// VOIE DOMAINE        (ZStudyFolder.fromMap) -> extra = {zz_cle_metier_app: valeur}
+  /// VOIE REGISTRE       (registry.decode)      -> extra = {}            ⛔ PERDU
+  /// ROUND-TRIP REGISTRE (decode -> encode)     -> zz_cle_metier_app = null ⛔ DÉTRUIT
+  /// ```
+  ///
+  /// **Cause racine** : `zcrud_generator` émet `fromMap: _$ZXxxFromMap` dans le
+  /// registrar généré (`*.g.dart`) — la factory du **codegen**, qui ne connaît que
+  /// les champs `@ZcrudField` et **ignore le canal hors-codegen `extra`** (peuplé,
+  /// lui, par la factory de **domaine** `ZXxx.fromMap`). `registry.decode` rend
+  /// donc **toujours** une entité à `extra == {}`.
+  ///
+  /// **Conséquence si un store est câblé ici** : chaque cycle **lecture → écriture**
+  /// Firestore **efface silencieusement toutes les clés métier inconnues du cœur**
+  /// (`extra`), c'est-à-dire l'échappatoire d'extension que garantit **AD-4**. Le
+  /// dommage est **irréversible** (les clés ne sont plus dans le document).
+  ///
+  /// **Aujourd'hui LATENT** : cette fabrique n'a **aucun appelant** dans le repo.
+  /// C'est la seule raison pour laquelle ce n'est pas une perte de données en
+  /// production — pas parce que la voie serait sûre.
+  ///
+  /// **À FAIRE AVANT TOUT CÂBLAGE** (story dédiée, couche data / ES-3) : corriger
+  /// `zcrud_generator` pour qu'il émette `fromMap: ZXxx.fromMap` lorsque la classe
+  /// définit cette factory de domaine. **Tant que DW-ES14-1 n'est pas soldée**,
+  /// utilisez le **constructeur nominal** en passant explicitement la factory de
+  /// domaine — elle, préserve `extra` :
+  ///
+  /// ```dart
+  /// FirebaseZRepositoryImpl<ZStudyFolder>(
+  ///   firestore: firestore,
+  ///   collectionPath: path,
+  ///   kind: 'study_folder',
+  ///   fromMap: ZStudyFolder.fromMap, // ✅ peuple `extra` (AD-4 préservé)
+  ///   toMap: (v) => v.toMap(),
+  /// );
+  /// ```
+  ///
+  /// *(`toMap`/`encode` n'est PAS affecté : le registrar généré câble
+  /// `toMap: (value) => value.toMap()`, donc l'écriture délègue bien au `toMap`
+  /// d'instance du domaine. Seul le **décodage** est dégradé.)*
+  /// Réf. : `architecture.md` § AD-19.1.c et § Deferred (DW-ES14-1) ;
+  /// `tool/reserved_keys_gate/lib/src/registrars.dart` (`kDomainDecoders`).
   factory FirebaseZRepositoryImpl.fromRegistry({
     required FirebaseFirestore firestore,
     required String collectionPath,
@@ -152,15 +213,27 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///
   /// **Confinement AD-5** : le type `Timestamp` n'apparaît QUE dans la conversion
   /// interne (`_encode`/[_inject]) ; la surface publique reste un `Set<String>`
-  /// nu. `is_deleted`/`updated_at` (`ZSyncMeta`) sont **exclus** — jamais dans cet
-  /// ensemble (AD-9 : merge LWW compare `updated_at` en ISO).
+  /// nu.
+  ///
+  /// **Exclusion des clés réservées — GARDÉE PAR MACHINE (AD-19, M2)** :
+  /// `updated_at`/`is_deleted` (`ZSyncMeta.reservedKeys`) sont **soustraits** de
+  /// cet ensemble au constructeur (`difference`, effectif en release) et un
+  /// `assert` échoue en debug/test si l'appelant les y met. Ce n'est **plus** une
+  /// simple convention en commentaire : hinter `updated_at` en `Timestamp`
+  /// écrirait la clé LWW en type natif, `ZSyncMeta.fromJson` la relirait `null`
+  /// (le parse ISO n'accepte qu'une `String`), **toutes** les métas
+  /// deviendraient `null` et `ZLwwResolver` dégénérerait silencieusement en « le
+  /// local gagne toujours » (perte d'écritures distantes, sans aucun test rouge).
+  /// La clé LWW reste donc **toujours** comparée en ISO-8601 (AD-9).
   final Set<String> _timestampFields;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
-  static const String _kIsDeleted = 'is_deleted';
+  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  static const String _kIsDeleted = ZSyncMeta.kIsDeleted;
 
   /// Clé snake_case de l'horodatage LWW (`ZSyncMeta`, ISO-8601).
-  static const String _kUpdatedAt = 'updated_at';
+  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  static const String _kUpdatedAt = ZSyncMeta.kUpdatedAt;
 
   /// Clé logique d'identité injectée dans la map avant décodage.
   static const String _kId = 'id';
@@ -206,21 +279,71 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   // ───────────────────────── (Dé)codage ─────────────────────────────────────
 
   /// Injecte l'`id` du document dans la [data] (le corps Firestore ne stocke pas
-  /// nécessairement `id`) **et normalise** les clés [_timestampFields] lues :
-  /// un `Timestamp` natif est reconverti en String ISO-8601 **avant** le `fromMap`
-  /// généré (qui ne connaît que `DateTime`/String via `_$asDateTime`). Une valeur
-  /// déjà String (ancien document ISO) est laissée telle quelle — **tolérance
-  /// bi-format** (`Timestamp` OU String, comme DODLP ; AD-10, gap B14).
+  /// nécessairement `id`) **et normalise** en String ISO-8601 les dates lues au
+  /// format `Timestamp` natif, **avant** tout décodage (`fromMap` généré — qui ne
+  /// connaît que `DateTime`/String via `_$asDateTime` — et `ZSyncMeta.fromJson` —
+  /// dont le parse ISO n'accepte qu'une `String`). Une valeur déjà String (ancien
+  /// document ISO) est laissée telle quelle : **tolérance bi-format**
+  /// (`Timestamp` OU String, comme DODLP ; AD-10, gap B14).
+  ///
+  /// Deux ensembles de clés sont normalisés :
+  /// 1. **[_timestampFields]** — les clés de **corps** hintées `persistAs:
+  ///    timestamp` (B14) ;
+  /// 2. **`ZSyncMeta.reservedKeys`** — les clés de **sync** (`updated_at`),
+  ///    normalisées **INCONDITIONNELLEMENT** (M3, ES-1.3). C'est le correctif du
+  ///    cas legacy **le plus probable du consommateur n°1** : un document
+  ///    réellement écrit par **DODLP** persiste ses dates en `Timestamp`
+  ///    Firestore natif, `updated_at` compris. Sans cette normalisation,
+  ///    `ZSyncMeta.fromJson` renvoyait `updatedAt: null` sur **toute** la donnée
+  ///    legacy ⇒ la **clé d'autorité du merge était perdue** et `ZLwwResolver`
+  ///    dégénérait en « le local gagne toujours » (écritures distantes écrasées),
+  ///    silencieusement. La méta **SURVIT** désormais au décodage d'un document
+  ///    legacy — et le miroir de compat `T.updatedAt` (AD-19.2) est peuplé du
+  ///    même coup.
   Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) {
     final map = <String, dynamic>{...?data, _kId: id};
-    if (_timestampFields.isEmpty) return map;
+    // (2) Clés de SYNC : toujours (indépendant de `_timestampFields`, AD-19/M3).
+    for (final key in ZSyncMeta.reservedKeys) {
+      _normalizeIsoInPlace(map, key);
+    }
+    // (1) Clés de CORPS hintées (B14).
     for (final key in _timestampFields) {
-      final value = map[key];
-      if (value is Timestamp) {
-        map[key] = value.toDate().toUtc().toIso8601String();
-      }
+      _normalizeIsoInPlace(map, key);
     }
     return map;
+  }
+
+  /// Réécrit `map[key]` en String ISO-8601 **si** la valeur lue est une date au
+  /// format natif Firestore. Défensif (AD-10) : toute autre valeur (String déjà
+  /// ISO, `null`, `bool`, type inattendu) est **laissée intacte** — jamais de
+  /// `throw`.
+  ///
+  /// Formes reconnues :
+  /// - `Timestamp` **natif** (SDK `cloud_firestore`) — cas prod/legacy DODLP ;
+  /// - `DateTime` (certains backends/fakes désérialisent directement) ;
+  /// - map `{_seconds, _nanoseconds}` — forme **sérialisée** d'un `Timestamp`
+  ///   (export/REST, caches JSON), qui autrement traverserait le décodage en
+  ///   silence.
+  void _normalizeIsoInPlace(Map<String, dynamic> map, String key) {
+    final value = map[key];
+    if (value is Timestamp) {
+      map[key] = value.toDate().toUtc().toIso8601String();
+      return;
+    }
+    if (value is DateTime) {
+      map[key] = value.toUtc().toIso8601String();
+      return;
+    }
+    if (value is Map) {
+      final seconds = value['_seconds'];
+      final nanos = value['_nanoseconds'];
+      if (seconds is int) {
+        final micros = seconds * Duration.microsecondsPerSecond +
+            (nanos is int ? nanos ~/ 1000 : 0);
+        map[key] = DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true)
+            .toIso8601String();
+      }
+    }
   }
 
   /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,

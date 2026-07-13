@@ -374,4 +374,63 @@ void main() {
       expect(registry.isRegistered('flashcard_choice'), isTrue);
     });
   });
+
+  // ES-1.3 (AC4) — MÊME défaut que `ZStudyFolder` : les stores écrivent
+  // `updated_at`/`is_deleted` DANS le corps puis passent la map COMPLÈTE à
+  // `fromMap`. `is_deleted` (non déclaré) atterrissait dans `extra` et était
+  // réémis par `toMap` — fuite d'une préoccupation de store dans le domaine.
+  group('ZFlashcard — AD-19 : clés de sync hors-entité (ES-1.3)', () {
+    test('fromMap d\'une map de STORE : ni is_deleted ni updated_at dans extra',
+        () {
+      final card = ZFlashcard.fromMap(<String, dynamic>{
+        'id': 'c1',
+        'question': 'q',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': true,
+        'un_champ_inconnu': 'gardé',
+      });
+      expect(card.extra.containsKey('is_deleted'), isFalse);
+      expect(card.extra.containsKey('updated_at'), isFalse);
+      // Round-trip AD-4 des clés VRAIMENT inconnues : non régressé.
+      expect(card.extra['un_champ_inconnu'], 'gardé');
+      // Miroir de compat peuplé (lecture legacy, AD-10).
+      expect(card.updatedAt, DateTime.utc(2026, 5, 5));
+    });
+
+    test('toMap() n\'émet JAMAIS is_deleted (AD-16, soft-delete hors-entité)',
+        () {
+      final card = ZFlashcard.fromMap(<String, dynamic>{
+        'question': 'q',
+        'is_deleted': true,
+      });
+      final map = card.toMap();
+      expect(map.containsKey('is_deleted'), isFalse);
+      expect(map.containsKey('isDeleted'), isFalse);
+    });
+
+    test('convergence : fromMap(toMap(c)) == c (l\'== n\'est plus cassée entre '
+        'une carte en mémoire et la même relue du store)', () {
+      final fromStore = ZFlashcard.fromMap(<String, dynamic>{
+        'id': 'c1',
+        'question': 'q',
+        'updated_at': DateTime.utc(2026, 5, 5).toIso8601String(),
+        'is_deleted': false,
+      });
+      final reread = ZFlashcard.fromMap(fromStore.toMap());
+      expect(reread.extra, equals(fromStore.extra));
+      expect(reread, equals(fromStore));
+    });
+
+    test('map de sync corrompue (is_deleted: "oui", updated_at: 42) ⇒ aucun '
+        'throw, aucune pollution (AD-10)', () {
+      final card = ZFlashcard.fromMap(<String, dynamic>{
+        'question': 'q',
+        'updated_at': 42,
+        'is_deleted': 'oui',
+      });
+      expect(card.question, 'q');
+      expect(card.updatedAt, isNull);
+      expect(card.extra, isEmpty);
+    });
+  });
 }

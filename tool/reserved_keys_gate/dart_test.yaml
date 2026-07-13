@@ -1,0 +1,8 @@
+# Déclare le tag du volet (A) du gate AD-19.1 (évite l'avertissement « tag non
+# déclaré »). `scripts/ci/gate_reserved_keys.dart` exécute ICI
+# `flutter test --tags reserved-keys` — et traite `exit 79` (aucun test exécuté)
+# comme un ÉCHEC FATAL : le harnais étant dans `melos.ignore`, `melos run test`
+# ne le lance PAS, donc l'absence de test taggé serait un faux vert total.
+tags:
+  reserved-keys:
+    description: "Volet (A) comportemental du gate AD-19.1 (clés de sync réservées)."

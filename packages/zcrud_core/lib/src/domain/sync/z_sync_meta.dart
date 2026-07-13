@@ -21,6 +21,40 @@ class ZSyncMeta {
   /// Construit des métadonnées de sync immuables.
   const ZSyncMeta({this.updatedAt, this.isDeleted = false});
 
+  /// Clé persistée (snake_case) de l'horodatage Last-Write-Wins (AD-9) —
+  /// **hors-entité**. Définition **machine** d'AD-19 : aucun site ne doit
+  /// redéclarer ce littéral.
+  static const String kUpdatedAt = 'updated_at';
+
+  /// Clé persistée (snake_case) du drapeau de soft-delete (AD-9/AD-16) —
+  /// **hors-entité**. Définition **machine** d'AD-19.
+  static const String kIsDeleted = 'is_deleted';
+
+  /// Clés **RÉSERVÉES** à la couche de synchronisation (AD-19).
+  ///
+  /// Une entité de domaine ne les capture **JAMAIS** dans son échappatoire
+  /// `extra` (AD-4) et ne les réémet **JAMAIS** depuis son `toMap`/`toJson` :
+  /// elles appartiennent au **store**, pas au domaine métier. Le merge LWW se
+  /// fait **toujours** sur `ZSyncMeta.updatedAt` (hors-entité), **jamais** sur
+  /// un `T.updatedAt` interne (qui n'est, au mieux, qu'un miroir de compat).
+  ///
+  /// C'est la **définition machine unique** de la convention AD-19 : toute
+  /// entité annotée dérive ses clés réservées de cet ensemble plutôt que de
+  /// redéclarer les littéraux.
+  static const Set<String> reservedKeys = <String>{kUpdatedAt, kIsDeleted};
+
+  /// Retire les [reservedKeys] de [map] (helper de garde AD-19).
+  ///
+  /// **Pur et défensif** : ne mute **jamais** [map], retourne toujours une
+  /// **nouvelle** map (map vide → map vide ; map sans clé réservée → copie
+  /// égale). Sert aux entités/adapters qui doivent isoler le corps métier des
+  /// métadonnées de sync.
+  static Map<String, dynamic> stripReserved(Map<String, dynamic> map) =>
+      <String, dynamic>{
+        for (final e in map.entries)
+          if (!reservedKeys.contains(e.key)) e.key: e.value,
+      };
+
   /// Clé de merge Last-Write-Wins (AD-9), ou `null` si jamais synchronisé.
   final DateTime? updatedAt;
 
@@ -35,8 +69,8 @@ class ZSyncMeta {
   /// Un champ corrompu n'invalide jamais le parent (évolution de schéma additive).
   factory ZSyncMeta.fromJson(Map<String, dynamic> json) {
     return ZSyncMeta(
-      updatedAt: _parseIso(json['updated_at']),
-      isDeleted: json['is_deleted'] is bool ? json['is_deleted'] as bool : false,
+      updatedAt: _parseIso(json[kUpdatedAt]),
+      isDeleted: json[kIsDeleted] is bool ? json[kIsDeleted] as bool : false,
     );
   }
 
@@ -48,8 +82,8 @@ class ZSyncMeta {
 
   /// Sérialise en clés **snake_case** ; [updatedAt] en ISO-8601 (ou `null`).
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'updated_at': updatedAt?.toIso8601String(),
-        'is_deleted': isDeleted,
+        kUpdatedAt: updatedAt?.toIso8601String(),
+        kIsDeleted: isDeleted,
       };
 
   /// Copie modifiée. [updatedAt] utilise une **sentinelle** : l'omettre conserve

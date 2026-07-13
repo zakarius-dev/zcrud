@@ -21,7 +21,10 @@ environment:
 
 # Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
 # Siblings du workspace résolus par contrainte de version (pas de path:).
-# AD-1 : composition flashcard -> markdown + export + cœur.
+# AD-1 : composition flashcard -> study_kernel + markdown + export + cœur.
+# ES-1.1 : arête flashcard -> study_kernel (dossier d'étude + config de session
+# remontés dans le noyau bas-niveau ; acyclique `flashcard -> study_kernel ->
+# core`, prouvé par graph_proof.py).
 # E9-1 : arête flashcard -> annotations (annotations `const` @ZcrudModel/
 # @ZcrudField/@ZcrudId référencées dans lib/ — pur-Dart, léger, acyclique).
 dependencies:
@@ -34,6 +37,7 @@ dependencies:
   flutter:
     sdk: flutter
   zcrud_core: ^0.1.0
+  zcrud_study_kernel: ^0.1.0
   zcrud_markdown: ^0.1.0
   zcrud_export: ^0.1.0
   zcrud_annotations: ^0.1.0

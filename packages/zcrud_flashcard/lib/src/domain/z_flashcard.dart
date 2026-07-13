@@ -34,6 +34,7 @@ library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
 import 'package:zcrud_core/domain.dart';
+import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 import 'z_choice.dart';
 import 'z_flashcard_source.dart';
@@ -55,8 +56,14 @@ typedef ZFlashcardExtensionParser = ZExtension? Function(
     Map<String, dynamic> json);
 
 /// Flashcard canonique immuable (données + `copyWith` ; invariants au repo).
+///
+/// **Implémente [ZSessionCandidate]** (ES-1.1, AC6) : `ZFlashcard` est un
+/// candidat filtrable par [ZStudySessionSelector] (remonté au noyau) via ses
+/// clés neutres `folderId`/`subFolderId`/`tagIds` (déjà présentes) et
+/// `typeKey => type.name` (clé de type opaque). Le noyau reste ainsi ignorant de
+/// `ZFlashcardType` (AD-17).
 @ZcrudModel(kind: 'flashcard')
-class ZFlashcard extends ZEntity with ZExtensible {
+class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   /// Construit une flashcard (constructeur nommé — source du `copyWith`).
   const ZFlashcard({
     this.id,
@@ -122,11 +129,13 @@ class ZFlashcard extends ZEntity with ZExtensible {
   @ZcrudId()
   final String? id;
 
-  /// Dossier d'appartenance (clé de partitionnement).
+  /// Dossier d'appartenance (clé de partitionnement ; port [ZSessionCandidate]).
+  @override
   @ZcrudField()
   final String? folderId;
 
-  /// Sous-dossier (hiérarchie 2 niveaux).
+  /// Sous-dossier (hiérarchie 2 niveaux ; port [ZSessionCandidate]).
+  @override
   @ZcrudField()
   final String? subFolderId;
 
@@ -161,7 +170,9 @@ class ZFlashcard extends ZEntity with ZExtensible {
   @ZcrudField()
   final String? hint;
 
-  /// Étiquettes (défaut `const []` ; filtrage de session).
+  /// Étiquettes (défaut `const []` ; filtrage de session ; port
+  /// [ZSessionCandidate]).
+  @override
   @ZcrudField()
   final List<String> tagIds;
 
@@ -173,7 +184,20 @@ class ZFlashcard extends ZEntity with ZExtensible {
   @ZcrudField()
   final DateTime? createdAt;
 
-  /// Date de mise à jour (ISO-8601 ; clé de merge LWW).
+  /// Date de mise à jour (ISO-8601) — **MIROIR DE COMPATIBILITÉ**, jamais
+  /// l'autorité de merge (AD-19).
+  ///
+  /// L'autorité Last-Write-Wins est **exclusivement** `ZSyncMeta.updatedAt`
+  /// (**hors-entité**, `zcrud_core`) : `ZFlashcardRepository` délègue à
+  /// `ZSyncableRepository<ZFlashcard>.sync()`, dont le merge passe par
+  /// `ZLwwResolver` sur `ZSyncEntry.meta`. Ce champ est **maintenu par
+  /// l'adapter** (collision de clé `updated_at`) pour les lectures legacy.
+  /// **Ne jamais** l'utiliser pour décider d'un merge, d'un tri de sync ou d'une
+  /// résolution de conflit.
+  ///
+  /// Non déprécié en ES-1.3 (contrairement à `ZStudyFolder.updatedAt`) : sa
+  /// surface E9 est consommée par la migration DODLP en cours — dépréciation
+  /// formelle à re-statuer (dette **DW-ES13-2**).
   @ZcrudField()
   final DateTime? updatedAt;
 
@@ -190,6 +214,13 @@ class ZFlashcard extends ZEntity with ZExtensible {
   /// préservant les clés inconnues du cœur au round-trip. Hors-codegen.
   @override
   final Map<String, dynamic> extra;
+
+  /// Clé de type **opaque** exposée au port [ZSessionCandidate] (ES-1.1, AC6) :
+  /// le `name` camelCase du [type] (ex. `"multipleChoice"`), comparé tel quel au
+  /// filtre `types` (`List<String>`) de [ZStudySessionConfig]. Le noyau reste
+  /// ignorant de [ZFlashcardType].
+  @override
+  String get typeKey => type.name;
 
   /// Sérialise vers la map persistée **complète** (snake_case).
   ///
@@ -288,12 +319,21 @@ class ZFlashcard extends ZEntity with ZExtensible {
     return ZExtension.guard<ZExtension?>(() => parser(map));
   }
 
-  /// Clés persistées **réservées** (champs générés + `source` + `extension`) —
-  /// dérivées de `$ZFlashcardFieldSpecs` pour rester synchrones avec le codegen.
+  /// Clés persistées **réservées** (champs générés + `source` + `extension` +
+  /// **clés de sync hors-entité AD-19**) — dérivées de `$ZFlashcardFieldSpecs`
+  /// pour rester synchrones avec le codegen.
+  ///
+  /// `...ZSyncMeta.reservedKeys` (`updated_at`, `is_deleted`) est **essentiel** :
+  /// les stores écrivent ces clés **dans le corps** du document puis passent la
+  /// map **complète** à [ZFlashcard.fromMap]. Sans cette réserve, `is_deleted`
+  /// (qui n'est **pas** un champ déclaré) atterrirait dans [extra] et serait
+  /// **réémis** par [toMap] — fuite d'une préoccupation de store dans le domaine
+  /// (AD-16), cassant l'`==` entre une carte en mémoire et la même relue.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZFlashcardFieldSpecs) spec.name,
     'source',
     'extension',
+    ...ZSyncMeta.reservedKeys,
   };
 
   /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).

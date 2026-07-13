@@ -32,11 +32,31 @@ pubspec_overrides.yaml
 *.gr.dart
 *.mocks.dart
 
-# EXCEPTION distribution git-privée : `zcrud_flashcard` utilise du codegen
-# (`part '*.g.dart'`) et est consommé en dépendance **git** → son code généré
-# DOIT être versionné (un consommateur clone l'arbre git au tag et ne régénère
-# PAS le code d'une dépendance). Les autres packages restent gitignorés.
-!packages/zcrud_flashcard/lib/**/*.g.dart
+# EXCEPTION distribution git-privée (règle GÉNÉRALE, plus par package) : le
+# monorepo est privé (`publish_to: none` × 15) → la SEULE voie de consommation
+# est la dépendance **git** : l'app clone l'arbre au tag et ne régénère JAMAIS le
+# code d'une dépendance (aucun `build_runner` ne tourne sur les deps). Tout
+# `part '<x>.g.dart'` d'un `lib/` distribué DOIT donc être versionné, sinon le
+# consommateur reçoit un package amputé de ses `part` => ÉCHEC DE COMPILATION.
+#
+# ⚠️ Pourquoi la règle est GÉNÉRALE (`packages/*`) et non nominative : en ES-1.1,
+# la négation nommait `zcrud_flashcard` SEUL ; le déplacement de `ZStudyFolder` /
+# `ZStudySessionConfig` vers le NOUVEAU `zcrud_study_kernel` a silencieusement
+# sorti leur code généré de git (tous les gates restaient verts : ils tournent en
+# LOCAL, APRÈS `melos run generate`). Une négation par package est une bombe à
+# retardement — chaque package d'ES-2 (`zcrud_note`, `zcrud_document`,
+# `zcrud_exam`, `zcrud_session`, `zcrud_study`) l'aurait réarmée. La règle
+# ci-dessous les couvre DÈS leur création, sans édition manuelle.
+#
+# Périmètre `lib/` UNIQUEMENT : seul le `lib/` d'une dépendance est compilé chez
+# le consommateur. Le code généré de `test/`/`example/`/`tool/` (ex. la fixture
+# `packages/zcrud_generator/test/models/article.g.dart`) reste gitignoré et
+# régénérable — le versionner ne servirait à rien et polluerait chaque diff.
+#
+# GATE (règle R1 de la rétro ES-1 : « toute règle d'architecture naît avec son
+# gate ») : `scripts/ci/gate_codegen_distribution.dart` (`melos run verify`)
+# échoue si un `part` d'un `lib/` de `packages/*` désigne un fichier gitignoré.
+!packages/*/lib/**/*.g.dart
 
 # ------------------------------------------------------------------
 # IDE & OS

@@ -243,12 +243,12 @@ development_status:
 
   # === ES-1 — Fondations zcrud_study_kernel + remontée ZStudyFolder ===
   # Dépend de : — (racine). Packages : zcrud_study_kernel (nouveau), zcrud_flashcard (refactor).
-  epic-es-1: backlog
-  es-1-1-remontee-zstudyfolder-kernel: backlog          # [L][SÉQ — TÊTE BLOQUANTE, bloque tout ES-1..ES-11] zcrud_study_kernel(new)+zcrud_flashcard(refactor) ← PREMIÈRE STORY
-  es-1-2-utilitaires-domaine-purs: backlog              # [M][SÉQ vs 1.1 — écrit kernel] zcrud_study_kernel (ZColorPalette/applyOrder/normalizeTagTitle)
-  es-1-3-reconciliation-zsyncmeta: backlog              # [M][SÉQ vs 1.1 — écrit kernel + doc archi] zcrud_study_kernel (ZSyncMeta hors-entité, OQ #3)
-  es-1-4-gates-ci-extension: backlog                    # [M][SÉQ légère — peut chevaucher 1.2/1.3, fichiers CI disjoints] .github/workflows, melos
-  epic-es-1-retrospective: optional
+  epic-es-1: done
+  es-1-1-remontee-zstudyfolder-kernel: done              # [L][SÉQ — TÊTE BLOQUANTE, bloque tout ES-1..ES-11] zcrud_study_kernel(new)+zcrud_flashcard(refactor) ← PREMIÈRE STORY
+  es-1-2-utilitaires-domaine-purs: done                 # [M][SÉQ vs 1.1 — écrit kernel + seam zcrud_core] zcrud_study_kernel (ZColorPalette/applyOrder/normalizeTagTitle) + ZColorKeyResolver (core) + narrowing barrel flashcard (solde LOW-1) + gate:web (déterminisme dart2js)
+  es-1-3-reconciliation-zsyncmeta: done              # [M][SÉQ vs 1.1 — écrit kernel + doc archi] zcrud_study_kernel (ZSyncMeta hors-entité, OQ #3)
+  es-1-4-gates-ci-extension: done                    # [M][SÉQ légère — peut chevaucher 1.2/1.3, fichiers CI disjoints] .github/workflows, melos
+  epic-es-1-retrospective: done
 
   # === ES-2 — Domaine canonique éducatif + codegen ===  Dépend de : ES-1.
   # Packages : zcrud_study_kernel, zcrud_note(new), zcrud_document(new), zcrud_exam(new).

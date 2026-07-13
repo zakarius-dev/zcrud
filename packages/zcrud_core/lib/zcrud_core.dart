@@ -152,6 +152,7 @@ export 'src/presentation/list/z_row_action.dart';
 // E3-3b-2 (`z_sub_list_field_widget.dart`). Aucun Syncfusion/backend (SM-5).
 export 'src/presentation/list/z_sub_list_screen.dart';
 export 'src/presentation/list/z_tabbed_list.dart';
+export 'src/presentation/theme/z_color_key_resolver.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';
