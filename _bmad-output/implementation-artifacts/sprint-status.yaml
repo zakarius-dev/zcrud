@@ -253,9 +253,11 @@ development_status:
   # === ES-2 — Domaine canonique éducatif + codegen ===  Dépend de : ES-1.
   # Packages : zcrud_study_kernel, zcrud_note(new), zcrud_document(new), zcrud_exam(new).
   # ∥ : 2.1(document) ∥ 2.2(note) ∥ 2.6(exam) disjoints ; 2.3/2.4/2.7/2.8 écrivent kernel → SÉQ entre elles.
-  epic-es-2: backlog
-  es-2-1-document-etat-lecture: backlog                 # [M][∥ — zcrud_document] ZStudyDocument + ZDocumentReadingState/LearningInfo
-  es-2-2-note-intelligente-contenu-type: backlog        # [M][∥ — zcrud_note] ZSmartNote (content via ZCodec)
+  epic-es-2: in-progress
+  es-2-0-registry-decode-preserve-extra: done           # [M][TÊTE BLOQUANTE — zcrud_generator + zcrud_firestore] DW-ES14-1 (rétro ES-1) : registry.decode DÉTRUIT `extra` (AD-4). Doit précéder les 8 entités (le generator est le socle de leur codegen) et tout câblage store (ES-3.2/3.5). Absorbe L3 d'ES-1.3 (même package).
+  es-2-1-document-etat-lecture: done                    # [M][∥ — zcrud_document] ZStudyDocument + ZDocumentReadingState/LearningInfo
+  es-2-2-note-intelligente-contenu-type: done           # [M][∥ — zcrud_note] ZSmartNote (content via ZCodec)
+  es-2-2b-gardes-extra-systemiques: done                # [M][TÊTE BLOQUANTE — SÉQ, écrit core+kernel+document+flashcard] DW-ES22-3 (`copyWith(extra:)` rouvre le filtre des clés réservées) + DW-ES22-4 (égalité superficielle sur `extra`) — MESURÉS dans du code DÉJÀ LIVRÉ. Doit précéder les 6 entités restantes d'ES-2 (sinon le défaut se reproduit 6 fois) et tout câblage store (ES-3).
   es-2-3-tags-flashcard-first-class: backlog            # [M][SÉQ — écrit kernel] ZFlashcardTag/ZSuggestedTag/remapColorKey
   es-2-4-ordre-contenu-dossier: backlog                 # [S][SÉQ — écrit kernel] ZFolderContentsOrder
   es-2-5-annotation-document: backlog                   # [M][∥ avec 2.2/2.6 — zcrud_document] ZDocumentAnnotation/ZAnnotationBounds
@@ -263,6 +265,31 @@ development_status:
   es-2-7-resultat-session-agregation-quotidienne: backlog # [M][SÉQ — écrit kernel] ZStudySessionResult/ZDailyStudyTask/aggregate
   es-2-8-podcast-content-addressed: backlog             # [S][SÉQ — écrit kernel] ZStudyPodcast (sourceHash)
   epic-es-2-retrospective: optional
+
+  # --- Dettes ouvertes portées par ES-2 (à solder avant les stories citées) ---
+  # DW-ES14-2 (BLOQUANTE avant ES-3.2/3.5) — ⚠️ ESCALADÉE en ES-2.2 : sa clause d'échappement
+  #   n°1 (« sauf si l'entité n'utilise pas le slot `extension` ») est FALSIFIÉE — `ZNoteAudio`
+  #   est le 1er `ZExtension` concret du repo. `ZcrudRegistry` n'offre AUCUN slot d'injection :
+  #   une cause, deux symptômes → `extension` DÉTRUITE et `sourceRegistry` IGNORÉ sur la voie
+  #   registre. Mitigé en ES-2.2 (`ZOpaqueNoteExtension` : DONNÉE préservée verbatim, TYPE perdu).
+  #   Le fix écrit `zcrud_core`. NB : `firebase_z_repository_impl.dart:207-212` écrit encore la
+  #   clause n°1 comme vraie et AUTORISE le câblage d'un store → à corriger avec la dette.
+  # 🔴 DW-ES22-3 (NOUVELLE, SYSTÉMIQUE, code DÉJÀ LIVRÉ) — `copyWith(extra:)` rouvre le filtre des
+  #   clés réservées : MESURÉ sur `ZStudyDocument`, `ZDocumentReadingState`, `ZStudyFolder` →
+  #   `toMap()` réémet `updated_at` ET `is_deleted`. Le gate ne l'attrape PAS (il sonde `fromMap`
+  #   et le registre, jamais `copyWith`). Corrigé dans `zcrud_note` seul (garde `_sanitizeExtra`
+  #   partagée `fromMap`+`copyWith`+`toMap`). Clôture = assertion (i) du volet (A) du gate.
+  # 🔴 DW-ES22-4 (NOUVELLE, SYSTÉMIQUE, code DÉJÀ LIVRÉ) — `_mapEquals`/`_mapHash` SUPERFICIELS,
+  #   copiés dans 4 packages : MESURÉ `fromMap(m) != fromMap(m)` dès qu'`extra` porte du JSON
+  #   IMBRIQUÉ (or c'est sa raison d'être). Corrigé dans `zcrud_note` seul (`noteJsonEquals`).
+  # DW-ES22-1 (avant ES-6.1) — REQUALIFIÉE : pas une duplication mais une DIVERGENCE SÉMANTIQUE
+  #   en sens opposé — `DeltaNeutralOps.asDeltaOps('# T') == []` DÉTRUIT vs
+  #   `normalizeNoteContentOps('# T')` PRÉSERVE. En ES-6.1, un aller-retour domaine→éditeur→domaine
+  #   EFFACERAIT ce que le domaine avait sauvé. Épinglée par un test-verrou (ES-2.2).
+  # DW-ES21-1 (due en ES-3.5/ES-11.2, AD-27) — mapping legacy IFFD 6 statuts → 4 canoniques,
+  #   dû dans l'ADAPTER (jamais le domaine) : uploading→uploading · converting|embedding→validating
+  #   · uploaded|converted|embedded→ready. Sans lui, un document IFFD `embedded` (donc PRÊT)
+  #   se lit `uploading` (« Traitement… » perpétuel). Épinglée par 8 tests (ES-2.1).
 
   # === ES-3 — Ports & couche data offline-first bi-topologie ===  Dépend de : ES-2.
   # Packages : zcrud_study_kernel (ports/registre), zcrud_firestore (adapters).

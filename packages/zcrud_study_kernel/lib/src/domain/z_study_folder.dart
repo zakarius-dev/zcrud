@@ -94,8 +94,12 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     this.coWorkersCanInviteOthers = false,
     this.shareId,
     this.extension,
-    this.extra = const <String, dynamic>{},
-  });
+    Map<String, dynamic> extra = const <String, dynamic>{},
+    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
+    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // ignore: prefer_initializing_formals
+  }) : _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10).
   ///
@@ -207,11 +211,29 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   @override
   final ZExtension? extension;
 
+  /// Slot `extra` **BRUT tel que reçu par le constructeur** — jamais lu ailleurs
+  /// que dans l'accesseur [extra] (**JAMAIS** dans `toMap`, `==`, `hashCode`).
+  ///
+  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
+  /// appeler **aucune** fonction (et AD-10 y interdit l'`assert`). C'est
+  /// l'accesseur qui porte la garde.
+  final Map<String, dynamic> _extra;
+
   /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`),
   /// préservant les clés inconnues du cœur au round-trip (dont `relatedTopics`/
   /// `countryCode`). Hors-codegen.
+  ///
+  /// 🔴 **GARDE (DW-ES22-3/DW-ES22-4, remédiation ES-2.2b/HIGH-2)** : l'accesseur
+  /// **NORMALISE** ([zNormalizeExtra]) — il ne rend **JAMAIS** une clé réservée,
+  /// **quelle que soit la voie d'écriture** (y compris le constructeur `const`,
+  /// seule voie incapable de filtrer). C'est **le seul point que TOUTES les voies
+  /// traversent** ⇒ la promesse est **INCONDITIONNELLE**, sans `assert` et sans
+  /// `throw` (AD-10), et **sans perdre `const`**.
+  ///
+  /// **Lecture SANS COPIE** sur le chemin chaud (`fromMap`/`copyWith` normalisent
+  /// déjà **EAGER**) : le slot stocké est alors rendu **tel quel**.
   @override
-  final Map<String, dynamic> extra;
+  Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
 
   /// `true` si le dossier est archivé (soft-archive réversible — AC5).
   bool get isArchived => archivedAt != null;
@@ -230,6 +252,17 @@ class ZStudyFolder extends ZEntity with ZExtensible {
   /// l'estampille `ZSyncMeta` à chaque `put`.
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
+      // 🔴 DW-ES22-3 (ES-2.2b, remédiation HIGH-1) — étale **l'ACCESSEUR**, qui
+      // NORMALISE ([extra] ⇒ `zNormalizeExtra`), et **JAMAIS** le champ brut
+      // `_extra`. C'est ce qui rend la promesse ci-dessus INCONDITIONNELLE, y
+      // compris pour une instance née du **constructeur nominal** (`const` : il
+      // ne peut RIEN filtrer).
+      //
+      // ⚠️ Un `_sanitizeExtra(extra)` ICI serait **DÉCORATIF** — MESURÉ
+      // (code-review ES-2.2b, INJ-A) : le retirer laissait le gate **VERT** sur
+      // 8 entités sur 9. Une garde qu'aucune machine n'exige est un vœu (R1).
+      // La garde vit à l'ACCESSEUR ; la retirer de là rend (i.1a)/(i.1b)/(i.1c)
+      // **ROUGES**.
       ...extra,
       ...ZStudyFolderZcrud(this).toMap(),
     };
@@ -295,9 +328,14 @@ class ZStudyFolder extends ZEntity with ZExtensible {
         extension: identical(extension, _$undefined)
             ? this.extension
             : extension as ZExtension?,
+        // 🔴 DW-ES22-3 (ES-2.2b) : la garde est la MÊME FONCTION NOMMÉE qu'en
+        // `fromMap` — `copyWith` ne peut plus ROUVRIR le filtre des clés
+        // réservées. **MESURÉ** avant correctif :
+        // `folder.copyWith(extra: {is_deleted: true}).toMap()` réémettait
+        // `is_deleted: true` ⇒ collision avec l'autorité de sync (AD-9/AD-16).
         extra: identical(extra, _$undefined)
             ? this.extra
-            : extra as Map<String, dynamic>,
+            : _sanitizeExtra(extra as Map<String, dynamic>),
       );
 
   /// Décode défensivement l'extension via [parser] (repli `null`).
@@ -328,13 +366,25 @@ class ZStudyFolder extends ZEntity with ZExtensible {
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).
-  /// Rendu **non-modifiable** (cohérence `ZExtensible`).
+  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
+  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
-      Map<String, dynamic>.unmodifiable(<String, dynamic>{
-        for (final e in map.entries)
-          if (!_reservedKeys.contains(e.key)) e.key: e.value,
-      });
+      _sanitizeExtra(map);
+
+  /// 🔴 **NORMALISATION EAGER de `extra`** (DW-ES22-3, ES-2.2b) — appelée par les
+  /// voies **CAPABLES** de filtrer : [fromMap] et [copyWith].
+  ///
+  /// ⚠️ Ce n'est **PAS** le porteur de l'invariant (le constructeur `const` ne
+  /// peut pas l'appeler) : c'est l'**ACCESSEUR** [extra] qui l'est. Ici, elle
+  /// garantit que le slot STOCKÉ est **déjà propre** ⇒ la lecture est **SANS
+  /// COPIE**. Cette propriété est **EXIGÉE PAR LE HARNAIS** (assertion (i.3),
+  /// `identical(e.extra, e.extra)`) : la retirer d'ici rend le gate **ROUGE**.
+  ///
+  /// Délègue à [zSanitizeExtra] (`zcrud_core`) : implémentation **UNIQUE** du
+  /// repo. Une fonction nommée unique rend le contournement **structurellement
+  /// impossible** — deux implémentations jumelles, elles, divergent.
+  static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
+      zSanitizeExtra(raw, _reservedKeys);
 
   @override
   bool operator ==(Object other) =>
@@ -354,7 +404,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
           coWorkersCanInviteOthers == other.coWorkersCanInviteOthers &&
           shareId == other.shareId &&
           extension == other.extension &&
-          _mapEquals(extra, other.extra);
+          zJsonEquals(extra, other.extra);
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -372,7 +422,7 @@ class ZStudyFolder extends ZEntity with ZExtensible {
         coWorkersCanInviteOthers,
         shareId,
         extension,
-        _mapHash(extra),
+        zJsonHash(extra),
       ]);
 }
 
@@ -397,20 +447,4 @@ bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a[i] != b[i]) return false;
   }
   return true;
-}
-
-bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
-  if (a.length != b.length) return false;
-  for (final e in a.entries) {
-    if (!b.containsKey(e.key) || b[e.key] != e.value) return false;
-  }
-  return true;
-}
-
-int _mapHash(Map<String, dynamic> m) {
-  var h = 0;
-  for (final e in m.entries) {
-    h ^= Object.hash(e.key, e.value);
-  }
-  return h;
 }

@@ -55,17 +55,131 @@ const String _rkGuard =
 /// Message du volet (B) — doit être ABSENT des fixtures de la règle (3).
 const String _rkVoletBMsg = 'ajoutez `...ZSyncMeta.reservedKeys`';
 
-/// Crée une fixture `packages/zcrud_fake/lib/src/e.dart` portant [source].
-String _rkFixture(Directory tmp, String name, String source) {
+/// Crée une fixture multi-fichiers sous `packages/zcrud_fake/lib/src/`.
+///
+/// Nécessaire à la preuve de la résolution **TRANSITIVE** (M4) : la classe de
+/// base et la classe dérivée vivent dans des **fichiers différents** — c'est le
+/// cas réel (`z_base_study_entity.dart` / `z_smart_note.dart`), et c'est ce que
+/// l'index de types du gate doit savoir recoller.
+String _rkFixtureFiles(Directory tmp, String name, Map<String, String> files) {
   final dir = Directory('${tmp.path}/$name');
-  Directory('${dir.path}/packages/zcrud_fake/lib/src').createSync(recursive: true);
-  File('${dir.path}/packages/zcrud_fake/lib/src/e.dart').writeAsStringSync(source);
+  final src = Directory('${dir.path}/packages/zcrud_fake/lib/src')
+    ..createSync(recursive: true);
+  files.forEach((String file, String source) {
+    File('${src.path}/$file').writeAsStringSync(source);
+  });
   return dir.path;
 }
 
+// ---------------------------------------------------------------------------
+// gate:reserved-keys — fixtures de la règle (g) : CANAUX HORS-CODEGEN (H1/ES-2.1)
+// ---------------------------------------------------------------------------
+//
+// **Pourquoi ces fixtures existent (R2 : une règle naît AVEC sa fixture d'échec
+// ISOLÉE).** La règle (g) est le filet qui manquait : un canal hors-codegen
+// (`ZFlashcard.source`, `ZDocumentReadingState.learning`) était TRANSPORTÉ par la
+// sonde sans qu'AUCUNE machine ne l'OBSERVE — retirer `kLearningKey` de
+// `_reservedKeys` laissait le **gate VERT** (mesuré, ES-2.1). Seuls des tests
+// **artisanaux, par canal, dans deux packages différents** mordaient.
+//
+//   - **(g1)** canal déclaré mais **NON RÉSERVÉ** ⇒ il fuit dans `extra`, est
+//     réémis EN DOUBLE, l'`==` casse ⇒ **ROUGE** ;
+//   - **(g2)** canal déclaré mais **JAMAIS SONDÉ** ⇒ l'assertion comportementale
+//     (f) du volet (A) ne l'observerait jamais ⇒ **ROUGE**. (g2) est ce qui donne
+//     ses **DENTS** à (f) : sans elle, on désactiverait (f) en **vidant la sonde**.
+//
+// **Isolation (R2)** : chaque fixture porte `...ZSyncMeta.reservedKeys` (volet (B)
+// MUET — asserté), un `*.g.dart` avec son registrar ET un harnais câblant ce
+// registrar + son corps de sonde (règles (1), (2), (3), (4) MUETTES — assertées).
+// **Seule la sous-règle visée peut rougir**, et l'on asserte que l'AUTRE est
+// SILENCIEUSE.
+
+/// Message des règles (g1)/(g2) — sert à prouver l'isolation croisée.
+const String _rkG1Msg = '(g1) CANAL HORS-CODEGEN NON RÉSERVÉ';
+const String _rkG2Msg = '(g2) CANAL DÉCLARÉ, JAMAIS SONDÉ';
+
+/// Fixture (g) : entité `@ZcrudModel` `ZExtensible` portant un canal hors-codegen.
+///
+/// [reservedChannel] : la clé du canal est-elle dans `_reservedKeys` ? (g1)
+/// [probedChannel]   : la clé du canal est-elle dans le corps de sonde ?   (g2)
+void _checkRuleG(
+  Directory tmp,
+  String name, {
+  required bool reservedChannel,
+  required bool probedChannel,
+  required String expectedMsg,
+  required String forbiddenMsg,
+}) {
+  final dir = Directory('${tmp.path}/$name');
+  final src = Directory('${dir.path}/packages/zcrud_fake/lib/src')
+    ..createSync(recursive: true);
+  final harness = Directory('${dir.path}/tool/reserved_keys_gate/lib/src')
+    ..createSync(recursive: true);
+
+  // L'entité : `learning` n'est NI `@ZcrudField` NI `extra`/`extension`
+  // ⇒ canal hors-codegen, par CONSTRUCTION (aucune heuristique).
+  final reserved = reservedChannel
+      ? "  static const Set<String> _reservedKeys = "
+          "<String>{'learning', ...ZSyncMeta.reservedKeys};\n"
+      : '  static const Set<String> _reservedKeys = '
+          '<String>{...ZSyncMeta.reservedKeys};\n';
+  File('${src.path}/z_fake.dart').writeAsStringSync(
+    "@ZcrudModel(kind: 'fake')\n"
+    'class ZFake with ZExtensible {\n'
+    '  ZFake(this.learning, this.extra);\n'
+    '  final ZFakeLearning learning;\n' // ⇐ LE CANAL
+    '  @override\n'
+    '  final Map<String, dynamic> extra;\n'
+    '$reserved'
+    '}\n',
+  );
+  // Le registrar généré (règles (1)/(2)/(4) satisfaites).
+  File('${src.path}/z_fake.g.dart').writeAsStringSync(
+    'void registerZFake(ZcrudRegistry registry) =>\n'
+    "    registry.register<ZFake>('fake');\n",
+  );
+  // Le harnais : registrar CÂBLÉ + corps de sonde (avec ou SANS le canal).
+  final body = probedChannel
+      ? "<String, dynamic>{'id': 'p', 'learning': <String, dynamic>{'q': 1}}"
+      : "<String, dynamic>{'id': 'p'}";
+  File('${harness.path}/registrars.dart').writeAsStringSync(
+    'const List<ZRegistrar> kRegistrars = <ZRegistrar>[registerZFake];\n'
+    'const Map<String, Map<String, dynamic>> kProbeBodies =\n'
+    '    <String, Map<String, dynamic>>{\n'
+    "  'fake': $body,\n"
+    '};\n',
+  );
+
+  final r = _dart(['scripts/ci/gate_reserved_keys.dart', '--root', dir.path]);
+  final out = '${r.stdout}${r.stderr}';
+  final byRule = out.contains(expectedMsg);
+  // ISOLATION (R2) : l'autre sous-règle de (g), le volet (B) et la règle (3)
+  // doivent être SILENCIEUX — sinon la fixture ne prouverait pas SA règle.
+  final isolated = !out.contains(forbiddenMsg) &&
+      !out.contains(_rkVoletBMsg) &&
+      !out.contains('est `ZExtensible`') &&
+      !out.contains('n\'est pas câblé dans') &&
+      !out.contains('câblage MORT');
+  _check(
+    'reserved-keys/$name',
+    r.exitCode != 0 && byRule && isolated,
+    'exit=${r.exitCode} (attendu !=0) · règle visée présente: $byRule · '
+    'ISOLÉE (autres règles muettes): $isolated',
+  );
+}
+
 /// Prouve que le gate rougit par la **règle (3) SEULE** sur [classes].
-void _checkRule3(Directory tmp, String name, List<String> classes, String source) {
-  final root = _rkFixture(tmp, name, source);
+void _checkRule3(Directory tmp, String name, List<String> classes, String source) =>
+    _checkRule3Files(tmp, name, classes, <String, String>{'e.dart': source});
+
+/// Idem, sur une fixture **multi-fichiers**.
+void _checkRule3Files(
+  Directory tmp,
+  String name,
+  List<String> classes,
+  Map<String, String> files,
+) {
+  final root = _rkFixtureFiles(tmp, name, files);
   final r = _dart(['scripts/ci/gate_reserved_keys.dart', '--root', root]);
   final out = '${r.stdout}${r.stderr}';
   final byRule3 =
@@ -504,6 +618,185 @@ void main() {
       'class ZHolder {\n'
       '$_rkGuard'
       '}\n',
+    );
+
+    // ---- Règle (3) — `ZExtensible` **TRANSITIF** (M4, code-review ES-2.0) ----
+    //
+    // LE trou que ces fixtures ferment : une entité écrite à la main héritant
+    // `ZExtensible` par un super-type INTERMÉDIAIRE échappait INTÉGRALEMENT au
+    // gate (ni `E_disk` — super-type direct non `ZExtensible` et `extra` hérité,
+    // donc non « concret » — ni `R_disk` — aucun registrar). Elle n'était NI
+    // sondée, NI signalée. Pré-existant, mais ES-2.0 l'a rendu PORTEUR : tout le
+    // filet DW-ES14-1 repose désormais sur ce contrôle de couverture, et ES-2
+    // crée ~8 entités dont plusieurs à la main.
+    //
+    // ⚠️ Isolation (R2) : chaque fichier porte `...ZSyncMeta.reservedKeys` ⇒
+    // volet (B) MUET (asserté) ; aucun `*.g.dart`, aucun harnais ⇒ règles (1),
+    // (2), (4) muettes. Seule (3) peut rougir.
+    //
+    // Le nom `ZSmartNote` n'est pas décoratif : c'est l'entité ES-2 réelle qui
+    // aurait traversé le gate en VERT.
+    _checkRule3Files(
+      tmp,
+      'couverture-transitif-super-type-indirect',
+      // La BASE **et** la dérivée doivent être nommées. Avant M4, seule la base
+      // l'était : `ZSmartNote` passait au travers, invisible.
+      <String>['ZBaseStudyEntity', 'ZSmartNote'],
+      <String, String>{
+        'z_base_study_entity.dart':
+            'abstract class ZBaseStudyEntity with ZExtensible {\n'
+            '  ZBaseStudyEntity(this.extra);\n'
+            '  final Map<String, dynamic> extra;\n'
+            '$_rkGuard'
+            '}\n',
+        // ⛔ Ne cite PAS `ZExtensible`, ne déclare PAS `extra` : invisible pour
+        //    la v1 du gate. C'est le fichier qui prouve la résolution
+        //    TRANSITIVE — et CROSS-FICHIER (l'index recolle les deux).
+        'z_smart_note.dart': 'class ZSmartNote extends ZBaseStudyEntity {\n'
+            '  ZSmartNote(super.extra, this.title);\n'
+            '  final String title;\n'
+            '$_rkGuard'
+            '}\n',
+      },
+    );
+
+    // Chaîne à 2 niveaux + `mixin M on ZExtensible` : les deux autres arêtes que
+    // l'index doit savoir traverser (`on` était totalement ignorée par la v1).
+    _checkRule3Files(
+      tmp,
+      'couverture-transitif-chaine-et-mixin-on',
+      <String>['ZDeepNote', 'ZOnMixinNote'],
+      <String, String>{
+        'z_chain.dart': 'abstract class ZL1 with ZExtensible {\n'
+            '  ZL1(this.extra);\n'
+            '  final Map<String, dynamic> extra;\n'
+            '$_rkGuard'
+            '}\n'
+            '\n'
+            'abstract class ZL2 extends ZL1 {\n'
+            '  ZL2(super.extra);\n'
+            '}\n'
+            '\n'
+            // Profondeur 3 : `ZDeepNote -> ZL2 -> ZL1 -> ZExtensible`.
+            'class ZDeepNote extends ZL2 {\n'
+            '  ZDeepNote(super.extra);\n'
+            '}\n',
+        'z_on_mixin.dart': 'mixin ZAudioSlot on ZExtensible {\n'
+            '  String get audioUrl;\n'
+            '}\n'
+            '\n'
+            // `ZOnMixinNote` mixe `ZAudioSlot`, dont la CONTRAINTE (`on`) est
+            // `ZExtensible` ⇒ elle EST `ZExtensible`.
+            'class ZOnMixinNote with ZAudioSlot {\n'
+            '  ZOnMixinNote(this.extra, this.audioUrl);\n'
+            '  final Map<String, dynamic> extra;\n'
+            '  @override\n'
+            '  final String audioUrl;\n'
+            '$_rkGuard'
+            '}\n',
+      },
+    );
+
+    // ---- Règle (g) — CANAUX HORS-CODEGEN : PREUVE ISOLÉE (H1, ES-2.1) --------
+    //
+    // LE trou que ces fixtures ferment : le harnais TRANSPORTAIT `source` et
+    // `learning` dans ses sondes sans que RIEN ne les OBSERVE. Retirer
+    // `kLearningKey` de `_reservedKeys` laissait le **gate VERT** — le filet
+    // était un test ARTISANAL, par canal, dans le package. Rien n'obligeait le
+    // PROCHAIN canal (ES-2.2 `ZSmartNote.content`, ES-2.5…) à naître avec son
+    // observateur : **R1 violé**.
+    _checkRuleG(
+      tmp,
+      'canal-hors-codegen-1-non-reserve',
+      reservedChannel: false, // ⇐ LA FAUTE : le canal fuit dans `extra`
+      probedChannel: true,
+      expectedMsg: _rkG1Msg,
+      forbiddenMsg: _rkG2Msg,
+    );
+
+    // (g2) donne ses DENTS à (f) : sans elle, on désactive l'assertion
+    // comportementale en VIDANT la sonde.
+    _checkRuleG(
+      tmp,
+      'canal-hors-codegen-2-non-sonde',
+      reservedChannel: true,
+      probedChannel: false, // ⇐ LA FAUTE : (f) n'observerait jamais ce canal
+      expectedMsg: _rkG2Msg,
+      forbiddenMsg: _rkG1Msg,
+    );
+
+    // ---- Règle (h) — POLITIQUE `hide` DES EXTENSIONS GÉNÉRÉES (M2 généralisé) --
+    //
+    // LE trou que cette fixture ferme (trouvé PAR CETTE RÈGLE, sur l'arbre réel) :
+    // `ZFlashcardZcrud` — l'entité PHARE, `ZExtensible`, porteuse du canal
+    // `source` — était **EXPORTÉE PUBLIQUEMENT** sous 1000+ tests verts. Son
+    // `copyWith` GÉNÉRÉ remet `extra`/`extension`/`source` aux DÉFAUTS. Les 3
+    // autres `ZExtensible` du repo étaient bien `hide` : la politique vivait en
+    // COMMENTAIRE de barrel, aucune machine ne la tenait. **La faute de H1, encore.**
+    //
+    // Isolation (R2) : la fixture n'a NI `*.g.dart`, NI harnais, et porte
+    // `...ZSyncMeta.reservedKeys` ⇒ volet (B) et règles (1)/(2)/(4)/(g) MUETS ;
+    // l'entité EST couverte par une sonde manuelle ⇒ règle (3) MUETTE.
+    // **Seule (h) peut rougir.**
+    final rkH = Directory('${tmp.path}/rkh')..createSync();
+    final rkHSrc = Directory('${rkH.path}/packages/zcrud_fake/lib/src/domain')
+      ..createSync(recursive: true);
+    File('${rkHSrc.path}/z_leaky.dart').writeAsStringSync(
+      "@ZcrudModel(kind: 'leaky')\n"
+      'class ZLeaky with ZExtensible {\n'
+      '  ZLeaky(this.extra);\n'
+      '  @override\n'
+      '  final Map<String, dynamic> extra;\n'
+      '$_rkGuard'
+      '}\n',
+    );
+    // Le BARREL public : exporte l'entité SANS masquer son extension générée.
+    File('${rkH.path}/packages/zcrud_fake/lib/zcrud_fake.dart')
+        .writeAsStringSync("export 'src/domain/z_leaky.dart';\n");
+    // Sonde manuelle ⇒ l'entité est COUVERTE (règle (3) muette).
+    final rkHHarness = Directory('${rkH.path}/tool/reserved_keys_gate/lib/src')
+      ..createSync(recursive: true);
+    File('${rkHHarness.path}/registrars.dart').writeAsStringSync(
+      'const List<ZRegistrar> kRegistrars = <ZRegistrar>[];\n'
+      'const Map<String, Map<String, dynamic>> kProbeBodies =\n'
+      '    <String, Map<String, dynamic>>{};\n',
+    );
+    File('${rkHHarness.path}/manual_probes.dart').writeAsStringSync(
+      'final List<ZManualProbe> kManualProbes = <ZManualProbe>[\n'
+      "  ZManualProbe(className: 'ZLeaky'),\n"
+      '];\n',
+    );
+    final rkBadH =
+        _dart(['scripts/ci/gate_reserved_keys.dart', '--root', rkH.path]);
+    final rkBadHOut = '${rkBadH.stdout}${rkBadH.stderr}';
+    final hByRule = rkBadHOut.contains('(h) EXTENSION GÉNÉRÉE EXPORTÉE') &&
+        rkBadHOut.contains('ZLeakyZcrud');
+    // ⚠️ Le marqueur de la règle (3) NE PEUT PAS être « est `ZExtensible` » : ce
+    // fragment apparaît AUSSI dans le message de (h) lui-même (collision de
+    // sous-chaîne — première rédaction, prise en défaut par la fixture). On vise
+    // un fragment PROPRE à (3).
+    final hIsolated = !rkBadHOut.contains(_rkVoletBMsg) &&
+        !rkBadHOut.contains('ni sondée') && // règle (3)
+        !rkBadHOut.contains(_rkG1Msg) &&
+        !rkBadHOut.contains(_rkG2Msg);
+    _check(
+      'reserved-keys/hide-extension-generee-exportee',
+      rkBadH.exitCode != 0 && hByRule && hIsolated,
+      'exit=${rkBadH.exitCode} (attendu !=0) · règle (h) nomme ZLeakyZcrud: '
+      '$hByRule · ISOLÉE (volet B, (3), (g) muets): $hIsolated',
+    );
+
+    // Contre-épreuve : le MÊME arbre, avec le `hide` ⇒ le gate se TAIT.
+    // (Sans elle, (h) pourrait rougir pour n'importe quelle raison.)
+    File('${rkH.path}/packages/zcrud_fake/lib/zcrud_fake.dart')
+        .writeAsStringSync("export 'src/domain/z_leaky.dart' hide ZLeakyZcrud;\n");
+    final rkOkH =
+        _dart(['scripts/ci/gate_reserved_keys.dart', '--root', rkH.path]);
+    _check(
+      'reserved-keys/hide-extension-generee-masquee',
+      rkOkH.exitCode == 0,
+      'exit=${rkOkH.exitCode} (attendu 0 — le `hide` SUFFIT à éteindre (h) : '
+      'la règle vise bien l\'EXPORT, et rien d\'autre)',
     );
 
     stdout.writeln('');

@@ -1,8 +1,14 @@
 # Root du workspace zcrud (pub workspaces — resolution: workspace).
 # Source de vérité de la résolution partagée : un unique pubspec.lock racine.
-# Les 15 packages PRODUIT sont listés ci-dessous (ordre = Structural Seed AD-1 ;
-# `zcrud_study_kernel` ajouté en ES-1.1), suivis des harnais dev/test-only
-# `binding_conformance` (E2-9) et `reserved_keys_gate` (ES-1.4), hors packages/**.
+# Les 17 packages PRODUIT sont listés ci-dessous (ordre = Structural Seed AD-1 ;
+# `zcrud_study_kernel` ajouté en ES-1.1, `zcrud_document` en ES-2.1,
+# `zcrud_note` en ES-2.2), suivis des
+# harnais dev/test-only `binding_conformance` (E2-9) et `reserved_keys_gate`
+# (ES-1.4), hors packages/**.
+#
+# ⚠️ `melos.yaml` n'énumère AUCUN package (glob `packages/**`) : CE BLOC
+# `workspace:` est le SEUL point de déclaration d'un nouveau package produit —
+# `melos list` le prend automatiquement.
 name: zcrud_workspace
 publish_to: none
 
@@ -18,6 +24,15 @@ workspace:
   # depuis zcrud_flashcard). Dépend uniquement de zcrud_core + zcrud_annotations
   # (acyclique flashcard -> study_kernel -> core).
   - packages/zcrud_study_kernel
+  # ES-2.1 : document d'étude (contenu PARTAGEABLE) + état de lecture PERSONNEL
+  # (AD-26, jamais colocalisés). Dépend de zcrud_core + zcrud_study_kernel +
+  # zcrud_annotations (acyclique document -> study_kernel -> core ; CORE OUT=0).
+  - packages/zcrud_document
+  # ES-2.2 : note intelligente à CONTENU TYPÉ (`ZSmartNote` : ops Delta neutres,
+  # jamais une `String` ambiguë — AD-28). Dépend UNIQUEMENT de zcrud_core +
+  # zcrud_annotations (PUR-DART : ni zcrud_markdown — qui est Flutter/Quill (D4) —
+  # ni zcrud_study_kernel — aucun import réel (D7)). ACYCLIQUE ; CORE OUT=0.
+  - packages/zcrud_note
   - packages/zcrud_generator
   - packages/zcrud_markdown
   - packages/zcrud_list

@@ -60,8 +60,12 @@ class ZStudySessionConfig with ZExtensible {
     this.types,
     this.count,
     this.extension,
-    this.extra = const <String, dynamic>{},
-  });
+    Map<String, dynamic> extra = const <String, dynamic>{},
+    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
+    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // ignore: prefer_initializing_formals
+  }) : _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10).
   ///
@@ -120,7 +124,16 @@ class ZStudySessionConfig with ZExtensible {
   /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`).
   /// Hors-codegen.
   @override
-  final Map<String, dynamic> extra;
+  Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
+
+  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
+  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  ///
+  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
+  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
+  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
+  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  final Map<String, dynamic> _extra;
 
   /// Sérialise vers la map persistée **complète** (snake_case).
   ///
@@ -128,6 +141,15 @@ class ZStudySessionConfig with ZExtensible {
   /// superpose [extra] et [extension].
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
+      // 🔴 DW-ES22-3 (ES-2.2b) — MÊME garde nommée qu'en `fromMap`/`copyWith`.
+      // `toMap()` est la **frontière de SORTIE** : la seule que TOUTES les voies
+      // d'écriture traversent ⇒ la promesse est INCONDITIONNELLE, y compris pour
+      // une instance née du constructeur nominal (qui ne peut RIEN filtrer).
+      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
+      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
+      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
+      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
+      // (i.1a)/(i.1b)/(i.1c) ROUGES.
       ...extra,
       ...ZStudySessionConfigZcrud(this).toMap(),
     };
@@ -163,9 +185,11 @@ class ZStudySessionConfig with ZExtensible {
         extension: identical(extension, _$undefined)
             ? this.extension
             : extension as ZExtension?,
+        // 🔴 DW-ES22-3 (ES-2.2b) : MÊME FONCTION NOMMÉE qu'en `fromMap` —
+        // `copyWith` ne peut plus ROUVRIR le filtre des clés réservées.
         extra: identical(extra, _$undefined)
             ? this.extra
-            : extra as Map<String, dynamic>,
+            : _sanitizeExtra(extra as Map<String, dynamic>),
       );
 
   /// Décode défensivement l'extension via [parser] (repli `null`).
@@ -199,12 +223,16 @@ class ZStudySessionConfig with ZExtensible {
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).
+  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
+  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
-      Map<String, dynamic>.unmodifiable(<String, dynamic>{
-        for (final e in map.entries)
-          if (!_reservedKeys.contains(e.key)) e.key: e.value,
-      });
+      _sanitizeExtra(map);
+
+  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par les
+  /// **TROIS** voies : [fromMap], [copyWith] **et** [toMap]. Délègue à
+  /// [zSanitizeExtra] (`zcrud_core`, implémentation UNIQUE du repo).
+  static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
+      zSanitizeExtra(raw, _reservedKeys);
 
   @override
   bool operator ==(Object other) =>
@@ -216,7 +244,7 @@ class ZStudySessionConfig with ZExtensible {
           _listEquals(types, other.types) &&
           count == other.count &&
           extension == other.extension &&
-          _mapEquals(extra, other.extra);
+          zJsonEquals(extra, other.extra);
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -226,7 +254,7 @@ class ZStudySessionConfig with ZExtensible {
         if (types != null) Object.hashAll(types!),
         count,
         extension,
-        _mapHash(extra),
+        zJsonHash(extra),
       ]);
 }
 
@@ -251,20 +279,4 @@ bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a[i] != b[i]) return false;
   }
   return true;
-}
-
-bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
-  if (a.length != b.length) return false;
-  for (final e in a.entries) {
-    if (!b.containsKey(e.key) || b[e.key] != e.value) return false;
-  }
-  return true;
-}
-
-int _mapHash(Map<String, dynamic> m) {
-  var h = 0;
-  for (final e in m.entries) {
-    h ^= Object.hash(e.key, e.value);
-  }
-  return h;
 }

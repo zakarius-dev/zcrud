@@ -47,9 +47,14 @@ export 'src/domain/edition/z_field_spec.dart';
 export 'src/domain/edition/z_sub_list_config.dart';
 export 'src/domain/edition/z_time_codec.dart';
 export 'src/domain/edition/z_validator_spec.dart';
-// Slots d'extensibilité (E2-3, AD-4/AD-10) : `ZExtension`/`ZExtensible`.
+// Slots d'extensibilité (E2-3, AD-4/AD-10) : `ZExtension`/`ZExtensible`, la
+// garde partagée `zSanitizeExtra` et l'égalité/hash PROFONDS `zJsonEquals`/
+// `zJsonHash` (ES-2.2b — DW-ES22-3/DW-ES22-4 : implémentation UNIQUE du repo ;
+// les recopier dans un satellite, ou les importer depuis `zcrud_note`, VIOLERAIT
+// AD-1 — cf. `z_json_equality.dart`).
 export 'src/domain/extension/z_extensible.dart';
 export 'src/domain/extension/z_extension.dart';
+export 'src/domain/extension/z_json_equality.dart';
 export 'src/domain/failures/z_failure.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';

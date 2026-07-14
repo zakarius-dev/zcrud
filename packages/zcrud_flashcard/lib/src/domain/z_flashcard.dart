@@ -82,8 +82,12 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     this.updatedAt,
     this.source,
     this.extension,
-    this.extra = const <String, dynamic>{},
-  });
+    Map<String, dynamic> extra = const <String, dynamic>{},
+    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
+    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // ignore: prefer_initializing_formals
+  }) : _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10).
   ///
@@ -213,7 +217,16 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`),
   /// préservant les clés inconnues du cœur au round-trip. Hors-codegen.
   @override
-  final Map<String, dynamic> extra;
+  Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
+
+  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
+  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  ///
+  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
+  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
+  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
+  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  final Map<String, dynamic> _extra;
 
   /// Clé de type **opaque** exposée au port [ZSessionCandidate] (ES-1.1, AC6) :
   /// le `name` camelCase du [type] (ex. `"multipleChoice"`), comparé tel quel au
@@ -230,6 +243,21 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   /// généré appelle ce `toMap()` (il masque l'extension générée).
   Map<String, dynamic> toMap({ZSourceRegistry? sourceRegistry}) {
     final map = <String, dynamic>{
+      // 🔴 DW-ES22-3 (ES-2.2b) — MÊME garde nommée qu'en `fromMap`/`copyWith`.
+      // `toMap()` est la **frontière de SORTIE** : la seule que TOUTES les voies
+      // d'écriture traversent ⇒ promesse INCONDITIONNELLE (constructeur nominal
+      // compris — il ne peut RIEN filtrer).
+      //
+      // ⚠️ **L'ORDRE DU SPREAD RESTE `{...extra, ...généré}`** : le généré écrase
+      // l'`extra`, ce qui PROTÈGE les champs du schéma. Ne pas l'inverser. C'est
+      // aussi ce qui rendait le défaut INVISIBLE sur cette entité : le champ
+      // métier `updatedAt` écrasait la pollution `updated_at` (MESURÉ : `val=null`)
+      // — seul `is_deleted`, qu'aucun champ n'écrase, la révélait.
+      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
+      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
+      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
+      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
+      // (i.1a)/(i.1b)/(i.1c) ROUGES.
       ...extra,
       ...ZFlashcardZcrud(this).toMap(),
     };
@@ -303,9 +331,15 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
         extension: identical(extension, _$undefined)
             ? this.extension
             : extension as ZExtension?,
+        // 🔴 DW-ES22-3 (ES-2.2b) : MÊME FONCTION NOMMÉE qu'en `fromMap` —
+        // `copyWith` ne peut plus ROUVRIR le filtre des clés réservées.
+        // ⚠️ Surface publique INCHANGÉE (migration DODLP) : même signature, même
+        // sémantique de sentinelle — seule la VALEUR écrite est désormais
+        // dépouillée de `updated_at`/`is_deleted` (qui n'ont jamais eu le droit
+        // d'y être : AD-16).
         extra: identical(extra, _$undefined)
             ? this.extra
-            : extra as Map<String, dynamic>,
+            : _sanitizeExtra(extra as Map<String, dynamic>),
       );
 
   /// Décode défensivement l'extension via [parser] (repli `null`).
@@ -336,13 +370,16 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).
-  /// Rendu **non-modifiable** (cohérence `ZExtensible`/`ZCustomSource.payload`).
+  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
+  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
-      Map<String, dynamic>.unmodifiable(<String, dynamic>{
-        for (final e in map.entries)
-          if (!_reservedKeys.contains(e.key)) e.key: e.value,
-      });
+      _sanitizeExtra(map);
+
+  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par les
+  /// **TROIS** voies : [fromMap], [copyWith] **et** [toMap]. Délègue à
+  /// [zSanitizeExtra] (`zcrud_core`, implémentation UNIQUE du repo).
+  static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
+      zSanitizeExtra(raw, _reservedKeys);
 
   @override
   bool operator ==(Object other) =>
@@ -364,7 +401,7 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
           updatedAt == other.updatedAt &&
           source == other.source &&
           extension == other.extension &&
-          _mapEquals(extra, other.extra);
+          zJsonEquals(extra, other.extra);
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -384,7 +421,7 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
         updatedAt,
         source,
         extension,
-        _mapHash(extra),
+        zJsonHash(extra),
       ]);
 }
 
@@ -409,20 +446,4 @@ bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a[i] != b[i]) return false;
   }
   return true;
-}
-
-bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
-  if (a.length != b.length) return false;
-  for (final e in a.entries) {
-    if (!b.containsKey(e.key) || b[e.key] != e.value) return false;
-  }
-  return true;
-}
-
-int _mapHash(Map<String, dynamic> m) {
-  var h = 0;
-  for (final e in m.entries) {
-    h ^= Object.hash(e.key, e.value);
-  }
-  return h;
 }

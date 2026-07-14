@@ -54,11 +54,21 @@ environment:
 # EXPOSE des assertions `expect(...)` réutilisées par le test du harnais ; ses
 # symboles font partie de son API publique (patron `binding_conformance`).
 dependencies:
-  # REL-1 : contraintes ^0.1.0 (versions courantes des 15 packages).
+  # REL-1 : contraintes ^0.1.0 (versions courantes des 16 packages).
   zcrud_core: ^0.1.0
   zcrud_study_kernel: ^0.1.0
   zcrud_flashcard: ^0.1.0
   zcrud_mindmap: ^0.1.0
+  # ES-2.1 (R8) : `ZStudyDocument` / `ZDocumentReadingState` / `ZDocumentViewerPrefs`.
+  # Une entité NON CÂBLÉE n'est PAS SONDÉE ⇒ le gate serait VERT POUR RIEN
+  # (`R_disk \ R_wired` doit rester vide). Le câblage se fait dans la MÊME story
+  # que la création des entités — jamais « plus tard ».
+  zcrud_document: ^0.1.0
+  # ES-2.2 (R8) : `ZSmartNote` — entité `ZExtensible` portant le canal
+  # HORS-CODEGEN `content` (ops Delta neutres). Sans ce câblage, la règle (g2)
+  # du volet AST rougirait (canal déclaré, jamais sondé) et l'assertion (f) du
+  # volet (A) serait INERTE sur elle : le canal serait « préservé » PAR PROSE.
+  zcrud_note: ^0.1.0
   flutter:
     sdk: flutter
   flutter_test:

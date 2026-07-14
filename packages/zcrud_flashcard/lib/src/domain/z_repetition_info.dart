@@ -80,8 +80,12 @@ class ZRepetitionInfo with ZExtensible {
     this.learnedAt,
     this.lastQuality,
     this.extension,
-    this.extra = const <String, dynamic>{},
-  });
+    Map<String, dynamic> extra = const <String, dynamic>{},
+    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
+    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // ignore: prefer_initializing_formals
+  }) : _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10, AC8/AC9).
   ///
@@ -163,7 +167,16 @@ class ZRepetitionInfo with ZExtensible {
   /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`),
   /// préservant les clés inconnues du cœur au round-trip. Hors-codegen.
   @override
-  final Map<String, dynamic> extra;
+  Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
+
+  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
+  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  ///
+  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
+  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
+  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
+  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  final Map<String, dynamic> _extra;
 
   /// Copie **folder-only** (M1 d'E9-4, tranchée E9-5) : relocalise le seul
   /// [folderId] dénormalisé (routage de session) en **préservant à l'identique**
@@ -198,6 +211,26 @@ class ZRepetitionInfo with ZExtensible {
   /// [extension]. **Jamais** de recalcul SRS (AC8) : sérialise l'état tel quel.
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
+      // 🔴 DW-ES22-3 (ES-2.2b) — **C'EST ICI, ET NULLE PART AILLEURS, QUE LA
+      // PROMESSE TIENT SUR CETTE ENTITÉ.**
+      //
+      // `ZRepetitionInfo` n'a **AUCUN `copyWith`** (voie SRS unique, AC8) : la
+      // seule voie d'écriture publique de `extra` est le **CONSTRUCTEUR
+      // NOMINAL** — qui est **`const`** et ne peut donc appeler **aucune**
+      // fonction de filtrage. Et **AD-10 INTERDIT** d'y mettre un `assert` : le
+      // décodeur généré l'appelle avec des valeurs **BRUTES**, un `assert` ferait
+      // **throw la désérialisation d'une donnée corrompue**.
+      //
+      // ⇒ `toMap()`, **frontière de SORTIE**, est la seule frontière que la voie
+      // constructeur traverse. **MESURÉ** avant correctif :
+      // `ZRepetitionInfo(…, extra: {updated_at: …, is_deleted: true}).toMap()`
+      // réémettait les DEUX clés ⇒ collision frontale avec l'autorité de sync
+      // (le store écrit `ZSyncMeta` APRÈS le corps — AD-9/AD-16/AD-19).
+      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
+      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
+      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
+      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
+      // (i.1a)/(i.1b)/(i.1c) ROUGES.
       ...extra,
       ...ZRepetitionInfoZcrud(this).toMap(),
     };
@@ -243,13 +276,20 @@ class ZRepetitionInfo with ZExtensible {
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé).
-  /// Rendu **non-modifiable** (cohérence `ZExtensible`).
+  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
+  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
-      Map<String, dynamic>.unmodifiable(<String, dynamic>{
-        for (final e in map.entries)
-          if (!_reservedKeys.contains(e.key)) e.key: e.value,
-      });
+      _sanitizeExtra(map);
+
+  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par
+  /// [fromMap] **et** [toMap].
+  ///
+  /// ⚠️ **DEUX sites seulement, et ce n'est PAS un oubli** : cette entité n'offre
+  /// **aucun `copyWith`** (voie SRS unique). La voie d'écriture publique de
+  /// `extra` y est le **constructeur nominal**, `const`, qui ne peut rien
+  /// filtrer — c'est [toMap] qui porte la promesse (cf. sa dartdoc).
+  static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
+      zSanitizeExtra(raw, _reservedKeys);
 
   @override
   bool operator ==(Object other) =>
@@ -264,7 +304,7 @@ class ZRepetitionInfo with ZExtensible {
           learnedAt == other.learnedAt &&
           lastQuality == other.lastQuality &&
           extension == other.extension &&
-          _mapEquals(extra, other.extra);
+          zJsonEquals(extra, other.extra);
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -277,7 +317,7 @@ class ZRepetitionInfo with ZExtensible {
         learnedAt,
         lastQuality,
         extension,
-        _mapHash(extra),
+        zJsonHash(extra),
       ]);
 }
 
@@ -292,20 +332,4 @@ Map<String, dynamic>? _asStringMap(Object? v) {
     }
   }
   return null;
-}
-
-bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
-  if (a.length != b.length) return false;
-  for (final e in a.entries) {
-    if (!b.containsKey(e.key) || b[e.key] != e.value) return false;
-  }
-  return true;
-}
-
-int _mapHash(Map<String, dynamic> m) {
-  var h = 0;
-  for (final e in m.entries) {
-    h ^= Object.hash(e.key, e.value);
-  }
-  return h;
 }

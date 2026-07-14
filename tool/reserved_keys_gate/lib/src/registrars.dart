@@ -1,12 +1,40 @@
-/// CÂBLAGE du volet (A) : registrars, corps de sondes, décodeurs de domaine et
-/// allowlist legacy (AD-19.1.c / AD-19.2).
+/// CÂBLAGE du volet (A) : registrars, corps de sondes et allowlist legacy
+/// (AD-19.1.c / AD-19.2).
 ///
-/// ## Contrat d'extension (ES-2) — 3 lignes par entité
+/// ## Contrat d'extension (ES-2) — **3 lignes** par entité
 ///
 /// Créer une entité study (`ZStudyDocument`, `ZSmartNote`, `ZExam`…) ⇒ ajouter :
 ///   1. son `registerZXxx` à [kRegistrars] ;
 ///   2. son corps de sonde minimal valide à [kProbeBodies] ;
-///   3. son décodeur de domaine (`ZXxx.fromMap`) à [kDomainDecoders].
+///   3. 🔴 **TOUTES ses VOIES D'ÉCRITURE de `extra` à [kExtraWriters]** (ES-2.2b)
+///      — constructeur nominal **ET** `copyWith` **ET** toute méthode publique
+///      prenant un `extra` — sans quoi les assertions **(i.1)** (la voie
+///      d'écriture ne rouvre pas le filtre des clés réservées), **(i.2)** (égalité
+///      PROFONDE) et **(i.3)** (quelle garde a réellement travaillé) ne les
+///      atteindraient **jamais**.
+///
+///      ⚠️ **La couverture est vérifiée dans DEUX dimensions** :
+///        - **par kind** (bidirectionnelle) : kind `ZExtensible` sans writer ⇒
+///          **ROUGE** ; writer orphelin ⇒ **ROUGE** ;
+///        - **par VOIE** (règle AST **(j)**, `scripts/ci/gate_reserved_keys.dart`)
+///          : les voies sont **DÉRIVÉES DU DISQUE**. **Le harnais ne choisit plus
+///          la voie** — il choisissait la plus SÛRE (`copyWith`), ce qui rendait
+///          (i.1a)/(i.1b) **vacuellement vertes sur 8 entités sur 9** et laissait
+///          la voie **CONSTRUCTEUR** (polluante) hors de portée de toute machine
+///          (code-review ES-2.2b, HIGH-1/HIGH-2).
+///      La règle **(k)** exige en outre qu'un writer transmette `extra`
+///      **VERBATIM** (un writer qui sanitise lui-même rendrait (i.1) trivialement
+///      verte — **MAJEUR-2**).
+///
+/// ⇒ **Une entité ES-2.3…ES-2.8 ne peut pas naître sans être couverte.** C'est le
+/// point de la story ES-2.2b : la parade est une **MACHINE**, pas une discipline
+/// (les 8 entités déjà livrées, elles, ont TOUTES reproduit le défaut — mesuré).
+///
+/// *(La 3ᵉ ligne historique — un « décodeur de domaine » `kDomainDecoders` —
+/// **n'existe plus** : depuis ES-2.0 / DW-ES14-1, le registrar généré câble
+/// `fromMap: ZXxx.fromMap` (la factory de DOMAINE), donc `registry.decode` **EST**
+/// la voie de domaine. Le volet (A) décode par le registre, comme le prescrivait
+/// la lettre d'AD-19.1.c.)*
 ///
 /// **L'oublier ne passe PAS inaperçu** : `scripts/ci/gate_reserved_keys.dart`
 /// confronte l'inventaire du DISQUE (`grep` des `void registerZ…` dans
@@ -15,7 +43,9 @@
 library;
 
 import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_document/zcrud_document.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
+import 'package:zcrud_note/zcrud_note.dart';
 // L'analyzer signale cet import comme « inutile » parce que `zcrud_flashcard`
 // RÉEXPORTE le barrel du kernel (AD-18). On le garde EXPLICITE : le harnais
 // dépend RÉELLEMENT de `zcrud_study_kernel` (déclaré en `dependencies`), et le
@@ -27,10 +57,6 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 /// Signature d'un registrar généré (`void registerZXxx(ZcrudRegistry)`).
 typedef ZRegistrar = void Function(ZcrudRegistry registry);
 
-/// Décodeur **de domaine** d'un kind : la factory défensive `fromMap` de
-/// l'entité (AD-10).
-typedef ZDomainDecoder = Object Function(Map<String, dynamic> map);
-
 /// **TOUS** les registrars générés du repo (`R_wired`).
 ///
 /// Confronté à `R_disk` par le gate : tout registrar présent sur disque et
@@ -41,6 +67,10 @@ const List<ZRegistrar> kRegistrars = <ZRegistrar>[
   registerZFlashcard, // flashcard             — zcrud_flashcard
   registerZRepetitionInfo, // repetition_info       — zcrud_flashcard
   registerZChoice, // flashcard_choice      — zcrud_flashcard (NON ZExtensible)
+  registerZStudyDocument, // study_document        — zcrud_document (ES-2.1)
+  registerZDocumentReadingState, // document_reading_state — zcrud_document (ES-2.1)
+  registerZDocumentViewerPrefs, // document_viewer_prefs  — zcrud_document (NON ZExtensible)
+  registerZSmartNote, // smart_note            — zcrud_note (ES-2.2)
 ];
 
 /// Corps métier **minimal valide** de la sonde de chaque `kind`.
@@ -52,49 +82,71 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
     <String, Map<String, dynamic>>{
   'study_folder': <String, dynamic>{'id': 'p', 'title': 'p'},
   'study_session_config': <String, dynamic>{'mode': 'spaced'},
+  // ⚠️ H2 (code-review ES-2.0) : la sonde `flashcard` ne portait AUCUNE clé
+  // `source` — le canal était donc affirmé « ✅ PRÉSERVÉ » dans la dartdoc
+  // publique de `FirebaseZRepositoryImpl.fromRegistry` (celle qui AUTORISE le
+  // câblage d'un store) **sans qu'aucune machine ne l'observe jamais**. C'est le
+  // motif exact que cette story déclare combattre, appliqué à `extra` et oublié
+  // sur `source`. La clé est désormais dans la sonde, et son round-trip est
+  // ÉPINGLÉ (`reserved_keys_test.dart` › groupe « H2 — canal `source` »).
+  //
+  // `kind: 'zz_source_test'` est volontairement INCONNU des variants génériques
+  // (`note`/`conversation`/`document`) : il exerce la voie `ZCustomSource`, celle
+  // qu'un consommateur ouvre via `ZSourceRegistry` (AD-4 pt.3).
   'flashcard': <String, dynamic>{
     'id': 'p',
     'folder_id': 'f',
     'question': 'q',
+    'source': <String, dynamic>{
+      'kind': 'zz_source_test',
+      'zz_payload': 'brut',
+    },
   },
   'repetition_info': <String, dynamic>{'flashcard_id': 'p', 'folder_id': 'f'},
   'flashcard_choice': <String, dynamic>{'content': 'c', 'is_correct': true},
-};
-
-/// Décodeurs **de domaine** par `kind` — la voie que le garde `_reservedKeys`
-/// de chaque entité protège réellement.
-///
-/// ## ⚠️ POURQUOI PAS UNIQUEMENT `registry.decode(kind, probe)` (déviation
-/// DOCUMENTÉE de la lettre d'AD-19.1.c, constat de disque ES-1.4)
-///
-/// Les registrars **générés** câblent `fromMap: _$ZXxxFromMap` — la factory du
-/// **codegen**, qui ne connaît QUE les champs annotés `@ZcrudField` et ne peuple
-/// donc **PAS** `extra` (canal **hors-codegen**, cf. `ZStudyFolder.fromMap`).
-/// Résultat : une entité décodée *via le registre* a toujours `extra == {}`.
-///
-/// Conséquences si le gate décodait **uniquement** par le registre :
-///   - l'assertion (a) serait **vacuellement verte** (`extra` vide) — le gate ne
-///     protégerait RIEN, y compris contre les 2 findings HIGH d'ES-1.3 ;
-///   - l'assertion (b) serait **structurellement rouge** (la clé inconnue ne
-///     survit pas), donc intenable.
-///
-/// Le gate décode donc par la **voie de domaine** (`ZXxx.fromMap`) — celle qui
-/// peuple `extra`, celle où vit `_reservedKeys`, celle qu'exercent les tests et
-/// les apps — puis **ré-encode via le registre** (`registry.encode`), ce qui
-/// exerce bien le `toMap` d'instance (assertions (c)/(d)).
-///
-/// **Dette tracée (DW-ES14-1)** : `FirebaseZRepositoryImpl` décode via
-/// `registry.decode(kind, map)` (`firebase_z_repository_impl.dart:143`) ⇒ sur
-/// ce chemin, `extra` est **perdu** (round-trip AD-4 non préservé côté store).
-/// C'est un défaut du **câblage du registrar généré**, hors périmètre ES-1.4
-/// (correctif = `zcrud_generator`) : signalé, non masqué. Le gate ne prétend PAS
-/// couvrir ce chemin.
-final Map<String, ZDomainDecoder> kDomainDecoders = <String, ZDomainDecoder>{
-  'study_folder': ZStudyFolder.fromMap,
-  'study_session_config': ZStudySessionConfig.fromMap,
-  'flashcard': ZFlashcard.fromMap,
-  'repetition_info': ZRepetitionInfo.fromMap,
-  'flashcard_choice': ZChoice.fromMap,
+  // ── ES-2.1 (zcrud_document) ──────────────────────────────────────────────
+  'study_document': <String, dynamic>{
+    'id': 'p',
+    'folder_id': 'f',
+    'file_name': 'cours.pdf',
+  },
+  // ⚠️ H2 (code-review ES-2.0), À NE PAS REJOUER : la clé `learning` est un
+  // CANAL HORS-CODEGEN (D4, patron `ZFlashcard.source`) — décodée et réémise À LA
+  // MAIN, sa clé étant RÉSERVÉE. Une sonde SANS `learning` (ou avec un `learning`
+  // VIDE) rendrait ce canal « préservé » par PROSE, sans qu'AUCUNE machine ne
+  // l'observe — exactement le finding H2, où la sonde `flashcard` ne portait
+  // aucune clé `source`. Elle est donc ici, et NON VIDE.
+  'document_reading_state': <String, dynamic>{
+    'doc_id': 'p',
+    'current_page': 3,
+    'learning': <String, dynamic>{
+      'quality_by_page': <String, dynamic>{'1': 2, '3': 0},
+    },
+  },
+  'document_viewer_prefs': <String, dynamic>{
+    'zoom_level': 1.5,
+    'scroll_direction': 'horizontal',
+  },
+  // ── ES-2.2 (zcrud_note) ──────────────────────────────────────────────────
+  // 🔴 `content` est un CANAL HORS-CODEGEN (D3, patron `learning`/`source`) : le
+  // générateur ne supporte AUCUN type `Map`, donc `List<Map<String, dynamic>>`
+  // ne peut PAS être un `@ZcrudField`. Il est décodé/réémis À LA MAIN, sa clé
+  // étant RÉSERVÉE.
+  //
+  // ⚠️ LA CLÉ `content` EST ICI, ET **NON VIDE** — c'est la règle (g2), et c'est
+  // le finding H1 d'ES-2.1 (et H2 d'ES-2.0 sur `source`) à NE PAS REJOUER : une
+  // sonde SANS le canal (ou avec un canal VIDE) rendrait celui-ci « préservé »
+  // PAR PROSE — l'assertion comportementale (f) (`extra ∩ corps-de-sonde == ∅`)
+  // ne l'observerait JAMAIS, et retirer `kContentKey` de `_reservedKeys`
+  // laisserait le gate VERT.
+  'smart_note': <String, dynamic>{
+    'id': 'p',
+    'folder_id': 'f',
+    'title': 't',
+    'content': <Map<String, dynamic>>[
+      <String, dynamic>{'insert': 'sonde\n'},
+    ],
+  },
 };
 
 /// Kinds enregistrés dont l'entité n'est **PAS** `ZExtensible` (aucun `extra`).
@@ -102,18 +154,64 @@ final Map<String, ZDomainDecoder> kDomainDecoders = <String, ZDomainDecoder>{
 /// - `flashcard_choice` : `ZChoice` — value object de QCM (`class ZChoice {`),
 ///   sans slot d'extension. Le cast `(e as ZExtensible)` de la lettre d'AD-19.1.c
 ///   **throw** dessus (piège n°1).
+/// - `document_viewer_prefs` : `ZDocumentViewerPrefs` (ES-2.1) — value object de
+///   préférences de lecture, même patron : `class ZDocumentViewerPrefs {`, aucun
+///   `extra`. (Ses deux sœurs d'ES-2.1, `ZStudyDocument` et
+///   `ZDocumentReadingState`, **SONT** `ZExtensible` : elles ne figurent PAS ici.)
 ///
 /// ## ⚠️ Pourquoi cette liste existe (L1, code-review ES-1.4)
 ///
-/// Les assertions **(a)/(b)** ne s'appliquent qu'aux entités `ZExtensible`. Sans
-/// cette liste, le saut était **SILENCIEUX** : un `kDomainDecoders` recâblé par
+/// Les assertions **(a)/(b)/(e)** ne s'appliquent qu'aux entités `ZExtensible`.
+/// Sans cette liste, le saut était **SILENCIEUX** : un registrar recâblé par
 /// erreur vers un type non-`ZExtensible` aurait rendu (a)/(b) **vacuellement
 /// vertes sans le moindre signal**. Le saut est désormais **DÉCLARÉ** — et
-/// vérifié dans les DEUX sens (cf. `assertExtraClean`) :
+/// vérifié dans les DEUX sens (cf. `assertExtraClean`, `assertUnknownKeyRoundTrip`) :
 ///   - kind **absent** d'ici mais entité non-`ZExtensible` ⇒ **ROUGE** (vacuité) ;
 ///   - kind **présent** ici mais entité `ZExtensible` ⇒ **ROUGE** (liste périmée).
 /// (c)/(d) restent appliquées à **TOUS** les kinds, sans exception.
-const Set<String> kNonExtensibleKinds = <String>{'flashcard_choice'};
+///
+/// ⚠️ **(e) NE PEUT PAS être « appliquée à chaque kind »** (D3, ES-2.0) : `ZChoice`
+/// n'a pas d'`extra` — elle ne peut structurellement pas préserver une clé
+/// inconnue, et (e) y serait ROUGE À JAMAIS. (e) s'applique EXACTEMENT là où
+/// (a)/(b) s'appliquent.
+const Set<String> kNonExtensibleKinds = <String>{
+  'flashcard_choice',
+  'document_viewer_prefs',
+};
+
+/// Kinds dont l'entité **PRÉSERVE** le payload `extension` **non typé** au lieu de
+/// le **DÉTRUIRE** — mitigation locale de **DW-ES14-2** (story ES-2.2, findings
+/// **MAJEUR-1**/**MAJEUR-2**).
+///
+/// ## Ce que cette liste dit — et surtout ce qu'elle NE DIT PAS
+///
+/// `ZcrudRegistry` n'offre **TOUJOURS AUCUN SLOT D'INJECTION** : sur la voie
+/// registre, **aucun** `extensionParser` n'est fourni ⇒ **le slot n'est JAMAIS
+/// TYPÉ**. **DW-ES14-2 reste OUVERTE, entière, et BLOQUANTE avant ES-3.2/ES-3.5.**
+///
+/// Ce que ces entités ont changé, c'est le **sort de la DONNÉE** :
+///
+/// | | payload d'`extension` non typé |
+/// |---|---|
+/// | kind **hors** de cette liste | ⛔ **DÉTRUIT** (`extension == null` ⇒ `toMap()` **omet la clé** ⇒ effacé du store au premier `put`) |
+/// | kind **dans** cette liste | ✅ **PORTÉ VERBATIM** et **RÉÉMIS À L'IDENTIQUE** (`ZOpaqueNoteExtension` — AD-4 pt.1 « évolution additive ») |
+///
+/// ⚠️ **Ce n'est PAS un échappatoire de confort** : le verrou `DW-ES14-2` est
+/// **RENFORCÉ** pour ces kinds, pas relâché — il exige que le payload soit réémis
+/// **BIT POUR BIT** (`extension.toJson() == payload`), ce qui **PROUVE** qu'aucun
+/// parser typé ne l'a interprété : **la dette est toujours là, et on l'observe**.
+///
+/// 🔴 **`ZNoteAudio` (zcrud_note) est la PREMIÈRE `ZExtension` CONCRÈTE du repo** :
+/// elle **FALSIFIE la clause d'échappement n°1 de DW-ES14-2** (*« si — et seulement
+/// si — l'entité **n'utilise pas** le slot `extension` »*). La dette n'est plus
+/// **théorique** : elle porte sur une entité **livrée**.
+///
+/// ⇒ **Quand DW-ES14-2 sera soldée**, cette liste **DISPARAÎT** (le registre typera
+/// le slot pour **tous** les kinds) et les verrous sont **INVERSÉS**, jamais
+/// supprimés.
+const Set<String> kExtensionPayloadPreservers = <String>{
+  'smart_note', // zcrud_note — ZSmartNote / ZOpaqueNoteExtension (ES-2.2)
+};
 
 /// Miroirs de compat AD-19.2 (pts 1-3) — **SEULS** kinds tolérés à ÉMETTRE
 /// `updated_at` depuis leur `toMap()` (assertion **(d) UNIQUEMENT**).
@@ -133,6 +231,345 @@ const Set<String> kNonExtensibleKinds = <String>{'flashcard_choice'};
 ///   - **anti-inertie** : une entrée dont le kind n'émet plus `updated_at` (ou
 ///     n'existe plus) rend la suite ROUGE.
 const Set<String> kLegacyUpdatedAtMirrors = <String>{'study_folder', 'flashcard'};
+
+// ===========================================================================
+// 🔴 ES-2.2b — `kExtraWriters` : LA VOIE D'ÉCRITURE PUBLIQUE DE `extra`.
+// ===========================================================================
+
+/// Écrit [extra] dans [entity] **par UNE voie d'écriture PUBLIQUE** et rend
+/// l'entité résultante.
+typedef ZExtraWrite = Object Function(Object entity, Map<String, dynamic> extra);
+
+/// **UNE** voie d'écriture publique de `extra` (ES-2.2b — remédiation **HIGH-1**,
+/// **HIGH-2**, **MAJEUR-2** de la code-review).
+///
+/// ## Pourquoi une LISTE de voies, et non « LA » voie
+///
+/// La v1 câblait **UNE SEULE** voie par entité — et **le harnais CHOISISSAIT
+/// laquelle** : systématiquement la **plus sûre** (`copyWith`, qui filtre déjà).
+/// **MESURÉ (code-review ES-2.2b)** : l'entité encodée par (i.1a)/(i.1b) avait donc
+/// un `extra` **DÉJÀ PROPRE** ⇒ retirer la garde de `toMap()` laissait le gate
+/// **VERT sur 8 entités sur 9**, et la **voie CONSTRUCTEUR** — polluante, publique,
+/// jamais sondée — restait **hors de portée de TOUTE machine** (6 entités sur 9
+/// portaient `updated_at`/`is_deleted` dans leur `extra` **EN MÉMOIRE**, dont
+/// `ZSmartNote`).
+///
+/// ⇒ **Le harnais ne choisit plus la voie** : il les câble **TOUTES**, et la
+/// **règle AST (j)** du gate (`scripts/ci/gate_reserved_keys.dart`) **DÉRIVE DU
+/// DISQUE** les voies publiques de chaque entité `ZExtensible` (tout constructeur
+/// public et toute méthode publique portant un paramètre `extra`) et **EXIGE**
+/// qu'elles soient toutes ici — dans les **deux sens** (voie non câblée ⇒ ROUGE ;
+/// voie morte ⇒ ROUGE).
+class ZExtraWriter {
+  /// Déclare une voie d'écriture.
+  const ZExtraWriter({
+    required this.voie,
+    required this.write,
+    required this.eagerlyNormalized,
+  });
+
+  /// Nom de la voie — **LITTÉRAL, LU PAR LE GATE** (règle (j)) : `'ctor'` pour le
+  /// constructeur nominal, sinon le nom de la méthode (`'copyWith'`). Ne jamais
+  /// l'interpoler.
+  final String voie;
+
+  /// La voie elle-même : elle DOIT transmettre `extra` **VERBATIM** à l'API
+  /// publique de l'entité. **La règle AST (k) l'EXIGE** (un writer qui
+  /// pré-sanitise — « writer menteur POLI » — rendrait (i.1) trivialement verte :
+  /// c'est le finding **MAJEUR-2**).
+  final ZExtraWrite write;
+
+  /// Cette voie **NORMALISE-t-elle le slot STOCKÉ** (`_extra`) ?
+  ///
+  /// - `true` — `copyWith`, ou un constructeur **non-`const`** (`ZMindmap`) :
+  ///   ils appellent `zSanitizeExtra` ⇒ le slot stocké est **déjà propre** ⇒ la
+  ///   lecture d'`extra` est **SANS COPIE** (`identical(e.extra, e.extra)`).
+  /// - `false` — le constructeur **`const`** des 7 entités codegen : il ne peut
+  ///   appeler **aucune** fonction (AD-10 y interdit l'`assert`) ⇒ le slot stocké
+  ///   reste **BRUT**, et c'est l'**ACCESSEUR** `extra` qui filtre à la lecture.
+  ///
+  /// **C'est une MACHINE, pas une étiquette** — assertion **(i.3)** :
+  ///   - `true` ⇒ on ASSERTE `identical(e.extra, e.extra)` ⇒ retirer
+  ///     `_sanitizeExtra` de `copyWith`/du ctor de `ZMindmap` fait **ROUGIR** ;
+  ///   - `false` ⇒ on ASSERTE **l'inverse** ⇒ (1) l'accesseur a **réellement
+  ///     travaillé** (la garde est PORTEUSE, pas décorative), (2) le writer a
+  ///     transmis les clés réservées **VERBATIM** — un writer **auto-sanitisant**
+  ///     rendrait le slot propre et **ROUGIRAIT** (**MAJEUR-2**, second filet,
+  ///     dynamique celui-ci).
+  final bool eagerlyNormalized;
+}
+
+/// **TOUTES** les voies d'écriture publiques de `extra`, par kind (`E_covered`).
+///
+/// ⚠️ La couverture est vérifiée dans **DEUX** dimensions :
+///   - **par kind** (test AC9 du harnais) : un kind `ZExtensible` sans writer ⇒ ROUGE ;
+///   - **par VOIE** (règle **(j)**, AST, dérivée du DISQUE) : une voie publique de
+///     l'entité non câblée ici ⇒ **ROUGE**. Le harnais **ne peut plus** se
+///     contenter de la voie la plus sûre.
+const Map<String, List<ZExtraWriter>> kExtraWriters =
+    <String, List<ZExtraWriter>>{
+  'study_folder': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyFolder,
+      eagerlyNormalized: false, // ctor `const` : ne peut RIEN filtrer.
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyFolder,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'study_session_config': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudySessionConfig,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudySessionConfig,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'flashcard': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorFlashcard,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithFlashcard,
+      eagerlyNormalized: true,
+    ),
+  ],
+  // ⚠️ `ZRepetitionInfo` n'a **AUCUN `copyWith`** (voie SRS unique) : sa SEULE
+  // voie publique est le constructeur nominal. La règle (j) le vérifie sur le
+  // DISQUE — si elle gagne un `copyWith` un jour, le gate EXIGE son câblage ici.
+  'repetition_info': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorRepetitionInfo,
+      eagerlyNormalized: false,
+    ),
+  ],
+  'study_document': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyDocument,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyDocument,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'document_reading_state': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorDocumentReadingState,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithDocumentReadingState,
+      eagerlyNormalized: true,
+    ),
+  ],
+  'smart_note': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorSmartNote,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithSmartNote,
+      eagerlyNormalized: true,
+    ),
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// VOIE `copyWith` — `x` est passé **VERBATIM** (règle AST (k) : aucune
+// transformation ; un writer qui pré-sanitiserait serait un MENTEUR POLI).
+// ---------------------------------------------------------------------------
+
+Object _copyWithStudyFolder(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyFolder).copyWith(extra: x);
+
+Object _copyWithStudySessionConfig(Object e, Map<String, dynamic> x) =>
+    (e as ZStudySessionConfig).copyWith(extra: x);
+
+Object _copyWithFlashcard(Object e, Map<String, dynamic> x) =>
+    (e as ZFlashcard).copyWith(extra: x);
+
+Object _copyWithStudyDocument(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyDocument).copyWith(extra: x);
+
+Object _copyWithDocumentReadingState(Object e, Map<String, dynamic> x) =>
+    (e as ZDocumentReadingState).copyWith(extra: x);
+
+Object _copyWithSmartNote(Object e, Map<String, dynamic> x) =>
+    (e as ZSmartNote).copyWith(extra: x);
+
+// ---------------------------------------------------------------------------
+// 🔴 VOIE `ctor` — LA VOIE QUE LE HARNAIS NE SONDAIT PAS (HIGH-1/HIGH-2).
+//
+// Constructeur nominal, **public** et **`const`** : il ne peut appeler AUCUNE
+// fonction (AD-10 y interdit l'`assert`) ⇒ il stocke `extra` **BRUT**. C'est
+// l'**ACCESSEUR** `extra` de l'entité qui filtre à la lecture — et ce sont ces
+// writers qui le prouvent : sans eux, (i.1a)/(i.1b)/(i.1c) n'encodaient QUE des
+// entités à l'`extra` déjà propre, et la garde n'était exigée par AUCUNE machine.
+// ---------------------------------------------------------------------------
+
+Object _ctorStudyFolder(Object e, Map<String, dynamic> x) {
+  final f = e as ZStudyFolder;
+  return ZStudyFolder(
+    id: f.id,
+    title: f.title,
+    colorKey: f.colorKey,
+    parentId: f.parentId,
+    ownerId: f.ownerId,
+    archivedAt: f.archivedAt,
+    createdAt: f.createdAt,
+    updatedAt: f.updatedAt,
+    isPublic: f.isPublic,
+    sharedWith: f.sharedWith,
+    canBeJoinedWithLink: f.canBeJoinedWithLink,
+    coWorkersCanInviteOthers: f.coWorkersCanInviteOthers,
+    shareId: f.shareId,
+    extension: f.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudySessionConfig(Object e, Map<String, dynamic> x) {
+  final c = e as ZStudySessionConfig;
+  return ZStudySessionConfig(
+    mode: c.mode,
+    folderId: c.folderId,
+    tagIds: c.tagIds,
+    types: c.types,
+    count: c.count,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorFlashcard(Object e, Map<String, dynamic> x) {
+  final c = e as ZFlashcard;
+  return ZFlashcard(
+    id: c.id,
+    folderId: c.folderId,
+    subFolderId: c.subFolderId,
+    type: c.type,
+    question: c.question,
+    answer: c.answer,
+    isTrue: c.isTrue,
+    choices: c.choices,
+    explanation: c.explanation,
+    hint: c.hint,
+    tagIds: c.tagIds,
+    isReadOnly: c.isReadOnly,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    source: c.source,
+    extension: c.extension,
+    extra: x,
+  );
+}
+
+Object _ctorRepetitionInfo(Object e, Map<String, dynamic> x) {
+  final r = e as ZRepetitionInfo;
+  return ZRepetitionInfo(
+    flashcardId: r.flashcardId,
+    folderId: r.folderId,
+    interval: r.interval,
+    repetitions: r.repetitions,
+    easeFactor: r.easeFactor,
+    nextReviewDate: r.nextReviewDate,
+    learnedAt: r.learnedAt,
+    lastQuality: r.lastQuality,
+    extension: r.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyDocument(Object e, Map<String, dynamic> x) {
+  final d = e as ZStudyDocument;
+  return ZStudyDocument(
+    id: d.id,
+    folderId: d.folderId,
+    fileName: d.fileName,
+    status: d.status,
+    storagePath: d.storagePath,
+    pageCount: d.pageCount,
+    sizeBytes: d.sizeBytes,
+    createdAt: d.createdAt,
+    extension: d.extension,
+    extra: x,
+  );
+}
+
+Object _ctorDocumentReadingState(Object e, Map<String, dynamic> x) {
+  final s = e as ZDocumentReadingState;
+  return ZDocumentReadingState(
+    docId: s.docId,
+    currentPage: s.currentPage,
+    pageCount: s.pageCount,
+    prefs: s.prefs,
+    learning: s.learning,
+    extension: s.extension,
+    extra: x,
+  );
+}
+
+Object _ctorSmartNote(Object e, Map<String, dynamic> x) {
+  final n = e as ZSmartNote;
+  return ZSmartNote(
+    id: n.id,
+    folderId: n.folderId,
+    subFolderId: n.subFolderId,
+    title: n.title,
+    content: n.content,
+    createdAt: n.createdAt,
+    extension: n.extension,
+    extra: x,
+  );
+}
+
+/// Entités `ZExtensible` **sans AUCUN `operator ==`** ⇒ **(i.2) est SAUTÉE**
+/// — mais le saut est **DÉCLARÉ ET CONTRÔLÉ** (**R6**, patron de (e)/(d)).
+///
+/// ## Ce que ce skip dit — et surtout ce qu'il NE DIT PAS
+///
+/// Ce n'est **PAS** le défaut DW-ES22-4 (« égalité *superficielle* sur `extra` ») :
+/// `ZMindmap`/`ZMindmapNode` n'ont **aucune égalité de valeur du tout** (égalité
+/// d'**IDENTITÉ** — mesuré : `a != b` **même avec un `extra` SCALAIRE**, et même
+/// avec un `extra` **vide**). C'est un défaut **préexistant et PLUS LARGE**, hors
+/// du périmètre nommé par la dette.
+///
+/// Leur donner un `==` profond exigerait une **égalité récursive sur l'arbre
+/// `children`** (`ZMindmapNode` est un arbre : O(n), garde-fou de cycle,
+/// changement sémantique pour un package à 110 tests). ⇒ **HORS PÉRIMÈTRE
+/// ES-2.2b.**
+///
+/// 📌 **Dette OUVERTE : `DW-ES22-5`** — à statuer en ES-10.x / rétro ES-2.
+///
+/// ⚠️ **(i.1) LEUR EST BIEN APPLIQUÉE** : leur constructeur nominal acceptait un
+/// `extra` pollué et leur `toJson()` le réémettait (MESURÉ CASSÉ). Seule (i.2)
+/// est sautée.
+///
+/// 🔴 **ANTI-INERTIE** : (i.2) **ASSERTE que l'égalité est bien ABSENTE** sur ces
+/// entités. Le jour où quelqu'un leur donne un `==` de valeur, l'entrée devient
+/// **MORTE** et le test **ROUGIT** en exigeant de la retirer. **Jamais silencieux.**
+const Set<String> kNoValueEqualityProbes = <String>{
+  'ZMindmap',
+  'ZMindmapNode',
+};
 
 /// Construit un [ZcrudRegistry] peuplé par **tous** les [kRegistrars].
 ZcrudRegistry buildRegistry() {

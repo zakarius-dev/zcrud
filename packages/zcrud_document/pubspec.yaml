@@ -1,0 +1,62 @@
+# zcrud_document — membre du workspace zcrud (resolution: workspace).
+# Document d'étude (ES-2.1, FR-S4) : `ZStudyDocument` (contenu PARTAGEABLE) et
+# son état de lecture PERSONNEL (`ZDocumentReadingState` / `ZDocumentViewerPrefs`
+# / `ZDocumentLearningInfo`) — jamais colocalisés (AD-26).
+#
+# AD-19 : AUCUNE des entités ne déclare `updated_at`/`is_deleted` (clés du STORE,
+# hors-entité `ZSyncMeta`). Un portage verbatim de lex — qui les porte INLINE, et
+# dont `updatedAt` est LITTÉRALEMENT la clé LWW de `DocumentReadingState` —
+# recréerait la perte de valeur métier soldée en ES-1.3 (le store écrit sa méta
+# APRÈS le corps à chaque `put`).
+name: zcrud_document
+description: "Study document domain for zcrud: ZStudyDocument (shareable content) and its PERSONAL reading state (ZDocumentReadingState, ZDocumentViewerPrefs, ZDocumentLearningInfo). Pure Dart, no Flutter, no Firebase."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_document
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - documents
+  - pdf
+  - crud
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+#
+# - `zcrud_core`   : surface PURE-DART `package:zcrud_core/domain.dart`
+#                    (`ZEntity`, `ZExtensible`, `ZExtension`, `ZSyncMeta`,
+#                    `ZcrudRegistry`, `ZFieldSpec`) — jamais le barrel principal,
+#                    qui tire Flutter et casserait `dart test`.
+# - `zcrud_study_kernel` : arête DÉCLARÉE d'emblée (AD-17 : les satellites study
+#                    dépendent du kernel). Les stories suivantes du MÊME package
+#                    la consomment (`ES-2.5` : `colorKey`/`ZColorPalette` ;
+#                    `ES-3.3` : registre de cascade `folder → document →
+#                    annotation`, dont `zcrud_document` est le propriétaire
+#                    d'arête — AD-21). Aucun cycle (kernel → core uniquement).
+# - `zcrud_annotations` : annotations `const` du codegen.
+#
+# ⛔ AUCUNE dép lourde, AUCUN gestionnaire d'état, AUCUN `cloud_firestore`,
+#    AUCUN SDK Flutter (NFR-S3/SM-S5 : zéro `Timestamp`/`Box`/`Color`/`IconData`,
+#    a fortiori zéro widget-lib — IFFD persiste des enums SYNCFUSION dans son
+#    domaine ; c'est précisément ce que ce package refuse).
+dependencies:
+  zcrud_core: ^0.1.0
+  zcrud_study_kernel: ^0.1.0
+  zcrud_annotations: ^0.1.0
+
+# Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
+# (`auto_apply: dependents`) émet `z_study_document.g.dart`,
+# `z_document_reading_state.g.dart` et `z_document_viewer_prefs.g.dart`
+# (SUIVIS par git sous `packages/*/lib/` — distribution en dépendance git,
+# gate `codegen-distribution`). Le package n'importe QUE la surface pur-Dart de
+# `zcrud_core` ⇒ ses tests tournent sous `dart test`.
+dev_dependencies:
+  zcrud_generator: ^0.1.0
+  build_runner: ^2.5.0
+  test: ^1.25.0

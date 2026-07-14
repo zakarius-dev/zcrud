@@ -67,7 +67,28 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 export 'src/data/z_flashcard_repository.dart';
 export 'src/data/z_repetition_store.dart';
 export 'src/domain/z_choice.dart';
-export 'src/domain/z_flashcard.dart';
+// 🔴 H3 (code-review ES-2.1, remédiation) — `hide ZFlashcardZcrud` MANQUAIT.
+//
+// `ZFlashcard` est `ZExtensible` ET porte le canal hors-codegen `source`. Son
+// extension GÉNÉRÉE était **EXPORTÉE PUBLIQUEMENT** : le `copyWith` généré ne
+// connaît QUE les champs `@ZcrudField` — il IGNORE `extra`, `extension` et
+// `source`, et les REMET AUX DÉFAUTS.
+//
+//     import 'package:zcrud_flashcard/zcrud_flashcard.dart';
+//     ZFlashcardZcrud(card).copyWith(question: 'x')
+//     // ⇒ extra, extension ET source : DÉTRUITS, en silence.
+//
+// Le `copyWith` d'INSTANCE ne masque que l'appel IMPLICITE ; l'appel EXPLICITE
+// d'extension restait ouvert depuis l'API PUBLIQUE. Ses 3 sœurs `ZExtensible` du
+// repo étaient `hide` (`ZStudyFolderZcrud`, `ZRepetitionInfoZcrud`,
+// `ZStudySessionConfigZcrud`) : **seule l'entité PHARE avait été oubliée** — sous
+// 1000+ tests verts, parce que la politique `hide` vivait en COMMENTAIRE et
+// qu'AUCUNE machine ne la tenait. C'est la MÊME faute que H1.
+//
+// ⇒ La règle est désormais **TENUE PAR LE GATE** : `gate:reserved-keys` règle (h)
+//   (`scripts/ci/gate_reserved_keys.dart`), avec sa fixture d'échec isolée
+//   (`prove_gates.dart` › `hide-extension-generee-exportee`).
+export 'src/domain/z_flashcard.dart' hide ZFlashcardZcrud;
 export 'src/domain/z_flashcard_api.dart';
 export 'src/domain/z_flashcard_source.dart';
 export 'src/domain/z_flashcard_type.dart';

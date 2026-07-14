@@ -20,6 +20,8 @@
 /// classe, collision de clé persistée.
 library;
 
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -27,7 +29,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:zcrud_annotations/zcrud_annotations.dart';
-import 'package:zcrud_core/edition.dart';
+import 'package:zcrud_core/domain.dart';
 
 /// Sentinelle interne : marque « argument non fourni » dans `copyWith`.
 const _undefinedRef = '_\$undefined';
@@ -39,6 +41,23 @@ const _idChecker =
     TypeChecker.typeNamed(ZcrudId, inPackage: 'zcrud_annotations');
 const _modelChecker =
     TypeChecker.typeNamed(ZcrudModel, inPackage: 'zcrud_annotations');
+
+/// `TypeChecker` du mixin `ZExtensible` (AD-4).
+///
+/// `isAssignableFrom` résout la hiérarchie **TRANSITIVEMENT** (super-classe,
+/// mixin d'un super-type, interface) : `class ZSmartNote extends ZBaseStudyEntity`
+/// où la base porte `with ZExtensible` est bien reconnue (prouvé par spike).
+/// C'est ce qui distingue les classes qui ONT un slot `extra` — les seules pour
+/// lesquelles le contrat DW-ES14-1 a un sens.
+const _extensibleChecker =
+    TypeChecker.typeNamed(ZExtensible, inPackage: 'zcrud_core');
+
+/// Clé de SONDE du garde runtime DW-ES14-1 (émis dans chaque `.g.dart`).
+///
+/// Volontairement improbable : elle n'est le nom persisté d'aucun champ de
+/// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`. Une
+/// entité conforme à AD-4 la fait donc **atterrir dans `extra`**.
+const _extraProbeKey = 'zz__zcrud_extra_probe__';
 
 /// Générateur du modèle `@ZcrudModel` (émission `part`).
 class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
@@ -81,6 +100,10 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
 
     final fields = _collectFields(element, rename);
 
+    // DW-ES14-1 (AD-4) : le registrar DOIT décoder par la factory de DOMAINE.
+    // Contrat vérifié PAR MACHINE, jamais présumé (R1/R6).
+    final isExtensible = _requireDomainFromMap(element, className);
+
     final buffer = StringBuffer()
       ..writeln(_emitFromMap(className, fields))
       ..writeln()
@@ -88,13 +111,245 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
-      ..writeln(_emitRegister(className, kind, fields))
+      ..writeln(_emitRegister(className, kind, extensible: isExtensible))
       ..writeln()
       ..writeln(_emitTimestampFields(className, fields));
 
     // Deux fragments : les helpers PARTAGÉS (dédupliqués par source_gen quand
     // plusieurs modèles vivent dans la même bibliothèque) + le code du modèle.
     return <String>[_sharedHelpers, buffer.toString().trim()];
+  }
+
+  // --------------------------------------------------------------------------
+  // Contrat DW-ES14-1 — factory de DOMAINE `Xxx.fromMap` obligatoire.
+  // --------------------------------------------------------------------------
+
+  /// Exige que la classe annotée déclare un décodeur de **domaine**
+  /// `Xxx.fromMap(Map<String, dynamic> map)` — factory **ou méthode statique**
+  /// (M2) — que [_emitRegister] câble sur le registre (`fromMap: Xxx.fromMap`).
+  /// Retourne `true` si la classe est **`ZExtensible`** (transitivement).
+  ///
+  /// ## Pourquoi un ÉCHEC DE BUILD, jamais un repli (R6, DW-ES14-1)
+  ///
+  /// Le repli « naturel » serait `_$XxxFromMap` — la factory du **codegen**, qui
+  /// ne connaît QUE les champs `@ZcrudField` et ne peuple donc **NI `extra`, NI
+  /// `extension`, NI `source`** (canaux **hors-codegen**, câblés à la main par la
+  /// factory de domaine). C'est **exactement** le défaut DW-ES14-1 : sur la voie
+  /// registre (`registry.decode`, `FirebaseZRepositoryImpl.fromRegistry`), toute
+  /// clé métier inconnue du schéma était **détruite** à chaque cycle
+  /// lecture → écriture (`toMap()` ne réémet que ce que `fromMap` a peuplé) —
+  /// violation d'**AD-4**, irréversible.
+  ///
+  /// ## ⚠️ H1 (code-review ES-2.0) — un contrat de SIGNATURE ne prouve RIEN
+  ///
+  /// La v1 de ce contrat validait **l'EXISTENCE** d'une signature, jamais le
+  /// **POUVOIR** de préserver `extra`… et son message d'erreur **prescrivait
+  /// littéralement la forme impotente** :
+  ///
+  /// ```dart
+  /// factory Xxx.fromMap(Map<String, dynamic> map) => _$XxxFromMap(map); // ⛔
+  /// ```
+  ///
+  /// Sur une classe `ZExtensible`, **ce geste EST DW-ES14-1** : contrat
+  /// satisfait, build VERT, `extra` DÉTRUIT. *Le gate qui interdit la dette
+  /// enseignait la dette.* Trois corrections, toutes **par machine** :
+  ///
+  /// 1. le message **prescrit la forme QUI MARCHE** (celle de `ZFlashcard`/
+  ///    `ZStudyFolder` : `extra: _extraFrom(map)` sur les clés non réservées) ;
+  /// 2. **BUILD ROUGE** si une classe `ZExtensible` délègue **NUEMENT** à
+  ///    `_$XxxFromMap` — détecté sur l'**AST du corps** du décodeur
+  ///    (`package:analyzer`, jamais de regex — R5) ;
+  /// 3. **GARDE RUNTIME** émis dans le registrar de toute classe `ZExtensible`
+  ///    ([_emitRegister]) : il **OBSERVE** le pouvoir (décode une sonde, exige la
+  ///    clé inconnue dans `extra`) au lieu de juger une forme. C'est le seul
+  ///    filet qui suive les packages **PUBLIÉS** chez un consommateur externe,
+  ///    lequel n'a **pas** le harnais `reserved_keys_gate` — trou hors-repo
+  ///    identifié par H1. Il attrape **toute** factory impotente, y compris
+  ///    celles que (2) ne peut pas voir (corps ré-écrit à la main sans `extra:`).
+  bool _requireDomainFromMap(ClassElement element, String className) {
+    final extensible = _extensibleChecker.isAssignableFrom(element);
+
+    // M2 — un `fromMap` STATIQUE est un tear-off parfaitement valide
+    // (`Xxx.fromMap` s'assigne au registre exactement comme une factory) : il est
+    // ACCEPTÉ. La v1 ne regardait que `element.constructors` et affirmait
+    // « ne déclare AUCUNE factory fromMap » — message FAUX pour le mainteneur qui
+    // en avait bien une sous les yeux.
+    final ExecutableElement? decoder = element.constructors
+            .where((c) => c.name == 'fromMap')
+            .cast<ExecutableElement?>()
+            .firstOrNull ??
+        element.methods
+            .where((m) => m.isStatic && m.name == 'fromMap')
+            .cast<ExecutableElement?>()
+            .firstOrNull;
+
+    if (decoder == null) {
+      throw InvalidGenerationSourceError(
+        '$className est annotée @ZcrudModel mais ne déclare AUCUN décodeur de '
+        'domaine `fromMap` (ni factory, ni méthode statique) — DW-ES14-1 / AD-4. '
+        'Sans lui, le registrar généré décoderait par `_\$${className}FromMap` — '
+        'la factory du CODEGEN, qui ignore les canaux HORS-codegen (`extra`, '
+        '`extension`, `source`) et DÉTRUIT donc les clés métier inconnues à '
+        'chaque cycle lecture→écriture via `registry.decode`.\n'
+        '${_prescription(className, extensible: extensible)}',
+        element: element,
+      );
+    }
+
+    _requireCompatibleSignature(decoder, className);
+    if (extensible) _rejectNakedCodegenDelegation(decoder, className);
+    return extensible;
+  }
+
+  /// Le **geste correctif**, écrit dans la forme QUI MARCHE (H1 pt. 1).
+  ///
+  /// Une classe **`ZExtensible`** ne peut PAS se contenter de déléguer à
+  /// `_$XxxFromMap` : la prescription est donc **différente** selon le cas — et
+  /// c'est précisément ce que la v1 confondait.
+  String _prescription(String className, {required bool extensible}) {
+    if (!extensible) {
+      return 'GESTE : $className n\'est pas `ZExtensible` (aucun slot `extra`) — '
+          'une délégation nue suffit :\n'
+          '    factory $className.fromMap(Map<String, dynamic> map) => '
+          '_\$${className}FromMap(map);\n'
+          '(des paramètres OPTIONNELS supplémentaires sont autorisés ; une '
+          'méthode `static` convient aussi.)';
+    }
+    return 'GESTE : $className est `ZExtensible` — sa factory DOIT peupler le '
+        'slot `extra` (AD-4), sinon `registry.decode` détruit les clés métier '
+        'inconnues. Patron RÉEL du repo (`ZFlashcard`, `ZStudyFolder`…) :\n'
+        '    factory $className.fromMap(Map<String, dynamic> map) {\n'
+        '      final base = _\$${className}FromMap(map);   // champs du schéma\n'
+        '      return $className(\n'
+        '        /* …champs recopiés depuis `base`… */\n'
+        '        extra: _extraFrom(map),                  // ✅ clés HORS-schéma\n'
+        '      );\n'
+        '    }\n'
+        '    static final Set<String> _reservedKeys = <String>{\n'
+        '      for (final spec in \$${className}FieldSpecs) spec.name,\n'
+        '      ...ZSyncMeta.reservedKeys,                  // AD-19.1\n'
+        '    };\n'
+        '    static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>\n'
+        '        Map<String, dynamic>.unmodifiable(<String, dynamic>{\n'
+        '          for (final e in map.entries)\n'
+        '            if (!_reservedKeys.contains(e.key)) e.key: e.value,\n'
+        '        });\n'
+        '⛔ NE PAS écrire `=> _\$${className}FromMap(map);` nu : le build le '
+        'REFUSE (il détruirait `extra`), et le registrar généré porte en plus un '
+        'GARDE RUNTIME qui l\'observe.';
+  }
+
+  /// Signature compatible avec `T Function(Map<String, dynamic>)` — vérifiée sur
+  /// les **TYPES** (`TypeSystem`), jamais sur une chaîne d'affichage (M1).
+  ///
+  /// La v1 comparait `type.getDisplayString() == 'Map<String, dynamic>'` : elle
+  /// **REJETAIT** (échec de build) des décodeurs légaux et **assignables** —
+  /// `Map<String, Object?>` (mutuellement sous-type en Dart), un typedef alias
+  /// (`typedef JsonMap = Map<String, dynamic>` → `getDisplayString()` rend
+  /// `JsonMap`), une forme préfixée par un import. Le critère RÉEL est
+  /// l'assignabilité d'un `Map<String, dynamic>` au paramètre — c'est exactement
+  /// ce que le tear-off exige. (Prouvé par spike : les 3 formes passent.)
+  void _requireCompatibleSignature(ExecutableElement decoder, String className) {
+    final params = decoder.formalParameters;
+    final positionalRequired =
+        params.where((p) => p.isPositional && p.isRequired).toList();
+    final surplusRequired =
+        params.where((p) => p.isRequired && !p.isPositional).toList();
+
+    final typeSystem = decoder.library.typeSystem;
+    final typeProvider = decoder.library.typeProvider;
+    final mapStringDynamic = typeProvider.mapType(
+      typeProvider.stringType,
+      typeProvider.dynamicType,
+    );
+
+    final signatureOk = positionalRequired.length == 1 &&
+        surplusRequired.isEmpty &&
+        typeSystem.isAssignableTo(
+          mapStringDynamic,
+          positionalRequired.first.type,
+        );
+
+    if (signatureOk) return;
+    throw InvalidGenerationSourceError(
+      'Le décodeur `$className.fromMap` a une signature INCOMPATIBLE avec le '
+      'registre (DW-ES14-1 / AD-4). Attendu : exactement UN paramètre '
+      'positionnel requis auquel un `Map<String, dynamic>` soit ASSIGNABLE '
+      '(`Map<String, dynamic>`, `Map<String, Object?>`, un typedef alias… tous '
+      'conviennent), tous les autres paramètres étant OPTIONNELS (nommés ou '
+      'positionnels). Trouvé : '
+      '(${params.map((p) => '${p.type.getDisplayString()} ${p.name}'
+          '${p.isRequired ? '' : '?'}').join(', ')}). '
+      'Aucun repli sur `_\$${className}FromMap` n\'est possible : il '
+      'détruirait `extra`/`extension`/`source` sur la voie `registry.decode`.',
+      element: decoder,
+    );
+  }
+
+  /// **H1 pt. 2** — sur une classe `ZExtensible`, une **DÉLÉGATION NUE** à
+  /// `_$XxxFromMap` est un **ÉCHEC DE BUILD** : c'est *littéralement* DW-ES14-1
+  /// (le codegen ignore `extra`), et c'était le geste que l'ancien message
+  /// d'erreur **dictait**.
+  ///
+  /// Lecture du **corps** par l'AST (`ParsedLibraryResult.getFragmentDeclaration`)
+  /// — **jamais de regex sur du Dart** (R5).
+  ///
+  /// ⚠️ **Ce contrôle est un filet de FORME** : il attrape le geste exact que le
+  /// message prescrivait, pas toute factory impotente (un corps ré-écrit à la
+  /// main qui « oublie » `extra:` lui échappe). Le filet de **POUVOIR** — celui
+  /// qui observe vraiment — est le garde runtime émis par [_emitRegister]. Si
+  /// l'AST est indisponible (session absente), on ne **dégrade pas en silence**
+  /// (R6) : le garde runtime reste émis inconditionnellement et couvre ce cas.
+  void _rejectNakedCodegenDelegation(
+    ExecutableElement decoder,
+    String className,
+  ) {
+    final body = _bodyAstOf(decoder);
+    if (body == null) return; // Pouvoir toujours gardé au runtime (cf. dartdoc).
+    if (!_isNakedCodegenDelegation(body, className)) return;
+
+    throw InvalidGenerationSourceError(
+      '`$className.fromMap` DÉLÈGUE NUEMENT à `_\$${className}FromMap` alors que '
+      '$className est `ZExtensible` (slot `extra`, AD-4) — c\'est EXACTEMENT '
+      'DW-ES14-1 : `_\$${className}FromMap` ne connaît QUE les champs '
+      '`@ZcrudField` et laisse `extra` VIDE. Le build serait vert et '
+      '`registry.decode` DÉTRUIRAIT toute clé métier inconnue du schéma, à '
+      'chaque cycle lecture→écriture — irréversible.\n'
+      '${_prescription(className, extensible: true)}',
+      element: decoder,
+    );
+  }
+
+  /// Corps AST du décodeur [decoder] (factory ou méthode statique), ou `null` si
+  /// l'AST n'est pas atteignable depuis la session d'analyse.
+  FunctionBody? _bodyAstOf(ExecutableElement decoder) {
+    final session = decoder.session;
+    if (session == null) return null;
+    final parsed = session.getParsedLibraryByElement(decoder.library);
+    if (parsed is! ParsedLibraryResult) return null;
+    final node = parsed.getFragmentDeclaration(decoder.firstFragment)?.node;
+    if (node is ConstructorDeclaration) return node.body;
+    if (node is MethodDeclaration) return node.body;
+    return null;
+  }
+
+  /// `true` si [body] se réduit à `_$XxxFromMap(map)` — forme `=> …` **ou** bloc
+  /// à `return` unique. Rien d'autre n'est jugé : ce contrôle ne prétend pas
+  /// décider si un corps quelconque peuple `extra` (c'est le rôle du garde
+  /// runtime), seulement refuser le geste précis que l'ancien message dictait.
+  bool _isNakedCodegenDelegation(FunctionBody body, String className) {
+    Expression? expr;
+    if (body is ExpressionFunctionBody) {
+      expr = body.expression;
+    } else if (body is BlockFunctionBody) {
+      final statements = body.block.statements;
+      if (statements.length != 1) return false;
+      final only = statements.first;
+      if (only is ReturnStatement) expr = only.expression;
+    }
+    if (expr is! MethodInvocation) return false;
+    if (expr.target != null) return false;
+    return expr.methodName.name == '_\$${className}FromMap';
   }
 
   // --------------------------------------------------------------------------
@@ -434,16 +689,58 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // Émission — register(ZcrudRegistry).
   // --------------------------------------------------------------------------
 
-  String _emitRegister(String className, String kind, List<_Field> fields) {
-    return '/// Enregistre `$className` (kind "$kind") sur [registry] : '
-        '(dé)sérialisation + schéma.\n'
-        'void register$className(ZcrudRegistry registry) =>\n'
-        '    registry.register<$className>(\n'
-        "      '$kind',\n"
-        '      fromMap: _\$${className}FromMap,\n'
-        '      toMap: (value) => value.toMap(),\n'
-        '      fieldSpecs: \$${className}FieldSpecs,\n'
-        '    );';
+  String _emitRegister(
+    String className,
+    String kind, {
+    required bool extensible,
+  }) {
+    // ⚠️ `fromMap: $className.fromMap` — le décodeur de **DOMAINE** (DW-ES14-1) :
+    // lui seul peuple les canaux HORS-codegen (`extra` AD-4, `source`), là où
+    // `_$${className}FromMap` (codegen) les IGNORE — ce qui détruisait toute clé
+    // métier inconnue sur la voie `registry.decode`. Existence + compatibilité de
+    // signature sont VÉRIFIÉES (`_requireDomainFromMap`) : jamais de repli.
+    // Le tear-off reste assignable à `T Function(Map<String, dynamic>)` même si le
+    // décodeur déclare des paramètres OPTIONNELS supplémentaires (sous-typage Dart).
+    final doc = '/// Enregistre `$className` (kind "$kind") sur [registry] : '
+        '(dé)sérialisation + schéma.\n';
+
+    /// Arguments de `registry.register<T>(…)`, indentés de [pad] espaces.
+    String registerArgs(String pad) => "$pad  '$kind',\n"
+        '$pad  fromMap: $className.fromMap,\n'
+        '$pad  toMap: (value) => value.toMap(),\n'
+        '$pad  fieldSpecs: \$${className}FieldSpecs,\n'
+        '$pad';
+
+    if (!extensible) {
+      // Aucun slot `extra` : rien à préserver, aucun garde à poser.
+      return '${doc}void register$className(ZcrudRegistry registry) =>\n'
+          '    registry.register<$className>(\n'
+          '${registerArgs('    ')});';
+    }
+
+    // 🔴 H1 — GARDE EXÉCUTOIRE DW-ES14-1, émis pour toute classe `ZExtensible`.
+    //
+    // Le contrat de BUILD ne vérifie qu'une SIGNATURE (et refuse la délégation
+    // nue) : il ne peut pas prouver qu'une factory ré-écrite à la main peuple
+    // vraiment `extra`. Ce garde, lui, l'OBSERVE — il décode une sonde portant
+    // une clé inconnue et exige qu'elle atterrisse dans `extra`. Il vit dans le
+    // `.g.dart`, donc il SUIT LES PACKAGES PUBLIÉS : un consommateur externe
+    // (DODLP, lex_douane) n'a pas `tool/reserved_keys_gate`, mais il a CE garde.
+    //
+    // ⚠️ Volontairement PAS sous `assert` : un `assert` s'évapore en release —
+    // ce serait la dégradation silencieuse que R6 interdit. Le coût est un
+    // décodage de sonde par kind, UNE FOIS, à l'enregistrement.
+    return '${doc}void register$className(ZcrudRegistry registry) {\n'
+        '  // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.\n'
+        '  _\$zRequireExtraPreserved<$className>(\n'
+        "    '$className',\n"
+        '    $className.fromMap,\n'
+        '    (value) => value.toMap(),\n'
+        '    (value) => value.extra,\n'
+        '  );\n'
+        '  registry.register<$className>(\n'
+        '${registerArgs('  ')});\n'
+        '}';
   }
 
   // --------------------------------------------------------------------------
@@ -561,10 +858,107 @@ String _toSnake(String s) {
 
 /// Helpers **partagés** émis une fois par bibliothèque (dédupliqués par
 /// source_gen). Parsing tolérant (AD-10) : `int|String`, enum par nom (jamais
-/// `byName` nu), date ISO tolérante ; sentinelle `copyWith`.
+/// `byName` nu), date ISO tolérante ; sentinelle `copyWith` ; **garde exécutoire
+/// DW-ES14-1** (H1).
 const _sharedHelpers = '''
 /// Sentinelle « argument non fourni » du `copyWith` généré (reset-null).
 const Object? _\$undefined = _ZUndefined();
+
+/// Clé de SONDE du garde DW-ES14-1 : n'est le nom persisté d'AUCUN champ de
+/// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
+const String _\$zExtraProbeKey = '$_extraProbeKey';
+
+/// 🔴 **GARDE EXÉCUTOIRE DW-ES14-1 / AD-4** — émis dans le `register…` de toute
+/// classe `ZExtensible` (H1, code-review ES-2.0).
+///
+/// ## Ce qu'il fait, et pourquoi il existe
+///
+/// Il **OBSERVE le POUVOIR** du couple (`fromMap`, `toMap`) au lieu de faire
+/// confiance à sa forme : il décode une sonde portant une clé **inconnue du
+/// schéma**, puis la ré-encode, et exige que la clé **survive au round-trip
+/// COMPLET** — exactement le cycle lecture → écriture d'un store câblé sur
+/// `registry.decode`/`registry.encode` (`FirebaseZRepositoryImpl.fromRegistry`).
+///
+/// Les **DEUX** jambes sont vérifiées, parce que la destruction peut venir de
+/// l'une **ou** de l'autre :
+///   - **(entrée)** `fromMap` amnésique — délègue à `_\$XxxFromMap` (la factory
+///     du CODEGEN, qui ne connaît QUE les champs `@ZcrudField`) ou « oublie »
+///     `extra:` en recopiant les champs ⇒ `extra` reste VIDE ;
+///   - **(sortie)** `toMap` amnésique — n'étale pas `...extra` ⇒ ce qui avait été
+///     préservé au décodage n'est **jamais réémis**. ⚠️ Le `toMap()` **généré**
+///     (extension `XxxZcrud`) n'étale PAS `extra` : une entité `ZExtensible` qui
+///     ne définit pas son propre `toMap()` d'instance tombe dans ce cas.
+///
+/// Le contrat de **BUILD** vérifie une signature et refuse la délégation nue ; il
+/// ne peut pas prouver qu'un corps ré-écrit à la main préserve `extra`. **Ce
+/// garde-ci le prouve**, à l'enregistrement, une fois par kind. C'est le seul
+/// filet qui suive les packages **PUBLIÉS** : un consommateur externe a le
+/// générateur, mais **pas** le harnais `tool/reserved_keys_gate`.
+///
+/// ## Pourquoi il n'est PAS sous `assert`
+///
+/// Un `assert` s'évapore en release : le filet disparaîtrait précisément là où la
+/// perte de données est définitive. Aucune dégradation silencieuse (R6).
+void _\$zRequireExtraPreserved<T>(
+  String className,
+  T Function(Map<String, dynamic> map) fromMap,
+  Map<String, dynamic> Function(T value) toMap,
+  Map<String, dynamic> Function(T value) extraOf,
+) {
+  final T decoded;
+  try {
+    decoded = fromMap(<String, dynamic>{_\$zExtraProbeKey: true});
+  } catch (error) {
+    throw StateError(
+      'zcrud/DW-ES14-1 : `\$className.fromMap` a LEVÉ sur une map de sonde. '
+      'Le décodage doit être DÉFENSIF (AD-10) : un champ absent ou corrompu ne '
+      'fait JAMAIS échouer le parent. Erreur : \$error',
+    );
+  }
+
+  // Jambe (entrée) — `fromMap` peuple-t-il `extra` ?
+  if (extraOf(decoded)[_\$zExtraProbeKey] != true) {
+    throw StateError(
+      'zcrud/DW-ES14-1 (AD-4) : `\$className` est `ZExtensible`, mais son '
+      'décodeur de domaine `\$className.fromMap` NE PEUPLE PAS `extra` — la clé '
+      'hors-schéma de la sonde a été DÉTRUITE au DÉCODAGE.\\n'
+      'Conséquence si ce registrar était utilisé (registry.decode / '
+      'FirebaseZRepositoryImpl.fromRegistry) : TOUTE clé métier inconnue du '
+      'schéma serait effacée à chaque cycle lecture -> écriture. IRRÉVERSIBLE.\\n'
+      'CAUSE la plus fréquente : `factory \$className.fromMap(map) => '
+      '_\\\$\${className}FromMap(map);` — la factory du CODEGEN ne connaît que les '
+      'champs @ZcrudField.\\n'
+      'GESTE : recopier les champs depuis `_\\\$\${className}FromMap(map)` PUIS '
+      'passer `extra: _extraFrom(map)` (clés non réservées de la map). Patron de '
+      'référence : `ZFlashcard.fromMap` / `ZStudyFolder.fromMap`.',
+    );
+  }
+
+  // Jambe (sortie) — `toMap` réémet-il `extra` ?
+  final Map<String, dynamic> encoded;
+  try {
+    encoded = toMap(decoded);
+  } catch (error) {
+    throw StateError(
+      'zcrud/DW-ES14-1 : `\$className.toMap()` a LEVÉ sur une entité décodée '
+      'depuis une map de sonde. Erreur : \$error',
+    );
+  }
+  if (encoded[_\$zExtraProbeKey] != true) {
+    throw StateError(
+      'zcrud/DW-ES14-1 (AD-4) : `\$className.fromMap` préserve bien `extra`, '
+      'mais `\$className.toMap()` NE LE RÉÉMET PAS — la clé hors-schéma est '
+      'DÉTRUITE à l\\'ENCODAGE. Le round-trip d\\'un store est donc amnésique '
+      'malgré un décodage correct.\\n'
+      'CAUSE la plus fréquente : l\\'entité s\\'appuie sur le `toMap()` GÉNÉRÉ '
+      '(extension `\${className}Zcrud`), qui n\\'émet QUE les champs @ZcrudField '
+      'et n\\'étale PAS `extra`.\\n'
+      'GESTE : déclarer un `toMap()` d\\'INSTANCE qui étale l\\'échappatoire — '
+      '`Map<String, dynamic> toMap() => {...extra, ...\${className}Zcrud(this).toMap()};` '
+      '(patron `ZFlashcard.toMap` / `ZStudyFolder.toMap`).',
+    );
+  }
+}
 
 class _ZUndefined {
   const _ZUndefined();

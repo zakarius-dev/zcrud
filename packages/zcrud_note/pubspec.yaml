@@ -1,0 +1,74 @@
+# zcrud_note — membre du workspace zcrud (resolution: workspace).
+# Note intelligente à CONTENU TYPÉ (ES-2.2, FR-S5) : `ZSmartNote` (contenu
+# PARTAGEABLE, ops Delta neutres) + `ZNoteAudio` (slot `ZExtension` optionnel).
+#
+# 🔴 AD-28 — LE CONTENU N'EST JAMAIS UNE `String` AMBIGUË.
+# lex persiste `content` en `String` MARKDOWN ; IFFD persiste `content` en
+# `String?` qui est TANTÔT du Delta JSON, TANTÔT du markdown — désambiguïsé par
+# une heuristique textuelle (`startsWith('[') && contains('"insert"')`) répétée
+# VERBATIM en 4 sites. `ZSmartNote.content` est typé `List<Map<String, dynamic>>`
+# (ops Delta neutres) : le TYPE dit le format, l'ambiguïté est structurellement
+# impossible — aucune devinette, aucune regex.
+#
+# 🔴 AD-19 — AUCUN horodatage de sync dans l'entité. lex porte `updatedAt` INLINE
+# **et** maintient « à la main » une copie hors-entité (aveu explicite de
+# `smart_notes_repository.dart` l. 12-16). Le store zcrud écrit `ZSyncMeta` APRÈS
+# le corps à chaque `put` ⇒ un tel champ serait ÉCRASÉ SILENCIEUSEMENT. L'autorité
+# LWW et le soft-delete vivent HORS-ENTITÉ (`ZSyncMeta`, AD-16/AD-19).
+name: zcrud_note
+description: "Smart note domain for zcrud: ZSmartNote with TYPED content (neutral Delta ops, never an ambiguous String) and an optional ZNoteAudio extension slot. Pure Dart, no Flutter, no Quill, no Firebase."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_note
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - notes
+  - rich-text
+  - crud
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
+#
+# - `zcrud_core`        : surface PURE-DART `package:zcrud_core/domain.dart`
+#                         (`ZEntity`, `ZExtensible`, `ZExtension`, `ZSyncMeta`,
+#                         `ZcrudRegistry`, `ZFieldSpec`) — jamais le barrel
+#                         principal, qui tire Flutter et casserait `dart test`.
+# - `zcrud_annotations` : annotations `const` du codegen.
+#
+# ⛔ **PAS `zcrud_markdown`** (D4 — la prescription de l'epic est INVALIDÉE) :
+#    `zcrud_markdown` est un package **FLUTTER** (`sdk: flutter`,
+#    `flutter_quill ^11.5.0`, `flutter_math_fork`, 2 convertisseurs HTML).
+#    L'arête ferait de ce package de DOMAINE PUR un package Flutter tirant Quill,
+#    et ses tests basculeraient de `dart test` à `flutter test`. De plus le
+#    domaine n'a AUCUN besoin du `ZCodec` : le format persisté canonique de la
+#    note EST le Delta ⇒ le codec applicable (`ZDeltaCodec`) est un codec
+#    IDENTITÉ. Enfin `DeltaNeutralOps` est PRIVÉ (`lib/src/data/`, absent du
+#    barrel) : même avec l'arête, il serait inutilisable.
+#    ⇒ L'arête naîtra en ES-6.1, avec le PREMIER WIDGET (`presentation/`).
+#
+# ⛔ **PAS `zcrud_study_kernel`** (D7, leçon L2 d'ES-2.1 : « dépendance DÉCLARÉE,
+#    aucun import ») : `ZSmartNote` référence son dossier par `folderId`, une clé
+#    NEUTRE `String` — aucun symbole du kernel n'est importé. L'arête sera
+#    déclarée quand un import réel l'exigera (ES-3.3, registre de cascade).
+#
+# ⛔ AUCUNE dép lourde, AUCUN gestionnaire d'état, AUCUN `cloud_firestore`,
+#    AUCUN SDK Flutter (NFR-S3/SM-S5).
+dependencies:
+  zcrud_core: ^0.1.0
+  zcrud_annotations: ^0.1.0
+
+# Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
+# (`auto_apply: dependents`) émet `z_smart_note.g.dart` (SUIVI par git sous
+# `packages/*/lib/` — distribution en dépendance git, gate
+# `codegen-distribution`). Le package n'importe QUE la surface pur-Dart de
+# `zcrud_core` ⇒ ses tests tournent sous `dart test`.
+dev_dependencies:
+  zcrud_generator: ^0.1.0
+  build_runner: ^2.5.0
+  test: ^1.25.0

@@ -88,10 +88,17 @@ En cas de doute sur un nom exact, **lister `.claude/skills/bmad-*` avant d'invoq
 
 ## Build & Development Commands (monorepo melos)
 
-> **Code généré NON suivi par git.** Les `*.g.dart` / `*.freezed.dart` sont **gitignorés**
-> (cf. `.gitignore`). Après un `git clone`/`git pull` ou après avoir modifié une annotation
-> `@ZcrudModel`/`@JsonSerializable`, **les régénérer** (`melos run generate`). La CI exécute
-> ce codegen avant tout analyze/test/build.
+> **Code généré : SUIVI par git sous `packages/*/lib/`** (depuis ES-1). Le `.gitignore` ignore
+> les `*.g.dart` / `*.freezed.dart` **partout SAUF** `packages/*/lib/**` (négation explicite).
+> Raison : les packages sont consommés en **dépendance git** — un consommateur clone l'arbre au
+> tag et **ne régénère PAS** le code d'une dépendance ; un `part` manquant casserait son build.
+> Le gate `codegen-distribution` (`melos run verify`) échoue si un `part` d'un `packages/*/lib/`
+> vise un fichier gitignoré.
+>
+> Conséquences : après avoir modifié une annotation `@ZcrudModel`/`@JsonSerializable` **ou le
+> générateur**, régénérer (`melos run generate`) **et committer les `*.g.dart` régénérés** — les
+> omettre laisserait dans git un code généré périmé (ex. un registrar câblé sur l'ancienne
+> factory). Le codegen reste exécuté par la CI avant analyze/test/build.
 
 ```bash
 # Bootstrap du workspace (resolution: workspace)
@@ -196,7 +203,7 @@ Chaque entité canonique expose : (1) un slot `ZExtension?` typé additif **vers
 | Persistance | snake_case ; **enums en camelCase** | `created_at`, `type: "openQuestion"` |
 | Métadonnées de sync | hors-entité `ZSyncMeta` | `updated_at`, `is_deleted` |
 | Tests | `*_test.dart` | — |
-| Code généré | `*.g.dart` / `*.freezed.dart` (**gitignorés**, régénérés) | — |
+| Code généré | `*.g.dart` / `*.freezed.dart` — **suivis par git sous `packages/*/lib/`** (dép. git), ignorés ailleurs | — |
 
 ---
 
@@ -212,7 +219,7 @@ Chaque entité canonique expose : (1) un slot `ZExtension?` typé additif **vers
 - **Never** de secret dans un package (clé API Google Maps, endpoints) — config plateforme de l'app ; **never** `badCertificateCallback => true`.
 - **Never** `EdgeInsets.only(left:/right:)`, `Alignment.centerLeft/Right`, `Positioned(left:/right:)`, `TextAlign.left/right` — utiliser les variantes **directionnelles** (`EdgeInsetsDirectional`, `AlignmentDirectional`, `PositionedDirectional`, `TextAlign.start/end`) pour le RTL (AD-13).
 - **Never** `ListView(children: [...])` — `ListView.builder`.
-- **Never** éditer un `*.g.dart` à la main (généré par build_runner) ; **never** le committer (gitignoré, régénéré après clone/pull et par la CI).
+- **Never** éditer un `*.g.dart` à la main (généré par build_runner) — mais **TOUJOURS committer** ceux de `packages/*/lib/` après régénération (suivis par git : distribution en dép. git ; cf. gate `codegen-distribution`).
 - **Never** style/couleur codé en dur dans un package — thème injecté via `ZcrudScope`/`ThemeExtension` (FR-26), repli `Theme.of(context)`.
 - **Always** `const` pour les widgets immuables ; `Semantics` explicites + cibles ≥ 48 dp (AD-13).
 
@@ -274,7 +281,7 @@ backlog → ready-for-dev → in-progress → review → done
 1. Traiter **chaque story une par une**, dans l'ordre du sprint-status (respecter le **graphe de dépendances** des epics, pas la seule numérotation — ex. **E11a précède E7**).
 2. Après la dernière story de l'epic : **`bmad-retrospective`**.
 3. Mettre l'epic + la retro à `done` dans le sprint-status.
-4. **Commit unique en fin d'epic** — message `feat(<pkg-ou-epic>): <titre>` (**code source uniquement** ; exclure les `*.g.dart`/`*.freezed.dart` gitignorés, les `pubspec.lock` de package et les fichiers d'env).
+4. **Commit unique en fin d'epic** — message `feat(<pkg-ou-epic>): <titre>` ; **inclure** les `*.g.dart` régénérés de `packages/*/lib/` (suivis par git — les omettre laisserait du code généré périmé chez un consommateur en dép. git) ; **exclure** les `pubspec.lock` (racine et `example/`) et les fichiers d'env.
 
 ### Règles générales (NON-NÉGOCIABLES)
 

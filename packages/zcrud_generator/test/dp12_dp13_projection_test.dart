@@ -41,6 +41,11 @@ $_model()
 class Decorated {
   const Decorated({required this.amount});
 
+  // DW-ES14-1 (AC2) : toute classe @ZcrudModel DOIT déclarer sa factory de
+  // domaine `fromMap` — contrat vérifié par le générateur (échec de build sinon).
+  factory Decorated.fromMap(Map<String, dynamic> map) =>
+      Decorated(amount: map['amount'] as String? ?? '');
+
   $_field(
     leading: ZFieldAdornment.icon('search'),
     prefix: ZFieldAdornment.text('EUR'),
@@ -68,6 +73,12 @@ $_model()
 class Flags {
   const Flags({required this.a, required this.b});
 
+  // DW-ES14-1 (AC2) : factory de domaine obligatoire.
+  factory Flags.fromMap(Map<String, dynamic> map) => Flags(
+        a: map['a'] as String? ?? '',
+        b: map['b'] as String? ?? '',
+      );
+
   // Opt-in de rétention explicite → `showIfNull: true` émis.
   $_field(showIfNull: true)
   final String a;
@@ -94,6 +105,10 @@ import 'package:zcrud_annotations/zcrud_annotations.dart';
 $_model()
 class Plain {
   const Plain({required this.name});
+
+  // DW-ES14-1 (AC2) : factory de domaine obligatoire.
+  factory Plain.fromMap(Map<String, dynamic> map) =>
+      Plain(name: map['name'] as String? ?? '');
 
   $_field(label: 'Name')
   final String name;

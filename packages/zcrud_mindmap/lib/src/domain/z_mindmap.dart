@@ -30,7 +30,12 @@ class ZMindmap with ZExtensible {
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
   })  : nodes = List<ZMindmapNode>.unmodifiable(nodes),
-        extra = Map<String, dynamic>.unmodifiable(extra);
+        // 🔴 DW-ES22-3 (ES-2.2b) : la garde partagée, dès la CONSTRUCTION.
+        // Ce constructeur est **non-`const`** ⇒ il PEUT filtrer (contrairement à
+        // `ZRepetitionInfo`). Ce n'est PAS un `assert` (AD-10 l'interdirait) :
+        // c'est un dépouillement SILENCIEUX et TOTAL — la désérialisation d'une
+        // donnée corrompue ne throw JAMAIS.
+        extra = _sanitizeExtra(extra);
 
   /// Identifiant opaque de la carte (non-null).
   final String id;
@@ -75,6 +80,37 @@ class ZMindmap with ZExtensible {
   /// (solde la dette DW-ES13-1). Si `ZSyncMeta` gagne une clé réservée, ce site
   /// la reprend automatiquement — plus de dérive silencieuse possible.
   static const Set<String> _reservedSyncKeys = ZSyncMeta.reservedKeys;
+
+  /// Ensemble **RÉSERVÉ** complet de l'entité = clés **connues** ∪ clés de
+  /// **sync** — l'argument de la garde partagée [_sanitizeExtra].
+  ///
+  /// ⚠️ Cette entité n'a **ni `$Z…FieldSpecs`** (pas de `@ZcrudModel`) **ni**
+  /// `_reservedKeys` : son ensemble réservé se **compose** de [_knownKeys] et de
+  /// [_reservedSyncKeys]. Patron **adapté**, pas recopié.
+  static const Set<String> _reservedKeys = <String>{
+    ..._knownKeys,
+    ..._reservedSyncKeys,
+  };
+
+  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par
+  /// [fromJson] (via l'initializer du constructeur) **ET** par [toJson].
+  ///
+  /// ⚠️ **DEUX sites, et pas de `copyWith`** : cette entité n'expose **aucun**
+  /// `copyWith` public (la mutation passe EXCLUSIVEMENT par `ZMindmapTreeOps`).
+  /// Sa voie d'écriture publique de `extra` est donc le **CONSTRUCTEUR NOMINAL**
+  /// — qui, lui, est **non-`const`** et **PEUT** filtrer dans son initializer.
+  ///
+  /// ⛔ Mais l'initializer **ne suffit pas** à porter la promesse : c'est [toJson],
+  /// **frontière de SORTIE**, qui la rend **INCONDITIONNELLE**. **MESURÉ** avant
+  /// correctif : `ZMindmap(…, extra: {updated_at: …, is_deleted: true}).toJson()`
+  /// réémettait les DEUX clés — en **contradiction directe** avec sa propre
+  /// dartdoc (« INVARIANT AD-16 : n'écrit NI `updated_at` NI `is_deleted` »).
+  ///
+  /// 🔴 **Aggravant, propre à cette entité** : son [toJson] étale `...extra` **EN
+  /// DERNIER** (l'inverse des entités codegen) ⇒ un `extra` pollué **ÉCRASAIT**
+  /// jusqu'aux clés connues. La garde couvre les deux (`_knownKeys` ∪ sync).
+  static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
+      zSanitizeExtra(raw, _reservedKeys);
 
   /// Désérialisation **défensive** (AD-10) : ne **throw JAMAIS**.
   ///
@@ -142,6 +178,13 @@ class ZMindmap with ZExtensible {
         if (description != null) 'description': description,
         'nodes': nodes.map((n) => n.toJson()).toList(),
         if (extension != null) 'extension': extension!.toJson(),
+        // 🔴 ES-2.2b (remédiation HIGH-1) — étale [extra] **tel quel** : le
+        // constructeur (NON-`const`) l'a déjà dépouillé, et c'est la SEULE voie
+        // d'écriture publique de cette entité (aucun `copyWith` : la mutation
+        // passe par TreeOps). Un `_sanitizeExtra(extra)` ICI serait **DÉCORATIF**
+        // — MESURÉ (code-review ES-2.2b, INJ-B) : le retirer laissait le gate
+        // **VERT**. La garde vit dans l'initializer du constructeur ; l'en retirer
+        // rend (i.1a)/(i.1c) ROUGES.
         ...extra,
       };
 }

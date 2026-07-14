@@ -4,10 +4,13 @@
 //
 // Pur-Dart (`dart test`) : le fixture importe `edition.dart` (surface pure), pas
 // le barrel principal (Flutter via présentation E2-7).
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:zcrud_core/edition.dart';
 
 import 'models/article.dart';
+import 'models/extensible_probe.dart';
 
 Article _sample() => Article(
       id: 'a1',
@@ -250,6 +253,125 @@ void main() {
       registerArticle(registry);
       expect(() => registry.codecFor('inconnu'),
           throwsA(isA<ZUnregisteredTypeError>()));
+    });
+
+    // AC1 (DW-ES14-1) : le registrar RÉELLEMENT ÉMIS SUR DISQUE par build_runner
+    // câble la factory de DOMAINE — celle qui peuple les canaux hors-codegen
+    // (`extra` AD-4, `extension`, `source`) — et NON `_$XxxFromMap` (codegen),
+    // qui les détruisait sur la voie `registry.decode`.
+    test('registrar généré : `fromMap: Xxx.fromMap` (domaine), PAS `_\$XxxFromMap`',
+        () {
+      final generated = File('test/models/article.g.dart').readAsStringSync();
+      expect(generated, contains('fromMap: Article.fromMap,'));
+      expect(generated, contains('fromMap: Author.fromMap,'));
+      expect(generated, isNot(contains(r'fromMap: _$ArticleFromMap,')));
+      expect(generated, isNot(contains(r'fromMap: _$AuthorFromMap,')));
+      // Non-régression : `toMap`/`fieldSpecs` INCHANGÉS.
+      expect(generated, contains('toMap: (value) => value.toMap(),'));
+      expect(generated, contains(r'fieldSpecs: $ArticleFieldSpecs,'));
+      // `_$XxxFromMap` reste ÉMIS (la factory de domaine le consomme, et les
+      // sous-modèles en dépendent) : on ne l'a pas supprimé, on ne le CÂBLE plus.
+      expect(generated, contains(r'Article _$ArticleFromMap('));
+    });
+  });
+
+  // =========================================================================
+  // 🔴 H1 (code-review ES-2.0) — GARDE EXÉCUTOIRE DW-ES14-1 : le registrar émis
+  // pour une classe `ZExtensible` OBSERVE le POUVOIR de sa factory de domaine.
+  //
+  // Le contrat de BUILD ne juge qu'une FORME (signature + refus de la délégation
+  // nue). `ProbeDropper` est précisément la factory impotente qu'il NE PEUT PAS
+  // voir (corps ré-écrit à la main, `extra:` omis) : le build la laisse passer —
+  // **c'est voulu**, sinon cette fixture prouverait la mauvaise règle (R2).
+  // SEUL le garde runtime peut la faire rougir.
+  //
+  // C'est aussi le SEUL filet qui suive les packages PUBLIÉS : un consommateur
+  // externe (DODLP, lex_douane) a le générateur mais PAS `reserved_keys_gate`.
+  // =========================================================================
+  group('H1 — garde runtime DW-ES14-1 : `extra` préservé, OBSERVÉ (pas présumé)',
+      () {
+    test('TÉMOIN : `ProbeKeeper` (conforme sur les 2 jambes) → register PASSE',
+        () {
+      final registry = ZcrudRegistry();
+      expect(() => registerProbeKeeper(registry), returnsNormally);
+
+      // …et le pouvoir est RÉEL : la clé hors-schéma survit au round-trip
+      // REGISTRE de bout en bout (c'est la garantie centrale d'ES-2.0).
+      final decoded = registry.decode(
+        'probe_keeper',
+        <String, dynamic>{'title': 't', 'zz_cle_inconnue': 'gardee'},
+      );
+      expect((decoded as ProbeKeeper).extra['zz_cle_inconnue'], 'gardee');
+      expect(
+        registry.encode('probe_keeper', decoded)['zz_cle_inconnue'],
+        'gardee',
+      );
+    });
+
+    // R2 — une fixture PAR JAMBE : chacune est conforme sur l'AUTRE jambe, donc
+    // seule la jambe visée peut la faire rougir.
+    test('MORD (jambe ENTRÉE) : `ProbeDropper` — `fromMap` laisse `extra` vide',
+        () {
+      final registry = ZcrudRegistry();
+      expect(
+        () => registerProbeDropper(registry),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('DW-ES14-1'),
+              contains('ProbeDropper'),
+              contains('NE PEUPLE PAS `extra`'),
+              contains('DÉCODAGE'),
+            ),
+          ),
+        ),
+        reason: 'une factory de domaine qui laisse `extra` vide DOIT être '
+            'refusée à l\'enregistrement : sinon `registry.decode` effacerait '
+            'silencieusement toute clé métier hors-schéma (DW-ES14-1).',
+      );
+    });
+
+    test('MORD (jambe SORTIE) : `ProbeEncodeDropper` — `toMap` n\'étale pas `extra`',
+        () {
+      final registry = ZcrudRegistry();
+      expect(
+        () => registerProbeEncodeDropper(registry),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('DW-ES14-1'),
+              contains('ProbeEncodeDropper'),
+              contains('NE LE RÉÉMET PAS'),
+              contains('ENCODAGE'),
+            ),
+          ),
+        ),
+        reason: 'décoder `extra` correctement ne sert à RIEN si `toMap()` ne le '
+            'réémet pas : le cycle lecture → écriture reste destructeur. Le '
+            '`toMap()` GÉNÉRÉ n\'étale pas `extra` — une entité `ZExtensible` '
+            'qui ne déclare pas le sien tombe exactement dans ce piège.',
+      );
+    });
+
+    test('le garde n\'est émis QUE pour les classes `ZExtensible`', () {
+      final probes = File('test/models/extensible_probe.g.dart').readAsStringSync();
+      final article = File('test/models/article.g.dart').readAsStringSync();
+      // Les 3 sondes sont `ZExtensible` → l'APPEL du garde est émis.
+      expect(probes, contains(r'_$zRequireExtraPreserved<ProbeKeeper>'));
+      expect(probes, contains(r'_$zRequireExtraPreserved<ProbeDropper>'));
+      expect(probes, contains(r'_$zRequireExtraPreserved<ProbeEncodeDropper>'));
+      // `Article`/`Author` n'ont aucun slot `extra` → AUCUN APPEL du garde (il
+      // n'aurait rien à observer, et `value.extra` ne compilerait même pas).
+      //
+      // ⚠️ La DÉCLARATION du helper, elle, vit dans le fragment `_sharedHelpers`
+      // et est émise dans toute bibliothèque (dédup. source_gen) : c'est l'APPEL
+      // — le câblage réel — qui est conditionné, pas le texte du helper.
+      expect(article, isNot(contains(r'_$zRequireExtraPreserved<Article>')));
+      expect(article, isNot(contains(r'_$zRequireExtraPreserved<Author>')));
     });
   });
 
