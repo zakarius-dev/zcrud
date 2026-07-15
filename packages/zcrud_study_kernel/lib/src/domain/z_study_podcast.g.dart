@@ -269,6 +269,12 @@ void registerZStudyPodcast(ZcrudRegistry registry) {
     fromMap: ZStudyPodcast.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZStudyPodcastFieldSpecs,
+    fromMapWithContext: (map, context) => ZStudyPodcast.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('study_podcast', json),
+    ),
   );
 }
 

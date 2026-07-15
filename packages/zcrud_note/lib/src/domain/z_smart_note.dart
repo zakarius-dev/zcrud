@@ -124,15 +124,18 @@ class ZSmartNote extends ZEntity with ZExtensible {
     this.folderId = '',
     this.subFolderId,
     this.title = '',
-    this.content = kEmptyNoteContent,
+    List<Map<String, dynamic>> content = kEmptyNoteContent,
     this.createdAt,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
     // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
-    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
-    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or les slots bruts
+    // DOIVENT rester privés — ce sont les ACCESSEURS qui portent les gardes (le
+    // `extra` normalisant ES-2.2b, la vue immuable PROFONDE `content` DW-ES24-1).
     // ignore: prefer_initializing_formals
-  }) : _extra = extra;
+  })  : _content = content,
+        // ignore: prefer_initializing_formals
+        _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10) — **aucun cas
   /// ne throw**, pas même `ZSmartNote.fromMap(const <String, dynamic>{})`.
@@ -210,7 +213,17 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// (**ES-6.1**) ajoutera son `ZMarkdownField` **explicitement**, câblé sur
   /// `note.content` — **sans conversion** (la valeur neutre de `ZCodec` **EST** ce
   /// type).
-  final List<Map<String, dynamic>> content;
+  ///
+  /// 🔴 **NON MODIFIABLE en PROFONDEUR INCONDITIONNELLEMENT** (DW-ES24-1) :
+  /// l'accesseur rend une vue `unmodifiable` de la liste, de **chaque op** ET de
+  /// ses valeurs imbriquées — muter l'une d'elles lève `UnsupportedError`, **même**
+  /// sur une instance née du ctor `const` invoqué non-`const`. Le slot STOCKÉ
+  /// [_content] reste BRUT (le ctor `const` l'exige).
+  List<Map<String, dynamic>> get content => zUnmodifiableJsonMapList(_content);
+
+  /// Slot **BRUT tel que reçu par le constructeur** — lu **NULLE PART** ailleurs
+  /// que dans l'accesseur [content] (le ctor `const` ne peut pas le filtrer).
+  final List<Map<String, dynamic>> _content;
 
   /// Date de création — clé `created_at`, **DISTINCTE** de toute clé réservée.
   ///

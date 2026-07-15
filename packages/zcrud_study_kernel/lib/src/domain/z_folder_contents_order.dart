@@ -136,14 +136,18 @@ class ZFolderContentsOrder with ZExtensible {
   /// `ZDocumentLearningInfo`.
   const ZFolderContentsOrder({
     this.folderId = '',
-    this.sectionOrders = const <String, List<String>>{},
+    Map<String, List<String>> sectionOrders = const <String, List<String>>{},
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
     // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
-    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
-    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or les slots bruts
+    // DOIVENT rester privés — ce sont les ACCESSEURS qui portent les gardes (le
+    // `extra` normalisant ES-2.2b, la vue immuable PROFONDE `sectionOrders`
+    // DW-ES24-1).
     // ignore: prefer_initializing_formals
-  }) : _extra = extra;
+  })  : _sectionOrders = sectionOrders,
+        // ignore: prefer_initializing_formals
+        _extra = extra;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10) — **ne throw
   /// JAMAIS**, pas même `ZFolderContentsOrder.fromMap(const {})`.
@@ -181,12 +185,19 @@ class ZFolderContentsOrder with ZExtensible {
   /// `ZDocumentReadingState.learning`) : sa clé [kSectionOrdersKey] est
   /// **réservée**, il est décodé/réémis **à la main**. `sectionKey → [id, id, …]`.
   ///
-  /// 🔴 **NON MODIFIABLE en PROFONDEUR** (M3) dès lors qu'elle vient de [fromMap]/
-  /// [copyWith] : la map **ET chaque liste interne** sont `unmodifiable`. Une
-  /// mutation en place changerait le [hashCode] et perdrait l'instance dans son
-  /// propre `Set`. Une section absente ⇒ **aucun ordre** (items rendus dans leur
-  /// ordre d'entrée par [applyTo]).
-  final Map<String, List<String>> sectionOrders;
+  /// 🔴 **NON MODIFIABLE en PROFONDEUR INCONDITIONNELLEMENT** (DW-ES24-1) :
+  /// l'accesseur rend une vue `unmodifiable` de la map **ET de chaque liste
+  /// interne** — muter l'une ou l'autre lève `UnsupportedError`, **même** sur une
+  /// instance née du ctor `const` invoqué non-`const`. Sans quoi une mutation en
+  /// place changerait le [hashCode] et perdrait l'instance dans son propre `Set`.
+  /// Une section absente ⇒ **aucun ordre** (items rendus dans leur ordre d'entrée
+  /// par [applyTo]).
+  Map<String, List<String>> get sectionOrders =>
+      zUnmodifiableMapOfLists(_sectionOrders);
+
+  /// Slot **BRUT tel que reçu par le constructeur** — lu **NULLE PART** ailleurs
+  /// que dans l'accesseur [sectionOrders] (le ctor `const` ne peut pas le filtrer).
+  final Map<String, List<String>> _sectionOrders;
 
   /// Slot type additif **versionné** (AD-4 pt.1), `null` si absent. Hors-codegen.
   @override
@@ -314,18 +325,19 @@ class ZFolderContentsOrder with ZExtensible {
       }
       // Clé de section **verbatim** (opaque, `''` toléré). PAS de dédoublonnage
       // (verbatim) — les doublons sont neutralisés à l'APPLICATION par applyOrder.
-      out['${entry.key}'] = List<String>.unmodifiable(ids);
+      out['${entry.key}'] = ids;
     }
-    return Map<String, List<String>>.unmodifiable(out);
+    // DW-ES24-1 : vue PROFONDE NON MODIFIABLE (idempotente ⇒ l'accesseur la rend
+    // TELLE QUELLE, zéro-copie sur le chemin chaud — AC14).
+    return zUnmodifiableMapOfLists(out);
   }
 
-  /// Garde M3 pour une map **déjà typée** (voie [copyWith]) : deep-copie en
-  /// **NON MODIFIABLE**, ids **verbatim**.
+  /// Garde M3 pour une map **déjà typée** (voie [copyWith]) : rend une vue
+  /// **PROFONDE NON MODIFIABLE** (map ET listes internes), ids **verbatim**.
   static Map<String, List<String>> _guardSectionOrders(
           Map<String, List<String>> raw) =>
-      Map<String, List<String>>.unmodifiable(<String, List<String>>{
-        for (final entry in raw.entries)
-          entry.key: List<String>.unmodifiable(entry.value),
+      zUnmodifiableMapOfLists(<String, List<String>>{
+        for (final entry in raw.entries) entry.key: <String>[...entry.value],
       });
 
   /// Encode le canal pour [toMap] : structure JSON **plate** (map de listes de

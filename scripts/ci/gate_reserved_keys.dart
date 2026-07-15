@@ -560,17 +560,27 @@ List<_Channel> _channelsOf(
         // Les DEUX slots AD-4 ont déjà leurs propres filets (assertions (a)/(b)/
         // (e), garde runtime `_$zRequireExtraPreserved`, verrou DW-ES14-2).
         if (name == 'extra' || name == 'extension') continue;
-        // 🔴 ES-2.2b : le CHAMP DE SUPPORT d'un slot AD-4 exposé par ACCESSEUR
-        // (`_extra` + `get extra`) n'est PAS un canal hors-codegen — il n'est
-        // JAMAIS persisté sous ce nom, et le slot qu'il porte a déjà ses filets.
-        // ⚠️ PORTÉE MINIMALE : ce n'est vrai QUE pour `_extra`/`_extension`
-        // ADOSSÉS à leur getter concret. **TOUT AUTRE champ privé reste un
-        // canal** (il peut parfaitement être réémis à la main par `toMap()`).
-        if ((name == '_extra' || name == '_extension') &&
-            concreteGetters.contains(name.substring(1))) {
-          continue;
-        }
-        final key = _snakeKey(name);
+        // 🔴 CHAMP DE SUPPORT D'UN ACCESSEUR (`final X _y; ... get y => …`).
+        //
+        // ES-2.2b a introduit ce patron pour `extra` (`_extra` + `get extra`) ;
+        // ES-3.0 (DW-ES24-1) le GÉNÉRALISE aux canaux hors-codegen exposés par un
+        // accesseur **immuabilisant** (`_content` + `get content`, `_sectionOrders`
+        // + `get sectionOrders`). La clé persistée d'un tel canal est celle de son
+        // **ACCESSEUR PUBLIC** (`content`/`section_orders`), JAMAIS du slot brut
+        // `_content`/`_section_orders` (qui n'est persisté sous aucun nom).
+        final backedPublic =
+            name.startsWith('_') && concreteGetters.contains(name.substring(1))
+                ? name.substring(1)
+                : null;
+        // Les slots AD-4 adossés à leur accesseur (`_extra`/`_extension`) ne sont
+        // PAS des canaux (g) — ils ont déjà leurs propres filets.
+        if (backedPublic == 'extra' || backedPublic == 'extension') continue;
+        // La clé du canal est dérivée de la surface PUBLIQUE (l'accesseur) quand
+        // le champ est un slot de support ; sinon du champ lui-même. **Un champ
+        // privé SANS accesseur concret reste un canal keyé sur `_x`** (il peut être
+        // réémis à la main par `toMap()`) — portée minimale préservée.
+        final channelName = backedPublic ?? name;
+        final key = _snakeKey(channelName);
         out.add(
           _Channel(
             className: _declName(d)!,

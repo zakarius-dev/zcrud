@@ -41,6 +41,8 @@
 /// **NON `ZExtensible`** : ce n'est pas un point d'extension (AD-4).
 library;
 
+import 'package:zcrud_core/domain.dart';
+
 import 'z_review_mode.dart';
 
 /// Résultat d'UNE session d'étude — value-object immuable (D1).
@@ -56,12 +58,17 @@ class ZStudySessionResult {
   /// portée par la frontière [fromMap] (la seule qui reçoit des valeurs BRUTES
   /// du corpus persisté). Un appelant qui passe une `Map` mutable en mémoire
   /// obtient un VO qui la référence — c'est **son** invariant à tenir.
+  ///
+  /// 🔴 **DW-ES24-1 (ES-3.0)** : le slot STOCKÉ [_byQuality] reste **BRUT** (ctor
+  /// `const` : ne filtre RIEN, AD-10 y interdit l'`assert`) ; c'est l'**ACCESSEUR**
+  /// [byQuality] qui rend une vue **NON MODIFIABLE INCONDITIONNELLEMENT**.
   const ZStudySessionResult({
     this.mode = ZReviewMode.spaced,
     this.total = 0,
     this.correct = 0,
-    this.byQuality = const <String, int>{},
-  });
+    Map<String, int> byQuality = const <String, int>{},
+    // ignore: prefer_initializing_formals
+  }) : _byQuality = byQuality;
 
   /// Reconstruit **défensivement** depuis une map persistée (AD-10, D6) — **ne
   /// throw JAMAIS**, pas même `ZStudySessionResult.fromMap(const {})`.
@@ -93,10 +100,16 @@ class ZStudySessionResult {
 
   /// Répartition `qualité SM-2 → compte` (défaut `const {}`).
   ///
-  /// 🔴 Rendu **NON MODIFIABLE** dès lors qu'il vient de [fromMap] : une
-  /// mutation en place changerait le [hashCode] et perdrait l'instance dans son
-  /// propre `Set`. Clés **opaques** (verbatim, ex. `"0".."5"`).
-  final Map<String, int> byQuality;
+  /// 🔴 Rendu **NON MODIFIABLE INCONDITIONNELLEMENT** (DW-ES24-1) : l'accesseur
+  /// rend une vue `unmodifiable` du slot brut — muter en place lève
+  /// `UnsupportedError`, **même** sur une instance née du ctor `const` invoqué
+  /// non-`const`. Sans quoi le [hashCode] changerait et l'instance se perdrait
+  /// dans son propre `Set`. Clés **opaques** (verbatim, ex. `"0".."5"`).
+  Map<String, int> get byQuality => zUnmodifiableScalarMap(_byQuality);
+
+  /// Slot **BRUT tel que reçu par le constructeur** — lu **NULLE PART** ailleurs
+  /// que dans l'accesseur [byQuality] (le ctor `const` ne peut pas le filtrer).
+  final Map<String, int> _byQuality;
 
   /// Sérialise vers la map persistée (snake_case, `mode` en camelCase `name`).
   ///
@@ -149,7 +162,8 @@ class ZStudySessionResult {
       // Niveau 2 : valeur non-`int` ⇒ paire ignorée (clé opaque verbatim).
       if (value is int) out['${entry.key}'] = value;
     }
-    return Map<String, int>.unmodifiable(out);
+    // DW-ES24-1 : vue NON MODIFIABLE (idempotente ⇒ accesseur zéro-copie, AC14).
+    return zUnmodifiableScalarMap(out);
   }
 
   // ---------------------------------------------------------------------------

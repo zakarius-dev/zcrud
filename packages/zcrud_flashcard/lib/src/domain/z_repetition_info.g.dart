@@ -267,6 +267,12 @@ void registerZRepetitionInfo(ZcrudRegistry registry) {
     fromMap: ZRepetitionInfo.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZRepetitionInfoFieldSpecs,
+    fromMapWithContext: (map, context) => ZRepetitionInfo.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('repetition_info', json),
+    ),
   );
 }
 

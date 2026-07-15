@@ -826,8 +826,14 @@ const Set<String> kNoValueEqualityProbes = <String>{
 };
 
 /// Construit un [ZcrudRegistry] peuplé par **tous** les [kRegistrars].
-ZcrudRegistry buildRegistry() {
-  final registry = ZcrudRegistry();
+///
+/// [decodeContext] (DW-ES14-2, ES-3.0) est **optionnel** : `null` ⇒ voie
+/// historique (slot `extension` non typé / provenance non résolue), utilisée par
+/// le gros des assertions (a)-(i) qui ne touchent PAS au typage de `extension`.
+/// Fourni ⇒ le registre thread le contexte (résolution typée) — voie prouvée par
+/// le groupe « DW-ES14-2 » inversé et le groupe « H2 — canal `source` ».
+ZcrudRegistry buildRegistry({ZDecodeContext? decodeContext}) {
+  final registry = ZcrudRegistry(decodeContext: decodeContext);
   for (final register in kRegistrars) {
     register(registry);
   }

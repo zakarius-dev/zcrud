@@ -221,6 +221,12 @@ void registerZFlashcardTag(ZcrudRegistry registry) {
     fromMap: ZFlashcardTag.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZFlashcardTagFieldSpecs,
+    fromMapWithContext: (map, context) => ZFlashcardTag.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('flashcard_tag', json),
+    ),
   );
 }
 

@@ -25,6 +25,8 @@
 /// Pur Dart — aucune dépendance Flutter/Firebase/Hive (NFR-S3/SM-S5).
 library;
 
+import 'package:zcrud_core/domain.dart';
+
 import 'z_doc_page_quality.dart';
 
 /// Clé persistée de la map d'apprentissage (snake_case, imbriquée sous `learning`).
@@ -54,7 +56,16 @@ class ZDocumentLearningInfo {
   /// **frontières réelles**, et **à TOUTES** : [fromJson]/[fromJsonSafe]
   /// (désérialisation — la seule voie par laquelle une donnée corrompue peut
   /// entrer), [mark] **et** [copyWith] (mutation applicative). Cf. `_guard`.
-  const ZDocumentLearningInfo({this.qualityByPage = const <int, int>{}});
+  ///
+  /// 🔴 **DW-ES24-1 (ES-3.0)** : le slot STOCKÉ [_qualityByPage] reste **BRUT**
+  /// (le ctor `const` ne peut RIEN filtrer, AD-10 y interdit l'`assert`) ; c'est
+  /// l'**ACCESSEUR** [qualityByPage] qui rend une vue **NON MODIFIABLE**
+  /// (`zUnmodifiableScalarMap`) — **INCONDITIONNELLEMENT**, y compris quand ce ctor
+  /// `const` est invoqué non-`const` avec une réf mutable retenue.
+  const ZDocumentLearningInfo({
+    Map<int, int> qualityByPage = const <int, int>{},
+    // ignore: prefer_initializing_formals
+  }) : _qualityByPage = qualityByPage;
 
   /// État vide (aucune page évaluée) — **défaut sûr** de toute dégénérescence.
   static const ZDocumentLearningInfo empty = ZDocumentLearningInfo();
@@ -134,7 +145,9 @@ class ZDocumentLearningInfo {
   /// La garde vit donc à **TOUTES** les frontières qui construisent une map :
   /// [fromJson], [mark] et [copyWith] — plus seulement à la désérialisation.
   static Map<int, int> _guard(Map<int, int> raw) =>
-      Map<int, int>.unmodifiable(<int, int>{
+      // DW-ES24-1 : vue NON MODIFIABLE (idempotente ⇒ l'accesseur la rend TELLE
+      // QUELLE, zéro-copie sur le chemin chaud fromJson/mark/copyWith — AC14).
+      zUnmodifiableScalarMap(<int, int>{
         for (final e in raw.entries)
           if (e.key >= 1) e.key: e.value,
       });
@@ -160,11 +173,16 @@ class ZDocumentLearningInfo {
 
   /// Qualité par page **1-based** (page absente ⇒ [ZDocPageQuality.toReview]).
   ///
-  /// 🔴 **NON MODIFIABLE** dès lors qu'elle vient de [fromJson]/[mark]/[copyWith]
-  /// (M3) — cohérence avec `extra`, `unmodifiable` sur les deux `ZExtensible` du
-  /// package. Une mutation en place changerait le [hashCode] (une **somme**) et
-  /// **perdrait l'instance dans son propre `Set`**.
-  final Map<int, int> qualityByPage;
+  /// 🔴 **NON MODIFIABLE INCONDITIONNELLEMENT** (DW-ES24-1) : l'accesseur rend une
+  /// vue `unmodifiable` du slot brut — une mutation en place lève `UnsupportedError`,
+  /// **même** sur une instance née du ctor `const` invoqué non-`const`. Sans quoi
+  /// elle changerait le [hashCode] (une **somme**) et **perdrait l'instance dans
+  /// son propre `Set`**.
+  Map<int, int> get qualityByPage => zUnmodifiableScalarMap(_qualityByPage);
+
+  /// Slot **BRUT tel que reçu par le constructeur** — lu **NULLE PART** ailleurs
+  /// que dans l'accesseur [qualityByPage] (le ctor `const` ne peut pas le filtrer).
+  final Map<int, int> _qualityByPage;
 
   /// Nombre de pages maîtrisées (qualité `>= mastered`).
   int get masteredCount => qualityByPage.values

@@ -243,6 +243,12 @@ void registerZStudySessionConfig(ZcrudRegistry registry) {
     fromMap: ZStudySessionConfig.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZStudySessionConfigFieldSpecs,
+    fromMapWithContext: (map, context) => ZStudySessionConfig.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('study_session_config', json),
+    ),
   );
 }
 

@@ -169,10 +169,14 @@ Map<String, dynamic> _textOp(String raw) => <String, dynamic>{
 
 /// Gèle une liste d'ops (**L1** — même contrat pour une note vide et une note
 /// pleine ; cohérent avec `_extraFrom`, qui rend une `Map.unmodifiable`).
+///
+/// 🔴 **DW-ES24-1 (ES-3.0)** : gel **PROFOND** (liste + chaque op + valeurs
+/// imbriquées) via [zUnmodifiableJsonMapList] — et non plus seulement la liste
+/// extérieure (`List.unmodifiable`, qui laissait les op maps mutables). Idempotent
+/// ⇒ l'accesseur `ZSmartNote.content` le rend TEL QUEL (zéro-copie sur le chemin
+/// chaud fromMap/copyWith — AC14).
 List<Map<String, dynamic>> _freeze(List<Map<String, dynamic>> ops) =>
-    ops.isEmpty
-        ? kEmptyNoteContent
-        : List<Map<String, dynamic>>.unmodifiable(ops);
+    ops.isEmpty ? kEmptyNoteContent : zUnmodifiableJsonMapList(ops);
 
 /// 🔴 **STRICTE (tout-ou-rien)** — sert **UNIQUEMENT** à *décider* si une `String`
 /// décodée en JSON **EST** un Delta. Rend `null` dès qu'**un seul** élément n'est

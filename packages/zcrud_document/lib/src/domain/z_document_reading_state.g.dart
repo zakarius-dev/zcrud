@@ -238,6 +238,12 @@ void registerZDocumentReadingState(ZcrudRegistry registry) {
     fromMap: ZDocumentReadingState.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZDocumentReadingStateFieldSpecs,
+    fromMapWithContext: (map, context) => ZDocumentReadingState.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('document_reading_state', json),
+    ),
   );
 }
 

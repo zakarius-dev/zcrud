@@ -314,6 +314,15 @@ void registerZFlashcard(ZcrudRegistry registry) {
     fromMap: ZFlashcard.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZFlashcardFieldSpecs,
+    fromMapWithContext: (map, context) => ZFlashcard.fromMap(
+      map,
+      sourceRegistry: context?.sourceRegistry,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('flashcard', json),
+    ),
+    toMapWithContext: (value, context) =>
+        value.toMap(sourceRegistry: context?.sourceRegistry),
   );
 }
 

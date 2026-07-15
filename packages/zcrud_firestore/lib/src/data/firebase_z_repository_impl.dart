@@ -128,136 +128,56 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// (ex. `ZModelAdapter.fromMapSafe`) peut être fourni pour une tolérance
   /// portée par le modèle.
   ///
+  ///
   /// ---
   ///
-  /// # ✅ DW-ES14-1 **SOLDÉE** (ES-2.0) — `extra` est désormais PRÉSERVÉ
+  /// # ✅ DW-ES14-2 SOLDÉE (ES-3.0) — la voie registre TYPE `extension`/`source`
   ///
-  /// Le registrar généré câble maintenant **`fromMap: ZXxx.fromMap`** — la factory
-  /// de **DOMAINE**, qui peuple les canaux **hors-codegen** — au lieu de
-  /// `_$ZXxxFromMap` (factory du codegen, aveugle à ces canaux). Contrat **vérifié
-  /// par le générateur** (échec de build explicite si la factory manque) et
-  /// **gardé par machine** : assertion **(e)** du volet (A) de `gate:reserved-keys`
-  /// (round-trip `registry.decode → registry.encode` préservant une clé inconnue,
-  /// pour chaque kind `ZExtensible`).
+  /// `fromRegistry` est la **voie recommandée**. Depuis ES-3.0, le [ZcrudRegistry]
+  /// porte un `ZDecodeContext` (câblé au bootstrap) que `registry.decode`/`.encode`
+  /// **thread** aux `fromMap`/`toMap` d'entité extensible. La voie registre
+  /// **résout donc désormais** :
   ///
-  /// État RÉEL de la voie registre, canal par canal — **chaque ligne est OBSERVÉE
-  /// PAR UNE MACHINE**, aucune n'est une promesse (H2, code-review ES-2.0 : la v1
-  /// de ce tableau affirmait « `source` ✅ PRÉSERVÉ … intégralement préservé »
-  /// alors que **rien** ne l'observait — la sonde `flashcard` ne portait aucune
-  /// clé `source` — et que l'affirmation était **partiellement FAUSSE**) :
+  /// - le slot `extension` **TYPÉ** (`ZNoteAudio`…) via le résolveur du contexte
+  ///   (AD-4) — un `ZSmartNote` round-trippé par le registre revient
+  ///   `extension is ZNoteAudio`, plus un `ZOpaqueNoteExtension` opaque ;
+  /// - la provenance `source` via le `ZSourceRegistry` du contexte (AD-4 pt.3) —
+  ///   le codec de l'app est **appliqué**, plus court-circuité.
   ///
-  /// ```text
-  /// extra      -> ✅ PRÉSERVÉ   (ZXxx.fromMap peuple `extra` ; toMap() fait {...extra, …})
-  ///                             garde: assertion (e) de gate:reserved-keys
-  ///                             + garde runtime dans le registrar généré
-  /// source     -> ⚠️ PAYLOAD round-trippé BRUT, mais `ZSourceRegistry` NON APPLIQUÉ
-  ///                             le codec de l'app est IGNORÉ (cf. DW-ES14-2)
-  /// extension  -> ⛔ DÉTRUIT    (cf. DW-ES14-2)
-  /// ```
-  ///
-  /// # ⚠️⚠️ DW-ES14-2 — [ZcrudRegistry] N'OFFRE **AUCUN SLOT D'INJECTION**
-  ///
-  /// **Cause RACINE, unique, deux symptômes.** Les entités décodent leurs canaux
-  /// hors-codegen via des collaborateurs **injectables** —
-  /// `ZXxx.fromMap(map, extensionParser: …, sourceRegistry: …)`. Or [ZcrudRegistry]
-  /// n'offre **aucun slot** pour les fournir : le registre appelle
-  /// `ZXxx.fromMap(map)` **tout court**.
-  ///
-  /// ## Symptôme 1 — `extension` est **DÉTRUIT**
-  ///
-  /// `_decodeExtension(raw, null)` renvoie **`null`**. Et comme `'extension'` est
-  /// une clé **réservée** de chaque entité, elle n'atterrit pas non plus dans
-  /// `extra` : le payload est **perdu** (`toMap()` ne réémet `extension` que si
-  /// elle est non-`null`). Un store câblé ici **efface le slot `extension`** de
-  /// tout document qui en porte un, à chaque cycle lecture → écriture.
-  /// **Irréversible.**
-  ///
-  /// ## Symptôme 2 — `source` : le **codec de l'app est court-circuité**
-  ///
-  /// `ZFlashcardSource.fromJson(raw, registry: null)` ⇒ pour tout `kind` **custom
-  /// enregistré dans le `ZSourceRegistry` de l'app** (AD-4 pt.3), le branchement
-  /// `registry?.tryCodecFor(kind)` est `null` : on obtient un `ZCustomSource` dont
-  /// le payload est le **corps persisté BRUT**, **jamais passé au codec**. Le
-  /// contrat de `ZSourceRegistry` est rompu **en silence**.
-  ///
-  /// - Le round-trip **strictement** `fromRegistry` → `fromRegistry` reste **fidèle
-  ///   en persistance** (`decode` et `encode` sont symétriquement sans registry) —
-  ///   c'est le seul point que la v1 de cette dartdoc pouvait légitimement
-  ///   revendiquer. **Il est désormais épinglé par un test.**
-  /// - ⛔ Mais **MÉLANGER LES VOIES CORROMPT LES VALEURS.** MESURÉ (ES-2.0/H2) : une
-  ///   carte lue par `fromRegistry` puis réécrite par la voie **nominale** (celle
-  ///   que cette même dartdoc recommande !) passe `codec.toJson(payloadBrut)` sur
-  ///   un payload **jamais décodé** — le codec y cherche ses clés normalisées, ne
-  ///   les trouve pas, et écrit **`null`** :
-  ///
-  ///   ```text
-  ///   persisté  {kind: article, article_id: 'A-42', chapitre: 3}
-  ///   réécrit   {kind: article, article_id: null,   chapitre: null}   ⛔ PERTE
-  ///   ```
-  ///
-  ///   Ce n'est pas une « double transformation » bénigne : c'est une **perte de
-  ///   données réelle**, sur un chemin que la documentation autorisait.
-  ///
-  /// # Quand utiliser `fromRegistry` malgré tout
-  ///
-  /// Si — et seulement si — **les trois** conditions tiennent :
-  ///   1. 🔴 **CLAUSE TOMBÉE (ES-2.2 — ne plus s'y fier).** Elle disait : *« si
-  ///      l'entité **n'utilise pas** le slot `extension` »*. Cette condition était
-  ///      **vérifiable en théorie tant qu'AUCUNE `ZExtension` concrète n'existait
-  ///      dans le repo** — ce n'est **PLUS le cas** : **`ZNoteAudio`**
-  ///      (`zcrud_note`, ES-2.2) est la **première** `ZExtension` concrète, portée
-  ///      par une entité **LIVRÉE** (`ZSmartNote`). La dette **DW-ES14-2** n'est
-  ///      donc plus théorique, et cette clause **n'autorise plus rien** : sur la
-  ///      voie registre, **AUCUN `extensionParser` n'est injectable** ⇒ le slot
-  ///      n'est **JAMAIS TYPÉ**, pour **aucun** kind.
-  ///
-  ///      **Ce qui varie n'est pas le typage, c'est le SORT DE LA DONNÉE :**
-  ///
-  ///      | | payload d'`extension` non typé |
-  ///      |---|---|
-  ///      | entité ordinaire | ⛔ **DÉTRUIT** (`extension == null` ⇒ clé omise par `toMap()` ⇒ **effacé du store au premier `put`**) |
-  ///      | `ZSmartNote` | ✅ **PORTÉ VERBATIM** (`ZOpaqueNoteExtension`) et réémis **bit pour bit** |
-  ///
-  ///      ⇒ **Ne câblez PAS un store sur `fromRegistry` pour une entité qui
-  ///      utilise `extension`** tant que **DW-ES14-2** n'est pas soldée (slot
-  ///      d'injection dans `ZcrudRegistry`) — **story dédiée à ordonnancer AVANT
-  ///      ES-3.2/ES-3.5**. Les verrous du harnais `reserved_keys_gate` (groupe
-  ///      « DW-ES14-2 ») observent cet état en machine ; **et**
-  ///   2. l'app **n'enregistre aucun codec** dans un `ZSourceRegistry` (sinon il
-  ///      sera ignoré, cf. symptôme 2) ; **et**
-  ///   3. l'app **ne mélange pas** cette voie avec la voie nominale sur la même
-  ///      entité (sinon : corruption ci-dessus).
-  ///
-  /// Seule l'échappatoire `extra` (AD-4) est **inconditionnellement** préservée
-  /// — et, depuis **ES-2.2b**, elle l'est **sur TOUTES les voies d'écriture** :
-  /// aucune entité ne peut plus réémettre `updated_at`/`is_deleted` depuis son
-  /// corps (**DW-ES22-3**, assertion (i.1) du gate), et son `==` est **PROFOND**
-  /// (**DW-ES22-4**, assertion (i.2)) — sans quoi une entité relue du store était
-  /// dite DIFFÉRENTE de la même en mémoire dès qu'`extra` portait du JSON imbriqué.
-  ///
-  /// **Sinon**, utilisez le **constructeur nominal** en passant explicitement la
-  /// factory de domaine **avec ses collaborateurs** :
+  /// Le call-site est **INCHANGÉ** (`registry.decode(kind, map)`) : le contexte est
+  /// un **champ du registre**, pas un paramètre de `decode` (AD-10 additif, spike
+  /// R4 / AC10). Un `ZcrudRegistry()` **sans** contexte conserve le comportement
+  /// historique (slot non typé / payload porté verbatim par `ZOpaqueNoteExtension`
+  /// — jamais détruit, AD-10). Pour typer, câbler le contexte au bootstrap :
   ///
   /// ```dart
-  /// FirebaseZRepositoryImpl<ZStudyFolder>(
-  ///   firestore: firestore,
-  ///   collectionPath: path,
-  ///   kind: 'study_folder',
-  ///   fromMap: (m) => ZStudyFolder.fromMap(m, extensionParser: monParser), // ✅
-  ///   toMap: (v) => v.toMap(),
+  /// final registry = ZcrudRegistry(
+  ///   decodeContext: ZDecodeContext(
+  ///     extensionParser: (kind, json) =>
+  ///         kind == 'smart_note' ? ZNoteAudio.fromJsonSafe(json) : null,
+  ///     sourceRegistry: appSourceRegistry,
+  ///   ),
+  /// )..bootstrap();
+  /// final repo = FirebaseZRepositoryImpl<ZSmartNote>.fromRegistry(
+  ///   firestore: firestore, collectionPath: path, kind: 'smart_note',
+  ///   registry: registry,
   /// );
   /// ```
   ///
-  /// **Les DEUX symptômes sont ÉPINGLÉS PAR DES TESTS** (verrous d'honnêteté,
-  /// `tool/reserved_keys_gate/test/reserved_keys_test.dart` › groupes `DW-ES14-2`
-  /// et « H2 — canal `source` ») : le comportement réel est figé en machine — la
-  /// dette ne peut ni empirer en silence, ni être oubliée. **À solder AVANT
-  /// ES-3.2/ES-3.5** — le critère de clôture couvre **`extensionParser` ET
-  /// `sourceRegistry`** (un seul slot d'injection dans [ZcrudRegistry] les porte
-  /// tous les deux).
+  /// # Décodage DÉFENSIF préservé (AD-10)
   ///
-  /// Réf. : `architecture.md` § AD-19.1.c et § Deferred › DETTES OUVERTES
-  /// (DW-ES14-2) ; `tool/reserved_keys_gate/` (assertion **(e)**).
+  /// La voie stricte `decode`/`encode` reste enveloppée localement (un
+  /// `fromMapSafe` explicite peut être fourni). Le contexte **absorbe** toute
+  /// exception d'un parser d'app (`ZExtension.guard`) : un `extension` corrompu ou
+  /// de version future retombe sur `ZOpaqueNoteExtension`/`null`, **jamais** un
+  /// throw, **jamais** une destruction.
+  ///
+  /// L'échappatoire `extra` (AD-4) reste **inconditionnellement** préservée sur
+  /// **TOUTES** les voies d'écriture (DW-ES22-3, assertion (i.1) du gate) avec un
+  /// `==` **profond** (DW-ES22-4, assertion (i.2)).
+  ///
+  /// Réf. : `architecture.md` § AD-19.1.c et § Deferred (DW-ES14-2 soldée) ;
+  /// `tool/reserved_keys_gate/` (assertion **(e)** + groupe « DW-ES14-2 » inversé).
   factory FirebaseZRepositoryImpl.fromRegistry({
     required FirebaseFirestore firestore,
     required String collectionPath,

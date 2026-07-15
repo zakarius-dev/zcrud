@@ -267,6 +267,12 @@ void registerZStudyDocument(ZcrudRegistry registry) {
     fromMap: ZStudyDocument.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZStudyDocumentFieldSpecs,
+    fromMapWithContext: (map, context) => ZStudyDocument.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('study_document', json),
+    ),
   );
 }
 

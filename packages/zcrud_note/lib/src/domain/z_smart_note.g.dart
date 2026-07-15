@@ -237,6 +237,12 @@ void registerZSmartNote(ZcrudRegistry registry) {
     fromMap: ZSmartNote.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZSmartNoteFieldSpecs,
+    fromMapWithContext: (map, context) => ZSmartNote.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('smart_note', json),
+    ),
   );
 }
 

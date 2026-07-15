@@ -59,6 +59,29 @@ const _extensibleChecker =
 /// entité conforme à AD-4 la fait donc **atterrir dans `extra`**.
 const _extraProbeKey = 'zz__zcrud_extra_probe__';
 
+/// **DW-ES14-2 (ES-3.0)** — présence des collaborateurs INJECTABLES qu'une entité
+/// accepte, détectée sur l'AST de ses paramètres nommés. Pilote l'émission des
+/// variantes `fromMapWithContext`/`toMapWithContext` du registrar.
+class _ContextShape {
+  const _ContextShape({
+    required this.fromMapExtensionParser,
+    required this.fromMapSourceRegistry,
+    required this.toMapSourceRegistry,
+  });
+
+  /// `fromMap` accepte un `extensionParser` nommé (slot `extension` typé, AD-4).
+  final bool fromMapExtensionParser;
+
+  /// `fromMap` accepte un `sourceRegistry` nommé (provenance ouverte, AD-4 pt.3).
+  final bool fromMapSourceRegistry;
+
+  /// `toMap` accepte un `sourceRegistry` nommé (ré-encodage de provenance).
+  final bool toMapSourceRegistry;
+
+  /// `true` si la factory de domaine consomme AU MOINS un collaborateur injectable.
+  bool get fromMapAny => fromMapExtensionParser || fromMapSourceRegistry;
+}
+
 /// Générateur du modèle `@ZcrudModel` (émission `part`).
 class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   /// Construit le générateur (`const`, sans état).
@@ -104,6 +127,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     // Contrat vérifié PAR MACHINE, jamais présumé (R1/R6).
     final isExtensible = _requireDomainFromMap(element, className);
 
+    // DW-ES14-2 (ES-3.0) : forme des collaborateurs INJECTABLES que la factory de
+    // domaine accepte (`extensionParser`/`sourceRegistry`). Le registrar thread le
+    // ZDecodeContext dans CES paramètres — plus jamais un tear-off nu qui les
+    // laisse `null`. Détecté sur l'AST des paramètres (jamais de regex — R5).
+    final ctxShape = _contextShapeOf(element);
+
     final buffer = StringBuffer()
       ..writeln(_emitFromMap(className, fields))
       ..writeln()
@@ -111,7 +140,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
-      ..writeln(_emitRegister(className, kind, extensible: isExtensible))
+      ..writeln(_emitRegister(className, kind,
+          extensible: isExtensible, ctx: ctxShape))
       ..writeln()
       ..writeln(_emitTimestampFields(className, fields));
 
@@ -199,6 +229,38 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     _requireCompatibleSignature(decoder, className);
     if (extensible) _rejectNakedCodegenDelegation(decoder, className);
     return extensible;
+  }
+
+  /// **DW-ES14-2 (ES-3.0)** — forme des collaborateurs INJECTABLES de l'entité.
+  ///
+  /// Inspecte l'AST des paramètres NOMMÉS (jamais de regex — R5) de la factory de
+  /// domaine `fromMap` (`extensionParser`/`sourceRegistry`) et de l'`operator`
+  /// d'instance `toMap` (`sourceRegistry`). Ces paramètres sont **optionnels** —
+  /// un tear-off nu les laisse `null`, ce qui DÉTRUIT le slot `extension` typé et
+  /// COURT-CIRCUITE le `ZSourceRegistry` de l'app sur la voie registre
+  /// (`registry.decode`). Le registrar émis les **thread** depuis le
+  /// `ZDecodeContext` injecté (AD-4, compose avec `ZTypeRegistry`/`ZSourceRegistry`).
+  _ContextShape _contextShapeOf(ClassElement element) {
+    final decoder = element.constructors
+            .where((c) => c.name == 'fromMap')
+            .cast<ExecutableElement?>()
+            .firstOrNull ??
+        element.methods
+            .where((m) => m.isStatic && m.name == 'fromMap')
+            .cast<ExecutableElement?>()
+            .firstOrNull;
+    final toMap = element.methods
+        .where((m) => !m.isStatic && m.name == 'toMap')
+        .cast<ExecutableElement?>()
+        .firstOrNull;
+    bool hasNamed(ExecutableElement? e, String name) =>
+        e != null &&
+        e.formalParameters.any((p) => p.isNamed && p.name == name);
+    return _ContextShape(
+      fromMapExtensionParser: hasNamed(decoder, 'extensionParser'),
+      fromMapSourceRegistry: hasNamed(decoder, 'sourceRegistry'),
+      toMapSourceRegistry: hasNamed(toMap, 'sourceRegistry'),
+    );
   }
 
   /// Le **geste correctif**, écrit dans la forme QUI MARCHE (H1 pt. 1).
@@ -693,6 +755,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     String className,
     String kind, {
     required bool extensible,
+    required _ContextShape ctx,
   }) {
     // ⚠️ `fromMap: $className.fromMap` — le décodeur de **DOMAINE** (DW-ES14-1) :
     // lui seul peuple les canaux HORS-codegen (`extra` AD-4, `source`), là où
@@ -704,11 +767,40 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final doc = '/// Enregistre `$className` (kind "$kind") sur [registry] : '
         '(dé)sérialisation + schéma.\n';
 
+    // 🔴 DW-ES14-2 (ES-3.0) — variantes CONSCIENTES DU CONTEXTE. Le tear-off nu
+    // `$className.fromMap` laisse `extensionParser`/`sourceRegistry` à `null` ⇒
+    // slot `extension` NON typé + `ZSourceRegistry` court-circuité sur la voie
+    // registre (la SEULE qu'un store emprunte). On thread donc le ZDecodeContext.
+    String contextArgs(String pad) {
+      final args = <String>[];
+      if (ctx.fromMapAny) {
+        final params = <String>[];
+        if (ctx.fromMapSourceRegistry) {
+          params.add('$pad      sourceRegistry: context?.sourceRegistry,');
+        }
+        if (ctx.fromMapExtensionParser) {
+          params.add('$pad      extensionParser: context?.extensionParser == null'
+              '\n$pad          ? null'
+              "\n$pad          : (json) => context!.extensionParser!('$kind', json),");
+        }
+        args.add('$pad  fromMapWithContext: (map, context) => '
+            '$className.fromMap(\n'
+            '$pad      map,\n'
+            '${params.join('\n')}\n'
+            '$pad  ),');
+      }
+      if (ctx.toMapSourceRegistry) {
+        args.add('$pad  toMapWithContext: (value, context) =>\n'
+            '$pad      value.toMap(sourceRegistry: context?.sourceRegistry),');
+      }
+      return args.isEmpty ? '' : '\n${args.join('\n')}';
+    }
+
     /// Arguments de `registry.register<T>(…)`, indentés de [pad] espaces.
     String registerArgs(String pad) => "$pad  '$kind',\n"
         '$pad  fromMap: $className.fromMap,\n'
         '$pad  toMap: (value) => value.toMap(),\n'
-        '$pad  fieldSpecs: \$${className}FieldSpecs,\n'
+        '$pad  fieldSpecs: \$${className}FieldSpecs,${contextArgs(pad)}\n'
         '$pad';
 
     if (!extensible) {

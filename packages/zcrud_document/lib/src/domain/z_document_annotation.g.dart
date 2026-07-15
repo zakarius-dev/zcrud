@@ -269,6 +269,12 @@ void registerZDocumentAnnotation(ZcrudRegistry registry) {
     fromMap: ZDocumentAnnotation.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZDocumentAnnotationFieldSpecs,
+    fromMapWithContext: (map, context) => ZDocumentAnnotation.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('document_annotation', json),
+    ),
   );
 }
 

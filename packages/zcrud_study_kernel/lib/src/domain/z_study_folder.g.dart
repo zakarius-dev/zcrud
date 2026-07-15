@@ -303,6 +303,12 @@ void registerZStudyFolder(ZcrudRegistry registry) {
     fromMap: ZStudyFolder.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZStudyFolderFieldSpecs,
+    fromMapWithContext: (map, context) => ZStudyFolder.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('study_folder', json),
+    ),
   );
 }
 

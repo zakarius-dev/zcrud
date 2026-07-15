@@ -248,6 +248,12 @@ void registerZExam(ZcrudRegistry registry) {
     fromMap: ZExam.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZExamFieldSpecs,
+    fromMapWithContext: (map, context) => ZExam.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('exam', json),
+    ),
   );
 }
 

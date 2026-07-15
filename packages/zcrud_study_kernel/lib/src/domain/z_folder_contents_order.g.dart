@@ -209,6 +209,12 @@ void registerZFolderContentsOrder(ZcrudRegistry registry) {
     fromMap: ZFolderContentsOrder.fromMap,
     toMap: (value) => value.toMap(),
     fieldSpecs: $ZFolderContentsOrderFieldSpecs,
+    fromMapWithContext: (map, context) => ZFolderContentsOrder.fromMap(
+      map,
+      extensionParser: context?.extensionParser == null
+          ? null
+          : (json) => context!.extensionParser!('folder_contents_order', json),
+    ),
   );
 }
 

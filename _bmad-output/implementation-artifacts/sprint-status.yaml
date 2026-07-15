@@ -269,6 +269,10 @@ development_status:
   #   OBLIGATOIRE EN TÊTE d'ES-3, AVANT tout store (ES-3.2/3.5). DW-ES25-1 : PROTOTYPER R4 tôt dans ES-3.
 
   # --- Dettes ouvertes portées par ES-2 (à solder avant les stories citées) ---
+  # ✅ DW-ES14-2 — SOLDÉE par ES-3.0 (ZDecodeContext injecté ; registre préserve extension TYPÉE +
+  #   sourceRegistry ; ZNoteAudio round-trippé revient typé, prouvé discriminant ; clause mensongère
+  #   firestore SUPPRIMÉE). ✅ DW-ES24-1 — SOLDÉE par ES-3.0 (immuabilité inconditionnelle uniforme
+  #   sur les 5 canaux via accesseur immuabilisant, const préservé). Descriptif historique conservé ci-dessous.
   # DW-ES14-2 (BLOQUANTE avant ES-3.2/3.5) — ⚠️ ESCALADÉE en ES-2.2 : sa clause d'échappement
   #   n°1 (« sauf si l'entité n'utilise pas le slot `extension` ») est FALSIFIÉE — `ZNoteAudio`
   #   est le 1er `ZExtension` concret du repo. `ZcrudRegistry` n'offre AUCUN slot d'injection :
@@ -315,7 +319,8 @@ development_status:
 
   # === ES-3 — Ports & couche data offline-first bi-topologie ===  Dépend de : ES-2.
   # Packages : zcrud_study_kernel (ports/registre), zcrud_firestore (adapters).
-  epic-es-3: backlog
+  epic-es-3: in-progress
+  es-3-0-registre-preserve-extension-immuabilite: done # [L/XL][TÊTE BLOQUANTE — SÉQ, écrit zcrud_core+generator+zcrud_firestore+9 .g.dart] DW-ES14-2 (ZcrudRegistry ne réinjecte NI extension NI sourceRegistry — extension DÉTRUITE sur la voie registre ; escape clause n°1 falsifiée par ZNoteAudio) + DW-ES24-1 (immuabilité PATRON des canaux Map/List). Verdict rétro ES-2 : OBLIGATOIRE avant tout store (ES-3.2/3.5).
   es-3-1-depot-etude-generique: backlog                 # [M][SÉQ — écrit kernel] ZStudyRepository<T>
   es-3-2-helper-offline-first-path-resolver: backlog    # [L][SÉQ — écrit zcrud_firestore] ZOfflineFirstBoxRepository + ZFirestorePathResolver
   es-3-3-cascade-suppression-declarative-bornee: backlog # [L][SÉQ — écrit kernel + zcrud_firestore] ZCascadeRegistry + ZFirestoreCascadeBatcher (≤450)

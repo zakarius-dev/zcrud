@@ -26,6 +26,7 @@ export 'src/data/adapters/z_model_adapter.dart';
 
 // Contrats de domaine (E2-1) + hiérarchie d'erreurs/`ZResult` (AD-11) + méta de
 // sync hors-entité (AD-16) + marqueur d'API. Ports & value objects (E2-2).
+export 'src/domain/collection/z_immutable_view.dart';
 export 'src/domain/contracts/z_entity.dart';
 export 'src/domain/contracts/z_node.dart';
 export 'src/domain/contracts/z_syncable.dart';
@@ -79,6 +80,7 @@ export 'src/domain/ports/z_syncable_repository.dart';
 // Registres ouverts d'extensibilité (E2-3, E3-3b, E9-1) : `ZTypeRegistry`,
 // `ZSourceRegistry`, `ZcrudRegistry`, `ZCodecRegistry`, erreurs de config.
 export 'src/domain/registry/z_codec_registry.dart';
+export 'src/domain/registry/z_decode_context.dart';
 export 'src/domain/registry/z_open_registry.dart';
 export 'src/domain/registry/z_registry_error.dart';
 export 'src/domain/registry/z_source_registry.dart';

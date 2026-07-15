@@ -7,6 +7,9 @@ import 'package:zcrud_core/zcrud_core.dart';
 // H2 — le canal `source` (`ZFlashcardSource`/`ZCustomSource`) n'est observable
 // que sur l'entité réelle qui le porte : `ZFlashcard`.
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
+// DW-ES14-2 (ES-3.0) — `ZNoteAudio` (première `ZExtension` concrète du repo) et
+// `ZSmartNote`/`ZOpaqueNoteExtension` : preuve DISCRIMINANTE du typage registre.
+import 'package:zcrud_note/zcrud_note.dart';
 
 /// Entité **volontairement fautive** (AC5 — contre-exemple mensonger PERMANENT).
 ///
@@ -1365,253 +1368,174 @@ void main() {
   });
 
   // =========================================================================
-  // VERROU DE DETTE — DW-ES14-2 (AC8).
+  // PREUVE POSITIVE — DW-ES14-2 SOLDÉE (ES-3.0, AC3/AC7).
+  //
+  // Le verrou d'honnêteté d'ES-2.0 (qui FIGEAIT la perte) est INVERSÉ : la voie
+  // registre TYPE désormais `extension` quand le ZDecodeContext câble un résolveur
+  // (AD-4). Les préconditions L2 sont CONSERVÉES (sinon faux signal de clôture).
+  // Un rouge provoqué (retrait du threading) fait retomber le slot opaque (R3).
   // =========================================================================
-  group(
-      'DW-ES14-2 — VERROU : la voie registre ne TYPE JAMAIS `extension` (et la '
-      'DÉTRUIT partout où l\'entité ne la préserve pas)', () {
-    /// Payload d'extension **valide en forme** (peu importe le contenu : sur la
-    /// voie registre, AUCUN parser n'est injectable ⇒ il n'est jamais lu).
-    const extensionPayload = <String, dynamic>{
+  group('DW-ES14-2 SOLDÉE — la voie registre TYPE `extension` via le contexte',
+      () {
+    // Payload d'un `ZNoteAudio` VALIDE (format_version géré) : round-trippé PAR
+    // LE REGISTRE avec un contexte, il doit revenir TYPÉ, pas opaque.
+    const audioPayload = <String, dynamic>{
       'format_version': 1,
-      'kind': 'zz_ext_test',
-      'body': <String, dynamic>{'k': 'v'},
+      'url': 'https://x/a.mp3',
+      'path': '/local/a.mp3',
+      'text_hash': 'h1',
     };
 
-    for (final kind in kProbeBodies.keys.where(
-      (k) => !kNonExtensibleKinds.contains(k),
-    )) {
-      test('$kind : le slot `extension` n\'est JAMAIS TYPÉ par le registre', () {
+    // Registre câblé AVEC un contexte qui résout le slot `extension` de
+    // `smart_note` en `ZNoteAudio` (AD-4) — la SEULE `ZExtension` concrète du repo.
+    ZcrudRegistry typedRegistry({bool thread = true}) => buildRegistry(
+          decodeContext: thread
+              ? ZDecodeContext(
+                  extensionParser: (kind, json) => kind == 'smart_note'
+                      ? ZNoteAudio.fromJsonSafe(json)
+                      : null,
+                )
+              : null,
+        );
+
+    test('smart_note : `extension` revient TYPÉ `ZNoteAudio` (DISCRIMINANT)', () {
+      final reg = typedRegistry();
+      final probe = <String, dynamic>{
+        ...buildProbe(kProbeBodies['smart_note']!),
+        'extension': audioPayload,
+      };
+      final entity = reg.decode('smart_note', probe) as ZSmartNote;
+
+      // 🟢 POSITIF : le slot est TYPÉ (plus un `ZOpaqueNoteExtension`). C'est la
+      // PREUVE à pouvoir discriminant : retirer le threading (test R3 ci-dessous)
+      // fait retomber ce même round-trip sur un opaque ⇒ `isA<ZNoteAudio>` rougit.
+      expect(entity.extension, isA<ZNoteAudio>(),
+          reason: 'DW-ES14-2 soldée : le contexte injecte '
+              'ZNoteAudio.fromJsonSafe sur la voie registre.');
+      final audio = entity.extension! as ZNoteAudio;
+      expect(audio.url, 'https://x/a.mp3');
+      expect(audio.path, '/local/a.mp3');
+      expect(audio.textHash, 'h1');
+
+      // Round-trip TYPÉ : le ré-encodage réémet le payload à l'identique.
+      final encoded = reg.encode('smart_note', entity);
+      expect(encoded['extension'], equals(audioPayload));
+
+      // 🟢 L2 CONSERVÉE (préconditions du verrou) : `extension` reste RÉSERVÉE —
+      // elle ne FUIT pas dans `extra` (sinon `is ZNoteAudio` serait un faux
+      // signal de clôture porté par une régression de `_reservedKeys`).
+      expect((entity as ZExtensible).extra.containsKey('extension'), isFalse);
+      // ANTI-AGGRAVATION : `extra` (DW-ES14-1) reste préservé au round-trip.
+      expect(encoded[kProbeUnknownKey], kProbeUnknownValue);
+    });
+
+    test('R3 — SANS threading, le round-trip RETOMBE opaque (rouge provoqué)',
+        () {
+      final reg = typedRegistry(thread: false); // injection NEUTRALISÉE
+      final probe = <String, dynamic>{
+        ...buildProbe(kProbeBodies['smart_note']!),
+        'extension': audioPayload,
+      };
+      final entity = reg.decode('smart_note', probe) as ZSmartNote;
+      // Sans contexte, le patron ES-2.2 porte le payload VERBATIM mais NON TYPÉ :
+      // c'est EXACTEMENT ce que le typage AC3 fait basculer.
+      expect(entity.extension, isNot(isA<ZNoteAudio>()));
+      expect(entity.extension, isA<ZOpaqueNoteExtension>());
+      expect(reg.encode('smart_note', entity)['extension'], equals(audioPayload));
+    });
+
+    test('AC1 — additif : les autres kinds extensibles restent INCHANGÉS', () {
+      // Un kind extensible SANS `ZExtension` concrète (flashcard, study_folder…)
+      // reste au comportement historique : le résolveur ne les type pas.
+      final reg = typedRegistry();
+      for (final kind in kProbeBodies.keys.where(
+        (k) => !kNonExtensibleKinds.contains(k) && k != 'smart_note',
+      )) {
         final probe = <String, dynamic>{
           ...buildProbe(kProbeBodies[kind]!),
-          'extension': extensionPayload,
+          'extension': audioPayload,
         };
-        final entity = registry.decode(kind, probe);
-        final encoded = registry.encode(kind, entity);
-
-        // ⛔ PERTE CONNUE ET DÉLIBÉRÉMENT NON CORRIGÉE PAR ES-2.0.
-        //
-        // CAUSE (racine, commune avec le canal `source` — cf. H2) : `ZcrudRegistry`
-        // n'offre AUCUN SLOT D'INJECTION. Les entités décodent leur slot
-        // `extension` via un `extensionParser` INJECTABLE — le registre appelle
-        // `ZXxx.fromMap(map)` SANS parser ⇒ `_decodeExtension(raw, null)` renvoie
-        // `null`. Et comme `'extension'` est une clé RÉSERVÉE de chaque entité,
-        // elle n'atterrit pas non plus dans `extra` : le payload est purement et
-        // simplement PERDU (`toMap()` ne réémet `extension` que si non-`null`).
-        //
-        // POURQUOI NON CORRIGÉE ICI : le correctif exige d'écrire soit
-        // `ZcrudRegistry` (`zcrud_core`), soit la sémantique des entités
-        // (`zcrud_study_kernel`) — les DEUX packages qu'ES-2.0 s'interdit d'écrire
-        // (condition de sa parallélisation avec ES-2.1/2.2/2.6).
-        //
-        // CE TEST EST UN VERROU D'HONNÊTETÉ : il rend la dette VISIBLE EN MACHINE
-        // (pas seulement en prose) et EMPÊCHE de croire la voie registre « sûre ».
-        //
-        // QUAND DW-ES14-2 SERA SOLDÉE (slot d'injection dans `ZcrudRegistry`, à
-        // faire AVANT ES-3.2/ES-3.5), CE TEST DOIT ÊTRE INVERSÉ : `isTrue` +
-        // assertion d'égalité du payload ré-encodé. Le voir rougir sera alors le
-        // SIGNAL du succès — ne pas le « réparer » en supprimant l'assertion.
-
-        // 🟢 L2 (code-review ES-2.0) — PRÉCONDITIONS DU VERROU : sans elles, ce
-        // verrou pourrait rougir pour une raison qui N'EST PAS la clôture de la
-        // dette, en annonçant un FAUX SIGNAL DE SUCCÈS.
-        //
-        // (i) `extension` doit rester une clé RÉSERVÉE. Si elle cessait de
-        //     l'être, elle tomberait dans `extra` et serait réémise via
-        //     `...extra` ⇒ `containsKey('extension')` deviendrait `true` et le
-        //     verrou ci-dessous crierait « la dette est soldée ! » alors que le
-        //     payload ne serait TOUJOURS PAS décodé en `ZExtension` typé.
-        expect(
-          (entity as ZExtensible).extra.containsKey('extension'),
-          isFalse,
-          reason: '[$kind] L2 : `extension` n\'est PLUS une clé réservée de '
-              'l\'entité — elle a FUITÉ dans `extra`. Le verrou DW-ES14-2 '
-              'ci-dessous n\'est plus interprétable (il rougirait en annonçant à '
-              'tort la clôture de la dette). Ce n\'est PAS la clôture : c\'est '
-              'une régression de `_reservedKeys`.',
-        );
-        // ─────────────────────────────────────────────────────────────────────
-        // 🔴 DEUX RÉGIMES — LA DETTE EST LA MÊME, LE SORT DE LA DONNÉE DIFFÈRE.
-        //
-        // Ce qui est COMMUN (= LA DETTE, intacte) : le registre n'injecte AUCUN
-        // parser ⇒ le slot n'est **JAMAIS TYPÉ**, sur AUCUN kind.
-        //
-        // Ce qui diffère (mitigation ES-2.2, MAJEUR-1/MAJEUR-2) :
-        //   - kind ORDINAIRE          ⇒ payload ⛔ DÉTRUIT   (`extension == null`,
-        //                                clé OMISE par `toMap()`) ;
-        //   - kind ∈ `kExtensionPayloadPreservers` ⇒ payload ✅ PORTÉ VERBATIM
-        //     (`ZOpaqueNoteExtension`) et RÉÉMIS BIT POUR BIT.
-        // ─────────────────────────────────────────────────────────────────────
-        if (kExtensionPayloadPreservers.contains(kind)) {
-          // (ii-bis) Le slot est PORTÉ, mais **NON TYPÉ** — et c'est ce que
-          //          `toJson() == payload` PROUVE : un parser typé aurait
-          //          NORMALISÉ le payload (`{format_version, kind, body}` n'est le
-          //          sous-schéma d'AUCUN type du repo). Le payload ressort
-          //          IDENTIQUE ⇒ **rien ne l'a interprété** ⇒ **DW-ES14-2 est
-          //          TOUJOURS OUVERTE**.
-          expect(
-            entity.extension,
-            isNotNull,
-            reason: '[$kind] RÉGRESSION : ce kind est déclaré PRÉSERVANT '
-                '(`kExtensionPayloadPreservers`) mais le payload d\'`extension` '
-                'est de nouveau DÉTRUIT (MAJEUR-1/MAJEUR-2 sont REVENUS).',
-          );
-          expect(
-            entity.extension!.toJson(),
-            equals(extensionPayload),
-            reason: '[$kind] soit le payload n\'est PLUS réémis verbatim (perte '
-                'de données), soit un parser TYPÉ l\'a enfin interprété — dans ce '
-                'second cas DW-ES14-2 est en voie de CLÔTURE : vérifier que '
-                '`ZcrudRegistry` offre un slot d\'injection, puis INVERSER ce '
-                'verrou et RETIRER le kind de `kExtensionPayloadPreservers`.',
-          );
-          expect(
-            encoded['extension'],
-            equals(extensionPayload),
-            reason: '[$kind] ⛔ LE PAYLOAD D\'EXTENSION EST PERDU AU ROUND-TRIP '
-                'REGISTRE (le slot serait EFFACÉ DU STORE au premier `put`).',
-          );
-        } else {
-          // (ii) le slot TYPÉ est bien VIDE — c'est CELA que DW-ES14-2 décrit
-          //      (aucun parser injectable ⇒ `extension == null`). Quand la dette
-          //      sera soldée, cette assertion rougira AUSSI : les deux rouges
-          //      ensemble sont la signature du VRAI succès.
-          expect(
-            entity.extension,
-            isNull,
-            reason: '[$kind] DW-ES14-2 : le slot `extension` est désormais DÉCODÉ '
-                '(non-`null`) — la dette est en voie de clôture. Vérifier que '
-                '`ZcrudRegistry` offre bien un slot d\'injection de parser, puis '
-                'INVERSER ce verrou. ⚠️ Si l\'entité PRÉSERVE désormais le payload '
-                'NON TYPÉ (patron `ZOpaqueNoteExtension`, ES-2.2), ce n\'est PAS '
-                'la clôture : l\'inscrire dans `kExtensionPayloadPreservers`.',
-          );
-
-          expect(
-            encoded.containsKey('extension'),
-            isFalse,
-            reason: '[$kind] DW-ES14-2 : si `extension` est désormais RÉÉMISE, la '
-                'dette est soldée — INVERSER ce verrou (et retirer DW-ES14-2 de '
-                'l\'architecture), ne pas le supprimer. ⚠️ Vérifier D\'ABORD les '
-                'deux préconditions ci-dessus : une `extension` réémise via `extra` '
-                '(clé dé-réservée) ne serait PAS une clôture, mais une fuite.',
-          );
-        }
-
-        // ⚠️ ANTI-AGGRAVATION SILENCIEUSE : la perte reste CIRCONSCRITE à
-        // `extension`. Si `extra` régressait du même coup (retour de DW-ES14-1),
-        // ce test rougirait AUSSI — la dette ne peut pas empirer en silence.
-        expect(
-          encoded[kProbeUnknownKey],
-          kProbeUnknownValue,
-          reason: '[$kind] la perte s\'est ÉTENDUE à `extra` (DW-ES14-1 est '
-              'revenue) — régression majeure, pas une simple dette.',
-        );
-      });
-    }
+        final entity = reg.decode(kind, probe) as ZExtensible;
+        // Aucun résolveur pour ces kinds ⇒ slot NON typé (`null`), inchangé.
+        expect(entity.extension, isNull,
+            reason: '[$kind] aucune `ZExtension` concrète : slot reste `null`.');
+        // L2 : `extension` reste réservée (ne fuit pas dans `extra`).
+        expect(entity.extra.containsKey('extension'), isFalse);
+      }
+    });
   });
 
   // =========================================================================
-  // 🟠 H2 (code-review ES-2.0) — CANAL `source` : la vérité MESURÉE, épinglée.
+  // DW-ES14-2 SOLDÉE — CANAL `source` honoré via le contexte (AC4).
   //
-  // La dartdoc de `FirebaseZRepositoryImpl.fromRegistry` — celle qui AUTORISE le
-  // câblage d'un store — publiait « `source` ✅ PRÉSERVÉ … intégralement
-  // préservé ». **Zéro machine derrière cette ligne** : la sonde `flashcard` ne
-  // portait aucune clé `source`. `extra` avait l'assertion (e), `extension` avait
-  // 4 verrous, `source` avait UNE PHRASE.
-  //
-  // Ces tests remplacent la phrase par des OBSERVATIONS. Ils disent ce que la
-  // voie registre fait RÉELLEMENT — y compris ce qu'elle CASSE.
+  // Le verrou d'honnêteté d'ES-2.0 (« le ZSourceRegistry de l'app est IGNORÉ »)
+  // est INVERSÉ : quand le ZDecodeContext porte le `sourceRegistry`, la voie
+  // registre APPLIQUE le codec de l'app (plus de bypass) — sur decode ET encode,
+  // donc mélanger les voies ne CORROMPT plus. Retirer le contexte (R3) fait
+  // retomber au payload brut.
   // =========================================================================
-  group('H2 — canal `source` sur la voie registre : comportement MESURÉ', () {
-    Map<String, dynamic> flashcardProbe() => buildProbe(kProbeBodies['flashcard']!);
+  group('DW-ES14-2 SOLDÉE — canal `source` honoré via le contexte', () {
+    Map<String, dynamic> flashcardProbe() =>
+        buildProbe(kProbeBodies['flashcard']!);
 
-    test('✅ le PAYLOAD BRUT survit au round-trip registre → registre', () {
+    ZSourceRegistry appSourceRegistry() => ZSourceRegistry()
+      ..register(
+        'zz_source_test',
+        fromJson: (json) => <String, dynamic>{'normalise': json['zz_payload']},
+        toJson: (value) => <String, dynamic>{
+          'zz_payload': (value as Map<String, dynamic>)['normalise'],
+        },
+      );
+
+    test('SANS contexte : round-trip registre→registre rend le `source` BRUT',
+        () {
+      // Contrat additif : un registre sans contexte conserve le comportement
+      // historique (codec NON appliqué, payload brut symétrique).
       final probe = flashcardProbe();
       final entity = registry.decode('flashcard', probe);
       final encoded = registry.encode('flashcard', entity);
-
-      // C'est CE point — et lui seul — que la dartdoc pouvait légitimement
-      // revendiquer. Il est désormais OBSERVÉ, plus seulement affirmé.
-      expect(
-        encoded['source'],
-        equals(probe['source']),
-        reason: 'le round-trip registre → registre doit rendre le `source` '
-            'BYTE-POUR-BYTE : `decode` et `encode` sont symétriquement SANS '
-            '`ZSourceRegistry`, donc `ZCustomSource` conserve le payload brut.',
-      );
+      expect(encoded['source'], equals(probe['source']));
     });
 
-    test('⚠️ le `ZSourceRegistry` de l\'app est IGNORÉ (codec JAMAIS appliqué)',
-        () {
-      // Une app enregistre son codec de provenance (AD-4 pt.3) : il NORMALISE le
-      // corps persisté `{zz_payload}` en payload métier `{normalise}`.
-      final appRegistry = ZSourceRegistry()
-        ..register(
-          'zz_source_test',
-          fromJson: (json) => <String, dynamic>{'normalise': json['zz_payload']},
-          toJson: (value) => <String, dynamic>{
-            'zz_payload': (value as Map<String, dynamic>)['normalise'],
-          },
-        );
-      final probe = flashcardProbe();
-
-      // VOIE DOMAINE (le registre est fourni) : le codec EST appliqué. ✅
-      final viaDomaine =
-          ZFlashcard.fromMap(probe, sourceRegistry: appRegistry).source;
+    test('AVEC contexte : le `ZSourceRegistry` de l\'app EST appliqué (AC4)', () {
+      final reg = buildRegistry(
+        decodeContext: ZDecodeContext(sourceRegistry: appSourceRegistry()),
+      );
+      final card = reg.decode('flashcard', flashcardProbe()) as ZFlashcard;
+      // La voie registre route désormais par le codec de l'app (plus de bypass) :
+      // le payload est NORMALISÉ, pas brut.
       expect(
-        (viaDomaine! as ZCustomSource).payload,
+        (card.source! as ZCustomSource).payload,
         equals(<String, dynamic>{'normalise': 'brut'}),
-        reason: 'témoin : avec le registre, `ZFlashcardSource.fromJson` route '
-            'par `registry.tryCodecFor(kind)`.',
-      );
-
-      // VOIE REGISTRE : `ZcrudRegistry` n'a AUCUN slot pour passer le
-      // `sourceRegistry` ⇒ `ZFlashcardSource.fromJson(raw, registry: null)` ⇒ le
-      // codec de l'app est PUREMENT IGNORÉ et l'on obtient le payload BRUT.
-      final viaRegistre =
-          (registry.decode('flashcard', probe) as ZFlashcard).source;
-      expect(
-        (viaRegistre! as ZCustomSource).payload,
-        equals(<String, dynamic>{'zz_payload': 'brut'}),
-        reason: 'DW-ES14-2 (canal `source`) : la voie registre BYPASSE le '
-            '`ZSourceRegistry` de l\'app — le contrat d\'AD-4 pt.3 est rompu EN '
-            'SILENCE. MÊME CAUSE RACINE que la perte d\'`extension` : '
-            '`ZcrudRegistry` n\'offre AUCUN SLOT D\'INJECTION. Si ce test rougit '
-            'parce que le codec est désormais APPLIQUÉ, la dette est soldée — '
-            'INVERSER ce verrou, ne pas le supprimer.',
+        reason: 'DW-ES14-2 (source) soldée : le contexte thread le '
+            'sourceRegistry ⇒ `registry.decode` applique le codec de l\'app.',
       );
     });
 
-    test('⛔ MÉLANGER LES VOIES CORROMPT LES VALEURS (pas une simple asymétrie)',
+    test('R3 — retirer le sourceRegistry du contexte RETOMBE au payload brut',
         () {
-      // Scénario EXPLICITEMENT autorisé par l'ancienne dartdoc : elle disait
-      // « `source` intégralement préservé » (⇒ `fromRegistry` est sûr) ET
-      // recommandait ailleurs le constructeur nominal AVEC le registre. Une app
-      // qui LIT par `fromRegistry` et ÉCRIT par la voie nominale tombe ici.
-      final appRegistry = ZSourceRegistry()
-        ..register(
-          'zz_source_test',
-          fromJson: (json) => <String, dynamic>{'normalise': json['zz_payload']},
-          toJson: (value) => <String, dynamic>{
-            'zz_payload': (value as Map<String, dynamic>)['normalise'],
-          },
-        );
+      final reg = buildRegistry(); // contexte NEUTRALISÉ
+      final card = reg.decode('flashcard', flashcardProbe()) as ZFlashcard;
+      expect(
+        (card.source! as ZCustomSource).payload,
+        equals(<String, dynamic>{'zz_payload': 'brut'}),
+        reason: 'sans contexte, le codec de l\'app est ignoré (payload brut).',
+      );
+    });
 
-      // LECTURE par le registre : payload jamais décodé (`{zz_payload: brut}`).
-      final card = registry.decode('flashcard', flashcardProbe()) as ZFlashcard;
-      // ÉCRITURE par la voie nominale : `codec.toJson` est appliqué à un payload
-      // qui n'a JAMAIS été décodé — il y cherche `normalise`, ne trouve rien.
-      final reecrit = card.toMap(sourceRegistry: appRegistry);
-
+    test('mélanger les voies ne CORROMPT plus (contexte des deux côtés)', () {
+      final reg = buildRegistry(
+        decodeContext: ZDecodeContext(sourceRegistry: appSourceRegistry()),
+      );
+      // LECTURE par le registre (codec appliqué) : payload normalisé.
+      final card = reg.decode('flashcard', flashcardProbe()) as ZFlashcard;
+      // ÉCRITURE par la voie nominale AVEC le registre : codec RÉAPPLIQUÉ.
+      final reecrit = card.toMap(sourceRegistry: appSourceRegistry());
       expect(
         reecrit['source'],
-        equals(<String, dynamic>{'zz_payload': null, 'kind': 'zz_source_test'}),
-        reason: 'MESURE (spike ES-2.0/H2) : la valeur `brut` est remplacée par '
-            '`null`. Ce n\'est PAS une « double transformation » bénigne : c\'est '
-            'une PERTE DE DONNÉES RÉELLE, produite par un mélange de voies que la '
-            'dartdoc autorisait explicitement. Verrou d\'honnêteté : si ce test '
-            'rougit, mesurer le nouveau comportement AVANT de le « réparer ».',
+        equals(<String, dynamic>{'zz_payload': 'brut', 'kind': 'zz_source_test'}),
+        reason: 'les DEUX voies appliquent le codec : la perte MESURÉE en ES-2.0 '
+            '(`zz_payload: null`) est SOLDÉE (DW-ES14-2).',
       );
     });
   });
