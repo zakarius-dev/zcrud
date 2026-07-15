@@ -25,6 +25,12 @@ topics:
 
 environment:
   sdk: ^3.12.2
+  # 🔴 ES-8.2 — BASCULE EN PACKAGE FLUTTER (D2/D5). Précédent EXACT : zcrud_note
+  # (ES-6.1). La PRÉSENTATION (`lib/src/presentation/`, `ZAnnotationToolbar`/
+  # `ZAnnotationPanel`) compose des widgets Flutter + `ZcrudScope` (surface
+  # presentation de `zcrud_core`) ⇒ requiert le SDK Flutter. Le DOMAINE
+  # (`lib/src/domain/`) reste PUR-DART (garde AJOUTÉE `source_policy_test.dart`).
+  flutter: ">=3.0.0"
 
 # Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
 # Siblings du workspace résolus par contrainte de version (pas de path:).
@@ -46,6 +52,15 @@ environment:
 #    a fortiori zéro widget-lib — IFFD persiste des enums SYNCFUSION dans son
 #    domaine ; c'est précisément ce que ce package refuse).
 dependencies:
+  # 🔴 ES-8.2 (D2/D5) : SDK Flutter requis par la PRÉSENTATION. Ajouter `flutter`
+  # en `dependencies` N'AJOUTE AUCUN nœud `zcrud_*` au graphe ⇒ ZÉRO nouvelle
+  # arête (les arêtes `→ {zcrud_core, zcrud_study_kernel, zcrud_annotations}`
+  # PRÉEXISTENT toutes). La présentation utilise désormais la surface Flutter
+  # `package:zcrud_core/zcrud_core.dart` (`ZcrudScope`/`ZcrudTheme`/`label`/
+  # `zResolveColorKeyOrSlot`) et `package:zcrud_study_kernel/…` (`ZColorPalette`,
+  # arête DÉCLARÉE d'emblée) ; le domaine reste sur `package:zcrud_core/domain.dart`.
+  flutter:
+    sdk: flutter
   zcrud_core: ^0.1.0
   zcrud_study_kernel: ^0.1.0
   zcrud_annotations: ^0.1.0
@@ -59,4 +74,17 @@ dependencies:
 dev_dependencies:
   zcrud_generator: ^0.1.0
   build_runner: ^2.5.0
+  # 🔴 ES-8.2 (D5) : bascule Flutter — `flutter_test` route ce package vers
+  # `flutter test` (R14 ; ⛔ NE PLUS lancer `dart test`). `test` est CONSERVÉ :
+  # les suites de DOMAINE pur-Dart existantes importent `package:test/test.dart`
+  # directement (elles restent vertes sous `flutter test`, qui ré-exporte `test`).
+  #
+  # 🔴 PERTE `gate:web` (DW-ES82-1, jumeau DW-ES-6.1-1) : `gate_web_determinism.dart`
+  # EXCLUT tout package `sdk: flutter` ⇒ les matrices de coercition JSON
+  # déterministe du domaine (`ZAnnotationBounds` `[0,1]`, `sanitizePage`,
+  # `sanitizeExtra`) ne sont PLUS rejouées sous `dart test -p node`. AUCUNE
+  # régression de test (tout tourne sous VM) — PERTE DE COUVERTURE DE PLATEFORME
+  # à escalader `architecture.md § Deferred` (orchestrateur/code-review).
+  flutter_test:
+    sdk: flutter
   test: ^1.25.0

@@ -17,3 +17,5 @@ export 'src/presentation/z_sectioned_study_layout.dart';
 export 'src/presentation/z_study_mindmap_section.dart';
 export 'src/presentation/z_study_tools_page.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';
+export 'src/presentation/z_tag_chips.dart';
+export 'src/presentation/z_tag_editor.dart';

@@ -392,10 +392,10 @@ development_status:
 
   # === ES-8 — Tags & annotations (UI) ===  Dépend de : ES-2 (et ES-3 pour persistance annotations, cf. finding F1).
   # ⚠ 8.1 écrit zcrud_study → NON ∥ avec ES-7.1/ES-9.*. 8.2 ∥ (zcrud_document/presentation disjoint).
-  epic-es-8: backlog
-  es-8-1-ui-tags-integrite-referentielle: backlog       # [M][SÉQ — écrit zcrud_study, NON ∥ avec 7.1/9.*] ZTagEditor/ZTagChips
-  es-8-2-ui-annotations-accessible-wcag: backlog        # [M][∥ — zcrud_document/presentation] ZAnnotationToolbar/Panel (WCAG)
-  epic-es-8-retrospective: optional
+  epic-es-8: done
+  es-8-1-ui-tags-integrite-referentielle: done           # [M][SÉQ — écrit zcrud_study, NON ∥ avec 7.1/9.*] ZTagEditor/ZTagChips
+  es-8-2-ui-annotations-accessible-wcag: done           # [M][∥ — zcrud_document/presentation] ZAnnotationToolbar/Panel (WCAG)
+  epic-es-8-retrospective: done
 
   # === ES-9 — Seams IA / communauté / examens (UI + ports) ===  Dépend de : ES-3 (+ entité ES-2.6 pour 9.2).
   # ⚠ 9.1/9.3/9.4 écrivent zcrud_study → SÉQ entre elles et avec ES-7.1/ES-8.1. 9.2 suit zcrud_exam/zcrud_study.

@@ -72,3 +72,19 @@ export 'src/domain/z_document_reading_state.dart'
 export 'src/domain/z_document_status.dart';
 export 'src/domain/z_document_viewer_prefs.dart' hide ZDocumentViewerPrefsZcrud;
 export 'src/domain/z_study_document.dart' hide ZStudyDocumentZcrud;
+
+// ── Présentation ACCESSIBLE (ES-8.2, FR-S28) — bascule Flutter (D2/D5) ────────
+// UI d'annotation WCAG (AD-13) bâtie AU-DESSUS des modèles déjà livrés. Aucun
+// type Flutter/`Color` n'apparaît en signature publique (AC13-e) : la surface
+// exportée n'expose que `String colorKey`, `ZColorPalette`, `ZDocumentAnnotation`
+// et des callbacks neutres.
+export 'src/presentation/z_annotation_panel.dart' show ZAnnotationPanel;
+export 'src/presentation/z_annotation_tool_controller.dart'
+    show
+        ZAnnotationToolController,
+        kAnnotationKindKeyPrefix,
+        kAnnotationSwatchKeyPrefix,
+        kAnnotationSwatchFillKeyPrefix,
+        kAnnotationSelectedMarkerKey,
+        kAnnotationPanelEntryKeyPrefix;
+export 'src/presentation/z_annotation_toolbar.dart' show ZAnnotationToolbar;
