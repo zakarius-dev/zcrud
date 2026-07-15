@@ -62,7 +62,33 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         ZUnorderedPlacement,
         applyOrder,
         normalizeTagTitle,
-        dedupeByNormalizedTitle;
+        dedupeByNormalizedTitle,
+        // ES-2.4 — `ZFolderContentsOrder` : ordre de contenu de dossier study
+        // PERSONNEL, NON pertinent flashcard ⇒ hors surface publique flashcard.
+        ZFolderContentsOrder,
+        ZFolderContentsOrderExtensionParser,
+        kSectionOrdersKey,
+        // ES-2.7 — vue « rythme du jour » (résultat de session + tâches
+        // quotidiennes + agrégation via le port neutre `ZApproachingExam`) :
+        // symboles study-niveau, NON pertinents flashcard ⇒ hors surface
+        // publique flashcard (précédent EXACT `ZFolderContentsOrder`).
+        ZStudySessionResult,
+        ZDailyStudyTask,
+        ZDueCardsTask,
+        ZExamTask,
+        ZApproachingExam,
+        aggregateDailyStudyTasks,
+        // ES-2.8 — podcast *content-addressed* (`ZStudyPodcast` + 3 enums +
+        // fraîcheur `ZPodcastFreshness`/`podcastFreshness`) : symboles
+        // study-niveau, NON pertinents flashcard ⇒ hors surface publique
+        // flashcard (précédent EXACT `ZFolderContentsOrder` / ES-2.7).
+        ZStudyPodcast,
+        ZStudyPodcastExtensionParser,
+        ZPodcastSourceKind,
+        ZPodcastMode,
+        ZPodcastStatus,
+        ZPodcastFreshness,
+        podcastFreshness;
 
 export 'src/data/z_flashcard_repository.dart';
 export 'src/data/z_repetition_store.dart';

@@ -253,18 +253,20 @@ development_status:
   # === ES-2 — Domaine canonique éducatif + codegen ===  Dépend de : ES-1.
   # Packages : zcrud_study_kernel, zcrud_note(new), zcrud_document(new), zcrud_exam(new).
   # ∥ : 2.1(document) ∥ 2.2(note) ∥ 2.6(exam) disjoints ; 2.3/2.4/2.7/2.8 écrivent kernel → SÉQ entre elles.
-  epic-es-2: in-progress
+  epic-es-2: done
   es-2-0-registry-decode-preserve-extra: done           # [M][TÊTE BLOQUANTE — zcrud_generator + zcrud_firestore] DW-ES14-1 (rétro ES-1) : registry.decode DÉTRUIT `extra` (AD-4). Doit précéder les 8 entités (le generator est le socle de leur codegen) et tout câblage store (ES-3.2/3.5). Absorbe L3 d'ES-1.3 (même package).
   es-2-1-document-etat-lecture: done                    # [M][∥ — zcrud_document] ZStudyDocument + ZDocumentReadingState/LearningInfo
   es-2-2-note-intelligente-contenu-type: done           # [M][∥ — zcrud_note] ZSmartNote (content via ZCodec)
   es-2-2b-gardes-extra-systemiques: done                # [M][TÊTE BLOQUANTE — SÉQ, écrit core+kernel+document+flashcard] DW-ES22-3 (`copyWith(extra:)` rouvre le filtre des clés réservées) + DW-ES22-4 (égalité superficielle sur `extra`) — MESURÉS dans du code DÉJÀ LIVRÉ. Doit précéder les 6 entités restantes d'ES-2 (sinon le défaut se reproduit 6 fois) et tout câblage store (ES-3).
-  es-2-3-tags-flashcard-first-class: backlog            # [M][SÉQ — écrit kernel] ZFlashcardTag/ZSuggestedTag/remapColorKey
-  es-2-4-ordre-contenu-dossier: backlog                 # [S][SÉQ — écrit kernel] ZFolderContentsOrder
-  es-2-5-annotation-document: backlog                   # [M][∥ avec 2.2/2.6 — zcrud_document] ZDocumentAnnotation/ZAnnotationBounds
-  es-2-6-examen-date-rappels: backlog                   # [M][∥ — zcrud_exam] ZExam/ZReminderTime (horloge injectée)
-  es-2-7-resultat-session-agregation-quotidienne: backlog # [M][SÉQ — écrit kernel] ZStudySessionResult/ZDailyStudyTask/aggregate
-  es-2-8-podcast-content-addressed: backlog             # [S][SÉQ — écrit kernel] ZStudyPodcast (sourceHash)
-  epic-es-2-retrospective: optional
+  es-2-3-tags-flashcard-first-class: done               # [M][SÉQ — écrit kernel] ZFlashcardTag/ZSuggestedTag/remapColorKey
+  es-2-4-ordre-contenu-dossier: done                    # [S][SÉQ — écrit kernel] ZFolderContentsOrder
+  es-2-5-annotation-document: done                      # [M][∥ avec 2.2/2.6 — zcrud_document] ZDocumentAnnotation/ZAnnotationBounds
+  es-2-6-examen-date-rappels: done                      # [M][∥ — zcrud_exam] ZExam/ZReminderTime (horloge injectée)
+  es-2-7-resultat-session-agregation-quotidienne: done # [M][SÉQ — écrit kernel] ZStudySessionResult/ZDailyStudyTask/aggregate
+  es-2-8-podcast-content-addressed: done                # [S][SÉQ — écrit kernel] ZStudyPodcast (sourceHash)
+  epic-es-2-retrospective: done  # Rétro ES-2 (R10–R13). Verdict PRÊT SOUS CONDITION : ES-3.0 dédiée
+  #   (DW-ES14-2 registre préserve `extension`/`sourceRegistry` + DW-ES24-1 immuabilité patron)
+  #   OBLIGATOIRE EN TÊTE d'ES-3, AVANT tout store (ES-3.2/3.5). DW-ES25-1 : PROTOTYPER R4 tôt dans ES-3.
 
   # --- Dettes ouvertes portées par ES-2 (à solder avant les stories citées) ---
   # DW-ES14-2 (BLOQUANTE avant ES-3.2/3.5) — ⚠️ ESCALADÉE en ES-2.2 : sa clause d'échappement
@@ -290,6 +292,26 @@ development_status:
   #   dû dans l'ADAPTER (jamais le domaine) : uploading→uploading · converting|embedding→validating
   #   · uploaded|converted|embedded→ready. Sans lui, un document IFFD `embedded` (donc PRÊT)
   #   se lit `uploading` (« Traitement… » perpétuel). Épinglée par 8 tests (ES-2.1).
+  # DW-ES25-1 (PATRON transverse, à PROTOTYPER R4 + statuer en rétro ES-2) — la règle (h) du gate
+  #   reserved-keys (non-export des extensions générées `XxxZcrud`) ne couvre QUE les classes
+  #   `ZExtensible` (`if (!index.isExtensibleDecl(d)) continue;`). Un VALUE OBJECT à INVARIANT
+  #   (ex. ZAnnotationBounds `[0,1]` ES-2.5, ZDocumentViewerPrefs/M2 ES-2.1) DOIT être `hide`
+  #   (son copyWith/toMap GÉNÉRÉ contourne la garde de sanitisation — atteignable publiquement si
+  #   exporté), mais AUCUNE machine ne l'exige : retirer le `hide` laisse le gate VERT (confirmé
+  #   par injection ES-2.5). Filet AC13 powerless (import interne). Fix = étendre (h) au signal
+  #   « @ZcrudModel NON-`ZExtensible` à invariant de valeur » SANS faux positif sur les VO
+  #   exportables SANS invariant (`ZChoice`, `ZSuggestedTag` — exportés sans `hide`, validé ES-2.3) :
+  #   distinguer les deux par AST n'est pas trivial (heuristique « déclare toMap/copyWith d'instance »
+  #   mange les VO exportables) ⇒ PROTOTYPER (R4) avant de figer. Protection ACTUELLE = convention
+  #   `hide` en place ; le trou est l'ABSENCE de garde-régression machine, pas un bug actuel.
+  # DW-ES24-1 (PATRON transverse, à statuer en rétro ES-2) — immuabilité PROFONDE des canaux
+  #   hors-codegen (Map/List) CONDITIONNELLE : gardée sur fromMap/copyWith (List.unmodifiable en
+  #   profondeur) mais NON sur le ctor `const` invoqué NON-const avec une réf mutable retenue
+  #   (`o.sectionOrders['a'].add(...)` sans throw). Trou de patron PARTAGÉ : ZDocumentLearningInfo
+  #   .qualityByPage (ES-2.1), ZDocumentReadingState.learning, ZSmartNote.content, ZFolderContentsOrder
+  #   .sectionOrders (ES-2.4). Vecteur persistant FERMÉ (le store passe par fromMap gardé) — hasard
+  #   in-memory, pas perte au store. Fix uniforme (accesseur normalisant OU champ privé+getter, à la
+  #   `extra`) à trancher au niveau PATRON, jamais story par story (corriger 1 entité = incohérence).
 
   # === ES-3 — Ports & couche data offline-first bi-topologie ===  Dépend de : ES-2.
   # Packages : zcrud_study_kernel (ports/registre), zcrud_firestore (adapters).

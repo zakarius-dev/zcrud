@@ -40,6 +40,13 @@ const Set<String> _flashcardAllowlist = <String>{
   'ZSessionConfigExtensionParser',
   'ZSessionCandidate',
   'ZStudySessionSelector',
+  // ES-2.3 — tags first-class + primitives pures (pertinents flashcard :
+  // migration DODLP, remap couleur / détection d'orphelins).
+  'ZFlashcardTag',
+  'ZFlashcardTagExtensionParser',
+  'ZSuggestedTag',
+  'remapColorKey',
+  'orphanTagIds',
 };
 
 /// Racine du repo, quel que soit le CWD du run.

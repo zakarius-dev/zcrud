@@ -44,6 +44,7 @@ library;
 
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_document/zcrud_document.dart';
+import 'package:zcrud_exam/zcrud_exam.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_note/zcrud_note.dart';
 // L'analyzer signale cet import comme « inutile » parce que `zcrud_flashcard`
@@ -71,6 +72,13 @@ const List<ZRegistrar> kRegistrars = <ZRegistrar>[
   registerZDocumentReadingState, // document_reading_state — zcrud_document (ES-2.1)
   registerZDocumentViewerPrefs, // document_viewer_prefs  — zcrud_document (NON ZExtensible)
   registerZSmartNote, // smart_note            — zcrud_note (ES-2.2)
+  registerZFlashcardTag, // flashcard_tag       — zcrud_study_kernel (ES-2.3)
+  registerZSuggestedTag, // suggested_tag       — zcrud_study_kernel (ES-2.3, NON ZExtensible)
+  registerZFolderContentsOrder, // folder_contents_order — zcrud_study_kernel (ES-2.4)
+  registerZDocumentAnnotation, // document_annotation   — zcrud_document (ES-2.5)
+  registerZAnnotationBounds, // annotation_bounds     — zcrud_document (ES-2.5, NON ZExtensible)
+  registerZExam, // exam                  — zcrud_exam (ES-2.6)
+  registerZStudyPodcast, // study_podcast   — zcrud_study_kernel (ES-2.8)
 ];
 
 /// Corps métier **minimal valide** de la sonde de chaque `kind`.
@@ -147,6 +155,88 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
       <String, dynamic>{'insert': 'sonde\n'},
     ],
   },
+  // ── ES-2.3 (zcrud_study_kernel) ──────────────────────────────────────────
+  'flashcard_tag': <String, dynamic>{
+    'id': 'p',
+    'title': 't',
+    'color_key': 'blue',
+  },
+  'suggested_tag': <String, dynamic>{'title': 't', 'color_key': 'blue'},
+  // ── ES-2.4 (zcrud_study_kernel) ──────────────────────────────────────────
+  // 🔴 `section_orders` est un CANAL HORS-CODEGEN (D3, patron `learning`) : le
+  // générateur ne supporte AUCUN type `Map`, donc `Map<String, List<String>>`
+  // ne peut PAS être un `@ZcrudField`. Il est décodé/réémis À LA MAIN, sa clé
+  // étant RÉSERVÉE.
+  //
+  // ⚠️ LA CLÉ `section_orders` EST ICI, ET **NON VIDE** — règle (g2) : une sonde
+  // SANS le canal (ou avec un canal VIDE) le rendrait « préservé PAR PROSE »
+  // (finding H1 d'ES-2.1 / H2 d'ES-2.0 à NE PAS rejouer).
+  'folder_contents_order': <String, dynamic>{
+    'folder_id': 'p',
+    'section_orders': <String, dynamic>{
+      'flashcards': <String>['c3', 'c1'],
+      'notes': <String>['n2'],
+    },
+  },
+  // ── ES-2.5 (zcrud_document) ──────────────────────────────────────────────
+  // Tous les champs sont codegen-ables (`bounds` = subModel, `rects` = listModel)
+  // ⇒ AUCUN canal `Map` hors-codegen (contraste `learning`/`content`/
+  // `section_orders`). La règle (g)/(g2) ne détecte donc aucun canal hors-codegen
+  // non réservé sur cette entité.
+  'document_annotation': <String, dynamic>{
+    'id': 'p',
+    'doc_id': 'd',
+    'page': 3,
+    'kind': 'highlight',
+    'color_key': 'yellow',
+    'bounds': <String, dynamic>{
+      'x': 0.1,
+      'y': 0.2,
+      'width': 0.3,
+      'height': 0.4,
+    },
+  },
+  'annotation_bounds': <String, dynamic>{
+    'x': 0.1,
+    'y': 0.2,
+    'width': 0.3,
+    'height': 0.4,
+  },
+  // ── ES-2.6 (zcrud_exam) ──────────────────────────────────────────────────
+  // 🔴 `reminder_time` est un CANAL HORS-CODEGEN (D3, patron `content`/`learning`)
+  // : le champ `reminderTime` (typé `ZReminderTime?`, non annoté `@ZcrudField`)
+  // est décodé/réémis À LA MAIN en `'HH:mm'`, sa clé étant RÉSERVÉE.
+  //
+  // ⚠️ LA CLÉ `reminder_time` EST ICI, ET **NON VIDE** — c'est la règle (g2) :
+  // une sonde SANS le canal (ou avec un canal VIDE) le rendrait « préservé PAR
+  // PROSE », et retirer `kReminderTimeKey` de `_reservedKeys` laisserait le gate
+  // VERT (finding H1 d'ES-2.1 / H2 d'ES-2.0 à NE PAS REJOUER).
+  'exam': <String, dynamic>{
+    'id': 'p',
+    'folder_id': 'f',
+    'title': 't',
+    'date': '2026-07-20T00:00:00.000Z',
+    'reminder_enabled': true,
+    'reminder_days_before': <int>[7, 1],
+    'reminder_time': '08:30',
+  },
+  // ── ES-2.8 (zcrud_study_kernel) ──────────────────────────────────────────
+  // TOUS les champs sont codegen-ables (3 `String` + `folder_id` + 3 enums
+  // `select` + `created_at` ISO-8601) ⇒ AUCUN canal `Map` hors-codegen
+  // (contraste `learning`/`content`/`section_orders`/`reminder_time`). La règle
+  // (g)/(g2) ne détecte donc aucun canal hors-codegen non réservé sur cette
+  // entité (précédent EXACT `document_annotation`). `source_hash` est une
+  // empreinte OPAQUE COMPARÉE, JAMAIS calculée (D4).
+  'study_podcast': <String, dynamic>{
+    'id': 'p',
+    'source_kind': 'folder',
+    'source_id': 's',
+    'folder_id': 'f',
+    'mode': 'dialogue',
+    'source_hash': 'h',
+    'result_ref': 'r',
+    'status': 'ready',
+  },
 };
 
 /// Kinds enregistrés dont l'entité n'est **PAS** `ZExtensible` (aucun `extra`).
@@ -177,6 +267,13 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
 const Set<String> kNonExtensibleKinds = <String>{
   'flashcard_choice',
   'document_viewer_prefs',
+  // ES-2.3 — `ZSuggestedTag` : DTO éphémère value object (`class ZSuggestedTag {`),
+  // sans slot d'extension. `ZFlashcardTag`, elle, EST `ZExtensible` (absente ici).
+  'suggested_tag',
+  // ES-2.5 — `ZAnnotationBounds` : VO borné `[0,1]` (`class ZAnnotationBounds {`),
+  // aucun slot `extra`. Le cast `(e as ZExtensible)` throw dessus (piège n°1).
+  // `ZDocumentAnnotation`, elle, EST `ZExtensible` (absente ici, munie de writers).
+  'annotation_bounds',
 };
 
 /// Kinds dont l'entité **PRÉSERVE** le payload `extension` **non typé** au lieu de
@@ -390,6 +487,78 @@ const Map<String, List<ZExtraWriter>> kExtraWriters =
       eagerlyNormalized: true,
     ),
   ],
+  // ES-2.3 — `ZFlashcardTag` : DEUX voies publiques d'écriture de `extra`
+  // (règle AST (j), HIGH-1/HIGH-2 d'ES-2.2b). `ZSuggestedTag` n'a pas d'`extra`.
+  'flashcard_tag': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorFlashcardTag,
+      eagerlyNormalized: false,
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithFlashcardTag,
+      eagerlyNormalized: true,
+    ),
+  ],
+  // ES-2.4 — `ZFolderContentsOrder` : DEUX voies publiques d'écriture de `extra`
+  // (règle AST (j), HIGH-1/HIGH-2 d'ES-2.2b). Le canal `section_orders` n'est PAS
+  // une voie `extra`.
+  'folder_contents_order': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorFolderContentsOrder,
+      eagerlyNormalized: false, // ctor `const` : ne peut RIEN filtrer.
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithFolderContentsOrder,
+      eagerlyNormalized: true,
+    ),
+  ],
+  // ES-2.5 — `ZDocumentAnnotation` : DEUX voies publiques d'écriture de `extra`
+  // (règle AST (j), HIGH-1/HIGH-2 d'ES-2.2b). `ZAnnotationBounds` (le VO borné)
+  // n'a PAS d'`extra` (kNonExtensibleKinds).
+  'document_annotation': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorDocumentAnnotation,
+      eagerlyNormalized: false, // ctor `const` : ne peut RIEN filtrer.
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithDocumentAnnotation,
+      eagerlyNormalized: true,
+    ),
+  ],
+  // ES-2.6 — `ZExam` : DEUX voies publiques d'écriture de `extra` (règle AST (j),
+  // HIGH-1/HIGH-2 d'ES-2.2b). Le canal `reminderTime` n'est PAS une voie `extra`.
+  'exam': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorExam,
+      eagerlyNormalized: false, // ctor `const` : ne peut RIEN filtrer.
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithExam,
+      eagerlyNormalized: true,
+    ),
+  ],
+  // ES-2.8 — `ZStudyPodcast` : DEUX voies publiques d'écriture de `extra` (règle
+  // AST (j), HIGH-1/HIGH-2 d'ES-2.2b). Aucun canal hors-codegen (D5).
+  'study_podcast': <ZExtraWriter>[
+    ZExtraWriter(
+      voie: 'ctor',
+      write: _ctorStudyPodcast,
+      eagerlyNormalized: false, // ctor `const` : ne peut RIEN filtrer.
+    ),
+    ZExtraWriter(
+      voie: 'copyWith',
+      write: _copyWithStudyPodcast,
+      eagerlyNormalized: true,
+    ),
+  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -414,6 +583,21 @@ Object _copyWithDocumentReadingState(Object e, Map<String, dynamic> x) =>
 
 Object _copyWithSmartNote(Object e, Map<String, dynamic> x) =>
     (e as ZSmartNote).copyWith(extra: x);
+
+Object _copyWithFlashcardTag(Object e, Map<String, dynamic> x) =>
+    (e as ZFlashcardTag).copyWith(extra: x);
+
+Object _copyWithFolderContentsOrder(Object e, Map<String, dynamic> x) =>
+    (e as ZFolderContentsOrder).copyWith(extra: x);
+
+Object _copyWithDocumentAnnotation(Object e, Map<String, dynamic> x) =>
+    (e as ZDocumentAnnotation).copyWith(extra: x);
+
+Object _copyWithExam(Object e, Map<String, dynamic> x) =>
+    (e as ZExam).copyWith(extra: x);
+
+Object _copyWithStudyPodcast(Object e, Map<String, dynamic> x) =>
+    (e as ZStudyPodcast).copyWith(extra: x);
 
 // ---------------------------------------------------------------------------
 // 🔴 VOIE `ctor` — LA VOIE QUE LE HARNAIS NE SONDAIT PAS (HIGH-1/HIGH-2).
@@ -537,6 +721,76 @@ Object _ctorSmartNote(Object e, Map<String, dynamic> x) {
     content: n.content,
     createdAt: n.createdAt,
     extension: n.extension,
+    extra: x,
+  );
+}
+
+Object _ctorFlashcardTag(Object e, Map<String, dynamic> x) {
+  final t = e as ZFlashcardTag;
+  return ZFlashcardTag(
+    id: t.id,
+    title: t.title,
+    colorKey: t.colorKey,
+    extension: t.extension,
+    extra: x,
+  );
+}
+
+Object _ctorFolderContentsOrder(Object e, Map<String, dynamic> x) {
+  final o = e as ZFolderContentsOrder;
+  return ZFolderContentsOrder(
+    folderId: o.folderId,
+    sectionOrders: o.sectionOrders,
+    extension: o.extension,
+    extra: x,
+  );
+}
+
+Object _ctorDocumentAnnotation(Object e, Map<String, dynamic> x) {
+  final a = e as ZDocumentAnnotation;
+  return ZDocumentAnnotation(
+    id: a.id,
+    docId: a.docId,
+    page: a.page,
+    kind: a.kind,
+    colorKey: a.colorKey,
+    bounds: a.bounds,
+    rects: a.rects,
+    text: a.text,
+    createdAt: a.createdAt,
+    extension: a.extension,
+    extra: x,
+  );
+}
+
+Object _ctorExam(Object e, Map<String, dynamic> x) {
+  final m = e as ZExam;
+  return ZExam(
+    id: m.id,
+    folderId: m.folderId,
+    title: m.title,
+    date: m.date,
+    reminderEnabled: m.reminderEnabled,
+    reminderDaysBefore: m.reminderDaysBefore,
+    reminderTime: m.reminderTime,
+    extension: m.extension,
+    extra: x,
+  );
+}
+
+Object _ctorStudyPodcast(Object e, Map<String, dynamic> x) {
+  final p = e as ZStudyPodcast;
+  return ZStudyPodcast(
+    id: p.id,
+    sourceKind: p.sourceKind,
+    sourceId: p.sourceId,
+    folderId: p.folderId,
+    mode: p.mode,
+    sourceHash: p.sourceHash,
+    resultRef: p.resultRef,
+    status: p.status,
+    createdAt: p.createdAt,
+    extension: p.extension,
     extra: x,
   );
 }

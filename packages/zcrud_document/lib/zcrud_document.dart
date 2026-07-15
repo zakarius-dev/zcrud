@@ -13,6 +13,11 @@
 /// - `ZDocumentLearningInfo` / `ZDocPageQuality` : maîtrise **par page**
 ///   (`Map<int,int>` ⇒ VO **écrit à la main** — le générateur ne supporte aucun
 ///   type `Map`).
+/// - `ZDocumentAnnotation` (ES-2.5, FR-S8) : **annotation PARTAGEABLE** (surlignage
+///   / sticky note) — `ZEntity` + `ZExtensible`, top-level à identité propre
+///   (AD-26). Son rectangle d'ancrage `ZAnnotationBounds` est un VO **borné
+///   `[0,1]`** (`sanitizeCoord` aux deux frontières) ; `ZDocumentAnnotationKind`
+///   en fixe la nature (repli défensif `highlight`).
 ///
 /// **AD-19** : **aucune** de ces entités ne déclare `updated_at`/`is_deleted` —
 /// l'autorité Last-Write-Wins et le soft-delete vivent **hors-entité**
@@ -57,7 +62,10 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/domain/`.
 library;
 
+export 'src/domain/z_annotation_bounds.dart' hide ZAnnotationBoundsZcrud;
 export 'src/domain/z_doc_page_quality.dart';
+export 'src/domain/z_document_annotation.dart' hide ZDocumentAnnotationZcrud;
+export 'src/domain/z_document_annotation_kind.dart';
 export 'src/domain/z_document_learning_info.dart';
 export 'src/domain/z_document_reading_state.dart'
     hide ZDocumentReadingStateZcrud;

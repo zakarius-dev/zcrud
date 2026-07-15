@@ -50,12 +50,55 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+// ES-2.7 (FR-S10) — agrégation PURE « rythme du jour » (cartes dues + examens
+// approchants) via le port neutre `ZApproachingExam` : le kernel ne dépend
+// d'AUCUN satellite (AD-1/AD-17/D3).
+export 'src/domain/aggregate_daily_study_tasks.dart';
 export 'src/domain/apply_order.dart';
 export 'src/domain/normalize_tag_title.dart';
+export 'src/domain/remap_color_key.dart';
+export 'src/domain/tag_referential_integrity.dart';
 export 'src/domain/z_color_palette.dart';
+// ES-2.7 (FR-S10) — famille OUVERTE de tâches quotidiennes (interface +
+// `String kind`, JAMAIS `sealed` — AD-4/D2) + port neutre `ZApproachingExam`.
+export 'src/domain/z_daily_study_task.dart';
+// ES-2.3 — `ZFlashcardTag` (`ZExtensible`) : l'extension GÉNÉRÉE
+// `ZFlashcardTagZcrud` est masquée (règle (h) — son `copyWith` généré remettrait
+// `extra`/`extension` aux défauts → perte silencieuse, finding H3 d'ES-2.1).
+export 'src/domain/z_flashcard_tag.dart' hide ZFlashcardTagZcrud;
+// ES-2.4 — `ZFolderContentsOrder` (`ZExtensible`, état PERSONNEL clé par
+// `folderId`) : l'extension GÉNÉRÉE `ZFolderContentsOrderZcrud` est masquée
+// (règle (h) — son `copyWith`/`toMap` généré remettrait `extra`/`extension`/le
+// canal `section_orders` aux défauts → perte silencieuse).
+export 'src/domain/z_folder_contents_order.dart' hide ZFolderContentsOrderZcrud;
+// ES-2.8 (FR-S11) — enums du podcast *content-addressed* : purs, aucune
+// extension générée ⇒ exportés SANS `hide` (précédent `ZReviewMode`).
+export 'src/domain/z_podcast_freshness.dart';
+export 'src/domain/z_podcast_mode.dart';
+export 'src/domain/z_podcast_source_kind.dart';
+export 'src/domain/z_podcast_status.dart';
 export 'src/domain/z_review_mode.dart';
 export 'src/domain/z_session_candidate.dart';
 export 'src/domain/z_study_folder.dart' hide ZStudyFolderZcrud;
 export 'src/domain/z_study_folder_hierarchy.dart';
+// ES-2.8 (FR-S11) — `ZStudyPodcast` (`ZEntity` + `ZExtensible`) : l'extension
+// GÉNÉRÉE `ZStudyPodcastZcrud` est masquée (règle (h) — son `copyWith`/`toMap`
+// généré remettrait `extra`/`extension` aux défauts → perte silencieuse H3).
+// `sourceHash` est une empreinte OPAQUE COMPARÉE, JAMAIS calculée ici (D4 :
+// aucune dépendance crypto — NFR-S10/SM-S7).
+export 'src/domain/z_study_podcast.dart' hide ZStudyPodcastZcrud;
 export 'src/domain/z_study_session_config.dart' hide ZStudySessionConfigZcrud;
+// ES-2.7 (FR-S10) — résultat d'UNE session : value-object PUR (AUCUN codegen,
+// aucun `@ZcrudModel`/`registerZ…` — D1).
+export 'src/domain/z_study_session_result.dart';
 export 'src/domain/z_study_session_selector.dart';
+// ES-2.3 — `ZSuggestedTag` : value object NON-`ZExtensible`. Son extension
+// générée `ZSuggestedTagZcrud` est exportée **sans `hide`** — précédent EXACT
+// `ZChoice` (`export 'src/domain/z_choice.dart';` du barrel flashcard, sans
+// `hide`). La règle (h) du gate `reserved-keys` ne cible QUE les entités
+// `ZExtensible` (dont le `copyWith` généré détruirait `extra`/`extension` —
+// finding H3) : un value object n'a NI `extra` NI `extension`, son `copyWith`
+// généré est complet et sûr. Le `hide` prescrit par la story (D7/AC10) est écarté
+// (R-G) : il amputerait inutilement le `toMap`/`copyWith` publics du DTO, en
+// contradiction avec le précédent `ZChoice`.
+export 'src/domain/z_suggested_tag.dart';

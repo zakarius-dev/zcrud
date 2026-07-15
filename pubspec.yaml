@@ -33,6 +33,12 @@ workspace:
   # zcrud_annotations (PUR-DART : ni zcrud_markdown — qui est Flutter/Quill (D4) —
   # ni zcrud_study_kernel — aucun import réel (D7)). ACYCLIQUE ; CORE OUT=0.
   - packages/zcrud_note
+  # ES-2.6 : examen daté + rappels (`ZExam` : `ZEntity` + `ZExtensible`,
+  # `@ZcrudModel`) + `ZReminderTime` (VO `HH:mm`). Proximité PURE, horloge `now`
+  # INJECTÉE en paramètre (jamais `DateTime.now()`). Dépend UNIQUEMENT de
+  # zcrud_core + zcrud_annotations (PUR-DART, aucun import kernel — folderId est
+  # une clé NEUTRE). ACYCLIQUE ; CORE OUT=0 ; aucune arête entrante (NFR-S10).
+  - packages/zcrud_exam
   - packages/zcrud_generator
   - packages/zcrud_markdown
   - packages/zcrud_list

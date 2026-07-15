@@ -1,0 +1,66 @@
+# zcrud_exam — membre du workspace zcrud (resolution: workspace).
+# Examen daté + rappels (ES-2.6, FR-S9) : `ZExam` (entité `ZEntity` +
+# `ZExtensible`, date d'examen + seuils de rappel) + `ZReminderTime` (value-object
+# d'heure `HH:mm`). TOUTE la logique de proximité (`daysUntil`/`isPast`/
+# `isApproaching`) prend l'horloge `now` en PARAMÈTRE — pure, totale, déterministe :
+# aucun `DateTime.now()` en dur (non déterministe, non testable, littéralement
+# banni des scripts de ce repo).
+#
+# 🔴 AD-19 — AUCUN horodatage de sync dans l'entité. `ZExam` ne porte NI
+# `updatedAt` NI `isDeleted` : l'autorité Last-Write-Wins et le soft-delete vivent
+# HORS-ENTITÉ (`ZSyncMeta`, AD-16/AD-19). Le store zcrud écrit `ZSyncMeta` APRÈS le
+# corps à chaque `put` ⇒ un tel champ serait ÉCRASÉ SILENCIEUSEMENT. La date
+# d'examen (`date`, clé MÉTIER) est DISTINCTE de toute clé de sync.
+#
+# 🔴 AD-28 — l'heure de rappel n'est jamais une `String` ambiguë : `reminderTime`
+# est typé `ZReminderTime?` (le TYPE dit le format `HH:mm`), persisté en `'HH:mm'`
+# (compat migration lex/IFFD) via un CANAL HORS-CODEGEN (patron `ZSmartNote.content`).
+name: zcrud_exam
+description: "Dated exam domain for zcrud: ZExam (folder-scoped exam with reminders) plus a ZReminderTime HH:mm value-object. All proximity logic is pure with an injected clock (never DateTime.now()). Pure Dart, no Flutter, no Firebase."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_exam
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - exam
+  - reminders
+  - crud
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
+#
+# - `zcrud_core`        : surface PURE-DART `package:zcrud_core/domain.dart`
+#                         (`ZEntity`, `ZExtensible`, `ZExtension`, `ZSyncMeta`,
+#                         `ZcrudRegistry`, `ZFieldSpec`, `zNormalizeExtra`,
+#                         `zSanitizeExtra`, `zJsonEquals`/`zJsonHash`) — jamais le
+#                         barrel principal, qui tire Flutter et casserait
+#                         `dart test`.
+# - `zcrud_annotations` : annotations `const` du codegen.
+#
+# ⛔ **PAS `zcrud_study_kernel`** (leçon L2 d'ES-2.1 : « dépendance DÉCLARÉE,
+#    aucun import ») : `ZExam` référence son dossier par `folderId`, une clé
+#    NEUTRE `String` — aucun symbole du kernel n'est importé (patron
+#    `ZSmartNote.folderId`/`ZFlashcard.folderId`). L'arête sera déclarée quand un
+#    import réel l'exigera (ES-3.x, cascade folder→exam).
+#
+# ⛔ AUCUNE dép lourde, AUCUN gestionnaire d'état, AUCUN `cloud_firestore`,
+#    AUCUN SDK Flutter (NFR-S3/SM-S5/NFR-S10). Tests sous `dart test`.
+dependencies:
+  zcrud_core: ^0.1.0
+  zcrud_annotations: ^0.1.0
+
+# Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
+# (`auto_apply: dependents`) émet `z_exam.g.dart` (SUIVI par git sous
+# `packages/*/lib/` — distribution en dépendance git, gate `codegen-distribution`).
+# Le package n'importe QUE la surface pur-Dart de `zcrud_core` ⇒ ses tests
+# tournent sous `dart test`.
+dev_dependencies:
+  zcrud_generator: ^0.1.0
+  build_runner: ^2.5.0
+  test: ^1.25.0

@@ -97,6 +97,11 @@ void main() {
       'Color(',
       'IconData',
       'Colors.',
+      // ES-2.8 (AC13, NFR-S10/SM-S7) : le kernel COMPARE des empreintes OPAQUES,
+      // il ne HASHE RIEN. `package:crypto`/SHA-256 est BANNI (l'invalidation
+      // *content-addressed* de `ZStudyPodcast.sourceHash` reçoit le hash déjà
+      // calculé par le seam d'app). Un `import 'package:crypto...'` fait ROUGIR.
+      'package:crypto',
     ]) {
       test("aucun fichier de lib/ ne référence `$forbidden` en CODE", () {
         for (final file in sources) {
