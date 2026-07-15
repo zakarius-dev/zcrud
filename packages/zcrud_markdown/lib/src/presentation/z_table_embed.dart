@@ -28,17 +28,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
-/// Clé/type Delta de l'embed tableau — op `{"insert": {"table": <structure>}}`.
-///
-/// C'est aussi le `type` capté GÉNÉRIQUEMENT par `DeltaNeutralOps._embedPlaceholder`
-/// (1re clé de la `Map` `insert`) → `ZMarkdownCodec` produit `[embed:table]` SANS
-/// modification (cohérence E6-2, HIGH-1 perte bornée).
-const String kTableEmbedType = 'table';
+// SOURCE UNIQUE du contrat table (SM-S4 / COMBLEMENT ES-6.2) : `kTableEmbedType`
+// et les clés de structure `rows`/`columns`/`cells` sont DÉFINIS dans la couture
+// NEUTRE `../data/z_table_ops.dart` (pur-Dart, réutilisée par le migrateur
+// `zcrud_note`). Ce fichier de RENDU les IMPORTE — il ne les re-déclare plus.
+import '../data/z_table_ops.dart';
 
-/// Clés de la structure JSON-safe portée par l'op embed tableau.
-const String _kRowsKey = 'rows';
-const String _kColumnsKey = 'columns';
-const String _kCellsKey = 'cells';
+// Alias locaux privés pour préserver le corps E6-4 inchangé (clés importées).
+const String _kRowsKey = kTableRowsKey;
+const String _kColumnsKey = kTableColumnsKey;
+const String _kCellsKey = kTableCellsKey;
 
 /// Libellé a11y (AD-13) du placeholder d'erreur — lisible par lecteur d'écran.
 @visibleForTesting

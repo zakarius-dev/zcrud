@@ -378,10 +378,10 @@ development_status:
 
   # === ES-6 — Notes & markdown (réutilisation zcrud_markdown) ===  Dépend de : ES-2, ES-5.
   # ∥ AVEC ES-7.2 / ES-8.2 (zcrud_note vs zcrud_mindmap vs zcrud_document). Packages : zcrud_note, zcrud_markdown.
-  epic-es-6: backlog
-  es-6-1-edition-lecture-notes-markdown: backlog        # [M][∥ — zcrud_note] ZMarkdownField/ZMarkdownReader (aucun nouveau codec)
-  es-6-2-migration-tables-markdown-sticky-notes: backlog # [M][∥ — zcrud_note + comblement zcrud_markdown] migration tables/sticky-notes
-  epic-es-6-retrospective: optional
+  epic-es-6: done
+  es-6-1-edition-lecture-notes-markdown: done          # [M][∥ — zcrud_note] ZMarkdownField/ZMarkdownReader (aucun nouveau codec)
+  es-6-2-migration-tables-markdown-sticky-notes: done         # [M][∥ — zcrud_note + comblement zcrud_markdown] migration tables/sticky-notes
+  epic-es-6-retrospective: done
 
   # === ES-7 — Intégration mindmap (réutilisation zcrud_mindmap) ===  Dépend de : ES-5.
   # ⚠ 7.1 écrit zcrud_study → NON ∥ avec ES-8.1/ES-9.*. 7.2 ∥ (zcrud_mindmap disjoint).

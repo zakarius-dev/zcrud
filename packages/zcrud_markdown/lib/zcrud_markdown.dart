@@ -13,6 +13,11 @@ library;
 export 'src/data/z_delta_codec.dart';
 export 'src/data/z_html_codec.dart';
 export 'src/data/z_markdown_codec.dart';
+// COMBLEMENT ES-6.2 (SM-S4) : couture NEUTRE pur-Dart de construction d'op embed
+// tableau. N'EXPOSE QUE la fabrique `zTableEmbedOp` + le type `kTableEmbedType`
+// (aucun type Quill) — l'embed de rendu et son builder restent INTERNES à
+// `lib/src/presentation/` (isolation AD-1/AD-7).
+export 'src/data/z_table_ops.dart' show zTableEmbedOp, kTableEmbedType;
 export 'src/domain/z_codec.dart';
 export 'src/domain/z_markdown_api.dart';
 export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;

@@ -2,6 +2,22 @@
 # Note intelligente à CONTENU TYPÉ (ES-2.2, FR-S5) : `ZSmartNote` (contenu
 # PARTAGEABLE, ops Delta neutres) + `ZNoteAudio` (slot `ZExtension` optionnel).
 #
+# 🔴 ES-6.1 — BASCULE EN PACKAGE FLUTTER (D2/D4). Le DOMAINE (`lib/src/domain/`)
+# reste PUR-DART (aucun import Flutter/Quill/zcrud_markdown — garde retargetée
+# `source_policy_test.dart`, D6/NFR-S10) ; c'est la PRÉSENTATION
+# (`lib/src/presentation/`, `ZSmartNoteEditor`/`ZSmartNoteReader`) qui, en
+# composant `ZMarkdownField`/`ZMarkdownReader` de `zcrud_markdown`, requiert le
+# SDK Flutter et l'arête `zcrud_note → zcrud_markdown`. Conséquences ASSUMÉES :
+#   - RUNNER (R14) : les tests de PRÉSENTATION tournent sous `flutter test` ; les
+#     tests de domaine pur-Dart restent verts (un package Flutter exécute aussi
+#     les suites pur-Dart). ⛔ NE PLUS lancer `dart test` ici.
+#   - `gate:web` (`gate_web_determinism.dart`) EXCLUT tout package `sdk: flutter`
+#     ⇒ la matrice de coercition D5 de `z_note_content_test.dart` n'est PLUS
+#     rejouée sous `dart test -p node`. Ce n'est PAS une régression de test (les
+#     suites tournent toujours, sous VM) mais une PERTE DE COUVERTURE DE
+#     PLATEFORME — escaladée en DW-ES-6.1-1 (option future : extraire le domaine
+#     pur dans un sous-package pour restaurer la couverture JS).
+#
 # 🔴 AD-28 — LE CONTENU N'EST JAMAIS UNE `String` AMBIGUË.
 # lex persiste `content` en `String` MARKDOWN ; IFFD persiste `content` en
 # `String?` qui est TANTÔT du Delta JSON, TANTÔT du markdown — désambiguïsé par
@@ -32,43 +48,70 @@ topics:
 
 environment:
   sdk: ^3.12.2
+  flutter: ">=3.0.0"
 
 # Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
 #
-# - `zcrud_core`        : surface PURE-DART `package:zcrud_core/domain.dart`
-#                         (`ZEntity`, `ZExtensible`, `ZExtension`, `ZSyncMeta`,
-#                         `ZcrudRegistry`, `ZFieldSpec`) — jamais le barrel
-#                         principal, qui tire Flutter et casserait `dart test`.
+# - `zcrud_core`        : surface `package:zcrud_core/zcrud_core.dart`
+#                         (`ZFormController`, `ZFieldSpec`, `EditionFieldType`,
+#                         `ZcrudTheme`) — le DOMAINE `zcrud_note`
+#                         (`lib/src/domain/`) reste, lui, sur la surface PURE-DART
+#                         `package:zcrud_core/domain.dart` (garde retargetée D6).
 # - `zcrud_annotations` : annotations `const` du codegen.
+# - `zcrud_markdown`    : 🔴 NOUVELLE ARÊTE (ES-6.1, D2/D4) — la PRÉSENTATION
+#                         compose `ZMarkdownField`/`ZMarkdownReader` + `ZDeltaCodec`
+#                         TELS QUELS (SM-S4 : aucun nouveau codec, aucune
+#                         duplication). `zcrud_markdown → zcrud_core` seul ⇒
+#                         graphe ACYCLIQUE conservé, CORE OUT=0 conservé.
 #
-# ⛔ **PAS `zcrud_markdown`** (D4 — la prescription de l'epic est INVALIDÉE) :
-#    `zcrud_markdown` est un package **FLUTTER** (`sdk: flutter`,
-#    `flutter_quill ^11.5.0`, `flutter_math_fork`, 2 convertisseurs HTML).
-#    L'arête ferait de ce package de DOMAINE PUR un package Flutter tirant Quill,
-#    et ses tests basculeraient de `dart test` à `flutter test`. De plus le
-#    domaine n'a AUCUN besoin du `ZCodec` : le format persisté canonique de la
-#    note EST le Delta ⇒ le codec applicable (`ZDeltaCodec`) est un codec
-#    IDENTITÉ. Enfin `DeltaNeutralOps` est PRIVÉ (`lib/src/data/`, absent du
-#    barrel) : même avec l'arête, il serait inutilisable.
-#    ⇒ L'arête naîtra en ES-6.1, avec le PREMIER WIDGET (`presentation/`).
+# 🔴 BASCULE FLUTTER (D2/D4) : composer les widgets `zcrud_markdown` (Quill)
+#    requiert le SDK Flutter. Le DOMAINE demeure PUR-DART (aucun import
+#    Flutter/Quill) — la pureté est tenue par machine (`source_policy_test.dart`
+#    retargeté sur `lib/src/domain/` + `lib/src/data/`, D6/NFR-S10). Le format
+#    persisté canonique de la note EST le Delta ⇒ le codec applicable
+#    (`ZDeltaCodec`) est un codec IDENTITÉ : `note.content` (ops déjà canoniques =
+#    valeur neutre de `ZCodec`) entre TEL QUEL dans `ZMarkdownField`, la branche
+#    destructrice `asDeltaOps(String)→null→[]` n'est JAMAIS atteinte (DW-ES22-1
+#    réconciliée PAR CONSTRUCTION, preuve AC5).
 #
 # ⛔ **PAS `zcrud_study_kernel`** (D7, leçon L2 d'ES-2.1 : « dépendance DÉCLARÉE,
 #    aucun import ») : `ZSmartNote` référence son dossier par `folderId`, une clé
 #    NEUTRE `String` — aucun symbole du kernel n'est importé. L'arête sera
 #    déclarée quand un import réel l'exigera (ES-3.3, registre de cascade).
 #
-# ⛔ AUCUNE dép lourde, AUCUN gestionnaire d'état, AUCUN `cloud_firestore`,
-#    AUCUN SDK Flutter (NFR-S3/SM-S5).
+# ⛔ AUCUN gestionnaire d'état, AUCUN `cloud_firestore` (NFR-S3/SM-S5).
 dependencies:
+  flutter:
+    sdk: flutter
   zcrud_core: ^0.1.0
   zcrud_annotations: ^0.1.0
+  zcrud_markdown: ^0.1.0
 
 # Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
 # (`auto_apply: dependents`) émet `z_smart_note.g.dart` (SUIVI par git sous
 # `packages/*/lib/` — distribution en dépendance git, gate
-# `codegen-distribution`). Le package n'importe QUE la surface pur-Dart de
-# `zcrud_core` ⇒ ses tests tournent sous `dart test`.
+# `codegen-distribution`).
+#
+# 🔴 ES-6.1 : `flutter_test` remplace `test` (bascule Flutter D2/D4). Les tests de
+# présentation (`ZSmartNoteEditor`/`ZSmartNoteReader`) sont des `testWidgets` ;
+# les tests de domaine pur-Dart restent verts sous `flutter test`. `flutter_test`
+# ré-exporte `package:test` (`test`/`group`/`expect`) ⇒ les suites de domaine
+# existantes n'ont RIEN à changer.
 dev_dependencies:
   zcrud_generator: ^0.1.0
   build_runner: ^2.5.0
+  flutter_test:
+    sdk: flutter
+  # Conservé aux côtés de `flutter_test` : les suites de DOMAINE pur-Dart
+  # existantes (`z_smart_note_test.dart`, `z_note_content_test.dart`, …) importent
+  # `package:test/test.dart` directement ⇒ le garder évite le lint
+  # `depend_on_referenced_packages` sans réécrire ces tests. `flutter_test` le tire
+  # de toute façon en transitif.
   test: ^1.25.0
+  # 🔴 ES-6.1 — DEV-ONLY : les tests de PRÉSENTATION pilotent la frappe via le
+  # `QuillController` RÉEL rendu par `ZMarkdownField` (membre PUBLIC de
+  # `flutter_quill`) — MÊME stratégie que les tests de `zcrud_markdown`. C'est une
+  # arête de TEST : elle n'apparaît PAS dans `dependencies:` (la surface publique
+  # de `zcrud_note` n'expose AUCUN type Quill — AC8) et n'est PAS scannée par les
+  # gardes de pureté (qui ne lisent que `lib/`).
+  flutter_quill: ^11.5.0

@@ -61,10 +61,24 @@
 /// par `scripts/ci/gate_reserved_keys.dart` (règle **(h)**), plus par un
 /// commentaire.
 ///
-/// API publique = ce barrel ; implémentation sous `lib/src/domain/`.
+/// ## ES-6.1 — Présentation : édition/lecture du corps riche (FR-S25)
+///
+/// `ZSmartNoteEditor` / `ZSmartNoteReader` sont de **minces adaptateurs** (D1/D2)
+/// composant `ZMarkdownField`/`ZMarkdownReader` + `ZDeltaCodec` de `zcrud_markdown`
+/// **TELS QUELS** (SM-S4 : aucun nouveau codec, aucune duplication). Ils exposent
+/// **UNIQUEMENT** des symboles neutres — `ZSmartNote`, `ValueChanged<ZSmartNote>`,
+/// valeurs neutres — **jamais** un type Quill (`QuillController`/`Document`/
+/// `Delta`, AC8/AD-1/AD-7). Cette moitié `presentation/` fait de `zcrud_note` un
+/// package **Flutter** (tests sous `flutter test`) ; le DOMAINE reste PUR-DART.
+///
+/// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+export 'src/data/z_note_table_migration.dart'
+    show zMigrateNoteTables, zMigrateStickyNote, zUpgradeLegacyNoteContent;
 export 'src/domain/z_note_audio.dart';
 export 'src/domain/z_note_content.dart';
 export 'src/domain/z_opaque_note_extension.dart';
 export 'src/domain/z_smart_note.dart' hide ZSmartNoteZcrud;
+export 'src/presentation/z_smart_note_editor.dart' show ZSmartNoteEditor;
+export 'src/presentation/z_smart_note_reader.dart' show ZSmartNoteReader;

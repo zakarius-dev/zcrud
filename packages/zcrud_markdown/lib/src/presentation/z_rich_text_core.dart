@@ -18,6 +18,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../data/delta_neutral_ops.dart';
+// SOURCE UNIQUE du type d'embed tableau (SM-S4 / ES-6.2) : re-câblage D3 sur la
+// couture NEUTRE, `z_table_embed.dart` ne re-déclare plus `kTableEmbedType`.
+import '../data/z_table_ops.dart';
 import 'z_latex_embed.dart';
 import 'z_media_embed.dart';
 import 'z_rich_text_toolbar_config.dart';
