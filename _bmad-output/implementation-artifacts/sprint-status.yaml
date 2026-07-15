@@ -385,10 +385,10 @@ development_status:
 
   # === ES-7 — Intégration mindmap (réutilisation zcrud_mindmap) ===  Dépend de : ES-5.
   # ⚠ 7.1 écrit zcrud_study → NON ∥ avec ES-8.1/ES-9.*. 7.2 ∥ (zcrud_mindmap disjoint).
-  epic-es-7: backlog
-  es-7-1-integration-mindmap-study-tools: backlog       # [M][SÉQ vs ES-5 — écrit zcrud_study, NON ∥ avec 8.1/9.*] ZStudyMindmapSection
-  es-7-2-comblement-ecarts-mindmap-richtext: backlog    # [M][∥ — zcrud_mindmap] comblement outline + décision rich-text (OQ-S5)
-  epic-es-7-retrospective: optional
+  epic-es-7: done
+  es-7-1-integration-mindmap-study-tools: done           # [M][SÉQ vs ES-5 — écrit zcrud_study, NON ∥ avec 8.1/9.*] ZStudyMindmapSection
+  es-7-2-comblement-ecarts-mindmap-richtext: done        # [M][∥ — zcrud_mindmap] comblement outline + décision rich-text (OQ-S5)
+  epic-es-7-retrospective: done
 
   # === ES-8 — Tags & annotations (UI) ===  Dépend de : ES-2 (et ES-3 pour persistance annotations, cf. finding F1).
   # ⚠ 8.1 écrit zcrud_study → NON ∥ avec ES-7.1/ES-9.*. 8.2 ∥ (zcrud_document/presentation disjoint).

@@ -46,6 +46,30 @@ class ZMindmapDefaultNodeContent extends StatelessWidget {
   }
 }
 
+/// Rendu **compact** (ES-7.2, AC3) : `label` seul, mono-ligne, thématisé. Ne
+/// rend **jamais** `content` (masquage condensé) et ne dépend d'aucun builder
+/// injecté. Couleur issue du thème (FR-26), `TextAlign.start` (RTL-safe, AD-13).
+class _CompactLabel extends StatelessWidget {
+  const _CompactLabel({required this.node});
+
+  final ZMindmapNode node;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ZcrudTheme.of(context);
+    final baseColor =
+        theme.labelColor ?? Theme.of(context).colorScheme.onSurface;
+    return Text(
+      node.label,
+      textAlign: TextAlign.start,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: baseColor) ??
+          TextStyle(color: baseColor),
+    );
+  }
+}
+
 /// Carte interactive thématisée enveloppant le contenu d'un nœud.
 ///
 /// Partagée par le graphe (`ExcludeSemantics` en amont) et la vue liste (qui
@@ -59,6 +83,7 @@ class ZMindmapNodeCard extends StatelessWidget {
     required this.isSelected,
     required this.config,
     this.onTap,
+    this.compact = false,
     super.key,
   });
 
@@ -67,6 +92,14 @@ class ZMindmapNodeCard extends StatelessWidget {
 
   /// Constructeur de contenu injecté (défaut sûr résolu par l'appelant).
   final ZMindmapNodeContentBuilder contentBuilder;
+
+  /// Mode **compact** (ES-7.2, AC3) : rendu **condensé label-seul** — le
+  /// [contentBuilder] (et donc tout extrait/contenu long ou rich-text) est
+  /// **masqué**, seul `label` est rendu en texte brut mono-ligne. Défaut `false`
+  /// ⇒ rendu E10 inchangé (ADDITIF STRICT, AC6). La garde de masquage vit ici :
+  /// la retirer (toujours appeler [contentBuilder]) laisse le contenu visible
+  /// ⇒ assertion AC3 ROUGE (INJ-2).
+  final bool compact;
 
   /// État de sélection **déjà résolu** par l'appelant (surlignage). Le point
   /// d'écoute unique (`ValueListenableBuilder`) vit dans la surface parente
@@ -109,7 +142,9 @@ class ZMindmapNodeCard extends StatelessWidget {
           ),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: contentBuilder(context, node),
+            child: compact
+                ? _CompactLabel(node: node)
+                : contentBuilder(context, node),
           ),
         ),
       ),

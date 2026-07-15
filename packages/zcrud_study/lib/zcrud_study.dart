@@ -14,5 +14,6 @@ export 'src/presentation/z_feature_availability.dart';
 export 'src/presentation/z_item_actions_menu.dart';
 export 'src/presentation/z_reorder_ids.dart';
 export 'src/presentation/z_sectioned_study_layout.dart';
+export 'src/presentation/z_study_mindmap_section.dart';
 export 'src/presentation/z_study_tools_page.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';

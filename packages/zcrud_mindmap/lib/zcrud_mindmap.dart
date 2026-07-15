@@ -22,6 +22,12 @@ export 'src/domain/z_mindmap_tree_ops.dart';
 // dépendance à `zcrud_markdown`). Lecture seule : interactions remontées par
 // callback, état de vue local en `ValueNotifier` (aucun gestionnaire d'état).
 export 'src/presentation/z_mindmap_list_view.dart';
+// COMBLEMENT ES-7.2 (OQ-S5, AD-28/AD-4/AD-7) : seam rich-text OPT-IN
+// `ZMindmapMarkdownContent` — adaptateur MINCE composant `ZMarkdownReader` +
+// `ZDeltaCodec` identité de `zcrud_markdown` (aucun nouveau codec, aucune
+// heuristique ; `content` de nœud reste texte brut, le rich vit dans le slot
+// AD-4 opt-in). Défaut de la vue = texte brut (autres apps non forcées).
+export 'src/presentation/z_mindmap_markdown_content.dart';
 export 'src/presentation/z_mindmap_node_card.dart';
 // Présentation E10-3 (FR-19, AD-1/AD-2/AD-13/AD-15/FR-26) : éditeur outline
 // CORRIGÉ = liste indentée éditable dont la SAUVEGARDE applique réellement les
@@ -35,3 +41,8 @@ export 'src/presentation/z_mindmap_outline_editor.dart';
 export 'src/presentation/z_mindmap_outline_labels.dart';
 export 'src/presentation/z_mindmap_view.dart';
 export 'src/presentation/z_mindmap_view_config.dart';
+// COMBLEMENTS ES-7.2 (SM-S4, AD-2/AD-13/AD-15/FR-26) : contrôles user-facing de
+// la vue (zoom piloté/clampé, compact, plein-écran, super-racine) via un
+// `ZMindmapViewController` pur-Flutter + libellés a11y externalisés
+// (`ZMindmapViewLabels`). Tout est OPT-IN (contrôleur optionnel) : défaut = E10.
+export 'src/presentation/z_mindmap_view_controls.dart';

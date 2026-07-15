@@ -41,16 +41,27 @@ environment:
 # - `zcrud_annotations`  : annotations `const` du codegen (arête study → annotations
 #                          hérité de la convention des packages study).
 #
-# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN
-#    satellite lourd (`zcrud_flashcard`/`zcrud_mindmap`/`zcrud_note`/
-#    `zcrud_document`) — ces arêtes seront ajoutées par la story qui les consomme
-#    réellement (ES-5.2+). Le harnais golden n'a besoin QUE de core + kernel.
+# - `zcrud_mindmap`      : arête AJOUTÉE par ES-7.1 (première story qui la consomme
+#                          réellement). `ZStudyMindmapSection` COMPOSE la surface
+#                          publique déjà livrée (`ZMindmapView` E10-2 ;
+#                          `ZMindmapOutlineController`/`ZMindmapOutlineEditor` E10-3)
+#                          — section « carte mentale » de la page study-tools
+#                          (AD-25/AD-4/AD-28). Arête ACYCLIQUE (mindmap → core/…,
+#                          jamais l'inverse). ⛔ `graphite` reste TRANSITIF via
+#                          `zcrud_mindmap` — PAS de `graphite`/`flutter_flow_chart`/
+#                          `graphview` en dépendance directe de `zcrud_study`
+#                          (flowchart legacy IFFD NON porté, AD-1).
+#
+# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN autre
+#    satellite lourd (`zcrud_flashcard`/`zcrud_note`/`zcrud_document`) — ces arêtes
+#    seront ajoutées par la story qui les consomme réellement.
 dependencies:
   flutter:
     sdk: flutter
   zcrud_core: ^0.1.0
   zcrud_study_kernel: ^0.1.0
   zcrud_annotations: ^0.1.0
+  zcrud_mindmap: ^0.1.0
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).
