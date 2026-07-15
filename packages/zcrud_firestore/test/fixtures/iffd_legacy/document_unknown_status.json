@@ -1,0 +1,17 @@
+{
+  "id": "doc_iffd_004",
+  "subjectId": "subj_chem_150",
+  "folderId": "folder_organic",
+  "subFolderId": null,
+  "creatorId": "user_ama",
+  "createdAt": 1710671400000,
+  "name": "reactions.pdf",
+  "type": "pdf",
+  "content": "…",
+  "contentLength": 9001,
+  "pageCount": 3,
+  "status": "quantum_indexing",
+  "cloudPath": "subjects/subj_chem_150/documents/doc_iffd_004.pdf",
+  "cloudUrl": null,
+  "assistantFileId": null
+}

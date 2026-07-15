@@ -4,7 +4,10 @@
 # neutre `ZRepository<T>` (défini dans zcrud_core).
 # AD-5 : `cloud_firestore`/`firebase_core` vivent EXCLUSIVEMENT ici ; aucun type
 # Firestore ne fuit dans une signature publique. `zcrud_core` n'en dépend PAS.
-# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
+# AD-1/AD-17 : arêtes sortantes zcrud_* = zcrud_core ET (ES-3.2) zcrud_study_kernel
+# UNIQUEMENT — le kernel ne dépend QUE de zcrud_core, donc
+# zcrud_firestore → zcrud_study_kernel → zcrud_core reste un DAG (acyclique) et
+# CORE OUT=0 est préservé (out-degree de zcrud_core inchangé = 0).
 name: zcrud_firestore
 description: "Firestore and Hive adapters for zcrud repositories: offline-first storage behind neutral, backend-agnostic ports."
 version: 0.1.0
@@ -37,6 +40,11 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   zcrud_core: ^0.1.0
+  # ES-3.2 (FR-S13) — `ZOfflineFirstBoxRepository<T>` étend le port
+  # `ZStudyRepository<T>` (Template Method `save = validate→persist`, ES-3.1) pour
+  # en implémenter le point d'extension `persist`. Nouvelle arête directe (D1),
+  # acyclique-safe (le kernel ne dépend que de zcrud_core, CORE OUT=0 inchangé).
+  zcrud_study_kernel: ^0.1.0
 
 dev_dependencies:
   flutter_test:

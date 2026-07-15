@@ -122,6 +122,65 @@ void main() {
     });
   });
 
+  group('registerAll (ES-3.4)', () {
+    test('enregistre CHAQUE dépôt de la liste injectée (garde d\'itération)',
+        () {
+      final o = ZSyncOrchestrator(timerFactory: _FakeTimerFactory().call);
+      final r1 = _SpyRepo(_SyncBehavior.ok);
+      final r2 = _SpyRepo(_SyncBehavior.ok);
+      final r3 = _SpyRepo(_SyncBehavior.ok);
+
+      o.registerAll([r1, r2, r3]);
+      // R3-a : remplacer la boucle par `register(repos.first)` → count==1 ⇒ ROUGE
+      // (la garde « aucun repo oublié » est LOAD-BEARING).
+      expect(o.registeredCount, 3);
+
+      o.dispose();
+    });
+
+    test('idempotence héritée : re-appel avec la même liste ⇒ toujours 3', () {
+      final o = ZSyncOrchestrator(timerFactory: _FakeTimerFactory().call);
+      final r1 = _SpyRepo(_SyncBehavior.ok);
+      final r2 = _SpyRepo(_SyncBehavior.ok);
+      final r3 = _SpyRepo(_SyncBehavior.ok);
+
+      o.registerAll([r1, r2, r3]);
+      o.registerAll([r1, r2, r3]);
+      expect(o.registeredCount, 3, reason: 'compose register (idempotent par identité)');
+
+      // Un doublon dans la liste elle-même n'est enregistré qu'une fois.
+      o.registerAll([r1, r1]);
+      expect(o.registeredCount, 3);
+
+      o.dispose();
+    });
+
+    test('no-op après dispose ⇒ registeredCount reste 0', () {
+      final o = ZSyncOrchestrator(timerFactory: _FakeTimerFactory().call);
+      o.dispose();
+      o.registerAll([_SpyRepo(_SyncBehavior.ok), _SpyRepo(_SyncBehavior.ok)]);
+      expect(o.registeredCount, 0, reason: 'no-op après dispose (héritée de register)');
+    });
+
+    test('un cycle synchronise TOUS les dépôts injectés, exactement une fois',
+        () async {
+      final o = ZSyncOrchestrator(timerFactory: _FakeTimerFactory().call);
+      final r1 = _SpyRepo(_SyncBehavior.ok);
+      final r2 = _SpyRepo(_SyncBehavior.ok);
+      final r3 = _SpyRepo(_SyncBehavior.ok);
+      o.registerAll([r1, r2, r3]);
+
+      await o.syncNow();
+      // Preuve par compteurs (pas par registeredCount seul — R12) : chaque dépôt
+      // injecté est réellement itéré jusqu'au bout.
+      expect(r1.syncCalls, 1);
+      expect(r2.syncCalls, 1);
+      expect(r3.syncCalls, 1);
+
+      o.dispose();
+    });
+  });
+
   group('Débounce & coalescence SANS Timer réel (AC3, AC9)', () {
     test('N déclencheurs rapprochés → 1 seul cycle, chaque sync() 1 fois',
         () async {

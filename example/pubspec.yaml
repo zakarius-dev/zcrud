@@ -112,3 +112,13 @@ dependency_overrides:
     path: ../packages/zcrud_export
   zcrud_firestore:
     path: ../packages/zcrud_firestore
+  # ES-3.2 : `zcrud_firestore` gagne une arête vers `zcrud_study_kernel` (base
+  # offline-first `ZOfflineFirstBoxRepository` étendant `ZStudyRepository`, ES-3.1).
+  # Override CONSOMMATEUR path↔hosted (voie standalone EX-1, aucun ajout au
+  # `workspace:` racine) — sinon la dép transitive `^0.1.0` est cherchée sur pub.dev.
+  zcrud_study_kernel:
+    path: ../packages/zcrud_study_kernel
+  # Transitif de `zcrud_study_kernel` (annotations `const` du codegen) : override
+  # path↔hosted pour la même raison (voie standalone EX-1).
+  zcrud_annotations:
+    path: ../packages/zcrud_annotations

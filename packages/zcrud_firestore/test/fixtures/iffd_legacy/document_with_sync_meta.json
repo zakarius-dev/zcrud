@@ -1,0 +1,19 @@
+{
+  "id": "doc_iffd_006",
+  "subjectId": "subj_geo_110",
+  "folderId": "folder_maps",
+  "subFolderId": null,
+  "creatorId": "user_esi",
+  "createdAt": 1710757800000,
+  "name": "atlas.pdf",
+  "type": "pdf",
+  "content": "…",
+  "contentLength": 220000,
+  "pageCount": 88,
+  "status": "converted",
+  "cloudPath": "subjects/subj_geo_110/documents/doc_iffd_006.pdf",
+  "cloudUrl": "https://storage.example/doc_iffd_006.pdf",
+  "assistantFileId": null,
+  "is_deleted": true,
+  "updated_at": "2024-04-01T08:00:00.000Z"
+}

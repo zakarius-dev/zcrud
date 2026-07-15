@@ -185,6 +185,23 @@ class ZSyncOrchestrator {
     _repos.remove(repo);
   }
 
+  /// **ES-3.4 (FR-S15 / AD-20)** — injection en **LOT** de la **liste injectée**
+  /// de dépôts synchronisables : enregistre **CHAQUE** dépôt de [repos].
+  ///
+  /// Miroir *first-class* de [register] pour une **liste** (le AC ES-3.4 exige
+  /// que l'orchestrateur *« prend une liste injectée »*) : c'est le foyer nommé
+  /// et testable de la **garde d'itération** — « aucun repo oublié ». Strictement
+  /// **additif** : il **compose** [register] (n'introduit **aucune** seconde voie
+  /// d'injection ni état), hérite donc de l'**idempotence par identité** (un même
+  /// instance présent deux fois dans [repos] n'est enregistré qu'une fois) et du
+  /// **no-op après [dispose]**. Pur-Dart (aucun import Flutter/backend).
+  void registerAll(Iterable<ZSyncableRepository<dynamic>> repos) {
+    if (_disposed) return;
+    for (final repo in repos) {
+      register(repo);
+    }
+  }
+
   /// **Test only** — nombre de dépôts actuellement enregistrés (lecture testable ;
   /// équivalent `@visibleForTesting`, l'annotation étant hors domaine pur-Dart).
   int get registeredCount => _repos.length;

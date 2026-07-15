@@ -1,0 +1,17 @@
+{
+  "id": "doc_iffd_001",
+  "subjectId": "subj_math_101",
+  "folderId": "folder_algebra",
+  "subFolderId": "subfolder_polynomials",
+  "creatorId": "user_amadou",
+  "createdAt": 1710498600000,
+  "name": "chapitre_1_polynomes.pdf",
+  "type": "pdf",
+  "content": "Contenu extrait du PDF (indexé pour l'IA)…",
+  "contentLength": 48213,
+  "pageCount": 12,
+  "status": "embedded",
+  "cloudPath": "subjects/subj_math_101/documents/doc_iffd_001.pdf",
+  "cloudUrl": "https://storage.example/doc_iffd_001.pdf",
+  "assistantFileId": "file-abc123xyz"
+}

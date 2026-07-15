@@ -50,6 +50,50 @@ bool _isFlutterPackage(Directory pkgDir) {
   return false;
 }
 
+/// `true` si le package [pkgDir] **déclare** le tag `serialization-compat` dans
+/// son `dart_test.yaml` (bloc `tags:` contenant une clé `serialization-compat:`).
+///
+/// ═══════════════════════ MICRO-AJUSTEMENT SIGNALÉ — ES-3.5 / D7 ═══════════════
+/// **Population REDEVABLE = tag-declarers (opt-in par `dart_test.yaml`).**
+///
+/// Avant ES-3.5, le gate itérait TOUS les packages ayant un dossier `test/` (18
+/// mesurés) et les comptait `skipped` faute de test taggé. Sous l'interrupteur
+/// `ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1`, cela imposerait un corpus dans CHACUN
+/// — dont 9 SANS entité persistée (`zcrud_geo`, `zcrud_intl`, `zcrud_list`,
+/// `zcrud_mindmap`, `zcrud_export`, `zcrud_get`, `zcrud_riverpod`,
+/// `zcrud_provider`, `zcrud_annotations`). Y semer une fixture serait un **corpus
+/// POWERLESS** (ne discrimine RIEN) — interdit (R12/DW-ES25-1).
+///
+/// Le `dart_test.yaml` **EST DÉJÀ** le marqueur d'opt-in de la convention (le
+/// kernel l'a posé « prêt pour ES-3.5 »). Ce filtre rend « redevable » ≡ « a
+/// DÉCLARÉ le tag », alignant le gate sur sa propre convention. Population
+/// résultante après ES-3.5 = {`zcrud_generator`, `zcrud_study_kernel`,
+/// `zcrud_firestore`} — toutes portent un corpus.
+///
+/// ⚠️ POUVOIR DISCRIMINANT PRÉSERVÉ : un package qui **déclare** le tag SANS
+/// corpus vert reste `skipped` ⇒ RC=1 sous l'interrupteur (cf. R3-8). Le squelette
+/// du gate (itération, runner `flutter`/`dart`, `exit 79`→skip, bannière,
+/// interrupteur) est **INCHANGÉ** — seul l'ensemble de départ est restreint.
+/// ═════════════════════════════════════════════════════════════════════════════
+bool _declaresCompatTag(Directory pkgDir) {
+  final cfg = File('${pkgDir.path}/dart_test.yaml');
+  if (!cfg.existsSync()) return false;
+  var inTags = false;
+  for (final raw in cfg.readAsLinesSync()) {
+    final line = raw.replaceFirst(RegExp(r'#.*$'), '');
+    if (RegExp(r'^tags:\s*$').hasMatch(line)) {
+      inTags = true;
+      continue;
+    }
+    // Une clé top-level non indentée ferme le bloc tags:.
+    if (inTags && RegExp(r'^[A-Za-z_]').hasMatch(line)) inTags = false;
+    if (inTags && RegExp(r'^\s+serialization-compat:').hasMatch(line)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Bannière BRUYANTE (patron `gate:web`) : la rétro-compat n'a PAS été vérifiée
 /// pour [skipped]. RC inchangé (0) — sauf interrupteur ES-3.5.
 void _banner(List<String> skipped, {required bool required}) {
@@ -107,7 +151,11 @@ void main() {
 
   final withTests = <Directory>[];
   for (final ent in pkgs.listSync()) {
-    if (ent is Directory && Directory('${ent.path}/test').existsSync()) {
+    // MICRO-AJUSTEMENT ES-3.5/D7 : population redevable = tag-declarers (a un
+    // dossier test/ ET déclare `serialization-compat` dans dart_test.yaml).
+    if (ent is Directory &&
+        Directory('${ent.path}/test').existsSync() &&
+        _declaresCompatTag(ent)) {
       withTests.add(ent);
     }
   }

@@ -88,7 +88,18 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         ZPodcastMode,
         ZPodcastStatus,
         ZPodcastFreshness,
-        podcastFreshness;
+        podcastFreshness,
+        // ES-3.1 — port CRUD offline-first générique `ZStudyRepository<T>` : port
+        // DATA study-niveau (Template Method `validate`→`persist`), NON pertinent
+        // pour la surface flashcard historique ⇒ hors surface publique flashcard
+        // (précédent EXACT `ZFolderContentsOrder` / ES-2.7 / ES-2.8).
+        ZStudyRepository,
+        // ES-3.3 — registre DÉCLARATIF de cascade (`ZCascadeEdge` +
+        // `ZCascadeRegistry`) : mécanisme study-niveau de suppression bornée,
+        // NON pertinent pour la surface flashcard historique ⇒ hors surface
+        // publique flashcard (précédent EXACT `ZStudyRepository` / ES-3.1, D10).
+        ZCascadeEdge,
+        ZCascadeRegistry;
 
 export 'src/data/z_flashcard_repository.dart';
 export 'src/data/z_repetition_store.dart';

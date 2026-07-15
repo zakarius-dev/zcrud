@@ -31,6 +31,10 @@ environment:
 dependencies:
   zcrud_core: ^0.1.0
   zcrud_annotations: ^0.1.0
+  # ES-3.1 (FR-S12) — `@protected` sur le point d'extension `ZStudyRepository.persist`
+  # (Template Method). Dép pur-Dart légère, `const` (AD-1-safe : non-`zcrud_*`, sans
+  # effet sur la fermeture transitive du gate de résolution NFR-S10/SM-S7).
+  meta: ^1.15.0
 
 # Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
 # (`auto_apply: dependents`) émet `z_study_folder.g.dart` /

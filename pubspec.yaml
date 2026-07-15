@@ -155,4 +155,4 @@ melos:
         dart run scripts/ci/gate_compat_resolution.dart && \
         dart run scripts/ci/gate_web_determinism.dart && \
         dart run scripts/ci/gate_reserved_keys.dart && \
-        dart run scripts/ci/verify_serialization.dart
+        ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1 dart run scripts/ci/verify_serialization.dart

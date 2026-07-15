@@ -58,6 +58,12 @@ export 'src/domain/apply_order.dart';
 export 'src/domain/normalize_tag_title.dart';
 export 'src/domain/remap_color_key.dart';
 export 'src/domain/tag_referential_integrity.dart';
+// ES-3.3 (FR-S14, AD-21) — registre DÉCLARATIF de cascade `ZCascadeEdge` +
+// `ZCascadeRegistry` : PUR, zéro backend, zéro chemin ; ownership anti two-owners
+// (garde machine) + traversée bornée (garde de cycle self-edge). La topologie
+// concrète est résolue côté `zcrud_firestore` (`ZFirestorePathResolver`). Hors
+// surface flashcard ⇒ classé au `hide` de `zcrud_flashcard` (D10).
+export 'src/domain/z_cascade_registry.dart';
 export 'src/domain/z_color_palette.dart';
 // ES-2.7 (FR-S10) — famille OUVERTE de tâches quotidiennes (interface +
 // `String kind`, JAMAIS `sealed` — AD-4/D2) + port neutre `ZApproachingExam`.
@@ -87,6 +93,12 @@ export 'src/domain/z_study_folder_hierarchy.dart';
 // `sourceHash` est une empreinte OPAQUE COMPARÉE, JAMAIS calculée ici (D4 :
 // aucune dépendance crypto — NFR-S10/SM-S7).
 export 'src/domain/z_study_podcast.dart' hide ZStudyPodcastZcrud;
+// ES-3.1 (FR-S12) — port CRUD offline-first générique `ZStudyRepository<T>`
+// (Template Method : `validate` overridable exécuté AVANT `persist`). COMPOSE
+// avec `ZSyncableRepository` de `zcrud_core` (AD-4), n'ajoute que le hook métier.
+// Port data générique HORS surface flashcard historique ⇒ classé au `hide` du
+// barrel `zcrud_flashcard` (D7/AC10).
+export 'src/domain/z_study_repository.dart';
 export 'src/domain/z_study_session_config.dart' hide ZStudySessionConfigZcrud;
 // ES-2.7 (FR-S10) — résultat d'UNE session : value-object PUR (AUCUN codegen,
 // aucun `@ZcrudModel`/`registerZ…` — D1).

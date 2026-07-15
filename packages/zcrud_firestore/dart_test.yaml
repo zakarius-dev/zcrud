@@ -1,0 +1,12 @@
+# Déclare le tag du slot de rétro-compat sérialisation (AD-10) pour éviter tout
+# avertissement « tag non déclaré ». OPT-IN de la population REDEVABLE du gate
+# `scripts/ci/verify_serialization.dart` (helper `_declaresCompatTag`, ES-3.5/D7) :
+# un package qui déclare ce tag DOIT porter un corpus vert sous
+# `ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1`, sinon RC=1.
+#
+# ES-3.5 sème ici le CORPUS de documents IFFD legacy (camelCase réels) —
+# `z_study_legacy_codec_test.dart` (`@Tags(['serialization-compat'])`). Runner :
+# `flutter test` (zcrud_firestore = package Flutter).
+tags:
+  serialization-compat:
+    description: "Round-trip / désérialisation défensive de documents legacy (AD-10)."

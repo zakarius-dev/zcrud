@@ -1,0 +1,17 @@
+{
+  "id": "doc_iffd_003",
+  "subjectId": "subj_phys_301",
+  "folderId": "folder_mechanics",
+  "subFolderId": "subfolder_kinematics",
+  "creatorId": "user_kofi",
+  "createdAt": "2024-03-15T10:30:00.000Z",
+  "name": "td_cinematique.pdf",
+  "type": "pdf",
+  "content": "Exercices corrigés…",
+  "contentLength": 15400,
+  "pageCount": 5,
+  "status": "uploaded",
+  "cloudPath": "subjects/subj_phys_301/documents/doc_iffd_003.pdf",
+  "cloudUrl": "https://storage.example/doc_iffd_003.pdf",
+  "assistantFileId": null
+}

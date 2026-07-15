@@ -316,21 +316,43 @@ development_status:
   #   .sectionOrders (ES-2.4). Vecteur persistant FERMÉ (le store passe par fromMap gardé) — hasard
   #   in-memory, pas perte au store. Fix uniforme (accesseur normalisant OU champ privé+getter, à la
   #   `extra`) à trancher au niveau PATRON, jamais story par story (corriger 1 entité = incohérence).
+  # DW-ES32-1 (LOW, code-review ES-3.2 — reporté/justifié, HORS-SYSTÈME) — `_decodeCloud`
+  #   (z_offline_first_box_repository.dart:168-188,435) normalise `updated_at` sur une COPIE non
+  #   utilisée pour la méta ; la voie méta lit le map BRUT (`ZSyncMeta.fromJson` → null sur non-String).
+  #   Impact UNIQUEMENT si un writer TIERS/legacy écrit `updated_at` en `Timestamp` natif → méta locale
+  #   null-ifiée → ré-adoption idempotente (amplification d'écritures, PAS de corruption). Hors-système :
+  #   `_cloudMap` écrit toujours de l'ISO (prouvé `timestamp_hint_test` AC8). Fix optionnel : normaliser
+  #   `doc.value` une fois avant d'en tirer entité + méta (aligne le code sur sa dartdoc). À solder SI un
+  #   writer tiers `Timestamp` est introduit (ex. interop DODLP/IFFD legacy en ES-3.5).
+  # DW-ES35-1 (✅ STATUÉE en rétro ES-3 : OUI plancher → ES-4.0 [TÊTE d'ES-4], R16 ; code-review ES-3.5 — faux-vert RÉSIDUEL de gate) —
+  #   `verify_serialization.dart` : la population redevable = tag-declarers (opt-in par `dart_test.yaml`,
+  #   D7). Retirer/omettre le `dart_test.yaml` d'un package à entité persistée le fait sortir
+  #   SILENCIEUSEMENT de la population sans RC=1 (le gate ne mord plus sur lui). Atténuation actuelle :
+  #   visible en diff ; allowlist explicitement pesée/rejetée en D7 (inertie). Défense-en-profondeur
+  #   suggérée : un « plancher » {zcrud_firestore, zcrud_generator, zcrud_study_kernel} TOUJOURS dans la
+  #   population, quels que soient leurs dart_test.yaml — décision de PATRON (R11) à trancher en rétro ES-3.
+  # DW-E54-1 (LOW, code-review ES-3.4 — PRÉ-EXISTANT E5-4, HORS périmètre additif ES-3.4) —
+  #   z_sync_orchestrator.dart:340-348 : une exception (throw) d'un `sync()` est comptée dans
+  #   `failed` mais ABSENTE de la liste `failures` (asymétrie vs le chemin `Left`, qui lui est
+  #   listé). Invariant best-effort tenu (jamais de rethrow, cycle poursuit) ; seul le rapport
+  #   `ZSyncRunReport.failures` est incomplet sur le cas throw. NON corrigé en ES-3.4 (R9/D1 :
+  #   l'ajout registerAll est strictement additif). À solder lors d'une story touchant l'orchestrateur E5.
 
   # === ES-3 — Ports & couche data offline-first bi-topologie ===  Dépend de : ES-2.
   # Packages : zcrud_study_kernel (ports/registre), zcrud_firestore (adapters).
-  epic-es-3: in-progress
+  epic-es-3: done
   es-3-0-registre-preserve-extension-immuabilite: done # [L/XL][TÊTE BLOQUANTE — SÉQ, écrit zcrud_core+generator+zcrud_firestore+9 .g.dart] DW-ES14-2 (ZcrudRegistry ne réinjecte NI extension NI sourceRegistry — extension DÉTRUITE sur la voie registre ; escape clause n°1 falsifiée par ZNoteAudio) + DW-ES24-1 (immuabilité PATRON des canaux Map/List). Verdict rétro ES-2 : OBLIGATOIRE avant tout store (ES-3.2/3.5).
-  es-3-1-depot-etude-generique: backlog                 # [M][SÉQ — écrit kernel] ZStudyRepository<T>
-  es-3-2-helper-offline-first-path-resolver: backlog    # [L][SÉQ — écrit zcrud_firestore] ZOfflineFirstBoxRepository + ZFirestorePathResolver
-  es-3-3-cascade-suppression-declarative-bornee: backlog # [L][SÉQ — écrit kernel + zcrud_firestore] ZCascadeRegistry + ZFirestoreCascadeBatcher (≤450)
-  es-3-4-orchestrateur-sync-parametre: backlog          # [M][SÉQ — adapte orchestrateur E5] zcrud_firestore (liste injectée)
-  es-3-5-compat-serialisation-camelcase-snake: backlog  # [L][SÉQ — écrit zcrud_firestore codec + fixtures/CI] gate compat corpus IFFD legacy
-  epic-es-3-retrospective: optional
+  es-3-1-depot-etude-generique: done                    # [M][SÉQ — écrit kernel] ZStudyRepository<T>
+  es-3-2-helper-offline-first-path-resolver: done       # [L][SÉQ — écrit zcrud_firestore] ZOfflineFirstBoxRepository + ZFirestorePathResolver
+  es-3-3-cascade-suppression-declarative-bornee: done   # [L][SÉQ — écrit kernel + zcrud_firestore] ZCascadeRegistry + ZFirestoreCascadeBatcher (≤450)
+  es-3-4-orchestrateur-sync-parametre: done             # [M][SÉQ — adapte orchestrateur E5] zcrud_firestore (liste injectée)
+  es-3-5-compat-serialisation-camelcase-snake: done     # [L][SÉQ — écrit zcrud_firestore codec + fixtures/CI] gate compat corpus IFFD legacy
+  epic-es-3-retrospective: done                         # R14 (runner flutter test), R15 (capture RC hors pipe), R16 (gate self-déclaré exige un plancher) ; DW-ES35-1 statuée OUI → ES-4.0
 
   # === ES-4 — SRS convergé + runtimes de session ===  Dépend de : ES-3.  ∥ AVEC ES-5 (packages disjoints).
   # Packages : zcrud_flashcard (SM-2 canonique), zcrud_session (nouveau).
   epic-es-4: backlog
+  es-4-0-plancher-gate-serialisation: backlog           # [S][SÉQ — TÊTE d'ES-4, écrit scripts/ci] DW-ES35-1 (R16) : plancher constant {firestore,generator,study_kernel} non-optable dans verify_serialization.dart (sortie de population ⇒ RC=1) + fixture prove_gates + R3 orchestrateur
   es-4-1-convergence-sm2-tests-contrat: backlog         # [L][SÉQ — TÊTE d'ES-4, bloque 4.2/4.3/4.4] zcrud_flashcard (ZSm2Scheduler + tests de contrat)
   es-4-2-runtime-session-srs-cycle: backlog             # [M][SÉQ vs 4.1] zcrud_session(new) ZStudySessionEngine
   es-4-3-runtimes-cramming-liste: backlog               # [M][SÉQ vs 4.1 — même package zcrud_session] ZLinearSessionState (zéro-SM2)
