@@ -1,0 +1,59 @@
+# zcrud_study — membre du workspace zcrud (resolution: workspace).
+# Package de PRÉSENTATION de l'orchestration « study tools » (AD-25). ES-5.1 pose
+# le SOCLE : le descripteur de section paramétrique `ZStudyToolsSectionSpec`
+# (title/itemBuilder/emptyState/addAction) + l'échafaudage de composition
+# `ZSectionedStudyLayout` (liste de sections INDÉPENDANTES, une frontière de
+# widget/Key par section) + le harnais golden DISCRIMINANT qui PROUVE que le
+# monolithe IFFD `folder_study_tools_page.dart` (~1753 l.) se décompose sans
+# perte d'apparence. Le branchement données réel + scoping ValueListenable par
+# champ = ES-5.2 ; les sections réordonnables = ES-5.3.
+name: zcrud_study
+description: "Study-tools orchestration (presentation) for zcrud: parametric section descriptor (ZStudyToolsSectionSpec) and a decomposed sectioned layout (ZSectionedStudyLayout) proven by a discriminant golden harness."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_study
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - presentation
+  - crud
+  - forms
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+#
+# - `flutter`            : package de PRÉSENTATION (widgets `ZSectionedStudyLayout`),
+#                          aiguille la CI sur `flutter test` (R14) — les tests
+#                          golden tirent `flutter_test`/`dart:ui`.
+# - `zcrud_core`         : surface présentation `package:zcrud_core/zcrud_core.dart`
+#                          (`ZcrudScope`, `ZcrudTheme`) — injection thème/seams
+#                          Flutter-native (AD-2/AD-6/AD-15). JAMAIS l'inverse.
+# - `zcrud_study_kernel` : arête DÉCLARÉE d'emblée (AD-17 : les satellites study
+#                          dépendent du kernel). Consommée par les stories
+#                          suivantes du MÊME package (ES-5.3 : `ZFolderContentsOrder`/
+#                          `applyOrder<T>`). Aucun cycle (kernel → core uniquement).
+# - `zcrud_annotations`  : annotations `const` du codegen (arête study → annotations
+#                          hérité de la convention des packages study).
+#
+# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN
+#    satellite lourd (`zcrud_flashcard`/`zcrud_mindmap`/`zcrud_note`/
+#    `zcrud_document`) — ces arêtes seront ajoutées par la story qui les consomme
+#    réellement (ES-5.2+). Le harnais golden n'a besoin QUE de core + kernel.
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_core: ^0.1.0
+  zcrud_study_kernel: ^0.1.0
+  zcrud_annotations: ^0.1.0
+
+# Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
+# (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

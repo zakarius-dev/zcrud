@@ -324,7 +324,14 @@ development_status:
   #   `_cloudMap` écrit toujours de l'ISO (prouvé `timestamp_hint_test` AC8). Fix optionnel : normaliser
   #   `doc.value` une fois avant d'en tirer entité + méta (aligne le code sur sa dartdoc). À solder SI un
   #   writer tiers `Timestamp` est introduit (ex. interop DODLP/IFFD legacy en ES-3.5).
-  # DW-ES35-1 (✅ STATUÉE en rétro ES-3 : OUI plancher → ES-4.0 [TÊTE d'ES-4], R16 ; code-review ES-3.5 — faux-vert RÉSIDUEL de gate) —
+  # DW-ES51-1 (✅ SOLDÉE par ES-5.2 : slots injectables addActionIcon/addActionSemanticLabel ajoutés au spec, label prime sur spec.title, badge via tokens theme, Semantics nettoyés — golden régénéré ; MEDIUM+LOW reportés d'ES-5.1, JUSTIFIÉ par écrit code-review-es-5-1.md) —
+  #   bouton d'ajout de section (z_sectioned_study_layout.dart) : Icon(Icons.add) codé en dur +
+  #   Semantics(label: spec.title) au lieu d'une sémantique « ajouter » (MEDIUM-1) ; paddings/BorderRadius
+  #   en dur du badge, Semantics redondants, fusedSections() documentaire (LOW-1/2/3). À corriger EN ES-5.2
+  #   (branchement réel d'addAction) via slots INJECTABLES addActionIcon/addActionSemanticLabel au spec
+  #   (i18n : jamais de label hardcodé). Atterrit dans le MÊME commit d'epic ES-5 (aucun code livré avec le smell).
+  # DW-ES35-1 (✅ SOLDÉE par ES-4.0 : plancher constant {firestore,generator,study_kernel} non-optable dans
+  #   verify_serialization.dart, sortie de population ⇒ RC=1 INCONDITIONNEL + preuve prove_gates ; R16 ; code-review ES-3.5 — faux-vert RÉSIDUEL de gate) —
   #   `verify_serialization.dart` : la population redevable = tag-declarers (opt-in par `dart_test.yaml`,
   #   D7). Retirer/omettre le `dart_test.yaml` d'un package à entité persistée le fait sortir
   #   SILENCIEUSEMENT de la population sans RC=1 (le gate ne mord plus sur lui). Atténuation actuelle :
@@ -351,23 +358,23 @@ development_status:
 
   # === ES-4 — SRS convergé + runtimes de session ===  Dépend de : ES-3.  ∥ AVEC ES-5 (packages disjoints).
   # Packages : zcrud_flashcard (SM-2 canonique), zcrud_session (nouveau).
-  epic-es-4: backlog
-  es-4-0-plancher-gate-serialisation: backlog           # [S][SÉQ — TÊTE d'ES-4, écrit scripts/ci] DW-ES35-1 (R16) : plancher constant {firestore,generator,study_kernel} non-optable dans verify_serialization.dart (sortie de population ⇒ RC=1) + fixture prove_gates + R3 orchestrateur
-  es-4-1-convergence-sm2-tests-contrat: backlog         # [L][SÉQ — TÊTE d'ES-4, bloque 4.2/4.3/4.4] zcrud_flashcard (ZSm2Scheduler + tests de contrat)
-  es-4-2-runtime-session-srs-cycle: backlog             # [M][SÉQ vs 4.1] zcrud_session(new) ZStudySessionEngine
-  es-4-3-runtimes-cramming-liste: backlog               # [M][SÉQ vs 4.1 — même package zcrud_session] ZLinearSessionState (zéro-SM2)
-  es-4-4-examen-blanc-session-engine: backlog           # [M][SÉQ vs 4.1 — zcrud_session] ZWhiteExamSessionEngine
-  es-4-5-widgets-qualite-progression: backlog           # [M][∥ — présentation zcrud_session] ZSrsQualityButtons/QualityBreakdown/ProgressRings
-  epic-es-4-retrospective: optional
+  epic-es-4: done
+  es-4-0-plancher-gate-serialisation: done              # [S][SÉQ — TÊTE d'ES-4, écrit scripts/ci] DW-ES35-1 SOLDÉE (R16) : plancher constant {firestore,generator,study_kernel} non-optable dans verify_serialization.dart (sortie de population ⇒ RC=1 inconditionnel) + prove_gates 41→43 OK + R3 orchestrateur
+  es-4-1-convergence-sm2-tests-contrat: done            # [L][SÉQ — TÊTE d'ES-4, bloque 4.2/4.3/4.4] zcrud_flashcard (ZSm2Scheduler + tests de contrat, verrou golden numérique ; prod inchangé ; AD-22 documenté)
+  es-4-2-runtime-session-srs-cycle: done                # [M][SÉQ vs 4.1] zcrud_session(new) ZStudySessionEngine (zéro-apply par construction, offsets +2/+4)
+  es-4-3-runtimes-cramming-liste: done                  # [M][SÉQ vs 4.1 — même package zcrud_session] ZLinearSessionState (zéro-SM2 par construction, modes list/cramming)
+  es-4-4-examen-blanc-session-engine: done              # [M][SÉQ vs 4.1 — zcrud_session] ZWhiteExamSessionEngine (machine à états StateError, scoring compose ZStudySessionResult, zéro-SM2)
+  es-4-5-widgets-qualite-progression: done              # [M][∥ — présentation zcrud_session] ZSrsQualityButtons/QualityBreakdown/ProgressRings (mapping qualité, DTO pur ; MEDIUM R6 silent-drop + LOW gardes récursives remédiés)
+  epic-es-4-retrospective: done                         # R20 (zéro-écriture par construction > garde runtime), R21 (gardes/scans récursifs dérivés du disque), R22 (les 2 faces partagent le critère canonique) ; DW-ES35-1 soldée, MEDIUM R6 ES-4.5 remédié ; DW-E54-1 reste ouverte.
 
   # === ES-5 — Layout « study tools » apparence IFFD ===  Dépend de : ES-3.  ∥ AVEC ES-4 (zcrud_study vs zcrud_session).
   # Packages : zcrud_study (nouveau, présentation).
-  epic-es-5: backlog
-  es-5-1-decomposabilite-layout-golden: backlog         # [M][SÉQ — TÊTE d'ES-5, bloque 5.2/5.3] zcrud_study(new) golden décomposabilité ~1750 l.
-  es-5-2-zstudytoolspage-scoping-isole-sm1: backlog     # [L][SÉQ vs 5.1] zcrud_study ZStudyToolsPage — non-régression SM-1
-  es-5-3-sections-reordonnables-hub-menu: backlog       # [L][SÉQ vs 5.2 — même package zcrud_study] sections/hub/menu (ZFolderContentsOrder)
-  es-5-4-feature-availability-injectable: backlog       # [S][SÉQ légère — fichier isolé zcrud_study] ZFeatureAvailability
-  epic-es-5-retrospective: optional
+  epic-es-5: done
+  es-5-1-decomposabilite-layout-golden: done            # [M][SÉQ — TÊTE d'ES-5, bloque 5.2/5.3] zcrud_study(new) golden décomposabilité ~1750 l.
+  es-5-2-zstudytoolspage-scoping-isole-sm1: done        # [L][SÉQ vs 5.1] zcrud_study ZStudyToolsPage — SM-1 prouvé (buildsB==1, 100 frappes) ; DW-ES51-1 soldé (icône/label injectés)
+  es-5-3-sections-reordonnables-hub-menu: done          # [L][SÉQ vs 5.2 — même package zcrud_study] sections/hub/menu (ZFolderContentsOrder) — SM-1 non régressé ; MEDIUM-1 (ordre optimiste local) remédié + verrouillé
+  es-5-4-feature-availability-injectable: done          # [S][SÉQ légère — fichier isolé zcrud_study] ZFeatureAvailability (fail-open injectable, compose slots ES-5.3)
+  epic-es-5-retrospective: done                         # R17 (sérialiser dev au bootstrap workspace), R18 (spot-check orchestrateur COVERAGE-PROBE), R19 (golden = byte-diff + comptage structurel) ; DW-ES51-1 soldée, MEDIUM-1 ES-5.3 remédié. COMMIT epic ES-5 différé jusqu'au repos d'ES-4 (verify repo-wide combiné).
 
   # === ES-6 — Notes & markdown (réutilisation zcrud_markdown) ===  Dépend de : ES-2, ES-5.
   # ∥ AVEC ES-7.2 / ES-8.2 (zcrud_note vs zcrud_mindmap vs zcrud_document). Packages : zcrud_note, zcrud_markdown.

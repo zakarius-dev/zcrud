@@ -1,0 +1,60 @@
+# zcrud_session — membre du workspace zcrud (resolution: workspace).
+# Runtime de SESSION d'étude (ES-4.2). Le moteur `ZStudySessionEngine`
+# (`ChangeNotifier` pur-Flutter, état IMMUABLE + reducer PUR) porte la file de
+# session en répétition espacée et RÉINSÈRE une carte ratée à un offset
+# déterministe (+2/+4 selon la sévérité du lapse). La SEULE écriture SRS transite
+# par un SEAM injecté `ZSessionReviewer` (= `ZFlashcardRepository.reviewCard` en
+# prod, AD-9) : le moteur ne détient AUCUN `ZSrsScheduler`/`ZRepetitionStore` et
+# n'appelle JAMAIS `apply`/`initial`/`put` (AD-23 « zéro écriture SM-2 PAR
+# CONSTRUCTION »). AUCUN gestionnaire d'état (Riverpod/GetX/provider) — AD-2,
+# objectif produit n°1. Câblage manager-spécifique = bindings (ES-9).
+name: zcrud_session
+description: "Study-session runtime for zcrud: ZStudySessionEngine (pure ChangeNotifier + immutable state + pure reducer) that cycles the SRS queue with deterministic +2/+4 lapse re-insertion, writing SRS solely through an injected reviewCard seam (single write path, AD-9/AD-23)."
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_session
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - study
+  - flashcards
+  - srs
+  - session
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* SORTANTES seules (AD-1, graphe ACYCLIQUE,
+# CORE OUT=0 ; jamais l'inverse).
+#
+# - `flutter`            : `ZStudySessionEngine extends ChangeNotifier`
+#                          (`package:flutter/foundation.dart` SEULE — aucun widget)
+#                          ⇒ paquet FLUTTER, CI sur `flutter test` (R14).
+# - `zcrud_core`         : `ZResult`/`Either`/`ZFailure`/`DomainFailure`
+#                          (contrat de résultat AD-5/AD-11, surface pur-Dart
+#                          `package:zcrud_core/domain.dart`). JAMAIS l'inverse.
+# - `zcrud_flashcard`    : type `ZRepetitionInfo` (retour du seam `reviewCard`)
+#                          + `ZSrsConfig` (SEUIL de lapse `passThreshold` RÉUTILISÉ,
+#                          jamais recopié). Le moteur COMPOSE `reviewCard` (voie
+#                          d'écriture unique verrouillée ES-4.1) — il ne le
+#                          réimplémente ni ne le modifie JAMAIS.
+# - `zcrud_study_kernel` : `ZReviewMode` (mode de session, défaut `spaced`).
+#                          Arête explicite (AD-17 : satellites study → kernel).
+#
+# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN
+#    `ZSrsScheduler`/`ZRepetitionStore` en dépendance directe (le seam suffit).
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_core: ^0.1.0
+  zcrud_flashcard: ^0.1.0
+  zcrud_study_kernel: ^0.1.0
+
+# Package Flutter → tests via `flutter test` (R14 : ChangeNotifier ∈ flutter).
+# Aucun codegen (aucun `@ZcrudModel` : état de session runtime NON persisté ⇒
+# pas de `*.g.dart`, gate `codegen-distribution` sans objet ; AC10).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

@@ -39,6 +39,19 @@ workspace:
   # zcrud_core + zcrud_annotations (PUR-DART, aucun import kernel — folderId est
   # une clé NEUTRE). ACYCLIQUE ; CORE OUT=0 ; aucune arête entrante (NFR-S10).
   - packages/zcrud_exam
+  # ES-4.2 : runtime de session SRS en CYCLE (`ZStudySessionEngine` :
+  # ChangeNotifier pur + reducer PUR, réinsertion +2/+4 sur lapse). Écrit le SRS
+  # UNIQUEMENT via un seam injecté (= `reviewCard`, voie unique AD-9/AD-23) —
+  # aucun `ZSrsScheduler`/`ZRepetitionStore` en champ. Dépend de zcrud_core +
+  # zcrud_flashcard + zcrud_study_kernel (arêtes SORTANTES seules ; ACYCLIQUE ;
+  # CORE OUT=0). Package Flutter (ChangeNotifier) → `flutter test`.
+  - packages/zcrud_session
+  # ES-5.1 : orchestration « study tools » (PRÉSENTATION, AD-25). Socle de
+  # décomposabilité (`ZStudyToolsSectionSpec` + `ZSectionedStudyLayout` +
+  # harnais golden discriminant). Dépend de zcrud_core + zcrud_study_kernel +
+  # zcrud_annotations (ACYCLIQUE ; CORE OUT=0 ; jamais l'inverse). Package
+  # Flutter → `flutter test` (golden).
+  - packages/zcrud_study
   - packages/zcrud_generator
   - packages/zcrud_markdown
   - packages/zcrud_list

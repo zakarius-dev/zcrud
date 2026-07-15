@@ -28,6 +28,26 @@ void _check(String name, bool ok, String detail) {
 ProcessResult _dart(List<String> a) => Process.runSync('dart', ['run', ...a]);
 ProcessResult _py(List<String> a) => Process.runSync('python3', a);
 
+/// Exécute `verify_serialization.dart` avec l'interrupteur
+/// `ZCRUD_REQUIRE_SERIALIZATION_COMPAT` GARANTI ABSENT (ES-4.0).
+///
+/// Isolation (R2) du plancher : SANS interrupteur, le mécanisme ORDINAIRE
+/// (tag-declarer skippé faute de corpus vert) est NON-FATAL ⇒ tout RC=1 hors
+/// interrupteur est imputable au PLANCHER SEUL. On copie l'environnement complet
+/// (PATH…) puis on RETIRE la seule variable-interrupteur, avec
+/// `includeParentEnvironment: false` pour que le retrait soit effectif même si
+/// la CI la pose globalement.
+ProcessResult _verifyNoSwitch(List<String> a) {
+  final env = Map<String, String>.from(Platform.environment)
+    ..remove('ZCRUD_REQUIRE_SERIALIZATION_COMPAT');
+  return Process.runSync(
+    'dart',
+    <String>['run', 'scripts/ci/verify_serialization.dart', ...a],
+    environment: env,
+    includeParentEnvironment: false,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // gate:reserved-keys — fixtures de la règle (3) `E_disk \ E_covered` (H1/M1)
 // ---------------------------------------------------------------------------
@@ -797,6 +817,56 @@ void main() {
       rkOkH.exitCode == 0,
       'exit=${rkOkH.exitCode} (attendu 0 — le `hide` SUFFIT à éteindre (h) : '
       'la règle vise bien l\'EXPORT, et rien d\'autre)',
+    );
+
+    // ---- Gate serialization-floor (ES-4.0, R16, DW-ES35-1) ------------------
+    //
+    // LE trou que cette preuve ferme : la population redevable du gate
+    // `verify:serialization` est SELF-DÉCLARÉE par opt-in (tag `serialization-compat`
+    // du `dart_test.yaml`, ES-3.5/D7). Retirer le tag d'un socle, supprimer son
+    // dossier `test/`, ou déplacer le package le fait SORTIR de la population
+    // SILENCIEUSEMENT — le gate reste VERT (faux-vert RÉSIDUEL DW-ES35-1, R6/R10).
+    // Le PLANCHER constant `{zcrud_firestore, zcrud_generator, zcrud_study_kernel}`
+    // rend cette sortie RC=1 INCONDITIONNEL.
+    //
+    // Isolation (R2) : la fixture est un dossier packages VIDE ⇒ les 3 socles sont
+    // ABSENTS de la population ⇒ le plancher DOIT mordre. Exécutée SANS
+    // l'interrupteur (`_verifyNoSwitch`), donc le skip ordinaire est non-fatal :
+    // tout RC=1 est imputable au plancher SEUL, jamais à une suite parasite
+    // (population vide ⇒ AUCUNE exécution de test). La fixture VIDE prouve AUSSI
+    // l'anti-PIÈGE-A : le contrôle plancher précède l'early-return `withTests.isEmpty`
+    // (un plancher placé APRÈS donnerait le NO-OP RC=0 — code mort). INJ-4 (retrait
+    // du bloc plancher du code) fait rougir (a) : c'est sa raison d'être (R12).
+    stdout.writeln('== gate:serialization-floor (ES-4.0, R16) ==');
+
+    // (a) VIOLATION — dossier packages éphémère VIDE (les 3 socles absents),
+    // SANS interrupteur ⇒ RC=1 + bannière FLOOR nommant les 3 socles constants.
+    final floorEmpty = Directory('${tmp.path}/floor_empty_population')
+      ..createSync();
+    final fBad = _verifyNoSwitch(['--packages', floorEmpty.path]);
+    final fBadOut = '${fBad.stdout}${fBad.stderr}';
+    final fNamesBanner = fBadOut.contains('FLOOR VIOLATION');
+    final fNamesAll = fBadOut.contains('zcrud_firestore') &&
+        fBadOut.contains('zcrud_generator') &&
+        fBadOut.contains('zcrud_study_kernel');
+    _check(
+      'serialization-floor/fixture-exit-population',
+      fBad.exitCode != 0 && fNamesBanner && fNamesAll,
+      'exit=${fBad.exitCode} (attendu !=0, SANS interrupteur ⇒ imputable au '
+      'plancher SEUL) · bannière FLOOR: $fNamesBanner · nomme les 3 socles '
+      'constants: $fNamesAll · anti-PIÈGE-A (population vide ⇒ RC=1, pas le NO-OP)',
+    );
+
+    // (b) CONTRE-ÉPREUVE — l'arbre RÉEL (les 3 socles présents & taggés) ⇒ RC=0
+    // (plancher MUET, pas de faux-positif). Sans (b), un plancher qui rougirait
+    // sur n'importe quel arbre passerait (a) sans rien prouver.
+    final fOk = _verifyNoSwitch(<String>['--packages', 'packages']);
+    _check(
+      'serialization-floor/contre-epreuve-arbre-reel',
+      fOk.exitCode == 0,
+      'exit=${fOk.exitCode} (attendu 0 — les 3 socles présents & taggés ⇒ '
+      'plancher muet ; prouve que la rougeur de (a) vient bien de la SORTIE de '
+      'population, pas de la présence du contrôle)',
     );
 
     stdout.writeln('');

@@ -94,6 +94,97 @@ bool _declaresCompatTag(Directory pkgDir) {
   return false;
 }
 
+/// ═══════════════════════ PLANCHER CONSTANT NON-OPTABLE — ES-4.0 / R16 ═════════
+/// **DW-ES35-1 (faux-vert RÉSIDUEL, code-review ES-3.5) soldé ici.**
+///
+/// La population redevable du gate est SELF-DÉCLARÉE par opt-in (`_declaresCompatTag`,
+/// D7). Un refactor qui retire le tag `serialization-compat` d'un `dart_test.yaml`,
+/// supprime/renomme le dossier `test/`, ou déplace un package-socle, fait SORTIR
+/// ce socle de la population SILENCIEUSEMENT — le gate ne l'itère plus, ne mord
+/// plus, et reste VERT (violation R6/R10, la classe de défaut qui a produit trois
+/// faux-verts en ES-1).
+///
+/// R16 impose un **plancher constant, non-optable** : un ensemble de membres
+/// TOUJOURS redevables quel que soit leur opt-in, dont la **sortie** de la
+/// population est **RC=1 inconditionnel** (indépendant de l'interrupteur
+/// `ZCRUD_REQUIRE_SERIALIZATION_COMPAT`). L'opt-in reste pour l'évolutivité
+/// (ajout de nouveaux packages à entité) ; le plancher garantit qu'un des trois
+/// socles ne peut PLUS s'auto-exclure.
+///
+/// ⚠️ LITTÉRAL EN DUR — JAMAIS dérivé du disque, d'une config, d'un `dart_test.yaml`
+/// ou d'un glob (AC1). Une dérivation depuis la population elle-même rendrait
+/// `_floorRequired.difference(payable)` toujours vide ⇒ plancher POWERLESS (R12).
+const Set<String> _floorRequired = <String>{
+  'zcrud_firestore',
+  'zcrud_generator',
+  'zcrud_study_kernel',
+};
+
+/// Dernier segment non vide d'un chemin de package (basename), robuste au préfixe
+/// de root de fixture (`--packages <dir>`) et au séparateur de plateforme. La
+/// comparaison plancher se fait par basename, jamais par chemin complet.
+String _basename(String path) {
+  final segments = path
+      .replaceAll('\\', '/')
+      .split('/')
+      .where((String s) => s.isNotEmpty)
+      .toList();
+  return segments.isEmpty ? path : segments.last;
+}
+
+/// Bannière FLOOR BRUYANTE et DISTINCTE (patron ES-1.4, R6) : un ou plusieurs
+/// socles-plancher sont sortis de la population redevable. Émise
+/// INCONDITIONNELLEMENT (interrupteur ou non) — jamais silencieuse. Nomme CHAQUE
+/// socle manquant et renvoie à R16/DW-ES35-1.
+void _floorBanner(Set<String> missing) {
+  stderr.writeln('');
+  stderr.writeln('=' * 78);
+  stderr.writeln(
+    '[verify:serialization] ❌ FLOOR VIOLATION — SOCLE-PLANCHER HORS POPULATION '
+    'REDEVABLE',
+  );
+  stderr.writeln(
+    '[verify:serialization] Un ou plusieurs packages-socles NON-OPTABLES sont '
+    'sortis de la population',
+  );
+  stderr.writeln(
+    '[verify:serialization] redevable self-déclarée (tag `serialization-compat` '
+    'retiré du dart_test.yaml,',
+  );
+  stderr.writeln(
+    '[verify:serialization] dossier test/ absent, ou package déplacé/supprimé) :',
+  );
+  for (final socle in missing) {
+    stderr.writeln('[verify:serialization]     - $socle');
+  }
+  stderr.writeln(
+    '[verify:serialization] R16 (plancher non-optable) : ces socles à entité '
+    'persistée sont TOUJOURS',
+  );
+  stderr.writeln(
+    '[verify:serialization] redevables du corpus de rétro-compat (AD-10) ; leur '
+    'SORTIE de la population',
+  );
+  stderr.writeln(
+    '[verify:serialization] est INTERDITE. Un opt-in (D7) sert l\'ajout de '
+    'nouveaux packages, JAMAIS',
+  );
+  stderr.writeln(
+    '[verify:serialization] l\'auto-exclusion d\'un socle. Réintégrez le socle '
+    '(tag + test/) ou, si le',
+  );
+  stderr.writeln(
+    '[verify:serialization] plancher doit changer, éditez `_floorRequired` '
+    'EXPLICITEMENT (revue exigée).',
+  );
+  stderr.writeln(
+    '[verify:serialization] RC=1 INCONDITIONNEL (indépendant de '
+    'ZCRUD_REQUIRE_SERIALIZATION_COMPAT) — DW-ES35-1.',
+  );
+  stderr.writeln('=' * 78);
+  stderr.writeln('');
+}
+
 /// Bannière BRUYANTE (patron `gate:web`) : la rétro-compat n'a PAS été vérifiée
 /// pour [skipped]. RC inchangé (0) — sauf interrupteur ES-3.5.
 void _banner(List<String> skipped, {required bool required}) {
@@ -137,14 +228,31 @@ void _banner(List<String> skipped, {required bool required}) {
   out.writeln('');
 }
 
-void main() {
+void main(List<String> args) {
   final required =
       Platform.environment['ZCRUD_REQUIRE_SERIALIZATION_COMPAT'] == '1';
 
-  final pkgs = Directory('packages');
+  // ES-4.0 / PIÈGE-B : `--packages <dir>` (défaut `packages`). Sans cette option
+  // le gate coderait en dur `packages/` et la preuve ISOLÉE du plancher dans
+  // prove_gates.dart (fixture éphémère) serait impossible ⇒ plancher POWERLESS
+  // (R12/DW-ES25-1). Le squelette d'itération/exécution reste INCHANGÉ.
+  var packagesDir = 'packages';
+  for (var i = 0; i < args.length; i++) {
+    final a = args[i];
+    if (a == '--packages' && i + 1 < args.length) {
+      packagesDir = args[i + 1];
+      i++;
+    } else if (a.startsWith('--packages=')) {
+      packagesDir = a.substring('--packages='.length);
+    }
+  }
+
+  final pkgs = Directory(packagesDir);
   if (!pkgs.existsSync()) {
+    // AC5 : dossier packages absent/inexistant ⇒ NO-OP exit(0) EXISTANT inchangé
+    // (signal de misconfiguration/cwd, distinct de la sortie d'un socle).
     stdout.writeln(
-      'verify:serialization NO-OP — pas de packages/. Slot E2-10/ES-3.5 (AD-10).',
+      'verify:serialization NO-OP — pas de $packagesDir/. Slot E2-10/ES-3.5 (AD-10).',
     );
     exit(0);
   }
@@ -160,6 +268,22 @@ void main() {
     }
   }
   withTests.sort((Directory a, Directory b) => a.path.compareTo(b.path));
+
+  // ═══ ES-4.0 : CONTRÔLE PLANCHER (R16, DW-ES35-1) ═══
+  // ⚠️ ANTI-PIÈGE-A : ce contrôle est évalué AVANT l'early-return
+  // `withTests.isEmpty` (et avant la boucle d'exécution). Placé APRÈS, il serait
+  // CODE MORT sur le chemin exact qu'il doit garder : une sortie TOTALE du
+  // plancher (les 3 socles partis ⇒ population vide) tomberait dans le NO-OP
+  // `exit(0)` et rendrait VERT — le jumeau du bug `exit()`-dans-`try` d'ES-1.4.
+  // Le verdict est purement STRUCTUREL (appartenance à la population), donc
+  // runner-agnostique : aucune exécution de suite n'est requise.
+  final payablePackages =
+      withTests.map((Directory d) => _basename(d.path)).toSet();
+  final floorMissing = _floorRequired.difference(payablePackages);
+  if (floorMissing.isNotEmpty) {
+    _floorBanner(floorMissing);
+    exit(1); // RC=1 INCONDITIONNEL — R16 : plancher non-optable.
+  }
 
   if (withTests.isEmpty) {
     stdout.writeln(
