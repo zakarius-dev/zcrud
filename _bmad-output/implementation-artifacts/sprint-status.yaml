@@ -399,12 +399,12 @@ development_status:
 
   # === ES-9 — Seams IA / communauté / examens (UI + ports) ===  Dépend de : ES-3 (+ entité ES-2.6 pour 9.2).
   # ⚠ 9.1/9.3/9.4 écrivent zcrud_study → SÉQ entre elles et avec ES-7.1/ES-8.1. 9.2 suit zcrud_exam/zcrud_study.
-  epic-es-9: backlog
-  es-9-1-seams-ia-neutres: backlog                      # [M][SÉQ — écrit zcrud_study] ports IA neutres + ZEducationQuotaInfo + registre provenance
-  es-9-2-examens-rappels-ui: backlog                    # [M][SÉQ — zcrud_exam/zcrud_study] UI examens (adossée ZExam, F4)
-  es-9-3-podcasts-seam-generation: backlog              # [S][SÉQ — écrit zcrud_study, NON ∥ avec 9.1/9.4] ZPodcastGenerationPort
-  es-9-4-communaute-partage-optionnelle-moderation: backlog # [L][SÉQ — écrit zcrud_study, NON ∥] partage optionnel + modération + dette sécu lex
-  epic-es-9-retrospective: optional
+  epic-es-9: done
+  es-9-1-seams-ia-neutres: done                         # [M][SÉQ — écrit zcrud_study] ports IA neutres + ZEducationQuotaInfo + registre provenance
+  es-9-2-examens-rappels-ui: done                       # [M][SÉQ — zcrud_exam/zcrud_study] UI examens (adossée ZExam, F4)
+  es-9-3-podcasts-seam-generation: done                 # [S][SÉQ — écrit zcrud_study, NON ∥ avec 9.1/9.4] ZPodcastGenerationPort
+  es-9-4-communaute-partage-optionnelle-moderation: done          # [L][SÉQ — écrit zcrud_study, NON ∥] partage optionnel + modération + dette sécu lex
+  epic-es-9-retrospective: done
 
   # === ES-10 — Binding Riverpod (lex_douane) ===  Dépend de : ES-4, ES-5, ES-6, ES-7, ES-8, ES-9 (fan-in). Package : zcrud_riverpod.
   epic-es-10: backlog

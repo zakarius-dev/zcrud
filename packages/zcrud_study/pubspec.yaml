@@ -52,9 +52,38 @@ environment:
 #                          `graphview` en dépendance directe de `zcrud_study`
 #                          (flowchart legacy IFFD NON porté, AD-1).
 #
+# - `zcrud_flashcard`    : arête AJOUTÉE par ES-9.1 (première story qui la consomme
+#                          réellement). Les seams IA neutres du domaine ES-9.1
+#                          renvoient `List<ZFlashcard>` (`ZFlashcardGenerationPort`)
+#                          et portent la provenance de carte via
+#                          `ZFlashcardSource` + le registre pluggable
+#                          `ZSourceRegistry` (AD-4). ES-9.1 RÉUTILISE ces types
+#                          existants (aucun modèle de provenance recréé). Arête
+#                          ACYCLIQUE : `zcrud_flashcard → core/kernel/annotations/
+#                          generator`, JAMAIS l'inverse (`zcrud_flashcard` ne
+#                          dépend PAS de `zcrud_study`). CORE OUT=0 préservé.
+#
+# - `zcrud_exam`         : arête AJOUTÉE par ES-9.2 (première story qui la consomme
+#                          réellement) — consommé pour `ZExam`/`ZReminderTime`/
+#                          `kReminderTimeKey` : UI examens (`ZExamEditor`) + section
+#                          rappels (`ZExamRemindersSection`) + adaptateur
+#                          `ZApproachingExam` (`z_exam_reminders.dart`) câblant les
+#                          examens réels à `aggregateDailyStudyTasks` (kernel). Le
+#                          câblage `ZExam → ZApproachingExam` est un ADAPTATEUR côté
+#                          `zcrud_study` (0 arête sur `zcrud_exam`, l'arête kernel
+#                          étant explicitement DIFFÉRÉE par le pubspec `zcrud_exam`).
+#                          Arête ACYCLIQUE : `zcrud_exam → core/annotations`
+#                          SEULEMENT, JAMAIS l'inverse (`zcrud_exam` ne dépend PAS de
+#                          `zcrud_study`) ⇒ aucun cycle. `zcrud_exam` reste PUR-DART
+#                          (aucun `sdk: flutter` ajouté à SON pubspec, `gate:web`
+#                          intact — l'UI vit ICI, précédent `ZTagEditor`/
+#                          `ZStudyMindmapSection`). CORE OUT=0 préservé.
+#
 # ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN autre
-#    satellite lourd (`zcrud_flashcard`/`zcrud_note`/`zcrud_document`) — ces arêtes
-#    seront ajoutées par la story qui les consomme réellement.
+#    satellite lourd (`zcrud_note`/`zcrud_document`), AUCUN SDK IA / client HTTP
+#    (`http`/`dio`/`openai`/`google_generative_ai`/`firebase_ai`) — les impls IA
+#    (routeur, prompts, `toWireJson`, SSE, clés) restent CÔTÉ APP (AD-11/AD-12).
+#    Ces arêtes seront ajoutées par la story qui les consomme réellement.
 dependencies:
   flutter:
     sdk: flutter
@@ -62,6 +91,8 @@ dependencies:
   zcrud_study_kernel: ^0.1.0
   zcrud_annotations: ^0.1.0
   zcrud_mindmap: ^0.1.0
+  zcrud_flashcard: ^0.1.0
+  zcrud_exam: ^0.1.0
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).
