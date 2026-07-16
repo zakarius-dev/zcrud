@@ -17,7 +17,7 @@
 # (Riverpod) vit EXCLUSIVEMENT ici (AD-6/AD-15).
 name: zcrud_riverpod
 description: "Riverpod state and injection binding for zcrud (optional). Targets lex_douane / IFFD host apps."
-version: 0.2.0
+version: 0.2.1
 publish_to: none
 resolution: workspace
 
@@ -34,12 +34,12 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
-  zcrud_core: ^0.2.0
+  zcrud_core: ^0.2.1
   # ES-10.1 (AD-24) — fan-in SORTANT vers l'étage study : donne accès au port
   # générique `ZStudyRepository<T>`, à `ZStudySessionConfig` (clé de family) et à
   # la primitive PURE `ZStudySessionSelector`. Aucun package d'entité study (réservé
   # à ES-10.2). Acyclique : aucun package study ne dépend de `zcrud_riverpod`.
-  zcrud_study_kernel: ^0.2.0
+  zcrud_study_kernel: ^0.2.1
   # ES-10.2 — DÉCISION D'ARCHITECTURE (2026-07-16) : le binding reste GÉNÉRIQUE.
   # AUCUNE dépendance vers un package d'entité concrète (`zcrud_document`/`_note`/
   # `_exam`/`_flashcard`). Les providers TYPÉS par entité sont des one-liners CÔTÉ

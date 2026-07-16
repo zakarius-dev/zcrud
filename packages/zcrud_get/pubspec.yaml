@@ -23,7 +23,7 @@
 # non comptés par graph_proof).
 name: zcrud_get
 description: "GetX and get_it state and injection binding for zcrud (optional). Targets the DODLP host app."
-version: 0.2.0
+version: 0.2.1
 publish_to: none
 resolution: workspace
 
@@ -42,18 +42,18 @@ environment:
 # Runtime : SDK Flutter + le cœur + le SDK du manager. `get`/`get_it` NE sont PAS
 # des `zcrud_*` → aucune arête comptée par graph_proof.py (CORE OUT=0 préservé).
 dependencies:
-  zcrud_core: ^0.2.0
+  zcrud_core: ^0.2.1
   # Fan-in ES-11.1 (AD-24/R28) : SEULE nouvelle arête `zcrud_*`. Fournit le port
   # générique `ZStudyRepository<T>`, la primitive PURE `ZStudySessionSelector` et
   # la forme persistable `ZStudySessionConfig`. AUCUNE entité concrète tirée.
-  zcrud_study_kernel: ^0.2.0
+  zcrud_study_kernel: ^0.2.1
   # EX-UI.11 (AD-30/AD-32/AD-4) : 2 arêtes UI SORTANTES ajoutées pour implémenter
   # les ports `ZFormPresenter` (navigation) et `ZToaster` (ui_kit) en idiome GetX,
   # substituables aux défauts pur-Flutter via leurs seams (`ZFormPresenterScope`/
   # `ZToasterScope`). `zcrud_navigation` tire `zcrud_responsive` TRANSITIVEMENT.
   # Sens SORTANT (binding-puits → paquets purs) ⇒ CORE OUT=0 intact, ACYCLIQUE.
-  zcrud_navigation: ^0.2.0
-  zcrud_ui_kit: ^0.2.0
+  zcrud_navigation: ^0.2.1
+  zcrud_ui_kit: ^0.2.1
   flutter:
     sdk: flutter
   get: ^4.7.2
