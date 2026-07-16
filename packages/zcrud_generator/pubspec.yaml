@@ -8,7 +8,7 @@
 # émet `toMap`/`fromMap`/`copyWith` + `ZFieldSpec[]` + `register(ZcrudRegistry)`.
 name: zcrud_generator
 description: "build_runner code generator for zcrud: (de)serialization, ZFieldSpec[] and registry from @ZcrudModel-annotated models."
-version: 0.1.0
+version: 0.2.0
 publish_to: none
 resolution: workspace
 
@@ -30,8 +30,8 @@ environment:
 # `ZcrudRegistry` référencés par le code émis).
 # Toolchain codegen (autorisée ICI SEULEMENT — AD-1) : analyzer/build/source_gen.
 dependencies:
-  zcrud_core: ^0.1.0
-  zcrud_annotations: ^0.1.0
+  zcrud_core: ^0.2.0
+  zcrud_annotations: ^0.2.0
   # architecture.md cible analyzer ^7 ; la résolution PARTAGÉE du workspace
   # (flutter_test/test → analyzer >=8) impose ^8 ici. Variance assumée et
   # documentée (Dev Notes) : contrainte de résolution unique, pas un choix libre.

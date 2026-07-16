@@ -98,7 +98,7 @@ dependency_overrides:
   zcrud_list:
     path: ../packages/zcrud_list
   # Frontière EX-3 : les 5 satellites déclarent `resolution: workspace` +
-  # épinglent `zcrud_core: ^0.1.0` hosted ; l'override `path:` réconcilie source
+  # épinglent `zcrud_core: ^0.2.0` hosted ; l'override `path:` réconcilie source
   # path↔hosted (voie standalone, aucun ajout au `workspace:` racine). Tirent
   # Quill / flutter_map+latlong2 / Syncfusion xlsio+pdf / cloud_firestore+
   # firebase_core+hive dans le lock PROPRE de l'app (jamais le lock racine — SM-5).
@@ -115,7 +115,7 @@ dependency_overrides:
   # ES-3.2 : `zcrud_firestore` gagne une arête vers `zcrud_study_kernel` (base
   # offline-first `ZOfflineFirstBoxRepository` étendant `ZStudyRepository`, ES-3.1).
   # Override CONSOMMATEUR path↔hosted (voie standalone EX-1, aucun ajout au
-  # `workspace:` racine) — sinon la dép transitive `^0.1.0` est cherchée sur pub.dev.
+  # `workspace:` racine) — sinon la dép transitive `^0.2.0` est cherchée sur pub.dev.
   zcrud_study_kernel:
     path: ../packages/zcrud_study_kernel
   # Transitif de `zcrud_study_kernel` (annotations `const` du codegen) : override
