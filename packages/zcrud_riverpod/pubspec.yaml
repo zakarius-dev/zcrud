@@ -7,10 +7,14 @@
 # `ProviderScope`, provider AUTO-DISPOSE du `ZFormController`, enveloppe d'un
 # `ZcrudScope` porteur du resolver manager-backed).
 #
-# INVARIANTS (AD-1/AD-15) : AUCUN autre `zcrud_*` que `zcrud_core` ; AUCUN backend
-# lourd. `flutter_riverpod` (et PAS `riverpod` seul ni `riverpod_annotation`/
-# codegen — hors périmètre) n'est pas un `zcrud_*` → CORE OUT=0 préservé.
-# Le code manager-spécifique (Riverpod) vit EXCLUSIVEMENT ici (AD-6/AD-15).
+# INVARIANTS (AD-1/AD-15) : deps `zcrud_*` = `zcrud_core` + `zcrud_study_kernel`
+# UNIQUEMENT (binding GÉNÉRIQUE — aucun package d'entité concrète, cf. décision
+# ES-10.2). Toujours AUCUN backend (`zcrud_firestore`/
+# `cloud_firestore`/`hive`) — l'adapter folder-scopé est INJECTÉ au seam par lex,
+# jamais importé ici ; `flutter_riverpod` reste le seul manager. `flutter_riverpod`
+# (et PAS `riverpod` seul ni `riverpod_annotation`/codegen — hors périmètre) n'est
+# pas un `zcrud_*` → CORE OUT=0 préservé (fan-in SORTANT). Le code manager-spécifique
+# (Riverpod) vit EXCLUSIVEMENT ici (AD-6/AD-15).
 name: zcrud_riverpod
 description: "Riverpod state and injection binding for zcrud (optional). Targets lex_douane / IFFD host apps."
 version: 0.1.0
@@ -31,6 +35,18 @@ environment:
 
 dependencies:
   zcrud_core: ^0.1.0
+  # ES-10.1 (AD-24) — fan-in SORTANT vers l'étage study : donne accès au port
+  # générique `ZStudyRepository<T>`, à `ZStudySessionConfig` (clé de family) et à
+  # la primitive PURE `ZStudySessionSelector`. Aucun package d'entité study (réservé
+  # à ES-10.2). Acyclique : aucun package study ne dépend de `zcrud_riverpod`.
+  zcrud_study_kernel: ^0.1.0
+  # ES-10.2 — DÉCISION D'ARCHITECTURE (2026-07-16) : le binding reste GÉNÉRIQUE.
+  # AUCUNE dépendance vers un package d'entité concrète (`zcrud_document`/`_note`/
+  # `_exam`/`_flashcard`). Les providers TYPÉS par entité sont des one-liners CÔTÉ
+  # APP (`zStudyWatchAllProvider<ZStudyDocument>(...)`) — instanciés par l'app hôte
+  # (lex/IFFD), jamais dans le binding réutilisable (AD-15 : binding thin ; évite le
+  # couplage + respecte la frontière EX-3 qui défère `zcrud_flashcard`/`_mindmap` en
+  # v1.x). Cf. DW-ES102-1 (câblage app-side).
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.6.1

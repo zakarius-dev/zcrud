@@ -407,10 +407,10 @@ development_status:
   epic-es-9-retrospective: done
 
   # === ES-10 — Binding Riverpod (lex_douane) ===  Dépend de : ES-4, ES-5, ES-6, ES-7, ES-8, ES-9 (fan-in). Package : zcrud_riverpod.
-  epic-es-10: backlog
-  es-10-1-providers-riverpod-egalite-config: backlog    # [L][SÉQ — agrège tous les packages study] providers + égalité profonde ZStudySessionConfig au binding
-  es-10-2-integration-lex-douane-repo-par-repo: backlog # [M][SÉQ vs 10.1] remplacement progressif repos education lex
-  epic-es-10-retrospective: optional
+  epic-es-10: done
+  es-10-1-providers-riverpod-egalite-config: done          # [L][SÉQ — agrège tous les packages study] providers + égalité profonde ZStudySessionConfig au binding
+  es-10-2-integration-lex-douane-repo-par-repo: done          # [M][SÉQ vs 10.1] adapter firestore folder-scopé générique (ZCRUD-SIDE ; binding GÉNÉRIQUE, providers typés app-side DW-ES102-1)
+  epic-es-10-retrospective: done
 
   # === ES-11 — Binding GetX + migration IFFD (flat→canonique) ===  Dépend de : ES-10. Packages : zcrud_get, zcrud_firestore, app IFFD.
   epic-es-11: backlog

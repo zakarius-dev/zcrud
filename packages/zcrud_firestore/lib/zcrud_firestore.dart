@@ -30,6 +30,14 @@ export 'src/data/z_firestore_cascade_batcher.dart';
 // (flat IFFD / nested lex / global share-links). Entrée NEUTRE → chemin `String` ;
 // aucun type hive/cloud_firestore n'est exporté (AD-5).
 export 'src/data/z_firestore_path_resolver.dart';
+// ES-10.2 (AC3, AD-5/AD-10) : fabrique d'adapter folder-scopé CONCRÈTE
+// `buildFolderScopedStudyRepository<T>` — compose `ZFirestorePathRule.
+// nestedUnderParent` + `ZFirestorePathResolver` + `ZOfflineFirstBoxRepository<T>`
+// pour la topologie `users/{uid}/{parent}/{folderId}/{collection}`. Générique-par-
+// topologie (aucun nom consommateur en dur, aucune arête d'entité). Retour NEUTRE
+// `ZStudyRepository<T>` ; seul `FirebaseFirestore` (paramètre) est une couture
+// backend. `buildFolderScopedResolver` (`@visibleForTesting`) n'est PAS réexporté.
+export 'src/data/z_folder_scoped_study_repository.dart' show buildFolderScopedStudyRepository;
 // ES-3.2 (FR-S13) : base offline-first `ZOfflineFirstBoxRepository<T>` — implémente
 // le point d'extension `persist` du Template Method `ZStudyRepository<T>` (ES-3.1) ;
 // merge LWW hors-entité, `hasPendingWrites`, listener temps réel, rattrapage

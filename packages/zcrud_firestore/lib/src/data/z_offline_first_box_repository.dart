@@ -468,6 +468,13 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   /// snapshot **confirmé** déclenche le merge LWW. Erreur locale de merge → loggée
   /// (le flux ne throw jamais).
   ///
+  /// Résolveur de chemin composé — exposé pour la vérification de CÂBLAGE des
+  /// fabriques d'assemblage (ex. `buildFolderScopedStudyRepository`) : un test
+  /// peut asserter que la fabrique PUBLIQUE a bien câblé `collection`/
+  /// `parentCollection` (le swap au site d'appel de la fabrique rougit alors).
+  @visibleForTesting
+  ZFirestorePathResolver get resolver => _resolver;
+
   /// Signature **NEUTRE** (`id → corps`) : aucun type Firestore n'y transite
   /// (AD-5) — le listener extrait les `snap.docs` avant l'appel.
   @visibleForTesting
