@@ -48,7 +48,7 @@
 # E11a (lot parite DODLP) precede E7 : il est donc liste avant epic-7.
 
 generated: 2026-07-09
-last_updated: 2026-07-12
+last_updated: 2026-07-16
 project: zcrud
 project_key: NOKEY
 tracking_system: file-system
@@ -442,3 +442,31 @@ development_status:
   ex-ui-10-alphabet-index-bar-transitions: done                # [S][P3 zcrud_ui_kit — DERNIÈRE] ZAlphabetIndexBar + ZRouteTransition + zSlideBeginOffset/zPageRoute RTL-aware · 87 tests · R3 inversion RTL OK · CR HIGH0/MED1(remédié: tap défaut+scrub)/LOW2 (L-1 cwd EX-UI.9 remédié) zcrud_ui_kit ZAlphabetIndexBar + transitions RTL-aware
   ex-ui-11-binding-getx-presenter-toaster: done                # [M][SÉQ — dépend EX-UI.6 ET EX-UI.8] zcrud_get ZGetFormPresenter + ZGetToaster (impls GetX des ports) · 55 tests · R3 dispatch OK · CR HIGH0/MED1(remédié: confinement get exhaustif)/LOW3 · +overrides example (nav/ui_kit/responsive) zcrud_get présentateur GetX + toaster GetX (impls de port)
   epic-ex-ui-retrospective: done  # R-EXUI-1..5 (inventaire cœur avant externalisation ; change-request via commit différé ; tests porteurs prouvés R3 ; vérif-disque agent mort ; gate repo-wide) ; dettes DW-EXUI-1/2
+
+  # === SU — E-STUDY-UI : parité UI d'étude (révision / gestion / mindmap) ===  Additif dans les satellites ; AUCUNE story n'écrit zcrud_core. PRD FR-SU1..21 · spine AD-33..46 · rapport docs/parity-study-ui-2026-07-16.
+  # Séquencement : su-1 (socle) = TÊTE BLOQUANTE, puis 3 workstreams à packages DISJOINTS —
+  #   (A) flashcard/session : su-2→su-3→su-4→su-5→su-6→su-7→su-8→su-9→su-10   (zcrud_flashcard, zcrud_session, zcrud_study_kernel)
+  #   (B) export           : su-11                                             (zcrud_export + zcrud_export_ui NEUF)
+  #   (C) mindmap          : su-12                                             (zcrud_mindmap)
+  # B et C ne touchent AUCUN fichier de A → 3 stories en vol max (CLAUDE.md). Vérif verte par package ciblé pendant le vol ; repo-wide au gate de commit d'epic.
+  epic-su: backlog
+  su-1-socle-types-partages-gardes-slots: backlog              # [M][SÉQ — TÊTE BLOQUANTE, bloque TOUT] AD-46 bornes d'échelle 0..5 possédées par ZSrsConfig + ZQualityScale dérive ; AD-34 garde de mode symétrique sur ZStudySessionEngine (spaced/learn seuls) ; AD-38 constructeur canonique de sectionKey ; AD-40 slots de rendu ouverts (défaut texte brut). Retouche des types PARTAGÉS existants — jamais deux stories dessus.
+  su-2-carte-revision-adaptative: backlog                      # [L][A — après su-1] FR-SU1 + FR-SU21(aperçu) ZFlashcardReviewCard 6 types + ZRevealTransition{flip3d,fade} (flip 3D MAISON, PAS de dep flip_card) + Reduce Motion + adaptateur markdown DANS zcrud_flashcard (AD-40, jamais dans zcrud_markdown = cycle)
+  su-3-saisie-notee-indices-minuteur-avance: backlog           # [XL][A — après su-2] FR-SU2/3/4/5 QCM+VF LOCAUX (jamais l'IA, AD-35) ; port éval ADVISORY {feedback,suggestedQuality,isCorrect?} n'écrit JAMAIS le SRS ; indices: stocké puis port, plafond LOCAL en dernier (AD-36) ; ZTimerDisplay ; ZCardAdvanceBehavior défaut par mode ; SM-1 sur la saisie
+  su-4-pile-swipeable-modes: backlog                           # [L][A — après su-3] FR-SU6/7 ZSessionCardSwiper (flutter_card_swiper ^7.2.0 CONFINÉ zcrud_session) swipe = navigation SEULE ; 6 modes sur les 3 runtimes EXISTANTS (AD-34) — AUCUN moteur créé ; test: aucun mode non-SRS n'atteint reviewCard
+  su-5-ecran-fin-feedback-pedagogique: backlog                 # [L][A — après su-4] FR-SU8/9 ZSessionSummaryView assemble ZSessionQualityBreakdown+ZStudyProgressRings ; confetti ^0.8.0 opt-in 1 tir JAMAIS si Reduce Motion ; banques FR/EN l10n surchargeables ; palier <10s sans indice
+  su-6-selecteur-streak-filtres: backlog                       # [XL][A — après su-5] FR-SU10/11/12 ZSessionModeSelector O(1) ; streak CANONIQUE zcrud_study_kernel (jour civil LOCAL, reset à 1 PAS 0, horloge PARAMÉTRÉE, exclu en consultation, toast via ZToaster) ; filtres purs (mauvais=q0-2 AD-46)
+  su-7-ui-examen-blanc: backlog                                # [M][A — après su-6 ; réutilise su-3] FR-SU13 ZListSessionView sur ZWhiteExamSessionEngine ; correction en fin d'examen ; ZÉRO écriture SRS (garanti par le type)
+  su-8-liste-filtres-ordre-manuel: backlog                     # [XL][A — après su-7] FR-SU14 + FR-SU21(duplication) ZFlashcardListView sur ZAdaptiveGrid ; recherche normalisée (accents) question+réponse+tags ; ordre manuel = ZFolderContentsOrder+applyOrder EXISTANTS (AD-38, aucune 2e entité) ; drag ET boutons = MÊME voie ; fonctionne SANS sélection multiple (livrée par me-3)
+  su-9-flux-generation-ia: backlog                             # [L][A — après su-8] FR-SU15 sheet + confirmation de tags ; requête d'union {source registre AD-4, count, typesDistribution, language, instructions?, modelId OPAQUE} ; résultat ÉPHÉMÈRE jamais persisté (AD-37/AD-43)
+  su-10-parcours-assemble-example: backlog                     # [M][A — DERNIÈRE du flux A ; dépend su-2..su-6] Critère de succès n°2 : sélecteur→swiper→carte interactive→célébration dans example/ ; widgets publics seuls ; profiling NFR-SU9
+  su-11-gabarit-pdf-export-ui: backlog                         # [XL][B — ∥ A, packages DISJOINTS ; après su-1] FR-SU16 ZFlashcardPdfTemplate (bytes in/out, AUCUNE dep plateforme) + port de rasterisation LaTeX (flutter_math_fork→capture→PdfBitmap, golden) + composition inline texte+bitmap (au-delà de buildFromImages) + PAQUET NEUF zcrud_export_ui (printing ^5.15.0 confiné, API Uint8List) — melos + gates CI
+  su-12-mindmap-edition-riche-port-generation: backlog         # [L][C — ∥ A et B, package DISJOINT ; après su-1] FR-SU17/18 slot de champ d'édition dans ZMindmapOutlineEditor (TextField en dur aujourd'hui) ; adaptateur DANS zcrud_mindmap (AD-40, test de graphe anti-cycle) ; label riche BORNÉ à la cellule fixe (AD-41) ; ZMindmapGenerationPort aligné sur ZFlashcardGenerationPort
+  epic-su-retrospective: optional
+
+  # === ME — E-MULTI-EDIT : multi-édition générique ===  SEUL epic autorisé à ÉCRIRE dans zcrud_core/zcrud_list — UNE story à la fois, jamais de parallélisation. Démarre APRÈS la clôture de SU (me-2 consomme su-2 aperçu + su-9 génération ; me-3 consomme su-8).
+  epic-me: backlog
+  me-1-capacite-moteur-selection-actions-lot: backlog          # [XL][SÉQ — ÉCRIT zcrud_core/zcrud_list : AUCUNE autre story en vol] FR-SU19 sélection à PROPRIÉTAIRE UNIQUE (Listenable détenu par la liste, AD-44) ; actions DÉCLARÉES en données (absente si non fournie) ; Déplacer = champ de rattachement DÉCLARÉ par le modèle ; champ commun DÉRIVÉ du ZFieldSpec (mêmes validateurs) ; suppression = cascade AD-21 AWAITED + rapport à l'élément racine (AD-39) ; gate: melos analyze ET verify REPO-WIDE
+  me-2-multi-editeur-flashcards: backlog                       # [XL][SÉQ — après me-1 ; dépend su-2 + su-9] FR-SU20 ZMultiFlashcardEditor split-view ; régime BROUILLON DÉCLARÉ (AD-43) : liste de travail en mémoire, RIEN persisté avant le commit explicite unique ; ZDiscardChangesGuard EXISTANT ; aperçu via ZFlashcardReviewCard (jamais un rendu parallèle)
+  me-3-branchement-selection-liste-flashcards: backlog         # [M][SÉQ — après me-2 ; dépend su-8 + me-1] FR-SU19 (branchement) la liste CONSOMME le contrôleur de me-1 (n'en redéclare aucun) ; suppression par lot = cascade AD-21 (purge SRS, corrige la dette d'orphelins lex) ; liste reste fonctionnelle SANS sélection (aucune régression de su-8)
+  epic-me-retrospective: optional

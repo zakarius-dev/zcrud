@@ -27,9 +27,9 @@ Si à la fin d'une étape je propose au user de continuer (ex. « Continue vers 
 - ✅ Les **findings** de code-review (HIGH/MAJEUR/MEDIUM/LOW + statut corrigé/justifié).
 - ✅ La **transition de statut** appliquée (édition ciblée du sprint-status).
 
-## Délégation des étapes BMAD via Workflow mono-agent + effort par étape (NON-NÉGOCIABLE)
+## Délégation des étapes BMAD via Workflow + effort par étape (NON-NÉGOCIABLE)
 
-Chaque étape BMAD est exécutée via le tool **`Workflow`** avec un **script à agent unique** (un seul `agent()` invoquant le vrai skill `bmad-*`) — pour régler le niveau d'**effort par étape** (impossible via le tool `Agent`).
+Chaque étape BMAD est exécutée via le tool **`Workflow`** — pour régler le niveau d'**effort par étape** (impossible via le tool `Agent`). **`create-story` / `dev-story` / `retrospective`** utilisent un **script à agent unique** (un seul `agent()` invoquant le vrai skill `bmad-*`). **`code-review` est l'exception : il est MULTI-AGENT** (cf. section dédiée ci-dessous).
 
 - ✅ **L'orchestrateur (boucle principale) reste le pilote** : entre chaque étape il **vérifie l'état réel sur disque** (`git status`, statut de la story, tests réels), **rejoue lui-même la vérif verte** via bash, édite le sprint-status de façon **ciblée et sérialisée** (jamais deux écritures parallèles), produit le **résumé d'étape**, arme le `ScheduleWakeup`. Le Workflow n'absorbe aucune de ces responsabilités.
 - ✅ **Effort par étape** :
@@ -42,8 +42,31 @@ Chaque étape BMAD est exécutée via le tool **`Workflow`** avec un **script à
   | `retrospective` | **medium** |
 
 - ✅ **Modèle** : hérité de l'orchestrateur → paramètre `model` **OMIS** sur les `agent()` BMAD (planification **et** développement). Les tâches **hors BMAD** (exploration read-only, remédiations massives) → `model:'sonnet'`.
-- ✅ **Un seul stage `agent()` par étape**. Jusqu'à **3 étapes en vol simultanément**, mais UNIQUEMENT si elles relèvent de **stories/epics parallélisables à fichiers disjoints** (cf. règle parallélisation ci-dessous) ; jamais deux écritures concurrentes du sprint-status (sérialisées par l'orchestrateur).
+- ✅ **Un seul stage `agent()` par étape** (sauf `code-review`, multi-agent). Jusqu'à **3 étapes en vol simultanément**, mais UNIQUEMENT si elles relèvent de **stories/epics parallélisables à fichiers disjoints** (cf. règle parallélisation ci-dessous) ; jamais deux écritures concurrentes du sprint-status (sérialisées par l'orchestrateur).
 - ✅ Si le tool `Skill` n'est pas invocable dans l'agent de Workflow, bascule explicite sur le **fallback disque** (`.claude/skills/bmad-*/SKILL.md` + fichiers annexes), signalée dans le rapport. **Ne jamais simuler une étape de mémoire.**
+
+## Code-review = Workflow MULTI-AGENT à lentilles (NON-NÉGOCIABLE)
+
+**Opt-in permanent du owner** : le `code-review` de chaque story s'exécute comme un **Workflow multi-agent** dont les lentilles couvrent **toutes les facettes** de la story, en parallèle. C'est ce qui rend tenables des **stories volumineuses (découpées par livrable)** : la couverture vient du **nombre de lentilles**, pas de la finesse du découpage.
+
+- ✅ **L'orchestrateur est AUTONOME** sur le dimensionnement : il **choisit seul** le nombre et la nature des agents de revue (une seule lentille sur une story triviale, un large éventail adversarial sur une story lourde), **sans demander l'autorisation**. Il calibre sur la story réelle : surface touchée, packages, criticité des invariants en jeu, densité d'ACs.
+- ✅ **Lentilles de référence** (à composer, jamais un catalogue figé) :
+
+  | Lentille | Ce qu'elle traque |
+  |---|---|
+  | Conformité AD | violations des invariants hérités et du spine de l'epic |
+  | Tests porteurs | tests tautologiques (qui ne rougissent pas quand la logique casse) — discipline R3 |
+  | A11y / RTL | `Semantics`, ≥ 48 dp, variantes directionnelles, Reduce Motion |
+  | L10n / thème | libellé ou couleur codés en dur |
+  | SM-1 / perf | rebuilds non granulaires, controllers recréés, listes non virtualisées |
+  | Isolation deps | dépendance qui fuit hors de son satellite ; CORE OUT ≠ 0 |
+  | Robustesse | chemin d'exception là où un repli est exigé (AD-10) |
+  | Adversariale | deux lectures conformes mais **incompatibles** d'une même règle |
+  | Réalité du code | affirmation jamais vérifiée sur disque — **toute « absence » doit être prouvée par un grep négatif** |
+
+- ✅ **Chaque agent écrit son rapport complet dans un fichier** et ne retourne qu'un **résumé compact** (verdict + 2-5 findings + chemin) — le contexte de l'orchestrateur ne porte jamais le texte intégral des revues.
+- ✅ **L'orchestrateur vérifie lui-même sur disque** tout finding structurant avant de l'appliquer — un rapport d'agent n'est **jamais** une preuve (cf. surveillance des sous-agents).
+- ✅ Le triage des findings reste inchangé (HIGH/MAJEUR obligatoires, MEDIUM par défaut, LOW consignés) et la **vérif verte est rejouée par l'orchestrateur** avant tout `done`.
 
 ## Surveillance des sous-agents en arrière-plan (NON-NÉGOCIABLE)
 
