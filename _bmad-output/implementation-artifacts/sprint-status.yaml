@@ -194,9 +194,9 @@ development_status:
   # === REL — Publication pub.dev (consigne user 2026-07-10 ; publisher zakarius.com) ===
   # DIFFERE : APRES les packages MVP (E4/E5/E6/E11a complets). Licence MIT, versions
   # 0.1.0. Publication reelle = action Owner (dart pub login) ou feu vert explicite.
-  epic-rel: in-progress
+  epic-rel: done  # modèle de distribution = DÉPENDANCE GIT (tag), décision owner 2026-07-16. rel-1 (prep) done, rel-2 (décision) done. Prochain tag/bump de version = action owner.
   rel-1-prep-packages-publiables: done
-  rel-2-dry-run-et-publication: owner-decision # dry-run VALIDE (0 warning) ; mais packages = publish_to:none (modèle dépendance git adopté, CLAUDE.md). Publication pub.dev = décision owner (basculer publish_to + dart pub login + publish ordonné 20 pkgs) OU rester en dép git (release = tag git)
+  rel-2-dry-run-et-publication: done # DÉCISION OWNER (2026-07-16) : distribution en DÉPENDANCE GIT (pas de pub.dev). Release = TAG GIT ; packages restent publish_to:none. Dry-run validé (0 warning). Pas de bascule publish_to, pas de dart pub publish.
   epic-rel-retrospective: optional
 
   # === E-DP — Parité migration DODLP (consigne user ; source : docs/dodlp-edition-parity-gap.md) ===
