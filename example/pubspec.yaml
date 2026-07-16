@@ -122,3 +122,14 @@ dependency_overrides:
   # path↔hosted pour la même raison (voie standalone EX-1).
   zcrud_annotations:
     path: ../packages/zcrud_annotations
+  # EX-UI.11 : `zcrud_get` gagne 2 arêtes (`ZGetFormPresenter`/`ZGetToaster`
+  # implémentent les ports de `zcrud_navigation`/`zcrud_ui_kit`). Overrides
+  # CONSOMMATEUR path↔hosted (voie standalone EX-1, aucun ajout au `workspace:`
+  # racine) — sinon ces dép. transitives `^0.2.0` sont cherchées sur pub.dev.
+  # `zcrud_responsive` (transitif de `zcrud_navigation`) est aussi épinglé.
+  zcrud_navigation:
+    path: ../packages/zcrud_navigation
+  zcrud_ui_kit:
+    path: ../packages/zcrud_ui_kit
+  zcrud_responsive:
+    path: ../packages/zcrud_responsive

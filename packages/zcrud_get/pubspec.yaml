@@ -7,14 +7,20 @@
 # puis enveloppe d'un `ZcrudScope` porteur du resolver manager-backed).
 #
 # INVARIANTS (AD-1/AD-15) : deps `zcrud_*` = `zcrud_core` + `zcrud_study_kernel`
-# (fan-in ES-11.1, arête SORTANTE binding → étage study, jamais l'inverse — le
-# binding est un PUITS) ; AUCUNE entité concrète (R28 —
+# + `zcrud_navigation` + `zcrud_ui_kit` (les 2 dernières AJOUTÉES en EX-UI.11 :
+# arêtes SORTANTES du binding-PUITS vers les paquets UI purs, pour y implémenter
+# les ports `ZFormPresenter`/`ZToaster` en idiome GetX ; `zcrud_responsive` est
+# tiré TRANSITIVEMENT via `zcrud_navigation`). Toutes ces arêtes sont SORTANTES
+# (jamais entrantes au cœur) ⇒ CORE OUT=0 intact, graphe ACYCLIQUE (un puits ne
+# crée aucun cycle) ; AUCUNE entité concrète (R28 —
 # document/note/exam/session/flashcard/mindmap/study) ; `get`/`get_it`/
-# `reflectable` restent les seuls idiomes/exception ; AUCUN backend lourd
+# `reflectable` restent les seuls idiomes/exception manager — `get` reste
+# l'UNIQUE idiome manager, exclusif à ce binding (AD-15) ; AUCUN backend lourd
 # (Firebase/Syncfusion/Quill/Maps/Hive). Le code manager-spécifique (get/get_it)
-# vit EXCLUSIVEMENT ici (AD-6/AD-15) ; `zcrud_core`/`zcrud_study_kernel` restent
-# STRICTEMENT inchangés. CORE OUT=0 préservé (`get`/`get_it`/`reflectable`/
-# `flutter` ne sont PAS des `zcrud_*` → non comptés par graph_proof).
+# vit EXCLUSIVEMENT ici (AD-6/AD-15) ; `zcrud_core`/`zcrud_study_kernel`/
+# `zcrud_navigation`/`zcrud_ui_kit` restent STRICTEMENT inchangés. CORE OUT=0
+# préservé (`get`/`get_it`/`reflectable`/`flutter` ne sont PAS des `zcrud_*` →
+# non comptés par graph_proof).
 name: zcrud_get
 description: "GetX and get_it state and injection binding for zcrud (optional). Targets the DODLP host app."
 version: 0.2.0
@@ -41,6 +47,13 @@ dependencies:
   # générique `ZStudyRepository<T>`, la primitive PURE `ZStudySessionSelector` et
   # la forme persistable `ZStudySessionConfig`. AUCUNE entité concrète tirée.
   zcrud_study_kernel: ^0.2.0
+  # EX-UI.11 (AD-30/AD-32/AD-4) : 2 arêtes UI SORTANTES ajoutées pour implémenter
+  # les ports `ZFormPresenter` (navigation) et `ZToaster` (ui_kit) en idiome GetX,
+  # substituables aux défauts pur-Flutter via leurs seams (`ZFormPresenterScope`/
+  # `ZToasterScope`). `zcrud_navigation` tire `zcrud_responsive` TRANSITIVEMENT.
+  # Sens SORTANT (binding-puits → paquets purs) ⇒ CORE OUT=0 intact, ACYCLIQUE.
+  zcrud_navigation: ^0.2.0
+  zcrud_ui_kit: ^0.2.0
   flutter:
     sdk: flutter
   get: ^4.7.2

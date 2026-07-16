@@ -1,0 +1,48 @@
+# zcrud_responsive — membre du workspace zcrud (resolution: workspace).
+# Infrastructure UI responsive TRANSVERSE (epic EX-UI). Tête bloquante EX-UI.1 :
+# pose deux primitives de mesure PURES NEUVES —
+#   * `ZWindowSizeClass` (enum Material 3, seuils 600/840) : classe de fenêtre en
+#     ENUM (jamais un `bool isMobile/isTablet/isDesktop` — NFR-U7) ;
+#   * `ZBreakpointValue<T>` (générique, cascade mobile-first) : bâti SUR l'enum
+#     `ZBreakpoint` (5 paliers Bootstrap) déjà fourni par zcrud_core.
+#
+# AD-29 (AMENDÉ, réconciliation E3-4 Option A) : ce package n'est PLUS une feuille
+# `flutter`-seule ; il DÉPEND de zcrud_core et RÉUTILISE ses primitives
+# responsives (`ZBreakpoint`, `ZResponsiveBreakpoints`) — INTERDICTION de les
+# redéclarer. L'arête zcrud_responsive -> zcrud_core est ENTRANTE au cœur :
+# `CORE OUT=0` reste intact (graph_proof.py ACYCLIQUE). AD-2/AD-15 : AUCUN
+# gestionnaire d'état (get/flutter_riverpod/provider), AUCUN routeur, AUCUN tiers
+# responsive, AUCUN dartz.
+name: zcrud_responsive
+description: "Transverse responsive UI infrastructure for zcrud: ZWindowSizeClass (Material 3 window size class) and ZBreakpointValue<T> (generic breakpoint-scoped value), reusing zcrud_core breakpoints. Depends only on zcrud_core."
+version: 0.2.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_responsive
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - responsive
+  - breakpoints
+  - ui
+  - material3
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core
+# (arête SORTANTE, entrante au cœur). `flutter` (SDK) n'est PAS un `zcrud_*` →
+# n'ajoute aucune arête au graphe (graph_proof.py ne compte que les `zcrud_*`).
+# ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur, AUCUN tiers
+# responsive, AUCUN dartz.
+dependencies:
+  zcrud_core: ^0.2.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  # Tests widget (`of(context)` sous MediaQuery + Directionality.rtl) et pur-Dart.
+  flutter_test:
+    sdk: flutter

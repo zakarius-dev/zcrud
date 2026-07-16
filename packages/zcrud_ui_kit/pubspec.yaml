@@ -1,0 +1,53 @@
+# zcrud_ui_kit — membre du workspace zcrud (resolution: workspace).
+# Kit de widgets UI TRANSVERSES (epic EX-UI, AD-32/AD-29). Tête de série du
+# package : EX-UI.7 pose les patterns génériques d'états de contenu et de
+# confirmation —
+#   * `ZContentState` (enum { idle, loading, empty, error, success }) :
+#     l'état d'un contenu en ENUM (jamais un `bool isLoading/hasError/isEmpty`,
+#     NFR-U7) ;
+#   * `ZEmptyState` / `ZLoadingState` / `ZErrorState` + aiguilleur
+#     `ZContentStateView` : widgets d'état à thème/l10n INJECTÉS ;
+#   * `ZConfirmTone` (enum { neutral, destructive }) + `ZConfirmDialog` +
+#     `showZConfirmDialog(...) -> Future<bool>` : dialog de confirmation
+#     dark-mode-aware, sans gestionnaire d'état.
+#
+# AD-29 : paquet UI PUR — dépend UNIQUEMENT de zcrud_core (+ flutter) et
+# CONSOMME ses seams (ZcrudScope / ZcrudTheme / ZcrudLocalizations), jamais
+# redéclarés. L'arête zcrud_ui_kit -> zcrud_core est ENTRANTE au cœur :
+# `CORE OUT=0` reste intact (graph_proof.py ACYCLIQUE). AD-2/AD-15 : AUCUN
+# gestionnaire d'état (get/flutter_riverpod/provider), AUCUN routeur, AUCUN
+# tiers (toastification/spinkit/dotted_border), AUCUN dartz.
+name: zcrud_ui_kit
+description: "Transverse UI kit for zcrud: content-state widgets (ZEmptyState/ZLoadingState/ZErrorState) driven by the ZContentState enum via ZContentStateView, plus a theme-injected ZConfirmDialog. Depends only on zcrud_core."
+version: 0.2.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_ui_kit
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - ui
+  - widgets
+  - material3
+  - a11y
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core
+# (arête SORTANTE, entrante au cœur). `flutter` (SDK) n'est PAS un `zcrud_*` →
+# n'ajoute aucune arête au graphe (graph_proof.py ne compte que les `zcrud_*`).
+# ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur, AUCUN tiers
+# UI, AUCUN dartz.
+dependencies:
+  zcrud_core: ^0.2.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  # Tests widget (rendu light/dark, Directionality.rtl, cibles ≥ 48 dp) et
+  # pur-Dart (valeurs d'enum).
+  flutter_test:
+    sdk: flutter

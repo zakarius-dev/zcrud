@@ -52,6 +52,28 @@ workspace:
   # zcrud_annotations (ACYCLIQUE ; CORE OUT=0 ; jamais l'inverse). Package
   # Flutter → `flutter test` (golden).
   - packages/zcrud_study
+  # EX-UI.1 : infrastructure UI responsive TRANSVERSE. Pose ZWindowSizeClass
+  # (enum M3, 600/840) + ZBreakpointValue<T> (générique, cascade). Dépend
+  # UNIQUEMENT de zcrud_core et RÉUTILISE ses breakpoints (ZBreakpoint /
+  # ZResponsiveBreakpoints), jamais redéclarés — AD-29 amendé (réconciliation
+  # E3-4, Option A). Arête SORTANTE vers le cœur (entrante au cœur) : CORE OUT=0
+  # intact ; ACYCLIQUE.
+  - packages/zcrud_responsive
+  # EX-UI.5 : navigation UI transverse. Pose le maillon AD-30 —
+  # ZEditionPresentation (enum { page, sheet, dialog }) + ZFormWeight (enum) +
+  # ZPresentationPolicy (dérive PUREMENT le mode d'un ZWindowSizeClass, injectable,
+  # non-sealed). Dépend de zcrud_core + zcrud_responsive (arêtes SORTANTES) :
+  # CORE OUT=0 intact ; ACYCLIQUE. Le port ZFormPresenter/ZAdaptivePresenter = EX-UI.6.
+  - packages/zcrud_navigation
+  # EX-UI.7 : kit de widgets UI transverses (AD-32). Tête de série du package —
+  # pose ZContentState (enum { idle, loading, empty, error, success }) +
+  # ZEmptyState/ZLoadingState/ZErrorState + aiguilleur ZContentStateView +
+  # ZConfirmTone (enum { neutral, destructive }) + ZConfirmDialog /
+  # showZConfirmDialog (dark-mode-aware, sans gestionnaire d'état). Dépend
+  # UNIQUEMENT de zcrud_core et CONSOMME ses seams (ZcrudScope/ZcrudTheme/
+  # ZcrudLocalizations), jamais redéclarés. Arête SORTANTE vers le cœur (entrante
+  # au cœur) : CORE OUT=0 intact ; ACYCLIQUE.
+  - packages/zcrud_ui_kit
   - packages/zcrud_generator
   - packages/zcrud_markdown
   - packages/zcrud_list

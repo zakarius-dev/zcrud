@@ -1,0 +1,56 @@
+# zcrud_navigation — membre du workspace zcrud (resolution: workspace).
+# Infrastructure UI de NAVIGATION transverse (epic EX-UI). Tête P2 (EX-UI.5) :
+# pose le « maillon manquant » AD-30 — la politique de présentation dérivée du
+# breakpoint :
+#   * `ZEditionPresentation` (enum { page, sheet, dialog }) : mode d'édition en
+#     ENUM (jamais des `bool` fullscreenDialog/dialog/isWebOrDesktop — NFR-U7) ;
+#   * `ZFormWeight` (enum { light, heavy }) : poids de formulaire en ENUM ;
+#   * `ZPresentationPolicy` : dérive PUREMENT un `ZEditionPresentation` d'un
+#     `ZWindowSizeClass` (fourni par zcrud_responsive, EX-UI.1), INJECTABLE
+#     (jamais figée — AD-30/AD-6), non-`sealed` (AD-4).
+#
+# AD-1 : ce package DÉPEND de zcrud_core ET zcrud_responsive (arêtes SORTANTES,
+# entrantes au cœur/à la feuille responsive) — `CORE OUT=0` reste intact, graphe
+# ACYCLIQUE (zcrud_navigation -> zcrud_responsive -> zcrud_core + zcrud_navigation
+# -> zcrud_core = DAG). AD-2/AD-15 : AUCUN gestionnaire d'état
+# (get/flutter_riverpod/provider), AUCUN routeur (go_router), AUCUN tiers, AUCUN
+# dartz. La politique elle-même est PUR-DART (aucun import flutter) ; `flutter`
+# reste déclaré pour flutter_test et pour le présentateur EX-UI.6 (à venir).
+name: zcrud_navigation
+description: "Transverse navigation UI infrastructure for zcrud: ZEditionPresentation, ZFormWeight and a pure injectable ZPresentationPolicy deriving the edition presentation from a ZWindowSizeClass breakpoint. Depends on zcrud_core and zcrud_responsive."
+version: 0.2.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_navigation
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - navigation
+  - responsive
+  - ui
+  - material3
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core
+# et zcrud_responsive (arêtes SORTANTES ; aucune n'entre dans ce package). Les
+# nombres/seuils responsives et l'enum `ZWindowSizeClass` viennent de
+# `zcrud_responsive` — jamais redéclarés ici. `flutter` (SDK) n'est PAS un
+# `zcrud_*` → n'ajoute aucune arête au graphe (graph_proof.py ne compte que les
+# `zcrud_*`). ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur,
+# AUCUN tiers responsive, AUCUN dartz.
+dependencies:
+  zcrud_core: ^0.2.0
+  zcrud_responsive: ^0.2.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  # Tests pur-Dart de la politique (table de vérité + injection, sans
+  # `BuildContext`). `flutter_test` fournit `package:test` transitivement et
+  # servira aux tests widget du présentateur EX-UI.6.
+  flutter_test:
+    sdk: flutter
