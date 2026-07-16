@@ -1,0 +1,17 @@
+{
+  "id": "doc_iffd_202",
+  "subjectId": "subj_music_400",
+  "folderId": "folder_solfege",
+  "subFolderId": "subfolder_rythme",
+  "creatorId": "user_kwame",
+  "createdAt": 1710585000000,
+  "name": "lecon_audio.mp3",
+  "type": "audio",
+  "audioText": "Transcription de la leçon d'audio pour l'indexation IA.",
+  "audioTextHash": 8419203715,
+  "contentLength": 512000,
+  "pageCount": null,
+  "status": "converted",
+  "cloudPath": "subjects/subj_music_400/documents/doc_iffd_202.mp3",
+  "assistantFileId": "file-music400abc"
+}

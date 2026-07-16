@@ -6,10 +6,15 @@
 # (création/scoping/dispose du `ZFormController` selon le lifecycle GetX/get_it,
 # puis enveloppe d'un `ZcrudScope` porteur du resolver manager-backed).
 #
-# INVARIANTS (AD-1/AD-15) : AUCUN autre `zcrud_*` que `zcrud_core` (out-degree
-# runtime = 1 vers le cœur) ; AUCUN backend lourd (Firebase/Syncfusion/Quill/Maps).
-# Le code manager-spécifique (get/get_it) vit EXCLUSIVEMENT ici (AD-6/AD-15) ;
-# `zcrud_core` reste STRICTEMENT inchangé.
+# INVARIANTS (AD-1/AD-15) : deps `zcrud_*` = `zcrud_core` + `zcrud_study_kernel`
+# (fan-in ES-11.1, arête SORTANTE binding → étage study, jamais l'inverse — le
+# binding est un PUITS) ; AUCUNE entité concrète (R28 —
+# document/note/exam/session/flashcard/mindmap/study) ; `get`/`get_it`/
+# `reflectable` restent les seuls idiomes/exception ; AUCUN backend lourd
+# (Firebase/Syncfusion/Quill/Maps/Hive). Le code manager-spécifique (get/get_it)
+# vit EXCLUSIVEMENT ici (AD-6/AD-15) ; `zcrud_core`/`zcrud_study_kernel` restent
+# STRICTEMENT inchangés. CORE OUT=0 préservé (`get`/`get_it`/`reflectable`/
+# `flutter` ne sont PAS des `zcrud_*` → non comptés par graph_proof).
 name: zcrud_get
 description: "GetX and get_it state and injection binding for zcrud (optional). Targets the DODLP host app."
 version: 0.1.0
@@ -32,6 +37,10 @@ environment:
 # des `zcrud_*` → aucune arête comptée par graph_proof.py (CORE OUT=0 préservé).
 dependencies:
   zcrud_core: ^0.1.0
+  # Fan-in ES-11.1 (AD-24/R28) : SEULE nouvelle arête `zcrud_*`. Fournit le port
+  # générique `ZStudyRepository<T>`, la primitive PURE `ZStudySessionSelector` et
+  # la forme persistable `ZStudySessionConfig`. AUCUNE entité concrète tirée.
+  zcrud_study_kernel: ^0.1.0
   flutter:
     sdk: flutter
   get: ^4.7.2

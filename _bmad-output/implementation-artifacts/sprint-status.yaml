@@ -413,8 +413,8 @@ development_status:
   epic-es-10-retrospective: done
 
   # === ES-11 — Binding GetX + migration IFFD (flat→canonique) ===  Dépend de : ES-10. Packages : zcrud_get, zcrud_firestore, app IFFD.
-  epic-es-11: backlog
-  es-11-1-binding-getx-zcrud-study: backlog             # [M][SÉQ — dépend ES-10] zcrud_get injection/lifecycle
-  es-11-2-migration-donnees-iffd-flat-canonique: backlog # [L][SÉQ — chantier migration] flat→canonique + ZSyncMeta additif, corpus réel
-  es-11-3-suppression-data-crud-legacy-god-controller: backlog # [M][SÉQ — dépend 11.1/11.2] ZStudyToolsPage + suppression legacy (apparence préservée)
-  epic-es-11-retrospective: optional
+  epic-es-11: done  # zcrud-side complet (11.1+11.2 done ; 11.3 déférée app-side DW-ES113-1)
+  es-11-1-binding-getx-zcrud-study: done                # [M][SÉQ — dépend ES-10] zcrud_get injection/lifecycle
+  es-11-2-migration-donnees-iffd-flat-canonique: done         # [L][SÉQ] mécanique migration flat→canonique (ZCRUD-SIDE ; exécution IFFD déférée DW-ES112-1)
+  es-11-3-suppression-data-crud-legacy-god-controller: deferred-app-side # [M] 100% APP-SIDE IFFD (aucun livrable zcrud ; ZStudyToolsPage existe déjà ES-5) → DÉFÉRÉ session IFFD, DW-ES113-1
+  epic-es-11-retrospective: done

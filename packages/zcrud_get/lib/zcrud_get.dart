@@ -16,3 +16,9 @@ export 'src/data/codecs/reflectable_codec.dart';
 export 'src/presentation/z_get_api.dart';
 export 'src/presentation/z_get_resolver.dart';
 export 'src/presentation/zcrud_get_scope.dart';
+// Binding study GÉNÉRIQUE GetX (ES-11.1, AD-24/R28) — miroir GetX d'ES-10.1 :
+// clé de cache à égalité profonde (`ZSessionConfigKey` + `tag`), controller de
+// flux `ZStudyWatchController<T>`, factory seam `buildStudyWatchController`,
+// factory dédup SM-1 `zPutStudySessionSelector`. Aucune entité concrète.
+export 'src/study/z_session_config_key.dart';
+export 'src/study/z_study_get.dart';

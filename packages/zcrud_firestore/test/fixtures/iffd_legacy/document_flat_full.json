@@ -1,0 +1,17 @@
+{
+  "id": "doc_iffd_101",
+  "subjectId": "subj_lit_310",
+  "folderId": "folder_poetry",
+  "subFolderId": "subfolder_sonnets",
+  "creatorId": "user_akosua",
+  "createdAt": 1710498600000,
+  "name": "recueil_sonnets.pdf",
+  "type": "pdf",
+  "content": "Texte intégral indexé pour l'IA…",
+  "contentLength": 73210,
+  "pageCount": 27,
+  "status": "embedded",
+  "cloudPath": "subjects/subj_lit_310/documents/doc_iffd_101.pdf",
+  "cloudUrl": "https://storage.example/doc_iffd_101.pdf",
+  "assistantFileId": "file-lit310xyz"
+}

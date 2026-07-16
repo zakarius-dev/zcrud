@@ -53,6 +53,15 @@ export 'src/data/z_offline_first_repository.dart';
 // de `Map` DÉFENSIF (jamais throw) ; signature NUE `Map<String,dynamic>` (aucun type
 // cloud_firestore — AD-5). Le mapping de casse/valeur vit EXCLUSIVEMENT ici (AD-27).
 export 'src/data/z_study_codec.dart';
+// ES-11.2 (FR-S34, AD-27/AD-19/AD-10/AD-5) : migrateur de CORPUS legacy IFFD
+// flat→canonique `ZLegacyStudyMigrator` (+ `ZDocumentMigrationOutcome`/
+// `ZLegacyMigrationReport`). COMPOSE `ZStudyLegacyCodec` (par-document) et ajoute
+// la garde d'IDEMPOTENCE (franchit le TRAP `status` : `ready`↛`uploading` au 2e
+// passage), le census R26 de préservation métier, un rapport auditable et un
+// DRY-RUN. Signature NUE `Map<String,dynamic>` (aucun type cloud_firestore/hive —
+// AD-5) ; générique par `Map` (aucune arête d'entité — R28). Write-back sur
+// données IFFD RÉELLES DÉFÉRÉ (DW-ES112-1).
+export 'src/data/z_study_migrator.dart';
 // ES-3.4 (FR-S15, AD-20) : fabrique de câblage `assembleZStudySyncOrchestrator`
 // — remplaçant neutre de `study_sync_manager.dart` (liste de repos INJECTÉE, aucun
 // import/liste codés en dur). Compose `ZSyncOrchestrator` (E5-4) : best-effort +
