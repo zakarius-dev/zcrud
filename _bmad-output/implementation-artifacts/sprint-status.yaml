@@ -61,7 +61,7 @@ development_status:
   e1-2-squelettes-packages-api-barrel: done
   e1-3-lint-analyse-build-runner-gates-ci: done
   e1-4-gate-compatibilite-dependances: done
-  e1-5-revocation-cle-google-maps: ready-for-dev
+  e1-5-revocation-cle-google-maps: zcrud-done-owner-action # zcrud OK (aucune clé en dur, gate:secrets vert, injection config plateforme AD-12) ; RÉVOCATION = action owner (console Google Cloud)
   epic-1-retrospective: optional
 
   # === E2 — Coeur : contrats, modele canonique, codegen & bindings (MVP) ===
@@ -133,21 +133,29 @@ development_status:
   # DIFFERE (consigne user, 2026-07-10) : migration REELLE dans l'app DODLP (code
   # app externe, hors de ce repo) -> Zakarius la fera dans une session dediee.
   # Le cycle BMAD autonome SAUTE E7 ; reste en backlog jusqu'a cette session.
-  epic-7: backlog
-  e7-1-binding-zcrud-get-zcrudscope: backlog
-  e7-2-reflectablecodec-zcrudregistry-bootstrap: backlog
-  e7-3-migration-ecrans-generiques-imports: backlog
-  e7-4-verification-parite: backlog
+  # SUPERSEDED par la roadmap ES (2026-07-16) : le binding GetX zcrud_get est livré
+  # par ES-11.1 (générique R28) ; le bootstrap ReflectableCodec/registre relève de
+  # la session DODLP ; la migration des écrans + parité DODLP = 100% app-side
+  # (consigne user, DW-ES113-1). Aucun livrable zcrud résiduel.
+  epic-7: superseded-by-es  # → binding = ES-11.1 ; migration écrans = session DODLP
+  e7-1-binding-zcrud-get-zcrudscope: superseded-by-es       # ≈ ES-11.1 (zcrud_get study binding)
+  e7-2-reflectablecodec-zcrudregistry-bootstrap: deferred-app-side # bootstrap DODLP-spécifique
+  e7-3-migration-ecrans-generiques-imports: deferred-app-side      # écrans DODLP
+  e7-4-verification-parite: deferred-app-side                      # parité DODLP
   epic-7-retrospective: optional
 
   # === E8 — Integration formulaires riches lex_douane_admin (MVP) ===
   # DIFFERE (consigne user, 2026-07-10) : migration REELLE dans l'app lex_douane
   # (code app externe, hors de ce repo) -> Zakarius la fera dans une session dediee.
   # Le cycle BMAD autonome SAUTE E8 ; reste en backlog jusqu'a cette session.
-  epic-8: backlog
-  e8-1-binding-zcrud-riverpod-adaptateur: backlog
-  e8-2-migration-ecrans-admin: backlog
-  e8-3-non-regression-resolution-contraintes: backlog
+  # SUPERSEDED par la roadmap ES (2026-07-16) : le binding Riverpod zcrud_riverpod
+  # est livré par ES-10.1 (générique R28) + l'adapter firestore folder-scopé par
+  # ES-10.2 ; la migration des écrans admin + non-régression = 100% app-side
+  # (consigne user, session lex_douane, DW-ES102-1). Aucun livrable zcrud résiduel.
+  epic-8: superseded-by-es  # → binding = ES-10.1/10.2 ; migration écrans = session lex
+  e8-1-binding-zcrud-riverpod-adaptateur: superseded-by-es  # ≈ ES-10.1/ES-10.2
+  e8-2-migration-ecrans-admin: deferred-app-side            # écrans lex_douane_admin
+  e8-3-non-regression-resolution-contraintes: deferred-app-side # non-régression lex
   epic-8-retrospective: optional
 
   # === E9 — Flashcards (zcrud_flashcard) (v1.x) ===
@@ -188,7 +196,7 @@ development_status:
   # 0.1.0. Publication reelle = action Owner (dart pub login) ou feu vert explicite.
   epic-rel: in-progress
   rel-1-prep-packages-publiables: done
-  rel-2-dry-run-et-publication: backlog
+  rel-2-dry-run-et-publication: owner-decision # dry-run VALIDE (0 warning) ; mais packages = publish_to:none (modèle dépendance git adopté, CLAUDE.md). Publication pub.dev = décision owner (basculer publish_to + dart pub login + publish ordonné 20 pkgs) OU rester en dép git (release = tag git)
   epic-rel-retrospective: optional
 
   # === E-DP — Parité migration DODLP (consigne user ; source : docs/dodlp-edition-parity-gap.md) ===
