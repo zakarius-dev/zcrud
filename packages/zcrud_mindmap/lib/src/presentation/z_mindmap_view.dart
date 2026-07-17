@@ -335,24 +335,33 @@ class _ZMindmapViewState extends State<ZMindmapView> {
             valueListenable: _selected,
             builder: (context, selectedId, _) {
               final isSelected = selectedId == node.id;
+              // Bornage AD-41 (SU-12) : la cellule GRAPHE borne le contenu
+              // (riche compris) à `cellSize` — troncature clippée, jamais de
+              // RenderFlex overflow. La vue liste, elle, reste NON bornée.
               if (controller == null) {
-                return ZMindmapNodeCard(
-                  node: node,
-                  contentBuilder: _contentBuilder,
-                  isSelected: isSelected,
-                  config: widget.config,
-                  onTap: _handleTap,
+                return ZMindmapCellClip(
+                  size: widget.config.cellSize,
+                  child: ZMindmapNodeCard(
+                    node: node,
+                    contentBuilder: _contentBuilder,
+                    isSelected: isSelected,
+                    config: widget.config,
+                    onTap: _handleTap,
+                  ),
                 );
               }
               return ValueListenableBuilder<bool>(
                 valueListenable: controller.compact,
-                builder: (context, compact, _) => ZMindmapNodeCard(
-                  node: node,
-                  contentBuilder: _contentBuilder,
-                  isSelected: isSelected,
-                  config: widget.config,
-                  onTap: _handleTap,
-                  compact: compact,
+                builder: (context, compact, _) => ZMindmapCellClip(
+                  size: widget.config.cellSize,
+                  child: ZMindmapNodeCard(
+                    node: node,
+                    contentBuilder: _contentBuilder,
+                    isSelected: isSelected,
+                    config: widget.config,
+                    onTap: _handleTap,
+                    compact: compact,
+                  ),
                 ),
               );
             },

@@ -30,6 +30,19 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 /// Ne porte que du **contenu source neutre** : aucun prompt, aucun endpoint,
 /// aucune clé (AC2/AD-12). Le [provenance] optionnel est apposé aux cartes
 /// produites (AC5).
+///
+/// ## Requête d'UNION canonique (AD-37, SU-9/AC1)
+///
+/// Porte les **6 dimensions** de la demande : `{source (content+provenance),
+/// count, typesDistribution, languageTag, instructions, modelId}`. Les trois
+/// derniers champs ([typesDistribution]/[instructions]/[modelId]) ont été
+/// **ajoutés en SU-9** de façon **OPTIONNELLE et ADDITIVE** : le DTO n'est PAS
+/// codegen (aucune annotation, aucune (dé)sérialisation générée) ⇒ l'extension
+/// n'a **aucun** impact rétro-compat pour l'unique consommateur (le port), dont
+/// la signature reste inchangée. Ces champs canoniques passent par des propriétés
+/// TYPÉES, **jamais** par [extra] (l'échappatoire non typée n'est pas le lieu
+/// d'un champ canonique — sinon on masquerait le contrat de [modelId] et on
+/// violerait « source unique » d'AD-37).
 class ZFlashcardGenerationRequest {
   /// Construit une requête de génération à partir du [content] source.
   const ZFlashcardGenerationRequest({
@@ -37,6 +50,9 @@ class ZFlashcardGenerationRequest {
     this.count,
     this.languageTag,
     this.provenance,
+    this.typesDistribution,
+    this.instructions,
+    this.modelId,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
@@ -53,6 +69,27 @@ class ZFlashcardGenerationRequest {
   /// produites (variant IFFD/lex enregistré via `ZSourceRegistry`, AC5). `null`
   /// = pas de provenance imposée.
   final ZFlashcardSource? provenance;
+
+  /// Répartition souhaitée du lot par type de carte (`{multipleChoice: 3, …}`),
+  /// ou `null` (l'app/le module de défauts calcule une répartition équitable).
+  ///
+  /// SU-9/AC1 : porté PAR VALEUR (deux requêtes qui n'en diffèrent que par cette
+  /// map ne sont PAS égales). La normalisation (négatifs → 0, types inconnus
+  /// écartés, somme bornée) est faite par `zNormalizeTypesDistribution`
+  /// (`z_flashcard_generation_defaults.dart`), source UNIQUE — jamais ici.
+  final Map<ZFlashcardType, int>? typesDistribution;
+
+  /// Consigne libre optionnelle transmise telle quelle à l'impl app-side (ex.
+  /// « insiste sur les définitions »), ou `null`. Contenu neutre — aucun prompt
+  /// système, aucun endpoint (AD-12).
+  final String? instructions;
+
+  /// Identifiant de modèle **OPAQUE** (SU-9/AC2), transporté VERBATIM et **jamais
+  /// interprété** par zcrud : aucun `enum`, aucun `switch`, aucun catalogue,
+  /// aucun libellé. Le type reste `String?` — le catalogue de modèles (et sa
+  /// résolution) vit **entièrement** côté app (AD-15/AD-35). `null` = l'app
+  /// décide.
+  final String? modelId;
 
   /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
   final Map<String, dynamic> _extra;
@@ -74,11 +111,43 @@ class ZFlashcardGenerationRequest {
           count == other.count &&
           languageTag == other.languageTag &&
           provenance == other.provenance &&
+          instructions == other.instructions &&
+          modelId == other.modelId &&
+          _typesDistEquals(typesDistribution, other.typesDistribution) &&
           zJsonEquals(extra, other.extra);
 
   @override
-  int get hashCode =>
-      Object.hash(content, count, languageTag, provenance, zJsonHash(extra));
+  int get hashCode => Object.hash(
+        content,
+        count,
+        languageTag,
+        provenance,
+        instructions,
+        modelId,
+        _typesDistHash(typesDistribution),
+        zJsonHash(extra),
+      );
+
+  /// Égalité PROFONDE de deux répartitions (clés + valeurs), `null`-safe (AC1).
+  static bool _typesDistEquals(
+    Map<ZFlashcardType, int>? a,
+    Map<ZFlashcardType, int>? b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key) || b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  /// Hash indépendant de l'ordre d'une répartition (`null` → `0`).
+  static int _typesDistHash(Map<ZFlashcardType, int>? m) => m == null
+      ? 0
+      : Object.hashAllUnordered(
+          m.entries.map((e) => Object.hash(e.key, e.value)),
+        );
 }
 
 /// Port neutre de **génération de flashcards** (AD-5 : `Either<ZFailure,·>`).

@@ -204,6 +204,25 @@ void main() {
             reason: 'dart:html interdit (utiliser package:web) : ${f.path}');
       }
     });
+
+    // 🔴 su-11 (AC3/AD-42, learning E10) : `zcrud_export` reste PUR — aucun
+    // rendu widget→image. Le port `ZLatexRasterizer` (abstraction) délègue CE
+    // besoin au satellite `zcrud_export_ui`. On BANNIT donc les primitives de
+    // rendu écran de `dart:ui`/`rendering` dans le CODE de `lib/`. Note : les
+    // TYPES DATA de `dart:ui` (`Offset`, `Rect`, `Color`) restent permis — seuls
+    // les APPELS de rasterisation sont interdits. Sans ce garde, un dev pourrait
+    // ajouter `RepaintBoundary().toImage()` ici sans qu'aucun test ne rougisse.
+    test('aucune primitive de RENDU ÉCRAN dart:ui dans lib/ (pureté AD-42)', () {
+      final render =
+          RegExp(r'\b(RepaintBoundary|PictureRecorder|toImage|toByteData)\b');
+      for (final f in _dartFiles(_libDir())) {
+        final code = _code(f.readAsStringSync());
+        final m = render.firstMatch(code);
+        expect(m, isNull,
+            reason: 'rendu écran interdit dans zcrud_export (AD-42) : '
+                '${f.path} → ${m?.group(0)}');
+      }
+    });
   });
 
   group('AC7/AC8/AC12 — secrets : aucune licence, badCert, ni appel réseau', () {

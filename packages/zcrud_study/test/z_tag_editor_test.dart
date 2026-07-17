@@ -49,6 +49,8 @@ void main() {
         existingTags: const <ZFlashcardTag>[existing],
         onCreateTag: created.add,
         onApplyExisting: applied.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
         addSemanticLabel: 'ADD',
       )));
       await tester.pump();
@@ -73,6 +75,8 @@ void main() {
         ],
         onCreateTag: created.add,
         onApplyExisting: applied.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
         addSemanticLabel: 'ADD',
       )));
       await tester.pump();
@@ -113,6 +117,9 @@ void main() {
       cardTagIds: cards,
       onReferencesPurged: (p) => purged = p,
       onDeleteTag: deleted.add,
+      inputLabel: 'IN',
+      inputHint: 'HINT',
+      addSemanticLabel: 'ADD',
       deleteTagSemanticLabel: (t) => 'DEL-${t.id}',
     )));
     await tester.pump();
@@ -161,7 +168,12 @@ void main() {
       await tester.pumpWidget(_host(StatefulBuilder(
         builder: (context, setState) {
           storm = setState;
-          return const ZTagEditor(existingTags: <ZFlashcardTag>[]);
+          return const ZTagEditor(
+            existingTags: <ZFlashcardTag>[],
+            inputLabel: 'IN',
+            inputHint: 'HINT',
+            addSemanticLabel: 'ADD',
+          );
         },
       )));
       await tester.pump();
@@ -190,6 +202,9 @@ void main() {
       await tester.pumpWidget(_host(ZTagEditor(
         existingTags: const <ZFlashcardTag>[],
         inputController: injected,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
       )));
       await tester.pump();
 
@@ -216,6 +231,9 @@ void main() {
       await tester.pumpWidget(_host(ZTagEditor(
         existingTags: const <ZFlashcardTag>[ZFlashcardTag(id: 'a', title: 'A')],
         showUsageCount: true,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
         referencingCardsCountOf: (t) {
           derivCalls++;
           return 0;
@@ -242,6 +260,8 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_host(const ZTagEditor(
         existingTags: <ZFlashcardTag>[],
+        inputLabel: 'IN',
+        inputHint: 'HINT',
         addSemanticLabel: 'ADD-XYZ',
       )));
       await tester.pump();
@@ -286,6 +306,9 @@ void main() {
         onCreateTag: created.add,
         onApplyExisting: applied.add,
         onSuggestionConfirmed: confirmed.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
       )));
       await tester.pump();
 
@@ -307,6 +330,9 @@ void main() {
         suggestions: const <ZSuggestedTag>[ZSuggestedTag(title: 'droit douanier')],
         onCreateTag: created.add,
         onApplyExisting: applied.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
         confirmSuggestionSemanticLabel: (s) => 'CONFIRM',
       )));
       await tester.pump();
@@ -331,6 +357,9 @@ void main() {
         suggestions: const <ZSuggestedTag>[ZSuggestedTag(title: 'Nouveau')],
         onSuggestionConfirmed: confirmed.add,
         onCreateTag: created.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
         confirmSuggestionSemanticLabel: (s) => 'CONFIRM',
       )));
       await tester.pump();
@@ -357,6 +386,9 @@ void main() {
         onCreateTag: created.add,
         onApplyExisting: applied.add,
         onSuggestionRejected: rejected.add,
+        inputLabel: 'IN',
+        inputHint: 'HINT',
+        addSemanticLabel: 'ADD',
         rejectSuggestionSemanticLabel: (x) => 'REJECT',
       )));
       await tester.pump();

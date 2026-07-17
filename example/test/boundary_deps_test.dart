@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-      'AC12 — l\'app dépend de zcrud_core + 3 bindings + zcrud_list + les 5 '
-      'satellites EX-3 ; flashcard/mindmap (E9/E10) restent INTERDITS', () {
+      'Frontière SU-10 — l\'app dépend de zcrud_core + 3 bindings + zcrud_list + '
+      'les 5 satellites EX-3 + zcrud_session/zcrud_flashcard (parcours d\'étude) ; '
+      'zcrud_mindmap (E10) reste INTERDIT', () {
     // `flutter test` s\'exécute depuis la racine du package `example/`.
     // On strippe les COMMENTAIRES (qui mentionnent les paquets interdits à titre
     // explicatif) pour ne tester que les vraies déclarations de dépendances.
@@ -17,22 +18,28 @@ void main() {
         })
         .join('\n');
 
-    // Frontière EX-3 (CLÔTURE de l'epic EX) : `zcrud_markdown`/`_geo`/`_intl`/
-    // `_export`/`_firestore` sont désormais AUTORISÉS (démos MVP restantes, tirent
-    // Quill/flutter_map/Syncfusion/Firebase/Hive via l'app — SM-5). Seuls
-    // `zcrud_flashcard` (E9) et `zcrud_mindmap` (E10) restent INTERDITS (v1.x).
+    // BASCULEMENT DE FRONTIÈRE (su-10, AC10) — ce n'est PAS « taire un défaut » :
+    // la frontière EX-3 disait « `zcrud_flashcard` interdit TANT QUE non consommé ».
+    // su-10 le consomme LÉGITIMEMENT (carte de révision + ports indice/évaluation
+    // + SRS, assemblés dans la démo « Parcours d'étude ») ⇒ `zcrud_flashcard`
+    // QUITTE l'ensemble interdit. Seul `zcrud_mindmap` (E10, su-12, hors
+    // périmètre) reste INTERDIT — y compris en TRANSITIF : c'est précisément
+    // pourquoi `zcrud_study` (qui dépend en dur de `zcrud_mindmap`) n'est PAS
+    // ajouté (écart consigné su-10). L'assertion couvre `dependencies` ET
+    // `dependency_overrides` : un override path de `zcrud_mindmap` (requis dès
+    // qu'il entre dans le lock) ferait rougir ce test.
     const forbidden = <String>[
-      'zcrud_flashcard',
       'zcrud_mindmap',
     ];
     for (final pkg in forbidden) {
       final declared = RegExp('^\\s+$pkg\\s*:', multiLine: true);
       expect(declared.hasMatch(withoutComments), isFalse,
-          reason: 'Frontière EX-3 violée : $pkg (E9/E10, v1.x) ne doit pas '
-              'être une dépendance');
+          reason: 'Frontière violée : $pkg (E10, v1.x — su-12) ne doit être '
+              'déclaré NI en dépendance NI en override');
     }
 
-    // Les 10 paquets zcrud attendus sont bien déclarés.
+    // Les paquets zcrud attendus sont bien déclarés — assertion POSITIVE : sans
+    // elle, un futur nettoyage de pubspec casserait le parcours sans rougir.
     for (final pkg in <String>[
       'zcrud_core',
       'zcrud_get',
@@ -44,6 +51,9 @@ void main() {
       'zcrud_intl',
       'zcrud_export',
       'zcrud_firestore',
+      // su-10 — parcours d'étude assemblé.
+      'zcrud_session',
+      'zcrud_flashcard',
     ]) {
       final declared = RegExp('^\\s+$pkg\\s*:', multiLine: true);
       expect(declared.hasMatch(withoutComments), isTrue, reason: '$pkg attendu');

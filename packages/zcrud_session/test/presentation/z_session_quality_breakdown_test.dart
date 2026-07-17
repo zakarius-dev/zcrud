@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
+import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
@@ -25,9 +26,9 @@ void main() {
         (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(
-        const ZSessionQualityBreakdown(
+        ZSessionQualityBreakdown(
           byQuality: <String, int>{'0': 1, '2': 3, '5': 2},
-          scale: ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
         ),
       ));
@@ -65,9 +66,9 @@ void main() {
         (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(
-        const ZSessionQualityBreakdown(
+        ZSessionQualityBreakdown(
           byQuality: <String, int>{'2': 3, '9': 7},
-          scale: ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
         ),
       ));
@@ -96,9 +97,9 @@ void main() {
       // canonique la traite en hors-échelle : elle DOIT apparaître quelque part.
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(
-        const ZSessionQualityBreakdown(
+        ZSessionQualityBreakdown(
           byQuality: <String, int>{'2': 4, '03': 2},
-          scale: ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
         ),
       ));
@@ -137,7 +138,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         ZSessionQualityBreakdown(
           byQuality: result.byQuality,
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
         ),
       ));

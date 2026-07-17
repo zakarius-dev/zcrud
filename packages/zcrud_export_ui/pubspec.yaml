@@ -1,0 +1,80 @@
+# zcrud_export_ui — satellite PLATEFORME d'export (su-11, AD-42) — membre du
+# workspace zcrud (resolution: workspace).
+#
+# AD-42 (SÉPARATION PURE/PLATEFORME) : `zcrud_export` est PUR (bytes in/out, sans
+# `printing` ni `dart:ui` de rendu écran). Tout ce qui exige une PLATEFORME —
+# rasterisation LaTeX (widget → pixels) et destination des bytes (preview /
+# impression / partage) — vit ICI, dans ce satellite. `zcrud_export_ui` est un
+# LEAF du graphe AD-1 : personne ne dépend de lui (CORE OUT inchangé, aucun cycle).
+#
+# DÉPENDANCES TIERCES CONFINÉES (NFR-SU10, AD-8) :
+#   • `printing ^5.15.0` — 3ᵉ (et dernière) dépendance tierce de l'epic
+#     E-STUDY-UI (après `flutter_card_swiper`, `confetti`). API `Uint8List` :
+#     `printing` ET sa transitive `pdf` ne franchissent JAMAIS ce package
+#     (le type `PdfPageFormat` est ABSORBÉ en interne, jamais en signature
+#     publique). Confinée à `lib/src/data/z_pdf_share_service.dart` +
+#     `lib/src/presentation/z_pdf_preview.dart`.
+#
+#     ✅ CVE-2024-4367 CORRIGÉ : `printing 5.15.0` porte le correctif (ESM import
+#     de pdf.js 5.7.284), fermant l'exécution de JS arbitraire à l'ouverture d'un
+#     PDF piégé sur le rendu WEB de `PdfPreview`. Débloqué par la migration
+#     transverse coordonnée du stack Syncfusion 32→34 (xlsio 34 accepte
+#     `xml ≥7.0.1`, requis par `pdf ^3.13.0` tiré par `printing 5.15`) : tout le
+#     graphe partage un SEUL `syncfusion_flutter_core`, donc `zcrud_export`
+#     (pdf/xlsio) ET `zcrud_list` (datagrid) ont été remontés à `^34.1.31` en même
+#     temps. La dette de sécurité transverse est désormais CLOSE.
+#   • `flutter_math_fork ^0.7.4` — 2ᵉ SITE de déclaration (le 1er est
+#     `zcrud_markdown`, où il est confiné à `z_latex_embed.dart`). Ici il fournit
+#     l'IMPL CONCRÈTE du port pur `ZLatexRasterizer` (déclaré dans `zcrud_export`),
+#     confinée au SEUL `lib/src/data/z_flutter_math_latex_rasterizer.dart`. Aucun
+#     type `Math`/`MathStyle`/… ne fuit dans une signature publique ni le barrel.
+#
+# 🔴 Le confinement de ces deux paquets N'EST PAS gardé par `graph_proof.py` (il
+# ne connaît que les arêtes inter-`zcrud_*`, aucune allowlist tierce) : il est
+# gardé par `test/z_export_ui_confinement_test.dart` (TABLE de paquets confinés,
+# patron su-5), qui scanne les `pubspec.yaml` de `packages/*` et les sources
+# `lib/**` de ce package.
+#
+# AD-1 : arêtes inter-packages zcrud_* SORTANTES = `zcrud_export` + `zcrud_core`
+# UNIQUEMENT (graphe acyclique). AD-12 : ZÉRO clé/secret committé.
+name: zcrud_export_ui
+description: "Platform export destinations for zcrud: PDF preview / print / share (printing) and the concrete LaTeX rasterizer (flutter_math_fork) implementing the pure ZLatexRasterizer port, all behind a neutral Uint8List API."
+version: 0.2.1
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_export_ui
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - export
+  - pdf
+  - printing
+  - latex
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_export + zcrud_core.
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+dependencies:
+  flutter:
+    sdk: flutter
+  # 3ᵉ dépendance tierce de l'epic — preview/print/share de BYTES PDF. Confinée à
+  # z_pdf_share_service.dart + z_pdf_preview.dart. API publique en Uint8List.
+  # ^5.15.0 : porte le correctif CVE-2024-4367 (ESM import de pdf.js 5.7.284 sur le
+  # rendu WEB de PdfPreview). Débloqué par le bump coordonné du stack Syncfusion
+  # 32→34 (xlsio 34 accepte `xml ≥7.0.1`, requis par pdf 3.13 tiré par printing 5.15).
+  printing: ^5.15.0
+  # 2ᵉ site de flutter_math_fork (1er = zcrud_markdown). Impl concrète du port
+  # pur ZLatexRasterizer. Confinée à z_flutter_math_latex_rasterizer.dart.
+  flutter_math_fork: ^0.7.4
+  zcrud_core: ^0.2.1
+  zcrud_export: ^0.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

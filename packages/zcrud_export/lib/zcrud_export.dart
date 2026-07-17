@@ -19,13 +19,34 @@
 /// Syncfusion/`dart:io`/`package:web` restant confinés hors du barrel.
 library;
 
-// --- API STABLE E11a-3 (ne JAMAIS retirer/renommer) ---
+// Exports triés alphabétiquement (`directives_ordering`). API STABLE E11a-3
+// (`ZExportApi`/`ZExportTable`/`ZExporter`) : ne JAMAIS retirer/renommer (la
+// suppression de `ZExportApi` en E11a-3 avait cassé `zcrud_flashcard`). Ajouts
+// E11b-3 (`ZFileSaver*`/`ZPdfCreationService`/`ZPdfExportOptions`) et su-11
+// (gabarit PDF flashcards `ZFlashcardPdf*` + port PUR `ZLatexRasterizer` +
+// `ZAnswerVisibility` + `ZExportedFile`) — tous ADDITIFS, aucun symbole
+// Syncfusion réexporté (AD-42, l'impl concrète du rasteriseur vit dans
+// `zcrud_export_ui`).
+export 'src/data/z_answer_visibility.dart' show ZAnswerVisibility;
 export 'src/data/z_export_api.dart' show ZExportApi;
 export 'src/data/z_export_table.dart' show ZExportTable;
+export 'src/data/z_exported_file.dart' show ZExportedFile;
 export 'src/data/z_exporter.dart' show ZExporter;
-
-// --- Ajouts additifs E11b-3 ---
 export 'src/data/z_file_save_result.dart' show ZFileSaveResult;
 export 'src/data/z_file_saver.dart' show ZFileSaver;
+export 'src/data/z_flashcard_pdf_input.dart'
+    show
+        ZFlashcardPdfCard,
+        ZFlashcardPdfChoice,
+        ZFlashcardPdfInput,
+        ZFlashcardPdfLabels,
+        kFlashcardPdfTypeExercise,
+        kFlashcardPdfTypeFillBlank,
+        kFlashcardPdfTypeMultipleChoice,
+        kFlashcardPdfTypeOpenQuestion,
+        kFlashcardPdfTypeShortAnswer,
+        kFlashcardPdfTypeTrueOrFalse;
+export 'src/data/z_flashcard_pdf_template.dart' show ZFlashcardPdfTemplate;
 export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
 export 'src/data/z_pdf_export_options.dart' show ZPdfExportOptions, ZPdfOrientation;
+export 'src/domain/z_latex_rasterizer.dart' show ZLatexRasterizer;

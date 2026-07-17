@@ -44,6 +44,7 @@ class ZMindmapOutlineEditor extends StatefulWidget {
     this.labels = const ZMindmapOutlineLabels(),
     this.config = const ZMindmapViewConfig(),
     this.editContentField = true,
+    this.editFieldBuilder,
     this.padding,
     super.key,
   });
@@ -70,6 +71,14 @@ class ZMindmapOutlineEditor extends StatefulWidget {
 
   /// Affiche un second champ pour éditer `content` (texte brut multiligne).
   final bool editContentField;
+
+  /// **Slot d'édition de champ injectable** (SU-12, AD-40). `null` (défaut) ⇒
+  /// repli `TextField` texte brut ACTUEL (aucune régression). Fourni ⇒ **label
+  /// ET content** sont rendus par ce builder (ex.
+  /// `ZMindmapMarkdownEditField.builder(slotKey: …)` pour l'édition rich-text).
+  /// Les `TextEditingController` stables et la voie d'écriture texte brut restent
+  /// inchangés (SM-1) ; l'adaptateur riche écrit un slot AD-4 séparé (`extra`).
+  final ZMindmapEditFieldBuilder? editFieldBuilder;
 
   /// Marge externe optionnelle de la liste (directionnelle recommandée).
   final EdgeInsetsGeometry? padding;
@@ -159,6 +168,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
                     config: widget.config,
                     theme: theme,
                     editContentField: widget.editContentField,
+                    editFieldBuilder: widget.editFieldBuilder,
                     onStructuralChange: _notifyChanged,
                     onTextChange: _notifyChanged,
                   );
@@ -232,6 +242,7 @@ class _OutlineRow extends StatelessWidget {
     required this.config,
     required this.theme,
     required this.editContentField,
+    required this.editFieldBuilder,
     required this.onStructuralChange,
     required this.onTextChange,
     super.key,
@@ -243,15 +254,13 @@ class _OutlineRow extends StatelessWidget {
   final ZMindmapViewConfig config;
   final ZcrudTheme theme;
   final bool editContentField;
+  final ZMindmapEditFieldBuilder? editFieldBuilder;
   final VoidCallback onStructuralChange;
   final VoidCallback onTextChange;
 
   @override
   Widget build(BuildContext context) {
     final indent = node.level * config.indentStep;
-    final labelColor = theme.labelColor ?? Theme.of(context).colorScheme.onSurface;
-    final borderColor =
-        theme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
 
     // Chaque mutation structurelle passe par le contrôleur puis notifie l'hôte.
     void structural(void Function() op) {
@@ -259,67 +268,52 @@ class _OutlineRow extends StatelessWidget {
       onStructuralChange();
     }
 
-    final labelField = Semantics(
-      // Le TextField expose déjà le rôle `textField` (LOW-2 : pas de flag
-      // redondant) ; on ne conserve que le label a11y.
-      label: labels.labelHint,
-      child: TextField(
-        controller: controller.labelControllerFor(node),
-        textAlign: TextAlign.start,
-        decoration: InputDecoration(
-          hintText: labels.labelHint,
-          isDense: true,
-          // MEDIUM-1 (AD-13) : cible éditable garantie ≥ 48 dp.
-          constraints: BoxConstraints(minHeight: config.minTapTarget),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: borderColor),
-            borderRadius: BorderRadius.all(theme.radiusS),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(theme.radiusS),
-          ),
-        ),
-        style: TextStyle(color: labelColor),
+    // Slot d'édition injectable (SU-12, AD-40) : `label` ET `content` passent par
+    // `editFieldBuilder ?? _defaultEditField`. Le défaut reproduit À L'IDENTIQUE
+    // le `TextField` historique (mêmes controllers stables, hints, bordures,
+    // ≥ 48 dp, TextAlign.start) — aucune régression sans injection.
+    final builder = editFieldBuilder ?? _defaultEditField;
+
+    Widget field(ZMindmapEditFieldKind kind) {
+      final isLabel = kind == ZMindmapEditFieldKind.label;
+      final ctx = ZMindmapEditFieldContext(
+        node: node,
+        kind: kind,
+        // Controller STABLE keyé par `node.id` (SM-1/AD-2 — jamais recréé).
+        controller: isLabel
+            ? controller.labelControllerFor(node)
+            : controller.contentControllerFor(node),
+        value: isLabel ? node.label : (node.content ?? ''),
         onChanged: (value) {
-          // Édition « live » : met à jour la forêt SANS reconstruire l'outline
-          // (le controller stable porte déjà le texte) — zéro perte de focus.
-          controller.editLabel(node.id, value);
+          // Voie texte brut « live » : met à jour la forêt SANS reconstruire
+          // l'outline (le controller stable porte déjà le texte) — zéro focus.
+          if (isLabel) {
+            controller.editLabel(node.id, value);
+          } else {
+            controller.editContent(node.id, value);
+          }
           onTextChange();
         },
-      ),
-    );
+        // Voie slot AD-4 (`extra`) : édition riche — écrit un slot séparé, laisse
+        // `label`/`content` en texte brut (OQ-S5/AD-28). SANS notifier (SM-1).
+        writeRichSlot: (slotKey, ops) {
+          controller.editRichSlot(node.id, slotKey, ops);
+          onTextChange();
+        },
+        hint: isLabel ? labels.labelHint : labels.contentHint,
+        config: config,
+        theme: theme,
+      );
+      return builder(context, ctx);
+    }
+
+    final labelField = field(ZMindmapEditFieldKind.label);
 
     final contentField = !editContentField
         ? null
         : Padding(
             padding: EdgeInsetsDirectional.only(top: theme.gapS),
-            child: Semantics(
-              label: labels.contentHint,
-              child: TextField(
-                controller: controller.contentControllerFor(node),
-                textAlign: TextAlign.start,
-                minLines: 1,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: labels.contentHint,
-                  isDense: true,
-                  // MEDIUM-1 (AD-13) : cible éditable garantie ≥ 48 dp.
-                  constraints: BoxConstraints(minHeight: config.minTapTarget),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: borderColor),
-                    borderRadius: BorderRadius.all(theme.radiusS),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(theme.radiusS),
-                  ),
-                ),
-                style: TextStyle(color: labelColor),
-                onChanged: (value) {
-                  controller.editContent(node.id, value);
-                  onTextChange();
-                },
-              ),
-            ),
+            child: field(ZMindmapEditFieldKind.content),
           );
 
     final actions = Wrap(
@@ -397,6 +391,46 @@ class _OutlineRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Slot d'édition **par défaut** (SU-12, AD-40) : le `TextField` texte brut
+/// HISTORIQUE, extrait tel quel. `label` = mono-ligne ; `content` = multiligne
+/// (`minLines:1`, `maxLines:4`). Mêmes controllers stables (SM-1), mêmes hints/
+/// bordures/couleurs thématisées (FR-26), cible ≥ 48 dp, `TextAlign.start` (AD-13).
+/// Repli utilisé quand aucun `editFieldBuilder` n'est injecté — AUCUNE régression.
+Widget _defaultEditField(BuildContext context, ZMindmapEditFieldContext ctx) {
+  final theme = ctx.theme;
+  final labelColor =
+      theme.labelColor ?? Theme.of(context).colorScheme.onSurface;
+  final borderColor =
+      theme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
+  final isContent = ctx.kind == ZMindmapEditFieldKind.content;
+  return Semantics(
+    // Le TextField expose déjà le rôle `textField` (LOW-2 : pas de flag
+    // redondant) ; on ne conserve que le label a11y.
+    label: ctx.hint,
+    child: TextField(
+      controller: ctx.controller,
+      textAlign: TextAlign.start,
+      minLines: isContent ? 1 : null,
+      maxLines: isContent ? 4 : 1,
+      decoration: InputDecoration(
+        hintText: ctx.hint,
+        isDense: true,
+        // MEDIUM-1 (AD-13) : cible éditable garantie ≥ 48 dp.
+        constraints: BoxConstraints(minHeight: ctx.config.minTapTarget),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.all(theme.radiusS),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(theme.radiusS),
+        ),
+      ),
+      style: TextStyle(color: labelColor),
+      onChanged: ctx.onChanged,
+    ),
+  );
 }
 
 /// Bouton d'action a11y (≥ 48 dp, `Semantics` externalisé, icône thématisée).

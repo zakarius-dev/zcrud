@@ -337,6 +337,88 @@ void main() {
       expect(identical(s0, s1), isTrue);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // SU-1, AC5 — garde de mode SYMÉTRIQUE (AD-34)
+  // ---------------------------------------------------------------------------
+  //
+  // Avant SU-1, `(mode: cramming, reviewer: RÉEL)` était CONSTRUCTIBLE : le
+  // moteur aurait écrit du SRS pour un mode qui l'interdit — seul trou résiduel
+  // du spine. La garde est strictement symétrique à `ZLinearSessionState`.
+  //
+  // Injection R3-I5 : retirer l'`assert` ⇒ les 4 cas refusés ROUGISSENT.
+  group('AC5 — garde de mode SRS (spaced/learn uniquement, AD-34)', () {
+    /// Modes NON-SRS : servis par un AUTRE runtime ratifié (AD-34) — jamais par
+    /// ce moteur, qui détient la voie d'écriture SRS.
+    const nonSrsModes = <ZReviewMode>[
+      ZReviewMode.cramming, // → ZLinearSessionState
+      ZReviewMode.list, // → ZLinearSessionState
+      ZReviewMode.test, // → ZWhiteExamSessionEngine
+      ZReviewMode.whiteExam, // → ZWhiteExamSessionEngine
+    ];
+
+    /// Modes SRS légitimes de ce moteur.
+    const srsModes = <ZReviewMode>[ZReviewMode.spaced, ZReviewMode.learn];
+
+    for (final mode in nonSrsModes) {
+      test('DISCRIMINANT R3-I5 — le mode $mode est REFUSÉ avec un reviewer réel',
+          () {
+        final reviewer = _SpyReviewer();
+        expect(
+          () => ZStudySessionEngine(
+            queue: _queueOf('AB'),
+            reviewer: reviewer.call,
+            mode: mode,
+          ),
+          throwsA(isA<AssertionError>()),
+          reason: '$mode écrirait du SRS via le reviewer alors que son régime '
+              'l\'interdit — la construction doit être refusée (AD-34)',
+        );
+        // La porte dérobée est bien fermée : aucune écriture n'a eu lieu.
+        expect(reviewer.calls, 0);
+      });
+    }
+
+    for (final mode in srsModes) {
+      test('le mode $mode reste ACCEPTÉ (la garde ne SUR-bloque pas)', () {
+        final reviewer = _SpyReviewer();
+        expect(
+          () => ZStudySessionEngine(
+            queue: _queueOf('AB'),
+            reviewer: reviewer.call,
+            mode: mode,
+          ),
+          returnsNormally,
+          reason: '$mode est un régime SRS légitime de ce moteur',
+        );
+      });
+    }
+
+    test('le mode par défaut (spaced) reste constructible — non-régression', () {
+      expect(
+        () => ZStudySessionEngine(
+          queue: _queueOf('AB'),
+          reviewer: _SpyReviewer().call,
+        ),
+        returnsNormally,
+      );
+    });
+
+    test(
+      'EXHAUSTIVITÉ — les 6 modes de ZReviewMode sont couverts : un 7e mode '
+      'ajouté sans arbitrage de régime fera rougir ce test',
+      () {
+        // Sans ceci, l'ajout d'un mode au kernel passerait SILENCIEUSEMENT à
+        // travers la garde (ni testé refusé, ni testé accepté).
+        expect(
+          <ZReviewMode>{...nonSrsModes, ...srsModes},
+          ZReviewMode.values.toSet(),
+          reason: 'un mode de ZReviewMode n\'est classé ni SRS ni non-SRS : son '
+              'régime d\'écriture n\'a pas été arbitré (AD-34)',
+        );
+      },
+    );
+  });
 }
 
 String _orderOf(ZSessionState s) =>

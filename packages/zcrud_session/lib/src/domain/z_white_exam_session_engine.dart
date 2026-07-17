@@ -109,8 +109,18 @@ class ZWhiteExamState {
   /// chaque réponse enregistrée).
   final int cursor;
 
-  /// Réponses enregistrées **dans l'ordre de présentation** (qualité SM-2
-  /// `0..5`). Sa longueur = nombre de cartes déjà répondues.
+  /// Réponses enregistrées **dans l'ordre d'ARRIVÉE** (qualité SM-2 `0..5`) —
+  /// c'est-à-dire l'ordre des appels à [ZWhiteExamSessionEngine.answer]. Sa
+  /// longueur = nombre de cartes déjà répondues.
+  ///
+  /// 🔴 **`answers[i]` NE désigne PAS `queue[i]`** — les deux ordres coïncident
+  /// **uniquement** sous un hôte **strictement linéaire** (qui répond dans
+  /// l'ordre de la file, sans jamais sauter). Sous tout autre hôte — dont
+  /// `ZListSessionView`, qui rend les N cartes **toutes saisissables** — c'est le
+  /// **multi-ensemble** des qualités des cartes répondues, **positionnellement
+  /// ININTERPRÉTABLE**. Cf. le contrat d'hôte détaillé sur
+  /// [ZWhiteExamSessionEngine.answer] et la contrainte de commutativité sur
+  /// [ZExamScoringPort].
   final List<int> answers;
 
   /// Résultat de scoring, **non-`null` uniquement** en phase
@@ -181,6 +191,32 @@ class ZWhiteExamState {
 /// = un [ZStudySessionResult]. La signature **n'expose AUCUN** store/scheduler
 /// SRS ⇒ un scorer alternatif ne peut PAS écrire d'état de répétition espacée
 /// (cohérent AD-23/AC4). Le défaut fourni est [scoreWhiteExam].
+///
+/// # 🔴 CONTRAT : un scorer DOIT être COMMUTATIF
+///
+/// [qualities] est **`ZWhiteExamState.answers`**, dont l'ordre est celui des
+/// **appels à [ZWhiteExamSessionEngine.answer]** — c'est-à-dire le **rang
+/// d'ARRIVÉE** des réponses, **PAS** l'ordre de [ZWhiteExamSessionEngine.queue].
+/// Ces deux ordres **coïncident uniquement** si l'hôte répond dans l'ordre de la
+/// file **sans jamais sauter** (cf. le contrat d'hôte sur
+/// [ZWhiteExamSessionEngine.answer]).
+///
+/// ⇒ **`qualities[i]` NE désigne PAS `queue[i]`.** Un scorer **positionnel** —
+/// p. ex. « la question 1 vaut double », qui lirait `qualities[0]` en croyant
+/// tenir `queue[0]` — noterait donc la **mauvaise question** sous saisie
+/// désordonnée ou avec sauts : **une note FAUSSE pour l'apprenant, sans aucune
+/// exception**. Ce seam est **public** : la contrainte doit être lue comme une
+/// **précondition d'implémentation**, pas comme un détail.
+///
+/// **Seule une fonction COMMUTATIVE de [qualities] est admissible** (un comptage
+/// / un agrégat insensible à la permutation), tant que le moteur reste
+/// strictement linéaire. [scoreWhiteExam] l'est — et une garde le **fige**
+/// (`z_white_exam_scoring_contract_test.dart`).
+///
+/// Rendre `qualities[i]` interprétable **positionnellement** exigerait de faire
+/// porter l'index de la carte au moteur (`answer({index, quality})`) : c'est un
+/// **changement de contrat du DOMAINE**, hors périmètre de SU-7 (D10), à porter
+/// par une story dédiée.
 typedef ZExamScoringPort = ZStudySessionResult Function(
   List<int> qualities, {
   required int passThreshold,
@@ -313,6 +349,39 @@ class ZWhiteExamSessionEngine extends ChangeNotifier {
   ///
   /// **Transition ILLÉGALE hors [ZWhiteExamPhase.running]** (avant [start], ou
   /// après [submit]) ⇒ **lève `StateError`** (jamais un no-op muet, R6/AC2).
+  ///
+  /// # 🔴 CONTRAT D'HÔTE — cette API est POSITIONNELLE et n'a AUCUN moyen de
+  /// # représenter un saut ou une réponse hors-ordre
+  ///
+  /// [quality] est enregistrée pour **`queue[cursor]`** — la carte **courante**
+  /// — et le curseur avance d'un cran. La signature **ne porte pas d'index** :
+  /// un hôte **ne peut pas** dire « cette qualité appartient à la carte #2 ».
+  ///
+  /// ⇒ Un hôte qui laisse l'apprenant **répondre dans le désordre** ou **sauter**
+  /// une question **corrompt** [ZWhiteExamState.answers], [ZWhiteExamState.cursor]
+  /// et [current] — **silencieusement, sans aucune exception**. Mesuré : Q3 juste
+  /// (5), puis Q1 faux (0), Q2 sautée ⇒ `answers == [5, 0]`, `cursor == 2`,
+  /// `current == Q3` — le moteur croit alors que `queue[0]`(Q1) vaut **5** (c'est
+  /// la note de Q3), que `queue[1]`(Q2) vaut **0** (elle n'a **jamais** été
+  /// répondue), et Q3 n'apparaît **nulle part**. **Les trois attributions sont
+  /// fausses.**
+  ///
+  /// **Ce que `answers` est RÉELLEMENT**, dès qu'un hôte autorise le saut ou le
+  /// désordre : le **MULTI-ENSEMBLE** des qualités des cartes répondues —
+  /// **positionnellement ININTERPRÉTABLE**. Deux conséquences, toutes deux
+  /// **gardées** (`z_white_exam_scoring_contract_test.dart`) :
+  ///
+  /// 1. seul un **scorer COMMUTATIF** est admissible (cf. [ZExamScoringPort]) ;
+  /// 2. [current]/[remaining]/[cursor] ne sont **fiables que** sous un hôte
+  ///    **strictement linéaire**.
+  ///
+  /// 🔒 `ZListSessionView` (SU-7) **rend les N cartes simultanément et toutes
+  /// saisissables** : son hôte est donc **NON linéaire par conception**. Il
+  /// n'exploite, en conséquence, que l'**agrégat commutatif** ([result]) et sa
+  /// propre `Map` indexée par position — **jamais** `answers`/`current`/`cursor`.
+  /// Aligner ces derniers exigerait `answer({index, quality})` : **changement de
+  /// contrat du DOMAINE, hors périmètre SU-7 (D10)**, à porter par une story
+  /// dédiée.
   void answer(int quality) {
     if (_state.phase != ZWhiteExamPhase.running) {
       throw StateError(

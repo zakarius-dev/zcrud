@@ -37,6 +37,15 @@ enum ZItemActionKind {
   /// Partager l'item.
   share,
 
+  /// **Dupliquer** l'item (SU-8/AC15, FR-SU21).
+  ///
+  /// Ajout **ADDITIF, non-breaking** : aucun `switch` sur [ZItemActionKind]
+  /// n'existe dans le repo (grep négatif vérifié — `grep -rn 'ZItemActionKind'`
+  /// ne rend que des constructions `kind: ZItemActionKind.x`, jamais une
+  /// analyse de cas exhaustive qui deviendrait non-exhaustive). Un membre neuf
+  /// ne casse donc aucun appelant.
+  duplicate,
+
   /// Supprimer l'item.
   delete,
 
@@ -115,6 +124,20 @@ class ZItemActionsMenu extends StatelessWidget {
               child: Semantics(
                 button: true,
                 label: action.label,
+                // 🔴 `excludeSemantics: true` (SU-8/AC20 — DÉFAUT RÉEL CORRIGÉ).
+                //
+                // `PopupMenuItem` **fusionne** son sous-arbre (`MergeSemantics`).
+                // Sans cette exclusion, le label de ce nœud **ET** celui du
+                // `Text(action.label)` enfant fusionnent tous deux : le lecteur
+                // d'écran annonce l'action **DEUX FOIS** — mesuré sur l'arbre
+                // sémantique réel : `label was "Ouvrir\nOuvrir"`.
+                //
+                // ⚠️ Retirer le `label:` d'ici **ne marche PAS** (essayé,
+                // mesuré) : le nœud devient **MUET** (`label: ""`) — l'action
+                // disparaîtrait purement et simplement pour un lecteur d'écran.
+                // Le couple `label:` + `excludeSemantics:` est la **seule**
+                // combinaison qui annonce l'action **exactement une fois**.
+                excludeSemantics: true,
                 child: Row(
                   children: [
                     Icon(action.icon),

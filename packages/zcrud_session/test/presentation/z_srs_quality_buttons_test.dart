@@ -23,7 +23,7 @@ void main() {
       final captured = <int>[];
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
           onQualitySelected: captured.add,
         ),
@@ -44,7 +44,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
           onQualitySelected: (_) {},
           previewLabelFor: (q) => 'PREVIEW_$q',
@@ -83,7 +83,7 @@ void main() {
 
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
           onQualitySelected: (_) {},
           previewLabelFor: preview,
@@ -113,7 +113,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
           onQualitySelected: (_) {},
         ),
@@ -147,7 +147,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 3,
           onQualitySelected: (_) {},
         ),
@@ -169,7 +169,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(
         ZSrsQualityButtons(
-          scale: const ZQualityScale(min: 0, max: 5),
+          scale: ZQualityScale.fromConfig(const ZSrsConfig()),
           passThreshold: 4,
           onQualitySelected: (_) {},
         ),
@@ -186,15 +186,44 @@ void main() {
     });
   });
 
-  group('ZQualityScale — value-object', () {
-    test('qualities est ordonné croissant et borné', () {
-      expect(const ZQualityScale(min: 0, max: 5).qualities,
+  group('ZQualityScale — value-object DÉRIVÉ de ZSrsConfig (SU-1, AC2/AD-46)', () {
+    test('qualities est ordonné croissant et borné (échelle par défaut)', () {
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()).qualities,
           <int>[0, 1, 2, 3, 4, 5]);
-      expect(const ZQualityScale(min: 1, max: 5).qualities,
-          <int>[1, 2, 3, 4, 5]);
-      expect(const ZQualityScale(min: 1, max: 5).contains(0), isFalse);
-      expect(const ZQualityScale(min: 0, max: 5) == const ZQualityScale(),
-          isTrue);
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()).contains(0), isTrue);
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()).contains(5), isTrue);
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()).contains(6), isFalse);
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()).contains(-1), isFalse);
+    });
+
+    test(
+      'DISCRIMINANT R3-I2 — l\'échelle DÉRIVE d\'une config non-défaut (1..5, '
+      'cas historique « sans blackout ») : insatisfiable avec `0..5` en dur',
+      () {
+        // `maxQuality` est épinglé à 5 par assert (SM-2 est un algorithme 0..5,
+        // AD-46) : l'échelle « sans blackout » (min=1) est la variation
+        // légitime, et elle discrimine tout aussi bien la dérivation — une
+        // échelle recodée en dur rendrait [0,1,2,3,4,5].
+        const config = ZSrsConfig(minQuality: 1, maxQuality: 5, passThreshold: 3);
+        final scale = ZQualityScale.fromConfig(config);
+        expect(scale.qualities, <int>[1, 2, 3, 4, 5]);
+        expect(scale.min, 1);
+        expect(scale.max, 5);
+        expect(scale.contains(0), isFalse,
+            reason: '0 est hors de l\'échelle dérivée (min=1) — une échelle en '
+                'dur le contiendrait');
+      },
+    );
+
+    test('==/hashCode : deux échelles dérivées de la MÊME config sont égales', () {
+      expect(ZQualityScale.fromConfig(const ZSrsConfig()),
+          equals(ZQualityScale.fromConfig(const ZSrsConfig())));
+      expect(
+        ZQualityScale.fromConfig(const ZSrsConfig()),
+        isNot(equals(ZQualityScale.fromConfig(
+          const ZSrsConfig(minQuality: 1, maxQuality: 5, passThreshold: 3),
+        ))),
+      );
     });
   });
 }

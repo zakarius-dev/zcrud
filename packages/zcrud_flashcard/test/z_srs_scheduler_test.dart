@@ -35,6 +35,41 @@ void main() {
     });
   });
 
+  group('AD-46 — le clamp de qualité lit la CONFIG, jamais des bornes en dur', () {
+    test(
+      'PORTEUR — sur une échelle « sans blackout » (min=1), un q=0 venu d\'un '
+      'port d\'évaluation est clampé à 1, PAS appliqué tel quel',
+      () {
+        // Scénario réel (AC1 : `clampQuality` sera consommé par su-3 via le
+        // `suggestedQuality` du port d'évaluation) : le domaine déclare que la
+        // qualité 0 N'EXISTE PAS (`ZQualityScale.fromConfig(config)` ne la
+        // contient pas), mais un port externe — ou une valeur persistée
+        // corrompue (AD-10) — rend malgré tout 0.
+        const noBlackout = ZSm2Scheduler(
+          config: ZSrsConfig(minQuality: 1, maxQuality: 5, passThreshold: 3),
+        );
+        final info = noBlackout.initial(flashcardId: 'c', folderId: 'f');
+
+        final atZero = noBlackout.apply(info, 0, now: kNow);
+
+        // INSATISFIABLE par un `quality.clamp(0, 5)` en dur : celui-ci
+        // laisserait passer 0 (deltaEF = -0.80) au lieu de 1 (deltaEF = -0.54).
+        expect(atZero.lastQuality, 1,
+            reason: 'un clamp(0,5) en dur appliquerait q=0 — la config dit '
+                'min=1 : le scheduler lirait une échelle AUTRE que celle du '
+                'domaine et de l\'UI (divergence silencieuse, AD-46)');
+
+        // Preuve d'équivalence : q=0 est traité EXACTEMENT comme q=1.
+        final atOne = noBlackout.apply(info, 1, now: kNow);
+        expect(atZero, atOne,
+            reason: 'hors échelle basse ⇒ ramené au min de la CONFIG');
+
+        // Et toujours aucune exception (AD-10 : clampé, jamais rejeté).
+        expect(() => noBlackout.apply(info, -100, now: kNow), returnsNormally);
+      },
+    );
+  });
+
   group('Courbe SM-2 multi-révisions, q=5 (AC4)', () {
     test('interval suit 1, 6, puis round(prev*ef) croissant ; ease plafonne',
         () {

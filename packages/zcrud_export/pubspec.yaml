@@ -35,10 +35,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Stack de l'architecture (^32.1.x) — SEULES arêtes Syncfusion d'export du
+  # Stack de l'architecture (^34.1.x) — SEULES arêtes Syncfusion d'export du
   # graphe (AD-8). Confinées à `lib/src/data/z_{excel,pdf}_exporter.dart`.
-  syncfusion_flutter_xlsio: ^32.1.19
-  syncfusion_flutter_pdf: ^32.1.19
+  # Bump coordonné 32→34 (tout le stack Syncfusion partage `syncfusion_flutter_core`)
+  # pour débloquer `printing ^5.15.0` (xlsio 34 accepte `xml ≥7.0.1`) → CVE-2024-4367.
+  syncfusion_flutter_xlsio: ^34.1.31
+  syncfusion_flutter_pdf: ^34.1.31
   # E11b-3 : téléchargement navigateur (ZFileSaver web) via `package:web` +
   # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage web-CONDITIONNEL
   # (`z_file_saver_web.dart`, chargé seulement si `dart.library.js_interop`) : ne

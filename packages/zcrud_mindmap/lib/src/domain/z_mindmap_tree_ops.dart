@@ -82,6 +82,32 @@ abstract final class ZMindmapTreeOps {
     );
   }
 
+  /// Remplace l'échappatoire [extra] (slot AD-4) du nœud [nodeId] par [extra]
+  /// (l'appelant compose la map complète : c'est une **voie d'écriture de slot**,
+  /// pas un merge). `label`/`content`/`level`/`children`/`extension` **inchangés**.
+  /// No-op `identical` si [nodeId] introuvable. Le constructeur `ZMindmapNode`
+  /// **dépouille** [extra] des clés réservées de sync (AD-19.1) — jamais un
+  /// `assert`. Voie de l'édition riche SU-12 (`extra[slotKey]` = ops Delta).
+  static List<ZMindmapNode> updateExtra(
+    List<ZMindmapNode> roots,
+    String nodeId,
+    Map<String, dynamic> extra,
+  ) {
+    return _replaceNode(
+      roots,
+      nodeId,
+      (n) => ZMindmapNode(
+        id: n.id,
+        label: n.label,
+        content: n.content,
+        level: n.level,
+        children: n.children,
+        extension: n.extension,
+        extra: extra,
+      ),
+    );
+  }
+
   /// Ajoute [child] (et son sous-arbre) comme dernier enfant de [parentId], avec
   /// **recalcul de `level`** (nouvelle base = `parent.level + 1`, cascade).
   /// No-op `identical` si [parentId] introuvable.

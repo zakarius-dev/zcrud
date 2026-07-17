@@ -374,4 +374,245 @@ void main() {
       expect(_delegate(tester).childAspectRatio.isFinite, isTrue);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SU-8 / AC2 — constructeur `.builder` ADDITIF : virtualisation RÉELLE.
+  //
+  // Pourquoi ce ctor existe (SU-8/D3) : le ctor `children:` est **lazy au rendu**
+  // mais **EAGER à la construction** — l'appelant doit matérialiser TOUS les
+  // widgets avant de les passer. Combiné à `shrinkWrap: true` +
+  // `NeverScrollableScrollPhysics`, la grille layoute TOUT (aucun culling de
+  // viewport). Sur des milliers de cartes, c'est NFR-SU9 violée.
+  //
+  // 🔴 La sonde compte les appels RÉELS d'`itemBuilder` : c'est la seule preuve
+  // que la virtualisation n'est pas décorative. Un ctor `.builder` qui
+  // délèguerait en interne à `children:` passerait TOUS les autres tests
+  // (colonnes, ratio, garde vide) et n'échouerait QUE sur ce compteur.
+  // ═══════════════════════════════════════════════════════════════════════════
+  group('SU-8/AC2 — ZAdaptiveGrid.builder (additif, virtualisé)', () {
+    testWidgets(
+      '🔴 VIRTUALISATION : sur 1000 items, itemBuilder est appelé ≪ 1000 fois',
+      (tester) async {
+        final built = <int>[];
+        await tester.pumpWidget(
+          _harness(
+            width: 900,
+            child: ZAdaptiveGrid.builder(
+              itemCount: 1000,
+              itemBuilder: (context, i) {
+                built.add(i);
+                return SizedBox(key: ValueKey('cell-$i'));
+              },
+              minItemWidth: 300,
+              itemHeight: 100,
+            ),
+          ),
+        );
+
+        expect(built, isNotEmpty,
+            reason: 'sonde cassée : aucun item construit ⇒ le test ne mesure '
+                'RIEN et resterait vert quoi qu\'il arrive');
+        expect(
+          built.length,
+          lessThan(200),
+          reason: '🔴 NFR-SU9 : ${built.length}/1000 items construits — la '
+              'grille n\'est PAS virtualisée. Cause quasi certaine : le ctor '
+              '`.builder` délègue à `children:` (shrinkWrap + '
+              'NeverScrollableScrollPhysics ⇒ tout est layouté).',
+        );
+      },
+    );
+
+    testWidgets(
+      '🔴 D4 — contre-preuve mesurée sur les WIDGETS RENDUS (jamais sur List.generate)',
+      (tester) async {
+        // 🔴 D4 — L'ANCIENNE version comptait `builtEagerly`, incrémenté par
+        // `List.generate` (le SDK Dart), vrai AVANT même le `pumpWidget` : elle
+        // mesurait `List.generate`, PAS `ZAdaptiveGrid`. Preuve : mutiler le ctor
+        // `children:` (rendre `SizedBox.shrink()`) la laissait VERTE tandis que
+        // 19 autres tests rougissaient — une garde décorative. On mesure
+        // désormais ce que le WIDGET rend réellement.
+        //
+        // ⚠️ Fait mesuré (sonde jetable) : les DEUX ctors s'appuient sur
+        // `GridView.builder` et **cullent le viewport** ⇒ ils montent le MÊME
+        // petit nombre de tuiles (≈12/1000), PAS « 1000 vs 10 ». La vraie
+        // différence n'est donc pas le nombre de tuiles montées mais :
+        //   (a) `.builder` n'APPELLE `itemBuilder` que pour le viewport (mesuré
+        //       ci-dessous, ≪ itemCount) — le caller ne construit jamais 1000
+        //       widgets ; `children:` exige une `List<Widget>` pré-construite ;
+        //   (b) chaque ctor REND bien son viewport — mutiler l'un rougit ICI.
+        bool isCell(Widget w) =>
+            w.key is ValueKey<String> &&
+            (w.key! as ValueKey<String>).value.startsWith('cell-');
+
+        // .builder : itemBuilder appelé ≪ itemCount (virtualisation RÉELLE, et
+        // c'est une propriété DU widget, pas de List.generate).
+        var builderCalls = 0;
+        await tester.pumpWidget(
+          _harness(
+            width: 900,
+            child: ZAdaptiveGrid.builder(
+              itemCount: 1000,
+              itemBuilder: (context, i) {
+                builderCalls++;
+                return SizedBox(key: ValueKey('cell-$i'));
+              },
+              minItemWidth: 300,
+              itemHeight: 100,
+            ),
+          ),
+        );
+        expect(builderCalls, lessThan(200),
+            reason: '🔴 .builder ne CONSTRUIT que le viewport ($builderCalls/1000) '
+                '— le caller ne matérialise jamais 1000 widgets');
+        expect(find.byKey(const ValueKey('cell-0')), findsOneWidget,
+            reason: 'sonde : .builder rend bien son viewport');
+
+        // children: le ctor historique REND réellement les widgets qu'on lui
+        // passe. 🔴 Mutiler ce ctor (SizedBox.shrink) rougirait ICI — là où
+        // l'ancien `builtEagerly` (décorrélé du ctor) restait vert.
+        await tester.pumpWidget(
+          _harness(
+            width: 900,
+            child: ZAdaptiveGrid(
+              children: _cells(1000),
+              minItemWidth: 300,
+              itemHeight: 100,
+            ),
+          ),
+        );
+        expect(find.byKey(const ValueKey('cell-0')), findsOneWidget,
+            reason: '🔴 D4 : le ctor children: MONTE/REND ses widgets — cette '
+                'assertion DÉPEND du ctor (mutiler → SizedBox.shrink la rougit), '
+                'contrairement à l\'ancien builtEagerly compté par List.generate');
+        expect(find.byWidgetPredicate(isCell).evaluate().length, greaterThan(0),
+            reason: 'sonde : au moins une tuile réellement montée');
+      },
+    );
+
+    testWidgets('les DEUX ctors donnent le MÊME nombre de colonnes', (tester) async {
+      // computeCrossAxisCount RÉUTILISÉ (jamais une 2e formule de colonnes).
+      for (final width in <double>[320, 640, 900, 1440]) {
+        await tester.pumpWidget(
+          _harness(
+            width: width,
+            child: ZAdaptiveGrid(children: _cells(20), minItemWidth: 300),
+          ),
+        );
+        final withChildren = _delegate(tester).crossAxisCount;
+
+        await tester.pumpWidget(
+          _harness(
+            width: width,
+            child: ZAdaptiveGrid.builder(
+              itemCount: 20,
+              itemBuilder: (context, i) => SizedBox(key: ValueKey('cell-$i')),
+              minItemWidth: 300,
+            ),
+          ),
+        );
+        final withBuilder = _delegate(tester).crossAxisCount;
+
+        expect(withBuilder, withChildren,
+            reason: 'largeur $width : les deux ctors doivent partager '
+                '`computeCrossAxisCount` — une 2e formule est une 2e source');
+      }
+    });
+
+    testWidgets('garde vide PARTAGÉE : itemCount 0 → SizedBox.shrink()', (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 900,
+          child: ZAdaptiveGrid.builder(
+            itemCount: 0,
+            itemBuilder: (context, i) => const SizedBox(),
+            minItemWidth: 300,
+          ),
+        ),
+      );
+      expect(find.byType(GridView), findsNothing);
+      expect(find.byType(SizedBox), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('itemCount NÉGATIF ⇒ garde vide, jamais de throw (AD-10)', (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 900,
+          child: ZAdaptiveGrid.builder(
+            itemCount: -5,
+            itemBuilder: (context, i) => const SizedBox(),
+            minItemWidth: 300,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(GridView), findsNothing);
+    });
+
+    testWidgets('replis AD-10 PARTAGÉS : ratio dégénéré ⇒ jamais de throw',
+        (tester) async {
+      // Même dégénérescence que le ctor children: (spacing > largeur d'item).
+      await tester.pumpWidget(
+        _harness(
+          width: 900,
+          child: ZAdaptiveGrid.builder(
+            itemCount: 6,
+            itemBuilder: (context, i) => SizedBox(key: ValueKey('cell-$i')),
+            minItemWidth: 100,
+            spacing: 400,
+            itemHeight: 100,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(_delegate(tester).childAspectRatio, greaterThan(0));
+      expect(_delegate(tester).childAspectRatio.isFinite, isTrue);
+    });
+
+    testWidgets('.builder SCROLLE de lui-même (jamais shrinkWrap)', (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 900,
+          child: ZAdaptiveGrid.builder(
+            itemCount: 1000,
+            itemBuilder: (context, i) => SizedBox(
+              key: ValueKey('cell-$i'),
+              child: Text('item $i', textDirection: TextDirection.ltr),
+            ),
+            minItemWidth: 300,
+            itemHeight: 100,
+          ),
+        ),
+      );
+      final grid = tester.widget<GridView>(find.byType(GridView));
+      expect(grid.shrinkWrap, isFalse,
+          reason: 'shrinkWrap: true layouterait TOUT ⇒ virtualisation morte');
+      expect(grid.physics, isNot(isA<NeverScrollableScrollPhysics>()),
+          reason: '.builder est la surface SCROLLABLE (AC2)');
+
+      // Le scroll révèle des items NON construits initialement (preuve que le
+      // culling est réel et que la grille est réellement parcourable).
+      expect(find.text('item 0'), findsOneWidget);
+      expect(find.text('item 900'), findsNothing);
+      await tester.drag(find.byType(GridView), const Offset(0, -3000));
+      await tester.pump();
+      expect(find.text('item 0'), findsNothing,
+          reason: 'après scroll, les premiers items sortent du viewport');
+    });
+
+    testWidgets('ctor children: NON RÉGRESSÉ (shrinkWrap + physics figées)',
+        (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 900,
+          child: ZAdaptiveGrid(children: _cells(6), minItemWidth: 300),
+        ),
+      );
+      final grid = tester.widget<GridView>(find.byType(GridView));
+      expect(grid.shrinkWrap, isTrue,
+          reason: 'zéro régression : le contrat du ctor existant est intact');
+      expect(grid.physics, isA<NeverScrollableScrollPhysics>());
+    });
+  });
 }

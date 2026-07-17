@@ -7,6 +7,7 @@ import 'demos/intl_demo_screen.dart';
 import 'demos/list_demo_screen.dart';
 import 'demos/markdown_demo_screen.dart';
 import 'demos/offline_demo_screen.dart';
+import 'demos/study_session_demo_screen.dart';
 
 /// Descripteur d'une entrée de démo par domaine (accueil, AC3/AC10).
 class _DemoEntry {
@@ -114,6 +115,14 @@ class HomeScreen extends StatelessWidget {
           icon: Icons.cloud_sync,
           available: true,
           onOpen: (_) => const OfflineDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Parcours d\'étude',
+          subtitle: 'Sélecteur → pile swipeable → carte interactive → '
+              'célébration (widgets publics + fakes, SM-1)',
+          icon: Icons.school_outlined,
+          available: true,
+          onOpen: (_) => const StudySessionDemoScreen(),
         ),
       ];
 

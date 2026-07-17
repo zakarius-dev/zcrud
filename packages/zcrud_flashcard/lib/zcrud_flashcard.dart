@@ -68,6 +68,13 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         ZFolderContentsOrder,
         ZFolderContentsOrderExtensionParser,
         kSectionOrdersKey,
+        // SU-1 (AD-38) — `zSectionKey` : constructeur canonique des clés de
+        // `ZFolderContentsOrder.sectionOrders`. Même FAMILLE que les symboles
+        // ci-dessus (`applyOrder`/`kSectionOrdersKey`, déjà masqués) : ordre de
+        // contenu de dossier study, NON pertinent flashcard ⇒ hors surface
+        // publique flashcard. Un consommateur qui compose une clé importe
+        // `zcrud_study_kernel` (foyer unique — jamais de recopie à la main).
+        zSectionKey,
         // ES-2.7 — vue « rythme du jour » (résultat de session + tâches
         // quotidiennes + agrégation via le port neutre `ZApproachingExam`) :
         // symboles study-niveau, NON pertinents flashcard ⇒ hors surface
@@ -99,7 +106,25 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         // NON pertinent pour la surface flashcard historique ⇒ hors surface
         // publique flashcard (précédent EXACT `ZStudyRepository` / ES-3.1, D10).
         ZCascadeEdge,
-        ZCascadeRegistry;
+        ZCascadeRegistry,
+        // SU-6 (FR-SU11, D1/D3) — flamme d'assiduité (`ZStudyStreak` +
+        // `zAdvanceStreak` + le jour civil) : compteur d'assiduité STUDY-niveau,
+        // dépendant de dates SEULES et d'AUCUN concept flashcard (ni `ZSrsConfig`,
+        // ni `ZRepetitionInfo`) ⇒ NON pertinent pour la surface flashcard
+        // historique (précédent EXACT `ZStudyRepository` / ES-3.1, `ZCascadeEdge` /
+        // ES-3.3). Le consommateur du streak est `zcrud_session`, qui importe le
+        // barrel `zcrud_study_kernel` DIRECTEMENT (foyer unique).
+        ZStudyStreak,
+        ZStreakOutcome,
+        ZStreakAdvance,
+        zIsGradedMode,
+        zAdvanceStreak,
+        ZCivilDayOf,
+        zLocalCivilDay,
+        zFormatCivilDay,
+        zIsCivilDay,
+        zParseCivilDayNumber,
+        zCivilDayNumber;
 
 export 'src/data/z_flashcard_repository.dart';
 export 'src/data/z_repetition_store.dart';
@@ -126,10 +151,65 @@ export 'src/domain/z_choice.dart';
 //   (`scripts/ci/gate_reserved_keys.dart`), avec sa fixture d'échec isolée
 //   (`prove_gates.dart` › `hide-extension-generee-exportee`).
 export 'src/domain/z_flashcard.dart' hide ZFlashcardZcrud;
+// SU-3 (AC2/AC3, AD-35) — port d'évaluation ADVISORY : il SUGGÈRE une qualité,
+// il ne NOTE jamais et n'écrit JAMAIS le SRS (AD-33). Foyer IMPOSÉ par le graphe
+// (AD-1) : `zcrud_study` dépend de `zcrud_flashcard` ⇒ le loger à côté de
+// `ZFlashcardGenerationPort` créerait un CYCLE.
+export 'src/domain/z_flashcard_answer_evaluation_port.dart';
 export 'src/domain/z_flashcard_api.dart';
+// SU-8 (AC13, FR-SU21, AD-45/D6) — « dupliquer pour modifier » : copie ÉPHÉMÈRE
+// (`id: null`, `isReadOnly: false`, `createdAt`/`updatedAt` null) — AUCUN état
+// personnel (ni SRS ni ordre : entités SÉPARÉES indexant des ids, inatteignables
+// sans id — PROUVÉ, pas supposé). L'original n'est JAMAIS muté. Ctor nominal et
+// non `copyWith` (qui ne peut pas remettre `id` à null ⇒ écraserait l'original).
+export 'src/domain/z_flashcard_duplicate.dart';
+// SU-6 (FR-SU12, D1) — filtres test/examen PURS : `ZMasteryLevel`/
+// `zMasteryLevelOf` (bornes TOUTES lues sur `ZSrsConfig`, `clampQuality` UNIQUE
+// voie de clamp — AD-46), `ZFlashcardTestFilters`, `zApplyTestFilters` (DÉLÈGUE
+// dossier ∧ tags ∧ types à `ZStudySessionSelector` — jamais réécrits),
+// `zDrawQuestions`/`zShuffleChoices` (aléa INJECTÉ — D5).
+//
+// SU-8 (AC5/AC6/AC7) — filtres de CONSULTATION, dans le MÊME fichier (ils
+// partagent `zMatchesSourceKind`, l'implémentation UNIQUE du prédicat de
+// provenance) mais fonction DISTINCTE : `ZFlashcardSearchField` (enum),
+// `ZFlashcardBrowseFilters`, `zApplyBrowseFilters` — qui DÉLÈGUE dossier ∧ tags ∧
+// types à `ZStudySessionSelector.matches` et JAMAIS à `selectFrom` (son plafond
+// `count` tronquerait la liste). AUCUN `Random`, AUCUN `questionCount` : une
+// liste de gestion ne TIRE pas (un dossier de 2 000 cartes en afficherait 10).
+export 'src/domain/z_flashcard_filters.dart';
+// SU-3 (AC5, AD-36) — port d'indices : appelé UNIQUEMENT après épuisement de
+// l'indice STOCKÉ (`ZFlashcard.hint`), avec les indices déjà montrés
+// (anti-répétition). Résultat ÉPHÉMÈRE : jamais persisté sur la carte.
+export 'src/domain/z_flashcard_hint_port.dart';
+// SU-3 (AC1, AD-35) — évaluation LOCALE exacte QCM/VF (le port n'est JAMAIS
+// appelé pour ces deux types). `zIsLocallyEvaluatedType` est la voie de ROUTAGE
+// (par le TYPE, jamais par un retour `null` — cf. dartdoc) : elle est appelée par
+// `ZFlashcardAnswerInput._submitWritten`, SEUL point d'où le port est atteignable,
+// qui REFUSE d'appeler le port pour un type qu'elle déclare local.
+export 'src/domain/z_flashcard_local_evaluation.dart';
+// SU-8 (AC4, D5) — normalisation de recherche : strippe les marques combinantes
+// U+0300–U+036F (comble la limite **L-2 / NFD** de `zFoldDiacritics`) puis
+// **DÉLÈGUE** à `zFoldDiacritics` (`zcrud_core`) — la table de repli reste
+// UNIQUE, jamais recopiée ici — et replie les espaces (dont insécables). Gardé
+// par `test/z_flashcard_search_single_fold_table_test.dart`.
+export 'src/domain/z_flashcard_search_text.dart';
+// SU-8 (AC8) — tri PUR, STABLE et TOTAL : `ZFlashcardSortMode` (enum),
+// `zSortFlashcards`. `manual` ne trie PAS (l'ordre manuel appartient à
+// `ZFolderContentsOrder`/`applyOrder` — AD-38, jamais une 2e voie).
+export 'src/domain/z_flashcard_sort.dart';
 export 'src/domain/z_flashcard_source.dart';
 export 'src/domain/z_flashcard_type.dart';
+// SU-3 (AC6, AD-36) — PROPRIÉTAIRE UNIQUE de la pénalité d'indices. Appliqué EN
+// DERNIER, sur la valeur RENDUE (y compris celle du port) : « un port qui rend
+// 10 indices ne contourne pas le plafond ». Plancher DÉRIVÉ (`passThreshold-1`).
+export 'src/domain/z_hint_penalty.dart';
 export 'src/domain/z_repetition_info.dart' hide ZRepetitionInfoZcrud;
+// SU-2 (AC2) — transition de révélation question→réponse (enum, jamais un
+// booléen ; Reduce Motion PRIME sur sa valeur).
+export 'src/domain/z_reveal_transition.dart';
+// SU-6 (FR-SU10, D1) — catégorisation PURE O(1)/carte (lookup Map, jamais
+// `firstWhere`) : `ZSessionCategories`/`zCategorize`/`zIndexSrsById`.
+export 'src/domain/z_session_categorization.dart';
 export 'src/domain/z_sm2_scheduler.dart';
 export 'src/domain/z_srs_config.dart';
 export 'src/domain/z_srs_scheduler.dart';
@@ -138,9 +218,20 @@ export 'src/domain/z_srs_scheduler.dart';
 export 'src/domain/z_study_session_config_flashcard_x.dart';
 // E9-5 — couche presentation/ (widgets d'édition additifs).
 export 'src/presentation/z_flashcard_choices_field_widget.dart';
+// SU-1 (AD-40) — contrat de slot de rendu de contenu + défaut texte brut
+// thématisé. L'adaptateur markdown/LaTeX injectable relève de su-2.
+export 'src/presentation/z_flashcard_content_slot.dart';
 export 'src/presentation/z_flashcard_editing_scope.dart';
 export 'src/presentation/z_flashcard_edition_validator.dart';
 export 'src/presentation/z_flashcard_editor_config.dart';
 export 'src/presentation/z_flashcard_editors.dart';
+// SU-2 (AC6, AD-40) — adaptateur markdown/LaTeX **opt-in**, chez le CONSOMMATEUR
+// (jamais dans `zcrud_markdown` : ce serait un cycle, AD-1). Le défaut de
+// `ZFlashcardReviewCard` reste le texte brut de su-1.
+export 'src/presentation/z_flashcard_markdown_content.dart';
+// SU-2 (AC1..AC7) — carte de révision adaptative (6 types + révélation).
+export 'src/presentation/z_flashcard_review_card.dart';
 export 'src/presentation/z_flashcard_true_false_field_widget.dart';
 export 'src/presentation/z_flashcard_type_field_widget.dart';
+// SU-2 (AC3) — primitive UNIQUE de Reduce Motion (su-4/su-5 la réutiliseront).
+export 'src/presentation/z_reduce_motion.dart';

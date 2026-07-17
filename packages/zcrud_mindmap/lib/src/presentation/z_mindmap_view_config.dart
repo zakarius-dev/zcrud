@@ -13,6 +13,7 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 
 import '../domain/z_mindmap_node.dart';
 
@@ -32,6 +33,88 @@ typedef ZMindmapNodeContentBuilder = Widget Function(
 /// E10-2 **ne mute jamais** l'arbre : elle notifie l'app hôte, qui décide (ouvrir
 /// un éditeur E10-3, naviguer…). AD-2/AD-15.
 typedef ZMindmapNodeCallback = void Function(ZMindmapNode node);
+
+/// Champ éditable ciblé par un [ZMindmapEditFieldBuilder] (SU-12, AD-40).
+///
+/// **enum, jamais `bool`** (Key Don'ts) : le kind discrimine le champ `label` du
+/// champ `content` sans encoder une sémantique dans un booléen opaque.
+enum ZMindmapEditFieldKind {
+  /// Titre court mono-ligne du nœud (`ZMindmapNode.label`, texte brut OQ-S5).
+  label,
+
+  /// Contenu long multiligne du nœud (`ZMindmapNode.content`, texte brut OQ-S5).
+  content,
+}
+
+/// Contexte **stable** passé à un [ZMindmapEditFieldBuilder] (SU-12, AD-40).
+///
+/// Porte tout ce qu'un slot d'édition (défaut `TextField` OU adaptateur riche)
+/// consomme SANS que le builder n'accède au [ZMindmapOutlineController] :
+/// - [controller] : le `TextEditingController` **STABLE** keyé par `node.id` (voie
+///   texte brut — jamais recréé au rebuild, zéro perte de focus SM-1/AD-2) ;
+/// - [value] : la valeur texte brut courante (`label` ou `content ?? ''`) ;
+/// - [onChanged] : voie d'écriture **texte brut** (branchée sur `editLabel`/
+///   `editContent` — `label`/`content` restent plain, OQ-S5/AD-28) ;
+/// - [writeRichSlot] : voie d'écriture d'un **slot AD-4** (`extra[slotKey]`) —
+///   c'est CE que l'adaptateur riche emprunte (ops Delta neutres), SANS toucher
+///   `label`/`content`. Générique (n'importe quel slot), pas markdown-spécifique.
+@immutable
+class ZMindmapEditFieldContext {
+  /// Construit le contexte d'un champ d'édition d'un nœud.
+  const ZMindmapEditFieldContext({
+    required this.node,
+    required this.kind,
+    required this.controller,
+    required this.value,
+    required this.onChanged,
+    required this.writeRichSlot,
+    required this.hint,
+    required this.config,
+    required this.theme,
+  });
+
+  /// Nœud immuable édité.
+  final ZMindmapNode node;
+
+  /// Champ ciblé (`label` ou `content`).
+  final ZMindmapEditFieldKind kind;
+
+  /// `TextEditingController` **stable** de la voie texte brut (keyé par `node.id`).
+  final TextEditingController controller;
+
+  /// Valeur texte brut courante du champ (`label` ou `content ?? ''`).
+  final String value;
+
+  /// Voie d'écriture **texte brut** (branchée sur `editLabel`/`editContent`).
+  final ValueChanged<String> onChanged;
+
+  /// Voie d'écriture d'un **slot AD-4** de `extra` (ops Delta neutres) : écrit
+  /// `node.extra[slotKey]` SANS toucher `label`/`content` (OQ-S5/AD-28). C'est la
+  /// voie qu'emprunte l'adaptateur d'édition riche (symétrie avec le rendu qui
+  /// LIT le même slot). Générique — l'appelant choisit `slotKey`.
+  final void Function(String slotKey, List<Map<String, dynamic>> ops)
+      writeRichSlot;
+
+  /// Libellé/placeholder a11y du champ (repli neutre).
+  final String hint;
+
+  /// Configuration de layout (cible tactile ≥ 48 dp, tokens géométriques).
+  final ZMindmapViewConfig config;
+
+  /// Thème injecté (couleurs/espacements — FR-26, repli `Theme.of`).
+  final ZcrudTheme theme;
+}
+
+/// Constructeur injectable d'un **champ d'édition** d'un nœud (SU-12, AD-40).
+///
+/// Reçoit un [ZMindmapEditFieldContext] stable et retourne le widget d'édition
+/// (défaut `TextField` texte brut fourni par l'outline editor quand `null` ;
+/// l'adaptateur riche `ZMindmapMarkdownEditField.builder` est une **injection**
+/// de l'app hôte, au-dessus de l'arête `zcrud_mindmap → zcrud_markdown`, AD-40).
+typedef ZMindmapEditFieldBuilder = Widget Function(
+  BuildContext context,
+  ZMindmapEditFieldContext ctx,
+);
 
 /// Mode d'affichage de [ZMindmapView].
 enum ZMindmapViewMode {

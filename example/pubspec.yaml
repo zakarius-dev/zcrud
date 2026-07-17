@@ -34,8 +34,24 @@ dependencies:
   # E5/E6/E11a (`_markdown`/`_geo`/`_intl`/`_export`/`_firestore`) sont désormais
   # AUTORISÉS — la démo exerce Markdown (Quill), Geo (flutter_map OSM), Intl,
   # Export (Syncfusion xlsio/pdf) et l'offline (Hive) via ces satellites, jamais
-  # via `zcrud_core` (SM-5). `zcrud_flashcard`/`zcrud_mindmap` (E9/E10) restent
-  # INTERDITS (v1.x), prouvé par `test/boundary_deps_test.dart`.
+  # via `zcrud_core` (SM-5).
+  #
+  # Frontière SU-10 (parcours d'étude assemblé) : `zcrud_session` +
+  # `zcrud_flashcard` (E9/étude) sont désormais AUTORISÉS — la démo « Parcours
+  # d'étude » assemble le sélecteur → la pile swipeable → la carte interactive →
+  # l'écran de célébration à partir de widgets PUBLICS (barrels) + adaptateurs
+  # fakes app-side. `zcrud_flashcard` QUITTE donc l'ensemble interdit
+  # (basculement de frontière assumé, cf. `test/boundary_deps_test.dart`).
+  #
+  # ⚠️ `zcrud_study` N'EST PAS ajouté (écart consigné su-10) : son pubspec dépend
+  # en DUR de `zcrud_mindmap` ET `zcrud_exam` (vérifié sur disque). L'y ajouter
+  # tirerait `zcrud_mindmap` dans le lock de l'app (override path obligatoire) —
+  # ce qui VIOLERAIT l'invariant AC10 « `zcrud_mindmap` reste INTERDIT ». Le
+  # parcours assemblé (sélecteur→pile→carte→célébration) n'a besoin QUE de
+  # `zcrud_session` + `zcrud_flashcard`. Le seul port hébergé par `zcrud_study`
+  # (`ZFlashcardGenerationPort`, génération IA) est HORS du flux assemblé ; son
+  # fake est reporté. `zcrud_mindmap` (E10) reste INTERDIT (su-12, hors
+  # périmètre), prouvé par `test/boundary_deps_test.dart`.
   zcrud_core:
     path: ../packages/zcrud_core
   zcrud_get:
@@ -56,6 +72,21 @@ dependencies:
     path: ../packages/zcrud_export
   zcrud_firestore:
     path: ../packages/zcrud_firestore
+  # SU-10 — parcours d'étude assemblé. `zcrud_session` porte le sélecteur, la
+  # pile swipeable, la surface de saisie et l'écran de célébration ; il tire
+  # `zcrud_flashcard` (carte de révision + ports indice/évaluation + SRS) et
+  # `zcrud_study_kernel` (déjà présent). Aucun `zcrud_mindmap`/`zcrud_exam`
+  # (cf. l'écart `zcrud_study` documenté plus haut).
+  zcrud_session:
+    path: ../packages/zcrud_session
+  zcrud_flashcard:
+    path: ../packages/zcrud_flashcard
+  # `zcrud_study_kernel` : transitif (via session/flashcard) mais RÉFÉRENCÉ
+  # DIRECTEMENT par le parcours (`ZStudySessionResult`/`ZStudyStreak`, masqués par
+  # le barrel `zcrud_flashcard`) ⇒ promu en dépendance directe
+  # (`depend_on_referenced_packages`). Barrel PUBLIC, jamais un import `/src/`.
+  zcrud_study_kernel:
+    path: ../packages/zcrud_study_kernel
   # Transitifs via `zcrud_firestore` mais RÉFÉRENCÉS DIRECTEMENT par l'app
   # (`depend_on_referenced_packages`) : `Hive.initFlutter()` (main.dart, démo
   # offline AC7) et `Hive.init`/`Box` (test hermétique temp-dir). Aucun autre
@@ -73,7 +104,7 @@ dev_dependencies:
   # est transitif ; on le déclare ici pour l'importer explicitement dans le test
   # (`depend_on_referenced_packages`). Runtime : Syncfusion reste tiré via
   # `zcrud_list` (SM-5), jamais `zcrud_core`.
-  syncfusion_flutter_datagrid: ^32.1.19
+  syncfusion_flutter_datagrid: ^34.1.31
 
 # Icônes Material requises par l'app (AD-13) ET par le backend Syncfusion
 # (`zcrud_list`/`SfDataGrid` déclarent `uses-material-design: true`).
@@ -133,3 +164,14 @@ dependency_overrides:
     path: ../packages/zcrud_ui_kit
   zcrud_responsive:
     path: ../packages/zcrud_responsive
+  # SU-10 — parcours d'étude. `zcrud_session`/`zcrud_flashcard` déclarent
+  # `resolution: workspace` + épinglent `zcrud_core: ^0.2.1` hosted : l'override
+  # `path:` réconcilie source path↔hosted (voie standalone EX-1, aucun ajout au
+  # `workspace:` racine). Ils tirent `flutter_card_swiper`/`confetti`/Quill dans
+  # le lock PROPRE de l'app (jamais le lock racine — SM-5). Leur unique arête
+  # zcrud transitive nouvelle (`zcrud_ui_kit`) est déjà surchargée ci-dessus ;
+  # AUCUN `zcrud_mindmap`/`zcrud_exam` (cf. écart `zcrud_study`).
+  zcrud_session:
+    path: ../packages/zcrud_session
+  zcrud_flashcard:
+    path: ../packages/zcrud_flashcard

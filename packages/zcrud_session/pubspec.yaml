@@ -45,12 +45,71 @@ environment:
 #
 # ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN
 #    `ZSrsScheduler`/`ZRepetitionStore` en dépendance directe (le seam suffit).
+# DÉPENDANCE TIERCE — `flutter_card_swiper` (SU-4, AC10 / NFR-SU7, AD-1/AD-8).
+#
+# ⚠️ SEULE dépendance tierce de l'epic E-STUDY-UI, et elle est déclarée ICI et
+# NULLE PART AILLEURS. Pourquoi ici : `ZSessionCardSwiper` (pile de session
+# swipeable, FR-SU6) est une surface de PRÉSENTATION de `zcrud_session` — c'est
+# le seul package de l'epic qui rende une pile de cartes navigable.
+#
+# Pourquoi nulle part ailleurs (AD-1, « satellite → cœur, jamais l'inverse ») :
+#  - `zcrud_core`      : le cœur ne dépend d'AUCUN paquet tiers d'UI (CORE OUT=0) ;
+#  - `zcrud_flashcard` : rend UNE carte (`ZFlashcardReviewCard`) — il ignore
+#                        qu'elle vive dans une pile. L'y faire entrer inverserait
+#                        la composition (la carte tirerait son conteneur).
+#
+# 🔴 Le confinement N'EST PAS gardé par `graph_proof` (vérifié : il ne connaît
+# que les arêtes inter-`zcrud_*` — aucune allowlist tierce, RC=1 sur
+# `grep "third\|ALLOW\|confin" scripts/dev/graph_proof.py`). Il est gardé par
+# `test/z_card_swiper_confinement_test.dart` (AC10), qui scanne ce pubspec, ceux
+# des autres packages, et l'import dans `lib/**`.
+#
+# L'import est confiné au SEUL `lib/src/presentation/z_session_card_swiper.dart`
+# et aucun type du paquet (`CardSwiper`/`CardSwiperDirection`/
+# `CardSwiperController`/`AllowedSwipeDirection`) n'apparaît en signature
+# publique — le barrel ne le réexporte pas.
+#
+# DÉPENDANCE TIERCE — `confetti` (SU-5, AC8 / NFR-SU7, AD-1/AD-8).
+#
+# ⚠️ 2ᵉ et DERNIÈRE dépendance tierce de l'epic E-STUDY-UI (contre-métrique PRD :
+# trois au total — `flutter_card_swiper`, `confetti`, `printing`). Déclarée ICI
+# et NULLE PART AILLEURS, pour la même raison que le swiper : `ZSessionSummaryView`
+# (écran de fin, FR-SU8) est une surface de PRÉSENTATION de `zcrud_session` — le
+# seul package de l'epic qui rende une fin de session.
+#
+# Compatibilité VÉRIFIÉE (lue dans `confetti-0.8.0/pubspec.yaml`) :
+# `sdk: ">=2.17.0 <4.0.0"`, `flutter: ">=3.0.0"`, SEULE dépendance transitive
+# `vector_math ^2.1.4` (déjà tirée par Flutter) ⇒ aucune dépendance de
+# plateforme, aucun codegen.
+#
+# 🔴 Confinement NON gardé par `graph_proof` (il ne connaît que les arêtes
+# inter-`zcrud_*`) : la contrainte n'est tenue que par
+# `test/z_third_party_confinement_test.dart` (TABLE de paquets confinés, SU-5).
+# L'import est confiné au SEUL `lib/src/presentation/z_session_summary_view.dart` ;
+# le barrel ne le réexporte pas.
+#
+# 🔒 Le confetti est OPT-IN (`ZSummaryCelebration.none` par défaut) et n'est
+# JAMAIS construit sous Reduce Motion (NFR-SU3) — `ConfettiController` porte un
+# `assert(duration.inMicroseconds > 0)` : une « durée nulle » CRASHERAIT.
 dependencies:
+  confetti: ^0.8.0
   flutter:
     sdk: flutter
+  flutter_card_swiper: ^7.2.0
   zcrud_core: ^0.2.1
   zcrud_flashcard: ^0.2.1
   zcrud_study_kernel: ^0.2.1
+  # SU-6 (D3/AC6) — `ZToaster`/`ZToasterScope` : le sprint-status impose « toast
+  # via ZToaster », et le spine impose « seams RÉUTILISÉS, jamais redéclarés ».
+  # Redéclarer un port de toast local ici serait la violation.
+  #
+  # Arête SÛRE, vérifiée : `zcrud_ui_kit -> zcrud_core` est sa SEULE arête
+  # sortante ⇒ `session -> ui_kit -> core` reste ACYCLIQUE ; CORE OUT=0 inchangé
+  # (aucune arête sortante de `zcrud_core`) ; et `zcrud_ui_kit` n'apporte AUCUNE
+  # dépendance TIERCE (uniquement `zcrud_core` + SDK Flutter) — la table de
+  # `test/z_third_party_confinement_test.dart` (paquets TIERS) n'est donc pas
+  # concernée.
+  zcrud_ui_kit: ^0.2.1
 
 # Package Flutter → tests via `flutter test` (R14 : ChangeNotifier ∈ flutter).
 # Aucun codegen (aucun `@ZcrudModel` : état de session runtime NON persisté ⇒

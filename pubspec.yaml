@@ -83,6 +83,11 @@ workspace:
   - packages/zcrud_geo
   - packages/zcrud_intl
   - packages/zcrud_export
+  # su-11 : satellite PLATEFORME d'export (AD-42). Garde `zcrud_export` PUR en
+  # accueillant l'impl concrète du rasteriseur LaTeX (`flutter_math_fork`) et la
+  # preview/impression/partage (`printing`). LEAF : personne n'en dépend ;
+  # arêtes SORTANTES zcrud_* = zcrud_export + zcrud_core UNIQUEMENT (AD-1).
+  - packages/zcrud_export_ui
   - packages/zcrud_riverpod
   - packages/zcrud_get
   - packages/zcrud_provider

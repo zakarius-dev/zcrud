@@ -95,6 +95,21 @@ class ZMindmapOutlineController extends ChangeNotifier {
     if (!identical(next, _forest)) _forest = next;
   }
 
+  /// Écrit le payload rich (ops Delta neutres) dans le **slot AD-4** [slotKey] de
+  /// `node.extra` du nœud [id], **sans** `notifyListeners()` (voie d'édition
+  /// « live », comme [editLabel]/[editContent] — le champ rich porte déjà son
+  /// état via son propre controller isolé ; notifier reconstruirait l'outline et
+  /// ferait perdre le focus/curseur, AD-2/SM-1). `label`/`content` restent
+  /// **inchangés** (OQ-S5/AD-28 : le rich vit dans `extra`, jamais dans
+  /// `label`/`content`). Défensif (AD-10) : nœud introuvable → no-op.
+  void editRichSlot(String id, String slotKey, List<Map<String, dynamic>> ops) {
+    final node = ZMindmapTreeOps.findNode(_forest, id);
+    if (node == null) return;
+    final nextExtra = <String, dynamic>{...node.extra, slotKey: ops};
+    final next = ZMindmapTreeOps.updateExtra(_forest, id, nextExtra);
+    if (!identical(next, _forest)) _forest = next;
+  }
+
   // ---------------------------------------------------------------------------
   // Mutations structurelles : remplacent la forêt et NOTIFIENT (rebuild liste)
   // ---------------------------------------------------------------------------

@@ -79,6 +79,21 @@ environment:
 #                          intact — l'UI vit ICI, précédent `ZTagEditor`/
 #                          `ZStudyMindmapSection`). CORE OUT=0 préservé.
 #
+# - `zcrud_responsive`  : arête AJOUTÉE par SU-8 (première story qui la consomme
+#                          réellement) — consommée pour `ZAdaptiveGrid.builder` :
+#                          la grille responsive VIRTUALISÉE de `ZFlashcardListView`
+#                          (FR-SU14/NFR-SU9). L'AC exige « responsive via
+#                          `ZAdaptiveGrid`, jamais une grille réécrite » : sans
+#                          cette arête, `zcrud_study` devrait REDÉCLARER une grille
+#                          — la « seconde source » que ce projet combat.
+#                          Arête ACYCLIQUE : `zcrud_responsive → [zcrud_core]`
+#                          SEULEMENT (out-degree 1), JAMAIS l'inverse
+#                          (`zcrud_responsive` ne dépend PAS de `zcrud_study`) ⇒
+#                          aucun cycle. CORE OUT=0 préservé. ZÉRO dépendance
+#                          tierce nouvelle (`zcrud_responsive` est un package
+#                          zcrud ⇒ `z_third_party_confinement_test` sans objet).
+#                          Graphe : 53 → 54 arêtes.
+#
 # ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`), AUCUN autre
 #    satellite lourd (`zcrud_note`/`zcrud_document`), AUCUN SDK IA / client HTTP
 #    (`http`/`dio`/`openai`/`google_generative_ai`/`firebase_ai`) — les impls IA
@@ -93,6 +108,7 @@ dependencies:
   zcrud_mindmap: ^0.2.1
   zcrud_flashcard: ^0.2.1
   zcrud_exam: ^0.2.1
+  zcrud_responsive: ^0.2.1
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).

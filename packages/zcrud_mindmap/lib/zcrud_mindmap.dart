@@ -28,6 +28,12 @@ export 'src/presentation/z_mindmap_list_view.dart';
 // heuristique ; `content` de nœud reste texte brut, le rich vit dans le slot
 // AD-4 opt-in). Défaut de la vue = texte brut (autres apps non forcées).
 export 'src/presentation/z_mindmap_markdown_content.dart';
+// SU-12 (FR-SU17, AD-40/AD-28/AD-7) : pendant ÉDITION du seam rich-text —
+// adaptateur MINCE `ZMindmapMarkdownEditField` composant `ZMarkdownField` (voie
+// `ctx`) + `ZDeltaCodec` identité, écrivant le payload rich dans le slot AD-4
+// `extra[slotKey]` (le MÊME que lit `ZMindmapMarkdownContent`). Injecté via
+// `ZMindmapOutlineEditor.editFieldBuilder` ; `label`/`content` restent plain.
+export 'src/presentation/z_mindmap_markdown_edit_field.dart';
 export 'src/presentation/z_mindmap_node_card.dart';
 // Présentation E10-3 (FR-19, AD-1/AD-2/AD-13/AD-15/FR-26) : éditeur outline
 // CORRIGÉ = liste indentée éditable dont la SAUVEGARDE applique réellement les

@@ -79,6 +79,7 @@ const List<ZRegistrar> kRegistrars = <ZRegistrar>[
   registerZAnnotationBounds, // annotation_bounds     — zcrud_document (ES-2.5, NON ZExtensible)
   registerZExam, // exam                  — zcrud_exam (ES-2.6)
   registerZStudyPodcast, // study_podcast   — zcrud_study_kernel (ES-2.8)
+  registerZStudyStreak, // study_streak    — zcrud_study_kernel (SU-6, NON ZExtensible)
 ];
 
 /// Corps métier **minimal valide** de la sonde de chaque `kind`.
@@ -237,6 +238,50 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
     'result_ref': 'r',
     'status': 'ready',
   },
+  // ── SU-6 (zcrud_study_kernel) ────────────────────────────────────────────
+  // `ZStudyStreak` — NON `ZExtensible` (cf. `kNonExtensibleKinds`) : ni `extra`,
+  // ni `extension` ⇒ (a)/(b)/(e) sautent, (c)/(d) s'appliquent.
+  //
+  // Tous les champs sont codegen-ables (2 `int`, 2 `String?`) ⇒ AUCUN canal `Map`
+  // hors-codegen (contraste `learning`/`content`/`section_orders`) : la règle
+  // (g)/(g2) ne détecte aucun canal non réservé. Précédent EXACT : `suggested_tag`.
+  //
+  // ⚠️ **Portée HONNÊTE de cette sonde** (code-review su-6, LOW-1 — la version
+  // précédente de ce commentaire SUR-PROMETTAIT). Elle affirmait qu'un `toMap()`
+  // écrasant/permutant `current`/`best` « ROUGIRAIT » ici. **C'est faux, mesuré
+  // sur le harnais** : pour un kind de `kNonExtensibleKinds`, `assertExtraClean`
+  // fait un early-return dès `entity is! ZExtensible` et `assertUnknownKeyRoundTrip`
+  // sur `!expectExtensible` ⇒ seule `assertEncodedClean` tourne, et elle
+  // n'inspecte QUE les clés réservées (`ZSyncMeta`), **jamais** les valeurs de
+  // champ. `{'current': 0, 'best': 0}` laisserait ce gate tout aussi vert.
+  //
+  // Le round-trip de ces valeurs EST prouvé — mais **ailleurs** :
+  // `packages/zcrud_study_kernel/test/z_study_streak_test.dart`. Ici, c'est un
+  // **corps minimal VALIDE** ; les valeurs restent choisies non-dégénérées par
+  // hygiène (et parce que le gate peut s'étendre), pas parce que ce gate les
+  // observerait. Une justification qui sur-promet dans le fichier même du gate
+  // anti-vacuité, c'est le « dartdoc rassurant » que ce gate combat.
+  //
+  // Valeurs et pourquoi elles restent celles-ci :
+  //   - `current`/`best` **positifs et distincts** (3 ≠ 7) : le plancher
+  //     anti-négatif de `fromMap` ne les touche pas, et des `0` — la valeur par
+  //     DÉFAUT du ctor — rendraient toute observation future verte par
+  //     COÏNCIDENCE ;
+  //   - `best > current` : l'état MÉTIER nominal (un record déjà établi, série en
+  //     cours plus courte) — pas un état dégénéré ;
+  //   - `last_graded_day` = jour civil **LISIBLE** (`zIsCivilDay` vraie) ⇒ `fromMap`
+  //     le préserve VERBATIM. Un jour illisible serait sanitisé en `null` (AC1) et
+  //     rendrait le round-trip vert en n'observant RIEN de la clé.
+  //
+  // AD-19 : aucun `updated_at`/`is_deleted` — le streak n'a AUCUN miroir de sync
+  // inline (il n'est PAS dans `kLegacyUpdatedAtMirrors`, et ne doit jamais l'être :
+  // sa fraîcheur vit hors-entité dans `ZSyncMeta`, AD-16).
+  'study_streak': <String, dynamic>{
+    'id': 'p',
+    'current': 3,
+    'best': 7,
+    'last_graded_day': '2026-07-16',
+  },
 };
 
 /// Kinds enregistrés dont l'entité n'est **PAS** `ZExtensible` (aucun `extra`).
@@ -274,6 +319,15 @@ const Set<String> kNonExtensibleKinds = <String>{
   // aucun slot `extra`. Le cast `(e as ZExtensible)` throw dessus (piège n°1).
   // `ZDocumentAnnotation`, elle, EST `ZExtensible` (absente ici, munie de writers).
   'annotation_bounds',
+  // SU-6 — `ZStudyStreak` : compteur d'assiduité FERMÉ (`class ZStudyStreak
+  // extends ZEntity {`, sans `with ZExtensible`) — ni `extra`, ni `extension`.
+  // Le cast `(e as ZExtensible)` de la lettre d'AD-19.1.c throw dessus (piège n°1),
+  // et (e) y serait ROUGE À JAMAIS (aucun slot où préserver une clé inconnue).
+  // Le saut de (a)/(b)/(e) est donc DÉCLARÉ ici, jamais silencieux. Sans cette
+  // ligne, le verrou bidirectionnel du harnais ROUGIT (vacuité non déclarée) —
+  // c'est pourquoi SU-6 coûte 3 lignes, non les « 2 lignes » du message du gate
+  // (qui suppose une entité `ZExtensible`, munie de writers).
+  'study_streak',
 };
 
 /// Kinds dont l'entité **PRÉSERVE** le payload `extension` **non typé** au lieu de

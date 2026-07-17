@@ -17,6 +17,18 @@ library;
 export 'src/domain/z_ai_explanation_port.dart';
 export 'src/domain/z_education_quota_info.dart';
 export 'src/domain/z_flashcard_generation_port.dart';
+// SU-9 (AC3/AC4, AD-37/AD-10) — défauts PURS de génération : bornes `[1,50]`
+// (`zGenerationCountBounds`/`zClampGenerationCount`, défaut null=10), répartition
+// équitable déterministe (`zEvenTypesDistribution`) et normalisation défensive
+// (`zNormalizeTypesDistribution` : négatifs→0, types inconnus écartés, distribution
+// fournie fait foi). SOURCE UNIQUE — jamais dupliquée dans un widget.
+export 'src/domain/z_flashcard_generation_defaults.dart';
+// SU-12 (FR-SU18, AD-37/AD-5/AD-10) — seam IA neutre de génération de carte
+// mentale : port `abstract interface class` `Future<ZResult<List<ZMindmapNode>>>`
+// (forêt ÉPHÉMÈRE sans id/folderId — PAS `ZMindmap`) + request VO d'union
+// (`modelId` OPAQUE ; omet `typesDistribution`/`provenance` flashcard-spécifiques).
+// Aucune impl (app-side). `ZMindmapNode` importé de `package:zcrud_mindmap/…`.
+export 'src/domain/z_mindmap_generation_port.dart';
 export 'src/domain/z_note_summary_port.dart';
 
 // ES-9.3 — seam de génération de podcast (domaine) : port `abstract interface
@@ -61,6 +73,32 @@ export 'src/presentation/z_exam_reminders.dart'
         zExamAsApproaching;
 export 'src/presentation/z_exam_reminders_section.dart';
 export 'src/presentation/z_feature_availability.dart';
+// SU-8 (AC9-AC12, AD-38) — UNIQUE voie de réordonnancement des flashcards :
+// `zReorderFlashcards` (drag ET boutons a11y y aboutissent tous deux ; délègue à
+// `zReorderIds` puis persiste via `copyWith(sectionOrders:)`), clé canonique
+// `zFlashcardsSectionKey` (⇒ `zSectionKey`, clé nue VERBATIM « flashcards » —
+// RISQUE DE DONNÉES : toute dérive orphelinerait l'ordre persisté EN SILENCE, car
+// `applyOrder` est TOTAL), et `zMoveUpIndices`/`zMoveDownIndices` (`null` ⇒ bouton
+// ABSENT : le 1er ne remonte pas, le dernier ne descend pas).
+export 'src/presentation/z_flashcard_list_view.dart';
+// SU-9 (AC1..AC13, AD-37/AD-43) — flux UI de génération IA : contrôleur pur
+// `ChangeNotifier` (statut ENUM, jeton de fraîcheur, handoff `onGenerated` — AUCUN
+// store, rien de persisté), feuille de génération (source depuis `ZSourceRegistry`
+// via `ZGenerationSourceOption`, slider 1..50, `FilterChip` par type, `modelId`
+// OPAQUE, aperçu via `ZFlashcardPreview`), point d'entrée conditionnel
+// (`ZFlashcardGenerationLauncher`/`ZFlashcardGenerationScope` : option ABSENTE sans
+// port), et confirmation de tags réutilisant `ZTagEditor`. Cartes ÉPHÉMÈRES
+// (`id==null`), fuite du résultat fermée sur toute voie (AC6).
+export 'src/presentation/z_flashcard_generation_controller.dart';
+export 'src/presentation/z_flashcard_generation_sheet.dart';
+export 'src/presentation/z_flashcard_tag_confirm_sheet.dart';
+// SU-8 (AC14, AD-45) — aperçu LECTURE SEULE : COMPOSE `ZFlashcardReviewCard`
+// (su-2) et ne rend RIEN lui-même (jamais un rendu parallèle, qui divergerait en
+// silence). Sur une carte `isReadOnly`, `onEdit`/`onDelete` sont forcés à `null`
+// ⇒ actions ABSENTES (jamais grisées) — la carte porte la MÊME garde : les deux
+// voies convergent, jamais deux règles concurrentes.
+export 'src/presentation/z_flashcard_preview.dart';
+export 'src/presentation/z_flashcard_reorder.dart';
 export 'src/presentation/z_item_actions_menu.dart';
 export 'src/presentation/z_reorder_ids.dart';
 export 'src/presentation/z_sectioned_study_layout.dart';

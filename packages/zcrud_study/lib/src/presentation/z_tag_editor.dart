@@ -71,7 +71,9 @@ typedef ZSuggestionSemanticLabel = String Function(ZSuggestedTag suggestion);
 /// suggestions. JAMAIS pour l'état des tags (immuable, passé en entrée).
 class ZTagEditor extends StatefulWidget {
   /// Construit l'éditeur. [palette] est INJECTÉE (défaut recommandé documenté).
-  /// Tous les libellés sémantiques sont INJECTÉS (replis neutres — AD-13/FR-26).
+  /// Les libellés RENDUS ([inputLabel]/[inputHint]/[addSemanticLabel]) sont
+  /// REQUIS (aucun défaut FR en dur — AD-13/FR-26/AC12) ; les dérivateurs
+  /// sémantiques de puces/suggestions gardent un repli neutre documenté.
   const ZTagEditor({
     required this.existingTags,
     this.palette = const ZColorPalette.defaultStudy(),
@@ -86,9 +88,9 @@ class ZTagEditor extends StatefulWidget {
     this.inputController,
     this.showUsageCount = false,
     this.referencingCardsCountOf,
-    this.inputLabel = 'Nom du tag',
-    this.inputHint = 'Ajouter un tag',
-    this.addSemanticLabel = 'Ajouter le tag',
+    required this.inputLabel,
+    required this.inputHint,
+    required this.addSemanticLabel,
     this.deleteTagSemanticLabel = _defaultDeleteSemanticLabel,
     this.confirmSuggestionSemanticLabel = _defaultConfirmSemanticLabel,
     this.rejectSuggestionSemanticLabel = _defaultRejectSemanticLabel,

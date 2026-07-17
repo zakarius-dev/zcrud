@@ -3,8 +3,15 @@
 ///
 /// origine: lex_core (module « Étude ») — `Sm2` (canonique §2.1, l.75),
 /// variante IFFD (clamp des DEUX bornes de `easeFactor`). Pur, sans état,
-/// horloge injectée (AD-14) ; toutes les constantes lues depuis un
-/// [ZSrsConfig] injecté (AC5 : aucune constante en dur dans l'algorithme).
+/// horloge injectée (AD-14) ; les constantes **réglables** (bornes d'ease,
+/// seuil de réussite, modificateur d'intervalle, bornes d'échelle) sont lues
+/// depuis un [ZSrsConfig] injecté (AC5) — aucune n'est recopiée ici.
+///
+/// **Seule exception, assumée** : le sommet `5` de la formule de facteur de
+/// facilité (`(5 - q)`) est **intrinsèque à SM-2**, pas un réglage — il est
+/// GELÉ par `z_sm2_contract_test.dart`. Il n'est pas une seconde source de
+/// vérité pour autant : `ZSrsConfig` **épingle** `maxQuality == 5` par assert
+/// (AD-46), si bien que la config ne peut pas diverger de la formule.
 ///
 /// **Précédent** : classe d'algorithme pure du monorepo à l'image de
 /// `ZMindmapTreeOps` (E10-1) — fonctions pures retournant de **nouvelles**
@@ -45,8 +52,12 @@ class ZSm2Scheduler implements ZSrsScheduler {
   ZRepetitionInfo apply(ZRepetitionInfo current, int quality, {DateTime? now}) {
     // Horloge injectée, jamais capturée à la construction (AD-14).
     final effectiveNow = now ?? DateTime.now();
-    // Clamp défensif de la qualité `0..5` — jamais de throw (AC6).
-    final q = quality.clamp(0, 5);
+    // Clamp défensif de la qualité — jamais de throw (AC6). Les bornes sont
+    // LUES depuis la config (AD-46 : `ZSrsConfig` est l'unique propriétaire de
+    // l'échelle et du clamp) : une valeur hors échelle venue d'un port
+    // d'évaluation est ramenée sur l'échelle que le DOMAINE déclare, jamais sur
+    // des bornes recopiées ici — une seconde source divergerait en silence.
+    final q = config.clampQuality(quality);
 
     // Mise à jour du facteur de facilité (formule SM-2), appliquée QUELLE QUE
     // SOIT l'issue, puis bornée aux DEUX bornes de la config (variante IFFD).

@@ -18,24 +18,46 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
+// AD-46 : les bornes d'échelle sont possédées par le domaine `ZSrsConfig`
+// (`zcrud_flashcard`). Arête PRÉEXISTANTE (`zcrud_session → zcrud_flashcard`,
+// déjà importée par les 3 runtimes) : la dérivation n'ajoute AUCUNE arête.
+import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
-/// Échelle de qualité configurable (value-object PUR).
+/// Échelle de qualité **DÉRIVÉE** du domaine (value-object PUR).
 ///
-/// `min ∈ {0, 1}` (échelle SM-2 pleine `0..5` ou tronquée `1..5`), `max = 5`.
+/// AD-46 : les bornes sont **possédées par `ZSrsConfig`** (`minQuality` /
+/// `maxQuality`) ; cette classe en **dérive** via [ZQualityScale.fromConfig],
+/// **unique voie de construction publique**. Aucune borne n'est redéclarée ici :
+/// une seconde source d'échelle divergerait silencieusement du domaine (l'UI
+/// afficherait des crans que le scheduler ne reconnaîtrait pas). La garde de
+/// source `z_quality_scale_single_source_test.dart` ROUGIT si un littéral de
+/// borne réapparaît dans ce fichier.
+///
 /// Produit la **liste ordonnée croissante** des qualités ([qualities]). Le
 /// mapping cran→qualité de [ZSrsQualityButtons] parcourt cette liste : l'indice
 /// visuel `i` rend la qualité `qualities[i]` (jamais une constante en dur).
 @immutable
 class ZQualityScale {
-  /// Construit une échelle. Défaut : pleine `0..5` (SuperMemo-2).
-  const ZQualityScale({this.min = 0, this.max = 5})
-      : assert(min == 0 || min == 1, 'min doit valoir 0 ou 1 (échelle SM-2)'),
-        assert(max == 5, 'max doit valoir 5 (échelle SM-2)');
+  /// Dérive l'échelle des bornes **possédées par le domaine** (AD-46).
+  ///
+  /// Unique voie de construction publique : lit `config.minQuality` /
+  /// `config.maxQuality`. Une app qui tronque l'échelle le fait **une seule
+  /// fois**, dans sa `ZSrsConfig` — l'UI suit par construction.
+  ///
+  /// **Non-`const` par nécessité du langage**, pas par choix : un constructeur
+  /// `const` ne peut pas lire un champ d'instance de son paramètre
+  /// (`config.minQuality` n'est pas une expression constante), et l'alternative
+  /// — recopier `0`/`5` en défauts littéraux — serait précisément la SECONDE
+  /// SOURCE que l'AD-46 interdit. La dérivation prime sur la constance : le VO
+  /// reste `@immutable`, trivial à construire, et l'échelle demeure UNIQUE.
+  ZQualityScale.fromConfig(ZSrsConfig config)
+      : min = config.minQuality,
+        max = config.maxQuality;
 
-  /// Borne basse (`0` = échelle pleine, `1` = sans « blackout total »).
+  /// Borne basse de l'échelle — **dérivée** de `ZSrsConfig.minQuality`.
   final int min;
 
-  /// Borne haute (toujours `5` — plafond SuperMemo-2).
+  /// Borne haute de l'échelle — **dérivée** de `ZSrsConfig.maxQuality`.
   final int max;
 
   /// Liste **ordonnée croissante** des qualités de l'échelle (`[min..max]`).
@@ -87,7 +109,8 @@ class ZSrsQualityButtons extends StatelessWidget {
   ///   jamais `3` en dur — D5/AC6) ;
   /// - [previewLabelFor] : seam d'intervalle prévisionnel (= `simulate` en prod ;
   ///   `null` → aucun aperçu affiché — AC1) ;
-  /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés).
+  /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés) ;
+  /// - [selectedQuality] : cran **PRÉ-SÉLECTIONNÉ** (SU-3/AC2), ou `null`.
   const ZSrsQualityButtons({
     required this.scale,
     required this.onQualitySelected,
@@ -95,6 +118,7 @@ class ZSrsQualityButtons extends StatelessWidget {
     this.previewLabelFor,
     this.labelKeyFor = zDefaultQualityLabelKey,
     this.colorKeyFor,
+    this.selectedQuality,
     super.key,
   });
 
@@ -115,6 +139,25 @@ class ZSrsQualityButtons extends StatelessWidget {
 
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
+
+  /// Cran **PRÉ-SÉLECTIONNÉ** (SU-3, AC2 — AD-35 « évaluation ADVISORY »), ou
+  /// `null`.
+  ///
+  /// **Retouche ADDITIVE** : le défaut `null` rend le comportement historique
+  /// **strictement inchangé** (aucun cran marqué) — zéro régression pour les
+  /// appelants existants (`ZSessionQualityBreakdown`, runtimes ES-4).
+  ///
+  /// 🔒 **Pré-sélectionner n'est PAS noter** : un port d'évaluation *suggère*
+  /// une qualité, la rangée la **montre** ; seul le **tap** de l'utilisateur
+  /// ([onQualitySelected]) vaut notation. [onQualitySelected] reste l'**UNIQUE**
+  /// voie de notation — su-3 n'en ouvre pas une seconde, et n'écrit RIEN
+  /// (AD-33 : l'écriture SRS passe par le seam `ZSessionReviewer`, branché en
+  /// su-4).
+  ///
+  /// 🔒 **Canal NON-COLORÉ obligatoire** (AD-13) : la sélection est portée par
+  /// `Semantics(selected: true)` **et** une affordance thématisée — jamais par
+  /// la seule couleur. Un cran hors échelle est simplement ignoré (AD-10).
+  final int? selectedQuality;
 
   /// Préfixe de [ValueKey] d'un bouton de cran (testabilité, AC1).
   static const String buttonKeyPrefix = 'zSrsQuality_';
@@ -143,6 +186,9 @@ class ZSrsQualityButtons extends StatelessWidget {
             labelKey: labelKeyFor(quality),
             colorKey: _colorKeyOf(quality),
             passed: quality >= passThreshold,
+            // SU-3/AC2 — pré-sélection ADVISORY. `null` ⇒ aucun cran marqué
+            // (comportement historique STRICTEMENT inchangé).
+            selected: selectedQuality == quality,
             previewLabel: previewLabelFor?.call(quality),
             onTap: () => onQualitySelected(quality),
           ),
@@ -159,6 +205,7 @@ class _QualityButton extends StatelessWidget {
     required this.labelKey,
     required this.colorKey,
     required this.passed,
+    required this.selected,
     required this.previewLabel,
     required this.onTap,
     super.key,
@@ -168,11 +215,30 @@ class _QualityButton extends StatelessWidget {
   final String labelKey;
   final String colorKey;
   final bool passed;
+
+  /// Cran **PRÉ-SÉLECTIONNÉ** (SU-3/AC2) — signalé par un canal NON-COLORÉ.
+  final bool selected;
   final String? previewLabel;
   final VoidCallback onTap;
 
   /// Cible tap minimale Material/AD-13 (dp).
   static const double minTarget = 48;
+
+  /// Clé l10n de l'état **réussite** d'un cran (`Semantics.value`).
+  ///
+  /// 🔴 **Dette du ledger su-1 soldée** (`code-review-su-1.md`, LOW) : les
+  /// libellés `'ok'`/`'lapse'` étaient **codés en dur** dans `Semantics.value` —
+  /// un lecteur d'écran les annonçait **en anglais** quelle que soit la locale,
+  /// alors même que le libellé visible du cran, lui, était traduit. AD-13 exige
+  /// l'inverse : c'est **précisément** le canal non-visuel qui doit être lisible.
+  static const String passedLabelKey = 'zcrud.srs.quality.passed';
+
+  /// Clé l10n de l'état **lapse** d'un cran (`Semantics.value`).
+  static const String lapsedLabelKey = 'zcrud.srs.quality.lapsed';
+
+  /// Clé l10n de l'état **pré-sélectionné** (SU-3/AC2), annoncé en plus de
+  /// `Semantics(selected: true)`.
+  static const String selectedLabelKey = 'zcrud.srs.quality.selected';
 
   @override
   Widget build(BuildContext context) {
@@ -182,13 +248,24 @@ class _QualityButton extends StatelessWidget {
     // Couleur JAMAIS seul canal (AD-13) : le texte du cran est toujours présent,
     // et l'état réussite/lapse est aussi porté par le `Semantics.value`.
     final preview = previewLabel;
+    // 🔴 Dette du ledger su-1 soldée : état réussite/lapse LOCALISÉ (le
+    // `fallback` préserve à l'identique l'ancien texte `'ok'`/`'lapse'` — aucune
+    // régression pour une app sans table de traduction).
+    final passedText = passed
+        ? label(context, passedLabelKey, fallback: 'ok')
+        : label(context, lapsedLabelKey, fallback: 'lapse');
     final semanticsValue = <String>[
-      passed ? 'ok' : 'lapse',
+      passedText,
+      // SU-3/AC2 — la pré-sélection est annoncée EN TOUTES LETTRES en plus du
+      // flag `selected:` : les lecteurs d'écran ne l'exposent pas tous.
+      if (selected) label(context, selectedLabelKey, fallback: 'sélectionné'),
       if (preview != null && preview.isNotEmpty) preview,
     ].join(' · ');
 
     return Semantics(
       button: true,
+      // SU-3/AC2 — canal NON-COLORÉ n°1 : le flag d'accessibilité natif.
+      selected: selected,
       label: text,
       value: semanticsValue,
       child: ConstrainedBox(
@@ -208,6 +285,14 @@ class _QualityButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
+                  // SU-3/AC2 — canal NON-COLORÉ n°2 : une FORME (coche), lisible
+                  // sans percevoir la couleur (AD-13 : « jamais la seule
+                  // couleur »). Le cran pré-sélectionné reste identifiable en
+                  // niveaux de gris comme en daltonisme.
+                  if (selected) ...<Widget>[
+                    Icon(Icons.check, size: theme.gapL, color: pair.onColor),
+                    SizedBox(height: theme.gapS),
+                  ],
                   Text(
                     text,
                     textAlign: TextAlign.center,
@@ -218,7 +303,16 @@ class _QualityButton extends StatelessWidget {
                     Text(
                       preview,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: pair.onColor, fontSize: 12),
+                      // 🔴 Dette du ledger su-1 soldée : `fontSize: 12` était
+                      // codé en dur — il ignorait le `textScaler` du thème et
+                      // l'échelle typographique de l'app. La taille vient
+                      // désormais du thème (repli : couleur seule, jamais une
+                      // taille inventée).
+                      style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(color: pair.onColor) ??
+                          TextStyle(color: pair.onColor),
                     ),
                   ],
                 ],

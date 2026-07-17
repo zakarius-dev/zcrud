@@ -36,8 +36,30 @@ import '../domain/compute_cross_axis_count.dart';
 /// `itemBuilder`) — jamais `GridView.count(children:)`/`GridView(children:)`. La
 /// grille ne scrolle pas d'elle-même (`shrinkWrap` + `NeverScrollableScrollPhysics`) :
 /// c'est le parent qui scrolle.
+///
+/// ## Deux constructeurs, une seule mécanique (SU-8/D3)
+///
+/// * [ZAdaptiveGrid] (`children:`) — **historique, inchangé**. Lazy au *rendu*
+///   mais **EAGER à la construction** : l'appelant matérialise **tous** les
+///   widgets d'abord, et `shrinkWrap` + `NeverScrollableScrollPhysics` font
+///   layouter **tout** (aucun culling de viewport). Convient à un **petit
+///   nombre** d'items imbriqués dans un parent scrollable.
+/// * [ZAdaptiveGrid.builder] (`itemCount`/`itemBuilder`) — **SU-8/AC2**, pour
+///   les collections **volumineuses** (des milliers de cartes, NFR-SU9) : la
+///   grille **scrolle d'elle-même** et ne construit que le viewport.
+///
+/// Les deux partagent **la même** primitive de colonnes ([computeCrossAxisCount]),
+/// **la même** garde vide et **les mêmes** replis AD-10 : `build` est un **corps
+/// unique** paramétré par `virtualized` — jamais deux branches de calcul. La
+/// **seule** divergence est le couple `shrinkWrap`/`physics` (qui scrolle : le
+/// parent, ou la grille). Vérifié par « les DEUX ctors donnent le MÊME nombre de
+/// colonnes » (`z_adaptive_grid_test.dart`).
 class ZAdaptiveGrid extends StatelessWidget {
   /// Crée une grille adaptative. Seuls [children] et [minItemWidth] sont requis.
+  ///
+  /// ⚠️ **EAGER** : [children] est matérialisé en entier par l'appelant, et la
+  /// grille layoute **tout** (`shrinkWrap`, parent scrollable). Pour une
+  /// collection volumineuse, préférer [ZAdaptiveGrid.builder] (NFR-SU9).
   const ZAdaptiveGrid({
     required this.children,
     required this.minItemWidth,
@@ -49,10 +71,50 @@ class ZAdaptiveGrid extends StatelessWidget {
     this.maxColumns,
     this.padding,
     super.key,
-  });
+  })  : _itemCount = null,
+        _itemBuilder = null;
 
-  /// Items à disposer. **Vide → `SizedBox.shrink()`** (garde AD-10).
+  /// Crée une grille adaptative **VIRTUALISÉE** (SU-8/AC2 — NFR-SU9).
+  ///
+  /// Construit **à la demande** ([itemBuilder] n'est appelé que pour les items
+  /// du viewport, ≪ [itemCount]) et **scrolle d'elle-même** : ni `shrinkWrap`,
+  /// ni `NeverScrollableScrollPhysics` — c'est la surface scrollable.
+  ///
+  /// Réutilise **à l'identique** [computeCrossAxisCount], la garde vide
+  /// (`itemCount <= 0 → SizedBox.shrink()`) et les replis AD-10 du ctor
+  /// historique : « jamais une grille réécrite » reste **vrai** (même widget,
+  /// même primitive de colonnes).
+  ///
+  /// [itemCount] `<= 0` ⇒ `SizedBox.shrink()` (AD-10, jamais de throw).
+  const ZAdaptiveGrid.builder({
+    required int itemCount,
+    required IndexedWidgetBuilder itemBuilder,
+    required this.minItemWidth,
+    this.spacing = 8.0,
+    this.runSpacing,
+    this.itemHeight,
+    this.aspectRatio,
+    this.minColumns = 1,
+    this.maxColumns,
+    this.padding,
+    super.key,
+  })  : _itemCount = itemCount,
+        _itemBuilder = itemBuilder,
+        // Les deux modes sont mutuellement exclusifs **PAR CONSTRUCTION** (deux
+        // constructeurs distincts) — jamais par un `assert` runtime (AD-10).
+        children = const <Widget>[];
+
+  /// Items à disposer (ctor historique). **Vide → `SizedBox.shrink()`** (garde
+  /// AD-10). Reste `const <Widget>[]` avec [ZAdaptiveGrid.builder].
   final List<Widget> children;
+
+  /// Nombre d'items du mode **virtualisé**, ou `null` en mode [children]
+  /// (SU-8/AC2). Privé : le mode est un détail d'implémentation, la surface
+  /// publique reste les deux constructeurs.
+  final int? _itemCount;
+
+  /// Constructeur d'item du mode **virtualisé**, ou `null` en mode [children].
+  final IndexedWidgetBuilder? _itemBuilder;
 
   /// Largeur minimale d'un item (dp) : pilote le nombre de colonnes
   /// (`largeur locale / minItemWidth`, borné). Remplace le ternaire `300/350`
@@ -84,10 +146,22 @@ class ZAdaptiveGrid extends StatelessWidget {
   /// `EdgeInsetsDirectional`, RTL-safe AD-13).
   final EdgeInsetsGeometry? padding;
 
+  /// Item du mode [children] — **tear-off d'instance**, jamais une closure
+  /// réallouée à chaque build (stabilité d'identité, AD-2/SM-1).
+  Widget _childAt(BuildContext context, int index) => children[index];
+
   @override
   Widget build(BuildContext context) {
-    // Garde vide AD-10 : jamais de LayoutBuilder/GridView fantôme.
-    if (children.isEmpty) {
+    // Mode VIRTUALISÉ (`.builder`) ou HISTORIQUE (`children:`) — une seule
+    // mécanique en dessous (aucune branche de calcul dupliquée).
+    final bool virtualized = _itemBuilder != null;
+    final int count = _itemCount ?? children.length;
+    final IndexedWidgetBuilder itemBuilder = _itemBuilder ?? _childAt;
+
+    // Garde vide AD-10 **PARTAGÉE** : jamais de LayoutBuilder/GridView fantôme.
+    // `<= 0` (et non `== 0`) : un `itemCount` négatif fourni par un appelant est
+    // absorbé ici, jamais propagé au delegate (qui lèverait).
+    if (count <= 0) {
       return const SizedBox.shrink();
     }
 
@@ -131,17 +205,23 @@ class ZAdaptiveGrid extends StatelessWidget {
         if (!ratio.isFinite || ratio <= 0) ratio = 1.0;
 
         return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          // 🔴 SU-8/AC2 — LA seule différence entre les deux modes.
+          // `children:` : shrinkWrap + physics figées (le PARENT scrolle) —
+          //   contrat historique, INCHANGÉ (zéro régression).
+          // `.builder`  : la grille est la surface SCROLLABLE ⇒ le viewport
+          //   cull réellement les items (NFR-SU9). `shrinkWrap: true` ici
+          //   layouterait TOUT et tuerait la virtualisation.
+          shrinkWrap: !virtualized,
+          physics: virtualized ? null : const NeverScrollableScrollPhysics(),
           padding: padding,
-          itemCount: children.length,
+          itemCount: count,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: n,
             mainAxisSpacing: runSpacing ?? spacing,
             crossAxisSpacing: spacing,
             childAspectRatio: ratio,
           ),
-          itemBuilder: (context, i) => children[i],
+          itemBuilder: itemBuilder,
         );
       },
     );

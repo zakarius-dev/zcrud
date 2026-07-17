@@ -58,6 +58,12 @@ export 'src/domain/apply_order.dart';
 export 'src/domain/normalize_tag_title.dart';
 export 'src/domain/remap_color_key.dart';
 export 'src/domain/tag_referential_integrity.dart';
+// SU-6 (FR-SU11, D1) — avancement PUR de la flamme d'assiduité : `zAdvanceStreak`
+// (horloge PARAMÉTRÉE — AD-14, reset à **1** jamais 0, jour civil LOCAL) +
+// `ZStreakOutcome`/`ZStreakAdvance`. Aucune extension générée (fonction + enum +
+// value object) ⇒ exporté SANS `hide` (précédent `ZReviewMode`). Hors surface
+// flashcard ⇒ classé au `hide` de `zcrud_flashcard` (D3).
+export 'src/domain/z_advance_streak.dart';
 // ES-3.3 (FR-S14, AD-21) — registre DÉCLARATIF de cascade `ZCascadeEdge` +
 // `ZCascadeRegistry` : PUR, zéro backend, zéro chemin ; ownership anti two-owners
 // (garde machine) + traversée bornée (garde de cycle self-edge). La topologie
@@ -84,6 +90,9 @@ export 'src/domain/z_podcast_mode.dart';
 export 'src/domain/z_podcast_source_kind.dart';
 export 'src/domain/z_podcast_status.dart';
 export 'src/domain/z_review_mode.dart';
+// SU-1 (AD-38) — `zSectionKey` : constructeur CANONIQUE et UNIQUE des clés de
+// `sectionOrders` (canal persisté). Fonction pure, aucune extension générée.
+export 'src/domain/z_section_key.dart';
 export 'src/domain/z_session_candidate.dart';
 export 'src/domain/z_study_folder.dart' hide ZStudyFolderZcrud;
 export 'src/domain/z_study_folder_hierarchy.dart';
@@ -104,6 +113,18 @@ export 'src/domain/z_study_session_config.dart' hide ZStudySessionConfigZcrud;
 // aucun `@ZcrudModel`/`registerZ…` — D1).
 export 'src/domain/z_study_session_result.dart';
 export 'src/domain/z_study_session_selector.dart';
+// SU-6 (FR-SU11, AC1/D1) — `ZStudyStreak` (`ZEntity`, `@ZcrudModel`) + le jour
+// civil (`ZCivilDayOf`/`zLocalCivilDay`/`zCivilDayNumber`/`zParseCivilDayNumber`/
+// `zIsCivilDay`/`zFormatCivilDay`).
+//
+// Exporté **SANS `hide`** : `ZStudyStreak` n'est **PAS** `ZExtensible` (aucun
+// `extra`/`extension` que le `copyWith` généré remettrait aux défauts — H3
+// d'ES-2.1) ⇒ son extension générée est COMPLÈTE et SÛRE, et c'est elle qui porte
+// `toMap`/`copyWith` (aucun doublon à la main). Précédent EXACT `ZSuggestedTag` /
+// `ZChoice`. La règle (h) ne cible QUE les `ZExtensible`.
+//
+// Hors surface flashcard ⇒ classé au `hide` de `zcrud_flashcard` (D3).
+export 'src/domain/z_study_streak.dart';
 // ES-2.3 — `ZSuggestedTag` : value object NON-`ZExtensible`. Son extension
 // générée `ZSuggestedTagZcrud` est exportée **sans `hide`** — précédent EXACT
 // `ZChoice` (`export 'src/domain/z_choice.dart';` du barrel flashcard, sans

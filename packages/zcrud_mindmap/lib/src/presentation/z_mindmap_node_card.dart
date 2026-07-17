@@ -70,6 +70,52 @@ class _CompactLabel extends StatelessWidget {
   }
 }
 
+/// Bornage AD-41 d'une cellule du **graphe** (SU-12) : un contenu de nœud
+/// **riche** (ex. `ZMindmapMarkdownContent` sans `maxLines`) doit être **borné à
+/// la cellule fixe** `cellSize` — troncature propre, **jamais** de `RenderFlex
+/// overflow` (leçon su-2/D3) et **jamais** de mesure intrinsèque qui déborderait.
+///
+/// Mécanique : [SizedBox] fige la taille de cellule ; [OverflowBox] donne à
+/// l'enfant des contraintes **lâches** (hauteur jusqu'à l'infini) ⇒ il se pose à
+/// sa taille naturelle **sans lever d'overflow** ; [ClipRect] **clippe** le
+/// débordement peint. Aligné en `topStart` (RTL-safe, AD-13).
+///
+/// ⚠️ **N'est PAS appliqué à la vue liste / l'outline** : là, le rendu riche
+/// **complet** (non borné) reste garanti (AC4). Seule la cellule du graphe borne.
+///
+/// Pouvoir discriminant (AD-41) : sans ce bornage, un contenu plus haut que la
+/// cellule **déborde** (contre-preuve testable) ; avec, `takeException()` est nul.
+class ZMindmapCellClip extends StatelessWidget {
+  /// Borne [child] à [size] (troncature clippée, sans overflow ni intrinsèque).
+  const ZMindmapCellClip({required this.size, required this.child, super.key});
+
+  /// Taille fixe de la cellule (défaut graphe `180×72`).
+  final Size size;
+
+  /// Contenu de nœud borné (rendu riche ou défaut).
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: SizedBox.fromSize(
+        size: size,
+        child: OverflowBox(
+          alignment: AlignmentDirectional.topStart,
+          minWidth: 0,
+          maxWidth: size.width,
+          minHeight: 0,
+          // Contraintes LÂCHES en hauteur : l'enfant se pose à sa taille
+          // naturelle (aucune mesure intrinsèque forcée, aucun RenderFlex
+          // overflow) ; le ClipRect tronque le surplus (AD-41).
+          maxHeight: double.infinity,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// Carte interactive thématisée enveloppant le contenu d'un nœud.
 ///
 /// Partagée par le graphe (`ExcludeSemantics` en amont) et la vue liste (qui

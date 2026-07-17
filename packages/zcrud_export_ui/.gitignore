@@ -1,0 +1,11 @@
+# .gitignore du PACKAGE zcrud_export_ui (su-11 LOW).
+#
+# Artefacts de diff transitoires du harnais golden (`matchesGoldenFile`) : créés
+# UNIQUEMENT sur un mismatch, machine-spécifiques, jamais du livrable.
+test/**/failures/
+
+# Captures golden octet-exactes ORPHELINES (su-11 D4) : le gate golden est passé
+# à des assertions PORTABLES (dimensions / non-uniformité / fontSize relative) ;
+# les PNG police-rasterisés committés étaient NON PORTABLES (rougissaient sur un
+# rendu correct en CI) et ne sont plus référencés. Ne pas les committer.
+test/golden/goldens/
