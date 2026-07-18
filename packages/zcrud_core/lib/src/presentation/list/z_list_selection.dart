@@ -12,11 +12,15 @@
 /// `package:flutter/foundation.dart` + types `zcrud_core`.
 library;
 
+import 'package:dartz/dartz.dart' show Left, Unit;
 import 'package:flutter/foundation.dart';
 
 import '../../domain/contracts/z_entity.dart';
+import '../../domain/edition/z_field_spec.dart';
 import '../../domain/failures/z_failure.dart';
 import '../../domain/ports/z_repository.dart';
+import '../edition/z_validator_compiler.dart';
+import 'z_batch_deletion_report.dart';
 
 /// Mode de sélection d'une liste (AC3).
 enum ZListSelectionMode {
@@ -123,6 +127,152 @@ class ZListSelectionController extends ChangeNotifier {
     _commit(<String>{..._selected.value, ...range});
   }
 
+  /// Applique une opération de lot GÉNÉRIQUE à chaque `id` sélectionné, via le
+  /// **seam INJECTÉ** [applyToRoot] (`Future<ZResult<Unit>> Function(String)`),
+  /// **`await`é par racine** (jamais fire-and-forget — AD-39). Agrège un
+  /// [ZBatchReport] au grain de la racine : chaque racine est **soit** réussie
+  /// (`Right`) **soit** échouée (`Left` **ou** `throw` capté en [ZFailure] —
+  /// AD-10 : **aucune exception ne franchit la surface**). Les racines réussies
+  /// sont **retirées** de la sélection quand [clearSucceededFromSelection] est
+  /// `true` ; les échouées y restent.
+  ///
+  /// **CORE OUT=0 (AD-1)** : la **cascade** (AD-21, borne ≤ 450) et le chemin
+  /// d'écriture physique sont des propriétés de [applyToRoot] (injecté par
+  /// `zcrud_study_kernel`/`zcrud_firestore`), jamais du cœur. Post-`dispose` ⇒
+  /// rapport vide (no-op).
+  ///
+  /// L'itération se fait sur un **instantané** des `id` sélectionnés capturé à
+  /// l'entrée : une mutation concurrente de la sélection ne change pas le lot en
+  /// cours. Le seam est appelé par `id` STABLE — jamais par index/position
+  /// (leçon E-STUDY-UI, RISQUE N°1).
+  Future<ZBatchReport> batchApply({
+    required Future<ZResult<Unit>> Function(String rootId) applyToRoot,
+    bool clearSucceededFromSelection = true,
+  }) async {
+    if (_disposed) return ZBatchReport.empty();
+    final ids = _selected.value.toList(growable: false);
+    final succeeded = <String>{};
+    final failures = <String, ZFailure>{};
+    for (final id in ids) {
+      ZResult<Unit> result;
+      try {
+        result = await applyToRoot(id);
+      } catch (error, stack) {
+        // AD-10 — un `throw` du seam injecté est CAPTÉ et converti en racine
+        // échouée (jamais propagé). Le stack est joint au message (diagnostic).
+        failures[id] = ServerFailure('batch operation threw for "$id": '
+            '$error\n$stack');
+        continue;
+      }
+      result.fold(
+        (failure) => failures[id] = failure,
+        (_) => succeeded.add(id),
+      );
+    }
+    if (!_disposed &&
+        clearSucceededFromSelection &&
+        succeeded.isNotEmpty) {
+      _commit(<String>{..._selected.value}..removeAll(succeeded));
+    }
+    return ZBatchReport(succeededRootIds: succeeded, failures: failures);
+  }
+
+  /// Suppression par **lot** conforme AD-39 : le supprimeur [deleteRoot] est un
+  /// **seam INJECTÉ** (la cascade AD-21 et la borne ≤ 450 sont sa propriété, pas
+  /// celle du cœur), **`await`é par racine**. Retourne un [ZBatchDeletionReport]
+  /// (= [ZBatchReport]) : l'appelant reçoit TOUJOURS les racines échouées avec
+  /// leur cause — jamais un lot silencieusement partiel. Les racines supprimées
+  /// avec succès sont retirées de la sélection ; les échouées y restent. Tout
+  /// `throw` est capté (AD-10).
+  ///
+  /// Remplace la voie best-effort [softDeleteSelected] (sans rapport racine).
+  Future<ZBatchDeletionReport> batchDelete({
+    required Future<ZResult<Unit>> Function(String rootId) deleteRoot,
+  }) =>
+      batchApply(applyToRoot: deleteRoot);
+
+  /// **Déplace** en lot les éléments sélectionnés en réaffectant le **champ de
+  /// rattachement DÉCLARÉ par le modèle** [attachmentField] (nom PARAMÉTRIQUE —
+  /// ex. `folder_id`/`parent_id` ; JAMAIS codé en dur) à la [destination]
+  /// fournie par un **sélecteur INJECTÉ** de l'app. L'écriture par racine passe
+  /// par le seam INJECTÉ [moveRoot] ; application **par élément** + rapport
+  /// (même contrat que [batchDelete]).
+  ///
+  /// **Modèle sans champ de rattachement** ([attachmentField] `null`/vide) ⇒
+  /// résultat DÉFINI (AD-10) : chaque racine est rapportée en échec
+  /// ([DomainFailure]) et **aucune écriture** n'est tentée — jamais de `throw`.
+  Future<ZBatchReport> batchMove({
+    required String? attachmentField,
+    required Object? destination,
+    required Future<ZResult<Unit>> Function(
+      String rootId,
+      String attachmentField,
+      Object? destination,
+    ) moveRoot,
+  }) {
+    if (attachmentField == null || attachmentField.isEmpty) {
+      // Aucune écriture : chaque racine échoue avec une cause définie (AD-10).
+      return batchApply(
+        applyToRoot: (_) async => Left<ZFailure, Unit>(
+          const DomainFailure(
+            'move rejected: model declares no attachment field',
+          ),
+        ),
+        clearSucceededFromSelection: false,
+      );
+    }
+    return batchApply(
+      applyToRoot: (id) => moveRoot(id, attachmentField, destination),
+    );
+  }
+
+  /// Édite un **champ commun** [field] sur tous les éléments sélectionnés, en
+  /// dérivant les validateurs du `ZFieldSpec` via [ZValidatorCompiler.compile]
+  /// — **exactement les mêmes** que le formulaire unitaire (AD-44 : une seule
+  /// source de validation, jamais une 2e implémentation). La valeur candidate
+  /// [value] est validée **AVANT toute écriture** : si elle est invalide,
+  /// **aucune racine n'est touchée** (le seam [writeRoot] n'est PAS appelé) et
+  /// chaque racine sélectionnée est rapportée en échec ([DomainFailure] portant
+  /// le message du validateur). Sinon, application **par élément** via le seam
+  /// INJECTÉ [writeRoot] + rapport (même contrat que [batchDelete]).
+  ///
+  /// [clearSucceededFromSelection] : défaut **`false`** — l'édition d'un champ
+  /// commun est une écriture **in-place**, les éléments RESTENT visibles ⇒ la
+  /// sélection est **conservée** (l'utilisateur peut enchaîner un 2ᵉ champ sur
+  /// le même lot, ex. multi-éditeur me-2, sans tout re-sélectionner). Contraste
+  /// avec [batchDelete]/[batchMove] où les éléments quittent la vue (défaut
+  /// `true`). L'appelant peut forcer le vidage en passant `true`.
+  Future<ZBatchReport> applyCommonField({
+    required ZFieldSpec field,
+    required String? value,
+    required Future<ZResult<Unit>> Function(
+      String rootId,
+      String fieldName,
+      String? value,
+    ) writeRoot,
+    bool clearSucceededFromSelection = false,
+  }) async {
+    if (_disposed) return ZBatchReport.empty();
+    // Mêmes validateurs que l'édition unitaire (AD-44) — validation AVANT écriture.
+    final validator = ZValidatorCompiler.compile(field.validators);
+    final error = validator?.call(value);
+    if (error != null) {
+      // Valeur invalide ⇒ AUCUNE racine touchée (writeRoot jamais appelé).
+      final ids = _selected.value.toList(growable: false);
+      final failures = <String, ZFailure>{
+        for (final id in ids) id: DomainFailure(error),
+      };
+      return ZBatchReport(
+        succeededRootIds: const <String>{},
+        failures: failures,
+      );
+    }
+    return batchApply(
+      applyToRoot: (id) => writeRoot(id, field.name, value),
+      clearSucceededFromSelection: clearSucceededFromSelection,
+    );
+  }
+
   /// Supprime en **lot** (best-effort) les éléments sélectionnés via
   /// `repository.softDelete` (AD-9/AD-11). Chaque `Left(ZFailure)` est remonté à
   /// [onFailure] **sans throw** ; les id supprimés avec succès sont **retirés**
@@ -131,6 +281,12 @@ class ZListSelectionController extends ChangeNotifier {
   ///
   /// **Atomicité** : best-effort — une transaction atomique multi-document est
   /// backend-spécifique (E5), non garantie ici (ambiguïté story #4).
+  @Deprecated(
+    'Voie best-effort SANS rapport au grain de la racine (AD-39). Utiliser '
+    'batchDelete({deleteRoot}) qui await par racine et retourne un '
+    'ZBatchDeletionReport (racines réussies + Map<rootId, ZFailure>). '
+    'Conservée pour rétro-compat E4-4.',
+  )
   Future<void> softDeleteSelected<T extends ZEntity>(
     ZRepository<T> repository, {
     void Function(ZFailure failure)? onFailure,

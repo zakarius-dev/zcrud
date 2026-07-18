@@ -99,6 +99,22 @@ environment:
 #    (`http`/`dio`/`openai`/`google_generative_ai`/`firebase_ai`) — les impls IA
 #    (routeur, prompts, `toWireJson`, SSE, clés) restent CÔTÉ APP (AD-11/AD-12).
 #    Ces arêtes seront ajoutées par la story qui les consomme réellement.
+#
+# - `zcrud_ui_kit`      : arête AJOUTÉE par ME-2 (première story qui la consomme
+#                          réellement) — consommée pour `ZDiscardChangesGuard` :
+#                          le garde anti-perte de saisie EXISTANT (EX-UI.9) qui
+#                          intercepte la sortie tant que le brouillon du
+#                          multi-éditeur diverge de son snapshot. L'AC exige
+#                          « jamais une garde réécrite » : sans cette arête,
+#                          `zcrud_study` devrait REDÉCLARER un `PopScope`+dialog —
+#                          la « seconde source » que ce projet combat.
+#                          Arête ACYCLIQUE : `zcrud_ui_kit → [zcrud_core]`
+#                          SEULEMENT (out-degree 1), JAMAIS l'inverse
+#                          (`zcrud_ui_kit` ne dépend PAS de `zcrud_study` ni de
+#                          `zcrud_flashcard`) ⇒ aucun cycle. CORE OUT=0 préservé.
+#                          ZÉRO dépendance tierce nouvelle (`zcrud_ui_kit` ne tire
+#                          que `zcrud_core` + SDK Flutter). Patron identique à
+#                          l'arête `zcrud_responsive` ajoutée par SU-8.
 dependencies:
   flutter:
     sdk: flutter
@@ -109,6 +125,7 @@ dependencies:
   zcrud_flashcard: ^0.2.1
   zcrud_exam: ^0.2.1
   zcrud_responsive: ^0.2.1
+  zcrud_ui_kit: ^0.2.1
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).

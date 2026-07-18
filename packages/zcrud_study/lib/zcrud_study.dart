@@ -100,6 +100,24 @@ export 'src/presentation/z_flashcard_tag_confirm_sheet.dart';
 export 'src/presentation/z_flashcard_preview.dart';
 export 'src/presentation/z_flashcard_reorder.dart';
 export 'src/presentation/z_item_actions_menu.dart';
+// ME-2 (AC1..AC10, FR-SU20, AD-43/AD-44/AD-39/AD-45) — multi-éditeur de
+// flashcards en régime BROUILLON DÉCLARÉ (`ZEditingMode.draft`) : contrôleur de
+// brouillon EN MÉMOIRE (`ChangeNotifier` pur, tranches `orderKeys`/`isDirty`
+// disjointes, aucun store), widget `ZMultiFlashcardEditor` qui COMPOSE me-1
+// (sélection + `applyCommonField`, `clearSucceededFromSelection` défaut `false`
+// CONSOMMÉ), su-2 (`ZFlashcardReviewCard` pour l'aperçu), su-9 (`onGenerated` ⇒
+// ajout éphémère), `zcrud_responsive` (split-view) et le `ZDiscardChangesGuard`
+// EXISTANT (zcrud_ui_kit). Commit unique injecté = SEUL franchissement de la
+// frontière de persistance (AD-43) ; un échec de commit préserve le brouillon.
+export 'src/presentation/z_multi_flashcard_editor.dart';
+export 'src/presentation/z_multi_flashcard_editor_controller.dart';
+// ME-3 (AC4/AC5/AC7, FR-SU19, AD-21/AD-39/AD-10) — seam de CASCADE de
+// suppression flashcard : `zFlashcardCascadeDeleteRoot` compose la suppression
+// de la carte PUIS la purge de son état SRS (`ZRepetitionStore.deleteByCard`),
+// matérialisant le `deleteRoot` INJECTÉ attendu par `batchDelete` (me-1). Vit
+// dans `lib/src/data/` (importe `ZRepetitionStore`, banni de la présentation) —
+// le widget de liste reste PUR (seam injecté). CORE OUT=0, arête existante.
+export 'src/data/z_flashcard_cascade_delete.dart';
 export 'src/presentation/z_reorder_ids.dart';
 export 'src/presentation/z_sectioned_study_layout.dart';
 export 'src/presentation/z_study_mindmap_section.dart';

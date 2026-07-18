@@ -25,11 +25,19 @@
 /// Prouvé par **compteur** (`z_flashcard_list_view_sm1_test.dart`), jamais par
 /// opinion : 100 caractères ⇒ rebuilds de liste **bornés**, focus intact.
 ///
+/// ## Sélection multiple — branchement ADDITIF (me-3, FR-SU19)
+///
+/// La sélection est **opt-in** par le paramètre [ZFlashcardListView.selection] :
+/// **absent** ⇒ la liste est **exactement** su-8 (zéro case, zéro barre — la
+/// non-régression su-8 est un invariant, AC2). **Fourni** ⇒ la liste *consomme*
+/// un `ZListSelectionController` me-1 (propriétaire UNIQUE, AD-44), affiche une
+/// case ≥ 48 dp par carte (keyée par `id` STABLE, jamais un index) et une
+/// `ZBatchActionBar` d'actions **déclarées** (supprimer/déplacer/custom — absente
+/// si son seam est `null`). La **suppression** cascade la **purge SRS** via le
+/// seam injecté `zFlashcardCascadeDeleteRoot` (dette d'orphelins lex corrigée).
+///
 /// ## Ce que ce widget ne fait PAS
 ///
-/// - **Aucune sélection multiple** (FR-SU19 = **me-3**) : su-8 est complète sans
-///   elle et ne **précâble rien** — aucun `selectionController`, aucun paramètre
-///   « en prévision de », aucun champ mort (AC17, prouvé par grep négatif) ;
 /// - **Aucun flux de génération IA** (**su-9**) : l'option est **ABSENTE** sans
 ///   port, par **composition** ([ZFeatureAvailability.gate] fabrique le `null`
 ///   que `ZItemAction.onSelected` consomme déjà) — jamais un `if (kEnableAi)` ni
@@ -46,7 +54,17 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_core/zcrud_core.dart'
+    show
+        ZBatchAction,
+        ZBatchActionBar,
+        ZBatchActionKind,
+        ZBatchDeletionReport,
+        ZListSelectionController,
+        ZListSelectionMode,
+        ZResult,
+        ZcrudTheme,
+        Unit;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_responsive/zcrud_responsive.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
@@ -159,6 +177,145 @@ typedef ZFlashcardTileContentBuilder = Widget Function(
   String text,
 );
 
+/// Destination d'un **déplacement** de lot (me-3, AC3) — enveloppe la valeur
+/// choisie par le sélecteur INJECTÉ afin de distinguer « annulé » (le futur
+/// résout `null`) de « déplacer vers `null` » (racine, `value == null`).
+@immutable
+class ZFlashcardBatchMoveDestination {
+  /// Construit une destination (sa [value] est le futur `attachmentField`).
+  const ZFlashcardBatchMoveDestination(this.value);
+
+  /// Valeur candidate du champ de rattachement (ex. `folderId` cible ; `null` ⇒
+  /// racine). PARAMÉTRIQUE — jamais interprétée ici.
+  final Object? value;
+}
+
+/// Configuration OPTIONNELLE de l'action **déplacer** en lot (me-3, AC3).
+///
+/// Absente ([ZFlashcardListSelection.move] `null`) ⇒ l'action « déplacer » est
+/// **ABSENTE** de la barre (jamais grisée — AD-44). Le champ de rattachement
+/// [attachmentField] est **DÉCLARÉ par le modèle** (PARAMÉTRIQUE, jamais
+/// `folder_id` en dur) : `null`/vide ⇒ chaque racine est rapportée en échec et
+/// **aucune écriture** n'est tentée (délégué à `batchMove`, AD-10).
+@immutable
+class ZFlashcardListBatchMove {
+  /// Construit la configuration de déplacement.
+  const ZFlashcardListBatchMove({
+    required this.attachmentField,
+    required this.label,
+    required this.resolveDestination,
+    required this.moveRoot,
+    this.icon = Icons.drive_file_move_outline,
+  });
+
+  /// Champ de rattachement DÉCLARÉ par le modèle (PARAMÉTRIQUE). `null`/vide ⇒
+  /// aucune écriture (chaque racine rapportée en échec, AD-10).
+  final String? attachmentField;
+
+  /// Libellé LOCALISÉ INJECTÉ de l'action (i18n).
+  final String label;
+
+  /// Glyphe INJECTÉ de l'action.
+  final IconData icon;
+
+  /// Sélecteur INJECTÉ de la destination (ex. un picker de dossier). Résout
+  /// `null` ⇒ **annulé** (no-op, aucune écriture) ; sinon la destination
+  /// choisie. Reçoit le `BuildContext` de la liste (pour ouvrir un dialog).
+  final Future<ZFlashcardBatchMoveDestination?> Function(BuildContext context)
+      resolveDestination;
+
+  /// Seam d'écriture INJECTÉ **par racine** (`id`, champ, destination) ⇒
+  /// `ZResult<Unit>`. La cascade/borne AD-21 reste sa propriété (jamais me-3).
+  final Future<ZResult<Unit>> Function(
+    String rootId,
+    String attachmentField,
+    Object? destination,
+  ) moveRoot;
+}
+
+/// Configuration de la **sélection multiple** de la liste (me-3, FR-SU19).
+///
+/// **STRICTEMENT ADDITIVE** : `ZFlashcardListView.selection == null` ⇒ la liste
+/// est **exactement** su-8 (zéro case, zéro barre — AC2). Fournie ⇒ la liste
+/// **consomme** un [ZListSelectionController] me-1 (propriétaire UNIQUE, AD-44)
+/// et compose une `ZBatchActionBar` d'actions **déclarées en données** (AD-44 :
+/// action absente si son seam est `null`).
+///
+/// **CORE OUT=0 / pureté** : la liste ne connaît QUE des seams injectés
+/// ([deleteRoot]/[ZFlashcardListBatchMove.moveRoot]) — jamais un store. La purge
+/// SRS en cascade est matérialisée par `zFlashcardCascadeDeleteRoot`
+/// (study-side, `lib/src/data/`) et injectée ici comme [deleteRoot].
+@immutable
+class ZFlashcardListSelection {
+  /// Construit la configuration de sélection.
+  ///
+  /// - [checkboxSemanticLabel] : libellé a11y **INJECTÉ** de la case d'une carte
+  ///   (annonce le mode sélection + l'état coché — AD-13) ;
+  /// - [countLabelBuilder] : libellé LOCALISÉ **INJECTÉ** du badge compteur —
+  ///   **source unique** annonçant mode + nombre sélectionné (AC9, pas de double
+  ///   annonce : la barre est présente UNIQUEMENT en mode sélection) ;
+  /// - [controller] : contrôleur INJECTÉ (sinon **créé et disposé** en interne —
+  ///   propriétaire UNIQUE, pattern me-2) ;
+  /// - [deleteRoot] : seam de suppression **cascadée** (carte + purge SRS,
+  ///   via `zFlashcardCascadeDeleteRoot`). `null` ⇒ action « supprimer » ABSENTE ;
+  /// - [deleteActionLabel]/[deleteActionIcon] : libellé/glyphe de « supprimer » ;
+  /// - [move] : configuration OPTIONNELLE de « déplacer » (`null` ⇒ ABSENTE) ;
+  /// - [customActions] : slot d'actions personnalisées (AD-44) ;
+  /// - [selectAllLabel] : libellé a11y de « tout sélectionner » (`null` ⇒ bouton
+  ///   ABSENT) ;
+  /// - [onBatchResult] : réception du [ZBatchDeletionReport] (AD-39) — l'appelant
+  ///   reçoit TOUJOURS `succeededRootIds` **et** `failures` (jamais un lot
+  ///   silencieusement partiel).
+  const ZFlashcardListSelection({
+    required this.checkboxSemanticLabel,
+    required this.countLabelBuilder,
+    this.controller,
+    this.deleteRoot,
+    this.deleteActionLabel,
+    this.deleteActionIcon = Icons.delete,
+    this.move,
+    this.customActions = const <ZBatchAction>[],
+    this.selectAllLabel,
+    this.onBatchResult,
+  }) : assert(
+          deleteRoot == null || deleteActionLabel != null,
+          'ZFlashcardListSelection: deleteActionLabel (nom accessible a11y, '
+          'AD-13) DOIT être fourni dès que deleteRoot l\'est — jamais un bouton '
+          '« supprimer » actionnable mais MUET pour un lecteur d\'écran '
+          '(récidive su-9). Miroir de l\'assert me-1 de ZBatchActionBar.',
+        );
+
+  /// Libellé a11y INJECTÉ de la case d'une carte (mode + état coché — AD-13).
+  final String Function(ZFlashcard card, bool selected) checkboxSemanticLabel;
+
+  /// Libellé LOCALISÉ INJECTÉ du compteur — source UNIQUE mode + nombre (AC9).
+  final String Function(int selectedCount) countLabelBuilder;
+
+  /// Contrôleur de sélection INJECTÉ (sinon créé/possédé). Propriétaire UNIQUE.
+  final ZListSelectionController? controller;
+
+  /// Seam de suppression cascadée (carte + SRS). `null` ⇒ action ABSENTE.
+  final Future<ZResult<Unit>> Function(String rootId)? deleteRoot;
+
+  /// Libellé LOCALISÉ INJECTÉ de « supprimer » (requis dès que [deleteRoot] l'est).
+  final String? deleteActionLabel;
+
+  /// Glyphe de « supprimer ».
+  final IconData deleteActionIcon;
+
+  /// Configuration OPTIONNELLE de « déplacer » (`null` ⇒ ABSENTE).
+  final ZFlashcardListBatchMove? move;
+
+  /// Actions personnalisées additionnelles (AD-44).
+  final List<ZBatchAction> customActions;
+
+  /// Libellé a11y de « tout sélectionner » (`null` ⇒ bouton ABSENT).
+  final String? selectAllLabel;
+
+  /// Réception du rapport de lot (AD-39). Reçoit TOUJOURS réussites + échecs.
+  final void Function(ZBatchDeletionReport report)? onBatchResult;
+}
+
 /// Liste de flashcards : recherche, filtres, tris, ordre manuel, duplication.
 class ZFlashcardListView extends StatefulWidget {
   /// Construit la liste.
@@ -201,6 +358,7 @@ class ZFlashcardListView extends StatefulWidget {
     this.typeLabels,
     this.sourceLabels,
     this.contentBuilder,
+    this.selection,
     this.searchDebounce = _kSearchDebounce,
     super.key,
   });
@@ -270,6 +428,10 @@ class ZFlashcardListView extends StatefulWidget {
   /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ texte brut thématisé.
   final ZFlashcardTileContentBuilder? contentBuilder;
 
+  /// Sélection multiple **opt-in** (me-3, FR-SU19). `null` ⇒ la liste est
+  /// **exactement** su-8 (zéro case, zéro barre — AC2, non-régression su-8).
+  final ZFlashcardListSelection? selection;
+
   /// Délai de débounce de la recherche (injectable pour les tests).
   final Duration searchDebounce;
 
@@ -288,6 +450,10 @@ class ZFlashcardListView extends StatefulWidget {
   /// Clé de l'état vide / sans résultat.
   static const ValueKey<String> emptyStateKey =
       ValueKey<String>('zFlashcardListView_empty');
+
+  /// Clé de la barre d'actions de lot (mode sélection — me-3).
+  static const ValueKey<String> batchBarKey =
+      ValueKey<String>('zFlashcardListView_batchBar');
 
   @override
   State<ZFlashcardListView> createState() => _ZFlashcardListViewState();
@@ -310,12 +476,39 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   /// arbre démonté (fuite réelle, pas théorique).
   Timer? _debounce;
 
+  /// Contrôleur de sélection (me-3) — `null` hors mode sélection (su-8 pur).
+  /// **Propriétaire UNIQUE** (AD-44) : injecté (jamais disposé) OU créé et
+  /// disposé ([_ownsSelection]). Discipline STABLE (patron du controller de
+  /// recherche + me-2) : jamais recréé au rebuild ⇒ la sélection ne saute pas.
+  ZListSelectionController? _selection;
+  bool _ownsSelection = false;
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.filters.query);
     _query = ValueNotifier<String>(widget.filters.query);
     _searchController.addListener(_onSearchChanged);
+    _initSelection();
+  }
+
+  /// (Ré)assigne le contrôleur de sélection selon [widget.selection] : injecté
+  /// (non possédé) OU créé en mode `multiple` (possédé, disposé au démontage).
+  void _initSelection() {
+    final sel = widget.selection;
+    if (sel == null) {
+      _selection = null;
+      _ownsSelection = false;
+      return;
+    }
+    final injected = sel.controller;
+    if (injected != null) {
+      _selection = injected;
+      _ownsSelection = false;
+    } else {
+      _selection = ZListSelectionController(mode: ZListSelectionMode.multiple);
+      _ownsSelection = true;
+    }
   }
 
   @override
@@ -336,6 +529,20 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       _searchController.text = widget.filters.query;
       _query.value = widget.filters.query;
     }
+
+    // me-3 : réconcilie le contrôleur de sélection si la CONFIG change réellement
+    // (présence basculée ou contrôleur injecté remplacé). On NE recrée PAS le
+    // contrôleur possédé quand rien de pertinent ne change (les deux configs
+    // demandent un contrôleur interne ⇒ `controller == null` des deux côtés) —
+    // sinon la sélection courante sauterait à chaque rebuild du parent (AD-2).
+    final oldSel = oldWidget.selection;
+    final newSel = widget.selection;
+    final changed = (oldSel == null) != (newSel == null) ||
+        oldSel?.controller != newSel?.controller;
+    if (changed) {
+      if (_ownsSelection) _selection?.dispose();
+      _initSelection();
+    }
   }
 
   @override
@@ -344,6 +551,8 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _query.dispose();
+    // N'est disposé QUE s'il est possédé (jamais un contrôleur injecté — AD-44).
+    if (_ownsSelection) _selection?.dispose();
     super.dispose();
   }
 
@@ -474,7 +683,132 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
 
   Widget _buildList(BuildContext context, String query) {
     final visible = _visibleCards(query);
+    final content = _buildContent(context, query, visible);
 
+    // me-3 — mode sélection ADDITIF : `selection == null` ⇒ contenu su-8 NU
+    // (zéro barre, AC2). Fourni ⇒ `ZBatchActionBar` (me-1) au-dessus du contenu.
+    final sel = widget.selection;
+    final controller = _selection;
+    if (sel == null || controller == null) return content;
+
+    // Ids VISIBLES pour « tout sélectionner » (keyés par `id` STABLE, jamais un
+    // index — leçon su-8). La sélection d'ids NON visibles (filtre/tri actif)
+    // n'est jamais perdue : elle vit dans le contrôleur, pas dans cette liste.
+    final visibleIds = <String>[
+      for (final card in visible)
+        if (card.id != null) card.id!,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _buildBatchBar(context, sel, controller, visibleIds),
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  /// Barre d'actions de lot (me-1) — actions DÉCLARÉES : une action dont le seam
+  /// est `null` est **ABSENTE** (jamais grisée, AD-44).
+  Widget _buildBatchBar(
+    BuildContext context,
+    ZFlashcardListSelection sel,
+    ZListSelectionController controller,
+    List<String> visibleIds,
+  ) {
+    final deleteRoot = sel.deleteRoot;
+    final move = sel.move;
+    return ZBatchActionBar(
+      key: ZFlashcardListView.batchBarKey,
+      controller: controller,
+      countLabelBuilder: sel.countLabelBuilder,
+      selectAllLabel: sel.selectAllLabel,
+      onSelectAll: sel.selectAllLabel == null
+          ? null
+          : () => controller.selectAll(visibleIds),
+      actions: <ZBatchAction>[
+        // « Supprimer » : ABSENTE tant que le seam cascade n'est pas fourni.
+        if (deleteRoot != null)
+          ZBatchAction(
+            kind: ZBatchActionKind.delete,
+            // 🔴 MED-5 — jamais de repli `?? ''` silencieux : l'assert du
+            // constructeur garantit `deleteActionLabel != null` dès que
+            // `deleteRoot` (donc cette branche) existe (jamais un bouton muet).
+            label: sel.deleteActionLabel!,
+            icon: sel.deleteActionIcon,
+            onSelected: () => unawaited(_runBatchDelete(sel, controller)),
+          ),
+        // « Déplacer » : ABSENTE tant que la config move n'est pas fournie.
+        if (move != null)
+          ZBatchAction(
+            kind: ZBatchActionKind.move,
+            label: move.label,
+            icon: move.icon,
+            onSelected: () => unawaited(_runBatchMove(context, sel, controller, move)),
+          ),
+        ...sel.customActions,
+      ],
+    );
+  }
+
+  /// Suppression par lot = `batchDelete` (me-1) `await`é par racine, avec le seam
+  /// **cascade** injecté (carte + purge SRS). Le rapport AD-39 est TOUJOURS
+  /// remonté à l'appelant (réussites + échecs) — jamais un lot silencieusement
+  /// partiel.
+  Future<void> _runBatchDelete(
+    ZFlashcardListSelection sel,
+    ZListSelectionController controller,
+  ) async {
+    final deleteRoot = sel.deleteRoot;
+    if (deleteRoot == null) return;
+    final report = await controller.batchDelete(deleteRoot: deleteRoot);
+    // 🔴 MED-1/AD-39 — `onBatchResult` est un canal de l'APPELANT (réussites +
+    // échecs), PAS un `setState` : il DOIT être remonté INCONDITIONNELLEMENT,
+    // même si la liste s'est démontée pendant l'await (le lot, unawaited, va au
+    // bout). Une garde `!mounted` ici AVALERAIT le rapport (y compris les échecs
+    // partiels) — c'est précisément ce que la story interdit. Aucun code UI /
+    // `context` / `setState` ne suit, donc aucune garde n'est requise.
+    sel.onBatchResult?.call(report);
+  }
+
+  /// Déplacement par lot = `batchMove` (me-1) : la destination vient d'un
+  /// sélecteur INJECTÉ (résout `null` ⇒ **annulé**, aucune écriture), le champ de
+  /// rattachement est DÉCLARÉ par le modèle (PARAMÉTRIQUE, `batchMove` rejette un
+  /// champ absent sans écrire). Rapport AD-39 remonté à l'appelant.
+  Future<void> _runBatchMove(
+    BuildContext context,
+    ZFlashcardListSelection sel,
+    ZListSelectionController controller,
+    ZFlashcardListBatchMove move,
+  ) async {
+    // 🔴 MED-3/AD-10 — la résolution de destination est un seam INJECTÉ (picker
+    // app) qui peut `throw` (picker KO, assertion Navigator). `_runBatchMove`
+    // étant `unawaited`, un throw non capté rejetterait un Future non-awaité et
+    // TRAVERSERAIT la surface (Zone/FlutterError). On l'enveloppe : sur throw,
+    // chemin DÉFINI (no-op, sélection conservée) — jamais de traversée. Symétrie
+    // avec le seam d'écriture, déjà capté par `batchMove` (me-1).
+    final ZFlashcardBatchMoveDestination? chosen;
+    try {
+      chosen = await move.resolveDestination(context);
+    } catch (_) {
+      return;
+    }
+    // Annulé (`null`) ⇒ no-op : aucune écriture, la sélection est conservée.
+    if (chosen == null) return;
+    final report = await controller.batchMove(
+      attachmentField: move.attachmentField,
+      destination: chosen.value,
+      moveRoot: move.moveRoot,
+    );
+    // 🔴 MED-1/AD-39 — rapport remonté INCONDITIONNELLEMENT (canal appelant, pas
+    // un setState) : jamais avalé par un démontage pendant l'await (cf. delete).
+    sel.onBatchResult?.call(report);
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    String query,
+    List<ZFlashcard> visible,
+  ) {
     if (visible.isEmpty) {
       // Deux messages DISTINCTS : « aucune carte » ≠ « aucun résultat ».
       // Un dossier NON vide dont rien n'est visible ⇒ « aucun résultat » ;
@@ -538,6 +872,21 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     required bool grid,
     required bool reorderable,
   }) {
+    // me-3 — case de sélection ADDITIVE : présente UNIQUEMENT en mode sélection
+    // ET pour une carte à `id` STABLE (une carte éphémère `id == null` ne peut
+    // PAS être sélectionnée — la sélection est keyée par id, jamais un index :
+    // leçon su-8). Le sous-arbre écoute une TRANCHE (sa propre appartenance) et
+    // se reconstruit SEUL au toggle (SM-1) — la tuile, elle, ne bouge pas.
+    final sel = widget.selection;
+    final controller = _selection;
+    final Widget? leadingSelection =
+        (sel != null && controller != null && card.id != null)
+            ? _SelectionCheckbox(
+                controller: controller,
+                card: card,
+                semanticLabelBuilder: sel.checkboxSemanticLabel,
+              )
+            : null;
     return _FlashcardTile(
       // ValueKey stable par carte (AD-2) : l'identité d'une tuile suit sa carte,
       // jamais sa position — sinon un réordonnancement recyclerait les états.
@@ -549,6 +898,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       sourceLabels: widget.sourceLabels,
       contentBuilder: widget.contentBuilder,
       showAnswerPreview: grid,
+      leadingSelection: leadingSelection,
       actions: _actionsFor(card, visible, reorderable: reorderable),
     );
   }
@@ -771,6 +1121,7 @@ class _FlashcardTile extends StatelessWidget {
     this.typeLabels,
     this.sourceLabels,
     this.contentBuilder,
+    this.leadingSelection,
     super.key,
   });
 
@@ -782,6 +1133,9 @@ class _FlashcardTile extends StatelessWidget {
   final Map<String, String>? typeLabels;
   final Map<String, String>? sourceLabels;
   final ZFlashcardTileContentBuilder? contentBuilder;
+
+  /// Case de sélection en tête de tuile (me-3) — `null` hors mode sélection.
+  final Widget? leadingSelection;
 
   /// Aperçu de la réponse : `answer`, ou le **choix correct** d'un QCM.
   ///
@@ -835,6 +1189,9 @@ class _FlashcardTile extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
+                  // me-3 — case de sélection en TÊTE (leading, directionnel :
+                  // Row.start suit le sens de lecture). Absente hors sélection.
+                  if (leadingSelection != null) leadingSelection!,
                   Expanded(
                     child: _TypeBadge(
                       type: card.type,
@@ -979,6 +1336,107 @@ class _Tags extends StatelessWidget {
                 .copyWith(color: foreground),
           ),
       ],
+    );
+  }
+}
+
+/// Case de sélection d'une carte (me-3, AC1/AC8/AC9).
+///
+/// 🔴 SM-1 — rebuild GRANULAIRE : ce widget écoute la SEULE tranche
+/// `selectedIds` du contrôleur et ne se reconstruit (`setState`) **QUE** si SON
+/// appartenance change. Cocher la carte `A` ne reconstruit donc **que** la case
+/// de `A` (et la barre, qui lit sa propre tranche) — **jamais** les N tuiles.
+/// C'est ce qui interdit le `setState` à l'échelle liste (le bug n°1 de zcrud).
+///
+/// AD-13 : cible **≥ 48 dp**, directionnel (Row/Checkbox neutres), `Semantics`
+/// annonçant la case (libellé INJECTÉ).
+///
+/// 🔴 LOW-B — la case elle-même ne porte **aucune** `key` : son identité stable
+/// vient de la **tuile parente** (`ValueKey('tile-<id>')`, [_buildTile]) qui,
+/// keyée par l'`id` STABLE de la carte (jamais un index — leçon su-8), préserve
+/// (ou recycle) l'élément — donc le `State` — de cette case au bon grain.
+///
+/// 🔴 MED-2/AD-44 — le contrôleur peut être **swappé** légitimement par la liste
+/// (`didUpdateWidget` de `_ZFlashcardListViewState`). Ce `State` se **réconcilie**
+/// alors ([didUpdateWidget] ci-dessous) : désabonne l'ancien, réabonne le
+/// nouveau, resync l'affichage — jamais un listener orphelin ni une case qui
+/// **affiche** l'ancien contrôleur pendant qu'`onChanged` **écrit** le nouveau.
+class _SelectionCheckbox extends StatefulWidget {
+  const _SelectionCheckbox({
+    required this.controller,
+    required this.card,
+    required this.semanticLabelBuilder,
+  });
+
+  final ZListSelectionController controller;
+  final ZFlashcard card;
+  final String Function(ZFlashcard card, bool selected) semanticLabelBuilder;
+
+  @override
+  State<_SelectionCheckbox> createState() => _SelectionCheckboxState();
+}
+
+class _SelectionCheckboxState extends State<_SelectionCheckbox> {
+  late final String _id;
+  late bool _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // `id` STABLE garanti non nul par l'appelant (`_buildTile` n'insère la case
+    // que pour une carte à `id`).
+    _id = widget.card.id!;
+    _selected = widget.controller.isSelected(_id);
+    widget.controller.selectedIds.addListener(_onSelectionChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SelectionCheckbox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 🔴 MED-2/AD-44 — la liste swappe légitimement le contrôleur (config
+    // basculée ou contrôleur injecté remplacé — cf. `_ZFlashcardListViewState.
+    // didUpdateWidget`). SANS cette réconciliation, la case resterait abonnée à
+    // l'ANCIEN contrôleur (listener orphelin) et **afficherait** son état alors
+    // qu'`onChanged` **écrit** déjà le NOUVEAU (`widget.controller`) : désync
+    // affichage↔écriture. On désabonne l'ancien, réabonne le nouveau, resync.
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.selectedIds.removeListener(_onSelectionChanged);
+      widget.controller.selectedIds.addListener(_onSelectionChanged);
+      final now = widget.controller.isSelected(_id);
+      if (now != _selected) setState(() => _selected = now);
+    }
+  }
+
+  /// Ne `setState` QUE si l'appartenance de CETTE carte change — la notification
+  /// arrive à toutes les cases mais une seule se reconstruit (SM-1).
+  void _onSelectionChanged() {
+    final now = widget.controller.isSelected(_id);
+    if (now != _selected) setState(() => _selected = now);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.selectedIds.removeListener(_onSelectionChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Cible ≥ 48 dp (AD-13). Le libellé a11y est INJECTÉ (mode + carte) ; l'état
+    // coché est porté par le `Checkbox` lui-même (source unique — pas de double
+    // annonce). Patron me-2 (`Semantics(label:) > Checkbox`).
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: _kMinTapTarget,
+        minHeight: _kMinTapTarget,
+      ),
+      child: Semantics(
+        label: widget.semanticLabelBuilder(widget.card, _selected),
+        child: Checkbox(
+          value: _selected,
+          onChanged: (_) => widget.controller.toggle(_id),
+        ),
+      ),
     );
   }
 }

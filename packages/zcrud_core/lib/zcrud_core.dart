@@ -116,7 +116,17 @@ export 'src/presentation/l10n/z_localizations.dart';
 // variantes `ZListLayout` (dataGrid/builder/custom — builder/custom rendus dans
 // le cœur SANS Syncfusion), états `ZListViewState` (loading/empty/noResults/
 // error/ready, accessibles), modèles neutres `ZListRenderRequest`/`ZListRow`.
+// Actions de LOT génériques (me-1, AD-44/AD-39/AD-10) : modèle déclaré en
+// données `ZBatchAction`/`ZBatchActionKind` (delete/move/custom ; `onSelected ==
+// null ⇒ ABSENTE`), barre neutre `ZBatchActionBar` (tranche `selectedIds`, badge
+// compteur, ≥ 48 dp, thème injecté) ; rapport au grain de la racine
+// `ZBatchReport`/`ZBatchDeletionReport` (racines réussies + `Map<rootId,
+// ZFailure>`). Voies `batchDelete`/`batchMove`/`applyCommonField` sur le
+// contrôleur (seams INJECTÉS, `await`és par racine — cascade/borne ≤ 450 hors
+// cœur). CORE OUT=0 préservé (AD-1).
 export 'src/presentation/list/dynamic_list.dart';
+export 'src/presentation/list/z_batch_action.dart';
+export 'src/presentation/list/z_batch_deletion_report.dart';
 export 'src/presentation/list/z_list_column.dart';
 // Interrogation de liste (E4-3, AD-8/AD-10/AD-16/AD-2/AD-15) : contrôleur
 // réactif Flutter-native `ZListController` (tranche `ValueListenable<

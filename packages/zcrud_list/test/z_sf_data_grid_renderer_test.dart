@@ -392,6 +392,63 @@ void main() {
     expect(g2.controller!.selectedRows.length, equals(1));
   });
 
+  // ─── D3(b) (code-review me-1, RISQUE N°1) : divergence id↔ligne ──────────
+  // La VRAIE surface du bug « index-vs-position » vit ICI (mapping id ↔ ligne),
+  // pas dans le cœur `zcrud_core` (pur `Set<String>`). Ce test rougirait si
+  // `_syncControllerFromInteraction` mappait la sélection par INDEX au lieu de
+  // l'`id` stable : après réordonnancement des lignes, la sélection doit suivre
+  // l'`id`, jamais la position réoccupée par un autre item.
+  testWidgets(
+      'D3(b) : la sélection suit l\'id STABLE quand les lignes sont RÉORDONNÉES '
+      '(jamais la position)', (tester) async {
+    // Sélection = id '2', initialement à l'index 1.
+    await tester.pumpWidget(frame(
+      request,
+      interaction: const ZListInteraction(
+        mode: ZListSelectionMode.multiple,
+        selectedIds: {'2'},
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // La source est RÉORDONNÉE : id '2' passe à l'index 0 ; id '3' réoccupe
+    // désormais l'index 1 (l'ancienne position de la sélection).
+    const reordered = [
+      ZListRow(id: '2', cells: {'name': 'Bob', 'age': 25}),
+      ZListRow(id: '3', cells: {'name': 'Chloé', 'age': 41}),
+      ZListRow(id: '1', cells: {'name': 'Alice', 'age': 30}),
+    ];
+    await tester.pumpWidget(frame(
+      ZListRenderRequest.fromSchema(fields, reordered),
+      interaction: const ZListInteraction(
+        mode: ZListSelectionMode.multiple,
+        selectedIds: {'2'},
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Le type public de `source` est `DataGridSource` (le `idOf` concret est
+    // privé) : on identifie la ligne par sa cellule `name` (id '2' → 'Bob',
+    // id '3' → 'Chloé').
+    String nameOf(DataGridRow row) {
+      for (final c in row.getCells()) {
+        if (c.columnName == 'name') return c.value.toString();
+      }
+      return '';
+    }
+
+    final g = grid(tester);
+    // Exactement une ligne sélectionnée, et c'est celle d'id '2' ('Bob',
+    // désormais index 0) — PAS l'index 1 (id '3', 'Chloé'). Un mapping
+    // positionnel aurait gardé l'index 1 ⇒ 'Chloé' sélectionné ⇒ RED.
+    expect(g.controller!.selectedRows.length, equals(1));
+    expect(nameOf(g.controller!.selectedRows.single), equals('Bob'));
+    // Preuve négative : la ligne réoccupant l'index 1 (id '3', 'Chloé') n'est
+    // PAS sélectionnée.
+    expect(nameOf(g.source.rows[1]), equals('Chloé'));
+    expect(g.controller!.selectedRows, isNot(contains(g.source.rows[1])));
+  });
+
   testWidgets('AC5 : colonne d\'actions rendue depuis interaction.actionsFor',
       (tester) async {
     final interaction = ZListInteraction(

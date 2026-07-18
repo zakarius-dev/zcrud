@@ -124,6 +124,7 @@ class FakeRepetitionStore implements ZRepetitionStore {
     this.connected = true,
     this.failSync = false,
     this.failPut = false,
+    this.failDeleteFor = const <String>{},
   });
 
   /// Couture de connectivité pour `sync()` (AC11).
@@ -137,8 +138,19 @@ class FakeRepetitionStore implements ZRepetitionStore {
   /// prouver que `moveCard` LOGGE l'échec de re-sync — MEDIUM-2, jamais avalé).
   bool failPut;
 
+  /// Couture d'**échec partiel** de purge (me-3, AC6) : `deleteByCard(id)`
+  /// renvoie `Left(CacheFailure)` pour tout `id` de cet ensemble — permet de
+  /// prouver qu'un échec de purge d'UNE racine est **rapporté** (jamais avalé)
+  /// et que les **autres** racines continuent d'être purgées.
+  Set<String> failDeleteFor;
+
   /// Espion : nombre d'appels `put` (voie d'écriture SRS).
   int putCount = 0;
+
+  /// Espion (me-3, AC5) : `flashcardId` reçus par [deleteByCard], **dans
+  /// l'ordre** — preuve FALSIFIABLE que la purge SRS a réellement lieu (compte
+  /// EXACT + bons id). Prouvé captant AVANT toute assertion « purgé » (témoin).
+  final List<String> deletedIds = <String>[];
 
   /// Espion : nombre d'appels `sync()`.
   int syncCount = 0;
@@ -178,6 +190,22 @@ class FakeRepetitionStore implements ZRepetitionStore {
     return Right<ZFailure, List<ZRepetitionInfo>>(<ZRepetitionInfo>[
       for (final raw in _raw.values) ZRepetitionInfo.fromMap(raw),
     ]);
+  }
+
+  @override
+  Future<ZResult<Unit>> deleteByCard(String flashcardId) async {
+    // Espion : consigne l'appel AVANT toute couture d'échec (l'ordre/le compte
+    // sont assérés par les tests — preuve falsifiable de la purge, AC5).
+    deletedIds.add(flashcardId);
+    if (failDeleteFor.contains(flashcardId)) {
+      // Panne réelle du store (AC6) : rapportée au grain de la racine, l'état
+      // n'est PAS retiré (l'échec ne prétend jamais un succès).
+      return Left<ZFailure, Unit>(CacheFailure('purge SRS KO pour "$flashcardId"'));
+    }
+    // Idempotence (AD-10) : purger un id absent est un SUCCÈS (no-op).
+    _raw.remove(flashcardId);
+    _meta.remove(flashcardId);
+    return Right<ZFailure, Unit>(unit);
   }
 
   @override

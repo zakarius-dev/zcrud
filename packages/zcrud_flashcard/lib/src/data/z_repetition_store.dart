@@ -60,6 +60,23 @@ abstract class ZRepetitionStore {
   /// (`Right(<[]>)`).
   Future<ZResult<List<ZRepetitionInfo>>> getAll();
 
+  /// **Purge** l'état SRS de la carte [flashcardId] (me-3, AC5/AC6 —
+  /// AD-10/AD-39).
+  ///
+  /// **Racine de la dette d'orphelins lex** : sans primitive de purge, supprimer
+  /// une carte laissait son `ZRepetitionInfo` **survivre** top-level
+  /// (`study_repetitions/{cardId}`), orphelin. [deleteByCard] est le point
+  /// d'écriture unique qui **corrige la cause** : appelé en **cascade** de la
+  /// suppression de la carte (seam `zFlashcardCascadeDeleteRoot`, study-side),
+  /// il garantit qu'aucun état SRS ne subsiste après suppression.
+  ///
+  /// **Idempotence (AD-10)** : purger un `flashcardId` **absent** est un
+  /// **succès** (`Right(unit)`), jamais un `Left` — un double-appel ou une carte
+  /// jamais inscrite ne fait **jamais** échouer la cascade. Un `Left`
+  /// (`CacheFailure`) n'est réservé qu'à une **panne réelle** du store local ;
+  /// il est alors **rapporté** au grain de la racine (AD-39), jamais avalé.
+  Future<ZResult<Unit>> deleteByCard(String flashcardId);
+
   /// Synchronise **une fois** le store avec son backend distant (best-effort,
   /// AD-9) : `Right(unit)` si déconnecté (jamais une erreur « offline »),
   /// l'échec étant **loggé**. Miroir de `ZSyncableRepository.sync`.
