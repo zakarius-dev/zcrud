@@ -473,28 +473,28 @@ development_status:
 
   # === FP — FORM PARITY : Formulaire — parité DODLP totale (CONSOLIDÉ) ===  5 epics · 13 stories. Épics : epics-zcrud-form-parity-2026-07-18. Readiness READY 2026-07-18. Décisions verrouillées : fork awesome_select=vendoring (packages/awesome_select privé) · WYSIWYG HTML isolé (zcrud_html, WebView controller unique AD-7/AD-50) · dateRange natif cœur.
   # --- Phase MVP (FP-1 → FP-3.1) ---
-  epic-fp-1: backlog
+  epic-fp-1: done
   fp-1-1-seams-types-coeur-mvp: done                      # [MVP][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core, une à la fois] EditionFieldType.dateRange + ZDateRange (showDateRangePicker, défensif AD-10) + tokens d'aération (ThemeExtension, FR-26) + seam ZSelectPresenter (AD-47/AD-48/AD-54)
   fp-1-2-substrat-satellites-vendoring: done              # [MVP][∥ disjoint de 1.1] squelettes des 4 satellites neufs (zcrud_select/zcrud_html/zcrud_media/zcrud_field_extras) + vendoring privé packages/awesome_select (publish_to:none) (AD-49/AD-51)
-  epic-fp-1-retrospective: optional
-  epic-fp-2: backlog
+  epic-fp-1-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
+  epic-fp-2: done
   fp-2-1-champs-natifs-base-specialises: done             # [MVP][SÉQ — présentation cœur, polish, PAS d'ajout d'enum] confirmation/polish des familles natives (text/number/date/select/radio/checkbox/relation/rowChips/tags/subItems/file/rating/slider/signature/color simple)
   fp-2-2-composition-binding-cablage: done                # [MVP][SÉQ, ∥ possible avec 2.1] point de composition binding (zcrud_get, AD-55) + câblage register() markdown/intl(phone/country/address)/geo
-  epic-fp-2-retrospective: optional
-  epic-fp-3: backlog
+  epic-fp-2-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
+  epic-fp-3: done
   fp-3-1-preuve-mvp-showcase-harnais: done                # [MVP][fan-in FP-2] showcase socle + états transverses (read-only/désactivé/erreur/conditionnel/RTL/thème) + banc SM-1 + harnais axes MVP dans example/ (AD-56)
   fp-3-2-parite-totale-consolidation: done                # [Finitions][fan-in FINAL — après FP-4/FP-5] consolidation showcase 40+ types × variantes + harnais 6 formulaires DODLP complets + benchs SM-1/SM-3 (FR-39/FR-40)
-  epic-fp-3-retrospective: optional
+  epic-fp-3-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
   # --- Phase Média-rich (FP-4) — 3 satellites DISJOINTS parallélisables (≤3 en vol) ---
-  epic-fp-4: backlog
+  epic-fp-4: done
   fp-4-1-selections-riches-awesome-select: done           # [Média-rich][∥ zcrud_select] SmartSelect via fork vendoré : select/radio/relation/multiselect derrière ZSelectPresenter (AD-48/AD-49)
   fp-4-2-media-fichiers: done                             # [Média-rich][∥ zcrud_media] image_picker+image_cropper+camera+video_thumbnail + file_picker/open_file/zone de dépôt (AD-51)
   fp-4-3-html-wysiwyg: done                               # [Média-rich][∥ zcrud_html] html_editor_enhanced WebView ISOLÉE (controller unique, AD-7/AD-50, commit débouncé) + rendu flutter_html ; registration html EXCLUSIVE avec zcrud_markdown
   fp-4-4-color-multiple-coeur: done                       # [Média-rich][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] ZColorConfig.multiple (List<int> ARGB) natif + roue/opacité (AD-52)
-  epic-fp-4-retrospective: optional
+  epic-fp-4-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
   # --- Phase Finitions (FP-5) ---
-  epic-fp-5: backlog
+  epic-fp-5: done
   fp-5-1-additions-coeur-finitions: done                  # [Finitions][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] additions d'enum pin/autocomplete/editableTable + subItems.itemsAreTags (AD-52/AD-53)
   fp-5-2-champs-extras: done                              # [Finitions][∥ zcrud_field_extras] PIN (pinput) + autocomplétion + table éditable + tags riches + réordonnancement (drag_and_drop_lists) (AD-53)
   fp-5-3-geoarea-style-picker: done                       # [Finitions][∥ zcrud_geo] geoArea UI style-picker fill/stroke (réutilise le seam couleur, modèle ZGeoShapeStyle existant) (AD-51)
-  epic-fp-5-retrospective: optional
+  epic-fp-5-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
