@@ -70,6 +70,9 @@ const _enLabels = <String, String>{
   'colorOpacity': 'Opacity',
   'colorHex': 'Hex code',
   'colorRecent': 'Recent',
+  // FP-4.4 : mode couleur multiple (List<int> ARGB).
+  'colorAddColor': 'Add a color',
+  'removeColor': 'Remove color',
   'apply': 'Apply',
   // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
   'percentSuffix': '%',
@@ -158,6 +161,9 @@ const _frLabels = <String, String>{
   'colorOpacity': 'Opacité',
   'colorHex': 'Code hexadécimal',
   'colorRecent': 'Récentes',
+  // FP-4.4 : mode couleur multiple (List<int> ARGB).
+  'colorAddColor': 'Ajouter une couleur',
+  'removeColor': 'Retirer la couleur',
   'apply': 'Appliquer',
   // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
   'percentSuffix': '%',

@@ -1,19 +1,21 @@
-/// 🎯 fp-1-2 (AC4) — garde de CONFINEMENT du squelette `zcrud_field_extras`.
+/// 🎯 fp-5-2 (AC-E1) — garde de CONFINEMENT du satellite `zcrud_field_extras`.
 ///
 /// 🔴 **CE TEST EST LA SEULE PROTECTION** de l'allowlist de dépendances du
-/// squelette. `scripts/dev/graph_proof.py` ne connaît QUE les arêtes
+/// satellite. `scripts/dev/graph_proof.py` ne connaît QUE les arêtes
 /// inter-`zcrud_*` : il ne verra JAMAIS une dépendance interdite non `zcrud_*`
-/// (`pinput`, qui n'arrive qu'aux Finitions). Sans ce fichier, le confinement
-/// est déclaratif.
+/// (un `flutter_tags`/`autocomplete_textfield` qui fuirait). Sans ce fichier, le
+/// confinement est déclaratif.
 ///
-/// Patron : `zcrud_export_ui/test/z_export_ui_confinement_test.dart` (su-11) —
-/// dé-commentateur **YAML** (`#`), motifs **ANCRÉS**, allowlist **DÉRIVÉE**,
-/// contre-preuves **R12 mutantes**.
+/// Patron : `zcrud_media/test/z_media_confinement_test.dart` — dé-commentateur
+/// **YAML** (`#`), motifs **ANCRÉS**, allowlist **DÉRIVÉE**, contre-preuves
+/// **R12 mutantes**.
 ///
 /// ## Deux volets FALSIFIABLES :
-///  1. **Allowlist pubspec** : clés de `dependencies:` ⊆ `{flutter, zcrud_core}`.
+///  1. **Allowlist pubspec** : clés de `dependencies:` ⊆ [_allowedDeps] (3 EXACT :
+///     `{flutter, zcrud_core}` ∪ [_extrasDeps] — la SEULE dép lourde fp-5-2 est
+///     `pinput` ; autocomplete/editableTable sont SDK-only).
 ///  2. **Allowlist import** : aucun `import 'package:<X>/'` dans `lib/**` hors
-///     `{flutter, zcrud_core, zcrud_field_extras}`.
+///     [_allowedImportPkgs] (= [_allowedDeps] ∪ `{zcrud_field_extras}`).
 @TestOn('vm')
 library;
 
@@ -23,11 +25,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 const String _self = 'zcrud_field_extras';
 
-const Set<String> _allowedDeps = <String>{'flutter', 'zcrud_core'};
-const Set<String> _allowedImportPkgs = <String>{'flutter', 'zcrud_core', _self};
+/// Les deps lourdes sanctionnées par le brief fp-5-2 (allowlist EXACTE, dérivée
+/// une seule fois). `pinput` = PIN/OTP. `autocomplete` (Flutter `Autocomplete`
+/// natif) et `editableTable` (`ListView.builder`) sont **SDK-only** — aucune dép.
+/// ⛔ `flutter_tags`/`drag_and_drop_lists`/`autocomplete_textfield`/`editable`
+/// sont explicitement EXCLUS (rejetés par l'étude ; morts dans DODLP).
+const Set<String> _extrasDeps = <String>{'pinput'};
 
-/// Un intrus témoin représentatif de ce que les Finitions confineront à l'impl.
-const String _probeIntruder = 'pinput';
+/// Allowlist des dépendances `pubspec` : `{flutter, zcrud_core}` ∪ [_extrasDeps].
+/// Le bloc `dependencies:` en est un **sous-ensemble exact**.
+const Set<String> _allowedDeps = <String>{
+  'flutter',
+  'zcrud_core',
+  ..._extrasDeps,
+};
+
+/// Allowlist des imports `lib/**` : deps ∪ `{zcrud_field_extras}` (dart-core est
+/// hors-scope du parseur `package:`).
+const Set<String> _allowedImportPkgs = <String>{..._allowedDeps, _self};
+
+/// Un intrus témoin **explicitement hors périmètre** : `flutter_tags` est rejeté
+/// par l'étude (« tags riches » non dispatcher-atteignable en satellite pur,
+/// SIGNAL cœur) — sa présence DOIT faire rougir la règle (AC-D1/AC-E1).
+const String _probeIntruder = 'flutter_tags';
 
 Directory _repoRoot() {
   for (final p in <String>['.', '../..']) {

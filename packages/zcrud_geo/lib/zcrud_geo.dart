@@ -23,4 +23,5 @@ export 'src/domain/z_geo_point.dart';
 export 'src/domain/z_geo_shape.dart';
 export 'src/domain/z_geo_shape_style.dart';
 export 'src/presentation/z_geo_field_widget.dart';
+export 'src/presentation/z_geo_shape_style_picker.dart';
 export 'src/presentation/z_map_adapter.dart';

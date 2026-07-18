@@ -54,6 +54,16 @@ dependencies:
   # Sens SORTANT (binding-puits → paquets purs) ⇒ CORE OUT=0 intact, ACYCLIQUE.
   zcrud_navigation: ^0.2.1
   zcrud_ui_kit: ^0.2.1
+  # fp-2-2 (AD-55/AD-1) : 3 arêtes SORTANTES du binding-PUITS vers les satellites
+  # de champs MVP, pour que le composeur unique `registerZcrudFormFields` APPELLE
+  # leurs registrars/builders (markdown = voie rich-text par défaut ; intl =
+  # phoneNumber/country/address ; geo = location). Sens SORTANT (binding → satellites)
+  # ⇒ CORE OUT=0 intact (le cœur ne gagne rien), graphe ACYCLIQUE (un puits ne crée
+  # aucun cycle). Les satellites NON-MVP (html/media/select/field_extras) NE sont PAS
+  # ajoutés : ils entrent via le seam opt-in `additionalRegistrars` au site d'appel.
+  zcrud_markdown: ^0.2.1
+  zcrud_intl: ^0.2.1
+  zcrud_geo: ^0.2.1
   flutter:
     sdk: flutter
   get: ^4.7.2

@@ -108,14 +108,34 @@ class ZNumberConfig extends ZFieldConfig {
 /// neutre** (sliders pur-Flutter), soit par un **seam injecté**
 /// (`ZcrudScope.colorPicker`). Rétro-compat : un `color` **sans** cette config
 /// conserve exactement les 15 swatches E3-3b-1.
+///
+/// **FP-4.4 / AD-52 — variante `multiple` native (additive)** : le drapeau
+/// [multiple] (défaut **`false`** ⇒ rétro-compat stricte : un `color` sans config,
+/// ou avec `ZColorConfig()`, reste **mono** — valeur `int` ARGB, `ZColorFieldWidget`
+/// intact) commute le champ en **multi-sélection** (valeur `List<int>` ARGB,
+/// `ZColorMultiFieldWidget`). Le constructeur nommé `const ZColorConfig.multiple({…})`
+/// matérialise la surface littérale exigée par AD-52 en posant `multiple = true`,
+/// sans retirer ni rencommer aucun champ existant (couvre la variante `color`
+/// **multiple** de DODLP `color_picker_field` **sans forker** ni tirer de dép lourde).
 class ZColorConfig extends ZFieldConfig {
-  /// Construit une config couleur `const`.
+  /// Construit une config couleur `const` **mono** (défaut historique :
+  /// `multiple = false` ⇒ valeur `int` ARGB, rétro-compat stricte).
   const ZColorConfig({
     this.enableAlpha = false,
     this.showPalette = true,
     this.showRecent = true,
     this.recentColors = const <int>[],
-  });
+  }) : multiple = false;
+
+  /// FP-4.4 (AD-52) — Construit une config couleur `const` **multiple**
+  /// (`multiple = true` ⇒ valeur `List<int>` ARGB, `ZColorMultiFieldWidget`).
+  /// Additif : aucun champ retiré/renommé par rapport au constructeur par défaut.
+  const ZColorConfig.multiple({
+    this.enableAlpha = false,
+    this.showPalette = true,
+    this.showRecent = true,
+    this.recentColors = const <int>[],
+  }) : multiple = true;
 
   /// Autorise le réglage du canal **alpha/opacité** dans le picker (défaut
   /// `false` ⇒ alpha plein, parité swatches historiques).
@@ -131,6 +151,12 @@ class ZColorConfig extends ZFieldConfig {
   /// (parité `recentColors` DODLP). Vide (défaut) ⇒ aucune ligne récente.
   final List<int> recentColors;
 
+  /// FP-4.4 (AD-52) — Mode **multi-sélection** : `false` (défaut) ⇒ champ mono
+  /// (`int` ARGB) ; `true` (via `ZColorConfig.multiple`) ⇒ champ multiple
+  /// (`List<int>` ARGB). Rétro-compat : le défaut `false` préserve exactement le
+  /// comportement E3-3b-1/DP-17.
+  final bool multiple;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -139,11 +165,12 @@ class ZColorConfig extends ZFieldConfig {
           enableAlpha == other.enableAlpha &&
           showPalette == other.showPalette &&
           showRecent == other.showRecent &&
+          multiple == other.multiple &&
           _listEquals(recentColors, other.recentColors);
 
   @override
   int get hashCode => Object.hash(runtimeType, enableAlpha, showPalette,
-      showRecent, Object.hashAll(recentColors));
+      showRecent, multiple, Object.hashAll(recentColors));
 }
 
 /// Config triviale pur-cœur du champ **curseur** (`slider`, E3-3b).

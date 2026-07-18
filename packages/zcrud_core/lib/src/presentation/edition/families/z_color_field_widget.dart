@@ -141,7 +141,10 @@ class ZColorFieldWidget extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: resolvedLabel,
+      // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
+      // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
+      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1). Le
+      // `value:` (hex courant) n'est PAS dupliqué par le Text → conservé.
       value: current == null ? null : _hex(current),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

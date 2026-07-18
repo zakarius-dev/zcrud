@@ -46,6 +46,7 @@ import 'families/z_app_file_field_widget.dart';
 // DP-12/DP-13 : ornements déclaratifs, label enrichi, fiche de lecture.
 import 'families/z_boolean_field_widget.dart';
 import 'families/z_color_field_widget.dart';
+import 'families/z_color_multi_field_widget.dart';
 import 'families/z_date_field_widget.dart';
 import 'families/z_date_range_field_widget.dart';
 import 'families/z_dynamic_item_field_widget.dart';
@@ -571,6 +572,18 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (n) => widget.controller.setValue(field.name, n),
         );
       case EditionFamily.color:
+        // FP-4.4 (AD-52) : dispatch conditionnel simple/multiple. Un
+        // `ZColorConfig.multiple` (⇒ `multiple == true`) monte le widget
+        // multi-sélection (valeur `List<int>` ARGB) ; sinon le champ mono reste
+        // strictement intact (valeur `int` ARGB — rétro-compat DP-17).
+        final colorCfg = field.config;
+        if (colorCfg is ZColorConfig && colorCfg.multiple) {
+          return ZColorMultiFieldWidget(
+            field: field,
+            value: value,
+            onChanged: (list) => widget.controller.setValue(field.name, list),
+          );
+        }
         return ZColorFieldWidget(
           field: field,
           value: value,

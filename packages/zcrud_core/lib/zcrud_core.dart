@@ -36,6 +36,7 @@ export 'src/presentation/edition/edition_field_family.dart';
 export 'src/presentation/edition/families/z_app_file_field_widget.dart';
 export 'src/presentation/edition/families/z_boolean_field_widget.dart';
 export 'src/presentation/edition/families/z_color_field_widget.dart';
+export 'src/presentation/edition/families/z_color_multi_field_widget.dart';
 export 'src/presentation/edition/families/z_date_field_widget.dart';
 export 'src/presentation/edition/families/z_date_range_field_widget.dart';
 export 'src/presentation/edition/families/z_dynamic_item_field_widget.dart';

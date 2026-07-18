@@ -161,27 +161,46 @@ String _safeMap(Map<dynamic, dynamic> value) {
 
 /// Fiche couleur : pastille (couleur = **donnée** ARGB, pas un style codé en dur)
 /// + code hexadécimal. Copie désactivée (Widget passe-plat — parité DODLP).
+///
+/// FP-4.4 : une valeur `List` (mode `ZColorConfig.multiple`) rend **N pastilles**
+/// (parse défensif AD-10 : seules les entrées `int` sont pastillées) ; le rendu
+/// simple `int` reste inchangé (rétro-compat).
 ReadOnlyValue _colorValue(Object? value) {
+  if (value is List) {
+    final argbs = <int>[for (final e in value) if (e is int) e];
+    if (argbs.isEmpty) return ReadOnlyValue.text('$value');
+    return ReadOnlyValue.widget(
+      Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: <Widget>[for (final argb in argbs) _colorChip(argb)],
+      ),
+    );
+  }
   if (value is! int) return ReadOnlyValue.text('$value');
-  final hex =
-      '#${value.toRadixString(16).toUpperCase().padLeft(8, '0')}';
-  return ReadOnlyValue.widget(
-    Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            // Couleur issue de la DONNÉE (ARGB), non un style codé en dur (FR-26).
-            color: Color(value),
-            borderRadius: const BorderRadius.all(Radius.circular(4)),
-          ),
+  return ReadOnlyValue.widget(_colorChip(value, withHex: true));
+}
+
+/// Pastille couleur (donnée ARGB — FR-26) + code hex optionnel. Directionnel.
+Widget _colorChip(int argb, {bool withHex = false}) {
+  final hex = '#${argb.toRadixString(16).toUpperCase().padLeft(8, '0')}';
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          // Couleur issue de la DONNÉE (ARGB), non un style codé en dur (FR-26).
+          color: Color(argb),
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
         ),
+      ),
+      if (withHex) ...<Widget>[
         const SizedBox(width: 8),
         Text(hex, textAlign: TextAlign.start),
       ],
-    ),
+    ],
   );
 }
 

@@ -478,8 +478,8 @@ development_status:
   fp-1-2-substrat-satellites-vendoring: done              # [MVP][∥ disjoint de 1.1] squelettes des 4 satellites neufs (zcrud_select/zcrud_html/zcrud_media/zcrud_field_extras) + vendoring privé packages/awesome_select (publish_to:none) (AD-49/AD-51)
   epic-fp-1-retrospective: optional
   epic-fp-2: backlog
-  fp-2-1-champs-natifs-base-specialises: backlog          # [MVP][SÉQ — présentation cœur, polish, PAS d'ajout d'enum] confirmation/polish des familles natives (text/number/date/select/radio/checkbox/relation/rowChips/tags/subItems/file/rating/slider/signature/color simple)
-  fp-2-2-composition-binding-cablage: backlog             # [MVP][SÉQ, ∥ possible avec 2.1] point de composition binding (zcrud_get, AD-55) + câblage register() markdown/intl(phone/country/address)/geo
+  fp-2-1-champs-natifs-base-specialises: done             # [MVP][SÉQ — présentation cœur, polish, PAS d'ajout d'enum] confirmation/polish des familles natives (text/number/date/select/radio/checkbox/relation/rowChips/tags/subItems/file/rating/slider/signature/color simple)
+  fp-2-2-composition-binding-cablage: done                # [MVP][SÉQ, ∥ possible avec 2.1] point de composition binding (zcrud_get, AD-55) + câblage register() markdown/intl(phone/country/address)/geo
   epic-fp-2-retrospective: optional
   epic-fp-3: backlog
   fp-3-1-preuve-mvp-showcase-harnais: backlog             # [MVP][fan-in FP-2] showcase socle + états transverses (read-only/désactivé/erreur/conditionnel/RTL/thème) + banc SM-1 + harnais axes MVP dans example/ (AD-56)
@@ -490,11 +490,11 @@ development_status:
   fp-4-1-selections-riches-awesome-select: done           # [Média-rich][∥ zcrud_select] SmartSelect via fork vendoré : select/radio/relation/multiselect derrière ZSelectPresenter (AD-48/AD-49)
   fp-4-2-media-fichiers: done                             # [Média-rich][∥ zcrud_media] image_picker+image_cropper+camera+video_thumbnail + file_picker/open_file/zone de dépôt (AD-51)
   fp-4-3-html-wysiwyg: done                               # [Média-rich][∥ zcrud_html] html_editor_enhanced WebView ISOLÉE (controller unique, AD-7/AD-50, commit débouncé) + rendu flutter_html ; registration html EXCLUSIVE avec zcrud_markdown
-  fp-4-4-color-multiple-coeur: backlog                    # [Média-rich][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] ZColorConfig.multiple (List<int> ARGB) natif + roue/opacité (AD-52)
+  fp-4-4-color-multiple-coeur: done                       # [Média-rich][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] ZColorConfig.multiple (List<int> ARGB) natif + roue/opacité (AD-52)
   epic-fp-4-retrospective: optional
   # --- Phase Finitions (FP-5) ---
   epic-fp-5: backlog
   fp-5-1-additions-coeur-finitions: done                  # [Finitions][SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] additions d'enum pin/autocomplete/editableTable + subItems.itemsAreTags (AD-52/AD-53)
-  fp-5-2-champs-extras: backlog                           # [Finitions][∥ zcrud_field_extras] PIN (pinput) + autocomplétion + table éditable + tags riches + réordonnancement (drag_and_drop_lists) (AD-53)
-  fp-5-3-geoarea-style-picker: backlog                    # [Finitions][∥ zcrud_geo] geoArea UI style-picker fill/stroke (réutilise le seam couleur, modèle ZGeoShapeStyle existant) (AD-51)
+  fp-5-2-champs-extras: done                              # [Finitions][∥ zcrud_field_extras] PIN (pinput) + autocomplétion + table éditable + tags riches + réordonnancement (drag_and_drop_lists) (AD-53)
+  fp-5-3-geoarea-style-picker: done                       # [Finitions][∥ zcrud_geo] geoArea UI style-picker fill/stroke (réutilise le seam couleur, modèle ZGeoShapeStyle existant) (AD-51)
   epic-fp-5-retrospective: optional

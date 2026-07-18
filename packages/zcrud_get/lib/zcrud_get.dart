@@ -26,6 +26,10 @@ library;
 // (SEULE exception `reflectable` autorisée — chemin allowlisté du gate) + le port
 // de réflexion injecté `ZReflectionCapability` / helper `ReflectableMirrorCapability`.
 export 'src/data/codecs/reflectable_codec.dart';
+// fp-2-2 — point de composition unique du registre de widgets (AD-55) :
+// `registerZcrudFormFields` câble markdown/intl/geo sur un `ZWidgetRegistry`
+// injecté, avec un seam opt-in `additionalRegistrars` (html/media/field_extras).
+export 'src/presentation/z_form_fields_composer.dart';
 export 'src/presentation/z_get_api.dart';
 // EX-UI.11 — présentateur GetX (impl du port `ZFormPresenter`, 3 modes).
 export 'src/presentation/z_get_form_presenter.dart';

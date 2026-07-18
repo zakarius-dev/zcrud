@@ -86,7 +86,9 @@ class ZRowChipsFieldWidget extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: resolvedLabel,
+      // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
+      // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
+      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1).
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

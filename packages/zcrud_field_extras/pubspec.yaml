@@ -28,12 +28,18 @@ environment:
   sdk: ^3.12.2
 
 # Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core.
-# ⛔ AUCUN autre `zcrud_*`, AUCUNE dép (pinput/…) à ce stade (Finitions,
-# confinées à l'impl).
+# ⛔ AUCUN autre `zcrud_*`. Deps lourdes CONFINÉES à l'impl (fp-5-2) :
+#   - `pinput` (widget PIN/OTP segmenté) — SEULE dép lourde ajoutée.
+#   - autocomplétion (`Autocomplete` natif Flutter) + table éditable = SDK-only,
+#     AUCUNE dépendance (l'étude REJETTE `autocomplete_textfield`/`editable`).
+#   - ⛔ `flutter_tags`/`drag_and_drop_lists` NON ajoutés (rejetés par l'étude ;
+#     « tags riches » non dispatcher-atteignable en satellite pur — SIGNAL cœur).
+# Ces deps NON `zcrud_*` n'ajoutent aucune arête au graph_proof (CORE OUT=0).
 dependencies:
   zcrud_core: ^0.2.1
   flutter:
     sdk: flutter
+  pinput: ^6.0.0
 
 dev_dependencies:
   flutter_test:
