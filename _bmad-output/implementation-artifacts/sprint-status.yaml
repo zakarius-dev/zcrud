@@ -470,3 +470,85 @@ development_status:
   me-2-multi-editeur-flashcards: done                          # [XL][SÉQ — après me-1 ; dépend su-2 + su-9] FR-SU20 ZMultiFlashcardEditor split-view ; régime BROUILLON DÉCLARÉ (AD-43) : liste de travail en mémoire, RIEN persisté avant le commit explicite unique ; ZDiscardChangesGuard EXISTANT ; aperçu via ZFlashcardReviewCard (jamais un rendu parallèle)
   me-3-branchement-selection-liste-flashcards: done            # [M][SÉQ — après me-2 ; dépend su-8 + me-1] FR-SU19 (branchement) la liste CONSOMME le contrôleur de me-1 (n'en redéclare aucun) ; suppression par lot = cascade AD-21 (purge SRS, corrige la dette d'orphelins lex) ; liste reste fonctionnelle SANS sélection (aucune régression de su-8)
   epic-me-retrospective: done
+
+  # === FP — FORM PARITY : Formulaire — parité DODLP totale ===  Itération formulaire (10 epics · 37 stories). Épics : epics-zcrud-form-parity-2026-07-18. Readiness 2026-07-18.
+  # Phasage : MVP (FP-1..FP-4) → Média-rich (FP-5..FP-8) → Finitions (FP-9..FP-10).
+  # Graphe : FP-1 fondations (tête) → FP-2 ∥ FP-3 → FP-4 (proof MVP) ; FP-1+FP-4 → FP-5 ∥ FP-6 ∥ FP-7 (satellites disjoints ≤3 en vol) ; FP-5 → FP-8 ; FP-1 → FP-9 ; tous → FP-10.
+  # CORE-SÉRIALISÉES (écrivent zcrud_core, UNE À LA FOIS) : 1.1, 1.2, 1.3, 8.1, 9.1, 9.6. Epic 2 = polish présentation cœur (pas d'ajout structurel) → hors parallélisme d'écriture cœur.
+
+  # === FP-1 — Fondations transverses (cœur + squelettes + vendoring) ===  [MVP-substrate] TÊTE BLOQUANTE de toute l'itération.
+  epic-fp-1: backlog
+  fp-1-1-daterange-natif-coeur: backlog                   # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] FR-5 dateRange net-new (ZDateRange{start,end}, showDateRangePicker)
+  fp-1-2-tokens-aeration-zcrudtheme: backlog              # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] FR-38 tokens d'aération ZcrudTheme + 3 écarts tranchés
+  fp-1-3-seam-zselectpresenter-coeur: backlog             # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] AR-2/AD-48 seam ZSelectPresenter + délégation familles natives
+  fp-1-4-squelettes-satellites-neufs: backlog             # [∥ — package disjoint] AR-3 squelettes zcrud_select/zcrud_media/zcrud_html/zcrud_field_extras
+  fp-1-5-vendoring-awesome-select: backlog                # [∥ — package disjoint] AR-1/AD-49 vendoring packages/awesome_select (membre workspace melos privé)
+  epic-fp-1-retrospective: optional
+
+  # === FP-2 — Champs natifs de base & spécialisés ===  [MVP] Dépend FP-1. Polish présentation cœur (pas d'ajout structurel) → SÉQ hors écritures cœur.
+  epic-fp-2: backlog
+  fp-2-1-champs-texte-numeriques-booleen-date: backlog    # [SÉQ] FR-1/2/3/4 text/multiline/password, number/int/float, boolean, dateTime/time (natif, polir)
+  fp-2-2-puces-tags-listes-sous-formulaire: backlog       # [SÉQ] FR-10/11/12/14 rowChips, tags, subItems mini-CRUD+réordonnancement, dynamicItem
+  fp-2-3-rating-slider-signature-stepper: backlog         # [SÉQ] FR-29/30/31/32 rating, slider, signature (strokes 0-dep), stepper/sections
+  fp-2-4-color-simple-seams: backlog                      # [SÉQ] FR-19/33 color simple + seams hidden/widget/custom (ZWidgetRegistry/ZTypeRegistry)
+  epic-fp-2-retrospective: optional
+
+  # === FP-3 — Câblage des satellites existants & point de composition binding ===  [MVP] Dépend FP-1. ∥ possible avec FP-2 (packages disjoints).
+  epic-fp-3: backlog
+  fp-3-1-composition-binding-markdown: backlog            # [SÉQ — AR-4/AD-55 point de composition unique zcrud_get] FR-21 câblage markdown/inlineMarkdown/richText
+  fp-3-2-cablage-intl-phone-country-address: backlog      # [SÉQ] FR-24/25/26 phoneNumber, country, address (câblage zcrud_intl)
+  fp-3-3-cablage-geo-location: backlog                    # [SÉQ] FR-27 location (câblage zcrud_geo)
+  epic-fp-3-retrospective: optional
+
+  # === FP-4 — Preuve MVP — showcase & harnais (tranche native/câblée) ===  [MVP] Dépend FP-2 ET FP-3 (fan-in). Package : example/.
+  epic-fp-4: backlog
+  fp-4-1-showcase-socle-mvp-sm1: backlog                  # [SÉQ] FR-40 showcase socle + champs MVP + états transverses + banc SM-1
+  fp-4-2-harnais-axes-mvp: backlog                        # [SÉQ] FR-39 harnais axes MVP (dense+SM-1, intl/géo, spécialisés/imbriqués)
+  epic-fp-4-retrospective: optional
+
+  # === FP-5 — Sélections riches (zcrud_select + fork awesome_select) ===  [Média-rich] Dépend FP-1 ET FP-4. Satellite DISJOINT zcrud_select — ∥ avec FP-6/FP-7 (≤3 en vol).
+  epic-fp-5: backlog
+  fp-5-1-presentateur-select: backlog                     # [∥ zcrud_select] FR-6 select choix unique, modal riche responsive + recherche
+  fp-5-2-radio-modal-checkbox-multiselect: backlog        # [∥ zcrud_select ; SÉQ après 5.1] FR-7/8 radio en modal (radioAsModal), checkbox/multiselect
+  fp-5-3-relation-crud-inline: backlog                    # [∥ zcrud_select ; SÉQ après 5.2] FR-9 relation + CRUD inline (crudDataSelect, sources runtime)
+  fp-5-4-binding-selections-showcase-axe2: backlog        # [∥ zcrud_select ; SÉQ après 5.3] câblage binding sélections + showcase/harnais axe 2
+  epic-fp-5-retrospective: optional
+
+  # === FP-6 — Média & fichiers (zcrud_media) ===  [Média-rich] Dépend FP-1 ET FP-4. Satellite DISJOINT zcrud_media — ∥ avec FP-5/FP-7 (≤3 en vol).
+  epic-fp-6: backlog
+  fp-6-1-file-bottom-sheet-multi-sources: backlog         # [∥ zcrud_media] FR-15 file bottom-sheet multi-sources + zone de dépôt + open
+  fp-6-2-image-galerie-camera-recadrage: backlog          # [∥ zcrud_media ; SÉQ après 6.1] FR-16 image galerie/caméra + recadrage
+  fp-6-3-document-scan-pdf: backlog                        # [∥ zcrud_media ; SÉQ après 6.2] FR-17 document scan → PDF
+  fp-6-4-vignette-video: backlog                          # [∥ zcrud_media ; SÉQ après 6.3] FR-18 vignette vidéo
+  fp-6-5-binding-media-showcase-axe3: backlog             # [∥ zcrud_media ; SÉQ après 6.4] câblage binding média + showcase/harnais axe 3
+  epic-fp-6-retrospective: optional
+
+  # === FP-7 — Rich-text HTML WYSIWYG (zcrud_html) ===  [Média-rich] Dépend FP-1 ET FP-4. Satellite DISJOINT zcrud_html — ∥ avec FP-5/FP-6 (≤3 en vol).
+  epic-fp-7: backlog
+  fp-7-1-wysiwyg-html-edition: backlog                    # [∥ zcrud_html] FR-22 WYSIWYG HTML édition (WebView à controller isolé)
+  fp-7-2-rendu-html-natif-lecture: backlog                # [∥ zcrud_html ; SÉQ après 7.1] FR-23 rendu HTML natif en lecture (flutter_html) + round-trip borné
+  fp-7-3-exclusivite-md-html-showcase-axe4: backlog       # [∥ zcrud_html ; SÉQ après 7.2] AR-5 exclusivité md/html au bootstrap + showcase/harnais axe 4
+  epic-fp-7-retrospective: optional
+
+  # === FP-8 — Couleur multiple (cœur additif) ===  [Média-rich] Dépend FP-5. CORE-SÉRIALISÉE.
+  epic-fp-8: backlog
+  fp-8-1-color-multiple-coeur: backlog                    # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] FR-20 ZColorConfig.multiple, List<int> ARGB
+  epic-fp-8-retrospective: optional
+
+  # === FP-9 — Champs de Finitions (zcrud_field_extras + cœur additif + geo) ===  [Finitions] Dépend FP-1. 9.1/9.6 CORE-SÉRIALISÉES ; 9.2-9.5 ∥ zcrud_field_extras ; 9.7 ∥ zcrud_geo.
+  epic-fp-9: backlog
+  fp-9-1-additions-enum-coeur: backlog                    # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core ; TÊTE bloque 9.2-9.5] additions d'enum cœur (pin/autocomplete/editableTable)
+  fp-9-2-pin-pinput: backlog                              # [∥ zcrud_field_extras ; après 9.1] FR-34 PIN (pinput)
+  fp-9-3-autocompletion: backlog                          # [∥ zcrud_field_extras ; après 9.1] FR-35 autocomplétion
+  fp-9-4-table-editable-virtualisee: backlog              # [∥ zcrud_field_extras ; après 9.1] FR-36 table éditable virtualisée
+  fp-9-5-icon-picker: backlog                             # [∥ zcrud_field_extras ; après 9.1] FR-37 icon picker (registre d'icônes)
+  fp-9-6-subitems-items-are-tags: backlog                 # [SÉQ — CORE-SÉRIALISÉE, écrit zcrud_core] FR-13 subItems variante itemsAreTags (ZSubListDisplayMode.tags)
+  fp-9-7-geoarea-style-picker: backlog                    # [∥ zcrud_geo] FR-28 geoArea + UI style-picker fill/stroke
+  fp-9-8-binding-field-extras-showcase-finitions: backlog # [SÉQ — fan-in 9.2-9.7] câblage binding field_extras + showcase Finitions
+  epic-fp-9-retrospective: optional
+
+  # === FP-10 — Parité totale — consolidation showcase & harnais ===  [Finitions/proof] Dépend FP-5, FP-6, FP-7, FP-8, FP-9 (fan-in). Package : example/.
+  epic-fp-10: backlog
+  fp-10-1-showcase-exhaustive: backlog                    # [SÉQ] FR-40 showcase exhaustive complète (40 types × variantes × états)
+  fp-10-2-harnais-6-formulaires-benchs: backlog           # [SÉQ] FR-39 harnais 6 formulaires complet + benchs SM-1/SM-3
+  epic-fp-10-retrospective: optional

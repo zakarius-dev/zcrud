@@ -5,6 +5,22 @@
 > Ne rien implémenter ad-hoc ici : chaque item devient une **story BMAD** (les touches à
 > `zcrud_core` restent sérialisées, une story à la fois).
 
+## Décisions VERROUILLÉES par le owner (2026-07-18)
+
+1. **`awesome_select` = FORK.** On adopte `awesome_select` via un **fork maintenu par nous**
+   (élimine le risque du `ref: master` flottant non-pub.dev), enveloppé derrière un
+   `ZFieldWidgetBuilder` dans un satellite (jamais `zcrud_core`, AD-1). Mécanique exacte
+   (fork GitHub épinglé vs vendoring dans un package du monorepo) = décision de la phase architecture.
+2. **PARITÉ DODLP TOTALE.** Objectif : **supporter TOUT ce qui était possible dans DODLP**. Il n'y a
+   plus de gap « optionnel / basse priorité » — chaque type de champ et chaque variante rendus par
+   DODLP entrent dans le périmètre : couleur (roue/opacité/multiple via `flex_color_picker`), média
+   (`image_picker`+`image_cropper`+`camera`+`video_thumbnail`), fichier (`file_picker`+`open_file`),
+   **rich-text HTML WYSIWYG** (`html_editor_enhanced`) + rendu HTML (`flutter_html`), PIN (`pinput`),
+   autocomplétion, table éditable (`editable`), tags (`flutter_tags`), signature, `dateRange`,
+   réordonnancement (`drag_and_drop_lists`), et `awesome_select` (select/radio/relation/multiselect).
+   La livraison peut être **phasée** (MVP champs de base → média/rich/WYSIWYG → finitions), mais la
+   **parité totale est l'état-cible non négociable**, pas un sous-ensemble.
+
 ## Consignes owner (verbatim condensé, 2026-07-17)
 
 1. **Harnais de parité visuelle bout-en-bout** : répliquer **≥ 6 formulaires fonctionnels de DODLP**
