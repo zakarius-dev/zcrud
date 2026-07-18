@@ -207,6 +207,33 @@ class _InMemoryLocalStore implements ZLocalStore<DemoRecord> {
     return const Right<ZFailure, Unit>(unit);
   }
 
+  // ── Voies de sync (E5-3, ZLocalStore) — non exercées par ces tests d'écran,
+  // implémentations minimales COHÉRENTES avec le contrat pour satisfaire
+  // l'interface (fake hermétique, sans backend). ────────────────────────────
+
+  @override
+  Future<ZResult<List<ZSyncEntry<DemoRecord>>>> syncEntries() async =>
+      Right<ZFailure, List<ZSyncEntry<DemoRecord>>>(<ZSyncEntry<DemoRecord>>[
+        for (final e in _records.entries)
+          ZSyncEntry<DemoRecord>(
+            entity: e.value,
+            meta: ZSyncMeta(isDeleted: _deleted.contains(e.key)),
+          ),
+      ]);
+
+  @override
+  Future<ZResult<Unit>> applyMerged(ZSyncEntry<DemoRecord> entry) async {
+    final id = entry.entity.recordId;
+    _records[id] = entry.entity;
+    if (entry.meta.isDeleted) {
+      _deleted.add(id);
+    } else {
+      _deleted.remove(id);
+    }
+    _emit();
+    return const Right<ZFailure, Unit>(unit);
+  }
+
   @override
   void dispose() => unawaited(_changes.close());
 }

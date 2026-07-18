@@ -28,7 +28,10 @@ void main() {
     // Récupère le `ZFormController` isolé porté par le champ (voie de persistance
     // publique) et simule une édition en écrivant la tranche neutre (Delta JSON).
     final field = tester.widget<ZMarkdownField>(find.byType(ZMarkdownField));
-    final controller = field.controller;
+    // `ZMarkdownField.controller` est nullable dans le type (voie `ctx`/registre
+    // le laisse à `null`), mais `MarkdownDemoScreen` monte le champ via la voie
+    // `controller` (constructeur par défaut, paramètre `required`) — non-null ici.
+    final controller = field.controller!;
     controller.setValue('body', <Map<String, dynamic>>[
       <String, dynamic>{'insert': 'Bonjour zcrud\n'},
     ]);

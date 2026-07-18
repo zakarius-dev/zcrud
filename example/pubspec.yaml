@@ -72,6 +72,21 @@ dependencies:
     path: ../packages/zcrud_export
   zcrud_firestore:
     path: ../packages/zcrud_firestore
+  # FP-3.2 (parité totale) — les 4 satellites FORM-PARITY (fp-4/fp-5, tous `done`)
+  # sont désormais consommés par la showcase EXHAUSTIVE + le harnais 6 formulaires
+  # DODLP : sélection modale riche (`zcrud_select`/`ZSmartSelectPresenter`), média
+  # riche (`zcrud_media`), HTML WYSIWYG (`zcrud_html`) et champs spécialisés
+  # (`zcrud_field_extras` : pin/autocomplete/editableTable). CONSOMMATEUR only :
+  # aucun `packages/*` modifié. AUCUN ne tire `zcrud_mindmap` (vérifié sur disque)
+  # — la frontière `test/boundary_deps_test.dart` le prouve (mindmap reste interdit).
+  zcrud_select:
+    path: ../packages/zcrud_select
+  zcrud_html:
+    path: ../packages/zcrud_html
+  zcrud_media:
+    path: ../packages/zcrud_media
+  zcrud_field_extras:
+    path: ../packages/zcrud_field_extras
   # SU-10 — parcours d'étude assemblé. `zcrud_session` porte le sélecteur, la
   # pile swipeable, la surface de saisie et l'écran de célébration ; il tire
   # `zcrud_flashcard` (carte de révision + ports indice/évaluation + SRS) et
@@ -143,6 +158,29 @@ dependency_overrides:
     path: ../packages/zcrud_export
   zcrud_firestore:
     path: ../packages/zcrud_firestore
+  # FP-3.2 : les 4 satellites FORM-PARITY déclarent `resolution: workspace` +
+  # épinglent `zcrud_core: ^0.2.1` hosted ; l'override `path:` réconcilie source
+  # path↔hosted (voie standalone EX-1, aucun ajout au `workspace:` racine). Ils
+  # tirent leurs deps lourdes CONFINÉES (`awesome_select` / `html_editor_enhanced`+
+  # `flutter_html` / `image_picker`+`file_picker`… / `pinput`) dans le lock PROPRE
+  # de l'app (jamais le lock racine des 14 — SM-5). AUCUN ne tire `zcrud_mindmap`.
+  zcrud_select:
+    path: ../packages/zcrud_select
+  zcrud_html:
+    path: ../packages/zcrud_html
+  zcrud_media:
+    path: ../packages/zcrud_media
+  zcrud_field_extras:
+    path: ../packages/zcrud_field_extras
+  # `awesome_select` : FEUILLE PRIVÉE vendorisée (fork MIT patché Flutter M3 —
+  # `titleLarge`/`onError`) sous `packages/awesome_select`, dépendue du SEUL
+  # `zcrud_select` (AD-49). Le workspace racine la résout par membership ; l'app
+  # STANDALONE doit surcharger l'arête `zcrud_select → awesome_select ^6.0.0`
+  # (HOSTED, CASSÉ sur Flutter courant : `headline6`/`errorColor` retirés) vers ce
+  # path fork. Override transitif path↔hosted (même patron que `zcrud_annotations`/
+  # `zcrud_study_kernel`), voie standalone EX-1 — aucun ajout au `workspace:` racine.
+  awesome_select:
+    path: ../packages/awesome_select
   # ES-3.2 : `zcrud_firestore` gagne une arête vers `zcrud_study_kernel` (base
   # offline-first `ZOfflineFirstBoxRepository` étendant `ZStudyRepository`, ES-3.1).
   # Override CONSOMMATEUR path↔hosted (voie standalone EX-1, aucun ajout au

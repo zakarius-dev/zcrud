@@ -54,6 +54,14 @@ void main() {
       // su-10 — parcours d'étude assemblé.
       'zcrud_session',
       'zcrud_flashcard',
+      // fp-3-2 — parité totale : les 4 satellites FORM-PARITY (fp-4/fp-5) sont
+      // consommés par la showcase EXHAUSTIVE + le harnais 6 formulaires DODLP.
+      // Sans cette assertion POSITIVE, un futur nettoyage de pubspec casserait la
+      // parité sans rougir. Aucun de ces 4 ne tire `zcrud_mindmap` (interdit ci-dessus).
+      'zcrud_select',
+      'zcrud_html',
+      'zcrud_media',
+      'zcrud_field_extras',
     ]) {
       final declared = RegExp('^\\s+$pkg\\s*:', multiLine: true);
       expect(declared.hasMatch(withoutComments), isTrue, reason: '$pkg attendu');

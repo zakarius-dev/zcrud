@@ -7,6 +7,7 @@ import 'demos/intl_demo_screen.dart';
 import 'demos/list_demo_screen.dart';
 import 'demos/markdown_demo_screen.dart';
 import 'demos/offline_demo_screen.dart';
+import 'demos/showcase/showcase_screen.dart';
 import 'demos/study_session_demo_screen.dart';
 
 /// Descripteur d'une entrée de démo par domaine (accueil, AC3/AC10).
@@ -115,6 +116,14 @@ class HomeScreen extends StatelessWidget {
           icon: Icons.cloud_sync,
           available: true,
           onOpen: (_) => const OfflineDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Showcase',
+          subtitle: 'Preuve MVP : socle via le vrai dispatcher, états '
+              'transverses, banc SM-1, harnais par axes',
+          icon: Icons.grid_view_outlined,
+          available: true,
+          onOpen: (_) => const ShowcaseScreen(),
         ),
         _DemoEntry(
           title: 'Parcours d\'étude',

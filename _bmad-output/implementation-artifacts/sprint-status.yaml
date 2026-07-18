@@ -482,8 +482,8 @@ development_status:
   fp-2-2-composition-binding-cablage: done                # [MVP][SÉQ, ∥ possible avec 2.1] point de composition binding (zcrud_get, AD-55) + câblage register() markdown/intl(phone/country/address)/geo
   epic-fp-2-retrospective: optional
   epic-fp-3: backlog
-  fp-3-1-preuve-mvp-showcase-harnais: backlog             # [MVP][fan-in FP-2] showcase socle + états transverses (read-only/désactivé/erreur/conditionnel/RTL/thème) + banc SM-1 + harnais axes MVP dans example/ (AD-56)
-  fp-3-2-parite-totale-consolidation: backlog             # [Finitions][fan-in FINAL — après FP-4/FP-5] consolidation showcase 40+ types × variantes + harnais 6 formulaires DODLP complets + benchs SM-1/SM-3 (FR-39/FR-40)
+  fp-3-1-preuve-mvp-showcase-harnais: done                # [MVP][fan-in FP-2] showcase socle + états transverses (read-only/désactivé/erreur/conditionnel/RTL/thème) + banc SM-1 + harnais axes MVP dans example/ (AD-56)
+  fp-3-2-parite-totale-consolidation: done                # [Finitions][fan-in FINAL — après FP-4/FP-5] consolidation showcase 40+ types × variantes + harnais 6 formulaires DODLP complets + benchs SM-1/SM-3 (FR-39/FR-40)
   epic-fp-3-retrospective: optional
   # --- Phase Média-rich (FP-4) — 3 satellites DISJOINTS parallélisables (≤3 en vol) ---
   epic-fp-4: backlog
