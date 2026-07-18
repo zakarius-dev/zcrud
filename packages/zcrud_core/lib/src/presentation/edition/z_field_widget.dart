@@ -47,6 +47,7 @@ import 'families/z_app_file_field_widget.dart';
 import 'families/z_boolean_field_widget.dart';
 import 'families/z_color_field_widget.dart';
 import 'families/z_date_field_widget.dart';
+import 'families/z_date_range_field_widget.dart';
 import 'families/z_dynamic_item_field_widget.dart';
 import 'families/z_free_widget_field_widget.dart';
 import 'families/z_number_field_widget.dart';
@@ -458,6 +459,20 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
               _resolveDateBound(dateCfg?.maxDateIso, dateCfg?.lastDateKey),
           // MIN-2 : croix d'effacement UNIQUEMENT pour un champ non requis et
           // éditable (retour à `null`). Un champ requis ne l'affiche pas.
+          onCleared: (field.isRequired || field.readOnly)
+              ? null
+              : () => widget.controller.setValue(field.name, null),
+        );
+      case EditionFamily.dateRange:
+        // Plage de dates (AD-47) : même chemin `ZFieldListenableBuilder`/
+        // `setValue` que la famille date. Widget `StatelessWidget` pur (ne reçoit
+        // jamais le `ZFormController`) ; `showDateRangePicker` = SDK (CORE OUT=0).
+        return ZDateRangeFieldWidget(
+          field: field,
+          value: value,
+          onChanged: (range) => widget.controller.setValue(field.name, range),
+          // MIN-2 : croix d'effacement UNIQUEMENT pour un champ non requis et
+          // éditable (retour à `null`).
           onCleared: (field.isRequired || field.readOnly)
               ? null
               : () => widget.controller.setValue(field.name, null),

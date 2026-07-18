@@ -71,6 +71,10 @@ void main() {
               controller: controller,
               fields: fields,
               shrinkWrap: true,
+              // Isole la géométrie de grille du token d'aération `formPadding`
+              // (défaut all(12) depuis AD-54) : ces AC mesurent des largeurs de
+              // cellule, pas le padding du ListView (couvert par aeration_tokens).
+              padding: EdgeInsets.zero,
               layout: layout,
               gridGutter: gutter,
             ),

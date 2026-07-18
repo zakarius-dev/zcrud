@@ -19,6 +19,7 @@ void main() {
         EditionFieldType.boolean,
         EditionFieldType.dateTime,
         EditionFieldType.time,
+        EditionFieldType.dateRange,
         EditionFieldType.select,
         EditionFieldType.radio,
         EditionFieldType.checkbox,
@@ -40,6 +41,17 @@ void main() {
         EditionFieldType.signature,
         EditionFieldType.color,
         EditionFieldType.icon,
+        // fp-5-1 (AD-52/AD-53) — types NOMMÉS au cœur, valeurs neutres,
+        // widget servi par `zcrud_field_extras` (fp-5-2) / repli contrôlé.
+        EditionFieldType.pin,
+        EditionFieldType.autocomplete,
+        EditionFieldType.editableTable,
+        // fp-4-2 (MAJEUR-1) — types média RICHES NOMMÉS au cœur, valeurs
+        // neutres (`AppFile`/liste — AD-40), widget servi par `zcrud_media`
+        // (`registerZMediaFieldWidgets`) via `ZWidgetRegistry` / repli contrôlé.
+        EditionFieldType.mediaImage,
+        EditionFieldType.mediaFile,
+        EditionFieldType.mediaVideo,
         EditionFieldType.markdown,
         EditionFieldType.inlineMarkdown,
         EditionFieldType.html,
@@ -53,8 +65,11 @@ void main() {
       for (final t in paritySet) {
         expect(EditionFieldType.values, contains(t));
       }
-      // Catalogue de parité (38) + la valeur ouverte `custom` = 39.
-      expect(paritySet.length, 38);
+      // Catalogue de parité (45, dont `dateRange` AD-47 + fp-5-1 `pin`/
+      // `autocomplete`/`editableTable` + fp-4-2 `mediaImage`/`mediaFile`/
+      // `mediaVideo`) + la valeur ouverte `custom` = 46.
+      // Guard PORTEUR : rougit si un type est oublié/retiré du catalogue.
+      expect(paritySet.length, 45);
       expect(EditionFieldType.values.length, paritySet.length + 1);
     });
 

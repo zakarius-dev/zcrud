@@ -139,9 +139,69 @@ void main() {
       expect(a.published, isFalse);
       expect(a.status, ArticleStatus.draft);
       expect(a.createdAt, isNull);
+      expect(a.period, isNull);
       expect(a.tags, isEmpty);
       expect(a.author, isNull);
       expect(a.coauthors, isEmpty);
+      expect(a.pinValue, isNull);
+      expect(a.autoValue, isNull);
+    });
+
+    test('(i) fp-5-1 : pin/autocomplete neutres String — défensif AD-10 + '
+        'round-trip (aucune nouvelle catégorie génératrice)', () {
+      // Valeur non-`String` → repli `null` (catégorie `_Cat.stringType`), le
+      // PARENT SURVIT (title conservé) — vrai test AD-10, pas returnsNormally.
+      final pinKo = Article.fromMap(asTopLevelMap(corpusCase(
+          'fp51_pin_non_string')));
+      expect(pinKo.pinValue, isNull);
+      expect(pinKo.title, 'ok', reason: 'AD-10 : le parent survit');
+
+      final autoKo = Article.fromMap(asTopLevelMap(corpusCase(
+          'fp51_auto_non_string_map')));
+      expect(autoKo.autoValue, isNull);
+      expect(autoKo.title, 'ok');
+
+      // Champs absents → `null` (nullable), parent intact.
+      final absent = Article.fromMap(asTopLevelMap(corpusCase(
+          'fp51_pin_auto_absents')));
+      expect(absent.pinValue, isNull);
+      expect(absent.autoValue, isNull);
+      expect(absent.title, 'ok');
+
+      // Valeurs valides → décodées + round-trip idempotent (toMap → fromMap).
+      final ok = Article.fromMap(asTopLevelMap(corpusCase(
+          'fp51_pin_auto_valides')));
+      expect(ok.pinValue, '1234');
+      expect(ok.autoValue, 'foo');
+      final round = Article.fromMap(ok.toMap());
+      expect(round.pinValue, '1234');
+      expect(round.autoValue, 'foo');
+    });
+
+    test('(h) ZDateRange corrompu (AD-47/AD-10) : period → null, parent survit', () {
+      // Chaque forme de corruption (non-map, end absent, non-String, non-ISO,
+      // start>end) retombe sur `null` SANS casser le parent (title conservé).
+      for (final n in const <String>[
+        'period_non_map',
+        'period_end_absent',
+        'period_non_string',
+        'period_non_iso',
+        'period_start_apres_end',
+      ]) {
+        final a = Article.fromMap(asTopLevelMap(corpusCase(n)));
+        expect(a.period, isNull, reason: n);
+        expect(a.title, 'T', reason: '$n : le parent survit');
+      }
+    });
+
+    test('(h) ZDateRange valide : décodé + round-trip idempotent', () {
+      final a =
+          Article.fromMap(asTopLevelMap(corpusCase('period_valide_roundtrip')));
+      expect(a.period, isNotNull);
+      expect(a.period!.start, DateTime.parse('2026-01-01T00:00:00.000'));
+      expect(a.period!.end, DateTime.parse('2026-01-31T00:00:00.000'));
+      // toMap → fromMap idempotent sur le champ period.
+      expect(Article.fromMap(a.toMap()).period, a.period);
     });
 
     test('sous-modèle Author.fromMap seul : défensif, name manquant → "" '

@@ -17,6 +17,7 @@ import '../domain/ports/z_relation_source.dart';
 import 'edition/families/z_color_field_widget.dart';
 import 'edition/z_field_adornment_view.dart';
 import 'edition/z_file_picker.dart';
+import 'edition/z_select_presenter.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
 import 'list/z_list_renderer.dart';
@@ -62,6 +63,7 @@ class ZcrudScope extends InheritedWidget {
     this.filePicker,
     this.cloudStorage,
     this.listRenderer,
+    this.selectPresenter,
     this.iconResolver,
     this.colorPicker,
     this.colorKeyResolver,
@@ -127,6 +129,16 @@ class ZcrudScope extends InheritedWidget {
   /// backend Material `DataTable` reste implémentable sur le même port. Jamais
   /// un singleton statique mutable.
   final ZListRenderer? listRenderer;
+
+  /// Seam de **présentation riche des familles de sélection** (AD-48 ; défaut
+  /// `null` → rendu **natif** zcrud strictement conservé). Injecté par l'app/le
+  /// binding pour brancher un présentateur riche (parité DODLP `awesome_select`)
+  /// sur `select`/`radio`/`checkbox`/`relation`. `zcrud_core` ne fournit AUCUNE
+  /// implémentation concrète : l'impl (adossée à `awesome_select`) vit dans
+  /// `zcrud_select` (fp-4-1), jamais dans le cœur (AD-1). Le présentateur ne
+  /// reçoit qu'un `ZSelectPresentation` neutre (jamais le `ZFormController` —
+  /// AD-2). Jamais un singleton statique mutable.
+  final ZSelectPresenter? selectPresenter;
 
   /// Résolveur d'**icône d'ornement** host-fourni (DP-12, M1 ; défaut `null` →
   /// le cœur retombe sur sa **table Material bornée** par défaut, puis `null` si
@@ -194,6 +206,7 @@ class ZcrudScope extends InheritedWidget {
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||
       !identical(listRenderer, oldWidget.listRenderer) ||
+      !identical(selectPresenter, oldWidget.selectPresenter) ||
       !identical(iconResolver, oldWidget.iconResolver) ||
       !identical(colorPicker, oldWidget.colorPicker) ||
       !identical(colorKeyResolver, oldWidget.colorKeyResolver);

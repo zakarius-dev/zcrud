@@ -34,9 +34,12 @@ class Article {
     this.published = false,
     this.status = ArticleStatus.draft,
     this.createdAt,
+    this.period,
     this.tags = const <String>[],
     this.author,
     this.coauthors = const <Author>[],
+    this.pinValue,
+    this.autoValue,
   });
 
   /// Reconstruit depuis une map persistée (délègue au `fromMap` généré défensif).
@@ -79,6 +82,11 @@ class Article {
   @ZcrudField(persistAs: ZPersistAs.timestamp)
   final DateTime? createdAt;
 
+  /// Plage de dates `ZDateRange` (AD-47) : (dé)sérialisation DÉFENSIVE via le
+  /// helper généré `_$asDateRange` (une plage corrompue → `null`, parent survit).
+  @ZcrudField()
+  final ZDateRange? period;
+
   /// Étiquettes (multiple inféré depuis `List<String>`).
   @ZcrudField()
   final List<String> tags;
@@ -92,6 +100,31 @@ class Article {
   @ZcrudField()
   final List<Author> coauthors;
 
+  /// fp-5-1 (AD-52/AD-53) — type NOMMÉ `pin`, valeur **neutre** `String` :
+  /// (dé)sérialisée par la catégorie EXISTANTE `_Cat.stringType` (aucune
+  /// nouvelle catégorie générée). Le `type:` explicite ne change QUE le
+  /// `EditionFieldType` émis, jamais le chemin de (dé)sérialisation.
+  @ZcrudField(type: EditionFieldType.pin)
+  final String? pinValue;
+
+  /// fp-5-1 (AD-53) — type NOMMÉ `autocomplete`, valeur **neutre** `String`
+  /// (chemin `_Cat.stringType` existant, défensif : non-`String` → `null`).
+  @ZcrudField(type: EditionFieldType.autocomplete)
+  final String? autoValue;
+
+  // fp-5-1 (D1, découverte SUR DISQUE) — le 3e type NOMMÉ `editableTable` a
+  // pour valeur neutre `List<Map<String, dynamic>>`. CE TYPE DART N'EST PAS
+  // (dé)sérialisable par le générateur EXISTANT : `_classify` récurse sur
+  // l'élément `Map<String, dynamic>`, qui ne correspond à AUCUNE branche
+  // (scalaire/enum/DateTime/ZDateRange/@ZcrudModel) → `InvalidGenerationSourceError`.
+  // C'est une LIMITE PRÉEXISTANTE du générateur (bare `Map` jamais supporté),
+  // INDÉPENDANTE de fp-5-1. D1 impose de NE PAS toucher le générateur → aucun
+  // champ `List<Map>` n'est ajouté ici (l'ajouter cassait la génération). Le
+  // routage/neutralité d'`editableTable` est prouvé au niveau CŒUR (dispatch
+  // → registryOrFallback → repli), cf. z_field_dispatch_test. Le `type:`
+  // explicite n'influe QUE sur l'`EditionFieldType` émis, jamais sur le chemin
+  // de (dé)sérialisation — prouvé par `pinValue`/`autoValue` (String neutre).
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -104,14 +137,17 @@ class Article {
           published == other.published &&
           status == other.status &&
           createdAt == other.createdAt &&
+          period == other.period &&
           author == other.author &&
+          pinValue == other.pinValue &&
+          autoValue == other.autoValue &&
           _listEq(tags, other.tags) &&
           _authorListEq(coauthors, other.coauthors);
 
   @override
   int get hashCode => Object.hash(id, title, subtitle, views, rating, published,
-      status, createdAt, author, Object.hashAll(tags),
-      Object.hashAll(coauthors));
+      status, createdAt, period, author, Object.hashAll(tags),
+      Object.hashAll(coauthors), pinValue, autoValue);
 }
 
 /// Sous-modèle imbriqué.

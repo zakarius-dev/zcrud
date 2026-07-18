@@ -37,6 +37,7 @@ export 'src/presentation/edition/families/z_app_file_field_widget.dart';
 export 'src/presentation/edition/families/z_boolean_field_widget.dart';
 export 'src/presentation/edition/families/z_color_field_widget.dart';
 export 'src/presentation/edition/families/z_date_field_widget.dart';
+export 'src/presentation/edition/families/z_date_range_field_widget.dart';
 export 'src/presentation/edition/families/z_dynamic_item_field_widget.dart';
 export 'src/presentation/edition/families/z_free_widget_field_widget.dart';
 export 'src/presentation/edition/families/z_number_field_widget.dart';
@@ -82,6 +83,11 @@ export 'src/presentation/edition/z_read_only_field_card.dart';
 // `ZResponsiveBreakpoints`, widget de disposition directionnel `ZResponsiveGrid`.
 export 'src/presentation/edition/z_responsive_grid.dart';
 export 'src/presentation/edition/z_section_collapse_store.dart';
+// Seam de présentation riche des familles de sélection (AD-48) : abstraction
+// Material-free `ZSelectPresenter` + DTO neutre `ZSelectPresentation` (injecté
+// via `ZcrudScope.selectPresenter`, défaut null → rendu natif). L'impl concrète
+// (awesome_select) vit dans `zcrud_select`, jamais dans le cœur (AD-1, OUT=0).
+export 'src/presentation/edition/z_select_presenter.dart';
 // Assistant multi-étapes (E3-5, AD-2/AD-13/SM-1) : `ZStepperEdition` partitionne
 // le MÊME `ZFormController` en étapes séquencées (réutilise `DynamicEdition` par
 // étape) ; validation PAR ÉTAPE (gate « suivant » sur validateurs E3-2), état

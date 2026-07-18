@@ -304,12 +304,18 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // DP-6 : dispatch par mode de rendu, décidé UNE FOIS au build du conteneur
-    // (l'édition compacte vit dans le dialog → pas de rebuild par frappe).
-    if (_displayMode == ZSubListDisplayMode.compact) {
-      return _buildCompact(context);
+    // DP-6 / fp-5-1 : dispatch EXPLICITE par mode de rendu, décidé UNE FOIS au
+    // build du conteneur (l'édition vit dans le dialog → pas de rebuild par
+    // frappe). `switch` exhaustif SANS `default:` : un futur mode casse la
+    // compilation → JAMAIS un repli silencieux vers `inline` (AC-B2).
+    switch (_displayMode) {
+      case ZSubListDisplayMode.compact:
+        return _buildCompact(context);
+      case ZSubListDisplayMode.tags:
+        return _buildTags(context);
+      case ZSubListDisplayMode.inline:
+        return _buildInline(context);
     }
-    return _buildInline(context);
   }
 
   /// Rendu **inline** historique (E3-3b-2) — STRICTEMENT préservé (AC4/AC19).
@@ -325,9 +331,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final downLabel = label(context, 'moveItemDown');
     final readOnly = widget.field.readOnly;
 
+    // fp-5-1 MED-1 (a11y) : le conteneur ne porte PAS `label:` — le `Text`
+    // visible ci-dessous fournit déjà le nom accessible de la section. Un
+    // `label:` sur le `Semantics(container:)` DOUBLERAIT l'annonce du lecteur
+    // d'écran (deux nœuds « Items »). Le `container: true` conserve la frontière
+    // sémantique (groupement) sans redoublement.
     return Semantics(
       container: true,
-      label: resolvedLabel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -595,9 +605,10 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     final canDelete =
         !readOnly && widget.acl.can(ZCrudAction.delete, collectionId: cid);
 
+    // fp-5-1 MED-1 (a11y) : pas de `label:` sur le conteneur — le `Text` visible
+    // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.
     return Semantics(
       container: true,
-      label: resolvedLabel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -657,6 +668,105 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
             ),
         ],
       ),
+    );
+  }
+
+  // ── fp-5-1 (AD-52) : mode tags (rangée de puces `InputChip`, minimal) ──────
+
+  /// Rendu **tags** (fp-5-1) : rendu natif **MINIMAL** zéro-dépendance — une
+  /// rangée `Wrap` de `InputChip` présentant le **résumé** de chaque item
+  /// (`summaryFields`/repli titre), plus un bouton d'ajout (≥ 48 dp) réutilisant
+  /// la machinerie de dialog existante (`_buildAddControl` → `_openAddDialog`).
+  /// Tapoter une puce ouvre le dialog d'édition (consultation si `readOnly`) ;
+  /// la puce est supprimable (`onDeleted` → `_confirmDelete`, gère softDelete).
+  /// Directionnel (`Wrap` suit `Directionality`, `EdgeInsetsDirectional`),
+  /// `Semantics` explicites, aucune couleur codée en dur (thème hérité, FR-26).
+  /// Les **tags riches** (toggle/icône par tag, réordonnancement drag) = fp-5-2.
+  Widget _buildTags(BuildContext context) {
+    final resolvedLabel = label(
+      context,
+      widget.field.label ?? widget.field.name,
+      fallback: widget.field.label ?? widget.field.name,
+    );
+    final readOnly = widget.field.readOnly;
+    final removeLabel = label(context, 'removeItem');
+    // Items visibles : les items soft-deleted sont EXCLUS (cohérent avec
+    // l'agrégation parent) ; le rendu minimal ne porte pas la restauration
+    // (offerte par le mode compact / fp-5-2).
+    final visible = <_SubItem>[
+      for (final item in _items)
+        if (!item.deleted) item,
+    ];
+
+    // fp-5-1 MED-1 (a11y) : pas de `label:` sur le conteneur — le `Text` visible
+    // (en-tête) porte déjà le nom de section ; un `label:` doublerait l'annonce.
+    return Semantics(
+      container: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    resolvedLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                if (!readOnly) _buildAddControl(context),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: <Widget>[
+                for (final item in visible)
+                  InputChip(
+                    key: ValueKey<String>('tag_${item.id}'),
+                    label: Text(_chipLabel(item)),
+                    // fp-5-1 MED-2 (AD-13) : épingle la cible tactile à `padded`
+                    // (≥ 48 dp) INDÉPENDAMMENT du thème ambiant — sinon un thème
+                    // `materialTapTargetSize: shrinkWrap` ferait tomber la puce
+                    // (et son `onDeleted`) sous 48 dp.
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    onPressed: readOnly
+                        ? () => _openViewDialog(item)
+                        : () => _openEditDialog(item),
+                    onDeleted: readOnly ? null : () => _confirmDelete(item),
+                    deleteButtonTooltipMessage: readOnly ? null : removeLabel,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Libellé lisible d'une puce (fp-5-1) : résumé dérivé (`summaryFields`/titre)
+  /// ou, à défaut, le libellé du champ (jamais une puce vide/illisible).
+  String _chipLabel(_SubItem item) {
+    final summaryFields = _summaryFields;
+    if (summaryFields.isNotEmpty) {
+      final parts = <String>[
+        for (final name in summaryFields)
+          if (_stringOf(item.controller.valueOf(name)).isNotEmpty)
+            _stringOf(item.controller.valueOf(name)),
+      ];
+      if (parts.isNotEmpty) return parts.join(' — ');
+    }
+    final title = _defaultTitle(item);
+    if (title.isNotEmpty) return title;
+    return label(
+      context,
+      widget.field.label ?? widget.field.name,
+      fallback: widget.field.label ?? widget.field.name,
     );
   }
 }

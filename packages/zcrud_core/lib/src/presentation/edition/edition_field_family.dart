@@ -46,6 +46,10 @@ enum EditionFamily {
   /// `dateTime` / `time` — déclencheur de picker directionnel, valeur ISO-8601.
   date,
 
+  /// `dateRange` — déclencheur de picker de **plage** directionnel
+  /// (`showDateRangePicker`), valeur `ZDateRange{start, end}` (AD-47).
+  dateRange,
+
   /// `boolean` — `Switch`/toggle avec état sémantique.
   boolean,
 
@@ -112,7 +116,7 @@ enum EditionFamily {
 
 /// Classe [type] dans sa [EditionFamily] de rendu (E3-3a).
 ///
-/// `switch` **exhaustif SANS `default:`** (AC2) : les 39 valeurs sont énumérées ;
+/// `switch` **exhaustif SANS `default:`** (AC2) : toutes les valeurs sont énumérées ;
 /// ajouter un `EditionFieldType` sans le classer ici **casse la compilation**.
 EditionFamily familyOf(EditionFieldType type) {
   switch (type) {
@@ -130,6 +134,9 @@ EditionFamily familyOf(EditionFieldType type) {
     case EditionFieldType.dateTime:
     case EditionFieldType.time:
       return EditionFamily.date;
+
+    case EditionFieldType.dateRange:
+      return EditionFamily.dateRange;
 
     case EditionFieldType.boolean:
       return EditionFamily.boolean;
@@ -191,6 +198,24 @@ EditionFamily familyOf(EditionFieldType type) {
     case EditionFieldType.country:
     case EditionFieldType.address:
     case EditionFieldType.icon:
+    // fp-5-1 (AD-52/AD-53) : `pin`/`autocomplete`/`editableTable` = types
+    // NOMMÉS au cœur, valeurs NEUTRES (String/String/List<Map>), widget riche
+    // servi par `zcrud_field_extras` (fp-5-2) via `ZWidgetRegistry`. Aucune
+    // nouvelle `EditionFamily`, aucun widget natif : repli `ZUnsupportedFieldWidget`
+    // tant que le `kind` n'est pas enregistré (AD-53/OQ-6). Cœur OUT=0 préservé.
+    case EditionFieldType.pin:
+    case EditionFieldType.autocomplete:
+    case EditionFieldType.editableTable:
+    // fp-4-2 (MAJEUR-1) : `mediaImage`/`mediaFile`/`mediaVideo` = types NOMMÉS
+    // au cœur, valeurs NEUTRES (`AppFile`/liste — AD-40), widget riche
+    // (drop-zone/ouverture/vignette) servi par `zcrud_media`
+    // (`registerZMediaFieldWidgets`) via `ZWidgetRegistry` sous `kind == type.name`.
+    // Repli `ZUnsupportedFieldWidget` tant que non enregistré (AD-10). Aucune
+    // dépendance média dans le cœur (AD-1, CORE OUT=0). Distincts des types
+    // natifs `image`/`file`/`document` (famille `file`, `ZAppFileField`).
+    case EditionFieldType.mediaImage:
+    case EditionFieldType.mediaFile:
+    case EditionFieldType.mediaVideo:
     case EditionFieldType.custom:
       return EditionFamily.registryOrFallback;
 

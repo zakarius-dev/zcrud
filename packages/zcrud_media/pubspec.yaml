@@ -1,0 +1,62 @@
+# zcrud_media — satellite MÉDIA (fp-4-2, AD-51) — membre du workspace zcrud
+# (resolution: workspace). Adaptateurs média : câble le contrat cœur EXISTANT
+# `ZFilePicker`/`ZFileSource` derrière une API NEUTRE (`AppFile`/chemins/
+# `Uint8List` — AUCUN type plateforme en signature publique, AD-40).
+#
+# AD-51 / AD-1 : les dépendances média tierces arrivent MAINTENANT (fp-4-2),
+# CONFINÉES à l'impl `lib/src/` (jamais tirées dans le cœur). Les seules arêtes
+# inter-packages zcrud_* SORTANTES restent `zcrud_core` UNIQUEMENT (graphe
+# acyclique, CORE OUT=0 — les deps média non `zcrud_*` sont invisibles au
+# `graph_proof`, gardées par `test/z_media_confinement_test.dart`).
+# AD-12 : ZÉRO clé/secret/endpoint committé ; AUCUNE permission plateforme codée
+# en dur (déclarations OS = responsabilité de l'app hôte).
+#
+# Périmètre des deps :
+#  - image_picker  : galerie + caméra (parité DODLP ; caméra = délégation OS via
+#                    `ImageSource.camera` d'image_picker, ET-5 — aucun plugin
+#                    `camera` in-app requis).
+#  - file_picker   : sélecteur de documents (contraint par `effectiveExtensions`).
+#  - image_cropper : recadrage POST-pick optionnel (seam `ZMediaCropOptions`).
+#  - video_thumbnail : vignette vidéo NEUTRE (`Uint8List`).
+#  - open_file     : ouverture au tap d'un fichier acquis (résultat défini, AD-10).
+#  - dotted_border : zone de dépôt (affordance riche, `ZWidgetRegistry`).
+# MED-3 (fp-4-2) : `camera` RETIRÉ — jamais importé (`package:camera/` absent de
+# `lib/`), la capture passe par `image_picker`/`ImageSource.camera` (ET-5). En
+# dép-git, la garder tirait un plugin natif lourd pour zéro fonctionnalité.
+name: zcrud_media
+description: "Media field satellite for zcrud (AD-51): wires the existing ZFilePicker/ZFileSource core contract behind a neutral AppFile/paths/Uint8List API. Provides ZMediaFilePicker + rich media field widgets (drop-zone/open/video thumbnail) registered via ZWidgetRegistry."
+version: 0.2.1
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_media
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - media
+  - file-picker
+  - form
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core.
+# ⛔ AUCUN autre `zcrud_*`. Les 6 deps média tierces (fp-4-2 ; `camera` retiré en
+# MED-3) sont CONFINÉES à `lib/src/` et gardées par
+# `test/z_media_confinement_test.dart` (allowlist EXACTE de 8 entrées =
+# {flutter, zcrud_core} ∪ ces 6). AUCUN secret/clé.
+dependencies:
+  zcrud_core: ^0.2.1
+  flutter:
+    sdk: flutter
+  image_picker: ^1.2.0
+  file_picker: ^10.3.3
+  image_cropper: ^11.0.0
+  video_thumbnail: ^0.5.3
+  open_file: ^3.3.2
+  dotted_border: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

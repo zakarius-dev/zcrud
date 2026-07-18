@@ -48,6 +48,7 @@ import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
+import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
@@ -181,6 +182,7 @@ class DynamicEdition extends StatefulWidget {
     this.readOnly = false,
     this.layout = const <String, ZResponsiveSpan>{},
     this.gridGutter = 8,
+    this.gridRunGutter,
     this.conditionContext = const <String, Object?>{},
     this.manageVisibility = true,
     this.acl = const ZAllowAllAcl(),
@@ -225,8 +227,16 @@ class DynamicEdition extends StatefulWidget {
   /// de grille (disposition en colonne pleine largeur — compat ascendante).
   final Map<String, ZResponsiveSpan> layout;
 
-  /// Gouttière (dp) de la grille responsive (quand [layout] est non vide).
+  /// Gouttière (dp) de la grille responsive (quand [layout] est non vide) —
+  /// horizontale, et verticale par défaut si [gridRunGutter] est `null`.
   final double gridGutter;
+
+  /// **Gouttière inter-rangées** (dp) de la grille responsive (AD-54, FR-38) :
+  /// relayée à `ZResponsiveGrid.runGutter`. **Additif non-cassant** : `null`
+  /// (défaut) ⇒ repli sur [gridGutter] (comportement symétrique inchangé). Non
+  /// `null` ⇒ aération verticale distincte (parité DODLP `verticalSpacing`, ex.
+  /// `gridGutter: 16, gridRunGutter: 8`). Sans effet hors grille ([layout] vide).
+  final double? gridRunGutter;
 
   /// **Contexte d'édition** (DP-2, B3) : clés externes au formulaire lues par les
   /// feuilles `ZCondition` de source `ZValueSource.context` (`crud`/`mode`/
@@ -558,6 +568,13 @@ class _DynamicEditionState extends State<DynamicEdition> {
   ZFieldSpec _effective(ZFieldSpec spec) =>
       widget.readOnly && !spec.readOnly ? spec.copyWith(readOnly: true) : spec;
 
+  /// Padding **effectif** du `ListView` : le [DynamicEdition.padding] explicite
+  /// prime ; sinon repli sur le token d'aération `ZcrudTheme.formPadding` (AD-54,
+  /// FR-26 — jamais une constante littérale). Lu via `ZcrudTheme.of(context)`
+  /// (scope → extension → repli dérivé du `Theme`).
+  EdgeInsetsGeometry _resolvedPadding(BuildContext context) =>
+      widget.padding ?? ZcrudTheme.of(context).formPadding;
+
   bool get _grouped =>
       widget.layout.isNotEmpty ||
       widget.sections.any((s) => s.collapsible);
@@ -651,7 +668,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     }
 
     return ListView.builder(
-      padding: widget.padding,
+      padding: _resolvedPadding(context),
       shrinkWrap: widget.shrinkWrap,
       physics: widget.physics,
       itemCount: rows.length,
@@ -733,7 +750,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     }
 
     return ListView.builder(
-      padding: widget.padding,
+      padding: _resolvedPadding(context),
       shrinkWrap: widget.shrinkWrap,
       physics: widget.physics,
       itemCount: blocks.length,
@@ -773,6 +790,9 @@ class _DynamicEditionState extends State<DynamicEdition> {
     // part (la garde L3 « place stable non contournable » reste tenue par `keys`).
     return ZResponsiveGrid(
       gutter: widget.gridGutter,
+      // AD-54/FR-38 : gouttière inter-rangées distincte si fournie (repli sur
+      // `gutter` côté `ZResponsiveGrid` quand `null` — additif non-cassant).
+      runGutter: widget.gridRunGutter,
       spans: <ZResponsiveSpan>[
         for (final spec in members)
           widget.layout[spec.name] ?? const ZResponsiveSpan(),

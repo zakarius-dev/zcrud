@@ -34,12 +34,22 @@ import 'z_field_spec.dart';
 ///   **dialog d'édition par item** (ajouter/consulter/modifier/supprimer),
 ///   chaque action **filtrée par `ZAcl`** — reproduit `DynamicSubListScreen`
 ///   (DODLP) sans imposer le déballage inline de tous les items.
+/// - [tags] (fp-5-1, AD-52) : **rangée de puces** (`Wrap`/`InputChip`) présentant
+///   le résumé de chaque item + bouton d'ajout réutilisant la machinerie de
+///   création (dialog par item). **Rendu natif MINIMAL zéro-dépendance** : les
+///   **tags riches** (toggle/icône par tag, réordonnancement drag) sont fp-5-2.
+///   Additif, opt-in : jamais atteint sans `displayMode: ZSubListDisplayMode.tags`
+///   (`inline` reste le défaut, rétro-compat stricte).
 enum ZSubListDisplayMode {
   /// Sous-formulaires imbriqués empilés (comportement historique E3-3b-2).
   inline,
 
   /// Liste résumé + dialog d'édition par item, actions gated `ZAcl` (DP-6).
   compact,
+
+  /// Rangée de puces `InputChip` (résumé par item) + ajout par dialog — rendu
+  /// natif minimal zéro-dépendance (fp-5-1, AD-52). Tags riches → fp-5-2.
+  tags,
 }
 
 /// Config triviale pur-cœur des champs **sous-liste** (`subItems`) et **item

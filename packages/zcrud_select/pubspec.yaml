@@ -1,0 +1,51 @@
+# zcrud_select — satellite SÉLECTION (fp-1-2, AD-48) — membre du workspace zcrud
+# (resolution: workspace). SQUELETTE de substrat : coquille conforme, gardée et
+# résolue offline AVANT l'écriture de l'adaptateur SmartSelect (fp-4-1).
+#
+# AD-48 : accueillera le présentateur `ZSelectPresenter` (choix single/multiple :
+# page / dialog / bottom-sheet ; radio / checkbox / chips) au-dessus du fork
+# `awesome_select`. Aucun type `awesome_select` ne fuitera en signature publique
+# (AD-40) — trivialement vrai au stade squelette (rien n'est encore importé).
+#
+# AD-49 : `awesome_select` (fork MIT vendorisé sous `packages/awesome_select/`)
+# est une FEUILLE PRIVÉE dépendue du SEUL `zcrud_select`. L'arête
+# `zcrud_select -> awesome_select` est POSÉE ICI (écart tranché ET-1) pour rendre
+# le graphe acyclique dès la naissance et donner un sens à la garde « déclarer ».
+#
+# AD-1 : arêtes inter-packages zcrud_* SORTANTES = `zcrud_core` UNIQUEMENT
+# (graphe acyclique, CORE OUT=0). `flutter` (SDK) et `awesome_select` (tiers,
+# non-`zcrud_*`) n'ajoutent AUCUNE arête au graph_proof (qui ne compte que les
+# `zcrud_*`). L'arête vendor est gardée par `test/z_select_confinement_test.dart`.
+# AD-12 : ZÉRO clé/secret committé.
+name: zcrud_select
+description: "Selection presenter satellite for zcrud (AD-48): single/multiple choice as page/dialog/bottom-sheet over the vendored awesome_select fork. Skeleton substrate — depends only on zcrud_core (+ private awesome_select leaf)."
+version: 0.2.1
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_select
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - select
+  - dropdown
+  - form
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core.
+# `awesome_select` (fork MIT vendorisé) est un TIERS PRIVÉ (non-`zcrud_*`) :
+# invisible pour graph_proof, gardé « exactement zcrud_select » par le test de
+# confinement. Déclaré-mais-pas-encore-importé = licite pour un squelette
+# (l'adaptateur qui l'importera est fp-4-1). ⛔ AUCUN autre `zcrud_*`.
+dependencies:
+  zcrud_core: ^0.2.1
+  awesome_select: ^6.0.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

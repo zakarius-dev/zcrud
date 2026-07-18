@@ -33,7 +33,9 @@ import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../../zcrud_scope.dart';
 import '../z_field_adornment_view.dart';
+import '../z_select_presenter.dart';
 
 /// Champ d'édition à **choix** (liste déroulante / modal recherche / chips /
 /// radios / cases).
@@ -114,6 +116,26 @@ class ZSelectFieldWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final resolvedLabel = label(context, field.label ?? field.name,
         fallback: field.label ?? field.name);
+
+    // AD-48 : si un présentateur riche est injecté au scope, on lui DÉLÈGUE la
+    // présentation via un DTO NEUTRE (jamais le controller — AD-2). Défaut `null`
+    // ⇒ rendu natif ci-dessous strictement conservé (aucune régression).
+    final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
+    if (presenter != null) {
+      return presenter.present(
+        context,
+        ZSelectPresentation(
+          field: field,
+          options: _choices,
+          selected: value,
+          onChanged: onChanged,
+          multiple: multiple || field.type == EditionFieldType.checkbox,
+          searchable: searchable,
+          readOnly: field.readOnly,
+          label: resolvedLabel,
+        ),
+      );
+    }
 
     if (field.type == EditionFieldType.checkbox) {
       return _buildCheckboxes(context, resolvedLabel);

@@ -16,6 +16,7 @@ library;
 
 export 'src/domain/edition/edition_field_type.dart';
 export 'src/domain/edition/z_condition.dart';
+export 'src/domain/edition/z_date_range.dart';
 export 'src/domain/edition/z_field_adornment.dart';
 export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';

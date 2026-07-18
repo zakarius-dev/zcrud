@@ -1,0 +1,52 @@
+# zcrud_html — satellite HTML (fp-4-3, AD-50) — membre du workspace zcrud
+# (resolution: workspace). Adaptateur HTML WYSIWYG : édition via WebView à
+# controller ISOLÉ (html_editor_enhanced) + lecture native (flutter_html).
+#
+# AD-50 : édition/lecture HTML riche (WebView à controller ISOLÉ, conforme AD-2,
+# commit débouncé hors-frappe, re-sync hors focus). Les champs `html`/`inlineHtml`
+# sont EXCLUSIFS avec ceux de `zcrud_markdown` (une valeur = un codec, jamais les
+# deux) — collision détectée par le contrat cœur `ZWidgetRegistry.register`
+# (throw), JAMAIS par une arête vers `zcrud_markdown` (interdite AD-1).
+#
+# Les dépendances lourdes `html_editor_enhanced` / `flutter_html` arrivent ICI
+# (fp-4-3), CONFINÉES à `lib/src/` : aucun de leurs types n'apparaît en signature
+# publique (barrel) ; le confinement est gardé par `test/z_html_confinement_test.dart`.
+#
+# AD-1 : arêtes inter-packages zcrud_* SORTANTES = `zcrud_core` UNIQUEMENT
+# (graphe acyclique, CORE OUT=0). `flutter` (SDK) + les tierces non-`zcrud_*`
+# n'ajoutent aucune arête au graph_proof. AD-12 : ZÉRO clé/secret committé
+# (ne PAS réintroduire le CDN MathJax DODLP).
+name: zcrud_html
+description: "Rich HTML field satellite for zcrud (AD-50): edit/read HTML via an isolated-controller WebView, html/inlineHtml exclusive with zcrud_markdown. Skeleton substrate — depends only on zcrud_core."
+version: 0.2.1
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_html
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - html
+  - richtext
+  - form
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : UNIQUEMENT zcrud_core.
+# ⛔ AUCUN autre `zcrud_*` (surtout PAS `zcrud_markdown`). Les deux tierces
+# lourdes ci-dessous sont CONFINÉES à `lib/src/` (aucun type en signature
+# publique — AD-40) et n'ajoutent aucune arête inter-package (CORE OUT=0 inchangé).
+dependencies:
+  zcrud_core: ^0.2.1
+  # Édition WYSIWYG HTML (WebView Summernote, controller isolé — AD-50/AD-2).
+  html_editor_enhanced: ^2.7.1
+  # Rendu HTML natif en lecture (AD-10 défensif — corrompu ⇒ rendu vide).
+  flutter_html: ^3.0.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

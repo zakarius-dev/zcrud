@@ -61,6 +61,10 @@ enum EditionFieldType {
   /// Heure seule (picker).
   time,
 
+  /// Plage de dates `{start, end}` (picker de plage). Valeur [ZDateRange]
+  /// sérialisée `{'start', 'end'}` ISO-8601, invariant `end >= start` (AD-47).
+  dateRange,
+
   /// Choix unique dans une liste d'options statiques (`select`).
   select,
 
@@ -125,6 +129,55 @@ enum EditionFieldType {
 
   /// Icône — **hors parité MVP** (déclaré, fallback).
   icon,
+
+  /// Code PIN / OTP (saisie segmentée). Valeur **neutre** `String` (AD-53).
+  /// **Widget servi ailleurs** : `zcrud_field_extras` (fp-5-2, `pinput`) via
+  /// `ZWidgetRegistry` ; tant que le `kind` n'est pas enregistré, le champ
+  /// dégrade proprement en `ZUnsupportedFieldWidget` (jamais un crash). Le cœur
+  /// ne **nomme** que le type (famille `registryOrFallback`) — aucune dépendance
+  /// lourde tirée ici (AD-1, CORE OUT=0).
+  pin,
+
+  /// Saisie **auto-complétée** (champ texte + suggestions). Valeur **neutre**
+  /// `String` (AD-53). **Widget servi ailleurs** : `zcrud_field_extras`
+  /// (fp-5-2) via `ZWidgetRegistry` ; repli `ZUnsupportedFieldWidget` tant que
+  /// non enregistré. Le cœur ne nomme que le type (famille `registryOrFallback`,
+  /// aucune dépendance lourde — AD-1).
+  autocomplete,
+
+  /// Table **éditable** (grille de lignes/colonnes). Valeur **neutre**
+  /// `List<Map<String, dynamic>>` (AD-53). **Widget servi ailleurs** :
+  /// `zcrud_field_extras` (fp-5-2, table virtualisée) via `ZWidgetRegistry` ;
+  /// repli `ZUnsupportedFieldWidget` tant que non enregistré. Le cœur ne nomme
+  /// que le type (famille `registryOrFallback`, aucune dépendance lourde —
+  /// AD-1).
+  editableTable,
+
+  /// **Image RICHE** (drop-zone + ouverture + aperçu). Valeur **neutre** :
+  /// `AppFile?` (mono) ou `List<AppFile>` (multiple) — AUCUN type plateforme
+  /// (AD-40). **Widget servi ailleurs** : `zcrud_media`
+  /// (`registerZMediaFieldWidgets`) via `ZWidgetRegistry` sous le `kind`
+  /// [name] (`'mediaImage'`) ; tant que le `kind` n'est pas enregistré, le
+  /// champ dégrade proprement en `ZUnsupportedFieldWidget` (jamais un crash,
+  /// AD-10). Le cœur ne **nomme** que le type (famille `registryOrFallback`) —
+  /// aucune dépendance média lourde tirée ici (AD-1, CORE OUT=0). Distinct du
+  /// type natif [image] (routé, lui, vers `ZAppFileField`).
+  mediaImage,
+
+  /// **Fichier/document RICHE** (drop-zone + ouverture au tap). Valeur
+  /// **neutre** `AppFile?`/`List<AppFile>` (AD-40). **Widget servi ailleurs** :
+  /// `zcrud_media` via `ZWidgetRegistry` sous le `kind` [name]
+  /// (`'mediaFile'`) ; repli `ZUnsupportedFieldWidget` tant que non enregistré
+  /// (AD-10). Famille `registryOrFallback`, aucune dépendance lourde (AD-1).
+  mediaFile,
+
+  /// **Vidéo RICHE** (drop-zone + vignette générée, type neutre `Uint8List`).
+  /// Valeur **neutre** `AppFile?`/`List<AppFile>` (AD-40). **Widget servi
+  /// ailleurs** : `zcrud_media` via `ZWidgetRegistry` sous le `kind` [name]
+  /// (`'mediaVideo'`) ; repli `ZUnsupportedFieldWidget` tant que non
+  /// enregistré (AD-10). Famille `registryOrFallback`, aucune dépendance
+  /// lourde (AD-1).
+  mediaVideo,
 
   /// Markdown riche (bloc) — widget en zcrud_markdown (E6).
   markdown,

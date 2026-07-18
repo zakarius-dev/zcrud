@@ -134,6 +134,12 @@ DateTime? _$asDateTime(Object? v) {
   return null;
 }
 
+/// Décode défensivement une plage `ZDateRange` (AD-10/AD-47) : délègue à
+/// `ZDateRange.fromJsonSafe` — `null` sur TOUTE anomalie (non-map, clé absente,
+/// valeur non-`String`, date non-ISO, `start > end`), jamais de throw. Le parent
+/// survit toujours (champ corrompu → `null`).
+ZDateRange? _$asDateRange(Object? v) => ZDateRange.fromJsonSafe(v);
+
 T? _$enumFromName<T extends Enum>(List<T> values, Object? name) {
   if (name is! String) return null;
   for (final value in values) {

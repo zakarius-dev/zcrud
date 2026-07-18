@@ -5,7 +5,9 @@
 // d'extension `registryOrFallback` (repli SANS registre) ; famille dédiée
 // `file` (E3-3c : `file`/`image`/`document` → `ZAppFileField`) ; le SEUL type
 // encore non servi (`stepper` → E3-5) reste en repli contrôlé. Exhaustivité
-// 0-default prouvée sur les 39 `EditionFieldType.values`.
+// 0-default prouvée sur les 46 `EditionFieldType.values` (fp-5-1 : pin/
+// autocomplete/editableTable ; fp-4-2 : mediaImage/mediaFile/mediaVideo →
+// registryOrFallback → repli sans registre).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -38,6 +40,7 @@ const Map<EditionFieldType, EditionFamily> _baseFamily =
   EditionFieldType.float: EditionFamily.number,
   EditionFieldType.dateTime: EditionFamily.date,
   EditionFieldType.time: EditionFamily.date,
+  EditionFieldType.dateRange: EditionFamily.dateRange,
   EditionFieldType.boolean: EditionFamily.boolean,
   EditionFieldType.select: EditionFamily.select,
   EditionFieldType.radio: EditionFamily.select,
@@ -88,6 +91,17 @@ const List<EditionFieldType> _registryTypes = <EditionFieldType>[
   EditionFieldType.country,
   EditionFieldType.address,
   EditionFieldType.icon,
+  // fp-5-1 (AD-52/AD-53) : NOMMÉS au cœur, valeurs neutres → repli contrôlé
+  // SANS registre (widget riche servi par `zcrud_field_extras`/fp-5-2).
+  EditionFieldType.pin,
+  EditionFieldType.autocomplete,
+  EditionFieldType.editableTable,
+  // fp-4-2 (MAJEUR-1) : types média riches NOMMÉS au cœur, valeurs neutres
+  // (`AppFile`/liste) → registryOrFallback → repli contrôlé SANS registre
+  // (widget riche drop-zone/ouverture/vignette servi par `zcrud_media`).
+  EditionFieldType.mediaImage,
+  EditionFieldType.mediaFile,
+  EditionFieldType.mediaVideo,
   EditionFieldType.custom,
 ];
 
@@ -127,7 +141,7 @@ Widget _mount(EditionFieldType type) {
 }
 
 void main() {
-  test('familyOf classe les 39 EditionFieldType sans throw (exhaustif)', () {
+  test('familyOf classe les 46 EditionFieldType sans throw (exhaustif)', () {
     // La classification est TOTALE : aucune valeur ne lève ni ne reste non
     // classée. (Le switch de `familyOf` est exhaustif SANS default : un futur
     // type casserait la compilation — prouvé ici côté runtime.)
@@ -135,15 +149,17 @@ void main() {
       final family = familyOf(type); // ne throw jamais
       expect(EditionFamily.values.contains(family), isTrue);
     }
-    expect(EditionFieldType.values.length, 39,
-        reason: 'catalogue canonique = 39 types');
+    expect(EditionFieldType.values.length, 46,
+        reason: 'catalogue canonique = 46 types (dont dateRange AD-47 + fp-5-1 '
+            'pin/autocomplete/editableTable + fp-4-2 mediaImage/mediaFile/'
+            'mediaVideo)');
   });
 
-  test('partition exhaustive 39 = base(13)+hidden(1)+feuilles(8)+freeWidget(1)'
-      '+registre(12)+file(3)+unsupported(1) (AC14/E3-3c)', () {
-    expect(_baseFamily.length, 13);
+  test('partition exhaustive 46 = base(14)+hidden(1)+feuilles(8)+freeWidget(1)'
+      '+registre(18)+file(3)+unsupported(1) (AC14/E3-3c/AD-47/fp-5-1/fp-4-2)', () {
+    expect(_baseFamily.length, 14);
     expect(_advancedFamily.length, 8);
-    expect(_registryTypes.length, 12);
+    expect(_registryTypes.length, 18);
     expect(_fileFamily.length, 3);
     expect(_stillUnsupported.length, 1);
     final all = <EditionFieldType>{
@@ -155,8 +171,8 @@ void main() {
       ..._fileFamily.keys,
       ..._stillUnsupported,
     };
-    // Aucun doublon + couverture totale des 39 valeurs.
-    expect(all.length, 39);
+    // Aucun doublon + couverture totale des 46 valeurs.
+    expect(all.length, 46);
     expect(all, EditionFieldType.values.toSet());
   });
 

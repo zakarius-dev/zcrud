@@ -192,11 +192,20 @@ void main() {
     ZFieldSpec byName(String n) =>
         $ArticleFieldSpecs.firstWhere((s) => s.name == n);
 
-    test('projection complète (11 champs)', () {
+    test('projection complète (14 champs, dont fp-5-1 pin/auto)', () {
       expect($ArticleFieldSpecs.map((s) => s.name), <String>[
         'id', 'title', 'subtitle', 'views', 'rating', 'published', 'status',
-        'created_at', 'tags', 'author', 'coauthors',
+        'created_at', 'period', 'tags', 'author', 'coauthors',
+        'pin_value', 'auto_value',
       ]);
+    });
+
+    test('fp-5-1 : @ZcrudField(type:) explicite projeté dans le ZFieldSpec '
+        '(neutre String, aucune nouvelle catégorie de (dé)sérialisation)', () {
+      // Le `type:` explicite pilote l'EditionFieldType émis SANS changer le
+      // chemin de (dé)sérialisation (String → `_Cat.stringType` existant).
+      expect(byName('pin_value').type, EditionFieldType.pin);
+      expect(byName('auto_value').type, EditionFieldType.autocomplete);
     });
 
     test('id → isId, type text', () {
@@ -212,6 +221,10 @@ void main() {
       expect(byName('status').type, EditionFieldType.select);
       expect(byName('created_at').type, EditionFieldType.dateTime);
       expect(byName('author').type, EditionFieldType.subItems);
+    });
+
+    test('inférence ZDateRange → dateRange (AD-47)', () {
+      expect(byName('period').type, EditionFieldType.dateRange);
     });
 
     test('List<String> → multiple=true', () {

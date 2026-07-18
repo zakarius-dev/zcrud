@@ -530,6 +530,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     if (_typeName(type) == 'DateTime') {
       return (_Cat.dateTimeType, null, 'dateTime');
     }
+    // Plage de dates `ZDateRange` (AD-47) : (dé)sérialisation DÉFENSIVE via le
+    // helper `_$asDateRange` (bâti sur `ZDateRange.fromJsonSafe` → jamais de
+    // throw) ; `toMap` via `.toJson()`. Patron strict de la branche `DateTime`.
+    if (_typeName(type) == 'ZDateRange') {
+      return (_Cat.dateRangeType, null, 'dateRange');
+    }
     if (el != null && _modelChecker.hasAnnotationOf(el)) {
       return (_Cat.subModel, _typeName(type), 'subItems');
     }
@@ -573,6 +579,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return '$m is bool ? $m as bool : $def';
       case _Cat.dateTimeType:
         return orDef('_\$asDateTime($m)');
+      case _Cat.dateRangeType:
+        return orDef('_\$asDateRange($m)');
       case _Cat.enumType:
         return orDef('_\$enumFromName(${f.elementTypeName}.values, $m)');
       case _Cat.subModel:
@@ -617,6 +625,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return 'false';
       case _Cat.dateTimeType:
         return 'DateTime.fromMillisecondsSinceEpoch(0)';
+      case _Cat.dateRangeType:
+        // Repli sûr d'un champ `ZDateRange` NON nullable (invariant `end >= start`
+        // respecté : plage dégénérée epoch→epoch). En pratique un champ dateRange
+        // est presque toujours nullable ⇒ repli `null` (branche au-dessus).
+        return 'ZDateRange(start: DateTime.fromMillisecondsSinceEpoch(0), '
+            'end: DateTime.fromMillisecondsSinceEpoch(0))';
       case _Cat.enumType:
         return '${f.elementTypeName}.values.first';
       case _Cat.subModel:
@@ -673,6 +687,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         return v;
       case _Cat.dateTimeType:
         return '$v$q.toIso8601String()';
+      case _Cat.dateRangeType:
+        return '$v$q.toJson()';
       case _Cat.enumType:
         return '$v$q.name';
       case _Cat.subModel:
@@ -1081,6 +1097,12 @@ DateTime? _\$asDateTime(Object? v) {
   return null;
 }
 
+/// Décode défensivement une plage `ZDateRange` (AD-10/AD-47) : délègue à
+/// `ZDateRange.fromJsonSafe` — `null` sur TOUTE anomalie (non-map, clé absente,
+/// valeur non-`String`, date non-ISO, `start > end`), jamais de throw. Le parent
+/// survit toujours (champ corrompu → `null`).
+ZDateRange? _\$asDateRange(Object? v) => ZDateRange.fromJsonSafe(v);
+
 T? _\$enumFromName<T extends Enum>(List<T> values, Object? name) {
   if (name is! String) return null;
   for (final value in values) {
@@ -1129,6 +1151,7 @@ enum _Cat {
   numType,
   boolType,
   dateTimeType,
+  dateRangeType,
   enumType,
   subModel,
   listScalar,

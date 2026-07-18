@@ -191,6 +191,93 @@ const List<CorpusCase> serializationCorpus = <CorpusCase>[
     },
   ),
 
+  // ---- (h) ZDateRange corrompu (AD-47/AD-10) : plage invalide → null --------
+  // Le champ `period` (ZDateRange?) retombe TOUJOURS sur `null` sans casser le
+  // parent (helper généré `_$asDateRange` → `ZDateRange.fromJsonSafe`).
+  (
+    name: 'period_non_map',
+    family: 'h',
+    map: <Object?, Object?>{'title': 'T', 'period': 42},
+  ),
+  (
+    name: 'period_end_absent',
+    family: 'h',
+    map: <Object?, Object?>{
+      'title': 'T',
+      'period': <Object?, Object?>{'start': '2026-01-02'},
+    },
+  ),
+  (
+    name: 'period_non_string',
+    family: 'h',
+    map: <Object?, Object?>{
+      'title': 'T',
+      'period': <Object?, Object?>{'start': 123, 'end': 456},
+    },
+  ),
+  (
+    name: 'period_non_iso',
+    family: 'h',
+    map: <Object?, Object?>{
+      'title': 'T',
+      'period': <Object?, Object?>{'start': 'pas-une-date', 'end': 'x'},
+    },
+  ),
+  (
+    name: 'period_start_apres_end',
+    family: 'h',
+    map: <Object?, Object?>{
+      'title': 'T',
+      'period': <Object?, Object?>{
+        'start': '2026-02-01',
+        'end': '2026-01-01',
+      },
+    },
+  ),
+  (
+    name: 'period_valide_roundtrip',
+    family: 'h',
+    map: <Object?, Object?>{
+      'title': 'T',
+      'period': <Object?, Object?>{
+        'start': '2026-01-01T00:00:00.000',
+        'end': '2026-01-31T00:00:00.000',
+      },
+    },
+  ),
+
+  // ---- (i) fp-5-1 : types NOMMÉS neutres String (pin/autocomplete) ----------
+  // Valeurs neutres (dé)sérialisées par la catégorie EXISTANTE `_Cat.stringType`
+  // (aucune nouvelle catégorie). Défensif AD-10 : une valeur non-`String`
+  // retombe sur `null` sans jamais casser le parent (`title` conservé).
+  (
+    name: 'fp51_pin_non_string',
+    family: 'i',
+    map: <Object?, Object?>{'title': 'ok', 'pin_value': 42},
+  ),
+  (
+    name: 'fp51_auto_non_string_map',
+    family: 'i',
+    map: <Object?, Object?>{
+      'title': 'ok',
+      'auto_value': <Object?, Object?>{'x': 1},
+    },
+  ),
+  (
+    name: 'fp51_pin_auto_valides',
+    family: 'i',
+    map: <Object?, Object?>{
+      'title': 'ok',
+      'pin_value': '1234',
+      'auto_value': 'foo',
+    },
+  ),
+  (
+    name: 'fp51_pin_auto_absents',
+    family: 'i',
+    map: <Object?, Object?>{'title': 'ok'},
+  ),
+
   // ---- (g) null partout : chaque champ null → repli ------------------------
   (
     name: 'null_partout',
@@ -204,9 +291,12 @@ const List<CorpusCase> serializationCorpus = <CorpusCase>[
       'published': null,
       'status': null,
       'created_at': null,
+      'period': null,
       'tags': null,
       'author': null,
       'coauthors': null,
+      'pin_value': null,
+      'auto_value': null,
     },
   ),
 ];

@@ -37,8 +37,10 @@ import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/ports/z_relation_crud.dart';
 import '../../../domain/ports/z_relation_source.dart';
 import '../../l10n/z_localizations.dart';
+import '../../zcrud_scope.dart';
 import '../z_field_adornment_view.dart';
 import '../z_field_label.dart';
+import '../z_select_presenter.dart';
 
 /// Champ d'édition **relation** (sélecteur d'entité liée, source dynamique
 /// injectable + filtre cross-champ + multi + modal recherche).
@@ -158,6 +160,26 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // AD-48 : présentateur riche injecté au scope → DÉLÉGATION via DTO NEUTRE
+    // (jamais le controller — AD-2). Les options présentées sont les choix
+    // effectifs (`_choices` : flux dynamique si branché, sinon repli statique).
+    // Défaut `null` ⇒ rendu natif ci-dessous strictement conservé.
+    final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
+    if (presenter != null) {
+      return presenter.present(
+        context,
+        ZSelectPresentation(
+          field: widget.field,
+          options: _choices,
+          selected: widget.value,
+          onChanged: widget.onChanged,
+          multiple: widget.multiple,
+          searchable: widget.searchable,
+          readOnly: widget.field.readOnly,
+          label: _resolvedLabel,
+        ),
+      );
+    }
     // Repli statique STRICT (AC7) : aucune source → dropdown sur `options`.
     if (widget.source == null) {
       return _buildDropdown(context, widget.options, loading: false);

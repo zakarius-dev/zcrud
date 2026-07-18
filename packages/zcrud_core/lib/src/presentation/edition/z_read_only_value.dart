@@ -207,6 +207,10 @@ bool zReadModeCardable(EditionFamily family) {
     case EditionFamily.slider:
     case EditionFamily.color:
       return true;
+    case EditionFamily.dateRange:
+    // `dateRange` (AD-47) : NON fiche-able ici — en mode lecture, le widget natif
+    // rend son déclencheur `readOnly` (plage affichée, désactivée). Un reader
+    // dédié relèvera d'une story ultérieure (patron des familles récentes).
     case EditionFamily.subList:
     case EditionFamily.dynamicItem:
     case EditionFamily.signature:

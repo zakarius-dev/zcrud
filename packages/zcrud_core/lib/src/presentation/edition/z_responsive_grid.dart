@@ -169,9 +169,10 @@ class ZResponsiveSpan {
 /// `span/12 × (largeur - gouttières)` ; les rangées **reflow** au-delà de 12.
 ///
 /// La direction du flux suit `Directionality` (AD-13) : `Wrap` place les cellules
-/// depuis le bord **start**. Les gouttières horizontales/verticales sont
-/// exprimées via [ZResponsiveGrid.gutter] (symétrique, donc directionnellement
-/// neutre) et posées par `Wrap.spacing`/`runSpacing`.
+/// depuis le bord **start**. La gouttière horizontale est [ZResponsiveGrid.gutter]
+/// (posée en `Wrap.spacing`) ; la gouttière verticale est [ZResponsiveGrid.runGutter]
+/// si fournie, sinon [ZResponsiveGrid.gutter] (posée en `Wrap.runSpacing`). Toutes
+/// deux directionnellement neutres (mesures dp).
 class ZResponsiveGrid extends StatelessWidget {
   /// Construit la grille pour [children], espacés de [gutter] (défaut 8 dp).
   ///
@@ -185,6 +186,7 @@ class ZResponsiveGrid extends StatelessWidget {
     required this.spans,
     this.keys = const <Key?>[],
     this.gutter = 8,
+    this.runGutter,
     super.key,
   })  : assert(children.length == spans.length,
             'children et spans doivent être alignés (même longueur)'),
@@ -202,8 +204,16 @@ class ZResponsiveGrid extends StatelessWidget {
   /// Span (1..12) de chaque cellule, aligné par index sur [children].
   final List<ZResponsiveSpan> spans;
 
-  /// Gouttière (dp) entre cellules — appliquée en `spacing`/`runSpacing`.
+  /// Gouttière (dp) entre cellules — appliquée en `spacing` (inter-colonnes) et,
+  /// par défaut, en `runSpacing` (inter-rangées) si [runGutter] est `null`.
   final double gutter;
+
+  /// Gouttière **inter-rangées** (dp) posée en `Wrap.runSpacing` (AD-54, FR-38).
+  /// **Additif non-cassant** : `null` (défaut) ⇒ repli sur [gutter] (comportement
+  /// symétrique EXACT d'avant). Non `null` ⇒ gouttière verticale distincte (parité
+  /// DODLP `verticalSpacing`, ex. `gutter: 16, runGutter: 8`). Directionnellement
+  /// neutre (mesure dp ; `Wrap` suit `Directionality`).
+  final double? runGutter;
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +251,9 @@ class ZResponsiveGrid extends StatelessWidget {
 
         return Wrap(
           spacing: gutter,
-          runSpacing: gutter,
+          // Gouttière inter-rangées : `runGutter` si fourni, sinon repli sur
+          // `gutter` (symétrie historique — API additive non-cassante).
+          runSpacing: runGutter ?? gutter,
           children: cells,
         );
       },

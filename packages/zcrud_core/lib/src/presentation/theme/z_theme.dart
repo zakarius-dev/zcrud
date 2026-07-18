@@ -38,6 +38,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       horizontal: 12,
       vertical: 8,
     ),
+    this.formPadding = const EdgeInsetsDirectional.all(12),
     this.inputRadius = const Radius.circular(12),
     this.inputBorderWidth = 1,
     this.inputFocusedBorderWidth = 2,
@@ -112,6 +113,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Padding de champ **directionnel** (RTL-safe, AD-13).
   final EdgeInsetsDirectional fieldPadding;
+
+  /// **Aération du formulaire** (AD-54, FR-26) : padding **directionnel** posé par
+  /// `DynamicEdition` autour de la liste des champs **quand `padding == null`**
+  /// (défaut `all(12)` — parité DODLP). Token d'espacement injectable (aucune
+  /// couleur ; exempté de la garde couleur). Un `padding` explicite passé à
+  /// `DynamicEdition` prime toujours sur ce repli.
+  final EdgeInsetsDirectional formPadding;
 
   // ── Tokens de décoration d'`InputDecoration` (parité DODLP M2) ────────────
   // Aucune couleur : les couleurs de bordure/remplissage sont TOUJOURS dérivées
@@ -311,6 +319,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Radius? radiusS,
     Radius? radiusM,
     EdgeInsetsDirectional? fieldPadding,
+    EdgeInsetsDirectional? formPadding,
     Radius? inputRadius,
     double? inputBorderWidth,
     double? inputFocusedBorderWidth,
@@ -344,6 +353,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         radiusS: radiusS ?? this.radiusS,
         radiusM: radiusM ?? this.radiusM,
         fieldPadding: fieldPadding ?? this.fieldPadding,
+        formPadding: formPadding ?? this.formPadding,
         inputRadius: inputRadius ?? this.inputRadius,
         inputBorderWidth: inputBorderWidth ?? this.inputBorderWidth,
         inputFocusedBorderWidth:
@@ -384,6 +394,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       fieldPadding:
           EdgeInsetsDirectional.lerp(fieldPadding, other.fieldPadding, t) ??
               fieldPadding,
+      formPadding:
+          EdgeInsetsDirectional.lerp(formPadding, other.formPadding, t) ??
+              formPadding,
       inputRadius: Radius.lerp(inputRadius, other.inputRadius, t) ?? inputRadius,
       inputBorderWidth:
           inputBorderWidth + (other.inputBorderWidth - inputBorderWidth) * t,

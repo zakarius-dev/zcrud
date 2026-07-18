@@ -88,6 +88,21 @@ workspace:
   # preview/impression/partage (`printing`). LEAF : personne n'en dépend ;
   # arêtes SORTANTES zcrud_* = zcrud_export + zcrud_core UNIQUEMENT (AD-1).
   - packages/zcrud_export_ui
+  # ── fp-1-2 (epic E-FORM-PARITY) : SUBSTRAT satellites de parité + vendor ──────
+  # Squelettes de substrat (coquilles conformes, gardées, résolues offline) posés
+  # AVANT les adaptateurs de parité. Chacun n'a qu'UNE arête `zcrud_*` sortante :
+  # zcrud_core (AD-1, CORE OUT=0 intact, ACYCLIQUE). Adaptateurs à venir :
+  # zcrud_select→fp-4-1 (AD-48), zcrud_media→fp-4-2 (AD-51), zcrud_html→fp-4-3
+  # (AD-50), zcrud_field_extras→Finitions (AD-53).
+  - packages/zcrud_select
+  - packages/zcrud_html
+  - packages/zcrud_media
+  - packages/zcrud_field_extras
+  # Fork MIT vendorisé (AD-49) : membre PRIVÉ (publish_to: none), feuille dépendue
+  # du SEUL zcrud_select. Nom sans préfixe `zcrud_` → invisible graph_proof
+  # (l'arête zcrud_select→awesome_select et « dépendu du seul zcrud_select » sont
+  # gardés par packages/zcrud_select/test/z_select_confinement_test.dart).
+  - packages/awesome_select
   - packages/zcrud_riverpod
   - packages/zcrud_get
   - packages/zcrud_provider
