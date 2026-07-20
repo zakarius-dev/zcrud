@@ -332,12 +332,19 @@ class _ZMediaFieldWidgetState extends State<ZMediaFieldWidget> {
       label: dropLabel,
       child: Opacity(
         opacity: enabled ? 1 : 0.5,
+        // dotted_border 3 : les réglages de tracé passent par un `options`
+        // typé (`sealed DottedBorderOptions`) au lieu de paramètres nommés à
+        // plat. `borderType: BorderType.RRect` + `radius:` deviennent
+        // `RoundedRectDottedBorderOptions`, qui fixe `BorderType.RRect` par
+        // construction. Le `padding` par défaut reste `EdgeInsets.all(2)`
+        // comme en v2 : aucun décalage visuel.
         child: DottedBorder(
-          color: borderColor,
-          strokeWidth: 1.5,
-          dashPattern: const <double>[6, 3],
-          borderType: BorderType.RRect,
-          radius: const Radius.circular(8),
+          options: RoundedRectDottedBorderOptions(
+            radius: const Radius.circular(8),
+            color: borderColor,
+            strokeWidth: 1.5,
+            dashPattern: const <double>[6, 3],
+          ),
           child: InkWell(
             key: const Key('z-media-dropzone'),
             onTap: enabled ? _acquire : null,
