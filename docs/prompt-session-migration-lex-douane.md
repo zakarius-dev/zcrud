@@ -238,11 +238,12 @@ ET html** — chantier de conception à venir, qui supprime la cause racine.
 migration. Tous les autres packages sont disponibles. Si un besoin de champ média apparaît,
 remonte-le — ne tente pas de forcer la résolution.
 
-### (a) Le tag à consommer est `v0.3.0`
+### (a) Le tag à consommer est `v0.3.1`
 
 `v0.2.1` (2026-07-16) est périmé de ~17 commits : il ne contient ni E-STUDY-UI, ni E-MULTI-EDIT,
 ni l'itération form-parity, ni la montée de version. **Les 28 packages ont été bumpés en `0.3.0`
-et le tag `v0.3.0` est coupé.** Épingle `ref: v0.3.0` — jamais `main`.
+et le tag `v0.3.1` est coupé** (v0.3.0 + les correctifs CR-1..CR-4 remontés par la
+session lex). Épingle `ref: v0.3.1` — jamais `main`.
 
 ⚠️ `zcrud_riverpod` 0.3.0 porte une **rupture d'API publique** assumée, à connaître avant de
 câbler :
@@ -254,7 +255,7 @@ câbler :
   `.exception`. C'est le piège n°1 au premier câblage de seam.
 
 **(b) Déclaration transitive obligatoire.** Les dépendances inter-`zcrud_*` sont des contraintes
-hosted (`zcrud_core: ^0.3.0`). Tout package `zcrud_*` **transitivement requis** doit être déclaré
+hosted (`zcrud_core: ^0.3.1`). Tout package `zcrud_*` **transitivement requis** doit être déclaré
 comme dépendance git (même `url`, même `ref`), sinon pub le cherche sur pub.dev où il n'existe
 pas. Établis le graphe des paquets dont tu as besoin **avant** d'éditer le pubspec.
 `awesome_select`, lui, se résout **tout seul** (dépendance git déclarée par `zcrud_select`) :

@@ -33,7 +33,7 @@
 # LWW et le soft-delete vivent HORS-ENTITÉ (`ZSyncMeta`, AD-16/AD-19).
 name: zcrud_note
 description: "Smart note domain for zcrud: ZSmartNote with TYPED content (neutral Delta ops, never an ambiguous String) and an optional ZNoteAudio extension slot. Pure Dart, no Flutter, no Quill, no Firebase."
-version: 0.3.0
+version: 0.3.1
 publish_to: none
 resolution: workspace
 
@@ -83,9 +83,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.3.0
-  zcrud_annotations: ^0.3.0
-  zcrud_markdown: ^0.3.0
+  zcrud_core: ^0.3.1
+  zcrud_annotations: ^0.3.1
+  zcrud_markdown: ^0.3.1
 
 # Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
 # (`auto_apply: dependents`) émet `z_smart_note.g.dart` (SUIVI par git sous
@@ -98,7 +98,7 @@ dependencies:
 # ré-exporte `package:test` (`test`/`group`/`expect`) ⇒ les suites de domaine
 # existantes n'ont RIEN à changer.
 dev_dependencies:
-  zcrud_generator: ^0.3.0
+  zcrud_generator: ^0.3.1
   build_runner: ^2.5.0
   flutter_test:
     sdk: flutter
