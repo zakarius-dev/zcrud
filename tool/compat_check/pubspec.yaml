@@ -19,9 +19,16 @@
 # VERSIONS RETENUES (source + justification détaillées dans README.md) :
 #   - flutter_quill: ^11.5.0  → Stack (architecture.md#Stack : `flutter_quill ^11.5.x`).
 #                                Résout en 11.5.1. Rich-text E6 (ZCodec Delta).
-#   - awesome_select: ^6.0.0  → ABSENT de la table Stack. Dernière stable publiée
-#                                (6.0.0), compatible flutter_quill ^11.5.x / Flutter
-#                                cible. Champs de sélection E3. Résout en 6.0.0.
+#   - awesome_select: DÉP. GIT → AD-49 RÉVISÉ (2026-07-20). La contrainte hosted
+#                                `^6.0.0` prouvait la MAUVAISE chose : la 6.0.0 de
+#                                pub.dev est figée en Dart 2 (`sdk: '>=2.17.0
+#                                <3.0.0'`) et AUCUN consommateur Dart 3 ne peut
+#                                l'installer. Le gate validait donc une chaîne
+#                                inutilisable en pratique (FR-25 malhonnête).
+#                                On pointe désormais le fork RÉELLEMENT livré
+#                                (zakarius-dev/awesome_select v6.1.0, MIT © Akbar
+#                                Pulatov, correctifs Dart 3 / Flutter M3), c.-à-d.
+#                                exactement ce que `zcrud_select` déclare.
 #   - analyzer: ^8.0.0        → TOOLCHAIN RÉELLE du codegen E2-5. Remédiation
 #                                code-review E2-5 (M1) : `packages/zcrud_generator`
 #                                s'exécute sous analyzer ^8 / source_gen ^4 / build
@@ -41,7 +48,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_quill: ^11.5.0
-  awesome_select: ^6.0.0
+  awesome_select:
+    git:
+      url: https://github.com/zakarius-dev/awesome_select.git
+      ref: v6.1.0
   analyzer: ^12.0.0
 
 # Remédiation code-review E2-5 (M1) : le manifeste doit prouver la co-résolution

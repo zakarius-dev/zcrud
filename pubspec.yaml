@@ -98,11 +98,17 @@ workspace:
   - packages/zcrud_html
   - packages/zcrud_media
   - packages/zcrud_field_extras
-  # Fork MIT vendorisé (AD-49) : membre PRIVÉ (publish_to: none), feuille dépendue
-  # du SEUL zcrud_select. Nom sans préfixe `zcrud_` → invisible graph_proof
-  # (l'arête zcrud_select→awesome_select et « dépendu du seul zcrud_select » sont
-  # gardés par packages/zcrud_select/test/z_select_confinement_test.dart).
-  - packages/awesome_select
+  # AD-49 RÉVISÉ (2026-07-20) — `awesome_select` n'est PLUS un membre vendorisé
+  # du workspace. Le vendoring rendait `zcrud_select` inconsommable de
+  # l'extérieur : la contrainte hosted `^6.0.0` résolvait, chez une app tierce,
+  # vers la 6.0.0 de pub.dev — figée en Dart 2 (`sdk: <3.0.0`) — et faisait
+  # ÉCHOUER son `pub get`. Le fork (correctifs Dart 3 / Flutter M3 + bug amont
+  # `task = task`) est désormais publié sous
+  # https://github.com/zakarius-dev/awesome_select (MIT, © Akbar Pulatov) et
+  # référencé en dépendance git `ref: v6.1.0` par le SEUL `zcrud_select`.
+  # Monorepo et apps consommatrices résolvent ainsi EXACTEMENT le même code.
+  # Confinement toujours gardé par
+  # packages/zcrud_select/test/z_select_confinement_test.dart.
   - packages/zcrud_riverpod
   - packages/zcrud_get
   - packages/zcrud_provider
@@ -156,9 +162,15 @@ melos:
     generate:
       description: Régénère le code (build_runner) sur chaque package annoté (no-op propre si aucun).
       run: melos exec --depends-on build_runner -- dart run build_runner build --delete-conflicting-outputs
-    analyze:
-      description: Analyse statique de tous les packages.
+    analyze:packages:
+      description: Analyse statique de tous les packages (melos exec, par package).
       exec: dart analyze .
+    analyze:scripts:
+      description: "Analyse statique des SCRIPTS de gate (`scripts/`) — hors vue melos, donc invisibles de `analyze:packages`. Comble l'angle mort qui a laissé passer la casse de gate_reserved_keys.dart par analyzer 12 sous un analyze VERT."
+      run: dart analyze scripts
+    analyze:
+      description: "Analyse statique COMPLÈTE : packages (melos exec) PUIS scripts de gate. Point d'entrée quotidien — doit couvrir tout ce que `verify` exécute."
+      run: melos run analyze:packages && melos run analyze:scripts
     test:dart:
       description: Tests des packages PUR-DART (dart test ; exclut les packages Flutter).
       run: melos exec --no-flutter --dir-exists test -- dart test
@@ -201,6 +213,7 @@ melos:
     verify:
       description: "Enchaîne tous les gates de merge localement — MIROIR EXACT de la CI (.github/workflows/ci.yml exécute ce script en STEP UNIQUE : tout gate ajouté ici est en CI par construction)."
       run: |
+        melos run analyze:scripts && \
         python3 scripts/dev/graph_proof.py && \
         dart run scripts/ci/gate_melos_divergence.dart && \
         dart run scripts/ci/gate_reflectable.dart && \

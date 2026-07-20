@@ -30,9 +30,17 @@ scripts:
     description: Régénère le code (build_runner) sur chaque package annoté (no-op propre si aucun).
     run: melos exec --depends-on build_runner -- dart run build_runner build --delete-conflicting-outputs
 
-  analyze:
-    description: Analyse statique de tous les packages.
+  analyze:packages:
+    description: Analyse statique de tous les packages (melos exec, par package).
     exec: dart analyze .
+
+  analyze:scripts:
+    description: "Analyse statique des SCRIPTS de gate (`scripts/`) — hors vue melos, donc invisibles de `analyze:packages`. Comble l'angle mort qui a laissé passer la casse de gate_reserved_keys.dart par analyzer 12 sous un analyze VERT."
+    run: dart analyze scripts
+
+  analyze:
+    description: "Analyse statique COMPLÈTE : packages (melos exec) PUIS scripts de gate. Point d'entrée quotidien — doit couvrir tout ce que `verify` exécute."
+    run: melos run analyze:packages && melos run analyze:scripts
 
   test:dart:
     description: Tests des packages PUR-DART (dart test ; exclut les packages Flutter).
@@ -89,6 +97,7 @@ scripts:
   verify:
     description: "Enchaîne tous les gates de merge localement — MIROIR EXACT de la CI (.github/workflows/ci.yml exécute ce script en STEP UNIQUE : tout gate ajouté ici est en CI par construction)."
     run: |
+      melos run analyze:scripts && \
       python3 scripts/dev/graph_proof.py && \
       dart run scripts/ci/gate_melos_divergence.dart && \
       dart run scripts/ci/gate_reflectable.dart && \

@@ -42,7 +42,15 @@ environment:
 # (l'adaptateur qui l'importera est fp-4-1). ⛔ AUCUN autre `zcrud_*`.
 dependencies:
   zcrud_core: ^0.2.1
-  awesome_select: ^6.0.0
+  # AD-49 révisé (2026-07-20) : le vendoring workspace rendait `zcrud_select`
+  # INCONSOMMABLE de l'extérieur — la contrainte hosted `^6.0.0` résolvait vers
+  # la 6.0.0 de pub.dev, figée en Dart 2 (`sdk: <3.0.0`) ⇒ `pub get` d'une app
+  # tierce (lex_douane) échouait. Le fork est désormais publié et référencé en
+  # dépendance git : l'app et le monorepo résolvent EXACTEMENT le même code.
+  awesome_select:
+    git:
+      url: https://github.com/zakarius-dev/awesome_select.git
+      ref: v6.1.0
   flutter:
     sdk: flutter
 

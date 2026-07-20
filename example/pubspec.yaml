@@ -172,15 +172,14 @@ dependency_overrides:
     path: ../packages/zcrud_media
   zcrud_field_extras:
     path: ../packages/zcrud_field_extras
-  # `awesome_select` : FEUILLE PRIVÉE vendorisée (fork MIT patché Flutter M3 —
-  # `titleLarge`/`onError`) sous `packages/awesome_select`, dépendue du SEUL
-  # `zcrud_select` (AD-49). Le workspace racine la résout par membership ; l'app
-  # STANDALONE doit surcharger l'arête `zcrud_select → awesome_select ^6.0.0`
-  # (HOSTED, CASSÉ sur Flutter courant : `headline6`/`errorColor` retirés) vers ce
-  # path fork. Override transitif path↔hosted (même patron que `zcrud_annotations`/
-  # `zcrud_study_kernel`), voie standalone EX-1 — aucun ajout au `workspace:` racine.
-  awesome_select:
-    path: ../packages/awesome_select
+  # `awesome_select` : PLUS AUCUN OVERRIDE NÉCESSAIRE (AD-49 révisé, 2026-07-20).
+  # Le fork n'est plus vendorisé sous `packages/awesome_select` : `zcrud_select`
+  # le déclare directement en DÉPENDANCE GIT (zakarius-dev/awesome_select
+  # `ref: v6.1.0`), qui se résout à l'identique depuis le workspace ET depuis une
+  # app standalone. C'est précisément ce que l'override path contournait — et ce
+  # qu'une app tierce (lex_douane) ne pouvait PAS contourner, faute d'avoir le
+  # dossier vendorisé : sa contrainte hosted `^6.0.0` tombait sur la 6.0.0 de
+  # pub.dev, figée en Dart 2, et son `pub get` échouait.
   # ES-3.2 : `zcrud_firestore` gagne une arête vers `zcrud_study_kernel` (base
   # offline-first `ZOfflineFirstBoxRepository` étendant `ZStudyRepository`, ES-3.1).
   # Override CONSOMMATEUR path↔hosted (voie standalone EX-1, aucun ajout au

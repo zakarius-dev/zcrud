@@ -5,3 +5,21 @@
 tags:
   serialization-compat:
     description: "Round-trip / désérialisation défensive (AD-10)."
+
+# ── Timeout relevé : flakiness d'infra sous `melos run test:dart` ────────────
+# CONSTAT (mesuré, 2026-07-20) : `melos run test:dart` remontait 2 à 5 échecs
+# NON DÉTERMINISTES dans ce package (−5 puis −2 sur deux exécutions), tandis que
+# `dart test` lancé SEUL ici passe 127/127. L'erreur n'était jamais une
+# assertion mais un `TimeoutException after 0:00:30` sur
+# `_ResolveSourceBuilder ... on 5 inputs`.
+#
+# CAUSE : melos exécute les packages EN PARALLÈLE ; or les tests de ce package
+# instancient un resolver analyzer COMPLET par cas (`build_test`), le plus
+# coûteux du dépôt. Sous contention CPU, un cas qui prend ~5 s isolé dépasse les
+# 30 s du timeout par défaut de `package:test`.
+#
+# CHOIX : relever le timeout ICI plutôt que sérialiser `melos` (`-c 1`), qui
+# ralentirait TOUT le dépôt pour un seul package pathologique. Le facteur x4
+# (120 s) couvre largement le pire cas observé sans masquer un vrai blocage :
+# un test réellement figé échoue toujours, simplement plus tard.
+timeout: 4x
