@@ -67,7 +67,7 @@ dependencies:
   flutter:
     sdk: flutter
   get: ^4.7.2
-  get_it: ^8.0.3
+  get_it: ^9.0.0
   # E2-6 (FR-11/AD-3) : `reflectable` — adaptateur `ReflectableCodec` DODLP, au
   # chemin allowlisté du gate. Ajouté à `zcrud_get` UNIQUEMENT (jamais au cœur).
   # N'est PAS un `zcrud_*` → aucune arête comptée par graph_proof (CORE OUT=0

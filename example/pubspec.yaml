@@ -113,7 +113,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   # Test-only : la démo LISTE (EX-2) vérifie que le rendu passe par le backend
   # Syncfusion (colonnes dérivées, `SfDataGrid`) tiré via `zcrud_list`. Ce type
   # est transitif ; on le déclare ici pour l'importer explicitement dans le test

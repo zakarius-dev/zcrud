@@ -119,11 +119,11 @@ workspace:
   - tool/reserved_keys_gate
 
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^8.0.0
   # Baseline de lint pur-Dart partagée (analysis_options.yaml racine). Déclarée
   # une seule fois au root (package_config partagé sous pub workspaces) =>
   # `package:lints/recommended.yaml` résolvable depuis chaque membre pur-Dart.
-  lints: ^5.0.0
+  lints: ^6.0.0
   # Résolution garantie de `package:yaml` pour le gate M-1 (scripts/ci/gate_melos_divergence.dart).
   yaml: ^3.1.2
   # ES-1.4 (H1) : `scripts/ci/gate_reserved_keys.dart` PARSE le Dart (AST) au lieu
