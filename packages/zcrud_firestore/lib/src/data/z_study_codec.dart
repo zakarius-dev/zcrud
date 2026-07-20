@@ -86,24 +86,42 @@ class ZStudyLegacyCodec {
   ///   `dashboard` (sérialisation `flutter_flow_chart`), dont les noms de champs
   ///   sont imposés par la bibliothèque : les renommer rendrait l'objet
   ///   indésérialisable.
+  /// - [keyAliases] (**CR-IFFD-5**) : clé legacy → clé **canonique métier**
+  ///   lorsqu'il s'agit d'un **renommage sémantique** que la conversion de casse
+  ///   ne peut pas deviner. Ex. IFFD `quality` → `last_quality` :
+  ///   `camelToSnake('quality')` rend `quality`, donc sans alias le champ
+  ///   traverse sous son nom legacy et `last_quality` reste **absent** — la
+  ///   qualité de la dernière révision est silencieusement perdue.
+  ///   ⚠️ À ne pas confondre avec [syncMetaKeyAliases], qui vise les clés
+  ///   **réservées** hors-entité ; ici la cible est une clé **métier** ordinaire.
   const ZStudyLegacyCodec({
     Map<String, ZLegacyValueMapper> valueMappers =
         const <String, ZLegacyValueMapper>{},
     Set<String> preserveLegacyUnder = const <String>{},
     Map<String, String> syncMetaKeyAliases = const <String, String>{},
+    Map<String, String> keyAliases = const <String, String>{},
     bool recurseNested = false,
     Set<String> opaqueKeys = const <String>{},
   })  : _valueMappers = valueMappers,
         _preserveLegacyUnder = preserveLegacyUnder,
         _syncMetaKeyAliases = syncMetaKeyAliases,
+        _keyAliases = keyAliases,
         _recurseNested = recurseNested,
         _opaqueKeys = opaqueKeys;
 
   final Map<String, ZLegacyValueMapper> _valueMappers;
   final Set<String> _preserveLegacyUnder;
   final Map<String, String> _syncMetaKeyAliases;
+  final Map<String, String> _keyAliases;
   final bool _recurseNested;
   final Set<String> _opaqueKeys;
+
+  /// Table de renommage sémantique de clés MÉTIER (CR-IFFD-5), exposée pour que
+  /// [ZLegacyStudyMigrator] puisse (a) créditer le census R26 sur la clé CIBLE —
+  /// sans quoi tout champ aliasé serait faussement déclaré **perdu** — et
+  /// (b) refuser de considérer comme « déjà canonique » un document portant
+  /// encore une clé source non renommée.
+  Map<String, String> get keyAliases => _keyAliases;
 
   /// Clés legacy déclarées comme alias d'une clé de sync réservée (CR-IFFD-3).
   ///
@@ -161,7 +179,18 @@ class ZStudyLegacyCodec {
         continue;
       }
 
-      final snakeKey = camelToSnake(key);
+      // CR-IFFD-5 — renommage SÉMANTIQUE : l'alias remplace la conversion de
+      // casse, qui ne peut pas le deviner (`quality` → `last_quality`).
+      final snakeKey = _keyAliases[key] ?? camelToSnake(key);
+
+      // Collision : la cible est déjà occupée par une AUTRE source (ex. le
+      // document porte à la fois `quality` et `lastQuality`). On n'écrase pas
+      // en silence — la valeur aliasée est préservée sous `_legacy_<source>`,
+      // le census reste satisfait, et le conflit demeure inspectable.
+      if (_keyAliases.containsKey(key) && out.containsKey(snakeKey)) {
+        out['$kLegacyPrefix${camelToSnake(key)}'] = value;
+        continue;
+      }
 
       // Préservation de la granularité legacy exacte AVANT tout remap (AD-4).
       if (_preserveLegacyUnder.contains(snakeKey) ||

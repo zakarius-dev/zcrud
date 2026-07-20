@@ -10,6 +10,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
 void main() {
+  mainCr5();
   // Configuration de l'hôte IFFD : son soft-delete générique s'appelle
   // `deleted` (cf. lib/src/utils/functions/data_functions.dart), ses mindmaps
   // portent des arbres `nodes[].outputs` récursifs à clés camelCase, et son
@@ -188,6 +189,72 @@ void main() {
       for (final h in hostiles) {
         expect(() => migrator.migrateDocument(h), returnsNormally);
       }
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-IFFD-5 — renommage SÉMANTIQUE de clé métier (`quality` → `last_quality`).
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCr5() {
+  const codec = ZStudyLegacyCodec(
+    keyAliases: <String, String>{'quality': 'last_quality'},
+    syncMetaKeyAliases: <String, String>{'deleted': ZSyncMeta.kIsDeleted},
+  );
+  const migrator = ZLegacyStudyMigrator(codec: codec);
+
+  group('CR-IFFD-5 — keyAliases', () {
+    test('la clé est renommée vers sa cible sémantique', () {
+      final out = migrator
+          .migrateDocument(<String, dynamic>{'quality': 4}).canonical;
+      expect(out['last_quality'], 4);
+      expect(out.containsKey('quality'), isFalse);
+    });
+
+    test('🔴 le census CRÉDITE la clé aliasée (sinon rapport rouge à tort)', () {
+      // Sans le volet census, `quality` serait cherchée sous `quality` ou
+      // `_legacy_quality` — introuvables — donc déclarée PERDUE sur CHAQUE
+      // document, rendant le dry-run inexploitable.
+      final o = migrator.migrateDocument(<String, dynamic>{'quality': 4});
+      expect(o.isPreservationComplete, isTrue);
+      expect(o.lostBusinessKeys, isEmpty);
+    });
+
+    test('🔴 une clé source résiduelle n\'est PAS déclarée canonique', () {
+      // `quality` n'a aucune majuscule interne : la seule détection de camelCase
+      // l'aurait laissée passer et le document n'aurait jamais été renommé.
+      final o = migrator.migrateDocument(
+        <String, dynamic>{'quality': 4, ZSyncMeta.kIsDeleted: false},
+      );
+      expect(o.alreadyCanonical, isFalse);
+      expect(o.canonical['last_quality'], 4);
+    });
+
+    test('collision : aucune valeur écrasée en silence', () {
+      final out = migrator.migrateDocument(<String, dynamic>{
+        'lastQuality': 1,
+        'quality': 9,
+      }).canonical;
+      // L'une occupe la cible, l'autre survit sous `_legacy_` — rien n'est perdu.
+      expect(out['last_quality'], anyOf(1, 9));
+      expect(out.values.contains(9), isTrue);
+      expect(out.values.contains(1), isTrue);
+    });
+
+    test('idempotence : le document renommé est un point fixe', () {
+      final once =
+          migrator.migrateDocument(<String, dynamic>{'quality': 4}).canonical;
+      final twice = migrator.migrateDocument(once);
+      expect(twice.alreadyCanonical, isTrue);
+      expect(twice.canonical, once);
+    });
+
+    test('sans keyAliases, comportement v0.3.3 inchangé', () {
+      const plain = ZLegacyStudyMigrator();
+      final out =
+          plain.migrateDocument(<String, dynamic>{'quality': 4}).canonical;
+      expect(out['quality'], 4);
+      expect(out.containsKey('last_quality'), isFalse);
     });
   });
 }

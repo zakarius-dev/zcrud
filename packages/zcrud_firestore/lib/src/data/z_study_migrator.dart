@@ -294,9 +294,15 @@ class ZLegacyStudyMigrator {
   /// faux positif perd la donnée. La détection est donc volontairement STRICTE.
   bool _isAlreadyCanonical(Map<String, dynamic> doc) {
     if (!doc.containsKey(ZSyncMeta.kIsDeleted)) return false;
-    final aliases = _codec.syncMetaAliasKeys;
+    final syncAliases = _codec.syncMetaAliasKeys;
+    // CR-IFFD-5 — même piège que `deleted` : une clé source de renommage
+    // sémantique (`quality`) ne porte AUCUNE majuscule interne, donc la seule
+    // détection de camelCase la laisserait passer pour canonique et le document
+    // ne serait jamais renommé.
+    final keyAliasSources = _codec.keyAliases.keys;
     for (final key in doc.keys) {
-      if (aliases.contains(key)) return false;
+      if (syncAliases.contains(key)) return false;
+      if (keyAliasSources.contains(key)) return false;
     }
     return _isDeepCanonical(doc);
   }
@@ -344,15 +350,24 @@ class ZLegacyStudyMigrator {
   /// Census R26 : pour chaque clé métier [businessIn], vérifie qu'elle est
   /// **retrouvable** dans [canonical] — soit renommée snake_case, soit préservée
   /// sous `_legacy_<snake>`. Retourne le sous-ensemble **couvert**.
-  static Set<String> _census(
+  ///
+  /// **CR-IFFD-5** — une clé **aliasée** (renommage sémantique, ex. `quality` →
+  /// `last_quality`) est créditée sur sa clé CIBLE. Sans cela, le census
+  /// chercherait `quality`/`_legacy_quality`, ne trouverait ni l'un ni l'autre,
+  /// et déclarerait **perdu** un champ pourtant correctement migré — rendant le
+  /// rapport de dry-run rouge à tort, donc inexploitable.
+  Set<String> _census(
     Set<String> businessIn,
     Map<String, dynamic> canonical,
   ) {
+    final aliases = _codec.keyAliases;
     final covered = <String>{};
     for (final key in businessIn) {
       final snake = ZStudyLegacyCodec.camelToSnake(key);
+      final aliasTarget = aliases[key];
       if (canonical.containsKey(snake) ||
-          canonical.containsKey('${ZStudyLegacyCodec.kLegacyPrefix}$snake')) {
+          canonical.containsKey('${ZStudyLegacyCodec.kLegacyPrefix}$snake') ||
+          (aliasTarget != null && canonical.containsKey(aliasTarget))) {
         covered.add(key);
       }
     }
