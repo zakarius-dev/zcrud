@@ -8,6 +8,10 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Riverpod 3 a resserré sa surface publique : `ProviderListenable` (le type de
+// « ce qui se watch/read ») n'est plus exporté par l'entrypoint principal et vit
+// désormais dans `misc.dart`. Import délibéré, pas un accès à du privé.
+import 'package:flutter_riverpod/misc.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 /// Résolveur de dépendances adossé à un [ProviderContainer].

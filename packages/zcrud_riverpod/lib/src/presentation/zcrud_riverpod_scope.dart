@@ -11,6 +11,10 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Riverpod 3 : `Override` et `ProviderListenable` ne sont plus exportés par
+// l'entrypoint principal (surface publique resserrée) — ils vivent dans
+// `misc.dart`. Import délibéré, pas un accès à du privé.
+import 'package:flutter_riverpod/misc.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_riverpod_resolver.dart';

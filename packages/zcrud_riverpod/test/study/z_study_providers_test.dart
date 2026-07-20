@@ -10,6 +10,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Riverpod 3 : `Override` vit désormais dans `misc.dart`.
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_riverpod/zcrud_riverpod.dart';
@@ -95,13 +97,24 @@ void main() {
     final container = ProviderContainer(); // AUCUN override.
     addTearDown(container.dispose);
 
+    // ⚠️ Riverpod 3 : une exception levée dans le `create` d'un provider est
+    // désormais ENCAPSULÉE dans un `ProviderException` (elle remontait nue en
+    // v2). Le contrat de fond est INCHANGÉ — l'erreur reste un `ZScopeError`
+    // actionnable nommant le `Type` — mais l'appelant doit la déballer via
+    // `.exception`. On asserte les DEUX niveaux pour rester falsifiable :
+    // avaler le throw ⇒ aucune exception ⇒ ROUGE ; retirer le `Type` du message
+    // ⇒ ROUGE.
     expect(
       () => container.read(repoSeam),
       throwsA(
-        isA<ZScopeError>().having(
-          (e) => e.message,
-          'message',
-          contains('_FakeEntity'),
+        isA<ProviderException>().having(
+          (e) => e.exception,
+          'exception',
+          isA<ZScopeError>().having(
+            (e) => e.message,
+            'message',
+            contains('_FakeEntity'),
+          ),
         ),
       ),
     );

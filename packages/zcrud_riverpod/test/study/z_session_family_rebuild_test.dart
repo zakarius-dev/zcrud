@@ -14,15 +14,16 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 /// (`didAddProvider`) — chaque clé DISTINCTE crée un provider ; deux clés ÉGALES
 /// (par `==`/`hashCode` de `ZSessionConfigKey`) sont dédupliquées ⇒ une seule
 /// création.
-class _AddCounter extends ProviderObserver {
+// Riverpod 3 : `ProviderObserver` est devenu `base` (⇒ sous-type `final`) et
+// `didAddProvider` prend désormais un `ProviderObserverContext` au lieu du
+// triplet (provider, value, container). Le DISCRIMINANT est INCHANGÉ : on
+// compte toujours les créations dont l'argument de family est une
+// `ZSessionConfigKey` — via `context.provider.argument`.
+final class _AddCounter extends ProviderObserver {
   int adds = 0;
   @override
-  void didAddProvider(
-    ProviderBase<Object?> provider,
-    Object? value,
-    ProviderContainer container,
-  ) {
-    if (provider.argument is ZSessionConfigKey) adds++;
+  void didAddProvider(ProviderObserverContext context, Object? value) {
+    if (context.provider.argument is ZSessionConfigKey) adds++;
   }
 }
 

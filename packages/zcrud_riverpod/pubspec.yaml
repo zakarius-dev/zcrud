@@ -49,7 +49,7 @@ dependencies:
   # v1.x). Cf. DW-ES102-1 (câblage app-side).
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.3.0
 
 dev_dependencies:
   flutter_test:

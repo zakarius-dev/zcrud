@@ -29,6 +29,9 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Riverpod 3 : `ProviderListenable` n'est plus exporté par l'entrypoint
+// principal (surface publique resserrée) — il vit dans `misc.dart`.
+import 'package:flutter_riverpod/misc.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
@@ -62,9 +65,14 @@ Provider<ZStudyRepository<T>> zStudyRepositoryProvider<T extends ZEntity>() =>
 /// - **`.autoDispose`** : dès que plus personne n'écoute (ou que le
 ///   `ProviderContainer` est disposé), Riverpod annule la souscription au flux
 ///   du repo — aucune fuite (AC5, même patron que `zFormControllerProvider`).
+///   ⚠️ **Riverpod 3** : l'auto-dispose est devenu le comportement **par
+///   défaut** et le type `AutoDisposeStreamProvider` a disparu de l'API. Le type
+///   de retour est donc `StreamProvider<List<T>>` — la sémantique (annulation de
+///   la souscription dès le dernier auditeur parti) est **inchangée**, et reste
+///   prouvée par le test AC5.
 /// - Aucune transformation : la liste émise est **exactement** celle du repo
 ///   (ordre et contenu préservés, AD-5).
-AutoDisposeStreamProvider<List<T>> zStudyWatchAllProvider<T extends ZEntity>({
+StreamProvider<List<T>> zStudyWatchAllProvider<T extends ZEntity>({
   required ProviderListenable<ZStudyRepository<T>> repo,
 }) =>
     StreamProvider.autoDispose<List<T>>(
