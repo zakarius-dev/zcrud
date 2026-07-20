@@ -123,6 +123,17 @@ class ZStudyLegacyCodec {
   /// encore une clé source non renommée.
   Map<String, String> get keyAliases => _keyAliases;
 
+  /// Clés dont la valeur est une charge utile TIERCE, jamais convertie
+  /// (CR-IFFD-2), exposée pour que la **détection** de canonicité du migrateur
+  /// puisse les enjamber exactement comme la conversion le fait (CR-IFFD-7).
+  ///
+  /// Sans cela, un sous-arbre opaque — qui conserve **par conception** ses clés
+  /// camelCase — ferait échouer la détection à jamais : le document serait
+  /// re-migré à chaque passage et ses `valueMappers` réappliqués, rétrogradant
+  /// les valeurs déjà canoniques. **La détection doit refléter la conversion :
+  /// ce qui n'est pas converti ne peut pas être exigé canonique.**
+  Set<String> get opaqueKeys => _opaqueKeys;
+
   /// Clés legacy déclarées comme alias d'une clé de sync réservée (CR-IFFD-3).
   ///
   /// Exposé pour que [ZLegacyStudyMigrator] puisse refuser de considérer comme
@@ -238,9 +249,14 @@ class ZStudyLegacyCodec {
       final value = e.value.value;
 
       // Préservation de la granularité legacy exacte AVANT tout remap (AD-4).
+      // CR-IFFD-7 (2ᵉ effet) — `putIfAbsent` et NON affectation : sur un
+      // document déjà porteur d'un `_legacy_<clé>`, réécrire l'écraserait par la
+      // valeur DÉJÀ REMAPPÉE du passage précédent (`embedded` → `ready`), et la
+      // granularité d'origine — seule raison d'être de cette clé — serait perdue
+      // sans retour. La première valeur observée est la bonne.
       if (_preserveLegacyUnder.contains(snakeKey) ||
           _preserveLegacyUnder.contains(key)) {
-        out['$kLegacyPrefix$snakeKey'] = value;
+        out.putIfAbsent('$kLegacyPrefix$snakeKey', () => value);
       }
 
       final mapper = _valueMappers[snakeKey] ?? _valueMappers[key];

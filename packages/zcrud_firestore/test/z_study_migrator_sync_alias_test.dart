@@ -12,6 +12,7 @@ import 'package:zcrud_firestore/zcrud_firestore.dart';
 void main() {
   mainCr5();
   mainCr6();
+  mainCr7();
   // Configuration de l'hôte IFFD : son soft-delete générique s'appelle
   // `deleted` (cf. lib/src/utils/functions/data_functions.dart), ses mindmaps
   // portent des arbres `nodes[].outputs` récursifs à clés camelCase, et son
@@ -323,6 +324,104 @@ void mainCr6() {
           migrator.migrateDocument(<String, dynamic>{'quality': 3}).canonical;
       expect(out['last_quality'], 3);
       expect(out.containsKey(ZStudyLegacyCodec.kAliasCollisionsKey), isFalse);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-IFFD-7 — `opaqueKeys` neutralisait la garde d'idempotence.
+//
+// Défaut introduit par nous en livrant `_isDeepCanonical` (CR-IFFD-2) et
+// `opaqueKeys` dans la MÊME release, sans faire refléter la conversion par la
+// détection. Un sous-arbre opaque conserve par conception ses clés camelCase :
+// la détection le voyait « non canonique » à jamais, donc re-migrait le document
+// à chaque passage et réappliquait `valueMappers` — rétrogradant le `status`.
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCr7() {
+  const migrator = ZLegacyStudyMigrator(
+    codec: ZStudyLegacyCodec(
+      valueMappers: <String, ZLegacyValueMapper>{
+        'status': ZStudyLegacyCodec.mapDocumentStatus,
+      },
+      preserveLegacyUnder: <String>{'status'},
+      recurseNested: true,
+      opaqueKeys: <String>{'dashboard'},
+    ),
+  );
+
+  group('CR-IFFD-7 — idempotence sous opaqueKeys', () {
+    test('🔴 le point fixe est atteint malgré une charge utile opaque', () {
+      final p1 = migrator.migrateDocument(<String, dynamic>{
+        'status': 'embedded',
+        'dashboard': <String, dynamic>{'elementId': 'e1'},
+      }).canonical;
+
+      final p2 = migrator.migrateDocument(p1);
+      expect(p2.alreadyCanonical, isTrue,
+          reason: 'un sous-arbre opaque ne doit pas empêcher la canonicité');
+      expect(p2.canonical, p1, reason: 'point fixe strict');
+    });
+
+    test('🔴 le status n\'est PAS rétrogradé au second passage', () {
+      final p1 = migrator.migrateDocument(<String, dynamic>{
+        'status': 'embedded',
+        'dashboard': <String, dynamic>{'elementId': 'e1'},
+      }).canonical;
+      expect(p1['status'], 'ready');
+
+      final p2 = migrator.migrateDocument(p1).canonical;
+      // Avant correctif : 'uploading' (mapDocumentStatus ne connaît que les 6
+      // valeurs legacy ; 'ready' tombait dans le default).
+      expect(p2['status'], 'ready');
+    });
+
+    test('🔴 la trace legacy d\'ORIGINE n\'est jamais écrasée (AD-4)', () {
+      final p1 = migrator.migrateDocument(<String, dynamic>{
+        'status': 'embedded',
+        'dashboard': <String, dynamic>{'elementId': 'e1'},
+      }).canonical;
+      expect(p1['_legacy_status'], 'embedded');
+
+      // Même re-soumis, le `_legacy_` conserve la PREMIÈRE valeur observée —
+      // sinon il porterait 'ready', la valeur déjà remappée, et la granularité
+      // d'origine serait perdue sans retour.
+      final p2 = migrator.migrateDocument(p1).canonical;
+      expect(p2['_legacy_status'], 'embedded');
+    });
+
+    test('la charge opaque traverse intacte, et son contenu reste toléré', () {
+      final out = migrator.migrateDocument(<String, dynamic>{
+        'status': 'embedded',
+        'dashboard': <String, dynamic>{'elementId': 'e1'},
+      }).canonical;
+      expect(out['dashboard'], <String, dynamic>{'elementId': 'e1'});
+    });
+
+    test('une clé camelCase HORS zone opaque reste détectée', () {
+      // La symétrie ne doit pas devenir un trou : seul le sous-arbre déclaré
+      // opaque est enjambé, le reste du document répond toujours de sa casse.
+      final o = migrator.migrateDocument(<String, dynamic>{
+        ZSyncMeta.kIsDeleted: false,
+        'dashboard': <String, dynamic>{'elementId': 'e1'},
+        'meta': <String, dynamic>{'createdAt': 1700000000000},
+      });
+      expect(o.alreadyCanonical, isFalse);
+    });
+
+    test('le NOM d\'une clé opaque reste soumis à la règle', () {
+      // `dashboard` est NOTRE clé, pas celle du tiers : si elle arrivait en
+      // camelCase, le document n'est pas canonique.
+      const m = ZLegacyStudyMigrator(
+        codec: ZStudyLegacyCodec(
+          recurseNested: true,
+          opaqueKeys: <String>{'my_board'},
+        ),
+      );
+      final o = m.migrateDocument(<String, dynamic>{
+        ZSyncMeta.kIsDeleted: false,
+        'myBoard': <String, dynamic>{'elementId': 'e1'},
+      });
+      expect(o.alreadyCanonical, isFalse);
     });
   });
 }

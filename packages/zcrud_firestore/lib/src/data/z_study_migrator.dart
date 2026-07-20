@@ -304,7 +304,24 @@ class ZLegacyStudyMigrator {
       if (syncAliases.contains(key)) return false;
       if (keyAliasSources.contains(key)) return false;
     }
-    return _isDeepCanonical(doc);
+
+    // CR-IFFD-7 — la DÉTECTION doit refléter la CONVERSION : un sous-arbre
+    // déclaré opaque n'est jamais converti, il ne peut donc pas être exigé
+    // canonique. Sans cette symétrie, tout document portant une charge utile
+    // tierce (qui conserve PAR CONCEPTION ses clés camelCase) était classé
+    // « non canonique » À JAMAIS, donc re-migré à chaque passage — et ses
+    // `valueMappers` réappliqués, rétrogradant `status` de `ready` à
+    // `uploading` : exactement le TRAP que la garde d'idempotence devait
+    // franchir. `opaqueKeys` la neutralisait.
+    final opaque = _codec.opaqueKeys;
+    for (final e in doc.entries) {
+      // Le NOM de la clé de premier niveau reste soumis à la règle, même quand
+      // sa VALEUR est opaque : c'est notre clé, pas celle du tiers.
+      if (_hasInternalUppercase(e.key)) return false;
+      if (opaque.contains(e.key)) continue;
+      if (!_isDeepCanonical(e.value)) return false;
+    }
+    return true;
   }
 
   /// Vrai ssi AUCUNE clé camelCase ne subsiste à quelque profondeur que ce soit.
