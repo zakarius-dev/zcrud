@@ -159,7 +159,7 @@ dependency_overrides:
   zcrud_firestore:
     path: ../packages/zcrud_firestore
   # FP-3.2 : les 4 satellites FORM-PARITY déclarent `resolution: workspace` +
-  # épinglent `zcrud_core: ^0.3.4` hosted ; l'override `path:` réconcilie source
+  # épinglent `zcrud_core: ^0.3.5` hosted ; l'override `path:` réconcilie source
   # path↔hosted (voie standalone EX-1, aucun ajout au `workspace:` racine). Ils
   # tirent leurs deps lourdes CONFINÉES (`awesome_select` / `html_editor_enhanced`+
   # `flutter_html` / `image_picker`+`file_picker`… / `pinput`) dans le lock PROPRE
@@ -202,7 +202,7 @@ dependency_overrides:
   zcrud_responsive:
     path: ../packages/zcrud_responsive
   # SU-10 — parcours d'étude. `zcrud_session`/`zcrud_flashcard` déclarent
-  # `resolution: workspace` + épinglent `zcrud_core: ^0.3.4` hosted : l'override
+  # `resolution: workspace` + épinglent `zcrud_core: ^0.3.5` hosted : l'override
   # `path:` réconcilie source path↔hosted (voie standalone EX-1, aucun ajout au
   # `workspace:` racine). Ils tirent `flutter_card_swiper`/`confetti`/Quill dans
   # le lock PROPRE de l'app (jamais le lock racine — SM-5). Leur unique arête

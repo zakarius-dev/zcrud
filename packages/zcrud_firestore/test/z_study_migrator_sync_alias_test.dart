@@ -11,6 +11,7 @@ import 'package:zcrud_firestore/zcrud_firestore.dart';
 
 void main() {
   mainCr5();
+  mainCr6();
   // Configuration de l'hôte IFFD : son soft-delete générique s'appelle
   // `deleted` (cf. lib/src/utils/functions/data_functions.dart), ses mindmaps
   // portent des arbres `nodes[].outputs` récursifs à clés camelCase, et son
@@ -255,6 +256,73 @@ void mainCr5() {
           plain.migrateDocument(<String, dynamic>{'quality': 4}).canonical;
       expect(out['quality'], 4);
       expect(out.containsKey('last_quality'), isFalse);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-IFFD-6 — collision d'alias : INDÉPENDANCE À L'ORDRE des clés.
+//
+// Défaut trouvé par la session IFFD en éprouvant par exécution une affirmation
+// du handoff v0.3.4 qui était FAUSSE : la préservation ne tenait que dans un
+// ordre sur deux, et le census se déclarait satisfait dans les deux.
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCr6() {
+  const migrator = ZLegacyStudyMigrator(
+    codec: ZStudyLegacyCodec(
+      keyAliases: <String, String>{'quality': 'last_quality'},
+    ),
+  );
+
+  group('CR-IFFD-6 — collision indépendante de l\'ordre', () {
+    test('🔴 les deux ordres produisent un résultat IDENTIQUE', () {
+      // Firestore ne garantit pas l'ordre des clés d'un document : un résultat
+      // qui en dépend est non déterministe du point de vue de l'appelant.
+      final a = migrator
+          .migrateDocument(<String, dynamic>{'quality': 1, 'lastQuality': 5})
+          .canonical;
+      final b = migrator
+          .migrateDocument(<String, dynamic>{'lastQuality': 5, 'quality': 1})
+          .canonical;
+      expect(a, b, reason: 'la sortie ne doit dépendre que du CONTENU');
+    });
+
+    test('🔴 aucune valeur perdue, quel que soit l\'ordre', () {
+      for (final doc in <Map<String, dynamic>>[
+        <String, dynamic>{'quality': 1, 'lastQuality': 5},
+        <String, dynamic>{'lastQuality': 5, 'quality': 1},
+      ]) {
+        final out = migrator.migrateDocument(doc).canonical;
+        expect(out.values.contains(5), isTrue, reason: 'gagnant présent');
+        expect(out['_legacy_quality'], 1, reason: 'perdant PRÉSERVÉ');
+      }
+    });
+
+    test('la collision est JOURNALISÉE (jamais silencieuse)', () {
+      final out = migrator
+          .migrateDocument(<String, dynamic>{'quality': 1, 'lastQuality': 5})
+          .canonical;
+      expect(
+        out[ZStudyLegacyCodec.kAliasCollisionsKey],
+        <String>['last_quality'],
+      );
+    });
+
+    test('la forme DÉJÀ CANONIQUE prime — une reprise ne rétrograde pas', () {
+      // Reprise réelle : le document porte le résultat d'une migration
+      // antérieure (`last_quality`) ET la clé legacy résiduelle (`quality`).
+      final out = migrator
+          .migrateDocument(<String, dynamic>{'quality': 1, 'last_quality': 9})
+          .canonical;
+      expect(out['last_quality'], 9, reason: 'le migré prime sur le legacy');
+      expect(out['_legacy_quality'], 1, reason: 'le legacy survit quand même');
+    });
+
+    test('sans collision, aucune clé de journal parasite', () {
+      final out =
+          migrator.migrateDocument(<String, dynamic>{'quality': 3}).canonical;
+      expect(out['last_quality'], 3);
+      expect(out.containsKey(ZStudyLegacyCodec.kAliasCollisionsKey), isFalse);
     });
   });
 }

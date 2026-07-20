@@ -133,6 +133,29 @@ class ZStudyLegacyCodec {
   /// Préfixe des clés de survie (granularité legacy préservée, AD-4).
   static const String kLegacyPrefix = '_legacy_';
 
+  /// Clé de survie journalisant les **cibles disputées** par plusieurs clés
+  /// sources (CR-IFFD-6). Présente **uniquement** en cas de collision : sa seule
+  /// existence signale qu'un arbitrage a eu lieu et qu'un `_legacy_<source>`
+  /// porte la ou les valeurs écartées. Une collision n'est ainsi jamais
+  /// silencieuse — le silence était le pire des comportements possibles.
+  static const String kAliasCollisionsKey = '${kLegacyPrefix}alias_collisions';
+
+  /// Priorité d'une clé source sur sa cible canonique (CR-IFFD-6). **0 gagne.**
+  ///
+  /// Déterministe et **indépendante de l'ordre d'itération** — Firestore ne
+  /// garantit pas l'ordre des clés d'un document, donc arbitrer au fil de la
+  /// boucle rendait le résultat non reproductible.
+  ///
+  /// Ordre retenu : la forme **déjà canonique** prime (elle est le produit d'une
+  /// migration antérieure), puis la conversion de casse, puis l'alias. Cela rend
+  /// une reprise **stable** : un document déjà migré n'est pas rétrogradé par
+  /// une clé legacy résiduelle.
+  int _priorityOf(String key) {
+    if (_keyAliases.containsKey(key)) return 2;
+    if (camelToSnake(key) == key) return 0;
+    return 1;
+  }
+
   /// Legacy (camelCase) → canonique (snake_case). **DÉFENSIF** (jamais throw).
   ///
   /// Pour chaque entrée :
@@ -154,6 +177,10 @@ class ZStudyLegacyCodec {
     // Résultats des alias de clés de sync — appliqués APRÈS la boucle pour
     // primer sur un passthrough de clé réservée (CR-IFFD-3, corpus partiel).
     final aliased = <String, Object?>{};
+    // CR-IFFD-6 — revendications de cible, résolues APRÈS la boucle pour être
+    // indépendantes de l'ordre des clés (non garanti par Firestore).
+    final claims = <String, _Claim>{};
+    final collisions = <String>{};
     for (final entry in legacy.entries) {
       final key = entry.key;
       final value = entry.value;
@@ -183,14 +210,32 @@ class ZStudyLegacyCodec {
       // casse, qui ne peut pas le deviner (`quality` → `last_quality`).
       final snakeKey = _keyAliases[key] ?? camelToSnake(key);
 
-      // Collision : la cible est déjà occupée par une AUTRE source (ex. le
-      // document porte à la fois `quality` et `lastQuality`). On n'écrase pas
-      // en silence — la valeur aliasée est préservée sous `_legacy_<source>`,
-      // le census reste satisfait, et le conflit demeure inspectable.
-      if (_keyAliases.containsKey(key) && out.containsKey(snakeKey)) {
+      // CR-IFFD-6 — plusieurs sources peuvent viser la MÊME cible (ex. `quality`
+      // aliasée ET `lastQuality` qui snake vers `last_quality`). La résolution
+      // est DIFFÉRÉE après la boucle : arbitrer au fil de l'itération rendait le
+      // résultat dépendant de l'ORDRE DES CLÉS du document — or Firestore ne le
+      // garantit pas. Selon l'ordre, une valeur disparaissait sans trace.
+      final claim = _Claim(source: key, value: value, priority: _priorityOf(key));
+      final existing = claims[snakeKey];
+      if (existing == null || claim.priority < existing.priority) {
+        if (existing != null) {
+          // Le perdant est préservé — INCONDITIONNELLEMENT, quel que soit
+          // l'ordre d'arrivée (AD-4, zéro perte).
+          out['$kLegacyPrefix${camelToSnake(existing.source)}'] = existing.value;
+          collisions.add(snakeKey);
+        }
+        claims[snakeKey] = claim;
+      } else {
         out['$kLegacyPrefix${camelToSnake(key)}'] = value;
-        continue;
+        collisions.add(snakeKey);
       }
+    }
+
+    // Résolution des revendications : un gagnant déterministe par cible.
+    for (final e in claims.entries) {
+      final snakeKey = e.key;
+      final key = e.value.source;
+      final value = e.value.value;
 
       // Préservation de la granularité legacy exacte AVANT tout remap (AD-4).
       if (_preserveLegacyUnder.contains(snakeKey) ||
@@ -214,6 +259,13 @@ class ZStudyLegacyCodec {
     // Ajout ADDITIF rétro-compatible (D3) : jamais d'écrasement d'une clé
     // déjà présente (putIfAbsent).
     out.putIfAbsent(ZSyncMeta.kIsDeleted, () => false);
+
+    // CR-IFFD-6 — une collision d'alias n'est JAMAIS silencieuse : les cibles
+    // disputées sont journalisées sous une clé de survie dédiée, inspectable et
+    // relevée par le rapport de migration.
+    if (collisions.isNotEmpty) {
+      out[kAliasCollisionsKey] = collisions.toList()..sort();
+    }
     return out;
   }
 
@@ -403,4 +455,20 @@ class ZStudyLegacyCodec {
     }
     return buf.toString();
   }
+}
+
+/// Revendication d'une clé canonique par une clé source (CR-IFFD-6).
+///
+/// [priority] arbitre de façon **déterministe** quand plusieurs sources visent
+/// la même cible — 0 gagne. L'ordre d'itération du document n'intervient jamais.
+class _Claim {
+  const _Claim({
+    required this.source,
+    required this.value,
+    required this.priority,
+  });
+
+  final String source;
+  final Object? value;
+  final int priority;
 }

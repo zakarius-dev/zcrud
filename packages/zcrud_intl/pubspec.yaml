@@ -11,7 +11,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
 description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
-version: 0.3.4
+version: 0.3.5
 publish_to: none
 resolution: workspace
 
@@ -36,7 +36,7 @@ dependencies:
   # SANS clé API ni réseau (AD-12). SEULE arête téléphone du graphe (AD-1),
   # confinée à `src/presentation/z_phone_codec.dart`.
   phone_numbers_parser: ^9.0.23
-  zcrud_core: ^0.3.4
+  zcrud_core: ^0.3.5
 
 dev_dependencies:
   flutter_test:
