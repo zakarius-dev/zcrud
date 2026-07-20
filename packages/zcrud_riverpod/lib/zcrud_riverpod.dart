@@ -9,6 +9,14 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+// CR-4 (session lex_douane, 2026-07-20) — `zStudyRepositoryProvider<T>` lève un
+// `ZScopeError` quand le seam n'est pas surchargé, mais le type vit dans
+// `zcrud_core`. Sans ce ré-export, un hôte devait importer `zcrud_core` UNIQUEMENT
+// pour attraper l'erreur de son propre binding. Ré-export CIBLÉ (`show`) : le
+// binding n'ouvre pas la surface entière du cœur, il n'expose que le type qu'il
+// lève lui-même.
+export 'package:zcrud_core/zcrud_core.dart' show ZScopeError;
+
 export 'src/presentation/z_riverpod_api.dart';
 export 'src/presentation/z_riverpod_resolver.dart';
 export 'src/presentation/zcrud_riverpod_scope.dart';
