@@ -17,7 +17,7 @@
 # (compat migration lex/IFFD) via un CANAL HORS-CODEGEN (patron `ZSmartNote.content`).
 name: zcrud_exam
 description: "Dated exam domain for zcrud: ZExam (folder-scoped exam with reminders) plus a ZReminderTime HH:mm value-object. All proximity logic is pure with an injected clock (never DateTime.now()). Pure Dart, no Flutter, no Firebase."
-version: 0.3.6
+version: 0.3.7
 publish_to: none
 resolution: workspace
 
@@ -52,8 +52,8 @@ environment:
 # ⛔ AUCUNE dép lourde, AUCUN gestionnaire d'état, AUCUN `cloud_firestore`,
 #    AUCUN SDK Flutter (NFR-S3/SM-S5/NFR-S10). Tests sous `dart test`.
 dependencies:
-  zcrud_core: ^0.3.6
-  zcrud_annotations: ^0.3.6
+  zcrud_core: ^0.3.7
+  zcrud_annotations: ^0.3.7
 
 # Toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
 # (`auto_apply: dependents`) émet `z_exam.g.dart` (SUIVI par git sous
@@ -61,6 +61,6 @@ dependencies:
 # Le package n'importe QUE la surface pur-Dart de `zcrud_core` ⇒ ses tests
 # tournent sous `dart test`.
 dev_dependencies:
-  zcrud_generator: ^0.3.6
+  zcrud_generator: ^0.3.7
   build_runner: ^2.5.0
   test: ^1.25.0

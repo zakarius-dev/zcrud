@@ -17,6 +17,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_config.dart';
@@ -104,6 +105,15 @@ class ZTextFieldWidget extends StatelessWidget {
         ? TextInputType.multiline
         : TextInputType.text;
 
+    // CR-IFFD-8 — capitalisation déclarative. Un mot de passe n'est JAMAIS
+    // capitalisé (altèrerait le secret) ; sinon la config pilote (a) l'indice
+    // clavier `textCapitalization` ET (b) un formateur DÉTERMINISTE couvrant
+    // collage / saisie programmatique / clavier physique — ce que l'indice seul
+    // ne fait pas.
+    final capitalization = isPassword
+        ? ZTextCapitalization.none
+        : (config?.capitalization ?? ZTextCapitalization.none);
+
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
@@ -111,6 +121,10 @@ class ZTextFieldWidget extends StatelessWidget {
       minLines: effectiveMinLines,
       maxLines: effectiveMaxLines,
       keyboardType: keyboardType,
+      textCapitalization: _keyboardHint(capitalization),
+      inputFormatters: capitalization == ZTextCapitalization.none
+          ? null
+          : <TextInputFormatter>[_ZCapitalizationFormatter(capitalization)],
       style: ZcrudTheme.of(context).inputTextStyle,
       readOnly: field.readOnly,
       // Validation CIBLÉE PAR CHAMP (AD-2) — jamais de `Form` global.
@@ -121,5 +135,81 @@ class ZTextFieldWidget extends StatelessWidget {
       decoration: zFieldDecoration(context, field, bare: bare),
       onChanged: onChanged,
     );
+  }
+}
+
+/// Indice de capitalisation clavier logiciel dérivé de la config (CR-IFFD-8).
+/// **Non fiable seul** — cf. [_ZCapitalizationFormatter] pour la garantie réelle.
+TextCapitalization _keyboardHint(ZTextCapitalization c) => switch (c) {
+      ZTextCapitalization.none => TextCapitalization.none,
+      ZTextCapitalization.sentences => TextCapitalization.sentences,
+      ZTextCapitalization.words => TextCapitalization.words,
+      ZTextCapitalization.characters => TextCapitalization.characters,
+    };
+
+/// Formateur de capitalisation DÉTERMINISTE (CR-IFFD-8) — garantit la casse à
+/// chaque frappe, quelle que soit la source (collage, saisie programmatique,
+/// clavier physique), là où `textCapitalization` n'est qu'un indice logiciel.
+///
+/// **SM-1 / AD-2 préservés** : toutes les transformations ne changent QUE la
+/// casse, jamais la longueur — la position du curseur ([TextEditingValue.selection])
+/// reste donc valide et est conservée telle quelle (aucun saut de curseur).
+class _ZCapitalizationFormatter extends TextInputFormatter {
+  const _ZCapitalizationFormatter(this.mode);
+
+  final ZTextCapitalization mode;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final formatted = _apply(newValue.text);
+    if (formatted == newValue.text) return newValue;
+    // Casse seule ⇒ longueur inchangée ⇒ la sélection reste valide.
+    return TextEditingValue(
+      text: formatted,
+      selection: newValue.selection,
+      composing: TextRange.empty,
+    );
+  }
+
+  String _apply(String s) => switch (mode) {
+        ZTextCapitalization.none => s,
+        ZTextCapitalization.characters => s.toUpperCase(),
+        ZTextCapitalization.words => _capWords(s),
+        ZTextCapitalization.sentences => _capSentences(s),
+      };
+
+  /// Première lettre de chaque mot en majuscule (séparateur = espace).
+  static String _capWords(String s) {
+    final buf = StringBuffer();
+    var atWordStart = true;
+    for (final rune in s.runes) {
+      final ch = String.fromCharCode(rune);
+      final isSpace = ch.trim().isEmpty;
+      buf.write(atWordStart && !isSpace ? ch.toUpperCase() : ch);
+      atWordStart = isSpace;
+    }
+    return buf.toString();
+  }
+
+  /// Première lettre de chaque phrase en majuscule (début + après `.`/`!`/`?`).
+  /// Sur une saisie mono-phrase, équivaut à l'`ucFirst` historique d'IFFD.
+  static String _capSentences(String s) {
+    final buf = StringBuffer();
+    var atSentenceStart = true;
+    for (final rune in s.runes) {
+      final ch = String.fromCharCode(rune);
+      final isSpace = ch.trim().isEmpty;
+      if (atSentenceStart && !isSpace) {
+        buf.write(ch.toUpperCase());
+        atSentenceStart = false;
+      } else {
+        buf.write(ch);
+        if (ch == '.' || ch == '!' || ch == '?') atSentenceStart = true;
+      }
+    }
+    return buf.toString();
   }
 }

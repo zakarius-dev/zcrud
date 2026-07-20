@@ -21,12 +21,42 @@ abstract class ZFieldConfig {
   const ZFieldConfig();
 }
 
+/// Capitalisation **déclarative** d'un champ texte (CR-IFFD-8) — pur-données,
+/// aucun type Flutter (le mapping vers `TextCapitalization` + un
+/// `TextInputFormatter` déterministe vit en présentation, AD-2/AD-15).
+///
+/// ⚠️ **Déterministe, pas seulement indicatif.** `TextCapitalization` de Flutter
+/// n'est qu'un **indice de clavier logiciel** : il ne s'applique ni au collage,
+/// ni à la saisie programmatique, ni aux claviers physiques. Cette énumération
+/// pilote EN PLUS un formateur qui garantit la casse à chaque frappe, quelle que
+/// soit la source — c'est ce qui reproduit fidèlement le `ucFirstFormatter`
+/// historique d'IFFD ([sentences] sur une saisie mono-phrase).
+enum ZTextCapitalization {
+  /// Aucune transformation (défaut — rétro-compatible, rendu antérieur inchangé).
+  none,
+
+  /// Première lettre de chaque phrase en majuscule (début de champ + après
+  /// `.`/`!`/`?`). Équivaut à l'`ucFirst` d'IFFD sur une saisie mono-phrase.
+  sentences,
+
+  /// Première lettre de chaque mot en majuscule.
+  words,
+
+  /// Toutes les lettres en majuscule.
+  characters,
+}
+
 /// Config triviale pur-cœur des champs **texte** (`text`/`multiline`).
 ///
 /// origine: colonne `inputType` + `minLines`/`maxLines` DODLP.
 class ZTextConfig extends ZFieldConfig {
   /// Construit une config texte `const`.
-  const ZTextConfig({this.minLines, this.maxLines, this.keyboardType});
+  const ZTextConfig({
+    this.minLines,
+    this.maxLines,
+    this.keyboardType,
+    this.capitalization = ZTextCapitalization.none,
+  });
 
   /// Nombre minimal de lignes affichées.
   final int? minLines;
@@ -37,6 +67,10 @@ class ZTextConfig extends ZFieldConfig {
   /// Indice de clavier neutre (opaque : le mapping vers `TextInputType` est E3).
   final String? keyboardType;
 
+  /// Capitalisation appliquée à la saisie (CR-IFFD-8). Défaut [ZTextCapitalization.none]
+  /// (aucun formateur — le champ texte conserve exactement son rendu antérieur).
+  final ZTextCapitalization capitalization;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -44,10 +78,12 @@ class ZTextConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           minLines == other.minLines &&
           maxLines == other.maxLines &&
-          keyboardType == other.keyboardType;
+          keyboardType == other.keyboardType &&
+          capitalization == other.capitalization;
 
   @override
-  int get hashCode => Object.hash(runtimeType, minLines, maxLines, keyboardType);
+  int get hashCode =>
+      Object.hash(runtimeType, minLines, maxLines, keyboardType, capitalization);
 }
 
 /// Config triviale pur-cœur des champs **numériques**

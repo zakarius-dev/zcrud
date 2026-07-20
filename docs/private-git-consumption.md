@@ -31,7 +31,7 @@ et reproductibilité). Le versionnage se fait **par tag git**, pas par contraint
 > `dependency_overrides` est **obligatoire**. Détail ci-dessous.
 
 ⚠️ **Règle importante** : les dépendances **inter-`zcrud_*`** du monorepo sont des
-contraintes **hosted** (`zcrud_core: ^0.3.1`). Or **pub exige que la SOURCE d'une
+contraintes **hosted** (`zcrud_core: ^0.3.7`). Or **pub exige que la SOURCE d'une
 dépendance soit identique dans tout le graphe** : déclarer `zcrud_core` en `git` côté
 app ne satisfait pas une arête interne qui l'attend en `hosted`. La résolution échoue :
 
@@ -52,22 +52,22 @@ export + annotations :
 ```yaml
 dependencies:
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_flashcard }
   # … les autres packages RÉELLEMENT importés par ton code
 
 # OBLIGATOIRE : impose la source git à TOUTE la fermeture transitive `zcrud_*`.
 # Doit lister les packages transitifs même si tu ne les importes jamais toi-même.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_annotations }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_study_kernel }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_markdown }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.6, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_export }
 ```
 
 ⚠️ **`dependency_overrides` est IGNORÉ pour les packages non-racine.** Dans un monorepo
@@ -89,6 +89,32 @@ Tout dépend de `zcrud_core` (puits du graphe). Arêtes utiles :
 | `zcrud_markdown`, `zcrud_list`, `zcrud_firestore`, `zcrud_geo`, `zcrud_intl`, `zcrud_export`, `zcrud_riverpod`, `zcrud_get`, `zcrud_provider` | zcrud_core |
 | `zcrud_mindmap` | zcrud_core, zcrud_markdown |
 | `zcrud_flashcard` | zcrud_core, zcrud_markdown, zcrud_export, zcrud_annotations |
+
+### ⚠️ Les packages d'ENTITÉ ne sont tirés par AUCUN binding (CR-IFFD-9)
+
+Les entités study concrètes — **`zcrud_document`** (`ZStudyDocument`), **`zcrud_note`**
+(`ZSmartNote`), **`zcrud_exam`** (`ZExam`) — ne sont dépendues par **aucun** package du
+graphe : ni par les bindings (`zcrud_riverpod`/`zcrud_get`/`zcrud_provider`), ni par
+`zcrud_flashcard`, ni par `zcrud_study_kernel`.
+
+**C'est un invariant d'architecture délibéré (AD-24), pas un oubli.** Le binding générique
+reste **thin** : il expose les seams et fabriques (`zStudyRepositoryProvider<T>`,
+`zStudyWatchAllProvider<T>`) mais **ignore** les types concrets, que l'app injecte. Un
+binding qui dépendrait de `zcrud_document` imposerait cette entité — et toutes les autres —
+à tout consommateur, y compris ceux qui ne s'en servent pas.
+
+**Conséquence pour l'app** : dès que ton code écrit `import 'package:zcrud_document/...'`
+(pour mapper vers `ZStudyDocument.fromMap`, typer un `ZStudyRepository<ZStudyDocument>`,
+etc.), tu **dois déclarer `zcrud_document` toi-même** — en `dependencies:` **et** en
+`dependency_overrides:` (même règle de source git que tout `zcrud_*`, cf. § « Ajouter les
+packages »). Idem pour `zcrud_note`, `zcrud_exam`.
+
+⚠️ **Ne mappe pas vers le schéma `*.g.dart` figé pour éviter d'importer l'entité.** C'est
+possible (le `toMap`/`fromMap` généré est stable dans un tag donné), mais le mapping
+**diverge alors en silence** si l'entité change de schéma dans un tag ultérieur — rien ne
+le détecte, le type concret n'étant pas importé. Importer réellement l'entité fait de tout
+changement de schéma une **erreur de compilation**, pas une corruption de données
+silencieuse. Préfère l'import dès que l'entité est au cœur du flux.
 
 ## ⚠️ Overrides tiers OBLIGATOIRES selon la cible
 

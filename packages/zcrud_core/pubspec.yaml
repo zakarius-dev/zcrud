@@ -7,7 +7,7 @@
 # (Riverpod/GetX/provider), aucun backend lourd (Firebase/Syncfusion/Quill/Maps).
 name: zcrud_core
 description: "Pure domain and Flutter-native reactive edition engine for rich CRUD: ZFieldSpec, ports, l10n, ZcrudScope. No heavy dependencies."
-version: 0.3.6
+version: 0.3.7
 publish_to: none
 resolution: workspace
 
