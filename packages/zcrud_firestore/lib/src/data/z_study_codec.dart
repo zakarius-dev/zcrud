@@ -69,15 +69,48 @@ class ZStudyLegacyCodec {
   ///   (avant remap) est conservée dans le corps canonique sous une clé de
   ///   survie `_legacy_<snake>` (AD-4 : zéro perte de granularité). Décodée, cette
   ///   clé inconnue retombe dans l'échappatoire `extra` de l'entité.
+  /// - [syncMetaKeyAliases] (**CR-IFFD-3**) : clé legacy → clé RÉSERVÉE
+  ///   ([ZSyncMeta.reservedKeys]) qu'elle désigne réellement. Sans cela, un hôte
+  ///   dont le soft-delete s'appelle autrement (IFFD : `deleted`) voit sa clé
+  ///   traverser telle quelle — `camelToSnake('deleted')` == `'deleted'`, aucune
+  ///   majuscule interne — puis `is_deleted:false` ajouté par le `putIfAbsent`
+  ///   final : **tout document supprimé redevient visible**. La perte est
+  ///   silencieuse (le census R26 est satisfait, la clé étant préservée).
+  ///   Ex. `{'deleted': ZSyncMeta.kIsDeleted}`.
+  /// - [recurseNested] (**CR-IFFD-2**) : descend dans les `Map`/`List`
+  ///   imbriquées pour y renommer les clés et normaliser les dates. `false` par
+  ///   défaut — la conversion en profondeur d'une charge utile TIERCE la
+  ///   casserait (cf. [opaqueKeys]).
+  /// - [opaqueKeys] : clés (canoniques snake_case) dont la valeur est une charge
+  ///   utile **tierce** à ne JAMAIS convertir, même sous [recurseNested] — ex.
+  ///   `dashboard` (sérialisation `flutter_flow_chart`), dont les noms de champs
+  ///   sont imposés par la bibliothèque : les renommer rendrait l'objet
+  ///   indésérialisable.
   const ZStudyLegacyCodec({
     Map<String, ZLegacyValueMapper> valueMappers =
         const <String, ZLegacyValueMapper>{},
     Set<String> preserveLegacyUnder = const <String>{},
+    Map<String, String> syncMetaKeyAliases = const <String, String>{},
+    bool recurseNested = false,
+    Set<String> opaqueKeys = const <String>{},
   })  : _valueMappers = valueMappers,
-        _preserveLegacyUnder = preserveLegacyUnder;
+        _preserveLegacyUnder = preserveLegacyUnder,
+        _syncMetaKeyAliases = syncMetaKeyAliases,
+        _recurseNested = recurseNested,
+        _opaqueKeys = opaqueKeys;
 
   final Map<String, ZLegacyValueMapper> _valueMappers;
   final Set<String> _preserveLegacyUnder;
+  final Map<String, String> _syncMetaKeyAliases;
+  final bool _recurseNested;
+  final Set<String> _opaqueKeys;
+
+  /// Clés legacy déclarées comme alias d'une clé de sync réservée (CR-IFFD-3).
+  ///
+  /// Exposé pour que [ZLegacyStudyMigrator] puisse refuser de considérer comme
+  /// « déjà canonique » un document qui en porte encore une — sans quoi une
+  /// reprise de migration sauterait définitivement ces documents.
+  Set<String> get syncMetaAliasKeys => _syncMetaKeyAliases.keys.toSet();
 
   /// Préfixe des clés de survie (granularité legacy préservée, AD-4).
   static const String kLegacyPrefix = '_legacy_';
@@ -100,6 +133,9 @@ class ZStudyLegacyCodec {
   /// (→ `ZSyncMeta.updatedAt: null`, défaut LWW « jamais synchronisé »).
   Map<String, dynamic> toCanonical(Map<String, dynamic> legacy) {
     final out = <String, dynamic>{};
+    // Résultats des alias de clés de sync — appliqués APRÈS la boucle pour
+    // primer sur un passthrough de clé réservée (CR-IFFD-3, corpus partiel).
+    final aliased = <String, Object?>{};
     for (final entry in legacy.entries) {
       final key = entry.key;
       final value = entry.value;
@@ -107,6 +143,21 @@ class ZStudyLegacyCodec {
       // Clés réservées / de survie : passées telles quelles (D3/AD-4).
       if (ZSyncMeta.reservedKeys.contains(key) || key.startsWith(kLegacyPrefix)) {
         out[key] = value;
+        continue;
+      }
+
+      // CR-IFFD-3 — alias de clé de SYNC : la clé legacy DÉSIGNE une clé
+      // réservée. Elle est CONSOMMÉE (renommée), jamais dupliquée, et la valeur
+      // brute est préservée sous `_legacy_<snake>` (AD-4, zéro perte).
+      // ⚠️ Résolu APRÈS la boucle (cf. `aliased`) : sur un corpus PARTIELLEMENT
+      // migré, le document porte à la fois `deleted:true` (la vérité legacy) et
+      // un `is_deleted:false` ajouté à tort par un passage antérieur. Appliquer
+      // l'alias dans la boucle le laisserait écraser par le passthrough de la
+      // clé réservée — la corruption l'emporterait sur l'intention réelle.
+      final aliasTarget = _syncMetaKeyAliases[key];
+      if (aliasTarget != null && ZSyncMeta.reservedKeys.contains(aliasTarget)) {
+        out['$kLegacyPrefix${camelToSnake(key)}'] = value;
+        aliased[aliasTarget] = _coerceSyncMetaValue(aliasTarget, value);
         continue;
       }
 
@@ -125,6 +176,11 @@ class ZStudyLegacyCodec {
         out[snakeKey] = _normalizeValue(snakeKey, value);
       }
     }
+
+    // CR-IFFD-3 — les alias PRIMENT : la clé legacy porte l'intention réelle de
+    // l'utilisateur, une clé réservée déjà présente peut être le résultat d'un
+    // passage antérieur défectueux.
+    out.addAll(aliased);
 
     // Ajout ADDITIF rétro-compatible (D3) : jamais d'écrasement d'une clé
     // déjà présente (putIfAbsent).
@@ -163,6 +219,70 @@ class ZStudyLegacyCodec {
   Object? _normalizeValue(String snakeKey, Object? value) {
     if (value is int && snakeKey.endsWith('_at')) {
       return _millisToIsoOrNull(value) ?? value;
+    }
+    // CR-IFFD-2 — descente RÉCURSIVE optionnelle. `opaqueKeys` protège les
+    // charges utiles tierces (renommer leurs champs les rendrait illisibles
+    // par la bibliothèque qui les a produites).
+    if (_recurseNested && !_opaqueKeys.contains(snakeKey)) {
+      return _normalizeDeep(value);
+    }
+    return value;
+  }
+
+  /// Descente récursive : renomme les clés en snake_case et normalise les dates
+  /// `int` millis→ISO à **toute profondeur**. Les `valueMappers` et
+  /// `preserveLegacyUnder` restent **de premier niveau** — ils désignent des
+  /// champs de document (ex. `status`), pas des feuilles arbitraires.
+  /// **DÉFENSIF** : jamais de throw ; toute valeur non-`Map`/`List` est rendue
+  /// telle quelle.
+  Object? _normalizeDeep(Object? value) {
+    if (value is Map) {
+      final out = <String, dynamic>{};
+      for (final e in value.entries) {
+        final k = e.key;
+        if (k is! String) {
+          // Clé non-String : intraduisible, préservée à l'identique.
+          out['${e.key}'] = _normalizeDeep(e.value);
+          continue;
+        }
+        if (ZSyncMeta.reservedKeys.contains(k) || k.startsWith(kLegacyPrefix)) {
+          out[k] = e.value;
+          continue;
+        }
+        final sk = camelToSnake(k);
+        final v = e.value;
+        out[sk] = (v is int && sk.endsWith('_at'))
+            ? (_millisToIsoOrNull(v) ?? v)
+            : _normalizeDeep(v);
+      }
+      return out;
+    }
+    if (value is List) {
+      return value.map<Object?>(_normalizeDeep).toList();
+    }
+    return value;
+  }
+
+  /// Coercition DÉFENSIVE d'une valeur legacy vers le type attendu par une clé
+  /// de sync réservée (CR-IFFD-3). **Ne throw jamais.**
+  ///
+  /// Pour [ZSyncMeta.kIsDeleted], le défaut est **FERMÉ** : une valeur
+  /// ininterprétable (ni `bool`, ni `null`) est traitée comme **supprimée**.
+  /// Ce choix est asymétrique et délibéré — masquer à tort un document est
+  /// réparable (la donnée est intacte, la valeur brute reste sous
+  /// `_legacy_<snake>`), tandis que **ressusciter** un document supprimé expose
+  /// un contenu que l'utilisateur avait explicitement retiré, potentiellement à
+  /// d'autres membres d'un dossier partagé.
+  static Object? _coerceSyncMetaValue(String target, Object? value) {
+    if (target == ZSyncMeta.kIsDeleted) {
+      if (value is bool) return value;
+      if (value == null) return false; // absent ⇒ non supprimé
+      return true; // ininterprétable ⇒ fail-closed
+    }
+    if (target == ZSyncMeta.kUpdatedAt) {
+      if (value is String) return value;
+      if (value is int) return _millisToIsoOrNull(value);
+      return null;
     }
     return value;
   }

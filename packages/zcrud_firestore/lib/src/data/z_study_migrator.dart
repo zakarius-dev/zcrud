@@ -278,10 +278,45 @@ class ZLegacyStudyMigrator {
   /// Un document est **déjà canonique** s'il porte [ZSyncMeta.kIsDeleted] ET
   /// qu'AUCUNE clé n'est en camelCase. Garde d'idempotence (franchit le TRAP
   /// `status`). Robuste au-delà du seul statut. **Ne throw jamais.**
+  /// **CR-IFFD-2 / CR-IFFD-3** — la détection est RÉCURSIVE et tient compte des
+  /// alias de clés de sync.
+  ///
+  /// Deux faux positifs corrigés, tous deux à perte SILENCIEUSE :
+  /// 1. n'inspecter que `doc.keys` déclarait canonique un document au premier
+  ///    niveau propre mais au **contenu imbriqué encore legacy** (ex. les
+  ///    `nodes[].edgeColor` récursifs d'un mindmap). Il traversait inchangé, et
+  ///    la détection étant un **point fixe**, aucun passage ultérieur ne le
+  ///    rattrapait jamais ;
+  /// 2. une clé d'alias encore présente (ex. `deleted`, sans majuscule interne)
+  ///    ne déclenchait rien : un corpus partiellement migré était sauté.
+  ///
+  /// Un faux négatif coûte un retraitement (le migrateur est idempotent) ; un
+  /// faux positif perd la donnée. La détection est donc volontairement STRICTE.
   bool _isAlreadyCanonical(Map<String, dynamic> doc) {
     if (!doc.containsKey(ZSyncMeta.kIsDeleted)) return false;
+    final aliases = _codec.syncMetaAliasKeys;
     for (final key in doc.keys) {
-      if (_hasInternalUppercase(key)) return false;
+      if (aliases.contains(key)) return false;
+    }
+    return _isDeepCanonical(doc);
+  }
+
+  /// Vrai ssi AUCUNE clé camelCase ne subsiste à quelque profondeur que ce soit.
+  /// **Ne throw jamais** (AD-10) ; les clés non-`String` sont ignorées.
+  static bool _isDeepCanonical(Object? value) {
+    if (value is Map) {
+      for (final e in value.entries) {
+        final k = e.key;
+        if (k is String && _hasInternalUppercase(k)) return false;
+        if (!_isDeepCanonical(e.value)) return false;
+      }
+      return true;
+    }
+    if (value is List) {
+      for (final v in value) {
+        if (!_isDeepCanonical(v)) return false;
+      }
+      return true;
     }
     return true;
   }

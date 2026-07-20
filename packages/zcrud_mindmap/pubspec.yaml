@@ -3,7 +3,7 @@
 # dépendances inter-packages sont posées en E1-2.
 name: zcrud_mindmap
 description: "Mind maps for zcrud: immutable ZMindmap/ZMindmapNode tree with ZMindmapTreeOps, a graphite auto-layout view plus an accessible list surface, and an outline editor."
-version: 0.3.1
+version: 0.3.2
 publish_to: none
 resolution: workspace
 
@@ -25,8 +25,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.3.1
-  zcrud_markdown: ^0.3.1
+  zcrud_core: ^0.3.2
+  zcrud_markdown: ^0.3.2
   graphite: ^1.2.1
 
 # E10-2 : le package devient PORTEUR D'UI (vue `ZMindmapView`) : il tire le SDK

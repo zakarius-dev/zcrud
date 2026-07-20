@@ -243,7 +243,7 @@ remonte-le — ne tente pas de forcer la résolution.
 `v0.2.1` (2026-07-16) est périmé de ~17 commits : il ne contient ni E-STUDY-UI, ni E-MULTI-EDIT,
 ni l'itération form-parity, ni la montée de version. **Les 28 packages ont été bumpés en `0.3.0`
 et le tag `v0.3.1` est coupé** (v0.3.0 + les correctifs CR-1..CR-4 remontés par la
-session lex). Épingle `ref: v0.3.1` — jamais `main`.
+session lex). Épingle `ref: v0.3.2` — jamais `main`.
 
 ⚠️ `zcrud_riverpod` 0.3.0 porte une **rupture d'API publique** assumée, à connaître avant de
 câbler :

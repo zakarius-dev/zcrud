@@ -9,7 +9,7 @@
 # champ = ES-5.2 ; les sections réordonnables = ES-5.3.
 name: zcrud_study
 description: "Study-tools orchestration (presentation) for zcrud: parametric section descriptor (ZStudyToolsSectionSpec) and a decomposed sectioned layout (ZSectionedStudyLayout) proven by a discriminant golden harness."
-version: 0.3.1
+version: 0.3.2
 publish_to: none
 resolution: workspace
 
@@ -118,14 +118,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.3.1
-  zcrud_study_kernel: ^0.3.1
-  zcrud_annotations: ^0.3.1
-  zcrud_mindmap: ^0.3.1
-  zcrud_flashcard: ^0.3.1
-  zcrud_exam: ^0.3.1
-  zcrud_responsive: ^0.3.1
-  zcrud_ui_kit: ^0.3.1
+  zcrud_core: ^0.3.2
+  zcrud_study_kernel: ^0.3.2
+  zcrud_annotations: ^0.3.2
+  zcrud_mindmap: ^0.3.2
+  zcrud_flashcard: ^0.3.2
+  zcrud_exam: ^0.3.2
+  zcrud_responsive: ^0.3.2
+  zcrud_ui_kit: ^0.3.2
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).
