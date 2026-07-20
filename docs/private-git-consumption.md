@@ -52,22 +52,22 @@ export + annotations :
 ```yaml
 dependencies:
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_flashcard }
   # … les autres packages RÉELLEMENT importés par ton code
 
 # OBLIGATOIRE : impose la source git à TOUTE la fermeture transitive `zcrud_*`.
 # Doit lister les packages transitifs même si tu ne les importes jamais toi-même.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_annotations }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_study_kernel }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_markdown }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.2, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.3, path: packages/zcrud_export }
 ```
 
 ⚠️ **`dependency_overrides` est IGNORÉ pour les packages non-racine.** Dans un monorepo

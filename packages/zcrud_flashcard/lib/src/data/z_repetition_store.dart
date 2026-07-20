@@ -2,10 +2,49 @@
 /// l'état SRS `ZRepetitionInfo`, adressé par `flashcardId` (Story E9-4, AC1/AC2).
 ///
 /// origine: canonique §7 (l.305-306) — l'état de répétition espacée est persisté
-/// **top-level** `study_repetitions/{cardId}`, **jamais** dans le sous-arbre
-/// partageable de la carte. Ce canal séparé garantit l'invariant SRS top-level
-/// (AD-9) : dupliquer/partager une carte n'emporte **jamais** l'historique SRS
-/// d'autrui.
+/// dans un canal **séparé** du sous-arbre partageable de la carte. Ce canal
+/// garantit l'invariant SRS (AD-9) : dupliquer/partager une carte n'emporte
+/// **jamais** l'historique SRS avec le corps de la carte.
+///
+/// ## ⚠️ CE QUE CE CANAL NE GARANTIT PAS À LUI SEUL (CR-IFFD-4, 2026-07-20)
+///
+/// La documentation affirmait auparavant que ce canal empêchait de partager
+/// « l'historique SRS **d'autrui** ». **C'était faux**, et l'écart est corrigé
+/// ici. Le canal sépare le SRS **du corps de la carte** — il ne sépare pas, par
+/// construction, le SRS **entre utilisateurs** : la clé logique documentée
+/// (`{cardId}`) est la même pour tous.
+///
+/// Or plusieurs utilisateurs révisant la **même carte partagée** est un mode
+/// nominal (dossiers publics/partagés), pas un cas limite. Sans scope
+/// d'appartenance, leurs progressions **collisionnent sur un unique
+/// enregistrement** : le dernier écrit gagne, les autres sont détruites — sans
+/// erreur ni trace.
+///
+/// ## CONTRAT : une instance = UN propriétaire (NON-NÉGOCIABLE)
+///
+/// Ce port est **abstrait et toujours injecté** — zcrud n'en fournit
+/// **aucune** implémentation concrète (l'adaptateur est la responsabilité de la
+/// composition root de l'app). C'est précisément là que le scope se pose :
+///
+/// > **Une instance de [ZRepetitionStore] est liée à EXACTEMENT UN propriétaire.**
+/// > L'adaptateur DOIT porter l'identité du propriétaire (typiquement l'`uid`)
+/// > **dans son chemin de persistance** — p. ex.
+/// > `users/{uid}/study_repetitions/{cardId}` — et non dans la clé passée aux
+/// > méthodes.
+///
+/// 🚫 **N'encodez JAMAIS le propriétaire dans le `flashcardId`**
+/// (`'{uid}_{cardId}'`) : cela corromprait la jointure carte↔répétition dont
+/// dépendent [deleteByCard] et la purge des orphelins.
+///
+/// ### Limite résiduelle assumée — purge inter-propriétaires
+///
+/// Une instance liée à un propriétaire ne peut atteindre que SES
+/// enregistrements. Supprimer une carte partagée via
+/// `zFlashcardCascadeDeleteRoot` purge donc le SRS du **seul** propriétaire
+/// courant ; ceux des autres deviennent orphelins. C'est **délibéré** — un
+/// client n'a ni le droit ni les moyens de supprimer l'état d'autrui. Le balayage
+/// inter-propriétaires relève du **backend** (tâche planifiée / Cloud Function),
+/// jamais de ce port.
 ///
 /// **Pourquoi un port flashcard-local (et non `ZSyncableRepository`) ?** —
 /// `ZRepetitionInfo` **n'est pas** un `ZEntity` (clé de jointure `flashcardId`,

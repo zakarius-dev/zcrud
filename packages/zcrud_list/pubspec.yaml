@@ -9,7 +9,7 @@
 # config plateforme de l'app hôte (Key Don'ts « never de secret dans un package »).
 name: zcrud_list
 description: "DynamicList data-grid for zcrud powered by Syncfusion, isolated behind the neutral ZListRenderer port."
-version: 0.3.2
+version: 0.3.3
 publish_to: none
 resolution: workspace
 
@@ -34,7 +34,7 @@ dependencies:
   # Bump coordonné 32→34 (le `syncfusion_flutter_core` partagé impose de bouger
   # tout le stack ensemble : pdf/xlsio/datagrid) pour débloquer `printing ^5.15.0`.
   syncfusion_flutter_datagrid: ^34.1.31
-  zcrud_core: ^0.3.2
+  zcrud_core: ^0.3.3
 
 dev_dependencies:
   flutter_test:

@@ -3,9 +3,17 @@
 ///
 /// origine: lex_core (module « Étude ») — `repetition_info.dart` (canonique
 /// §2.1, l.62-73) : l'état de répétition espacée d'une carte, **hors carte**,
-/// persisté top-level `study_repetitions/{cardId}` (E9-4) — jamais dans le
-/// sous-arbre partageable. Le partage/duplication d'une carte n'emporte donc
-/// jamais l'historique SRS d'autrui (AD-9).
+/// persisté dans un canal SÉPARÉ (E9-4) — jamais dans le sous-arbre partageable.
+/// Le partage/duplication d'une carte n'emporte donc jamais l'historique SRS
+/// **avec le corps de la carte** (AD-9).
+///
+/// ⚠️ **Portée exacte de cet invariant (CR-IFFD-4, 2026-07-20)** — la formulation
+/// antérieure (« n'emporte jamais l'historique SRS **d'autrui** ») était FAUSSE :
+/// la séparation joue vis-à-vis du **corps de la carte**, pas entre
+/// **utilisateurs**. `ZRepetitionInfo` ne porte volontairement **aucun champ
+/// d'appartenance** — le scope par propriétaire est porté par le **chemin de
+/// persistance** de l'adaptateur, une instance de `ZRepetitionStore` étant liée à
+/// exactement un propriétaire. Voir le contrat détaillé sur `ZRepetitionStore`.
 ///
 /// **Généré par `@ZcrudModel` (AD-3)** : `melos run generate` émet
 /// `z_repetition_info.g.dart` (`part`, gitignoré, régénéré) portant
