@@ -29,7 +29,7 @@ sera faite dans une session zcrud dédiée, suivie d'un nouveau tag.
 
 ## 1. Ce qu'est zcrud (état réel au 2026-07-20)
 
-Monorepo Flutter (pub workspaces + melos), **29 packages** sous `packages/`, distribué **en
+Monorepo Flutter (pub workspaces + melos), **28 packages** sous `packages/`, distribué **en
 privé par dépendance git sur tag** (`github.com/zakarius-dev/zcrud`) — jamais publié sur pub.dev.
 Doc de consommation faisant foi : **`zcrud/docs/private-git-consumption.md`** (lis-la en entier
 avant toute manipulation de `pubspec.yaml`).
@@ -46,11 +46,11 @@ avant toute manipulation de `pubspec.yaml`).
   `zcrud_navigation` (`ZEditionPresentation`, `ZPresentationPolicy`), `zcrud_ui_kit`
   (`ZContentState`, `ZEmptyState/Loading/Error`, `ZConfirmDialog`).
 - **Champs & rendu** : `zcrud_markdown` (Quill + `ZCodec`), `zcrud_html`, `zcrud_media`,
-  `zcrud_select` (+ fork vendorisé `awesome_select`), `zcrud_field_extras`, `zcrud_geo`,
+  `zcrud_select` (+ fork `awesome_select` en dép. git), `zcrud_field_extras`, `zcrud_geo`,
   `zcrud_intl`, `zcrud_list` (Syncfusion `SfDataGrid` derrière `ZListRenderer`), `zcrud_export`,
   `zcrud_export_ui`.
 - **Data** : `zcrud_firestore` (adapters Firestore + Hive offline-first).
-- **Bindings** : **`zcrud_riverpod`** ← *c'est le tien*, `zcrud_get`, `zcrud_provider`.
+- **Bindings** : **`zcrud_riverpod`** (Riverpod 3.3.x) ← *c'est le tien*, `zcrud_get`, `zcrud_provider`.
 
 **Invariants d'architecture** (16 AD de base + extensions AD-17..AD-56) — source de vérité :
 `zcrud/_bmad-output/planning-artifacts/architecture/architecture-zcrud-2026-07-09/architecture.md`
@@ -180,53 +180,85 @@ repli `ZUnsupportedFieldWidget`. Un **showcase exhaustif** vit dans `zcrud/examp
 Une reconnaissance croisée des deux dépôts a déjà été faite. **Vérifie chaque point toi-même sur
 disque** — ne me crois pas sur parole, ces mesures datent du 2026-07-20.
 
-### 🔴 (0) CONFLIT DE RÉSOLUTION MAJEUR — Riverpod 2 vs 3
+> **Mis à jour le 2026-07-20**, après une montée de version complète de zcrud (6 vagues,
+> commits `e9c603e` → `31cadf4`) menée précisément pour débloquer cette migration.
+> **Trois des quatre bloqueurs annoncés ici auparavant sont LEVÉS.** Ce qui suit est l'état réel.
 
-| Dépendance | lex_douane | zcrud | Verdict |
+### ✅ Bloqueurs LEVÉS côté zcrud (ne les rejoue pas)
+
+| Dépendance | lex_douane | zcrud (après montée) | État |
 |---|---|---|---|
-| `flutter_riverpod` | `^3.3.0` (**résolu 3.3.2**) + `riverpod_annotation` 4.0.3 / `riverpod_generator` 4.0.4 | **`^2.6.1`** (`zcrud_riverpod`) | 🔴 **BLOQUANT** — majeures incompatibles, `^2.6.1` refuse 3.3.2 |
-| `syncfusion_flutter_*` | `^33.2.12` (**résolu 33.2.15**) | **`^34.1.31`** (`zcrud_list`, `zcrud_export`) | 🔴 **BLOQUANT** si `zcrud_list`/`zcrud_export` sont tirés (Syncfusion exige des majeures alignées entre modules) |
-| `cloud_firestore` | `^6.1.1` (résolu 6.6.0) | `^6.0.0` | ✅ compatible |
-| `hive` / `hive_flutter` / `dartz` | 2.2.3 / 1.1.0 / 0.10.1 | `^2.2.3` / `^1.1.0` / `^0.10.1` | ✅ compatible |
-| `flutter_quill` | **absent de lex** | `^11.5.0` (`zcrud_markdown`) | ⚠️ nouvelle dépendance transitive lourde |
-| `analyzer` | contraint par `freezed 3.2.6-dev.1` / `build_runner 2.15.0` ; `lex_aa7_lint` **déjà sorti du workspace** car `custom_lint 0.8.1` épingle `analyzer 8.4.0` | `^8.0.0` (`zcrud_generator`, dev) | ⚠️ à re-tester — lex a déjà un historique de blocage sur ce point |
+| `flutter_riverpod` | `^3.3.0` (résolu **3.3.2**) | **`^3.3.0`** — `zcrud_riverpod` migré en Riverpod 3 | ✅ **aligné** |
+| `analyzer` | résolu **12.1.0** | **`^12.0.0`** (résolu 12.1.0) | ✅ **aligné** |
+| `syncfusion_flutter_*` | `^33.2.12` (résolu 33.2.15) | **`^34.1.31`** | ⚠️ **c'est à LEX de monter** en 34 (cf. vague U4 du prompt de montée lex) — plus un blocage zcrud |
+| `awesome_select` | — | **dépendance git** `zakarius-dev/awesome_select` `ref: v6.1.0` | ✅ **résolu** — plus de vendoring, plus de contrainte hosted cassée |
+| `cloud_firestore` | `^6.1.1` (6.6.0) | `^6.0.0` (résolu 6.7.1) | ✅ compatible |
+| `hive` / `hive_flutter` / `dartz` | 2.2.3 / 1.1.0 / 0.10.1 | idem | ✅ compatible |
+| `flutter_quill` | **absent de lex** | `^11.5.0` (`zcrud_markdown`) | ⚠️ nouvelle dépendance transitive lourde — décision, pas blocage |
 
-**Le conflit Riverpod est le premier obstacle réel, et il n'a pas de contournement app-side
-propre.** Trois voies, à m'exposer avec ta recommandation motivée **avant** toute autre décision :
+**Conséquence** : tu peux consommer `zcrud_riverpod` **tel quel**, en Riverpod 3 idiomatique. Le
+débat « monter le binding / le contourner / différer » est clos.
 
-1. **Faire monter `zcrud_riverpod` en Riverpod 3** — change-request zcrud (le binding est mince :
-   `ZRiverpodResolver`, `ZcrudRiverpodScope`, `zFormControllerProvider`, seam + fabrique study).
-   Probablement la bonne réponse, mais **hors de ton périmètre d'écriture**.
-2. **Ne pas consommer `zcrud_riverpod` du tout** : câbler toi-même, dans `lex_ui`/`lex_data`, des
-   providers `@riverpod` (v3, codegen — l'idiome lex) au-dessus des ports **purs** de
-   `zcrud_core`/`zcrud_study_kernel`, qui **n'ont aucune dépendance Riverpod**. Tu perds ~200
-   lignes de binding et le patron d'égalité profonde `ZSessionConfigKey`, mais tu débloques tout
-   le reste immédiatement et tu restes 100 % idiomatique lex.
-3. **Différer** toute consommation Riverpod et n'intégrer d'abord que les packages purs.
+### 🔴 (0) LE bloqueur restant — `file_picker`, et il est DUR
 
-**Mesure la contrainte réellement** (`dart pub get --dry-run` avec la dépendance git ajoutée)
-avant de conclure. Un `pubspec.lock` qui résout est la seule preuve acceptable.
+| | lex_douane | zcrud |
+|---|---|---|
+| `file_picker` | `12.0.0-beta.5` | **`^10.3.3`**, plafonné |
 
-### (a) Le tag `v0.2.1` est PÉRIMÉ. Le dernier tag zcrud (`v0.2.1`, 2026-07-16) est **10 commits
-en retard** sur `main` : il **ne contient PAS** l'epic E-STUDY-UI, E-MULTI-EDIT, ni l'itération
-form-parity (4 satellites neufs + fork vendorisé + 46 types de champs). **Un nouveau tag
-(`v0.3.0`) doit être coupé côté zcrud avant l'intégration.** C'est une **action owner** — ne
-l'exécute pas depuis cette session (zcrud est en lecture seule). Signale-la et attends. En
-attendant, tu peux prototyper avec un `ref:` sur un **SHA de commit** (`cdb1f39`), jamais sur
-`main`.
+**Cause** : `html_editor_enhanced` **2.7.1 — sa dernière version publiée** — épingle
+`file_picker ^10.2.0`. `zcrud_html` en dépend, et le monorepo zcrud est un **pub workspace à
+résolution unique** : tout le graphe est donc gelé en `file_picker` 10.x.
 
-**(b) Piège de résolution `awesome_select`.** `zcrud_select` déclare `awesome_select: ^6.0.0` en
-contrainte **hosted**. Dans le workspace zcrud, `resolution: workspace` fait gagner le **fork
-vendorisé** (`packages/awesome_select`, `publish_to: none`). **Pour un consommateur externe en
-dépendance git, cette contrainte se résout depuis pub.dev — donc sur le VRAI `awesome_select`,
-pas sur le fork.** Si tu tires `zcrud_select`, tu dois soit ajouter une dépendance git explicite
-sur `path: packages/awesome_select`, soit un `dependency_overrides`. **Vérifie le
-`pubspec.lock` résolu** et prouve quelle source a gagné avant de conclure que ça marche.
+**Ce qui a été essayé et a ÉCHOUÉ** (ne le refais pas) : un `dependency_overrides` forçant
+`file_picker` 11. La résolution passe, **mais la compilation casse** —
 
-**(c) Déclaration transitive obligatoire.** Les dépendances inter-`zcrud_*` sont des contraintes
-hosted (`zcrud_core: ^0.2.1`). Tout package `zcrud_*` **transitivement requis** doit être déclaré
+```
+html_editor_enhanced-2.7.1/lib/src/widgets/toolbar_widget.dart:1972
+  Error: Member not found: 'platform'.    result = await FilePicker.platform
+```
+
+`file_picker` **11.0.0 a supprimé `FilePicker.platform`** au profit de méthodes statiques
+(`FilePicker.pickFiles()`). La contrainte `^10.2.0` traduit donc une **vraie rupture d'API**, pas
+une borne prudente : aucun override ne la contourne. Et la **12 n'y change rien** (rupture
+introduite en 11, jamais annulée ; la 12 n'a d'ailleurs **aucune version stable** — 7 betas).
+
+**Portée exacte** — deux packages sont touchés, pour deux raisons différentes :
+
+| Package | Situation |
+|---|---|
+| `zcrud_html` | dépend de `html_editor_enhanced` (tiers, abandonné) → **impatchable sans forker** |
+| `zcrud_media` | porte **son propre** `FilePicker.platform.pickFiles(...)` → réparable en 1 ligne, **mais** il partage la résolution du workspace avec `zcrud_html`, donc il ne peut pas monter seul |
+
+**Décision owner prise le 2026-07-20 : STATU QUO.** `file_picker` reste en 10.x ; `zcrud_html` et
+`zcrud_media` sont **différés** de la migration lex. La sortie retenue n'est pas un fork de plus
+mais le remplacement de `html_editor_enhanced` par **un éditeur rich-text unique servant markdown
+ET html** — chantier de conception à venir, qui supprime la cause racine.
+
+⚠️ **Pour toi, concrètement** : **ne consomme ni `zcrud_html` ni `zcrud_media`** dans cette
+migration. Tous les autres packages sont disponibles. Si un besoin de champ média apparaît,
+remonte-le — ne tente pas de forcer la résolution.
+
+### (a) Le tag à consommer est `v0.3.0`
+
+`v0.2.1` (2026-07-16) est périmé de ~17 commits : il ne contient ni E-STUDY-UI, ni E-MULTI-EDIT,
+ni l'itération form-parity, ni la montée de version. **Les 28 packages ont été bumpés en `0.3.0`
+et le tag `v0.3.0` est coupé.** Épingle `ref: v0.3.0` — jamais `main`.
+
+⚠️ `zcrud_riverpod` 0.3.0 porte une **rupture d'API publique** assumée, à connaître avant de
+câbler :
+- `zStudyWatchAllProvider<T>` retourne désormais `StreamProvider<List<T>>` (le type
+  `AutoDisposeStreamProvider` a disparu de Riverpod 3 ; l'auto-dispose est le défaut, la
+  sémantique est inchangée) ;
+- **Riverpod 3 ENCAPSULE les exceptions de provider dans un `ProviderException`.** Un
+  `ZScopeError` levé par un seam non surchargé te parvient donc **enveloppé** : déballe-le via
+  `.exception`. C'est le piège n°1 au premier câblage de seam.
+
+**(b) Déclaration transitive obligatoire.** Les dépendances inter-`zcrud_*` sont des contraintes
+hosted (`zcrud_core: ^0.3.0`). Tout package `zcrud_*` **transitivement requis** doit être déclaré
 comme dépendance git (même `url`, même `ref`), sinon pub le cherche sur pub.dev où il n'existe
 pas. Établis le graphe des paquets dont tu as besoin **avant** d'éditer le pubspec.
+`awesome_select`, lui, se résout **tout seul** (dépendance git déclarée par `zcrud_select`) :
+aucun override à prévoir.
 
 ---
 
@@ -383,8 +415,9 @@ et documente la règle retenue — ne les rejoue pas à chaque story.
 1. `docs/zcrud-integration-inventory.md` — la reconnaissance de la Phase 0, avec les **écarts et
    points bloquants** en tête de document.
 2. Une **note de décision** sur les points de pré-vol (§ 4), en tête desquels **le conflit
-   Riverpod 2 vs 3** avec ta recommandation motivée entre les 3 voies — puis le tag périmé, la
-   résolution `awesome_select`, les majeures Syncfusion, le graphe transitif à déclarer.
+   `file_picker`** (seul bloqueur restant : `zcrud_html` et `zcrud_media` sont différés, décision
+   owner) — puis la montée Syncfusion 33→34 à faire CÔTÉ LEX, et le graphe transitif à déclarer.
+   Les bloqueurs Riverpod, analyzer et `awesome_select` sont LEVÉS : ne les rejoue pas.
 3. Un **plan de migration séquencé** (epics + stories BMAD), respectant l'ordre V0→V5 du § 5, avec
    pour chaque story : périmètre, critère de non-régression, et **critère de rollback**.
 4. `docs/zcrud-change-requests.md` — initialisé, même vide.

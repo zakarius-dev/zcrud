@@ -159,12 +159,21 @@ dette reste tracée, pas oubliée. **Ne supprime pas le package** et ne le réin
 Une intégration du monorepo **zcrud** est prévue **après**. Deux conséquences :
 
 1. **Ne rétrograde rien pour « préparer » zcrud** — en particulier **ne touche pas à
-   `flutter_riverpod` 3.3.2**. lex est en avance (v3), zcrud est en retard (v2) : **c'est à zcrud
-   de monter**, pas à lex de descendre. Une rétrogradation Riverpod 3→2 côté lex serait une
-   régression majeure sur 321 fichiers en `@riverpod` codegen et 340 `ConsumerWidget`.
-2. Deux montées **convergent** naturellement avec zcrud et sont donc **prioritaires** : **Syncfusion
-   33→34** (zcrud est déjà sur 34.1.31) et **`cloud_firestore` 6.7.1** (zcrud accepte `^6.0.0`).
-   Traite-les avec soin : elles éliminent un conflit futur.
+   `flutter_riverpod` 3.3.2**. C'était déjà la consigne quand zcrud était en Riverpod 2 ; elle
+   n'a plus lieu d'être invoquée : **zcrud a été migré en Riverpod 3.3.x le 2026-07-20**
+   (`zcrud_riverpod ^3.3.0`). Les deux dépôts sont alignés. Une rétrogradation Riverpod 3→2
+   côté lex resterait une régression majeure sur 321 fichiers `@riverpod` et 340
+   `ConsumerWidget` — elle n'apporterait désormais strictement rien.
+2. **Montée PRIORITAIRE — Syncfusion 33→34 (vague U4).** zcrud est passé en `^34.1.31` ; tant que
+   lex reste en 33.2.15, `zcrud_list` et `zcrud_export` sont inconsommables (Syncfusion exige des
+   majeures alignées entre modules). **C'est désormais le principal conflit résiduel, et il se
+   règle CÔTÉ LEX.** `cloud_firestore` 6.7.1 et `analyzer` 12.1.0 sont déjà alignés des deux
+   côtés — plus rien à faire là-dessus.
+3. **Ne cherche pas à monter `file_picker` pour zcrud.** zcrud est volontairement gelé en 10.x
+   (`html_editor_enhanced` 2.7.1 épingle `^10.2.0`, et `file_picker` 11 a supprimé
+   `FilePicker.platform` — un `dependency_overrides` a été testé et **casse à la compilation**).
+   Décision owner : `zcrud_html` et `zcrud_media` sont **différés** de la migration. Ta propre
+   montée de `file_picker` est donc libre — elle n'interfère avec rien.
 
 Ne planifie, n'installe et ne référence **aucun package zcrud** dans cette session.
 
