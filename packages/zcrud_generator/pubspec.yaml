@@ -35,11 +35,11 @@ dependencies:
   # architecture.md cible analyzer ^7 ; la résolution PARTAGÉE du workspace
   # (flutter_test/test → analyzer >=8) impose ^8 ici. Variance assumée et
   # documentée (Dev Notes) : contrainte de résolution unique, pas un choix libre.
-  analyzer: ^8.0.0
-  build: ^3.0.0
+  analyzer: ^12.0.0
+  build: ^4.0.0
   source_gen: ^4.0.0
 
 dev_dependencies:
-  build_runner: ^2.5.0
-  build_test: ^3.0.0
+  build_runner: ^2.15.0
+  build_test: ^3.5.0
   test: ^1.25.0

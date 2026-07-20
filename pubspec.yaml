@@ -132,7 +132,7 @@ dev_dependencies:
   # `interface class`) : une entité `ZExtensible` non sondée traversait le gate.
   # Dépendance de SCRIPT (root, dev-only) — AD-1 intact : aucun package `zcrud_*`
   # ne gagne `analyzer` (il reste confiné à `zcrud_generator`, seul autorisé).
-  analyzer: ^8.0.0
+  analyzer: ^12.0.0
 
 # Configuration melos (melos >= 6 / pub workspaces la lit depuis le root
 # pubspec.yaml). ⚠️ CE BLOC EST LA SOURCE DE VÉRITÉ DES SCRIPTS melos : le

@@ -422,7 +422,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final fields = <_Field>[];
     final seenKeys = <String>{};
     for (final field in element.fields) {
-      if (field.isStatic || field.isSynthetic) continue;
+      // analyzer 12 : `Element.isSynthetic` a été retiré de l'API publique. Le
+      // remplaçant sémantique sur `PropertyInducingElement` est
+      // `isOriginDeclaration` (le champ vient d'une `FieldDeclaration` /
+      // `EnumConstantDeclaration` explicite) ; sa négation couvre exactement
+      // l'ancien « synthétique » (propriété induite par un getter/setter), et
+      // reste conservatrice face à d'éventuelles futures origines.
+      if (field.isStatic || !field.isOriginDeclaration) continue;
       final fieldAnno = _fieldChecker.firstAnnotationOf(field);
       final isId = _idChecker.hasAnnotationOf(field);
       if (fieldAnno == null && !isId) continue;

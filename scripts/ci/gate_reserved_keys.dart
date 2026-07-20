@@ -219,10 +219,14 @@ bool _usesReservedKeysToken(CompilationUnit unit) {
 }
 
 /// Nom déclaré d'un membre de compilation (classe / alias / enum / mixin).
+// analyzer 12 : l'AST a été restructuré. `ClassDeclaration`/`EnumDeclaration`
+// exposent désormais leur nom via `namePart.typeName` (le `namePart` porte aussi
+// les type-params et l'éventuel constructeur primaire) au lieu d'un `name`
+// direct. `ClassTypeAlias` et `MixinDeclaration` conservent `name`.
 String? _declName(CompilationUnitMember d) {
-  if (d is ClassDeclaration) return d.name.lexeme;
+  if (d is ClassDeclaration) return d.namePart.typeName.lexeme;
   if (d is ClassTypeAlias) return d.name.lexeme;
-  if (d is EnumDeclaration) return d.name.lexeme;
+  if (d is EnumDeclaration) return d.namePart.typeName.lexeme;
   if (d is MixinDeclaration) return d.name.lexeme;
   return null;
 }
@@ -349,10 +353,12 @@ class _TypeIndex {
 }
 
 /// Membres de classe de [d] (vide pour un alias de classe).
+// analyzer 12 : les membres passent par le `body` (`ClassBody`/`EnumBody`),
+// qui n'existait pas auparavant — `d.members` a disparu des trois formes.
 List<ClassMember> _membersOf(CompilationUnitMember d) {
-  if (d is ClassDeclaration) return d.members;
-  if (d is EnumDeclaration) return d.members;
-  if (d is MixinDeclaration) return d.members;
+  if (d is ClassDeclaration) return d.body.members;
+  if (d is EnumDeclaration) return d.body.members;
+  if (d is MixinDeclaration) return d.body.members;
   return const <ClassMember>[];
 }
 
