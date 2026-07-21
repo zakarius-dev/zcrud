@@ -77,7 +77,7 @@ class ZFlashcardReviewCard extends StatefulWidget {
   ///   la source canonique `SessionFlashcardView`) ;
   /// - [onRevealChanged] : **notification sortante** de la révélation (la carte
   ///   ne cède jamais la propriété de son état — AD-2) ;
-  /// - [onEdit]/[onDelete] : actions injectées — `null` ⇒ action **ABSENTE**
+  /// - [onEdit]/[onDelete]/[onSource] : actions injectées — `null` ⇒ action **ABSENTE**
   ///   (AD-45), exactement comme [ZFlashcard.isReadOnly] : **une seule règle**.
   const ZFlashcardReviewCard({
     required this.card,
@@ -87,6 +87,7 @@ class ZFlashcardReviewCard extends StatefulWidget {
     this.onRevealChanged,
     this.onEdit,
     this.onDelete,
+    this.onSource,
     super.key,
   });
 
@@ -111,6 +112,16 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Action de suppression — `null` ⇒ **absente** de l'arbre (AD-45).
   final VoidCallback? onDelete;
 
+  /// Action « voir la source » (CR-LEX-6) — `null` ⇒ action **ABSENTE**, comme
+  /// [onEdit]/[onDelete].
+  ///
+  /// Remonter de la carte vers ce dont elle est tirée (article de code, note,
+  /// document, conversation…) est une **traçabilité** que l'hôte seul sait
+  /// résoudre : `ZFlashcard.source` est un slot ouvert (`ZSourceRegistry`), et
+  /// la carte ne sait donc NI ce que la source désigne NI comment y naviguer.
+  /// D'où un callback, jamais une résolution interne.
+  final VoidCallback? onSource;
+
   /// Clé de la rangée d'actions (testabilité — patron `buttonKeyPrefix`).
   static const ValueKey<String> actionsKey =
       ValueKey<String>('zFlashcardReviewCard_actions');
@@ -122,6 +133,10 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Clé de l'action de suppression.
   static const ValueKey<String> deleteActionKey =
       ValueKey<String>('zFlashcardReviewCard_delete');
+
+  /// Clé de l'action « voir la source » (CR-LEX-6).
+  static const ValueKey<String> sourceActionKey =
+      ValueKey<String>('zFlashcardReviewCard_source');
 
   /// Builder de contenu **RÉELLEMENT** utilisé par `build` — **tear-off statique**
   /// quand rien n'est injecté (AC1-d/AC7).
@@ -534,6 +549,16 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     if (!widget._actionsAllowed) return null;
     final theme = ZcrudTheme.of(context);
     final actions = <Widget>[
+      // Consultation avant mutation : la source précède édition/suppression.
+      if (widget.onSource != null)
+        _action(
+          context,
+          key: ZFlashcardReviewCard.sourceActionKey,
+          icon: Icons.link,
+          labelKey: 'zcrud.flashcard.action.source',
+          fallback: 'Voir la source',
+          onTap: widget.onSource!,
+        ),
       if (widget.onEdit != null)
         _action(
           context,

@@ -3,7 +3,7 @@
 # dépendances inter-packages sont posées en E1-2.
 name: zcrud_annotations
 description: "Annotations for the zcrud code generator: @ZcrudModel, @ZcrudField and @ZcrudId. Declare a model once, generate everything."
-version: 0.3.7
+version: 0.3.8
 publish_to: none
 resolution: workspace
 
@@ -22,7 +22,7 @@ environment:
 # Arêtes inter-packages zcrud_* (AD-1, graphe acyclique — E1-2).
 # Siblings du workspace résolus par contrainte de version (pas de path:).
 dependencies:
-  zcrud_core: ^0.3.7
+  zcrud_core: ^0.3.8
 
 # Tests pur-Dart (E2-4) : `package:test` seul. AUCUNE dépendance runtime lourde
 # (ni build_runner/source_gen/analyzer, ni gestionnaire d'état, ni Firebase,

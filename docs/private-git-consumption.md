@@ -19,9 +19,9 @@ repo privé `zakarius-dev/zcrud` :
 
 ## Épinglage
 
-Utiliser un **tag de release** (ex. `v0.3.1`) comme `ref`, jamais `main` (stabilité
+Utiliser un **tag de release** (ex. `v0.3.8`) comme `ref`, jamais `main` (stabilité
 et reproductibilité). Le versionnage se fait **par tag git**, pas par contrainte
-`^0.3.1`.
+`^0.3.8`.
 
 ## Ajouter les packages
 
@@ -31,7 +31,7 @@ et reproductibilité). Le versionnage se fait **par tag git**, pas par contraint
 > `dependency_overrides` est **obligatoire**. Détail ci-dessous.
 
 ⚠️ **Règle importante** : les dépendances **inter-`zcrud_*`** du monorepo sont des
-contraintes **hosted** (`zcrud_core: ^0.3.7`). Or **pub exige que la SOURCE d'une
+contraintes **hosted** (`zcrud_core: ^0.3.8`). Or **pub exige que la SOURCE d'une
 dépendance soit identique dans tout le graphe** : déclarer `zcrud_core` en `git` côté
 app ne satisfait pas une arête interne qui l'attend en `hosted`. La résolution échoue :
 
@@ -52,30 +52,51 @@ export + annotations :
 ```yaml
 dependencies:
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_flashcard }
   # … les autres packages RÉELLEMENT importés par ton code
 
 # OBLIGATOIRE : impose la source git à TOUTE la fermeture transitive `zcrud_*`.
 # Doit lister les packages transitifs même si tu ne les importes jamais toi-même.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_annotations }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_study_kernel }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_markdown }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.7, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.3.8, path: packages/zcrud_export }
 ```
 
-⚠️ **`dependency_overrides` est IGNORÉ pour les packages non-racine.** Dans un monorepo
-consommateur (melos / pub workspaces), le bloc doit donc être répété dans **chaque
-`pubspec.yaml` d'application** — il ne peut pas être factorisé dans un package
-intermédiaire. C'est un coût de maintenance réel à chaque changement de `ref:`.
-La sortie de fond (supprimer cette duplication) serait de publier les packages sur un
-registre privé ; non retenu à ce jour (cf. en-tête de ce document).
+### Où placer le bloc — deux cas, à ne pas confondre (CR-LEX-5)
+
+> 🔴 **CORRECTION 2026-07-21.** Ce document prescrivait « répéter le bloc dans chaque
+> `pubspec.yaml` d'application ». C'est correct pour un consommateur **mono-package**, et
+> **faux et bloquant** pour un consommateur en **pub workspace**.
+
+**Cas 1 — consommateur MONO-PACKAGE (une app, un `pubspec.yaml`)**
+Un seul bloc, dans le `pubspec.yaml` de l'app. `dependency_overrides` n'est honoré que dans
+le package **racine** : un bloc placé dans un package intermédiaire est ignoré en silence.
+
+**Cas 2 — consommateur en PUB WORKSPACE (monorepo : lex_douane, IFFD…)**
+**Un bloc UNIQUE dans le `pubspec.yaml` RACINE du workspace**, qui lie tous les membres via
+le lock partagé. **Ne le répétez pas dans les apps** : pub refuse un même override déclaré
+par deux membres, *même si les deux blocs sont strictement identiques* —
+
+```
+The package `collection` is overridden in both:
+package `app_a` at `./apps/a` and 'app_b' at `./apps/b`.
+Consider removing one of the overrides.
+```
+
+Ce n'est pas un conflit de valeurs mais une règle d'unicité de l'override dans un workspace.
+Mesuré côté lex_douane (racine + 4 packages + 2 apps) : le bloc racine est honoré et lie
+bien tous les membres.
+
+La sortie de fond (supprimer la duplication entre apps mono-package) serait de publier les
+packages sur un registre privé ; non retenu à ce jour (cf. en-tête de ce document).
 
 ### Graphe de dépendances (à déclarer selon ce qu'on utilise)
 

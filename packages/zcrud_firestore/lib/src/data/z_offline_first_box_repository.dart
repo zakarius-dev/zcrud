@@ -177,14 +177,59 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     }
   }
 
-  /// Normalise `updated_at` (clé LWW hors-entité) en String ISO-8601 **si** elle
-  /// est lue au format Firestore natif (`Timestamp`/`DateTime`/`{_seconds,
-  /// _nanoseconds}`), pour que `ZSyncMeta.fromJson` (parse ISO String) et le
-  /// comparateur LWW la relisent (parité `firebase_z_repository_impl.dart`
-  /// `_normalizeIsoInPlace`, AD-10/M3). Toute autre valeur est laissée intacte.
+  /// Normalise en String ISO-8601 **TOUT** horodatage lu au format Firestore
+  /// natif (`Timestamp`, `DateTime`, forme sérialisée `{_seconds,_nanoseconds}`)
+  /// — **pas seulement** la clé LWW (CR-LEX-8/CR-LEX-9).
+  ///
+  /// ## Pourquoi systématique, et non une liste de clés déclarée
+  ///
+  /// Cette normalisation ne traitait auparavant que [ZSyncMeta.kUpdatedAt]. Tout
+  /// AUTRE champ porteur d'un `Timestamp` était transmis **brut** à [_decode] :
+  /// or les entités `Z*` sont **backend-agnostiques par conception** (AD-16 —
+  /// `Timestamp` est confiné à ce package), leur `fromMap` généré ne sait décoder
+  /// ni `Timestamp` ni `{_seconds,_nanoseconds}`, et le champ retombait
+  /// silencieusement à **`null`**. Un hôte dont la production écrit ses dates en
+  /// `Timestamp` natif perdait la date de TOUS ses enregistrements au cutover,
+  /// sans erreur ni avertissement.
+  ///
+  /// Une liste `dateKeys` déclarée par l'hôte aurait été un second inventaire à
+  /// tenir juste — et en oublier une clé reproduit exactement la perte. Ici
+  /// aucune configuration n'est requise : un `Timestamp` est **sans ambiguïté**
+  /// temporel, et le convertir est précisément ce qu'AD-16 exige. Un hôte n'a
+  /// aucun usage légitime d'un `Timestamp` brut dans son domaine.
+  ///
+  /// **Récursif** : un horodatage imbriqué (sous-map / liste) pose le même
+  /// problème et est traité de même. **DÉFENSIF (AD-10)** : toute valeur
+  /// non-temporelle traverse **intacte**, jamais de `throw`.
   void _normalizeMetaIso(Map<String, dynamic> map) {
-    final t = _timeFromRaw(map[ZSyncMeta.kUpdatedAt]);
-    if (t != null) map[ZSyncMeta.kUpdatedAt] = t.toIso8601String();
+    for (final key in map.keys.toList()) {
+      map[key] = _normalizeTemporalDeep(map[key]);
+    }
+  }
+
+  /// Convertit récursivement tout horodatage backend en String ISO-8601.
+  /// Retourne la valeur **inchangée** si elle n'est pas temporelle (AD-10).
+  Object? _normalizeTemporalDeep(Object? value) {
+    // Une String déjà ISO n'est PAS retouchée (idempotence) ; on ne convertit
+    // que les formes backend, jamais du texte que l'hôte pourrait avoir voulu.
+    if (value is Timestamp || value is DateTime) {
+      return _timeFromRaw(value)?.toIso8601String() ?? value;
+    }
+    if (value is Map) {
+      // Forme sérialisée `{_seconds,_nanoseconds}` → horodatage complet.
+      if (value['_seconds'] is int) {
+        final t = _timeFromRaw(value);
+        if (t != null) return t.toIso8601String();
+      }
+      return <String, dynamic>{
+        for (final e in value.entries)
+          '${e.key}': _normalizeTemporalDeep(e.value),
+      };
+    }
+    if (value is List) {
+      return value.map<Object?>(_normalizeTemporalDeep).toList();
+    }
+    return value;
   }
 
   /// Lit un horodatage **tolérant** (AD-10) : `Timestamp` natif, `DateTime`, forme
@@ -432,8 +477,16 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       final map = doc.value;
       final entity = _decodeCloud(id, map);
       if (entity == null) continue; // corrompu → écarté + loggé (AD-10)
-      final cloudMeta = ZSyncMeta.fromJson(map);
-      final cloudTime = _timeFromRaw(map[ZSyncMeta.kUpdatedAt]);
+      // CR-LEX-9 — `ZSyncMeta.fromJson` doit lire le map NORMALISÉ. Construit
+      // sur le map brut, `updatedAt` valait `null` quand le cloud portait un
+      // `Timestamp` — et c'est ce `null` qui était PERSISTÉ. La clé d'arbitrage
+      // LWW retombait donc à vide, exposant les cycles suivants à écraser la
+      // version la plus récente par la plus ancienne, silencieusement.
+      // `_decodeCloud` normalise une COPIE : la normalisation est refaite ici.
+      final normalized = <String, dynamic>{...map};
+      _normalizeMetaIso(normalized);
+      final cloudMeta = ZSyncMeta.fromJson(normalized);
+      final cloudTime = _timeFromRaw(normalized[ZSyncMeta.kUpdatedAt]);
       final localEntry = localById[id];
       final localTime = localEntry?.updatedAt;
 
