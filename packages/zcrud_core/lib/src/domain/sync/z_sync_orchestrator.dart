@@ -21,7 +21,7 @@
 /// [ZSyncOrchestrator.new.isConnected] est le **point d'injection de la vraie
 /// source réseau de l'app** (le « login/reconnexion » du canonique) : un cycle ne
 /// part que lorsque le réseau est réellement présent. Une **erreur serveur**
-/// applicative (permission/quota) remontée par un dépôt en `Left(ServerFailure)`
+/// applicative (permission/quota) remontée par un dépôt en `Left(ZServerFailure)`
 /// est **comptée `failed` + loggée** dans [ZSyncRunReport] — **jamais** noyée
 /// silencieusement en « offline ». La distinction fine par-dépôt réseau/serveur
 /// (retourner `Left` sélectif sur permission/quota) nécessiterait un **changement

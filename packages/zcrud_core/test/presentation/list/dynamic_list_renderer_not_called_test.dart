@@ -45,7 +45,7 @@ void main() {
       ZListLoading(),
       ZListEmpty(),
       ZListNoResults(),
-      ZListError(ServerFailure('down')),
+      ZListError(ZServerFailure('down')),
     ]) {
       final fake = _CountingRenderer();
       await _pump(tester, state, fake);

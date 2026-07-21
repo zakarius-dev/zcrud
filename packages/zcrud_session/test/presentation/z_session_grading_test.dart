@@ -11,7 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_core/domain.dart' show DomainFailure, Left;
+import 'package:zcrud_core/domain.dart' show ZDomainFailure, Left;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZSrsConfig;
 import 'package:zcrud_session/zcrud_session.dart';
 
@@ -150,7 +150,7 @@ void main() {
     testWidgets('🔴 échec du seam ⇒ file figée, erreur exposée (jamais avalée)',
         (tester) async {
       const config = ZSrsConfig();
-      final spy = SpyReviewer(failure: const DomainFailure('seam KO'));
+      final spy = SpyReviewer(failure: const ZDomainFailure('seam KO'));
       final engine = ZStudySessionEngine(
         queue: _queue(),
         reviewer: spy.call,

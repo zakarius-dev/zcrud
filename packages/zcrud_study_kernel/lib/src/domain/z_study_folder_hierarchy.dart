@@ -5,11 +5,11 @@
 /// dans `saveFolder` (jamais l'entité — AD-14 : `ZStudyFolder` reste données +
 /// `copyWith`, sans assert ni throw). Retourne un `ZResult<Unit>`
 /// (`Either<ZFailure, Unit>` — AD-11) : `Right(unit)` si le placement est
-/// valide, `Left(DomainFailure)` sinon. Pure, **sans I/O** ni horloge :
+/// valide, `Left(ZDomainFailure)` sinon. Pure, **sans I/O** ni horloge :
 /// unit-testable dès E9-3 (sans Firebase).
 ///
 /// Réutilise **intégralement** les types du cœur (`ZResult`, `Unit`, `unit`,
-/// `DomainFailure`) — aucun nouveau type de failure (AD-1).
+/// `ZDomainFailure`) — aucun nouveau type de failure (AD-1).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -30,14 +30,14 @@ import 'z_study_folder.dart';
 ///
 /// Sémantique **exacte** (retourne au **premier** échec) :
 /// - `selfId != null && parentId == selfId` (dossier son propre parent) ⇒
-///   `Left(DomainFailure)` ;
+///   `Left(ZDomainFailure)` ;
 /// - `parentId == null` (racine, niveau 1) ⇒ `Right(unit)` ;
 /// - `parentId != null && parent == null` (parent introuvable/non résolu) ⇒
-///   `Left(DomainFailure)` ;
+///   `Left(ZDomainFailure)` ;
 /// - `parentId != null && parent.parentId == null` (parent = racine, enfant
 ///   niveau 2) ⇒ `Right(unit)` ;
 /// - `parentId != null && parent.parentId != null` (placer sous un enfant ⇒
-///   niveau 3) ⇒ `Left(DomainFailure)`.
+///   niveau 3) ⇒ `Left(ZDomainFailure)`.
 ZResult<Unit> validatePlacement({
   required String? parentId,
   ZStudyFolder? parent,
@@ -46,7 +46,7 @@ ZResult<Unit> validatePlacement({
   // Garde d'intégrité : un dossier ne peut être son propre parent.
   if (selfId != null && parentId == selfId) {
     return const Left<ZFailure, Unit>(
-      DomainFailure('Un dossier ne peut pas être son propre parent.'),
+      ZDomainFailure('Un dossier ne peut pas être son propre parent.'),
     );
   }
   // Racine (niveau 1) : toujours valide.
@@ -57,13 +57,13 @@ ZResult<Unit> validatePlacement({
   // parent avant d'appeler — cf. contrat).
   if (parent == null) {
     return const Left<ZFailure, Unit>(
-      DomainFailure('Parent introuvable : rattachement refusé.'),
+      ZDomainFailure('Parent introuvable : rattachement refusé.'),
     );
   }
   // Le parent a lui-même un parent ⇒ placer ici créerait un niveau 3 : refusé.
   if (parent.parentId != null) {
     return const Left<ZFailure, Unit>(
-      DomainFailure('Hiérarchie limitée à 2 niveaux (racine + sous-dossier).'),
+      ZDomainFailure('Hiérarchie limitée à 2 niveaux (racine + sous-dossier).'),
     );
   }
   // Parent = racine ⇒ l'enfant est niveau 2 : valide.

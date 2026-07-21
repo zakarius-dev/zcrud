@@ -175,7 +175,7 @@ class _RejectingRepo extends ZOfflineFirstBoxRepository<_Note> {
 
   @override
   ZResult<Unit> validate(_Note item) =>
-      Left<ZFailure, Unit>(DomainFailure('rejet métier'));
+      Left<ZFailure, Unit>(ZDomainFailure('rejet métier'));
 }
 
 void main() {
@@ -276,7 +276,7 @@ void main() {
 
       final res = await repo.save(const _Note(id: 'a', title: 'A', count: 1));
       expect(res.isLeft(), isTrue);
-      res.leftMap((f) => expect((f as DomainFailure).message, 'rejet métier'));
+      res.leftMap((f) => expect((f as ZDomainFailure).message, 'rejet métier'));
 
       // AUCUNE écriture locale (le put n'a jamais eu lieu).
       expect((await repo.getById('a')).isLeft(), isTrue);

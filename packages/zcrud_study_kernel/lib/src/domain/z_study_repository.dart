@@ -15,7 +15,7 @@
 ///   validation est écrite AVANT toute écriture Hive/Firestore, un `Left`
 ///   court-circuite l'écriture ;
 /// - `flashcards_repository.dart:14-20` — matérialisation de l'éphémère : une
-///   carte éphémère sans dossier cible → `Left(DomainFailure)`.
+///   carte éphémère sans dossier cible → `Left(ZDomainFailure)`.
 ///
 /// ## Ce que ce port AJOUTE (et ce qu'il n'ajoute PAS)
 ///
@@ -73,7 +73,7 @@ abstract class ZStudyRepository<T extends ZEntity>
   ///
   /// **Contrat** : PUR, TOTAL, déterministe — **aucune** I/O, aucun
   /// `DateTime.now()`, **jamais** d'exception (AD-10). Appelé par [save]
-  /// **AVANT** [persist]. Un `Left(DomainFailure)` **BLOQUE** l'écriture (le
+  /// **AVANT** [persist]. Un `Left(ZDomainFailure)` **BLOQUE** l'écriture (le
   /// rejet remonte tel quel) ; un `Right(unit)` la laisse passer.
   ///
   /// **Défaut** = no-op succès (`Right(unit)`) : un dépôt sans invariant métier

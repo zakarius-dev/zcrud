@@ -78,7 +78,7 @@ class _CategoryRepo implements ZRepository<_Item> {
       const Stream<List<_Item>>.empty();
   @override
   Future<ZResult<_Item>> getById(String id) async =>
-      Left(NotFoundFailure('n/a', id: id));
+      Left(ZNotFoundFailure('n/a', id: id));
   @override
   Future<ZResult<_Item>> save(_Item item, {String? collectionId}) async =>
       Right(item);

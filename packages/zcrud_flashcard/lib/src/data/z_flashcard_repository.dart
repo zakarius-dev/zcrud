@@ -99,7 +99,7 @@ class ZFlashcardRepository {
   Future<ZResult<List<ZFlashcard>>> getAll({ZDataRequest? request}) =>
       _cards.getAll(request: request);
 
-  /// Lit la carte d'identité [id] (`Left(NotFoundFailure)` si absente/supprimée).
+  /// Lit la carte d'identité [id] (`Left(ZNotFoundFailure)` si absente/supprimée).
   Future<ZResult<ZFlashcard>> getById(String id) => _cards.getById(id);
 
   /// Persiste [card] (offline-first : local autoritaire + distant best-effort).
@@ -110,7 +110,7 @@ class ZFlashcardRepository {
   /// `subFolderId` sont conservés.
   ///
   /// **Garde `folderId` (AC6)** : une carte **éphémère** dont `folderId` est
-  /// `null` **ou** vide (`''`) retourne `Left(DomainFailure)` **sans** appeler
+  /// `null` **ou** vide (`''`) retourne `Left(ZDomainFailure)` **sans** appeler
   /// [cards] (aucune écriture) et **sans** throw. Une carte **déjà
   /// matérialisée** (`id != null`) n'est **pas** soumise à cette garde (choix
   /// retenu, cf. AC6 : la garde ne s'applique qu'à la matérialisation de
@@ -118,7 +118,7 @@ class ZFlashcardRepository {
   Future<ZResult<ZFlashcard>> save(ZFlashcard card) async {
     if (card.isEphemeral &&
         (card.folderId == null || card.folderId!.isEmpty)) {
-      return Left<ZFailure, ZFlashcard>(const DomainFailure(
+      return Left<ZFailure, ZFlashcard>(const ZDomainFailure(
         'Matérialisation refusée : dossier cible requis (folderId) pour une '
         'carte éphémère.',
       ));
@@ -147,7 +147,7 @@ class ZFlashcardRepository {
   ///
   /// **Défensif (AD-10)** : un état **corrompu** relu est reconstruit par le
   /// store (`fromMap`) et considéré présent (préservé) — jamais un throw. Un
-  /// `Left` réel du store (`CacheFailure`) est propagé.
+  /// `Left` réel du store (`ZCacheFailure`) est propagé.
   ///
   /// **Seul** write SRS autorisé **hors** [reviewCard]/[resetRepetition] ; ne
   /// touche **jamais** [cards] ; n'appelle **jamais** `scheduler.apply` (pas une
@@ -207,7 +207,7 @@ class ZFlashcardRepository {
   ///
   /// **`vide ≠ erreur` (AD-10)** : si la carte n'a **aucune** ligne SRS
   /// (jamais inscrite), seule la carte est déplacée — **aucun** `put` SRS. Si la
-  /// carte est introuvable, `Left(NotFoundFailure)` (aucune écriture). Un `Left`
+  /// carte est introuvable, `Left(ZNotFoundFailure)` (aucune écriture). Un `Left`
   /// du port carte est propagé **avant** toute écriture SRS (la carte prime).
   Future<ZResult<ZFlashcard>> moveCard({
     required String flashcardId,

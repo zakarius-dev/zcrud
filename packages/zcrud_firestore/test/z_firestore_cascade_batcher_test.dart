@@ -349,7 +349,7 @@ void main() {
   });
 
   group('AC10 — panne de lot NON avalée (Left, jamais Right)', () {
-    test('commit() qui échoue ⇒ Left(ServerFailure)', () async {
+    test('commit() qui échoue ⇒ Left(ZServerFailure)', () async {
       final fs = _CommitFailFirestore();
       await fs.collection('study_folders').doc('f1').set(
           <String, dynamic>{'title': 'root'});
@@ -370,7 +370,7 @@ void main() {
       // masque la panne ⇒ ce test ROUGIT (attendait Left).
       expect(result.isLeft(), isTrue);
       result.fold(
-        (f) => expect(f, isA<ServerFailure>()),
+        (f) => expect(f, isA<ZServerFailure>()),
         (_) => fail('la panne de commit ne doit JAMAIS remonter Right'),
       );
     });

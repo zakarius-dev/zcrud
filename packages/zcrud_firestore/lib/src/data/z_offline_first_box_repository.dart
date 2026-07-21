@@ -158,6 +158,56 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   CollectionReference<Map<String, dynamic>> _collection(String path) =>
       _firestore.collection(path);
 
+  /// Énumère les **identifiants des parents** existants au cloud pour ce `kind`
+  /// *nested* (ex. les `folderId` de `users/{uid}/study_folders`) — **CR-LEX-10**.
+  ///
+  /// ## Le problème que cela résout
+  ///
+  /// Un repository folder-scopé est figé sur **un** `parentId` : son [sync] ne
+  /// couvre que ce dossier. Un hôte multi-dossiers devait donc connaître la liste
+  /// des dossiers **avant** de construire ses repos — or sa seule source était le
+  /// **store local**. La découverte devenait circulaire : sur un appareil **neuf**
+  /// (réinstallation, nouveau téléphone, logout/login) le local est vide ⇒ aucun
+  /// dossier découvert ⇒ `sync()` ne parcourt rien ⇒ les données cloud ne
+  /// redescendent **jamais**. Et comme `sync()` rend `Right(unit)`, le mode
+  /// dégradé est **indiscernable** de « l'utilisateur n'a rien » : succès
+  /// silencieux, liste vide, données pourtant intactes au cloud.
+  ///
+  /// Faute de cette API, un hôte devait interroger `FirebaseFirestore`
+  /// **lui-même** — perçant l'isolation backend (AD-5/AD-11) pour une opération
+  /// qui relève du repository.
+  ///
+  /// ## Contrat
+  ///
+  /// Signature **nue** (AD-5) : aucun type `cloud_firestore` n'apparaît.
+  /// `Left(ZDomainFailure)` si le `kind` n'est pas *nested* ou si le `userId`
+  /// manque ; `Left(ZServerFailure)` sur panne réseau — **jamais** une liste vide
+  /// silencieuse, précisément le mode que cette API existe pour éliminer.
+  Future<ZResult<List<String>>> listParentIds() async {
+    final resolved =
+        _resolver.resolveParentCollection(kind: _kind, userId: _userId);
+    final path = resolved.fold<String?>((_) => null, (p) => p);
+    if (path == null) {
+      return Left<ZFailure, List<String>>(
+        resolved.swap().getOrElse(
+              () => const ZDomainFailure('chemin parent non résolu'),
+            ),
+      );
+    }
+    try {
+      final snap = await _collection(path).get();
+      return Right<ZFailure, List<String>>(
+        <String>[for (final d in snap.docs) d.id],
+      );
+    } on Object catch (e, s) {
+      _log('listParentIds a échoué (kind=$_kind, path=$path)',
+          error: e, stackTrace: s);
+      return Left<ZFailure, List<String>>(
+        ZServerFailure('Énumération des parents impossible : $e'),
+      );
+    }
+  }
+
   // ───────────────────────── (Dé)codage cloud (D7/D8, AD-10) ─────────────────
 
   /// Décodage **DÉFENSIF + CONTEXTUALISÉ** (D7/AD-10) d'un document cloud : injecte

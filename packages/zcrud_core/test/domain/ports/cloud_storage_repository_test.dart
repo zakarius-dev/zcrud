@@ -1,6 +1,6 @@
 // AC5 (E3-3c) — Port neutre `CloudStorageRepository` : le contrat retourne
 // `ZResult` (Either<ZFailure,_>) ; un fake prouve upload→Right(uploaded),
-// échec→Left(ServerFailure), delete→Right(unit), SANS dépendance lourde.
+// échec→Left(ZServerFailure), delete→Right(unit), SANS dépendance lourde.
 import 'package:test/test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -23,12 +23,12 @@ void main() {
     expect(repo.uploadCount, 1);
   });
 
-  test('upload échec → Left(ServerFailure)', () async {
+  test('upload échec → Left(ZServerFailure)', () async {
     final repo = FakeCloudStorageRepository(fail: true);
     final res = await repo.upload(file);
     expect(res.isLeft(), isTrue);
     res.fold(
-      (f) => expect(f, isA<ServerFailure>()),
+      (f) => expect(f, isA<ZServerFailure>()),
       (_) => fail('attendu Left'),
     );
   });
@@ -41,7 +41,7 @@ void main() {
     expect(repo.deleted, contains(file));
   });
 
-  test('downloadUrl : présente → Right ; absente → Left(NotFoundFailure)',
+  test('downloadUrl : présente → Right ; absente → Left(ZNotFoundFailure)',
       () async {
     final repo = FakeCloudStorageRepository();
     final absent = await repo.downloadUrl(file);

@@ -23,7 +23,7 @@ void main() {
   });
 
   test('égalité de valeur (== / hashCode) incluant failures', () {
-    const f = ServerFailure('x');
+    const f = ZServerFailure('x');
     final a = ZSyncRunReport(
         attempted: 1, succeeded: 0, failed: 1, failures: const [f]);
     final b = ZSyncRunReport(
@@ -32,7 +32,7 @@ void main() {
         attempted: 1,
         succeeded: 0,
         failed: 1,
-        failures: const [ServerFailure('y')]);
+        failures: const [ZServerFailure('y')]);
 
     expect(a, equals(b));
     expect(a.hashCode, equals(b.hashCode));

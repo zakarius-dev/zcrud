@@ -41,7 +41,7 @@ class _FailingPodcastPort implements ZPodcastGenerationPort {
   Future<ZResult<ZStudyPodcast>> generatePodcast(
     ZPodcastGenerationRequest request,
   ) async =>
-      Left<ZFailure, ZStudyPodcast>(const DomainFailure('quota'));
+      Left<ZFailure, ZStudyPodcast>(const ZDomainFailure('quota'));
 }
 
 void main() {

@@ -29,7 +29,7 @@ class _FakeMindmapGenerationPort implements ZMindmapGenerationPort {
   Future<ZResult<List<ZMindmapNode>>> generateMindmap(
     ZMindmapGenerationRequest request,
   ) async {
-    if (fail) return Left<ZFailure, List<ZMindmapNode>>(const DomainFailure('quota'));
+    if (fail) return Left<ZFailure, List<ZMindmapNode>>(const ZDomainFailure('quota'));
     return Right<ZFailure, List<ZMindmapNode>>(
       <ZMindmapNode>[ZMindmapNode(id: 'ephemeral', label: request.content)],
     );
@@ -45,7 +45,7 @@ class _FakeExplanationPort implements ZAiExplanationPort {
 class _FakeSummaryPort implements ZNoteSummaryPort {
   @override
   Future<ZResult<String>> summarize(ZNoteSummaryRequest request) async =>
-      Left<ZFailure, String>(const DomainFailure('quota'));
+      Left<ZFailure, String>(const ZDomainFailure('quota'));
 }
 
 void main() {

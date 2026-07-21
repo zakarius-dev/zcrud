@@ -143,7 +143,7 @@ void main() {
       (tester) async {
     final context = await _pumpContext(tester);
     final repo = _FakeRepo(
-      deleteResult: Left<ZFailure, Unit>(const ServerFailure('boom')),
+      deleteResult: Left<ZFailure, Unit>(const ZServerFailure('boom')),
     );
     ZFailure? failure;
     var success = false;
@@ -155,8 +155,8 @@ void main() {
     action.resolve(context, const _FakeEntity('e1'), enabled: true).onInvoke();
     await tester.pump();
 
-    expect(failure, isA<ServerFailure>());
-    expect((failure! as ServerFailure).message, 'boom');
+    expect(failure, isA<ZServerFailure>());
+    expect((failure! as ZServerFailure).message, 'boom');
     expect(success, isFalse);
     expect(tester.takeException(), isNull);
   });

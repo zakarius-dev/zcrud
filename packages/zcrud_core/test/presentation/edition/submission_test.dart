@@ -86,7 +86,7 @@ void main() {
     ];
     final c = _ctrl(<String, Object?>{'a': 'ok'});
     addTearDown(c.dispose);
-    const failure = ServerFailure('boom');
+    const failure = ZServerFailure('boom');
     final submit = ZEditionSubmitController<Unit>(
       controller: c,
       fields: fields,
@@ -118,7 +118,7 @@ void main() {
     final outcome = await submit.submit();
 
     expect(outcome.status, ZSubmissionStatus.failure);
-    expect(submit.state.value.failure, isA<ServerFailure>());
+    expect(submit.state.value.failure, isA<ZServerFailure>());
     expect(submit.state.value.isValidationFailure, isFalse);
   });
 
@@ -184,7 +184,7 @@ void main() {
     expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
 
     // Échec applicatif ⇒ message accessible + bouton réactivé.
-    gate.complete(const Left<ZFailure, Unit>(ServerFailure('serveur indisponible')));
+    gate.complete(const Left<ZFailure, Unit>(ZServerFailure('serveur indisponible')));
     await tester.pump();
     expect(find.text('serveur indisponible'), findsOneWidget);
     expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNotNull);

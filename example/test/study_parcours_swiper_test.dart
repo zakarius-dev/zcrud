@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_core/zcrud_core.dart' show DomainFailure;
+import 'package:zcrud_core/zcrud_core.dart' show ZDomainFailure;
 import 'package:zcrud_example/demos/fakes/in_memory_study_store.dart';
 import 'package:zcrud_example/demos/study_session_demo_screen.dart';
 import 'package:zcrud_example/support/rebuild_indicator.dart';
@@ -139,7 +139,7 @@ void main() {
         'l\'échec est typé (Left), zéro écriture SRS', (tester) async {
       useTallSurface(tester);
       final store = InMemoryStudyStore.demo(
-        reviewFailure: const DomainFailure('SRS indisponible (fake)'),
+        reviewFailure: const ZDomainFailure('SRS indisponible (fake)'),
       );
       // Un seul écran, mode learn (spaced/learn = seuls à écrire du SRS).
       await tester.pumpWidget(

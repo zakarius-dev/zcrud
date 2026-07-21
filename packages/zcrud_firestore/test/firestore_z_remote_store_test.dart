@@ -112,12 +112,12 @@ void main() {
       remote.dispose();
     });
 
-    test('remoteDelete d\'un id inconnu → Left(NotFoundFailure)', () async {
+    test('remoteDelete d\'un id inconnu → Left(ZNotFoundFailure)', () async {
       final fs = FakeFirebaseFirestore();
       final remote = _remote(fs);
       final r = await remote.remoteDelete('nope');
       expect(r.isLeft(), isTrue);
-      r.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      r.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
       remote.dispose();
     });
   });
@@ -135,7 +135,7 @@ void main() {
     });
   });
 
-  group('AC12 — propagation typée (ServerFailure jamais avalé)', () {
+  group('AC12 — propagation typée (ZServerFailure jamais avalé)', () {
     test('ZResult remonte intact depuis l\'adaptateur E5-1', () async {
       final fs = FakeFirebaseFirestore();
       final remote = _remote(fs);

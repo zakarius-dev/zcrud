@@ -73,7 +73,7 @@ class _SpyRepo implements ZSyncableRepository<ZEntity> {
       case _SyncBehavior.ok:
         return Right<ZFailure, Unit>(unit);
       case _SyncBehavior.leftServer:
-        return const Left<ZFailure, Unit>(ServerFailure('serveur indisponible'));
+        return const Left<ZFailure, Unit>(ZServerFailure('serveur indisponible'));
       case _SyncBehavior.throwError:
         throw StateError('boom');
     }
@@ -231,7 +231,7 @@ void main() {
       o.dispose();
     });
 
-    test('un Left(ServerFailure) est compté (pas d\'exception échappée)',
+    test('un Left(ZServerFailure) est compté (pas d\'exception échappée)',
         () async {
       final okA = _SpyRepo(_SyncBehavior.ok);
       final bad = _SpyRepo(_SyncBehavior.leftServer);
@@ -247,7 +247,7 @@ void main() {
       expect(okB.syncCalls, 1);
       expect(report.succeeded, 2);
       expect(report.failed, 1);
-      expect(report.failures.single, isA<ServerFailure>());
+      expect(report.failures.single, isA<ZServerFailure>());
 
       o.dispose();
     });

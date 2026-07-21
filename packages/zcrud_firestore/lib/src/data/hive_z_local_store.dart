@@ -5,7 +5,7 @@
 /// écrit (MAJEUR-1), visibilité `is_deleted` **cohérente** get/getAll/watch
 /// (MAJEUR-2), décodage **défensif** (AD-10, un corrompu parmi N → N-1),
 /// soft-delete **hors-entité** (`ZSyncMeta`), erreurs enveloppées en
-/// `Left(CacheFailure)` (AD-11, jamais de `catch(_){}`).
+/// `Left(ZCacheFailure)` (AD-11, jamais de `catch(_){}`).
 ///
 /// **Isolation AD-5 (CRUCIAL)** : `package:hive` est importé **uniquement** ici.
 /// Aucun type Hive (`Box`, `HiveObject`, `HiveInterface`, `BoxEvent`,
@@ -273,7 +273,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   /// Enveloppe **unique** : un `ZFailure` levé volontairement est repropagé ;
   /// une `HiveError` (box fermée/corrompue, I/O) ou toute autre erreur d'accès →
-  /// `Left(CacheFailure)` (le local est un **cache**). **JAMAIS** de `catch(_){}`.
+  /// `Left(ZCacheFailure)` (le local est un **cache**). **JAMAIS** de `catch(_){}`.
   Future<ZResult<R>> _guard<R>(Future<ZResult<R>> Function() body) async {
     try {
       return await body();
@@ -281,18 +281,18 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
       return Left<ZFailure, R>(f);
     } on HiveError catch (e, s) {
       _log('HiveError (kind=$_kind)', error: e, stackTrace: s);
-      return Left<ZFailure, R>(CacheFailure(e.message));
+      return Left<ZFailure, R>(ZCacheFailure(e.message));
     } on Object catch (e, s) {
       _log('erreur cache inattendue (kind=$_kind)', error: e, stackTrace: s);
-      return Left<ZFailure, R>(CacheFailure(e.toString()));
+      return Left<ZFailure, R>(ZCacheFailure(e.toString()));
     }
   }
 
   /// Mappe une erreur brute en [ZFailure] pour la voie **FLUX** (miroir [_guard]).
   ZFailure _toFailure(Object e) {
     if (e is ZFailure) return e;
-    if (e is HiveError) return CacheFailure(e.message);
-    return CacheFailure(e.toString());
+    if (e is HiveError) return ZCacheFailure(e.message);
+    return ZCacheFailure(e.toString());
   }
 
   // ───────────────────────── Lectures (AC4/5/6/8/9) ──────────────────────────
@@ -361,18 +361,18 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   Future<ZResult<T>> getById(String id) => _guard(() async {
         if (!_box.containsKey(id)) {
           return Left<ZFailure, T>(
-            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+            ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
           );
         }
         final map = _rawMap(id, _box.get(id));
         if (map == null) {
           return Left<ZFailure, T>(
-            NotFoundFailure('Entrée corrompue', id: id, entity: _kind),
+            ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
           );
         }
         if (!_isVisible(map)) {
           return Left<ZFailure, T>(
-            NotFoundFailure(
+            ZNotFoundFailure(
               map[_kIsDeleted] == true
                   ? 'Entité soft-deleted'
                   : 'Entité non visible (is_deleted absent — hors invariant '
@@ -385,7 +385,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         final entity = _decodeEntity(id, map);
         if (entity == null) {
           return Left<ZFailure, T>(
-            NotFoundFailure('Entrée corrompue', id: id, entity: _kind),
+            ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
           );
         }
         return Right<ZFailure, T>(entity);
@@ -399,7 +399,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// [getAll], qui exclut les tombstones — indispensable au merge LWW pour
   /// propager une suppression). Décodage **défensif** (AD-10) : une entrée
   /// corrompue/non décodable est **écartée + loggée**, jamais un `throw`. Tri
-  /// stable par `id` (ordre total). Erreur d'accès → `Left(CacheFailure)`.
+  /// stable par `id` (ordre total). Erreur d'accès → `Left(ZCacheFailure)`.
   @override
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() => _guard(() async {
         final out = <ZSyncEntry<T>>[];
@@ -428,7 +428,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         final id = entry.entity.id;
         if (id == null) {
           return Left<ZFailure, Unit>(
-            DomainFailure(
+            ZDomainFailure(
               'applyMerged requiert une entité matérialisée (id non-null) '
               '(kind=$_kind)',
             ),
@@ -461,7 +461,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         final decoded = reread == null ? null : _decodeEntity(id, reread);
         if (decoded == null) {
           return Left<ZFailure, T>(
-            DomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
+            ZDomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
           );
         }
         return Right<ZFailure, T>(decoded);
@@ -476,19 +476,19 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
       _setDeletedFlag(id, deleted: false);
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché), réécrit
-  /// `updated_at` (ISO-8601). `id` absent → `Left(NotFoundFailure)`. **Jamais**
+  /// `updated_at` (ISO-8601). `id` absent → `Left(ZNotFoundFailure)`. **Jamais**
   /// de `box.delete` (soft-delete par drapeau — la propagation distante = E5-3).
   Future<ZResult<Unit>> _setDeletedFlag(String id, {required bool deleted}) =>
       _guard(() async {
         if (!_box.containsKey(id)) {
           return Left<ZFailure, Unit>(
-            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+            ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
           );
         }
         final map = _rawMap(id, _box.get(id));
         if (map == null) {
           return Left<ZFailure, Unit>(
-            NotFoundFailure('Entrée corrompue', id: id, entity: _kind),
+            ZNotFoundFailure('Entrée corrompue', id: id, entity: _kind),
           );
         }
         map[_kIsDeleted] = deleted;

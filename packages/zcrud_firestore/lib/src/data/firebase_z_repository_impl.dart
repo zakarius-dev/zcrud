@@ -508,7 +508,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// `where` d'inégalité (`>`, `>=`, `<`, `<=`) OU un `where(is_deleted==false)`
   /// AVEC un `orderBy(champ)` + le tie-break `orderBy('id')` exige un **index
   /// composite** Firestore (`firestore.indexes.json`), sinon la prod lève
-  /// `FAILED_PRECONDITION` → `ServerFailure`. `fake_cloud_firestore` n'exige aucun
+  /// `FAILED_PRECONDITION` → `ZServerFailure`. `fake_cloud_firestore` n'exige aucun
   /// index (faux vert). Les index sont à provisionner à l'intégration/déploiement
   /// (E7) — non fournis par cette story (adaptateur backend-agnostique, AD-5).
   Query<Map<String, dynamic>> _buildQuery(
@@ -546,9 +546,9 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
 
   // ───────────────────────── Enveloppe d'erreurs unique (AC9/10/11) ──────────
 
-  /// Enveloppe **unique** de toute opération : `FirebaseException → ServerFailure`
+  /// Enveloppe **unique** de toute opération : `FirebaseException → ZServerFailure`
   /// ; un `ZFailure` levé volontairement est repropagé ; toute autre erreur →
-  /// `ServerFailure` typé. **JAMAIS** de `catch(_){}` (bug #3). Le corps décide
+  /// `ZServerFailure` typé. **JAMAIS** de `catch(_){}` (bug #3). Le corps décide
   /// lui-même des `Left`/`Right` métier (`null ≠ erreur` — bug #4).
   Future<ZResult<R>> _guard<R>(Future<ZResult<R>> Function() body) async {
     try {
@@ -556,12 +556,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     } on FirebaseException catch (e, s) {
       _log('FirebaseException (kind=$_kind, code=${e.code})',
           error: e, stackTrace: s);
-      return Left<ZFailure, R>(ServerFailure(e.message ?? e.code));
+      return Left<ZFailure, R>(ZServerFailure(e.message ?? e.code));
     } on ZFailure catch (f) {
       return Left<ZFailure, R>(f);
     } on Object catch (e, s) {
       _log('erreur inattendue (kind=$_kind)', error: e, stackTrace: s);
-      return Left<ZFailure, R>(ServerFailure(e.toString()));
+      return Left<ZFailure, R>(ZServerFailure(e.toString()));
     }
   }
 
@@ -643,12 +643,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   }
 
   /// Mappe une erreur brute en [ZFailure] pour la voie **FLUX** — miroir de
-  /// [_guard] (`FirebaseException → ServerFailure`, `ZFailure` repropagé, reste →
-  /// `ServerFailure`).
+  /// [_guard] (`FirebaseException → ZServerFailure`, `ZFailure` repropagé, reste →
+  /// `ZServerFailure`).
   ZFailure _toFailure(Object e) {
-    if (e is FirebaseException) return ServerFailure(e.message ?? e.code);
+    if (e is FirebaseException) return ZServerFailure(e.message ?? e.code);
     if (e is ZFailure) return e;
-    return ServerFailure(e.toString());
+    return ZServerFailure(e.toString());
   }
 
   @override
@@ -665,7 +665,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         final snap = await _rawCollection().doc(id).get();
         if (!snap.exists) {
           return Left<ZFailure, T>(
-            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+            ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
           );
         }
         final data = snap.data() ?? <String, dynamic>{};
@@ -674,7 +674,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         // le filtre serveur l'exclut de getAll/watch → aucune divergence.
         if (!_isVisible(data)) {
           return Left<ZFailure, T>(
-            NotFoundFailure(
+            ZNotFoundFailure(
               data[_kIsDeleted] == true
                   ? 'Entité soft-deleted'
                   : 'Entité non visible (is_deleted absent — hors invariant '
@@ -687,7 +687,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         final entity = _decode(id, data);
         if (entity == null) {
           return Left<ZFailure, T>(
-            NotFoundFailure('Document corrompu', id: id, entity: _kind),
+            ZNotFoundFailure('Document corrompu', id: id, entity: _kind),
           );
         }
         return Right<ZFailure, T>(entity);
@@ -741,7 +741,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         final decoded = snap.data();
         if (decoded == null) {
           return Left<ZFailure, T>(
-            DomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
+            ZDomainFailure('Entité écrite mais non re-décodable (kind=$_kind)'),
           );
         }
         return Right<ZFailure, T>(decoded);
@@ -756,14 +756,14 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       _setDeletedFlag(id, deleted: false);
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché) via un
-  /// `WriteBatch` committé (AC8). `id` inconnu → `Left(NotFoundFailure)` (AC10).
+  /// `WriteBatch` committé (AC8). `id` inconnu → `Left(ZNotFoundFailure)` (AC10).
   Future<ZResult<Unit>> _setDeletedFlag(String id, {required bool deleted}) =>
       _guard(() async {
         final doc = _rawCollection().doc(id);
         final snap = await doc.get();
         if (!snap.exists) {
           return Left<ZFailure, Unit>(
-            NotFoundFailure('Entité introuvable', id: id, entity: _kind),
+            ZNotFoundFailure('Entité introuvable', id: id, entity: _kind),
           );
         }
         final batch = _firestore.batch();
@@ -782,7 +782,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// chacun apparié à son [ZSyncMeta] (lu depuis le corps). Contraste voulu avec
   /// [getAll] (qui exclut les tombstones) — indispensable au merge LWW. Décodage
   /// **défensif** (AD-10) : un document corrompu est **écarté + loggé**, jamais un
-  /// `throw`. `FirebaseException` → `Left(ServerFailure)` (best-effort).
+  /// `throw`. `FirebaseException` → `Left(ZServerFailure)` (best-effort).
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntriesAll() => _guard(() async {
         final snap = await _rawCollection().get();
         final out = <ZSyncEntry<T>>[];
@@ -807,7 +807,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         final id = entry.entity.id;
         if (id == null) {
           return Left<ZFailure, Unit>(
-            DomainFailure(
+            ZDomainFailure(
               'writeMerged requiert une entité matérialisée (kind=$_kind)',
             ),
           );
@@ -822,7 +822,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// chacune écrite **verbatim** (méta préservée, jamais `now()`). Le changeset
   /// est **découpé** en lots de ≤ [kMaxBatchWrites] (**450**), chaque lot étant un
   /// `WriteBatch` **committé atomiquement** (aucune écriture partielle non-commit).
-  /// Liste vide → `Right(unit)`. `FirebaseException` → `Left(ServerFailure)`.
+  /// Liste vide → `Right(unit)`. `FirebaseException` → `Left(ZServerFailure)`.
   Future<ZResult<Unit>> applyMergedAll(List<ZSyncEntry<T>> entries) =>
       _guard(() async {
         for (var start = 0;
@@ -837,7 +837,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
             final id = entry.entity.id;
             if (id == null) {
               return Left<ZFailure, Unit>(
-                DomainFailure(
+                ZDomainFailure(
                   'applyMergedAll: entité éphémère (id null) interdite '
                   '(kind=$_kind)',
                 ),

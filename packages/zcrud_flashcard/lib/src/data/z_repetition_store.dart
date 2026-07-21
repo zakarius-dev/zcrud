@@ -85,7 +85,7 @@ abstract class ZRepetitionStore {
   /// (jamais un `Left`) — le coordinateur retombe alors sur `initial()`. Un
   /// état persisté **corrompu** est reconstruit **défensivement** via
   /// `ZRepetitionInfo.fromMap` (jamais de throw). Un `Left` n'est réservé
-  /// qu'à une **panne réelle** du store local (`CacheFailure`).
+  /// qu'à une **panne réelle** du store local (`ZCacheFailure`).
   Future<ZResult<ZRepetitionInfo?>> getByCard(String flashcardId);
 
   /// Persiste l'état [info] (clé `flashcardId`), en **estampillant** la méta
@@ -112,7 +112,7 @@ abstract class ZRepetitionStore {
   /// **Idempotence (AD-10)** : purger un `flashcardId` **absent** est un
   /// **succès** (`Right(unit)`), jamais un `Left` — un double-appel ou une carte
   /// jamais inscrite ne fait **jamais** échouer la cascade. Un `Left`
-  /// (`CacheFailure`) n'est réservé qu'à une **panne réelle** du store local ;
+  /// (`ZCacheFailure`) n'est réservé qu'à une **panne réelle** du store local ;
   /// il est alors **rapporté** au grain de la racine (AD-39), jamais avalé.
   Future<ZResult<Unit>> deleteByCard(String flashcardId);
 

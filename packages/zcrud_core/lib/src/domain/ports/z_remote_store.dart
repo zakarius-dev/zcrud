@@ -30,7 +30,7 @@ import '../sync/z_sync_entry.dart';
 /// transitent en **ISO-8601** (jamais `Timestamp`).
 ///
 /// **Contrat de résultat** (AD-11) : `ZResult<...>` / `ZResult<Unit>` ; une
-/// erreur d'accès distant est un [ServerFailure]. Les **flux** sont des
+/// erreur d'accès distant est un [ZServerFailure]. Les **flux** sont des
 /// `Stream<List<T>>` **NUS**.
 abstract class ZRemoteStore<T extends ZEntity> {
   /// Pousse [item] vers le distant (best-effort). Matérialise l'éphémère et
@@ -40,7 +40,7 @@ abstract class ZRemoteStore<T extends ZEntity> {
 
   /// Propage un **soft-delete** distant de l'élément [id] (`is_deleted = true`,
   /// hors-entité). **Jamais** de purge physique. `id` absent →
-  /// `Left(NotFoundFailure)`.
+  /// `Left(ZNotFoundFailure)`.
   Future<ZResult<Unit>> remoteDelete(String id);
 
   /// Tire l'état distant (lecture best-effort) filtré/trié/paginé selon
@@ -55,14 +55,14 @@ abstract class ZRemoteStore<T extends ZEntity> {
   /// [ZSyncMeta]. **Contraste voulu avec [pull]** (qui exclut les tombstones) :
   /// indispensable au merge Last-Write-Wins. Décodage **défensif** (AD-10) : une
   /// entrée non décodable est écartée + loggée. Erreur d'accès distant →
-  /// `Left(ServerFailure)` (best-effort, assimilé à « offline » par le dépôt).
+  /// `Left(ZServerFailure)` (best-effort, assimilé à « offline » par le dépôt).
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntries();
 
   /// **Écriture PRÉSERVANT la méta** (E5-3) d'une **seule** entrée : écrit
   /// l'entité **et** son [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted`
   /// conservés tels quels, **jamais** `now()`. Réservé au merge (défaire
   /// l'estampille de `push` casserait le LWW). Un tombstone (`isDeleted:true`) est
-  /// propagé tel quel. Erreur distante → `Left(ServerFailure)`.
+  /// propagé tel quel. Erreur distante → `Left(ZServerFailure)`.
   Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry);
 
   /// **Propagation PAR LOT BORNÉE** (E5-3, AD-9) d'un changeset d'[entries]
@@ -73,7 +73,7 @@ abstract class ZRemoteStore<T extends ZEntity> {
   /// de 500) est **backend-spécifique** et vit **exclusivement** dans l'adaptateur
   /// (`zcrud_firestore`) — **jamais** dans ce port neutre (AD-5). Chaque lot est
   /// **committé atomiquement** (aucune écriture partielle non-commit). Une liste
-  /// vide → `Right(unit)` (no-op). Erreur distante → `Left(ServerFailure)`.
+  /// vide → `Right(unit)` (no-op). Erreur distante → `Left(ZServerFailure)`.
   Future<ZResult<Unit>> applyMergedAll(List<ZSyncEntry<T>> entries);
 
   /// Libère les ressources (abonnements, contrôleurs de flux).

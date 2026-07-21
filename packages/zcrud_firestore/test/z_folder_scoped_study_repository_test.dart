@@ -73,7 +73,7 @@ void main() {
     );
   });
 
-  test('AC4 — folderId vide (parentId="") ⇒ Left(DomainFailure) explicite '
+  test('AC4 — folderId vide (parentId="") ⇒ Left(ZDomainFailure) explicite '
       'nommant parentId + le kind, jamais un chemin muet [R3-I4]', () {
     final resolver = buildFolderScopedResolver(
       kind: kind,
@@ -90,7 +90,7 @@ void main() {
     final msg = res.fold((f) => f.message, (p) => 'RIGHT:$p');
     expect(msg, contains('parentId'));
     expect(msg, contains(kind));
-    expect(res.fold((f) => f, (_) => null), isA<DomainFailure>());
+    expect(res.fold((f) => f, (_) => null), isA<ZDomainFailure>());
   });
 
   test('AC3 — le type de retour public est le PORT NEUTRE ZStudyRepository<T> '

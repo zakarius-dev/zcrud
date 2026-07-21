@@ -383,7 +383,7 @@ class GatedCloudStorageRepository implements CloudStorageRepository {
   Future<ZResult<String>> downloadUrl(AppFile file) async =>
       file.remoteUrl != null
           ? Right<ZFailure, String>(file.remoteUrl!)
-          : Left<ZFailure, String>(const NotFoundFailure('no remote url'));
+          : Left<ZFailure, String>(const ZNotFoundFailure('no remote url'));
 
   @override
   Stream<double> watchProgress(AppFile file) => const Stream<double>.empty();

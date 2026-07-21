@@ -67,7 +67,7 @@ void main() {
   testWidgets('error → message de la ZFailure + liveRegion (AC6/AD-11)',
       (tester) async {
     final handle = tester.ensureSemantics();
-    await _pump(tester, const ZListError(DomainFailure('boom réseau')));
+    await _pump(tester, const ZListError(ZDomainFailure('boom réseau')));
 
     expect(find.byKey(const ValueKey('zListError')), findsOneWidget);
     expect(find.text('boom réseau'), findsOneWidget);
@@ -86,7 +86,7 @@ void main() {
       ZListLoading(),
       ZListEmpty(),
       ZListNoResults(),
-      ZListError(DomainFailure('x')),
+      ZListError(ZDomainFailure('x')),
     ]) {
       await _pump(tester, state);
       expect(tester.takeException(), isNull,

@@ -171,24 +171,24 @@ void main() {
     });
   });
 
-  group('AC6 — carte éphémère sans dossier cible → Left(DomainFailure)', () {
-    test('folderId == null → Left(DomainFailure), port carte jamais appelé',
+  group('AC6 — carte éphémère sans dossier cible → Left(ZDomainFailure)', () {
+    test('folderId == null → Left(ZDomainFailure), port carte jamais appelé',
         () async {
       final res = await repo.save(ephemeralCard(folderId: null));
       expect(res.isLeft(), isTrue);
       res.fold(
-        (f) => expect(f, isA<DomainFailure>()),
+        (f) => expect(f, isA<ZDomainFailure>()),
         (_) => fail('attendu Left'),
       );
       expect(cards.saveCount, 0, reason: 'aucune écriture sur garde folderId');
     });
 
-    test('folderId == "" → Left(DomainFailure), port carte jamais appelé',
+    test('folderId == "" → Left(ZDomainFailure), port carte jamais appelé',
         () async {
       final res = await repo.save(ephemeralCard(folderId: ''));
       expect(res.isLeft(), isTrue);
       res.fold(
-        (f) => expect(f, isA<DomainFailure>()),
+        (f) => expect(f, isA<ZDomainFailure>()),
         (_) => fail('attendu Left'),
       );
       expect(cards.saveCount, 0);

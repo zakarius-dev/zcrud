@@ -37,7 +37,7 @@ List<_Item> _items(int n) =>
 /// - [honorRequest] : honore filtres/tri/recherche/limit/curseur via
 ///   `zApplyListRequest` (backend « intelligent »). Si `false`, retourne le jeu
 ///   BRUT non paginé (backend « sans curseur » → repli in-memory attendu).
-/// - [failOnCursor] : renvoie `Left(ServerFailure)` dès qu'un `startAfter` est
+/// - [failOnCursor] : renvoie `Left(ZServerFailure)` dès qu'un `startAfter` est
 ///   présent (curseur non honoré → repli attendu, AD-16).
 /// - [failAlways] : renvoie toujours `Left` (vraie erreur → `ZListError`).
 class _FakeRepo implements ZRepository<_Item> {
@@ -57,9 +57,9 @@ class _FakeRepo implements ZRepository<_Item> {
 
   @override
   Future<ZResult<List<_Item>>> getAll({ZDataRequest? request}) async {
-    if (failAlways) return const Left(ServerFailure('backend en panne'));
+    if (failAlways) return const Left(ZServerFailure('backend en panne'));
     if (failOnCursor && request?.startAfter != null) {
-      return const Left(ServerFailure('curseur non supporté'));
+      return const Left(ZServerFailure('curseur non supporté'));
     }
     if (!honorRequest) return Right(List<_Item>.of(_data));
     final req = request ?? const ZDataRequest();
@@ -77,7 +77,7 @@ class _FakeRepo implements ZRepository<_Item> {
 
   @override
   Future<ZResult<_Item>> getById(String id) async =>
-      Left(NotFoundFailure('n/a', id: id));
+      Left(ZNotFoundFailure('n/a', id: id));
 
   @override
   Future<ZResult<_Item>> save(_Item item, {String? collectionId}) async =>
@@ -134,7 +134,7 @@ class _ControlledRepo implements ZRepository<_Item> {
 
   @override
   Future<ZResult<_Item>> getById(String id) async =>
-      Left(NotFoundFailure('n/a', id: id));
+      Left(ZNotFoundFailure('n/a', id: id));
 
   @override
   Future<ZResult<_Item>> save(_Item item, {String? collectionId}) async =>

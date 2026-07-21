@@ -174,7 +174,7 @@ class _InMemoryZRepository implements ZRepository<_Person> {
   Future<ZResult<_Person>> getById(String id) async {
     final p = _store[id];
     if (p == null || _deleted.contains(id)) {
-      return Left(NotFoundFailure('introuvable', id: id, entity: 'Person'));
+      return Left(ZNotFoundFailure('introuvable', id: id, entity: 'Person'));
     }
     return Right(p);
   }
@@ -192,7 +192,7 @@ class _InMemoryZRepository implements ZRepository<_Person> {
   @override
   Future<ZResult<Unit>> softDelete(String id) async {
     if (!_store.containsKey(id)) {
-      return Left(NotFoundFailure('introuvable', id: id));
+      return Left(ZNotFoundFailure('introuvable', id: id));
     }
     _deleted.add(id);
     _emit();
@@ -229,7 +229,7 @@ void main() {
     expect(saved.name, 'Ada');
   });
 
-  test('getById après softDelete → Left(NotFoundFailure) (AC3)', () async {
+  test('getById après softDelete → Left(ZNotFoundFailure) (AC3)', () async {
     final saved =
         (await repo.save(const _Person(name: 'Bob', age: 40))).getOrElse(() => throw StateError('left'));
     final id = saved.id!;
@@ -238,7 +238,7 @@ void main() {
     await repo.softDelete(id);
     final res = await repo.getById(id);
     expect(res.isLeft(), isTrue);
-    res.fold((f) => expect(f, isA<NotFoundFailure>()), (_) => fail('attendu Left'));
+    res.fold((f) => expect(f, isA<ZNotFoundFailure>()), (_) => fail('attendu Left'));
 
     // getAll exclut le soft-deleted.
     final all = (await repo.getAll()).getOrElse(() => []);

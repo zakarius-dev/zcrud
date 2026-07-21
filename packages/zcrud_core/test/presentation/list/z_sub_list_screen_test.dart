@@ -64,7 +64,7 @@ class _FakeChildRepo implements ZRepository<_Child> {
     for (final c in _live) {
       if (c.id == id) return Right(c);
     }
-    return Left(NotFoundFailure('n/a', id: id));
+    return Left(ZNotFoundFailure('n/a', id: id));
   }
 
   @override

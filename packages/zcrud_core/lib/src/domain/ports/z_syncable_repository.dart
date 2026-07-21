@@ -28,9 +28,9 @@ abstract class ZSyncableRepository<T extends ZEntity> extends ZRepository<T> {
   /// **bornée** des gagnants locaux.
   ///
   /// **`Right(unit)` si déconnecté** (best-effort, AD-9) : un distant injoignable
-  /// (couture de connectivité `false`, ou `Left(ServerFailure)` distant) est
+  /// (couture de connectivité `false`, ou `Left(ZServerFailure)` distant) est
   /// traité comme « offline » → `Right(unit)` (jamais une erreur « offline »),
   /// l'échec étant **loggé**. En revanche une **panne locale**
-  /// (`Left(CacheFailure)`) est une vraie erreur → `Left` (jamais avalée).
+  /// (`Left(ZCacheFailure)`) est une vraie erreur → `Left` (jamais avalée).
   Future<ZResult<Unit>> sync();
 }

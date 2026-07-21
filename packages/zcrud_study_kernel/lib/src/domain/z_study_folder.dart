@@ -18,7 +18,7 @@
 /// parent racine (niveau 2). L'entité **ne s'auto-valide JAMAIS** (pas d'assert,
 /// pas de throw) : la règle « 2 niveaux max » est portée par la primitive pure
 /// `validatePlacement` (`z_study_folder_hierarchy.dart`), que le dépôt E9-4
-/// compose dans `saveFolder` (`Left(DomainFailure)` si `depth >= 3`, sans
+/// compose dans `saveFolder` (`Left(ZDomainFailure)` si `depth >= 3`, sans
 /// écrire).
 ///
 /// **`archivedAt` = soft-archive réversible, DISTINCT du soft-delete (AC5)** :

@@ -2,7 +2,7 @@
 //
 // Fake `ZRepository` avec store + Set `deleted` : softDelete exclut de getAll
 // SANS suppression dure ; restore ré-inclut ; suppression EN LOT sur sélection ;
-// `Left(ServerFailure)` → onFailure, 0 throw. Wiring via `DynamicList` (layout
+// `Left(ZServerFailure)` → onFailure, 0 throw. Wiring via `DynamicList` (layout
 // `builder`, SM-5) : tap sur l'action delete appelle le port.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -134,10 +134,10 @@ void main() {
     expect(await _visibleIds(repo), <String>['b', 'c']);
   });
 
-  testWidgets('AC8 : Left(ServerFailure) sur softDelete → onFailure, 0 throw',
+  testWidgets('AC8 : Left(ZServerFailure) sur softDelete → onFailure, 0 throw',
       (tester) async {
     final store = newStore();
-    final repo = _StoreRepo(store)..failWith = const ServerFailure('nope');
+    final repo = _StoreRepo(store)..failWith = const ZServerFailure('nope');
     final rows = <ZListRow>[
       ZListRow(id: 'a', cells: {'name': 'Alice'}),
     ];
@@ -167,7 +167,7 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Delete').first);
     await tester.pump();
 
-    expect(captured, isA<ServerFailure>());
+    expect(captured, isA<ZServerFailure>());
     expect(repo.deleted, isEmpty); // rien supprimé
     expect(tester.takeException(), isNull); // 0 throw
   });

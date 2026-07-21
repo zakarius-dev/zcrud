@@ -5,12 +5,12 @@
 //   `updated_at` PRÉCIS passent par `applyMerged`/`writeMerged` (écriture
 //   verbatim) — jamais un seed « propre » qui masque la sémantique LWW.
 // - Injection d'échec distant : `_ThrowingFirestore` (FirebaseException →
-//   ServerFailure) ; comptage de lots : `_CountingFirestore` (override `batch()`).
+//   ZServerFailure) ; comptage de lots : `_CountingFirestore` (override `batch()`).
 //
 // Couvre : syncEntries tombstones (AC3), applyMerged anti-now() (AC4), lectures
 // local + getById soft-deleté→NotFound (AC8), write offline réussit (AC9), sync()
 // 5 cas de convergence dont tombstones (AC10), Right(unit) offline vs
-// Left(CacheFailure) local (AC11), 451→2 lots atomiques (AC12), soft-delete
+// Left(ZCacheFailure) local (AC11), 451→2 lots atomiques (AC12), soft-delete
 // bout-en-bout (AC13), isolation signatures (AC14).
 import 'dart:async';
 import 'dart:io';
@@ -75,7 +75,7 @@ FirestoreZRemoteStore<_Note> _remoteStore(FirebaseFirestore fs) =>
     FirestoreZRemoteStore<_Note>(repository: _repoImpl(fs));
 
 /// FirebaseFirestore de test qui **lève** sur tout accès `collection()`
-/// (FirebaseException → ServerFailure). Miroir E5-1.
+/// (FirebaseException → ZServerFailure). Miroir E5-1.
 class _ThrowingFirestore extends FakeFirebaseFirestore {
   @override
   CollectionReference<Map<String, dynamic>> collection(String path) {
@@ -320,7 +320,7 @@ void main() {
 
       final byId = await repo.getById('a');
       expect(byId.isLeft(), isTrue);
-      byId.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      byId.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
 
       final all = (await repo.getAll()).getOrElse(() => fail('getAll'));
       expect(all.map((n) => n.id), <String>['b']);
@@ -334,7 +334,7 @@ void main() {
   // ───────────────────────── AC9 — écriture LOCAL-first, distant offline ──────
 
   group('AC9 — write HORS-LIGNE réussit (Right) + lisible localement', () {
-    test('save/softDelete réussissent même si le distant échoue (ServerFailure)',
+    test('save/softDelete réussissent même si le distant échoue (ZServerFailure)',
         () async {
       final local = await localStore();
       // Distant qui échoue systématiquement (offline simulé).
@@ -446,7 +446,7 @@ void main() {
   // ───────────────────────── AC11 — Right(unit) offline vs Left local ─────────
 
   group('AC11 — sync() : offline → Right(unit) ; panne locale → Left', () {
-    test('remote ServerFailure (syncEntries) → Right(unit)', () async {
+    test('remote ZServerFailure (syncEntries) → Right(unit)', () async {
       final local = await localStore();
       await local.applyMerged(_entry('a', 'A', 1, DateTime.utc(2026, 1, 1)));
       final repo = ZOfflineFirstRepository<_Note>(
@@ -472,7 +472,7 @@ void main() {
       repo.dispose();
     });
 
-    test('erreur LOCALE (box fermée) → Left(CacheFailure) (jamais avalée)',
+    test('erreur LOCALE (box fermée) → Left(ZCacheFailure) (jamais avalée)',
         () async {
       final box = await Hive.openBox<dynamic>('notes_local_fail');
       final local = HiveZLocalStore<_Note>(
@@ -485,11 +485,11 @@ void main() {
         local: local,
         remote: _remoteStore(FakeFirebaseFirestore()),
       );
-      await box.close(); // toute lecture locale → HiveError → CacheFailure
+      await box.close(); // toute lecture locale → HiveError → ZCacheFailure
 
       final res = await repo.sync();
       expect(res.isLeft(), isTrue);
-      res.leftMap((f) => expect(f, isA<CacheFailure>()));
+      res.leftMap((f) => expect(f, isA<ZCacheFailure>()));
       repo.dispose();
     });
   });

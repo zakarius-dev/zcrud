@@ -27,12 +27,12 @@
 /// la SEULE couture backend voulue (AD-5) ; le **type de retour est le port
 /// NEUTRE** `ZStudyRepository<T>`.
 ///
-/// ## AD-10 — folderId manquant ⇒ `Left(DomainFailure)` explicite
+/// ## AD-10 — folderId manquant ⇒ `Left(ZDomainFailure)` explicite
 ///
 /// La topologie `nestedUnderParent` **exige** un `parentId` non vide : la
 /// fabrique passe [folderId] **tel quel** comme `parentId` (jamais un défaut
 /// avalé, jamais un repli en chemin plat). Un [folderId] vide fait donc remonter,
-/// à la résolution de chemin de toute opération, le `Left(DomainFailure)`
+/// à la résolution de chemin de toute opération, le `Left(ZDomainFailure)`
 /// explicite du resolver (nommant le `kind` et l'exigence `parentId`) — jamais un
 /// chemin silencieusement tronqué qui écrirait dans la mauvaise collection.
 ///
@@ -139,7 +139,7 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
       encode: encode,
       userId: userId,
       // AD-10 : `folderId` passé TEL QUEL comme parentId — jamais avalé ni replié
-      // en chemin plat. Vide ⇒ `Left(DomainFailure)` du resolver à toute opération.
+      // en chemin plat. Vide ⇒ `Left(ZDomainFailure)` du resolver à toute opération.
       parentId: folderId,
       isConnected: isConnected,
       logger: logger,

@@ -231,7 +231,7 @@ void main() {
   group('AC6 — grade atomique ; échec de review NON avalé (AD-5/R6)', () {
     test('seam Left ⇒ file INCHANGÉE + erreur exposée (retour + state)',
         () async {
-      final spy = _SpyReviewer(failure: const ServerFailure('offline'));
+      final spy = _SpyReviewer(failure: const ZServerFailure('offline'));
       final engine = ZStudySessionEngine(
         queue: _queueOf('ABC'),
         reviewer: spy.call,
@@ -241,12 +241,12 @@ void main() {
 
       expect(result.isLeft(), isTrue); // échec REMONTÉ, jamais avalé
       result.fold(
-        (f) => expect(f, const ServerFailure('offline')),
+        (f) => expect(f, const ZServerFailure('offline')),
         (_) => fail('attendu Left'),
       );
       expect(_order(engine), 'ABC'); // file INCHANGÉE (pas de réinsertion)
       expect(engine.lapses, 0);
-      expect(engine.state.error, const ServerFailure('offline')); // exposé
+      expect(engine.state.error, const ZServerFailure('offline')); // exposé
     });
 
     test('seam Right ⇒ file MUTÉE (contre-preuve)', () async {

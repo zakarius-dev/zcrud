@@ -14,7 +14,7 @@
 ///   `AsyncValue.error` (un provider qui déplie l'`Either` et **re-throw**
 ///   l'exception typée) vit dans **`zcrud_riverpod`** — jamais importé dans
 ///   `zcrud_core` (AD-15). Une exception jetée par `onSubmit` est **enveloppée**
-///   en [ZFailure] (`ServerFailure`), jamais un `catch(_){}` nu.
+///   en [ZFailure] (`ZServerFailure`), jamais un `catch(_){}` nu.
 /// - **AD-2 / SM-1** : l'état de soumission est un `ValueListenable` **dédié** —
 ///   le bouton et la surface d'erreur n'écoutent QUE lui ; aucun rebuild global
 ///   sur la voie de frappe. La validation agrégée ne monte AUCUN `Form` global :
@@ -211,7 +211,7 @@ class ZEditionSubmitController<T> {
   ///   état `failure(ZValidationFailure)`, `onSubmit` **NON** appelé.
   /// - Valide ⇒ `inProgress` (bouton désactivé), snapshot, `await onSubmit` ;
   ///   `Right` ⇒ `success` (+ [controller.markPristine]), `Left` ⇒ `failure`.
-  /// - Exception jetée par `onSubmit` ⇒ **enveloppée** en `ServerFailure` (AD-11).
+  /// - Exception jetée par `onSubmit` ⇒ **enveloppée** en `ZServerFailure` (AD-11).
   /// - Ré-entrance pendant `inProgress` ⇒ **ignorée** (pas de double soumission).
   Future<ZSubmissionOutcome<T>> submit() async {
     if (_state.value.status == ZSubmissionStatus.inProgress) {
@@ -233,7 +233,7 @@ class ZEditionSubmitController<T> {
       either = await onSubmit(values);
     } catch (e) {
       // AD-11 : jamais de remontée non typée — on enveloppe en ZFailure.
-      final failure = ServerFailure('Échec de soumission : $e');
+      final failure = ZServerFailure('Échec de soumission : $e');
       _state.value = ZSubmissionState.failure(failure);
       return ZSubmissionOutcome<T>.failure(failure);
     }

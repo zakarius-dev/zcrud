@@ -15,7 +15,7 @@
 # responsive, AUCUN dartz.
 name: zcrud_responsive
 description: "Transverse responsive UI infrastructure for zcrud: ZWindowSizeClass (Material 3 window size class) and ZBreakpointValue<T> (generic breakpoint-scoped value), reusing zcrud_core breakpoints. Depends only on zcrud_core."
-version: 0.3.8
+version: 0.4.0
 publish_to: none
 resolution: workspace
 
@@ -38,7 +38,7 @@ environment:
 # ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur, AUCUN tiers
 # responsive, AUCUN dartz.
 dependencies:
-  zcrud_core: ^0.3.8
+  zcrud_core: ^0.4.0
   flutter:
     sdk: flutter
 

@@ -56,7 +56,7 @@ class _SpyStore implements ZRepetitionStore {
   Future<ZResult<Unit>> deleteByCard(String flashcardId) async {
     deletedIds.add(flashcardId);
     if (failFor.contains(flashcardId)) {
-      return Left<ZFailure, Unit>(CacheFailure('purge SRS KO "$flashcardId"'));
+      return Left<ZFailure, Unit>(ZCacheFailure('purge SRS KO "$flashcardId"'));
     }
     _byCard.remove(flashcardId);
     return Right<ZFailure, Unit>(unit);
@@ -76,7 +76,7 @@ class _SpyDelete {
   Future<ZResult<Unit>> call(String id) async {
     deletedCards.add(id);
     if (failFor.contains(id)) {
-      return Left<ZFailure, Unit>(NotFoundFailure('carte KO', id: id));
+      return Left<ZFailure, Unit>(ZNotFoundFailure('carte KO', id: id));
     }
     return Right<ZFailure, Unit>(unit);
   }
@@ -226,7 +226,7 @@ void main() {
 
       expect(report.failedRootIds, <String>{'K'},
           reason: '🔴 K figure dans le rapport avec sa cause (jamais avalé)');
-      expect(report.failures['K'], isA<CacheFailure>());
+      expect(report.failures['K'], isA<ZCacheFailure>());
       expect(report.succeededCount, 2, reason: 'A et B réussissent (N-1)');
       expect(store.has('A'), isFalse);
       expect(store.has('B'), isFalse);
@@ -256,7 +256,7 @@ void main() {
       );
 
       expect(report.failedRootIds, <String>{'K'});
-      expect(report.failures['K'], isA<NotFoundFailure>());
+      expect(report.failures['K'], isA<ZNotFoundFailure>());
       expect(store.deletedIds, isNot(contains('K')),
           reason: '🔴 short-circuit : la carte K n\'ayant pas été supprimée, on '
               'ne détruit PAS son historique SRS (jamais purger une carte vivante)');

@@ -31,7 +31,7 @@ class _SpyDeleter {
       throw StateError('boom-$rootId');
     }
     if (failingIds.contains(rootId)) {
-      return Left<ZFailure, Unit>(ServerFailure('fail-$rootId'));
+      return Left<ZFailure, Unit>(ZServerFailure('fail-$rootId'));
     }
     return Right<ZFailure, Unit>(unit);
   }
@@ -329,7 +329,7 @@ void main() {
       // Rapport fidèle : 2 réussies + 1 échouée avec CAUSE.
       expect(report.succeededRootIds, {'r1', 'r3'});
       expect(report.failedRootIds, {'r2'});
-      expect(report.failures['r2'], const ServerFailure('fail-r2'));
+      expect(report.failures['r2'], const ZServerFailure('fail-r2'));
       expect(report.hasFailures, isTrue);
       // Best-effort : succès retirés de la sélection, échec conservé.
       expect(controller.selectedIds.value, {'r2'});
@@ -405,7 +405,7 @@ void main() {
       // Aucune écriture tentée (spy jamais appelé) ; toutes racines échouées.
       expect(spy.received, isEmpty);
       expect(report.failedRootIds, {'m1', 'm2'});
-      expect(report.failures['m1'], isA<DomainFailure>());
+      expect(report.failures['m1'], isA<ZDomainFailure>());
       // La sélection reste intacte (rien n'a été appliqué).
       expect(controller.selectedIds.value, {'m1', 'm2'});
     });
@@ -436,7 +436,7 @@ void main() {
       // AUCUNE écriture (spy jamais appelé) ; toutes racines échouées.
       expect(spy.received, isEmpty);
       expect(report.failedRootIds, {'a', 'b', 'c'});
-      expect(report.failures['a'], const DomainFailure('trop court'));
+      expect(report.failures['a'], const ZDomainFailure('trop court'));
       expect(report.succeededRootIds, isEmpty);
       // Sélection intacte (rien appliqué).
       expect(controller.selectedIds.value, {'a', 'b', 'c'});
@@ -500,11 +500,11 @@ void main() {
     test('égalité de valeur par contenu + hasFailures/failedRootIds', () {
       final a = ZBatchReport(
         succeededRootIds: {'r1'},
-        failures: {'r2': const ServerFailure('x')},
+        failures: {'r2': const ZServerFailure('x')},
       );
       final b = ZBatchReport(
         succeededRootIds: {'r1'},
-        failures: {'r2': const ServerFailure('x')},
+        failures: {'r2': const ZServerFailure('x')},
       );
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);
@@ -515,7 +515,7 @@ void main() {
       expect(a, isA<ZBatchDeletionReport>());
       // collections non modifiables.
       expect(() => a.succeededRootIds.add('z'), throwsUnsupportedError);
-      expect(() => a.failures['q'] = const ServerFailure('y'),
+      expect(() => a.failures['q'] = const ZServerFailure('y'),
           throwsUnsupportedError);
     });
   });

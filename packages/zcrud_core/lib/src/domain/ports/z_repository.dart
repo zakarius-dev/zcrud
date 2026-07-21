@@ -28,7 +28,7 @@ import '../failures/z_failure.dart';
 /// implémentés) :
 /// - [save] **matérialise l'éphémère** : une entité sans `id` (`isEphemeral`)
 ///   se voit attribuer une identité opaque à l'écriture ; l'absence de cible
-///   requise est rejetée par un `Left(DomainFailure)`.
+///   requise est rejetée par un `Left(ZDomainFailure)`.
 /// - [softDelete]/[restore] basculent le drapeau `is_deleted` **hors-entité**
 ///   (`ZSyncMeta`, AD-16) ; les lectures excluent les soft-deleted.
 abstract class ZRepository<T extends ZEntity> {
@@ -45,12 +45,12 @@ abstract class ZRepository<T extends ZEntity> {
   /// Lit tous les éléments correspondant à [request] (exclut les soft-deleted).
   Future<ZResult<List<T>>> getAll({ZDataRequest? request});
 
-  /// Lit l'élément d'identité [id]. `Left(NotFoundFailure)` s'il est absent ou
+  /// Lit l'élément d'identité [id]. `Left(ZNotFoundFailure)` s'il est absent ou
   /// soft-deleted.
   Future<ZResult<T>> getById(String id);
 
   /// Persiste [item]. Matérialise l'éphémère (attribution d'`id`) et rejette
-  /// une cible manquante via `Left(DomainFailure)` (AD-14). [collectionId]
+  /// une cible manquante via `Left(ZDomainFailure)` (AD-14). [collectionId]
   /// localise le conteneur si nécessaire.
   Future<ZResult<T>> save(T item, {String? collectionId});
 

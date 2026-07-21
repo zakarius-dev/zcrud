@@ -24,16 +24,16 @@ import '../failures/z_failure.dart';
 abstract class CloudStorageRepository {
   /// Téléverse les octets référencés par [file] (via son `localPath`) et
   /// retourne l'[AppFile] **mis à jour** — `remoteUrl` renseignée,
-  /// `uploadState == ZAppFileUploadState.uploaded`. `Left(ServerFailure)` en cas
+  /// `uploadState == ZAppFileUploadState.uploaded`. `Left(ZServerFailure)` en cas
   /// d'échec réseau/serveur.
   Future<ZResult<AppFile>> upload(AppFile file);
 
   /// Supprime la ressource distante référencée par [file] (par `remoteUrl`/`id`).
-  /// `Right(unit)` si supprimée/inexistante ; `Left(ServerFailure)` sinon.
+  /// `Right(unit)` si supprimée/inexistante ; `Left(ZServerFailure)` sinon.
   Future<ZResult<Unit>> delete(AppFile file);
 
   /// Résout l'URL de téléchargement de [file] (si connue côté backend).
-  /// `Left(NotFoundFailure)` si la ressource est absente.
+  /// `Left(ZNotFoundFailure)` si la ressource est absente.
   Future<ZResult<String>> downloadUrl(AppFile file);
 
   /// Flux **nu** de progression d'upload `0..1` de [file] (AD-11 : jamais

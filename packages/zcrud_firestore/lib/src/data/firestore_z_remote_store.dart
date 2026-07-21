@@ -10,7 +10,7 @@
 /// **Fire-and-forget best-effort (borné E5-2)** : la sémantique du port est que
 /// le distant **n'est jamais la source de vérité** (un échec distant ≠ un échec
 /// du store local). L'impl E5-2 se **contente de déléguer** à l'adaptateur E5-1
-/// et de **propager son `ZResult` typé** (`ServerFailure` inclus, jamais avalé).
+/// et de **propager son `ZResult` typé** (`ZServerFailure` inclus, jamais avalé).
 /// L'**orchestration** — débounce, best-effort silencieux (`Right(unit)` si
 /// déconnecté), cascade bornée ≤ 450, merge Last-Write-Wins sur `updatedAt` —
 /// **appartient à E5-3/E5-4** et n'est **PAS** implémentée ici (frontière

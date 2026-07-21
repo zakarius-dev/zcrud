@@ -82,7 +82,7 @@ class _SpyRepo extends ZStudyRepository<_FakeEntity> {
 
   @override
   Future<ZResult<_FakeEntity>> getById(String id) async =>
-      const Left<ZFailure, _FakeEntity>(NotFoundFailure('stub'));
+      const Left<ZFailure, _FakeEntity>(ZNotFoundFailure('stub'));
 
   @override
   Future<ZResult<Unit>> softDelete(String id) async =>
@@ -119,7 +119,7 @@ void main() {
 
   group('AC2 — Template Method : validate→Left BLOQUE persist (DISCRIMINANT)', () {
     test('save renvoie le Left exact ET persist n\'est JAMAIS appelé', () async {
-      const rejet = DomainFailure('rejet');
+      const rejet = ZDomainFailure('rejet');
       final repo = _SpyRepo(
         validateOverride: (_) => const Left<ZFailure, Unit>(rejet),
       );
@@ -131,7 +131,7 @@ void main() {
       expect(
         result.fold((f) => f, (_) => null),
         rejet,
-        reason: 'le DomainFailure du validate doit remonter inchangé',
+        reason: 'le ZDomainFailure du validate doit remonter inchangé',
       );
       // 2) preuve par l'espion : persist BLOQUÉ mécaniquement.
       expect(
@@ -183,7 +183,7 @@ void main() {
     ZResult<Unit> twoLevelMax(_FakeEntity item) {
       if (item.parentId == alreadyLevel2) {
         return const Left<ZFailure, Unit>(
-          DomainFailure('Hiérarchie limitée à 2 niveaux.'),
+          ZDomainFailure('Hiérarchie limitée à 2 niveaux.'),
         );
       }
       return const Right<ZFailure, Unit>(unit);
@@ -228,7 +228,7 @@ void main() {
         'la règle', () async {
       final repo = _SpyRepo(
         validateOverride: (item) => item.parentId == null
-            ? const Left<ZFailure, Unit>(DomainFailure('cible requise'))
+            ? const Left<ZFailure, Unit>(ZDomainFailure('cible requise'))
             : const Right<ZFailure, Unit>(unit),
       );
 

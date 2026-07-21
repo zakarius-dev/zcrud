@@ -61,6 +61,7 @@ ZFirestorePathResolver _resolver() => ZFirestorePathResolver(
     );
 
 void main() {
+  mainCr10();
   late Directory dir;
   late Box<dynamic> box;
   late HiveZLocalStore<_Dated> local;
@@ -210,6 +211,124 @@ void main() {
       final entries = (await local.syncEntries()).getOrElse(() => const []);
       expect(entries.single.entity.title, 'local récent',
           reason: 'un cloud plus ancien ne doit jamais écraser le local');
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-LEX-10 — découverte des parents d'une topologie nested.
+//
+// Un repository folder-scopé est figé sur UN parentId : son sync() ne couvre que
+// ce dossier. Sur un appareil NEUF (store local vide), l'hôte n'avait aucune
+// source pour découvrir les dossiers existants — la découverte était circulaire,
+// et sync() rendait Right(unit) sur une liste vide : succès SILENCIEUX.
+// Faute d'API, lex devait interroger FirebaseFirestore elle-même, perçant
+// l'isolation backend (AD-5/AD-11).
+void mainCr10() {
+  const String kNested = 'exam';
+  const String kParentCol = 'study_folders';
+
+  ZFirestorePathResolver nestedResolver() => ZFirestorePathResolver(
+        <String, ZFirestorePathRule>{
+          kNested: const ZFirestorePathRule.nestedUnderParent(
+            collection: 'exams',
+            parentCollection: kParentCol,
+          ),
+        },
+      );
+
+  group('CR-LEX-10 — listParentIds', () {
+    late Directory dir;
+    late Box<dynamic> box;
+    late HiveZLocalStore<_Dated> local;
+    late FakeFirebaseFirestore fs;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('zcrud_cr_lex10');
+      Hive.init(dir.path);
+      box = await Hive.openBox<dynamic>('cr_lex10_${dir.path.hashCode}');
+      local = HiveZLocalStore<_Dated>(
+        box: box,
+        kind: kNested,
+        fromMap: _Dated.fromMap,
+        toMap: (e) => e.toMap(),
+      );
+      fs = FakeFirebaseFirestore();
+    });
+
+    tearDown(() async {
+      await box.close();
+      await dir.delete(recursive: true);
+    });
+
+    ZOfflineFirstBoxRepository<_Dated> nestedRepo({String parentId = 'f1'}) =>
+        ZOfflineFirstBoxRepository<_Dated>(
+          local: local,
+          firestore: fs,
+          resolver: nestedResolver(),
+          kind: kNested,
+          decode: _Dated.fromMap,
+          encode: (e) => e.toMap(),
+          userId: 'u1',
+          parentId: parentId,
+          autoListen: false,
+        );
+
+    test('🔴 APPAREIL NEUF : les dossiers cloud sont découvrables, local vide',
+        () async {
+      // Le scénario exact de la CR : 2 dossiers au cloud, store local VIDE.
+      await fs.collection('users/u1/$kParentCol').doc('f1').set(
+          <String, dynamic>{'name': 'Dossier 1'});
+      await fs.collection('users/u1/$kParentCol').doc('f2').set(
+          <String, dynamic>{'name': 'Dossier 2'});
+
+      final ids = (await nestedRepo().listParentIds())
+          .getOrElse(() => const <String>[]);
+      // Avant : l'hôte ne pouvait RIEN découvrir ⇒ sync() no-op ⇒ liste vide.
+      expect(ids..sort(), <String>['f1', 'f2']);
+    });
+
+    test('aucun parent au cloud ⇒ liste vide, mais Right (pas une erreur)',
+        () async {
+      final r = await nestedRepo().listParentIds();
+      expect(r.isRight(), isTrue);
+      expect(r.getOrElse(() => const <String>['x']), isEmpty);
+    });
+
+    test('une topologie NON nested rend Left explicite, jamais une liste vide',
+        () async {
+      // Le mode dégradé silencieux est précisément ce qu'on élimine.
+      final flat = ZOfflineFirstBoxRepository<_Dated>(
+        local: local,
+        firestore: fs,
+        resolver: _resolver(), // globalTopLevel
+        kind: _kKind,
+        decode: _Dated.fromMap,
+        encode: (e) => e.toMap(),
+        autoListen: false,
+      );
+      final r = await flat.listParentIds();
+      expect(r.isLeft(), isTrue);
+    });
+
+    test('user-scopé sans userId ⇒ Left explicite', () async {
+      final noUser = ZOfflineFirstBoxRepository<_Dated>(
+        local: local,
+        firestore: fs,
+        resolver: nestedResolver(),
+        kind: kNested,
+        decode: _Dated.fromMap,
+        encode: (e) => e.toMap(),
+        parentId: 'f1',
+        autoListen: false,
+      );
+      final r = await noUser.listParentIds();
+      expect(r.isLeft(), isTrue);
+    });
+
+    test('aucun type backend dans la signature (AD-5)', () async {
+      final ids = await nestedRepo().listParentIds();
+      expect(ids, isA<Either<ZFailure, List<String>>>());
     });
   });
 }

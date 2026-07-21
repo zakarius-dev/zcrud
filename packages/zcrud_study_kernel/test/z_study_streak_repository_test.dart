@@ -99,12 +99,12 @@ class _ValidatingStreakRepository extends _FakeStreakRepository {
   ZResult<Unit> validate(ZStudyStreak item) {
     if (!zIsCivilDay(item.lastGradedDay) && item.lastGradedDay != null) {
       return const Left<ZFailure, Unit>(
-        DomainFailure('lastGradedDay n\'est pas un jour civil yyyy-MM-dd'),
+        ZDomainFailure('lastGradedDay n\'est pas un jour civil yyyy-MM-dd'),
       );
     }
     if (item.current < 0 || item.best < 0) {
       return const Left<ZFailure, Unit>(
-        DomainFailure('un compteur d\'assiduité n\'est jamais négatif'),
+        ZDomainFailure('un compteur d\'assiduité n\'est jamais négatif'),
       );
     }
     return const Right<ZFailure, Unit>(unit);
@@ -147,7 +147,7 @@ void main() {
     test('🔴 un échec de persistance rend Left(ZFailure) — JAMAIS une exception '
         '(AD-11/AD-10 : la session continue)', () async {
       final repo = _FakeStreakRepository(
-        failure: const CacheFailure('disque plein'),
+        failure: const ZCacheFailure('disque plein'),
       );
       const streak = ZStudyStreak(current: 2, best: 2, lastGradedDay: '2026-03-29');
 
@@ -158,7 +158,7 @@ void main() {
 
       expect(result.isLeft(), isTrue);
       result.fold(
-        (failure) => expect(failure, isA<CacheFailure>()),
+        (failure) => expect(failure, isA<ZCacheFailure>()),
         (_) => fail('un échec de persistance ne doit pas rendre Right'),
       );
     });
@@ -166,7 +166,7 @@ void main() {
     test('🔴 un échec de persistance n\'empêche PAS la session de continuer : '
         'le streak reste AFFICHABLE (AD-10)', () async {
       final repo = _FakeStreakRepository(
-        failure: const ServerFailure('backend indisponible'),
+        failure: const ZServerFailure('backend indisponible'),
       );
       const before = ZStudyStreak(current: 6, best: 6, lastGradedDay: '2026-03-28');
       final at = DateTime(2026, 3, 29, 9);
@@ -194,9 +194,9 @@ void main() {
     test('les 3 familles de ZFailure remontent telles quelles (jamais de throw)',
         () async {
       for (final failure in <ZFailure>[
-        const CacheFailure('cache'),
-        const ServerFailure('server'),
-        const NotFoundFailure('absent'),
+        const ZCacheFailure('cache'),
+        const ZServerFailure('server'),
+        const ZNotFoundFailure('absent'),
       ]) {
         final repo = _FakeStreakRepository(failure: failure);
         final result = await repo.save(const ZStudyStreak(current: 1, best: 1));
@@ -209,7 +209,7 @@ void main() {
     test('🔴 validate → Left EMPÊCHE MÉCANIQUEMENT persist (espion à 0 appel)',
         () async {
       final repo = _FakeStreakRepository(
-        validationFailure: const DomainFailure('refusé'),
+        validationFailure: const ZDomainFailure('refusé'),
       );
 
       final result = await repo.save(const ZStudyStreak(current: 1, best: 1));

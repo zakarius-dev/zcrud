@@ -6,7 +6,7 @@
 // toute assertion à 0 — sans quoi l'étape suivante ne prouverait rien.
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_core/domain.dart' show ServerFailure, Unit, ZResult;
+import 'package:zcrud_core/domain.dart' show ZServerFailure, Unit, ZResult;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
@@ -20,7 +20,7 @@ class _CommitSpy {
   Future<ZResult<Unit>> commit(List<ZFlashcard> cards) async {
     writes++;
     payloads.add(List<ZFlashcard>.of(cards));
-    if (fail) return left(const ServerFailure('commit refusé'));
+    if (fail) return left(const ZServerFailure('commit refusé'));
     return right(unit);
   }
 }

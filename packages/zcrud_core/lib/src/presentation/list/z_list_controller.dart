@@ -219,7 +219,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     if (_disposed || gen != _generation) return;
     if (result.isLeft()) {
       final failure =
-          result.swap().getOrElse(() => const ServerFailure('échec inconnu'));
+          result.swap().getOrElse(() => const ZServerFailure('échec inconnu'));
       // Un échec sur une requête PORTANT un curseur est interprété comme un
       // curseur non honoré → repli in-memory (AD-16), pas d'erreur fatale. Un
       // échec sur la première page (sans curseur) est une vraie erreur.
@@ -250,7 +250,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     if (_disposed || gen != _generation) return;
     if (result.isLeft()) {
       final failure =
-          result.swap().getOrElse(() => const ServerFailure('échec inconnu'));
+          result.swap().getOrElse(() => const ZServerFailure('échec inconnu'));
       _isLoading = false;
       _emit(ZListError(failure));
       return;

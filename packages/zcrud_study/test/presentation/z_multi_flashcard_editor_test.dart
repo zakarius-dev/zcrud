@@ -7,7 +7,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/domain.dart'
-    show EditionFieldType, ServerFailure, Unit, ZFieldSpec, ZResult;
+    show EditionFieldType, ZServerFailure, Unit, ZFieldSpec, ZResult;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
@@ -18,7 +18,7 @@ class _CommitSpy {
   Future<ZResult<Unit>> call(List<ZFlashcard> cards) async {
     writes++;
     payloads.add(List<ZFlashcard>.of(cards));
-    if (fail) return left(const ServerFailure('refusé'));
+    if (fail) return left(const ZServerFailure('refusé'));
     return right(unit);
   }
 }

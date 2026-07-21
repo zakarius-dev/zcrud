@@ -4,7 +4,7 @@
 // N→1 SANS Timer réel (AC3, AC9), séparation quand/comment — seul `sync()` touché
 // (AC4), échec partiel Left+throw sans interruption + trace (AC5), offline→0 sync
 // (AC6), gate enabled=false (AC7), `syncNow` rapport agrégé (AC8), dette
-// réseau/serveur `ServerFailure` compté `failed` (AC10), dispose inerte + dépôts
+// réseau/serveur `ZServerFailure` compté `failed` (AC10), dispose inerte + dépôts
 // NON disposés (AC11).
 //
 // **Aucun `Timer` réel ni `Future.delayed`** dans la suite débounce : le temps est
@@ -66,9 +66,9 @@ class _SpyRepo implements ZSyncableRepository<ZEntity> {
       case _SyncBehavior.ok:
         return Right<ZFailure, Unit>(unit);
       case _SyncBehavior.leftServer:
-        return const Left<ZFailure, Unit>(ServerFailure('serveur indisponible'));
+        return const Left<ZFailure, Unit>(ZServerFailure('serveur indisponible'));
       case _SyncBehavior.leftCache:
-        return const Left<ZFailure, Unit>(CacheFailure('cache corrompu'));
+        return const Left<ZFailure, Unit>(ZCacheFailure('cache corrompu'));
       case _SyncBehavior.throwError:
         throw StateError('boom');
     }
@@ -287,7 +287,7 @@ void main() {
       expect(report.failed, 2);
       // Le Left (ZFailure) est collecté ; l'exception brute non (juste comptée).
       expect(report.failures.length, 1);
-      expect(report.failures.single, isA<ServerFailure>());
+      expect(report.failures.single, isA<ZServerFailure>());
       // Les deux échecs sont tracés (log non muet — AD-11).
       expect(log.messages.where((m) => m.contains('échec')).length, 1);
       expect(log.messages.where((m) => m.contains('exception')).length, 1);
@@ -478,7 +478,7 @@ void main() {
   });
 
   group('Dette réseau/serveur (AC10)', () {
-    test('Left(ServerFailure) compté failed + collecté (pas masqué offline)',
+    test('Left(ZServerFailure) compté failed + collecté (pas masqué offline)',
         () async {
       final log = _LogSink();
       final o = ZSyncOrchestrator(
@@ -489,7 +489,7 @@ void main() {
 
       final report = (await o.syncNow()).getOrElse(() => const ZSyncRunReport.empty());
       expect(report.failed, 1);
-      expect(report.failures.single, isA<ServerFailure>());
+      expect(report.failures.single, isA<ZServerFailure>());
       // Visible dans le log (jamais noyé silencieusement).
       expect(log.messages.any((m) => m.contains('échec')), isTrue);
 

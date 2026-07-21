@@ -263,7 +263,7 @@ class DemoRepository implements ZRepository<DemoRecord> {
     for (final r in _data) {
       if (r.recordId == id) return Right<ZFailure, DemoRecord>(r);
     }
-    return Left<ZFailure, DemoRecord>(NotFoundFailure('DemoRecord', id: id));
+    return Left<ZFailure, DemoRecord>(ZNotFoundFailure('DemoRecord', id: id));
   }
 
   @override

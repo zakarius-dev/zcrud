@@ -56,7 +56,7 @@ void main() {
   });
 
   group('🔴 AC6/AD-39 — panne réelle du store : Left RAPPORTÉ (jamais avalé)', () {
-    test('failDeleteFor ⇒ Left(CacheFailure), l\'état N\'est PAS retiré', () async {
+    test('failDeleteFor ⇒ Left(ZCacheFailure), l\'état N\'est PAS retiré', () async {
       final store = FakeRepetitionStore(failDeleteFor: <String>{'K'});
       await store.put(_seed('K'));
       final res = await store.deleteByCard('K');

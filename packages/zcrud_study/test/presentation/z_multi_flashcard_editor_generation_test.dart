@@ -4,7 +4,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_core/domain.dart' show ServerFailure, Unit, ZResult;
+import 'package:zcrud_core/domain.dart' show ZServerFailure, Unit, ZResult;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
@@ -164,7 +164,7 @@ void main() {
     await spy.call(const <ZFlashcard>[]);
     expect(spy.writes, 1);
     final port = _FakeGenPort(
-        (_) async => left(const ServerFailure('port en panne')));
+        (_) async => left(const ZServerFailure('port en panne')));
     await tester.pumpWidget(_harness(ZMultiFlashcardEditor(
       onCommit: spy.call,
       labels: _labels,

@@ -23,7 +23,7 @@ class _FakeRepo implements ZRepository<_FakeEntity> {
   Future<ZResult<Unit>> softDelete(String id) async {
     softDeleted.add(id);
     if (failingIds.contains(id)) {
-      return Left<ZFailure, Unit>(ServerFailure('fail-$id'));
+      return Left<ZFailure, Unit>(ZServerFailure('fail-$id'));
     }
     return Right<ZFailure, Unit>(unit);
   }

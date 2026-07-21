@@ -281,7 +281,7 @@ void main() {
 
       final byId = await store.getById('legacy1');
       expect(byId.isLeft(), isTrue);
-      byId.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      byId.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
 
       final all = (await store.getAll()).getOrElse(() => fail('getAll'));
       expect(all.map((n) => n.id).toSet(), <String>{'ok1'});
@@ -319,16 +319,16 @@ void main() {
     });
   });
 
-  group('AC9 — Either/CacheFailure, NotFound, vide (jamais de catch nu)', () {
-    test('getById clé absente → Left(NotFoundFailure) (null ≠ erreur)',
+  group('AC9 — Either/ZCacheFailure, NotFound, vide (jamais de catch nu)', () {
+    test('getById clé absente → Left(ZNotFoundFailure) (null ≠ erreur)',
         () async {
       final box = await openBox();
       final store = _store(box);
       final r = await store.getById('nope');
       expect(r.isLeft(), isTrue);
       r.leftMap((f) {
-        expect(f, isA<NotFoundFailure>());
-        expect((f as NotFoundFailure).id, 'nope');
+        expect(f, isA<ZNotFoundFailure>());
+        expect((f as ZNotFoundFailure).id, 'nope');
       });
     });
 
@@ -339,7 +339,7 @@ void main() {
       expect(r, isEmpty);
     });
 
-    test('erreur d\'accès (box fermée) → Left(CacheFailure), jamais d\'exception',
+    test('erreur d\'accès (box fermée) → Left(ZCacheFailure), jamais d\'exception',
         () async {
       final box = await openBox();
       final store = _store(box);
@@ -347,23 +347,23 @@ void main() {
 
       final getAll = await store.getAll();
       expect(getAll.isLeft(), isTrue);
-      getAll.leftMap((f) => expect(f, isA<CacheFailure>()));
+      getAll.leftMap((f) => expect(f, isA<ZCacheFailure>()));
 
       final put = await store.put(const _Note(title: 't', count: 1));
       expect(put.isLeft(), isTrue);
-      put.leftMap((f) => expect(f, isA<CacheFailure>()));
+      put.leftMap((f) => expect(f, isA<ZCacheFailure>()));
 
       final del = await store.softDelete('x');
       expect(del.isLeft(), isTrue);
-      del.leftMap((f) => expect(f, isA<CacheFailure>()));
+      del.leftMap((f) => expect(f, isA<ZCacheFailure>()));
     });
 
-    test('softDelete d\'un id inconnu → Left(NotFoundFailure)', () async {
+    test('softDelete d\'un id inconnu → Left(ZNotFoundFailure)', () async {
       final box = await openBox();
       final store = _store(box);
       final r = await store.softDelete('inconnu');
       expect(r.isLeft(), isTrue);
-      r.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      r.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
     });
   });
 

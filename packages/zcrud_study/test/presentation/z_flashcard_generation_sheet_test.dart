@@ -162,7 +162,7 @@ void main() {
     });
 
     testWidgets('échec du port → message affiché, saisie préservée', (tester) async {
-      final port = _FakePort((_) async => left(const ServerFailure('hors ligne')));
+      final port = _FakePort((_) async => left(const ZServerFailure('hors ligne')));
       await tester.pumpWidget(_harness(ZFlashcardGenerationSheet(
         port: port,
         messages: _messages,
@@ -247,7 +247,7 @@ void main() {
       // Un échec fait passer le statut → failed ⇒ le ListenableBuilder externe
       // reconstruit TOUTE la feuille. Si le controller était créé dans build(),
       // le texte serait perdu. Il est en initState ⇒ préservé.
-      final port = _FakePort((_) async => left(const ServerFailure('nope')));
+      final port = _FakePort((_) async => left(const ZServerFailure('nope')));
       await tester.pumpWidget(_harness(ZFlashcardGenerationSheet(
         port: port,
         messages: _messages,

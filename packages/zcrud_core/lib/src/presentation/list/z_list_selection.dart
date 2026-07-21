@@ -160,7 +160,7 @@ class ZListSelectionController extends ChangeNotifier {
       } catch (error, stack) {
         // AD-10 — un `throw` du seam injecté est CAPTÉ et converti en racine
         // échouée (jamais propagé). Le stack est joint au message (diagnostic).
-        failures[id] = ServerFailure('batch operation threw for "$id": '
+        failures[id] = ZServerFailure('batch operation threw for "$id": '
             '$error\n$stack');
         continue;
       }
@@ -200,7 +200,7 @@ class ZListSelectionController extends ChangeNotifier {
   ///
   /// **Modèle sans champ de rattachement** ([attachmentField] `null`/vide) ⇒
   /// résultat DÉFINI (AD-10) : chaque racine est rapportée en échec
-  /// ([DomainFailure]) et **aucune écriture** n'est tentée — jamais de `throw`.
+  /// ([ZDomainFailure]) et **aucune écriture** n'est tentée — jamais de `throw`.
   Future<ZBatchReport> batchMove({
     required String? attachmentField,
     required Object? destination,
@@ -214,7 +214,7 @@ class ZListSelectionController extends ChangeNotifier {
       // Aucune écriture : chaque racine échoue avec une cause définie (AD-10).
       return batchApply(
         applyToRoot: (_) async => Left<ZFailure, Unit>(
-          const DomainFailure(
+          const ZDomainFailure(
             'move rejected: model declares no attachment field',
           ),
         ),
@@ -232,7 +232,7 @@ class ZListSelectionController extends ChangeNotifier {
   /// source de validation, jamais une 2e implémentation). La valeur candidate
   /// [value] est validée **AVANT toute écriture** : si elle est invalide,
   /// **aucune racine n'est touchée** (le seam [writeRoot] n'est PAS appelé) et
-  /// chaque racine sélectionnée est rapportée en échec ([DomainFailure] portant
+  /// chaque racine sélectionnée est rapportée en échec ([ZDomainFailure] portant
   /// le message du validateur). Sinon, application **par élément** via le seam
   /// INJECTÉ [writeRoot] + rapport (même contrat que [batchDelete]).
   ///
@@ -260,7 +260,7 @@ class ZListSelectionController extends ChangeNotifier {
       // Valeur invalide ⇒ AUCUNE racine touchée (writeRoot jamais appelé).
       final ids = _selected.value.toList(growable: false);
       final failures = <String, ZFailure>{
-        for (final id in ids) id: DomainFailure(error),
+        for (final id in ids) id: ZDomainFailure(error),
       };
       return ZBatchReport(
         succeededRootIds: const <String>{},

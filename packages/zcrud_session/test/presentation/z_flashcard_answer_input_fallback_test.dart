@@ -21,7 +21,7 @@ class _OfflineEvaluationPort implements ZFlashcardAnswerEvaluationPort {
     callCount++;
     await Future<void>.delayed(const Duration(milliseconds: 50));
     return const Left<ZFailure, ZFlashcardAnswerEvaluation>(
-      ServerFailure('hors ligne'),
+      ZServerFailure('hors ligne'),
     );
   }
 }

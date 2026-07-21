@@ -172,7 +172,7 @@ class _InMemoryLocalStore implements ZLocalStore<DemoRecord> {
   Future<ZResult<DemoRecord>> getById(String id) async {
     final r = _records[id];
     return r == null || _deleted.contains(id)
-        ? Left<ZFailure, DemoRecord>(NotFoundFailure('DemoRecord', id: id))
+        ? Left<ZFailure, DemoRecord>(ZNotFoundFailure('DemoRecord', id: id))
         : Right<ZFailure, DemoRecord>(r);
   }
 

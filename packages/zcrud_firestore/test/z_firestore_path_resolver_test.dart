@@ -77,7 +77,7 @@ void main() {
       final res = r.resolveCollection(kind: 'flashcards', userId: 'u1');
       expect(res.isLeft(), isTrue);
       res.leftMap((f) {
-        expect(f, isA<DomainFailure>());
+        expect(f, isA<ZDomainFailure>());
         expect(f.message, contains('parentId'));
       });
     });
@@ -93,7 +93,7 @@ void main() {
       final r = resolver();
       final res = r.resolveCollection(kind: 'inexistant');
       expect(res.isLeft(), isTrue);
-      res.leftMap((f) => expect(f, isA<DomainFailure>()));
+      res.leftMap((f) => expect(f, isA<ZDomainFailure>()));
     });
 
     test('resolveDoc = <collection>/<id> (nested)', () {

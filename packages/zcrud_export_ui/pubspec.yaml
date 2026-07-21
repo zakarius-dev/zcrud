@@ -39,7 +39,7 @@
 # UNIQUEMENT (graphe acyclique). AD-12 : ZÉRO clé/secret committé.
 name: zcrud_export_ui
 description: "Platform export destinations for zcrud: PDF preview / print / share (printing) and the concrete LaTeX rasterizer (flutter_math_fork) implementing the pure ZLatexRasterizer port, all behind a neutral Uint8List API."
-version: 0.3.8
+version: 0.4.0
 publish_to: none
 resolution: workspace
 
@@ -69,8 +69,8 @@ dependencies:
   # 2ᵉ site de flutter_math_fork (1er = zcrud_markdown). Impl concrète du port
   # pur ZLatexRasterizer. Confinée à z_flutter_math_latex_rasterizer.dart.
   flutter_math_fork: ^0.7.4
-  zcrud_core: ^0.3.8
-  zcrud_export: ^0.3.8
+  zcrud_core: ^0.4.0
+  zcrud_export: ^0.4.0
 
 dev_dependencies:
   flutter_test:

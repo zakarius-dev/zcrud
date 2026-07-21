@@ -197,8 +197,8 @@ class ZOfflineFirstRepository<T extends ZEntity>
   /// borné via `applyMergedAll`).
   ///
   /// **`Right(unit)` si déconnecté** (AD-9/AD-11) : `isConnected == false` OU un
-  /// `Left(ServerFailure)` distant est assimilé à « offline » → `Right(unit)`
-  /// (loggé). Une **panne locale** (`Left(CacheFailure)` sur `syncEntries`/
+  /// `Left(ZServerFailure)` distant est assimilé à « offline » → `Right(unit)`
+  /// (loggé). Une **panne locale** (`Left(ZCacheFailure)` sur `syncEntries`/
   /// `applyMerged`) est une vraie erreur → `Left` (jamais avalée).
   @override
   Future<ZResult<Unit>> sync() async {

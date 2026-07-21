@@ -117,7 +117,7 @@ class FailingEvaluationPort implements ZFlashcardAnswerEvaluationPort {
   ) async {
     callCount++;
     return const Left<ZFailure, ZFlashcardAnswerEvaluation>(
-      ServerFailure('quota dépassé'),
+      ZServerFailure('quota dépassé'),
     );
   }
 }
@@ -158,7 +158,7 @@ class FailingHintPort implements ZFlashcardHintPort {
   @override
   Future<ZResult<String>> generateHint(ZFlashcardHintRequest request) async {
     callCount++;
-    return const Left<ZFailure, String>(ServerFailure('indisponible'));
+    return const Left<ZFailure, String>(ZServerFailure('indisponible'));
   }
 }
 

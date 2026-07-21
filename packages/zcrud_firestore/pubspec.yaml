@@ -10,7 +10,7 @@
 # CORE OUT=0 est préservé (out-degree de zcrud_core inchangé = 0).
 name: zcrud_firestore
 description: "Firestore and Hive adapters for zcrud repositories: offline-first storage behind neutral, backend-agnostic ports."
-version: 0.3.8
+version: 0.4.0
 publish_to: none
 resolution: workspace
 
@@ -39,12 +39,12 @@ dependencies:
   # publique. `hive_flutter` fournit `Hive.initFlutter()` à l'app hôte (E7).
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  zcrud_core: ^0.3.8
+  zcrud_core: ^0.4.0
   # ES-3.2 (FR-S13) — `ZOfflineFirstBoxRepository<T>` étend le port
   # `ZStudyRepository<T>` (Template Method `save = validate→persist`, ES-3.1) pour
   # en implémenter le point d'extension `persist`. Nouvelle arête directe (D1),
   # acyclique-safe (le kernel ne dépend que de zcrud_core, CORE OUT=0 inchangé).
-  zcrud_study_kernel: ^0.3.8
+  zcrud_study_kernel: ^0.4.0
 
 dev_dependencies:
   flutter_test:

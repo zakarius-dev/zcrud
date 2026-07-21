@@ -24,23 +24,23 @@ void main() {
       expect(r.isRight(), isTrue);
     });
 
-    test('petit-enfant (niveau 3) ⇒ Left(DomainFailure), sans écrire', () {
+    test('petit-enfant (niveau 3) ⇒ Left(ZDomainFailure), sans écrire', () {
       const parent =
           ZStudyFolder(id: 'p', title: 'sous-dossier', parentId: 'grand');
       final r = validatePlacement(parentId: 'p', parent: parent, selfId: 'c');
       expect(r.isLeft(), isTrue);
       r.fold(
-        (f) => expect(f, isA<DomainFailure>()),
+        (f) => expect(f, isA<ZDomainFailure>()),
         (_) => fail('attendu Left'),
       );
     });
 
-    test('auto-parent (parentId == selfId) ⇒ Left(DomainFailure)', () {
+    test('auto-parent (parentId == selfId) ⇒ Left(ZDomainFailure)', () {
       const parent = ZStudyFolder(id: 'x', title: 'r');
       final r = validatePlacement(parentId: 'x', parent: parent, selfId: 'x');
       expect(r.isLeft(), isTrue);
       r.fold(
-        (f) => expect(f, isA<DomainFailure>()),
+        (f) => expect(f, isA<ZDomainFailure>()),
         (_) => fail('attendu Left'),
       );
     });
@@ -49,7 +49,7 @@ void main() {
       final r = validatePlacement(parentId: 'p', parent: null, selfId: 'c');
       expect(r.isLeft(), isTrue);
       r.fold(
-        (f) => expect(f, isA<DomainFailure>()),
+        (f) => expect(f, isA<ZDomainFailure>()),
         (_) => fail('attendu Left'),
       );
     });

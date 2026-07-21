@@ -58,7 +58,7 @@ void main() {
     test('(a) Left(ZFailure) → failed + message du failure + saisie intacte',
         () async {
       final port = _FakePort(
-          (_) async => left(const DomainFailure('quota dépassé')));
+          (_) async => left(const ZDomainFailure('quota dépassé')));
       final c = _controller(port);
       final req = _req();
       await c.generate(req);

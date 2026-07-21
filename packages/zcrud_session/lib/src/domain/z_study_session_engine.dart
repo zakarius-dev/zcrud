@@ -25,7 +25,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:zcrud_core/domain.dart'
-    show DomainFailure, Left, Right, ZFailure, ZResult;
+    show ZDomainFailure, Left, Right, ZFailure, ZResult;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show ZRepetitionInfo, ZSrsConfig;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
@@ -190,7 +190,7 @@ class ZStudySessionEngine extends ChangeNotifier {
   ///
   /// Sur une session **complète** (aucune carte courante) : **no-op** — le seam
   /// n'est **pas** invoqué, aucune notification n'est émise, un
-  /// `Left(DomainFailure)` signale l'absence de carte.
+  /// `Left(ZDomainFailure)` signale l'absence de carte.
   ///
   /// 🔒 **SU-4 (AC5, AD-46) — `clampQuality` est l'UNIQUE voie de clamp.** La
   /// [quality] est ramenée dans l'échelle **possédée par `ZSrsConfig`** AVANT
@@ -204,8 +204,8 @@ class ZStudySessionEngine extends ChangeNotifier {
     final card = _state.current;
     if (card == null) {
       // No-op : aucune carte courante ⇒ pas de seam, pas de notification (AC8).
-      return const Left<DomainFailure, ZRepetitionInfo>(
-        DomainFailure('ZStudySessionEngine.grade: aucune carte courante '
+      return const Left<ZDomainFailure, ZRepetitionInfo>(
+        ZDomainFailure('ZStudySessionEngine.grade: aucune carte courante '
             '(session complète)'),
       );
     }

@@ -14,7 +14,7 @@ void main() {
     });
 
     test('Left transporte une ZFailure', () {
-      const ZResult<int> r = Left(DomainFailure('boom'));
+      const ZResult<int> r = Left(ZDomainFailure('boom'));
       expect(r.isLeft(), isTrue);
       final msg = r.fold((l) => l.message, (rr) => 'ok');
       expect(msg, 'boom');
@@ -28,7 +28,7 @@ void main() {
 
     test('fold couvre les deux branches', () {
       const ZResult<String> ok = Right('yes');
-      const ZResult<String> ko = Left(ServerFailure('down'));
+      const ZResult<String> ko = Left(ZServerFailure('down'));
       expect(ok.fold((l) => 'L', (r) => 'R:$r'), 'R:yes');
       expect(ko.fold((l) => 'L:${l.message}', (r) => 'R'), 'L:down');
     });

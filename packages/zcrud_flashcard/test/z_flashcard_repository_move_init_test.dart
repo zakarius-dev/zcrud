@@ -90,11 +90,11 @@ void main() {
       expect(reps.putCount, 0, reason: 'vide ≠ erreur : aucun put SRS');
     });
 
-    test('carte introuvable → Left(NotFoundFailure), aucune écriture', () async {
+    test('carte introuvable → Left(ZNotFoundFailure), aucune écriture', () async {
       cards.saveCount = 0;
       final moved = await repo.moveCard(flashcardId: 'ghost', folderId: 'new');
       expect(moved.isLeft(), isTrue);
-      moved.fold((f) => expect(f, isA<NotFoundFailure>()), (_) => fail('Left attendu'));
+      moved.fold((f) => expect(f, isA<ZNotFoundFailure>()), (_) => fail('Left attendu'));
       expect(cards.saveCount, 0, reason: 'aucune sauvegarde si carte absente');
     });
 

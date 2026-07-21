@@ -26,7 +26,7 @@ void main() {
       expect(_label<int>(const ZDataLoading()), 'loading');
       expect(_label<int>(const ZDataLoaded(items: [1])), 'loaded');
       expect(_label<int>(const ZDataEmpty()), 'empty');
-      expect(_label<int>(const ZDataError(DomainFailure('boom'))), 'error');
+      expect(_label<int>(const ZDataError(ZDomainFailure('boom'))), 'error');
     });
 
     test('ZDataEmpty est distinct de ZDataLoading', () {
@@ -65,17 +65,17 @@ void main() {
 
   group('ZDataError — porte un ZFailure (AC6)', () {
     test('failure exposée et typée ZFailure', () {
-      const state = ZDataError<int>(NotFoundFailure('x', id: '1'));
+      const state = ZDataError<int>(ZNotFoundFailure('x', id: '1'));
       expect(state.failure, isA<ZFailure>());
-      expect(state.failure, const NotFoundFailure('x', id: '1'));
+      expect(state.failure, const ZNotFoundFailure('x', id: '1'));
     });
 
     test('égalité par failure', () {
-      expect(const ZDataError<int>(DomainFailure('e')),
-          equals(const ZDataError<int>(DomainFailure('e'))));
+      expect(const ZDataError<int>(ZDomainFailure('e')),
+          equals(const ZDataError<int>(ZDomainFailure('e'))));
       expect(
-          const ZDataError<int>(DomainFailure('a')) ==
-              const ZDataError<int>(DomainFailure('b')),
+          const ZDataError<int>(ZDomainFailure('a')) ==
+              const ZDataError<int>(ZDomainFailure('b')),
           isFalse);
     });
   });

@@ -119,7 +119,7 @@ Future<void> _seedRaw(
 /// construit EN INTERNE par le repository (le test n'y a aucune référence
 /// partagée). On injecte donc la `FirebaseException` à la **frontière d'accès
 /// Firestore** — exactement le type d'erreur que `_guard` doit convertir en
-/// `Left(ServerFailure)` sans jamais l'avaler ni la laisser remonter (AC9,
+/// `Left(ZServerFailure)` sans jamais l'avaler ni la laisser remonter (AC9,
 /// bug #3, AD-11).
 class _ThrowingFirestore extends FakeFirebaseFirestore {
   @override
@@ -362,25 +362,25 @@ void main() {
       expect((await repo.getById(n.id!)).isRight(), isTrue);
     });
 
-    test('softDelete d\'un id inconnu → Left(NotFoundFailure)', () async {
+    test('softDelete d\'un id inconnu → Left(ZNotFoundFailure)', () async {
       final fs = FakeFirebaseFirestore();
       final repo = _repo(fs);
       final r = await repo.softDelete('inconnu');
       expect(r.isLeft(), isTrue);
-      r.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      r.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
     });
   });
 
   group('AC10 — bug #4 : null ≠ erreur', () {
-    test('getById sur id inconnu → Left(NotFoundFailure) (jamais exception)',
+    test('getById sur id inconnu → Left(ZNotFoundFailure) (jamais exception)',
         () async {
       final fs = FakeFirebaseFirestore();
       final repo = _repo(fs);
       final r = await repo.getById('nope');
       expect(r.isLeft(), isTrue);
       r.leftMap((f) {
-        expect(f, isA<NotFoundFailure>());
-        expect((f as NotFoundFailure).id, 'nope');
+        expect(f, isA<ZNotFoundFailure>());
+        expect((f as ZNotFoundFailure).id, 'nope');
       });
     });
   });
@@ -467,8 +467,8 @@ void main() {
     });
   });
 
-  group('AC9 — bug #3 : FirebaseException → ServerFailure (jamais avalé)', () {
-    test('une FirebaseException pendant getAll devient Left(ServerFailure)',
+  group('AC9 — bug #3 : FirebaseException → ZServerFailure (jamais avalé)', () {
+    test('une FirebaseException pendant getAll devient Left(ZServerFailure)',
         () async {
       final repo = FirebaseZRepositoryImpl<_Note>(
         firestore: _ThrowingFirestore(),
@@ -479,9 +479,9 @@ void main() {
       );
 
       final r = await repo.getAll();
-      // Jamais d'exception qui remonte, jamais un Left muet : ServerFailure typé.
+      // Jamais d'exception qui remonte, jamais un Left muet : ZServerFailure typé.
       expect(r.isLeft(), isTrue);
-      r.leftMap((f) => expect(f, isA<ServerFailure>()));
+      r.leftMap((f) => expect(f, isA<ZServerFailure>()));
     });
   });
 
@@ -554,7 +554,7 @@ void main() {
       // getById : Left(NotFound) — aligné sur getAll/watch (MAJEUR-2).
       final byId = await repo.getById('legacy1');
       expect(byId.isLeft(), isTrue);
-      byId.leftMap((f) => expect(f, isA<NotFoundFailure>()));
+      byId.leftMap((f) => expect(f, isA<ZNotFoundFailure>()));
 
       // getAll : le legacy est absent, le conforme présent.
       final all = (await repo.getAll()).getOrElse(() => fail('getAll'));
@@ -583,10 +583,10 @@ void main() {
       );
       // L'appel `watch(...)` NE DOIT PAS lever synchroniquement.
       final stream = repo.watch(const ZDataRequest());
-      // L'erreur arrive via le CANAL du stream, typée ServerFailure (AD-11).
+      // L'erreur arrive via le CANAL du stream, typée ZServerFailure (AD-11).
       await expectLater(
         stream,
-        emitsError(isA<ServerFailure>()),
+        emitsError(isA<ZServerFailure>()),
       );
       repo.dispose();
     });
@@ -600,7 +600,7 @@ void main() {
         toMap: (n) => n.toMap(),
       );
       final stream = repo.watchAll();
-      await expectLater(stream, emitsError(isA<ServerFailure>()));
+      await expectLater(stream, emitsError(isA<ZServerFailure>()));
       repo.dispose();
     });
   });

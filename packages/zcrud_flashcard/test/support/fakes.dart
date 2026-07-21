@@ -52,7 +52,7 @@ class FakeCardRepository extends ZSyncableRepository<ZFlashcard> {
     final meta = _meta[id];
     if (card == null || (meta?.isDeleted ?? false)) {
       return Left<ZFailure, ZFlashcard>(
-        NotFoundFailure('carte introuvable', id: id, entity: 'flashcard'),
+        ZNotFoundFailure('carte introuvable', id: id, entity: 'flashcard'),
       );
     }
     return Right<ZFailure, ZFlashcard>(card);
@@ -87,7 +87,7 @@ class FakeCardRepository extends ZSyncableRepository<ZFlashcard> {
   @override
   Future<ZResult<Unit>> softDelete(String id) async {
     if (!_byId.containsKey(id)) {
-      return Left<ZFailure, Unit>(NotFoundFailure('carte introuvable', id: id));
+      return Left<ZFailure, Unit>(ZNotFoundFailure('carte introuvable', id: id));
     }
     _meta[id] = (_meta[id] ?? const ZSyncMeta()).copyWith(isDeleted: true);
     return Right<ZFailure, Unit>(unit);
@@ -96,7 +96,7 @@ class FakeCardRepository extends ZSyncableRepository<ZFlashcard> {
   @override
   Future<ZResult<Unit>> restore(String id) async {
     if (!_byId.containsKey(id)) {
-      return Left<ZFailure, Unit>(NotFoundFailure('carte introuvable', id: id));
+      return Left<ZFailure, Unit>(ZNotFoundFailure('carte introuvable', id: id));
     }
     _meta[id] = (_meta[id] ?? const ZSyncMeta()).copyWith(isDeleted: false);
     return Right<ZFailure, Unit>(unit);
@@ -130,16 +130,16 @@ class FakeRepetitionStore implements ZRepetitionStore {
   /// Couture de connectivité pour `sync()` (AC11).
   bool connected;
 
-  /// Couture d'**échec partiel** : `sync()` renvoie `Left(ServerFailure)`
+  /// Couture d'**échec partiel** : `sync()` renvoie `Left(ZServerFailure)`
   /// (toléré/loggé par le coordinateur — AC11).
   bool failSync;
 
-  /// Couture d'échec du `put` SRS : renvoie `Left(CacheFailure)` (utilisé pour
+  /// Couture d'échec du `put` SRS : renvoie `Left(ZCacheFailure)` (utilisé pour
   /// prouver que `moveCard` LOGGE l'échec de re-sync — MEDIUM-2, jamais avalé).
   bool failPut;
 
   /// Couture d'**échec partiel** de purge (me-3, AC6) : `deleteByCard(id)`
-  /// renvoie `Left(CacheFailure)` pour tout `id` de cet ensemble — permet de
+  /// renvoie `Left(ZCacheFailure)` pour tout `id` de cet ensemble — permet de
   /// prouver qu'un échec de purge d'UNE racine est **rapporté** (jamais avalé)
   /// et que les **autres** racines continuent d'être purgées.
   Set<String> failDeleteFor;
@@ -177,7 +177,7 @@ class FakeRepetitionStore implements ZRepetitionStore {
   Future<ZResult<ZRepetitionInfo>> put(ZRepetitionInfo info) async {
     putCount++;
     if (failPut) {
-      return Left<ZFailure, ZRepetitionInfo>(CacheFailure('put SRS KO'));
+      return Left<ZFailure, ZRepetitionInfo>(ZCacheFailure('put SRS KO'));
     }
     // Estampille LWW hors-entité (ZSyncMeta), persiste la map telle quelle.
     _raw[info.flashcardId] = info.toMap();
@@ -200,7 +200,7 @@ class FakeRepetitionStore implements ZRepetitionStore {
     if (failDeleteFor.contains(flashcardId)) {
       // Panne réelle du store (AC6) : rapportée au grain de la racine, l'état
       // n'est PAS retiré (l'échec ne prétend jamais un succès).
-      return Left<ZFailure, Unit>(CacheFailure('purge SRS KO pour "$flashcardId"'));
+      return Left<ZFailure, Unit>(ZCacheFailure('purge SRS KO pour "$flashcardId"'));
     }
     // Idempotence (AD-10) : purger un id absent est un SUCCÈS (no-op).
     _raw.remove(flashcardId);
@@ -212,7 +212,7 @@ class FakeRepetitionStore implements ZRepetitionStore {
   Future<ZResult<Unit>> sync() async {
     syncCount++;
     if (failSync) {
-      return Left<ZFailure, Unit>(const ServerFailure('sync SRS distant indispo'));
+      return Left<ZFailure, Unit>(const ZServerFailure('sync SRS distant indispo'));
     }
     if (!connected) return Right<ZFailure, Unit>(unit);
     return Right<ZFailure, Unit>(unit);

@@ -36,7 +36,7 @@
 ///
 /// Une résolution impossible (kind inconnu, topologie `nested` **sans**
 /// `parentId`, topologie user-scopée **sans** `userId`) retourne un
-/// `Left(DomainFailure)` **explicite** — **jamais** un chemin silencieusement
+/// `Left(ZDomainFailure)` **explicite** — **jamais** un chemin silencieusement
 /// incorrect qui écrirait dans la mauvaise collection.
 library;
 
@@ -128,7 +128,7 @@ class ZFirestorePathRule {
 ///
 /// **Backend-agnostique (AD-5/AD-11/NFR-S8)** : ni entrée ni sortie n'expose un
 /// type `cloud_firestore` ; la sortie est un chemin `String` (ou un
-/// `Left(DomainFailure)` explicite). **Anti-réflexion (AC11)** : aucune méthode ne
+/// `Left(ZDomainFailure)` explicite). **Anti-réflexion (AC11)** : aucune méthode ne
 /// prend un `Type`/générique `T` ni n'appelle `.toString()`/`runtimeType` pour
 /// dériver un segment — chaque segment provient d'une [ZFirestorePathRule]
 /// littérale.
@@ -144,7 +144,7 @@ class ZFirestorePathResolver {
   Iterable<String> get kinds => _rules.keys;
 
   /// **Topologie déclarée** du [kind] (ES-3.3, point d'extension public ajouté) —
-  /// ou un `Left(DomainFailure)` explicite si [kind] est inconnu.
+  /// ou un `Left(ZDomainFailure)` explicite si [kind] est inconnu.
   ///
   /// Sert au `ZFirestoreCascadeBatcher` (AD-21) à **choisir sa stratégie
   /// d'énumération** sans coder aucun chemin : `nestedUnderParent` ⇒ tous les
@@ -156,7 +156,7 @@ class ZFirestorePathResolver {
     final rule = _rules[kind];
     if (rule == null) {
       return Left<ZFailure, ZFirestoreTopology>(
-        DomainFailure(
+        ZDomainFailure(
           'ZFirestorePathResolver : aucune règle de topologie déclarée pour '
           'kind="$kind" (topologies connues : ${_rules.keys.join(', ')}).',
         ),
@@ -166,7 +166,7 @@ class ZFirestorePathResolver {
   }
 
   /// Résout le **chemin de collection** `String` du [kind] pour le contexte
-  /// ([userId]/[parentId]) fourni, ou un `Left(DomainFailure)` **explicite** si :
+  /// ([userId]/[parentId]) fourni, ou un `Left(ZDomainFailure)` **explicite** si :
   /// - [kind] n'est pas déclaré dans la table ;
   /// - la topologie est `nestedUnderParent` **sans** [parentId] ;
   /// - la règle est `userScoped` **sans** [userId].
@@ -178,7 +178,7 @@ class ZFirestorePathResolver {
     final rule = _rules[kind];
     if (rule == null) {
       return Left<ZFailure, String>(
-        DomainFailure(
+        ZDomainFailure(
           'ZFirestorePathResolver : aucune règle de topologie déclarée pour '
           'kind="$kind" (topologies connues : ${_rules.keys.join(', ')}).',
         ),
@@ -189,7 +189,7 @@ class ZFirestorePathResolver {
     if (rule.userScoped) {
       if (userId == null || userId.isEmpty) {
         return Left<ZFailure, String>(
-          DomainFailure(
+          ZDomainFailure(
             'ZFirestorePathResolver : la topologie user-scopée de kind="$kind" '
             'exige un userId non vide.',
           ),
@@ -210,7 +210,7 @@ class ZFirestorePathResolver {
       case ZFirestoreTopology.nestedUnderParent:
         if (parentId == null || parentId.isEmpty) {
           return Left<ZFailure, String>(
-            DomainFailure(
+            ZDomainFailure(
               'ZFirestorePathResolver : la topologie nested de kind="$kind" '
               'exige un parentId non vide.',
             ),
@@ -220,6 +220,58 @@ class ZFirestorePathResolver {
           '$userPrefix${rule.parentCollection}/$parentId/${rule.collection}',
         );
     }
+  }
+
+  /// Résout le chemin de la **collection PARENTE** d'un `kind` *nested*
+  /// (ex. `users/{uid}/study_folders`) — **CR-LEX-10**.
+  ///
+  /// Rend un hôte capable d'**énumérer les parents existants** au lieu de devoir
+  /// les deviner. Sans cela, un repository folder-scopé est figé sur un unique
+  /// `parentId`, et un appareil **neuf** (réinstallation, logout/login) n'a
+  /// aucune source de découverte : store local vide ⇒ aucun dossier connu ⇒
+  /// `sync()` ne parcourt rien ⇒ **succès silencieux, zéro donnée**.
+  ///
+  /// **Reste PUR** (AD-5) : rend un chemin `String`, n'interroge rien. C'est
+  /// `ZOfflineFirstBoxRepository.listParentIds()` qui exécute la requête.
+  ///
+  /// `Left(ZDomainFailure)` si le `kind` est inconnu, si la topologie **n'est pas**
+  /// nested (un `flat`/`global` n'a pas de parent), ou si le scope utilisateur
+  /// exige un `userId` absent.
+  ZResult<String> resolveParentCollection({
+    required String kind,
+    String? userId,
+  }) {
+    final rule = _rules[kind];
+    if (rule == null) {
+      return Left<ZFailure, String>(
+        ZDomainFailure(
+          'ZFirestorePathResolver : aucune règle de topologie déclarée pour '
+          'kind="$kind" (topologies connues : ${_rules.keys.join(', ')}).',
+        ),
+      );
+    }
+    if (rule.topology != ZFirestoreTopology.nestedUnderParent) {
+      return Left<ZFailure, String>(
+        ZDomainFailure(
+          'ZFirestorePathResolver : kind="$kind" n\'est pas une topologie '
+          'nested — il n\'a pas de collection parente à énumérer.',
+        ),
+      );
+    }
+    if (rule.userScoped) {
+      if (userId == null || userId.isEmpty) {
+        return Left<ZFailure, String>(
+          ZDomainFailure(
+            'ZFirestorePathResolver : la topologie user-scopée de kind="$kind" '
+            'exige un userId non vide.',
+          ),
+        );
+      }
+      return Right<ZFailure, String>(
+        '${rule.userSegment}/$userId/${rule.parentCollection}',
+      );
+    }
+    return Right<ZFailure, String>('${rule.parentCollection}');
   }
 
   /// Résout le **chemin de document** `String` (`<collection>/<id>`) du [kind],

@@ -37,7 +37,7 @@ import 'package:flutter/foundation.dart';
 // re-export dartz) : aucune dépendance directe à `dartz` n'est ajoutée à
 // `zcrud_study` (arête pubspec unique = `zcrud_ui_kit`).
 import 'package:zcrud_core/domain.dart'
-    show Left, Right, ServerFailure, Unit, ZFailure, ZResult, unit;
+    show Left, Right, ZServerFailure, Unit, ZFailure, ZResult, unit;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
 
 /// Régime d'édition **DÉCLARÉ** (AD-43) — jamais implicite (enum, pas un `bool`).
@@ -233,7 +233,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
   ) async {
     final list = _computeWorkingList();
     // 🔴 BUG-2/AD-10 — un `onCommit` injecté qui `throw` NE DOIT PAS traverser la
-    // surface : on le capte et on le convertit en `Left(ServerFailure)` (même
+    // surface : on le capte et on le convertit en `Left(ZServerFailure)` (même
     // patron que `ZListSelectionController.batchApply`). Le brouillon reste alors
     // *dirty* intact (aucune mise à jour du snapshot) — aucune perte (AC9).
     ZResult<Unit> result;
@@ -241,7 +241,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
       result = await onCommit(List<ZFlashcard>.unmodifiable(list));
     } catch (error, stack) {
       return Left<ZFailure, Unit>(
-        ServerFailure('commit threw: $error\n$stack'),
+        ZServerFailure('commit threw: $error\n$stack'),
       );
     }
     if (_disposed) return result;
