@@ -33,6 +33,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/edition/z_derivation.dart';
 import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_size.dart';
@@ -196,6 +197,18 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       for (final k in selCfg.filterKeys) {
         _refListenables.add(widget.controller.fieldListenable(k));
       }
+    }
+    // CR-IFFD-22 — options DÉRIVÉES : le moteur publie dans une tranche dédiée
+    // `ZDerivationChannels.optionsKey(name)`. SANS cet abonnement, la tranche
+    // changerait sans que ce champ le voie — une capacité déclarée mais que
+    // personne ne lit, exactement le silence que ces CR reprochent. Abonnement
+    // CIBLÉ (SM-1) : seul ce champ recompute. Indépendant de `ZSelectConfig`,
+    // car un champ peut dériver ses options sans porter de config de select.
+    if (widget.field.derivedFrom?.options != null) {
+      _refListenables.add(
+        widget.controller
+            .fieldListenable(ZDerivationChannels.optionsKey(widget.field.name)),
+      );
     }
     _revealAndRefs = Listenable.merge(<Listenable>[
       widget.controller.reveal,
@@ -645,7 +658,13 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     ZFieldSpec field,
     ZSelectConfig? selCfg,
   ) {
-    if (selCfg == null) return field.choices;
+    // CR-IFFD-22 — options DÉRIVÉES, lues AVANT le repli statique et AVANT le
+    // retour anticipé ci-dessous : un champ qui déclare `derivedFrom.options`
+    // sans `ZSelectConfig` doit quand même les recevoir. Un `choicesSourceKey`
+    // ou un `choicesFromKey` EXPLICITE reste prioritaire — l'hôte qui câble à la
+    // main a le dernier mot.
+    final derived = _derivedChoices(field);
+    if (selCfg == null) return derived ?? field.choices;
     // 1. Source CALCULÉE (registre injecté + clé).
     final sourceKey = selCfg.choicesSourceKey;
     if (sourceKey != null) {
@@ -676,8 +695,26 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         return slice.cast<ZFieldChoice>();
       }
     }
-    // 3. Repli statique.
+    // 3. Options DÉRIVÉES (CR-IFFD-22).
+    if (derived != null) return derived;
+    // 4. Repli statique.
     return field.choices;
+  }
+
+  /// Options publiées par le moteur de dérivation pour ce champ, ou `null` si
+  /// le champ n'en dérive pas / si la tranche ne porte encore rien d'exploitable.
+  ///
+  /// **DÉFENSIF** (AD-10) : une tranche d'un autre type est ignorée plutôt que
+  /// de faire échouer le rendu du champ.
+  List<ZFieldChoice>? _derivedChoices(ZFieldSpec field) {
+    if (field.derivedFrom?.options == null) return null;
+    final slice = widget.controller
+        .valueOf(ZDerivationChannels.optionsKey(field.name));
+    if (slice is List<ZFieldChoice>) return slice;
+    if (slice is List && slice.every((e) => e is ZFieldChoice)) {
+      return slice.cast<ZFieldChoice>();
+    }
+    return null;
   }
 
   /// Résout une borne de date (D4/D5) : le **littéral** [iso] (ISO-8601 parsé)

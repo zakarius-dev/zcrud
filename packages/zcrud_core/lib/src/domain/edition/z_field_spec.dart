@@ -20,6 +20,7 @@ library;
 
 import 'edition_field_type.dart';
 import 'z_condition.dart';
+import 'z_derivation.dart';
 import 'z_field_adornment.dart';
 import 'z_field_choice.dart';
 import 'z_field_config.dart';
@@ -54,6 +55,7 @@ class ZFieldSpec {
     this.suffix,
     this.hintText,
     this.helperText,
+    this.derivedFrom,
   });
 
   /// Clé persistée du champ (snake_case par défaut — AD-3).
@@ -137,6 +139,18 @@ class ZFieldSpec {
   /// littéral, injecté dans `InputDecoration.helperText`. `null` par défaut.
   final String? helperText;
 
+  /// **Dérivation déclarative** « ce champ dérive de ces champs-là »
+  /// (CR-IFFD-22). `null` par défaut ⇒ comportement **strictement inchangé**.
+  ///
+  /// Seul membre de [ZFieldSpec] à porter des **closures** : il n'est donc PAS
+  /// émis par le générateur (le schéma statique reste pur-données, lisible par
+  /// `ConstantReader` — AD-3) ; c'est une **surcharge runtime** posée par
+  /// l'hôte (`spec.copyWith(derivedFrom: ...)`). Il est volontairement **exclu
+  /// de `==`/`hashCode`** : deux specs ne diffèrent jamais par l'identité d'une
+  /// closure (la mémoïsation runtime d'E3 et les tests de projection E2-5
+  /// restent valides).
+  final ZDerivation? derivedFrom;
+
   /// `true` ssi ce champ porte un validateur [ZValidatorKind.required] (miroir
   /// pur-Dart de `isFieldRequired` DODLP — DP-12, M5). Alimente l'astérisque «
   /// requis » du label enrichi (`ZFieldLabel`), sans dépendance Flutter.
@@ -167,6 +181,7 @@ class ZFieldSpec {
     ZFieldAdornment? suffix,
     String? hintText,
     String? helperText,
+    ZDerivation? derivedFrom,
   }) =>
       ZFieldSpec(
         name: name ?? this.name,
@@ -188,6 +203,7 @@ class ZFieldSpec {
         suffix: suffix ?? this.suffix,
         hintText: hintText ?? this.hintText,
         helperText: helperText ?? this.helperText,
+        derivedFrom: derivedFrom ?? this.derivedFrom,
       );
 
   @override

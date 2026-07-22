@@ -169,6 +169,27 @@ ZStudyLegacyCodec(
 - **Cumulatif entre passages** : au 2ᵉ passage le champ vaut `''` et non plus `null` ; un
   recalcul seul effacerait le marqueur au moment précis où on le relit.
 
+> ## 🔴 RECTIFICATION (CR-IFFD-18) — NE SUIVEZ PAS LA RECOMMANDATION CI-DESSOUS
+>
+> Le paragraphe qui suit vous disait de retirer vos cinq contournements
+> `extra['<prefixe>_<champ>']`. **C'était FAUX, et le retrait aurait détruit de la donnée en
+> production, silencieusement.**
+>
+> `preserveAbsenceUnder` n'existe **qu'au codec** (`ZStudyLegacyCodec`) — vérifié : deux
+> fichiers dans tout le dépôt, aucun dans une entité. Or vos cutovers d'entités ne construisent
+> **aucun codec** : leur chemin est `entité hôte → constructeur → toMap() → store`, et il ne
+> traverse jamais `toCanonical`. La sémantique est de surcroît **inverse** — le codec marque
+> l'absence sur la map *legacy* (`null`/clé manquante), alors que sur la map *runtime* le champ
+> vaut déjà `''` : le marqueur ne se serait jamais posé.
+>
+> Vous avez eu raison de ne pas nous suivre, et votre témoin positif écartait bien l'hypothèse
+> d'une mauvaise configuration de votre part.
+>
+> **Ce qu'il faut faire à la place** : `zcrud_core` fournit désormais la même capacité **sur le
+> chemin entité** (`zMarkAbsent` / `zNullFieldsOf` / `zRestoreAbsentString`, même clé de survie
+> que le codec). Voir `docs/handoff-iffd-v0.5.2.md` §1. **Migrez d'abord vos documents porteurs
+> du marqueur app-side** — les deux conventions ne se connaissent pas.
+
 **Vous pouvez retirer vos cinq contournements** (`extra['<prefixe>_<champ>']` sur
 `ZStudyDocument`, `ZSmartNote`, `ZFlashcard`, `ZMindmap`, `ZStudyFolder`) — mais **migrez les
 documents déjà porteurs du marqueur app-side avant**, les deux conventions ne se connaissent pas.

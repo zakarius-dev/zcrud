@@ -118,13 +118,33 @@ class ZFormController extends ChangeNotifier {
   /// `item[...]` DODLP, distinct de `editionState[...]`).
   Object? baselineValueOf(String name) => _baseline[name];
 
+  /// Champs **touchés par l'utilisateur** : tout [setValue] dont `derived` vaut
+  /// `false` (CR-IFFD-22). *Touché* ≠ *dirty* : revenir manuellement à la valeur
+  /// d'origine efface le *dirty* mais PAS le *touché* (le champ a bien été
+  /// saisi). Remis à zéro par [reset]/[reseed]/[markPristine].
+  final Set<String> _touched = <String>{};
+
+  /// `true` si l'utilisateur a écrit dans la tranche [name] depuis la dernière
+  /// remise à zéro ([reset]/[reseed]/[markPristine]).
+  ///
+  /// Lecture **pure** (aucun canal réactif, SM-1 intact). C'est le prédicat de
+  /// `ZDerivationOverwrite.ifPristine` : le moteur de dérivation sait quelles
+  /// écritures viennent de LUI (`derived: true`) ; tout le reste est une saisie.
+  bool isTouched(String name) => _touched.contains(name);
+
   /// Met à jour **exclusivement** la tranche du champ [name].
   ///
   /// Notifie UNIQUEMENT les listeners de `fieldListenable(name)` ; les autres
   /// tranches et le `ChangeNotifier` global ne sont PAS notifiés (aucun
   /// `notifyListeners()` global — invariant SM-1). Poser la même valeur (`==`)
   /// est un no-op natif de [ValueNotifier] (pas de notification superflue).
-  void setValue(String name, Object? value) {
+  ///
+  /// [derived] (défaut `false` ⇒ appelants existants inchangés) marque une
+  /// écriture **du moteur de dérivation**, pas de l'utilisateur : elle ne rend
+  /// pas le champ *touché* (voir [isTouched]). Les widgets d'édition appellent
+  /// toujours la forme par défaut (`onChanged → setValue`).
+  void setValue(String name, Object? value, {bool derived = false}) {
+    if (!derived) _touched.add(name);
     _slice(name).value = value;
     _updateDirty(name, value);
   }
@@ -182,6 +202,7 @@ class ZFormController extends ChangeNotifier {
         _slices.entries.map((e) => MapEntry<String, Object?>(e.key, e.value.value)),
       );
     _dirtyFields.clear();
+    _touched.clear();
     if (_isDirty.value) _isDirty.value = false;
   }
 
@@ -195,6 +216,7 @@ class ZFormController extends ChangeNotifier {
       entry.value.value = _baseline[entry.key];
     }
     _dirtyFields.clear();
+    _touched.clear();
     if (_isDirty.value) _isDirty.value = false;
     _reveal.value = 0;
     _reseedRevision.value = _reseedRevision.value + 1;
@@ -210,6 +232,7 @@ class ZFormController extends ChangeNotifier {
       _baseline[name] = value;
     });
     _dirtyFields.clear();
+    _touched.clear();
     if (_isDirty.value) _isDirty.value = false;
     _reseedRevision.value = _reseedRevision.value + 1;
   }

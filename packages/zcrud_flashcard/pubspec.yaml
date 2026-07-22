@@ -3,7 +3,7 @@
 # dépendances inter-packages sont posées en E1-2.
 name: zcrud_flashcard
 description: "Spaced-repetition flashcards for zcrud: ZFlashcard/ZChoice models, a pluggable SuperMemo-2 scheduler, study folders/sessions and an offline-first repository."
-version: 0.5.1
+version: 0.6.0
 publish_to: none
 resolution: workspace
 
@@ -36,10 +36,10 @@ dependencies:
   # test` (ce dernier ne compile pas les tests important `flutter_test`).
   flutter:
     sdk: flutter
-  zcrud_core: ^0.5.1
-  zcrud_study_kernel: ^0.5.1
-  zcrud_markdown: ^0.5.1
-  zcrud_annotations: ^0.5.1
+  zcrud_core: ^0.6.0
+  zcrud_study_kernel: ^0.6.0
+  zcrud_markdown: ^0.6.0
+  zcrud_annotations: ^0.6.0
 
 # E9-1 : toolchain codegen CONFINÉE en dev (AD-1/AD-3) — le builder `zcrud_model`
 # (`auto_apply: dependents`) émet `flashcard.g.dart`/`z_choice.g.dart`
@@ -47,7 +47,7 @@ dependencies:
 # via `zcrud_core.dart`, réutilisé par le domaine flashcard — même convention que
 # `zcrud_mindmap`). Aucune dépendance runtime lourde ajoutée.
 dev_dependencies:
-  zcrud_generator: ^0.5.1
+  zcrud_generator: ^0.6.0
   build_runner: ^2.5.0
   flutter_test:
     sdk: flutter

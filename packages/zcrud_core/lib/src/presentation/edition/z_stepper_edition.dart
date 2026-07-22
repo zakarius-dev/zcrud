@@ -427,7 +427,40 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// Amorçage de la fenêtre selon le mode.
+  /// CR-IFFD-22 — le stepper est le **seul écrivain** de `visibleFields` et
+  /// calcule sa fenêtre depuis `ZCondition` uniquement. Une cible `visible` de
+  /// `ZDerivation` n'y est donc **PAS appliquée** : le champ resterait visible
+  /// alors que la dérivation le masque.
+  ///
+  /// Cette limite est **signalée**, jamais silencieuse (même idiome que
+  /// `ZSyncMeta.collidingReservedKeys`) : une capacité déclarée que personne
+  /// n'applique est précisément le défaut que ces demandes reprochent. Le
+  /// correctif — faire porter la composition au stepper — touche son invariant
+  /// de single-writer et relève d'un chantier à part, pas d'un ajout de passage.
+  ///
+  /// ⚠️ Les cibles `value`, `options` et `bounds`, elles, fonctionnent
+  /// normalement sous stepper : seule `visible` est concernée.
+  void _warnDerivedVisibilityUnsupported() {
+    assert(() {
+      final ignored = <String>[
+        for (final f in widget.fields)
+          if (f.derivedFrom?.visible != null) f.name,
+      ];
+      if (ignored.isEmpty) return true;
+      // ignore: avoid_print
+      print(
+        'ZStepperEdition — ⚠️ VISIBILITÉ DÉRIVÉE NON APPLIQUÉE : '
+        '${ignored.join(', ')}. Le stepper compose sa fenêtre depuis '
+        '`ZCondition` seule ; la cible `visible` de `ZDerivation` est IGNORÉE '
+        'ici (elle fonctionne sous `DynamicEdition`). Exprimez la condition '
+        'avec `ZCondition` si elle doit valoir dans un stepper.',
+      );
+      return true;
+    }());
+  }
+
   void _initWindow(int start) {
+    _warnDerivedVisibilityUnsupported();
     if (widget.nested) {
       // Imbriqué : reporter la contribution APRÈS la première frame (éviter un
       // `notifyListeners` du controller pendant le build du parent).

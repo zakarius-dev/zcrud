@@ -18,6 +18,7 @@ Widget _host(Widget child) => MaterialApp(
     );
 
 void main() {
+  mainCrIffd19to21();
   group('CR-IFFD-16 — slots optionnels, neutres par défaut', () {
     testWidgets('une carte réduite à son titre rend le titre et rien d\'autre',
         (tester) async {
@@ -217,6 +218,161 @@ void main() {
       await tester.tap(find.text('Supprimer'));
       await tester.pumpAndSettle();
       expect(chosen, 'del');
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-IFFD-19/20/21 — trois défauts de CETTE carte, trouvés par IFFD EN LA
+// CÂBLANT. Aucun n'était visible depuis la signature.
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCrIffd19to21() {
+  group('CR-IFFD-20 — le slot `progress` ne lève plus', () {
+    testWidgets('🔴 un LinearProgressIndicator NU ne lève pas', (tester) async {
+      // Le widget de progression le plus évident, et celui de la page legacy
+      // d'IFFD. Sans borne, il veut une largeur infinie dans la `Row` et lève
+      // « unbounded width ». Un CircularProgressIndicator, lui, passait — d'où
+      // un défaut invisible jusqu'à ce qu'un hôte tente la variante linéaire.
+      await tester.pumpWidget(_host(
+        const SizedBox(
+          width: 400,
+          child: ZStudyToolsItemCard(
+            title: 'Téléversement',
+            progress: LinearProgressIndicator(),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('le circulaire continue de passer (non-régression)',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        const SizedBox(
+          width: 400,
+          child: ZStudyToolsItemCard(
+            title: 'x',
+            progress: CircularProgressIndicator(),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('AD-10 — une largeur max absurde ne casse pas le layout',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        const SizedBox(
+          width: 400,
+          child: ZStudyToolsItemCard(
+            title: 'x',
+            progressMaxWidth: -5,
+            progress: LinearProgressIndicator(),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('CR-IFFD-21 — l\'éviction de `trailing` est une POLITIQUE', () {
+    testWidgets('🔴 `hidesTrailingWhileBusy: false` garde les deux',
+        (tester) async {
+      // Le cas concret d'IFFD : pendant une génération, le bouton « Lire
+      // l'audio » reste rendu — écouter n'est pas une opération CONCURRENTE
+      // avec résumer. Seul l'hôte sait lesquelles de ses actions le sont.
+      await tester.pumpWidget(_host(
+        const SizedBox(
+          width: 400,
+          child: ZStudyToolsItemCard(
+            title: 'Note',
+            trailing: Icon(Icons.volume_up),
+            progress: CircularProgressIndicator(),
+            hidesTrailingWhileBusy: false,
+          ),
+        ),
+      ));
+      expect(find.byIcon(Icons.volume_up), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('le DÉFAUT évince toujours (non-régression)', (tester) async {
+      await tester.pumpWidget(_host(
+        const SizedBox(
+          width: 400,
+          child: ZStudyToolsItemCard(
+            title: 'Note',
+            trailing: Icon(Icons.more_vert),
+            progress: CircularProgressIndicator(),
+          ),
+        ),
+      ));
+      expect(find.byIcon(Icons.more_vert), findsNothing);
+    });
+
+    testWidgets('sans `progress`, `trailing` est rendu quelle que soit la politique',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        const ZStudyToolsItemCard(
+          title: 'Note',
+          trailing: Icon(Icons.more_vert),
+          hidesTrailingWhileBusy: true,
+        ),
+      ));
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    });
+  });
+
+  group('CR-IFFD-19 — la forme de la carte est atteignable par le thème', () {
+    ShapeBorder? shapeOf(WidgetTester tester) =>
+        tester.widget<Card>(find.byType(Card)).shape;
+
+    testWidgets('🔴 `CardThemeData.shape` du thème est RESPECTÉ',
+        (tester) async {
+      // Un `shape:` construit en dur l'emporte sur le thème : la carte rendait
+      // toute bordure d'hôte inatteignable. Le liseré legacy d'IFFD était le
+      // seul écart visuel que le portage ne pouvait pas fermer.
+      const themed = RoundedRectangleBorder(
+        side: BorderSide(color: Color(0xFF123456), width: 2),
+      );
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(cardTheme: const CardThemeData(shape: themed)),
+        home: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: Scaffold(body: ZStudyToolsItemCard(title: 'x')),
+        ),
+      ));
+      expect(shapeOf(tester), themed);
+    });
+
+    testWidgets('🔴 `borderSide` explicite PRIME sur le thème', (tester) async {
+      const themed = RoundedRectangleBorder(
+        side: BorderSide(color: Color(0xFF123456), width: 2),
+      );
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(cardTheme: const CardThemeData(shape: themed)),
+        home: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: Scaffold(
+            body: ZStudyToolsItemCard(
+              title: 'x',
+              borderSide: BorderSide(color: Color(0xFFABCDEF), width: 3),
+            ),
+          ),
+        ),
+      ));
+      final shape = shapeOf(tester)! as RoundedRectangleBorder;
+      expect(shape.side.color, const Color(0xFFABCDEF));
+      expect(shape.side.width, 3);
+    });
+
+    testWidgets('sans thème NI slot, le rendu antérieur est PRÉSERVÉ',
+        (tester) async {
+      await tester.pumpWidget(_host(const ZStudyToolsItemCard(title: 'x')));
+      final shape = shapeOf(tester)! as RoundedRectangleBorder;
+      // Le jeton `radiusM` reste le défaut, et aucun liseré n'apparaît.
+      expect(shape.side.style, BorderStyle.none);
     });
   });
 }

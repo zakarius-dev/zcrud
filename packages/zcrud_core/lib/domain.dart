@@ -40,6 +40,7 @@ export 'src/domain/edition/edition_field_type.dart';
 export 'src/domain/edition/z_condition.dart';
 export 'src/domain/edition/z_condition_evaluator.dart';
 export 'src/domain/edition/z_date_range.dart';
+export 'src/domain/edition/z_derivation.dart';
 export 'src/domain/edition/z_field_adornment.dart';
 export 'src/domain/edition/z_field_choice.dart';
 export 'src/domain/edition/z_field_config.dart';
@@ -54,6 +55,11 @@ export 'src/domain/edition/z_validator_spec.dart';
 // `zJsonHash` (ES-2.2b — DW-ES22-3/DW-ES22-4 : implémentation UNIQUE du repo ;
 // les recopier dans un satellite, ou les importer depuis `zcrud_note`, VIOLERAIT
 // AD-1 — cf. `z_json_equality.dart`).
+// CR-IFFD-18 — preservation de l'ABSENCE sur le chemin ENTITE (le chemin des
+// hotes qui consomment les entites directement, sans passer par un codec de
+// migration). Meme cle de survie que le codec, pour que les deux chemins
+// s'accordent sur un corpus deja migre.
+export 'src/domain/extension/z_absence.dart';
 export 'src/domain/extension/z_extensible.dart';
 export 'src/domain/extension/z_extension.dart';
 export 'src/domain/extension/z_json_equality.dart';

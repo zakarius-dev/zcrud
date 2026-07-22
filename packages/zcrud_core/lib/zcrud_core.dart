@@ -67,6 +67,7 @@ export 'src/presentation/edition/families/z_unsupported_field_widget.dart';
 // `onConfirmDiscard`, aucune dép routing), `ZCrossFieldValidator` (inter-champs
 // `match`/`minKey`/`maxKey` en closures capturant le controller — report b).
 export 'src/presentation/edition/z_cross_field_validator.dart';
+export 'src/presentation/edition/z_derivation_engine.dart';
 export 'src/presentation/edition/z_discard_guard.dart';
 export 'src/presentation/edition/z_edition_field.dart';
 // Décoration de champ enrichie (DP-12, M1/M5/M6) : résolveur d'ornement neutre

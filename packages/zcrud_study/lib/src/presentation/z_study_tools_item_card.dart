@@ -57,7 +57,10 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.badge,
     this.trailing,
     this.progress,
+    this.progressMaxWidth = 120,
+    this.hidesTrailingWhileBusy = true,
     this.onTap,
+    this.borderSide,
     this.semanticLabel,
     super.key,
   });
@@ -81,15 +84,46 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Indicateur de traitement en cours (téléversement, conversion, génération).
   ///
-  /// ⚠️ Rendu **à la place** de [trailing] tant qu'il est non-`null` : afficher
-  /// des actions sur un item en cours de traitement invite à déclencher une
-  /// opération concurrente sur une ressource instable.
+  /// ⚠️ **Contrainte de layout (CR-IFFD-20)** : le slot est rendu dans une
+  /// `Row`, donc dans un espace horizontal **non borné**. Un
+  /// `LinearProgressIndicator` **nu** y lève *« unbounded width »* — un
+  /// `CircularProgressIndicator`, qui s'auto-dimensionne, passe. La carte borne
+  /// donc elle-même le slot à [progressMaxWidth] : la variante linéaire est
+  /// utilisable telle quelle, sans que l'hôte ait à deviner l'exigence.
   final Widget? progress;
+
+  /// Largeur maximale allouée au slot [progress].
+  ///
+  /// Existe parce qu'un indicateur **linéaire** n'a pas de largeur intrinsèque :
+  /// sans borne il lèverait. Une valeur nulle ou négative est ignorée (repli sur
+  /// le défaut) plutôt que de produire une contrainte invalide (AD-10).
+  final double progressMaxWidth;
+
+  /// Politique d'éviction de [trailing] pendant un traitement (**CR-IFFD-21**).
+  ///
+  /// Le défaut `true` évince [trailing] : offrir des actions sur une ressource
+  /// en cours de traitement invite à lancer une opération **concurrente**
+  /// dessus.
+  ///
+  /// ⚠️ **Mais toutes les actions d'un `trailing` ne sont pas concurrentes.**
+  /// Écouter une note pendant qu'on la résume est une **consultation**, pas une
+  /// mutation. L'éviction inconditionnelle rangeait donc sous « action » des
+  /// choses qui n'en sont pas — et **seul l'hôte** sait lesquelles des siennes
+  /// sont concurrentes. Passer `false` conserve [trailing] à côté de [progress] ;
+  /// c'est alors à l'hôte de n'y laisser que le consultable.
+  final bool hidesTrailingWhileBusy;
 
   /// Activation de la carte. `null` ⇒ carte non interactive : **aucun**
   /// `InkWell`, et pas de rôle `button` annoncé (AD-45 : l'absence de capacité
   /// est structurelle, pas un bouton désactivé).
   final VoidCallback? onTap;
+
+  /// Contour explicite de la carte (**CR-IFFD-19**).
+  ///
+  /// `null` ⇒ la forme vient de `CardThemeData.shape` s'il est fourni, sinon du
+  /// jeton `radiusM` — c'est-à-dire **exactement** le rendu antérieur. Ce slot
+  /// est une capacité qui manquait, pas un changement de défaut.
+  final BorderSide? borderSide;
 
   /// Libellé sémantique de la carte entière. Repli : [title] — complété de
   /// [subtitle] pour que le lecteur d'écran annonce la carte comme un tout
@@ -149,11 +183,20 @@ class ZStudyToolsItemCard extends StatelessWidget {
               ),
             ),
           ),
-          // Le traitement en cours ÉVINCE les actions (cf. [progress]).
+          // CR-IFFD-20 — le slot est BORNÉ par la carte. Sans cela un
+          // `LinearProgressIndicator` nu lève « unbounded width » dans la `Row` :
+          // une exigence de layout réelle, INVISIBLE depuis la signature du slot.
           if (busy) ...<Widget>[
             SizedBox(width: theme.gapM),
-            progress!,
-          ] else if (trailing != null) ...<Widget>[
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: progressMaxWidth > 0 ? progressMaxWidth : 120,
+              ),
+              child: progress,
+            ),
+          ],
+          // CR-IFFD-21 — l'éviction est une POLITIQUE, plus une fatalité.
+          if (trailing != null && !(busy && hidesTrailingWhileBusy)) ...<Widget>[
             SizedBox(width: theme.gapM),
             trailing!,
           ],
@@ -162,9 +205,23 @@ class ZStudyToolsItemCard extends StatelessWidget {
     );
 
     final tap = onTap;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(theme.radiusM),
-    );
+    // CR-IFFD-19 — un `shape:` explicite l'emporte sur `CardThemeData.shape` :
+    // en le construisant en dur, la carte rendait TOUTE bordure d'hôte
+    // inatteignable — ni par le thème, ni par un slot. Le rayon venait bien d'un
+    // jeton, mais la FORME, elle, échappait au thème.
+    //
+    // Priorité : `side` du slot > `CardThemeData.shape` du thème > jeton `radiusM`
+    // (le défaut historique, strictement préservé quand rien n'est fourni).
+    final themed = CardTheme.of(context).shape;
+    final ShapeBorder shape = borderSide != null
+        ? RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(theme.radiusM),
+            side: borderSide!,
+          )
+        : themed ??
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(theme.radiusM),
+            );
 
     return Semantics(
       container: true,

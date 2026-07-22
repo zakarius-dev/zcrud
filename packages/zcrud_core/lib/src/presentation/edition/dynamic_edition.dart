@@ -50,6 +50,7 @@ import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
 import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
+import 'z_derivation_engine.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
 import 'z_section_collapse_store.dart';
@@ -352,6 +353,17 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// (conditionnel) + `_collapsed` (repli). Aucune tranche de valeur.
   late Listenable _structural;
 
+  /// **Moteur de dérivation** (CR-IFFD-22) : exécute les `ZFieldSpec.derivedFrom`
+  /// des [DynamicEdition.fields]. `null` si aucun champ n'en déclare (coût nul,
+  /// comportement strictement inchangé). Possédé par cet État : (ré)attaché sur
+  /// changement de controller/fields, **disposé** en `dispose` (aucun listener
+  /// fuité).
+  ZDerivationEngine? _derivations;
+
+  /// `true` si le moteur courant porte au moins une cible `visible` (gate du
+  /// recalcul structurel : sans elle, rien ne change par rapport à E3-4).
+  bool _hasDerivedVisibility = false;
+
   @override
   void initState() {
     super.initState();
@@ -359,6 +371,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     _rebuildIndexes();
     _bindGuards();
     _bindReseed();
+    _bindDerivations();
     _structural = Listenable.merge(<Listenable?>[
       widget.controller.visibleFields,
       _collapsed,
@@ -367,7 +380,7 @@ class _DynamicEditionState extends State<DynamicEdition> {
     // la baseline (persisted) et le contexte (uniquement s'il existe des
     // conditions — sinon on respecte l'ensemble visible fourni par l'hôte, compat
     // ascendante ; une condition `context`/`persisted` seule doit aussi amorcer).
-    if (widget.manageVisibility && _hasConditions) {
+    if (widget.manageVisibility && (_hasConditions || _hasDerivedVisibility)) {
       _recomputeVisibility();
     }
   }
@@ -381,13 +394,14 @@ class _DynamicEditionState extends State<DynamicEdition> {
       _rebuildIndexes();
       _bindGuards();
       _bindReseed();
+      _bindDerivations();
       if (controllerChanged) {
         _structural = Listenable.merge(<Listenable?>[
           widget.controller.visibleFields,
           _collapsed,
         ]);
       }
-      if (widget.manageVisibility && _hasConditions) {
+      if (widget.manageVisibility && (_hasConditions || _hasDerivedVisibility)) {
         _recomputeVisibility();
       }
       return;
@@ -511,21 +525,55 @@ class _DynamicEditionState extends State<DynamicEdition> {
 
   void _onReseed() => _recomputeVisibility();
 
+  /// (Ré)attache le [ZDerivationEngine] (CR-IFFD-22). Détruit d'abord le moteur
+  /// précédent (retrait EXHAUSTIF de ses listeners), n'en recrée un que si au
+  /// moins un champ déclare `derivedFrom` — sinon `null` (coût nul).
+  ///
+  /// La cible `visible` se branche sur le canal STRUCTUREL **existant** : le
+  /// moteur n'écrit jamais `visibleFields` lui-même, il publie une **révision**
+  /// que ce formulaire observe pour rejouer [_recomputeVisibility] (single-writer
+  /// de `visibleFields` préservé — AD-2/DP-9).
+  void _bindDerivations() {
+    _derivations?.visibilityRevision.removeListener(_onDerivedVisibility);
+    _derivations?.dispose();
+    _derivations = null;
+    _hasDerivedVisibility = false;
+    if (!widget.fields.any((f) => f.derivedFrom != null)) return;
+    final engine = ZDerivationEngine(
+      controller: widget.controller,
+      fields: widget.fields,
+    );
+    _derivations = engine;
+    _hasDerivedVisibility = engine.hasDerivedVisibility;
+    if (_hasDerivedVisibility) {
+      engine.visibilityRevision.addListener(_onDerivedVisibility);
+    }
+  }
+
+  void _onDerivedVisibility() {
+    if (widget.manageVisibility) _recomputeVisibility();
+  }
+
   /// Recalcule l'ensemble visible = **ordre canonique** de [widget.fields] filtré
   /// par [evaluateZCondition], puis pilote `setVisibleFields` (no-op si inchangé
   /// — AC4). Préserve la PLACE ordinale (réinsertion à l'index canonique — AC5)
   /// et ne détruit JAMAIS de tranche (le controller conserve ses slices).
   void _recomputeVisibility() {
     final ctx = widget.conditionContext;
+    // Composition en **ET** : `ZCondition` (déclaratif pur-données, voie par
+    // défaut) ET `ZDerivation.visible` (échappatoire impérative, CR-IFFD-22).
+    // Un champ sans dérivation `visible` n'est jamais masqué par le moteur.
+    final derivations = _derivations;
     final next = <String>[
       for (final f in widget.fields)
-        if (f.condition == null ||
-            evaluateZCondition(
-              f.condition!,
-              widget.controller.valueOf,
-              persistedValueOf: widget.controller.baselineValueOf,
-              contextValueOf: (k) => ctx[k],
-            ))
+        if ((f.condition == null ||
+                evaluateZCondition(
+                  f.condition!,
+                  widget.controller.valueOf,
+                  persistedValueOf: widget.controller.baselineValueOf,
+                  contextValueOf: (k) => ctx[k],
+                )) &&
+            (derivations == null || derivations.isVisible(f.name)))
           f.name,
     ];
     widget.controller.setVisibleFields(next);
@@ -539,6 +587,9 @@ class _DynamicEditionState extends State<DynamicEdition> {
     _guardListenables.clear();
     _reseedListenable?.removeListener(_onReseed);
     _reseedListenable = null;
+    _derivations?.visibilityRevision.removeListener(_onDerivedVisibility);
+    _derivations?.dispose();
+    _derivations = null;
     _collapsed.dispose();
     super.dispose();
   }
