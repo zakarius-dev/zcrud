@@ -34,4 +34,8 @@
 library;
 
 export 'src/domain/z_exam.dart' hide ZExamZcrud;
+// CR-IFFD-17 — recurrence de rappel GENERALISEE : le canonique portait le seul
+// modele relatif (« N jours avant ») ; le modele hebdomadaire, non convertible,
+// etait invisible a la logique temporelle du socle.
+export 'src/domain/z_reminder_recurrence.dart';
 export 'src/domain/z_reminder_time.dart';

@@ -220,6 +220,13 @@ const Map<String, Map<String, dynamic>> kProbeBodies =
     'reminder_enabled': true,
     'reminder_days_before': <int>[7, 1],
     'reminder_time': '08:30',
+    // CR-IFFD-17 — canal HORS-CODEGEN `reminderRecurrence`. Valeur NON VIDE :
+    // une sonde vide ne prouverait rien (le slot serait omis a l'emission, donc
+    // la reservation de la cle ne serait jamais exercee).
+    'reminder_recurrence': <String, dynamic>{
+      'days_before': <int>[7],
+      'weekdays': <int>[1, 5],
+    },
   },
   // ── ES-2.8 (zcrud_study_kernel) ──────────────────────────────────────────
   // TOUS les champs sont codegen-ables (3 `String` + `folder_id` + 3 enums

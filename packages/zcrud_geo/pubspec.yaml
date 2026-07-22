@@ -10,7 +10,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_geo
 description: "Geo fields for zcrud: neutral location/geoArea model with an optional OpenStreetMap map adapter."
-version: 0.5.0
+version: 0.5.1
 publish_to: none
 resolution: workspace
 
@@ -42,7 +42,7 @@ dependencies:
   # `lib/adapters/google.dart` ; jamais exporté par le barrel principal, jamais
   # tiré dans `zcrud_core` (CORE OUT=0).
   google_maps_flutter: ^2.9.0
-  zcrud_core: ^0.5.0
+  zcrud_core: ^0.5.1
 
 dev_dependencies:
   flutter_test:

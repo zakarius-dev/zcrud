@@ -49,6 +49,7 @@ library;
 import 'package:zcrud_annotations/zcrud_annotations.dart';
 import 'package:zcrud_core/domain.dart';
 
+import 'z_reminder_recurrence.dart';
 import 'z_reminder_time.dart';
 
 part 'z_exam.g.dart';
@@ -71,6 +72,23 @@ typedef ZExamExtensionParser = ZExtension? Function(Map<String, dynamic> json);
 /// gate `reserved-keys` — le champ `reminderTime` (non annoté `@ZcrudField`) est
 /// détecté comme canal de clé `reminder_time`, qui DOIT donc être réservée.
 const String kReminderTimeKey = 'reminder_time';
+
+/// Clé persistée du canal **HORS-CODEGEN** [ZExam.reminderRecurrence]
+/// (**CR-IFFD-17**, **D3**).
+///
+/// **RÉSERVÉE** : sans cela elle atterrirait dans [ZExam.extra], serait réémise
+/// EN DOUBLE par `toMap()`, et l'`==` entre une instance mémoire et la même
+/// relue du store casserait.
+///
+/// ⚠️ Déclarée **ICI**, aux côtés de [kReminderTimeKey], et non dans le fichier
+/// du VO : le gate `reserved-keys` résout la constante dans le fichier de
+/// l'entité qui la réserve. Déclarée ailleurs, elle est vue comme une clé
+/// littérale non réservée — le gate l'a effectivement refusée.
+///
+/// Comme [kReminderTimeKey], elle **DOIT** rester le snake_case du nom de champ
+/// (`reminderRecurrence` → `reminder_recurrence`) : contrainte normative de la
+/// règle **(g1)**.
+const String kReminderRecurrenceKey = 'reminder_recurrence';
 
 /// Examen daté rattaché à un dossier, avec rappels — **contenu personnel
 /// top-level à identité propre** (AD-14).
@@ -98,6 +116,7 @@ class ZExam extends ZEntity with ZExtensible {
     this.reminderEnabled = false,
     this.reminderDaysBefore = const <int>[],
     this.reminderTime,
+    this.reminderRecurrence,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
     // ⚠️ Le « fix » du lint (`this._extra`) est ILLÉGAL en Dart : un paramètre
@@ -136,6 +155,9 @@ class ZExam extends ZEntity with ZExtensible {
       reminderDaysBefore: base.reminderDaysBefore,
       // 🔴 CANAL HORS-CODEGEN (D3) — décodé À LA MAIN, défensif (AD-10).
       reminderTime: ZReminderTime.parse(map[kReminderTimeKey] as String?),
+      // 🔴 CANAL HORS-CODEGEN (CR-IFFD-17) — décodé À LA MAIN, défensif (AD-10).
+      reminderRecurrence:
+          ZReminderRecurrence.fromJsonSafe(map[kReminderRecurrenceKey]),
       extension: _decodeExtension(map['extension'], extensionParser),
       extra: _extraFrom(map),
     );
@@ -245,6 +267,13 @@ class ZExam extends ZEntity with ZExtensible {
     if (reminderTime != null) {
       map[kReminderTimeKey] = reminderTime!.toHhmm();
     }
+    // 🔴 CANAL HORS-CODEGEN (CR-IFFD-17) — omis si `null` OU vide : un slot
+    // vide persisté serait indiscernable d'un slot absent au retour, et
+    // `fromJsonSafe` rend `null` dans les deux cas (round-trip idempotent).
+    final recurrence = reminderRecurrence;
+    if (recurrence != null && !recurrence.isEmpty) {
+      map[kReminderRecurrenceKey] = recurrence.toJson();
+    }
     if (extension != null) {
       map['extension'] = extension!.toJson();
     }
@@ -264,6 +293,7 @@ class ZExam extends ZEntity with ZExtensible {
     Object? reminderEnabled = _$undefined,
     Object? reminderDaysBefore = _$undefined,
     Object? reminderTime = _$undefined,
+    Object? reminderRecurrence = _$undefined,
     Object? extension = _$undefined,
     Object? extra = _$undefined,
   }) {
@@ -282,6 +312,9 @@ class ZExam extends ZEntity with ZExtensible {
       reminderTime: identical(reminderTime, _$undefined)
           ? this.reminderTime
           : reminderTime as ZReminderTime?,
+      reminderRecurrence: identical(reminderRecurrence, _$undefined)
+          ? this.reminderRecurrence
+          : reminderRecurrence as ZReminderRecurrence?,
       extension: identical(extension, _$undefined)
           ? this.extension
           : extension as ZExtension?,
@@ -338,10 +371,16 @@ class ZExam extends ZEntity with ZExtensible {
   /// 7 déclenche), reste dû à J-1 et J0, **cesse** dès J+1 (passé).
   bool isApproaching(DateTime now) {
     if (!reminderEnabled) return false;
-    final delta = daysUntil(now);
-    if (delta == null) return false; // date == null
-    if (delta < 0) return false; // strictement passé
-    return reminderDaysBefore.any((threshold) => delta <= threshold);
+    // CR-IFFD-17 — passe par la récurrence EFFECTIVE, jamais par les champs
+    // bruts : c'est ce qui rend le modèle hebdomadaire visible à la logique
+    // temporelle du socle. Auparavant, une app hebdomadaire logeait sa donnée
+    // dans `extra` et cette méthode rendait TOUJOURS `false` — l'app était
+    // muette vis-à-vis d'une fonction que le socle est censé porter.
+    //
+    // ⚠️ `date == null` ne rend plus `false` d'office : une récurrence
+    // hebdomadaire est évaluable SANS échéance (c'est tout son propos). La
+    // famille relative, elle, reste inévaluable — cf. `matches`.
+    return effectiveReminderRecurrence.matches(now: now, dueDate: date);
   }
 
   /// Décode défensivement l'extension via [parser] (repli `null`, AD-4/AD-10).
@@ -367,10 +406,35 @@ class ZExam extends ZEntity with ZExtensible {
   /// 🔴 **[kReminderTimeKey] est ESSENTIEL** (D3, règle (g1)) : le canal
   /// hors-codegen étant réémis à la main par [toMap], sa clé DOIT être réservée —
   /// sinon elle atterrirait **aussi** dans [extra] et serait émise **deux fois**.
+
+  /// 🔴 Récurrence de rappel **GÉNÉRALISÉE** (CR-IFFD-17), **CANAL HORS-CODEGEN**
+  /// persisté sous la clé RÉSERVÉE [kReminderRecurrenceKey].
+  ///
+  /// `null` ⇒ slot **absent** : [reminderDaysBefore] fait alors seul autorité et
+  /// le comportement est **exactement** celui d'avant cette CR. Une application
+  /// qui n'utilise que les seuils relatifs n'a strictement rien à changer.
+  ///
+  /// Non-`null` ⇒ **fait autorité** et remplace [reminderDaysBefore] dans le
+  /// calcul de proximité (cf. [effectiveReminderRecurrence]). C'est délibéré :
+  /// additionner les deux sources ferait déclencher des rappels que l'hôte n'a
+  /// pas demandés dès qu'il migre — la récurrence peut d'ailleurs porter
+  /// elle-même ses `daysBefore`.
+  final ZReminderRecurrence? reminderRecurrence;
+
+  /// Récurrence réellement appliquée : [reminderRecurrence] s'il est renseigné,
+  /// sinon la forme relative dérivée de [reminderDaysBefore].
+  ///
+  /// **Source unique** de la logique de proximité : [isApproaching] passe par
+  /// ici, jamais par les champs bruts — sinon les deux modèles divergeraient
+  /// silencieusement.
+  ZReminderRecurrence get effectiveReminderRecurrence =>
+      reminderRecurrence ?? ZReminderRecurrence.relative(reminderDaysBefore);
+
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZExamFieldSpecs) spec.name,
     'extension',
     kReminderTimeKey,
+    kReminderRecurrenceKey,
     ...ZSyncMeta.reservedKeys,
   };
 
@@ -397,6 +461,7 @@ class ZExam extends ZEntity with ZExtensible {
           // Ordre-sensible (les seuils sont réémis dans l'ordre).
           _intListEquals(reminderDaysBefore, other.reminderDaysBefore) &&
           reminderTime == other.reminderTime &&
+          reminderRecurrence == other.reminderRecurrence &&
           extension == other.extension &&
           // Égalité PROFONDE : `extra` porte du JSON ARBITRAIRE (donc IMBRIQUÉ) —
           // une égalité superficielle casserait `fromMap(m) == fromMap(m)` dès
@@ -412,6 +477,7 @@ class ZExam extends ZEntity with ZExtensible {
         reminderEnabled,
         Object.hashAll(reminderDaysBefore),
         reminderTime,
+        reminderRecurrence,
         extension,
         zJsonHash(extra),
       ]);
