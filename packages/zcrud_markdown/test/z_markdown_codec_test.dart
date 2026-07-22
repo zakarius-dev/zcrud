@@ -210,30 +210,30 @@ void main() {
     });
 
     test(
-        'E6-4 — EMBED table (type CANONIQUE `table`) → placeholder [embed:table] '
-        'via Markdown, texte environnant préservé, jamais ressuscité (AC5)', () {
-      // Corpus RÉEL E6-4 : texte + {insert:{table:...}} + texte.
+        'E6-4 — EMBED table : CHANGEMENT DE CONTRAT en v0.8.0 — le tableau '
+        'SURVIT désormais au Markdown (il était détruit)', () {
+      // ⚠️ Ce test assertait l'INVERSE jusqu'en v0.7.0 : il verrouillait
+      // `[embed:table]` et « jamais ressuscité » comme un contrat. Mesuré, ce
+      // contrat était une DESTRUCTION — toutes les cellules disparaissaient au
+      // premier enregistrement, exactement comme l'image avant CR-IFFD-24 §1.
+      // Un test peut verrouiller un défaut aussi solidement qu'une capacité :
+      // celui-ci l'a fait pendant sept versions.
       final md = codec.encode(mixedTextAndTableEmbedOps)! as String;
       expect(md, isNotEmpty);
-      // Les DEUX segments de texte autour de l'embed survivent (perte bornée).
       expect(md, contains('avant'));
       expect(md, contains('apres'));
-      // Le TYPE `table` est capté génériquement par `_embedPlaceholder`
-      // (1re clé de la Map insert) SANS modification du codec (AC5/AC10).
-      expect(md, contains('embed:table'));
-      // Round-trip : le texte + le marqueur reviennent, mais AUCUN embed opaque
-      // (Map insert) ne ressuscite.
+      expect(md, isNot(contains('embed:table')),
+          reason: 'le placeholder destructeur ne doit plus apparaître');
       final rt = codec.decode(md);
       final text = _plainText(rt);
       expect(text, contains('avant'));
       expect(text, contains('apres'));
-      expect(text, contains('[embed:table]'));
-      final resurrected = rt.any((op) {
+      final survived = rt.any((op) {
         final ins = op['insert'];
         return ins is Map && ins.containsKey('table');
       });
-      expect(resurrected, isFalse,
-          reason: 'le tableau ne doit PAS survivre au Markdown (AC5)');
+      expect(survived, isTrue,
+          reason: 'le tableau doit renaître du Markdown, pas disparaître');
     });
 
     test(

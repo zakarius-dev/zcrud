@@ -125,6 +125,8 @@ abstract final class DeltaNeutralOps {
         if (op['insert'] is Map &&
             !_isPreserved(op['insert'] as Map, preserveEmbedTypes))
           <String, dynamic>{'insert': _embedPlaceholder(op['insert'] as Map)}
+        else if (op['insert'] is Map)
+          <String, dynamic>{...op, 'insert': _thaw(op['insert'])}
         else
           op,
     ];
@@ -154,6 +156,28 @@ abstract final class DeltaNeutralOps {
         else
           op,
     ];
+  }
+
+  /// DÉGÈLE une valeur d'embed en structures ordinaires `Map<String, dynamic>` /
+  /// `List<dynamic>`.
+  ///
+  /// PIÈGE MESURÉ, et il est mortel : `zTableEmbedOp` gèle sa charge en
+  /// profondeur (`zUnmodifiableJsonMapList`), ce qui rend des
+  /// `UnmodifiableMapView<Object?, Object?>`. `Document.fromDelta`, en aval, les
+  /// caste en `Map<String, dynamic>` et **lève**. Le filet AD-10 attrape alors
+  /// l'exception et persiste `''` : préserver un embed gelé sans le dégeler ne
+  /// dégraderait pas ce tableau, cela **viderait le document entier**.
+  static Object? _thaw(Object? value) {
+    if (value is Map) {
+      return <String, dynamic>{
+        for (final MapEntry<Object?, Object?> e in value.entries)
+          e.key.toString(): _thaw(e.value),
+      };
+    }
+    if (value is List) {
+      return <dynamic>[for (final Object? v in value) _thaw(v)];
+    }
+    return value;
   }
 
   /// Un embed est PRÉSERVÉ (non dégradé en placeholder) si son type figure dans

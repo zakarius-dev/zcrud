@@ -490,14 +490,25 @@ void main() {
   });
 
   group('Non-régression du sous-ensemble déjà acquis', () {
-    test('une TABLE Markdown reste du texte, elle n\'est pas mutilée', () {
-      // Point décisif : activer `gitHubFlavored` en bloc aurait aplati la table
-      // en `ab12`. On échange une perte contre une destruction — refusé.
+    test('une TABLE Markdown n\'est JAMAIS mutilée en `ab12`', () {
+      // Point décisif, et il tient toujours : `gitHubFlavored` aplatissait la
+      // table en `ab12`. Depuis la v0.8.0 elle devient un vrai tableau, mais le
+      // refus de la MUTILER est inchangé — c'est ce que ce test verrouille.
       final ops = codec.decode('| a | b |\n|---|---|\n| 1 | 2 |');
-      final String texte = _plain(ops);
+      expect(_plain(ops), isNot(contains('ab12')));
+      final Map<dynamic, dynamic> insert = ops
+          .map((op) => op['insert'])
+          .whereType<Map<dynamic, dynamic>>()
+          .firstWhere((m) => m.containsKey('table'),
+              orElse: () => <String, dynamic>{});
+      expect(insert['table'], isNotNull,
+          reason: 'un tableau bien formé devient un tableau');
+    });
+
+    test('un bloc de pipes SANS séparateur reste du texte intact', () {
+      final texte = _plain(codec.decode('| juste | des pipes |\n| encore |'));
       expect(texte, contains('|'), reason: 'les séparateurs doivent survivre');
-      expect(texte, contains('a'));
-      expect(texte, contains('2'));
+      expect(texte, contains('juste'));
     });
 
     test('une URL nue n\'est PAS transformée en lien (autolink non activé)', () {

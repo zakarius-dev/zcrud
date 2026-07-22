@@ -19,7 +19,7 @@
 # `dependencies:`). AUCUN gestionnaire d'état, AUCUN routeur.
 name: zcrud_reorder
 description: "Opt-in ZReorderRenderer backend for zcrud, backed by an ecosystem reorderable-grid package. Hosts that do not install it keep the zero-dependency fallback from zcrud_responsive."
-version: 0.7.0
+version: 0.8.0
 publish_to: none
 resolution: workspace
 
@@ -37,7 +37,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
-  zcrud_core: ^0.7.0
+  zcrud_core: ^0.8.0
   flutter:
     sdk: flutter
   reorderable_grid_view: ^2.2.8
@@ -49,7 +49,7 @@ dependencies:
   # l'interchangeabilité avec le repli zéro-dépendance `ZDefaultReorderRenderer`.
   # Aucune dépendance tierce n'est tirée par cette arête (zcrud_responsive est
   # SDK-only).
-  zcrud_responsive: ^0.7.0
+  zcrud_responsive: ^0.8.0
 
 dev_dependencies:
   flutter_test:

@@ -15,10 +15,93 @@ import '../domain/z_codec.dart';
 import '../domain/z_markdown_bridge.dart';
 import 'delta_neutral_ops.dart';
 import 'z_markdown_escaping.dart';
+import 'z_table_markdown.dart';
 
 /// Attribut d'élément portant la donnée d'un pont entre le parseur Markdown et
 /// la construction de l'embed. Interne : jamais visible d'un hôte.
 const String _kBridgeDataAttr = 'data';
+
+/// Nom d'élément Markdown interne portant un tableau reconnu.
+const String _kTableTag = 'z-table';
+
+/// Charge d'embed tableau `{rows, columns, cells}` depuis la matrice JSON
+/// transportée par l'attribut d'élément. Défensif (AD-10) : une charge illisible
+/// rend une structure vide plutôt que de casser le décodage.
+Map<String, dynamic> _tablePayload(String encodedCells) {
+  final List<List<String>> cells =
+      zDecodeCells(encodedCells) ?? const <List<String>>[];
+  var width = 0;
+  for (final List<String> row in cells) {
+    if (row.length > width) width = row.length;
+  }
+  return <String, dynamic>{
+    'rows': cells.length,
+    'columns': width,
+    // Rectangulaire par construction, comme `zTableEmbedOp` le garantit : le
+    // builder de rendu REJETTE une matrice irrégulière.
+    'cells': <List<String>>[
+      for (final List<String> row in cells)
+        <String>[
+          for (var i = 0; i < width; i++) i < row.length ? row[i] : '',
+        ],
+    ],
+  };
+}
+
+/// Bloc clôturé de repli — porte la charge JSON EXACTE d'un tableau que la forme
+/// GFM ne saurait pas restituer (une cellule contenant `|`, par exemple).
+final class _ZTableFenceSyntax extends md.BlockSyntax {
+  const _ZTableFenceSyntax();
+
+  @override
+  RegExp get pattern => RegExp('^```$kZTableFenceInfo\\s*\$');
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final lines = <String>[parser.current.content];
+    parser.advance();
+    while (!parser.isDone) {
+      final String line = parser.current.content;
+      lines.add(line);
+      parser.advance();
+      if (line.trim() == '```') break;
+    }
+    final List<List<String>>? cells = zParseTableFence(lines.join('\n'));
+    if (cells == null) return md.Text(lines.join('\n'));
+    return md.Element.empty(_kTableTag)
+      ..attributes[_kBridgeDataAttr] = zEncodeCells(cells);
+  }
+}
+
+/// Tableau GFM `| a | b |`.
+///
+/// Écrit ici plutôt que réutilisé de `markdown_quill` : mesuré, son
+/// `EmbeddableTableSyntax` NE reconnaît PAS une cellule contenant un `|` échappé
+/// — or c'est exactement ce que notre encodeur produit. Un parseur incapable de
+/// relire notre propre écriture rouvrirait l'asymétrie que CR-IFFD-24 dénonce.
+final class _ZTablePipeSyntax extends md.BlockSyntax {
+  const _ZTablePipeSyntax();
+
+  @override
+  RegExp get pattern => RegExp(r'^\s*\|');
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final lines = <String>[];
+    while (!parser.isDone && pattern.hasMatch(parser.current.content)) {
+      lines.add(parser.current.content);
+      parser.advance();
+    }
+    final String raw = lines.join('\n');
+    final List<List<String>>? cells = zParseMarkdownTable(raw);
+    // Pas un tableau (ligne de séparation absente ou mal formée) : on rend le
+    // texte TEL QUEL. Ne jamais mutiler ce qu'on n'a pas su structurer — c'est
+    // ce reproche exact qui a fait écarter `gitHubFlavored`.
+    if (cells == null) return md.Text(raw);
+    return md.Element.empty(_kTableTag)
+      ..attributes[_kBridgeDataAttr] = zEncodeCells(cells);
+  }
+}
 
 /// Barré GFM restreint au tilde **DOUBLE**.
 ///
@@ -97,11 +180,21 @@ const List<_ZMarkerAttr> _kMarkerAttrs = <_ZMarkerAttr>[
 ///   `DeltaToMarkdown` écrit `- - -`. Le pont existait des DEUX côtés, comme
 ///   pour l'image — et il était neutralisé au même endroit. Corriger l'image
 ///   sans chercher son jumeau, c'était traiter un symptôme : trouvé en revue.
+/// - `table` : rendu en TABLEAU GFM lisible quand ce rendu se relit à
+///   l'identique, en bloc clôturé `\`\`\`zcrud-table` sinon (charge JSON exacte).
+///   Avant la v0.8.0 un tableau perdait **toutes ses cellules** au premier
+///   enregistrement — ce n'était pas une dégradation documentée, c'était la même
+///   destruction que celle de l'image.
 /// - `video` : pas de forme Markdown native ; encodé en lien `[src](src)`
 ///   (parité des hôtes). Le round-trip le rend donc comme un LIEN, pas comme une
 ///   vidéo — dégradation ASSUMÉE, mais la source survit, ce qui n'était pas le
 ///   cas avec `[embed:video]`.
-const Set<String> _kNativeEmbedTypes = <String>{'image', 'video', 'divider'};
+const Set<String> _kNativeEmbedTypes = <String>{
+  'image',
+  'video',
+  'divider',
+  'table',
+};
 
 /// Codec **Markdown** : le format persisté est une `String` Markdown lisible.
 ///
@@ -124,7 +217,8 @@ const Set<String> _kNativeEmbedTypes = <String>{'image', 'video', 'divider'};
 ///
 /// Le round-trip `decode(encode(ops))` PRÉSERVE la sémantique du **sous-ensemble
 /// Markdown** : titres **H1–H6**, gras, italique, **souligné** via `<u>`,
-/// **barré** via `~~` (GFM), **cases à cocher** `- [x]`/`- [ ]`, **exposant /
+/// **barré** via `~~` (GFM), **cases à cocher** `- [x]`/`- [ ]`, **tableaux**
+/// (`| a | b |`, avec repli sans perte), **exposant /
 /// indice** via `<sup>`/`<sub>`, listes imbriquées, liens, **images** via
 /// `![](src)`, `code` inline + blocs, blockquote, texte brut. Il **PERD** :
 ///
@@ -136,7 +230,6 @@ const Set<String> _kNativeEmbedTypes = <String>{'image', 'video', 'divider'};
 /// | Fond (`background`)             | **perdu**                              |
 /// | Alignement (`align`)            | **perdu**                              |
 /// | Vidéo (`video`)                 | **dégradé en LIEN** `[src](src)` — la source SURVIT, le type d'embed non |
-/// | Tableau Markdown `\| a \| b \|` | **conservé en TEXTE littéral** — le décodeur ne l'agrège PAS en tableau (choix : l'activer sans pont le mutilerait en `ab12`) |
 /// | Entité HTML littérale (`&amp;`) | **résolue** en son caractère (`&`) dès le premier round-trip — la forme entité n'est pas restituée |
 /// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder `\[embed:<type>\]` (échappé), texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed — AC9) |
 ///
@@ -207,6 +300,11 @@ final class ZMarkdownCodec implements ZCodec {
           // `OrderedListWithCheckboxSyntax` ne changeait RIEN — vérifié par
           // exécution, la retirer laissait `1. [x]` fonctionner.
           md.UnorderedListWithCheckboxSyntax(),
+          // Tableau ↔ embed. Placées AVANT les syntaxes par défaut, donc avant
+          // `FencedCodeBlockSyntax` (sans quoi le bloc de repli serait lu comme
+          // un simple bloc de code).
+          _ZTableFenceSyntax(),
+          _ZTablePipeSyntax(),
         ],
         inlineSyntaxes: <md.InlineSyntax>[
           // Les ponts passent AVANT tout le reste : `md.Document` insère
@@ -240,6 +338,13 @@ final class ZMarkdownCodec implements ZCodec {
         // Chaque pont déclaré devient un élément Markdown interne, remonté en
         // embed Delta du type annoncé par l'hôte (CR-IFFD-23 §3).
         customElementToEmbeddable: <String, ElementToEmbeddableConvertor>{
+          // `Embeddable` et non `BlockEmbed` : la charge d'un tableau est une
+          // STRUCTURE (`{rows, columns, cells}`), et `BlockEmbed` contraint sa
+          // donnée à une `String`.
+          _kTableTag: (attrs) => Embeddable(
+                'table',
+                _tablePayload(attrs[_kBridgeDataAttr] ?? ''),
+              ),
           for (var i = 0; i < bridges.length; i++)
             _bridgeTag(i): (attrs) =>
                 BlockEmbed(bridges[i].embedType, attrs[_kBridgeDataAttr] ?? ''),
@@ -282,6 +387,25 @@ final class ZMarkdownCodec implements ZCodec {
           // Pas de forme Markdown native pour la vidéo : lien vers la source.
           // `image` n'est PAS listé ici — `DeltaToMarkdown` sait déjà l'écrire,
           // et un handler custom masquerait le built-in.
+          // Auto-vérification : la forme lisible n'est retenue que si elle se
+          // relit à l'identique. La garantie s'EXÉCUTE à chaque écriture.
+          'table': (embed, out) {
+            final List<List<String>>? cells =
+                zCellsOfTablePayload(embed.value.data);
+            if (cells == null) {
+              out.write('[embed:table]');
+              return;
+            }
+            // Un tableau Markdown occupe FORCÉMENT son propre bloc : écrit au
+            // milieu d'une ligne (`avant | x | apres`), il ne serait pas relu
+            // comme un tableau. On force donc la coupure. Conséquence assumée
+            // et documentée : un tableau INLINE devient un bloc à part — la
+            // mise en page bouge, le CONTENU est intégralement préservé.
+            out
+              ..write('\n\n')
+              ..write(zRenderTableGuaranteed(cells))
+              ..write('\n');
+          },
           'video': (embed, out) {
             final Object? src = embed.value.data;
             final String href = src is String ? src : '';
