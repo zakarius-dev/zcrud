@@ -116,10 +116,14 @@ abstract final class DeltaNeutralOps {
   ///   `Document.fromDelta` interne à la conversion throw).
   ///
   /// Interne au package.
-  static Delta toDeltaForMarkdown(List<Map<String, dynamic>> ops) {
+  static Delta toDeltaForMarkdown(
+    List<Map<String, dynamic>> ops, {
+    Set<String> preserveEmbedTypes = const <String>{},
+  }) {
     final sanitized = <Map<String, dynamic>>[
       for (final op in ops)
-        if (op['insert'] is Map)
+        if (op['insert'] is Map &&
+            !_isPreserved(op['insert'] as Map, preserveEmbedTypes))
           <String, dynamic>{'insert': _embedPlaceholder(op['insert'] as Map)}
         else
           op,
@@ -150,6 +154,19 @@ abstract final class DeltaNeutralOps {
         else
           op,
     ];
+  }
+
+  /// Un embed est PRÉSERVÉ (non dégradé en placeholder) si son type figure dans
+  /// [preserveEmbedTypes] — c'est-à-dire si l'encodeur aval sait l'exprimer
+  /// nativement (CR-IFFD-24 §1 : l'image et la vidéo s'écrivent en Markdown, les
+  /// remplacer par `[embed:image]` DÉTRUISAIT une donnée exprimable).
+  ///
+  /// N'accorder cette préservation qu'aux types réellement gérés en aval : un
+  /// embed préservé SANS handler ferait throw `DeltaToMarkdown` et viderait le
+  /// document ENTIER (la régression HIGH-1 que le placeholder évite).
+  static bool _isPreserved(Map<Object?, dynamic> insert, Set<String> preserved) {
+    if (preserved.isEmpty || insert.keys.isEmpty) return false;
+    return preserved.contains(insert.keys.first.toString());
   }
 
   /// Placeholder textuel d'un `insert` embed opaque (perte bornée — AC9). Le

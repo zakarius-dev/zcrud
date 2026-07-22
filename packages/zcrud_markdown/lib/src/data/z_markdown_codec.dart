@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 // Libs de conversion ISOLÉES (AD-1) — au SEUL pubspec zcrud_markdown. Aucun de
 // ces types (`Delta`, `md.Document`, `MarkdownToDelta`, `DeltaToMarkdown`,
 // `CustomAttributeHandler`) n'apparaît dans la signature publique de
@@ -11,36 +12,121 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:markdown_quill/markdown_quill.dart';
 
 import '../domain/z_codec.dart';
+import '../domain/z_markdown_bridge.dart';
 import 'delta_neutral_ops.dart';
+import 'z_markdown_escaping.dart';
 
-/// Clé d'attribut Delta du **souligné** (parité `Attribute.underline.key` de
-/// flutter_quill — chaîne stable, gardée locale pour ne pas importer Quill ici).
-const String _kUnderlineAttr = 'underline';
+/// Attribut d'élément portant la donnée d'un pont entre le parseur Markdown et
+/// la construction de l'embed. Interne : jamais visible d'un hôte.
+const String _kBridgeDataAttr = 'data';
 
-/// Marqueurs HTML littéraux portant le souligné à travers le round-trip Markdown
-/// (MIN-1, parité DODLP `<u>`). Markdown standard n'exprime pas le souligné : on
-/// le SÉRIALISE en `<u>…</u>` (préservé littéralement par `markdown` avec
-/// `encodeHtml:false`), puis on le ré-ABSORBE en attribut au décodage.
-const String _kUnderlineOpen = '<u>';
-const String _kUnderlineClose = '</u>';
+/// Barré GFM restreint au tilde **DOUBLE**.
+///
+/// `md.StrikethroughSyntax` déclare `tags: [DelimiterTag('del', 1),
+/// DelimiterTag('del', 2)]` : un tilde SIMPLE apparié suffit à barrer. Un corpus
+/// legacy contenant `H~2~O` ou `CO~2~` (convention Pandoc d'indice) aurait donc
+/// été muté irréversiblement en `H~~2~~O` au premier enregistrement.
+///
+/// C'est exactement la mécanique refusée pour les tables sous `gitHubFlavored`
+/// (`| a | b |` aplati en `ab12`) : une syntaxe qui transforme du texte en
+/// attribut et mute le contenu. La refuser d'un côté et l'accepter de l'autre
+/// n'aurait pas tenu — trouvé en revue.
+final class _ZDoubleTildeStrikethroughSyntax extends md.DelimiterSyntax {
+  _ZDoubleTildeStrikethroughSyntax()
+      : super(
+          '~{2,}',
+          requiresDelimiterRun: true,
+          allowIntraWord: true,
+          startCharacter: 0x7E, // '~'
+          tags: <md.DelimiterTag>[md.DelimiterTag('del', 2)],
+        );
+}
+
+/// Syntaxe Markdown inline SYNTHÉTISÉE depuis un [ZMarkdownEmbedBridge].
+///
+/// C'est le seul endroit où un pont — décrit par l'hôte en pur Dart (`RegExp`) —
+/// devient un type de la lib de conversion. L'isolation AD-1 tient donc : la
+/// description reste neutre, la traduction est confinée ici.
+final class _ZBridgeInlineSyntax extends md.InlineSyntax {
+  _ZBridgeInlineSyntax(this.bridge, this.tag) : super(bridge.pattern.pattern);
+
+  final ZMarkdownEmbedBridge bridge;
+  final String tag;
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final element = md.Element.empty(tag)
+      ..attributes[_kBridgeDataAttr] = bridge.dataOf(match).toString();
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Un attribut Delta porté à travers le Markdown par une paire de marqueurs
+/// HTML littéraux (Markdown standard ne l'exprime pas). Préservés tels quels par
+/// `markdown` avec `encodeHtml:false`, puis RÉ-ABSORBÉS en attribut au décodage.
+///
+/// Ce mécanisme existait pour le seul souligné (MIN-1, parité DODLP `<u>`) ; il
+/// est GÉNÉRALISÉ (CR-IFFD-24 §2) à l'exposant/indice, dont les deux boutons
+/// sont actifs par défaut dans la barre d'outils alors que leur effet était
+/// silencieusement perdu à la persistance.
+@immutable
+class _ZMarkerAttr {
+  const _ZMarkerAttr(this.open, this.close, this.attribute, this.value);
+
+  final String open;
+  final String close;
+  final String attribute;
+  final Object value;
+}
+
+const List<_ZMarkerAttr> _kMarkerAttrs = <_ZMarkerAttr>[
+  _ZMarkerAttr('<u>', '</u>', 'underline', true),
+  _ZMarkerAttr('<sup>', '</sup>', 'script', 'super'),
+  _ZMarkerAttr('<sub>', '</sub>', 'script', 'sub'),
+];
+
+/// Types d'embed que l'encodeur Markdown sait exprimer NATIVEMENT et qui ne
+/// doivent donc PAS être dégradés en placeholder (CR-IFFD-24 §1).
+///
+/// - `image` : `DeltaToMarkdown` émet `![](src)` et `MarkdownToDelta` relit
+///   `![alt](src)` — le pont existait des deux côtés, il était neutralisé en
+///   amont. C'est la perte la plus grave corrigée par ce tag : une image
+///   disparaissait au PREMIER enregistrement, URL comprise.
+/// - `divider` (`---`) : `MarkdownToDelta` construit l'embed depuis `hr` et
+///   `DeltaToMarkdown` écrit `- - -`. Le pont existait des DEUX côtés, comme
+///   pour l'image — et il était neutralisé au même endroit. Corriger l'image
+///   sans chercher son jumeau, c'était traiter un symptôme : trouvé en revue.
+/// - `video` : pas de forme Markdown native ; encodé en lien `[src](src)`
+///   (parité des hôtes). Le round-trip le rend donc comme un LIEN, pas comme une
+///   vidéo — dégradation ASSUMÉE, mais la source survit, ce qui n'était pas le
+///   cas avec `[embed:video]`.
+const Set<String> _kNativeEmbedTypes = <String>{'image', 'video', 'divider'};
 
 /// Codec **Markdown** : le format persisté est une `String` Markdown lisible.
 ///
 /// - [encode] : ops Delta neutres → `Delta` (interne) → `String` Markdown.
 ///   `encode(const [])` → `''`. Défensif : toute exception de conversion → `''`.
-///   Le **souligné** (attribut `underline`) est sérialisé en `<u>…</u>` (MIN-1).
 /// - [decode] : `String` Markdown → ops Delta neutres. Défensif (AD-10) :
 ///   `null`/vide/Markdown mal formé/legacy → `[]`, **jamais** de throw. Une
-///   valeur `List` (Delta legacy) est tolérée et normalisée en ops neutres. Les
-///   marqueurs `<u>…</u>` sont ré-absorbés en attribut `underline` (MIN-1).
+///   valeur `List` (Delta legacy) **ou une `String` contenant un Delta JSON
+///   sérialisé** est tolérée et normalisée en ops neutres (CR-IFFD-23 §1).
 ///
 /// ## Table des pertes (round-trip borné — SM-4 / AC3)
 ///
+/// > ⚠️ **Cette table a été FAUSSE de la v0.1.0 à la v0.6.0 incluse** sur deux
+/// > lignes, et INCOMPLÈTE sur trois pertes. Elle annonçait « titres H1–H6 »
+/// > alors que H4–H6 étaient écrasés, et « barré conservé » alors que le
+/// > décodeur ne savait pas relire `~~`. Aucun test ne l'exécutait : le groupe
+/// > « assertion EXPLICITE de chaque perte » n'en couvrait que 2 sur 8. Les deux
+/// > défauts sont CORRIGÉS depuis la v0.7.0 (CR-IFFD-24 §1), et chaque ligne
+/// > ci-dessous est désormais assertée par exécution.
+///
 /// Le round-trip `decode(encode(ops))` PRÉSERVE la sémantique du **sous-ensemble
-/// Markdown** (titres H1–H6, gras, italique, **souligné** via `<u>`, listes
-/// imbriquées, liens, `code` inline + blocs, blockquote, texte brut incluant les
-/// entités HTML littérales). Il **PERD** — par conception, Markdown ne les
-/// exprime pas — :
+/// Markdown** : titres **H1–H6**, gras, italique, **souligné** via `<u>`,
+/// **barré** via `~~` (GFM), **cases à cocher** `- [x]`/`- [ ]`, **exposant /
+/// indice** via `<sup>`/`<sub>`, listes imbriquées, liens, **images** via
+/// `![](src)`, `code` inline + blocs, blockquote, texte brut. Il **PERD** :
 ///
 /// | Attribut / contenu Delta        | Sort au round-trip Markdown            |
 /// |---------------------------------|----------------------------------------|
@@ -49,43 +135,168 @@ const String _kUnderlineClose = '</u>';
 /// | Taille (`size`)                 | **perdu**                              |
 /// | Fond (`background`)             | **perdu**                              |
 /// | Alignement (`align`)            | **perdu**                              |
-/// | Souligné (`underline`)          | **conservé** via `<u>…</u>` (MIN-1)    |
-/// | Barré (`strike`)                | conservé si l'app émet `~~` (GFM)      |
-/// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder `[embed:<type>]`, texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed — AC9) |
+/// | Vidéo (`video`)                 | **dégradé en LIEN** `[src](src)` — la source SURVIT, le type d'embed non |
+/// | Tableau Markdown `\| a \| b \|` | **conservé en TEXTE littéral** — le décodeur ne l'agrège PAS en tableau (choix : l'activer sans pont le mutilerait en `ab12`) |
+/// | Entité HTML littérale (`&amp;`) | **résolue** en son caractère (`&`) dès le premier round-trip — la forme entité n'est pas restituée |
+/// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder `\[embed:<type>\]` (échappé), texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed — AC9) |
 ///
-/// > LIMITE (MIN-1) : un texte brut contenant littéralement `<u>`/`</u>` saisi
-/// > par l'utilisateur serait interprété comme du souligné au décodage (parité
-/// > du comportement DODLP : `<u>` est le sentinel du souligné). Cas marginal
-/// > assumé, non fatal.
+/// > LIMITE (MIN-1) : un texte brut contenant littéralement `<u>`/`</u>`,
+/// > `<sup>`/`<sub>` saisi par l'utilisateur serait interprété comme l'attribut
+/// > correspondant au décodage. Cas marginal assumé, non fatal.
 ///
 /// > PERTE BORNÉE (HIGH-1) : un embed opaque au MILIEU du texte ne fait **jamais**
 /// > échouer la conversion ni vider le document — il est remplacé par un
 /// > placeholder textuel (`[embed:latex]`, `[embed:table]`, …) tandis que TOUT le
 /// > texte non-embed survit. La perte est cantonnée à l'embed lui-même.
 ///
-/// Ces pertes sont **assertées explicitement** par le test « table des pertes »
-/// (`z_markdown_codec_test.dart`), jamais silencieuses ni fatales. Pour un
-/// round-trip **sans perte**, utiliser `ZDeltaCodec` (format persisté = Delta).
+/// Pour un round-trip **sans perte**, utiliser `ZDeltaCodec` (persisté = Delta).
 final class ZMarkdownCodec implements ZCodec {
   /// Codec `const` (aucun état mutable).
-  const ZMarkdownCodec();
+  ///
+  /// [bridges] — ponts Markdown ↔ embed **opt-in** (CR-IFFD-23 §3 /
+  /// CR-IFFD-24 §2). Vide par défaut : sans déclaration, le comportement est
+  /// EXACTEMENT celui d'avant, et les embeds continuent de dégrader en
+  /// placeholder. Cf. `ZMarkdownBridges.latex` pour un jeu prêt à l'emploi.
+  const ZMarkdownCodec({
+    this.bridges = const <ZMarkdownEmbedBridge>[],
+  });
+
+  /// Ponts Markdown ↔ embed déclarés par l'hôte. L'ordre compte : le premier
+  /// motif qui correspond gagne (d'où `$$…$$` avant `$…$`).
+  final List<ZMarkdownEmbedBridge> bridges;
+
+  /// Types d'embed exprimables : natifs + ceux qu'un pont sait réémettre.
+  Set<String> get _expressibleEmbedTypes => <String>{
+        ..._kNativeEmbedTypes,
+        for (final bridge in bridges) bridge.embedType,
+      };
+
+  /// Nom d'élément Markdown interne porteur d'un pont. Préfixé pour ne jamais
+  /// entrer en collision avec une balise réelle ni avec les clés natives de
+  /// `MarkdownToDelta` (qui, elles, ne sont pas surchargeables).
+  static String _bridgeTag(int index) => 'z-bridge-$index';
+
+  /// Document Markdown de décodage.
+  ///
+  /// Les trois syntaxes ajoutées le sont **en supplément** du défaut
+  /// `ExtensionSet.commonMark` (`FencedCodeBlockSyntax` + `InlineHtmlSyntax`) :
+  /// le jeu est donc un SURENSEMBLE strict de ce qui était reconnu jusqu'ici,
+  /// et rien de ce qui fonctionnait ne peut régresser.
+  ///
+  /// ⚠️ **`ExtensionSet.gitHubFlavored` n'est PAS utilisé, délibérément.** Il
+  /// embarque `TableSyntax`, et `MarkdownToDelta` APLATIT une table en
+  /// concaténant ses cellules — mesuré : `| a | b |…` devient `ab12`, séparateurs
+  /// et structure détruits. Aujourd'hui une table survit en texte littéral, donc
+  /// l'activer serait échanger une perte contre une DESTRUCTION. Le pont
+  /// table↔embed est un chantier à part.
+  md.Document _markdownDocument() => md.Document(
+        encodeHtml: false,
+        // Les syntaxes des ponts passent AVANT les syntaxes par défaut
+        // (`md.Document` insère `inlineSyntaxes` en tête) : un hôte peut donc
+        // faire primer `$…$` sur l'interprétation ordinaire du texte.
+        blockSyntaxes: const <md.BlockSyntax>[
+          // CR-IFFD-24 §1 : `- [x]` / `1. [x]` → `{list: checked|unchecked}`.
+          // Sans elle, le marqueur `[x]` était RÉINJECTÉ dans le texte de la
+          // puce et polluait le contenu à chaque cycle.
+          //
+          // UNE SEULE suffit, et elle couvre AUSSI les listes ordonnées : les
+          // deux classes `…WithCheckboxSyntax` sont des sous-classes VIDES qui
+          // partagent le `listPattern` de `ListSyntax` (lequel distingue
+          // ordonné/non-ordonné par son groupe 1) et servent uniquement de
+          // drapeau `taskListParserEnabled` (`list_syntax.dart:78-80`). Ajouter
+          // `OrderedListWithCheckboxSyntax` ne changeait RIEN — vérifié par
+          // exécution, la retirer laissait `1. [x]` fonctionner.
+          md.UnorderedListWithCheckboxSyntax(),
+        ],
+        inlineSyntaxes: <md.InlineSyntax>[
+          // Les ponts passent AVANT tout le reste : `md.Document` insère
+          // `inlineSyntaxes` en tête de sa liste, donc un hôte peut faire primer
+          // `$…$` sur l'interprétation ordinaire du texte.
+          for (var i = 0; i < bridges.length; i++)
+            _ZBridgeInlineSyntax(bridges[i], _bridgeTag(i)),
+          // CR-IFFD-24 §1 : `~~x~~` → `{strike: true}`. L'encodeur émettait déjà
+          // du `~~` que le décodeur ne savait pas relire.
+          _ZDoubleTildeStrikethroughSyntax(),
+        ],
+      );
+
+  /// Convertisseur Markdown → Delta.
+  ///
+  /// `customElementToBlockAttribute` restaure **H4–H6** (CR-IFFD-24 §1) :
+  /// `markdown_quill` ne mappe nativement que `h1`–`h3`, alors que
+  /// `flutter_quill` expose bien `Attribute.h4`/`h5`/`h6`. La limite n'était donc
+  /// pas dans le modèle mais dans le convertisseur.
+  ///
+  /// ⚠️ La fusion interne de `MarkdownToDelta` est `{...custom, ...builtin}` :
+  /// une clé DÉJÀ définie nativement (`h1`, `img`, `em`…) ne peut PAS être
+  /// surchargée par ce chemin. On n'y AJOUTE que des clés absentes.
+  MarkdownToDelta _markdownToDelta() => MarkdownToDelta(
+        markdownDocument: _markdownDocument(),
+        customElementToBlockAttribute: <String, ElementToAttributeConvertor>{
+          'h4': (_) => <Attribute<dynamic>>[Attribute.h4],
+          'h5': (_) => <Attribute<dynamic>>[Attribute.h5],
+          'h6': (_) => <Attribute<dynamic>>[Attribute.h6],
+        },
+        // Chaque pont déclaré devient un élément Markdown interne, remonté en
+        // embed Delta du type annoncé par l'hôte (CR-IFFD-23 §3).
+        customElementToEmbeddable: <String, ElementToEmbeddableConvertor>{
+          for (var i = 0; i < bridges.length; i++)
+            _bridgeTag(i): (attrs) =>
+                BlockEmbed(bridges[i].embedType, attrs[_kBridgeDataAttr] ?? ''),
+        },
+      );
 
   @override
   Object? encode(List<Map<String, dynamic>> deltaOps) {
     if (deltaOps.isEmpty) return '';
     try {
-      final delta = DeltaNeutralOps.toDeltaForMarkdown(deltaOps);
+      final delta = DeltaNeutralOps.toDeltaForMarkdown(
+        // CR-IFFD-24 §3 : `** gras **` n'est pas du gras, et `a_ ital _b` n'est
+        // pas de l'italique du tout — un `_` intra-mot n'ouvre aucune emphase.
+        zMoveSpacesOutOfMarkers(deltaOps),
+        // Un embed n'est préservé que si l'encodeur sait l'écrire : natif
+        // (image/vidéo) ou porté par un pont déclaré. Les autres dégradent en
+        // placeholder — sans quoi `DeltaToMarkdown` throwerait et VIDERAIT le
+        // document entier (HIGH-1).
+        preserveEmbedTypes: _expressibleEmbedTypes,
+      );
       if (delta.isEmpty) return '';
       return DeltaToMarkdown(
-        // MIN-1 : le souligné (non exprimable en Markdown standard) est
-        // sérialisé en `<u>…</u>` littéral, préservé au round-trip.
+        // CR-IFFD-23 §2 : n'échappe les ouvreurs de bloc qu'en tête de ligne,
+        // ET les caractères que les ponts déclarés rendent significatifs.
+        customContentHandler: zMarkdownContentEscaper(
+          extraDangerous: <String>{
+            for (final bridge in bridges) ...bridge.escapedCharacters,
+          },
+        ),
         customTextAttrsHandlers: <String, CustomAttributeHandler>{
-          _kUnderlineAttr: CustomAttributeHandler(
-            beforeContent: (attribute, node, output) =>
-                output.write(_kUnderlineOpen),
-            afterContent: (attribute, node, output) =>
-                output.write(_kUnderlineClose),
-          ),
+          for (final marker in _kMarkerAttrs)
+            marker.attribute: CustomAttributeHandler(
+              beforeContent: (attribute, node, output) =>
+                  output.write(_openMarkerFor(attribute)),
+              afterContent: (attribute, node, output) =>
+                  output.write(_closeMarkerFor(attribute)),
+            ),
+        },
+        customEmbedHandlers: <String, EmbedToMarkdown>{
+          // Pas de forme Markdown native pour la vidéo : lien vers la source.
+          // `image` n'est PAS listé ici — `DeltaToMarkdown` sait déjà l'écrire,
+          // et un handler custom masquerait le built-in.
+          'video': (embed, out) {
+            final Object? src = embed.value.data;
+            final String href = src is String ? src : '';
+            out.write('[$href]($href)');
+          },
+          // Ponts déclarés : la moitié qui manquait (CR-IFFD-23 §3). Un pont
+          // déclaré APRÈS un autre sur le même type d'embed l'emporte — dernier
+          // déclaré gagne, comme pour toute Map littérale.
+          // PREMIER déclaré gagne, pour coïncider avec le décodage (où la
+          // première syntaxe qui correspond l'emporte). Une Map littérale
+          // laisserait gagner le DERNIER : encodage et décodage auraient alors
+          // désigné deux ponts différents pour un même type d'embed.
+          for (final bridge in bridges.reversed)
+            bridge.embedType: (embed, out) =>
+                out.write(bridge.toMarkdown(embed.value.data)),
         },
       ).convert(delta);
     } on Object catch (error, stack) {
@@ -98,6 +309,25 @@ final class ZMarkdownCodec implements ZCodec {
     }
   }
 
+  /// Marqueur ouvrant correspondant à [attribute] (clé + valeur), ou `''` si
+  /// aucune correspondance — un `script` de valeur inattendue n'écrit alors
+  /// AUCUN marqueur plutôt qu'un marqueur faux (AD-10).
+  static String _openMarkerFor(Attribute<dynamic> attribute) =>
+      _markerFor(attribute)?.open ?? '';
+
+  static String _closeMarkerFor(Attribute<dynamic> attribute) =>
+      _markerFor(attribute)?.close ?? '';
+
+  static _ZMarkerAttr? _markerFor(Attribute<dynamic> attribute) {
+    for (final marker in _kMarkerAttrs) {
+      if (marker.attribute != attribute.key) continue;
+      // `underline` est booléen (valeur `true`), `script` porte 'super'/'sub'.
+      if (marker.value == true && attribute.value != false) return marker;
+      if (marker.value == attribute.value) return marker;
+    }
+    return null;
+  }
+
   @override
   List<Map<String, dynamic>> decode(Object? persisted) {
     // Tolérance legacy : une valeur non-`String` (ex. `List` Delta déjà décodé)
@@ -107,12 +337,28 @@ final class ZMarkdownCodec implements ZCodec {
     }
     final text = persisted.trim();
     if (text.isEmpty) return const <Map<String, dynamic>>[];
+    // CR-IFFD-23 §1 : un corpus Quill legacy est stocké sous la forme
+    // `jsonEncode(document.toDelta().toJson())` — donc une `String`, pas une
+    // `List`. Elle empruntait la branche Markdown et s'affichait LITTÉRALEMENT
+    // (`[{"insert":"…"}]` à l'écran), en perdant au passage TOUT le document,
+    // attributs et embeds compris.
+    final List<Map<String, dynamic>>? serializedDelta = _asSerializedDelta(text);
+    if (serializedDelta != null) return serializedDelta;
     try {
-      final mdDocument = md.Document(encodeHtml: false);
-      final delta =
-          MarkdownToDelta(markdownDocument: mdDocument).convert(persisted);
-      // MIN-1 : ré-absorbe les marqueurs `<u>…</u>` en attribut `underline`.
-      return _absorbUnderlineMarkers(DeltaNeutralOps.deltaToNeutralOps(delta));
+      final delta = _markdownToDelta().convert(persisted);
+      final ops = _absorbMarkerAttrs(DeltaNeutralOps.deltaToNeutralOps(delta));
+      // Un texte NON VIDE ne doit jamais produire un document vide : trouvé
+      // hors CR pendant la mesure — `[ref]: http://exemple.test` (définition de
+      // lien de référence, syntaxe Markdown standard) est consommée comme
+      // métadonnée par le parseur et ne rend AUCUN nœud. Tout le contenu
+      // disparaissait silencieusement. Repli : le texte brut, qui est toujours
+      // préférable à rien.
+      if (ops.isEmpty || _isBlank(ops)) {
+        return <Map<String, dynamic>>[
+          <String, dynamic>{'insert': '$text\n'},
+        ];
+      }
+      return ops;
     } on Object catch (error, stack) {
       // AD-10 : Markdown mal formé/legacy → `[]`, jamais de throw.
       assert(() {
@@ -123,28 +369,69 @@ final class ZMarkdownCodec implements ZCodec {
     }
   }
 
-  /// Ré-absorbe les marqueurs littéraux `<u>`/`</u>` (issus de l'encodage) en
-  /// attribut `underline:true` sur les inserts texte concernés (MIN-1).
+  /// Vrai si les ops décodées ne portent AUCUN contenu (que des sauts de ligne
+  /// et des blancs, aucun embed) — un document visuellement vide.
+  static bool _isBlank(List<Map<String, dynamic>> ops) {
+    for (final op in ops) {
+      final Object? insert = op['insert'];
+      if (insert is! String) return false; // un embed est du contenu
+      if (insert.trim().isNotEmpty) return false;
+    }
+    return true;
+  }
+
+  /// Reconnaît un **Delta JSON sérialisé** dans une chaîne, ou `null` si le
+  /// texte doit être traité comme du Markdown (CR-IFFD-23 §1).
   ///
-  /// Machine à états DÉFENSIVE : l'état « souligné actif » est maintenu à travers
-  /// les ops (un `<u>` peut ouvrir dans une op et se fermer dans une autre). Les
-  /// ops embed (`insert` non-`String`) sont conservées à l'identique et ne
+  /// La règle est délibérément ÉTROITE, parce qu'un faux positif viderait un
+  /// document Markdown légitime. Trois conditions cumulatives, mesurées sur un
+  /// corpus piège (`[Un lien](url)`, `[1, 2, 3]`, `[]`, `["a","b"]`,
+  /// `{"insert":"x"}`, `- [x] fait`, `[ref]: http://…`, JSON tronqué) :
+  ///
+  /// 1. le texte commence par `[` — un Delta est une LISTE ;
+  /// 2. `asDeltaOps` rend une liste non nulle (toute op porte un `insert`) ;
+  /// 3. cette liste est NON VIDE — `asDeltaOps('[]')` rend `[]`, pas `null`,
+  ///    et `[]` est un texte Markdown parfaitement licite.
+  ///
+  /// Une détection naïve par `jsonDecode` aurait détourné six de ces entrées et
+  /// **throwé** sur cinq autres — le `try/catch` global de [decode] les aurait
+  /// alors transformées en document VIDE. Le remède aurait été pire que le mal.
+  static List<Map<String, dynamic>>? _asSerializedDelta(String text) {
+    if (!text.startsWith('[')) return null;
+    try {
+      final ops = DeltaNeutralOps.asDeltaOps(text);
+      if (ops == null || ops.isEmpty) return null;
+      return ops;
+    } on Object {
+      // JSON invalide → ce n'est pas un Delta, c'est du Markdown. Pas de log :
+      // ce chemin est NOMINAL (tout Markdown commençant par `[` y passe).
+      return null;
+    }
+  }
+
+  /// Ré-absorbe les marqueurs littéraux `<u>`, `<sup>`, `<sub>` (issus de
+  /// l'encodage) en attributs Delta sur les inserts texte concernés.
+  ///
+  /// Machine à états DÉFENSIVE : l'état « attribut actif » est maintenu à travers
+  /// les ops (un marqueur peut ouvrir dans une op et se fermer dans une autre).
+  /// Les ops embed (`insert` non-`String`) sont conservées à l'identique et ne
   /// modifient pas l'état. Les autres attributs d'un insert texte sont préservés
-  /// (le souligné est simplement AJOUTÉ). Jamais de throw.
-  static List<Map<String, dynamic>> _absorbUnderlineMarkers(
+  /// (les attributs de marqueur sont simplement AJOUTÉS). Jamais de throw.
+  static List<Map<String, dynamic>> _absorbMarkerAttrs(
     List<Map<String, dynamic>> ops,
   ) {
     // Court-circuit : aucun marqueur → renvoi tel quel (perf + identité).
     final bool hasMarker = ops.any((op) {
       final Object? insert = op['insert'];
-      return insert is String &&
-          (insert.contains(_kUnderlineOpen) ||
-              insert.contains(_kUnderlineClose));
+      if (insert is! String) return false;
+      return _kMarkerAttrs.any(
+        (m) => insert.contains(m.open) || insert.contains(m.close),
+      );
     });
     if (!hasMarker) return ops;
 
     final result = <Map<String, dynamic>>[];
-    var underlineActive = false;
+    final active = <String, Object>{};
     for (final op in ops) {
       final Object? insert = op['insert'];
       if (insert is! String) {
@@ -160,8 +447,8 @@ final class ZMarkdownCodec implements ZCodec {
       void flush() {
         if (buffer.isEmpty) return;
         final Map<String, dynamic> attrs = <String, dynamic>{
-          if (baseAttrs != null) ...baseAttrs,
-          if (underlineActive) _kUnderlineAttr: true,
+          ...?baseAttrs,
+          ...active,
         };
         result.add(<String, dynamic>{
           'insert': buffer.toString(),
@@ -172,14 +459,41 @@ final class ZMarkdownCodec implements ZCodec {
 
       var i = 0;
       while (i < insert.length) {
-        if (insert.startsWith(_kUnderlineOpen, i)) {
+        // Un marqueur NON FERMÉ ne doit pas déborder sur tout le reste du
+        // document : un `<u>` orphelin soulignait tous les paragraphes
+        // suivants. L'état est donc borné au BLOC — trouvé en revue.
+        if (insert.startsWith('\n', i)) {
           flush();
-          underlineActive = true;
-          i += _kUnderlineOpen.length;
-        } else if (insert.startsWith(_kUnderlineClose, i)) {
+          active.clear();
+          result.add(<String, dynamic>{
+            'insert': '\n',
+            ...?(op['attributes'] is Map<String, dynamic>
+                ? <String, dynamic>{'attributes': op['attributes']}
+                : null),
+          });
+          i += 1;
+          continue;
+        }
+        _ZMarkerAttr? opened;
+        _ZMarkerAttr? closed;
+        for (final marker in _kMarkerAttrs) {
+          if (insert.startsWith(marker.open, i)) {
+            opened = marker;
+            break;
+          }
+          if (insert.startsWith(marker.close, i)) {
+            closed = marker;
+            break;
+          }
+        }
+        if (opened != null) {
           flush();
-          underlineActive = false;
-          i += _kUnderlineClose.length;
+          active[opened.attribute] = opened.value;
+          i += opened.open.length;
+        } else if (closed != null) {
+          flush();
+          active.remove(closed.attribute);
+          i += closed.close.length;
         } else {
           buffer.write(insert[i]);
           i += 1;

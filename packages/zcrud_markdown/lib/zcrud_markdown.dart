@@ -20,6 +20,10 @@ export 'src/data/z_markdown_codec.dart';
 export 'src/data/z_table_ops.dart' show zTableEmbedOp, kTableEmbedType;
 export 'src/domain/z_codec.dart';
 export 'src/domain/z_markdown_api.dart';
+// CR-IFFD-23 §3 / CR-IFFD-24 §2 (AD-57) : ponts Markdown ↔ embed OPT-IN.
+// Description PURE DART (`RegExp`, `Match`, closures) — aucun type de lib de
+// conversion n'y transite, c'est ce qui autorise l'export par le barrel.
+export 'src/domain/z_markdown_bridge.dart';
 export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;
 export 'src/presentation/z_markdown_codec_scope.dart';
 export 'src/presentation/z_markdown_field.dart'

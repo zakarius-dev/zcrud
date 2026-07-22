@@ -109,6 +109,54 @@ void main() {
       expect(_plainText(rt), contains('rouge'));
     });
 
+    // Ajoutées en v0.7.0 : le docstring affirme que CHAQUE ligne de la table
+    // est assertée par exécution. C'était faux — 4 lignes sur 8 (police,
+    // taille, fond, alignement) n'avaient aucune assertion, alors même que le
+    // titre de ce groupe annonce « assertion EXPLICITE de chaque perte ».
+    // Reprocher à la v0.6.0 une couverture de 2/8 en en livrant 4/8 aurait
+    // reconduit le défaut sanctionné par CR-IFFD-24.
+    //
+    // NATURE DE CES TESTS, dite franchement : une assertion de PERTE ne rougit
+    // que si la perte cesse. Ils documentent donc par exécution plutôt qu'ils
+    // ne gardent contre une régression — leur seule morsure réelle serait
+    // qu'on dote ces attributs d'un marqueur de survie (comme `<u>` pour le
+    // souligné) sans mettre la table des pertes à jour. C'est précisément le
+    // scénario qui a produit la ligne fausse sur le barré.
+    for (final MapEntry<String, Object> perte in <String, Object>{
+      'font': 'Roboto',
+      'size': '24',
+      'background': '#00ff00',
+    }.entries) {
+      test('${perte.key} PERDU au round-trip Markdown', () {
+        final ops = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'insert': 'valeur',
+            'attributes': <String, dynamic>{perte.key: perte.value},
+          },
+          <String, dynamic>{'insert': '\n'},
+        ];
+        final rt = codec.decode(codec.encode(ops));
+        expect(_hasAttr(rt, perte.key), isFalse,
+            reason: '${perte.key} ne doit PAS survivre au Markdown');
+        expect(_plainText(rt), contains('valeur'),
+            reason: 'le TEXTE, lui, doit survivre (perte bornée)');
+      });
+    }
+
+    test('ALIGNEMENT (align) PERDU au round-trip Markdown', () {
+      // L'alignement est un attribut de LIGNE (porté par le saut de ligne).
+      final ops = <Map<String, dynamic>>[
+        <String, dynamic>{'insert': 'centré'},
+        <String, dynamic>{
+          'insert': '\n',
+          'attributes': <String, dynamic>{'align': 'center'},
+        },
+      ];
+      final rt = codec.decode(codec.encode(ops));
+      expect(_hasAttr(rt, 'align'), isFalse);
+      expect(_plainText(rt), contains('centré'));
+    });
+
     test('EMBED LaTeX (E6-3) perdu via Markdown, sans throw (AC9)', () {
       // L'embed opaque n'est pas exprimable en MD : encode dégrade (défensif),
       // le round-trip NE restaure PAS la formule.
