@@ -19,7 +19,7 @@
 # AD-12 : ZÉRO clé/secret committé.
 name: zcrud_select
 description: "Selection presenter satellite for zcrud (AD-48): single/multiple choice as page/dialog/bottom-sheet over the vendored awesome_select fork. Skeleton substrate — depends only on zcrud_core (+ private awesome_select leaf)."
-version: 0.4.1
+version: 0.4.2
 publish_to: none
 resolution: workspace
 
@@ -41,7 +41,7 @@ environment:
 # confinement. Déclaré-mais-pas-encore-importé = licite pour un squelette
 # (l'adaptateur qui l'importera est fp-4-1). ⛔ AUCUN autre `zcrud_*`.
 dependencies:
-  zcrud_core: ^0.4.1
+  zcrud_core: ^0.4.2
   # AD-49 révisé (2026-07-20) : le vendoring workspace rendait `zcrud_select`
   # INCONSOMMABLE de l'extérieur — la contrainte hosted `^6.0.0` résolvait vers
   # la 6.0.0 de pub.dev, figée en Dart 2 (`sdk: <3.0.0`) ⇒ `pub get` d'une app

@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_responsive/zcrud_responsive.dart' show ZAdaptiveGrid;
 
 import 'z_reorder_ids.dart';
 import 'z_study_tools_section_spec.dart';
@@ -137,46 +138,19 @@ class _ZStudySection extends StatelessWidget {
         ),
       );
     }
-    // CR-IFFD-10 §2 — grille MULTI-COLONNES quand une largeur minimale d'item
-    // est déclarée. Le nombre de colonnes est dérivé de la largeur DISPONIBLE
-    // (`LayoutBuilder`), jamais d'un breakpoint figé : la page s'étale sur
-    // desktop/tablette au lieu d'empiler. `null` ⇒ une colonne (rendu antérieur).
+    // CR-IFFD-10 §2 — grille MULTI-COLONNES via `ZAdaptiveGrid` (zcrud_responsive),
+    // DÉJÀ dépendu par ce package et déjà utilisé par `z_flashcard_list_view` /
+    // `z_multi_flashcard_editor`. On NE réimplémente PAS le calcul de colonnes :
+    // `computeCrossAxisCount` gère déjà gouttière, padding, plancher/plafond et
+    // les replis AD-10 (NaN/infini/négatif). `null` ⇒ une colonne (rendu antérieur).
     final minWidth = spec.crossAxisMinItemWidth;
     if (minWidth != null && minWidth > 0) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final available = constraints.maxWidth;
-          final columns = available.isFinite && available > 0
-              ? (available / minWidth).floor().clamp(1, spec.itemCount.clamp(1, 99))
-              : 1;
-          if (columns <= 1) return _singleColumn(context, theme);
-          final rows = (spec.itemCount / columns).ceil();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              for (var r = 0; r < rows; r++)
-                Padding(
-                  padding: EdgeInsetsDirectional.only(bottom: theme.gapS),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      for (var c = 0; c < columns; c++)
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsetsDirectional.only(
-                              end: c < columns - 1 ? theme.gapS : 0,
-                            ),
-                            child: r * columns + c < spec.itemCount
-                                ? spec.itemBuilder(context, r * columns + c)
-                                : const SizedBox.shrink(),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          );
-        },
+      return ZAdaptiveGrid(
+        minItemWidth: minWidth,
+        spacing: theme.gapS,
+        children: <Widget>[
+          for (var i = 0; i < spec.itemCount; i++) spec.itemBuilder(context, i),
+        ],
       );
     }
     return _singleColumn(context, theme);

@@ -7,7 +7,7 @@
 # dossier + à la config sans tirer tout `zcrud_flashcard` ni introduire de cycle.
 name: zcrud_study_kernel
 description: "Low-level study kernel for zcrud: ZStudyFolder, 2-level hierarchy validation, ZReviewMode, ZStudySessionConfig and a neutral ZSessionCandidate-based session selector. Depends only on zcrud_core."
-version: 0.4.1
+version: 0.4.2
 publish_to: none
 resolution: workspace
 
@@ -29,8 +29,8 @@ environment:
 # `package:zcrud_core/domain.dart`, aucun SDK Flutter, aucune dép lourde) et des
 # annotations `const` (codegen). AUCUNE arête vers `zcrud_flashcard` (acyclicité).
 dependencies:
-  zcrud_core: ^0.4.1
-  zcrud_annotations: ^0.4.1
+  zcrud_core: ^0.4.2
+  zcrud_annotations: ^0.4.2
   # ES-3.1 (FR-S12) — `@protected` sur le point d'extension `ZStudyRepository.persist`
   # (Template Method). Dép pur-Dart légère, `const` (AD-1-safe : non-`zcrud_*`, sans
   # effet sur la fermeture transitive du gate de résolution NFR-S10/SM-S7).
@@ -43,6 +43,6 @@ dependencies:
 # Flutter), ses tests tournent sous `dart test` (même convention que
 # `zcrud_annotations`). PAS de `build.yaml` : `auto_apply: dependents` suffit.
 dev_dependencies:
-  zcrud_generator: ^0.4.1
+  zcrud_generator: ^0.4.2
   build_runner: ^2.5.0
   test: ^1.25.0
