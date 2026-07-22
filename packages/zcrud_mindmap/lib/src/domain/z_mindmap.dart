@@ -18,7 +18,26 @@ import 'z_mindmap_node.dart';
 import 'z_mindmap_tree_ops.dart';
 
 /// Carte mentale immuable : forêt de [nodes] racines titrée dans un container.
-class ZMindmap with ZExtensible {
+///
+/// ## Conformité `ZEntity` (CR-LEX-14)
+///
+/// `ZMindmap` était la **seule** entité persistable du dossier d'étude à ne pas
+/// étendre [ZEntity] (`ZExam`, `ZStudyFolder`, `ZStudyDocument`, `ZSmartNote`…
+/// le font toutes). Or **toute** la chaîne de persistance est bornée
+/// `T extends ZEntity` : `buildFolderScopedStudyRepository`, `ZStudyRepository`,
+/// `ZLocalStore`, `HiveZLocalStore`. La carte mentale était donc **statiquement
+/// exclue** du noyau de persistance, et chaque hôte devait redécouvrir et
+/// réécrire un adaptateur d'entité — avec le risque que deux hôtes enveloppent
+/// **différemment** et produisent des documents incompatibles entre eux.
+///
+/// ⚠️ **[id] reste `String` NON-NULLABLE** : Dart autorise une sous-classe à
+/// **restreindre** le type de retour d'un getter (`String` est un sous-type de
+/// `String?`). La conformité au contrat n'exige donc **aucune rupture** pour le
+/// code existant — contrairement à ce qu'un passage en `String?` aurait imposé.
+/// [isEphemeral] est en revanche redéfini : le défaut hérité (`id == null`) ne
+/// pourrait jamais être vrai ici, alors que la chaîne **vide** est précisément
+/// le marqueur d'absence d'identité de cette entité (cf. `fromJson`).
+class ZMindmap extends ZEntity with ZExtensible {
   /// Construit une carte immuable. [nodes] est copié défensivement en liste
   /// non-modifiable.
   ZMindmap({
@@ -37,8 +56,18 @@ class ZMindmap with ZExtensible {
         // donnée corrompue ne throw JAMAIS.
         extra = _sanitizeExtra(extra);
 
-  /// Identifiant opaque de la carte (non-null).
+  /// Identifiant opaque de la carte (non-null — cf. note de conformité).
+  @override
   final String id;
+
+  /// `true` tant que la carte n'a pas d'identité (CR-LEX-14).
+  ///
+  /// Redéfini : le défaut hérité de [ZEntity] teste `id == null`, impossible ici
+  /// puisque [id] est non-nullable. Le marqueur d'absence d'identité de cette
+  /// entité est la **chaîne vide** — c'est le repli de `fromJson` sur un `id`
+  /// absent ou corrompu.
+  @override
+  bool get isEphemeral => id.isEmpty;
 
   /// Dossier/container (clé de sous-collection + filtrage stream), non-null.
   final String folderId;

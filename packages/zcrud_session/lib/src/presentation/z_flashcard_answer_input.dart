@@ -107,7 +107,9 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     this.srsConfig = const ZSrsConfig(),
     this.contentBuilder,
     this.evaluationPort,
+    this.allowSkipEvaluation = false,
     this.hintPort,
+    this.revealStoredHint = false,
     this.hintPolicy = const ZHintPenaltyPolicy(),
     this.timerDisplay = ZTimerDisplay.hidden,
     this.timeLimit,
@@ -138,9 +140,41 @@ class ZFlashcardAnswerInput extends StatefulWidget {
   /// 🔒 **Jamais appelé** pour un QCM/Vrai-Faux (AD-35 / AC1).
   final ZFlashcardAnswerEvaluationPort? evaluationPort;
 
+  /// Offre, **à chaque soumission**, une voie « évaluer sans IA » qui n'appelle
+  /// PAS [evaluationPort] (CR-LEX-13). `false` par défaut.
+  ///
+  /// zcrud modélisait le choix avec/sans IA comme une propriété de
+  /// **construction** (port fourni ou non) ; un hôte qui l'offre comme
+  /// **affordance d'interaction** — bouton d'auto-évaluation à côté du bouton
+  /// IA — devait remonter le widget entier à chaque bascule. Les deux modèles
+  /// sont cohérents ; ils n'étaient simplement pas superposables.
+  ///
+  /// Sans effet si [evaluationPort] est `null` (il n'y a alors rien à esquiver).
+  final bool allowSkipEvaluation;
+
+  /// Clé du bouton « évaluer sans IA » (CR-LEX-13, testabilité).
+  static const ValueKey<String> skipEvaluationKey =
+      ValueKey<String>('zSkipEvaluation');
+
   /// Port d'indices (`null` ⇒ bouton « Indice » **ABSENT** après épuisement du
   /// stocké — patron `ZItemActionsMenu` : **absent si non fourni**, jamais grisé).
   final ZFlashcardHintPort? hintPort;
+
+  /// Sert l'indice **stocké** de la carte d'emblée, sans geste (CR-LEX-13/18).
+  /// `false` par défaut — le bouton « Indice » reste l'unique voie.
+  ///
+  /// AD-36 fait de l'indice une ressource **consommée et pénalisée**, ce qui est
+  /// un choix produit cohérent — mais sa **visibilité** n'était pas
+  /// paramétrable : le modèle « aide toujours offerte », courant dans les jeux
+  /// de cartes, n'était pas exprimable. Adopter la surface faisait donc
+  /// **disparaître de l'écran** un contenu que l'hôte affichait.
+  ///
+  /// ⚠️ **La pénalité reste gouvernée par [hintPolicy]**, indépendamment de ce
+  /// drapeau : un indice révélé d'emblée est **compté** (`hintsUsed`) et plafonne
+  /// la qualité comme tout autre. Pour l'offrir sans coût, neutralisez le plafond
+  /// (`ZHintPenaltyPolicy(floor: config.maxQuality)`) — visibilité et pénalité
+  /// restent deux décisions distinctes, jamais couplées en douce.
+  final bool revealStoredHint;
 
   /// Politique de plafond d'indices (plancher **dérivé** par défaut, AD-36).
   final ZHintPenaltyPolicy hintPolicy;
@@ -320,6 +354,20 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     // elle, tourne toujours (`_stopwatch` ci-dessus). Pas de resynchronisation au
     // montage : `_stopwatch` vient de démarrer, `_elapsed` est déjà exact (zéro).
     _syncTicker(resync: false);
+    _maybeRevealStoredHint();
+  }
+
+  /// CR-LEX-18 — sert l'indice STOCKÉ d'emblée quand l'hôte le demande.
+  ///
+  /// Passe par la MÊME voie que le bouton (`_shownHints`) : l'indice est donc
+  /// **compté** (`hintsUsed`) et plafonne la qualité exactement comme s'il avait
+  /// été demandé. Un chemin parallèle qui l'afficherait sans le compter ferait
+  /// diverger la pénalité de ce que l'utilisateur a réellement vu — c'est
+  /// précisément le défaut du contournement app-side.
+  void _maybeRevealStoredHint() {
+    if (!widget.revealStoredHint) return;
+    if (!_hasUnservedStoredHint) return;
+    _shownHints.value = <String>[widget.card.hint!];
   }
 
   @override
@@ -343,6 +391,8 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     _hintInFlight = false;
     _selected.value = <int>{};
     _shownHints.value = const <String>[];
+    // CR-LEX-18 — la nouvelle carte doit servir SON indice stocké d'emblée.
+    _maybeRevealStoredHint();
     _hintError.value = null;
     _correction.value = null;
     _answerController.clear();
@@ -510,7 +560,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   }
 
   /// Soumission d'une réponse **rédigée** — port ADVISORY + replis AD-10 (AC3).
-  Future<void> _submitWritten() async {
+  Future<void> _submitWritten({bool skipEvaluation = false}) async {
     // 🔒 AD-35 — **PROPRIÉTAIRE UNIQUE de la décision de routage**, et le SEUL
     // point du code d'où le port est atteignable. `zIsLocallyEvaluatedType` était
     // documentée (barrel + dartdoc) comme « la voie de ROUTAGE » alors qu'elle
@@ -532,7 +582,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     // 🔒 Jeton de FRAÎCHEUR capturé AVANT l'`await` (cf. [_generation]).
     final generation = _generation;
 
-    final port = widget.evaluationPort;
+    // CR-LEX-13 — `skipEvaluation` est une décision de SOUMISSION (affordance),
+    // pas de construction : l'hôte peut offrir « évaluer sans IA » à côté du
+    // bouton IA sans remonter le widget.
+    final port = skipEvaluation ? null : widget.evaluationPort;
     ZFlashcardAnswerEvaluation? evaluation;
 
     if (port != null) {
@@ -769,6 +822,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       correction: _correction,
       validator: _requiredValidator(context),
       onSubmit: _submitWritten,
+      onSubmitWithoutEvaluation:
+          (widget.allowSkipEvaluation && widget.evaluationPort != null)
+              ? () => _submitWritten(skipEvaluation: true)
+              : null,
     ),
   };
 
@@ -890,6 +947,7 @@ class _ChoicesInput extends StatelessWidget {
   /// Régime d'apparition de la correction (SU-7/D2) — **rendu seul**.
   final ZCorrectionVisibility visibility;
   final VoidCallback onSubmit;
+
 
   /// Préfixe de clé d'un choix (testabilité).
   static const String choiceKeyPrefix = 'zAnswerChoice_';
@@ -1179,6 +1237,7 @@ class _WrittenInput extends StatelessWidget {
     required this.correction,
     required this.validator,
     required this.onSubmit,
+    this.onSubmitWithoutEvaluation,
   });
 
   final TextEditingController controller;
@@ -1189,6 +1248,10 @@ class _WrittenInput extends StatelessWidget {
   /// message est **localisé** et son **identité est stable** entre builds (AC10).
   final FormFieldValidator<String> validator;
   final VoidCallback onSubmit;
+
+  /// CR-LEX-13 — soumission qui n'appelle PAS le port d'évaluation. `null` ⇒
+  /// bouton ABSENT (patron d'absence structurelle du dépôt).
+  final VoidCallback? onSubmitWithoutEvaluation;
 
   /// Clé du champ de rédaction.
   static const ValueKey<String> fieldKey = ValueKey<String>('zAnswerField');
@@ -1250,7 +1313,23 @@ class _WrittenInput extends StatelessWidget {
           valueListenable: correction,
           builder: (context, corrected, _) => corrected != null
               ? const SizedBox.shrink()
-              : _SubmitButton(onPressed: onSubmit),
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    _SubmitButton(onPressed: onSubmit),
+                    // CR-LEX-13 — voie « évaluer sans IA », offerte À CHAQUE
+                    // soumission et non figée à la construction.
+                    if (onSubmitWithoutEvaluation != null) ...<Widget>[
+                      const SizedBox(width: 8),
+                      _ControlButton(
+                        buttonKey: ZFlashcardAnswerInput.skipEvaluationKey,
+                        labelKey: 'zcrud.flashcard.selfEvaluate',
+                        fallback: 'Évaluer sans IA',
+                        onPressed: onSubmitWithoutEvaluation!,
+                      ),
+                    ],
+                  ],
+                ),
         ),
       ],
     );

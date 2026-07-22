@@ -183,6 +183,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   /// `Left(ZDomainFailure)` si le `kind` n'est pas *nested* ou si le `userId`
   /// manque ; `Left(ZServerFailure)` sur panne réseau — **jamais** une liste vide
   /// silencieuse, précisément le mode que cette API existe pour éliminer.
+  @override
   Future<ZResult<List<String>>> listParentIds() async {
     final resolved =
         _resolver.resolveParentCollection(kind: _kind, userId: _userId);

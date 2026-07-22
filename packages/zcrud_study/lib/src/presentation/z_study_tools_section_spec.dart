@@ -39,6 +39,12 @@ class ZStudyToolsSectionSpec {
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.crossAxisMinItemWidth,
+    this.crossAxisItemHeight,
+    this.crossAxisAspectRatio,
+    this.crossAxisVirtualized = false,
+    this.crossAxisViewportHeight,
+    this.collapseSemanticLabel,
+    this.expandSemanticLabel,
     this.headerCount,
     this.secondaryAction,
     this.secondaryActionIcon,
@@ -161,6 +167,59 @@ class ZStudyToolsSectionSpec {
   /// nombre de colonnes est dérivé de la largeur disponible — la page d'origine
   /// s'étale ainsi sur desktop/tablette au lieu d'empiler.
   final double? crossAxisMinItemWidth;
+
+  /// Hauteur fixe d'une cellule de grille (CR-IFFD-11 §2). `null` ⇒ forme par
+  /// défaut de la grille.
+  ///
+  /// La page d'origine pose des cartes BASSES (≈ 76 dp) : sans ce paramètre, les
+  /// cellules prennent une hauteur par défaut et l'écart de parité est visible
+  /// précisément sur grand écran, là où la grille sert.
+  /// Exclusif avec [crossAxisAspectRatio] — si les deux sont fournis, la hauteur
+  /// fixe l'emporte (elle est plus déterministe).
+  final double? crossAxisItemHeight;
+
+  /// Ratio largeur/hauteur d'une cellule (CR-IFFD-11 §2), alternative à
+  /// [crossAxisItemHeight] quand la hauteur doit suivre la largeur de colonne.
+  final double? crossAxisAspectRatio;
+
+  /// ⚠️ **EXCLUSIF avec [onReorder]** (CR-IFFD-11 §1) : le réordonnancement
+  /// s'appuie sur `ReorderableListView` (SDK Flutter), qui ne dispose pas en
+  /// grille. Déclarer les deux rend une liste **mono-colonne** et ignore cette
+  /// largeur — un `assert` le signale en debug. Une grille réordonnable exigerait
+  /// un paquet tiers refusé par AD-1, ou une implémentation maison du
+  /// drag-and-drop bidimensionnel.
+  ///
+  /// Grille **virtualisée** (CR-IFFD-11 §4) : ne construit que les cellules du
+  /// viewport et scrolle d'elle-même. `false` par défaut (grille *eager*,
+  /// imbriquée dans le défilement de la page — rendu antérieur inchangé).
+  ///
+  /// ⚠️ À activer dès qu'une section peut porter plusieurs dizaines d'items : en
+  /// mode *eager*, TOUTES les cellules sont construites ET layoutées, même hors
+  /// écran. Une section alimentée par tout le contenu d'un dossier (héritage
+  /// parent compris) est exactement ce cas.
+  final bool crossAxisVirtualized;
+
+  /// Hauteur du viewport d'une grille [crossAxisVirtualized] — **obligatoire**
+  /// dans ce mode (CR-IFFD-11 §4).
+  ///
+  /// Une grille virtualisée EST la surface scrollable : imbriquée sans hauteur
+  /// bornée dans le défilement de la page, elle lève « Vertical viewport was
+  /// given unbounded height ». La déclarer, c'est accepter en connaissance de
+  /// cause un **défilement imbriqué** — le prix de la virtualisation à ce
+  /// niveau. Sans elle, la grille retombe défensivement en mode *eager*.
+  final double? crossAxisViewportHeight;
+
+  /// Libellé accessible du contrôle de repli quand la section est DÉPLIÉE
+  /// (CR-IFFD-11 §3). Repli : `'Replier'`.
+  ///
+  /// C'était le SEUL libellé non injecté de ce layout — un hôte non francophone
+  /// obtenait un `semanticLabel` en français sur un contrôle d'accessibilité,
+  /// contredisant AD-13 et le principe d'injection appliqué partout ailleurs.
+  final String? collapseSemanticLabel;
+
+  /// Libellé accessible du contrôle de repli quand la section est REPLIÉE
+  /// (CR-IFFD-11 §3). Repli : `'Déplier'`.
+  final String? expandSemanticLabel;
 
   /// Compteur affiché dans l'en-tête, **découplé** du nombre d'items rendus
   /// (CR-IFFD-10 §4). `null` (défaut) ⇒ le badge affiche [itemCount].

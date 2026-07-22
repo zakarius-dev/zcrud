@@ -153,10 +153,19 @@ class ZFlashcardReviewCard extends StatefulWidget {
   ZFlashcardContentBuilder get resolvedContentBuilder =>
       contentBuilder ?? ZFlashcardDefaultContent.builder;
 
-  /// Vrai si une action peut être rendue : jamais en lecture seule (AD-45).
+  /// Vrai si une action de **MUTATION** peut être rendue : jamais en lecture
+  /// seule (AD-45). Concerne [onEdit] et [onDelete].
   ///
-  /// **Les deux voies convergent** (AC4) : `isReadOnly` **ou** callback non
-  /// fourni ⇒ absence. Jamais deux règles concurrentes.
+  /// ⚠️ **Ne gouverne PAS [onSource]** (CR-LEX-12). `onSource` est une action de
+  /// **CONSULTATION** : remonter au texte dont la carte est tirée ne modifie
+  /// rien. La faire dépendre de `isReadOnly` la supprimait précisément sur la
+  /// population qui l'a motivée — les cartes **curées** issues d'un corpus
+  /// officiel, qui sont en lecture seule ET porteuses d'une source. La note
+  /// « consultation avant mutation » du rendu était donc annulée par cette
+  /// garde, et le défaut était verrouillé par un test.
+  ///
+  /// Les deux voies d'absence convergent toujours pour les mutations :
+  /// `isReadOnly` **ou** callback non fourni ⇒ absence.
   bool get _actionsAllowed => !card.isReadOnly;
 
   @override
@@ -546,8 +555,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   ///
   /// Retourne `null` (et non un widget désactivé) : l'absence est structurelle.
   Widget? _actions(BuildContext context) {
-    if (!widget._actionsAllowed) return null;
     final theme = ZcrudTheme.of(context);
+    // CR-LEX-12 — la CONSULTATION survit à la lecture seule ; seules les
+    // MUTATIONS y sont soumises. La garde s'applique donc par action, plus
+    // globalement à la rangée.
+    final mutationsAllowed = widget._actionsAllowed;
     final actions = <Widget>[
       // Consultation avant mutation : la source précède édition/suppression.
       if (widget.onSource != null)
@@ -559,7 +571,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
           fallback: 'Voir la source',
           onTap: widget.onSource!,
         ),
-      if (widget.onEdit != null)
+      if (mutationsAllowed && widget.onEdit != null)
         _action(
           context,
           key: ZFlashcardReviewCard.editActionKey,
@@ -568,7 +580,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
           fallback: 'Modifier',
           onTap: widget.onEdit!,
         ),
-      if (widget.onDelete != null)
+      if (mutationsAllowed && widget.onDelete != null)
         _action(
           context,
           key: ZFlashcardReviewCard.deleteActionKey,

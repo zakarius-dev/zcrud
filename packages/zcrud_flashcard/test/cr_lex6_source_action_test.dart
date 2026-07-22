@@ -63,14 +63,36 @@ void main() {
     expect(_actions, findsNothing, reason: 'aucun callback ⇒ aucune rangée');
   });
 
-  testWidgets('carte en lecture seule ⇒ action ABSENTE même si onSource fourni',
+  // ⚠️ CORRIGÉ (CR-LEX-12) — ce test verrouillait un DÉFAUT. Il asserait que la
+  // source disparaît en lecture seule, or c'est exactement la population qui a
+  // motivé CR-LEX-6 : les cartes CURÉES d'un corpus officiel sont en lecture
+  // seule ET porteuses d'une source. La consultation n'est pas une mutation.
+  testWidgets('🔴 carte en lecture seule ⇒ la SOURCE reste accessible',
+      (tester) async {
+    var opened = false;
+    await _pump(
+      tester,
+      card: const ZFlashcard(question: 'Q', answer: 'A', isReadOnly: true),
+      onSource: () => opened = true,
+    );
+    expect(_source, findsOneWidget,
+        reason: 'consulter la source ne modifie rien — la lecture seule ne '
+            'doit pas la supprimer');
+    await tester.tap(_source);
+    await tester.pump();
+    expect(opened, isTrue);
+  });
+
+  testWidgets('carte en lecture seule ⇒ les MUTATIONS restent absentes (AD-45)',
       (tester) async {
     await _pump(
       tester,
       card: const ZFlashcard(question: 'Q', answer: 'A', isReadOnly: true),
       onSource: () {},
+      onEdit: () {},
     );
-    expect(_source, findsNothing);
+    expect(_source, findsOneWidget);
+    expect(_edit, findsNothing, reason: 'éditer EST une mutation');
   });
 
   testWidgets('la source PRÉCÈDE l\'édition (consultation avant mutation)',

@@ -98,6 +98,39 @@ abstract class ZStudyRepository<T extends ZEntity>
   @protected
   Future<ZResult<T>> persist(T item, {String? collectionId});
 
+  /// Énumère les identifiants des **parents** existants côté distant, pour une
+  /// topologie *folder-scopée* (CR-LEX-10, remonté au PORT par CR-LEX-15).
+  ///
+  /// ## Pourquoi ce membre appartient au CONTRAT, pas à l'implémentation
+  ///
+  /// Livré d'abord sur l'adaptateur Firestore, il était **statiquement
+  /// inatteignable** : les fabriques rendent le port neutre `ZStudyRepository<T>`,
+  /// jamais le type concret. La seule voie était un `as ZOfflineFirstBoxRepository`
+  /// — c'est-à-dire renoncer à l'abstraction que AD-5/AD-11 protègent, pour une
+  /// opération qui relève précisément du repository.
+  ///
+  /// ## Contrat
+  ///
+  /// Un dépôt figé sur un unique parent ne couvre que celui-ci : sans cette
+  /// énumération, un hôte multi-dossiers doit **deviner** la liste avant de
+  /// construire ses dépôts, et sa seule source est le store **local** — donc
+  /// **rien** sur un appareil neuf. `sync()` rendait alors `Right(unit)` sur une
+  /// liste vide : un **succès silencieux** indiscernable de « l'utilisateur n'a
+  /// rien ».
+  ///
+  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt dont la topologie n'a pas de
+  /// parent (flat, global) ou qui n'implémente pas la découverte le dit
+  /// **explicitement**. Jamais une liste vide, qui serait exactement le mode
+  /// dégradé silencieux que ce membre existe pour éliminer.
+  Future<ZResult<List<String>>> listParentIds() async =>
+      Left<ZFailure, List<String>>(
+        const ZDomainFailure(
+          'listParentIds() n\'est pas supporté par ce dépôt : la topologie n\'a '
+          'pas de parent à énumérer, ou la découverte n\'est pas implémentée. '
+          'Un Left explicite, jamais une liste vide silencieuse.',
+        ),
+      );
+
   /// **Template Method** (concret, non destiné à être ré-overridé) : valide
   /// [item] via [validate] PUIS, **seulement si `Right`**, persiste via
   /// [persist]. Un `validate → Left` court-circuite l'écriture et remonte le

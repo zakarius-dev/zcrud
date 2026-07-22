@@ -3,6 +3,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
 void main() {
+  mainCrLex14();
   group('ZMindmap — modèle container (AC3)', () {
     test('mixe ZExtensible, défauts sûrs', () {
       final map = ZMindmap(id: 'm1', folderId: 'f1');
@@ -139,6 +140,45 @@ void main() {
       });
       expect(map.extra['owner'], 'zak');
       expect(map.toJson()['owner'], 'zak');
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-LEX-14 — `ZMindmap` doit être utilisable par la chaîne de persistance.
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCrLex14() {
+  group('CR-LEX-14 — conformité ZEntity', () {
+    test('🔴 ZMindmap SATISFAIT la borne `T extends ZEntity`', () {
+      // Discriminant : avant, `buildFolderScopedStudyRepository<ZMindmap>` et
+      // toute la chaîne (`ZStudyRepository`, `ZLocalStore`, `HiveZLocalStore`)
+      // refusaient le type — « doesn't conform to the bound 'ZEntity' ».
+      // Cette fonction générique reproduit la borne : si ZMindmap ne la
+      // satisfaisait pas, ce fichier NE COMPILERAIT PAS.
+      String? idOf<T extends ZEntity>(T e) => e.id;
+
+      final m = ZMindmap(id: 'm1', folderId: 'f1');
+      expect(idOf<ZMindmap>(m), 'm1');
+      expect(m, isA<ZEntity>());
+    });
+
+    test('`id` reste NON-NULLABLE : aucune rupture pour l\'existant', () {
+      final m = ZMindmap(id: 'm1', folderId: 'f1');
+      // Si `id` était devenu `String?`, cette affectation ne compilerait pas.
+      final String id = m.id;
+      expect(id, 'm1');
+    });
+
+    test('isEphemeral suit la chaîne VIDE (marqueur réel d\'absence d\'id)', () {
+      expect(ZMindmap(id: '', folderId: 'f1').isEphemeral, isTrue);
+      expect(ZMindmap(id: 'm1', folderId: 'f1').isEphemeral, isFalse);
+      // Le défaut hérité (`id == null`) serait TOUJOURS faux ici : sans cette
+      // redéfinition, une carte sans identité se dirait matérialisée.
+    });
+
+    test('un document sans `id` se désérialise en éphémère', () {
+      final m = ZMindmap.fromJson(<String, dynamic>{'folder_id': 'f1'});
+      expect(m.isEphemeral, isTrue);
     });
   });
 }

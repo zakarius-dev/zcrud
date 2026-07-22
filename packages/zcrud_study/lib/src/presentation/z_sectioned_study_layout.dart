@@ -120,7 +120,28 @@ class _ZStudySection extends StatelessWidget {
   Widget _buildItems(BuildContext context, ZcrudTheme theme) {
     // ES-5.3 — réordonnabilité UNIQUEMENT sur les grilles verticales. `null` =
     // capacité absente (AD-4) ⇒ rendu ES-5.2 inchangé (non-régression).
+    // CR-IFFD-11 §1 — RÉORDONNANCEMENT et GRILLE sont EXCLUSIFS, et cette
+    // exclusivité est désormais SIGNALÉE au lieu de dégrader en silence.
+    //
+    // Le réordonnancement s'appuie sur `ReorderableListView` du **SDK Flutter**,
+    // qui ne sait pas disposer en grille ; une grille réordonnable exigerait le
+    // paquet tiers `reorderable_grid_view`, explicitement REFUSÉ (AD-1, décision
+    // documentée sur `_ReorderableItemList`), ou une implémentation maison du
+    // drag-and-drop bidimensionnel — un chantier à part entière, pas un défaut à
+    // corriger au passage.
+    //
+    // Ce qui EST corrigé ici : jusqu'à présent, déclarer les deux donnait
+    // silencieusement une liste mono-colonne — le `crossAxisMinItemWidth` était
+    // ignoré sans un mot. Un `assert` le signale maintenant en debug.
     if (spec.axis == Axis.vertical && spec.onReorder != null) {
+      assert(
+        spec.crossAxisMinItemWidth == null,
+        'ZStudyToolsSectionSpec(id: ${spec.id}) : `onReorder` et '
+        '`crossAxisMinItemWidth` sont EXCLUSIFS. Le reordonnancement s\'appuie '
+        'sur ReorderableListView (SDK Flutter), qui ne dispose pas en grille — '
+        'le rendu sera une liste MONO-COLONNE et `crossAxisMinItemWidth` sera '
+        'ignore. Choisissez : reordonnable OU multi-colonnes.',
+      );
       return _ReorderableItemList(spec: spec, theme: theme);
     }
     if (spec.axis == Axis.horizontal) {
@@ -145,16 +166,62 @@ class _ZStudySection extends StatelessWidget {
     // les replis AD-10 (NaN/infini/négatif). `null` ⇒ une colonne (rendu antérieur).
     final minWidth = spec.crossAxisMinItemWidth;
     if (minWidth != null && minWidth > 0) {
-      return ZAdaptiveGrid(
+      // CR-IFFD-11 §2 — hauteur/ratio de cellule TRANSMIS (la primitive les
+      // acceptait déjà : seul le câblage manquait, d'où un écart de parité
+      // visible sur grand écran).
+      // CR-IFFD-11 §4 — mode VIRTUALISÉ : ne construit que le viewport et
+      // scrolle de lui-même. Indispensable dès quelques dizaines d'items — en
+      // mode eager, TOUT est construit ET layouté, même hors écran.
+      if (spec.crossAxisVirtualized) {
+        // ⚠️ La grille virtualisée EST la surface scrollable (ni `shrinkWrap`,
+        // ni `NeverScrollableScrollPhysics`). Imbriquée telle quelle dans le
+        // `ListView.builder` du layout, elle reçoit une hauteur NON BORNÉE et
+        // lève « Vertical viewport was given unbounded height ». Une hauteur de
+        // viewport EXPLICITE est donc obligatoire — c'est le prix du défilement
+        // imbriqué, et l'hôte doit le décider en connaissance de cause.
+        assert(
+          spec.crossAxisViewportHeight != null,
+          'ZStudyToolsSectionSpec(id: ${spec.id}) : `crossAxisVirtualized` exige '
+          '`crossAxisViewportHeight` — une grille virtualisee scrolle d\'elle-meme '
+          'et ne peut pas etre imbriquee sans hauteur bornee.',
+        );
+        final viewport = spec.crossAxisViewportHeight;
+        if (viewport == null) {
+          // Repli DÉFENSIF en release (AD-10) : plutôt la grille eager qu'un
+          // crash de rendu.
+          return _eagerGrid(context, theme, minWidth);
+        }
+        return SizedBox(
+          height: viewport,
+          child: ZAdaptiveGrid.builder(
+          itemCount: spec.itemCount,
+          itemBuilder: spec.itemBuilder,
+          minItemWidth: minWidth,
+          spacing: theme.gapS,
+          itemHeight: spec.crossAxisItemHeight,
+            aspectRatio: spec.crossAxisItemHeight == null
+                ? spec.crossAxisAspectRatio
+                : null,
+          ),
+        );
+      }
+      return _eagerGrid(context, theme, minWidth);
+    }
+    return _singleColumn(context, theme);
+  }
+
+  /// Grille EAGER — imbriquée dans le défilement de la page (rendu par défaut).
+  Widget _eagerGrid(BuildContext context, ZcrudTheme theme, double minWidth) =>
+      ZAdaptiveGrid(
         minItemWidth: minWidth,
         spacing: theme.gapS,
+        itemHeight: spec.crossAxisItemHeight,
+        aspectRatio:
+            spec.crossAxisItemHeight == null ? spec.crossAxisAspectRatio : null,
         children: <Widget>[
           for (var i = 0; i < spec.itemCount; i++) spec.itemBuilder(context, i),
         ],
       );
-    }
-    return _singleColumn(context, theme);
-  }
 
   /// Empilement mono-colonne — rendu historique, préservé à l'identique.
   Widget _singleColumn(BuildContext context, ZcrudTheme theme) {
@@ -458,7 +525,12 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
 
   @override
   Widget build(BuildContext context) {
-    final label = _expanded ? 'Replier' : 'Déplier';
+    // CR-IFFD-11 §3 — libellés INJECTÉS (repli FR conservé). C'était le seul
+    // libellé en dur de ce layout : un hôte non francophone obtenait un
+    // `semanticLabel` français sur un contrôle d'accessibilité (AD-13).
+    final label = _expanded
+        ? (widget.spec.collapseSemanticLabel ?? 'Replier')
+        : (widget.spec.expandSemanticLabel ?? 'Déplier');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -480,11 +552,53 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
             ),
           ),
         ),
-        if (_expanded) ...<Widget>[
-          SizedBox(height: widget.theme.gapS),
-          widget.body,
-        ],
+        // CR-IFFD-11 §5 — transition ANIMÉE, sauf sous Reduce Motion.
+        // Comportement demandé et retenu : ~200 ms, courbe standard ; sous
+        // `MediaQuery.disableAnimationsOf` la transition est INSTANTANÉE (durée
+        // nulle) — aucun mouvement, mais **état final identique** dans les deux
+        // modes. `AnimatedSize` avec `duration: Duration.zero` rend exactement
+        // l'état final sans frame intermédiaire : une seule branche de rendu,
+        // jamais deux arbres divergents (AD-13).
+        _AnimatedCollapse(
+          expanded: _expanded,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              SizedBox(height: widget.theme.gapS),
+              widget.body,
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+/// Transition de repli — animée, **instantanée sous Reduce Motion** (CR-IFFD-11 §5).
+///
+/// Sous Reduce Motion, **aucun animateur n'est monté** : le sous-arbre est rendu
+/// directement. Ce n'est pas une animation de durée nulle — `AnimatedSize` avec
+/// `Duration.zero` se re-salit pendant son propre `performLayout` et lève
+/// « A RenderAnimatedSize was mutated in its own performLayout implementation ».
+/// L'**état final est identique** dans les deux modes ; seule disparaît la
+/// transition (AD-13).
+class _AnimatedCollapse extends StatelessWidget {
+  const _AnimatedCollapse({required this.expanded, required this.child});
+
+  final bool expanded;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = expanded ? child : const SizedBox.shrink();
+    if (MediaQuery.disableAnimationsOf(context)) return body;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      alignment: AlignmentDirectional.topStart.resolve(
+        Directionality.of(context),
+      ),
+      child: body,
     );
   }
 }

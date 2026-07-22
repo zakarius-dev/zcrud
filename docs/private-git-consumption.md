@@ -19,9 +19,9 @@ repo privé `zakarius-dev/zcrud` :
 
 ## Épinglage
 
-Utiliser un **tag de release** (ex. `v0.4.3`) comme `ref`, jamais `main` (stabilité
+Utiliser un **tag de release** (ex. `v0.4.5`) comme `ref`, jamais `main` (stabilité
 et reproductibilité). Le versionnage se fait **par tag git**, pas par contrainte
-`^0.4.3`.
+`^0.4.5`.
 
 ## Ajouter les packages
 
@@ -31,7 +31,7 @@ et reproductibilité). Le versionnage se fait **par tag git**, pas par contraint
 > `dependency_overrides` est **obligatoire**. Détail ci-dessous.
 
 ⚠️ **Règle importante** : les dépendances **inter-`zcrud_*`** du monorepo sont des
-contraintes **hosted** (`zcrud_core: ^0.4.3`). Or **pub exige que la SOURCE d'une
+contraintes **hosted** (`zcrud_core: ^0.4.5`). Or **pub exige que la SOURCE d'une
 dépendance soit identique dans tout le graphe** : déclarer `zcrud_core` en `git` côté
 app ne satisfait pas une arête interne qui l'attend en `hosted`. La résolution échoue :
 
@@ -52,22 +52,22 @@ export + annotations :
 ```yaml
 dependencies:
   zcrud_flashcard:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_flashcard }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_flashcard }
   # … les autres packages RÉELLEMENT importés par ton code
 
 # OBLIGATOIRE : impose la source git à TOUTE la fermeture transitive `zcrud_*`.
 # Doit lister les packages transitifs même si tu ne les importes jamais toi-même.
 dependency_overrides:
   zcrud_core:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_core }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_core }
   zcrud_annotations:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_annotations }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_annotations }
   zcrud_study_kernel:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_study_kernel }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_study_kernel }
   zcrud_markdown:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_markdown }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_markdown }
   zcrud_export:
-    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.3, path: packages/zcrud_export }
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.4.5, path: packages/zcrud_export }
 ```
 
 ### Où placer le bloc — deux cas, à ne pas confondre (CR-LEX-5)
