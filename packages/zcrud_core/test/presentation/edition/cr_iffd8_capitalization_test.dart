@@ -32,6 +32,7 @@ ZFieldSpec _text(ZTextCapitalization cap) => ZFieldSpec(
     );
 
 void main() {
+  mainCrIffd13();
   group('CR-IFFD-8 — capitalisation appliquée à la valeur du formulaire', () {
     testWidgets('sentences : "biologie" ⇒ "Biologie" (ucFirst d\'IFFD)',
         (tester) async {
@@ -134,6 +135,113 @@ void main() {
       // La casse ne change PAS la longueur : l'offset reste valide.
       expect(state.controller!.text, 'ABCDEF');
       expect(state.controller!.selection.baseOffset, 3);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CR-IFFD-13 — transformation de saisie INJECTABLE.
+//
+// La demande initiale était un mode `first`. La session IFFD l'a elle-même
+// révisée : ajouter le comportement exact d'un hôte ne résout que son cas, et
+// l'app suivante arrive avec sa propre règle. Une transformation injectable
+// couvre tout, et la règle vit dans l'application qui la possède.
+// ─────────────────────────────────────────────────────────────────────────────
+void mainCrIffd13() {
+  ZFieldSpec spec(ZTextConfig config) => ZFieldSpec(
+        name: 't',
+        type: EditionFieldType.text,
+        label: 'T',
+        config: config,
+      );
+
+  // La règle « première lettre seule », exprimée PAR L'HÔTE.
+  String ucFirst(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  group('CR-IFFD-13 — textTransform injecté', () {
+    testWidgets('🔴 « première lettre seule » est exprimable par l\'hôte',
+        (tester) async {
+      final c = _controller(<String, Object?>{'t': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        spec(ZTextConfig(textTransform: ucFirst)),
+      ]));
+      await tester.enterText(find.byType(TextField), 'biologie');
+      await tester.pump();
+      expect(c.valueOf('t'), 'Biologie');
+    });
+
+    testWidgets('🔴 le cas que `sentences` traitait MAL : example.com',
+        (tester) async {
+      // `sentences` capitalise après chaque `.` ⇒ 'Example.Com'. C'est
+      // exactement l'écart mesuré par IFFD sur un champ `host`.
+      final c = _controller(<String, Object?>{'t': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        spec(ZTextConfig(textTransform: ucFirst)),
+      ]));
+      await tester.enterText(find.byType(TextField), 'example.com');
+      await tester.pump();
+      expect(c.valueOf('t'), 'Example.com');
+    });
+
+    testWidgets('la transformation s\'applique APRÈS la capitalisation',
+        (tester) async {
+      final c = _controller(<String, Object?>{'t': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        spec(ZTextConfig(
+          capitalization: ZTextCapitalization.characters,
+          textTransform: (s) => s.replaceAll(' ', '_'),
+        )),
+      ]));
+      await tester.enterText(find.byType(TextField), 'iso 9001');
+      await tester.pump();
+      // Majuscules d'abord, puis la règle de l'hôte : l'hôte a le dernier mot.
+      expect(c.valueOf('t'), 'ISO_9001');
+    });
+
+    testWidgets('une transformation qui CHANGE la longueur ne lève pas',
+        (tester) async {
+      final c = _controller(<String, Object?>{'t': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        spec(ZTextConfig(textTransform: (s) => s.replaceAll('a', ''))),
+      ]));
+      await tester.enterText(find.byType(TextField), 'banana');
+      await tester.pump();
+      expect(c.valueOf('t'), 'bnn');
+      expect(tester.takeException(), isNull, reason: 'curseur ramené aux bornes');
+    });
+
+    testWidgets('AD-10 — une transformation qui LÈVE ne casse pas la saisie',
+        (tester) async {
+      final c = _controller(<String, Object?>{'t': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        spec(ZTextConfig(textTransform: (s) => throw StateError('hôte fautif'))),
+      ]));
+      await tester.enterText(find.byType(TextField), 'texte');
+      await tester.pump();
+      expect(c.valueOf('t'), 'texte', reason: 'repli sur le texte non transformé');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('jamais appliquée à un mot de passe', (tester) async {
+      final c = _controller(<String, Object?>{'p': ''});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c, <ZFieldSpec>[
+        ZFieldSpec(
+          name: 'p',
+          type: EditionFieldType.password,
+          label: 'P',
+          config: ZTextConfig(textTransform: (s) => s.toUpperCase()),
+        ),
+      ]));
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pump();
+      expect(c.valueOf('p'), 'secret');
     });
   });
 }

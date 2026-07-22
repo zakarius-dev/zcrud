@@ -36,6 +36,8 @@ class ZStudyToolsSectionSpec {
     this.itemIds,
     this.onReorder,
     this.reorderHandleSemanticLabel,
+    this.reorderMoveBeforeSemanticLabel,
+    this.reorderMoveAfterSemanticLabel,
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.crossAxisMinItemWidth,
@@ -145,6 +147,19 @@ class ZStudyToolsSectionSpec {
   /// « Drag » codé en dur (AD-13/FR-23) : le label est INJECTÉ par l'appelant.
   final String? reorderHandleSemanticLabel;
 
+  /// Libellé LOCALISÉ de l'action sémantique « déplacer avant » du mode GRILLE
+  /// réordonnable (CR-IFFD-15). `null` ⇒ repli neutre documenté côté layout.
+  ///
+  /// En grille, le geste est un **appui long sur la cellule** : il n'existe pas
+  /// de poignée, et un appui long est **inatteignable au lecteur d'écran**.
+  /// L'alternative accessible obligatoire (AD-13) passe donc par deux actions
+  /// sémantiques, dont ce libellé.
+  final String? reorderMoveBeforeSemanticLabel;
+
+  /// Libellé LOCALISÉ de l'action sémantique « déplacer après » du mode GRILLE
+  /// réordonnable (CR-IFFD-15). Voir [reorderMoveBeforeSemanticLabel].
+  final String? reorderMoveAfterSemanticLabel;
+
   // ── CR-IFFD-10 : capacités de la page d'origine absentes du portage ────────
 
   /// Section **repliable** (CR-IFFD-10 §1). `false` par défaut — le rendu
@@ -182,12 +197,19 @@ class ZStudyToolsSectionSpec {
   /// [crossAxisItemHeight] quand la hauteur doit suivre la largeur de colonne.
   final double? crossAxisAspectRatio;
 
-  /// ⚠️ **EXCLUSIF avec [onReorder]** (CR-IFFD-11 §1) : le réordonnancement
-  /// s'appuie sur `ReorderableListView` (SDK Flutter), qui ne dispose pas en
-  /// grille. Déclarer les deux rend une liste **mono-colonne** et ignore cette
-  /// largeur — un `assert` le signale en debug. Une grille réordonnable exigerait
-  /// un paquet tiers refusé par AD-1, ou une implémentation maison du
-  /// drag-and-drop bidimensionnel.
+  /// ✅ **COMBINABLE avec [onReorder]** depuis CR-IFFD-15 (voie A/C, arbitrée
+  /// par l'owner) : déclarer les deux produit désormais une **grille
+  /// multi-colonnes RÉORDONNABLE** (`ZReorderableAdaptiveGrid` de
+  /// `zcrud_responsive`), et non plus une liste mono-colonne signalée par un
+  /// `assert`. L'activation est **implicite** — aucun drapeau supplémentaire.
+  /// Le geste est un **appui long sur la cellule** (pas de poignée), doublé de
+  /// deux actions sémantiques ([reorderMoveBeforeSemanticLabel] /
+  /// [reorderMoveAfterSemanticLabel]) pour le lecteur d'écran (AD-13).
+  ///
+  /// ⚠️ Reste **exclusif avec [crossAxisVirtualized]** : une cellule non
+  /// construite ne peut pas être une cible de dépôt. Une section à la fois
+  /// réordonnable et virtualisée est rendue **eager** (réordonnable), la
+  /// virtualisation cédant — documenté, jamais dégradé en silence.
   ///
   /// Grille **virtualisée** (CR-IFFD-11 §4) : ne construit que les cellules du
   /// viewport et scrolle d'elle-même. `false` par défaut (grille *eager*,

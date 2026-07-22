@@ -49,10 +49,48 @@ class ZSyncMeta {
   /// **nouvelle** map (map vide → map vide ; map sans clé réservée → copie
   /// égale). Sert aux entités/adapters qui doivent isoler le corps métier des
   /// métadonnées de sync.
-  static Map<String, dynamic> stripReserved(Map<String, dynamic> map) =>
-      <String, dynamic>{
-        for (final e in map.entries)
-          if (!reservedKeys.contains(e.key)) e.key: e.value,
+  static Map<String, dynamic> stripReserved(Map<String, dynamic> map) {
+    assert(() {
+      final collided = collidingReservedKeys(map);
+      if (collided.isEmpty) return true;
+      // ignore: avoid_print
+      print(
+        'ZSyncMeta — ⚠️ COLLISION DE CLÉ RÉSERVÉE : le corps métier porte '
+        '${collided.join(', ')}. Ces clés sont possédées par la couche de '
+        'synchronisation (AD-19) et seront ÉCRASÉES par la méta hors-entité — '
+        'la valeur métier serait perdue SANS SIGNAL. Renommez le champ (ex. '
+        '`content_updated_at`) ou portez-le dans `extra`.',
+      );
+      return true;
+    }());
+    return <String, dynamic>{
+      for (final e in map.entries)
+        if (!reservedKeys.contains(e.key)) e.key: e.value,
+    };
+  }
+
+  /// Clés RÉSERVÉES qu'un corps métier porterait à tort (CR-IFFD-14).
+  ///
+  /// La collision est **probable** : `updatedAt` est l'un des noms les plus
+  /// répandus des modèles applicatifs, et un hôte peut légitimement porter un
+  /// « dernière modification par l'utilisateur » — qui n'est PAS l'estampille
+  /// Last-Write-Wins. Le contrat de clé réservée n'est pas remis en cause ; ce
+  /// qui l'est, c'est que l'écrasement soit **muet**.
+  ///
+  /// Exposé pour qu'un hôte puisse **vérifier avant d'écrire** plutôt que de
+  /// découvrir la perte en production :
+  ///
+  /// ```dart
+  /// final collided = ZSyncMeta.collidingReservedKeys(monEntite.toMap());
+  /// if (collided.isNotEmpty) { /* renommer, ou porter dans `extra` */ }
+  /// ```
+  ///
+  /// En debug, [stripReserved] journalise déjà la collision ; cette fonction
+  /// permet de la traiter **programmatiquement**, y compris en release.
+  static Set<String> collidingReservedKeys(Map<String, dynamic> map) =>
+      <String>{
+        for (final k in map.keys)
+          if (reservedKeys.contains(k)) k,
       };
 
   /// Clé de merge Last-Write-Wins (AD-9), ou `null` si jamais synchronisé.

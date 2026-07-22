@@ -56,6 +56,7 @@ class ZTextConfig extends ZFieldConfig {
     this.maxLines,
     this.keyboardType,
     this.capitalization = ZTextCapitalization.none,
+    this.textTransform,
   });
 
   /// Nombre minimal de lignes affichées.
@@ -71,6 +72,50 @@ class ZTextConfig extends ZFieldConfig {
   /// (aucun formateur — le champ texte conserve exactement son rendu antérieur).
   final ZTextCapitalization capitalization;
 
+  /// Transformation de saisie **injectable par l'hôte** (CR-IFFD-13).
+  ///
+  /// ## Pourquoi une fonction, et non un mode de plus dans [ZTextCapitalization]
+  ///
+  /// La demande initiale était un mode « première lettre seule ». L'ajouter
+  /// n'aurait résolu que le cas d'un hôte : le suivant arrive avec sa propre
+  /// règle (code pays en majuscules, référence normalisée, numéro formaté…),
+  /// donc un mode de plus, indéfiniment. Une transformation injectable couvre
+  /// tout le reste — **y compris les besoins qu'aucune app n'a encore
+  /// exprimés** — et la règle vit là où elle appartient : dans l'application qui
+  /// la possède.
+  ///
+  /// ## Pourquoi `String Function(String)` et non des `inputFormatters`
+  ///
+  /// `TextInputFormatter` est un type **Flutter**, et cette configuration est du
+  /// **domaine pur** : c'est la raison pour laquelle [keyboardType] est une
+  /// `String` opaque et non un `TextInputType`. Une fonction pure porte la même
+  /// capacité sans faire fuiter Flutter dans le domaine (AD-15) ; la
+  /// présentation l'enveloppe dans un `TextInputFormatter`.
+  ///
+  /// ## Contrat
+  ///
+  /// **PURE et TOTALE** : même entrée ⇒ même sortie, jamais d'exception, aucun
+  /// effet de bord. Appliquée **APRÈS** [capitalization] si les deux sont
+  /// fournies — l'hôte a le dernier mot.
+  ///
+  /// ⚠️ **S'applique à la SAISIE, pas à la valeur soumise.** Une valeur
+  /// préremplie et jamais touchée ressort **inchangée** — c'est le comportement
+  /// d'un `TextInputFormatter`, et il est délibéré : transformer en sortie
+  /// modifierait des données que l'utilisateur n'a pas éditées.
+  ///
+  /// ⚠️ Une transformation qui **change la longueur** du texte déplace
+  /// nécessairement le curseur ; il est alors ramené dans les bornes. Une
+  /// transformation qui préserve la longueur (casse) préserve la position exacte.
+  ///
+  /// ```dart
+  /// // « première lettre seule » — le cas d'IFFD, exprimé par l'hôte :
+  /// ZTextConfig(
+  ///   textTransform: (s) =>
+  ///       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1),
+  /// )
+  /// ```
+  final String Function(String value)? textTransform;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -79,11 +124,13 @@ class ZTextConfig extends ZFieldConfig {
           minLines == other.minLines &&
           maxLines == other.maxLines &&
           keyboardType == other.keyboardType &&
-          capitalization == other.capitalization;
+          capitalization == other.capitalization &&
+          textTransform == other.textTransform;
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, minLines, maxLines, keyboardType, capitalization);
+      Object.hash(runtimeType, minLines, maxLines, keyboardType, capitalization,
+          textTransform);
 }
 
 /// Config triviale pur-cœur des champs **numériques**

@@ -122,6 +122,10 @@ export 'src/presentation/z_reorder_ids.dart';
 export 'src/presentation/z_sectioned_study_layout.dart';
 export 'src/presentation/z_study_mindmap_section.dart';
 export 'src/presentation/z_study_tools_page.dart';
+// CR-IFFD-16 (voie B) — carte d'item de BASE à slots : le socle fournit la
+// structure et l'accessibilite (>= 48 dp, Semantics, RTL) une fois pour toutes ;
+// la semantique metier de l'hote arrive par les slots.
+export 'src/presentation/z_study_tools_item_card.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';
 export 'src/presentation/z_tag_chips.dart';
 export 'src/presentation/z_tag_editor.dart';

@@ -113,6 +113,11 @@ class ZTextFieldWidget extends StatelessWidget {
     final capitalization = isPassword
         ? ZTextCapitalization.none
         : (config?.capitalization ?? ZTextCapitalization.none);
+    // CR-IFFD-13 — transformation INJECTÉE par l'hôte, appliquée APRÈS la
+    // capitalisation (l'hôte a le dernier mot). Jamais sur un mot de passe.
+    final transform = isPassword ? null : config?.textTransform;
+    final hasFormatter =
+        capitalization != ZTextCapitalization.none || transform != null;
 
     return TextFormField(
       controller: controller,
@@ -122,9 +127,11 @@ class ZTextFieldWidget extends StatelessWidget {
       maxLines: effectiveMaxLines,
       keyboardType: keyboardType,
       textCapitalization: _keyboardHint(capitalization),
-      inputFormatters: capitalization == ZTextCapitalization.none
-          ? null
-          : <TextInputFormatter>[_ZCapitalizationFormatter(capitalization)],
+      inputFormatters: hasFormatter
+          ? <TextInputFormatter>[
+              _ZTextTransformFormatter(capitalization, transform),
+            ]
+          : null,
       style: ZcrudTheme.of(context).inputTextStyle,
       readOnly: field.readOnly,
       // Validation CIBLÉE PAR CHAMP (AD-2) — jamais de `Form` global.
@@ -154,22 +161,40 @@ TextCapitalization _keyboardHint(ZTextCapitalization c) => switch (c) {
 /// **SM-1 / AD-2 préservés** : toutes les transformations ne changent QUE la
 /// casse, jamais la longueur — la position du curseur ([TextEditingValue.selection])
 /// reste donc valide et est conservée telle quelle (aucun saut de curseur).
-class _ZCapitalizationFormatter extends TextInputFormatter {
-  const _ZCapitalizationFormatter(this.mode);
+class _ZTextTransformFormatter extends TextInputFormatter {
+  const _ZTextTransformFormatter(this.mode, this.transform);
 
   final ZTextCapitalization mode;
+
+  /// Transformation injectée par l'hôte (CR-IFFD-13), appliquée APRÈS [mode].
+  final String Function(String)? transform;
 
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final formatted = _apply(newValue.text);
+    var formatted = _apply(newValue.text);
+    final custom = transform;
+    if (custom != null) {
+      // DÉFENSIF (AD-10) : une transformation d'hôte qui lève ne doit pas
+      // casser la saisie — on retombe sur le texte non transformé.
+      try {
+        formatted = custom(formatted);
+      } on Object {
+        // Silencieux et total : la frappe continue.
+      }
+    }
     if (formatted == newValue.text) return newValue;
-    // Casse seule ⇒ longueur inchangée ⇒ la sélection reste valide.
+    // Une transformation d'hôte PEUT changer la longueur (la casse, non) : on
+    // ramène l'offset dans les bornes plutôt que de lever `RangeError`.
+    final offset = newValue.selection.baseOffset;
+    final safe = offset < 0 || offset > formatted.length
+        ? formatted.length
+        : offset;
     return TextEditingValue(
       text: formatted,
-      selection: newValue.selection,
+      selection: TextSelection.collapsed(offset: safe),
       composing: TextRange.empty,
     );
   }

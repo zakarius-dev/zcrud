@@ -12,7 +12,7 @@
 # manager-spécifique (provider) vit EXCLUSIVEMENT ici (AD-6/AD-15).
 name: zcrud_provider
 description: "provider state and injection binding for zcrud (optional). Completes the multi-state-manager matrix."
-version: 0.4.5
+version: 0.4.6
 publish_to: none
 resolution: workspace
 
@@ -29,7 +29,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
-  zcrud_core: ^0.4.5
+  zcrud_core: ^0.4.6
   flutter:
     sdk: flutter
   provider: ^6.1.2

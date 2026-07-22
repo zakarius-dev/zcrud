@@ -94,6 +94,9 @@ class ZStudyLegacyCodec {
   ///   qualité de la dernière révision est silencieusement perdue.
   ///   ⚠️ À ne pas confondre avec [syncMetaKeyAliases], qui vise les clés
   ///   **réservées** hors-entité ; ici la cible est une clé **métier** ordinaire.
+  /// - [preserveAbsenceUnder] (**CR-IFFD-12**) : champs (nom canonique
+  ///   snake_case **ou** legacy) dont l'**ABSENCE** doit survivre à la migration
+  ///   vers un domaine qui ne sait pas la représenter. Cf. [kAbsentFieldsKey].
   const ZStudyLegacyCodec({
     Map<String, ZLegacyValueMapper> valueMappers =
         const <String, ZLegacyValueMapper>{},
@@ -102,7 +105,9 @@ class ZStudyLegacyCodec {
     Map<String, String> keyAliases = const <String, String>{},
     bool recurseNested = false,
     Set<String> opaqueKeys = const <String>{},
+    Set<String> preserveAbsenceUnder = const <String>{},
   })  : _valueMappers = valueMappers,
+        _preserveAbsenceUnder = preserveAbsenceUnder,
         _preserveLegacyUnder = preserveLegacyUnder,
         _syncMetaKeyAliases = syncMetaKeyAliases,
         _keyAliases = keyAliases,
@@ -115,6 +120,7 @@ class ZStudyLegacyCodec {
   final Map<String, String> _keyAliases;
   final bool _recurseNested;
   final Set<String> _opaqueKeys;
+  final Set<String> _preserveAbsenceUnder;
 
   /// Table de renommage sémantique de clés MÉTIER (CR-IFFD-5), exposée pour que
   /// [ZLegacyStudyMigrator] puisse (a) créditer le census R26 sur la clé CIBLE —
@@ -160,6 +166,32 @@ class ZStudyLegacyCodec {
   /// porte la ou les valeurs écartées. Une collision n'est ainsi jamais
   /// silencieuse — le silence était le pire des comportements possibles.
   static const String kAliasCollisionsKey = '${kLegacyPrefix}alias_collisions';
+
+  /// Clé de survie listant les champs qui étaient **ABSENTS** (ou `null`) dans
+  /// le document legacy (**CR-IFFD-12**).
+  ///
+  /// **Le motif générique** : toute migration d'un schéma legacy *permissif*
+  /// vers un domaine *strict* perd une distinction que la cible ne porte pas.
+  /// Ici : les entités `zcrud_*` rendent non-nullables des champs que les hôtes
+  /// portent en nullable (`folderId`, `title`, `question`…), avec `''` pour
+  /// défaut — « jamais renseigné » et « vidé volontairement » deviennent
+  /// **indiscernables**. Cinq cutovers ont posé cinq fois le même contournement.
+  ///
+  /// La réponse retenue est celle de [kLegacyPrefix] : **ne pas assouplir le
+  /// domaine** (il est strict à dessein), mais préserver l'information écartée
+  /// dans une clé de survie. Décodée, cette clé inconnue retombe dans
+  /// l'échappatoire `extra` de l'entité — l'hôte y lit la distinction et
+  /// [toLegacy] la restitue en `null`.
+  ///
+  /// **Une liste, pas N clés** : un marqueur par champ multiplierait les clés
+  /// sur un corpus large ; la liste est vide-donc-absente dans le cas nominal.
+  ///
+  /// ⚠️ **Cumulative entre passages.** Au 2ᵉ passage le champ vaut `''` et non
+  /// plus `null` : recalculer la liste l'effacerait, et l'absence — que cette
+  /// clé existe pour retenir — serait perdue au moment même où on la relit.
+  /// [toCanonical] fusionne donc avec la liste déjà présente. C'est la même
+  /// classe de défaut que CR-IFFD-7 (la détection doit refléter la conversion).
+  static const String kAbsentFieldsKey = '${kLegacyPrefix}absent_fields';
 
   /// Priorité d'une clé source sur sa cible canonique (CR-IFFD-6). **0 gagne.**
   ///
@@ -286,6 +318,32 @@ class ZStudyLegacyCodec {
     // déjà présente (putIfAbsent).
     out.putIfAbsent(ZSyncMeta.kIsDeleted, () => false);
 
+    // CR-IFFD-12 — préservation de l'ABSENCE. Un champ déclaré est « absent »
+    // s'il manque du document legacy OU s'il y vaut `null` : le domaine cible
+    // le rendra `''` dans les deux cas, et la distinction serait perdue là.
+    if (_preserveAbsenceUnder.isNotEmpty) {
+      final absent = <String>{};
+      // CUMULATIF (cf. [kAbsentFieldsKey]) : au 2ᵉ passage la valeur vaut déjà
+      // `''` — recalculer seul EFFACERAIT le marqueur du 1ᵉʳ passage.
+      final prior = legacy[kAbsentFieldsKey];
+      if (prior is List) {
+        for (final e in prior) {
+          if (e is String) absent.add(e);
+        }
+      }
+      for (final field in _preserveAbsenceUnder) {
+        final canonical = _keyAliases[field] ?? camelToSnake(field);
+        // La forme legacy ET la forme canonique sont consultées : l'hôte
+        // déclare l'une ou l'autre, comme pour `preserveLegacyUnder`.
+        final present = legacy.containsKey(field) && legacy[field] != null ||
+            legacy.containsKey(canonical) && legacy[canonical] != null;
+        if (!present) absent.add(canonical);
+      }
+      if (absent.isNotEmpty) {
+        out[kAbsentFieldsKey] = absent.toList()..sort();
+      }
+    }
+
     // CR-IFFD-6 — une collision d'alias n'est JAMAIS silencieuse : les cibles
     // disputées sont journalisées sous une clé de survie dédiée, inspectable et
     // relevée par le rapport de migration.
@@ -300,6 +358,15 @@ class ZStudyLegacyCodec {
   /// de survie (`_legacy_…`) restent **intactes** (elles n'ont pas de forme
   /// camelCase legacy — concern de store / survie codec).
   Map<String, dynamic> toLegacy(Map<String, dynamic> canonical) {
+    // CR-IFFD-12 — restitution de l'ABSENCE : les champs listés retrouvent
+    // `null`, la valeur que le domaine strict avait dû rendre `''`.
+    final absent = <String>{};
+    final marker = canonical[kAbsentFieldsKey];
+    if (marker is List) {
+      for (final e in marker) {
+        if (e is String) absent.add(e);
+      }
+    }
     final out = <String, dynamic>{};
     for (final entry in canonical.entries) {
       final key = entry.key;
@@ -307,7 +374,12 @@ class ZStudyLegacyCodec {
         out[key] = entry.value;
         continue;
       }
-      out[snakeToCamel(key)] = entry.value;
+      // Restitution CONSERVATRICE : seule une valeur devenue `''` est rendue à
+      // `null`. Si l'hôte a depuis renseigné le champ, la saisie l'emporte sur
+      // un marqueur d'absence devenu périmé — sinon la migration écraserait une
+      // donnée réelle par `null`.
+      final restore = absent.contains(key) && entry.value == '';
+      out[snakeToCamel(key)] = restore ? null : entry.value;
     }
     return out;
   }

@@ -14,7 +14,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
-import 'package:zcrud_responsive/zcrud_responsive.dart' show ZAdaptiveGrid;
+import 'package:zcrud_responsive/zcrud_responsive.dart'
+    show ZAdaptiveGrid, ZReorderableAdaptiveGrid;
 
 import 'z_reorder_ids.dart';
 import 'z_study_tools_section_spec.dart';
@@ -33,6 +34,15 @@ const IconData _kAddActionFallbackIcon = Icons.add;
 /// a11y) reste, elle, TOUJOURS injectée (`reorderHandleSemanticLabel`, i18n) :
 /// aucun libellé n'est jamais codé en dur (AD-13/FR-26).
 const IconData _kDragHandleFallbackIcon = Icons.drag_handle;
+
+/// Libellés de REPLI des actions sémantiques de la grille réordonnable
+/// (CR-IFFD-15). MÊME patron toléré et documenté que `'Replier'`/`'Déplier'`
+/// (CR-IFFD-11 §3) : dès qu'un libellé est INJECTÉ
+/// (`reorderMoveBeforeSemanticLabel`/`reorderMoveAfterSemanticLabel`), il prime.
+const String _kMoveBeforeFallbackLabel = 'Déplacer avant';
+
+/// Voir [_kMoveBeforeFallbackLabel].
+const String _kMoveAfterFallbackLabel = 'Déplacer après';
 
 /// Rend une liste de sections « study tools » décomposée.
 ///
@@ -120,28 +130,27 @@ class _ZStudySection extends StatelessWidget {
   Widget _buildItems(BuildContext context, ZcrudTheme theme) {
     // ES-5.3 — réordonnabilité UNIQUEMENT sur les grilles verticales. `null` =
     // capacité absente (AD-4) ⇒ rendu ES-5.2 inchangé (non-régression).
-    // CR-IFFD-11 §1 — RÉORDONNANCEMENT et GRILLE sont EXCLUSIFS, et cette
-    // exclusivité est désormais SIGNALÉE au lieu de dégrader en silence.
     //
-    // Le réordonnancement s'appuie sur `ReorderableListView` du **SDK Flutter**,
-    // qui ne sait pas disposer en grille ; une grille réordonnable exigerait le
-    // paquet tiers `reorderable_grid_view`, explicitement REFUSÉ (AD-1, décision
-    // documentée sur `_ReorderableItemList`), ou une implémentation maison du
-    // drag-and-drop bidimensionnel — un chantier à part entière, pas un défaut à
-    // corriger au passage.
+    // CR-IFFD-15 (voie A/C) — RÉORDONNANCEMENT et GRILLE ne sont PLUS exclusifs.
+    // L'ancien `assert` d'exclusivité a disparu : la coexistence de `onReorder`
+    // et de `crossAxisMinItemWidth` PRODUIT désormais une grille multi-colonnes
+    // réordonnable, par **activation implicite** (aucun changement d'API hôte).
     //
-    // Ce qui EST corrigé ici : jusqu'à présent, déclarer les deux donnait
-    // silencieusement une liste mono-colonne — le `crossAxisMinItemWidth` était
-    // ignoré sans un mot. Un `assert` le signale maintenant en debug.
+    // La capacité a été remontée dans le socle : `ZReorderableAdaptiveGrid`
+    // (`zcrud_responsive`) est bâtie sur le SEUL SDK (`LongPressDraggable` /
+    // `DragTarget` / `Scrollable`) — le paquet tiers `reorderable_grid_view`
+    // reste REFUSÉ (AD-1) — et délègue le calcul de colonnes à `ZAdaptiveGrid`,
+    // donc à `computeCrossAxisCount` (aucune réimplémentation).
+    //
+    // ⚠️ Seule exclusivité restante : réordonner + VIRTUALISER. Une cellule non
+    // construite ne peut pas être une cible de dépôt ; en cas de conflit, la
+    // réordonnabilité l'emporte et la grille est rendue *eager* (documenté sur
+    // `ZStudyToolsSectionSpec.crossAxisMinItemWidth`, jamais silencieux).
     if (spec.axis == Axis.vertical && spec.onReorder != null) {
-      assert(
-        spec.crossAxisMinItemWidth == null,
-        'ZStudyToolsSectionSpec(id: ${spec.id}) : `onReorder` et '
-        '`crossAxisMinItemWidth` sont EXCLUSIFS. Le reordonnancement s\'appuie '
-        'sur ReorderableListView (SDK Flutter), qui ne dispose pas en grille — '
-        'le rendu sera une liste MONO-COLONNE et `crossAxisMinItemWidth` sera '
-        'ignore. Choisissez : reordonnable OU multi-colonnes.',
-      );
+      final reorderableMinWidth = spec.crossAxisMinItemWidth;
+      if (reorderableMinWidth != null && reorderableMinWidth > 0) {
+        return _reorderableGrid(context, theme, reorderableMinWidth);
+      }
       return _ReorderableItemList(spec: spec, theme: theme);
     }
     if (spec.axis == Axis.horizontal) {
@@ -209,6 +218,35 @@ class _ZStudySection extends StatelessWidget {
     }
     return _singleColumn(context, theme);
   }
+
+  /// Grille MULTI-COLONNES **RÉORDONNABLE** (CR-IFFD-15) — primitive du socle.
+  ///
+  /// L'ordre optimiste, le geste d'appui long, les actions sémantiques et
+  /// l'autoscroll vivent dans `ZReorderableAdaptiveGrid` : ce layout ne fait que
+  /// **câbler** le descripteur. Les indices de `onReorder` sont dans la MÊME
+  /// convention `removeAt`/`insert` que le mode liste (`zReorderIds`) — l'hôte
+  /// persiste à l'identique quel que soit le mode de rendu.
+  Widget _reorderableGrid(
+    BuildContext context,
+    ZcrudTheme theme,
+    double minWidth,
+  ) =>
+      ZReorderableAdaptiveGrid(
+        itemIds: spec.itemIds!,
+        itemBuilder: spec.itemBuilder,
+        onReorder: spec.onReorder!,
+        minItemWidth: minWidth,
+        spacing: theme.gapS,
+        itemHeight: spec.crossAxisItemHeight,
+        aspectRatio:
+            spec.crossAxisItemHeight == null ? spec.crossAxisAspectRatio : null,
+        // Libellés INJECTÉS, avec repli neutre documenté — MÊME patron que
+        // `collapseSemanticLabel`/`expandSemanticLabel` (CR-IFFD-11 §3).
+        moveBeforeSemanticLabel:
+            spec.reorderMoveBeforeSemanticLabel ?? _kMoveBeforeFallbackLabel,
+        moveAfterSemanticLabel:
+            spec.reorderMoveAfterSemanticLabel ?? _kMoveAfterFallbackLabel,
+      );
 
   /// Grille EAGER — imbriquée dans le défilement de la page (rendu par défaut).
   Widget _eagerGrid(BuildContext context, ZcrudTheme theme, double minWidth) =>

@@ -10,7 +10,11 @@
 /// * [ZResponsiveLayout] (EX-UI.2) : aiguilleur à 3 builders (compact/medium/
 ///   expanded) en cascade descendante, mesure **locale** via `LayoutBuilder` ;
 /// * [computeCrossAxisCount] + [ZAdaptiveGrid] (EX-UI.3) : nombre de colonnes borné
-///   (**clamp ≥ 1** — anti-bug iffd) et grille d'items par largeur-min.
+///   (**clamp ≥ 1** — anti-bug iffd) et grille d'items par largeur-min ;
+/// * [ZReorderableAdaptiveGrid] (CR-IFFD-15) : la MÊME grille, **réordonnable**
+///   par appui long (+ actions sémantiques a11y), autoscroll de bord, ordre
+///   LINÉAIRE inter-lignes — bâtie **sur** [ZAdaptiveGrid] (donc sur
+///   [computeCrossAxisCount]) et **sur le seul SDK** (aucun paquet tiers, AD-1).
 ///
 /// **Dépendance (AD-29 AMENDÉ — réconciliation E3-4, Option A)** : ce package
 /// **dépend de `zcrud_core`** et **RÉUTILISE** ses primitives responsives —
@@ -48,4 +52,5 @@ export 'src/domain/z_window_size_class.dart';
 // EX-UI.2 [ZResponsiveLayout] (3 builders, cascade descendante) ;
 // EX-UI.3 [ZAdaptiveGrid] (grille d'items par largeur-min, garde vide→shrink).
 export 'src/presentation/z_adaptive_grid.dart';
+export 'src/presentation/z_reorderable_adaptive_grid.dart';
 export 'src/presentation/z_responsive_layout.dart';
