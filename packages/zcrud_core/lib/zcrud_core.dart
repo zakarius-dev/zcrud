@@ -31,6 +31,12 @@ export 'domain.dart';
 // widgets par famille (texte/nombre/date/booléen/select/relation) + repli
 // contrôlé `ZUnsupportedFieldWidget` (types servis ailleurs — E3-3b/E3-3c/
 // registre). Place stable garantie par `DynamicEdition` (KeyedSubtree, L3/AC7).
+// AD-57 — port de ZONE DE DEPOT NATIVE (fichiers de l'OS, echange inter-apps) :
+// abstraction pure au coeur + defaut zero-dependance `ZNoDropRegionRenderer`.
+// L'implementation native vit dans le satellite OPT-IN `zcrud_dnd` : son backend
+// impose une chaine de build native, que le coeur n'inflige a personne.
+export 'src/presentation/dnd/z_drop_region_renderer.dart';
+export 'src/presentation/dnd/z_drop_region_request.dart';
 export 'src/presentation/edition/dynamic_edition.dart';
 export 'src/presentation/edition/edition_field_family.dart';
 export 'src/presentation/edition/families/z_app_file_field_widget.dart';
@@ -158,6 +164,7 @@ export 'src/presentation/list/z_list_selection.dart';
 export 'src/presentation/list/z_list_tab.dart';
 export 'src/presentation/list/z_list_view_state.dart';
 export 'src/presentation/list/z_row_action.dart';
+
 // Composition de listes (E4-5, étend FR-6 · AD-8/AD-16/AD-2/AD-15/SM-5) :
 // `ZSubListScreen<T>` (sous-liste d'entités RELIÉES filtrée par la relation
 // neutre `ZFilter(parentField, eq, parentId)` en `baseFilters` PERSISTANTS ;
@@ -169,6 +176,11 @@ export 'src/presentation/list/z_row_action.dart';
 // E3-3b-2 (`z_sub_list_field_widget.dart`). Aucun Syncfusion/backend (SM-5).
 export 'src/presentation/list/z_sub_list_screen.dart';
 export 'src/presentation/list/z_tabbed_list.dart';
+// AD-57 — port de rendu REORDONNABLE : abstraction pure au coeur, implementations
+// hors coeur (repli zero-dependance dans zcrud_responsive, satellite adosse a un
+// paquet de l'ecosysteme, ou impl de l'hote). Aucun type tiers en surface.
+export 'src/presentation/reorder/z_reorder_render_request.dart';
+export 'src/presentation/reorder/z_reorder_renderer.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';

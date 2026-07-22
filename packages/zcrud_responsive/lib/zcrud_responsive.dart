@@ -52,5 +52,9 @@ export 'src/domain/z_window_size_class.dart';
 // EX-UI.2 [ZResponsiveLayout] (3 builders, cascade descendante) ;
 // EX-UI.3 [ZAdaptiveGrid] (grille d'items par largeur-min, garde vide→shrink).
 export 'src/presentation/z_adaptive_grid.dart';
+// AD-57 — repli ZERO-DEPENDANCE du port `ZReorderRenderer` (defini dans
+// zcrud_core). C'est le plancher garanti : un hote qui n'installe aucun
+// satellite garde une capacite fonctionnelle.
+export 'src/presentation/z_default_reorder_renderer.dart';
 export 'src/presentation/z_reorderable_adaptive_grid.dart';
 export 'src/presentation/z_responsive_layout.dart';

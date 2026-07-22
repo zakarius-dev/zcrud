@@ -58,6 +58,13 @@ workspace:
   # ZResponsiveBreakpoints), jamais redéclarés — AD-29 amendé (réconciliation
   # E3-4, Option A). Arête SORTANTE vers le cœur (entrante au cœur) : CORE OUT=0
   # intact ; ACYCLIQUE.
+  # AD-57 — satellites OPT-IN adosses a un paquet de l'ecosysteme pub.dev, chacun
+  # derriere une abstraction du coeur et avec un repli zero-dependance ailleurs.
+  # `zcrud_reorder` : backend de ZReorderRenderer (reordonnancement INTERNE).
+  # `zcrud_dnd` : drag-and-drop NATIF (fichiers de l'OS, echange inter-apps) —
+  # capacite DISTINCTE, isolee car elle impose une chaine de build native.
+  - packages/zcrud_reorder
+  - packages/zcrud_dnd
   - packages/zcrud_responsive
   # EX-UI.5 : navigation UI transverse. Pose le maillon AD-30 —
   # ZEditionPresentation (enum { page, sheet, dialog }) + ZFormWeight (enum) +

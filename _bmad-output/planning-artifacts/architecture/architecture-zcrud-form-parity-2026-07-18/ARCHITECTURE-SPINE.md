@@ -304,6 +304,37 @@ sens conservateur (option native / isolation) ; le PRD les référence déjà co
 | Voie HTML | Deux voies possibles (Delta vs WYSIWYG) | **Exclusivité** `zcrud_markdown` (Delta) **xor** `zcrud_html` (WYSIWYG) sur `html`/`inlineHtml` (AD-50) | La registration `throw` en collision ; l'app choisit une voie au bootstrap |
 | Section « boîte grise » | Parité visuelle possible (OQ-1) | **Header sobre thémé** par défaut (AD-54) | FR-26 refuse le gris codé en dur ; parité fonctionnelle ; strict = OQ-1 owner |
 
+### AD-57 — Paquets tiers ADMIS dans les satellites, derrière une abstraction et un défaut zéro-dépendance
+
+- **Binds:** AD-1, AD-7, AD-8 ; FR-24.
+- **Prevents:** la sur-lecture d'AD-1 comme un bannissement général des paquets tiers ; la
+  réimplémentation maison de capacités déjà résolues par l'écosystème ; et, à l'inverse, l'imposition
+  d'une dépendance lourde à tout consommateur d'un paquet léger.
+- **Contexte (incident fondateur)** — AD-1 ne contraint que **`zcrud_core`**. Un commentaire de code a
+  pourtant énoncé qu'un paquet tiers était « refusé par AD-1 », l'affirmation a été reprise dans deux
+  handoffs, puis a servi à justifier un **drag-and-drop bidimensionnel écrit à la main** — alors que
+  **15 satellites** dépendaient déjà de paquets pub.dev (`graphite`, `pinput`, `html_editor_enhanced`,
+  `image_cropper`, `confetti`…). La règle est écrite ici pour que cette lecture ne se reforme pas.
+- **Rule:** un paquet **satellite** PEUT dépendre d'un paquet tiers pub.dev, sous **trois** conditions
+  cumulatives :
+  1. **Jamais dans `zcrud_core`** — AD-1 reste intact et non négociable.
+  2. **Derrière une abstraction** portée par le paquet léger (patron AD-7 `ZCodec` / AD-8
+     `ZListRenderer`) : le tiers est une **implémentation** du port, jamais le type public que
+     l'hôte manipule. Aucun type du paquet tiers ne fuit dans une signature publique du socle.
+  3. **Défaut zéro-dépendance obligatoire** : le port a toujours une implémentation de repli
+     n'exigeant que le SDK Flutter. Un consommateur qui ne prend pas le satellite garde une
+     capacité fonctionnelle — dégradée, jamais absente.
+- **Corollaire — quand créer un satellite « extras »** : lorsque la capacité est **déterminante**
+  (elle change ce que l'application peut faire, pas seulement son apparence) ET que l'écosystème la
+  résout mieux qu'une implémentation de passage. Le socle mutualise alors l'**intégration** une fois
+  pour toutes, au lieu de la laisser à chaque hôte.
+- **Contrainte de build à peser explicitement** : un tiers imposant une chaîne de compilation
+  (code natif, Rust, binaires précompilés) s'impose au build de **toutes** les applications
+  consommatrices — la distribution se fait en dépendance git, sans étape de publication qui
+  l'absorberait. Ce coût doit être énoncé dans la décision, jamais découvert par l'hôte.
+- **Ce qui reste interdit** : un paquet tiers en dépendance de `zcrud_core` ; un type tiers dans une
+  API publique du socle ; un satellite sans repli qui rendrait une capacité indisponible.
+
 ## Deferred
 
 - **OQ-1 (owner)** — parité visuelle **stricte** des sections (boîte grise) : déclencherait des tokens

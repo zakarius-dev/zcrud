@@ -1,0 +1,48 @@
+# zcrud_dnd — membre du workspace zcrud (resolution: workspace).
+#
+# Satellite OPT-IN d'AD-57 : drag-and-drop NATIF, c'est-à-dire l'échange de
+# données avec le SYSTÈME et les autres applications (déposer un fichier de
+# l'explorateur sur une carte, glisser un contenu vers une autre app).
+#
+# ⚠️ À NE PAS CONFONDRE avec `zcrud_reorder` : réordonner une collection est un
+# geste INTERNE à l'application, et n'a rien à voir avec ce paquet. Les deux
+# capacités ont été distinguées délibérément — les mélanger aurait imposé une
+# chaîne de compilation native à des hôtes qui veulent seulement réordonner.
+#
+# ⚠️ COÛT DE BUILD, à connaître avant d'ajouter cette dépendance (AD-57) :
+# `super_drag_and_drop` embarque du code natif (Rust) et télécharge des binaires
+# précompilés à la construction. Comme zcrud est distribué en DÉPENDANCE GIT —
+# sans étape de publication qui absorberait ce coût — cette contrainte s'impose
+# au build de toute application consommatrice. C'est la raison pour laquelle la
+# capacité vit dans un package SÉPARÉ et opt-in.
+#
+# AD-1 : arête SORTANTE vers zcrud_core uniquement (entrante au cœur ;
+# CORE OUT=0 intact). AUCUN gestionnaire d'état, AUCUN routeur.
+name: zcrud_dnd
+description: "Opt-in native drag-and-drop surfaces for zcrud (OS-level file drops and cross-application data exchange), backed by super_drag_and_drop. Separate from in-app reordering."
+version: 0.5.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_dnd
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - drag-and-drop
+  - files
+  - desktop
+  - ui
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  zcrud_core: ^0.5.0
+  flutter:
+    sdk: flutter
+  super_drag_and_drop: ^0.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

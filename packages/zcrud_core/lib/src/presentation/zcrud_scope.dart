@@ -14,6 +14,7 @@ import '../domain/ports/z_acl.dart';
 import '../domain/ports/z_choices_source.dart';
 import '../domain/ports/z_relation_crud.dart';
 import '../domain/ports/z_relation_source.dart';
+import 'dnd/z_drop_region_renderer.dart';
 import 'edition/families/z_color_field_widget.dart';
 import 'edition/z_field_adornment_view.dart';
 import 'edition/z_file_picker.dart';
@@ -21,6 +22,7 @@ import 'edition/z_select_presenter.dart';
 import 'edition/z_widget_registry.dart';
 import 'l10n/z_labels.dart';
 import 'list/z_list_renderer.dart';
+import 'reorder/z_reorder_renderer.dart';
 import 'theme/z_color_key_resolver.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
@@ -63,6 +65,8 @@ class ZcrudScope extends InheritedWidget {
     this.filePicker,
     this.cloudStorage,
     this.listRenderer,
+    this.reorderRenderer,
+    this.dropRegionRenderer,
     this.selectPresenter,
     this.iconResolver,
     this.colorPicker,
@@ -129,6 +133,27 @@ class ZcrudScope extends InheritedWidget {
   /// backend Material `DataTable` reste implémentable sur le même port. Jamais
   /// un singleton statique mutable.
   final ZListRenderer? listRenderer;
+
+  /// Seam de **rendu réordonnable** (AD-57 ; défaut `null` → le repli
+  /// zéro-dépendance de `zcrud_responsive` s'applique, donc AUCUNE régression
+  /// pour un hôte qui n'injecte rien).
+  ///
+  /// Contrairement à [listRenderer], l'absence d'injection ne lève PAS : la
+  /// capacité reste **fonctionnelle**, seulement non spécialisée — c'est
+  /// l'exigence de défaut zéro-dépendance d'AD-57. Injecter permet de brancher
+  /// un satellite adossé à un paquet de l'écosystème, ou une implémentation
+  /// propre à l'application. Jamais un singleton statique mutable.
+  final ZReorderRenderer? reorderRenderer;
+
+  /// Seam de **zone de depot NATIVE** (AD-57 ; defaut `null` ->
+  /// [ZNoDropRegionRenderer], qui rend le contenu SANS capacite de depot).
+  ///
+  /// Capacite DISTINCTE du reordonnancement : recevoir un fichier du systeme ou
+  /// d'une autre application. Elle est isolee dans le satellite opt-in
+  /// `zcrud_dnd` parce que son backend impose une CHAINE DE BUILD NATIVE a
+  /// toute application consommatrice — cout qu'un hote sans besoin de depot ne
+  /// doit pas payer. Jamais un singleton statique mutable.
+  final ZDropRegionRenderer? dropRegionRenderer;
 
   /// Seam de **présentation riche des familles de sélection** (AD-48 ; défaut
   /// `null` → rendu **natif** zcrud strictement conservé). Injecté par l'app/le

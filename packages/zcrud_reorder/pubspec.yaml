@@ -1,0 +1,56 @@
+# zcrud_reorder — membre du workspace zcrud (resolution: workspace).
+#
+# Satellite OPT-IN d'AD-57 : implémentation du port `ZReorderRenderer`
+# (défini dans zcrud_core) adossée à un paquet de l'écosystème pub.dev.
+#
+# Pourquoi ce package existe — une grille réordonnable avait d'abord été écrite
+# à la main au motif ERRONÉ qu'un paquet tiers serait « refusé par AD-1 ». AD-1
+# ne contraint que `zcrud_core` ; quinze satellites dépendaient déjà de paquets
+# pub.dev. AD-57 fixe la règle : tiers ADMIS dans un satellite, derrière une
+# abstraction, avec un défaut zéro-dépendance ailleurs.
+#
+# ⚠️ C'est ici — et NULLE PART ailleurs — que la dépendance tierce de
+# réordonnancement est déclarée. Un consommateur qui n'installe pas ce package
+# garde le repli `ZDefaultReorderRenderer` de zcrud_responsive : la capacité est
+# dégradée, jamais absente.
+#
+# AD-1 : arêtes SORTANTES vers zcrud_core ET zcrud_responsive (satellite →
+# satellite, acyclique ; CORE OUT=0 intact — cf. la justification sur le bloc
+# `dependencies:`). AUCUN gestionnaire d'état, AUCUN routeur.
+name: zcrud_reorder
+description: "Opt-in ZReorderRenderer backend for zcrud, backed by an ecosystem reorderable-grid package. Hosts that do not install it keep the zero-dependency fallback from zcrud_responsive."
+version: 0.5.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_reorder
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - reorderable
+  - grid
+  - drag-and-drop
+  - ui
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  zcrud_core: ^0.5.0
+  flutter:
+    sdk: flutter
+  reorderable_grid_view: ^2.2.8
+  # Arête SATELLITE → SATELLITE, ACYCLIQUE (`zcrud_responsive -> zcrud_core`
+  # seulement ; il ne dépend PAS de zcrud_reorder) — même patron que
+  # `zcrud_navigation -> zcrud_responsive`. Motif : réutiliser la primitive de
+  # colonnes `computeCrossAxisCount` (EX-UI.3) plutôt que d'écrire un SECOND
+  # calcul de colonnes divergent. C'est aussi ce qui rend testable
+  # l'interchangeabilité avec le repli zéro-dépendance `ZDefaultReorderRenderer`.
+  # Aucune dépendance tierce n'est tirée par cette arête (zcrud_responsive est
+  # SDK-only).
+  zcrud_responsive: ^0.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

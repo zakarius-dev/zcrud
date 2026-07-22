@@ -13,9 +13,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZcrudScope, ZcrudTheme, ZReorderRenderRequest;
 import 'package:zcrud_responsive/zcrud_responsive.dart'
-    show ZAdaptiveGrid, ZReorderableAdaptiveGrid;
+    show ZAdaptiveGrid, ZDefaultReorderRenderer;
 
 import 'z_reorder_ids.dart';
 import 'z_study_tools_section_spec.dart';
@@ -137,10 +138,16 @@ class _ZStudySection extends StatelessWidget {
     // réordonnable, par **activation implicite** (aucun changement d'API hôte).
     //
     // La capacité a été remontée dans le socle : `ZReorderableAdaptiveGrid`
-    // (`zcrud_responsive`) est bâtie sur le SEUL SDK (`LongPressDraggable` /
-    // `DragTarget` / `Scrollable`) — le paquet tiers `reorderable_grid_view`
-    // reste REFUSÉ (AD-1) — et délègue le calcul de colonnes à `ZAdaptiveGrid`,
-    // donc à `computeCrossAxisCount` (aucune réimplémentation).
+    // (`zcrud_responsive`) est le DÉFAUT zéro-dépendance : bâtie sur le seul SDK
+    // (`LongPressDraggable`/`DragTarget`/`Scrollable`), elle délègue le calcul
+    // de colonnes à `ZAdaptiveGrid`, donc à `computeCrossAxisCount`.
+    //
+    // ⚠️ RECTIFICATION (AD-57) — un commentaire de ce fichier a longtemps
+    // affirmé que `reorderable_grid_view` était « refusé par AD-1 ». C'ÉTAIT
+    // FAUX : AD-1 ne contraint que `zcrud_core`, et 15 satellites dépendaient
+    // déjà de paquets pub.dev. Le rendu est désormais choisi via le port
+    // `ZReorderRenderer` — le maison n'est que le repli, un satellite peut
+    // brancher un paquet de l'écosystème.
     //
     // ⚠️ Seule exclusivité restante : réordonner + VIRTUALISER. Une cellule non
     // construite ne peut pas être une cible de dépôt ; en cas de conflit, la
@@ -226,12 +233,25 @@ class _ZStudySection extends StatelessWidget {
   /// **câbler** le descripteur. Les indices de `onReorder` sont dans la MÊME
   /// convention `removeAt`/`insert` que le mode liste (`zReorderIds`) — l'hôte
   /// persiste à l'identique quel que soit le mode de rendu.
+  /// Grille RÉORDONNABLE — résolue par le port `ZReorderRenderer` (AD-57).
+  ///
+  /// L'hôte peut injecter, via `ZcrudScope(reorderRenderer: …)`, un satellite
+  /// adossé à un paquet de l'écosystème ou sa propre implémentation. Sans
+  /// injection, le repli **zéro-dépendance** de `zcrud_responsive` s'applique :
+  /// la capacité reste fonctionnelle, jamais absente — c'est l'exigence de
+  /// défaut d'AD-57, et c'est pourquoi ce chemin ne lève PAS de `ZScopeError`
+  /// (contrairement à `ZListRenderer`, dont aucun repli n'est possible sans
+  /// backend de grille).
   Widget _reorderableGrid(
     BuildContext context,
     ZcrudTheme theme,
     double minWidth,
-  ) =>
-      ZReorderableAdaptiveGrid(
+  ) {
+    final renderer = ZcrudScope.maybeOf(context)?.reorderRenderer ??
+        const ZDefaultReorderRenderer();
+    return renderer.build(
+      context,
+      ZReorderRenderRequest(
         itemIds: spec.itemIds!,
         itemBuilder: spec.itemBuilder,
         onReorder: spec.onReorder!,
@@ -246,7 +266,9 @@ class _ZStudySection extends StatelessWidget {
             spec.reorderMoveBeforeSemanticLabel ?? _kMoveBeforeFallbackLabel,
         moveAfterSemanticLabel:
             spec.reorderMoveAfterSemanticLabel ?? _kMoveAfterFallbackLabel,
-      );
+      ),
+    );
+  }
 
   /// Grille EAGER — imbriquée dans le défilement de la page (rendu par défaut).
   Widget _eagerGrid(BuildContext context, ZcrudTheme theme, double minWidth) =>
@@ -350,8 +372,8 @@ class _ZStudySection extends StatelessWidget {
 /// frontière keyée `ValueKey('section:$id')` — réordonner ne déclenche donc
 /// AUCUN `setState` au niveau page/section et ne reconstruit NI les autres
 /// sections NI la page (invariant AC2). Le rendu se fait via
-/// `ReorderableListView.builder` du **SDK Flutter** (jamais le paquet tiers
-/// `reorderable_grid_view` — AD-1), `shrinkWrap: true` +
+/// `ReorderableListView.builder` du **SDK Flutter** (repli zéro-dépendance,
+/// AD-57 — et NON parce qu'un paquet tiers serait interdit), `shrinkWrap: true` +
 /// `NeverScrollableScrollPhysics` (imbriqué dans le `ListView.builder` du
 /// layout), enfants keyés `ValueKey(id)` (clé STABLE requise), poignée
 /// directionnelle a11y ≥ 48 dp.
