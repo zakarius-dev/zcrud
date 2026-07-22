@@ -14,7 +14,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export
 description: "Tabular export for zcrud (DataGrid to Excel and PDF via Syncfusion) behind a neutral, byte-based API."
-version: 0.4.0
+version: 0.4.1
 publish_to: none
 resolution: workspace
 
@@ -47,7 +47,7 @@ dependencies:
   # remonte JAMAIS dans une signature neutre ni dans `zcrud_core`. Léger, sans
   # transitive lourde. N'affecte pas le graphe AD-1 (n'est pas un package zcrud_*).
   web: ^1.1.0
-  zcrud_core: ^0.4.0
+  zcrud_core: ^0.4.1
 
 dev_dependencies:
   # Lecteur ZIP TEST-ONLY : ré-ouvre le `.xlsx` généré (un ZIP d'XML) pour

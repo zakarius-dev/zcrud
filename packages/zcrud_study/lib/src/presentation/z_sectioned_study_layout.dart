@@ -86,20 +86,30 @@ class _ZStudySection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context, theme),
-          SizedBox(height: theme.gapS),
-          // Section vide → emptyState ; peuplée → items (jamais l'inverse, AC3).
-          if (isEmpty)
-            Semantics(
-              container: true,
-              label: spec.title,
-              child: spec.emptyState,
+          // CR-IFFD-10 §1 — le corps est masqué quand la section est repliée.
+          // L'état vit LOCALEMENT (`_CollapsibleBody`, sous la frontière keyée
+          // de la section) : replier ne reconstruit NI les autres sections NI la
+          // page (SM-1/AD-2).
+          if (spec.collapsible)
+            _CollapsibleBody(
+              spec: spec,
+              theme: theme,
+              body: _body(context, theme, isEmpty),
             )
-          else
-            _buildItems(context, theme),
+          else ...[
+            SizedBox(height: theme.gapS),
+            _body(context, theme, isEmpty),
+          ],
         ],
       ),
     );
   }
+
+  /// Corps de la section : `emptyState` si vide, items sinon (jamais l'inverse,
+  /// AC3). Extrait pour être partagé entre le rendu direct et le rendu repliable.
+  Widget _body(BuildContext context, ZcrudTheme theme, bool isEmpty) => isEmpty
+      ? Semantics(container: true, label: spec.title, child: spec.emptyState)
+      : _buildItems(context, theme);
 
   /// Items de la section selon [ZStudyToolsSectionSpec.axis] :
   /// - [Axis.vertical] réordonnable ([onReorder] non-null) → grille
@@ -127,6 +137,53 @@ class _ZStudySection extends StatelessWidget {
         ),
       );
     }
+    // CR-IFFD-10 §2 — grille MULTI-COLONNES quand une largeur minimale d'item
+    // est déclarée. Le nombre de colonnes est dérivé de la largeur DISPONIBLE
+    // (`LayoutBuilder`), jamais d'un breakpoint figé : la page s'étale sur
+    // desktop/tablette au lieu d'empiler. `null` ⇒ une colonne (rendu antérieur).
+    final minWidth = spec.crossAxisMinItemWidth;
+    if (minWidth != null && minWidth > 0) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final available = constraints.maxWidth;
+          final columns = available.isFinite && available > 0
+              ? (available / minWidth).floor().clamp(1, spec.itemCount.clamp(1, 99))
+              : 1;
+          if (columns <= 1) return _singleColumn(context, theme);
+          final rows = (spec.itemCount / columns).ceil();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (var r = 0; r < rows; r++)
+                Padding(
+                  padding: EdgeInsetsDirectional.only(bottom: theme.gapS),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      for (var c = 0; c < columns; c++)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsetsDirectional.only(
+                              end: c < columns - 1 ? theme.gapS : 0,
+                            ),
+                            child: r * columns + c < spec.itemCount
+                                ? spec.itemBuilder(context, r * columns + c)
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    }
+    return _singleColumn(context, theme);
+  }
+
+  /// Empilement mono-colonne — rendu historique, préservé à l'identique.
+  Widget _singleColumn(BuildContext context, ZcrudTheme theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -155,7 +212,28 @@ class _ZStudySection extends StatelessWidget {
             ),
           ),
           SizedBox(width: theme.gapS),
-          _CountBadge(count: spec.itemCount, theme: theme),
+          _CountBadge(count: spec.headerCount ?? spec.itemCount, theme: theme),
+          // CR-IFFD-10 §3 — action secondaire (ex. « Afficher tout »), rendue
+          // AVANT l'ajout : consultation avant création. `null` ⇒ ABSENTE (AD-4).
+          if (spec.secondaryAction != null) ...[
+            SizedBox(width: theme.gapS),
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: _kMinTapTarget,
+                minHeight: _kMinTapTarget,
+              ),
+              child: IconButton(
+                key: ValueKey<String>('section:${spec.id}:secondaryAction'),
+                onPressed: spec.secondaryAction,
+                tooltip: spec.secondaryActionSemanticLabel ?? spec.title,
+                icon: Icon(
+                  spec.secondaryActionIcon ?? Icons.arrow_forward,
+                  semanticLabel:
+                      spec.secondaryActionSemanticLabel ?? spec.title,
+                ),
+              ),
+            ),
+          ],
           // Callback `null` = action ABSENTE (AD-4) : aucun bouton rendu.
           if (addAction != null) ...[
             SizedBox(width: theme.gapS),
@@ -376,6 +454,63 @@ class _CountBadge extends StatelessWidget {
         textAlign: TextAlign.start,
         style: TextStyle(color: scheme.onSecondaryContainer),
       ),
+    );
+  }
+}
+
+/// Corps repliable d'une section (CR-IFFD-10 §1) — **état LOCAL délibéré**.
+///
+/// `StatefulWidget` sous la frontière keyée `ValueKey('section:$id')` : basculer
+/// le repli ne déclenche AUCUN `setState` au niveau page/section et ne
+/// reconstruit NI les autres sections NI la page (SM-1/AD-2), exactement comme
+/// l'ordre optimiste de `_ReorderableItems`.
+class _CollapsibleBody extends StatefulWidget {
+  const _CollapsibleBody({
+    required this.spec,
+    required this.theme,
+    required this.body,
+  });
+
+  final ZStudyToolsSectionSpec spec;
+  final ZcrudTheme theme;
+  final Widget body;
+
+  @override
+  State<_CollapsibleBody> createState() => _CollapsibleBodyState();
+}
+
+class _CollapsibleBodyState extends State<_CollapsibleBody> {
+  late bool _expanded = widget.spec.initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _expanded ? 'Replier' : 'Déplier';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: _kMinTapTarget,
+              minHeight: _kMinTapTarget,
+            ),
+            child: IconButton(
+              key: ValueKey<String>('section:${widget.spec.id}:collapse'),
+              onPressed: () => setState(() => _expanded = !_expanded),
+              tooltip: label,
+              icon: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                semanticLabel: '$label ${widget.spec.title}',
+              ),
+            ),
+          ),
+        ),
+        if (_expanded) ...<Widget>[
+          SizedBox(height: widget.theme.gapS),
+          widget.body,
+        ],
+      ],
     );
   }
 }

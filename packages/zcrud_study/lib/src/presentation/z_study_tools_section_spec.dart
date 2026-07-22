@@ -36,6 +36,13 @@ class ZStudyToolsSectionSpec {
     this.itemIds,
     this.onReorder,
     this.reorderHandleSemanticLabel,
+    this.collapsible = false,
+    this.initiallyExpanded = true,
+    this.crossAxisMinItemWidth,
+    this.headerCount,
+    this.secondaryAction,
+    this.secondaryActionIcon,
+    this.secondaryActionSemanticLabel,
   })  : assert(itemCount >= 0, 'itemCount ne peut être négatif'),
         // AD-4/AD-10 — cohérence de développement (assert, jamais de throw
         // runtime persistant) : une section réordonnable ([onReorder] non-null)
@@ -131,4 +138,47 @@ class ZStudyToolsSectionSpec {
   /// `null` = repli sur [title] (toléré, documenté). JAMAIS de « Réordonner »/
   /// « Drag » codé en dur (AD-13/FR-23) : le label est INJECTÉ par l'appelant.
   final String? reorderHandleSemanticLabel;
+
+  // ── CR-IFFD-10 : capacités de la page d'origine absentes du portage ────────
+
+  /// Section **repliable** (CR-IFFD-10 §1). `false` par défaut — le rendu
+  /// antérieur (toujours déplié) est strictement préservé.
+  ///
+  /// L'état plié/déplié vit **localement** sous la frontière keyée de la section
+  /// (SM-1/AD-2) : replier une section ne reconstruit NI les autres sections NI
+  /// la page.
+  final bool collapsible;
+
+  /// État initial quand [collapsible] est `true` (CR-IFFD-10 §1). Ignoré sinon.
+  ///
+  /// Permet le patron d'origine « déplié seulement si la section a des
+  /// éléments » : `initiallyExpanded: items.isNotEmpty`.
+  final bool initiallyExpanded;
+
+  /// Largeur minimale d'un item pour un rendu **multi-colonnes** (CR-IFFD-10 §2).
+  ///
+  /// `null` (défaut) ⇒ une seule colonne, rendu antérieur inchangé. Sinon le
+  /// nombre de colonnes est dérivé de la largeur disponible — la page d'origine
+  /// s'étale ainsi sur desktop/tablette au lieu d'empiler.
+  final double? crossAxisMinItemWidth;
+
+  /// Compteur affiché dans l'en-tête, **découplé** du nombre d'items rendus
+  /// (CR-IFFD-10 §4). `null` (défaut) ⇒ le badge affiche [itemCount].
+  ///
+  /// Permet le patron d'origine « badge = total (42), rail = `take(10)` » :
+  /// `itemCount: 10, headerCount: 42`.
+  final int? headerCount;
+
+  /// Action d'en-tête **secondaire**, en plus de [addAction] (CR-IFFD-10 §3) —
+  /// typiquement « Afficher tout » (navigation). `null` ⇒ action ABSENTE (AD-4).
+  ///
+  /// Sans elle, un hôte devait détourner [addAction] pour la navigation : jamais
+  /// les deux à la fois, et une sémantique approximative.
+  final VoidCallback? secondaryAction;
+
+  /// Icône de [secondaryAction] (repli neutre si absente).
+  final IconData? secondaryActionIcon;
+
+  /// Libellé accessible de [secondaryAction] (a11y AD-13 — repli sur [title]).
+  final String? secondaryActionSemanticLabel;
 }
