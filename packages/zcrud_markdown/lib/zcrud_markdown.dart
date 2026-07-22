@@ -44,3 +44,8 @@ export 'src/presentation/z_rich_text_fullscreen_dialog.dart'
 // `ZMarkdownField.toolbarConfig`.
 export 'src/presentation/z_rich_text_toolbar_config.dart'
     show ZRichTextToolbarConfig;
+// Mode d'interprétation du contenu d'une cellule de tableau, OPT-IN (AD-57) :
+// la charge persistée ne change pas, seule sa LECTURE change. Absent ⇒ texte
+// brut, c'est-à-dire le rendu historique.
+export 'src/presentation/z_table_cell_scope.dart'
+    show ZTableCellScope, ZTableCellContent;

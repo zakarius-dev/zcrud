@@ -11,7 +11,7 @@
 # graph_proof. AD-12 : ZÉRO clé/secret committé.
 name: zcrud_field_extras
 description: "Specialized field satellite for zcrud (AD-53): PIN/autocomplete/editable-table/icon served by ZWidgetRegistry, light deps confined to impl. Skeleton substrate — depends only on zcrud_core."
-version: 0.8.0
+version: 0.9.0
 publish_to: none
 resolution: workspace
 
@@ -36,7 +36,7 @@ environment:
 #     « tags riches » non dispatcher-atteignable en satellite pur — SIGNAL cœur).
 # Ces deps NON `zcrud_*` n'ajoutent aucune arête au graph_proof (CORE OUT=0).
 dependencies:
-  zcrud_core: ^0.8.0
+  zcrud_core: ^0.9.0
   flutter:
     sdk: flutter
   pinput: ^6.0.0

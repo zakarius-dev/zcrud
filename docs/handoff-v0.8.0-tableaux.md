@@ -106,3 +106,81 @@ en cellule — ne mord **pas** sur la fidélité, et c'est instructif : l'auto-v
 rattrape en basculant sur le repli. L'échappement n'est donc pas une exigence de **correction**
 mais de **lisibilité**, et c'est cette propriété-là qui est assertée. Le dire plutôt que de
 compter une garde de plus.
+
+---
+
+# Addendum v0.9.0 — mode « cellule = Markdown » (chemin hybride)
+
+## 7. ⚠️ Deux limites du §5 étaient FAUSSES
+
+Le §5 déclarait « une cellule ne porte que du TEXTE » et « inline seulement ».
+**Les deux sont démenties par la mesure**, et je les avais écrites sans les exécuter.
+
+Round-trip **20 cas sur 20 fidèles**, avec et sans pont : liste à puces, liste **imbriquée**,
+liste ordonnée, cases à cocher, bloc de code (langage compris), citation, titre, **deux
+paragraphes**, liste **avec formules**, et tout mélangé. Idem pour les blocs LaTeX `$$…$$`,
+y compris **multi-ligne** et avec un `|` interne.
+
+La raison est structurelle : **la chaîne d'une cellule est un document Markdown complet à elle
+seule**, décodée pour son propre compte — pas de l'inline inséré dans le document extérieur.
+
+Corollaire : la limite « LaTeX multi-ligne non reconnu » du handoff `v0.7.0` est elle aussi mal
+énoncée. Mesuré, les motifs ne sont pas bornés à la **ligne** mais au **paragraphe** — seule une
+ligne **blanche** casse la reconnaissance :
+
+```
+sauts SIMPLES                 -> reconnu = true
+ligne BLANCHE au milieu       -> reconnu = false
+ligne BLANCHE après ouverture -> reconnu = false
+```
+
+## 8. Ce qui est livré
+
+```dart
+ZTableCellScope(
+  content: ZTableCellContent.markdown,                    // défaut : plainText
+  codec: ZMarkdownCodec(bridges: ZMarkdownBridges.latex),  // porte les ponts
+  child: monSousArbre,
+)
+```
+
+**Le format persisté ne change pas d'un octet.** Ce mode change la LECTURE d'une cellule, pas son
+stockage — donc rien à migrer, et la bascule est réversible dans les deux sens.
+
+⚠️ **C'est un pont : le sens d'un texte ordinaire change.** Une cellule contenant `- a` devient une
+puce, `*x*` de l'italique. Sur un corpus écrit à l'époque du texte brut, l'apparence peut bouger.
+D'où l'opt-in, et le défaut `plainText` qui préserve exactement le rendu historique.
+
+## 9. Chemin HYBRIDE — le coût suit la richesse, pas la taille
+
+Le rendu riche passe par `ZMarkdownReader`, qui monte un `QuillEditor` complet. Un par cellule sur
+un tableau 10×5 ferait **50 éditeurs Quill** — frontalement contraire à SM-1.
+
+Une cellule qui décode en texte NU (aucun attribut, aucun embed, texte identique à la source) reste
+un `Text`. **Garde mesurée : un tableau 10×5 de texte nu monte 0 éditeur ; une seule cellule riche
+en monte 1.**
+
+Piège traité : `- a` décode en un insert `a` **sans attribut** — l'attribut de liste est porté par
+le saut de ligne. Un aiguillage naïf sur « aucun attribut » aurait affiché `a`, c'est-à-dire un
+contenu **faux** plutôt qu'un contenu brut. D'où la comparaison au texte source.
+
+## 10. 🔴 Défaut PRÉEXISTANT révélé, et corrigé
+
+Une op construite par `zTableEmbedOp` et passée à `ZMarkdownReader`/`ZMarkdownField` **vidait le
+document**. La charge gelée (`zUnmodifiableJsonMapList`) faisait lever `Document.fromJson`, le
+filet AD-10 attrapait, et le contenu disparaissait — sans erreur visible, hors de tout tableau.
+Mesuré : `document vide ? true`. Le dégel est désormais fait à la racine, dans
+`DeltaNeutralOps.asDeltaOps`.
+
+## 11. Ce qui reste ouvert
+
+- **L'édition** : `showZTableDialog` édite du texte brut. En mode Markdown, l'utilisateur tape de la
+  source. Acceptable en première étape — mais c'est une décision d'UX à prendre, pas à découvrir.
+- **L'alignement** d'un tableau externe reste perdu (la charge ne le porte pas).
+- Un `<br>` littéral en cellule déclenche toujours le repli sans perte.
+
+## 12. Vérification
+
+`melos run analyze` RC=0 · `melos run verify` RC=0 · `zcrud_markdown` **407/407** ·
+`zcrud_core` **1063/1063** · `zcrud_study` **540/540** · `zcrud_session` **529/529**.
+**7 gardes R3** prouvées mordantes sur le mode cellule.

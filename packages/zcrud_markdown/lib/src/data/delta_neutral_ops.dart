@@ -37,15 +37,32 @@ abstract final class DeltaNeutralOps {
     final ops = <Map<String, dynamic>>[];
     for (final op in raw) {
       if (op is! Map) return null; // opération malformée → défensif
-      final map = op.map<String, dynamic>(
-        (key, dynamic v) => MapEntry(key.toString(), v),
-      );
+      // DÉGEL PROFOND. `zTableEmbedOp` gèle sa charge (`zUnmodifiableJsonMapList`)
+      // et rend des `UnmodifiableMapView<Object?, Object?>` ; `Document.fromJson`
+      // les caste en `Map<String, dynamic>` et LÈVE. Le filet AD-10 attrapait
+      // alors l'exception et rendait un document VIDE : une op de tableau
+      // parfaitement valide faisait DISPARAÎTRE tout le contenu, sans erreur
+      // visible. Défaut préexistant, trouvé en câblant le rendu de cellule.
+      final map = _thawMap(op);
       // Une op Delta valide porte `insert` (édition) ; `retain`/`delete` n'ont
       // pas de sens dans un document persisté. `insert` absent ⇒ malformé.
       if (!map.containsKey('insert')) return null;
       ops.add(map);
     }
     return ops;
+  }
+
+  /// Dégèle en profondeur une `Map` d'op en structures ordinaires.
+  static Map<String, dynamic> _thawMap(Map<Object?, dynamic> map) =>
+      <String, dynamic>{
+        for (final MapEntry<Object?, dynamic> e in map.entries)
+          e.key.toString(): _thawValue(e.value),
+      };
+
+  static Object? _thawValue(Object? value) {
+    if (value is Map) return _thawMap(value);
+    if (value is List) return <dynamic>[for (final Object? v in value) _thawValue(v)];
+    return value;
   }
 
   /// Décode DÉFENSIVEMENT (AD-10) une valeur de tranche en [Document].

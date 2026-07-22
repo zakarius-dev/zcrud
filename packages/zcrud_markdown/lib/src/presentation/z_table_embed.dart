@@ -33,6 +33,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 // NEUTRE `../data/z_table_ops.dart` (pur-Dart, réutilisée par le migrateur
 // `zcrud_note`). Ce fichier de RENDU les IMPORTE — il ne les re-déclare plus.
 import '../data/z_table_ops.dart';
+import 'z_table_cell.dart';
 
 // Alias locaux privés pour préserver le corps E6-4 inchangé (clés importées).
 const String _kRowsKey = kTableRowsKey;
@@ -148,11 +149,11 @@ class ZTableEmbedBuilder extends EmbedBuilder {
                     horizontal: 8,
                     vertical: 4,
                   ),
-                  child: Text(
-                    cell,
-                    style: textStyle,
-                    textAlign: TextAlign.start,
-                  ),
+                  // Chemin HYBRIDE : `Text` tant que la cellule est du texte
+                  // nu, rendu riche seulement si elle porte réellement de la
+                  // structure. Le mode est opt-in (`ZTableCellScope`) et vaut
+                  // `plainText` en son absence — le rendu historique.
+                  child: ZTableCell(text: cell, style: textStyle),
                 ),
             ],
           ),
