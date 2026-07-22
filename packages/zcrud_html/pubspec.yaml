@@ -18,7 +18,7 @@
 # (ne PAS réintroduire le CDN MathJax DODLP).
 name: zcrud_html
 description: "Rich HTML field satellite for zcrud (AD-50): edit/read HTML via an isolated-controller WebView, html/inlineHtml exclusive with zcrud_markdown. Skeleton substrate — depends only on zcrud_core."
-version: 0.4.2
+version: 0.4.3
 publish_to: none
 resolution: workspace
 
@@ -39,7 +39,7 @@ environment:
 # lourdes ci-dessous sont CONFINÉES à `lib/src/` (aucun type en signature
 # publique — AD-40) et n'ajoutent aucune arête inter-package (CORE OUT=0 inchangé).
 dependencies:
-  zcrud_core: ^0.4.2
+  zcrud_core: ^0.4.3
   # Édition WYSIWYG HTML (WebView Summernote, controller isolé — AD-50/AD-2).
   html_editor_enhanced: ^2.7.1
   # Rendu HTML natif en lecture (AD-10 défensif — corrompu ⇒ rendu vide).

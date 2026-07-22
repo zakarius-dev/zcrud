@@ -134,6 +134,16 @@ class ZStudyLegacyCodec {
   /// ce qui n'est pas converti ne peut pas être exigé canonique.**
   Set<String> get opaqueKeys => _opaqueKeys;
 
+  /// `true` si la conversion descend dans les `Map`/`List` imbriquées.
+  ///
+  /// Exposé pour que la **détection** de canonicité du migrateur reflète la
+  /// conversion : n'exiger la canonicité en profondeur que si la conversion y
+  /// descend. Sans cette symétrie, un contenu imbriqué camelCase — que le codec
+  /// ne convertit PAS quand `recurseNested` est `false` — rendait le document
+  /// éternellement « non canonique », donc re-migré à chaque passage, avec
+  /// rétrogradation des valeurs déjà remappées.
+  bool get recurseNested => _recurseNested;
+
   /// Clés legacy déclarées comme alias d'une clé de sync réservée (CR-IFFD-3).
   ///
   /// Exposé pour que [ZLegacyStudyMigrator] puisse refuser de considérer comme

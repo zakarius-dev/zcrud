@@ -22,7 +22,14 @@ import 'z_form_presenter.dart';
 /// Fractions d'écran par défaut (dp) dérivées de `MediaQuery.sizeOf` quand
 /// `maxWidth`/`maxHeight` ne sont pas fournis — reproduit l'intention des apps
 /// (dialog ~ largeur bornée, sheet ~ 90 % hauteur) **sans** largeur globale.
-abstract final class _ZAdaptiveDefaults {
+/// Bornes d'écran par défaut de la présentation adaptative (dp) — **publiques**
+/// (audit de consolidation, 2026-07-22).
+///
+/// Elles étaient privées, et `zcrud_get` les **répliquait** dans un
+/// `_ZGetPresenterDefaults` local : deux copies d'une même décision M3, libres
+/// de diverger silencieusement au prochain ajustement. Un binding qui implémente
+/// le port `ZFormPresenter` doit pouvoir s'aligner sur la source, pas la recopier.
+abstract final class ZAdaptivePresenterDefaults {
   /// Largeur max (dp) d'une `dialog` : `min(largeurÉcran, 560)` (M3 medium).
   static const double dialogMaxWidth = 560;
 
@@ -67,7 +74,7 @@ class ZAdaptivePresenter implements ZFormPresenter {
       case ZEditionPresentation.sheet:
         final screen = MediaQuery.sizeOf(context);
         final effectiveMaxHeight =
-            maxHeight ?? screen.height * _ZAdaptiveDefaults.sheetMaxHeightFraction;
+            maxHeight ?? screen.height * ZAdaptivePresenterDefaults.sheetMaxHeightFraction;
         return showModalBottomSheet<T>(
           context: context,
           isScrollControlled: true,
@@ -82,9 +89,9 @@ class ZAdaptivePresenter implements ZFormPresenter {
       case ZEditionPresentation.dialog:
         final screen = MediaQuery.sizeOf(context);
         final effectiveMaxWidth = maxWidth ??
-            (screen.width < _ZAdaptiveDefaults.dialogMaxWidth
+            (screen.width < ZAdaptivePresenterDefaults.dialogMaxWidth
                 ? screen.width
-                : _ZAdaptiveDefaults.dialogMaxWidth);
+                : ZAdaptivePresenterDefaults.dialogMaxWidth);
         return showDialog<T>(
           context: context,
           useSafeArea: useSafeArea,

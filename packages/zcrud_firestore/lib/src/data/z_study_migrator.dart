@@ -314,11 +314,27 @@ class ZLegacyStudyMigrator {
     // `uploading` : exactement le TRAP que la garde d'idempotence devait
     // franchir. `opaqueKeys` la neutralisait.
     final opaque = _codec.opaqueKeys;
+    // ⚠️ ÉLARGISSEMENT (banc d'invariants, 2026-07-22) — le principe de
+    // CR-IFFD-7 (« la détection doit refléter la conversion ») ne valait
+    // qu'à moitié : `opaqueKeys` était enjambé, mais la détection descendait
+    // TOUJOURS dans les sous-structures, y compris quand `recurseNested` est
+    // FALSE — c'est-à-dire quand la conversion, elle, ne descend PAS.
+    //
+    // Conséquence, trouvée par croisement (config `valueMappers` + document à
+    // contenu imbriqué camelCase, SANS aucun `opaqueKeys`) : le document était
+    // déclaré non canonique à jamais, re-migré à chaque passage, et son `status`
+    // rétrogradé `ready` → `uploading`. Exactement le TRAP de CR-IFFD-1, par une
+    // porte que les 7 CR n'avaient pas ouverte.
+    //
+    // Règle complète : on n'exige la canonicité EN PROFONDEUR que si la
+    // conversion descend effectivement (`recurseNested`). Sinon seul le premier
+    // niveau — le seul que le codec transforme — répond de sa casse.
+    final deep = _codec.recurseNested;
     for (final e in doc.entries) {
-      // Le NOM de la clé de premier niveau reste soumis à la règle, même quand
-      // sa VALEUR est opaque : c'est notre clé, pas celle du tiers.
+      // Le NOM de la clé de premier niveau reste toujours soumis à la règle,
+      // même quand sa VALEUR est opaque : c'est notre clé, pas celle du tiers.
       if (_hasInternalUppercase(e.key)) return false;
-      if (opaque.contains(e.key)) continue;
+      if (!deep || opaque.contains(e.key)) continue;
       if (!_isDeepCanonical(e.value)) return false;
     }
     return true;

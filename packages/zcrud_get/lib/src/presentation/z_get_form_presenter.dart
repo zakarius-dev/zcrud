@@ -30,17 +30,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zcrud_navigation/zcrud_navigation.dart';
 
-/// Fractions/bornes d'écran par défaut (dp) — **répliquent** l'intention de
-/// `ZAdaptivePresenter` (`_ZAdaptiveDefaults`) quand `maxWidth`/`maxHeight` ne
-/// sont pas fournis. Aucun littéral de couleur : uniquement des tailles.
-abstract final class _ZGetPresenterDefaults {
-  /// Largeur max (dp) d'une `dialog` : `min(largeurÉcran, 560)` (M3 medium).
-  static const double dialogMaxWidth = 560;
-
-  /// Fraction de la hauteur d'écran allouée par défaut à une bottom-sheet.
-  static const double sheetMaxHeightFraction = 0.9;
-}
-
 /// Présentateur **GetX** : exécute chaque [ZEditionPresentation] via une
 /// primitive GetX. `const` (aucun état — un port de présentation ne conserve
 /// aucune référence manager en champ, il reçoit le [BuildContext] à l'appel).
@@ -81,7 +70,7 @@ class ZGetFormPresenter implements ZFormPresenter {
       case ZEditionPresentation.sheet:
         final screen = MediaQuery.sizeOf(context); // ⛔ jamais Get.height/width
         final effectiveMaxHeight = maxHeight ??
-            screen.height * _ZGetPresenterDefaults.sheetMaxHeightFraction;
+            screen.height * ZAdaptivePresenterDefaults.sheetMaxHeightFraction;
         return Get.bottomSheet<T>(
           _constrained(
             builder,
@@ -95,9 +84,9 @@ class ZGetFormPresenter implements ZFormPresenter {
       case ZEditionPresentation.dialog:
         final screen = MediaQuery.sizeOf(context);
         final effectiveMaxWidth = maxWidth ??
-            (screen.width < _ZGetPresenterDefaults.dialogMaxWidth
+            (screen.width < ZAdaptivePresenterDefaults.dialogMaxWidth
                 ? screen.width
-                : _ZGetPresenterDefaults.dialogMaxWidth);
+                : ZAdaptivePresenterDefaults.dialogMaxWidth);
         return Get.dialog<T>(
           Dialog(
             child: _constrained(

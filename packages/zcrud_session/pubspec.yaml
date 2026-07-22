@@ -10,7 +10,7 @@
 # objectif produit n°1. Câblage manager-spécifique = bindings (ES-9).
 name: zcrud_session
 description: "Study-session runtime for zcrud: ZStudySessionEngine (pure ChangeNotifier + immutable state + pure reducer) that cycles the SRS queue with deterministic +2/+4 lapse re-insertion, writing SRS solely through an injected reviewCard seam (single write path, AD-9/AD-23)."
-version: 0.4.2
+version: 0.4.3
 publish_to: none
 resolution: workspace
 
@@ -96,9 +96,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_card_swiper: ^7.2.0
-  zcrud_core: ^0.4.2
-  zcrud_flashcard: ^0.4.2
-  zcrud_study_kernel: ^0.4.2
+  zcrud_core: ^0.4.3
+  zcrud_flashcard: ^0.4.3
+  zcrud_study_kernel: ^0.4.3
   # SU-6 (D3/AC6) — `ZToaster`/`ZToasterScope` : le sprint-status impose « toast
   # via ZToaster », et le spine impose « seams RÉUTILISÉS, jamais redéclarés ».
   # Redéclarer un port de toast local ici serait la violation.
@@ -109,7 +109,7 @@ dependencies:
   # dépendance TIERCE (uniquement `zcrud_core` + SDK Flutter) — la table de
   # `test/z_third_party_confinement_test.dart` (paquets TIERS) n'est donc pas
   # concernée.
-  zcrud_ui_kit: ^0.4.2
+  zcrud_ui_kit: ^0.4.3
 
 # Package Flutter → tests via `flutter test` (R14 : ChangeNotifier ∈ flutter).
 # Aucun codegen (aucun `@ZcrudModel` : état de session runtime NON persisté ⇒
