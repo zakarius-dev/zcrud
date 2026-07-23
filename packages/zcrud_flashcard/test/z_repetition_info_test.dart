@@ -158,7 +158,11 @@ void main() {
         },
         extensionParser: _TestExt.fromJsonSafe,
       );
-      expect(info.extension, isNull); // version non gérée → null.
+      // ⚠️ CHANGEMENT DE CONTRAT (CR-LEX-33) : ce test assertait `isNull`.
+      // Ne pas savoir TYPER un payload n'autorise pas à l'EFFACER — `extension`
+      // étant une clé CONNUE (exclue d'`extra`), le `null` valait DESTRUCTION
+      // silencieuse du slot d'un autre hôte. Il est désormais porté verbatim.
+      expect(info.extension, isA<ZOpaqueExtension>()); // version non gérée → null.
       expect(info.flashcardId, 'c'); // parent intact.
     });
 

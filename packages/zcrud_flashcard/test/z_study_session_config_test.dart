@@ -182,7 +182,11 @@ void main() {
         },
         extensionParser: _TestExt.fromJsonSafe,
       );
-      expect(config.extension, isNull);
+      // ⚠️ CHANGEMENT DE CONTRAT (CR-LEX-33) : ce test assertait `isNull`.
+      // Ne pas savoir TYPER un payload n'autorise pas à l'EFFACER — `extension`
+      // étant une clé CONNUE (exclue d'`extra`), le `null` valait DESTRUCTION
+      // silencieuse du slot d'un autre hôte. Il est désormais porté verbatim.
+      expect(config.extension, isA<ZOpaqueExtension>());
       expect(config.mode, ZReviewMode.cramming);
     });
   });

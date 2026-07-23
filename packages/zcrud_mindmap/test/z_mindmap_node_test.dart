@@ -158,7 +158,11 @@ void main() {
       expect((node.extension! as _FakeExt).confidence, 0.9);
     });
 
-    test('extension : formatVersion inconnue → null, nœud survit', () {
+    test('extension : formatVersion inconnue → PRÉSERVÉE, nœud survit', () {
+      // ⚠️ CHANGEMENT DE CONTRAT (CR-LEX-33). Ce test assertait `isNull` : il
+      // verrouillait la DESTRUCTION du payload d'un autre hôte comme un
+      // contrat. Une version future non gérée n'est pas une raison d'effacer —
+      // c'est au contraire le cas nominal du slot d'extension versionné.
       final node = ZMindmapNode.fromJson(
         {
           'id': 'n1',
@@ -166,11 +170,16 @@ void main() {
         },
         extensionDecoder: _FakeExt.decode,
       );
-      expect(node.extension, isNull);
+      expect(node.extension, isA<ZOpaqueExtension>());
+      expect(node.toJson()['extension'],
+          {'format_version': 99, 'confidence': 0.9});
       expect(node.id, 'n1');
     });
 
-    test('extension : décodeur qui throw → null (guard), nœud survit', () {
+    test('extension : décodeur qui throw → PRÉSERVÉE (AD-10), nœud survit', () {
+      // Le filet AD-10 tient toujours — mais il ne coûte plus la donnée : un
+      // décodeur d'hôte défaillant est traité comme un décodeur qui n'a pas su
+      // typer, pas comme une autorisation d'effacer.
       final node = ZMindmapNode.fromJson(
         {
           'id': 'n1',
@@ -178,7 +187,7 @@ void main() {
         },
         extensionDecoder: (_) => throw StateError('boom'),
       );
-      expect(node.extension, isNull);
+      expect(node.extension, isA<ZOpaqueExtension>());
       expect(node.id, 'n1');
     });
 
@@ -187,15 +196,24 @@ void main() {
         {'id': 'n1', 'extension': 'garbage'},
         extensionDecoder: _FakeExt.decode,
       );
+      // Un payload NON-Map reste `null` : il n'y a rien de structuré à
+      // préserver. La borne de CR-LEX-33 tient — on préserve un sous-document,
+      // pas n'importe quelle valeur.
       expect(node.extension, isNull);
     });
 
-    test('sans décodeur, extension ignorée → null (mais pas dans extra)', () {
+    test('🔴 sans décodeur, extension PRÉSERVÉE (elle était détruite)', () {
+      // C'est le cas EXACT de CR-LEX-33, et le nom de ce test disait le
+      // défaut : « ignorée → null (mais pas dans extra) ». Ni décodée, ni
+      // recueillie ⇒ effacée à la première réécriture, sans erreur ni journal.
       final node = ZMindmapNode.fromJson({
         'id': 'n1',
         'extension': {'format_version': 1},
       });
-      expect(node.extension, isNull);
+      expect(node.extension, isA<ZOpaqueExtension>());
+      expect(node.toJson()['extension'], {'format_version': 1});
+      // `extension` ne transite PAS par `extra` : un seul canal, donc pas de
+      // double émission au round-trip.
       expect(node.extra.containsKey('extension'), isFalse);
     });
   });

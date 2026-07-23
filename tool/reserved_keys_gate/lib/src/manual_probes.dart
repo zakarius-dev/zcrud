@@ -68,13 +68,22 @@ final List<ZManualProbe> kManualProbes = <ZManualProbe>[
     body: const <String, dynamic>{'id': 'm', 'folder_id': 'f'},
     decode: ZMindmap.fromJson,
     encode: (Object e) => (e as ZMindmap).toJson(),
-    // Aucun `copyWith` ⇒ reconstruction NOMINALE (la voie que l'app emprunte).
+    // Deux voies d'écriture publiques depuis CR-LEX-29.
     // ⚠️ `x` est passé **VERBATIM** — la règle AST (k) l'exige (MAJEUR-2).
     writes: <ZExtraWriter>[
       ZExtraWriter(
         voie: 'ctor',
         eagerlyNormalized: true, // ctor NON-`const` ⇒ il filtre (initializer).
         write: _ctorMindmap,
+      ),
+      // CR-LEX-29 : `copyWithPreservingTree` délègue au constructeur, donc au
+      // même dépouillement. Le gate l'a exigé de lui-même — il a détecté une
+      // voie d'écriture publique de `extra` non sondée, ce qui est exactement
+      // son rôle.
+      ZExtraWriter(
+        voie: 'copyWithPreservingTree',
+        eagerlyNormalized: true,
+        write: _copyWithMindmap,
       ),
     ],
   ),
@@ -92,6 +101,9 @@ final List<ZManualProbe> kManualProbes = <ZManualProbe>[
     ],
   ),
 ];
+
+Object _copyWithMindmap(Object e, Map<String, dynamic> x) =>
+    (e as ZMindmap).copyWithPreservingTree(extra: x);
 
 Object _ctorMindmap(Object e, Map<String, dynamic> x) {
   final m = e as ZMindmap;

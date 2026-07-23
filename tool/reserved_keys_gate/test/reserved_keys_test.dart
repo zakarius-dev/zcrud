@@ -1444,9 +1444,16 @@ void main() {
       expect(reg.encode('smart_note', entity)['extension'], equals(audioPayload));
     });
 
-    test('AC1 — additif : les autres kinds extensibles restent INCHANGÉS', () {
-      // Un kind extensible SANS `ZExtension` concrète (flashcard, study_folder…)
-      // reste au comportement historique : le résolveur ne les type pas.
+    test('AC1 — les autres kinds extensibles PRÉSERVENT le payload', () {
+      // ⚠️ CHANGEMENT DE CONTRAT (CR-LEX-33). Ce test assertait `isNull` pour
+      // TOUS les kinds sans `ZExtension` concrète, et sa formule — « slot reste
+      // `null` » — décrivait le comportement historique comme un acquis. C'était
+      // une DESTRUCTION : ni typé, ni recueilli dans `extra`, donc effacé à la
+      // première réécriture, du store local puis du cloud à la synchronisation
+      // suivante. Un hôte détruisait ainsi les données d'un autre, en silence.
+      //
+      // Ne pas savoir TYPER un payload n'autorise pas à l'EFFACER : il est
+      // désormais porté verbatim par `ZOpaqueExtension`.
       final reg = typedRegistry();
       for (final kind in kProbeBodies.keys.where(
         (k) => !kNonExtensibleKinds.contains(k) && k != 'smart_note',
@@ -1456,10 +1463,12 @@ void main() {
           'extension': audioPayload,
         };
         final entity = reg.decode(kind, probe) as ZExtensible;
-        // Aucun résolveur pour ces kinds ⇒ slot NON typé (`null`), inchangé.
-        expect(entity.extension, isNull,
-            reason: '[$kind] aucune `ZExtension` concrète : slot reste `null`.');
-        // L2 : `extension` reste réservée (ne fuit pas dans `extra`).
+        expect(entity.extension, isA<ZOpaqueExtension>(),
+            reason: '[$kind] payload non typé ⇒ PRÉSERVÉ, jamais détruit.');
+        expect(entity.extension!.toJson(), audioPayload,
+            reason: '[$kind] il doit être réémis VERBATIM.');
+        // L2 : `extension` reste réservée (un seul canal, pas de double
+        // émission au round-trip).
         expect(entity.extra.containsKey('extension'), isFalse);
       }
     });

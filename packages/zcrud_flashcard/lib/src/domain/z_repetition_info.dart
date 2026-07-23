@@ -253,10 +253,12 @@ class ZRepetitionInfo with ZExtensible {
     Object? raw,
     ZRepetitionInfoExtensionParser? parser,
   ) {
-    if (parser == null) return null;
-    final map = _asStringMap(raw);
-    if (map == null) return null;
-    return ZExtension.guard<ZExtension?>(() => parser(map));
+    // CR-LEX-33 : le corps de cette méthode était `if (parser == null) return
+    // null;` — un hôte SANS parser lisait `null`, et comme `extension` est une
+    // clé CONNUE (donc exclue d'`extra`), le payload d'un AUTRE hôte était
+    // DÉTRUIT au décodage, avant toute ligne de code applicatif. Le cœur
+    // préserve désormais verbatim ce que personne n'a su typer.
+    return zDecodeExtension(raw, parser);
   }
 
   /// Clés persistées **réservées** (champs générés + `extension` + **clés de
@@ -327,17 +329,4 @@ class ZRepetitionInfo with ZExtensible {
         extension,
         zJsonHash(extra),
       ]);
-}
-
-/// Coerce défensive vers `Map<String, dynamic>` (repli `null`).
-Map<String, dynamic>? _asStringMap(Object? v) {
-  if (v is Map<String, dynamic>) return v;
-  if (v is Map) {
-    try {
-      return <String, dynamic>{for (final e in v.entries) '${e.key}': e.value};
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
 }

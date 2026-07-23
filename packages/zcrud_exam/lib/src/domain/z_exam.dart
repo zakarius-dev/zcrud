@@ -388,10 +388,12 @@ class ZExam extends ZEntity with ZExtensible {
     Object? raw,
     ZExamExtensionParser? parser,
   ) {
-    if (parser == null) return null;
-    final map = _asStringMap(raw);
-    if (map == null) return null;
-    return ZExtension.guard<ZExtension?>(() => parser(map));
+    // CR-LEX-33 : le corps de cette méthode était `if (parser == null) return
+    // null;` — un hôte SANS parser lisait `null`, et comme `extension` est une
+    // clé CONNUE (donc exclue d'`extra`), le payload d'un AUTRE hôte était
+    // DÉTRUIT au décodage, avant toute ligne de code applicatif. Le cœur
+    // préserve désormais verbatim ce que personne n'a su typer.
+    return zDecodeExtension(raw, parser);
   }
 
   /// Clés persistées **RÉSERVÉES** (champs générés + `extension` +
@@ -493,11 +495,3 @@ bool _intListEquals(List<int> a, List<int> b) {
   return true;
 }
 
-/// Coerce défensive vers `Map<String, dynamic>` (repli `null`).
-Map<String, dynamic>? _asStringMap(Object? v) {
-  if (v is Map<String, dynamic>) return v;
-  if (v is Map) {
-    return <String, dynamic>{for (final e in v.entries) '${e.key}': e.value};
-  }
-  return null;
-}

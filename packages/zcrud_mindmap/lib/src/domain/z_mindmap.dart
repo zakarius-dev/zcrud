@@ -37,6 +37,15 @@ import 'z_mindmap_tree_ops.dart';
 /// [isEphemeral] est en revanche redéfini : le défaut hérité (`id == null`) ne
 /// pourrait jamais être vrai ici, alors que la chaîne **vide** est précisément
 /// le marqueur d'absence d'identité de cette entité (cf. `fromJson`).
+/// Sentinelle de [ZMindmap.copyWithPreservingTree] : distingue « paramètre non
+/// fourni » de « mets explicitement à `null` ». Pendant local de la `_$undefined`
+/// que le générateur émet pour les entités annotées.
+const Object _$undefinedMindmap = _ZUndefinedMindmap();
+
+class _ZUndefinedMindmap {
+  const _ZUndefinedMindmap();
+}
+
 class ZMindmap extends ZEntity with ZExtensible {
   /// Construit une carte immuable. [nodes] est copié défensivement en liste
   /// non-modifiable.
@@ -88,6 +97,57 @@ class ZMindmap extends ZEntity with ZExtensible {
   /// Échappatoire non typée (AD-4), défaut `const {}`, jamais `null`.
   @override
   final Map<String, dynamic> extra;
+
+  /// Copie en **préservant les champs qui ne sont PAS l'arbre** (CR-LEX-29).
+  ///
+  /// ## Pourquoi cette méthode existe, et pourquoi elle exclut `nodes`
+  ///
+  /// `ZMindmap` était la SEULE entité du dépôt sans `copyWith` — mesuré :
+  /// `ZExam`, `ZStudyFolder`, `ZStudyDocument` en ont un, `ZMindmap` zéro. Le
+  /// motif documenté (« la mutation passe EXCLUSIVEMENT par
+  /// `ZMindmapTreeOps` ») protège la cohérence de l'**arbre**, et il reste
+  /// valable : `nodes` n'est **pas** un paramètre ici.
+  ///
+  /// Mais il ne devrait pas interdire de préserver ce qui **n'est pas l'arbre**.
+  /// Un hôte qui reconstruisait la carte champ par champ perdait
+  /// `description`, `extension` et `extra` à chaque sauvegarde — dont le slot
+  /// d'extension AD-4, celui qui porte les données d'un **autre** hôte.
+  ///
+  /// ⚠️ **Sentinelle obligatoire** : `description` et `extension` sont
+  /// nullables. Sans elle, `copyWith()` ne saurait pas distinguer « non
+  /// fourni » de « mets à `null` », et effacerait ce qu'il prétend préserver —
+  /// le défaut même qu'il corrige. Les entités générées utilisent la même
+  /// (`_$undefined`, émise par le codegen) ; celle-ci est déclarée à la main
+  /// parce que `zcrud_mindmap` est hors codegen.
+  ZMindmap copyWithPreservingTree({
+    Object? id = _$undefinedMindmap,
+    Object? folderId = _$undefinedMindmap,
+    Object? title = _$undefinedMindmap,
+    Object? description = _$undefinedMindmap,
+    Object? extension = _$undefinedMindmap,
+    Object? extra = _$undefinedMindmap,
+  }) {
+    return ZMindmap(
+      id: identical(id, _$undefinedMindmap) ? this.id : id! as String,
+      folderId: identical(folderId, _$undefinedMindmap)
+          ? this.folderId
+          : folderId! as String,
+      title:
+          identical(title, _$undefinedMindmap) ? this.title : title! as String,
+      description: identical(description, _$undefinedMindmap)
+          ? this.description
+          : description as String?,
+      // `nodes` est repris TEL QUEL : l'arbre ne se modifie que par TreeOps.
+      nodes: nodes,
+      extension: identical(extension, _$undefinedMindmap)
+          ? this.extension
+          : extension as ZExtension?,
+      // Le constructeur re-dépouille `extra` : l'opération est idempotente.
+      extra: identical(extra, _$undefinedMindmap)
+          ? this.extra
+          : (extra as Map<String, dynamic>?) ?? const <String, dynamic>{},
+    );
+  }
 
   /// Clés **connues** du cœur (le reste alimente [extra]).
   static const Set<String> _knownKeys = <String>{
@@ -186,12 +246,11 @@ class ZMindmap extends ZEntity with ZExtensible {
       // Renormalise les `level` : ne jamais faire confiance aux valeurs
       // persistées (cache fragile), racines forcées à 0 puis cascade.
       nodes: ZMindmapTreeOps.normalizeLevels(nodes),
-      extension: extensionDecoder == null
-          ? null
-          : ZExtension.guard<ZExtension?>(() {
-              final raw = json['extension'];
-              return raw is Map<String, dynamic> ? extensionDecoder(raw) : null;
-            }),
+      // CR-LEX-33 : ce ternaire rendait `null` dès qu'aucun décodeur n'était
+      // fourni. Comme `extension` est une clé CONNUE (donc exclue d'`extra`),
+      // le payload d'un AUTRE hôte était DÉTRUIT au décodage. Le cœur préserve
+      // désormais verbatim ce que personne n'a su typer.
+      extension: zDecodeExtension(json['extension'], extensionDecoder),
       extra: extra,
     );
   }

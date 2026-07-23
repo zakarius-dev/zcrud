@@ -63,6 +63,11 @@ export 'src/domain/extension/z_absence.dart';
 export 'src/domain/extension/z_extensible.dart';
 export 'src/domain/extension/z_extension.dart';
 export 'src/domain/extension/z_json_equality.dart';
+// CR-LEX-33 : `extension` était une clé CONNUE (donc exclue d'`extra`) dont le
+// décodage dépendait d'un paramètre OPTIONNEL — un hôte sans parser DÉTRUISAIT
+// le slot d'un autre, au décodage. `zDecodeExtension` préserve verbatim ce que
+// personne n'a su typer.
+export 'src/domain/extension/z_opaque_extension.dart';
 export 'src/domain/failures/z_failure.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';

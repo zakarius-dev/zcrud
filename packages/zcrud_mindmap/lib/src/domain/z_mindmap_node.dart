@@ -166,12 +166,11 @@ class ZMindmapNode extends ZNode with ZExtensible {
       content: json['content'] is String ? json['content'] as String : null,
       level: json['level'] is int ? json['level'] as int : 0,
       children: children,
-      extension: extensionDecoder == null
-          ? null
-          : ZExtension.guard<ZExtension?>(() {
-              final raw = json['extension'];
-              return raw is Map<String, dynamic> ? extensionDecoder(raw) : null;
-            }),
+      // CR-LEX-33 : ce ternaire rendait `null` dès qu'aucun décodeur n'était
+      // fourni. Comme `extension` est une clé CONNUE (donc exclue d'`extra`),
+      // le payload d'un AUTRE hôte était DÉTRUIT au décodage. Le cœur préserve
+      // désormais verbatim ce que personne n'a su typer.
+      extension: zDecodeExtension(json['extension'], extensionDecoder),
       extra: extra,
     );
   }

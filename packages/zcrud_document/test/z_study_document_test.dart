@@ -185,7 +185,9 @@ void main() {
         'extension': <String, dynamic>{'format_version': 1},
       });
       expect(d.extra.containsKey('extension'), isFalse);
-      expect(d.extension, isNull, reason: 'aucun parser injecté ⇒ repli null');
+      expect(d.extension, isA<ZOpaqueExtension>(),
+          reason: 'CR-LEX-33 : sans parser le payload est PRESERVE (il etait '
+              'detruit) ; le point du test reste qu il ne fuit pas dans extra');
     });
   });
 
