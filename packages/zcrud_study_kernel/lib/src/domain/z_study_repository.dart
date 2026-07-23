@@ -98,6 +98,25 @@ abstract class ZStudyRepository<T extends ZEntity>
   @protected
   Future<ZResult<T>> persist(T item, {String? collectionId});
 
+  /// Écriture protégée **PRÉSERVANTE** (CR-LEX-34) — point d'extension du
+  /// Template Method [saveMerging]. Fusionne [item] par-dessus l'existant au
+  /// lieu de l'écraser : voir [saveMerging] pour la sémantique et sa limite.
+  ///
+  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt dont le backend ne sait pas
+  /// fusionner au niveau du document le dit **explicitement**, exactement comme
+  /// [listParentIds]. Jamais un repli silencieux sur [persist], qui rouvrirait
+  /// la destruction invisible que ce membre élimine. L'adaptateur offline-first
+  /// (ES-3.2) l'**override**.
+  @protected
+  Future<ZResult<T>> persistMerging(T item, {String? collectionId}) async =>
+      Left<ZFailure, T>(
+        const ZDomainFailure(
+          'saveMerging() n\'est pas supporté par ce dépôt : son backend ne sait '
+          'pas fusionner au niveau du document. Un Left explicite, jamais une '
+          'écriture écrasante silencieuse.',
+        ),
+      );
+
   /// Énumère les identifiants des **parents** existants côté distant, pour une
   /// topologie *folder-scopée* (CR-LEX-10, remonté au PORT par CR-LEX-15).
   ///
@@ -152,5 +171,42 @@ abstract class ZStudyRepository<T extends ZEntity>
       validate(item).fold(
         (failure) => Future<ZResult<T>>.value(Left<ZFailure, T>(failure)),
         (_) => persist(item, collectionId: collectionId),
+      );
+
+  /// **Template Method PRÉSERVANT** (CR-LEX-34) : comme [save] — valide via
+  /// [validate] PUIS, seulement si `Right`, écrit — mais l'écriture **fusionne**
+  /// [item] par-dessus l'existant ([persistMerging]) au lieu de l'**écraser**
+  /// ([persist]).
+  ///
+  /// ## Le défaut que ce membre ferme
+  ///
+  /// [save] écrase le document en totalité. Un hôte dont l'entité ne mappe pas
+  /// 100 % des champs `Z` **détruit silencieusement** ceux qu'il ignore — dont
+  /// ceux écrits par un **autre hôte**, et les champs **hors-codegen**. Rien ne
+  /// l'en avertit : le code compile, `analyze` est vert, aucun test de round-trip
+  /// ne rougit (le harnais part d'une entité hôte, il ne peut donc jamais
+  /// construire l'état « un `Z` déjà porteur est écrasé »). C'est le défaut payé
+  /// **trois fois** (ZMindmap, ZExam, ZStudyDocument/Folder — CR-LEX-29/33).
+  ///
+  /// [saveMerging] déplace le « relire-fusionner » **dans le store**, une fois,
+  /// au lieu de le laisser à la charge — donc à l'oubli — de chaque appelant.
+  ///
+  /// ## Sémantique et LIMITE assumée
+  ///
+  /// Les clés de [item] écrasent l'existant ; les clés présentes **uniquement**
+  /// en base survivent. ⚠️ Le merge est **ADDITIF** : il ne peut pas EFFACER une
+  /// clé — un champ que [item] omet (y compris un nullable remis à `null`, que
+  /// `toMap` omet) est **préservé stale**. Pour un remplacement (donc un
+  /// effacement possible), utiliser [save]. Le choix de la voie appartient à
+  /// l'appelant, par appel.
+  ///
+  /// `@nonVirtual` (même raison que [save], code-review ES-3.1/M1) : la garantie
+  /// « validate AVANT écriture » ne doit pas pouvoir être court-circuitée par un
+  /// override. Les points d'extension restent [validate] et [persistMerging].
+  @nonVirtual
+  Future<ZResult<T>> saveMerging(T item, {String? collectionId}) =>
+      validate(item).fold(
+        (failure) => Future<ZResult<T>>.value(Left<ZFailure, T>(failure)),
+        (_) => persistMerging(item, collectionId: collectionId),
       );
 }

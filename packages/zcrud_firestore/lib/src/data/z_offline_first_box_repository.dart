@@ -110,8 +110,12 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     String? parentId,
     Future<bool> Function()? isConnected,
     ZOfflineFirstBoxLog? logger,
+    ZClock? clock,
     bool autoListen = true,
   })  : _local = local,
+        // CR-LEX-36 : même source de temps que le store local, pour que le push
+        // distant et l'écriture locale portent une estampille cohérente.
+        _clock = clock ?? ZSystemClock.utc,
         _firestore = firestore,
         _resolver = resolver,
         _kind = kind,
@@ -125,6 +129,8 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   }
 
   final ZLocalStore<T> _local;
+  /// CR-LEX-36 : source de temps de la clé LWW `updated_at` du push distant.
+  final ZClock _clock;
   final FirebaseFirestore _firestore;
   final ZFirestorePathResolver _resolver;
   final String _kind;
@@ -353,12 +359,32 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     );
   }
 
+  /// Écriture protégée **PRÉSERVANTE** (CR-LEX-34) : identique à [persist] mais
+  /// le store **fusionne** au lieu d'écraser ([ZLocalStore.putMerged]). Le push
+  /// distant reste inchangé — il pousse l'entité fusionnée relue localement.
+  ///
+  /// ⚠️ **Le push distant, lui, reste un `set` écrasant** : la fusion protège le
+  /// document LOCAL (source de vérité offline-first, AD-9). Un autre hôte qui
+  /// aurait écrit des clés **uniquement au cloud** sans passer par le store local
+  /// n'est pas couvert — cas hors périmètre offline-first (le local fait autorité).
+  @override
+  Future<ZResult<T>> persistMerging(T item, {String? collectionId}) async {
+    final localRes = await _local.putMerged(item);
+    return localRes.fold(
+      (failure) => Left<ZFailure, T>(failure),
+      (saved) {
+        unawaited(_bestEffortPushFresh(saved, collectionId: collectionId));
+        return Right<ZFailure, T>(saved);
+      },
+    );
+  }
+
   /// Pousse [saved] (matérialisé) au Firestore résolu avec une méta **fraîche**
   /// (`updated_at=now`, `is_deleted:false`) — best-effort (échec loggé + avalé).
   Future<void> _bestEffortPushFresh(T saved, {String? collectionId}) async {
     final id = saved.id;
     if (id == null) return; // défensif : put a matérialisé l'id
-    final iso = DateTime.now().toUtc().toIso8601String();
+    final iso = _clock().toIso8601String();
     await _bestEffortSet(
       docId: id,
       map: _cloudMap(

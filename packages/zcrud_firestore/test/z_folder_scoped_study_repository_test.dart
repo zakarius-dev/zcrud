@@ -35,9 +35,13 @@ class _FakeLocal<T extends ZEntity> implements ZLocalStore<T> {
   @override
   Future<ZResult<T>> put(T item) => throw UnimplementedError();
   @override
+  Future<ZResult<T>> putMerged(T item) => throw UnimplementedError();
+  @override
   Future<ZResult<Unit>> softDelete(String id) => throw UnimplementedError();
   @override
   Future<ZResult<Unit>> restore(String id) => throw UnimplementedError();
+  @override
+  Future<ZResult<Unit>> purge(String id) => throw UnimplementedError();
   @override
   Future<ZResult<List<ZSyncEntry<T>>>> syncEntries() =>
       throw UnimplementedError();

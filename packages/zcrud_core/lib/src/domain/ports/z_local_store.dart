@@ -60,7 +60,49 @@ abstract class ZLocalStore<T extends ZEntity> {
   /// Persiste [item] dans le cache local (source de vérité). Matérialise
   /// l'éphémère (attribution d'`id` opaque, AD-14) et renvoie l'entité
   /// matérialisée. Réécrit `is_deleted:false`/`updated_at` (`ZSyncMeta`).
+  ///
+  /// ⚠️ **ÉCRASEMENT TOTAL** : le document persisté est **remplacé** par la
+  /// sérialisation de [item]. Une clé présente en base mais **absente** de la
+  /// map de [item] — typiquement écrite par un **AUTRE hôte** — est **perdue**.
+  /// Pour préserver l'existant non mappé, voir [putMerged] (CR-LEX-34).
   Future<ZResult<T>> put(T item);
+
+  /// **Écriture PRÉSERVANTE** (CR-LEX-34) : fusionne la sérialisation de [item]
+  /// **PAR-DESSUS** le document existant, clé à clé. Une clé présente en base
+  /// mais **absente** de [item] — écrite par un autre hôte, ou champ hors-codegen
+  /// que l'appelant n'a pas relu — **SURVIT**.
+  ///
+  /// ## Pourquoi ce membre existe
+  ///
+  /// [put] écrase le document **en totalité** : un hôte dont l'entité ne mappe
+  /// pas 100 % des champs `Z` **détruit silencieusement** ceux qu'il ignore, et
+  /// rien ne l'en avertit (le code compile, `analyze` est vert, aucun test ne
+  /// rougit). C'est l'unique voie sans « relire-avant-écrire » manuel, dont
+  /// l'oubli est **structurellement invisible**. [putMerged] déplace ce
+  /// relire-fusionner **dans le store**, une fois, au lieu de le laisser à la
+  /// charge de chaque appelant.
+  ///
+  /// ## Sémantique EXACTE, et sa limite ASSUMÉE
+  ///
+  /// - Les clés présentes dans [item] **écrasent** l'existant (dernière écriture
+  ///   gagne pour ces clés).
+  /// - Les clés présentes **uniquement** en base sont **conservées**.
+  /// - ⚠️ **Ce merge est ADDITIF** : il ne peut pas EFFACER une clé. Un champ
+  ///   que [item] omet — y compris un champ nullable remis à `null` (que
+  ///   `toMap` **omet**) — est **préservé stale**, jamais supprimé. Pour un
+  ///   effacement, utiliser [put] (remplacement total). Ce choix est ce que la
+  ///   préservation exige : on ne peut pas distinguer « champ non mappé » de
+  ///   « champ volontairement vidé » depuis la seule map de [item].
+  ///
+  /// Comme [put] : matérialise l'éphémère, réestampille `updated_at=now` et
+  /// **ressuscite** (`is_deleted:false`) — un `putMerged` **est** une mutation
+  /// utilisateur, pas l'application d'un merge de sync (pour cela, [applyMerged]).
+  ///
+  /// **Défaut** : les implémentations qui ne savent pas fusionner au niveau du
+  /// document brut **doivent** rendre un `Left(ZCacheFailure)` explicite —
+  /// **jamais** un repli silencieux sur [put], qui rouvrirait exactement la
+  /// destruction invisible que ce membre élimine.
+  Future<ZResult<T>> putMerged(T item);
 
   /// Soft-delete l'élément [id] (`is_deleted = true`, hors-entité `ZSyncMeta`).
   /// **Jamais** de purge physique. `id` absent → `Left(ZNotFoundFailure)`.
@@ -94,6 +136,27 @@ abstract class ZLocalStore<T extends ZEntity> {
   /// un tombstone** (soft-delete). Le corps persiste **toujours** son `id`
   /// (invariant clé↔corps). Erreur d'accès → `Left(ZCacheFailure)`.
   Future<ZResult<Unit>> applyMerged(ZSyncEntry<T> entry);
+
+  /// **Purge physique par identité** (CR-LEX-35) : supprime DÉFINITIVEMENT
+  /// l'entrée [id] du cache local, **SANS** tombstone.
+  ///
+  /// ## Pourquoi, et en quoi c'est DISTINCT de [softDelete]
+  ///
+  /// [softDelete] pose un tombstone (`is_deleted = true`) — nécessaire pour
+  /// **propager** une suppression **utilisateur** au merge LWW. Mais une
+  /// **annulation d'écriture** (une création qui a échoué, une carte refusée
+  /// pour quota/type) n'a **pas** à être propagée : elle annule une écriture
+  /// qui, précisément, ne doit **pas** avoir eu lieu. La forcer en tombstone
+  /// laisse une entrée dans la box **indéfiniment** et **propage** au cloud une
+  /// suppression de rattrapage — la box croît sans borne chez un utilisateur qui
+  /// essuie beaucoup de refus.
+  ///
+  /// ⚠️ **À réserver aux annulations qui ne doivent pas être propagées.** Pour
+  /// une suppression **utilisateur** (à propager), c'est [softDelete].
+  ///
+  /// `id` absent → `Right(unit)` (idempotent : purger ce qui n'existe pas est un
+  /// succès, pas une erreur — contrairement à [softDelete] qui exige la cible).
+  Future<ZResult<Unit>> purge(String id);
 
   /// **Purge physique** de tout le cache local (maintenance/tests) — distincte
   /// du [softDelete] métier. À NE PAS utiliser comme voie de suppression d'une

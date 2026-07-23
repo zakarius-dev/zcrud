@@ -254,4 +254,95 @@ void main() {
           isA<Either<ZFailure, _FakeEntity>>());
     });
   });
+
+  group('CR-LEX-34 — saveMerging : Template Method PRÉSERVANT', () {
+    test('🔴 défaut = Left explicite (jamais un écrasement silencieux)',
+        () async {
+      // Comme listParentIds : un dépôt dont le backend ne sait pas fusionner le
+      // DIT, il ne retombe pas en silence sur une écriture écrasante.
+      final res = await _SpyRepo().saveMerging(const _FakeEntity(id: 'a'));
+      expect(res.isLeft(), isTrue);
+      res.fold(
+        (f) => expect(f, isA<ZDomainFailure>()),
+        (_) => fail('un défaut non supporté doit être Left'),
+      );
+    });
+
+    test('🔴 validate→Left BLOQUE persistMerging (même garantie que save)',
+        () async {
+      var merged = 0;
+      final repo = _MergeSpyRepo(
+        onMerge: () => merged++,
+        validateOverride: (_) =>
+            Left<ZFailure, Unit>(const ZDomainFailure('rejeté')),
+      );
+      final res = await repo.saveMerging(const _FakeEntity(id: 'a'));
+      expect(res.isLeft(), isTrue);
+      expect(merged, 0,
+          reason: 'un rejet métier doit couper l\'écriture préservante AUSSI');
+    });
+
+    test('validate→Right laisse passer vers persistMerging', () async {
+      var merged = 0;
+      final repo = _MergeSpyRepo(onMerge: () => merged++);
+      final res = await repo.saveMerging(const _FakeEntity(id: 'a'));
+      expect(res.isRight(), isTrue);
+      expect(merged, 1);
+    });
+  });
+}
+
+/// Dépôt-espion qui OVERRIDE `persistMerging` — prouve que le Template Method
+/// `saveMerging` l'appelle bien, et seulement après un `validate → Right`.
+class _MergeSpyRepo extends ZStudyRepository<_FakeEntity> {
+  _MergeSpyRepo({required this.onMerge, this.validateOverride});
+
+  final void Function() onMerge;
+  final ZResult<Unit> Function(_FakeEntity item)? validateOverride;
+
+  @override
+  ZResult<Unit> validate(_FakeEntity item) =>
+      validateOverride?.call(item) ?? super.validate(item);
+
+  @override
+  Future<ZResult<_FakeEntity>> persistMerging(
+    _FakeEntity item, {
+    String? collectionId,
+  }) async {
+    onMerge();
+    return Right<ZFailure, _FakeEntity>(item);
+  }
+
+  @override
+  Future<ZResult<_FakeEntity>> persist(
+    _FakeEntity item, {
+    String? collectionId,
+  }) async =>
+      Right<ZFailure, _FakeEntity>(item);
+
+  @override
+  Stream<List<_FakeEntity>> watchAll() =>
+      Stream<List<_FakeEntity>>.value(const <_FakeEntity>[]);
+  @override
+  Stream<List<_FakeEntity>> watch(ZDataRequest request) =>
+      Stream<List<_FakeEntity>>.value(const <_FakeEntity>[]);
+  @override
+  Future<ZResult<List<_FakeEntity>>> getAll({ZDataRequest? request}) async =>
+      const Right<ZFailure, List<_FakeEntity>>(<_FakeEntity>[]);
+  @override
+  Future<ZResult<_FakeEntity>> getById(String id) async =>
+      Left<ZFailure, _FakeEntity>(const ZNotFoundFailure('x'));
+  @override
+  Future<ZResult<Unit>> softDelete(String id) async =>
+      const Right<ZFailure, Unit>(unit);
+  @override
+  Future<ZResult<Unit>> restore(String id) async =>
+      const Right<ZFailure, Unit>(unit);
+  @override
+  Future<ZResult<int>> count({ZDataRequest? request}) async =>
+      const Right<ZFailure, int>(0);
+  @override
+  Future<ZResult<Unit>> sync() async => const Right<ZFailure, Unit>(unit);
+  @override
+  void dispose() {}
 }

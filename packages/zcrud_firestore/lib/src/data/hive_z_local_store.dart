@@ -72,6 +72,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     String Function()? idFactory,
     ZLocalStoreLog? logger,
+    ZClock? clock,
     bool ownsBox = false,
   })  : _box = box,
         _kind = kind,
@@ -80,6 +81,9 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         _fromMapSafe = fromMapSafe,
         _idFactory = idFactory ?? _defaultIdFactory,
         _log = logger ?? _noopLog,
+        // CR-LEX-36 : source de temps de la clé LWW. Défaut = horloge système
+        // (comportement historique). Un hôte peut injecter une horloge corrigée.
+        _clock = clock ?? ZSystemClock.utc,
         _ownsBox = ownsBox;
 
   /// Ouvre (ou réutilise) la box du [kind] via Hive puis construit l'adaptateur
@@ -93,6 +97,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     String Function()? idFactory,
     ZLocalStoreLog? logger,
+    ZClock? clock,
   }) async {
     final box = await Hive.openBox<dynamic>(boxNameFor(kind));
     return HiveZLocalStore<T>(
@@ -103,6 +108,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
       fromMapSafe: fromMapSafe,
       idFactory: idFactory,
       logger: logger,
+      clock: clock,
       ownsBox: true,
     );
   }
@@ -117,6 +123,8 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final String Function() _idFactory;
   final ZLocalStoreLog _log;
+  /// CR-LEX-36 : source de temps de la clé LWW `updated_at`.
+  final ZClock _clock;
   final bool _ownsBox;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
@@ -191,7 +199,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     final map = Map<String, dynamic>.of(_toMap(value));
     map[_kId] = id;
     final meta =
-        ZSyncMeta(updatedAt: DateTime.now().toUtc(), isDeleted: false).toJson();
+        ZSyncMeta(updatedAt: _clock(), isDeleted: false).toJson();
     map[_kUpdatedAt] = meta[_kUpdatedAt];
     map[_kIsDeleted] = false;
     return map;
@@ -467,6 +475,35 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, T>(decoded);
       });
 
+  /// Écriture PRÉSERVANTE (CR-LEX-34) : fusionne la map de [item] PAR-DESSUS le
+  /// document brut existant. Une clé présente en base mais absente de [item]
+  /// (autre hôte, champ hors-codegen non relu) **survit**.
+  ///
+  /// Le merge est fait sur la **map brute** stockée — seule couche qui voit les
+  /// clés non mappées : décoder en `T` puis ré-encoder les perdrait, sauf
+  /// celles que `extra` a capturées. On lit donc le JSON brut et on superpose
+  /// `{...existant, ...encodé}` : l'encodé (donc [item] + méta fraîche) gagne
+  /// par clé, l'existant-seul survit. Absent en base ⇒ création (= [put]).
+  @override
+  Future<ZResult<T>> putMerged(T item) => _guard(() async {
+        final id = item.id ?? _idFactory();
+        final encoded = _encode(item, id);
+        final existing = _rawMap(id, _box.get(id));
+        final merged = existing == null
+            ? encoded
+            : <String, dynamic>{...existing, ...encoded};
+        await _box.put(id, jsonEncode(merged));
+
+        final reread = _rawMap(id, _box.get(id));
+        final decoded = reread == null ? null : _decodeEntity(id, reread);
+        if (decoded == null) {
+          return Left<ZFailure, T>(
+            ZDomainFailure('Entité fusionnée mais non re-décodable (kind=$_kind)'),
+          );
+        }
+        return Right<ZFailure, T>(decoded);
+      });
+
   @override
   Future<ZResult<Unit>> softDelete(String id) =>
       _setDeletedFlag(id, deleted: true);
@@ -474,6 +511,14 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   @override
   Future<ZResult<Unit>> restore(String id) =>
       _setDeletedFlag(id, deleted: false);
+
+  /// Purge physique par identité (CR-LEX-35) : `box.delete(id)`, **sans**
+  /// tombstone. Idempotent — purger un `id` absent est un succès.
+  @override
+  Future<ZResult<Unit>> purge(String id) => _guard(() async {
+        await _box.delete(id);
+        return Right<ZFailure, Unit>(unit);
+      });
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché), réécrit
   /// `updated_at` (ISO-8601). `id` absent → `Left(ZNotFoundFailure)`. **Jamais**
@@ -492,7 +537,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
           );
         }
         map[_kIsDeleted] = deleted;
-        map[_kUpdatedAt] = DateTime.now().toUtc().toIso8601String();
+        map[_kUpdatedAt] = _clock().toIso8601String();
         await _box.put(id, jsonEncode(map));
         return Right<ZFailure, Unit>(unit);
       });
