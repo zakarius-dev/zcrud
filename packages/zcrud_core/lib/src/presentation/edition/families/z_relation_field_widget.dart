@@ -145,7 +145,7 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
       },
       // AD-10 : erreur capturée, aucune exception propagée au build ;
       // conservation de la dernière liste connue (ou reste `null` = chargement).
-      onError: (Object _, StackTrace __) {},
+      onError: (Object error, StackTrace stack) {},
       cancelOnError: false,
     );
   }
@@ -227,7 +227,7 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         for (final option in choices)
           DropdownMenuItem<Object?>(
             value: option.value,
-            child: Text(label(context, option.label, fallback: option.label)),
+            child: _dropdownItemChild(context, option),
           ),
       ],
       onChanged: enabled ? widget.onChanged : null,
@@ -322,6 +322,30 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
 
   /// Libellé d'affichage d'une [value] (résolu depuis [choices] ; `null` si
   /// absente des options live — valeur non représentée).
+  /// Item de menu déroulant — titre, plus une ligne secondaire quand l'option
+  /// porte un `subtitle` (CR-IFFD-26 §1, parité avec `select`).
+  Widget _dropdownItemChild(BuildContext context, ZFieldChoice option) {
+    final String title = label(context, option.label, fallback: option.label);
+    final String? sub = option.subtitle == null
+        ? null
+        : label(context, option.subtitle!, fallback: option.subtitle!);
+    if (sub == null || sub.isEmpty) {
+      return Text(title, textAlign: TextAlign.start);
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, textAlign: TextAlign.start),
+        Text(
+          sub,
+          textAlign: TextAlign.start,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
   String? _labelForValue(List<ZFieldChoice> choices, Object? value) {
     for (final c in choices) {
       if (c.value == value) {
@@ -349,6 +373,9 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         searchable: widget.searchable || widget.crudHandler != null,
         initialSelection: initial,
         labelOf: (c) => label(sheetContext, c.label, fallback: c.label),
+        subtitleOf: (c) => c.subtitle == null
+            ? null
+            : label(sheetContext, c.subtitle!, fallback: c.subtitle!),
         // DP-15 : CRUD inline neutre (create/edit/copy) + snapshot du filtre
         // cross-champ pour pré-remplir la création. `null` ⇒ aucun bouton.
         crudHandler: widget.crudHandler,
@@ -434,6 +461,7 @@ class _RelationSelectSheet extends StatefulWidget {
     required this.searchable,
     required this.initialSelection,
     required this.labelOf,
+    this.subtitleOf,
     this.crudHandler,
     this.crudContext = const <String, Object?>{},
   });
@@ -444,6 +472,14 @@ class _RelationSelectSheet extends StatefulWidget {
   final bool searchable;
   final Set<Object?> initialSelection;
   final String Function(ZFieldChoice) labelOf;
+
+  /// CR-IFFD-26 §1 : sous-titre d'une option, ou `null`.
+  ///
+  /// `relation` était la SEULE des trois familles à ne pas rendre
+  /// `ZFieldChoice.subtitle` (`select` et `row_chips` le font) — alors que
+  /// c'est celle qui en a le plus besoin : elle liste des ENTITÉS, dont le seul
+  /// libellé est souvent ambigu (deux homonymes deviennent indistinguables).
+  final String? Function(ZFieldChoice)? subtitleOf;
 
   /// CRUD inline neutre (DP-15) : `null` ⇒ aucun bouton créer/modifier/copier.
   final ZRelationCrudHandler? crudHandler;
@@ -470,7 +506,11 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
     if (_query.isEmpty) return _choices;
     final q = _query.toLowerCase();
     return _choices
-        .where((c) => widget.labelOf(c).toLowerCase().contains(q))
+        .where((c) =>
+            widget.labelOf(c).toLowerCase().contains(q) ||
+            // Le sous-titre porte souvent le discriminant (un `@pseudo`) : le
+            // rendre visible sans le rendre cherchable serait à moitié utile.
+            (widget.subtitleOf?.call(c)?.toLowerCase().contains(q) ?? false))
         .toList(growable: false);
   }
 
@@ -537,6 +577,17 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
     }
     if (result == null) return; // annulé/échec → no-op.
     _selectResult(result, replaced: replaced);
+  }
+
+  /// Sous-titre d'une option, ou `null` s'il n'y en a pas (CR-IFFD-26 §1).
+  Widget? _subtitleWidget(BuildContext context, ZFieldChoice choice) {
+    final String? sub = widget.subtitleOf?.call(choice);
+    if (sub == null || sub.isEmpty) return null;
+    return Text(
+      sub,
+      textAlign: TextAlign.start,
+      style: Theme.of(context).textTheme.bodySmall,
+    );
   }
 
   @override
@@ -612,6 +663,7 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                                 ListTileControlAffinity.leading,
                             title: Text(widget.labelOf(choice),
                                 textAlign: TextAlign.start),
+                            subtitle: _subtitleWidget(context, choice),
                             // DP-15 : affordances Modifier/Copier par option.
                             secondary: crud == null
                                 ? null

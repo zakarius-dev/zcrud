@@ -278,6 +278,9 @@ class ZDerivationEngine {
         _controller.isTouched(target)) {
       return; // saisie manuelle PRÉSERVÉE.
     }
+    // CR-IFFD-26 §2 : la fonction peut S'ABSTENIR. Comparé par IDENTITÉ, donc
+    // aucune valeur métier ne peut être confondue avec le marqueur.
+    if (identical(value, zUnchanged)) return;
     _write(target, value, chain);
   }
 

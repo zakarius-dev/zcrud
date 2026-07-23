@@ -25,7 +25,7 @@
 # dép-git, la garder tirait un plugin natif lourd pour zéro fonctionnalité.
 name: zcrud_media
 description: "Media field satellite for zcrud (AD-51): wires the existing ZFilePicker/ZFileSource core contract behind a neutral AppFile/paths/Uint8List API. Provides ZMediaFilePicker + rich media field widgets (drop-zone/open/video thumbnail) registered via ZWidgetRegistry."
-version: 0.9.0
+version: 0.10.0
 publish_to: none
 resolution: workspace
 
@@ -47,7 +47,7 @@ environment:
 # `test/z_media_confinement_test.dart` (allowlist EXACTE de 8 entrées =
 # {flutter, zcrud_core} ∪ ces 6). AUCUN secret/clé.
 dependencies:
-  zcrud_core: ^0.9.0
+  zcrud_core: ^0.10.0
   flutter:
     sdk: flutter
   image_picker: ^1.2.0

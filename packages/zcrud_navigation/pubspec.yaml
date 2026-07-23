@@ -18,7 +18,7 @@
 # reste déclaré pour flutter_test et pour le présentateur EX-UI.6 (à venir).
 name: zcrud_navigation
 description: "Transverse navigation UI infrastructure for zcrud: ZEditionPresentation, ZFormWeight and a pure injectable ZPresentationPolicy deriving the edition presentation from a ZWindowSizeClass breakpoint. Depends on zcrud_core and zcrud_responsive."
-version: 0.9.0
+version: 0.10.0
 publish_to: none
 resolution: workspace
 
@@ -43,8 +43,8 @@ environment:
 # `zcrud_*`). ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur,
 # AUCUN tiers responsive, AUCUN dartz.
 dependencies:
-  zcrud_core: ^0.9.0
-  zcrud_responsive: ^0.9.0
+  zcrud_core: ^0.10.0
+  zcrud_responsive: ^0.10.0
   flutter:
     sdk: flutter
 

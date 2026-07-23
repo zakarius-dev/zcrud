@@ -20,7 +20,7 @@
 # CORE OUT=0 intact). AUCUN gestionnaire d'état, AUCUN routeur.
 name: zcrud_dnd
 description: "Opt-in native drag-and-drop surfaces for zcrud (OS-level file drops and cross-application data exchange), backed by super_drag_and_drop. Separate from in-app reordering."
-version: 0.9.0
+version: 0.10.0
 publish_to: none
 resolution: workspace
 
@@ -38,7 +38,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
-  zcrud_core: ^0.9.0
+  zcrud_core: ^0.10.0
   flutter:
     sdk: flutter
   super_drag_and_drop: ^0.9.1

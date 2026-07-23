@@ -114,6 +114,43 @@ typedef ZDerivationValueFn = Future<Object?> Function(
   Map<String, Object?> sources,
 );
 
+/// Marqueur rendu par un [ZDerivationValueFn] pour dire **« ne touche à rien »**
+/// (CR-IFFD-26 §2).
+///
+/// Sans lui, la valeur rendue était écrite INCONDITIONNELLEMENT : rendre `null`
+/// EFFACE la cible, il n'existait donc aucune façon d'exprimer l'abstention. Or
+/// c'est la règle habituelle d'une **cascade d'invalidation** :
+///
+/// > « Si la source devient vide, efface la cible — elle n'a plus de sens.
+/// >   Sinon, laisse la saisie de l'utilisateur tranquille. »
+///
+/// `ZDerivationOverwrite.ifPristine` ne la couvre pas : sa condition porte sur
+/// l'état vierge de la CIBLE, alors que celle-ci porte sur la valeur de la
+/// SOURCE. Les deux se composent d'ailleurs sans se gêner.
+///
+/// ```dart
+/// value: (v) async {
+///   final amont = v['dossierId'];
+///   if (amont == null || amont == '') return null;  // efface : plus de sens
+///   return zUnchanged;                              // sinon : ne touche à rien
+/// },
+/// ```
+// Pas d'`@immutable` : `lib/src/domain` est PUR DART (gate `domain_purity`), et
+// l'annotation viendrait de `package:flutter/foundation.dart`. La classe est de
+// toute façon sans état et son unique instance est `const`.
+final class ZUnchanged {
+  const ZUnchanged._();
+
+  @override
+  String toString() => 'zUnchanged';
+}
+
+/// Instance unique du marqueur [ZUnchanged].
+///
+/// Comparé par IDENTITÉ : une valeur métier ne peut donc jamais être confondue
+/// avec lui, même si elle s'imprime pareil.
+const ZUnchanged zUnchanged = ZUnchanged._();
+
 /// Fonction de dérivation des **options** d'un `select`/`radio`/`checkbox`.
 typedef ZDerivationOptionsFn = Future<List<ZFieldChoice>> Function(
   Map<String, Object?> sources,

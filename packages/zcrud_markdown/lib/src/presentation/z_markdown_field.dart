@@ -113,6 +113,7 @@ class ZMarkdownField extends StatefulWidget {
     required ZFormController this.controller,
     required this.field,
     this.showToolbar = true,
+    this.showLabel = true,
     this.toolbarConfig,
     this.codec,
     this.minLines,
@@ -135,6 +136,7 @@ class ZMarkdownField extends StatefulWidget {
   ZMarkdownField.fromContext({
     required ZFieldWidgetContext this.ctx,
     required this.mode,
+    this.showLabel = true,
     this.toolbarConfig,
     this.codec,
     this.minLines,
@@ -146,6 +148,14 @@ class ZMarkdownField extends StatefulWidget {
   })  : controller = null,
         field = ctx.field,
         showToolbar = true;
+
+  /// Le libellé du champ est-il RENDU au-dessus de l'éditeur ? (CR-IFFD-25 §1)
+  ///
+  /// `true` par défaut : c'est ce que font tous les autres types de champ, via
+  /// `InputDecoration.labelText`. Un hôte qui pose déjà son propre libellé peut
+  /// le désactiver — mais qu'il sache que le socle EXCLUT le sien de la
+  /// sémantique, donc un libellé app-side sera annoncé une seule fois.
+  final bool showLabel;
 
   /// Contrôleur détenant la tranche (voie `controller`) — `null` en voie `ctx`.
   final ZFormController? controller;
@@ -600,8 +610,20 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     // hauteur est plafonnée ; sinon comportement E6-1 (intrinsèque, non-scroll).
     final double lineHeight =
         (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16) * 1.5;
-    final int? minLines = widget.minLines;
-    final int? maxLines = widget.maxLines;
+    // CR-IFFD-25 §2 : la hauteur est une propriété du CHAMP, pas de
+    // l'application. Elle n'était lisible que depuis le registre
+    // (`registerZMarkdownFields(minLines:)`), donc fixée par sous-arbre : un
+    // formulaire portant deux éditeurs de hauteurs différentes (3/5 et 5/10)
+    // n'était pas portable, aucune valeur de registre ne satisfaisant les deux.
+    //
+    // La spec l'emporte, le registre reste le DÉFAUT — rien ne casse. Aucune
+    // config nouvelle : `ZTextConfig` porte déjà `minLines`/`maxLines` pour le
+    // texte simple, et un éditeur riche est un champ de texte. L'asymétrie
+    // entre les deux familles n'avait pas de raison d'être.
+    final ZFieldConfig? config = _field.config;
+    final ZTextConfig? textConfig = config is ZTextConfig ? config : null;
+    final int? minLines = textConfig?.minLines ?? widget.minLines;
+    final int? maxLines = textConfig?.maxLines ?? widget.maxLines;
     final bool bounded = maxLines != null;
 
     Widget quill = QuillEditor(
@@ -652,6 +674,25 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        // CR-IFFD-25 §1 : le libellé n'était RENDU nulle part — il n'alimentait
+        // que la sémantique et le titre du dialog plein écran. Dans un même
+        // formulaire, « Titre » s'affichait au-dessus de son champ et
+        // « Contenu » non : incohérence INTERNE au socle, tous les autres types
+        // passant par `zFieldDecoration` (donc par un `InputDecoration.labelText`
+        // visible).
+        //
+        // ⚠️ `ExcludeSemantics` est indispensable : le libellé est DÉJÀ porté
+        // par le `Semantics(textField:, label:)` de l'éditeur. Sans exclusion,
+        // un lecteur d'écran l'annoncerait DEUX FOIS — exactement le défaut
+        // corrigé sur `ZStudyToolsItemCard` (handoff v0.4.6 §2), et la raison
+        // pour laquelle IFFD s'est délibérément abstenue de le contourner.
+        if (_showLabel)
+          ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(bottom: 4),
+              child: Text(label, style: _labelStyle(context)),
+            ),
+          ),
         if (showToolbar)
           Semantics(
             container: true,
@@ -684,6 +725,24 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       ],
       child: column,
     );
+  }
+
+  /// Le libellé doit-il être RENDU ?
+  ///
+  /// Non quand l'hôte l'a explicitement désactivé, ni quand le champ n'a aucun
+  /// libellé propre (`label` retombe alors sur `name`, un identifiant technique
+  /// qu'il vaut mieux ne pas afficher).
+  bool get _showLabel => widget.showLabel && _field.label != null;
+
+  /// Style du libellé — aligné sur celui d'un `InputDecoration.labelText`, pour
+  /// que le champ riche s'accorde visuellement à ses voisins (FR-26 : aucune
+  /// couleur ni taille en dur).
+  TextStyle? _labelStyle(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return theme.inputDecorationTheme.labelStyle ??
+        theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        );
   }
 
   /// Compteur vivant de caractères (MIN-1) — affiché sous l'éditeur quand une
