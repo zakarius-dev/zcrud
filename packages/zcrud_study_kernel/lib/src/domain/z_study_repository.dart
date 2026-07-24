@@ -102,7 +102,7 @@ abstract class ZStudyRepository<T extends ZEntity>
   /// Template Method [saveMerging]. Fusionne [item] par-dessus l'existant au
   /// lieu de l'écraser : voir [saveMerging] pour la sémantique et sa limite.
   ///
-  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt dont le backend ne sait pas
+  /// **Défaut** : `Left(ZUnsupportedOperationFailure)` (CR-LEX-44) — un dépôt dont le backend ne sait pas
   /// fusionner au niveau du document le dit **explicitement**, exactement comme
   /// [listParentIds]. Jamais un repli silencieux sur [persist], qui rouvrirait
   /// la destruction invisible que ce membre élimine. L'adaptateur offline-first
@@ -110,10 +110,11 @@ abstract class ZStudyRepository<T extends ZEntity>
   @protected
   Future<ZResult<T>> persistMerging(T item, {String? collectionId}) async =>
       Left<ZFailure, T>(
-        const ZDomainFailure(
+        const ZUnsupportedOperationFailure(
           'saveMerging() n\'est pas supporté par ce dépôt : son backend ne sait '
           'pas fusionner au niveau du document. Un Left explicite, jamais une '
           'écriture écrasante silencieuse.',
+          operation: 'persistMerging',
         ),
       );
 
@@ -137,16 +138,17 @@ abstract class ZStudyRepository<T extends ZEntity>
   /// liste vide : un **succès silencieux** indiscernable de « l'utilisateur n'a
   /// rien ».
   ///
-  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt dont la topologie n'a pas de
+  /// **Défaut** : `Left(ZUnsupportedOperationFailure)` (CR-LEX-44) — un dépôt dont la topologie n'a pas de
   /// parent (flat, global) ou qui n'implémente pas la découverte le dit
   /// **explicitement**. Jamais une liste vide, qui serait exactement le mode
   /// dégradé silencieux que ce membre existe pour éliminer.
   Future<ZResult<List<String>>> listParentIds() async =>
       Left<ZFailure, List<String>>(
-        const ZDomainFailure(
+        const ZUnsupportedOperationFailure(
           'listParentIds() n\'est pas supporté par ce dépôt : la topologie n\'a '
           'pas de parent à énumérer, ou la découverte n\'est pas implémentée. '
           'Un Left explicite, jamais une liste vide silencieuse.',
+          operation: 'listParentIds',
         ),
       );
 
@@ -192,15 +194,16 @@ abstract class ZStudyRepository<T extends ZEntity>
   /// les exclut : c'est tout l'intérêt — savoir qu'une entité est supprimée, et
   /// depuis quand, EST l'information demandée. Un dépôt vide rend `Right([])`.
   ///
-  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt sans couche de sync le dit
+  /// **Défaut** : `Left(ZUnsupportedOperationFailure)` (CR-LEX-44) — un dépôt sans couche de sync le dit
   /// explicitement, comme [listParentIds]. Jamais une liste vide, qui serait
   /// indiscernable de « l'utilisateur n'a rien ».
   Future<ZResult<List<ZSyncEntry<T>>>> getAllWithMeta() async =>
       Left<ZFailure, List<ZSyncEntry<T>>>(
-        const ZDomainFailure(
+        const ZUnsupportedOperationFailure(
           'getAllWithMeta() n\'est pas supporté par ce dépôt : il n\'a pas de '
           'couche de synchronisation exposant ZSyncMeta. Un Left explicite, '
           'jamais une liste vide silencieuse.',
+          operation: 'getAllWithMeta',
         ),
       );
 
@@ -228,15 +231,16 @@ abstract class ZStudyRepository<T extends ZEntity>
   /// L'ordre correct (propager, **attendre**, puis purger) est précisément ce que
   /// cette opération encapsule.
   ///
-  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt sans couche distante le dit
+  /// **Défaut** : `Left(ZUnsupportedOperationFailure)` (CR-LEX-44) — un dépôt sans couche distante le dit
   /// explicitement, comme [listParentIds] et [persistMerging]. Jamais un repli
   /// silencieux sur une purge non propagée, qui serait le piège lui-même.
   Future<ZResult<Unit>> purgeLocalPropagatingTombstone(String id) async =>
       Left<ZFailure, Unit>(
-        const ZDomainFailure(
+        const ZUnsupportedOperationFailure(
           'purgeLocalPropagatingTombstone() n\'est pas supporté par ce dépôt : '
           'il n\'a pas de couche distante où propager un tombstone. Un Left '
           'explicite, jamais une purge locale non propagée (résurrection).',
+          operation: 'purgeLocalPropagatingTombstone',
         ),
       );
 

@@ -128,6 +128,64 @@ class ZQuotaExceededFailure extends ZFailure {
       'ZQuotaExceededFailure($message, retryAfter: $retryAfter)';
 }
 
+/// L'opération **n'est pas supportée** par cette implémentation — ce n'est PAS
+/// une panne (CR-LEX-44).
+///
+/// 🔴 **Le défaut que ce type ferme.** Plusieurs membres de port ont une
+/// implémentation par défaut qui rend `Left(ZDomainFailure(<message>))` pour
+/// dire « ce dépôt n'a pas de couche de sync / de couche distante ». Le refus
+/// était donc **explicite mais indiscernable** : pour distinguer « non supporté »
+/// (⇒ je bascule sur mon propre chemin) d'« une panne réelle » (⇒ je remonte
+/// l'erreur), l'appelant n'avait que la **comparaison de chaîne** — fragile par
+/// nature, et qui casse à la première reformulation d'un message.
+///
+/// Mesuré côté hôte : adopter un tel membre faisait passer une garantie de
+/// **structurelle** à **conditionnelle à l'implémentation injectée**, avec une
+/// dégradation **silencieuse** dans un cas (index méta vide ⇒ tri faux) et un
+/// **échec visible par l'utilisateur** dans l'autre.
+///
+/// ```dart
+/// final r = await repo.getAllWithMeta();
+/// r.fold(
+///   (f) => f is ZUnsupportedOperationFailure
+///       ? _monPropreIndexMeta()   // capacité absente : repli DÉTERMINISTE
+///       : _remonterLErreur(f),    // panne réelle : ne jamais l'avaler
+///   (entries) => _utiliser(entries),
+/// );
+/// ```
+///
+/// ⚠️ **Limite assumée, à lire avant de concevoir dessus** : la découverte est
+/// **a posteriori** — on apprend l'indisponibilité en appelant. C'est sans
+/// conséquence pour une lecture ; pour une opération à effet visible, sondez au
+/// câblage plutôt qu'au geste de l'utilisateur. Un drapeau `supportsXxx` a été
+/// **écarté délibérément** : il constituerait une **seconde source de vérité**
+/// qu'un implémenteur pourrait oublier de mettre à jour en surchargeant le
+/// membre — l'échec silencieux exact que cette CR corrige.
+///
+/// [operation] nomme le membre non supporté (ex. `'getAllWithMeta'`), pour un
+/// diagnostic exploitable sans parser le message.
+class ZUnsupportedOperationFailure extends ZFailure {
+  /// Construit l'échec, en nommant l'[operation] non supportée.
+  const ZUnsupportedOperationFailure(super.message, {required this.operation});
+
+  /// Nom du membre non supporté (ex. `'purgeLocalPropagatingTombstone'`).
+  final String operation;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZUnsupportedOperationFailure &&
+          other.message == message &&
+          other.operation == operation;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, message, operation);
+
+  @override
+  String toString() =>
+      'ZUnsupportedOperationFailure($message, operation: $operation)';
+}
+
 /// Type de résultat ergonomique du domaine : `Either<ZFailure, T>` (AD-11).
 ///
 /// Convention : `Left` = échec ([ZFailure]), `Right` = succès (`T`). Pour les

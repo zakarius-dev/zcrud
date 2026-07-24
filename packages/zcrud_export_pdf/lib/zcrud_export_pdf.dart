@@ -34,6 +34,7 @@ export 'src/data/z_flashcard_pdf_template.dart' show ZFlashcardPdfTemplate;
 export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
 export 'src/data/z_pdf_export_options.dart' show ZPdfExportOptions, ZPdfOrientation;
 export 'src/data/z_pdf_exporter.dart' show buildPdfBytes;
+export 'src/domain/z_font_coverage.dart' show ZFontCoverage;
 export 'src/domain/z_latex_rasterizer.dart' show ZLatexRasterizer;
 // CR-LEX-38 : port de police TrueType. Sans lui, tout Unicode hors WinAnsi
 // (arabe, grec, CJK, emoji) était DÉTRUIT en `?` à l'export — sans aucun

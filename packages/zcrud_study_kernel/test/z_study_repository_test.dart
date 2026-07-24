@@ -260,10 +260,22 @@ void main() {
         () async {
       // Comme listParentIds : un dépôt dont le backend ne sait pas fusionner le
       // DIT, il ne retombe pas en silence sur une écriture écrasante.
+      //
+      // 🔴 CR-LEX-44 — cette assertion portait sur `ZDomainFailure`, c'est-à-dire
+      // sur le défaut MÊME que la CR incrimine : le refus était indiscernable
+      // d'une panne. Elle n'est pas retirée, elle est RENVERSÉE en garantie plus
+      // forte — le type doit désormais discriminer, et NE DOIT PAS être un
+      // `ZDomainFailure`, sans quoi la correction serait annulable en silence.
       final res = await _SpyRepo().saveMerging(const _FakeEntity(id: 'a'));
       expect(res.isLeft(), isTrue);
       res.fold(
-        (f) => expect(f, isA<ZDomainFailure>()),
+        (f) {
+          expect(f, isA<ZUnsupportedOperationFailure>());
+          expect(f, isNot(isA<ZDomainFailure>()),
+              reason: 'sinon l\'appelant ne peut toujours pas discriminer');
+          expect((f as ZUnsupportedOperationFailure).operation,
+              'persistMerging');
+        },
         (_) => fail('un défaut non supporté doit être Left'),
       );
     });

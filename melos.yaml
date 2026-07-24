@@ -105,6 +105,7 @@ scripts:
       dart run scripts/ci/gate_codegen.dart && \
       dart run scripts/ci/gate_codegen_distribution.dart && \
       dart run scripts/ci/gate_compat_resolution.dart && \
+      dart run scripts/ci/gate_consumption_recipe.dart && \
       dart run scripts/ci/gate_web_determinism.dart && \
       dart run scripts/ci/gate_reserved_keys.dart && \
       ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1 dart run scripts/ci/verify_serialization.dart

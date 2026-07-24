@@ -70,6 +70,123 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.14.0, path: packages/zcrud_export }
 ```
 
+---
+
+## 🔴 Deux pièges MESURÉS, découverts par les hôtes — pas par nous
+
+### Piège 1 — un paquet interne NEUF casse la résolution, même à API inchangée
+
+En `v0.16.0`, `zcrud_export` a été scindé : le PDF est passé dans un paquet léger
+`zcrud_export_pdf`, que `zcrud_export` ré-exporte **intégralement**. Le handoff affirmait
+« la surface publique est inchangée : **aucun hôte ne casse** ». C'était **faux au SOLVEUR**,
+et lex l'a mesuré :
+
+```
+could not find package `zcrud_export_pdf` at pub.dev
+```
+
+L'arête interne est `hosted` ⇒ **tout paquet `zcrud_*` du graphe doit figurer dans le
+`dependency_overrides` racine**, y compris ceux qui viennent d'apparaître et que l'hôte
+n'importe jamais lui-même. Le raisonnement d'origine portait sur la surface d'**API** —
+exacte — et l'extrapolait à la **résolution**, qui n'avait pas été exécutée.
+
+⚙️ **Fermé par un gate** : `scripts/ci/gate_consumption_recipe.dart` échoue au merge si un
+paquet `zcrud_*` du dépôt n'est pas listé ici. À sa première exécution il en a trouvé
+**dix**, pas un — le piège était bien plus large que le cas rencontré.
+
+### Piège 2 — un `dependency_overrides` EST une arête directe : l'alléger exige DEUX gestes
+
+Mesuré par lex en adoptant la scission :
+
+| Geste | `dart pub get` | Graphe résolu |
+|---|---|---|
+| dépendance **directe** sur `zcrud_export_pdf` **seule** | RC=0 | 380 → 380 · **delta 0** |
+| **+ retrait de l'entrée `zcrud_export:` du `dependency_overrides` racine** | RC=0 | 380 → **376** · **−4** |
+
+Lu dans le lock : `zcrud_export: dependency: "direct overridden"`. Tant que l'entrée existe,
+elle **tire le paquet et tout son volet tableur**, quelle que soit la dépendance déclarée.
+
+⇒ Pour ne plus tirer `syncfusion_flutter_xlsio` + `syncfusion_officecore` + `jiffy` :
+dépendre de `zcrud_export_pdf` **ET** retirer `zcrud_export` des overrides. Le premier geste
+seul ne gagne **rien** — un hôte qui suit la consigne à la lettre croira le correctif
+inefficace.
+
+⚠️ `pubspec.lock` étant souvent gitignoré, verrouillez l'allègement par un test de graphe :
+sans lui, il se défera au premier override rajouté par réflexe.
+
+---
+
+## Fermeture COMPLÈTE des paquets (à jour, vérifiée par gate)
+
+Les **31** paquets du dépôt. Listez dans `dependency_overrides` **tous** ceux que votre
+graphe atteint — pas seulement ceux que vous importez.
+
+```yaml
+dependency_overrides:
+  zcrud_annotations:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_annotations }
+  zcrud_core:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_core }
+  zcrud_dnd:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_dnd }
+  zcrud_document:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_document }
+  zcrud_exam:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_exam }
+  zcrud_export:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_export }
+  zcrud_export_pdf:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_export_pdf }
+  zcrud_export_ui:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_export_ui }
+  zcrud_field_extras:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_field_extras }
+  zcrud_firestore:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_firestore }
+  zcrud_flashcard:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_flashcard }
+  zcrud_generator:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_generator }
+  zcrud_geo:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_geo }
+  zcrud_get:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_get }
+  zcrud_html:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_html }
+  zcrud_intl:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_intl }
+  zcrud_list:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_list }
+  zcrud_markdown:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_markdown }
+  zcrud_media:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_media }
+  zcrud_mindmap:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_mindmap }
+  zcrud_navigation:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_navigation }
+  zcrud_note:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_note }
+  zcrud_provider:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_provider }
+  zcrud_reorder:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_reorder }
+  zcrud_responsive:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_responsive }
+  zcrud_riverpod:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_riverpod }
+  zcrud_select:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_select }
+  zcrud_session:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_session }
+  zcrud_study:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_study }
+  zcrud_study_kernel:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_study_kernel }
+  zcrud_ui_kit:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_ui_kit }
+```
+
 ### Où placer le bloc — deux cas, à ne pas confondre (CR-LEX-5)
 
 > 🔴 **CORRECTION 2026-07-21.** Ce document prescrivait « répéter le bloc dans chaque
