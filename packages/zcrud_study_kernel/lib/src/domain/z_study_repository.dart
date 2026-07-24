@@ -173,6 +173,37 @@ abstract class ZStudyRepository<T extends ZEntity>
         (_) => persist(item, collectionId: collectionId),
       );
 
+  /// Lit toutes les entités **appariées à leur [ZSyncMeta]** — `updatedAt` /
+  /// `isDeleted` — **depuis le PORT** (CR-LEX-26).
+  ///
+  /// ## Le manque exact
+  ///
+  /// La méta de synchronisation est **hors-entité** (AD-19) : elle n'est pas
+  /// dans le corps métier, et n'était lisible que via `ZLocalStore.syncEntries`
+  /// — c'est-à-dire le **store**, pas le port. Un hôte dont l'entité expose
+  /// `updatedAt`/`isDeleted` devait donc **court-circuiter** `ZStudyRepository`
+  /// et atteindre le store directement, ou réécrire un accès parallèle. Le même
+  /// contournement a été réécrit **cinq fois** chez un consommateur — le signal
+  /// qu'il manquait au contrat, pas à l'hôte.
+  ///
+  /// ## Contrat
+  ///
+  /// **Inclut les tombstones** (`isDeleted: true`), contrairement à [getAll] qui
+  /// les exclut : c'est tout l'intérêt — savoir qu'une entité est supprimée, et
+  /// depuis quand, EST l'information demandée. Un dépôt vide rend `Right([])`.
+  ///
+  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt sans couche de sync le dit
+  /// explicitement, comme [listParentIds]. Jamais une liste vide, qui serait
+  /// indiscernable de « l'utilisateur n'a rien ».
+  Future<ZResult<List<ZSyncEntry<T>>>> getAllWithMeta() async =>
+      Left<ZFailure, List<ZSyncEntry<T>>>(
+        const ZDomainFailure(
+          'getAllWithMeta() n\'est pas supporté par ce dépôt : il n\'a pas de '
+          'couche de synchronisation exposant ZSyncMeta. Un Left explicite, '
+          'jamais une liste vide silencieuse.',
+        ),
+      );
+
   /// **Suppression qui PROPAGE puis PURGE** (CR-LEX-35, demande révisée) :
   /// retire physiquement l'entrée **locale** (le cache ne croît pas) **ET**
   /// propage un **tombstone** au distant (la suppression se synchronise).

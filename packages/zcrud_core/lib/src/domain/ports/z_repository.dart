@@ -31,12 +31,29 @@ import '../failures/z_failure.dart';
 ///   requise est rejetée par un `Left(ZDomainFailure)`.
 /// - [softDelete]/[restore] basculent le drapeau `is_deleted` **hors-entité**
 ///   (`ZSyncMeta`, AD-16) ; les lectures excluent les soft-deleted.
-abstract class ZRepository<T extends ZEntity> {
+/// Surface **LECTURE SEULE** d'un dépôt (CR-LEX-32).
+///
+/// ## Pourquoi elle existe
+///
+/// Une migration par vagues, un écran de consultation, un rapport : tous
+/// lisent sans jamais écrire. Sans surface dédiée, ils reçoivent un
+/// [ZRepository] complet — donc la capacité d'écrire — et la seule protection
+/// possible était un **décorateur écrit à la main par chaque hôte**, qu'il
+/// fallait en plus tester.
+///
+/// Typer la dépendance en [ZReadOnlyRepository] rend l'écriture **inexprimable
+/// à la compilation** : ce n'est plus une convention à surveiller en revue,
+/// c'est le compilateur qui la refuse.
+///
+/// ```dart
+/// // La vague de migration ne PEUT PAS écrire, par construction :
+/// Future<void> migrerVague(ZReadOnlyRepository<ZStudyFolder> source) async { … }
+/// ```
+///
+/// [ZRepository] l'**implémente** : aucun adaptateur existant n'a à changer, et
+/// tout dépôt se passe déjà là où une lecture seule est attendue.
+abstract class ZReadOnlyRepository<T extends ZEntity> {
   /// Flux temps réel **nu** de tous les éléments non soft-deleted.
-  ///
-  /// Équivalent du `dataChanges` canonique : seed immédiat puis diffusion des
-  /// mutations (sémantique broadcast portée par l'impl E5). Jamais enveloppé
-  /// dans un `Either` (AD-11).
   Stream<List<T>> watchAll();
 
   /// Flux temps réel **nu** filtré/trié/paginé selon [request].
@@ -47,6 +64,32 @@ abstract class ZRepository<T extends ZEntity> {
 
   /// Lit l'élément d'identité [id]. `Left(ZNotFoundFailure)` s'il est absent ou
   /// soft-deleted.
+  Future<ZResult<T>> getById(String id);
+
+  /// Compte les éléments correspondant à [request] (exclut les soft-deleted).
+  Future<ZResult<int>> count({ZDataRequest? request});
+}
+
+abstract class ZRepository<T extends ZEntity> implements ZReadOnlyRepository<T> {
+  /// Flux temps réel **nu** de tous les éléments non soft-deleted.
+  ///
+  /// Équivalent du `dataChanges` canonique : seed immédiat puis diffusion des
+  /// mutations (sémantique broadcast portée par l'impl E5). Jamais enveloppé
+  /// dans un `Either` (AD-11).
+  @override
+  Stream<List<T>> watchAll();
+
+  /// Flux temps réel **nu** filtré/trié/paginé selon [request].
+  @override
+  Stream<List<T>> watch(ZDataRequest request);
+
+  /// Lit tous les éléments correspondant à [request] (exclut les soft-deleted).
+  @override
+  Future<ZResult<List<T>>> getAll({ZDataRequest? request});
+
+  /// Lit l'élément d'identité [id]. `Left(ZNotFoundFailure)` s'il est absent ou
+  /// soft-deleted.
+  @override
   Future<ZResult<T>> getById(String id);
 
   /// Persiste [item]. Matérialise l'éphémère (attribution d'`id`) et rejette
@@ -61,6 +104,7 @@ abstract class ZRepository<T extends ZEntity> {
   Future<ZResult<Unit>> restore(String id);
 
   /// Compte les éléments correspondant à [request] (exclut les soft-deleted).
+  @override
   Future<ZResult<int>> count({ZDataRequest? request});
 
   /// Libère les ressources (abonnements, contrôleurs de flux).

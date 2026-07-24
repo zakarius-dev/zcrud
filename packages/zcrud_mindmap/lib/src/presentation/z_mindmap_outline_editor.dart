@@ -88,19 +88,48 @@ class ZMindmapOutlineEditor extends StatefulWidget {
 }
 
 class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
-  late final ZMindmapOutlineController _controller;
-  late final bool _ownsController;
+  // CR-LEX-20 : NON `late final`. Un `State` survit au remplacement de son
+  // widget ; figer le contrôleur à la construction rendait tout contrôleur
+  // injecté ensuite **inerte** — l'éditeur continuait d'écouter et de muter
+  // l'ancien, sans erreur ni signal. C'est le défaut AD-2 que ce socle existe
+  // pour éliminer, dans l'un de ses propres widgets.
+  late ZMindmapOutlineController _controller;
+  late bool _ownsController;
 
   @override
   void initState() {
     super.initState();
-    if (widget.controller != null) {
-      _controller = widget.controller!;
+    _adopt(widget.controller);
+  }
+
+  /// Adopte [injected] (propriété à l'appelant) ou en crée un possédé.
+  void _adopt(ZMindmapOutlineController? injected) {
+    if (injected != null) {
+      _controller = injected;
       _ownsController = false;
     } else {
       _controller = ZMindmapOutlineController(initialForest: widget.roots);
       _ownsController = true;
     }
+  }
+
+  /// CR-LEX-20 — prend en compte un contrôleur **remplacé** par l'appelant.
+  ///
+  /// Règle de propriété, et c'est elle qui rend le correctif sûr :
+  /// - on ne `dispose` **QUE** ce qu'on possède. Un contrôleur injecté
+  ///   appartient à l'appelant : le libérer parce qu'il en fournit un autre
+  ///   détruirait un objet dont on n'a pas la charge ;
+  /// - passer d'un contrôleur injecté à `null` recrée un contrôleur **possédé**
+  ///   (l'éditeur redevient autonome), sans toucher à l'ancien.
+  @override
+  void didUpdateWidget(ZMindmapOutlineEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (identical(widget.controller, oldWidget.controller)) return;
+    final previous = _controller;
+    final ownedPrevious = _ownsController;
+    _adopt(widget.controller);
+    // L'ancien n'est libéré que s'il était POSSÉDÉ et n'est pas réutilisé.
+    if (ownedPrevious && !identical(previous, _controller)) previous.dispose();
   }
 
   @override

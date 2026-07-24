@@ -544,6 +544,11 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     return localRes;
   }
 
+  /// Expose la méta de sync **depuis le PORT** (CR-LEX-26) — délègue au store
+  /// local, source de vérité offline-first (AD-9). Inclut les tombstones.
+  @override
+  Future<ZResult<List<ZSyncEntry<T>>>> getAllWithMeta() => _local.syncEntries();
+
   /// Purge locale APRÈS propagation d'un tombstone (CR-LEX-35 révisée).
   ///
   /// Séquence, et l'ordre est la correction :

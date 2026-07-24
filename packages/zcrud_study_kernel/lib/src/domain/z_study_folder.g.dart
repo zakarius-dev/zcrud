@@ -210,7 +210,7 @@ extension ZStudyFolderZcrud on ZStudyFolder {
     'owner_id': this.ownerId,
     'archived_at': this.archivedAt?.toIso8601String(),
     'created_at': this.createdAt?.toIso8601String(),
-    'updated_at': this.updatedAt?.toIso8601String(),
+    if (this.updatedAt != null) 'updated_at': this.updatedAt?.toIso8601String(),
     'is_public': this.isPublic,
     'shared_with': this.sharedWith,
     'can_be_joined_with_link': this.canBeJoinedWithLink,

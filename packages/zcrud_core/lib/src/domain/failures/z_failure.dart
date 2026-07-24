@@ -79,10 +79,53 @@ class ZNotFoundFailure extends ZFailure {
   String toString() => 'ZNotFoundFailure($message, id: $id, entity: $entity)';
 }
 
-/// Échec du **backend distant** (I/O réseau, erreur serveur, quota…).
+/// Échec du **backend distant** (I/O réseau, erreur serveur).
+///
+/// ⚠️ Pour un **quota dépassé**, préférer [ZQuotaExceededFailure] : le dartdoc
+/// de ce type citait « quota » sans qu'aucune structure ne puisse le porter, si
+/// bien que tout aller-retour par un port zcrud **détruisait la distinction**
+/// entre « le serveur est en panne » (réessayer) et « votre quota est épuisé »
+/// (ne pas réessayer, informer l'utilisateur) — CR-LEX-23.
 class ZServerFailure extends ZFailure {
   /// Construit un [ZServerFailure].
   const ZServerFailure(super.message);
+}
+
+/// **Quota dépassé** — l'appel est refusé pour épuisement d'un contingent
+/// (requêtes IA, stockage, débit), pas pour une panne (CR-LEX-23).
+///
+/// ## Pourquoi un sous-type dédié
+///
+/// La distinction quota / panne serveur **change ce que l'appelant doit
+/// faire** : une panne se réessaie, un quota non — il faut informer
+/// l'utilisateur, et éventuellement attendre [retryAfter]. Aucun sous-type ne
+/// pouvant porter cette information, elle était aplatie dans le `message` d'un
+/// [ZServerFailure] : l'hôte devait alors **parser du texte** pour décider,
+/// ou traiter les deux pareil.
+///
+/// [retryAfter] est la durée AVANT laquelle un nouvel essai est inutile
+/// (`null` si le backend ne la fournit pas — c'est le cas courant, et son
+/// absence ne doit jamais être confondue avec « réessayable tout de suite »).
+class ZQuotaExceededFailure extends ZFailure {
+  /// Construit un [ZQuotaExceededFailure], avec un [retryAfter] optionnel.
+  const ZQuotaExceededFailure(super.message, {this.retryAfter});
+
+  /// Délai avant lequel réessayer est inutile — `null` si non fourni.
+  final Duration? retryAfter;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZQuotaExceededFailure &&
+          other.message == message &&
+          other.retryAfter == retryAfter;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, message, retryAfter);
+
+  @override
+  String toString() =>
+      'ZQuotaExceededFailure($message, retryAfter: $retryAfter)';
 }
 
 /// Type de résultat ergonomique du domaine : `Either<ZFailure, T>` (AD-11).

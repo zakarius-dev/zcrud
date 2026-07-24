@@ -654,8 +654,24 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // --------------------------------------------------------------------------
 
   String _emitExtension(String className, List<_Field> fields) {
+    // CR-LEX-31 : un miroir de clé RÉSERVÉE de sync (`updated_at`,
+    // `is_deleted` — possédées par la couche de sync, AD-19) n'est émis que
+    // s'il porte RÉELLEMENT une valeur.
+    //
+    // Il était émis INCONDITIONNELLEMENT, `null` compris : l'avertissement de
+    // collision de zcrud se déclenchait donc à CHAQUE écriture, sur 100 % des
+    // entités concernées — zcrud avertissant contre lui-même, sans qu'aucun de
+    // ces cas ne porte de signal. Omettre le `null` supprime exactement ce
+    // bruit-là et **conserve** l'avertissement quand il est légitime : une
+    // valeur métier réelle qui SERA écrasée par la méta hors-entité.
+    //
+    // On n'omet PAS la clé non-nulle : le round-trip `fromMap(toMap(x))` doit
+    // rester fidèle pour un miroir renseigné.
     final toMapEntries = fields
-        .map((f) => "      '${f.key}': ${_toMapExpr(f)},")
+        .map((f) => _kReservedSyncKeys.contains(f.key) && f.nullable
+            ? "      if (this.${f.dartName} != null) '${f.key}': "
+                "${_toMapExpr(f)},"
+            : "      '${f.key}': ${_toMapExpr(f)},")
         .join('\n');
 
     final copyParams = fields
@@ -679,6 +695,16 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '      $className(\n$copyArgs\n      );\n'
         '}';
   }
+
+  /// Clés possédées par la couche de synchronisation (`ZSyncMeta`, AD-19) —
+  /// jamais réémises par le corps métier (CR-LEX-31). Miroir littéral de
+  /// `ZSyncMeta.reservedKeys` : le générateur ne peut pas importer `zcrud_core`
+  /// (il tournerait alors sur sa propre dépendance), d'où la duplication —
+  /// gardée par un test qui compare les deux ensembles.
+  static const Set<String> _kReservedSyncKeys = <String>{
+    'updated_at',
+    'is_deleted',
+  };
 
   String _toMapExpr(_Field f) {
     final v = 'this.${f.dartName}';

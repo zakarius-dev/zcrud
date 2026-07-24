@@ -224,7 +224,7 @@ extension ZFlashcardZcrud on ZFlashcard {
     'tag_ids': this.tagIds,
     'is_read_only': this.isReadOnly,
     'created_at': this.createdAt?.toIso8601String(),
-    'updated_at': this.updatedAt?.toIso8601String(),
+    if (this.updatedAt != null) 'updated_at': this.updatedAt?.toIso8601String(),
   };
 
   /// Copie avec sentinelle : un argument omis préserve la valeur, `null` explicite la remet à `null`.
