@@ -100,10 +100,10 @@ export 'src/domain/registry/z_type_registry.dart';
 export 'src/domain/registry/zcrud_registry.dart';
 // Contrats de synchronisation offline-first (E5-3) : `ZLwwResolver`, `ZSyncEntry`,
 // `ZSyncMeta`.
-export 'src/domain/sync/z_lww_resolver.dart';
 // CR-LEX-36 : source de temps injectable pour la clé LWW `updated_at` — le
 // levier app-side qui manquait pour atténuer le skew d'horloge multi-appareils.
 export 'src/domain/sync/z_clock.dart';
+export 'src/domain/sync/z_lww_resolver.dart';
 export 'src/domain/sync/z_sync_entry.dart';
 export 'src/domain/sync/z_sync_meta.dart';
 // Orchestrateur de synchronisation (E5-4) : `ZSyncOrchestrator` (Dart PUR).

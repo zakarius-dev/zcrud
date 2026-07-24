@@ -173,6 +173,42 @@ abstract class ZStudyRepository<T extends ZEntity>
         (_) => persist(item, collectionId: collectionId),
       );
 
+  /// **Suppression qui PROPAGE puis PURGE** (CR-LEX-35, demande révisée) :
+  /// retire physiquement l'entrée **locale** (le cache ne croît pas) **ET**
+  /// propage un **tombstone** au distant (la suppression se synchronise).
+  ///
+  /// ## Le manque exact que ce membre comble
+  ///
+  /// Aucune des deux primitives existantes ne couvrait le besoin — il est
+  /// **entre les deux** :
+  ///
+  /// | Primitive | cache ne croît pas | propage le tombstone |
+  /// |---|---|---|
+  /// | [softDelete] | ❌ (tombstone local conservé) | ✅ |
+  /// | `ZLocalStore.purge` | ✅ | ❌ — **résurrection au `sync()`** |
+  /// | **ce membre** | ✅ | ✅ |
+  ///
+  /// ⚠️ **`ZLocalStore.purge` seul est un piège** pour une suppression qui doit
+  /// se synchroniser : il retire l'entrée locale sans laisser de tombstone, donc
+  /// un autre appareil **ressuscite** le document au prochain `sync()`. Un
+  /// `softDelete`-puis-`purge` **ne sauve pas** la propagation : le push du
+  /// `softDelete` est fire-and-forget et **relit** l'entrée locale — une purge
+  /// awaitée la retire avant cette relecture, et le tombstone n'est jamais émis.
+  /// L'ordre correct (propager, **attendre**, puis purger) est précisément ce que
+  /// cette opération encapsule.
+  ///
+  /// **Défaut** : `Left(ZDomainFailure)` — un dépôt sans couche distante le dit
+  /// explicitement, comme [listParentIds] et [persistMerging]. Jamais un repli
+  /// silencieux sur une purge non propagée, qui serait le piège lui-même.
+  Future<ZResult<Unit>> purgeLocalPropagatingTombstone(String id) async =>
+      Left<ZFailure, Unit>(
+        const ZDomainFailure(
+          'purgeLocalPropagatingTombstone() n\'est pas supporté par ce dépôt : '
+          'il n\'a pas de couche distante où propager un tombstone. Un Left '
+          'explicite, jamais une purge locale non propagée (résurrection).',
+        ),
+      );
+
   /// **Template Method PRÉSERVANT** (CR-LEX-34) : comme [save] — valide via
   /// [validate] PUIS, seulement si `Right`, écrit — mais l'écriture **fusionne**
   /// [item] par-dessus l'existant ([persistMerging]) au lieu de l'**écraser**

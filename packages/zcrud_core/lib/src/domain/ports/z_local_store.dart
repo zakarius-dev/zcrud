@@ -151,8 +151,25 @@ abstract class ZLocalStore<T extends ZEntity> {
   /// suppression de rattrapage — la box croît sans borne chez un utilisateur qui
   /// essuie beaucoup de refus.
   ///
-  /// ⚠️ **À réserver aux annulations qui ne doivent pas être propagées.** Pour
-  /// une suppression **utilisateur** (à propager), c'est [softDelete].
+  /// ## 🔴 PIÈGE — cette opération ne PROPAGE RIEN
+  ///
+  /// [purge] agit **uniquement sur le cache local**. Elle ne pousse **aucun**
+  /// tombstone au distant. Conséquence, mesurée chez un hôte qui l'a adoptée à
+  /// tort : si la suppression doit se **synchroniser**, purger retire le
+  /// tombstone qui la portait ⇒ un autre appareil **RESSUSCITE** le document au
+  /// prochain `sync()`. **C'est une perte de donnée**, silencieuse.
+  ///
+  /// Et un `softDelete`-puis-`purge` **ne sauve pas** la propagation : le push
+  /// du `softDelete` est fire-and-forget et **relit** l'entrée locale ; une
+  /// purge awaitée la retire avant cette relecture, le tombstone n'est jamais
+  /// émis.
+  ///
+  /// ⚠️ **N'utiliser QUE si l'annulation est STRICTEMENT locale** — une écriture
+  /// qui n'a jamais atteint le distant. Sinon :
+  /// - suppression **utilisateur** à propager → [softDelete] ;
+  /// - annulation à propager **sans** garder de tombstone local →
+  ///   `ZStudyRepository.purgeLocalPropagatingTombstone` (CR-LEX-35), qui
+  ///   propage **puis** purge, dans cet ordre.
   ///
   /// `id` absent → `Right(unit)` (idempotent : purger ce qui n'existe pas est un
   /// succès, pas une erreur — contrairement à [softDelete] qui exige la cible).

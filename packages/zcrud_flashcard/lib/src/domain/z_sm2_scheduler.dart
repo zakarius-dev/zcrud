@@ -48,6 +48,23 @@ class ZSm2Scheduler implements ZSrsScheduler {
         easeFactor: config.defaultEaseFactor,
       );
 
+  /// Bonus de retard (CR-LEX-37) — `0` si la carte est à l'heure ou en avance,
+  /// si elle n'a jamais été planifiée, ou si le facteur est nul (le DÉFAUT).
+  ///
+  /// Formule : `min(round(joursDeRetard * overdueBonusFactor), base)`. Le
+  /// bornage par [base] est **anti-explosion** : une carte oubliée six mois ne
+  /// doit pas se voir attribuer un intervalle délirant — au pire, le retard
+  /// double l'intervalle calculé.
+  int _overdueBonus(ZRepetitionInfo current, DateTime now, int base) {
+    if (config.overdueBonusFactor <= 0) return 0;
+    final due = current.nextReviewDate;
+    if (due == null) return 0;
+    final overdueDays = now.difference(due).inDays;
+    if (overdueDays <= 0) return 0;
+    final bonus = (overdueDays * config.overdueBonusFactor).round();
+    return bonus < base ? bonus : base;
+  }
+
   @override
   ZRepetitionInfo apply(ZRepetitionInfo current, int quality, {DateTime? now}) {
     // Horloge injectée, jamais capturée à la construction (AD-14).
@@ -78,9 +95,16 @@ class ZSm2Scheduler implements ZSrsScheduler {
         interval = 6;
       } else {
         // Croissance : `interval * easeFactor * modificateur`, arrondi.
-        interval =
+        final base =
             (current.interval * easeFactor * config.defaultIntervalModifier)
                 .round();
+        // CR-LEX-37 : BONUS DE RETARD. Une carte révisée en retard a été
+        // mémorisée PLUS longtemps que son intervalle ne le prévoyait — le
+        // retard est donc une information de rétention, créditée au prochain
+        // intervalle. `overdueBonusFactor` était déclaré mais JAMAIS lu : le
+        // réglage était inerte, et la parité avec un moteur SM-2 qui crédite le
+        // retard était impossible par configuration.
+        interval = base + _overdueBonus(current, effectiveNow, base);
       }
     } else {
       // Lapse : on repart de zéro (compteur), intervalle minimal.

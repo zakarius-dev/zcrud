@@ -19,7 +19,7 @@
 # tiers (toastification/spinkit/dotted_border), AUCUN dartz.
 name: zcrud_ui_kit
 description: "Transverse UI kit for zcrud: content-state widgets (ZEmptyState/ZLoadingState/ZErrorState) driven by the ZContentState enum via ZContentStateView, plus a theme-injected ZConfirmDialog. Depends only on zcrud_core."
-version: 0.12.0
+version: 0.13.0
 publish_to: none
 resolution: workspace
 
@@ -42,7 +42,7 @@ environment:
 # ⛔ AUCUN autre `zcrud_*`, AUCUN gestionnaire d'état, AUCUN routeur, AUCUN tiers
 # UI, AUCUN dartz.
 dependencies:
-  zcrud_core: ^0.12.0
+  zcrud_core: ^0.13.0
   flutter:
     sdk: flutter
 

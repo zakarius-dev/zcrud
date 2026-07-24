@@ -22,7 +22,7 @@ class ZSrsConfig {
     this.maxEaseFactor = 2.5,
     this.defaultEaseFactor = kDefaultEaseFactor,
     this.defaultIntervalModifier = 1.0,
-    this.overdueBonusFactor = 0.5,
+    this.overdueBonusFactor = 0.0,
     this.passThreshold = 3,
     this.minQuality = 0,
     this.maxQuality = 5,
@@ -87,9 +87,28 @@ class ZSrsConfig {
   /// Une app le monte pour espacer davantage, le baisse pour resserrer.
   final double defaultIntervalModifier;
 
-  /// Facteur de bonus pour une carte révisée **en retard** (échéance dépassée).
-  /// Point d'extension documenté du calcul d'échéance (défaut `0.5`) : **inerte
-  /// au MVP** (E9-2), un scheduler enrichi (E9-4/FSRS) peut l'exploiter.
+  /// Facteur de bonus pour une carte révisée **en retard** (échéance dépassée) —
+  /// **défaut `0.0` = aucun bonus** (CR-LEX-37).
+  ///
+  /// Une carte révisée en retard a été mémorisée **plus longtemps** que son
+  /// intervalle ne le prévoyait : le retard est une information de rétention,
+  /// que `ZSm2Scheduler` crédite au prochain intervalle —
+  /// `min(round(joursDeRetard * ce facteur), intervalleDeBase)`, le bornage
+  /// étant anti-explosion (au pire, le retard **double** l'intervalle).
+  ///
+  /// ## ⚠️ Le défaut a changé de `0.5` à `0.0` — et c'est un NON-changement
+  ///
+  /// Ce champ était déclaré à `0.5` mais **jamais lu** : « inerte au MVP ».
+  /// Le comportement RÉEL était donc `0.0`, et le `0.5` affiché décrivait une
+  /// correction qui n'existait pas — un réglage inerte **oriente le travail à
+  /// tort** (un hôte pouvait croire la correction active, ou tenter de la régler
+  /// sans effet). Le câbler en gardant `0.5` aurait **modifié silencieusement**
+  /// les intervalles de tous les consommateurs existants, sur des données de
+  /// production. Le défaut décrit désormais ce qui se passe vraiment ; la
+  /// correction s'**active explicitement**.
+  ///
+  /// `0.5` est la valeur de **parité** avec les moteurs SM-2 qui créditent le
+  /// retard (variante IFFD/lex). Une app qui la veut la déclare.
   final double overdueBonusFactor;
 
   /// Seuil de **réussite** : `quality >= passThreshold` = révision réussie,

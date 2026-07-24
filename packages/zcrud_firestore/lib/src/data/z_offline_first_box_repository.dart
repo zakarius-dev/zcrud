@@ -412,6 +412,64 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     );
   }
 
+  /// Propage un **tombstone** pour [id] en **AWAITANT** le push et en
+  /// **rapportant** son succès (CR-LEX-35 révisée).
+  ///
+  /// Contrairement à [_bestEffortPushEntry], l'échec n'est PAS avalé : purger
+  /// l'entrée locale sans savoir si le tombstone a atteint le cloud provoquerait
+  /// une **résurrection** au prochain `sync()`. Le succès est donc la condition
+  /// de la purge.
+  Future<bool> _propagateTombstoneAwaited(String id) async {
+    final entries = await _local.syncEntries();
+    return entries.fold(
+      (_) async => false,
+      (list) async {
+        for (final e in list) {
+          if (e.id != id) continue;
+          final entity = e.entity;
+          final entityId = entity.id;
+          if (entityId == null) return false;
+          return _setReportingSuccess(
+            docId: entityId,
+            map: _cloudMap(
+              entity: entity,
+              id: entityId,
+              isoUpdatedAt: e.meta.updatedAt?.toIso8601String(),
+              isDeleted: e.meta.isDeleted,
+            ),
+            label: 'purge→tombstone (id=$id)',
+          );
+        }
+        return false; // entrée introuvable : rien à propager, donc rien à purger
+      },
+    );
+  }
+
+  /// `set` distant **awaité** qui rend `true` ssi l'écriture a réellement abouti.
+  Future<bool> _setReportingSuccess({
+    required String docId,
+    required Map<String, dynamic> map,
+    required String label,
+  }) async {
+    final pathRes = _collectionPath(collectionIdOverride: null);
+    return pathRes.fold(
+      (failure) async {
+        _log('propagation abandonnée ($label) : chemin non résolu — '
+            '${failure.message}');
+        return false;
+      },
+      (path) async {
+        try {
+          await _collection(path).doc(docId).set(map);
+          return true;
+        } on Object catch (e, s) {
+          _log('propagation échouée ($label)', error: e, stackTrace: s);
+          return false;
+        }
+      },
+    );
+  }
+
   /// Écriture distante **best-effort** unique : résout le chemin, `set` le doc ;
   /// tout échec (chemin `Left`, `FirebaseException`, exception) est **loggé** puis
   /// **avalé** (AD-9/AD-11) — le local reste autoritaire.
@@ -484,6 +542,35 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       (_) => unawaited(_bestEffortPropagateFromLocal(id, 'softDelete→push')),
     );
     return localRes;
+  }
+
+  /// Purge locale APRÈS propagation d'un tombstone (CR-LEX-35 révisée).
+  ///
+  /// Séquence, et l'ordre est la correction :
+  /// 1. `softDelete` **local** — crée la méta `is_deleted:true` à propager ;
+  /// 2. propagation du tombstone, **AWAITÉE** (contrairement au `softDelete`
+  ///    public, fire-and-forget) : sans l'attendre, l'étape 3 retirerait
+  ///    l'entrée **avant** que le push ne la lise — le tombstone ne partirait
+  ///    jamais et le document **ressusciterait** au `sync()` suivant ;
+  /// 3. purge locale **seulement si** la propagation a abouti.
+  ///
+  /// **Hors-ligne / échec de propagation** : le tombstone local est **CONSERVÉ**
+  /// et la purge est **abandonnée** — on retombe exactement sur le comportement
+  /// de [softDelete] (l'entrée reste, écartée des lectures, propagée au prochain
+  /// `sync()`). C'est un `Right` : la suppression **est** effective des deux
+  /// côtés du branchement ; seule l'économie de place est différée. Purger ici
+  /// échangerait une entrée résiduelle contre une **résurrection**.
+  @override
+  Future<ZResult<Unit>> purgeLocalPropagatingTombstone(String id) async {
+    final soft = await _local.softDelete(id);
+    if (soft.isLeft()) return soft;
+    final propagated = await _propagateTombstoneAwaited(id);
+    if (!propagated) {
+      _log('purgeLocalPropagatingTombstone : propagation non aboutie (id=$id) — '
+          'tombstone local CONSERVÉ (purge abandonnée, anti-résurrection)');
+      return const Right<ZFailure, Unit>(unit);
+    }
+    return _local.purge(id);
   }
 
   @override
