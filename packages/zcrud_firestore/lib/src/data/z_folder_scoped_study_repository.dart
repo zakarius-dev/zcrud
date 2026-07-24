@@ -145,3 +145,73 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
       logger: logger,
       autoListen: autoListen,
     );
+
+/// Résolveur **flat top-level** (topologie `flatTopLevel`) — jumeau exact de
+/// [buildFolderScopedResolver] pour une collection RACINE (CR-LEX-30).
+@visibleForTesting
+ZFirestorePathResolver buildUserScopedResolver({
+  required String kind,
+  required String collection,
+  required bool userScoped,
+}) =>
+    ZFirestorePathResolver(<String, ZFirestorePathRule>{
+      kind: ZFirestorePathRule.flatTopLevel(
+        collection: collection,
+        userScoped: userScoped,
+      ),
+    });
+
+/// Fabrique d'adapter **user-scopé concret** pour une collection **RACINE**
+/// (topologie `flatTopLevel`) — jumelle exacte de
+/// [buildFolderScopedStudyRepository] (CR-LEX-30).
+///
+/// ## Pourquoi elle existe
+///
+/// Seule la topologie `nestedUnderParent` avait sa fabrique publiée. Un hôte
+/// dont la collection est **racine** — le cas du module d'étude — devait
+/// **ré-assembler la composition à la main** : construire le résolveur, le
+/// câbler au repository, et refaire ce geste à chaque site. Le contournement a
+/// fini par entrer en **production** chez un consommateur.
+///
+/// ## ⚠️ `userScoped` est REQUIS, délibérément
+///
+/// Contrairement à la fabrique folder-scopée (où il vaut `true` par défaut), ce
+/// paramètre **n'a pas de défaut** ici : un défaut se trompant de sens écrirait
+/// **hors du scope utilisateur**, c'est-à-dire dans la collection d'un autre —
+/// une fuite de données silencieuse. Le choix doit être fait à chaque
+/// construction, pas hérité d'une valeur qu'on n'a pas lue.
+///
+/// **Type de retour = port NEUTRE** `ZStudyRepository<T>` : aucun type
+/// `cloud_firestore` en signature publique hors le paramètre [firestore].
+ZStudyRepository<T> buildUserScopedStudyRepository<T extends ZEntity>({
+  required FirebaseFirestore firestore,
+  required ZLocalStore<T> local,
+  required String kind,
+  required String collection,
+  required T Function(Map<String, dynamic> map) decode,
+  required Map<String, dynamic> Function(T value) encode,
+  required bool userScoped,
+  String? userId,
+  Future<bool> Function()? isConnected,
+  ZOfflineFirstBoxLog? logger,
+  ZClock? clock,
+  bool autoListen = true,
+}) =>
+    ZOfflineFirstBoxRepository<T>(
+      local: local,
+      firestore: firestore,
+      resolver: buildUserScopedResolver(
+        kind: kind,
+        collection: collection,
+        userScoped: userScoped,
+      ),
+      kind: kind,
+      decode: decode,
+      encode: encode,
+      userId: userId,
+      // Topologie RACINE : aucun parent. Le passer serait une erreur silencieuse.
+      isConnected: isConnected,
+      logger: logger,
+      clock: clock,
+      autoListen: autoListen,
+    );

@@ -229,6 +229,15 @@ const List<ZFieldSpec> $ZDocumentViewerPrefsFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'page_layout', type: EditionFieldType.select),
 ];
 
+/// Clés que `ZDocumentViewerPrefs.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZDocumentViewerPrefsPersistedKeys = <String>{
+  'zoom_level',
+  'scroll_direction',
+  'page_layout',
+};
+
 /// Enregistre `ZDocumentViewerPrefs` (kind "document_viewer_prefs") sur [registry] : (dé)sérialisation + schéma.
 void registerZDocumentViewerPrefs(ZcrudRegistry registry) =>
     registry.register<ZDocumentViewerPrefs>(

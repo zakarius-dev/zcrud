@@ -3,6 +3,7 @@
 // même si la map porte un bloc `extension` de partage (aucune activation
 // implicite, AD-10). Complété par graph_proof (delta = 0, orchestrateur).
 // Runner R14.
+import 'package:zcrud_core/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
@@ -17,10 +18,19 @@ void main() {
     'extension': const ZStudySharingExtension(isPublic: true).toJson(),
   };
 
-  test('AC2 — fromMap SANS parser ⇒ extension == null, dossier survit', () {
-    // Aucune app-activation : pas d'extensionParser.
+  test('AC2 — fromMap SANS parser ⇒ partage NON activé, payload PRÉSERVÉ', () {
+    // ⚠️ CHANGEMENT DE CONTRAT (CR-LEX-33, v0.11.0) : ce test assertait
+    // `extension == null`. Ne pas savoir TYPER un payload n'autorise pas à
+    // l'EFFACER — `extension` étant une clé connue (exclue d'`extra`), le
+    // `null` valait DESTRUCTION silencieuse du slot d'un autre hôte.
+    //
+    // L'invariant AD-26 que ce test protège est INTACT : le partage n'est pas
+    // activé sans parser (le slot n'est pas typé). Seule la préservation du
+    // payload brut change.
     final folder = ZStudyFolder.fromMap(folderMap);
-    expect(folder.extension, isNull,
+    expect(folder.extension, isA<ZOpaqueExtension>(),
+        reason: 'le payload est préservé verbatim, faute de savoir le typer');
+    expect(folder.extension, isNot(isA<ZStudySharingExtension>()),
         reason: 'sans parser injecté, le partage n\'est PAS activé (AD-26)');
     // Le reste du dossier est décodé normalement.
     expect(folder.id, 'f1');

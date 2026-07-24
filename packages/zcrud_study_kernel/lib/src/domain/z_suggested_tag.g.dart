@@ -208,6 +208,11 @@ const List<ZFieldSpec> $ZSuggestedTagFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'color_key', type: EditionFieldType.text),
 ];
 
+/// Clés que `ZSuggestedTag.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZSuggestedTagPersistedKeys = <String>{'title', 'color_key'};
+
 /// Enregistre `ZSuggestedTag` (kind "suggested_tag") sur [registry] : (dé)sérialisation + schéma.
 void registerZSuggestedTag(ZcrudRegistry registry) =>
     registry.register<ZSuggestedTag>(

@@ -35,7 +35,20 @@ class ZMindmapOutlineController extends ChangeNotifier {
   /// Construit le contrôleur sur une [initialForest] (copiée en liste stable).
   ZMindmapOutlineController({
     List<ZMindmapNode> initialForest = const <ZMindmapNode>[],
+    this.minRoots = 0,
   }) : _forest = List<ZMindmapNode>.unmodifiable(initialForest);
+
+  /// Nombre MINIMAL de racines que la forêt ne peut pas franchir à la baisse
+  /// (CR-LEX-21) — défaut `0`, donc **non cassant**.
+  ///
+  /// `deleteNode` supprime un **sous-arbre entier**, racine comprise : une
+  /// forêt à une seule racine devient **vide** en un geste, sans confirmation
+  /// possible. Poser `minRoots: 1` rend cet état **inatteignable par
+  /// accident** — la suppression de la dernière racine est simplement refusée.
+  ///
+  /// ⚠️ Ce n'est **pas** une confirmation : c'est un plancher structurel. Pour
+  /// demander à l'utilisateur, voir `ZMindmapOutlineEditor.onConfirmDelete`.
+  final int minRoots;
 
   List<ZMindmapNode> _forest;
 
@@ -154,9 +167,32 @@ class ZMindmapOutlineController extends ChangeNotifier {
   void deleteNode(String id) {
     final next = ZMindmapTreeOps.deleteNode(_forest, id);
     if (identical(next, _forest)) return; // introuvable → aucun changement
+    // CR-LEX-21 : plancher structurel. Sans lui, supprimer la dernière racine
+    // vidait la forêt en un geste, sans retour possible.
+    if (next.length < minRoots) return;
     final removed = ZMindmapTreeOps.findNode(_forest, id);
     if (removed != null) _disposeSubtreeControllers(removed);
     _set(next);
+  }
+
+  /// Nombre de nœuds que [deleteNode] retirerait pour [id] — racine du
+  /// sous-arbre **comprise**. `0` si l'`id` est introuvable (CR-LEX-21).
+  ///
+  /// Permet à un hôte d'annoncer l'ampleur AVANT de supprimer (« ceci
+  /// supprimera 12 nœuds »), au lieu de la découvrir après coup.
+  int subtreeSize(String id) {
+    final node = ZMindmapTreeOps.findNode(_forest, id);
+    if (node == null) return 0;
+    var n = 0;
+    void visit(ZMindmapNode x) {
+      n++;
+      for (final child in x.children) {
+        visit(child);
+      }
+    }
+
+    visit(node);
+    return n;
   }
 
   /// Dispose récursivement les controllers du sous-arbre enraciné en [node].

@@ -217,6 +217,16 @@ const List<ZFieldSpec> $ZAnnotationBoundsFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'height', type: EditionFieldType.float),
 ];
 
+/// Clés que `ZAnnotationBounds.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZAnnotationBoundsPersistedKeys = <String>{
+  'x',
+  'y',
+  'width',
+  'height',
+};
+
 /// Enregistre `ZAnnotationBounds` (kind "annotation_bounds") sur [registry] : (dé)sérialisation + schéma.
 void registerZAnnotationBounds(ZcrudRegistry registry) =>
     registry.register<ZAnnotationBounds>(

@@ -235,6 +235,17 @@ const List<ZFieldSpec> $ZStudySessionConfigFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'count', type: EditionFieldType.integer),
 ];
 
+/// Clés que `ZStudySessionConfig.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZStudySessionConfigPersistedKeys = <String>{
+  'mode',
+  'folder_id',
+  'tag_ids',
+  'types',
+  'count',
+};
+
 /// Enregistre `ZStudySessionConfig` (kind "study_session_config") sur [registry] : (dé)sérialisation + schéma.
 void registerZStudySessionConfig(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

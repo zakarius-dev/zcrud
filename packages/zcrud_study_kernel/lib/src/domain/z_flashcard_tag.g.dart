@@ -213,6 +213,15 @@ const List<ZFieldSpec> $ZFlashcardTagFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'color_key', type: EditionFieldType.text),
 ];
 
+/// Clés que `ZFlashcardTag.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZFlashcardTagPersistedKeys = <String>{
+  'id',
+  'title',
+  'color_key',
+};
+
 /// Enregistre `ZFlashcardTag` (kind "flashcard_tag") sur [registry] : (dé)sérialisation + schéma.
 void registerZFlashcardTag(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

@@ -208,6 +208,11 @@ const List<ZFieldSpec> $ZChoiceFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'is_correct', type: EditionFieldType.boolean),
 ];
 
+/// Clés que `ZChoice.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZChoicePersistedKeys = <String>{'content', 'is_correct'};
+
 /// Enregistre `ZChoice` (kind "flashcard_choice") sur [registry] : (dé)sérialisation + schéma.
 void registerZChoice(ZcrudRegistry registry) => registry.register<ZChoice>(
   'flashcard_choice',

@@ -303,13 +303,23 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///    même coup.
   Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) {
     final map = <String, dynamic>{...?data, _kId: id};
-    // (2) Clés de SYNC : toujours (indépendant de `_timestampFields`, AD-19/M3).
-    for (final key in ZSyncMeta.reservedKeys) {
-      _normalizeIsoInPlace(map, key);
-    }
-    // (1) Clés de CORPS hintées (B14).
-    for (final key in _timestampFields) {
-      _normalizeIsoInPlace(map, key);
+    // CR-LEX-27 : normalisation UNIVERSELLE et RÉCURSIVE — alignée sur celle de
+    // `ZOfflineFirstBoxRepository._normalizeMetaIso`.
+    //
+    // Elle ne portait auparavant que sur les clés de SYNC et les clés de corps
+    // explicitement HINTÉES (`persistAs: timestamp`). Une clé temporelle non
+    // hintée — `created_at` en est le cas type — traversait donc le décodage en
+    // `Timestamp` brut, là où l'autre implémentation du MÊME port la
+    // normalisait. Deux chemins, deux résultats : un hôte qui bascule de l'un à
+    // l'autre voyait sa donnée changer de forme sans qu'aucun contrat ne
+    // l'annonce, et sans pouvoir corriger côté appelant.
+    //
+    // L'argument de la dartdoc de `_normalizeMetaIso` vaut mot pour mot ici :
+    // on ne convertit QUE les formes backend (`Timestamp`, `DateTime`,
+    // `{_seconds,_nanoseconds}`), jamais du texte que l'hôte aurait voulu — une
+    // String déjà ISO n'est pas retouchée (idempotence).
+    for (final key in map.keys.toList()) {
+      map[key] = _normalizeTemporalDeep(map[key]);
     }
     return map;
   }
@@ -325,26 +335,33 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// - map `{_seconds, _nanoseconds}` — forme **sérialisée** d'un `Timestamp`
   ///   (export/REST, caches JSON), qui autrement traverserait le décodage en
   ///   silence.
-  void _normalizeIsoInPlace(Map<String, dynamic> map, String key) {
-    final value = map[key];
+  /// Convertit RÉCURSIVEMENT tout horodatage backend en String ISO-8601
+  /// (CR-LEX-27). Valeur non temporelle ⇒ rendue **inchangée** (AD-10).
+  Object? _normalizeTemporalDeep(Object? value) {
     if (value is Timestamp) {
-      map[key] = value.toDate().toUtc().toIso8601String();
-      return;
+      return value.toDate().toUtc().toIso8601String();
     }
     if (value is DateTime) {
-      map[key] = value.toUtc().toIso8601String();
-      return;
+      return value.toUtc().toIso8601String();
     }
     if (value is Map) {
+      // Forme sérialisée `{_seconds,_nanoseconds}` (export/REST, cache JSON).
       final seconds = value['_seconds'];
-      final nanos = value['_nanoseconds'];
       if (seconds is int) {
+        final nanos = value['_nanoseconds'];
         final micros = seconds * Duration.microsecondsPerSecond +
             (nanos is int ? nanos ~/ 1000 : 0);
-        map[key] = DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true)
+        return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true)
             .toIso8601String();
       }
+      return <String, dynamic>{
+        for (final e in value.entries) '${e.key}': _normalizeTemporalDeep(e.value),
+      };
     }
+    if (value is List) {
+      return value.map<Object?>(_normalizeTemporalDeep).toList();
+    }
+    return value;
   }
 
   /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,
@@ -725,7 +742,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   Future<ZResult<T>> save(T item, {String? collectionId}) => _guard(() async {
         final collection = _rawCollection(collectionId);
         // Matérialisation de l'éphémère (AD-14, invariant porté par le repo).
-        final id = item.id ?? collection.doc().id;
+        // CR-LEX-19 : `isEphemeral` fait foi, pas `id == null`.
+        final id = item.isEphemeral ? collection.doc().id : item.id!;
         // Le corps porte TOUJOURS son `id` logique (clé du tie-break AC12) en
         // plus des métadonnées `ZSyncMeta` fusionnées par [_encode].
         final map = _encode(item)..[_kId] = id;

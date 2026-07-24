@@ -220,6 +220,16 @@ const List<ZFieldSpec> $ZStudyStreakFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'last_graded_day', type: EditionFieldType.text),
 ];
 
+/// Clés que `ZStudyStreak.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZStudyStreakPersistedKeys = <String>{
+  'id',
+  'current',
+  'best',
+  'last_graded_day',
+};
+
 /// Enregistre `ZStudyStreak` (kind "study_streak") sur [registry] : (dé)sérialisation + schéma.
 void registerZStudyStreak(ZcrudRegistry registry) =>
     registry.register<ZStudyStreak>(

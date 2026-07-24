@@ -259,6 +259,20 @@ const List<ZFieldSpec> $ZStudyDocumentFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'created_at', type: EditionFieldType.dateTime),
 ];
 
+/// Clés que `ZStudyDocument.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZStudyDocumentPersistedKeys = <String>{
+  'id',
+  'folder_id',
+  'file_name',
+  'status',
+  'storage_path',
+  'page_count',
+  'size_bytes',
+  'created_at',
+};
+
 /// Enregistre `ZStudyDocument` (kind "study_document") sur [registry] : (dé)sérialisation + schéma.
 void registerZStudyDocument(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

@@ -295,6 +295,25 @@ const List<ZFieldSpec> $ZStudyFolderFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'share_id', type: EditionFieldType.text),
 ];
 
+/// Clés que `ZStudyFolder.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZStudyFolderPersistedKeys = <String>{
+  'id',
+  'title',
+  'color_key',
+  'parent_id',
+  'owner_id',
+  'archived_at',
+  'created_at',
+  'updated_at',
+  'is_public',
+  'shared_with',
+  'can_be_joined_with_link',
+  'co_workers_can_invite_others',
+  'share_id',
+};
+
 /// Enregistre `ZStudyFolder` (kind "study_folder") sur [registry] : (dé)sérialisation + schéma.
 void registerZStudyFolder(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

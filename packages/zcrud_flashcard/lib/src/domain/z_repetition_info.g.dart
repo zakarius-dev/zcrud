@@ -259,6 +259,20 @@ const List<ZFieldSpec> $ZRepetitionInfoFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'last_quality', type: EditionFieldType.integer),
 ];
 
+/// Clés que `ZRepetitionInfo.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZRepetitionInfoPersistedKeys = <String>{
+  'flashcard_id',
+  'folder_id',
+  'interval',
+  'repetitions',
+  'ease_factor',
+  'next_review_date',
+  'learned_at',
+  'last_quality',
+};
+
 /// Enregistre `ZRepetitionInfo` (kind "repetition_info") sur [registry] : (dé)sérialisation + schéma.
 void registerZRepetitionInfo(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

@@ -37,7 +37,11 @@ export 'src/data/z_firestore_path_resolver.dart';
 // topologie (aucun nom consommateur en dur, aucune arête d'entité). Retour NEUTRE
 // `ZStudyRepository<T>` ; seul `FirebaseFirestore` (paramètre) est une couture
 // backend. `buildFolderScopedResolver` (`@visibleForTesting`) n'est PAS réexporté.
-export 'src/data/z_folder_scoped_study_repository.dart' show buildFolderScopedStudyRepository;
+// CR-LEX-30 : la fabrique `flatTopLevel(userScoped:)` — jumelle de la
+// folder-scopée — est publiée. Sa composition n'a plus à être ré-assemblée à la
+// main par chaque hôte dont la collection est RACINE.
+export 'src/data/z_folder_scoped_study_repository.dart'
+    show buildFolderScopedStudyRepository, buildUserScopedStudyRepository;
 // ES-3.2 (FR-S13) : base offline-first `ZOfflineFirstBoxRepository<T>` — implémente
 // le point d'extension `persist` du Template Method `ZStudyRepository<T>` (ES-3.1) ;
 // merge LWW hors-entité, `hasPendingWrites`, listener temps réel, rattrapage

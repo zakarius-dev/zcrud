@@ -460,7 +460,12 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   @override
   Future<ZResult<T>> put(T item) => _guard(() async {
         // Matérialisation de l'éphémère (AD-14, invariant porté par le store).
-        final id = item.id ?? _idFactory();
+        // CR-LEX-19 : consulter `isEphemeral`, pas `id == null`. Une entité
+        // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
+        // id.isEmpty`) n'est jamais `null` : le test direct la déclarait
+        // matérialisée et écrivait un document de clé VIDE. Le contrat existait,
+        // les implémentations ne le consultaient pas.
+        final id = item.isEphemeral ? _idFactory() : item.id!;
         final map = _encode(item, id);
         await _box.put(id, jsonEncode(map));
 
@@ -486,7 +491,12 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// par clé, l'existant-seul survit. Absent en base ⇒ création (= [put]).
   @override
   Future<ZResult<T>> putMerged(T item) => _guard(() async {
-        final id = item.id ?? _idFactory();
+        // CR-LEX-19 : consulter `isEphemeral`, pas `id == null`. Une entité
+        // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
+        // id.isEmpty`) n'est jamais `null` : le test direct la déclarait
+        // matérialisée et écrivait un document de clé VIDE. Le contrat existait,
+        // les implémentations ne le consultaient pas.
+        final id = item.isEphemeral ? _idFactory() : item.id!;
         final encoded = _encode(item, id);
         final existing = _rawMap(id, _box.get(id));
         final merged = existing == null

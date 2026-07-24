@@ -230,6 +230,16 @@ const List<ZFieldSpec> $ZDocumentReadingStateFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'prefs', type: EditionFieldType.subItems),
 ];
 
+/// Clés que `ZDocumentReadingState.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZDocumentReadingStatePersistedKeys = <String>{
+  'doc_id',
+  'current_page',
+  'page_count',
+  'prefs',
+};
+
 /// Enregistre `ZDocumentReadingState` (kind "document_reading_state") sur [registry] : (dé)sérialisation + schéma.
 void registerZDocumentReadingState(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

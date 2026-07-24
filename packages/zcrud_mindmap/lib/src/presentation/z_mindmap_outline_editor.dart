@@ -18,6 +18,8 @@
 /// couleurs/espacements viennent de `ZcrudTheme.of(context)` (aucun littéral).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -39,6 +41,7 @@ class ZMindmapOutlineEditor extends StatefulWidget {
   const ZMindmapOutlineEditor({
     this.roots = const <ZMindmapNode>[],
     this.controller,
+    this.onConfirmDelete,
     this.onSave,
     this.onChanged,
     this.labels = const ZMindmapOutlineLabels(),
@@ -54,6 +57,18 @@ class ZMindmapOutlineEditor extends StatefulWidget {
 
   /// Contrôleur injecté optionnel (sinon interne, créé/disposé par le widget).
   final ZMindmapOutlineController? controller;
+
+  /// Confirmation demandée AVANT de supprimer un nœud (CR-LEX-21) — `null` par
+  /// défaut, donc **non cassant** (suppression immédiate, comportement actuel).
+  ///
+  /// `deleteNode` retire un **sous-arbre entier** : un geste peut emporter
+  /// beaucoup plus que la ligne visée, et rien ne permettait de l'intercepter.
+  /// Ce hook est **asynchrone** — c'est ce qu'exige une vraie confirmation
+  /// (dialogue). Rendre `false` **annule** la suppression.
+  ///
+  /// L'ampleur est disponible via `controller.subtreeSize(node.id)` pour
+  /// l'annoncer à l'utilisateur.
+  final Future<bool> Function(ZMindmapNode node)? onConfirmDelete;
 
   /// Émis (avec la forêt mutée) au tap sur « enregistrer ». `null` → pas de
   /// bouton d'enregistrement (mode piloté par [onChanged] ou contrôleur externe).
@@ -199,6 +214,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
                     editContentField: widget.editContentField,
                     editFieldBuilder: widget.editFieldBuilder,
                     onStructuralChange: _notifyChanged,
+                    onConfirmDelete: widget.onConfirmDelete,
                     onTextChange: _notifyChanged,
                   );
                 },
@@ -273,6 +289,7 @@ class _OutlineRow extends StatelessWidget {
     required this.editContentField,
     required this.editFieldBuilder,
     required this.onStructuralChange,
+    this.onConfirmDelete,
     required this.onTextChange,
     super.key,
   });
@@ -285,6 +302,28 @@ class _OutlineRow extends StatelessWidget {
   final bool editContentField;
   final ZMindmapEditFieldBuilder? editFieldBuilder;
   final VoidCallback onStructuralChange;
+
+  /// CR-LEX-21 — confirmation avant suppression d'un sous-arbre (`null` = pas
+  /// de confirmation, comportement historique).
+  final Future<bool> Function(ZMindmapNode node)? onConfirmDelete;
+
+  /// Supprime après confirmation (CR-LEX-21). Sans hook, le comportement est
+  /// **identique à avant** : suppression immédiate, synchrone.
+  ///
+  /// Avec hook, l'attente est **asynchrone** — une confirmation réelle l'exige.
+  /// Un `false` annule : aucune mutation, aucune notification.
+  void _requestDelete(void Function(void Function()) structural) {
+    final confirm = onConfirmDelete;
+    if (confirm == null) {
+      structural(() => controller.deleteNode(node.id));
+      return;
+    }
+    unawaited(
+      confirm(node).then((ok) {
+        if (ok) structural(() => controller.deleteNode(node.id));
+      }),
+    );
+  }
   final VoidCallback onTextChange;
 
   @override
@@ -396,7 +435,7 @@ class _OutlineRow extends StatelessWidget {
           icon: Icons.delete_outline,
           config: config,
           theme: theme,
-          onTap: () => structural(() => controller.deleteNode(node.id)),
+          onTap: () => _requestDelete(structural),
         ),
       ],
     );

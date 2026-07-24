@@ -140,6 +140,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       ..writeln()
       ..writeln(_emitFieldSpecs(className, fields))
       ..writeln()
+      ..writeln(_emitPersistedKeys(className, fields))
+      ..writeln()
       ..writeln(_emitRegister(className, kind,
           extensible: isExtensible, ctx: ctxShape))
       ..writeln()
@@ -735,6 +737,34 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // --------------------------------------------------------------------------
   // Émission — ZFieldSpec[] (projection 1:1 + inférence).
   // --------------------------------------------------------------------------
+
+  /// Émet `$XxxPersistedKeys` — l'ensemble EXACT des clés que `toMap()` peut
+  /// produire, **champs nuls compris** (CR-LEX-28).
+  ///
+  /// ## À quoi ça sert
+  ///
+  /// Un hôte qui mappe son modèle vers une entité `Z` doit couvrir 100 % des
+  /// champs persistés, sous peine d'en détruire silencieusement (CR-LEX-34).
+  /// Cet inventaire devait être **tenu à la main** dans chaque descripteur : un
+  /// champ neuf ajouté par un tag futur restait **invisible** jusqu'à ce qu'une
+  /// donnée disparaisse. Généré, il permet une garde d'exhaustivité **automatique**.
+  ///
+  /// ⚠️ **« peut produire », pas « produit toujours »** : une clé réservée-miroir
+  /// n'est émise que si elle porte une valeur (CR-LEX-31), et un champ nul
+  /// n'apparaît pas dans une map donnée. L'ensemble est donc le **surensemble**
+  /// stable — c'est exactement ce qu'une garde d'exhaustivité doit comparer.
+  String _emitPersistedKeys(String className, List<_Field> fields) {
+    final entries = fields.map((f) => "  '${f.key}',").join('\n');
+    return "/// Clés que `$className.toMap()` PEUT produire (CR-LEX-28) — "
+        'surensemble\n'
+        '/// stable, champs nuls compris. Source unique pour une garde '
+        "d'exhaustivité\n"
+        '/// côté hôte : un champ ajouté par un tag futur apparaît ici sans '
+        'action.\n'
+        'const Set<String> \$${className}PersistedKeys = <String>{\n'
+        '$entries\n'
+        '};';
+  }
 
   String _emitFieldSpecs(String className, List<_Field> fields) {
     final specs = fields.map(_emitSpec).join('\n');

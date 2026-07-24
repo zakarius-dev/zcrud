@@ -201,6 +201,11 @@ const List<ZFieldSpec> $ZFolderContentsOrderFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'folder_id', type: EditionFieldType.text),
 ];
 
+/// Clés que `ZFolderContentsOrder.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZFolderContentsOrderPersistedKeys = <String>{'folder_id'};
+
 /// Enregistre `ZFolderContentsOrder` (kind "folder_contents_order") sur [registry] : (dé)sérialisation + schéma.
 void registerZFolderContentsOrder(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

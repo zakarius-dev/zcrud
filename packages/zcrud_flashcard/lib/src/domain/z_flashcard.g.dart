@@ -306,6 +306,26 @@ const List<ZFieldSpec> $ZFlashcardFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'updated_at', type: EditionFieldType.dateTime),
 ];
 
+/// Clés que `ZFlashcard.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZFlashcardPersistedKeys = <String>{
+  'id',
+  'folder_id',
+  'sub_folder_id',
+  'type',
+  'question',
+  'answer',
+  'is_true',
+  'choices',
+  'explanation',
+  'hint',
+  'tag_ids',
+  'is_read_only',
+  'created_at',
+  'updated_at',
+};
+
 /// Enregistre `ZFlashcard` (kind "flashcard") sur [registry] : (dé)sérialisation + schéma.
 void registerZFlashcard(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

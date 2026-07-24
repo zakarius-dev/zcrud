@@ -240,6 +240,18 @@ const List<ZFieldSpec> $ZExamFieldSpecs = <ZFieldSpec>[
   ),
 ];
 
+/// Clés que `ZExam.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZExamPersistedKeys = <String>{
+  'id',
+  'folder_id',
+  'title',
+  'date',
+  'reminder_enabled',
+  'reminder_days_before',
+};
+
 /// Enregistre `ZExam` (kind "exam") sur [registry] : (dé)sérialisation + schéma.
 void registerZExam(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

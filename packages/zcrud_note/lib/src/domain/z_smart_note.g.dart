@@ -229,6 +229,17 @@ const List<ZFieldSpec> $ZSmartNoteFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'created_at', type: EditionFieldType.dateTime),
 ];
 
+/// Clés que `ZSmartNote.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZSmartNotePersistedKeys = <String>{
+  'id',
+  'folder_id',
+  'sub_folder_id',
+  'title',
+  'created_at',
+};
+
 /// Enregistre `ZSmartNote` (kind "smart_note") sur [registry] : (dé)sérialisation + schéma.
 void registerZSmartNote(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.

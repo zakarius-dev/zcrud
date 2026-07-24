@@ -261,6 +261,21 @@ const List<ZFieldSpec> $ZDocumentAnnotationFieldSpecs = <ZFieldSpec>[
   ZFieldSpec(name: 'created_at', type: EditionFieldType.dateTime),
 ];
 
+/// Clés que `ZDocumentAnnotation.toMap()` PEUT produire (CR-LEX-28) — surensemble
+/// stable, champs nuls compris. Source unique pour une garde d'exhaustivité
+/// côté hôte : un champ ajouté par un tag futur apparaît ici sans action.
+const Set<String> $ZDocumentAnnotationPersistedKeys = <String>{
+  'id',
+  'doc_id',
+  'page',
+  'kind',
+  'color_key',
+  'bounds',
+  'rects',
+  'text',
+  'created_at',
+};
+
 /// Enregistre `ZDocumentAnnotation` (kind "document_annotation") sur [registry] : (dé)sérialisation + schéma.
 void registerZDocumentAnnotation(ZcrudRegistry registry) {
   // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.
