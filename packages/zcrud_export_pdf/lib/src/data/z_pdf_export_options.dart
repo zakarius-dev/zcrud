@@ -35,6 +35,7 @@ class ZPdfExportOptions {
     this.orientation = ZPdfOrientation.portrait,
     this.title,
     this.repeatHeader = true,
+    this.latexEnabled = true,
   });
 
   /// Orientation de la/des page(s). Défaut : [ZPdfOrientation.portrait].
@@ -46,6 +47,19 @@ class ZPdfExportOptions {
   /// Répète la ligne d'en-tête sur chaque page auto-paginée (défaut `true`).
   final bool repeatHeader;
 
+  /// Interprète `$...$` comme du **LaTeX inline** dans les gabarits qui composent
+  /// texte + formules (défaut `true` = comportement historique).
+  ///
+  /// CR-LEX-41 §B : la tokenisation était **inconditionnelle**, donc un corpus
+  /// où `$` est un symbole monétaire (« 100 $ US ») n'avait aucun recours. Passer
+  /// `false` traite le texte comme littéral — `$` compris.
+  ///
+  /// ⚠️ Ce drapeau ne « répare » pas le repli : depuis CR-LEX-41, le repli texte
+  /// **réémet les délimiteurs** dans les deux cas, donc `true` n'est plus lossy.
+  /// `latexEnabled: false` sert à empêcher la *rasterisation* d'un segment qui
+  /// n'est pas une formule, pas à éviter une perte.
+  final bool latexEnabled;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -53,8 +67,10 @@ class ZPdfExportOptions {
           runtimeType == other.runtimeType &&
           orientation == other.orientation &&
           title == other.title &&
-          repeatHeader == other.repeatHeader;
+          repeatHeader == other.repeatHeader &&
+          latexEnabled == other.latexEnabled;
 
   @override
-  int get hashCode => Object.hash(orientation, title, repeatHeader);
+  int get hashCode =>
+      Object.hash(orientation, title, repeatHeader, latexEnabled);
 }

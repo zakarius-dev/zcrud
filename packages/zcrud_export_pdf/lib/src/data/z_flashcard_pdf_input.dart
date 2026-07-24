@@ -112,6 +112,8 @@ class ZFlashcardPdfLabels {
     this.explanationLabel = 'Explication',
     this.trueLabel = 'Vrai',
     this.falseLabel = 'Faux',
+    this.cardNumberPattern = 'Carte {index} / {total}',
+    this.untitledLabel = 'Flashcards',
   });
 
   /// Badge du type QCM.
@@ -146,6 +148,29 @@ class ZFlashcardPdfLabels {
 
   /// Libellé « faux » (V/F).
   final String falseLabel;
+
+  /// Patron de **numérotation de carte** (CR-LEX-42), défaut FR
+  /// `'Carte {index} / {total}'`.
+  ///
+  /// Jusqu'au tag `v0.16.0` cette chaîne était écrite **en dur** dans le
+  /// gabarit : un hôte qui surchargeait scrupuleusement les onze autres
+  /// libellés obtenait quand même un document mixte, sans aucun recours.
+  ///
+  /// Les jetons `{index}` et `{total}` sont substitués par [cardNumberFor].
+  /// Un patron qui n'en contient aucun est rendu **tel quel** — c'est un choix
+  /// d'hôte légitime (numérotation supprimée : passer `''`), pas une erreur.
+  final String cardNumberPattern;
+
+  /// Titre de repli quand `ZFlashcardPdfInput.title` est vide (CR-LEX-42),
+  /// défaut FR `'Flashcards'` — lui aussi codé en dur auparavant.
+  final String untitledLabel;
+
+  /// Rend la numérotation de la carte [index] sur [total] via
+  /// [cardNumberPattern]. Substitution littérale, sans regex : `{index}` et
+  /// `{total}`. Ne lève jamais (AD-10).
+  String cardNumberFor(int index, int total) => cardNumberPattern
+      .replaceAll('{index}', '$index')
+      .replaceAll('{total}', '$total');
 
   /// Badge pour une [typeKey] neutre — repli défensif sur [openQuestion]
   /// (AD-10 : clé inconnue/absente jamais fatale). **Table unique** de décision.

@@ -138,7 +138,11 @@ class ZFlashcardPdfTemplate {
       // Titre (toujours présent, même dossier vide → PDF 1 page jamais 0-page).
       final titleFont =
           _font(fontBytes, _titleSize, style: PdfFontStyle.bold);
-      flow.drawText(input.title.isEmpty ? 'Flashcards' : input.title, titleFont);
+      // CR-LEX-42 : le repli de titre était lui aussi écrit en français en dur.
+      flow.drawText(
+        input.title.isEmpty ? input.labels.untitledLabel : input.title,
+        titleFont,
+      );
       flow.newParagraph(_paraGap);
 
       final n = input.cards.length;
@@ -216,9 +220,14 @@ class ZFlashcardPdfTemplate {
     final bodyBold = _font(fontBytes, _bodySize, style: PdfFontStyle.bold);
     final badgeFont = _font(fontBytes, _badgeSize);
 
-    // Numérotation (heading) — table unique.
-    flow.drawText('Carte $index / $total', headingFont);
-    flow.newParagraph(2);
+    // Numérotation (heading) — table unique. CR-LEX-42 : la seule chaîne
+    // française que l'hôte ne pouvait PAS surcharger. Un patron vide supprime
+    // la numérotation, ce qui est un choix d'hôte légitime.
+    final numbering = input.labels.cardNumberFor(index, total);
+    if (numbering.isNotEmpty) {
+      flow.drawText(numbering, headingFont);
+      flow.newParagraph(2);
+    }
 
     // Badge d'instruction (par type, table unique jamais redécidée).
     flow.drawBadge(input.labels.badgeFor(card.typeKey), badgeFont);
@@ -301,43 +310,68 @@ class ZFlashcardPdfTemplate {
     PdfFont font,
     Map<String, PdfBitmap?> bitmaps,
   ) {
-    for (final seg in _tokenize(text)) {
+    for (final seg in _tokenize(text, latexEnabled: _latexEnabled)) {
       if (seg.isLatex) {
-        final bmp = bitmaps[seg.text];
+        final bmp = bitmaps[seg.source];
         if (bmp != null) {
           flow.drawInlineBitmap(bmp, font.height);
         } else {
-          // Repli défensif (AC9) : texte brut de la formule (jamais de trou).
-          flow.drawText(seg.text, font);
+          // CR-LEX-41 §B — repli défensif (AC9) : on réémet le texte SOURCE,
+          // DÉLIMITEURS COMPRIS. Auparavant `seg.text` était peint nu : les `$`
+          // disparaissaient du document, et avec eux le sens (« 100 $ US » →
+          // « 100  US »). Le repli ne doit rien coûter.
+          flow.drawText(seg.raw, font);
         }
-      } else if (seg.text.isNotEmpty) {
-        flow.drawText(seg.text, font);
+      } else if (seg.raw.isNotEmpty) {
+        flow.drawText(seg.raw, font);
       }
     }
   }
 
   /// Extrait les sources LaTeX (`$...$`) d'un texte (sans délimiteurs).
-  static Iterable<String> _latexOf(String text) sync* {
-    for (final seg in _tokenize(text)) {
-      if (seg.isLatex && seg.text.isNotEmpty) yield seg.text;
+  Iterable<String> _latexOf(String text) sync* {
+    for (final seg in _tokenize(text, latexEnabled: _latexEnabled)) {
+      if (seg.isLatex && seg.source.isNotEmpty) yield seg.source;
     }
   }
 
+  /// Interprétation LaTeX active (CR-LEX-41 §B) — `ZPdfExportOptions.latexEnabled`.
+  bool get _latexEnabled => (options ?? const ZPdfExportOptions()).latexEnabled;
+
   /// Découpe [text] en segments alternés texte / LaTeX sur le délimiteur `$`.
-  /// Les positions impaires sont du LaTeX. Un `$` non apparié laisse le reste en
-  /// texte (défensif). Aucun throw.
-  static List<_Seg> _tokenize(String text) {
-    if (!text.contains(r'$')) return <_Seg>[_Seg(false, text)];
-    final parts = text.split(r'$');
-    // Nombre PAIR de `$` ⇒ (parts.length impair) alternance propre. Nombre IMPAIR
-    // (délimiteur non fermé) ⇒ le dernier fragment reste du TEXTE (repli).
-    final unbalanced = parts.length.isEven;
-    final out = <_Seg>[];
-    for (var i = 0; i < parts.length; i++) {
-      final isLast = i == parts.length - 1;
-      final isLatex = i.isOdd && !(unbalanced && isLast);
-      out.add(_Seg(isLatex, parts[i]));
+  ///
+  /// 🔴 **INVARIANT SANS PERTE (CR-LEX-41 §B)** : la concaténation des [_Seg.raw]
+  /// reconstitue [text] **caractère pour caractère**. C'est ce qui garantit qu'un
+  /// `$` — délimiteur apparié, délimiteur orphelin, ou simple symbole monétaire —
+  /// ne peut plus s'évaporer du document. L'ancienne version, bâtie sur un
+  /// `split(r'$')` dont les délimiteurs n'étaient jamais réémis, violait cet
+  /// invariant en silence. Un test le vérifie sur un corpus.
+  ///
+  /// Un `$` non apparié rattache le reste au TEXTE (défensif). Aucun throw.
+  static List<_Seg> _tokenize(String text, {bool latexEnabled = true}) {
+    if (!latexEnabled || !text.contains(r'$')) {
+      return <_Seg>[_Seg(false, text, text)];
     }
+    final parts = text.split(r'$');
+    final out = <_Seg>[];
+    // `pending` porte un délimiteur ORPHELIN, recollé au texte qui le suit — il
+    // appartient au contenu, pas à la syntaxe.
+    var pending = '';
+    var i = 0;
+    while (i < parts.length) {
+      out.add(_Seg(false, parts[i], pending + parts[i]));
+      pending = '';
+      i++;
+      if (i >= parts.length) break;
+      if (i < parts.length - 1) {
+        // Un `$` fermant existe ⇒ formule appariée, délimiteurs conservés.
+        out.add(_Seg(true, parts[i], '\$${parts[i]}\$'));
+        i++;
+      } else {
+        pending = r'$'; // Ouvrant sans fermant : c'est du texte.
+      }
+    }
+    if (pending.isNotEmpty) out.add(_Seg(false, '', pending));
     return out;
   }
 
@@ -351,9 +385,18 @@ class ZFlashcardPdfTemplate {
 
 /// Un segment de texte inline : soit du texte brut, soit une source LaTeX.
 class _Seg {
-  const _Seg(this.isLatex, this.text);
+  const _Seg(this.isLatex, this.source, this.raw);
+
+  /// Le segment est une formule appariée `$...$`.
   final bool isLatex;
-  final String text;
+
+  /// Contenu **sans délimiteurs** — la clé de rasterisation.
+  final String source;
+
+  /// Contenu **tel qu'il figure dans la source**, délimiteurs compris. C'est ce
+  /// qui est peint en repli : `raw` concaténé sur tous les segments reconstitue
+  /// le texte d'origine à l'identique (CR-LEX-41 §B).
+  final String raw;
 }
 
 /// Moteur de **flux** : place mots et bitmaps en ligne, retourne à la ligne et
@@ -424,18 +467,52 @@ class _Flow {
     if (h > _lineMaxH) _lineMaxH = h;
   }
 
-  /// Dessine [text] en le découpant en mots (chaque mot = un élément plaçable) :
-  /// le texte reste **extractible** (drawString), avec habillage et pagination.
+  /// Sépare les **ruptures de ligne** d'un texte : `\r\n`, `\n`, `\r`, la
+  /// tabulation verticale, le saut de page, et les séparateurs Unicode
+  /// `U+2028`/`U+2029`.
+  static final RegExp _lineBreaks = RegExp(r'\r\n|[\n\r\v\f\u2028\u2029]');
+
+  /// Dessine [rawText] en le découpant en **lignes** puis en **mots** (chaque mot
+  /// = un élément plaçable) : le texte reste **extractible** (drawString), avec
+  /// habillage et pagination.
+  ///
+  /// 🔴 **CR-LEX-41 §A — les sauts de ligne étaient une PERTE SILENCIEUSE.** Le
+  /// découpage ne portait que sur l'espace : un mot contenant `\n` partait en
+  /// **un seul** `drawString` dans un `Rect` d'**une** hauteur de ligne, et tout
+  /// ce qui suivait le saut sortait du rectangle — jamais rendu, sans exception
+  /// ni compteur. Le PDF restait valide et **amputé**. C'était plus grave que la
+  /// substitution Unicode de CR-LEX-38 : celle-ci laissait au moins un `?`.
+  /// Un saut de ligne est désormais un **vrai retour à la ligne**.
   ///
   /// Défensif (AD-10) : les polices STANDARD (WinAnsi) ne portent PAS tous les
   /// glyphes Unicode (arabe/CJK/emoji…) et `measureString`/`drawString`
-  /// **lèveraient** sur un caractère non supporté. [text] est donc d'abord
+  /// **lèveraient** sur un caractère non supporté. Chaque ligne est donc
   /// [_sanitize]é (les glyphes hors police → `?`) — le rendu ne throw JAMAIS
-  /// (le shaping RTL/complexe complet exigerait une police TrueType embarquée,
-  /// hors périmètre pur de `zcrud_export`).
+  /// (le shaping RTL/complexe complet exige une police TrueType, cf. CR-LEX-38 :
+  /// `ZPdfFontProvider`).
   void drawText(String rawText, PdfFont font, {PdfColor? color}) {
     if (rawText.isEmpty) return;
-    final text = _sanitize(font, rawText);
+    final lines = rawText.split(_lineBreaks);
+    for (var i = 0; i < lines.length; i++) {
+      // Toute ligne SAUF la première ouvre un nouveau retour chariot. La
+      // première ne le fait pas : `drawText` est aussi appelé EN COURS de ligne
+      // (« Réponse : » puis le contenu) — la composition inline doit tenir.
+      if (i > 0) newLine(font.height);
+      _drawSingleLine(lines[i], font, color: color);
+    }
+  }
+
+  /// Dessine UNE ligne (garantie sans rupture) mot à mot.
+  ///
+  /// ⚠️ La tabulation n'est **pas** transformée, et c'est un choix MESURÉ, pas un
+  /// oubli. La CR-LEX-41 demandait de découper aussi sur `\t` ; l'extraction du
+  /// PDF montre que `\t` ne perdait **rien** — `'AAA\tBBB'` ressort `AAA    BBB`,
+  /// intact. La perte venait entièrement du `\n`. Une expansion en espaces a été
+  /// écrite puis **retirée** : aucune assertion ne pouvait la faire rougir, et du
+  /// code qu'aucun test ne peut infirmer est précisément ce que ce dépôt traque.
+  void _drawSingleLine(String rawLine, PdfFont font, {PdfColor? color}) {
+    if (rawLine.isEmpty) return;
+    final text = _sanitize(font, rawLine);
     if (text.isEmpty) return;
     final brush = color == null ? null : PdfSolidBrush(color);
     final spaceW = _measure(font, ' ');
@@ -461,8 +538,19 @@ class _Flow {
   }
 
   /// Dessine un badge : texte encadré d'un rectangle de fond léger (bloc).
+  ///
+  /// 🔴 Le badge souffrait de la **même amputation** que [drawText] avant
+  /// CR-LEX-41 §A — un libellé multi-ligne était peint dans un rectangle d'une
+  /// seule hauteur de ligne, et la suite disparaissait. La CR ne le signalait
+  /// pas ; c'est le jumeau du défaut, deux méthodes plus loin.
+  ///
+  /// Un badge est par construction un **encadré d'une ligne** : plutôt que
+  /// d'inventer un encadré multi-ligne, les blancs sont **aplatis** (`\s+` → un
+  /// espace). Aucun mot n'est retiré — c'est une perte de mise en forme, pas de
+  /// contenu, et elle est visible dans le document.
   void drawBadge(String rawText, PdfFont font) {
-    final text = _sanitize(font, rawText);
+    final flattened = rawText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final text = _sanitize(font, flattened);
     if (_x > 0) newLine(font.height);
     final padH = 4.0;
     final padV = 2.0;
