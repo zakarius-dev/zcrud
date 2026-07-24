@@ -101,21 +101,53 @@ void main() {
       }
     });
 
-    test('aucun autre package que zcrud_export ne déclare ces libs', () {
+    test('chaque lib Syncfusion d\'export reste confinée à SON paquet', () {
+      // CR-LEX-40 : la topologie a deux paquets depuis la scission.
+      // - `syncfusion_flutter_xlsio` (tableur) : `zcrud_export` UNIQUEMENT —
+      //   c'est précisément ce qu'un hôte PDF-seul ne doit plus tirer ;
+      // - `syncfusion_flutter_pdf` : les DEUX, puisque `zcrud_export` compose
+      //   `zcrud_export_pdf` en y ajoutant l'Excel.
+      const proprietaires = <String, Set<String>>{
+        'syncfusion_flutter_xlsio': <String>{'zcrud_export'},
+        'syncfusion_flutter_pdf': <String>{'zcrud_export', 'zcrud_export_pdf'},
+      };
       final packagesDir = Directory('packages').existsSync()
           ? Directory('packages')
           : Directory('../../packages');
       for (final entity in packagesDir.listSync().whereType<Directory>()) {
         final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
-        if (name == 'zcrud_export') continue;
         final pubspec = File('${entity.path}/pubspec.yaml');
         if (!pubspec.existsSync()) continue;
         final content = pubspec.readAsStringSync();
         for (final lib in _exportLibs) {
+          if (proprietaires[lib]!.contains(name)) continue;
           expect(content.contains('$lib:'), isFalse,
-              reason: '$name ne doit PAS déclarer $lib (confiné à zcrud_export)');
+              reason: '$name ne doit PAS déclarer $lib');
         }
       }
+    });
+
+    test('🔴 CR-LEX-40 — `zcrud_export_pdf` n\'a AUCUNE arête tableur', () {
+      // C'est l'invariant que la scission existe pour tenir : un hôte PDF-seul
+      // ne doit tirer ni xlsio, ni son transitif officecore, ni jiffy.
+      final pubspec = File(
+        Directory('packages').existsSync()
+            ? 'packages/zcrud_export_pdf/pubspec.yaml'
+            : '../../packages/zcrud_export_pdf/pubspec.yaml',
+      );
+      expect(pubspec.existsSync(), isTrue);
+      // On cherche la DÉCLARATION (`  lib: ^x`), pas une mention en commentaire —
+      // le pubspec du paquet léger EXPLIQUE justement pourquoi xlsio en est
+      // absent, et une détection naïve se serait mordu la queue.
+      final declarations = pubspec
+          .readAsLinesSync()
+          .where((l) => !l.trimLeft().startsWith('#'))
+          .join('\n');
+      expect(declarations.contains('syncfusion_flutter_xlsio:'), isFalse,
+          reason: 'la scission serait vaine si le paquet léger la déclarait');
+      // Contrôle POSITIF : la détection sait trouver une lib réellement déclarée.
+      expect(declarations.contains('syncfusion_flutter_pdf:'), isTrue,
+          reason: 'sans ce contrôle, un pubspec vide rendrait le test vert');
     });
   });
 
@@ -153,9 +185,12 @@ void main() {
               reason: 'backend Syncfusion hors convention z_*.dart : ${f.path}');
         }
       }
-      // Il DOIT exister au moins les 3 backends attendus (garde-fou du garde).
-      expect(syncfusionImporters.length, greaterThanOrEqualTo(3),
-          reason: 'les 3 backends Syncfusion (excel/pdf/pdf-doc) doivent exister');
+      // CR-LEX-40 : depuis la scission, les backends PDF vivent dans
+      // `zcrud_export_pdf` (où le même garde s'applique). `zcrud_export` ne
+      // conserve que le backend TABLEUR — mais il doit en rester AU MOINS un,
+      // sans quoi ce garde s'auto-satisferait sur un paquet vide.
+      expect(syncfusionImporters.length, greaterThanOrEqualTo(1),
+          reason: 'le backend Syncfusion tableur doit exister');
     });
 
     test('aucun type Syncfusion dans une signature publique (fichiers DÉRIVÉS)',

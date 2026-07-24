@@ -28,9 +28,7 @@ import 'dart:typed_data';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_excel_exporter.dart';
-import 'z_export_table.dart';
-import 'z_pdf_export_options.dart';
-import 'z_pdf_exporter.dart';
+import 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
 
 /// Façade d'export neutre et immuable (`const`-constructible).
 ///

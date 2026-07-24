@@ -21,7 +21,7 @@ import 'dart:typed_data';
 
 import 'package:syncfusion_flutter_xlsio/xlsio.dart';
 
-import 'z_export_table.dart';
+import 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
 
 /// Construit un classeur `.xlsx` à partir de la [table] neutre et renvoie ses
 /// **bytes** (`Uint8List`). Ligne 1 = en-têtes ; lignes suivantes = cellules.

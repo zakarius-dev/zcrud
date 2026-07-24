@@ -70,6 +70,8 @@ dependencies:
     path: ../packages/zcrud_intl
   zcrud_export:
     path: ../packages/zcrud_export
+  zcrud_export_pdf:
+    path: ../packages/zcrud_export_pdf
   zcrud_firestore:
     path: ../packages/zcrud_firestore
   # FP-3.2 (parité totale) — les 4 satellites FORM-PARITY (fp-4/fp-5, tous `done`)
@@ -156,6 +158,8 @@ dependency_overrides:
     path: ../packages/zcrud_intl
   zcrud_export:
     path: ../packages/zcrud_export
+  zcrud_export_pdf:
+    path: ../packages/zcrud_export_pdf
   zcrud_firestore:
     path: ../packages/zcrud_firestore
   # FP-3.2 : les 4 satellites FORM-PARITY déclarent `resolution: workspace` +

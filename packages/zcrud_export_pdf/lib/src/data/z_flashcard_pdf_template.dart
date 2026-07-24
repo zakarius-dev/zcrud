@@ -35,6 +35,7 @@ import 'dart:ui' show Offset, Rect;
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../domain/z_latex_rasterizer.dart';
+import '../domain/z_pdf_font_provider.dart';
 import 'z_answer_visibility.dart';
 import 'z_exported_file.dart';
 import 'z_flashcard_pdf_input.dart';
@@ -48,10 +49,23 @@ import 'z_pdf_export_options.dart';
 class ZFlashcardPdfTemplate {
   /// Construit le gabarit. [rasterizer] optionnel (repli texte brut si absent) ;
   /// [options] paramètre l'orientation (portrait par défaut).
-  const ZFlashcardPdfTemplate({this.rasterizer, this.options});
+  const ZFlashcardPdfTemplate({
+    this.rasterizer,
+    this.options,
+    this.fontProvider,
+  });
 
   /// Port de rasterisation LaTeX (impl concrète hors package). `null` → repli texte.
   final ZLatexRasterizer? rasterizer;
+
+  /// Port de police **TrueType** (CR-LEX-38) — `null` ⇒ police standard
+  /// WinAnsi, donc **latin-1 seulement**, et tout caractère hors jeu redevient
+  /// `?`. Le fournir suffit à ce que l'arabe, le grec, le cyrillique, le CJK ou
+  /// les emoji survivent à l'export.
+  ///
+  /// ⚠️ La police fournie doit **couvrir** les écritures de votre corpus : le
+  /// gabarit n'en compose qu'une seule pour tout le document.
+  final ZPdfFontProvider? fontProvider;
 
   /// Options de mise en page (orientation). `null` → portrait.
   final ZPdfExportOptions? options;
@@ -65,6 +79,34 @@ class ZFlashcardPdfTemplate {
   static const double _badgeSize = 9;
   static const double _paraGap = 6; // interligne entre blocs
 
+  /// Charge les octets de police, **sans jamais lever** (AD-10).
+  Future<Uint8List?> _loadFontBytes() async {
+    final provider = fontProvider;
+    if (provider == null) return null;
+    try {
+      final bytes = await provider.loadFont();
+      return (bytes == null || bytes.isEmpty) ? null : bytes;
+    } on Object {
+      // Un provider défaillant ne doit pas coûter l'export entier : on dégrade
+      // vers la police standard, comme s'il n'avait pas été fourni.
+      return null;
+    }
+  }
+
+  /// Fabrique une police à [size] : TrueType si [bytes] est fourni (Unicode),
+  /// sinon standard WinAnsi (CR-LEX-38). Un `PdfTrueTypeFont` invalide retombe
+  /// aussi sur le standard — jamais d'export perdu.
+  static PdfFont _font(Uint8List? bytes, double size, {PdfFontStyle? style}) {
+    if (bytes != null) {
+      try {
+        return PdfTrueTypeFont(bytes, size, style: style);
+      } on Object {
+        // Octets illisibles : on ne casse pas l'export.
+      }
+    }
+    return PdfStandardFont(PdfFontFamily.helvetica, size, style: style);
+  }
+
   /// Construit le PDF pour [input] avec le mode d'affichage [answerVisibility].
   ///
   /// Renvoie le triplet neutre `{bytes, fileName, mimeType}` — `mimeType` =
@@ -77,6 +119,10 @@ class ZFlashcardPdfTemplate {
     // Pré-rasterisation (le port est asynchrone) : on résout TOUTES les formules
     // rendues AVANT la mise en page synchrone. Cache par source (dé-duplication).
     final bitmaps = await _prerasterize(input, answerVisibility);
+    // CR-LEX-38 : octets de police chargés UNE fois, défensivement. Un provider
+    // absent, rendant `null`, ou levant ⇒ repli sur la police standard : le
+    // rendu fonctionne toujours, il redevient borné au latin-1.
+    final Uint8List? fontBytes = await _loadFontBytes();
 
     final document = PdfDocument();
     try {
@@ -91,13 +137,14 @@ class ZFlashcardPdfTemplate {
 
       // Titre (toujours présent, même dossier vide → PDF 1 page jamais 0-page).
       final titleFont =
-          PdfStandardFont(PdfFontFamily.helvetica, _titleSize, style: PdfFontStyle.bold);
+          _font(fontBytes, _titleSize, style: PdfFontStyle.bold);
       flow.drawText(input.title.isEmpty ? 'Flashcards' : input.title, titleFont);
       flow.newParagraph(_paraGap);
 
       final n = input.cards.length;
       for (var i = 0; i < n; i++) {
-        _renderCard(flow, input, input.cards[i], i + 1, n, answerVisibility, bitmaps);
+        _renderCard(flow, input, input.cards[i], i + 1, n, answerVisibility,
+            bitmaps, fontBytes);
       }
 
       final bytes = Uint8List.fromList(document.saveSync());
@@ -125,6 +172,9 @@ class ZFlashcardPdfTemplate {
       for (final ch in card.choices ?? const <ZFlashcardPdfChoice>[]) {
         sources.addAll(_latexOf(ch.content));
       }
+      // CR-LEX-39 : l'indice est rendu dans LES DEUX modes — ses formules
+      // doivent donc être pré-rasterisées inconditionnellement.
+      sources.addAll(_latexOf(card.hint ?? ''));
       if (visibility == ZAnswerVisibility.withAnswers) {
         sources.addAll(_latexOf(card.answer ?? ''));
         sources.addAll(_latexOf(card.explanation ?? ''));
@@ -159,13 +209,12 @@ class ZFlashcardPdfTemplate {
     int total,
     ZAnswerVisibility visibility,
     Map<String, PdfBitmap?> bitmaps,
+    Uint8List? fontBytes,
   ) {
-    final headingFont =
-        PdfStandardFont(PdfFontFamily.helvetica, _headingSize, style: PdfFontStyle.bold);
-    final bodyFont = PdfStandardFont(PdfFontFamily.helvetica, _bodySize);
-    final bodyBold =
-        PdfStandardFont(PdfFontFamily.helvetica, _bodySize, style: PdfFontStyle.bold);
-    final badgeFont = PdfStandardFont(PdfFontFamily.helvetica, _badgeSize);
+    final headingFont = _font(fontBytes, _headingSize, style: PdfFontStyle.bold);
+    final bodyFont = _font(fontBytes, _bodySize);
+    final bodyBold = _font(fontBytes, _bodySize, style: PdfFontStyle.bold);
+    final badgeFont = _font(fontBytes, _badgeSize);
 
     // Numérotation (heading) — table unique.
     flow.drawText('Carte $index / $total', headingFont);
@@ -195,6 +244,17 @@ class ZFlashcardPdfTemplate {
         }
         _drawInline(flow, ch.content, bodyFont, bitmaps);
       }
+      flow.newParagraph(_paraGap / 2);
+    }
+
+    // CR-LEX-39 — INDICE, rendu HORS du bloc réponse : il reste visible en
+    // `withoutAnswers`, qui est le mode RÉVISION, celui où un indice sert le
+    // plus. Le masquer avec la réponse en ferait un doublon de l'explication.
+    final hint = card.hint;
+    if (hint != null && hint.isNotEmpty) {
+      flow.newLine(bodyFont.height);
+      flow.drawText('${input.labels.hintLabel} : ', bodyBold);
+      _drawInline(flow, hint, bodyFont, bitmaps);
       flow.newParagraph(_paraGap / 2);
     }
 
@@ -238,7 +298,7 @@ class ZFlashcardPdfTemplate {
   void _drawInline(
     _Flow flow,
     String text,
-    PdfStandardFont font,
+    PdfFont font,
     Map<String, PdfBitmap?> bitmaps,
   ) {
     for (final seg in _tokenize(text)) {
@@ -373,7 +433,7 @@ class _Flow {
   /// [_sanitize]é (les glyphes hors police → `?`) — le rendu ne throw JAMAIS
   /// (le shaping RTL/complexe complet exigerait une police TrueType embarquée,
   /// hors périmètre pur de `zcrud_export`).
-  void drawText(String rawText, PdfStandardFont font, {PdfColor? color}) {
+  void drawText(String rawText, PdfFont font, {PdfColor? color}) {
     if (rawText.isEmpty) return;
     final text = _sanitize(font, rawText);
     if (text.isEmpty) return;
@@ -401,7 +461,7 @@ class _Flow {
   }
 
   /// Dessine un badge : texte encadré d'un rectangle de fond léger (bloc).
-  void drawBadge(String rawText, PdfStandardFont font) {
+  void drawBadge(String rawText, PdfFont font) {
     final text = _sanitize(font, rawText);
     if (_x > 0) newLine(font.height);
     final padH = 4.0;
@@ -477,7 +537,7 @@ class _Flow {
     });
   }
 
-  double _measure(PdfStandardFont font, String text) {
+  double _measure(PdfFont font, String text) {
     if (text.isEmpty) return 0;
     return font.measureString(text).width;
   }
@@ -485,7 +545,7 @@ class _Flow {
   /// Remplace les caractères non portés par [font] (WinAnsi) par `?` afin que
   /// `measureString`/`drawString` ne lèvent JAMAIS (AD-10). Chemin rapide : si la
   /// chaîne entière se mesure, elle est renvoyée telle quelle (aucun coût).
-  static String _sanitize(PdfStandardFont font, String text) {
+  static String _sanitize(PdfFont font, String text) {
     if (text.isEmpty) return text;
     try {
       font.measureString(text);

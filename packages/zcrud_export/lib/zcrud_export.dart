@@ -27,26 +27,13 @@ library;
 // `ZAnswerVisibility` + `ZExportedFile`) — tous ADDITIFS, aucun symbole
 // Syncfusion réexporté (AD-42, l'impl concrète du rasteriseur vit dans
 // `zcrud_export_ui`).
-export 'src/data/z_answer_visibility.dart' show ZAnswerVisibility;
+// CR-LEX-40 : le PDF et les pièces NEUTRES vivent désormais dans
+// `zcrud_export_pdf`, qui n'a AUCUNE dépendance tableur. Ce paquet le
+// ré-exporte INTÉGRALEMENT et n'ajoute que l'Excel : la surface publique de
+// `zcrud_export` est donc INCHANGÉE — aucun consommateur ne casse. Un hôte
+// PDF-seul bascule sur `zcrud_export_pdf` et perd `syncfusion_flutter_xlsio`,
+// `syncfusion_officecore` et `jiffy`.
+export 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
+
 export 'src/data/z_export_api.dart' show ZExportApi;
-export 'src/data/z_export_table.dart' show ZExportTable;
-export 'src/data/z_exported_file.dart' show ZExportedFile;
 export 'src/data/z_exporter.dart' show ZExporter;
-export 'src/data/z_file_save_result.dart' show ZFileSaveResult;
-export 'src/data/z_file_saver.dart' show ZFileSaver;
-export 'src/data/z_flashcard_pdf_input.dart'
-    show
-        ZFlashcardPdfCard,
-        ZFlashcardPdfChoice,
-        ZFlashcardPdfInput,
-        ZFlashcardPdfLabels,
-        kFlashcardPdfTypeExercise,
-        kFlashcardPdfTypeFillBlank,
-        kFlashcardPdfTypeMultipleChoice,
-        kFlashcardPdfTypeOpenQuestion,
-        kFlashcardPdfTypeShortAnswer,
-        kFlashcardPdfTypeTrueOrFalse;
-export 'src/data/z_flashcard_pdf_template.dart' show ZFlashcardPdfTemplate;
-export 'src/data/z_pdf_creation_service.dart' show ZPdfCreationService;
-export 'src/data/z_pdf_export_options.dart' show ZPdfExportOptions, ZPdfOrientation;
-export 'src/domain/z_latex_rasterizer.dart' show ZLatexRasterizer;

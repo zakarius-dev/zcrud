@@ -11,7 +11,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zcrud_export/zcrud_export.dart';
+import 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
 
 import 'support/pdf_flashcard_support.dart';
 

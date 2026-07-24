@@ -1,0 +1,48 @@
+# zcrud_export_pdf — membre du workspace zcrud (resolution: workspace).
+#
+# CR-LEX-40 : paquet d'export **PDF SEUL**. Consommer le gabarit PDF forçait
+# auparavant tout le volet Excel — `syncfusion_flutter_xlsio` + son transitif
+# `syncfusion_officecore` + `jiffy` entraient au graphe d'un hôte PDF-seul pour
+# n'être JAMAIS appelés. Dart n'ayant pas de dépendance optionnelle, seule une
+# frontière de paquet peut les écarter.
+#
+# Topologie retenue (NON CASSANTE) : ce paquet porte le PDF et les pièces
+# NEUTRES (table, fichier exporté, savers, ports) ; `zcrud_export` en DÉPEND et
+# le ré-exporte en y ajoutant l'Excel. Un consommateur existant de
+# `zcrud_export` ne voit donc AUCUN changement d'API — c'est ce qui distingue
+# cette forme de la scission proposée en CR, qui aurait cassé `ZExporter.toExcel`.
+#
+# AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
+name: zcrud_export_pdf
+description: "PDF export for zcrud (flashcard templates and tabular documents) behind a neutral, byte-based API — no spreadsheet dependency."
+version: 0.16.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_export_pdf
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - export
+  - pdf
+  - flashcards
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # SEULE arête Syncfusion de ce paquet (AD-8) — confinée aux impls concrètes.
+  # `syncfusion_flutter_xlsio` est délibérément ABSENT : c'est tout l'objet de
+  # CR-LEX-40.
+  syncfusion_flutter_pdf: ^34.1.31
+  # Téléchargement navigateur (ZFileSaver web) via `package:web` +
+  # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage
+  # web-CONDITIONNEL : ne remonte jamais dans une signature neutre.
+  web: ^1.1.0
+  zcrud_core: ^0.16.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

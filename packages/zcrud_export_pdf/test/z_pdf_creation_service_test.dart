@@ -9,7 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
-import 'package:zcrud_export/zcrud_export.dart';
+import 'package:zcrud_export_pdf/zcrud_export_pdf.dart';
 
 /// PNG 2x2 rouge minimal valide (décodable par PdfBitmap).
 final Uint8List _smallPng = base64.decode(

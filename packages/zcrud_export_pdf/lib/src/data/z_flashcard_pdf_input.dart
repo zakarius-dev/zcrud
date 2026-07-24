@@ -63,6 +63,7 @@ class ZFlashcardPdfCard {
     this.answer,
     this.isTrue,
     this.choices,
+    this.hint,
     this.explanation,
   });
 
@@ -81,6 +82,16 @@ class ZFlashcardPdfCard {
   /// Choix de QCM (marqués ✓/✗ en `withAnswers`, non marqués en `withoutAnswers`).
   final List<ZFlashcardPdfChoice>? choices;
 
+  /// Indice (CR-LEX-39) — **rendu AUSSI en `withoutAnswers`**, contrairement à
+  /// [answer] et [explanation].
+  ///
+  /// C'est délibéré et c'est tout l'intérêt : `withoutAnswers` est le mode
+  /// **révision**, celui où un indice sert le plus. Le masquer avec la réponse
+  /// en ferait un doublon d'[explanation]. Sans ce champ, l'indice — pourtant
+  /// porté par `ZFlashcard` — ne pouvait être rendu qu'en le faisant passer
+  /// pour une partie de l'énoncé.
+  final String? hint;
+
   /// Explication (masquée en `withoutAnswers`). Peut contenir du LaTeX.
   final String? explanation;
 }
@@ -96,6 +107,7 @@ class ZFlashcardPdfLabels {
     this.exercise = 'Exercice',
     this.fillBlank = 'Texte à trous — complétez',
     this.shortAnswer = 'Réponse courte',
+    this.hintLabel = 'Indice',
     this.answerLabel = 'Réponse',
     this.explanationLabel = 'Explication',
     this.trueLabel = 'Vrai',
@@ -116,6 +128,9 @@ class ZFlashcardPdfLabels {
 
   /// Badge du type texte à trous.
   final String fillBlank;
+
+  /// Libellé de l'indice (CR-LEX-39), défaut FR « Indice ».
+  final String hintLabel;
 
   /// Badge du type réponse courte.
   final String shortAnswer;

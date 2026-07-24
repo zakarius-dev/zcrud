@@ -90,6 +90,9 @@ workspace:
   - packages/zcrud_geo
   - packages/zcrud_intl
   - packages/zcrud_export
+  # CR-LEX-40 : export PDF SEUL (sans arete tableur) —  en depend
+  # et le re-exporte, donc aucune surface publique ne change.
+  - packages/zcrud_export_pdf
   # su-11 : satellite PLATEFORME d'export (AD-42). Garde `zcrud_export` PUR en
   # accueillant l'impl concrète du rasteriseur LaTeX (`flutter_math_fork`) et la
   # preview/impression/partage (`printing`). LEAF : personne n'en dépend ;
