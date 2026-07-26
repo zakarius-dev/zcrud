@@ -9,7 +9,7 @@
 # champ = ES-5.2 ; les sections réordonnables = ES-5.3.
 name: zcrud_study
 description: "Study-tools orchestration (presentation) for zcrud: parametric section descriptor (ZStudyToolsSectionSpec) and a decomposed sectioned layout (ZSectionedStudyLayout) proven by a discriminant golden harness."
-version: 0.18.0
+version: 0.19.0
 publish_to: none
 resolution: workspace
 
@@ -100,6 +100,22 @@ environment:
 #    (routeur, prompts, `toWireJson`, SSE, clés) restent CÔTÉ APP (AD-11/AD-12).
 #    Ces arêtes seront ajoutées par la story qui les consomme réellement.
 #
+# - `zcrud_session`     : arête AJOUTÉE par SUF-3 (première story qui la consomme
+#                          réellement) — consommée pour `ZStudyProgressRings` +
+#                          `ZProgressRingsData` : l'onglet Progression de la
+#                          page-détail `ZStudyFolderDetail` COMPOSE l'anneau de
+#                          progression EXISTANT (ES-4.5) sur un DTO PRÉ-CALCULÉ
+#                          injecté (aucun calcul de ratio dans le widget, AD-2/
+#                          ES-4.5). L'AC exige « NE PAS réimplémenter
+#                          `ZStudyProgressRings` » : sans cette arête, `zcrud_study`
+#                          devrait REDÉCLARER l'anneau — la « seconde source » que
+#                          ce projet combat. Arête ACYCLIQUE : `zcrud_session →
+#                          core/flashcard/study_kernel/ui_kit` SEULEMENT, JAMAIS
+#                          l'inverse (`zcrud_session` ne dépend PAS de `zcrud_study`
+#                          — prouvé sur disque) ⇒ aucun cycle. CORE OUT=0 préservé.
+#                          ZÉRO dépendance tierce nouvelle (`zcrud_session` est un
+#                          package zcrud). Graphe : 68 → 69 arêtes.
+#
 # - `zcrud_ui_kit`      : arête AJOUTÉE par ME-2 (première story qui la consomme
 #                          réellement) — consommée pour `ZDiscardChangesGuard` :
 #                          le garde anti-perte de saisie EXISTANT (EX-UI.9) qui
@@ -118,14 +134,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.18.0
-  zcrud_study_kernel: ^0.18.0
-  zcrud_annotations: ^0.18.0
-  zcrud_mindmap: ^0.18.0
-  zcrud_flashcard: ^0.18.0
-  zcrud_exam: ^0.18.0
-  zcrud_responsive: ^0.18.0
-  zcrud_ui_kit: ^0.18.0
+  zcrud_core: ^0.19.0
+  zcrud_study_kernel: ^0.19.0
+  zcrud_annotations: ^0.19.0
+  zcrud_mindmap: ^0.19.0
+  zcrud_flashcard: ^0.19.0
+  zcrud_exam: ^0.19.0
+  zcrud_responsive: ^0.19.0
+  zcrud_session: ^0.19.0
+  zcrud_ui_kit: ^0.19.0
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).

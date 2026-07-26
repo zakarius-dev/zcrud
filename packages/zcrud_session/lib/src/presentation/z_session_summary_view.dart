@@ -157,6 +157,7 @@ class ZSessionSummaryView extends StatefulWidget {
     this.masteredThreshold,
     this.feedbackKey,
     this.feedbackBank,
+    this.breakdownCoverage = ZQualityBreakdownCoverage.presentKeysOnly,
     super.key,
   });
 
@@ -193,6 +194,14 @@ class ZSessionSummaryView extends StatefulWidget {
 
   /// Banque de messages **injectée** — surcharge INTÉGRALE (AC5).
   final ZFeedbackBank? feedbackBank;
+
+  /// Couverture de la répartition (SUF-4, paire 2) — **passée telle quelle** à
+  /// [ZSessionQualityBreakdown]. Défaut historique : seules les clés présentes.
+  ///
+  /// Sans ce pass-through, une app montant CE widget ne pourrait pas atteindre
+  /// la répartition à longueur stable du natif lex : le breakdown est construit
+  /// ici, pas par l'appelant.
+  final ZQualityBreakdownCoverage breakdownCoverage;
 
   /// [ValueKey] du bouton « Terminer » (testabilité, AC3).
   static const ValueKey<String> finishButtonKey =
@@ -413,6 +422,7 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           byQuality: widget.result.byQuality,
           scale: scale,
           passThreshold: widget.config.passThreshold,
+          coverage: widget.breakdownCoverage,
         ),
         SizedBox(height: theme.gapL),
         _buildActions(context),

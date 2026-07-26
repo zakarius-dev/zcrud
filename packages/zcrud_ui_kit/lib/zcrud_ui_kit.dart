@@ -67,6 +67,30 @@
 ///   de lex est **retiré**), durées/courbes **injectées**, sens du slide dérivé
 ///   de `Directionality.of(context)`.
 ///
+/// SUF-1 pose le **page-shell déclaratif** (epic SUF, AD-2/AD-13/AD-29) :
+/// * [ZAppBarAction] (SUF-1) : action d'app-bar **en données** (icône +
+///   `semanticLabel` + `onPressed` + `tooltip?` + `isOverflow?`) — une action
+///   non déclarée est structurellement absente (aucun bouton fantôme) ;
+/// * [ZAppBarSearchConfig] (SUF-1) : config **déclarative** de la recherche
+///   intégrée — le shell **détient** l'état (`isSearching`/`query`), la config
+///   n'expose qu'un callback d'émission `onQueryChanged` (AD-2/AD-15) ;
+/// * [ZPageTab] (SUF-1) : onglet déclaratif (`label`/`icon?`/`contentBuilder`)
+///   pilotant `TabBar`/`TabBarView` (`isScrollable`) ;
+/// * [ZPageAppBarMode] (SUF-1) : mode d'app-bar en **enum**
+///   (`fixed`/`floating`/`pinned`/`floatingPinned`) — jamais un couple de `bool`
+///   (NFR-U7) ;
+/// * [ZSearchableAppBar] (SUF-1) : app-bar recherchable `PreferredSizeWidget`,
+///   état de recherche **détenu** (aucun contrôleur externe), rebuild
+///   **granulaire** (la frappe ne rebâtit que la tranche app-bar, SM-1), titre
+///   qui morphe en champ (autofocus, `Échap` ⇒ fermeture), couleurs dérivées du
+///   `ColorScheme`, libellés/hints via l10n injectée (repli
+///   `MaterialLocalizations`), directionnelle (RTL) et a11y (`Semantics`,
+///   cibles ≥ 48 dp) ;
+/// * [ZPageScaffold] (SUF-1) : assemblage titre/leading/actions/recherche/
+///   onglets + [ZPageAppBarMode] (app-bar fixe **ou** `SliverAppBar` repliable),
+///   factorisant le rendu app-bar entre les deux modes (le motif dupliqué des
+///   apps hôtes n'est pas re-écrit).
+///
 /// **Dépendance (AD-29)** : ce package **dépend de `zcrud_core`** et **consomme**
 /// ses seams (`ZcrudScope` / `ZcrudTheme` / `ZcrudLocalizations`) en lecture, avec
 /// repli systématique sur `Theme.of(context)` / `MaterialLocalizations.of(context)`
@@ -77,14 +101,19 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/{domain,presentation}`.
 library;
 
+export 'src/domain/z_app_bar_action.dart';
+export 'src/domain/z_app_bar_search_config.dart';
 export 'src/domain/z_confirm_tone.dart';
 export 'src/domain/z_content_state.dart';
+export 'src/domain/z_page_app_bar_mode.dart';
+export 'src/domain/z_page_tab.dart';
 export 'src/domain/z_route_transition.dart';
 export 'src/domain/z_toast_severity.dart';
 export 'src/domain/z_toaster.dart';
 export 'src/presentation/z_alphabet_index_bar.dart';
 export 'src/presentation/z_confirm_dialog.dart';
 export 'src/presentation/z_discard_changes_guard.dart';
+export 'src/presentation/z_page_shell.dart';
 export 'src/presentation/z_scaffold_messenger_toaster.dart';
 export 'src/presentation/z_state_widgets.dart';
 export 'src/presentation/z_toaster_scope.dart';

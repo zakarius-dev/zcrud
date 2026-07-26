@@ -498,3 +498,16 @@ development_status:
   fp-5-2-champs-extras: done                              # [Finitions][∥ zcrud_field_extras] PIN (pinput) + autocomplétion + table éditable + tags riches + réordonnancement (drag_and_drop_lists) (AD-53)
   fp-5-3-geoarea-style-picker: done                       # [Finitions][∥ zcrud_geo] geoArea UI style-picker fill/stroke (réutilise le seam couleur, modèle ZGeoShapeStyle existant) (AD-51)
   epic-fp-5-retrospective: done          # rétro globale d'itération : epic-fp-retrospective.md
+
+  # === SUF — E-STUDY-UI : Folders & Page-shell (parité UI d'étude : cartes de dossier + page-détail + app-bar déclaratif) ===
+  # Comble les 2 trous vérifiés sur disque (carte de dossier + ossature page-détail, jamais livrés par SU/ME/ES) + porte
+  # le système d'app-bars d'IFFD (DynamicSearcheableAppBar) dans zcrud. Additif satellites (zcrud_ui_kit + zcrud_study) ;
+  # AUCUNE story n'écrit zcrud_core. Cible parité = lex_douane (neutre thémable, bridge app-side). Plan : plans/tingly-brewing-cake.md.
+  # Séquencement : SUF-1 (zcrud_ui_kit, FONDATION) = TÊTE → SUF-2 (zcrud_study, carte) → SUF-3 (zcrud_study, détail ; dépend SUF-1+SUF-2)
+  #   → SUF-4 (audit session + démo). SUF-2 et SUF-3 = même package zcrud_study ⇒ JAMAIS en vol simultané.
+  epic-suf: done
+  suf-1-page-shell-searchable-appbar: done              # [L][SÉQ — TÊTE, FONDATION zcrud_ui_kit] ZPageScaffold/ZSearchableAppBar déclaratif (title/leading/actions[]/search intégrée AD-2/tabs) — équivalent générique DynamicSearcheableAppBar IFFD ; neutre thémable ; AD-13 RTL/Semantics/≥48dp
+  suf-2-carte-dossier: done                             # [M][SÉQ — après SUF-1 ; zcrud_study] ZFolderCard neutre (props opaques, accent via ZColorKeyResolver, slot counts/badges superset lex+IFFD, badge archivé l10n) sur ZAdaptiveGrid ; AD-13
+  suf-3-page-detail-dossier-sous-dossiers-adaptatifs: done         # [XL][SÉQ — après SUF-1 ET SUF-2 ; zcrud_study] ZStudyFolderDetail : header via SUF-1 + onglets Matériel(=ZSectionedStudyLayout)/Notebook/Progression(=ZStudyProgressRings) + navigation sous-dossiers ADAPTATIVE (sidebar redimensionnable grand écran ↔ chips/dropdown petit écran) via zcrud_responsive ; AD-2 rebuilds granulaires
+  suf-4-audit-session-demo-assemblee: done             # [M][SÉQ — DERNIÈRE] audit parité widgets zcrud_session vs lex (doc + fermeture écarts par slots injectables + R3) + démo example/ grille→détail→session
+  epic-suf-retrospective: backlog

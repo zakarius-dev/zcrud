@@ -20,6 +20,32 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_srs_quality_buttons.dart';
 
+/// **Couverture** des crans rendus par [ZSessionQualityBreakdown] — **enum**,
+/// jamais un booléen (SUF-4, paire 2 : une variante est un choix nommé).
+enum ZQualityBreakdownCoverage {
+  /// **Un segment par clé PRÉSENTE** dans `byQuality` (comportement historique,
+  /// **défaut**). Un cran jamais utilisé n'apparaît pas ⇒ la répartition change
+  /// de longueur d'une session à l'autre.
+  presentKeysOnly,
+
+  /// **Un segment par cran de l'ÉCHELLE**, y compris ceux absents de
+  /// `byQuality` (rendus à `0`) — répartition de **longueur STABLE**.
+  ///
+  /// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
+  /// packages/lex_ui/lib/presentation/widgets/study/session_quality_breakdown.dart:71,78`) :
+  /// lex parcourt `Sm2QualityLevel.values` et rend `histogram[level] ?? 0` —
+  /// « un niveau à 0 reste affiché pour une répartition stable » (sa dartdoc,
+  /// `:24`). zcrud ne rendait que les clés présentes (`byQuality.containsKey`,
+  /// `:77`) : une session où personne n'a répondu « Difficile » affichait 4
+  /// pilules chez zcrud contre 5 chez lex. Fermeture ADDITIVE — le défaut
+  /// [presentKeysOnly] laisse l'existant strictement inchangé.
+  ///
+  /// 🔒 N'affecte **que** les crans de l'échelle : les clés **hors échelle**
+  /// (corpus corrompu) restent rendues à part et signalées, jamais fusionnées
+  /// ni inventées (R6).
+  wholeScale,
+}
+
 /// Répartition des qualités d'une session (présentation PURE).
 class ZSessionQualityBreakdown extends StatelessWidget {
   /// Construit le breakdown.
@@ -36,6 +62,7 @@ class ZSessionQualityBreakdown extends StatelessWidget {
     required this.passThreshold,
     this.labelKeyFor = zDefaultQualityLabelKey,
     this.colorKeyFor,
+    this.coverage = ZQualityBreakdownCoverage.presentKeysOnly,
     super.key,
   });
 
@@ -53,6 +80,10 @@ class ZSessionQualityBreakdown extends StatelessWidget {
 
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
+
+  /// Couverture des crans rendus (SUF-4) — défaut **historique**
+  /// [ZQualityBreakdownCoverage.presentKeysOnly].
+  final ZQualityBreakdownCoverage coverage;
 
   /// Préfixe de [ValueKey] d'un segment **dans** l'échelle (testabilité, AC2).
   static const String segmentKeyPrefix = 'zBreakdownSegment_';
@@ -72,16 +103,22 @@ class ZSessionQualityBreakdown extends StatelessWidget {
 
     // Segments DANS l'échelle : parcours de l'échelle en ordre CROISSANT, ne
     // gardant que les clés réellement présentes (un segment par clé présente).
+    //
+    // SUF-4 — la COUVERTURE est injectée : `presentKeysOnly` (défaut) conserve
+    // le filtre historique `containsKey`, `wholeScale` rend TOUT cran de
+    // l'échelle (absent ⇒ `0`), pour une répartition de longueur stable comme
+    // le natif lex. Le compte reste consommé VERBATIM (aucun recomptage).
+    final wholeScale = coverage == ZQualityBreakdownCoverage.wholeScale;
     final inScale = <Widget>[
       for (final quality in scale.qualities)
-        if (byQuality.containsKey('$quality'))
+        if (wholeScale || byQuality.containsKey('$quality'))
           _Segment(
             key: ValueKey<String>('$segmentKeyPrefix$quality'),
             colorKey: _colorKeyOf(quality),
             slotIndex: quality,
             labelText: label(context, labelKeyFor(quality),
                 fallback: '$quality'),
-            count: byQuality['$quality']!,
+            count: byQuality['$quality'] ?? 0,
             unknown: false,
           ),
     ];

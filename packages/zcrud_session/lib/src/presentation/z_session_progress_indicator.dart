@@ -48,6 +48,28 @@ enum ZSessionProgressStyle {
   /// **Barre segmentée** — segments proportionnels. Le mode « complet », où N
   /// points deviendraient illisibles.
   segmentedBar,
+
+  /// **Barre CONTINUE** — une seule barre remplie à `position/total`, sans
+  /// découpage par carte (SUF-4, fermeture de l'écart de parité paire 4).
+  ///
+  /// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
+  /// packages/lex_ui/lib/presentation/screens/study_session_screen.dart:497-503`,
+  /// `_SessionHeader`) : lex rend un `LinearProgressIndicator(value: progress,
+  /// minHeight: 6)` **continu**. Ni [dots] ni [segmentedBar] ne le produisent —
+  /// tous deux rendent **N** éléments (un par carte) : sur une file de 200
+  /// cartes, lex montre une barre lisible et zcrud, 200 segments d'un pixel.
+  /// Aucune composition d'appelant ne comble ça (le widget ne prend pas de
+  /// `child`) ⇒ fermeture par valeur d'enum ADDITIVE, jamais par un booléen.
+  ///
+  /// 🔒 **Rien n'est codé en dur** : l'épaisseur vient de
+  /// [ZSessionProgressIndicator.linearThickness] (défaut : `ZcrudTheme.gapS`) —
+  /// **jamais** le `6` de lex ; le rayon de `ZcrudTheme.radiusS` ; les deux
+  /// couleurs des seams `zResolveColorKeyOrSlot` (remplissage `'primary'`, piste
+  /// [ZSessionProgressIndicator.pendingColorKey]). Le contrat a11y est
+  /// **identique** aux deux autres styles : le `Semantics(value: 'position/total')`
+  /// reste porté par [ZSessionProgressIndicator.progressKey] — la couleur n'est
+  /// donc jamais le seul canal (AD-13).
+  linear,
 }
 
 /// Résout la **qualité déjà obtenue** pour la carte d'index donné, ou `null` si
@@ -74,6 +96,7 @@ class ZSessionProgressIndicator extends StatelessWidget {
     this.qualityOf,
     this.labelKeyFor = zDefaultQualityLabelKey,
     this.colorKeyFor,
+    this.linearThickness,
     super.key,
   });
 
@@ -98,6 +121,16 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
 
+  /// Épaisseur de la barre [ZSessionProgressStyle.linear] — **INJECTÉE**
+  /// (SUF-4). `null` ⇒ **dérivée du thème** (`ZcrudTheme.of(context).gapS`).
+  ///
+  /// 🔒 Ce paramètre existe pour qu'une app atteigne l'épaisseur exacte de son
+  /// design (lex : 6 dp) **sans** que ce widget code `6` en dur ni qu'elle doive
+  /// tordre le token global `gapS`, partagé par tout le chrome. Une valeur `<= 0`
+  /// ou non finie est **ignorée** (repli thème) — jamais une exception, jamais
+  /// une barre invisible (AD-10). Sans effet sur les styles [dots]/[segmentedBar].
+  final double? linearThickness;
+
   /// Clé du nœud portant la progression (testabilité — AC9 : l'ASSOCIATION du
   /// `Semantics(value:)` se prouve sur CE nœud, jamais sur une chaîne trouvée
   /// au hasard de l'arbre).
@@ -110,6 +143,44 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// Clé de couleur d'une carte **non notée** — rôle neutre, jamais une teinte
   /// en dur.
   static const String pendingColorKey = 'neutral';
+
+  /// Clé du nœud de la **barre continue** (style [ZSessionProgressStyle.linear]).
+  ///
+  /// La garde SUF-4 lit l'épaisseur et la fraction **sur ce nœud** — jamais sur
+  /// un `LinearProgressIndicator` trouvé au hasard de l'arbre.
+  static const ValueKey<String> linearKey = ValueKey<String>('zProgressLinear');
+
+  /// Clé de couleur du **remplissage** de la barre continue — rôle Material 3
+  /// résolu par le cœur, jamais une teinte en dur.
+  static const String linearFillColorKey = 'primary';
+
+  /// **Position 1-based** dans la file, bornée (`0` si la file est vide).
+  ///
+  /// Source UNIQUE de la progression : le `Semantics(value:)` annoncé **et** la
+  /// fraction peinte par [ZSessionProgressStyle.linear] en dérivent tous deux —
+  /// ils ne peuvent donc pas diverger (un lecteur d'écran qui annonce « 3/4 »
+  /// devant une barre au quart serait exactement le défaut que ce dépôt traque).
+  /// Défensif (AD-10) : `total <= 0` ⇒ `0`, un `currentIndex` négatif ou
+  /// au-delà de la file est ramené dans `[1, total]`.
+  int get position => total <= 0 ? 0 : (currentIndex + 1).clamp(1, total);
+
+  /// Fraction **résolue** de la barre continue (`0..1`).
+  ///
+  /// `total <= 0` ⇒ `0` : aucune division, aucune exception, barre vide (AD-10).
+  double get resolvedLinearValue =>
+      total <= 0 ? 0 : (position / total).clamp(0.0, 1.0).toDouble();
+
+  /// Épaisseur **résolue** de la barre continue.
+  ///
+  /// [linearThickness] si elle est utilisable (finie et `> 0`), sinon le token
+  /// de thème `gapS` — **jamais** un littéral (le `6` de lex reste côté app).
+  double resolvedLinearThickness(ZcrudTheme theme) {
+    final thickness = linearThickness;
+    if (thickness == null || !thickness.isFinite || thickness <= 0) {
+      return theme.gapS;
+    }
+    return thickness;
+  }
 
   String _colorKeyOf(int quality) {
     final resolver = colorKeyFor;
@@ -136,7 +207,6 @@ class ZSessionProgressIndicator extends StatelessWidget {
     // Progression rendue en TEXTE dans le `Semantics.value` : la couleur n'est
     // jamais le seul canal (AD-13). `total == 0` ⇒ aucune division, aucun
     // segment (AD-10 : jamais d'exception sur une file vide).
-    final position = total == 0 ? 0 : (currentIndex + 1).clamp(1, total);
     final value = '$position/$total';
 
     return Semantics(
@@ -148,7 +218,44 @@ class ZSessionProgressIndicator extends StatelessWidget {
       child: switch (style) {
         ZSessionProgressStyle.dots => _dots(context, theme),
         ZSessionProgressStyle.segmentedBar => _bar(context, theme),
+        ZSessionProgressStyle.linear => _linear(context, theme),
       },
+    );
+  }
+
+  /// Barre **CONTINUE** — parité lex `_SessionHeader` (SUF-4, paire 4).
+  ///
+  /// Aucune dimension ni couleur en dur : épaisseur par
+  /// [resolvedLinearThickness], rayon `theme.radiusS`, couleurs par les seams du
+  /// cœur. Le `Semantics(value:)` reste porté par le nœud parent
+  /// ([progressKey]) — contrat a11y IDENTIQUE aux deux autres styles.
+  Widget _linear(BuildContext context, ZcrudTheme theme) {
+    final fill = zResolveColorKeyOrSlot(
+      context,
+      linearFillColorKey,
+      slotIndex: 0,
+    );
+    final track = zResolveColorKeyOrSlot(context, pendingColorKey, slotIndex: 0);
+    // 🔴 Défaut MESURÉ par la garde SUF-4, pas anticipé : `semanticsValue: null`
+    // ne SUPPRIME pas l'annonce du `ProgressIndicator` — il la fait **calculer**
+    // (pourcentage). L'arbre sémantique RÉEL, sondé, portait DEUX valeurs :
+    //   zSessionProgress -> value = « 2/4 »
+    //   └─ (nœud du LinearProgressIndicator) -> value = « 50 »
+    // ⇒ le lecteur d'écran annonçait la progression DEUX FOIS, dans DEUX unités
+    // différentes (motif su-5/D1). `ExcludeSemantics` retire le nœud enfant ; le
+    // nœud parent ([progressKey]) porte DÉJÀ label + value, et l'indicateur
+    // n'est ni focusable ni actionnable : rien à re-déclarer.
+    return ExcludeSemantics(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(theme.radiusS),
+        child: LinearProgressIndicator(
+          key: linearKey,
+          value: resolvedLinearValue,
+          minHeight: resolvedLinearThickness(theme),
+          color: fill.color,
+          backgroundColor: track.color,
+        ),
+      ),
     );
   }
 

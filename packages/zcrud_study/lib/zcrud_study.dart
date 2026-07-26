@@ -89,6 +89,13 @@ export 'src/presentation/z_flashcard_list_view.dart';
 // (`ZFlashcardGenerationLauncher`/`ZFlashcardGenerationScope` : option ABSENTE sans
 // port), et confirmation de tags réutilisant `ZTagEditor`. Cartes ÉPHÉMÈRES
 // (`id==null`), fuite du résultat fermée sur toute voie (AC6).
+// SUF-2 (AC1..AC11, AD-2/AD-4/AD-10/AD-13/AD-45/FR-26) — carte de dossier
+// d'étude à PROPS PRIMITIVES (jamais l'entité ZStudyFolder) : accent DÉRIVÉ de
+// `colorKey` via `zResolveColorKeyOrSlot` (aucune table locale), slot compteur/
+// badges + slot menu, badge « Archivé » à libellé INJECTÉ, cible ≥ 48 dp,
+// grille adaptative posée par l'appelant (ZAdaptiveGrid.builder). Réplique
+// neutre du natif lex `FolderCard` sans gestionnaire d'état (AD-2).
+export 'src/presentation/z_folder_card.dart';
 export 'src/presentation/z_flashcard_generation_controller.dart';
 export 'src/presentation/z_flashcard_generation_sheet.dart';
 export 'src/presentation/z_flashcard_tag_confirm_sheet.dart';
@@ -120,6 +127,18 @@ export 'src/presentation/z_multi_flashcard_editor_controller.dart';
 export 'src/data/z_flashcard_cascade_delete.dart';
 export 'src/presentation/z_reorder_ids.dart';
 export 'src/presentation/z_sectioned_study_layout.dart';
+// SUF-3 (AC1..AC16, AD-2/AD-13/AD-4/AD-10) — ossature de page-détail d'un dossier
+// d'étude : `ZStudyFolderDetail` COMPOSE le page-shell SUF-1 (`ZPageScaffold`),
+// l'onglet Matériel (`ZSectionedStudyLayout`), l'onglet Progression
+// (`ZStudyProgressRings`/`zcrud_session`) et une navigation de sous-dossiers
+// ADAPTATIVE (sidebar redimensionnable/repliable ↔ sélecteur compact, bascule
+// via `ZResponsiveLayout` au seuil 600). Sous-dossiers via le VO OPAQUE
+// `ZSubfolderRef` + descripteur `ZSubfolderNavSpec` (labels/slots injectés) —
+// jamais l'entité kernel. État (sélection/repli/largeur) DÉTENU par le widget
+// (`ValueNotifier`), rebuilds granulaires (AD-2), aucune I/O (largeur persistée
+// par callback injecté). Arête `zcrud_study → zcrud_session` ACYCLIQUE (D2).
+export 'src/presentation/z_study_folder_detail.dart'
+    show ZStudyFolderDetail, ZMaterialSectionsBuilder;
 export 'src/presentation/z_study_mindmap_section.dart';
 // CR-IFFD-16 (voie B) — carte d'item de BASE à slots : le socle fournit la
 // structure et l'accessibilite (>= 48 dp, Semantics, RTL) une fois pour toutes ;
@@ -127,5 +146,11 @@ export 'src/presentation/z_study_mindmap_section.dart';
 export 'src/presentation/z_study_tools_item_card.dart';
 export 'src/presentation/z_study_tools_page.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';
+// SUF-3 — descripteurs de nav de sous-dossiers (VO opaque + spec agrégé) et les
+// deux briques de nav adaptative (sidebar grand écran / sélecteur compact).
+export 'src/presentation/z_subfolder_compact_selector.dart';
+export 'src/presentation/z_subfolder_nav_spec.dart';
+export 'src/presentation/z_subfolder_ref.dart';
+export 'src/presentation/z_subfolder_sidebar.dart';
 export 'src/presentation/z_tag_chips.dart';
 export 'src/presentation/z_tag_editor.dart';

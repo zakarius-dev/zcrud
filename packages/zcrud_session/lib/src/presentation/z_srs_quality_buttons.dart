@@ -92,6 +92,99 @@ typedef ZQualityLabelKeyResolver = String Function(int quality);
 /// `passThreshold` injecté (`quality >= passThreshold`).
 typedef ZQualityColorKeyResolver = String Function(int quality);
 
+/// **Affordance d'emphase** d'un cran de qualité — INJECTÉE (SUF-4, paire 1).
+///
+/// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
+/// packages/lex_ui/lib/presentation/widgets/study/srs_quality_buttons.dart:214,227`) :
+/// lex peint chaque cran en **fond teinté** (`color.withValues(alpha: 0.12)`) +
+/// **bord 1 px**, et exprime le cran *suggéré par l'IA* en **montant** ces deux
+/// dimensions (`alpha: 0.24`, `width: 2`). [ZSrsQualityButtons] rendait, lui,
+/// un fond **plein** et **aucun bord** — deux dimensions **figées dans le
+/// widget**, donc inatteignables par un appelant. Une app bridgée perdait le
+/// bord et la teinte de son design : c'est la « perte visuelle » que SUF-4
+/// interdit.
+///
+/// 🔒 **Ce n'est PAS un look codé en dur** : cette classe ne porte **aucune
+/// couleur** — seulement des **dimensions** (opacité, épaisseur) appliquées à la
+/// couleur déjà résolue par les seams (`colorKeyFor`/`ZColorKeyResolver`). Les
+/// valeurs de lex (`0.12`/`0.24`/`1`/`2`) vivent **côté app**, jamais ici.
+///
+/// 🔒 **Défaut = [none] = rendu HISTORIQUE STRICTEMENT inchangé** (fond plein,
+/// zéro bord) : aucun appelant existant ne bouge.
+///
+/// 🔒 **Le canal couleur n'est jamais seul** (AD-13) : l'emphase du cran
+/// sélectionné reste portée, indépendamment de cette classe, par
+/// `Semantics(selected:)`, l'annonce en toutes lettres et l'icône de coche.
+/// Cette affordance **s'ajoute** à ces canaux, elle ne les remplace pas.
+@immutable
+class ZSrsQualityEmphasis {
+  /// Construit une affordance. Tous les paramètres sont des **dimensions**.
+  ///
+  /// - [fillOpacity] : opacité du fond d'un cran ordinaire — `null` ⇒ couleur
+  ///   **inchangée** (fond plein, comportement historique) ;
+  /// - [selectedFillOpacity] : opacité du fond du cran sélectionné — `null` ⇒
+  ///   retombe sur [fillOpacity] ;
+  /// - [borderWidth] / [selectedBorderWidth] : épaisseur du bord (`<= 0` ⇒
+  ///   **aucun bord**, comportement historique).
+  const ZSrsQualityEmphasis({
+    this.fillOpacity,
+    this.selectedFillOpacity,
+    this.borderWidth = 0,
+    this.selectedBorderWidth = 0,
+  });
+
+  /// Affordance **neutre** : rendu historique exact (fond plein, aucun bord).
+  static const ZSrsQualityEmphasis none = ZSrsQualityEmphasis();
+
+  /// Opacité du fond d'un cran ordinaire (`null` ⇒ couleur inchangée).
+  final double? fillOpacity;
+
+  /// Opacité du fond du cran sélectionné (`null` ⇒ [fillOpacity]).
+  final double? selectedFillOpacity;
+
+  /// Épaisseur du bord d'un cran ordinaire (`<= 0` ⇒ aucun bord).
+  final double borderWidth;
+
+  /// Épaisseur du bord du cran sélectionné (`<= 0` ⇒ aucun bord).
+  final double selectedBorderWidth;
+
+  /// Opacité **résolue** pour l'état [selected], ou `null` (couleur inchangée).
+  ///
+  /// Défensif (AD-10) : une valeur non finie ou hors `[0, 1]` est **bornée**,
+  /// jamais propagée telle quelle (`Color.withValues` asserte sur `0..1`).
+  double? opacityFor({required bool selected}) {
+    final raw = selected ? (selectedFillOpacity ?? fillOpacity) : fillOpacity;
+    if (raw == null || !raw.isFinite) return null;
+    return raw.clamp(0.0, 1.0).toDouble();
+  }
+
+  /// Épaisseur **résolue** du bord pour l'état [selected] (`0` ⇒ aucun bord).
+  ///
+  /// Défensif (AD-10) : une valeur négative ou non finie vaut `0`.
+  double borderWidthFor({required bool selected}) {
+    final raw = selected ? selectedBorderWidth : borderWidth;
+    if (!raw.isFinite || raw <= 0) return 0;
+    return raw;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZSrsQualityEmphasis &&
+          fillOpacity == other.fillOpacity &&
+          selectedFillOpacity == other.selectedFillOpacity &&
+          borderWidth == other.borderWidth &&
+          selectedBorderWidth == other.selectedBorderWidth;
+
+  @override
+  int get hashCode => Object.hash(
+        fillOpacity,
+        selectedFillOpacity,
+        borderWidth,
+        selectedBorderWidth,
+      );
+}
+
 /// Clé l10n par défaut d'un cran de qualité (`zcrud.srs.quality.<q>`).
 ///
 /// Résolue par `label(context, key, fallback: '<q>')` : à défaut de traduction,
@@ -119,6 +212,7 @@ class ZSrsQualityButtons extends StatelessWidget {
     this.labelKeyFor = zDefaultQualityLabelKey,
     this.colorKeyFor,
     this.selectedQuality,
+    this.emphasis = ZSrsQualityEmphasis.none,
     super.key,
   });
 
@@ -159,6 +253,10 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// la seule couleur. Un cran hors échelle est simplement ignoré (AD-10).
   final int? selectedQuality;
 
+  /// Affordance d'emphase **INJECTÉE** (SUF-4, paire 1) — défaut
+  /// [ZSrsQualityEmphasis.none] ⇒ rendu historique STRICTEMENT inchangé.
+  final ZSrsQualityEmphasis emphasis;
+
   /// Préfixe de [ValueKey] d'un bouton de cran (testabilité, AC1).
   static const String buttonKeyPrefix = 'zSrsQuality_';
 
@@ -189,6 +287,7 @@ class ZSrsQualityButtons extends StatelessWidget {
             // SU-3/AC2 — pré-sélection ADVISORY. `null` ⇒ aucun cran marqué
             // (comportement historique STRICTEMENT inchangé).
             selected: selectedQuality == quality,
+            emphasis: emphasis,
             previewLabel: previewLabelFor?.call(quality),
             onTap: () => onQualitySelected(quality),
           ),
@@ -206,6 +305,7 @@ class _QualityButton extends StatelessWidget {
     required this.colorKey,
     required this.passed,
     required this.selected,
+    required this.emphasis,
     required this.previewLabel,
     required this.onTap,
     super.key,
@@ -218,6 +318,9 @@ class _QualityButton extends StatelessWidget {
 
   /// Cran **PRÉ-SÉLECTIONNÉ** (SU-3/AC2) — signalé par un canal NON-COLORÉ.
   final bool selected;
+
+  /// Affordance d'emphase INJECTÉE (SUF-4) — dimensions seules, aucune couleur.
+  final ZSrsQualityEmphasis emphasis;
   final String? previewLabel;
   final VoidCallback onTap;
 
@@ -244,6 +347,9 @@ class _QualityButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final pair = zResolveColorKeyOrSlot(context, colorKey, slotIndex: quality);
+    // SUF-4 — dimensions d'emphase RÉSOLUES (déjà bornées, AD-10).
+    final fillOpacity = emphasis.opacityFor(selected: selected);
+    final borderWidth = emphasis.borderWidthFor(selected: selected);
     final text = label(context, labelKey, fallback: '$quality');
     // Couleur JAMAIS seul canal (AD-13) : le texte du cran est toujours présent,
     // et l'état réussite/lapse est aussi porté par le `Semantics.value`.
@@ -274,8 +380,21 @@ class _QualityButton extends StatelessWidget {
           minHeight: minTarget,
         ),
         child: Material(
-          color: pair.color,
-          borderRadius: BorderRadius.all(theme.radiusM),
+          // SUF-4 — l'opacité vient de l'affordance INJECTÉE ; `null` (défaut)
+          // ⇒ la couleur résolue est utilisée TELLE QUELLE (aucun
+          // `withValues`, donc aucune dérive de rendu pour l'existant).
+          color: fillOpacity == null
+              ? pair.color
+              : pair.color.withValues(alpha: fillOpacity),
+          // SUF-4 — `shape` remplace `borderRadius` (Material interdit les
+          // deux) : MÊME rayon, et un bord dont l'épaisseur est INJECTÉE.
+          // `borderWidth == 0` ⇒ `BorderSide.none` ⇒ rendu historique exact.
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(theme.radiusM),
+            side: borderWidth <= 0
+                ? BorderSide.none
+                : BorderSide(color: pair.color, width: borderWidth),
+          ),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.all(theme.radiusM),

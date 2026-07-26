@@ -207,6 +207,31 @@ class _InMemoryLocalStore implements ZLocalStore<DemoRecord> {
     return const Right<ZFailure, Unit>(unit);
   }
 
+  /// Purge PHYSIQUE (CR-LEX-35) — **idempotente** : purger un `id` absent est un
+  /// succès (`Right(unit)`), contrairement à [softDelete] qui exige la cible.
+  @override
+  Future<ZResult<Unit>> purge(String id) async {
+    _records.remove(id);
+    _deleted.remove(id);
+    _emit();
+    return const Right<ZFailure, Unit>(unit);
+  }
+
+  /// Écriture PRÉSERVANTE (CR-LEX-34) — **non supportée par ce fake**, et c'est
+  /// le contrat : ce store garde des objets `DemoRecord` **typés**, pas le
+  /// document brut clé-à-clé. Il ne peut donc pas fusionner « par-dessus
+  /// l'existant » sans inventer une sémantique. Le port impose alors un
+  /// `Left(ZCacheFailure)` EXPLICITE plutôt qu'un faux merge silencieux — un
+  /// repli muet ferait passer une perte de clés pour une écriture réussie.
+  @override
+  Future<ZResult<DemoRecord>> putMerged(DemoRecord item) async =>
+      Left<ZFailure, DemoRecord>(
+        const ZCacheFailure(
+          'putMerged non supporté : fake en mémoire à objets typés, '
+          'aucun document brut à fusionner clé-à-clé.',
+        ),
+      );
+
   // ── Voies de sync (E5-3, ZLocalStore) — non exercées par ces tests d'écran,
   // implémentations minimales COHÉRENTES avec le contrat pour satisfaire
   // l'interface (fake hermétique, sans backend). ────────────────────────────
