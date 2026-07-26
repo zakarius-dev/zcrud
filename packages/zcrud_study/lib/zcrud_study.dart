@@ -137,8 +137,11 @@ export 'src/presentation/z_sectioned_study_layout.dart';
 // jamais l'entité kernel. État (sélection/repli/largeur) DÉTENU par le widget
 // (`ValueNotifier`), rebuilds granulaires (AD-2), aucune I/O (largeur persistée
 // par callback injecté). Arête `zcrud_study → zcrud_session` ACYCLIQUE (D2).
+// CR-53 — `ZMaterialSlotBuilder` (typedef NOUVEAU, COEXISTANT avec
+// `ZMaterialSectionsBuilder` qui reste INCHANGÉ) : slots libres en-tête/pied de
+// l'onglet Matériel, par sous-dossier sélectionné.
 export 'src/presentation/z_study_folder_detail.dart'
-    show ZStudyFolderDetail, ZMaterialSectionsBuilder;
+    show ZStudyFolderDetail, ZMaterialSectionsBuilder, ZMaterialSlotBuilder;
 export 'src/presentation/z_study_mindmap_section.dart';
 // CR-IFFD-16 (voie B) — carte d'item de BASE à slots : le socle fournit la
 // structure et l'accessibilite (>= 48 dp, Semantics, RTL) une fois pour toutes ;

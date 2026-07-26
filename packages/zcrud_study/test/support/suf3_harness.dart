@@ -100,6 +100,9 @@ Future<ZStudyFolderDetail> pumpDetail(
   String? colorKey,
   int colorSlotIndex = 0,
   ZMaterialSectionsBuilder? materialSectionsBuilder,
+  // CR-53 — slots libres de l'onglet Matériel (`null` ⇒ absents, défaut).
+  ZMaterialSlotBuilder? materialHeaderBuilder,
+  ZMaterialSlotBuilder? materialFooterBuilder,
   WidgetBuilder? notebookBuilder,
   ZProgressRingsData? progressData,
   List<Widget> progressStatCards = const <Widget>[],
@@ -120,6 +123,8 @@ Future<ZStudyFolderDetail> pumpDetail(
     notebookTabLabel: kNoteTab,
     progressionTabLabel: kProgTab,
     materialSectionsBuilder: materialSectionsBuilder ?? defaultSections,
+    materialHeaderBuilder: materialHeaderBuilder,
+    materialFooterBuilder: materialFooterBuilder,
     notebookBuilder: notebookBuilder ??
         (context) =>
             const Text('NOTE_BODY', key: ValueKey<String>('notebook-marker')),

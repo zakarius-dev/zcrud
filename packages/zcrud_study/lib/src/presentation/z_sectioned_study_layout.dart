@@ -53,21 +53,83 @@ const String _kMoveAfterFallbackLabel = 'Déplacer après';
 /// [sections] — aucun tri implicite (pré-requis ES-5.3).
 class ZSectionedStudyLayout extends StatelessWidget {
   /// Construit le layout à partir des descripteurs de section (ordre préservé).
-  const ZSectionedStudyLayout({required this.sections, super.key});
+  ///
+  /// [header]/[footer] sont des slots OPTIONNELS (CR-53) : `null` ⇒ slot
+  /// ABSENT STRUCTURELLEMENT — le rendu est alors STRICTEMENT celui d'avant
+  /// CR-53 (`itemCount == sections.length`, aucun item fantôme).
+  const ZSectionedStudyLayout({
+    required this.sections,
+    this.header,
+    this.footer,
+    super.key,
+  });
 
   /// Descripteurs de section, dans l'ordre visuel vertical voulu.
   final List<ZStudyToolsSectionSpec> sections;
 
+  /// CR-53 — contenu LIBRE rendu **au-dessus de la première section**, dans le
+  /// **MÊME défilement** qu'elles (premier item du `ListView.builder`, jamais
+  /// un second `Scrollable` ni un bandeau figé hors-scroll).
+  ///
+  /// Répond au constat lex : la page-détail rend quatre blocs au-dessus des
+  /// sections (CTA « Réviser », chips de sous-dossiers, bandeau de génération,
+  /// filtre par tags) qui ne sont PAS des sections d'outils — les verser dans
+  /// [sections] serait un détournement (ni titre, ni compteur, ni sémantique de
+  /// section).
+  ///
+  /// **AD-4** : `null` ⇒ capacité absente — AUCUN item n'est réservé, aucun
+  /// `SizedBox.shrink` fantôme n'est inséré, `itemCount` est inchangé.
+  ///
+  /// **AD-2** : c'est un `Widget` DÉJÀ CONSTRUIT (jamais un builder ré-invoqué
+  /// par le layout). Le layout le RESTITUE tel quel comme enfant du sliver :
+  /// tant que l'appelant repousse la MÊME instance, `Element.updateChild`
+  /// court-circuite et le sous-arbre d'en-tête n'est NI reconstruit NI remonté
+  /// quand [sections] change. Un `WidgetBuilder` fabriquerait au contraire une
+  /// instance neuve à chaque rebuild du layout et détruirait cette garantie —
+  /// c'est la raison EXPLICITE du choix `Widget?` plutôt que builder ici.
+  /// (La granularité par sélection, elle, est portée un cran plus haut par
+  /// `ZStudyFolderDetail.materialHeaderBuilder`.)
+  final Widget? header;
+
+  /// Symétrique de [header], rendu **après la dernière section**, dans le même
+  /// défilement. Mêmes garanties (AD-4 : `null` ⇒ absent structurellement ;
+  /// AD-2 : instance restituée telle quelle).
+  final Widget? footer;
+
   @override
   Widget build(BuildContext context) {
+    // Capture LOCALE des slots : la promotion de type permet de restituer
+    // l'instance EXACTE (identité préservée ⇒ court-circuit d'updateChild).
+    final Widget? headerSlot = header;
+    final Widget? footerSlot = footer;
+    // `null` ⇒ 0 item réservé (absence STRUCTURELLE, AD-4) — jamais un slot
+    // vide dans le décompte.
+    final int leading = headerSlot == null ? 0 : 1;
+    final int trailing = footerSlot == null ? 0 : 1;
     return ListView.builder(
+      // Virtualisation PRÉSERVÉE : les slots sont des items du MÊME
+      // `ListView.builder` (jamais un `Column`/`ListView(children:)` qui
+      // construirait toutes les sections d'un coup).
       // Pas de tri : l'ordre d'entrée EST l'ordre de rendu (AC3, ES-5.3).
-      itemCount: sections.length,
+      itemCount: leading + sections.length + trailing,
       itemBuilder: (context, index) {
-        final spec = sections[index];
+        if (headerSlot != null && index == 0) {
+          // Restitué TEL QUEL (aucun emballage, aucune clé dérivée de
+          // `sections`) — cf. la doc de [header] (AD-2).
+          return headerSlot;
+        }
+        final int sectionIndex = index - leading;
+        if (sectionIndex >= sections.length) {
+          // Seul index restant possible : le pied.
+          return footerSlot;
+        }
+        final spec = sections[sectionIndex];
         return _ZStudySection(
           // Frontière de widget STABLE par section — décomposition comptable
-          // (AC5) et frontière rebuild (SM-1/ES-5.2).
+          // (AC5) et frontière rebuild (SM-1/ES-5.2). La clé reste dérivée du
+          // SEUL id : elle ne dépend NI de l'index de liste, NI de la présence
+          // ou du contenu des slots ⇒ changer l'en-tête ne remonte pas les
+          // sections (leur état local de repli/ordre survit).
           key: ValueKey('section:${spec.id}'),
           spec: spec,
         );

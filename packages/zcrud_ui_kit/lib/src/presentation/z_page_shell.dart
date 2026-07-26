@@ -33,6 +33,7 @@ import '../domain/z_page_app_bar_mode.dart';
 import '../domain/z_page_tab.dart';
 
 part 'z_page_scaffold.dart';
+part 'z_page_shell_body.dart';
 part 'z_searchable_app_bar.dart';
 
 /// Contrôleur d'état de recherche **détenu par le widget** (AD-2/AD-15).
@@ -136,6 +137,41 @@ class _ZSearchController {
     focusNode.dispose();
   }
 }
+
+/// `TabBar` déclaratif **partagé** par [ZPageScaffold] (mode fixe) et
+/// [ZPageShellBody] (modes sliver) — le motif n'est écrit qu'une fois.
+PreferredSizeWidget _zTabBar(List<ZPageTab> tabs, TabController? controller) =>
+    TabBar(
+      controller: controller,
+      isScrollable: true,
+      tabs: <Widget>[
+        for (final tab in tabs)
+          Tab(
+            text: tab.label,
+            icon: tab.icon == null ? null : Icon(tab.icon),
+          ),
+      ],
+    );
+
+/// `TabBarView` déclaratif **partagé** (mêmes propriétaires que [_zTabBar]).
+Widget _zTabBarView(List<ZPageTab> tabs, TabController? controller) =>
+    TabBarView(
+      controller: controller,
+      children: <Widget>[
+        for (final tab in tabs) Builder(builder: tab.contentBuilder),
+      ],
+    );
+
+/// Fournit un `DefaultTabController` **seulement** si aucun contrôleur n'est
+/// injecté (sinon `TabBar`/`TabBarView` reçoivent celui de l'hôte).
+Widget _zWrapTabs({
+  required Widget child,
+  required int length,
+  required TabController? controller,
+}) =>
+    controller != null
+        ? child
+        : DefaultTabController(length: length, child: child);
 
 /// Résout un libellé par composition défensive (AD-13/AD-10) :
 /// `ZcrudScope.labels` → `ZcrudLocalizations` → `MaterialLocalizations`.

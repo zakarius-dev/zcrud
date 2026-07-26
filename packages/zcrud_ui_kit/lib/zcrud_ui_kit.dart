@@ -89,7 +89,20 @@
 /// * [ZPageScaffold] (SUF-1) : assemblage titre/leading/actions/recherche/
 ///   onglets + [ZPageAppBarMode] (app-bar fixe **ou** `SliverAppBar` repliable),
 ///   factorisant le rendu app-bar entre les deux modes (le motif dupliqué des
-///   apps hôtes n'est pas re-écrit).
+///   apps hôtes n'est pas re-écrit). Il **construit** le `Scaffold` : il en
+///   expose donc les slots en **pass-through** (CR-52) — `floatingActionButton`
+///   (+ `Location`), `drawer`/`endDrawer`, `bottomNavigationBar`, `bottomSheet`,
+///   `persistentFooterButtons`, `backgroundColor`, `resizeToAvoidBottomInset`,
+///   `extendBody`/`extendBodyBehindAppBar`. Tous **optionnels**, défauts
+///   `Scaffold` : un slot non fourni est **structurellement absent** et le rendu
+///   par défaut est inchangé. **Un seul `Scaffold`** est construit quel que soit
+///   le mode ⇒ aucun slot dupliqué ;
+/// * [ZPageShellBody] (CR-52) : la même valeur (app-bar morphante repliable +
+///   onglets) **sans posséder de `Scaffold`** — à poser dans le `Scaffold` de
+///   l'hôte, qui garde ainsi **tous** ses slots, présents et futurs. À préférer
+///   dès que l'hôte enveloppe son `Scaffold` (`PopScope`…) ou en aiguille
+///   plusieurs selon l'état. Pour un app-bar **fixe**, la brique équivalente est
+///   [ZSearchableAppBar] dans `Scaffold(appBar:)`.
 ///
 /// **Dépendance (AD-29)** : ce package **dépend de `zcrud_core`** et **consomme**
 /// ses seams (`ZcrudScope` / `ZcrudTheme` / `ZcrudLocalizations`) en lecture, avec

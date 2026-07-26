@@ -4,7 +4,9 @@
 /// - en-tête + actions (tri/ajout/menu) + recherche + 3 onglets → `ZPageScaffold`
 ///   / `ZSearchableAppBar` / `ZPageTab` / `ZAppBarAction` / `ZAppBarSearchConfig`
 ///   (SUF-1, `zcrud_ui_kit`) — **aucune** app-bar/recherche réimplémentée ;
-/// - onglet **Matériel** → `ZSectionedStudyLayout` (même package) ;
+/// - onglet **Matériel** → `ZSectionedStudyLayout` (même package), avec deux
+///   slots LIBRES optionnels au-dessus/en-dessous des sections, dans le MÊME
+///   défilement (`materialHeaderBuilder`/`materialFooterBuilder`, CR-53) ;
 /// - onglet **Progression** → `ZStudyProgressRings` (+ DTO PRÉ-CALCULÉ
 ///   `ZProgressRingsData`, `zcrud_session`) + cartes de stats INJECTÉES ;
 /// - navigation de sous-dossiers ADAPTATIVE (sidebar redimensionnable/repliable
@@ -62,6 +64,33 @@ typedef ZMaterialSectionsBuilder = List<ZStudyToolsSectionSpec> Function(
   String? selectedSubfolderId,
 );
 
+/// CR-53 — construit un slot LIBRE (en-tête ou pied) de l'onglet « Matériel »
+/// pour le sous-dossier [selectedSubfolderId] (`null` = tous).
+///
+/// **Typedef NOUVEAU, COEXISTANT** : [ZMaterialSectionsBuilder] n'est ni changé
+/// ni déprécié (il est PUBLIC et déjà exporté — toute retouche de sa signature
+/// serait cassante). Les slots sont une capacité ORTHOGONALE (AD-4), pas une
+/// extension du contrat « sections » : les fusionner dans un builder unique
+/// rendant un agrégat aurait forcé TOUS les hôtes existants à migrer, ou imposé
+/// deux paramètres mutuellement exclusifs gardés par un `assert` (mode d'échec
+/// à l'exécution). Ici, un hôte qui n'utilise pas les slots ne bouge pas d'une
+/// ligne.
+///
+/// Retourner `null` ⇒ slot ABSENT pour cette sélection (AD-4/AD-10) : aucun
+/// item n'est réservé dans la liste des sections.
+///
+/// C'est un BUILDER (et non un `Widget`) parce que le contenu dépend de la
+/// sélection de sous-dossier, état DÉTENU par [ZStudyFolderDetail] : l'hôte ne
+/// peut pas le pré-construire. Il est invoqué DANS le `ValueListenableBuilder`
+/// de la sélection — donc exactement dans la même tranche que
+/// [ZMaterialSectionsBuilder], jamais au-dessus (AD-2/SM-1 : un changement de
+/// sélection ne reconstruit que le corps Matériel, pas les onglets ni la
+/// sidebar).
+typedef ZMaterialSlotBuilder = Widget? Function(
+  BuildContext context,
+  String? selectedSubfolderId,
+);
+
 /// Page-détail d'un dossier d'étude (ossature composée).
 class ZStudyFolderDetail extends StatefulWidget {
   /// Construit la page-détail. Les libellés d'onglets et la navigation
@@ -75,6 +104,8 @@ class ZStudyFolderDetail extends StatefulWidget {
     required this.materialSectionsBuilder,
     required this.notebookBuilder,
     required this.nav,
+    this.materialHeaderBuilder,
+    this.materialFooterBuilder,
     this.colorKey,
     this.colorSlotIndex = 0,
     this.materialTabIcon,
@@ -146,6 +177,17 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Constructeur des sections Matériel selon le sous-dossier sélectionné.
   final ZMaterialSectionsBuilder materialSectionsBuilder;
+
+  /// CR-53 — slot LIBRE rendu **au-dessus des sections** de l'onglet Matériel,
+  /// dans le MÊME défilement (câblé sur `ZSectionedStudyLayout.header`).
+  ///
+  /// `null` (défaut) ⇒ capacité absente : le rendu est STRICTEMENT celui d'avant
+  /// CR-53. Un builder qui rend `null` ⇒ slot absent pour cette sélection.
+  final ZMaterialSlotBuilder? materialHeaderBuilder;
+
+  /// Symétrique de [materialHeaderBuilder], rendu **sous la dernière section**
+  /// (câblé sur `ZSectionedStudyLayout.footer`). `null` ⇒ absent.
+  final ZMaterialSlotBuilder? materialFooterBuilder;
 
   /// Constructeur du corps de l'onglet Notebook (slot).
   final WidgetBuilder notebookBuilder;
@@ -293,6 +335,11 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       valueListenable: _selected,
       builder: (context, id, _) => ZSectionedStudyLayout(
         sections: widget.materialSectionsBuilder(id),
+        // CR-53 — slots par sous-dossier SÉLECTIONNÉ. Builder absent OU rendant
+        // `null` ⇒ slot absent structurellement (AD-4/AD-10) : le layout ne
+        // réserve alors AUCUN item.
+        header: widget.materialHeaderBuilder?.call(context, id),
+        footer: widget.materialFooterBuilder?.call(context, id),
       ),
     );
   }
