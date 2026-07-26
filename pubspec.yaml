@@ -178,9 +178,12 @@ melos:
     analyze:scripts:
       description: "Analyse statique des SCRIPTS de gate (`scripts/`) — hors vue melos, donc invisibles de `analyze:packages`. Comble l'angle mort qui a laissé passer la casse de gate_reserved_keys.dart par analyzer 12 sous un analyze VERT."
       run: dart analyze scripts
+    analyze:example:
+      description: "Analyse statique d'`example/` — HORS du bloc `workspace:` (frontière EX-1), donc invisible de `melos exec` (`melos list` ne le renvoie pas) et donc d'`analyze:packages`. 3e occurrence de la MÊME classe d'angle mort (après ZExportApi en E11a-3 et les scripts de gate) : une erreur d'analyse y a survécu depuis 1e4ba5e sous un `melos analyze` VERT (AI-SUF-1)."
+      run: dart analyze example
     analyze:
-      description: "Analyse statique COMPLÈTE : packages (melos exec) PUIS scripts de gate. Point d'entrée quotidien — doit couvrir tout ce que `verify` exécute."
-      run: melos run analyze:packages && melos run analyze:scripts
+      description: "Analyse statique COMPLÈTE : packages (melos exec) PUIS scripts de gate PUIS example. Point d'entrée quotidien — doit couvrir tout ce que `verify` exécute, Y COMPRIS ce que `melos list` ne voit pas."
+      run: melos run analyze:packages && melos run analyze:scripts && melos run analyze:example
     test:dart:
       description: Tests des packages PUR-DART (dart test ; exclut les packages Flutter).
       run: melos exec --no-flutter --dir-exists test -- dart test

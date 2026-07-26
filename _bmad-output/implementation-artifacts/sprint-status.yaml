@@ -510,4 +510,4 @@ development_status:
   suf-2-carte-dossier: done                             # [M][SÉQ — après SUF-1 ; zcrud_study] ZFolderCard neutre (props opaques, accent via ZColorKeyResolver, slot counts/badges superset lex+IFFD, badge archivé l10n) sur ZAdaptiveGrid ; AD-13
   suf-3-page-detail-dossier-sous-dossiers-adaptatifs: done         # [XL][SÉQ — après SUF-1 ET SUF-2 ; zcrud_study] ZStudyFolderDetail : header via SUF-1 + onglets Matériel(=ZSectionedStudyLayout)/Notebook/Progression(=ZStudyProgressRings) + navigation sous-dossiers ADAPTATIVE (sidebar redimensionnable grand écran ↔ chips/dropdown petit écran) via zcrud_responsive ; AD-2 rebuilds granulaires
   suf-4-audit-session-demo-assemblee: done             # [M][SÉQ — DERNIÈRE] audit parité widgets zcrud_session vs lex (doc + fermeture écarts par slots injectables + R3) + démo example/ grille→détail→session
-  epic-suf-retrospective: backlog
+  epic-suf-retrospective: done
