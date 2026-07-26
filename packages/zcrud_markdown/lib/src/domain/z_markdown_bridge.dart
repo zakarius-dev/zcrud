@@ -41,6 +41,7 @@ final class ZMarkdownEmbedBridge {
     required this.toMarkdown,
     this.dataFromMatch,
     this.escapedCharacters = const <String>{},
+    this.accepts,
   });
 
   /// Type de l'embed Delta produit — la clé de l'`insert` (`'latex'`,
@@ -71,6 +72,26 @@ final class ZMarkdownEmbedBridge {
   /// relire », déjà appliquée à `~` pour le barré.
   final Set<String> escapedCharacters;
 
+  /// Garde au **DÉCODAGE** (CR-LEX-48). `null` (défaut) = tout accepter, donc
+  /// comportement inchangé pour un hôte existant (AD-57).
+  ///
+  /// [escapedCharacters] protège l'**écriture** : un texte ordinaire est réécrit
+  /// `\$`. Mais un markdown **source** — écrit à la main, importé, produit par
+  /// un générateur — ne contient aucun `$` échappé, et rien ne refusait alors la
+  /// correspondance : `de 5 $ à 9 $` devenait un embed `latex` de charge
+  /// `« à 9 »`. Le pont était **tout ou rien**.
+  ///
+  /// Ce prédicat n'est PAS un second motif : il se compose avec le MÊME
+  /// [pattern], dans le MÊME objet. Le motif dit *ce qui peut correspondre*,
+  /// [accepts] dit *et seulement si*. Il n'ARBITRE pas l'ambiguïté intrinsèque
+  /// (un montant et une formule restent indiscernables dans l'absolu) : il rend
+  /// l'arbitrage POSSIBLE côté hôte.
+  ///
+  /// Un refus **préserve le texte littéral** : le premier caractère du
+  /// délimiteur est réémis tel quel et l'analyse reprend juste après (jamais de
+  /// texte mangé).
+  final bool Function(Match match)? accepts;
+
   /// Donnée d'embed pour [match], défensivement (AD-10 : jamais de throw — un
   /// motif sans groupe 1 rend une chaîne vide plutôt que de casser le décodage).
   String dataOf(Match match) {
@@ -79,6 +100,35 @@ final class ZMarkdownEmbedBridge {
     if (match.groupCount < 1) return '';
     return match.group(1) ?? '';
   }
+
+  /// [accepts] appliqué DÉFENSIVEMENT (AD-10) : un prédicat hôte qui lève ne
+  /// doit jamais casser le décodage. L'exception est traitée comme un **REFUS**
+  /// — le texte littéral est préservé, la perte est bornée —, posture identique
+  /// à celle déjà tenue par [dataOf].
+  bool acceptsMatch(Match match) {
+    final predicate = accepts;
+    if (predicate == null) return true;
+    try {
+      return predicate(match);
+    } on Object {
+      return false;
+    }
+  }
+}
+
+/// Garde par défaut des ponts LaTeX fournis : une charge **vide** ou **bordée
+/// d'espaces** n'est pas une formule (CR-LEX-48).
+///
+/// C'est la règle de flanquement que CommonMark applique déjà à ses propres
+/// délimiteurs d'emphase (`*`/`_` ne peuvent pas ouvrir devant une espace), et
+/// c'est aussi celle des extensions math usuelles. Elle sépare les quatre vraies
+/// formules mesurées (`V = P + F + A`, `\frac{a}{b}`, `x^2`, `\alpha + \beta`)
+/// des deux fausses (`« à 9 »`, `« CAD à 250 »`) sans heuristique sur le contenu
+/// LaTeX lui-même — donc sans rejeter `$x$`.
+bool zLatexPayloadLooksLikeFormula(Match match) {
+  final String? data = match.groupCount < 1 ? null : match.group(1);
+  if (data == null || data.isEmpty) return false;
+  return data.trim().length == data.length;
 }
 
 /// Ponts prêts à l'emploi, **opt-in** (AD-57).
@@ -99,12 +149,17 @@ abstract final class ZMarkdownBridges {
           pattern: RegExp(r'(?<!\\)\$\$([^$]+?)(?<!\\)\$\$'),
           toMarkdown: (data) => '\$\$$data\$\$',
           escapedCharacters: const <String>{r'$'},
+          accepts: zLatexPayloadLooksLikeFormula,
         ),
         ZMarkdownEmbedBridge(
           embedType: 'latexBlock',
-          pattern: RegExp(r'\\\[(.+?)\\\]'),
+          // CR-LEX-50 : `(?<!\\)` sur les DEUX délimiteurs. Sans ces gardes, le
+          // `\]` né d'un backslash littéral doublé par l'encodeur (`a\]` →
+          // `a\\]`) refermait un bloc ouvert par un crochet échappé.
+          pattern: RegExp(r'(?<!\\)\\\[(.+?)(?<!\\)\\\]'),
           toMarkdown: (data) => '\$\$$data\$\$',
           escapedCharacters: const <String>{r'$'},
+          accepts: zLatexPayloadLooksLikeFormula,
         ),
       ];
 
@@ -122,12 +177,15 @@ abstract final class ZMarkdownBridges {
           pattern: RegExp(r'(?<!\\)\$([^$\n]+?)(?<!\\)\$'),
           toMarkdown: (data) => '\$$data\$',
           escapedCharacters: const <String>{r'$'},
+          accepts: zLatexPayloadLooksLikeFormula,
         ),
         ZMarkdownEmbedBridge(
           embedType: 'latex',
-          pattern: RegExp(r'\\\((.+?)\\\)'),
+          // CR-LEX-50 : mêmes gardes que la forme bloc `\[…\]`.
+          pattern: RegExp(r'(?<!\\)\\\((.+?)(?<!\\)\\\)'),
           toMarkdown: (data) => '\$$data\$',
           escapedCharacters: const <String>{r'$'},
+          accepts: zLatexPayloadLooksLikeFormula,
         ),
       ];
 

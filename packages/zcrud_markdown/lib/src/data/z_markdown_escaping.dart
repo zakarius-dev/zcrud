@@ -10,7 +10,24 @@ import 'package:flutter_quill/flutter_quill.dart';
 /// un lien, du code ou une balise au décodage, où qu'ils se trouvent dans la
 /// ligne. `~` en fait partie depuis que le décodeur sait lire `~~` (GFM) : sans
 /// lui, un texte contenant littéralement `~~mot~~` ressortirait BARRÉ.
-const String _kInlineDangerous = r'\\`*_[]<~';
+///
+/// ⚠️ **`]` en est ABSENT, et ce n'est pas un oubli — c'est CR-LEX-50.**
+/// L'encodeur écrivait `[1]` → `\[1\]`, or `\[…\]` est le délimiteur de **bloc
+/// LaTeX** déclaré par `ZMarkdownBridges.latexBlock` : le décodeur du MÊME codec
+/// relisait donc `\[1\]` en formule, puis le cycle suivant écrivait `$$1$$`. Une
+/// référence juridique `[1]` devenait une formule mathématique, et la
+/// dégradation **se composait** (le placeholder `\[embed:chart\]` était sa propre
+/// victime). Ce n'était pas une ambiguïté de source : la séquence corruptrice
+/// était **fabriquée par le codec**.
+///
+/// `]` seul n'ouvre RIEN en Markdown : un lien, une image ou une référence
+/// exigent un `[` ouvrant — et celui-là reste échappé. Ne plus échapper `]` est
+/// donc l'échappement **juste** (moins de bruit, cf. CR-IFFD-23 §2) ET la
+/// garantie que l'encodeur ne peut plus fabriquer de `\[…\]`. La garde
+/// symétrique côté motifs (`(?<!\\)` sur les délimiteurs `\[`/`\]`/`\(`/`\)` de
+/// `ZMarkdownBridges`) couvre le seul `\]` résiduel possible, celui né d'un
+/// backslash littéral doublé (`a\]` → `a\\]`).
+const String _kInlineDangerous = r'\\`*_[<~';
 
 /// Ouvreurs de **bloc**. Ils ne sont ambigus qu'en **tête de ligne** — c'est
 /// tout le grief de CR-IFFD-23 §2.

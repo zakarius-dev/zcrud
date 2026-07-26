@@ -14,6 +14,7 @@ import 'package:markdown_quill/markdown_quill.dart';
 import '../domain/z_codec.dart';
 import '../domain/z_markdown_bridge.dart';
 import 'delta_neutral_ops.dart';
+import 'z_markdown_block_layout.dart';
 import 'z_markdown_escaping.dart';
 import 'z_table_markdown.dart';
 
@@ -23,6 +24,38 @@ const String _kBridgeDataAttr = 'data';
 
 /// Nom d'élément Markdown interne portant un tableau reconnu.
 const String _kTableTag = 'z-table';
+
+/// Nom d'élément Markdown interne portant une liste ordonnée dont le **numéro de
+/// départ** n'est pas 1 (CR-LEX-51 §B).
+///
+/// Un tag DISTINCT est nécessaire : la fusion de `MarkdownToDelta` est
+/// `{...custom, ...builtin}`, donc la clé `ol` — déjà définie nativement — n'est
+/// **pas** surchargeable. On ne peut qu'AJOUTER une clé absente.
+const String _kOrderedListTag = 'z-ol-start';
+
+/// Liste ordonnée dont le numéro de départ diffère de 1 (CR-LEX-51 §B).
+///
+/// `md.ListSyntax` pose déjà `start` en attribut d'élément quand la liste ne
+/// démarre pas à 1 : l'information EXISTE dans l'AST Markdown, elle était
+/// simplement jetée au passage en Delta. On se contente donc de RENOMMER
+/// l'élément pour le rendre atteignable par `customElementToBlockAttribute`.
+///
+/// La sous-classe conserve `UnorderedListWithCheckboxSyntax` comme base : c'est
+/// la syntaxe déjà déclarée par le codec, et elle couvre AUSSI les listes
+/// ordonnées (le `listPattern` de `ListSyntax` distingue ordonné/non-ordonné par
+/// son groupe 1). En changer romprait la prise en charge de `- [x]`.
+final class _ZOrderedListStartSyntax extends md.UnorderedListWithCheckboxSyntax {
+  const _ZOrderedListStartSyntax();
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final md.Node node = super.parse(parser);
+    if (node is! md.Element || node.tag != 'ol') return node;
+    if (!node.attributes.containsKey('start')) return node;
+    return md.Element(_kOrderedListTag, node.children)
+      ..attributes.addAll(node.attributes);
+  }
+}
 
 /// Charge d'embed tableau `{rows, columns, cells}` depuis la matrice JSON
 /// transportée par l'attribut d'élément. Défensif (AD-10) : une charge illisible
@@ -138,9 +171,94 @@ final class _ZBridgeInlineSyntax extends md.InlineSyntax {
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
+    // CR-LEX-48 : garde au DÉCODAGE. Un pont était TOUT ou RIEN — rien ne
+    // refusait `de 5 $ à 9 $`, qui devenait un embed `latex` de charge « à 9 ».
+    if (!bridge.acceptsMatch(match)) {
+      // ⚠️ Rendre `false` NE SUFFIT PAS : `InlineSyntax.tryMatch` ne consomme
+      // rien dans ce cas mais rend quand même `true`, et `InlineParser.parse`
+      // reboucle à la MÊME position — BOUCLE INFINIE (mesuré sur la lib, pas
+      // supposé). On réémet donc le premier caractère du délimiteur en texte
+      // LITTÉRAL et on avance d'un caractère : le texte refusé est intégralement
+      // préservé, jamais mangé.
+      final String matched = match[0] ?? '';
+      if (matched.isEmpty) return false;
+      parser.addNode(md.Text(matched.substring(0, 1)));
+      parser.consume(1);
+      return false;
+    }
     final element = md.Element.empty(tag)
       ..attributes[_kBridgeDataAttr] = bridge.dataOf(match).toString();
     parser.addNode(element);
+    return true;
+  }
+}
+
+/// Nom d'élément Markdown interne portant une **image avec son texte ALT**
+/// (CR-LEX-46).
+const String _kImageTag = 'z-image';
+
+/// Clé d'attribut d'op portant le texte ALT d'une image.
+const String _kAltAttr = 'alt';
+
+/// Image `![alt](src)` — relue AVEC son texte ALT (CR-LEX-46).
+///
+/// Le ALT était détruit dès le PREMIER enregistrement, des deux côtés à la fois :
+/// `markdown_quill` construit l'embed par `BlockEmbed.image(elAttrs['src'])`
+/// (ALT jeté à la lecture) et le réécrit par `out.write('![](${data})')` (ALT
+/// toujours vide à l'écriture). Or la clé native `img` n'est PAS surchargeable
+/// (fusion `{...custom, ...builtin}` côté décodage) : il faut donc une syntaxe
+/// inline PRIORITAIRE, qui capte l'image avant que la syntaxe native ne la voie.
+///
+/// Formes non couvertes (URL entre `<>`, titre `"…"`, URL à parenthèses) : la
+/// syntaxe native reprend la main et le ALT dégrade comme avant — jamais de
+/// destruction NOUVELLE.
+final class _ZImageSyntax extends md.InlineSyntax {
+  _ZImageSyntax()
+      : super(
+          r'!\[((?:[^\]\\\n]|\\.)*)\]\(([^()\s]*)(?:\s+"[^"\n]*")?\)',
+          startCharacter: 0x21, // '!'
+        );
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element.empty(_kImageTag)
+        ..attributes['src'] = match[2] ?? ''
+        ..attributes[_kAltAttr] = _unescape(match[1] ?? ''),
+    );
+    return true;
+  }
+
+  /// Défait l'échappement posé par l'encodeur (`\\` et `\[`).
+  static String _unescape(String alt) =>
+      alt.replaceAllMapped(RegExp(r'\\(.)'), (m) => m[1] ?? '');
+}
+
+/// Fusionne un retour souple (`\n` de continuation) en **espace**, comme le
+/// prescrit CommonMark — CR-LEX-47.
+///
+/// `MarkdownToDelta` le fait déjà (`_trimTextToMdSpec`, motif ` ?\n *`), MAIS
+/// court-circuite cette normalisation dès que `_isInBlockQuote` : le retour
+/// souple TERMINAL d'un nœud texte est alors retiré **sans insérer aucun
+/// séparateur**. Mesuré : `> …elle est\n> *acquise*…` rendait `elle estacquise`,
+/// et le cycle suivant réécrivait `est_acquise_` — un `_` intra-mot n'ouvrant
+/// aucune emphase, l'italique était DÉTRUITE en plus du mot recollé.
+///
+/// Normaliser au niveau INLINE traite les deux contextes de la même façon, ce
+/// qui est précisément ce qui manquait. Les retours DURS sont hors d'atteinte :
+/// la garde `(?<![ \\])` refuse un `\n` précédé d'une espace ou d'un backslash,
+/// c'est-à-dire exactement les deux formes de saut de ligne forcé de CommonMark
+/// (`  \n` et `\\\n`), qui restent traitées par `LineBreakSyntax`.
+final class _ZSoftLineBreakSyntax extends md.InlineSyntax {
+  _ZSoftLineBreakSyntax()
+      : super(
+          r'(?<![ \\])\n *',
+          startCharacter: 0x0A, // '\n'
+        );
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Text(' '));
     return true;
   }
 }
@@ -172,10 +290,13 @@ const List<_ZMarkerAttr> _kMarkerAttrs = <_ZMarkerAttr>[
 /// Types d'embed que l'encodeur Markdown sait exprimer NATIVEMENT et qui ne
 /// doivent donc PAS être dégradés en placeholder (CR-IFFD-24 §1).
 ///
-/// - `image` : `DeltaToMarkdown` émet `![](src)` et `MarkdownToDelta` relit
-///   `![alt](src)` — le pont existait des deux côtés, il était neutralisé en
-///   amont. C'est la perte la plus grave corrigée par ce tag : une image
-///   disparaissait au PREMIER enregistrement, URL comprise.
+/// - `image` : l'URL et le **texte ALT** font l'aller-retour (`![alt](src)`).
+///   Le pont natif ne portait QUE l'URL — `BlockEmbed.image(elAttrs['src'])` à
+///   la lecture, `out.write('![](…)')` à l'écriture : le ALT était détruit dès
+///   le premier enregistrement, silencieusement, et rien ne le documentait
+///   (CR-LEX-46). Il est désormais capté par une syntaxe inline prioritaire et
+///   reversé en attribut d'op `alt`. Reste PERDU : un ALT contenant `]` ou un
+///   saut de ligne (cf. table des pertes) — jamais l'URL.
 /// - `divider` (`---`) : `MarkdownToDelta` construit l'embed depuis `hr` et
 ///   `DeltaToMarkdown` écrit `- - -`. Le pont existait des DEUX côtés, comme
 ///   pour l'image — et il était neutralisé au même endroit. Corriger l'image
@@ -215,12 +336,20 @@ const Set<String> _kNativeEmbedTypes = <String>{
 /// > défauts sont CORRIGÉS depuis la v0.7.0 (CR-IFFD-24 §1), et chaque ligne
 /// > ci-dessous est désormais assertée par exécution.
 ///
+/// > ⚠️ **Elle était encore INCOMPLÈTE au tag v0.18.0** : elle rangeait les
+/// > « images via `![](src)` » parmi ce que le round-trip PRÉSERVE, alors que le
+/// > **texte ALT** était détruit dès le premier enregistrement et n'apparaissait
+/// > sur AUCUNE ligne de perte (CR-LEX-46). Le ALT est désormais PRÉSERVÉ ; ce
+/// > qui en reste perdu est explicitement listé ci-dessous.
+///
 /// Le round-trip `decode(encode(ops))` PRÉSERVE la sémantique du **sous-ensemble
 /// Markdown** : titres **H1–H6**, gras, italique, **souligné** via `<u>`,
 /// **barré** via `~~` (GFM), **cases à cocher** `- [x]`/`- [ ]`, **tableaux**
 /// (`| a | b |`, avec repli sans perte), **exposant /
-/// indice** via `<sup>`/`<sub>`, listes imbriquées, liens, **images** via
-/// `![](src)`, `code` inline + blocs, blockquote, texte brut. Il **PERD** :
+/// indice** via `<sup>`/`<sub>`, listes imbriquées (y compris le **numéro de
+/// départ** d'une liste ordonnée non indentée), liens, **images avec leur texte
+/// ALT** via `![alt](src)`, `code` inline + blocs (contenu **opaque**),
+/// blockquote, texte brut. Il **PERD** :
 ///
 /// | Attribut / contenu Delta        | Sort au round-trip Markdown            |
 /// |---------------------------------|----------------------------------------|
@@ -229,9 +358,13 @@ const Set<String> _kNativeEmbedTypes = <String>{
 /// | Taille (`size`)                 | **perdu**                              |
 /// | Fond (`background`)             | **perdu**                              |
 /// | Alignement (`align`)            | **perdu**                              |
+/// | Texte **ALT** d'image contenant `]` ou un saut de ligne | **perdu** — l'ALT est omis (`![](src)`), l'URL SURVIT. Écrire `\]` rouvrirait CR-LEX-50 (l'encodeur fabriquerait un délimiteur de bloc LaTeX) : la perte est préférée à la corruption du texte voisin |
+/// | Numéro de départ d'une liste ordonnée **indentée** | **perdu** (renumérotée depuis 1) — la correspondance run Delta ↔ run Markdown n'est pas triviale pour une liste imbriquée, et renuméroter de travers serait pire |
+/// | Retour **souple** (`\n` de continuation) | **fusionné en espace**, conformément à CommonMark — hors blockquote c'était déjà le cas ; dans un blockquote il RECOLLAIT les mots (CR-LEX-47) |
 /// | Vidéo (`video`)                 | **dégradé en LIEN** `[src](src)` — la source SURVIT, le type d'embed non |
 /// | Entité HTML littérale (`&amp;`) | **résolue** en son caractère (`&`) dès le premier round-trip — la forme entité n'est pas restituée |
-/// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder `\[embed:<type>\]` (échappé), texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed — AC9) |
+/// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder `\[embed:<type>]` (crochet ouvrant échappé), texte environnant PRÉSERVÉ (perte **BORNÉE** à l'embed — AC9) |
+/// | Tableau **inline** (au milieu d'une ligne) | promu en BLOC à part : la mise en page bouge, le CONTENU est intégralement préservé (CR-LEX-45) |
 ///
 /// > LIMITE (MIN-1) : un texte brut contenant littéralement `<u>`/`</u>`,
 /// > `<sup>`/`<sub>` saisi par l'utilisateur serait interprété comme l'attribut
@@ -299,7 +432,11 @@ final class ZMarkdownCodec implements ZCodec {
           // drapeau `taskListParserEnabled` (`list_syntax.dart:78-80`). Ajouter
           // `OrderedListWithCheckboxSyntax` ne changeait RIEN — vérifié par
           // exécution, la retirer laissait `1. [x]` fonctionner.
-          md.UnorderedListWithCheckboxSyntax(),
+          //
+          // CR-LEX-51 §B : la variante `_ZOrderedListStartSyntax` REMPLACE la
+          // syntaxe d'origine (elle en hérite) et se borne à renommer l'élément
+          // quand `start != 1`, pour rendre le numéro de départ atteignable.
+          _ZOrderedListStartSyntax(),
           // Tableau ↔ embed. Placées AVANT les syntaxes par défaut, donc avant
           // `FencedCodeBlockSyntax` (sans quoi le bloc de repli serait lu comme
           // un simple bloc de code).
@@ -312,9 +449,14 @@ final class ZMarkdownCodec implements ZCodec {
           // `$…$` sur l'interprétation ordinaire du texte.
           for (var i = 0; i < bridges.length; i++)
             _ZBridgeInlineSyntax(bridges[i], _bridgeTag(i)),
+          // CR-LEX-46 : image AVEC son texte ALT (la clé native `img` n'est pas
+          // surchargeable — seule une syntaxe prioritaire y donne accès).
+          _ZImageSyntax(),
           // CR-IFFD-24 §1 : `~~x~~` → `{strike: true}`. L'encodeur émettait déjà
           // du `~~` que le décodeur ne savait pas relire.
           _ZDoubleTildeStrikethroughSyntax(),
+          // CR-LEX-47 : retour souple → espace, y compris DANS un blockquote.
+          _ZSoftLineBreakSyntax(),
         ],
       );
 
@@ -334,6 +476,16 @@ final class ZMarkdownCodec implements ZCodec {
           'h4': (_) => <Attribute<dynamic>>[Attribute.h4],
           'h5': (_) => <Attribute<dynamic>>[Attribute.h5],
           'h6': (_) => <Attribute<dynamic>>[Attribute.h6],
+          // CR-LEX-51 §B — numéro de départ d'une liste ordonnée. La clé
+          // `start` n'est pas au registre `flutter_quill` : `Style.fromJson` la
+          // conserve en `AttributeScope.ignore`, ce qui la rend inoffensive pour
+          // le rendu tout en la faisant survivre au Delta persisté.
+          _kOrderedListTag: (element) => <Attribute<dynamic>>[
+                Attribute.ol,
+                if (int.tryParse(element.attributes['start'] ?? '')
+                    case final int start)
+                  Attribute<int>('start', AttributeScope.block, start),
+              ],
         },
         // Chaque pont déclaré devient un élément Markdown interne, remonté en
         // embed Delta du type annoncé par l'hôte (CR-IFFD-23 §3).
@@ -345,6 +497,15 @@ final class ZMarkdownCodec implements ZCodec {
                 'table',
                 _tablePayload(attrs[_kBridgeDataAttr] ?? ''),
               ),
+          // CR-LEX-46 — porteur INTERNE `{src, alt}` : `_delta.insert()` d'un
+          // embed n'accepte AUCUN attribut d'op côté `MarkdownToDelta`, donc le
+          // ALT doit transiter DANS la charge, puis être reversé en attribut par
+          // `_restoreImageAlt`. Le type reste privé jusque-là : un `image` à
+          // charge `Map` casserait tout `EmbedBuilder` d'hôte.
+          _kImageTag: (attrs) => Embeddable(_kImageTag, <String, String>{
+                'src': attrs['src'] ?? '',
+                _kAltAttr: attrs[_kAltAttr] ?? '',
+              }),
           for (var i = 0; i < bridges.length; i++)
             _bridgeTag(i): (attrs) =>
                 BlockEmbed(bridges[i].embedType, attrs[_kBridgeDataAttr] ?? ''),
@@ -355,6 +516,31 @@ final class ZMarkdownCodec implements ZCodec {
   Object? encode(List<Map<String, dynamic>> deltaOps) {
     if (deltaOps.isEmpty) return '';
     try {
+      return _layout(_convertToMarkdown(deltaOps), deltaOps);
+    } on Object catch (error, stack) {
+      // AD-10 : jamais casser le parent — persisté vide + log non-fatal.
+      assert(() {
+        debugPrint('ZMarkdownCodec.encode: conversion ignorée ($error)\n$stack');
+        return true;
+      }());
+      return '';
+    }
+  }
+
+  /// Passes de **mise en page de bloc** appliquées au Markdown émis
+  /// (CR-LEX-49 : frontière après une citation ; CR-LEX-51 §B : numéro de départ
+  /// d'une liste ordonnée). Chacune rend son entrée à l'IDENTIQUE quand elle n'a
+  /// rien à corriger — cf. `z_markdown_block_layout.dart`.
+  static String _layout(String markdown, List<Map<String, dynamic>> ops) {
+    if (markdown.isEmpty) return markdown;
+    return zRestoreOrderedListStart(
+      zSeparateBlocksAfterQuote(markdown),
+      ops,
+    );
+  }
+
+  String _convertToMarkdown(List<Map<String, dynamic>> deltaOps) {
+    {
       final delta = DeltaNeutralOps.toDeltaForMarkdown(
         // CR-IFFD-24 §3 : `** gras **` n'est pas du gras, et `a_ ital _b` n'est
         // pas de l'italique du tout — un `_` intra-mot n'ouvre aucune emphase.
@@ -384,9 +570,16 @@ final class ZMarkdownCodec implements ZCodec {
             ),
         },
         customEmbedHandlers: <String, EmbedToMarkdown>{
+          // CR-LEX-46 — le handler natif écrit `![](${data})`, ALT TOUJOURS
+          // VIDE. Contrairement au décodage, la fusion est ici
+          // `_embedHandlers.addAll(custom)` : la clé `image` EST surchargeable
+          // (mesuré — le commentaire qui l'en dissuadait était faux).
+          'image': (embed, out) {
+            final Object? src = embed.value.data;
+            final String href = src is String ? src : '';
+            out.write('![${_altOf(embed)}]($href)');
+          },
           // Pas de forme Markdown native pour la vidéo : lien vers la source.
-          // `image` n'est PAS listé ici — `DeltaToMarkdown` sait déjà l'écrire,
-          // et un handler custom masquerait le built-in.
           // Auto-vérification : la forme lisible n'est retenue que si elle se
           // relit à l'identique. La garantie s'EXÉCUTE à chaque écriture.
           'table': (embed, out) {
@@ -423,14 +616,21 @@ final class ZMarkdownCodec implements ZCodec {
                 out.write(bridge.toMarkdown(embed.value.data)),
         },
       ).convert(delta);
-    } on Object catch (error, stack) {
-      // AD-10 : jamais casser le parent — persisté vide + log non-fatal.
-      assert(() {
-        debugPrint('ZMarkdownCodec.encode: conversion ignorée ($error)\n$stack');
-        return true;
-      }());
-      return '';
     }
+  }
+
+  /// Texte ALT d'un embed image, ÉCHAPPÉ pour la forme `![alt](src)`.
+  ///
+  /// ⚠️ Un ALT contenant `]` rend la chaîne **vide** plutôt que d'écrire `\]` :
+  /// écrire `\]` rouvrirait CR-LEX-50 par la bande (un `\[` échappé plus haut
+  /// dans la même ligne trouverait là son délimiteur fermant, et toute la phrase
+  /// intermédiaire deviendrait une formule). Perte BORNÉE et documentée dans la
+  /// table des pertes — jamais une corruption du texte voisin.
+  static String _altOf(Embed embed) {
+    final Object? raw = embed.style.attributes[_kAltAttr]?.value;
+    final String alt = raw is String ? raw : '';
+    if (alt.isEmpty || alt.contains(']') || alt.contains('\n')) return '';
+    return alt.replaceAll(r'\', r'\\').replaceAll('[', r'\[');
   }
 
   /// Marqueur ouvrant correspondant à [attribute] (clé + valeur), ou `''` si
@@ -470,7 +670,11 @@ final class ZMarkdownCodec implements ZCodec {
     if (serializedDelta != null) return serializedDelta;
     try {
       final delta = _markdownToDelta().convert(persisted);
-      final ops = _absorbMarkerAttrs(DeltaNeutralOps.deltaToNeutralOps(delta));
+      final ops = _absorbMarkerAttrs(
+        _ensureOwnLineEmbeds(
+          _restoreImageAlt(DeltaNeutralOps.deltaToNeutralOps(delta)),
+        ),
+      );
       // Un texte NON VIDE ne doit jamais produire un document vide : trouvé
       // hors CR pendant la mesure — `[ref]: http://exemple.test` (définition de
       // lien de référence, syntaxe Markdown standard) est consommée comme
@@ -491,6 +695,99 @@ final class ZMarkdownCodec implements ZCodec {
       }());
       return const <Map<String, dynamic>>[];
     }
+  }
+
+  /// Reverse le porteur interne `z-image` en embed `image` NORMAL + attribut
+  /// d'op `alt` (CR-LEX-46).
+  ///
+  /// La charge de l'embed reste une `String` (l'URL), comme l'attend tout
+  /// `EmbedBuilder` d'hôte : le ALT voyage en ATTRIBUT, clé inconnue du registre
+  /// `flutter_quill` (donc `AttributeScope.ignore`, inoffensive au rendu) mais
+  /// parfaitement sérialisable — c'est la place que la CR laissait au choix.
+  static List<Map<String, dynamic>> _restoreImageAlt(
+    List<Map<String, dynamic>> ops,
+  ) {
+    var touched = false;
+    final out = <Map<String, dynamic>>[];
+    for (final op in ops) {
+      final Object? insert = op['insert'];
+      if (insert is! Map || !insert.containsKey(_kImageTag)) {
+        out.add(op);
+        continue;
+      }
+      touched = true;
+      final Object? payload = insert[_kImageTag];
+      final String src =
+          payload is Map ? '${payload['src'] ?? ''}' : '${payload ?? ''}';
+      final String alt = payload is Map ? '${payload[_kAltAttr] ?? ''}' : '';
+      final Map<String, dynamic> attrs = <String, dynamic>{
+        ...?(op['attributes'] is Map<String, dynamic>
+            ? op['attributes'] as Map<String, dynamic>
+            : null),
+        if (alt.isNotEmpty) _kAltAttr: alt,
+      };
+      out.add(<String, dynamic>{
+        'insert': <String, dynamic>{'image': src},
+        if (attrs.isNotEmpty) 'attributes': attrs,
+      });
+    }
+    return touched ? out : ops;
+  }
+
+  /// Types d'embed qui occupent NÉCESSAIREMENT leur propre ligne Delta.
+  ///
+  /// Un tableau n'est pas un caractère : il ne peut pas partager une ligne avec
+  /// du texte, sous peine de partager aussi ses **attributs de bloc**.
+  static const Set<String> _kOwnLineEmbedTypes = <String>{'table'};
+
+  static bool _isOwnLineEmbed(Map<String, dynamic> op) {
+    final Object? insert = op['insert'];
+    if (insert is! Map || insert.keys.isEmpty) return false;
+    return _kOwnLineEmbedTypes.contains(insert.keys.first.toString());
+  }
+
+  /// Garantit qu'un embed de bloc TERMINE sa ligne Delta (CR-LEX-45).
+  ///
+  /// CAUSE RACINE MESURÉE, dans `MarkdownToDelta` : son
+  /// `_insertNewLineAfterElementIfNeeded` n'insère le `\n` de sortie de bloc que
+  /// si `_justPreviousBlockExit` est `false`, et ce drapeau n'est remis à `false`
+  /// que par `visitText`. Or notre élément de tableau (`z-table`) est un
+  /// `Element.empty` — **aucun texte à visiter**. Quand un paragraphe le précède,
+  /// le drapeau est resté `true` depuis la sortie de ce paragraphe : AUCUN `\n`
+  /// n'est émis après le tableau, et l'embed partage alors UNE SEULE ligne Delta
+  /// avec le bloc suivant, dont il hérite l'attribut.
+  ///
+  /// Conséquence à l'écriture : `DeltaToMarkdown` pose le préfixe de bloc
+  /// (`## `, `> `, `- `) en TÊTE de ligne — donc AVANT l'embed —, puis la coupure
+  /// forcée du handler `table` scinde la ligne en deux et **orpheline le texte** :
+  /// `## ` vide avant le tableau, titre nu après. Un tableau en TÊTE de document
+  /// n'était pas touché (le drapeau démarre à `false`), ce qui explique le
+  /// contrôle négatif vert de la CR.
+  ///
+  /// On répare donc à la SOURCE, sur la ligne Delta, plutôt qu'à l'écriture :
+  /// c'est la structure qui était fausse, pas son rendu.
+  static List<Map<String, dynamic>> _ensureOwnLineEmbeds(
+    List<Map<String, dynamic>> ops,
+  ) {
+    if (!ops.any(_isOwnLineEmbed)) return ops; // identité : aucun tableau
+    final out = <Map<String, dynamic>>[];
+    for (var i = 0; i < ops.length; i++) {
+      final Map<String, dynamic> op = ops[i];
+      if (!_isOwnLineEmbed(op)) {
+        out.add(op);
+        continue;
+      }
+      final Object? previous = out.isEmpty ? null : out.last['insert'];
+      if (out.isNotEmpty && !(previous is String && previous.endsWith('\n'))) {
+        out.add(<String, dynamic>{'insert': '\n'});
+      }
+      out.add(op);
+      final Object? next = i + 1 < ops.length ? ops[i + 1]['insert'] : null;
+      if (!(next is String && next.startsWith('\n'))) {
+        out.add(<String, dynamic>{'insert': '\n'});
+      }
+    }
+    return out;
   }
 
   /// Vrai si les ops décodées ne portent AUCUN contenu (que des sauts de ligne
@@ -541,6 +838,14 @@ final class ZMarkdownCodec implements ZCodec {
   /// Les ops embed (`insert` non-`String`) sont conservées à l'identique et ne
   /// modifient pas l'état. Les autres attributs d'un insert texte sont préservés
   /// (les attributs de marqueur sont simplement AJOUTÉS). Jamais de throw.
+  /// Une op dont le contenu est OPAQUE aux marqueurs littéraux : `code` inline
+  /// et bloc de code (CR-LEX-51 §A).
+  static bool _isOpaqueToMarkers(Object? attributes) {
+    if (attributes is! Map) return false;
+    return attributes.containsKey(Attribute.inlineCode.key) ||
+        attributes.containsKey(Attribute.codeBlock.key);
+  }
+
   static List<Map<String, dynamic>> _absorbMarkerAttrs(
     List<Map<String, dynamic>> ops,
   ) {
@@ -566,6 +871,27 @@ final class ZMarkdownCodec implements ZCodec {
           op['attributes'] is Map<String, dynamic>
               ? op['attributes'] as Map<String, dynamic>
               : null;
+      // CR-LEX-51 §A — le contenu d'un span `code` est OPAQUE : il n'est pas du
+      // Markdown, donc pas davantage du HTML. `` `<u>` `` était consommé comme
+      // marqueur ouvrant : le span devenait VIDE (`flush()` abandonne un buffer
+      // vide) et `underline` restait armé jusqu'à la fin du bloc — le
+      // soulignement avalait la fin de la phrase et une balise fermante
+      // apparaissait au cycle suivant. Un code inline SANS HTML survivait :
+      // ce n'était pas « le code » qui cassait, c'était le HTML qu'il porte.
+      if (_isOpaqueToMarkers(op['attributes'])) {
+        final Map<String, dynamic> attrs = <String, dynamic>{
+          ...?baseAttrs,
+          ...active,
+        };
+        result.add(<String, dynamic>{
+          'insert': insert,
+          if (attrs.isNotEmpty) 'attributes': attrs,
+        });
+        // Un bloc de code porte ses propres `\n` : l'état de marqueur reste
+        // borné au BLOC, comme sur le chemin ordinaire.
+        if (insert.contains('\n')) active.clear();
+        continue;
+      }
       // Découpe le texte aux frontières de marqueurs en préservant l'ordre.
       var buffer = StringBuffer();
       void flush() {
