@@ -638,7 +638,10 @@ void assertExtraWriteSanitized({
   //         `kExtraWriters` avait DÉJÀ en production) rendrait le slot stocké
   //         PROPRE ⇒ identical TRUE ⇒ **ROUGE**. Le témoin d'écriture seul ne
   //         l'attrapait PAS (il n'observe qu'une clé NON réservée).
-  final zeroCopy = identical(writtenExtra, (written as ZExtensible).extra);
+  // `written` est déjà un `ZExtensible` pour l'analyseur : le cast était
+  // redondant (warning `unnecessary_cast`, resté INVISIBLE tant que ce
+  // répertoire échappait à l'analyse — cf. gate:analyze-coverage).
+  final zeroCopy = identical(writtenExtra, written.extra);
   expect(
     zeroCopy,
     writer.eagerlyNormalized,

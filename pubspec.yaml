@@ -176,8 +176,8 @@ melos:
       description: Analyse statique de tous les packages (melos exec, par package).
       exec: dart analyze .
     analyze:scripts:
-      description: "Analyse statique des SCRIPTS de gate (`scripts/`) — hors vue melos, donc invisibles de `analyze:packages`. Comble l'angle mort qui a laissé passer la casse de gate_reserved_keys.dart par analyzer 12 sous un analyze VERT."
-      run: dart analyze scripts
+      description: "Analyse statique des cibles HORS VUE MELOS : `scripts/`, `tool/compat_check` (hors workspace) ET `tool/binding_conformance`/`tool/reserved_keys_gate` (membres du `workspace:` MAIS listés dans `melos.ignore:`, donc jamais atteints par `melos exec`). MESURÉ : une erreur de type injectée dans reserved_keys_gate laissait `melos run analyze` VERT."
+      run: dart analyze scripts tool/compat_check tool/binding_conformance tool/reserved_keys_gate
     analyze:example:
       description: "Analyse statique d'`example/` — HORS du bloc `workspace:` (frontière EX-1), donc invisible de `melos exec` (`melos list` ne le renvoie pas) et donc d'`analyze:packages`. 3e occurrence de la MÊME classe d'angle mort (après ZExportApi en E11a-3 et les scripts de gate) : une erreur d'analyse y a survécu depuis 1e4ba5e sous un `melos analyze` VERT (AI-SUF-1)."
       run: dart analyze example
@@ -202,6 +202,9 @@ melos:
     gate:melos:
       description: "Gate M-1 : anti-divergence des blocs scripts melos (pubspec vs melos.yaml)."
       run: dart run scripts/ci/gate_melos_divergence.dart
+    gate:analyze-coverage:
+      description: "Gate : aucun répertoire avec pubspec.yaml hors workspace ne peut échapper à l'analyse."
+      run: dart run scripts/ci/gate_analyze_coverage.dart
     gate:reflectable:
       description: "Gate AD-3 : interdiction de reflectable dans le moteur (hors ReflectableCodec)."
       run: dart run scripts/ci/gate_reflectable.dart
@@ -227,6 +230,7 @@ melos:
       description: "Enchaîne tous les gates de merge localement — MIROIR EXACT de la CI (.github/workflows/ci.yml exécute ce script en STEP UNIQUE : tout gate ajouté ici est en CI par construction)."
       run: |
         melos run analyze:scripts && \
+        dart run scripts/ci/gate_analyze_coverage.dart && \
         python3 scripts/dev/graph_proof.py && \
         dart run scripts/ci/gate_melos_divergence.dart && \
         dart run scripts/ci/gate_reflectable.dart && \
