@@ -24,6 +24,7 @@ import 'l10n/z_labels.dart';
 import 'list/z_list_renderer.dart';
 import 'reorder/z_reorder_renderer.dart';
 import 'theme/z_color_key_resolver.dart';
+import 'theme/z_gradient_resolver.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
 import 'z_scope_error.dart';
@@ -71,6 +72,7 @@ class ZcrudScope extends InheritedWidget {
     this.iconResolver,
     this.colorPicker,
     this.colorKeyResolver,
+    this.gradientResolver,
     super.key,
   });
 
@@ -198,6 +200,10 @@ class ZcrudScope extends InheritedWidget {
   /// statique mutable).
   final ZColorKeyResolver? colorKeyResolver;
 
+  /// Couture de dégradé hôte (VIS-1). `null` conserve le repli neutre ou
+  /// l'accent uni; fournir une instance `const` ou mémoïsée hors de `build`.
+  final ZGradientResolver? gradientResolver;
+
   /// Retourne le [ZcrudScope] le plus proche.
   ///
   /// Lève [ZScopeError] (message actionnable) si aucun scope n'est présent dans
@@ -231,8 +237,11 @@ class ZcrudScope extends InheritedWidget {
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||
       !identical(listRenderer, oldWidget.listRenderer) ||
+      !identical(reorderRenderer, oldWidget.reorderRenderer) ||
+      !identical(dropRegionRenderer, oldWidget.dropRegionRenderer) ||
       !identical(selectPresenter, oldWidget.selectPresenter) ||
       !identical(iconResolver, oldWidget.iconResolver) ||
       !identical(colorPicker, oldWidget.colorPicker) ||
-      !identical(colorKeyResolver, oldWidget.colorKeyResolver);
+      !identical(colorKeyResolver, oldWidget.colorKeyResolver) ||
+      !identical(gradientResolver, oldWidget.gradientResolver);
 }

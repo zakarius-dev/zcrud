@@ -72,6 +72,7 @@ const double _kPastilleSize = 14;
 /// ZFolderCard(
 ///   title: 'Chapitre 3 — Valeur en douane',
 ///   colorKey: 'secondary',                 // opaque : résolue par le cœur/bridge
+///   headerDecoration: myAccent,             // slot : remplace la pastille historique
 ///   counts: const Text('42 cartes'),        // slot : compteur lex OU badges IFFD
 ///   menu: myFolderMenu,                      // slot : le widget ignore son contenu
 ///   isArchived: true,
@@ -89,6 +90,7 @@ class ZFolderCard extends StatelessWidget {
     required this.title,
     required this.colorKey,
     this.colorSlotIndex = 0,
+    this.headerDecoration,
     this.counts,
     this.menu,
     this.archivedLabel,
@@ -114,6 +116,11 @@ class ZFolderCard extends StatelessWidget {
   /// utilisé **seulement** si [colorKey] reste inconnue du resolver (couleur
   /// contrastée distincte par index — AD-10).
   final int colorSlotIndex;
+
+  /// Décoration d'en-tête injectée. Lorsqu'elle est fournie, elle remplace
+  /// uniquement la pastille d'accent historique ; `null` conserve cette
+  /// pastille circulaire de 14 dp à l'identique.
+  final Widget? headerDecoration;
 
   /// Slot compteur/badges rendu **verbatim**, ancré en bas (superset lex
   /// compteur / IFFD badges — D3). `null` ⇒ **absent** de l'arbre (aucun espace
@@ -157,8 +164,11 @@ class ZFolderCard extends StatelessWidget {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     // D2/AD-10 — accent DÉRIVÉ, jamais codé en dur : seam total du cœur.
-    final ZColorPair pair =
-        zResolveColorKeyOrSlot(context, colorKey, slotIndex: colorSlotIndex);
+    final ZColorPair pair = zResolveColorKeyOrSlot(
+      context,
+      colorKey,
+      slotIndex: colorSlotIndex,
+    );
     final Color tint = pair.color.withValues(alpha: tintAlpha);
 
     final bool showArchived = isArchived && archivedLabel != null;
@@ -213,17 +223,19 @@ class ZFolderCard extends StatelessWidget {
             mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // En-tête : pastille pleine d'accent + menu aligné en fin (RTL-safe).
+              // En-tête : décoration injectée ou pastille pleine d'accent +
+              // menu aligné en fin (RTL-safe).
               Row(
                 children: <Widget>[
-                  Container(
-                    width: _kPastilleSize,
-                    height: _kPastilleSize,
-                    decoration: BoxDecoration(
-                      color: pair.color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  headerDecoration ??
+                      Container(
+                        width: _kPastilleSize,
+                        height: _kPastilleSize,
+                        decoration: BoxDecoration(
+                          color: pair.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                   const Spacer(),
                   // Slot menu rendu verbatim, NON exclu de la sémantique.
                   ?menu,
@@ -251,10 +263,9 @@ class ZFolderCard extends StatelessWidget {
     // Le thème Material de l'hôte décide la forme complète (dont sa bordure)
     // lorsqu'il en fournit une. La même instance est donnée au `Card` et à
     // l'`InkWell` pour que le clip et l'encre restent parfaitement cohérents.
-    final ShapeBorder shape = CardTheme.of(context).shape ??
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(theme.radiusM),
-        );
+    final ShapeBorder shape =
+        CardTheme.of(context).shape ??
+        RoundedRectangleBorder(borderRadius: BorderRadius.all(theme.radiusM));
 
     final bool interactive = onTap != null || onLongPress != null;
 
@@ -307,6 +318,7 @@ class ZFolderCard extends StatelessWidget {
     );
   }
 }
+
 /// Badge discret « Archivé » — parité lex `_ArchivedBadge` en NEUTRE : fond
 /// `surfaceContainerHighest`, texte `onSurfaceVariant`, rayon `badgeRadius` du
 /// thème (repli `radiusM`).
@@ -322,7 +334,10 @@ class _ArchivedBadge extends StatelessWidget {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 8,
+        vertical: 2,
+      ),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.all(theme.badgeRadius ?? theme.radiusM),
@@ -330,10 +345,9 @@ class _ArchivedBadge extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.start,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: scheme.onSurfaceVariant),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
       ),
     );
   }

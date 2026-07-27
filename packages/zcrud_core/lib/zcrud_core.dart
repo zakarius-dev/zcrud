@@ -183,6 +183,7 @@ export 'src/presentation/list/z_tabbed_list.dart';
 export 'src/presentation/reorder/z_reorder_render_request.dart';
 export 'src/presentation/reorder/z_reorder_renderer.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
+export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';

@@ -96,6 +96,9 @@ export 'src/presentation/z_flashcard_list_view.dart';
 // grille adaptative posée par l'appelant (ZAdaptiveGrid.builder). Réplique
 // neutre du natif lex `FolderCard` sans gestionnaire d'état (AD-2).
 export 'src/presentation/z_folder_card.dart';
+export 'src/presentation/z_folder_card_chrome.dart';
+export 'src/presentation/z_subfolder_item_chrome.dart'
+    show ZCountBadge, ZCountBadgeRow, ZCountBadgeSpec;
 export 'src/presentation/z_flashcard_generation_controller.dart';
 export 'src/presentation/z_flashcard_generation_sheet.dart';
 export 'src/presentation/z_flashcard_tag_confirm_sheet.dart';

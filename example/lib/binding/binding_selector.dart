@@ -84,6 +84,7 @@ class _BindingSeamForwarder extends StatelessWidget {
       filePicker: root.filePicker,
       cloudStorage: root.cloudStorage,
       listRenderer: root.listRenderer,
+      gradientResolver: root.gradientResolver,
       child: child,
     );
   }

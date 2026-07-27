@@ -61,6 +61,7 @@ Future<void> _pump(
   VoidCallback? onContinue,
   int? masteredThreshold,
   ZSummaryCelebration celebration = ZSummaryCelebration.none,
+  ZCelebrationSpec? celebrationSpec,
   String? feedbackKey,
   ZFeedbackBank? feedbackBank,
 }) async {
@@ -75,6 +76,7 @@ Future<void> _pump(
         onContinue: onContinue,
         masteredThreshold: masteredThreshold,
         celebration: celebration,
+        celebrationSpec: celebrationSpec,
         feedbackKey: feedbackKey,
         feedbackBank: feedbackBank,
       ),
@@ -134,100 +136,116 @@ String _valueOf(WidgetTester tester, ValueKey<String> key) =>
     tester.widget<Text>(find.byKey(key)).data!;
 
 void main() {
-  group('🎯 AC1 — il ASSEMBLE les widgets EXISTANTS, il ne réimplémente rien',
-      () {
-    testWidgets('le breakdown ET les anneaux sont MONTÉS', (tester) async {
-      await _pump(tester);
-      expect(find.byType(ZSessionQualityBreakdown), findsOneWidget);
-      expect(
-        find.byType(ZStudyProgressRings),
-        findsOneWidget,
-        reason: '🔴 R3-AC1 : remplacer ce montage par un `CustomPaint` maison '
-            'fait ROUGIR ce test',
-      );
-    });
+  group(
+    '🎯 AC1 — il ASSEMBLE les widgets EXISTANTS, il ne réimplémente rien',
+    () {
+      testWidgets('le breakdown ET les anneaux sont MONTÉS', (tester) async {
+        await _pump(tester);
+        expect(find.byType(ZSessionQualityBreakdown), findsOneWidget);
+        expect(
+          find.byType(ZStudyProgressRings),
+          findsOneWidget,
+          reason:
+              '🔴 R3-AC1 : remplacer ce montage par un `CustomPaint` maison '
+              'fait ROUGIR ce test',
+        );
+      });
 
-    testWidgets(
+      testWidgets(
         '🔴 le DTO monté ÉGALE `ZProgressRingsData.fromResult(result)` '
-        '(jamais un ratio recalculé)', (tester) async {
-      await _pump(tester);
-      final rings = tester.widget<ZStudyProgressRings>(
-        find.byType(ZStudyProgressRings),
-      );
-      expect(
-        rings.data,
-        ZProgressRingsData.fromResult(_result),
-        reason: '🔴 le DTO doit venir de la fonction PURE du contrat existant. '
-            'Un ratio recalculé à la main divergerait silencieusement',
-      );
-    });
-
-    testWidgets('🔴 le breakdown reçoit `byQuality` VERBATIM (aucun recomptage)',
+        '(jamais un ratio recalculé)',
         (tester) async {
-      await _pump(tester);
-      final breakdown = tester.widget<ZSessionQualityBreakdown>(
-        find.byType(ZSessionQualityBreakdown),
+          await _pump(tester);
+          final rings = tester.widget<ZStudyProgressRings>(
+            find.byType(ZStudyProgressRings),
+          );
+          expect(
+            rings.data,
+            ZProgressRingsData.fromResult(_result),
+            reason:
+                '🔴 le DTO doit venir de la fonction PURE du contrat existant. '
+                'Un ratio recalculé à la main divergerait silencieusement',
+          );
+        },
       );
-      expect(breakdown.byQuality, _result.byQuality);
-    });
 
-    testWidgets(
+      testWidgets(
+        '🔴 le breakdown reçoit `byQuality` VERBATIM (aucun recomptage)',
+        (tester) async {
+          await _pump(tester);
+          final breakdown = tester.widget<ZSessionQualityBreakdown>(
+            find.byType(ZSessionQualityBreakdown),
+          );
+          expect(breakdown.byQuality, _result.byQuality);
+        },
+      );
+
+      testWidgets(
         '🔴 `scale` et `passThreshold` DÉRIVENT de la `ZSrsConfig` injectée '
-        '(AD-46 : jamais une seconde source)', (tester) async {
-      // Config TRONQUÉE : si le widget redéclarait l'échelle `0..5` en dur, il
-      // ignorerait cette config et ce test ROUGIRAIT.
-      const truncated = ZSrsConfig(minQuality: 1, passThreshold: 2);
-      await tester.pumpWidget(
-        _wrap(
-          ZSessionSummaryView(
-            result: _result,
-            duration: Duration.zero,
-            config: truncated,
-            onFinish: () {},
-          ),
-        ),
+        '(AD-46 : jamais une seconde source)',
+        (tester) async {
+          // Config TRONQUÉE : si le widget redéclarait l'échelle `0..5` en dur, il
+          // ignorerait cette config et ce test ROUGIRAIT.
+          const truncated = ZSrsConfig(minQuality: 1, passThreshold: 2);
+          await tester.pumpWidget(
+            _wrap(
+              ZSessionSummaryView(
+                result: _result,
+                duration: Duration.zero,
+                config: truncated,
+                onFinish: () {},
+              ),
+            ),
+          );
+          await tester.pump();
+          final breakdown = tester.widget<ZSessionQualityBreakdown>(
+            find.byType(ZSessionQualityBreakdown),
+          );
+          expect(breakdown.scale, ZQualityScale.fromConfig(truncated));
+          expect(breakdown.scale.min, 1);
+          expect(breakdown.passThreshold, 2);
+        },
       );
-      await tester.pump();
-      final breakdown = tester.widget<ZSessionQualityBreakdown>(
-        find.byType(ZSessionQualityBreakdown),
-      );
-      expect(breakdown.scale, ZQualityScale.fromConfig(truncated));
-      expect(breakdown.scale.min, 1);
-      expect(breakdown.passThreshold, 2);
-    });
-  });
+    },
+  );
 
   group('🎯 AC2 — stats : total / MAÎTRISÉES / durée', () {
     testWidgets(
-        '🔴 « maîtrisées » affiche 3 (q4+q5), JAMAIS 6 (`result.correct`)',
-        (tester) async {
-      await _pump(tester);
-      expect(
-        _valueOf(tester, ZSessionSummaryView.masteredValueKey),
-        '$_expectedMastered',
-        reason: '🔴 R3-AC2-(a) : brancher `masteredCount` sur `result.correct` '
-            'affiche 6 et fait ROUGIR ce test. `correct` = q >= passThreshold '
-            '(q3+) ; maîtrisée = q4-5 — DEUX concepts distincts',
-      );
-      // 🔴 L'AC2 OPPOSE explicitement les deux nombres : on vérifie que le
-      // corpus est bien discriminant, sinon ce test ne prouverait rien.
-      expect(
-        _expectedMastered,
-        isNot(_corpusCorrect),
-        reason: 'si le corpus rendait `correct == mastered`, ce test serait '
-            'INCAPABLE de rougir',
-      );
-      expect(_valueOf(tester, ZSessionSummaryView.masteredValueKey),
-          isNot('$_corpusCorrect'));
-    });
+      '🔴 « maîtrisées » affiche 3 (q4+q5), JAMAIS 6 (`result.correct`)',
+      (tester) async {
+        await _pump(tester);
+        expect(
+          _valueOf(tester, ZSessionSummaryView.masteredValueKey),
+          '$_expectedMastered',
+          reason:
+              '🔴 R3-AC2-(a) : brancher `masteredCount` sur `result.correct` '
+              'affiche 6 et fait ROUGIR ce test. `correct` = q >= passThreshold '
+              '(q3+) ; maîtrisée = q4-5 — DEUX concepts distincts',
+        );
+        // 🔴 L'AC2 OPPOSE explicitement les deux nombres : on vérifie que le
+        // corpus est bien discriminant, sinon ce test ne prouverait rien.
+        expect(
+          _expectedMastered,
+          isNot(_corpusCorrect),
+          reason:
+              'si le corpus rendait `correct == mastered`, ce test serait '
+              'INCAPABLE de rougir',
+        );
+        expect(
+          _valueOf(tester, ZSessionSummaryView.masteredValueKey),
+          isNot('$_corpusCorrect'),
+        );
+      },
+    );
 
     testWidgets('« totales » affiche `result.total` (8)', (tester) async {
       await _pump(tester);
       expect(_valueOf(tester, ZSessionSummaryView.totalValueKey), '8');
     });
 
-    testWidgets('🔴 la durée affichée est la `Duration` INJECTÉE',
-        (tester) async {
+    testWidgets('🔴 la durée affichée est la `Duration` INJECTÉE', (
+      tester,
+    ) async {
       await _pump(tester, duration: const Duration(minutes: 3, seconds: 25));
       expect(
         _valueOf(tester, ZSessionSummaryView.durationValueKey),
@@ -240,28 +258,30 @@ void main() {
       expect(_valueOf(tester, ZSessionSummaryView.durationValueKey), '12:07');
     });
 
-    testWidgets('🔴 le seuil de maîtrise est DÉRIVÉ (`scale.max - 1`), jamais 4',
-        (tester) async {
-      // R3-AC2-(b) : avec le seuil dérivé (4), on attend 3 (q4+q5). Si le seuil
-      // devenait `scale.max` (5), on obtiendrait 1 (q5 seul) ⇒ ROUGE.
-      await _pump(tester);
-      expect(_valueOf(tester, ZSessionSummaryView.masteredValueKey), '3');
+    testWidgets(
+      '🔴 le seuil de maîtrise est DÉRIVÉ (`scale.max - 1`), jamais 4',
+      (tester) async {
+        // R3-AC2-(b) : avec le seuil dérivé (4), on attend 3 (q4+q5). Si le seuil
+        // devenait `scale.max` (5), on obtiendrait 1 (q5 seul) ⇒ ROUGE.
+        await _pump(tester);
+        expect(_valueOf(tester, ZSessionSummaryView.masteredValueKey), '3');
 
-      // Preuve de la DÉRIVATION : un seuil explicitement injecté est HONORÉ ⇒
-      // le défaut vient bien d'un calcul, pas d'un `4` enfoui.
-      await _pump(tester, masteredThreshold: 5);
-      expect(
-        _valueOf(tester, ZSessionSummaryView.masteredValueKey),
-        '1',
-        reason: 'seuil 5 ⇒ q5 seul ⇒ 1 (attendu écrit à la main)',
-      );
-      await _pump(tester, masteredThreshold: 3);
-      expect(
-        _valueOf(tester, ZSessionSummaryView.masteredValueKey),
-        '6',
-        reason: 'seuil 3 ⇒ q3+q4+q5 = 3+2+1 = 6 (attendu écrit à la main)',
-      );
-    });
+        // Preuve de la DÉRIVATION : un seuil explicitement injecté est HONORÉ ⇒
+        // le défaut vient bien d'un calcul, pas d'un `4` enfoui.
+        await _pump(tester, masteredThreshold: 5);
+        expect(
+          _valueOf(tester, ZSessionSummaryView.masteredValueKey),
+          '1',
+          reason: 'seuil 5 ⇒ q5 seul ⇒ 1 (attendu écrit à la main)',
+        );
+        await _pump(tester, masteredThreshold: 3);
+        expect(
+          _valueOf(tester, ZSessionSummaryView.masteredValueKey),
+          '6',
+          reason: 'seuil 3 ⇒ q3+q4+q5 = 3+2+1 = 6 (attendu écrit à la main)',
+        );
+      },
+    );
 
     test('🔴 `zMasteredCount` — fonction PURE, attendus LITTÉRAUX', () {
       final scale = ZQualityScale.fromConfig(const ZSrsConfig());
@@ -280,8 +300,7 @@ void main() {
       expect(zMasteredCount(const <String, int>{}, scale, 4), 0);
     });
 
-    test(
-        '🔴 AD-10/D3 — un cran NÉGATIF n\'est JAMAIS compté (« Maîtrisées : -1 » '
+    test('🔴 AD-10/D3 — un cran NÉGATIF n\'est JAMAIS compté (« Maîtrisées : -1 » '
         'ne peut plus s\'afficher)', () {
       final scale = ZQualityScale.fromConfig(const ZSrsConfig());
       // `ZStudySessionResult._decodeByQuality` ne filtre que le TYPE (`is int`) :
@@ -290,7 +309,8 @@ void main() {
       expect(
         zMasteredCount(const <String, int>{'5': -3, '4': 2}, scale, 4),
         2,
-        reason: '🔴 sans plancher : -3 + 2 = -1 ⇒ l\'écran affiche « Maîtrisées '
+        reason:
+            '🔴 sans plancher : -3 + 2 = -1 ⇒ l\'écran affiche « Maîtrisées '
             ': -1 » et le lecteur d\'écran annonce « moins un ». Aucun throw, '
             'aucun test rouge — bug SILENCIEUX',
       );
@@ -316,7 +336,8 @@ void main() {
       expect(
         _valueOf(tester, ZSessionSummaryView.masteredValueKey),
         '2',
-        reason: '🔴 jamais « -1 » — cohérent avec `_decodeCount` du VO '
+        reason:
+            '🔴 jamais « -1 » — cohérent avec `_decodeCount` du VO '
             '(« négatif → 0 ») et avec `_formatDuration` (jamais « -1:-30 »)',
       );
     });
@@ -331,9 +352,9 @@ void main() {
   // que le dev avait corrigé. C'est là toute la leçon : un défaut trouvé est un
   // MOTIF à balayer, et seul un test qui regarde le BON canal peut le tenir.
   group('🎯 AC10/AD-13 (D1) — l\'arbre SÉMANTIQUE des stats ne BÉGAIE pas', () {
-    testWidgets(
-        '🔴 chaque tuile annonce « libellé » + « valeur » UNE seule fois',
-        (tester) async {
+    testWidgets('🔴 chaque tuile annonce « libellé » + « valeur » UNE seule fois', (
+      tester,
+    ) async {
       await _pump(tester);
 
       // Attendus écrits À LA MAIN (corpus : total=8, mastered=q4+q5=3,
@@ -351,30 +372,36 @@ void main() {
         expect(
           node.label,
           label,
-          reason: '🔴 D1 : sans `ExcludeSemantics`, le libellé du `Semantics` '
+          reason:
+              '🔴 D1 : sans `ExcludeSemantics`, le libellé du `Semantics` '
               'parent FUSIONNE avec les 2 `Text` enfants et le nœud annonce '
               '« $label\\n$value\\n$label » — MESURÉ. L\'apprenant sous '
               'TalkBack/VoiceOver entend le libellé DEUX fois et la valeur DEUX '
               'fois, sur les 3 tuiles du bilan (fonction centrale de FR-SU8)',
         );
-        expect(node.value, value,
-            reason: '🔴 la valeur est portée par `Semantics(value:)`');
+        expect(
+          node.value,
+          value,
+          reason: '🔴 la valeur est portée par `Semantics(value:)`',
+        );
       }
     });
 
     testWidgets(
-        '🔬 contre-preuve — le canal VISUEL reste intact (AD-13 : la couleur '
-        'n\'est jamais seul canal)', (tester) async {
-      await _pump(tester);
-      // `ExcludeSemantics` ne retire QUE la sémantique : les textes restent
-      // RENDUS. Une correction qui les effacerait serait pire que le défaut.
-      expect(find.text('Cartes'), findsOneWidget);
-      expect(find.text('Maîtrisées'), findsOneWidget);
-      expect(find.text('Durée'), findsOneWidget);
-      expect(_valueOf(tester, ZSessionSummaryView.totalValueKey), '8');
-      expect(_valueOf(tester, ZSessionSummaryView.masteredValueKey), '3');
-      expect(_valueOf(tester, ZSessionSummaryView.durationValueKey), '03:25');
-    });
+      '🔬 contre-preuve — le canal VISUEL reste intact (AD-13 : la couleur '
+      'n\'est jamais seul canal)',
+      (tester) async {
+        await _pump(tester);
+        // `ExcludeSemantics` ne retire QUE la sémantique : les textes restent
+        // RENDUS. Une correction qui les effacerait serait pire que le défaut.
+        expect(find.text('Cartes'), findsOneWidget);
+        expect(find.text('Maîtrisées'), findsOneWidget);
+        expect(find.text('Durée'), findsOneWidget);
+        expect(_valueOf(tester, ZSessionSummaryView.totalValueKey), '8');
+        expect(_valueOf(tester, ZSessionSummaryView.masteredValueKey), '3');
+        expect(_valueOf(tester, ZSessionSummaryView.durationValueKey), '03:25');
+      },
+    );
   });
 
   group('🎯 AC3 — les boutons sont TAPÉS, et l\'AUTRE callback est vérifié', () {
@@ -396,7 +423,8 @@ void main() {
       expect(
         continues,
         0,
-        reason: '🔴 « présence ≠ association » : deux boutons câblés sur le '
+        reason:
+            '🔴 « présence ≠ association » : deux boutons câblés sur le '
             'MÊME callback passeraient un test qui ne compte qu\'un seul',
       );
     });
@@ -419,60 +447,80 @@ void main() {
       expect(
         finishes,
         0,
-        reason: '🔴 R3-AC3 : permuter `onFinish`/`onContinue` fait ROUGIR ce '
+        reason:
+            '🔴 R3-AC3 : permuter `onFinish`/`onContinue` fait ROUGIR ce '
             'test (défaut su-4 : le bouton « précédent » qui AVANÇAIT)',
       );
     });
 
-    testWidgets('le libellé « Encore N dues » porte N = 7 (jamais un recompte)',
-        (tester) async {
-      await _pump(tester, dueRemaining: 7, onContinue: () {});
-      expect(find.text('Encore 7 dues'), findsOneWidget);
-      // …et N SUIT le paramètre (sans quoi un `7` en dur passerait).
-      await _pump(tester, dueRemaining: 2, onContinue: () {});
-      expect(find.text('Encore 2 dues'), findsOneWidget);
-      expect(find.text('Encore 7 dues'), findsNothing);
-    });
+    testWidgets(
+      'le libellé « Encore N dues » porte N = 7 (jamais un recompte)',
+      (tester) async {
+        await _pump(tester, dueRemaining: 7, onContinue: () {});
+        expect(find.text('Encore 7 dues'), findsOneWidget);
+        // …et N SUIT le paramètre (sans quoi un `7` en dur passerait).
+        await _pump(tester, dueRemaining: 2, onContinue: () {});
+        expect(find.text('Encore 2 dues'), findsOneWidget);
+        expect(find.text('Encore 7 dues'), findsNothing);
+      },
+    );
 
-    testWidgets('🔴 `dueRemaining == 0` ⇒ bouton ABSENT (jamais grisé, AD-45)',
-        (tester) async {
-      await _pump(tester, dueRemaining: 0, onContinue: () {});
-      expect(find.byKey(ZSessionSummaryView.continueButtonKey), findsNothing);
-      // « Terminer » reste, lui, toujours présent.
-      expect(find.byKey(ZSessionSummaryView.finishButtonKey), findsOneWidget);
-    });
+    testWidgets(
+      '🔴 `dueRemaining == 0` ⇒ bouton ABSENT (jamais grisé, AD-45)',
+      (tester) async {
+        await _pump(tester, dueRemaining: 0, onContinue: () {});
+        expect(find.byKey(ZSessionSummaryView.continueButtonKey), findsNothing);
+        // « Terminer » reste, lui, toujours présent.
+        expect(find.byKey(ZSessionSummaryView.finishButtonKey), findsOneWidget);
+      },
+    );
 
-    testWidgets('chaque bouton est une cible ≥ 48 dp avec `Semantics(button:)`',
-        (tester) async {
-      await _pump(tester, dueRemaining: 7, onContinue: () {});
-      for (final key in <ValueKey<String>>[
-        ZSessionSummaryView.finishButtonKey,
-        ZSessionSummaryView.continueButtonKey,
-      ]) {
-        final size = tester.getSize(find.byKey(key));
-        // ⚠️ L'attendu `48` est écrit À LA MAIN (jamais
-        // `ZSessionSummaryView.minTarget` : comparer à la constante du code
-        // serait tautologique — défaut su-4).
-        expect(size.height, greaterThanOrEqualTo(48.0), reason: '$key : AD-13');
-        expect(size.width, greaterThanOrEqualTo(48.0), reason: '$key : AD-13');
-      }
-      // ⚠️ On assère les propriétés qui PORTENT l'AC — `isButton`, le libellé
-      // l10n, et une action de tap RÉELLE — sans sur-contraindre le reste :
-      // `InkWell` ajoute légitimement une action `focus`, et un
-      // `matchesSemantics` exhaustif rougirait sur du bruit d'implémentation
-      // (une garde qui crie au loup finit désactivée).
-      final finish =
-          tester.getSemantics(find.byKey(ZSessionSummaryView.finishButtonKey));
-      expect(finish.label, 'Terminer');
-      expect(finish.hasFlag(SemanticsFlag.isButton), isTrue,
-          reason: 'AD-13 : le rôle « bouton » doit être annoncé');
-      expect(
-        finish.getSemanticsData().hasAction(SemanticsAction.tap),
-        isTrue,
-        reason: 'un bouton sans action de tap est inatteignable au lecteur '
-            'd\'écran',
-      );
-    });
+    testWidgets(
+      'chaque bouton est une cible ≥ 48 dp avec `Semantics(button:)`',
+      (tester) async {
+        await _pump(tester, dueRemaining: 7, onContinue: () {});
+        for (final key in <ValueKey<String>>[
+          ZSessionSummaryView.finishButtonKey,
+          ZSessionSummaryView.continueButtonKey,
+        ]) {
+          final size = tester.getSize(find.byKey(key));
+          // ⚠️ L'attendu `48` est écrit À LA MAIN (jamais
+          // `ZSessionSummaryView.minTarget` : comparer à la constante du code
+          // serait tautologique — défaut su-4).
+          expect(
+            size.height,
+            greaterThanOrEqualTo(48.0),
+            reason: '$key : AD-13',
+          );
+          expect(
+            size.width,
+            greaterThanOrEqualTo(48.0),
+            reason: '$key : AD-13',
+          );
+        }
+        // ⚠️ On assère les propriétés qui PORTENT l'AC — `isButton`, le libellé
+        // l10n, et une action de tap RÉELLE — sans sur-contraindre le reste :
+        // `InkWell` ajoute légitimement une action `focus`, et un
+        // `matchesSemantics` exhaustif rougirait sur du bruit d'implémentation
+        // (une garde qui crie au loup finit désactivée).
+        final finish = tester.getSemantics(
+          find.byKey(ZSessionSummaryView.finishButtonKey),
+        );
+        expect(finish.label, 'Terminer');
+        expect(
+          finish.hasFlag(SemanticsFlag.isButton),
+          isTrue,
+          reason: 'AD-13 : le rôle « bouton » doit être annoncé',
+        );
+        expect(
+          finish.getSemanticsData().hasAction(SemanticsAction.tap),
+          isTrue,
+          reason:
+              'un bouton sans action de tap est inatteignable au lecteur '
+              'd\'écran',
+        );
+      },
+    );
   });
 
   // 🔴 D6 — le RACCORD du feedback pédagogique. Les deux pièces
@@ -482,58 +530,74 @@ void main() {
   // laissaient la suite VERTE à 397 — alors que le titre même de la story est
   // « écran de fin ET feedback pédagogique » (FR-SU9/AC5).
   group('🎯 AC5 (D6) — le SLOT de feedback est réellement CÂBLÉ', () {
-    testWidgets('🔴 `feedbackKey` ⇒ le message de la banque par DÉFAUT est RENDU '
-        '(texte littéral, locale FR)', (tester) async {
-      await _pumpLocalized(
-        tester,
-        'fr',
-        feedbackKey: zFeedbackKeyFor(ZFeedbackTier.exceptional),
-      );
-      expect(find.byType(ZSessionFeedbackText), findsOneWidget);
-      expect(
-        find.text('Exceptionnel — juste, sans indice et en un éclair !'),
-        findsOneWidget,
-        reason: '🔴 R3-D6 : `if (widget.feedbackKey != null)` → `if (false)` '
-            'fait ROUGIR ce test. Sans lui, l\'apprenant ne reçoit AUCUN '
-            'feedback pédagogique et la suite reste verte',
-      );
-    });
+    testWidgets(
+      '🔴 `feedbackKey` ⇒ le message de la banque par DÉFAUT est RENDU '
+      '(texte littéral, locale FR)',
+      (tester) async {
+        await _pumpLocalized(
+          tester,
+          'fr',
+          feedbackKey: zFeedbackKeyFor(ZFeedbackTier.exceptional),
+        );
+        expect(find.byType(ZSessionFeedbackText), findsOneWidget);
+        expect(
+          find.text('Exceptionnel — juste, sans indice et en un éclair !'),
+          findsOneWidget,
+          reason:
+              '🔴 R3-D6 : `if (widget.feedbackKey != null)` → `if (false)` '
+              'fait ROUGIR ce test. Sans lui, l\'apprenant ne reçoit AUCUN '
+              'feedback pédagogique et la suite reste verte',
+        );
+      },
+    );
 
     testWidgets(
-        '🔴 une banque INJECTÉE surcharge INTÉGRALEMENT la banque par défaut '
-        '— à travers le SLOT de la vue', (tester) async {
-      await _pumpLocalized(
-        tester,
-        'fr',
-        feedbackKey: zFeedbackKeyFor(ZFeedbackTier.exceptional),
-        feedbackBank: const _WitnessBank(),
-      );
-      expect(
-        find.text('TÉMOIN-SURCHARGE'),
-        findsOneWidget,
-        reason: '🔴 R3-D6 : `bank: widget.feedbackBank` → `bank: null` fait '
-            'ROUGIR ce test. Sans lui, la banque de l\'app est IGNORÉE au '
-            'profit de la banque par défaut — le mauvais TON, en silence',
-      );
-      expect(
-        find.text('Exceptionnel — juste, sans indice et en un éclair !'),
-        findsNothing,
-        reason: '🔴 AC5 : « surcharge INTÉGRALE » — jamais une fusion des deux '
-            'banques',
-      );
-    });
+      '🔴 une banque INJECTÉE surcharge INTÉGRALEMENT la banque par défaut '
+      '— à travers le SLOT de la vue',
+      (tester) async {
+        await _pumpLocalized(
+          tester,
+          'fr',
+          feedbackKey: zFeedbackKeyFor(ZFeedbackTier.exceptional),
+          feedbackBank: const _WitnessBank(),
+        );
+        expect(
+          find.text('TÉMOIN-SURCHARGE'),
+          findsOneWidget,
+          reason:
+              '🔴 R3-D6 : `bank: widget.feedbackBank` → `bank: null` fait '
+              'ROUGIR ce test. Sans lui, la banque de l\'app est IGNORÉE au '
+              'profit de la banque par défaut — le mauvais TON, en silence',
+        );
+        expect(
+          find.text('Exceptionnel — juste, sans indice et en un éclair !'),
+          findsNothing,
+          reason:
+              '🔴 AC5 : « surcharge INTÉGRALE » — jamais une fusion des deux '
+              'banques',
+        );
+      },
+    );
 
-    testWidgets('🔴 `feedbackKey: null` (défaut) ⇒ AUCUN message rendu',
-        (tester) async {
+    testWidgets('🔴 `feedbackKey: null` (défaut) ⇒ AUCUN message rendu', (
+      tester,
+    ) async {
       await _pumpLocalized(tester, 'fr');
       expect(find.byType(ZSessionFeedbackText), findsNothing);
     });
 
     testWidgets('🔴 une clé INCONNUE ne rend rien (jamais la clé technique) '
         '— AD-10', (tester) async {
-      await _pumpLocalized(tester, 'fr', feedbackKey: 'zcrud.session.feedback.xxx');
-      expect(find.text('zcrud.session.feedback.xxx'), findsNothing,
-          reason: '🔴 afficher la clé brute à un apprenant est pire que rien');
+      await _pumpLocalized(
+        tester,
+        'fr',
+        feedbackKey: 'zcrud.session.feedback.xxx',
+      );
+      expect(
+        find.text('zcrud.session.feedback.xxx'),
+        findsNothing,
+        reason: '🔴 afficher la clé brute à un apprenant est pire que rien',
+      );
     });
   });
 
@@ -546,29 +610,35 @@ void main() {
   // a RIEN du tout. Lire des propriétés ne pompe aucune frame : aucun risque T2.
   group('🎯 AC6 (D5) — les réglages IMPOSÉS du `ConfettiWidget` sont GARDÉS', () {
     testWidgets('🔴 shouldLoop=false, pauseEmissionOnLowFrameRate=false, '
-        'burst COURT, et couleurs du THÈME (jamais aléatoires)', (tester) async {
+        'burst COURT, et couleurs du THÈME (jamais aléatoires)', (
+      tester,
+    ) async {
       await _pump(tester, celebration: ZSummaryCelebration.confetti);
       // 🚫 JAMAIS `pumpAndSettle` ici (T2 : `_continueAnimation()` est HORS du
       // `if (!shouldLoop)` ⇒ peut ne jamais converger).
-      final confetti =
-          tester.widget<ConfettiWidget>(find.byType(ConfettiWidget));
+      final confetti = tester.widget<ConfettiWidget>(
+        find.byType(ConfettiWidget),
+      );
 
       expect(
         confetti.shouldLoop,
         isFalse,
-        reason: '🔴 T2 : `shouldLoop: true` ⇒ rafale EN BOUCLE, et tout '
+        reason:
+            '🔴 T2 : `shouldLoop: true` ⇒ rafale EN BOUCLE, et tout '
             '`pumpAndSettle` du repo cesserait de converger',
       );
       expect(
         confetti.pauseEmissionOnLowFrameRate,
         isFalse,
-        reason: '🔴 T3 : c\'est le DÉFAUT du paquet — sur un appareil qui rame, '
+        reason:
+            '🔴 T3 : c\'est le DÉFAUT du paquet — sur un appareil qui rame, '
             'l\'émission se suspend et la célébration ne part pas',
       );
       expect(
         confetti.colors,
         isNotNull,
-        reason: '🔴 T4 : `colors: null` ⇒ le paquet tire des couleurs '
+        reason:
+            '🔴 T4 : `colors: null` ⇒ le paquet tire des couleurs '
             'ALÉATOIRES, hors thème — NFR-SU5 VIOLÉE, en silence',
       );
 
@@ -592,11 +662,15 @@ void main() {
       expect(
         burst,
         lessThan(const Duration(seconds: 2)),
-        reason: '🔴 T1 : le défaut du paquet est 30 s ⇒ une célébration de 30 '
+        reason:
+            '🔴 T1 : le défaut du paquet est 30 s ⇒ une célébration de 30 '
             'SECONDES. La borne « < 2 s » est écrite à la main',
       );
-      expect(burst.inMicroseconds, greaterThan(0),
-          reason: '🔴 T1 : `Duration.zero` fait ASSERT-FAIL dans le paquet');
+      expect(
+        burst.inMicroseconds,
+        greaterThan(0),
+        reason: '🔴 T1 : `Duration.zero` fait ASSERT-FAIL dans le paquet',
+      );
 
       // T6 — le confetti est DÉCORATIF : rien ne doit transiter par un canal
       // que le lecteur d'écran ne comprend pas (le paquet n'a AUCUN `Semantics`).
@@ -606,7 +680,8 @@ void main() {
           matching: find.byType(ExcludeSemantics),
         ),
         findsOneWidget,
-        reason: '🔴 T6 : sans `ExcludeSemantics`, un nœud décoratif et vide de '
+        reason:
+            '🔴 T6 : sans `ExcludeSemantics`, un nœud décoratif et vide de '
             'sens serait annoncé',
       );
 
@@ -615,9 +690,123 @@ void main() {
     });
   });
 
+  group('🎉 VIS-4 — recette de célébration injectable', () {
+    testWidgets(
+      'G1 — sans injection, les réglages et le trophée historiques sont réellement montés',
+      (tester) async {
+        await _pump(tester, celebration: ZSummaryCelebration.confetti);
+
+        final confetti = tester.widget<ConfettiWidget>(
+          find.byType(ConfettiWidget),
+        );
+        expect(
+          confetti.confettiController.duration,
+          const Duration(milliseconds: 800),
+        );
+        expect(confetti.numberOfParticles, 12);
+        expect(confetti.emissionFrequency, 0.05);
+        expect(confetti.gravity, 0.3);
+        expect(
+          tester
+              .widget<Icon>(find.byKey(ZSessionSummaryView.trophyIconKey))
+              .icon,
+          Icons.emoji_events,
+        );
+        final halo = tester.widget<Container>(
+          find.ancestor(
+            of: find.byKey(ZSessionSummaryView.trophyIconKey),
+            matching: find.byType(Container),
+          ),
+        );
+        expect((halo.decoration! as BoxDecoration).shape, BoxShape.circle);
+      },
+    );
+
+    testWidgets(
+      'G2 — le spec remplace les réglages et le décor réellement montés',
+      (tester) async {
+        const decoration = BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(17)),
+        );
+        const spec = ZCelebrationSpec(
+          burstDuration: Duration(seconds: 5),
+          numberOfParticles: 50,
+          emissionFrequency: 0.03,
+          gravity: 0.15,
+          trophyDecoration: decoration,
+        );
+        await _pump(
+          tester,
+          celebration: ZSummaryCelebration.confetti,
+          celebrationSpec: spec,
+        );
+
+        final confetti = tester.widget<ConfettiWidget>(
+          find.byType(ConfettiWidget),
+        );
+        expect(
+          confetti.confettiController.duration,
+          const Duration(seconds: 5),
+        );
+        expect(confetti.numberOfParticles, 50);
+        expect(confetti.emissionFrequency, 0.03);
+        expect(confetti.gravity, 0.15);
+        final halo = tester.widget<Container>(
+          find.ancestor(
+            of: find.byKey(ZSessionSummaryView.trophyIconKey),
+            matching: find.byType(Container),
+          ),
+        );
+        expect(halo.decoration, decoration);
+      },
+    );
+
+    testWidgets('G3 — l’icône témoin du spec est celle réellement montée', (
+      tester,
+    ) async {
+      const witness = Icons.rocket_launch;
+      await _pump(
+        tester,
+        celebration: ZSummaryCelebration.subtle,
+        celebrationSpec: const ZCelebrationSpec(trophyIcon: witness),
+      );
+      expect(
+        find.byIcon(witness),
+        findsOneWidget,
+        reason:
+            'une icône historique en dur ne satisfait pas le contrat injecté',
+      );
+      expect(
+        tester.widget<Icon>(find.byKey(ZSessionSummaryView.trophyIconKey)).icon,
+        witness,
+      );
+    });
+
+    testWidgets(
+      'G4 — le résumé transmet les quatre paramètres discriminants aux anneaux',
+      (tester) async {
+        const spec = ZCelebrationSpec(
+          ringsDiameter: 137,
+          ringsStrokeWidth: 7,
+          ringsTrackColorKey: 'trace-witness',
+          ringsProgressColorKey: 'progress-witness',
+        );
+        await _pump(tester, celebrationSpec: spec);
+        final rings = tester.widget<ZStudyProgressRings>(
+          find.byType(ZStudyProgressRings),
+        );
+        expect(rings.diameter, 137);
+        expect(rings.strokeWidth, 7);
+        expect(rings.trackColorKey, 'trace-witness');
+        expect(rings.progressColorKey, 'progress-witness');
+      },
+    );
+  });
+
   group('🎯 AC11 — enums > booléens', () {
-    testWidgets('🔴 le défaut est OPT-OUT : `ZSummaryCelebration.none`',
-        (tester) async {
+    testWidgets('🔴 le défaut est OPT-OUT : `ZSummaryCelebration.none`', (
+      tester,
+    ) async {
       await _pump(tester);
       final view = tester.widget<ZSessionSummaryView>(
         find.byType(ZSessionSummaryView),
@@ -650,7 +839,9 @@ void main() {
           .split('\n')
           .where((l) {
             final t = l.trim();
-            return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/');
+            return !t.startsWith('//') &&
+                !t.startsWith('*') &&
+                !t.startsWith('/');
           })
           .join('\n');
       expect(

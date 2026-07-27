@@ -1,5 +1,5 @@
 // AC4/AC5 : `ZcrudScope` (InheritedWidget, défaut zéro-config) + seams throw.
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -19,33 +19,38 @@ class _FakeListRenderer extends ZListRenderer {
     BuildContext context,
     ZListRenderRequest request, {
     ZListInteraction? interaction,
-  }) =>
-      const SizedBox();
+  }) => const SizedBox();
 }
 
 void main() {
-  testWidgets('of() sans scope dans l\'arbre lève ZScopeError (AC5)',
-      (tester) async {
+  testWidgets('of() sans scope dans l\'arbre lève ZScopeError (AC5)', (
+    tester,
+  ) async {
     late BuildContext ctx;
     await tester.pumpWidget(
-      Builder(builder: (context) {
-        ctx = context;
-        return const SizedBox();
-      }),
+      Builder(
+        builder: (context) {
+          ctx = context;
+          return const SizedBox();
+        },
+      ),
     );
     expect(() => ZcrudScope.of(ctx), throwsA(isA<ZScopeError>()));
     expect(ZcrudScope.maybeOf(ctx), isNull);
   });
 
-  testWidgets('scope par défaut expose ZAllowAllAcl permissive (AC5)',
-      (tester) async {
+  testWidgets('scope par défaut expose ZAllowAllAcl permissive (AC5)', (
+    tester,
+  ) async {
     late ZcrudScope scope;
     await tester.pumpWidget(
       ZcrudScope(
-        child: Builder(builder: (context) {
-          scope = ZcrudScope.of(context);
-          return const SizedBox();
-        }),
+        child: Builder(
+          builder: (context) {
+            scope = ZcrudScope.of(context);
+            return const SizedBox();
+          },
+        ),
       ),
     );
     expect(scope.acl, isA<ZAllowAllAcl>());
@@ -53,31 +58,36 @@ void main() {
     expect(scope.acl.can(ZCrudAction.delete), isTrue);
   });
 
-  testWidgets('resolver non fourni (défaut throwing) lève ZScopeError (AC4)',
-      (tester) async {
+  testWidgets('resolver non fourni (défaut throwing) lève ZScopeError (AC4)', (
+    tester,
+  ) async {
     late ZcrudScope scope;
     await tester.pumpWidget(
       ZcrudScope(
-        child: Builder(builder: (context) {
-          scope = ZcrudScope.of(context);
-          return const SizedBox();
-        }),
+        child: Builder(
+          builder: (context) {
+            scope = ZcrudScope.of(context);
+            return const SizedBox();
+          },
+        ),
       ),
     );
-    expect(() => scope.resolver.resolve<String>(),
-        throwsA(isA<ZScopeError>()));
+    expect(() => scope.resolver.resolve<String>(), throwsA(isA<ZScopeError>()));
   });
 
-  testWidgets('resolver fourni retourne la valeur injectée (AC4)',
-      (tester) async {
+  testWidgets('resolver fourni retourne la valeur injectée (AC4)', (
+    tester,
+  ) async {
     late ZcrudScope scope;
     await tester.pumpWidget(
       ZcrudScope(
         resolver: const _FakeResolver('injecté'),
-        child: Builder(builder: (context) {
-          scope = ZcrudScope.of(context);
-          return const SizedBox();
-        }),
+        child: Builder(
+          builder: (context) {
+            scope = ZcrudScope.of(context);
+            return const SizedBox();
+          },
+        ),
       ),
     );
     expect(scope.resolver.resolve<String>(), 'injecté');
@@ -89,8 +99,11 @@ void main() {
     const r1 = ZDependencyResolver.throwing;
     const scopeA = ZcrudScope(resolver: r1, acl: acl, child: child);
     const scopeSame = ZcrudScope(resolver: r1, acl: acl, child: child);
-    const scopeDiffResolver =
-        ZcrudScope(resolver: _FakeResolver('x'), acl: acl, child: child);
+    const scopeDiffResolver = ZcrudScope(
+      resolver: _FakeResolver('x'),
+      acl: acl,
+      child: child,
+    );
 
     expect(scopeA.updateShouldNotify(scopeSame), isFalse);
     expect(scopeA.updateShouldNotify(scopeDiffResolver), isTrue);
@@ -102,8 +115,9 @@ void main() {
     expect(scope.theme, isNull);
   });
 
-  testWidgets('E2-8 : labels/theme injectés exposés par of() (AC5/AC9)',
-      (tester) async {
+  testWidgets('E2-8 : labels/theme injectés exposés par of() (AC5/AC9)', (
+    tester,
+  ) async {
     final labels = ZcrudLabels({'save': 'Valider'});
     const theme = ZcrudTheme();
     late ZcrudScope scope;
@@ -111,10 +125,12 @@ void main() {
       ZcrudScope(
         labels: labels,
         theme: theme,
-        child: Builder(builder: (context) {
-          scope = ZcrudScope.of(context);
-          return const SizedBox();
-        }),
+        child: Builder(
+          builder: (context) {
+            scope = ZcrudScope.of(context);
+            return const SizedBox();
+          },
+        ),
       ),
     );
     expect(identical(scope.labels, labels), isTrue);
@@ -136,10 +152,7 @@ void main() {
       ),
       isFalse,
     );
-    expect(
-      base.updateShouldNotify(const ZcrudScope(child: child)),
-      isTrue,
-    );
+    expect(base.updateShouldNotify(const ZcrudScope(child: child)), isTrue);
   });
 
   test('E2-8 : updateShouldNotify sensible à labels/theme (AC9)', () {
@@ -169,4 +182,64 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'G9 : les 18 seams, dont reorder/drop/gradient, notifient isolément',
+    () {
+      const child = SizedBox();
+      ZGradientSpec? gradientA(ColorScheme scheme, String key) => null;
+      ZGradientSpec? gradientB(ColorScheme scheme, String key) => null;
+      final base = ZcrudScope(child: child);
+      expect(base.updateShouldNotify(const ZcrudScope(child: child)), isFalse);
+      expect(
+        base.updateShouldNotify(
+          const ZcrudScope(
+            reorderRenderer: _FakeReorderRenderer(),
+            child: child,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        base.updateShouldNotify(
+          const ZcrudScope(
+            dropRegionRenderer: _FakeDropRegionRenderer(),
+            child: child,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        base.updateShouldNotify(
+          ZcrudScope(gradientResolver: gradientA, child: child),
+        ),
+        isTrue,
+      );
+      expect(
+        ZcrudScope(
+          gradientResolver: gradientA,
+          child: child,
+        ).updateShouldNotify(
+          ZcrudScope(gradientResolver: gradientB, child: child),
+        ),
+        isTrue,
+      );
+    },
+  );
+}
+
+class _FakeReorderRenderer extends ZReorderRenderer {
+  const _FakeReorderRenderer();
+
+  @override
+  Widget build(BuildContext context, ZReorderRenderRequest request) =>
+      const SizedBox();
+}
+
+class _FakeDropRegionRenderer extends ZDropRegionRenderer {
+  const _FakeDropRegionRenderer();
+
+  @override
+  Widget build(BuildContext context, ZDropRegionRequest request) =>
+      const SizedBox();
 }

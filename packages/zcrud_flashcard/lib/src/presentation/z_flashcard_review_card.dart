@@ -58,14 +58,14 @@ import 'z_reduce_motion.dart';
 ///
 /// Valeur canonique d'une perspective douce : sans elle, `rotateY` produit un
 /// simple écrasement horizontal (aucune impression de volume).
-const double _kPerspective = 0.001;
+const double ZFlashcardReviewCardPerspective = 0.001;
 
 /// Mi-course du flip : bascule de face (θ = π/2) — la face arrière prend le
 /// relais ET reçoit sa **contre-rotation** (sinon elle s'affiche **en miroir**).
-const double _kHalfTurn = 0.5;
+const double ZFlashcardReviewCardHalfTurn = 0.5;
 
 /// Cible tap minimale Material/AD-13 (dp) — patron `z_srs_quality_buttons.dart`.
-const double _kMinTarget = 48;
+const double ZFlashcardReviewCardMinTarget = 48;
 
 /// Carte de révision d'une [ZFlashcard] : rendu adapté au type + révélation.
 class ZFlashcardReviewCard extends StatefulWidget {
@@ -73,8 +73,8 @@ class ZFlashcardReviewCard extends StatefulWidget {
   ///
   /// - [revealTransition] : transition **souhaitée** (Reduce Motion prime — AC3) ;
   /// - [contentBuilder] : slot AD-40 **opt-in** (`null` ⇒ texte brut de su-1) ;
-  /// - [transitionDuration] : durée de la transition (défaut 250 ms — valeur de
-  ///   la source canonique `SessionFlashcardView`) ;
+  /// - [transitionDuration] : override explicite de durée. La priorité est
+  ///   l'override, puis [ZcrudTheme.flipDuration], puis 250 ms ;
   /// - [onRevealChanged] : **notification sortante** de la révélation (la carte
   ///   ne cède jamais la propriété de son état — AD-2) ;
   /// - [onEdit]/[onDelete]/[onSource] : actions injectées — `null` ⇒ action **ABSENTE**
@@ -83,7 +83,7 @@ class ZFlashcardReviewCard extends StatefulWidget {
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
     this.contentBuilder,
-    this.transitionDuration = const Duration(milliseconds: 250),
+    this.transitionDuration,
     this.onRevealChanged,
     this.onEdit,
     this.onDelete,
@@ -100,8 +100,11 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ défaut texte brut.
   final ZFlashcardContentBuilder? contentBuilder;
 
-  /// Durée de la transition de révélation (défaut 250 ms).
-  final Duration transitionDuration;
+  /// Override explicite de la durée de transition.
+  ///
+  /// S'il est absent, [ZcrudTheme.flipDuration] est employé ; si ce token est
+  /// lui aussi absent, la durée historique de 250 ms est conservée.
+  final Duration? transitionDuration;
 
   /// Notifié à chaque bascule de révélation (`true` = réponse affichée).
   final ValueChanged<bool>? onRevealChanged;
@@ -123,20 +126,29 @@ class ZFlashcardReviewCard extends StatefulWidget {
   final VoidCallback? onSource;
 
   /// Clé de la rangée d'actions (testabilité — patron `buttonKeyPrefix`).
-  static const ValueKey<String> actionsKey =
-      ValueKey<String>('zFlashcardReviewCard_actions');
+  static const ValueKey<String> actionsKey = ValueKey<String>(
+    'zFlashcardReviewCard_actions',
+  );
 
   /// Clé de l'action d'édition.
-  static const ValueKey<String> editActionKey =
-      ValueKey<String>('zFlashcardReviewCard_edit');
+  static const ValueKey<String> editActionKey = ValueKey<String>(
+    'zFlashcardReviewCard_edit',
+  );
 
   /// Clé de l'action de suppression.
-  static const ValueKey<String> deleteActionKey =
-      ValueKey<String>('zFlashcardReviewCard_delete');
+  static const ValueKey<String> deleteActionKey = ValueKey<String>(
+    'zFlashcardReviewCard_delete',
+  );
 
   /// Clé de l'action « voir la source » (CR-LEX-6).
-  static const ValueKey<String> sourceActionKey =
-      ValueKey<String>('zFlashcardReviewCard_source');
+  static const ValueKey<String> sourceActionKey = ValueKey<String>(
+    'zFlashcardReviewCard_source',
+  );
+
+  /// Clé de la barre de dégradé optionnelle (testabilité du seam VIS-1).
+  static const ValueKey<String> gradientAccentKey = ValueKey<String>(
+    'zFlashcardReviewCard_gradientAccent',
+  );
 
   /// Builder de contenu **RÉELLEMENT** utilisé par `build` — **tear-off statique**
   /// quand rien n'est injecté (AC1-d/AC7).
@@ -190,6 +202,18 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// État **visuel** de la transition — **stable**, jamais recréé (AD-2).
   late final AnimationController _controller;
 
+  static const Duration _fallbackTransitionDuration = Duration(
+    milliseconds: 250,
+  );
+
+  Duration _effectiveTransitionDuration(BuildContext context) =>
+      widget.transitionDuration ??
+      ZcrudTheme.of(context).flipDuration ??
+      _fallbackTransitionDuration;
+
+  Curve _effectiveTransitionCurve(BuildContext context) =>
+      ZcrudTheme.of(context).flipCurve ?? Curves.linear;
+
   @override
   void initState() {
     super.initState();
@@ -197,23 +221,32 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     _showBack = ValueNotifier<bool>(false);
     _controller = AnimationController(
       vsync: this,
-      duration: widget.transitionDuration,
+      // `initState` ne peut pas dépendre d'un InheritedWidget. La durée de
+      // thème est appliquée juste après dans `didChangeDependencies`, sur ce
+      // controller unique et déjà stable.
+      duration: widget.transitionDuration ?? _fallbackTransitionDuration,
     )..addListener(_syncShowBack);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final duration = _effectiveTransitionDuration(context);
+    if (_controller.duration != duration) _controller.duration = duration;
   }
 
   /// Aligne [_showBack] sur le controller — `ValueNotifier` ne notifie que sur
   /// **changement** ⇒ au plus une reconstruction de face par flip.
   void _syncShowBack() {
-    _showBack.value = _controller.value >= _kHalfTurn;
+    _showBack.value = _controller.value >= ZFlashcardReviewCardHalfTurn;
   }
 
   @override
   void didUpdateWidget(covariant ZFlashcardReviewCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.transitionDuration != oldWidget.transitionDuration) {
-      // Durée ajustée SUR le controller existant — jamais de recréation (AD-2).
-      _controller.duration = widget.transitionDuration;
-    }
+    // Durée ajustée SUR le controller existant — jamais de recréation (AD-2).
+    final duration = _effectiveTransitionDuration(context);
+    if (_controller.duration != duration) _controller.duration = duration;
     if (widget.card != oldWidget.card) {
       // Carte suivante ⇒ retour à la face QUESTION (AC7). Sans ce reset, la
       // carte suivante s'ouvrirait réponse déjà révélée — bug fonctionnel réel.
@@ -282,9 +315,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// **tuerait la révélation par tap** sur le chemin d'usage documenté (AC6). Les
   /// `Semantics` du sous-arbre, elles, restent lisibles (AD-13) : c'est
   /// l'**interactivité** qui est neutralisée, pas l'accessibilité.
-  Widget _content(BuildContext context, String content) => IgnorePointer(
-        child: widget.resolvedContentBuilder(context, content),
-      );
+  Widget _content(BuildContext context, String content) =>
+      IgnorePointer(child: widget.resolvedContentBuilder(context, content));
 
   /// Repli l10n d'un contenu absent (AD-10) — **jamais** un écran vide.
   ///
@@ -292,12 +324,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// libellé d'interface, pas un contenu de carte — l'injecter dans le slot
   /// ferait passer un texte système pour du contenu utilisateur.
   Widget _fallback(BuildContext context) => ZFlashcardDefaultContent(
-        content: label(
-          context,
-          'zcrud.flashcard.noAnswer',
-          fallback: 'Aucune réponse',
-        ),
-      );
+    content: label(
+      context,
+      'zcrud.flashcard.noAnswer',
+      fallback: 'Aucune réponse',
+    ),
+  );
 
   /// **TABLE DE RENDU UNIQUE** par [ZFlashcardType] (AC1).
   ///
@@ -371,8 +403,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) =>
           constraints.hasBoundedHeight
-              ? SingleChildScrollView(child: column)
-              : column,
+          ? SingleChildScrollView(child: column)
+          : column,
     );
   }
 
@@ -387,8 +419,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       return marked ? <Widget>[_fallback(context)] : const <Widget>[];
     }
     return <Widget>[
-      for (final choice in choices)
-        _choiceRow(context, choice, marked: marked),
+      for (final choice in choices) _choiceRow(context, choice, marked: marked),
     ];
   }
 
@@ -409,8 +440,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// un token d'**espacement** (seul cas du repo). Une app réglant `gapL: 8`
   /// rétrécissait à 8 dp le `check_circle` — **seul canal visuel discriminant**
   /// ⇒ AD-13 perdu pour un daltonien. La taille vient désormais de l'`IconTheme`.
-  Widget _choiceRow(BuildContext context, ZChoice choice,
-      {required bool marked}) {
+  Widget _choiceRow(
+    BuildContext context,
+    ZChoice choice, {
+    required bool marked,
+  }) {
     final theme = ZcrudTheme.of(context);
     final isCorrect = marked && choice.isCorrect;
     // Repli aligné sur celui du contenu (`ZFlashcardDefaultContent` : `??
@@ -499,10 +533,10 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// `MarkdownToDelta.convert` + `jsonEncode` **jetés** par la déduplication de
   /// `ZMarkdownReader.didUpdateWidget`, qui n'arrive qu'APRÈS le travail.
   Widget _faceSlot(BuildContext context) => ValueListenableBuilder<bool>(
-        valueListenable: _showBack,
-        builder: (BuildContext context, bool showBack, Widget? _) =>
-            _faceBody(context, showBack),
-      );
+    valueListenable: _showBack,
+    builder: (BuildContext context, bool showBack, Widget? _) =>
+        _faceBody(context, showBack),
+  );
 
   /// Flip 3D **MAISON** — `Matrix4` à perspective + `rotateY` (AC2).
   ///
@@ -515,23 +549,23 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// `Matrix4` est réévaluée par frame. Rendre le contenu depuis le `builder:`
   /// le reconstruirait à chaque tick.
   Widget _flip3d(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        child: _faceSlot(context),
-        builder: (BuildContext context, Widget? child) {
-          final t = _controller.value;
-          final transform = Matrix4.identity()
-            ..setEntry(3, 2, _kPerspective)
-            ..rotateY(t * math.pi);
-          if (t >= _kHalfTurn) {
-            transform.rotateY(math.pi); // contre-rotation : jamais de miroir
-          }
-          return Transform(
-            transform: transform,
-            alignment: Alignment.center,
-            child: child,
-          );
-        },
+    animation: _controller,
+    child: _faceSlot(context),
+    builder: (BuildContext context, Widget? child) {
+      final t = _effectiveTransitionCurve(context).transform(_controller.value);
+      final transform = Matrix4.identity()
+        ..setEntry(3, 2, ZFlashcardReviewCardPerspective)
+        ..rotateY(t * math.pi);
+      if (_controller.value >= ZFlashcardReviewCardHalfTurn) {
+        transform.rotateY(math.pi); // contre-rotation : jamais de miroir
+      }
+      return Transform(
+        transform: transform,
+        alignment: Alignment.center,
+        child: child,
       );
+    },
+  );
 
   /// Fondu court — **aucune rotation** (AC2).
   ///
@@ -540,16 +574,20 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   ///
   /// ⚠️ **`child:`** : cf. [_flip3d] — seule l'opacité est réévaluée par frame.
   Widget _fade(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        child: _faceSlot(context),
-        builder: (BuildContext context, Widget? child) {
-          final t = _controller.value;
-          final showBack = t >= _kHalfTurn;
-          final opacity =
-              ((showBack ? t - _kHalfTurn : _kHalfTurn - t) * 2).clamp(0.0, 1.0);
-          return Opacity(opacity: opacity, child: child);
-        },
-      );
+    animation: _controller,
+    child: _faceSlot(context),
+    builder: (BuildContext context, Widget? child) {
+      final t = _effectiveTransitionCurve(context).transform(_controller.value);
+      final showBack = _controller.value >= ZFlashcardReviewCardHalfTurn;
+      final opacity =
+          ((showBack
+                      ? t - ZFlashcardReviewCardHalfTurn
+                      : ZFlashcardReviewCardHalfTurn - t) *
+                  2)
+              .clamp(0.0, 1.0);
+      return Opacity(opacity: opacity, child: child);
+    },
+  );
 
   /// Rangée d'actions — **absente** si lecture seule ou si aucun callback (AD-45).
   ///
@@ -624,8 +662,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       label: label(context, labelKey, fallback: fallback),
       child: ConstrainedBox(
         constraints: const BoxConstraints(
-          minWidth: _kMinTarget,
-          minHeight: _kMinTarget,
+          minWidth: ZFlashcardReviewCardMinTarget,
+          minHeight: ZFlashcardReviewCardMinTarget,
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -639,17 +677,49 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
+  /// Barre décorative opt-in, résolue uniquement par le seam hôte VIS-1.
+  ///
+  /// L'identité est le nom stable du type, jamais une position de liste. Les
+  /// quatre entrées requises (spec + tokens VIS) restent nullables : l'absence
+  /// de l'une d'elles garde l'arbre historique strictement inchangé.
+  Widget? _gradientAccent(BuildContext context) {
+    final theme = ZcrudTheme.of(context);
+    final height = theme.accentBarHeight;
+    final begin = theme.gradientBegin;
+    final end = theme.gradientEnd;
+    final spec = zResolveGradient(context, widget.card.type.name);
+    if (spec == null || height == null || begin == null || end == null) {
+      return null;
+    }
+    final Gradient gradient = switch (spec.gradient) {
+      final LinearGradient linear => LinearGradient(
+        begin: begin,
+        end: end,
+        colors: linear.colors,
+        stops: linear.stops,
+        tileMode: linear.tileMode,
+        transform: linear.transform,
+      ),
+      _ => spec.gradient,
+    };
+    return Container(
+      key: ZFlashcardReviewCard.gradientAccentKey,
+      height: height,
+      decoration: BoxDecoration(gradient: gradient),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    final surface =
-        theme.surfaceColor ?? Theme.of(context).colorScheme.surface;
+    final surface = theme.surfaceColor ?? Theme.of(context).colorScheme.surface;
 
     // ⚠️ SM-1 : construit UNE FOIS par build de la carte, et rendu en SIBLING du
     // `ValueListenableBuilder` — une révélation ne re-rentre PAS dans `build`,
     // donc cette instance est **préservée** telle quelle (identité stable). Un
     // `setState` de carte la reconstruirait : c'est ce que la garde SM-1 mesure.
     final actions = _actions(context);
+    final gradientAccent = _gradientAccent(context);
 
     // Seule tranche reconstruite à la révélation (AD-2/SM-1).
     final face = ValueListenableBuilder<bool>(
@@ -670,16 +740,25 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
         // « Afficher la réponse » sur une réponse déjà affichée — faux dans 50 %
         // des états.
         label: revealed
-            ? label(context, 'zcrud.flashcard.hide',
-                fallback: 'Masquer la réponse')
-            : label(context, 'zcrud.flashcard.reveal',
-                fallback: 'Afficher la réponse'),
+            ? label(
+                context,
+                'zcrud.flashcard.hide',
+                fallback: 'Masquer la réponse',
+              )
+            : label(
+                context,
+                'zcrud.flashcard.reveal',
+                fallback: 'Afficher la réponse',
+              ),
         // L'état révélé est ANNONCÉ (AC5) : la révélation n'est pas qu'un effet
         // visuel.
         value: revealed
             ? label(context, 'zcrud.flashcard.face.answer', fallback: 'Réponse')
-            : label(context, 'zcrud.flashcard.face.question',
-                fallback: 'Question'),
+            : label(
+                context,
+                'zcrud.flashcard.face.question',
+                fallback: 'Question',
+              ),
         child: _animatedFace(context, revealed),
       ),
     );
@@ -697,8 +776,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
         borderRadius: BorderRadius.all(theme.radiusM),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
-            minWidth: _kMinTarget,
-            minHeight: _kMinTarget,
+            minWidth: ZFlashcardReviewCardMinTarget,
+            minHeight: ZFlashcardReviewCardMinTarget,
           ),
           child: Padding(
             padding: theme.fieldPadding,
@@ -710,16 +789,17 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
               // face est rendue telle quelle et grandit librement.
               builder: (BuildContext context, BoxConstraints constraints) =>
                   Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (constraints.hasBoundedHeight)
-                    Flexible(child: face)
-                  else
-                    face,
-                  if (actions != null) actions,
-                ],
-              ),
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      if (gradientAccent != null) gradientAccent,
+                      if (constraints.hasBoundedHeight)
+                        Flexible(child: face)
+                      else
+                        face,
+                      if (actions != null) actions,
+                    ],
+                  ),
             ),
           ),
         ),

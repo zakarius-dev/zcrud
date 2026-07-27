@@ -70,6 +70,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.readLabelGap = 8,
     this.readLabelTextStyle,
     this.readValueTextStyle = const TextStyle(fontWeight: FontWeight.w500),
+    this.accentBarHeight,
+    this.gradientBegin,
+    this.gradientEnd,
+    this.cardShadowBlurRadius,
+    this.cardShadowOffset,
+    this.cardShadowAlpha,
+    this.cardTintAlpha,
+    this.iconContainerSize,
+    this.iconContainerRadius,
+    this.countPillPadding,
+    this.countPillRadius,
+    this.countPillIconSize,
+    this.celebrationDuration,
+    this.celebrationCurve,
+    this.flipDuration,
+    this.flipCurve,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -204,6 +220,54 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// défaut poids `w500`).
   final TextStyle? readValueTextStyle;
 
+  /// Hauteur future de la barre d'accent. `null` conserve v0.19.3 inchangé.
+  final double? accentBarHeight;
+
+  /// Début directionnel du dégradé. `null` conserve v0.19.3 inchangé.
+  final AlignmentGeometry? gradientBegin;
+
+  /// Fin directionnelle du dégradé. `null` conserve v0.19.3 inchangé.
+  final AlignmentGeometry? gradientEnd;
+
+  /// Flou de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  final double? cardShadowBlurRadius;
+
+  /// Décalage de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  final Offset? cardShadowOffset;
+
+  /// Opacité de l'ombre de carte. `null` conserve v0.19.3 inchangé.
+  final double? cardShadowAlpha;
+
+  /// Opacité de teinte de carte. `null` conserve v0.19.3 inchangé.
+  final double? cardTintAlpha;
+
+  /// Taille future du conteneur d'icône. `null` conserve v0.19.3 inchangé.
+  final double? iconContainerSize;
+
+  /// Rayon futur du conteneur d'icône. `null` conserve v0.19.3 inchangé.
+  final Radius? iconContainerRadius;
+
+  /// Padding directionnel de la pastille de compteur. `null` conserve v0.19.3.
+  final EdgeInsetsDirectional? countPillPadding;
+
+  /// Rayon de la pastille de compteur. `null` conserve v0.19.3 inchangé.
+  final Radius? countPillRadius;
+
+  /// Taille d'icône de la pastille de compteur. `null` conserve v0.19.3.
+  final double? countPillIconSize;
+
+  /// Durée de célébration. `null` conserve v0.19.3 inchangé.
+  final Duration? celebrationDuration;
+
+  /// Courbe de célébration. `null` conserve v0.19.3 inchangé.
+  final Curve? celebrationCurve;
+
+  /// Durée de retournement. `null` conserve v0.19.3 inchangé.
+  final Duration? flipDuration;
+
+  /// Courbe de retournement. `null` conserve v0.19.3 inchangé.
+  final Curve? flipCurve;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -267,7 +331,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       );
     }
     final radius = BorderRadius.all(inputRadius);
-    OutlineInputBorder borderOf(Color color, double width) => OutlineInputBorder(
+    OutlineInputBorder borderOf(Color color, double width) =>
+        OutlineInputBorder(
           borderRadius: radius,
           borderSide: BorderSide(color: color, width: width),
         );
@@ -284,8 +349,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       errorText: errorText,
       errorMaxLines: helperMaxLines,
       labelStyle: labelTextStyle,
-      floatingLabelStyle: (labelTextStyle ?? const TextStyle())
-          .copyWith(fontWeight: floatingLabelWeight),
+      floatingLabelStyle: (labelTextStyle ?? const TextStyle()).copyWith(
+        fontWeight: floatingLabelWeight,
+      ),
       filled: inputFilled,
       fillColor: scheme.surfaceContainerHighest,
       contentPadding: inputContentPadding,
@@ -347,43 +413,74 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? readLabelGap,
     TextStyle? readLabelTextStyle,
     TextStyle? readValueTextStyle,
-  }) =>
-      ZcrudTheme(
-        fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
-        errorColor: errorColor ?? this.errorColor,
-        labelColor: labelColor ?? this.labelColor,
-        surfaceColor: surfaceColor ?? this.surfaceColor,
-        gapS: gapS ?? this.gapS,
-        gapM: gapM ?? this.gapM,
-        gapL: gapL ?? this.gapL,
-        radiusS: radiusS ?? this.radiusS,
-        radiusM: radiusM ?? this.radiusM,
-        badgeRadius: badgeRadius ?? this.badgeRadius,
-        fieldPadding: fieldPadding ?? this.fieldPadding,
-        formPadding: formPadding ?? this.formPadding,
-        inputRadius: inputRadius ?? this.inputRadius,
-        inputBorderWidth: inputBorderWidth ?? this.inputBorderWidth,
-        inputFocusedBorderWidth:
-            inputFocusedBorderWidth ?? this.inputFocusedBorderWidth,
-        inputContentPadding: inputContentPadding ?? this.inputContentPadding,
-        inputFilled: inputFilled ?? this.inputFilled,
-        helperMaxLines: helperMaxLines ?? this.helperMaxLines,
-        floatingLabelWeight: floatingLabelWeight ?? this.floatingLabelWeight,
-        labelTextStyle: labelTextStyle ?? this.labelTextStyle,
-        inputTextStyle: inputTextStyle ?? this.inputTextStyle,
-        hintTextStyle: hintTextStyle ?? this.hintTextStyle,
-        largeMinHeight: largeMinHeight ?? this.largeMinHeight,
-        largePadding: largePadding ?? this.largePadding,
-        largeLabelTextStyle: largeLabelTextStyle ?? this.largeLabelTextStyle,
-        largeLeadingIconSize: largeLeadingIconSize ?? this.largeLeadingIconSize,
-        largeLeadingGap: largeLeadingGap ?? this.largeLeadingGap,
-        largeLabelGap: largeLabelGap ?? this.largeLabelGap,
-        readCardMargin: readCardMargin ?? this.readCardMargin,
-        readPadding: readPadding ?? this.readPadding,
-        readLabelGap: readLabelGap ?? this.readLabelGap,
-        readLabelTextStyle: readLabelTextStyle ?? this.readLabelTextStyle,
-        readValueTextStyle: readValueTextStyle ?? this.readValueTextStyle,
-      );
+    double? accentBarHeight,
+    AlignmentGeometry? gradientBegin,
+    AlignmentGeometry? gradientEnd,
+    double? cardShadowBlurRadius,
+    Offset? cardShadowOffset,
+    double? cardShadowAlpha,
+    double? cardTintAlpha,
+    double? iconContainerSize,
+    Radius? iconContainerRadius,
+    EdgeInsetsDirectional? countPillPadding,
+    Radius? countPillRadius,
+    double? countPillIconSize,
+    Duration? celebrationDuration,
+    Curve? celebrationCurve,
+    Duration? flipDuration,
+    Curve? flipCurve,
+  }) => ZcrudTheme(
+    fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
+    errorColor: errorColor ?? this.errorColor,
+    labelColor: labelColor ?? this.labelColor,
+    surfaceColor: surfaceColor ?? this.surfaceColor,
+    gapS: gapS ?? this.gapS,
+    gapM: gapM ?? this.gapM,
+    gapL: gapL ?? this.gapL,
+    radiusS: radiusS ?? this.radiusS,
+    radiusM: radiusM ?? this.radiusM,
+    badgeRadius: badgeRadius ?? this.badgeRadius,
+    fieldPadding: fieldPadding ?? this.fieldPadding,
+    formPadding: formPadding ?? this.formPadding,
+    inputRadius: inputRadius ?? this.inputRadius,
+    inputBorderWidth: inputBorderWidth ?? this.inputBorderWidth,
+    inputFocusedBorderWidth:
+        inputFocusedBorderWidth ?? this.inputFocusedBorderWidth,
+    inputContentPadding: inputContentPadding ?? this.inputContentPadding,
+    inputFilled: inputFilled ?? this.inputFilled,
+    helperMaxLines: helperMaxLines ?? this.helperMaxLines,
+    floatingLabelWeight: floatingLabelWeight ?? this.floatingLabelWeight,
+    labelTextStyle: labelTextStyle ?? this.labelTextStyle,
+    inputTextStyle: inputTextStyle ?? this.inputTextStyle,
+    hintTextStyle: hintTextStyle ?? this.hintTextStyle,
+    largeMinHeight: largeMinHeight ?? this.largeMinHeight,
+    largePadding: largePadding ?? this.largePadding,
+    largeLabelTextStyle: largeLabelTextStyle ?? this.largeLabelTextStyle,
+    largeLeadingIconSize: largeLeadingIconSize ?? this.largeLeadingIconSize,
+    largeLeadingGap: largeLeadingGap ?? this.largeLeadingGap,
+    largeLabelGap: largeLabelGap ?? this.largeLabelGap,
+    readCardMargin: readCardMargin ?? this.readCardMargin,
+    readPadding: readPadding ?? this.readPadding,
+    readLabelGap: readLabelGap ?? this.readLabelGap,
+    readLabelTextStyle: readLabelTextStyle ?? this.readLabelTextStyle,
+    readValueTextStyle: readValueTextStyle ?? this.readValueTextStyle,
+    accentBarHeight: accentBarHeight ?? this.accentBarHeight,
+    gradientBegin: gradientBegin ?? this.gradientBegin,
+    gradientEnd: gradientEnd ?? this.gradientEnd,
+    cardShadowBlurRadius: cardShadowBlurRadius ?? this.cardShadowBlurRadius,
+    cardShadowOffset: cardShadowOffset ?? this.cardShadowOffset,
+    cardShadowAlpha: cardShadowAlpha ?? this.cardShadowAlpha,
+    cardTintAlpha: cardTintAlpha ?? this.cardTintAlpha,
+    iconContainerSize: iconContainerSize ?? this.iconContainerSize,
+    iconContainerRadius: iconContainerRadius ?? this.iconContainerRadius,
+    countPillPadding: countPillPadding ?? this.countPillPadding,
+    countPillRadius: countPillRadius ?? this.countPillRadius,
+    countPillIconSize: countPillIconSize ?? this.countPillIconSize,
+    celebrationDuration: celebrationDuration ?? this.celebrationDuration,
+    celebrationCurve: celebrationCurve ?? this.celebrationCurve,
+    flipDuration: flipDuration ?? this.flipDuration,
+    flipCurve: flipCurve ?? this.flipCurve,
+  );
 
   @override
   ZcrudTheme lerp(ThemeExtension<ZcrudTheme>? other, double t) {
@@ -414,24 +511,30 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
             ),
       fieldPadding:
           EdgeInsetsDirectional.lerp(fieldPadding, other.fieldPadding, t) ??
-              fieldPadding,
+          fieldPadding,
       formPadding:
           EdgeInsetsDirectional.lerp(formPadding, other.formPadding, t) ??
-              formPadding,
-      inputRadius: Radius.lerp(inputRadius, other.inputRadius, t) ?? inputRadius,
+          formPadding,
+      inputRadius:
+          Radius.lerp(inputRadius, other.inputRadius, t) ?? inputRadius,
       inputBorderWidth:
           inputBorderWidth + (other.inputBorderWidth - inputBorderWidth) * t,
-      inputFocusedBorderWidth: inputFocusedBorderWidth +
+      inputFocusedBorderWidth:
+          inputFocusedBorderWidth +
           (other.inputFocusedBorderWidth - inputFocusedBorderWidth) * t,
-      inputContentPadding: EdgeInsetsDirectional.lerp(
-              inputContentPadding, other.inputContentPadding, t) ??
+      inputContentPadding:
+          EdgeInsetsDirectional.lerp(
+            inputContentPadding,
+            other.inputContentPadding,
+            t,
+          ) ??
           inputContentPadding,
       // Tokens discrets (non interpolables) : bascule au point milieu.
       inputFilled: t < 0.5 ? inputFilled : other.inputFilled,
       helperMaxLines: t < 0.5 ? helperMaxLines : other.helperMaxLines,
       floatingLabelWeight:
           FontWeight.lerp(floatingLabelWeight, other.floatingLabelWeight, t) ??
-              floatingLabelWeight,
+          floatingLabelWeight,
       labelTextStyle: TextStyle.lerp(labelTextStyle, other.labelTextStyle, t),
       inputTextStyle: TextStyle.lerp(inputTextStyle, other.inputTextStyle, t),
       hintTextStyle: TextStyle.lerp(hintTextStyle, other.hintTextStyle, t),
@@ -439,25 +542,169 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           largeMinHeight + (other.largeMinHeight - largeMinHeight) * t,
       largePadding:
           EdgeInsetsDirectional.lerp(largePadding, other.largePadding, t) ??
-              largePadding,
-      largeLabelTextStyle:
-          TextStyle.lerp(largeLabelTextStyle, other.largeLabelTextStyle, t),
-      largeLeadingIconSize: largeLeadingIconSize +
+          largePadding,
+      largeLabelTextStyle: TextStyle.lerp(
+        largeLabelTextStyle,
+        other.largeLabelTextStyle,
+        t,
+      ),
+      largeLeadingIconSize:
+          largeLeadingIconSize +
           (other.largeLeadingIconSize - largeLeadingIconSize) * t,
       largeLeadingGap:
           largeLeadingGap + (other.largeLeadingGap - largeLeadingGap) * t,
       largeLabelGap: largeLabelGap + (other.largeLabelGap - largeLabelGap) * t,
       readCardMargin:
           EdgeInsetsDirectional.lerp(readCardMargin, other.readCardMargin, t) ??
-              readCardMargin,
+          readCardMargin,
       readPadding:
           EdgeInsetsDirectional.lerp(readPadding, other.readPadding, t) ??
-              readPadding,
+          readPadding,
       readLabelGap: readLabelGap + (other.readLabelGap - readLabelGap) * t,
-      readLabelTextStyle:
-          TextStyle.lerp(readLabelTextStyle, other.readLabelTextStyle, t),
-      readValueTextStyle:
-          TextStyle.lerp(readValueTextStyle, other.readValueTextStyle, t),
+      readLabelTextStyle: TextStyle.lerp(
+        readLabelTextStyle,
+        other.readLabelTextStyle,
+        t,
+      ),
+      readValueTextStyle: TextStyle.lerp(
+        readValueTextStyle,
+        other.readValueTextStyle,
+        t,
+      ),
+      accentBarHeight: _lerpNullableDouble(
+        accentBarHeight,
+        other.accentBarHeight,
+        t,
+      ),
+      gradientBegin: _lerpNullableAlignment(
+        gradientBegin,
+        other.gradientBegin,
+        t,
+      ),
+      gradientEnd: _lerpNullableAlignment(gradientEnd, other.gradientEnd, t),
+      cardShadowBlurRadius: _lerpNullableDouble(
+        cardShadowBlurRadius,
+        other.cardShadowBlurRadius,
+        t,
+      ),
+      cardShadowOffset: _lerpNullableOffset(
+        cardShadowOffset,
+        other.cardShadowOffset,
+        t,
+      ),
+      cardShadowAlpha: _lerpNullableDouble(
+        cardShadowAlpha,
+        other.cardShadowAlpha,
+        t,
+      ),
+      cardTintAlpha: _lerpNullableDouble(cardTintAlpha, other.cardTintAlpha, t),
+      iconContainerSize: _lerpNullableDouble(
+        iconContainerSize,
+        other.iconContainerSize,
+        t,
+      ),
+      iconContainerRadius: _lerpNullableRadius(
+        iconContainerRadius,
+        other.iconContainerRadius,
+        t,
+      ),
+      countPillPadding: _lerpNullablePadding(
+        countPillPadding,
+        other.countPillPadding,
+        t,
+      ),
+      countPillRadius: _lerpNullableRadius(
+        countPillRadius,
+        other.countPillRadius,
+        t,
+      ),
+      countPillIconSize: _lerpNullableDouble(
+        countPillIconSize,
+        other.countPillIconSize,
+        t,
+      ),
+      celebrationDuration: _lerpNullableDuration(
+        celebrationDuration,
+        other.celebrationDuration,
+        t,
+      ),
+      celebrationCurve: _chooseNullableCurve(
+        celebrationCurve,
+        other.celebrationCurve,
+        t,
+      ),
+      flipDuration: _lerpNullableDuration(flipDuration, other.flipDuration, t),
+      flipCurve: _chooseNullableCurve(flipCurve, other.flipCurve, t),
     );
   }
 }
+
+double? _lerpNullableDouble(double? a, double? b, double t) =>
+    a == null && b == null ? null : (a ?? 0) + ((b ?? 0) - (a ?? 0)) * t;
+
+Offset? _lerpNullableOffset(Offset? a, Offset? b, double t) =>
+    a == null && b == null
+    ? null
+    : Offset.lerp(a ?? Offset.zero, b ?? Offset.zero, t);
+
+Radius? _lerpNullableRadius(Radius? a, Radius? b, double t) =>
+    a == null && b == null
+    ? null
+    : Radius.lerp(a ?? Radius.zero, b ?? Radius.zero, t);
+
+EdgeInsetsDirectional? _lerpNullablePadding(
+  EdgeInsetsDirectional? a,
+  EdgeInsetsDirectional? b,
+  double t,
+) => a == null && b == null
+    ? null
+    : EdgeInsetsDirectional.lerp(
+        a ?? EdgeInsetsDirectional.zero,
+        b ?? EdgeInsetsDirectional.zero,
+        t,
+      );
+
+AlignmentGeometry? _lerpNullableAlignment(
+  AlignmentGeometry? a,
+  AlignmentGeometry? b,
+  double t,
+) => a == null && b == null
+    ? null
+    : AlignmentGeometry.lerp(
+        a ?? AlignmentDirectional.center,
+        b ?? AlignmentDirectional.center,
+        t,
+      );
+
+/// Interpole deux durées nullables — **sans jamais matérialiser `Duration.zero`**.
+///
+/// 🔴 Différence VOLONTAIRE avec les autres helpers nullables (CR epic VIS,
+/// MAJEUR-1). Pour une dimension, traiter un côté absent comme `0` est
+/// acceptable : une barre d'accent qui « grandit depuis rien » est un rendu
+/// plausible. Pour une DURÉE, `0` n'est pas une absence, c'est une valeur
+/// **invalide** : une animation de durée nulle est dégénérée, et
+/// `ConfettiController` lève sur une durée non strictement positive.
+///
+/// MESURÉ avant correction, avec `a.celebrationDuration == null` et
+/// `b.celebrationDuration == 5 s` : `t=0.0` rendait `0:00:00.000000`. Un thème
+/// animé vers un préréglage traversait donc un instant où la durée valait zéro
+/// — et une session de célébration construite à cet instant précis plantait.
+///
+/// Règle retenue : un côté `null` signifie « le consommateur applique SON
+/// défaut », valeur que le thème **ignore**. Aucune interpolation n'est donc
+/// possible ; on rend l'autre côté, qui est la seule valeur réellement connue.
+Duration? _lerpNullableDuration(Duration? a, Duration? b, double t) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return Duration(
+    microseconds:
+        (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t).round(),
+  );
+}
+
+Curve? _chooseNullableCurve(Curve? a, Curve? b, double t) =>
+    a == null && b == null
+    ? null
+    : t < .5
+    ? a ?? b
+    : b ?? a;

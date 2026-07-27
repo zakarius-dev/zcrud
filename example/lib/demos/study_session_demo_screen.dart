@@ -13,6 +13,7 @@ import '../support/rebuild_indicator.dart';
 import 'fakes/fake_answer_evaluation_port.dart';
 import 'fakes/fake_flashcard_hint_port.dart';
 import 'fakes/in_memory_study_store.dart';
+import 'iffd_visual_preset.dart';
 
 /// Point de démarrage d'une session (mode + file) — permet aux tests de
 /// **court-circuiter le sélecteur** et d'entrer directement dans une session
@@ -230,7 +231,10 @@ class _StudySessionDemoScreenState extends State<StudySessionDemoScreen> {
     }
   }
 
-  void _seedSession({required ZReviewMode mode, required List<ZFlashcard> queue}) {
+  void _seedSession({
+    required ZReviewMode mode,
+    required List<ZFlashcard> queue,
+  }) {
     _runtime?.dispose();
     _mode = mode;
     _currentIndex = 0;
@@ -450,6 +454,7 @@ class _StudySessionDemoScreenState extends State<StudySessionDemoScreen> {
           duration: _stopwatch.elapsed,
           config: _config,
           celebration: widget.celebration,
+          celebrationSpec: iffdCelebrationSpec,
           onFinish: _finish,
         );
     }
@@ -474,8 +479,9 @@ class _StudySessionDemoScreenState extends State<StudySessionDemoScreen> {
       );
     }
     final currentItem = _currentStudyItem();
-    final currentCard =
-        currentItem == null ? null : _cardsById[currentItem.flashcardId];
+    final currentCard = currentItem == null
+        ? null
+        : _cardsById[currentItem.flashcardId];
     return Column(
       children: <Widget>[
         Expanded(

@@ -81,6 +81,93 @@ enum ZSummaryCelebration {
   confetti,
 }
 
+/// Recette visuelle optionnelle de la célébration du résumé.
+///
+/// Chaque champ `null` conserve explicitement le comportement historique. La
+/// valeur est donc additive : une application peut ne surcharger qu'un détail
+/// sans modifier les réglages v0.19.3 restants.
+@immutable
+class ZCelebrationSpec {
+  /// Crée une recette de célébration partielle ou complète.
+  /// 🔴 Les bornes ci-dessous reprennent celles que `confetti` **assertionne**
+  /// en interne (durée strictement positive, particules > 0, gravité et
+  /// fréquence dans `[0, 1]`). Sans elles, une valeur invalide traversait cette
+  /// API publique sans bruit et n'échouait qu'au fond du paquet tiers, avec un
+  /// message sans rapport avec le préréglage fautif (CR epic VIS, MEDIUM-1).
+  /// Échouer ICI nomme le vrai coupable — et `null` reste toujours licite :
+  /// il signifie « garde le défaut historique ».
+  const ZCelebrationSpec({
+    this.burstDuration,
+    this.numberOfParticles,
+    this.gravity,
+    this.emissionFrequency,
+    this.entranceCurve,
+    this.trophyIcon,
+    this.trophyDecoration,
+    this.ringsDiameter,
+    this.ringsStrokeWidth,
+    this.ringsTrackColorKey,
+    this.ringsProgressColorKey,
+  }) : // ⚠️ `burstDuration` n'est PAS vérifiée ici : comparer deux `Duration`
+       // n'est pas évaluable dans un `assert` de constructeur `const` (opérateur
+       // non constant) — l'y mettre casse la compilation de tout appelant const.
+       // Sa validation vit donc au point de consommation, dans `_ConfettiBurst`.
+       assert(
+         numberOfParticles == null || numberOfParticles > 0,
+         'numberOfParticles doit être > 0 ; utiliser `null` pour le défaut.',
+       ),
+       assert(
+         gravity == null || (gravity >= 0 && gravity <= 1),
+         'gravity doit appartenir à [0, 1] ; utiliser `null` pour le défaut.',
+       ),
+       assert(
+         emissionFrequency == null ||
+             (emissionFrequency >= 0 && emissionFrequency <= 1),
+         'emissionFrequency doit appartenir à [0, 1] ; `null` pour le défaut.',
+       ),
+       assert(
+         ringsDiameter == null || ringsDiameter > 0,
+         'ringsDiameter doit être > 0 ; utiliser `null` pour le défaut.',
+       ),
+       assert(
+         ringsStrokeWidth == null || ringsStrokeWidth > 0,
+         'ringsStrokeWidth doit être > 0 ; utiliser `null` pour le défaut.',
+       );
+
+  /// Durée du burst de confetti ; `null` conserve la durée historique.
+  final Duration? burstDuration;
+
+  /// Nombre de particules ; `null` conserve le défaut historique.
+  final int? numberOfParticles;
+
+  /// Gravité des particules ; `null` conserve le défaut historique.
+  final double? gravity;
+
+  /// Fréquence d'émission ; `null` conserve le défaut historique.
+  final double? emissionFrequency;
+
+  /// Courbe de l'animation d'entrée ; `null` délègue au token puis au défaut.
+  final Curve? entranceCurve;
+
+  /// Icône du trophée ; `null` conserve [Icons.emoji_events].
+  final IconData? trophyIcon;
+
+  /// Décor du halo ; `null` reconstruit le cercle historique résolu du thème.
+  final BoxDecoration? trophyDecoration;
+
+  /// Diamètre des anneaux ; `null` conserve `96`.
+  final double? ringsDiameter;
+
+  /// Épaisseur des anneaux ; `null` conserve `10`.
+  final double? ringsStrokeWidth;
+
+  /// Clé de couleur de piste des anneaux ; `null` conserve `neutral`.
+  final String? ringsTrackColorKey;
+
+  /// Clé de couleur de progression ; `null` conserve `primary`.
+  final String? ringsProgressColorKey;
+}
+
 /// Compte des cartes **MAÎTRISÉES** — dérivé de [byQuality] (D3).
 ///
 /// 🔴 **CE N'EST PAS `result.correct`** (= `q >= passThreshold`, soit q3+ —
@@ -154,6 +241,7 @@ class ZSessionSummaryView extends StatefulWidget {
     this.dueRemaining = 0,
     this.onContinue,
     this.celebration = ZSummaryCelebration.none,
+    this.celebrationSpec,
     this.masteredThreshold,
     this.feedbackKey,
     this.feedbackBank,
@@ -185,6 +273,10 @@ class ZSessionSummaryView extends StatefulWidget {
   /// Variante de célébration (**défaut `none`** — confetti OPT-IN, AC11).
   final ZSummaryCelebration celebration;
 
+  /// Recette optionnelle de célébration ; les champs `null` gardent le rendu
+  /// historique, y compris sans injection de token VIS.
+  final ZCelebrationSpec? celebrationSpec;
+
   /// Seuil de maîtrise **injecté**. `null` ⇒ **consommé** depuis son propriétaire
   /// AD-46, `config.masteredThreshold` (D3 ; su-6/D2 — jamais redérivé ici).
   final int? masteredThreshold;
@@ -204,32 +296,38 @@ class ZSessionSummaryView extends StatefulWidget {
   final ZQualityBreakdownCoverage breakdownCoverage;
 
   /// [ValueKey] du bouton « Terminer » (testabilité, AC3).
-  static const ValueKey<String> finishButtonKey =
-      ValueKey<String>('zSummaryFinish');
+  static const ValueKey<String> finishButtonKey = ValueKey<String>(
+    'zSummaryFinish',
+  );
 
   /// [ValueKey] du bouton « Encore N dues » (testabilité, AC3).
-  static const ValueKey<String> continueButtonKey =
-      ValueKey<String>('zSummaryContinue');
+  static const ValueKey<String> continueButtonKey = ValueKey<String>(
+    'zSummaryContinue',
+  );
 
   /// [ValueKey] de la valeur « cartes totales » (testabilité, AC2).
-  static const ValueKey<String> totalValueKey =
-      ValueKey<String>('zSummaryTotalValue');
+  static const ValueKey<String> totalValueKey = ValueKey<String>(
+    'zSummaryTotalValue',
+  );
 
   /// [ValueKey] de la valeur « maîtrisées » (testabilité, AC2).
-  static const ValueKey<String> masteredValueKey =
-      ValueKey<String>('zSummaryMasteredValue');
+  static const ValueKey<String> masteredValueKey = ValueKey<String>(
+    'zSummaryMasteredValue',
+  );
 
   /// [ValueKey] de la valeur « durée » (testabilité, AC2).
-  static const ValueKey<String> durationValueKey =
-      ValueKey<String>('zSummaryDurationValue');
+  static const ValueKey<String> durationValueKey = ValueKey<String>(
+    'zSummaryDurationValue',
+  );
 
   /// [ValueKey] de l'icône du trophée — **sonde d'échelle** (AC7).
   ///
   /// L'échelle se mesure sur la **géométrie peinte** (`tester.getRect`), jamais
   /// sur le champ `transform` du widget : `Transform.scale` ne le peuple pas
   /// (faux négatif MESURÉ en su-4).
-  static const ValueKey<String> trophyIconKey =
-      ValueKey<String>('zSummaryTrophyIcon');
+  static const ValueKey<String> trophyIconKey = ValueKey<String>(
+    'zSummaryTrophyIcon',
+  );
 
   /// [ValueKey] du halo (`Opacity`) — **sonde d'opacité** (AC7).
   static const ValueKey<String> glowKey = ValueKey<String>('zSummaryGlow');
@@ -254,18 +352,6 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     vsync: this,
     duration: ZSessionSummaryView.entranceDuration,
   );
-
-  /// Échelle du trophée — animation **RÉELLE** (`0.6 → 1.0`, rebond élastique).
-  late final Animation<double> _trophyScale = Tween<double>(
-    begin: 0.6,
-    end: 1,
-  ).animate(CurvedAnimation(parent: _entrance, curve: Curves.elasticOut));
-
-  /// Opacité du halo — animation **RÉELLE** (`0.0 → 1.0`).
-  late final Animation<double> _glowOpacity = Tween<double>(
-    begin: 0,
-    end: 1,
-  ).animate(CurvedAnimation(parent: _entrance, curve: Curves.easeIn));
 
   /// Controller de confetti — **POSSÉDÉ par nous** (T5), `null` tant qu'aucun
   /// tir n'est parti (et à jamais sous Reduce Motion / hors opt-in).
@@ -337,9 +423,23 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
 
     _celebrationFired = true;
     _celebrationPlays++;
+    final spec = widget.celebrationSpec;
+    final candidate =
+        spec?.burstDuration ??
+        ZcrudTheme.of(context).celebrationDuration ??
+        _ConfettiBurst.burstDuration;
+    // 🔴 Repli DÉFENSIF sur une durée non strictement positive (CR epic VIS,
+    // MEDIUM-1 ; AD-10). `ConfettiController` assertionne sur
+    // `duration.inMicroseconds > 0` : une valeur nulle ferait planter le bilan
+    // de session — l'écran de fin d'apprentissage, au pire moment possible.
+    // La source ne peut pas être fermée en amont : le token de thème est
+    // interpolé pendant les transitions et transite par du code hôte. On
+    // retombe donc sur le défaut historique plutôt que de laisser lever.
+    final burstDuration = candidate > Duration.zero
+        ? candidate
+        : _ConfettiBurst.burstDuration;
     setState(() {
-      _confetti = ConfettiController(duration: _ConfettiBurst.burstDuration)
-        ..play();
+      _confetti = ConfettiController(duration: burstDuration)..play();
     });
   }
 
@@ -381,8 +481,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     // **conservé tel quel** : seul le DÉFAUT change de foyer.
     final masteredThreshold =
         widget.masteredThreshold ?? widget.config.masteredThreshold;
-    final mastered =
-        zMasteredCount(widget.result.byQuality, scale, masteredThreshold);
+    final mastered = zMasteredCount(
+      widget.result.byQuality,
+      scale,
+      masteredThreshold,
+    );
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -393,8 +496,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           SizedBox(height: theme.gapL),
         ],
         Text(
-          label(context, 'zcrud.session.summary.title',
-              fallback: 'Session terminée'),
+          label(
+            context,
+            'zcrud.session.summary.title',
+            fallback: 'Session terminée',
+          ),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
@@ -404,6 +510,12 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
         // zéro) ; `correct > total` ⇒ ratio clampé. Contrat EXISTANT, consommé.
         ZStudyProgressRings(
           data: ZProgressRingsData.fromResult(widget.result),
+          diameter: widget.celebrationSpec?.ringsDiameter ?? 96,
+          strokeWidth: widget.celebrationSpec?.ringsStrokeWidth ?? 10,
+          trackColorKey:
+              widget.celebrationSpec?.ringsTrackColorKey ?? 'neutral',
+          progressColorKey:
+              widget.celebrationSpec?.ringsProgressColorKey ?? 'primary',
         ),
         SizedBox(height: theme.gapM),
         if (widget.feedbackKey != null) ...<Widget>[
@@ -444,7 +556,7 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       alignment: AlignmentDirectional.topCenter,
       children: <Widget>[
         scrollable,
-        _ConfettiBurst(controller: confetti),
+        _ConfettiBurst(controller: confetti, spec: widget.celebrationSpec),
       ],
     );
   }
@@ -456,16 +568,22 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
   Widget _buildCelebrationHeader(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final pair = zResolveColorKeyOrSlot(context, 'primary', slotIndex: 0);
+    final spec = widget.celebrationSpec;
+    final entranceCurve = spec?.entranceCurve ?? theme.celebrationCurve;
     return AnimatedBuilder(
       animation: _entrance,
-      builder: (context, child) => Opacity(
-        key: ZSessionSummaryView.glowKey,
-        opacity: _glowOpacity.value.clamp(0.0, 1.0),
-        child: Transform.scale(
-          scale: _trophyScale.value,
-          child: child,
-        ),
-      ),
+      builder: (context, child) {
+        final trophyScale = 0.6 +
+            0.4 *
+                (entranceCurve ?? Curves.elasticOut).transform(_entrance.value);
+        final glowOpacity =
+            (entranceCurve ?? Curves.easeIn).transform(_entrance.value);
+        return Opacity(
+          key: ZSessionSummaryView.glowKey,
+          opacity: glowOpacity.clamp(0.0, 1.0),
+          child: Transform.scale(scale: trophyScale, child: child),
+        );
+      },
       // `child` est construit UNE fois et réutilisé à chaque frame (jamais
       // reconstruit dans la closure — AD-2).
       // 🟡 LOW (code-review su-5) : le repli était « Session terminée, bravo »,
@@ -474,16 +592,18 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       // trophée ne porte que la CÉLÉBRATION ; le titre porte le FAIT. La clé
       // l10n est inchangée (un hôte qui la surcharge n'est pas impacté).
       child: Semantics(
-        label: label(context, 'zcrud.session.summary.celebration',
-            fallback: 'Bravo'),
+        label: label(
+          context,
+          'zcrud.session.summary.celebration',
+          fallback: 'Bravo',
+        ),
         child: Container(
           padding: theme.fieldPadding,
-          decoration: BoxDecoration(
-            color: pair.color,
-            shape: BoxShape.circle,
-          ),
+          decoration:
+              spec?.trophyDecoration ??
+              BoxDecoration(color: pair.color, shape: BoxShape.circle),
           child: Icon(
-            Icons.emoji_events,
+            spec?.trophyIcon ?? Icons.emoji_events,
             key: ZSessionSummaryView.trophyIconKey,
             size: theme.gapL * 2,
             color: pair.onColor,
@@ -503,8 +623,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       children: <Widget>[
         _StatTile(
           valueKey: ZSessionSummaryView.totalValueKey,
-          labelText:
-              label(context, 'zcrud.session.summary.total', fallback: 'Cartes'),
+          labelText: label(
+            context,
+            'zcrud.session.summary.total',
+            fallback: 'Cartes',
+          ),
           valueText: '${widget.result.total}',
         ),
         // 🔴 D3 — « maîtrisées » (q4-5), JAMAIS `result.correct` (q3+). Les
@@ -512,14 +635,20 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
         // DIFFÉRENTS, volontairement.
         _StatTile(
           valueKey: ZSessionSummaryView.masteredValueKey,
-          labelText: label(context, 'zcrud.session.summary.mastered',
-              fallback: 'Maîtrisées'),
+          labelText: label(
+            context,
+            'zcrud.session.summary.mastered',
+            fallback: 'Maîtrisées',
+          ),
           valueText: '$mastered',
         ),
         _StatTile(
           valueKey: ZSessionSummaryView.durationValueKey,
-          labelText:
-              label(context, 'zcrud.session.summary.duration', fallback: 'Durée'),
+          labelText: label(
+            context,
+            'zcrud.session.summary.duration',
+            fallback: 'Durée',
+          ),
           valueText: _formatDuration(widget.duration),
         ),
       ],
@@ -537,9 +666,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
 
     // Le compte vient du paramètre INJECTÉ, jamais d'un recomptage : le patron
     // `{n}` laisse l'app placer le nombre où sa langue l'exige.
-    final continueText = label(context, 'zcrud.session.summary.continue',
-            fallback: 'Encore {n} dues')
-        .replaceAll('{n}', '${widget.dueRemaining}');
+    final continueText = label(
+      context,
+      'zcrud.session.summary.continue',
+      fallback: 'Encore {n} dues',
+    ).replaceAll('{n}', '${widget.dueRemaining}');
 
     return Wrap(
       spacing: theme.gapM,
@@ -548,8 +679,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       children: <Widget>[
         _ActionButton(
           buttonKey: ZSessionSummaryView.finishButtonKey,
-          text: label(context, 'zcrud.session.summary.finish',
-              fallback: 'Terminer'),
+          text: label(
+            context,
+            'zcrud.session.summary.finish',
+            fallback: 'Terminer',
+          ),
           onPressed: widget.onFinish,
           filled: true,
         ),
@@ -639,8 +773,11 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    final pair = zResolveColorKeyOrSlot(context, filled ? 'primary' : 'neutral',
-        slotIndex: filled ? 0 : 4);
+    final pair = zResolveColorKeyOrSlot(
+      context,
+      filled ? 'primary' : 'neutral',
+      slotIndex: filled ? 0 : 4,
+    );
     return Semantics(
       button: true,
       label: text,
@@ -694,12 +831,14 @@ class _ActionButton extends StatelessWidget {
 /// | `colors: null` ⇒ couleurs **aléatoires** ; `strokeColor = Colors.black` en dur | `colors:` **injectées du thème** (NFR-SU5) |
 /// | `grep Semantics confetti-0.8.0/lib/` → **RC=1** — **ZÉRO `Semantics`** | [ExcludeSemantics] : rien ne doit transiter par un canal que le lecteur d'écran ne voit pas |
 class _ConfettiBurst extends StatelessWidget {
-  const _ConfettiBurst({required this.controller});
+  const _ConfettiBurst({required this.controller, required this.spec});
 
   /// Durée du tir — **courte et explicite** (T1).
   static const Duration burstDuration = Duration(milliseconds: 800);
 
   final ConfettiController controller;
+
+  final ZCelebrationSpec? spec;
 
   @override
   Widget build(BuildContext context) {
@@ -720,9 +859,9 @@ class _ConfettiBurst extends StatelessWidget {
         shouldLoop: false,
         pauseEmissionOnLowFrameRate: false,
         colors: colors,
-        numberOfParticles: 12,
-        emissionFrequency: 0.05,
-        gravity: 0.3,
+        numberOfParticles: spec?.numberOfParticles ?? 12,
+        emissionFrequency: spec?.emissionFrequency ?? 0.05,
+        gravity: spec?.gravity ?? 0.3,
       ),
     );
   }

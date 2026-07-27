@@ -511,3 +511,27 @@ development_status:
   suf-3-page-detail-dossier-sous-dossiers-adaptatifs: done         # [XL][SÉQ — après SUF-1 ET SUF-2 ; zcrud_study] ZStudyFolderDetail : header via SUF-1 + onglets Matériel(=ZSectionedStudyLayout)/Notebook/Progression(=ZStudyProgressRings) + navigation sous-dossiers ADAPTATIVE (sidebar redimensionnable grand écran ↔ chips/dropdown petit écran) via zcrud_responsive ; AD-2 rebuilds granulaires
   suf-4-audit-session-demo-assemblee: done             # [M][SÉQ — DERNIÈRE] audit parité widgets zcrud_session vs lex (doc + fermeture écarts par slots injectables + R3) + démo example/ grille→détail→session
   epic-suf-retrospective: done
+
+  # === VIS — ALIGNEMENT VISUEL IFFD par thème hybride (préréglage injectable) ===
+  # Exécute la directive owner « aligner le plus possible à IFFD » — jamais instruite jusqu'ici (3 puces).
+  # Décision : HYBRIDE À 3 COUCHES. (1) ~80 % du look IFFD est INCOLORE (barre d'accent 4dp, ombres, rayons,
+  # pills de compteurs, alphas, durées/courbes) ⇒ tokens ZcrudTheme, profite à TOUT hôte. (2) dégradés dérivés
+  # du ColorScheme de l'hôte ⇒ zDerivedGradientResolver (aucun hex). (3) les 8 paires exactes d'IFFD sont une
+  # palette DÉCORATIVE (sa marque est navy/gold/teal) ⇒ déclarées APP-SIDE, démo dans example/ seule.
+  # ⚠️ Correction vérifiée 2026-07-27 : les dégradés DE DOSSIERS sont 5 paires (folders_page.dart:51-66), pas 8.
+  #   La palette à 8 paires est subjectGradients (subjects_page.dart:49-58), utilisée par les pages sujets/admin — autre palette.
+  # FR-26/NFR-S7 (aucune couleur littérale en package) VÉRIFIÉ TENU (12/14 occurrences = commentaires de la règle) ;
+  # aucun gate CI ne le protège ⇒ ne pas l'affaiblir. INVARIANT : sans injection, rendu IDENTIQUE (golden inchangé).
+  # Plan détaillé : plans/tingly-brewing-cake.md (section « Epic VIS »).
+  # Séquencement : VIS-1 (SEULE story écrivant zcrud_core) = TÊTE → puis VIS-2 ∥ VIS-3 ∥ VIS-4 (packages disjoints, 3 max).
+  # ⚠️ DIRECTIVE OWNER 2026-07-27 : PAS de code-review par story. Cycle réduit create-story → dev-story → vérif verte rejouée
+  #   par l'orchestrateur ; UNE SEULE code-review en FIN d'epic sur les 4 stories, avant commit/tag/handoff.
+  #   ⚠️ 2026-07-27 (owner) : cette revue finale est faite par UN AGENT UNIQUE (Codex), PAS en multi-agent à lentilles.
+  #   Contrepartie : l'orchestrateur rejoue lui-même les injections R3 de chaque story + la neutralité golden + analyze/verify repo-wide.
+  #   Les stories restent en `review` jusqu'à cette revue unique. Contrepartie exigée : vérif verte rejouée après CHAQUE story.
+  epic-vis: done
+  vis-1-tokens-look-couture-degrade: done            # [L][SÉQ — TÊTE, CORE-SÉRIALISÉE, écrit zcrud_core] tokens incolores ZcrudTheme (accentBar/ombres/pills/alphas/durées, TOUS nullables) + ZGradientSpec/ZGradientResolver/zResolveGradient + zDerivedGradientResolver neutre + ZcrudScope.gradientResolver ⚠️ corriger au passage le bug latent updateShouldNotify (15 comparaisons pour 17 seams : reorderRenderer+dropRegionRenderer manquants ⇒ 18 après ajout) ⚠️ lerp doit court-circuiter null-des-2-côtés (piège v0.19.3)
+  vis-2-carte-dossier-accent-badges: done            # [M][∥ après VIS-1 ; zcrud_study] slot headerDecoration sur ZFolderCard (défaut = pastille 14dp actuelle) + barre d'accent dégradée + ZCountBadge/ZCountBadgeRow publics (règle « zéro ⇒ absent », réutilise le style de ZSubfolderCountPill sans le dupliquer) ; golden inchangé sans injection
+  vis-3-degrades-type-question: done                 # [M][∥ après VIS-1 ; zcrud_flashcard] ZGradientSpec par clé STABLE questionType.name (D2/D3 : jamais un index de position) + tokens de flip (durée/courbe) aujourd'hui privés ; test R3 d'invariance sous tri/filtrage — la garde qui aurait attrapé le défaut IFFD
+  vis-4-celebration-preset-demo: done                # [M][∥ après VIS-1 ; zcrud_session + example/] ZCelebrationSpec injectable (durée/particules/gravité/icône, défauts INCHANGÉS 800ms/12) + paramètres passés à ZStudyProgressRings (paramétrable mais appelé sans args par ses 2 consommateurs) + préréglage « façon IFFD » dans example/ + docs/recipe-preset-iffd.md — SEUL lieu du dépôt où des hex décoratifs apparaissent
+  epic-vis-retrospective: done

@@ -4,12 +4,9 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_list/zcrud_list.dart';
 
 import 'demos/demo_registry.dart';
+import 'demos/iffd_visual_preset.dart';
 import 'home_screen.dart';
 import 'support/demo_file_picker.dart';
-
-/// Design-tokens injectés (FR-26/AD-6) : on ne fixe QUE des espacements ; les
-/// couleurs restent `null` → repli `Theme.of` (aucun style/couleur codé en dur).
-const ZcrudTheme _demoZcrudTheme = ZcrudTheme(gapM: 10, gapL: 20);
 
 /// Coquille de l'application exemple (EX-1, AC1/AC3). `MaterialApp` +
 /// `ZcrudScope` racine (thème `ZcrudTheme` de démo, `ZFilePicker` de démo),
@@ -32,10 +29,10 @@ class _ExampleAppState extends State<ExampleApp> {
   final ZWidgetRegistry _widgetRegistry = buildDemoWidgetRegistry();
 
   void _toggleLocale() => setState(
-        () => _locale = _locale.languageCode == 'fr'
-            ? const Locale('en')
-            : const Locale('fr'),
-      );
+    () => _locale = _locale.languageCode == 'fr'
+        ? const Locale('en')
+        : const Locale('fr'),
+  );
 
   void _toggleRtl() => setState(() => _rtl = !_rtl);
 
@@ -66,7 +63,8 @@ class _ExampleAppState extends State<ExampleApp> {
       // Bascule RTL via un `Directionality` directionnel explicite (AD-13).
       builder: (context, child) {
         final scoped = ZcrudScope(
-          theme: _demoZcrudTheme,
+          theme: iffdVisualTheme,
+          gradientResolver: iffdVisualGradientResolver,
           filePicker: const DemoFilePicker(),
           // Backend Syncfusion de la LISTE injecté au NIVEAU RACINE (EX-2, AC5/
           // AC8/AC9). C'est le SEUL point d'injection re-propagé sous chaque
