@@ -28,6 +28,7 @@ void main() {
     final base = _custom();
     expect(base.copyWith().fieldBorderColor, base.fieldBorderColor);
     expect(base.copyWith().gapM, base.gapM);
+    expect(base.copyWith().badgeRadius, base.badgeRadius);
     final changed = base.copyWith(gapM: 42, errorColor: const Color(0xFF000001));
     expect(changed.gapM, 42);
     expect(changed.errorColor, const Color(0xFF000001));

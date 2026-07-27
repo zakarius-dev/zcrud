@@ -41,7 +41,6 @@ Future<void> pumpCard(
     ),
   );
 }
-
 /// Pastille d'accent (le seul `Container` à décoration circulaire de la carte).
 Finder pastilleFinder() => find.byWidgetPredicate(
       (Widget w) =>
@@ -229,6 +228,57 @@ void main() {
   });
 
   group('AC7 — neutre thémable + RTL (directionnel)', () {
+    testWidgets('G11c — CardTheme.shape pilote le contour et l’encre',
+        (WidgetTester tester) async {
+      const ShapeBorder hostShape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(13)),
+        side: BorderSide(width: 3),
+      );
+      await pumpCard(
+        tester,
+        ZFolderCard(title: 'T', colorKey: 'k', onTap: () {}),
+        theme: ThemeData(cardTheme: const CardThemeData(shape: hostShape)),
+      );
+
+      expect(tester.widget<Card>(find.byType(Card)).shape, hostShape);
+      expect(tester.widget<InkWell>(find.byType(InkWell)).customBorder,
+          hostShape);
+    });
+
+    testWidgets('G11d — badgeRadius est indépendant du rayon de carte',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          home: ZcrudScope(
+            theme: const ZcrudTheme(
+              radiusM: Radius.circular(16),
+              badgeRadius: Radius.circular(8),
+            ),
+            child: const Directionality(
+              textDirection: TextDirection.ltr,
+              child: Scaffold(
+                body: ZFolderCard(
+                  title: 'T',
+                  colorKey: 'k',
+                  isArchived: true,
+                  archivedLabel: 'ARCH',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final Container badge = tester.widget<Container>(
+        find.ancestor(of: find.text('ARCH'), matching: find.byType(Container)),
+      );
+      expect(
+        (badge.decoration! as BoxDecoration).borderRadius,
+        const BorderRadius.all(Radius.circular(8)),
+      );
+    });
+
     testWidgets('G11 — rendu RTL sans exception, titre présent',
         (WidgetTester tester) async {
       await pumpCard(

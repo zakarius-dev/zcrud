@@ -34,6 +34,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.gapL = 16,
     this.radiusS = const Radius.circular(4),
     this.radiusM = const Radius.circular(8),
+    this.badgeRadius,
     this.fieldPadding = const EdgeInsetsDirectional.symmetric(
       horizontal: 12,
       vertical: 8,
@@ -110,6 +111,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Rayon — moyen.
   final Radius radiusM;
+
+  /// Rayon des badges. `null` conserve le rayon moyen [radiusM], afin que les
+  /// thèmes existants gardent strictement leur rendu.
+  final Radius? badgeRadius;
 
   /// Padding de champ **directionnel** (RTL-safe, AD-13).
   final EdgeInsetsDirectional fieldPadding;
@@ -318,6 +323,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? gapL,
     Radius? radiusS,
     Radius? radiusM,
+    Radius? badgeRadius,
     EdgeInsetsDirectional? fieldPadding,
     EdgeInsetsDirectional? formPadding,
     Radius? inputRadius,
@@ -352,6 +358,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         gapL: gapL ?? this.gapL,
         radiusS: radiusS ?? this.radiusS,
         radiusM: radiusM ?? this.radiusM,
+        badgeRadius: badgeRadius ?? this.badgeRadius,
         fieldPadding: fieldPadding ?? this.fieldPadding,
         formPadding: formPadding ?? this.formPadding,
         inputRadius: inputRadius ?? this.inputRadius,
@@ -391,6 +398,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       gapL: gapL + (other.gapL - gapL) * t,
       radiusS: Radius.lerp(radiusS, other.radiusS, t) ?? radiusS,
       radiusM: Radius.lerp(radiusM, other.radiusM, t) ?? radiusM,
+      // ⚠️ `null` des DEUX côtés doit RESTER `null` : c'est l'héritage déclaré
+      // (« badgeRadius nul ⇒ suit radiusM »). MESURÉ sans ce court-circuit :
+      // `lerp` de deux thèmes par défaut rendait `Radius.circular(8.0)` au lieu
+      // de `null` — l'héritage était donc GELÉ à la première transition de
+      // thème (Flutter lerp à chaque changement), et le badge cessait ensuite
+      // de suivre `radiusM`. Le rendu immédiat était identique, la régression
+      // ne serait apparue qu'au changement suivant de `radiusM`.
+      badgeRadius: badgeRadius == null && other.badgeRadius == null
+          ? null
+          : Radius.lerp(
+              badgeRadius ?? radiusM,
+              other.badgeRadius ?? other.radiusM,
+              t,
+            ),
       fieldPadding:
           EdgeInsetsDirectional.lerp(fieldPadding, other.fieldPadding, t) ??
               fieldPadding,

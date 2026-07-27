@@ -248,9 +248,13 @@ class ZFolderCard extends StatelessWidget {
       },
     );
 
-    final ShapeBorder shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(theme.radiusM),
-    );
+    // Le thème Material de l'hôte décide la forme complète (dont sa bordure)
+    // lorsqu'il en fournit une. La même instance est donnée au `Card` et à
+    // l'`InkWell` pour que le clip et l'encre restent parfaitement cohérents.
+    final ShapeBorder shape = CardTheme.of(context).shape ??
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(theme.radiusM),
+        );
 
     final bool interactive = onTap != null || onLongPress != null;
 
@@ -303,9 +307,9 @@ class ZFolderCard extends StatelessWidget {
     );
   }
 }
-
 /// Badge discret « Archivé » — parité lex `_ArchivedBadge` en NEUTRE : fond
-/// `surfaceContainerHighest`, texte `onSurfaceVariant`, rayon `radiusM` du thème.
+/// `surfaceContainerHighest`, texte `onSurfaceVariant`, rayon `badgeRadius` du
+/// thème (repli `radiusM`).
 /// Aucune couleur codée en dur (FR-26). Rendu **conditionnellement** par
 /// [ZFolderCard] (jamais un badge muet).
 class _ArchivedBadge extends StatelessWidget {
@@ -321,7 +325,7 @@ class _ArchivedBadge extends StatelessWidget {
       padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.all(theme.radiusM),
+        borderRadius: BorderRadius.all(theme.badgeRadius ?? theme.radiusM),
       ),
       child: Text(
         label,
