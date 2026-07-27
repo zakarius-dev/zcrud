@@ -41,14 +41,14 @@ List<ZStudyToolsSectionSpec> defaultSections(String? id) {
 
 /// Quelques sous-dossiers de référence.
 List<ZSubfolderRef> refs({int n = 3}) => <ZSubfolderRef>[
-      for (var i = 0; i < n; i++)
-        ZSubfolderRef(
-          id: 'sf$i',
-          label: 'Sous-dossier $i',
-          colorKey: i.isEven ? 'primary' : 'secondary',
-          count: i,
-        ),
-    ];
+  for (var i = 0; i < n; i++)
+    ZSubfolderRef(
+      id: 'sf$i',
+      label: 'Sous-dossier $i',
+      colorKey: i.isEven ? 'primary' : 'secondary',
+      count: i,
+    ),
+];
 
 /// Construit un `ZSubfolderNavSpec` neutre paramétrable.
 ZSubfolderNavSpec navSpec({
@@ -112,6 +112,17 @@ Future<ZStudyFolderDetail> pumpDetail(
   ZAppBarAction? addAction,
   List<ZAppBarAction> menuActions = const <ZAppBarAction>[],
   ZAppBarSearchConfig? search,
+  Widget? floatingActionButton,
+  FloatingActionButtonLocation? floatingActionButtonLocation,
+  List<Widget>? persistentFooterButtons,
+  Widget? drawer,
+  Widget? endDrawer,
+  Widget? bottomNavigationBar,
+  Widget? bottomSheet,
+  Color? backgroundColor,
+  bool? resizeToAvoidBottomInset,
+  bool extendBody = false,
+  bool extendBodyBehindAppBar = false,
   String? initialSelectedSubfolderId,
   TextDirection textDirection = TextDirection.ltr,
 }) async {
@@ -125,7 +136,8 @@ Future<ZStudyFolderDetail> pumpDetail(
     materialSectionsBuilder: materialSectionsBuilder ?? defaultSections,
     materialHeaderBuilder: materialHeaderBuilder,
     materialFooterBuilder: materialFooterBuilder,
-    notebookBuilder: notebookBuilder ??
+    notebookBuilder:
+        notebookBuilder ??
         (context) =>
             const Text('NOTE_BODY', key: ValueKey<String>('notebook-marker')),
     progressData: progressData,
@@ -136,6 +148,17 @@ Future<ZStudyFolderDetail> pumpDetail(
     addAction: addAction,
     menuActions: menuActions,
     search: search,
+    floatingActionButton: floatingActionButton,
+    floatingActionButtonLocation: floatingActionButtonLocation,
+    persistentFooterButtons: persistentFooterButtons,
+    drawer: drawer,
+    endDrawer: endDrawer,
+    bottomNavigationBar: bottomNavigationBar,
+    bottomSheet: bottomSheet,
+    backgroundColor: backgroundColor,
+    resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+    extendBody: extendBody,
+    extendBodyBehindAppBar: extendBodyBehindAppBar,
     initialSelectedSubfolderId: initialSelectedSubfolderId,
   );
   await tester.pumpWidget(

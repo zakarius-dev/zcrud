@@ -21,6 +21,7 @@ class ZAppBarSearchConfig {
     required this.onQueryChanged,
     this.hintLabel,
     this.initialQuery = '',
+    this.hidesHostActions = false,
   });
 
   /// Émis à chaque frappe (texte brut) et à la fermeture (chaîne vide).
@@ -31,4 +32,10 @@ class ZAppBarSearchConfig {
 
   /// Valeur initiale de la query (par défaut vide).
   final String initialQuery;
+
+  /// Masque les actions déclarées par l'hôte pendant la recherche.
+  ///
+  /// Par défaut `false` : le rendu historique est strictement conservé.
+  /// La loupe/fermeture propre au shell reste toujours disponible.
+  final bool hidesHostActions;
 }

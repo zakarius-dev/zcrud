@@ -43,7 +43,7 @@ part of 'z_page_shell.dart';
 /// plusieurs `Scaffold` aiguillés selon l'état, ou un slot que ce pass-through
 /// n'expose pas) : préférer [ZPageShellBody], qui ne possède aucun `Scaffold` et
 /// laisse à l'hôte **tous** ses slots, présents et futurs.
-class ZPageScaffold extends StatelessWidget {
+class ZPageScaffold extends StatefulWidget {
   /// Construit le shell. [title] est un `Widget` ou `String`. [tabs] nul/vide ⇒
   /// aucun `TabBar` (corps = [body]). [mode] défaut [ZPageAppBarMode.fixed].
   /// [tabController] optionnel : si fourni, le shell ne crée pas de
@@ -56,8 +56,10 @@ class ZPageScaffold extends StatelessWidget {
     this.search,
     this.tabs,
     this.body,
+    this.aboveTabViews,
     this.mode = ZPageAppBarMode.fixed,
     this.tabController,
+    this.tabAlignment,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.persistentFooterButtons,
@@ -71,9 +73,9 @@ class ZPageScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = false,
     super.key,
   }) : assert(
-          title is Widget || title is String,
-          'title doit être un Widget ou un String',
-        );
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       );
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
@@ -93,11 +95,18 @@ class ZPageScaffold extends StatelessWidget {
   /// Corps affiché quand il n'y a **pas** d'onglets (nul ⇒ aucun corps).
   final Widget? body;
 
+  /// Slot rendu sous le [TabBar] et au-dessus du [TabBarView] si des onglets
+  /// sont fournis. `null` conserve le corps historique sans wrapper ajouté.
+  final Widget? aboveTabViews;
+
   /// Mode d'app-bar (fixe vs sliver repliable — AC11).
   final ZPageAppBarMode mode;
 
   /// `TabController` injecté optionnel (sinon `DefaultTabController` interne).
   final TabController? tabController;
+
+  /// Alignement optionnel des onglets (`null` ⇒ comportement Flutter actuel).
+  final TabAlignment? tabAlignment;
 
   /// `Scaffold.floatingActionButton` (nul ⇒ aucun FAB — CR-52).
   final Widget? floatingActionButton;
@@ -134,9 +143,36 @@ class ZPageScaffold extends StatelessWidget {
   /// sliver (cf. doc de classe).
   final bool extendBodyBehindAppBar;
 
-  bool get _isSliver => mode != ZPageAppBarMode.fixed;
+  @override
+  State<ZPageScaffold> createState() => _ZPageScaffoldState();
+}
 
-  bool get _hasTabs => tabs != null && tabs!.isNotEmpty;
+class _ZPageScaffoldState extends State<ZPageScaffold> {
+  late final _ZSearchController _controller;
+
+  bool get _isSliver => widget.mode != ZPageAppBarMode.fixed;
+
+  bool get _hasTabs => widget.tabs != null && widget.tabs!.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = _ZSearchController(() => widget.search);
+  }
+
+  @override
+  void didUpdateWidget(ZPageScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.search, widget.search)) {
+      _controller.didUpdateConfig(oldWidget.search, widget.search);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -145,40 +181,43 @@ class ZPageScaffold extends StatelessWidget {
   /// **Unique** site de construction du `Scaffold` du shell : les slots y sont
   /// câblés une seule fois, donc jamais dupliqués entre les modes.
   Scaffold _scaffold({PreferredSizeWidget? appBar, Widget? body}) => Scaffold(
-        appBar: appBar,
-        body: body,
-        floatingActionButton: floatingActionButton,
-        floatingActionButtonLocation: floatingActionButtonLocation,
-        persistentFooterButtons: persistentFooterButtons,
-        drawer: drawer,
-        endDrawer: endDrawer,
-        bottomNavigationBar: bottomNavigationBar,
-        bottomSheet: bottomSheet,
-        backgroundColor: backgroundColor,
-        resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        extendBody: extendBody,
-        extendBodyBehindAppBar: extendBodyBehindAppBar,
-      );
+    appBar: appBar,
+    body: body,
+    floatingActionButton: widget.floatingActionButton,
+    floatingActionButtonLocation: widget.floatingActionButtonLocation,
+    persistentFooterButtons: widget.persistentFooterButtons,
+    drawer: widget.drawer,
+    endDrawer: widget.endDrawer,
+    bottomNavigationBar: widget.bottomNavigationBar,
+    bottomSheet: widget.bottomSheet,
+    backgroundColor: widget.backgroundColor,
+    resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
+    extendBody: widget.extendBody,
+    extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
+  );
 
   // --- Mode fixe -------------------------------------------------------------
 
   Widget _buildFixed(BuildContext context) {
     final scaffold = _scaffold(
-      appBar: ZSearchableAppBar(
-        title: title,
-        leading: leading,
-        actions: actions,
-        search: search,
-        bottom: _hasTabs ? _zTabBar(tabs!, tabController) : null,
+      appBar: ZSearchableAppBar._controlled(
+        title: widget.title,
+        controller: _controller,
+        leading: widget.leading,
+        actions: widget.actions,
+        search: widget.search,
+        bottom: _hasTabs
+            ? _zTabBar(widget.tabs!, widget.tabController, widget.tabAlignment)
+            : null,
       ),
-      body: _hasTabs ? _zTabBarView(tabs!, tabController) : body,
+      body: _hasTabs ? _buildTabBody() : widget.body,
     );
     // Le `TabBar` vit dans l'app-bar du `Scaffold` (hors de son corps) : le
     // `DefaultTabController` doit donc envelopper le `Scaffold` lui-même.
     return _hasTabs
         ? _zWrapTabs(
-            length: tabs!.length,
-            controller: tabController,
+            length: widget.tabs!.length,
+            controller: widget.tabController,
             child: scaffold,
           )
         : scaffold;
@@ -189,15 +228,31 @@ class ZPageScaffold extends StatelessWidget {
   /// Le corps sliver est **délégué** à [ZPageShellBody] (même rendu, code
   /// unique) ; les slots restent portés par le `Scaffold` extérieur.
   Widget _buildSliver(BuildContext context) => _scaffold(
-        body: ZPageShellBody(
-          title: title,
-          leading: leading,
-          actions: actions,
-          search: search,
-          tabs: tabs,
-          body: body,
-          mode: mode,
-          tabController: tabController,
-        ),
-      );
+    body: ZPageShellBody._controlled(
+      title: widget.title,
+      leading: widget.leading,
+      actions: widget.actions,
+      search: widget.search,
+      tabs: widget.tabs,
+      body: widget.body,
+      aboveTabViews: widget.aboveTabViews,
+      mode: widget.mode,
+      tabController: widget.tabController,
+      tabAlignment: widget.tabAlignment,
+      controller: _controller,
+    ),
+  );
+
+  Widget _buildTabBody() {
+    final tabViews = _zTabBarView(widget.tabs!, widget.tabController);
+    final aboveTabViews = widget.aboveTabViews;
+    return aboveTabViews == null
+        ? tabViews
+        : Column(
+            children: <Widget>[
+              aboveTabViews,
+              Expanded(child: tabViews),
+            ],
+          );
+  }
 }

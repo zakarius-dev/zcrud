@@ -116,20 +116,44 @@ final class ZMarkdownEmbedBridge {
   }
 }
 
-/// Garde par défaut des ponts LaTeX fournis : une charge **vide** ou **bordée
-/// d'espaces** n'est pas une formule (CR-LEX-48).
+/// Garde par défaut des ponts LaTeX fournis (CR-LEX-48, CR-54).
 ///
-/// C'est la règle de flanquement que CommonMark applique déjà à ses propres
-/// délimiteurs d'emphase (`*`/`_` ne peuvent pas ouvrir devant une espace), et
-/// c'est aussi celle des extensions math usuelles. Elle sépare les quatre vraies
-/// formules mesurées (`V = P + F + A`, `\frac{a}{b}`, `x^2`, `\alpha + \beta`)
-/// des deux fausses (`« à 9 »`, `« CAD à 250 »`) sans heuristique sur le contenu
-/// LaTeX lui-même — donc sans rejeter `$x$`.
+/// Une charge vide est refusée. Les espaces de bordure sont ignorés pour la
+/// décision : `$ V = P + F $` et `$ x^2 $` restent donc des formules. Une
+/// charge à plusieurs mots doit toutefois porter un signal LaTeX ou mathématique
+/// explicite (commande `\…`, opérateur, exposant/indice ou accolades) ; ainsi
+/// `« à 9 »` et `« CAD à 250 »` restent du texte.
+///
+/// Pour les délimiteurs dollar, un `$` ouvrant immédiatement précédé d'un
+/// chiffre est refusé : `5$à9$` est un montant collé, pas la formule `à9`.
+/// Cette décision emploie le contexte du [Match] (`input` et `start`), sans
+/// dupliquer les motifs des ponts.
+///
+/// Limites résiduelles : ce n'est pas un parseur LaTeX. Une formule à plusieurs
+/// mots sans commande ni symbole (`$ variable locale $`) est conservée comme
+/// texte, tandis qu'un fragment court sans espace qui n'est pas un montant
+/// (`$à9$`) reste ambigu et est accepté. Les hôtes qui ont besoin d'une règle
+/// métier plus stricte peuvent fournir leur propre [ZMarkdownEmbedBridge.accepts]
+/// sur la même famille de motifs.
 bool zLatexPayloadLooksLikeFormula(Match match) {
   final String? data = match.groupCount < 1 ? null : match.group(1);
-  if (data == null || data.isEmpty) return false;
-  return data.trim().length == data.length;
+  if (data == null) return false;
+  final String trimmed = data.trim();
+  if (trimmed.isEmpty) return false;
+
+  final String matched = match[0] ?? '';
+  if (matched.startsWith(r'$') && match.start > 0) {
+    final int precedingCodeUnit = match.input.codeUnitAt(match.start - 1);
+    if (precedingCodeUnit >= 0x30 && precedingCodeUnit <= 0x39) return false;
+  }
+
+  if (_zLatexFormulaSignal.hasMatch(trimmed)) return true;
+  if (_zLatexWhitespace.hasMatch(trimmed)) return false;
+  return true;
 }
+
+final RegExp _zLatexFormulaSignal = RegExp(r'\\[a-zA-Z]+|[\^_{}=+*/<>]');
+final RegExp _zLatexWhitespace = RegExp(r'\s');
 
 /// Ponts prêts à l'emploi, **opt-in** (AD-57).
 ///

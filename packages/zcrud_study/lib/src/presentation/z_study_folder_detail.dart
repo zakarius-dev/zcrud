@@ -60,9 +60,8 @@ const double _kHeaderAccentSize = 12.0;
 /// Construit les sections « Matériel » pour le sous-dossier [selectedSubfolderId]
 /// (`null` = tous). Le widget ne filtre AUCUNE donnée lui-même (AD-2) : il
 /// re-fournit l'id sélectionné à ce builder INJECTÉ.
-typedef ZMaterialSectionsBuilder = List<ZStudyToolsSectionSpec> Function(
-  String? selectedSubfolderId,
-);
+typedef ZMaterialSectionsBuilder =
+    List<ZStudyToolsSectionSpec> Function(String? selectedSubfolderId);
 
 /// CR-53 — construit un slot LIBRE (en-tête ou pied) de l'onglet « Matériel »
 /// pour le sous-dossier [selectedSubfolderId] (`null` = tous).
@@ -86,10 +85,8 @@ typedef ZMaterialSectionsBuilder = List<ZStudyToolsSectionSpec> Function(
 /// [ZMaterialSectionsBuilder], jamais au-dessus (AD-2/SM-1 : un changement de
 /// sélection ne reconstruit que le corps Matériel, pas les onglets ni la
 /// sidebar).
-typedef ZMaterialSlotBuilder = Widget? Function(
-  BuildContext context,
-  String? selectedSubfolderId,
-);
+typedef ZMaterialSlotBuilder =
+    Widget? Function(BuildContext context, String? selectedSubfolderId);
 
 /// Page-détail d'un dossier d'étude (ossature composée).
 class ZStudyFolderDetail extends StatefulWidget {
@@ -117,15 +114,26 @@ class ZStudyFolderDetail extends StatefulWidget {
     this.menuActions = const <ZAppBarAction>[],
     this.search,
     this.mode = ZPageAppBarMode.fixed,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation,
+    this.persistentFooterButtons,
+    this.drawer,
+    this.endDrawer,
+    this.bottomNavigationBar,
+    this.bottomSheet,
+    this.backgroundColor,
+    this.resizeToAvoidBottomInset,
+    this.extendBody = false,
+    this.extendBodyBehindAppBar = false,
     this.progressData,
     this.progressStatCards = const <Widget>[],
     this.progressEmptyState,
     this.initialSelectedSubfolderId,
     super.key,
-  })  : assert(
-          title is Widget || title is String,
-          'title doit être un Widget ou un String',
-        );
+  }) : assert(
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       );
 
   /// Clé stable de la pastille d'accent d'en-tête (exposée pour les tests).
   static const Key accentKey = ValueKey<String>('suf3:accent');
@@ -174,6 +182,19 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Mode d'app-bar (fixe vs sliver repliable) — délégué à SUF-1.
   final ZPageAppBarMode mode;
+
+  /// Slots de `Scaffold` relayés au shell (CR-56). Tous restent optionnels.
+  final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final List<Widget>? persistentFooterButtons;
+  final Widget? drawer;
+  final Widget? endDrawer;
+  final Widget? bottomNavigationBar;
+  final Widget? bottomSheet;
+  final Color? backgroundColor;
+  final bool? resizeToAvoidBottomInset;
+  final bool extendBody;
+  final bool extendBodyBehindAppBar;
 
   /// Constructeur des sections Matériel selon le sous-dossier sélectionné.
   final ZMaterialSectionsBuilder materialSectionsBuilder;
@@ -255,6 +276,17 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       actions: actions,
       search: widget.search,
       mode: widget.mode,
+      floatingActionButton: widget.floatingActionButton,
+      floatingActionButtonLocation: widget.floatingActionButtonLocation,
+      persistentFooterButtons: widget.persistentFooterButtons,
+      drawer: widget.drawer,
+      endDrawer: widget.endDrawer,
+      bottomNavigationBar: widget.bottomNavigationBar,
+      bottomSheet: widget.bottomSheet,
+      backgroundColor: widget.backgroundColor,
+      resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
+      extendBody: widget.extendBody,
+      extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       tabs: <ZPageTab>[
         ZPageTab(
           label: widget.materialTabLabel,
@@ -376,8 +408,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
         return ValueListenableBuilder<double>(
           valueListenable: _sidebarWidth,
           builder: (context, width, _) {
-            final clamped =
-                width.clamp(widget.nav.minSidebarWidth, maxWidth).toDouble();
+            final clamped = width
+                .clamp(widget.nav.minSidebarWidth, maxWidth)
+                .toDouble();
             return SizedBox(
               width: clamped,
               child: ZSubfolderSidebar(

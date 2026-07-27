@@ -24,9 +24,24 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.bottom,
     super.key,
   }) : assert(
-          title is Widget || title is String,
-          'title doit être un Widget ou un String',
-        );
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       ),
+       _controller = null;
+
+  /// Variante interne : le contrôleur est détenu par `ZPageScaffold` afin de
+  /// traverser un changement de branche fixe/sliver sans perdre la recherche.
+  const ZSearchableAppBar._controlled({
+    required this.title,
+    required _ZSearchController this._controller,
+    this.leading,
+    this.actions = const <ZAppBarAction>[],
+    this.search,
+    this.bottom,
+  }) : assert(
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       );
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
@@ -43,6 +58,8 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// Contenu bas optionnel (ex. `TabBar`) — participe à [preferredSize].
   final PreferredSizeWidget? bottom;
 
+  final _ZSearchController? _controller;
+
   @override
   Size get preferredSize =>
       Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
@@ -56,6 +73,7 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
 /// aucune mutation — l'état reste propriété exclusive du widget.
 class ZSearchableAppBarState extends State<ZSearchableAppBar> {
   late final _ZSearchController _controller;
+  late final bool _ownsController;
 
   @override
   void initState() {
@@ -63,20 +81,21 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
     // La config est lue à l'ÉMISSION (`() => widget.search`), jamais copiée :
     // une `ZAppBarSearchConfig` remplacée (closure recréée au build de l'hôte)
     // est donc prise en compte immédiatement, sans perte silencieuse.
-    _controller = _ZSearchController(() => widget.search);
+    _ownsController = widget._controller == null;
+    _controller = widget._controller ?? _ZSearchController(() => widget.search);
   }
 
   @override
   void didUpdateWidget(ZSearchableAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.search, widget.search)) {
+    if (_ownsController && !identical(oldWidget.search, widget.search)) {
       _controller.didUpdateConfig(oldWidget.search, widget.search);
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 

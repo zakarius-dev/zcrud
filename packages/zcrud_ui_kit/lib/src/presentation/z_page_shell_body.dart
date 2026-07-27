@@ -44,13 +44,35 @@ class ZPageShellBody extends StatefulWidget {
     this.search,
     this.tabs,
     this.body,
+    this.aboveTabViews,
     this.mode = ZPageAppBarMode.pinned,
     this.tabController,
+    this.tabAlignment,
     super.key,
   }) : assert(
-          title is Widget || title is String,
-          'title doit être un Widget ou un String',
-        );
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       ),
+       _controller = null;
+
+  /// Variante interne composée par `ZPageScaffold` avec son unique état de
+  /// recherche, pour survivre à un hot-swap de mode.
+  const ZPageShellBody._controlled({
+    required this.title,
+    required _ZSearchController this._controller,
+    this.leading,
+    this.actions = const <ZAppBarAction>[],
+    this.search,
+    this.tabs,
+    this.body,
+    this.aboveTabViews,
+    this.mode = ZPageAppBarMode.pinned,
+    this.tabController,
+    this.tabAlignment,
+  }) : assert(
+         title is Widget || title is String,
+         'title doit être un Widget ou un String',
+       );
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
@@ -70,12 +92,20 @@ class ZPageShellBody extends StatefulWidget {
   /// Contenu affiché quand il n'y a **pas** d'onglets (nul ⇒ absent).
   final Widget? body;
 
+  /// Slot sous le `TabBar` et au-dessus des vues (`null` ⇒ absent).
+  final Widget? aboveTabViews;
+
   /// Mode d'app-bar. [ZPageAppBarMode.fixed] se replie sur `pinned` (cf. doc de
   /// classe) : un app-bar fixe se pose dans `Scaffold(appBar:)`.
   final ZPageAppBarMode mode;
 
   /// `TabController` injecté optionnel (sinon `DefaultTabController` interne).
   final TabController? tabController;
+
+  /// Alignement optionnel des onglets (`null` ⇒ défaut Flutter).
+  final TabAlignment? tabAlignment;
+
+  final _ZSearchController? _controller;
 
   @override
   State<ZPageShellBody> createState() => _ZPageShellBodyState();
@@ -85,6 +115,7 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
   /// Contrôleur de recherche **détenu** (propriétaire unique, AD-2) : créé une
   /// fois, `dispose`é une fois, jamais recréé au rebuild.
   late final _ZSearchController _controller;
+  late final bool _ownsController;
 
   bool get _hasTabs => widget.tabs != null && widget.tabs!.isNotEmpty;
 
@@ -98,29 +129,32 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
   void initState() {
     super.initState();
     // Config lue à l'ÉMISSION (jamais copiée) — cf. `_ZSearchController`.
-    _controller = _ZSearchController(() => widget.search);
+    _ownsController = widget._controller == null;
+    _controller = widget._controller ?? _ZSearchController(() => widget.search);
   }
 
   @override
   void didUpdateWidget(ZPageShellBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.search, widget.search)) {
+    if (_ownsController && !identical(oldWidget.search, widget.search)) {
       _controller.didUpdateConfig(oldWidget.search, widget.search);
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
   Widget _sliverAppBar(BuildContext context, {PreferredSizeWidget? bottom}) {
     final mode = _mode;
-    final floating = mode == ZPageAppBarMode.floating ||
+    final floating =
+        mode == ZPageAppBarMode.floating ||
         mode == ZPageAppBarMode.floatingPinned;
     final pinned =
-        mode == ZPageAppBarMode.pinned || mode == ZPageAppBarMode.floatingPinned;
+        mode == ZPageAppBarMode.pinned ||
+        mode == ZPageAppBarMode.floatingPinned;
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isSearching,
       builder: (context, searching, _) => SliverAppBar(
@@ -163,10 +197,14 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
           headerSliverBuilder: (context, _) => <Widget>[
             _sliverAppBar(
               context,
-              bottom: _zTabBar(widget.tabs!, widget.tabController),
+              bottom: _zTabBar(
+                widget.tabs!,
+                widget.tabController,
+                widget.tabAlignment,
+              ),
             ),
           ],
-          body: _zTabBarView(widget.tabs!, widget.tabController),
+          body: _buildTabBody(),
         ),
       );
     }
@@ -177,5 +215,18 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
         if (widget.body != null) SliverToBoxAdapter(child: widget.body),
       ],
     );
+  }
+
+  Widget _buildTabBody() {
+    final tabViews = _zTabBarView(widget.tabs!, widget.tabController);
+    final aboveTabViews = widget.aboveTabViews;
+    return aboveTabViews == null
+        ? tabViews
+        : Column(
+            children: <Widget>[
+              aboveTabViews,
+              Expanded(child: tabViews),
+            ],
+          );
   }
 }

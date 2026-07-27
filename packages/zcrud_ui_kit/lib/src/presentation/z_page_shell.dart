@@ -51,11 +51,12 @@ part 'z_searchable_app_bar.dart';
 /// **la même** config fraîche.
 class _ZSearchController {
   _ZSearchController(this._configOf)
-      : _isSearching = ValueNotifier<bool>(false),
-        query = ValueNotifier<String>(_configOf()?.initialQuery ?? ''),
-        textController =
-            TextEditingController(text: _configOf()?.initialQuery ?? ''),
-        focusNode = FocusNode();
+    : _isSearching = ValueNotifier<bool>(false),
+      query = ValueNotifier<String>(_configOf()?.initialQuery ?? ''),
+      textController = TextEditingController(
+        text: _configOf()?.initialQuery ?? '',
+      ),
+      focusNode = FocusNode();
 
   /// Accès **paresseux** à la config courante du widget propriétaire (jamais
   /// une copie : relu à chaque émission).
@@ -124,8 +125,7 @@ class _ZSearchController {
     // Nouvelle valeur initiale DÉCLARÉE : elle prime sur la saisie précédente.
     textController.value = TextEditingValue(
       text: current.initialQuery,
-      selection:
-          TextSelection.collapsed(offset: current.initialQuery.length),
+      selection: TextSelection.collapsed(offset: current.initialQuery.length),
     );
     query.value = current.initialQuery;
   }
@@ -140,18 +140,19 @@ class _ZSearchController {
 
 /// `TabBar` déclaratif **partagé** par [ZPageScaffold] (mode fixe) et
 /// [ZPageShellBody] (modes sliver) — le motif n'est écrit qu'une fois.
-PreferredSizeWidget _zTabBar(List<ZPageTab> tabs, TabController? controller) =>
-    TabBar(
-      controller: controller,
-      isScrollable: true,
-      tabs: <Widget>[
-        for (final tab in tabs)
-          Tab(
-            text: tab.label,
-            icon: tab.icon == null ? null : Icon(tab.icon),
-          ),
-      ],
-    );
+PreferredSizeWidget _zTabBar(
+  List<ZPageTab> tabs,
+  TabController? controller,
+  TabAlignment? tabAlignment,
+) => TabBar(
+  controller: controller,
+  tabAlignment: tabAlignment,
+  isScrollable: true,
+  tabs: <Widget>[
+    for (final tab in tabs)
+      Tab(text: tab.label, icon: tab.icon == null ? null : Icon(tab.icon)),
+  ],
+);
 
 /// `TabBarView` déclaratif **partagé** (mêmes propriétaires que [_zTabBar]).
 Widget _zTabBarView(List<ZPageTab> tabs, TabController? controller) =>
@@ -168,10 +169,9 @@ Widget _zWrapTabs({
   required Widget child,
   required int length,
   required TabController? controller,
-}) =>
-    controller != null
-        ? child
-        : DefaultTabController(length: length, child: child);
+}) => controller != null
+    ? child
+    : DefaultTabController(length: length, child: child);
 
 /// Résout un libellé par composition défensive (AD-13/AD-10) :
 /// `ZcrudScope.labels` → `ZcrudLocalizations` → `MaterialLocalizations`.
@@ -233,10 +233,7 @@ Widget _zBuildTitle(
         textAlign: TextAlign.start,
         onChanged: controller.onChanged,
         style: Theme.of(context).textTheme.titleLarge,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-        ),
+        decoration: InputDecoration(hintText: hint, border: InputBorder.none),
       ),
     );
   }
@@ -261,13 +258,15 @@ List<Widget> _zBuildActions(
     (action.isOverflow ? overflow : inline).add(action);
   }
   return <Widget>[
-    for (final action in inline)
-      IconButton(
-        icon: Icon(action.icon, semanticLabel: action.semanticLabel),
-        tooltip: action.tooltip,
-        onPressed: action.onPressed,
-      ),
-    if (overflow.isNotEmpty)
+    if (!(searching && (search?.hidesHostActions ?? false)))
+      for (final action in inline)
+        IconButton(
+          icon: _zActionChild(action),
+          tooltip: action.tooltip,
+          onPressed: action.onPressed,
+        ),
+    if (overflow.isNotEmpty &&
+        !(searching && (search?.hidesHostActions ?? false)))
       PopupMenuButton<int>(
         icon: const Icon(Icons.more_vert),
         itemBuilder: (context) => <PopupMenuEntry<int>>[
@@ -277,7 +276,7 @@ List<Widget> _zBuildActions(
               enabled: overflow[i].onPressed != null,
               child: Row(
                 children: <Widget>[
-                  Icon(overflow[i].icon),
+                  _zActionChild(overflow[i]),
                   const SizedBox(width: 12),
                   Text(overflow[i].semanticLabel),
                 ],
@@ -301,3 +300,18 @@ List<Widget> _zBuildActions(
       ),
   ];
 }
+
+/// Contenu d'action avec sémantique explicite, quelle que soit sa forme.
+///
+/// 🔴 `ExcludeSemantics` est INDISPENSABLE sur le chemin widget (CR-LEX-58).
+/// MESURÉ sans lui, avec `child: CircleAvatar(child: Text('ZD'))` et
+/// `semanticLabel: 'PROFIL'` : le nœud fusionné portait `'PROFIL\nZD'` — le
+/// texte interne du widget FUYAIT dans le libellé, et un lecteur d'écran
+/// annonçait « PROFIL ZD ». Quand l'hôte fournit un `semanticLabel` explicite,
+/// il fait AUTORITÉ : le contenu visuel ne doit pas s'y concaténer.
+/// Sans objet sur le chemin icône (`Icon` sans `semanticLabel` n'émet rien),
+/// donc aucune régression de ce côté.
+Widget _zActionChild(ZAppBarAction action) => Semantics(
+  label: action.semanticLabel,
+  child: ExcludeSemantics(child: action.child ?? Icon(action.icon)),
+);

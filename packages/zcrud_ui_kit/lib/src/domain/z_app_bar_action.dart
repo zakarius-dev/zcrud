@@ -21,10 +21,23 @@ class ZAppBarAction {
     this.onPressed,
     this.tooltip,
     this.isOverflow = false,
-  });
+  }) : child = null;
+
+  /// Variante pour une action portée par un widget (avatar, badge, indicateur
+  /// de chargement…). Le chemin [ZAppBarAction.new] à icône reste inchangé.
+  const ZAppBarAction.widget({
+    required Widget this.child,
+    required this.semanticLabel,
+    this.onPressed,
+    this.tooltip,
+    this.isOverflow = false,
+  }) : icon = const IconData(0);
 
   /// Glyphe de l'action.
   final IconData icon;
+
+  /// Widget visible de l'action, présent seulement avec [ZAppBarAction.widget].
+  final Widget? child;
 
   /// Libellé accessible explicite (lecteur d'écran) — toujours présent.
   final String semanticLabel;
@@ -45,6 +58,7 @@ class ZAppBarAction {
       other is ZAppBarAction &&
           runtimeType == other.runtimeType &&
           icon == other.icon &&
+          child == other.child &&
           semanticLabel == other.semanticLabel &&
           onPressed == other.onPressed &&
           tooltip == other.tooltip &&
@@ -52,5 +66,5 @@ class ZAppBarAction {
 
   @override
   int get hashCode =>
-      Object.hash(icon, semanticLabel, onPressed, tooltip, isOverflow);
+      Object.hash(icon, child, semanticLabel, onPressed, tooltip, isOverflow);
 }
