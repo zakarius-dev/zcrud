@@ -36,10 +36,16 @@ const double _kMinTapTarget = 48.0;
 /// glyphe conventionnel « + » est le défaut neutre justifié d'une action d'ajout.
 const IconData _kAddActionFallbackIcon = Icons.add;
 
-/// Glyphe de poignée de drag de REPLI (défaut neutre conventionnel documenté,
-/// même patron justifié que [_kAddActionFallbackIcon]). La sémantique (label
-/// a11y) reste, elle, TOUJOURS injectée (`reorderHandleSemanticLabel`, i18n) :
-/// aucun libellé n'est jamais codé en dur (AD-13/FR-26).
+/// Glyphe de poignée de drag de REPLI, appliqué UNIQUEMENT quand l'appelant
+/// n'injecte pas `reorderHandleIcon` (CR-LEX-79 §2) — même patron justifié que
+/// [_kAddActionFallbackIcon]. Le nom « fallback » est désormais EXACT : il
+/// existe bien un slot devant lequel se replier (`ZStudyToolsSectionSpec
+/// .reorderHandleIcon`), là où la poignée était auparavant la seule icône du
+/// layout à rester codée en dur INCONDITIONNELLEMENT alors que
+/// `addActionIcon`/`secondaryActionIcon` étaient, eux, injectables. La
+/// sémantique (label a11y) reste, elle, TOUJOURS injectée
+/// (`reorderHandleSemanticLabel`, i18n) : aucun libellé n'est jamais codé en
+/// dur (AD-13/FR-26).
 const IconData _kDragHandleFallbackIcon = Icons.drag_handle;
 
 /// Libellés de REPLI des actions sémantiques de la grille réordonnable
@@ -429,11 +435,32 @@ class _ZStudySection extends StatelessWidget {
   ) {
     final renderer = ZcrudScope.maybeOf(context)?.reorderRenderer ??
         const ZDefaultReorderRenderer();
+    // CR-LEX-79 §1 — AFFORDANCE de réordonnancement sur le chemin GRILLE.
+    //
+    // Elle manquait ENTIÈREMENT ici (ni poignée, ni `Semantics`, ni cible ≥
+    // 48 dp) alors que le chemin liste la portait : un hôte qui ajoutait
+    // `crossAxisMinItemWidth` à une section déjà réordonnable perdait
+    // l'affordance SANS AUCUN SIGNAL — pas d'erreur, pas d'assert, et le
+    // glisser continuait de passer en test. L'information « cet élément se
+    // déplace » n'est pas une décoration (AD-13).
+    //
+    // Elle est posée AUTOUR de l'item, EN AMONT du renderer : le port
+    // `ZReorderRenderer` (AD-57) ne transporte pas de slot de poignée, et
+    // décorer ici garantit l'affordance pour TOUT renderer — le repli
+    // `zcrud_responsive` comme un satellite injecté par l'hôte. Aucune
+    // modification de `zcrud_responsive` n'est requise.
+    final IconData handleIcon = spec.reorderHandleIcon ?? _kDragHandleFallbackIcon;
+    final String handleLabel = spec.reorderHandleSemanticLabel ?? spec.title;
     return renderer.build(
       context,
       ZReorderRenderRequest(
         itemIds: spec.itemIds!,
-        itemBuilder: spec.itemBuilder,
+        itemBuilder: (context, index) => _ReorderableGridCell(
+          icon: handleIcon,
+          handleSemanticLabel: handleLabel,
+          theme: theme,
+          child: spec.itemBuilder(context, index),
+        ),
         onReorder: spec.onReorder!,
         minItemWidth: minWidth,
         spacing: theme.gapS,
@@ -644,6 +671,9 @@ class _ReorderableItemListState extends State<_ReorderableItemList> {
             key: ValueKey(id),
             index: index,
             handleSemanticLabel: spec.reorderHandleSemanticLabel ?? spec.title,
+            // CR-LEX-79 §2 — glyphe INJECTÉ (repli neutre documenté), MÊME
+            // patron que `addActionIcon`/`secondaryActionIcon`.
+            handleIcon: spec.reorderHandleIcon ?? _kDragHandleFallbackIcon,
             theme: theme,
             child: spec.itemBuilder(
                 context, originalIndex < 0 ? index : originalIndex),
@@ -660,6 +690,7 @@ class _ReorderableItemRow extends StatelessWidget {
   const _ReorderableItemRow({
     required this.index,
     required this.handleSemanticLabel,
+    required this.handleIcon,
     required this.theme,
     required this.child,
     super.key,
@@ -667,6 +698,10 @@ class _ReorderableItemRow extends StatelessWidget {
 
   final int index;
   final String handleSemanticLabel;
+
+  /// Glyphe de la poignée — INJECTÉ par l'appelant, repli neutre documenté
+  /// ([_kDragHandleFallbackIcon]) résolu par l'appelant (CR-LEX-79 §2).
+  final IconData handleIcon;
   final ZcrudTheme theme;
   final Widget child;
 
@@ -693,12 +728,80 @@ class _ReorderableItemRow extends StatelessWidget {
                 ),
                 // Le glyphe est décoratif ; l'annonce a11y vient du Semantics
                 // parent (label INJECTÉ) — pas de label sur l'icône.
-                child: const Icon(_kDragHandleFallbackIcon),
+                child: Icon(handleIcon),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Cellule de GRILLE réordonnable : l'item de l'appelant + la MÊME poignée
+/// visible que le chemin liste (CR-LEX-79 §1).
+///
+/// ## Pourquoi ce widget existe
+///
+/// `ZReorderableAdaptiveGrid` (`zcrud_responsive`) déclenche le déplacement par
+/// **appui long sur la cellule entière** et n'affiche rien : la capacité était
+/// donc **invisible au voyant** et **inatteignable comme information** pour le
+/// lecteur d'écran, alors que le chemin liste portait poignée + label + cible
+/// 48 dp. Pire, la perte était SILENCIEUSE à l'adoption (ajouter
+/// `crossAxisMinItemWidth` suffisait à la provoquer, sans erreur ni assert).
+///
+/// ## Ce qu'elle est — et ce qu'elle n'est PAS
+///
+/// C'est une **affordance** : un repère visuel + un nœud `Semantics` au libellé
+/// INJECTÉ, dimensionné ≥ 48 dp (AD-13). Ce n'est **pas** un second déclencheur
+/// de drag : le geste reste l'appui long, qui fonctionne sur la poignée comme
+/// sur le reste de la cellule (la poignée est *à l'intérieur* du
+/// `LongPressDraggable`). `ReorderableDragStartListener` serait ici **inerte** —
+/// il ne fait rien hors d'un `SliverReorderableList` du SDK — et un `Draggable`
+/// local ne connaîtrait pas la **position d'affichage** attendue par le
+/// protocole de dépôt (l'`itemBuilder` reçoit l'index SOURCE). Une poignée qui
+/// *paraîtrait* déclencher sans déclencher serait pire que pas de poignée.
+///
+/// Le nœud n'est donc PAS marqué `button: true` (contrairement au chemin liste,
+/// où la poignée EST le point de départ du geste) : il annonce une information,
+/// il n'ouvre pas d'action. L'alternative accessible au geste reste portée par
+/// les actions sémantiques « déplacer avant/après » de la cellule du socle.
+class _ReorderableGridCell extends StatelessWidget {
+  const _ReorderableGridCell({
+    required this.icon,
+    required this.handleSemanticLabel,
+    required this.theme,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String handleSemanticLabel;
+  final ZcrudTheme theme;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      // MÊME structure que `_ReorderableItemRow` (poignée en fin de ligne, côté
+      // `end` — directionnelle par construction, jamais `left`/`right`).
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Expanded(child: child),
+        SizedBox(width: theme.gapS),
+        Semantics(
+          container: true,
+          label: handleSemanticLabel,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: _kMinTapTarget,
+              minHeight: _kMinTapTarget,
+            ),
+            // Glyphe décoratif : l'annonce vient du `Semantics` parent (label
+            // INJECTÉ) — jamais un second label sur l'icône.
+            child: Icon(icon),
+          ),
+        ),
+      ],
     );
   }
 }

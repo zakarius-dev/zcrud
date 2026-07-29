@@ -36,6 +36,7 @@ class ZStudyToolsSectionSpec {
     this.itemIds,
     this.onReorder,
     this.reorderHandleSemanticLabel,
+    this.reorderHandleIcon,
     this.reorderMoveBeforeSemanticLabel,
     this.reorderMoveAfterSemanticLabel,
     this.collapsible = false,
@@ -148,6 +149,19 @@ class ZStudyToolsSectionSpec {
   /// « Drag » codé en dur (AD-13/FR-23) : le label est INJECTÉ par l'appelant.
   final String? reorderHandleSemanticLabel;
 
+  /// Glyphe INJECTÉ de la poignée de réordonnancement (CR-LEX-79 §2).
+  ///
+  /// `null` (défaut) ⇒ repli sur `Icons.drag_handle` — **rendu strictement
+  /// inchangé** pour tout hôte qui ne renseigne pas ce slot. MÊME patron que
+  /// [addActionIcon] et [secondaryActionIcon], qui étaient déjà injectables : la
+  /// poignée était la seule icône du layout à rester CODÉE EN DUR, ce qui
+  /// obligeait l'hôte à aligner ses assertions sur le glyphe amont au lieu de
+  /// choisir sa propre iconographie (ex. `Icons.drag_handle_rounded`).
+  ///
+  /// S'applique aux **DEUX** chemins réordonnables — liste mono-colonne ET
+  /// grille multi-colonnes (cf. [crossAxisMinItemWidth]).
+  final IconData? reorderHandleIcon;
+
   /// Libellé LOCALISÉ de l'action sémantique « déplacer avant » du mode GRILLE
   /// réordonnable (CR-IFFD-15). `null` ⇒ repli neutre documenté côté layout.
   ///
@@ -224,9 +238,34 @@ class ZStudyToolsSectionSpec {
   /// multi-colonnes RÉORDONNABLE** (`ZReorderableAdaptiveGrid` de
   /// `zcrud_responsive`), et non plus une liste mono-colonne signalée par un
   /// `assert`. L'activation est **implicite** — aucun drapeau supplémentaire.
-  /// Le geste est un **appui long sur la cellule** (pas de poignée), doublé de
-  /// deux actions sémantiques ([reorderMoveBeforeSemanticLabel] /
+  /// Le geste est un **appui long sur la cellule**, doublé de deux actions
+  /// sémantiques ([reorderMoveBeforeSemanticLabel] /
   /// [reorderMoveAfterSemanticLabel]) pour le lecteur d'écran (AD-13).
+  ///
+  /// **CR-LEX-79 §1 — l'AFFORDANCE est désormais présente sur les DEUX chemins.**
+  /// Jusqu'ici la poignée n'existait QUE sur le chemin liste : passer une section
+  /// déjà réordonnable en grille (renseigner cette largeur) faisait DISPARAÎTRE
+  /// la poignée **sans aucun signal** — ni erreur, ni `assert`, et le glisser
+  /// continuait de passer en test. Chaque cellule de grille porte désormais la
+  /// MÊME poignée que le mode liste : glyphe [reorderHandleIcon] (repli
+  /// `Icons.drag_handle`), nœud `Semantics` au libellé INJECTÉ
+  /// ([reorderHandleSemanticLabel], repli [title]) et cible ≥ 48 dp.
+  ///
+  /// ⚠️ **Écart ASSUMÉ et documenté entre les deux chemins** : en liste, la
+  /// poignée est un `ReorderableDragStartListener` — un point de départ de drag
+  /// DISTINCT (glisser depuis la poignée, sans appui long). En grille, le
+  /// déclencheur reste l'**appui long sur la cellule entière** (poignée
+  /// comprise) : la poignée y est une **affordance**, pas un second déclencheur.
+  /// La raison est structurelle — `ReorderableDragStartListener` ne fait rien
+  /// hors d'un `SliverReorderableList` du SDK (absent du chemin grille), et un
+  /// `Draggable` local ne connaîtrait pas la **position d'affichage** attendue
+  /// par le protocole de dépôt de la grille (l'`itemBuilder` reçoit l'index
+  /// SOURCE, pas la position courante). Une poignée qui *paraîtrait* déclencher
+  /// sans déclencher serait pire que pas de poignée.
+  ///
+  /// ℹ️ L'affordance est posée **autour de l'item, en amont du renderer** : elle
+  /// s'applique donc AUSSI à un `ZReorderRenderer` injecté par l'hôte (AD-57),
+  /// et pas seulement au repli `zcrud_responsive`.
   ///
   /// ⚠️ Reste **exclusif avec [crossAxisVirtualized]** : une cellule non
   /// construite ne peut pas être une cible de dépôt. Une section à la fois
