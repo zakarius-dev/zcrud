@@ -129,6 +129,11 @@ export 'src/presentation/z_multi_flashcard_editor_controller.dart';
 // le widget de liste reste PUR (seam injecté). CORE OUT=0, arête existante.
 export 'src/data/z_flashcard_cascade_delete.dart';
 export 'src/presentation/z_reorder_ids.dart';
+// CR-LEX-74 — ce fichier expose DEUX enveloppes du MÊME contenu de sections :
+// `ZSectionedStudyLayout` (boîte, `ListView.builder`) et `ZSectionedStudySliver`
+// (sliver, `SliverList.builder`) — cette dernière s'assemble dans les `slivers:`
+// d'un `CustomScrollView` sans défilement imbriqué, donc SANS tuer une
+// `SliverAppBar` rétractable. Contenu/ordre/clés = source unique partagée.
 export 'src/presentation/z_sectioned_study_layout.dart';
 // SUF-3 (AC1..AC16, AD-2/AD-13/AD-4/AD-10) — ossature de page-détail d'un dossier
 // d'étude : `ZStudyFolderDetail` COMPOSE le page-shell SUF-1 (`ZPageScaffold`),

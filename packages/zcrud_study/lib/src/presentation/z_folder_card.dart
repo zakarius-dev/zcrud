@@ -296,9 +296,21 @@ class ZFolderCard extends StatelessWidget {
     // Le thème Material de l'hôte décide la forme complète (dont sa bordure)
     // lorsqu'il en fournit une. La même instance est donnée au `Card` et à
     // l'`InkWell` pour que le clip et l'encre restent parfaitement cohérents.
+    final CardThemeData cardTheme = CardTheme.of(context);
     final ShapeBorder shape =
-        CardTheme.of(context).shape ??
+        cardTheme.shape ??
         RoundedRectangleBorder(borderRadius: BorderRadius.all(theme.radiusM));
+
+    // 🔴 Même traitement pour la MARGE (CR-LEX-73). Elle était figée à
+    // `EdgeInsets.zero`, si bien que chaque hôte la restituait par un `Padding`
+    // externe — lex l'a fait, et signale que « tout autre hôte devra la
+    // réécrire ». C'est le motif E3 déjà corrigé sur `shape` (CR-LEX-61) : un
+    // widget qui impose une décision que le `CardTheme` exprime déjà force
+    // l'hôte à la déclarer deux fois. La CR demandait la correction sur les
+    // DEUX widgets porteurs du défaut, pour ne pas la voir réapparaître sur un
+    // troisième — `ZStudyToolsItemCard` porte la même.
+    // Défaut inchangé : sans `CardTheme.margin`, la marge reste nulle.
+    final EdgeInsetsGeometry cardMargin = cardTheme.margin ?? EdgeInsets.zero;
 
     final bool interactive = onTap != null || onLongPress != null;
 
@@ -320,7 +332,7 @@ class ZFolderCard extends StatelessWidget {
     final Widget card = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: kZFolderCardMinHeight),
       child: Card(
-        margin: EdgeInsets.zero,
+        margin: cardMargin,
         color: tint,
         shape: shape,
         clipBehavior: Clip.antiAlias,

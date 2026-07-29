@@ -63,6 +63,11 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.borderSide,
     this.accent,
     this.semanticLabel,
+    this.contentPadding,
+    this.margin,
+    this.titleStyle,
+    this.subtitleStyle,
+    this.titleMaxLines = 1,
     super.key,
   });
 
@@ -77,6 +82,12 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Qualificatif court du contenu (type, extension, état). Le socle le pose et
   /// le met en forme ; **il n'en interprète jamais le contenu**.
+  ///
+  /// ♿ **Sa sémantique est PRÉSERVÉE** (CR-LEX-71) : un `Semantics` posé ici
+  /// par l'hôte — un cadenas « lecture seule », par exemple — est réellement
+  /// annoncé au lecteur d'écran, comme pour [leading] et [trailing]. Seuls
+  /// [title] et [subtitle] sont exclus, parce qu'eux sont déjà portés par le
+  /// `label` de la carte.
   final Widget? badge;
 
   /// Zone d'actions de fin de carte — y compris un menu contextuel fourni par
@@ -139,14 +150,50 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// plutôt que comme une suite de fragments.
   final String? semanticLabel;
 
+  /// Marge intérieure de la carte (**CR-LEX-70**).
+  ///
+  /// Le jeton `gapM` servait à la fois de **padding de carte** et
+  /// d'**espacement inter-slots** : deux rôles pour un seul token, donc aucune
+  /// valeur ne pouvait satisfaire un hôte voulant 12 de padding et 16 de gap.
+  /// Ce slot sépare les deux rôles. `null` ⇒ `EdgeInsetsDirectional.all(gapM)`,
+  /// c'est-à-dire **exactement** le rendu antérieur.
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// Marge **extérieure** de la carte (**CR-LEX-73**).
+  ///
+  /// Priorité : ce slot > `CardThemeData.margin` du thème de l'hôte >
+  /// `EdgeInsets.zero` (le défaut historique, strictement préservé quand ni
+  /// l'un ni l'autre n'est fourni). Même motif que `CardThemeData.shape`
+  /// (CR-IFFD-19 / CR-LEX-61) : une marge écrite en dur rend la marge du thème
+  /// inatteignable et force chaque hôte à la réécrire dans un `Padding`
+  /// externe.
+  final EdgeInsetsGeometry? margin;
+
+  /// Style du [title] (**CR-LEX-72**). `null` ⇒ `textTheme.titleSmall`.
+  final TextStyle? titleStyle;
+
+  /// Style du [subtitle] (**CR-LEX-72**). `null` ⇒ `textTheme.bodySmall`.
+  ///
+  /// Aucune couleur n'est imposée par le socle (FR-26) : un hôte qui veut
+  /// atténuer son sous-titre en `onSurfaceVariant` le fait par ce slot ou par
+  /// son `textTheme`.
+  final TextStyle? subtitleStyle;
+
+  /// Nombre maximal de lignes du [title] (**CR-LEX-72**). Défaut `1`, le
+  /// comportement historique ; une valeur ≤ 0 est ignorée et replie sur `1`
+  /// plutôt que de produire une contrainte invalide (AD-10).
+  final int titleMaxLines;
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final textTheme = Theme.of(context).textTheme;
     final busy = progress != null;
 
+    // CR-LEX-70 — le padding de carte et l'espacement inter-slots sont deux
+    // rôles distincts : le premier est injectable, le second reste le jeton.
     final content = Padding(
-      padding: EdgeInsetsDirectional.all(theme.gapM),
+      padding: contentPadding ?? EdgeInsetsDirectional.all(theme.gapM),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[
@@ -159,37 +206,48 @@ class ZStudyToolsItemCard extends StatelessWidget {
           // `trailing` : exclure tout le contenu rendrait le menu contextuel de
           // l'hôte INATTEIGNABLE au lecteur d'écran — l'a11y qu'on prétend
           // apporter serait retirée d'une main pendant qu'on la donne de l'autre.
+          //
+          // CR-LEX-71 — l'exclusion enveloppait la `Column` ENTIÈRE, donc aussi
+          // `badge` : un cadenas « lecture seule » posé par l'hôte était visible
+          // à l'œil et MUET au lecteur d'écran, à rebours de ce commentaire. La
+          // raison d'être de l'exclusion est la DOUBLE ANNONCE de `title`/
+          // `subtitle`, qui sont déjà dans le `label` de la carte ; `badge`, lui,
+          // n'y est PAS — l'en sortir ne peut donc rien dupliquer. L'exclusion
+          // est désormais posée sur les deux `Text` eux-mêmes : même layout,
+          // portée réellement conforme à la dartdoc.
           Expanded(
-            child: ExcludeSemantics(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: ExcludeSemantics(
                         child: Text(
                           title,
-                          style: textTheme.titleSmall,
-                          maxLines: 1,
+                          style: titleStyle ?? textTheme.titleSmall,
+                          maxLines: titleMaxLines > 0 ? titleMaxLines : 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (badge != null) ...<Widget>[
-                        SizedBox(width: theme.gapS),
-                        badge!,
-                      ],
+                    ),
+                    if (badge != null) ...<Widget>[
+                      SizedBox(width: theme.gapS),
+                      badge!,
                     ],
-                  ),
-                  if (subtitle != null)
-                    Text(
+                  ],
+                ),
+                if (subtitle != null)
+                  ExcludeSemantics(
+                    child: Text(
                       subtitle!,
-                      style: textTheme.bodySmall,
+                      style: subtitleStyle ?? textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
           // CR-IFFD-20 — le slot est BORNÉ par la carte. Sans cela un
@@ -222,7 +280,8 @@ class ZStudyToolsItemCard extends StatelessWidget {
     //
     // Priorité : `side` du slot > `CardThemeData.shape` du thème > jeton `radiusM`
     // (le défaut historique, strictement préservé quand rien n'est fourni).
-    final themed = CardTheme.of(context).shape;
+    final CardThemeData cardTheme = CardTheme.of(context);
+    final themed = cardTheme.shape;
     final ShapeBorder shape = borderSide != null
         ? RoundedRectangleBorder(
             borderRadius: BorderRadius.all(theme.radiusM),
@@ -247,7 +306,11 @@ class ZStudyToolsItemCard extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: kZStudyToolsItemMinHeight),
         child: Card(
-          margin: EdgeInsets.zero,
+          // CR-LEX-73 — même motif que `shape` : une marge en dur rendait la
+          // marge du `CardTheme` de l'hôte inatteignable et l'obligeait à la
+          // réécrire dans un `Padding` externe. Priorité slot > thème > zéro
+          // (le défaut historique, préservé quand rien n'est fourni).
+          margin: margin ?? cardTheme.margin ?? EdgeInsets.zero,
           shape: shape,
           clipBehavior: Clip.antiAlias,
           child: tap == null

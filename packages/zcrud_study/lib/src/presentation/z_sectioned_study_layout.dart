@@ -10,6 +10,12 @@
 /// `AlignmentDirectional`/`TextAlign.start`) ; `Semantics` explicites ; cibles
 /// interactives ≥ 48 dp ; thème injecté via `ZcrudTheme.of` (`ZcrudScope` →
 /// `Theme.of` repli, aucune couleur codée en dur) ; `ListView.builder`.
+///
+/// CR-LEX-74 — DEUX enveloppes, UN seul contenu : [ZSectionedStudyLayout]
+/// (boîte, `ListView.builder`) et [ZSectionedStudySliver] (sliver,
+/// `SliverList.builder`, assemblable dans un `CustomScrollView` sans défilement
+/// imbriqué). Le contenu, l'ordre et les clés viennent de la source unique
+/// `_ZSectionsSource` — les deux chemins ne PEUVENT pas diverger.
 library;
 
 import 'package:flutter/material.dart';
@@ -98,42 +104,151 @@ class ZSectionedStudyLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Capture LOCALE des slots : la promotion de type permet de restituer
-    // l'instance EXACTE (identité préservée ⇒ court-circuit d'updateChild).
-    final Widget? headerSlot = header;
-    final Widget? footerSlot = footer;
-    // `null` ⇒ 0 item réservé (absence STRUCTURELLE, AD-4) — jamais un slot
-    // vide dans le décompte.
-    final int leading = headerSlot == null ? 0 : 1;
-    final int trailing = footerSlot == null ? 0 : 1;
+    // CONTENU/ORDRE/CLÉS : SOURCE UNIQUE partagée avec [ZSectionedStudySliver]
+    // (CR-74). Cette enveloppe ne décide QUE du transport (boîte scrollable).
+    final source = _ZSectionsSource(
+      sections: sections,
+      header: header,
+      footer: footer,
+    );
     return ListView.builder(
       // Virtualisation PRÉSERVÉE : les slots sont des items du MÊME
       // `ListView.builder` (jamais un `Column`/`ListView(children:)` qui
       // construirait toutes les sections d'un coup).
       // Pas de tri : l'ordre d'entrée EST l'ordre de rendu (AC3, ES-5.3).
-      itemCount: leading + sections.length + trailing,
-      itemBuilder: (context, index) {
-        if (headerSlot != null && index == 0) {
-          // Restitué TEL QUEL (aucun emballage, aucune clé dérivée de
-          // `sections`) — cf. la doc de [header] (AD-2).
-          return headerSlot;
-        }
-        final int sectionIndex = index - leading;
-        if (sectionIndex >= sections.length) {
-          // Seul index restant possible : le pied.
-          return footerSlot;
-        }
-        final spec = sections[sectionIndex];
-        return _ZStudySection(
-          // Frontière de widget STABLE par section — décomposition comptable
-          // (AC5) et frontière rebuild (SM-1/ES-5.2). La clé reste dérivée du
-          // SEUL id : elle ne dépend NI de l'index de liste, NI de la présence
-          // ou du contenu des slots ⇒ changer l'en-tête ne remonte pas les
-          // sections (leur état local de repli/ordre survit).
-          key: ValueKey('section:${spec.id}'),
-          spec: spec,
-        );
-      },
+      itemCount: source.itemCount,
+      itemBuilder: source.buildItem,
+    );
+  }
+}
+
+/// `ZSectionedStudySliver` — **variante SLIVER** de [ZSectionedStudyLayout]
+/// (CR-LEX-74).
+///
+/// ## Pourquoi un widget SÉPARÉ et non un drapeau `sliver: true`
+///
+/// Un drapeau qui change le **type de rendu** (`RenderBox` ↔ `RenderSliver`)
+/// déplace une erreur de **compilation** vers une erreur d'**exécution** : un
+/// `SliverList` posé dans un `Column`/`Padding` lève
+/// « A RenderSliver expected a RenderBox child » au premier layout, et
+/// symétriquement un `ListView` posé dans les `slivers:` d'un
+/// `CustomScrollView` lève « RenderViewport expected a child of type
+/// RenderSliver ». Le drapeau rendrait ces deux fautes indiscernables à
+/// l'analyse : `ZSectionedStudyLayout(sliver: true)` reste un `Widget` boîte du
+/// point de vue du typage, donc l'hôte compile puis plante. Deux widgets
+/// distincts font porter le contrat par le TYPE : le mauvais choix ne compile
+/// pas.
+///
+/// ## Zéro duplication (exigence stricte)
+///
+/// Le contenu, l'ORDRE, les clés (`ValueKey('section:$id')`), les slots
+/// [header]/[footer] et le rail flashcards proviennent d'une **source unique**,
+/// [_ZSectionsSource], partagée à l'identique par les deux enveloppes. Aucune
+/// des deux n'a de branche de contenu qui lui soit propre — une divergence
+/// future exigerait de modifier la source commune, donc les deux à la fois.
+///
+/// ## Usage
+///
+/// ```dart
+/// CustomScrollView(
+///   slivers: [
+///     const SliverAppBar(pinned: true, ...),   // rétractable : PRÉSERVÉ
+///     ZSectionedStudySliver(sections: sections),
+///   ],
+/// )
+/// ```
+///
+/// **AD-2** : virtualisation PRÉSERVÉE (`SliverList.builder`, jamais
+/// `SliverList(children:)` qui matérialiserait toutes les sections) ; aucun
+/// gestionnaire d'état ; aucun `Scrollable` propre ⇒ **pas de défilement
+/// imbriqué**, l'app-bar rétractable de l'hôte continue de réagir au geste.
+class ZSectionedStudySliver extends StatelessWidget {
+  /// Mêmes paramètres, mêmes sémantiques que [ZSectionedStudyLayout] — seule
+  /// l'enveloppe (sliver au lieu de boîte) change.
+  const ZSectionedStudySliver({
+    required this.sections,
+    this.header,
+    this.footer,
+    super.key,
+  });
+
+  /// Descripteurs de section, dans l'ordre visuel vertical voulu.
+  /// Cf. [ZSectionedStudyLayout.sections].
+  final List<ZStudyToolsSectionSpec> sections;
+
+  /// Cf. [ZSectionedStudyLayout.header] (mêmes garanties AD-2/AD-4).
+  final Widget? header;
+
+  /// Cf. [ZSectionedStudyLayout.footer] (mêmes garanties AD-2/AD-4).
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = _ZSectionsSource(
+      sections: sections,
+      header: header,
+      footer: footer,
+    );
+    return SliverList.builder(
+      itemCount: source.itemCount,
+      itemBuilder: source.buildItem,
+    );
+  }
+}
+
+/// SOURCE UNIQUE du contenu, de l'ordre et des clés des items de sections
+/// (CR-LEX-74).
+///
+/// Extraite telle quelle du `build` historique de [ZSectionedStudyLayout] :
+/// aucun comportement n'a changé, seul le point d'appel a été factorisé pour
+/// que la variante sliver ne puisse PAS diverger. C'est le refus explicite du
+/// défaut constaté chez IFFD (même mapping recopié en plusieurs exemplaires
+/// dont un divergent).
+@immutable
+class _ZSectionsSource {
+  const _ZSectionsSource({
+    required this.sections,
+    required this.header,
+    required this.footer,
+  });
+
+  final List<ZStudyToolsSectionSpec> sections;
+  final Widget? header;
+  final Widget? footer;
+
+  /// `null` ⇒ 0 item réservé (absence STRUCTURELLE, AD-4) — jamais un slot
+  /// vide dans le décompte.
+  int get _leading => header == null ? 0 : 1;
+  int get _trailing => footer == null ? 0 : 1;
+
+  int get itemCount => _leading + sections.length + _trailing;
+
+  /// Item d'index [index] — MÊME contenu, MÊME ordre, MÊMES clés quelle que
+  /// soit l'enveloppe.
+  Widget? buildItem(BuildContext context, int index) {
+    // Capture LOCALE des slots : la promotion de type permet de restituer
+    // l'instance EXACTE (identité préservée ⇒ court-circuit d'updateChild).
+    final Widget? headerSlot = header;
+    final Widget? footerSlot = footer;
+    if (headerSlot != null && index == 0) {
+      // Restitué TEL QUEL (aucun emballage, aucune clé dérivée de
+      // `sections`) — cf. la doc de [ZSectionedStudyLayout.header] (AD-2).
+      return headerSlot;
+    }
+    final int sectionIndex = index - _leading;
+    if (sectionIndex >= sections.length) {
+      // Seul index restant possible : le pied.
+      return footerSlot;
+    }
+    final spec = sections[sectionIndex];
+    return _ZStudySection(
+      // Frontière de widget STABLE par section — décomposition comptable
+      // (AC5) et frontière rebuild (SM-1/ES-5.2). La clé reste dérivée du
+      // SEUL id : elle ne dépend NI de l'index de liste, NI de la présence
+      // ou du contenu des slots ⇒ changer l'en-tête ne remonte pas les
+      // sections (leur état local de repli/ordre survit).
+      key: ValueKey('section:${spec.id}'),
+      spec: spec,
     );
   }
 }
