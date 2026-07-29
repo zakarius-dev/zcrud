@@ -43,6 +43,7 @@ class ZStudyToolsSectionSpec {
     this.crossAxisMinItemWidth,
     this.crossAxisItemHeight,
     this.crossAxisAspectRatio,
+    this.crossAxisMaxColumns,
     this.crossAxisVirtualized = false,
     this.crossAxisViewportHeight,
     this.collapseSemanticLabel,
@@ -196,6 +197,27 @@ class ZStudyToolsSectionSpec {
   /// Ratio largeur/hauteur d'une cellule (CR-IFFD-11 §2), alternative à
   /// [crossAxisItemHeight] quand la hauteur doit suivre la largeur de colonne.
   final double? crossAxisAspectRatio;
+
+  /// **Plafond** du nombre de colonnes de la grille (CR-LEX-77).
+  ///
+  /// `null` (défaut) ⇒ **illimité** : le nombre de colonnes reste dérivé de la
+  /// seule largeur disponible — **rendu strictement inchangé** pour tout hôte
+  /// qui ne renseigne pas ce slot.
+  ///
+  /// Non-null ⇒ le nombre de colonnes est borné en haut, dans les **TROIS**
+  /// chemins de grille (eager, virtualisé, réordonnable) : un hôte qui rendait
+  /// `ResponsiveGrid(minItemWidth: 220, maxColumns: 3)` conserve ses 3 colonnes
+  /// à 1200 dp au lieu de passer à 5. Le plafond ne mord qu'au-dessus de la
+  /// largeur où la responsive donne déjà moins de colonnes — sous ce seuil le
+  /// rendu est identique avec ou sans plafond.
+  ///
+  /// **AD-10 — repli défensif ALIGNÉ sur la primitive** : la valeur est
+  /// transmise TELLE QUELLE à `computeCrossAxisCount`, dont le contrat est déjà
+  /// écrit : un plafond `< minColumns` (donc `0` ou négatif) est **remonté au
+  /// plancher** (≥ 1 colonne garantie) — jamais de grille vide, jamais de
+  /// `RangeError`. Aucun assainissement local n'est fait ici : un plafond qui se
+  /// comporterait différemment selon le chemin serait pire que pas de plafond.
+  final int? crossAxisMaxColumns;
 
   /// ✅ **COMBINABLE avec [onReorder]** depuis CR-IFFD-15 (voie A/C, arbitrée
   /// par l'owner) : déclarer les deux produit désormais une **grille

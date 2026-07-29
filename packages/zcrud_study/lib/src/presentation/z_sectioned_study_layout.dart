@@ -395,6 +395,9 @@ class _ZStudySection extends StatelessWidget {
             aspectRatio: spec.crossAxisItemHeight == null
                 ? spec.crossAxisAspectRatio
                 : null,
+            // CR-LEX-77 (chemin 2/3 — VIRTUALISÉ) : plafond de colonnes
+            // transmis. `null` ⇒ illimité, rendu inchangé.
+            maxColumns: spec.crossAxisMaxColumns,
           ),
         );
       }
@@ -437,6 +440,10 @@ class _ZStudySection extends StatelessWidget {
         itemHeight: spec.crossAxisItemHeight,
         aspectRatio:
             spec.crossAxisItemHeight == null ? spec.crossAxisAspectRatio : null,
+        // CR-LEX-77 (chemin 3/3 — RÉORDONNABLE) : plafond de colonnes transmis
+        // au port `ZReorderRenderer`, dont la requête l'acceptait DÉJÀ (seul le
+        // câblage manquait). `null` ⇒ illimité, rendu inchangé.
+        maxColumns: spec.crossAxisMaxColumns,
         // Libellés INJECTÉS, avec repli neutre documenté — MÊME patron que
         // `collapseSemanticLabel`/`expandSemanticLabel` (CR-IFFD-11 §3).
         moveBeforeSemanticLabel:
@@ -455,6 +462,9 @@ class _ZStudySection extends StatelessWidget {
         itemHeight: spec.crossAxisItemHeight,
         aspectRatio:
             spec.crossAxisItemHeight == null ? spec.crossAxisAspectRatio : null,
+        // CR-LEX-77 (chemin 1/3 — EAGER) : plafond de colonnes transmis.
+        // `null` ⇒ illimité, rendu inchangé.
+        maxColumns: spec.crossAxisMaxColumns,
         children: <Widget>[
           for (var i = 0; i < spec.itemCount; i++) spec.itemBuilder(context, i),
         ],
