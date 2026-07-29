@@ -1,8 +1,33 @@
 # Handoff → session `lex_douane` · zcrud **v0.22.0** — lot « chrome des tuiles d'étude » (CR-70 à CR-74)
 
 > **Tag à épingler : `v0.22.0`**
-> **Vos cinq CR sont livrées.** Additif : passer de `v0.21.0` à `v0.22.0` ne demande aucune
-> modification de votre code, et aucun golden préexistant n'a été régénéré.
+> **Vos cinq CR sont livrées.** Additif : aucun golden préexistant n'a été régénéré.
+
+> ## 🔴 AMENDEMENT (2026-07-29, après CR-76) — l'en-tête original était inexact
+>
+> Cet en-tête affirmait : *« passer de `v0.21.0` à `v0.22.0` ne demande aucune modification de votre
+> code »*. **C'est vrai pour un hôte passif, et faux pour un hôte qui COMPENSAIT** le défaut corrigé.
+>
+> **Action requise sur ce tag** : `CR-73` a été livrée sur **`ZFolderCard`** en plus de
+> `ZStudyToolsItemCard` (§ 3). Si vous restituiez sa marge par un `Padding` externe — parce que le
+> widget forçait `EdgeInsets.zero` — **retirez cette compensation** : le socle résout désormais
+> `CardThemeData.margin` lui-même, et les deux s'additionnent. Mesuré chez lex : **24 dp au lieu de
+> 12**, espacement de grille faussé.
+>
+> `ZFolderCard` n'était pas nommé dans votre CR : la modification était donc **invisible depuis votre
+> lecture de `CR-73`**. C'est exactement ce qui rendait l'omission dommageable.
+>
+> ### ⚠️ Une SECONDE compensation à retirer, du même ordre — `CR-71`
+>
+> Votre contournement du badge muet était de *« replier le libellé dans le `semanticLabel` de la
+> carte »*. Depuis `CR-71`, le badge s'annonce **par lui-même**. Si la compensation reste, le lecteur
+> d'écran énonce **deux fois** la même information : une fois par le `semanticLabel` de la carte, une
+> fois par le `Semantics` du badge.
+>
+> Le § 1 disait « vous pouvez retirer votre contournement » — c'était trop faible. **Il faut le
+> retirer**, sinon la correction d'accessibilité produit une verbosité qui en annule le bénéfice.
+> Même classe d'erreur que ci-dessus : j'ai décrit ce que le socle fait maintenant, sans décrire ce
+> qui arrive à qui avait compensé.
 
 | CR | Sévérité | État |
 |---|---|---|

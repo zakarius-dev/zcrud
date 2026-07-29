@@ -54,6 +54,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     required this.title,
     this.leading,
     this.subtitle,
+    this.belowSubtitle,
     this.badge,
     this.trailing,
     this.progress,
@@ -79,6 +80,28 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Libellé secondaire sous le titre.
   final String? subtitle;
+
+  /// Contenu secondaire rendu **sous [subtitle]**, dans la même colonne que
+  /// [title] (**CR-LEX-75**) : puce d'état, chip, méta-information.
+  ///
+  /// ⚠️ **Pourquoi [progress] ne pouvait pas en tenir lieu**, pour deux raisons
+  /// distinctes : (1) il est rendu dans la `Row` de tête, donc **à côté** du
+  /// bloc titre/sous-titre et non dessous — l'y placer déplace la lecture de la
+  /// carte ; (2) il est **borné à [progressMaxWidth]**, borne justifiée pour un
+  /// `LinearProgressIndicator` (CR-IFFD-20) mais qui **tronque un libellé** —
+  /// mesuré chez un hôte : `RenderFlex overflowed` de 41 px, et cette largeur
+  /// **dépend de la locale** (7 langues, dont l'arabe) ⇒ aucune valeur codée en
+  /// dur ne serait sûre. Ce slot n'impose donc **aucune contrainte de largeur**.
+  ///
+  /// Il se rend correctement que [subtitle] soit fourni ou non.
+  ///
+  /// ♿ **Sa sémantique est PRÉSERVÉE**, comme celle de [badge] (CR-LEX-71) :
+  /// le contenu vient de l'hôte et n'est **pas** repris dans le `label` de la
+  /// carte, donc l'en exclure ne préviendrait aucune double annonce — cela le
+  /// rendrait seulement muet.
+  ///
+  /// `null` ⇒ **rendu strictement inchangé** (aucun nœud, aucun espacement).
+  final Widget? belowSubtitle;
 
   /// Qualificatif court du contenu (type, extension, état). Le socle le pose et
   /// le met en forme ; **il n'en interprète jamais le contenu**.
@@ -123,6 +146,13 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// choses qui n'en sont pas — et **seul l'hôte** sait lesquelles des siennes
   /// sont concurrentes. Passer `false` conserve [trailing] à côté de [progress] ;
   /// c'est alors à l'hôte de n'y laisser que le consultable.
+  ///
+  /// ⚠️ **Piège du défaut `true` (CR-LEX-75)** : dès que [progress] est rempli,
+  /// [trailing] — souvent un **menu contextuel** — **disparaît pendant tout le
+  /// traitement**. Un hôte dont le trailing porte une action de
+  /// **RÉCUPÉRATION** (annuler, supprimer un import bloqué) perd donc son seul
+  /// recours au moment précis où il en a besoin, sans qu'aucun test ne rougisse.
+  /// Un tel hôte doit passer `false`.
   final bool hidesTrailingWhileBusy;
 
   /// Activation de la carte. `null` ⇒ carte non interactive : **aucun**
@@ -247,6 +277,17 @@ class ZStudyToolsItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                // CR-LEX-75 — contenu secondaire SOUS le sous-titre, dans la
+                // `Column` et **sans borne de largeur** : `progress`, borné à
+                // 120 dp dans la `Row` de tête, tronquait toute puce d'état
+                // localisée (débordement mesuré de 41 px, variable selon la
+                // locale). Volontairement HORS `ExcludeSemantics`, comme
+                // `badge` (CR-LEX-71) : ce contenu n'est pas dans le `label` de
+                // la carte, l'exclure le rendrait muet sans rien dédupliquer.
+                if (belowSubtitle != null) ...<Widget>[
+                  SizedBox(height: theme.gapS),
+                  belowSubtitle!,
+                ],
               ],
             ),
           ),

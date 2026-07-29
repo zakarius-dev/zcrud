@@ -248,6 +248,39 @@ Chaque entité canonique expose : (1) un slot `ZExtension?` typé additif **vers
 
 ---
 
+## Handoffs vers les apps consommatrices (NON-NÉGOCIABLE)
+
+🔴 **Ne jamais écrire « aucune modification de votre code » sans qualifier POUR QUI.**
+
+Une livraison additive est sans effet pour un hôte **passif**. Elle en a un pour l'hôte qui
+**COMPENSAIT** le défaut qu'on vient de corriger : sa compensation **s'additionne** au correctif.
+Mesuré (CR-LEX-76, v0.22.0) : lex restituait par un `Padding` externe la marge que `ZFolderCard`
+forçait à zéro ; le socle s'étant mis à lire `CardThemeData.margin`, la marge rendue est passée à
+**24 dp au lieu de 12**.
+
+**Trois occurrences de la MÊME classe d'erreur** — affirmer une propriété sur *l'hôte* alors qu'on
+n'a vérifié qu'une propriété sur *son propre code* :
+
+| Version | Affirmation | Réalité |
+|---|---|---|
+| v0.16.0 | « aucun hôte ne casse » | faux au solveur |
+| v0.19.1 | « non cassant, vérifié contre le tag » | vérif d'**API** extrapolée au **comportement** (CR-60) |
+| v0.22.0 | « aucune modification de votre code » | vrai si passif, faux si l'hôte compensait (CR-76) |
+
+**Règles à appliquer dans tout handoff** :
+1. Toute correction qui transforme un **défaut contourné** en comportement natif porte un
+   avertissement explicite : *« les hôtes qui compensaient doivent RETIRER leur compensation »*,
+   avec la **liste des widgets** concernés.
+2. Nommer les widgets touchés **au-delà de la cible de la CR**. Une extension décidée de notre
+   initiative (ex. CR-73 étendue à `ZFolderCard`) est **invisible** depuis la lecture de la CR par
+   l'hôte : c'est justement celle qu'il faut signaler le plus fort.
+3. Distinguer systématiquement **hôte passif** et **hôte ayant contourné** dans les formules
+   d'impact. « Rien à faire » peut vouloir dire « rien à faire » ou « rien à faire *si vous n'aviez
+   rien contourné* ».
+4. 🟢 **Recommander le tripwire** (pratique de lex, à propager) : sur chaque défaut amont contourné,
+   garder un test qui **affirme la perte**. Quand l'amont corrige, il rougit et désigne le doublon —
+   au lieu de croire le handoff sur parole. C'est le pendant exact de la discipline R3 côté aval.
+
 ## Artefacts BMAD — source of truth
 
 | Document | Path |
