@@ -61,6 +61,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.hidesTrailingWhileBusy = true,
     this.onTap,
     this.borderSide,
+    this.accent,
     this.semanticLabel,
     super.key,
   });
@@ -125,6 +126,14 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// est une capacité qui manquait, pas un changement de défaut.
   final BorderSide? borderSide;
 
+  /// Décor d'accent superposé, fourni par l'hôte.
+  ///
+  /// Un [Widget] permet autant une barre, une texture qu'un dégradé résolu par
+  /// l'application, sans imposer de couleur ni de dégradé par défaut. Il est
+  /// ignoré par les gestes et la sémantique : il ne transforme pas un décor en
+  /// contrôle. `null` conserve strictement le rendu historique.
+  final Widget? accent;
+
   /// Libellé sémantique de la carte entière. Repli : [title] — complété de
   /// [subtitle] pour que le lecteur d'écran annonce la carte comme un tout
   /// plutôt que comme une suite de fragments.
@@ -145,40 +154,40 @@ class ZStudyToolsItemCard extends StatelessWidget {
             SizedBox(width: theme.gapM),
           ],
           // ExcludeSemantics CIBLÉ sur les seuls libellés : le nœud de la carte
-            // les porte déjà dans son `label`, et les répéter ferait annoncer
-            // l'item deux fois. ⚠️ Volontairement NON étendu à `leading`/`badge`/
-            // `trailing` : exclure tout le contenu rendrait le menu contextuel de
-            // l'hôte INATTEIGNABLE au lecteur d'écran — l'a11y qu'on prétend
-            // apporter serait retirée d'une main pendant qu'on la donne de l'autre.
+          // les porte déjà dans son `label`, et les répéter ferait annoncer
+          // l'item deux fois. ⚠️ Volontairement NON étendu à `leading`/`badge`/
+          // `trailing` : exclure tout le contenu rendrait le menu contextuel de
+          // l'hôte INATTEIGNABLE au lecteur d'écran — l'a11y qu'on prétend
+          // apporter serait retirée d'une main pendant qu'on la donne de l'autre.
           Expanded(
             child: ExcludeSemantics(
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        title,
-                        style: textTheme.titleSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: textTheme.titleSmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    if (badge != null) ...<Widget>[
-                      SizedBox(width: theme.gapS),
-                      badge!,
+                      if (badge != null) ...<Widget>[
+                        SizedBox(width: theme.gapS),
+                        badge!,
+                      ],
                     ],
-                  ],
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ),
@@ -196,7 +205,8 @@ class ZStudyToolsItemCard extends StatelessWidget {
             ),
           ],
           // CR-IFFD-21 — l'éviction est une POLITIQUE, plus une fatalité.
-          if (trailing != null && !(busy && hidesTrailingWhileBusy)) ...<Widget>[
+          if (trailing != null &&
+              !(busy && hidesTrailingWhileBusy)) ...<Widget>[
             SizedBox(width: theme.gapM),
             trailing!,
           ],
@@ -219,9 +229,9 @@ class ZStudyToolsItemCard extends StatelessWidget {
             side: borderSide!,
           )
         : themed ??
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(theme.radiusM),
-            );
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(theme.radiusM),
+              );
 
     return Semantics(
       container: true,
@@ -232,12 +242,10 @@ class ZStudyToolsItemCard extends StatelessWidget {
       // l'action tactile de l'`InkWell`. Sans ce `onTap`, la carte serait
       // annoncée « bouton » et resterait INACTIVABLE au lecteur d'écran.
       onTap: tap,
-      label: semanticLabel ??
-          (subtitle == null ? title : '$title, ${subtitle!}'),
+      label:
+          semanticLabel ?? (subtitle == null ? title : '$title, ${subtitle!}'),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: kZStudyToolsItemMinHeight,
-        ),
+        constraints: const BoxConstraints(minHeight: kZStudyToolsItemMinHeight),
         child: Card(
           margin: EdgeInsets.zero,
           shape: shape,
@@ -245,7 +253,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
           child: tap == null
               // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
               // structurelle, elle ne se rend pas comme un bouton éteint.
-              ? content
+              ? _withAccent(content)
               : InkWell(
                   onTap: tap,
                   customBorder: shape,
@@ -254,10 +262,26 @@ class ZStudyToolsItemCard extends StatelessWidget {
                   // — par le nœud de la carte. Sans cela, le lecteur d'écran
                   // verrait un bouton imbriqué dans un bouton.
                   excludeFromSemantics: true,
-                  child: content,
+                  child: _withAccent(content),
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _withAccent(Widget content) {
+    if (accent == null) return content;
+    return Stack(
+      fit: StackFit.passthrough,
+      children: <Widget>[
+        content,
+        PositionedDirectional(
+          top: 0,
+          start: 0,
+          end: 0,
+          child: IgnorePointer(child: ExcludeSemantics(child: accent!)),
+        ),
+      ],
     );
   }
 }

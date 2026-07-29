@@ -91,7 +91,9 @@ class ZFolderCard extends StatelessWidget {
     required this.colorKey,
     this.colorSlotIndex = 0,
     this.headerDecoration,
+    this.topAccent,
     this.counts,
+    this.footer,
     this.menu,
     this.archivedLabel,
     this.isArchived = false,
@@ -122,10 +124,22 @@ class ZFolderCard extends StatelessWidget {
   /// pastille circulaire de 14 dp à l'identique.
   final Widget? headerDecoration;
 
+  /// Accent injecté au-dessus du contenu, sur toute la largeur de la carte.
+  ///
+  /// Pour une barre résolue par la couture de dégradé, employer
+  /// [ZFolderCardGradientAccent]. `null` conserve strictement l'arbre et le
+  /// rendu historiques.
+  final Widget? topAccent;
+
   /// Slot compteur/badges rendu **verbatim**, ancré en bas (superset lex
   /// compteur / IFFD badges — D3). `null` ⇒ **absent** de l'arbre (aucun espace
   /// réservé). Le widget n'en interprète jamais le contenu.
   final Widget? counts;
+
+  /// Slot de pied rendu sous le contenu. Il partage la même ligne que le badge
+  /// archivé éventuel : ce dernier reste donc visible et n'est jamais remplacé.
+  /// `null` ⇒ aucun espace réservé.
+  final Widget? footer;
 
   /// Slot menu/trailing (ex. `IconButton` ⋮) rendu en tête, aligné en fin
   /// (RTL-safe). `null` ⇒ **absent**. **Non exclu** de la sémantique : un menu
@@ -173,14 +187,33 @@ class ZFolderCard extends StatelessWidget {
 
     final bool showArchived = isArchived && archivedLabel != null;
 
-    // Pied de carte : slot compteur (Expanded pour pousser le badge en fin) +
-    // badge « Archivé » conditionnel. Rendu SEULEMENT s'il a du contenu (AD-4 :
-    // aucun espace réservé quand les deux sont absents).
+    // Un semanticLabel explicite décrit la carte comme un tout : les nouveaux
+    // slots purement visuels/de pied ne doivent alors pas créer une annonce
+    // concurrente. Sans semanticLabel, ils restent accessibles comme `counts`.
+    final Widget? semanticTopAccent = topAccent == null
+        ? null
+        : semanticLabel == null
+        ? topAccent
+        : ExcludeSemantics(child: topAccent!);
+    final Widget? semanticFooter = footer == null
+        ? null
+        : semanticLabel == null
+        ? footer
+        : ExcludeSemantics(child: footer!);
+
+    // Pied de carte : slots compteur/pied + badge « Archivé » conditionnel.
+    // Rendu SEULEMENT s'il a du contenu (AD-4 : aucun espace réservé quand les
+    // trois sont absents).
     final List<Widget> footerChildren = <Widget>[
       if (counts != null)
         Expanded(child: counts!)
+      else if (semanticFooter != null)
+        Expanded(child: semanticFooter)
       else if (showArchived)
         const Spacer(),
+      if (counts != null && semanticFooter != null) SizedBox(width: theme.gapS),
+      if (counts != null && semanticFooter != null)
+        Expanded(child: semanticFooter),
       if (showArchived) ...<Widget>[
         SizedBox(width: theme.gapS),
         // ExcludeSemantics : le texte du badge est DÉJÀ porté par le `label` du
@@ -269,6 +302,21 @@ class ZFolderCard extends StatelessWidget {
 
     final bool interactive = onTap != null || onLongPress != null;
 
+    final Widget cardContent = semanticTopAccent == null
+        ? content
+        : LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool bounded = constraints.maxHeight.isFinite;
+              return Column(
+                mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
+                children: <Widget>[
+                  SizedBox(width: double.infinity, child: semanticTopAccent),
+                  if (bounded) Expanded(child: content) else content,
+                ],
+              );
+            },
+          );
+
     final Widget card = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: kZFolderCardMinHeight),
       child: Card(
@@ -284,11 +332,11 @@ class ZFolderCard extends StatelessWidget {
                 // L'action sémantique est portée UNE SEULE fois — par le nœud de
                 // la carte ci-dessous ; l'encre et le tap de pointeur restent.
                 excludeFromSemantics: true,
-                child: content,
+                child: cardContent,
               )
             // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
             // structurelle, elle ne se rend pas comme un bouton éteint.
-            : content,
+            : cardContent,
       ),
     );
 

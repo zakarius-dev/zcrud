@@ -88,3 +88,8 @@ export 'src/presentation/z_annotation_tool_controller.dart'
         kAnnotationSelectedMarkerKey,
         kAnnotationPanelEntryKeyPrefix;
 export 'src/presentation/z_annotation_toolbar.dart' show ZAnnotationToolbar;
+export 'src/presentation/z_document_viewer_chrome.dart'
+    show
+        ZDocumentPageNavigation,
+        ZDocumentViewerChrome,
+        ZDocumentViewerLoadState;

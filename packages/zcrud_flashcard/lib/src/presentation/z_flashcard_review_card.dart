@@ -67,12 +67,23 @@ const double ZFlashcardReviewCardHalfTurn = 0.5;
 /// Cible tap minimale Material/AD-13 (dp) — patron `z_srs_quality_buttons.dart`.
 const double ZFlashcardReviewCardMinTarget = 48;
 
+/// Construit le contenu déjà localisé du badge de type de question.
+///
+/// Le package ne traduit ni ne nomme les valeurs de [ZFlashcardType] : l'hôte
+/// choisit son libellé et son éventuelle icône dans ce builder. Ce contrat suit
+/// le précédent de [ZFlashcardContentBuilder] : le discriminant métier est
+/// transmis à l'hôte, plutôt que converti en table de textes locale.
+typedef ZFlashcardQuestionTypeBadgeBuilder =
+    Widget Function(BuildContext context, ZFlashcardType type);
+
 /// Carte de révision d'une [ZFlashcard] : rendu adapté au type + révélation.
 class ZFlashcardReviewCard extends StatefulWidget {
   /// Construit la carte de révision de [card].
   ///
   /// - [revealTransition] : transition **souhaitée** (Reduce Motion prime — AC3) ;
   /// - [contentBuilder] : slot AD-40 **opt-in** (`null` ⇒ texte brut de su-1) ;
+  /// - [questionTypeBadgeBuilder] : badge de type déjà localisé par l'hôte ;
+  /// - [instructionBanner] : consigne déjà localisée par l'hôte ;
   /// - [transitionDuration] : override explicite de durée. La priorité est
   ///   l'override, puis [ZcrudTheme.flipDuration], puis 250 ms ;
   /// - [onRevealChanged] : **notification sortante** de la révélation (la carte
@@ -83,6 +94,8 @@ class ZFlashcardReviewCard extends StatefulWidget {
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
     this.contentBuilder,
+    this.questionTypeBadgeBuilder,
+    this.instructionBanner,
     this.transitionDuration,
     this.onRevealChanged,
     this.onEdit,
@@ -99,6 +112,19 @@ class ZFlashcardReviewCard extends StatefulWidget {
 
   /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ défaut texte brut.
   final ZFlashcardContentBuilder? contentBuilder;
+
+  /// Slot de badge de type **opt-in** — `null` ⇒ absent de l'arbre.
+  ///
+  /// Un builder est requis ici, comme pour [contentBuilder] : le type canonique
+  /// est fourni à l'hôte, seul propriétaire du libellé traduit et de sa
+  /// présentation. Le package ne contient donc aucune table type → libellé.
+  final ZFlashcardQuestionTypeBadgeBuilder? questionTypeBadgeBuilder;
+
+  /// Bandeau de consigne **opt-in**, déjà traduit et composé par l'hôte.
+  ///
+  /// Contrairement au badge, la consigne ne dépend pas du type : un [Widget]
+  /// évite un builder sans donnée utile. `null` ⇒ absence structurelle.
+  final Widget? instructionBanner;
 
   /// Override explicite de la durée de transition.
   ///
@@ -148,6 +174,16 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Clé de la barre de dégradé optionnelle (testabilité du seam VIS-1).
   static const ValueKey<String> gradientAccentKey = ValueKey<String>(
     'zFlashcardReviewCard_gradientAccent',
+  );
+
+  /// Clé du chrome du badge de type (testabilité des slots IFFD).
+  static const ValueKey<String> questionTypeBadgeKey = ValueKey<String>(
+    'zFlashcardReviewCard_questionTypeBadge',
+  );
+
+  /// Clé du slot de bandeau de consigne (testabilité des slots IFFD).
+  static const ValueKey<String> instructionBannerKey = ValueKey<String>(
+    'zFlashcardReviewCard_instructionBanner',
   );
 
   /// Builder de contenu **RÉELLEMENT** utilisé par `build` — **tear-off statique**
@@ -682,16 +718,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// L'identité est le nom stable du type, jamais une position de liste. Les
   /// quatre entrées requises (spec + tokens VIS) restent nullables : l'absence
   /// de l'une d'elles garde l'arbre historique strictement inchangé.
-  Widget? _gradientAccent(BuildContext context) {
-    final theme = ZcrudTheme.of(context);
-    final height = theme.accentBarHeight;
+  Gradient? _resolvedGradient(ZGradientSpec spec, ZcrudTheme theme) {
     final begin = theme.gradientBegin;
     final end = theme.gradientEnd;
-    final spec = zResolveGradient(context, widget.card.type.name);
-    if (spec == null || height == null || begin == null || end == null) {
-      return null;
-    }
-    final Gradient gradient = switch (spec.gradient) {
+    if (begin == null || end == null) return null;
+    return switch (spec.gradient) {
       final LinearGradient linear => LinearGradient(
         begin: begin,
         end: end,
@@ -702,6 +733,73 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       ),
       _ => spec.gradient,
     };
+  }
+
+  /// Badge de type informatif, absent sans builder (parité IFFD).
+  ///
+  /// Le chrome réutilise les tokens de count-pill et la résolution de gradient
+  /// de la carte. [Semantics] laisse le libellé déjà localisé de l'hôte
+  /// annoncable : c'est une information, jamais une décoration.
+  Widget? _questionTypeBadge(
+    BuildContext context,
+    ZGradientSpec? gradientSpec,
+  ) {
+    final builder = widget.questionTypeBadgeBuilder;
+    if (builder == null) return null;
+    final theme = ZcrudTheme.of(context);
+    final gradient = gradientSpec == null
+        ? null
+        : _resolvedGradient(gradientSpec, theme);
+    final iconSize =
+        theme.countPillIconSize ?? IconTheme.of(context).size ?? 24.0;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: IgnorePointer(
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Container(
+            key: ZFlashcardReviewCard.questionTypeBadgeKey,
+            padding:
+                theme.countPillPadding ??
+                EdgeInsetsDirectional.symmetric(
+                  horizontal: theme.gapS,
+                  vertical: theme.gapS / 2,
+                ),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.all(
+                theme.countPillRadius ?? theme.radiusM,
+              ),
+            ),
+            child: IconTheme.merge(
+              data: IconThemeData(size: iconSize),
+              child: builder(context, widget.card.type),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Bandeau de consigne informatif, absent sans injection.
+  Widget? _instructionBanner() {
+    final banner = widget.instructionBanner;
+    if (banner == null) return null;
+    return IgnorePointer(
+      child: KeyedSubtree(
+        key: ZFlashcardReviewCard.instructionBannerKey,
+        child: banner,
+      ),
+    );
+  }
+
+  Widget? _gradientAccent(BuildContext context, ZGradientSpec? spec) {
+    final theme = ZcrudTheme.of(context);
+    final height = theme.accentBarHeight;
+    if (spec == null || height == null) return null;
+    final gradient = _resolvedGradient(spec, theme);
+    if (gradient == null) return null;
     return Container(
       key: ZFlashcardReviewCard.gradientAccentKey,
       height: height,
@@ -719,7 +817,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     // donc cette instance est **préservée** telle quelle (identité stable). Un
     // `setState` de carte la reconstruirait : c'est ce que la garde SM-1 mesure.
     final actions = _actions(context);
-    final gradientAccent = _gradientAccent(context);
+    // Résolution UNIQUE : la barre et le badge lisent exactement le même
+    // gradient hôte, indexé par l'identité stable du type.
+    final gradientSpec = zResolveGradient(context, widget.card.type.name);
+    final gradientAccent = _gradientAccent(context, gradientSpec);
+    final questionTypeBadge = _questionTypeBadge(context, gradientSpec);
+    final instructionBanner = _instructionBanner();
 
     // Seule tranche reconstruite à la révélation (AD-2/SM-1).
     final face = ValueListenableBuilder<bool>(
@@ -793,6 +896,20 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       if (gradientAccent != null) gradientAccent,
+                      if (questionTypeBadge != null) ...<Widget>[
+                        if (gradientAccent != null)
+                          SizedBox(height: theme.gapM),
+                        questionTypeBadge,
+                      ],
+                      if (instructionBanner != null) ...<Widget>[
+                        if (gradientAccent != null || questionTypeBadge != null)
+                          SizedBox(height: theme.gapM),
+                        instructionBanner,
+                      ],
+                      if (gradientAccent != null ||
+                          questionTypeBadge != null ||
+                          instructionBanner != null)
+                        SizedBox(height: theme.gapM),
                       if (constraints.hasBoundedHeight)
                         Flexible(child: face)
                       else

@@ -37,6 +37,7 @@ export 'src/domain/z_session_reviewer.dart';
 export 'src/domain/z_session_runtime.dart';
 export 'src/domain/z_session_state.dart';
 export 'src/domain/z_study_session_engine.dart';
+export 'src/domain/z_white_exam_session_controller.dart';
 export 'src/domain/z_white_exam_session_engine.dart';
 // Widgets de PRÉSENTATION PURS (ES-4.5, AD-2/AD-13/FR-26) — 1re surface
 // présentation de `zcrud_session` (import `flutter/material` + surface
@@ -124,3 +125,4 @@ export 'src/presentation/z_study_progress_rings.dart';
 // et le rend à l'hôte ; le filtrage EST la fonction pure `zApplyTestFilters`.
 export 'src/presentation/z_test_filters_dialog.dart';
 export 'src/presentation/z_timer_display.dart';
+export 'src/presentation/z_white_exam_session_view.dart';

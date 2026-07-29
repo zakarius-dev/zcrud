@@ -512,6 +512,12 @@ development_status:
   suf-4-audit-session-demo-assemblee: done             # [M][SÉQ — DERNIÈRE] audit parité widgets zcrud_session vs lex (doc + fermeture écarts par slots injectables + R3) + démo example/ grille→détail→session
   epic-suf-retrospective: done
 
+  # ⚠️ DIRECTIVE OWNER 2026-07-27 — DÉLÉGATION : plus AUCUNE tâche à Codex. Sous-agents Claude Code,
+  #   modèle Opus, effort medium par défaut (high si tâche complexe). Motifs constatés sur le lot CR-63..69 :
+  #   limite hebdo d'API atteinte en plein lot (agent mort APRÈS avoir écrit, AVANT son rapport) ;
+  #   échec silencieux au lancement (prompt trop long ⇒ shell KO ⇒ tâche jamais démarrée) ;
+  #   rapports incomplets (total annoncé « +79 » pour une baseline de 547). L'orchestrateur re-mesure TOUJOURS.
+
   # === VIS — ALIGNEMENT VISUEL IFFD par thème hybride (préréglage injectable) ===
   # Exécute la directive owner « aligner le plus possible à IFFD » — jamais instruite jusqu'ici (3 puces).
   # Décision : HYBRIDE À 3 COUCHES. (1) ~80 % du look IFFD est INCOLORE (barre d'accent 4dp, ombres, rayons,
