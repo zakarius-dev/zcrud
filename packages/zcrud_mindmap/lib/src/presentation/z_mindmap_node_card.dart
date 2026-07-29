@@ -178,7 +178,13 @@ class ZMindmapNodeCard extends StatelessWidget {
           borderRadius: BorderRadius.all(theme.radiusM),
           border: Border.all(
             color: isSelected ? selectedBorder : border,
-            width: isSelected ? 2 : 1,
+            // CR-LEX-80 : épaisseur injectable par état. Le repli sur les
+            // constantes historiques (1 / 2) garde le rendu strictement
+            // inchangé quand l'hôte n'injecte rien (ADDITIF STRICT).
+            width: isSelected
+                ? (config.selectedBorderWidth ??
+                    kZMindmapDefaultSelectedBorderWidth)
+                : (config.borderWidth ?? kZMindmapDefaultBorderWidth),
           ),
         ),
         child: Padding(

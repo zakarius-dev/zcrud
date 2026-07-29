@@ -140,9 +140,15 @@ class ZMindmapViewConfig {
     this.cellSpacing = 24,
     this.indentStep = 24,
     this.minTapTarget = 48,
+    this.borderWidth,
+    this.selectedBorderWidth,
   })  : assert(minScale > 0 && minScale <= maxScale,
             'minScale doit être > 0 et ≤ maxScale'),
-        assert(minTapTarget >= 48, 'cible tactile ≥ 48 dp (AD-13)');
+        assert(minTapTarget >= 48, 'cible tactile ≥ 48 dp (AD-13)'),
+        assert(borderWidth == null || borderWidth >= 0,
+            'borderWidth doit être ≥ 0'),
+        assert(selectedBorderWidth == null || selectedBorderWidth >= 0,
+            'selectedBorderWidth doit être ≥ 0');
 
   /// Échelle minimale de l'`InteractiveViewer` interne de `graphite` (zoom).
   final double minScale;
@@ -161,4 +167,32 @@ class ZMindmapViewConfig {
 
   /// Côté minimal d'une cible tactile interactive (AD-13 : ≥ 48 dp).
   final double minTapTarget;
+
+  /// Épaisseur du trait de la carte de nœud **non sélectionnée** (CR-LEX-80).
+  ///
+  /// `null` ⇒ repli sur [kZMindmapDefaultBorderWidth] (`1`) : rendu **strictement
+  /// inchangé** tant que l'hôte n'injecte rien (ADDITIF STRICT). La config porte
+  /// déjà les autres dimensions du nœud ([cellSize], [cellSpacing]) — le trait
+  /// était la seule dimension fermée.
+  final double? borderWidth;
+
+  /// Épaisseur du trait de la carte de nœud **sélectionnée** (CR-LEX-80).
+  ///
+  /// `null` ⇒ repli sur [kZMindmapDefaultSelectedBorderWidth] (`2`). Le défaut
+  /// `1`/`2` est **volontairement conservé** : il fait de l'épaisseur un canal de
+  /// distinction de la sélection. C'est l'hôte qui arbitre (ex. trait constant),
+  /// pas le socle.
+  final double? selectedBorderWidth;
 }
+
+/// Épaisseur de trait par défaut d'un nœud **non sélectionné** (CR-LEX-80).
+///
+/// Valeur historique — la changer modifierait le rendu de tous les hôtes qui
+/// n'injectent rien (`ZMindmapViewConfig.borderWidth == null`).
+const double kZMindmapDefaultBorderWidth = 1;
+
+/// Épaisseur de trait par défaut d'un nœud **sélectionné** (CR-LEX-80).
+///
+/// Valeur historique — canal de distinction de la sélection (cf.
+/// [ZMindmapViewConfig.selectedBorderWidth]).
+const double kZMindmapDefaultSelectedBorderWidth = 2;
