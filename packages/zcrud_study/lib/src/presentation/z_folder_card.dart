@@ -175,6 +175,15 @@ class ZFolderCard extends StatelessWidget {
   /// rendrait seulement muet. Il n'est donc PAS traité comme [topAccent] /
   /// [footer], qui sont, eux, des décors.
   ///
+  /// 📐 **Coût vertical NUL en cellule contrainte (CR-IFFD-37)** : le slot
+  /// **participe** à la hauteur allouée au lieu de s'y **ajouter**. Livré, il
+  /// était correct… et inutilisable à densité réelle — une grille en
+  /// `childAspectRatio: itemWidth / 210` débordait sur *chaque* carte, quand le
+  /// même texte tenait dans [counts] (qui, lui, vit dans une zone déjà bornée).
+  /// Désormais, toute hauteur où la carte tient **sans** le slot est une hauteur
+  /// où elle tient **avec**. À l'extrême, c'est le sous-titre qui se borne au
+  /// reliquat (le titre reste prioritaire) — jamais la carte qui déborde.
+  ///
   /// `null` ⇒ **rendu strictement inchangé** (aucun nœud, aucun espacement).
   final Widget? belowSubtitle;
 
@@ -321,20 +330,72 @@ class ZFolderCard extends StatelessWidget {
     // CR-IFFD-28 — le sous-titre est ancré AU TITRE (donc suit l'ancrage bas du
     // patron anti-overflow), pas au pied de carte. `null` ⇒ l'arbre reste
     // exactement `titleText`, sans colonne ni espacement supplémentaires.
-    final Widget titleBlock = belowSubtitle == null
-        ? titleText
-        : Column(
+    //
+    // 🔴 CR-IFFD-37 — le slot AJOUTAIT sa hauteur au lieu d'y PARTICIPER.
+    // Mesuré chez IFFD : `RenderFlex overflowed` dès 210 dp de cellule, alors
+    // que le MÊME texte composé dans [counts] tient — parce que [counts] vit
+    // dans une zone DÉJÀ BORNÉE (`Expanded`), là où cette colonne, sizée au
+    // contenu et à enfants tous INFLEXIBLES, débordait la hauteur résiduelle
+    // que l'`Align` lui prête. Gouverner l'espacement (`gapS`) ne pouvait pas
+    // suffire : le gap n'est qu'une fraction du coût, le reste est la hauteur
+    // propre du sous-titre.
+    //
+    // En régime BORNÉ, la colonne est donc reconstruite pour ne JAMAIS pouvoir
+    // déborder : le titre garde la priorité (hauteur naturelle) mais est borné
+    // à la place réellement disponible — exactement ce que le régime sans slot
+    // faisait déjà, l'`Align` passant des contraintes lâches à un `Text` qui
+    // s'y conforme — et le sous-titre absorbe le reliquat via un `Flexible`.
+    // La somme des enfants inflexibles ne dépasse donc jamais la contrainte.
+    Widget stackedBlock(Widget below) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        titleText,
+        SizedBox(height: theme.gapS),
+        // Volontairement HORS `ExcludeSemantics`, comme sur les deux cartes
+        // sœurs : ce contenu n'est pas dans le `label` de la carte, l'exclure
+        // le rendrait muet sans rien dédupliquer.
+        below,
+      ],
+    );
+
+    Widget titleBlockFor({required bool bounded}) {
+      final Widget? below = belowSubtitle;
+      if (below == null) return titleText;
+      if (!bounded) return stackedBlock(below);
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final double available = constraints.maxHeight;
+          // AD-10 — repli sûr : sans hauteur finie, aucune répartition n'a de
+          // sens, la colonne reste sizée au contenu.
+          if (!available.isFinite) return stackedBlock(below);
+          return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              titleText,
-              SizedBox(height: theme.gapS),
-              // Volontairement HORS `ExcludeSemantics`, comme sur les deux
-              // cartes sœurs : ce contenu n'est pas dans le `label` de la
-              // carte, l'exclure le rendrait muet sans rien dédupliquer.
-              belowSubtitle!,
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: available),
+                child: titleText,
+              ),
+              // `Flexible` (fit LOOSE) : le sous-titre prend sa hauteur
+              // naturelle tant qu'il y a la place, et se borne au reliquat
+              // sinon — au lieu de faire déborder la carte. L'ESPACEMENT est
+              // porté par ce même enfant flexible (`Padding` plutôt que
+              // `SizedBox`) : un gap inflexible pouvait à lui seul dépasser la
+              // place restante et faire déborder la colonne. Aucun enfant
+              // inflexible ne peut donc plus excéder la contrainte — le titre
+              // en est borné, l'espacement en fait partie.
+              Flexible(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(top: theme.gapS),
+                  child: below,
+                ),
+              ),
             ],
           );
+        },
+      );
+    }
 
     // D6 / AC9 vs AC6 — deux régimes selon la hauteur DISPONIBLE, décidés par un
     // `LayoutBuilder` (jamais un layout de grille : la grille reste posée par
@@ -394,11 +455,11 @@ class ZFolderCard extends StatelessWidget {
                 Expanded(
                   child: Align(
                     alignment: AlignmentDirectional.bottomStart,
-                    child: titleBlock,
+                    child: titleBlockFor(bounded: true),
                   ),
                 )
               else
-                titleBlock,
+                titleBlockFor(bounded: false),
               if (footerChildren.isNotEmpty) ...<Widget>[
                 SizedBox(height: theme.gapS),
                 Row(children: footerChildren),

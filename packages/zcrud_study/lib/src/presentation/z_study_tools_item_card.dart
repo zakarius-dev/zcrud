@@ -102,6 +102,15 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// carte, donc l'en exclure ne préviendrait aucune double annonce — cela le
   /// rendrait seulement muet.
   ///
+  /// 📐 **Coût vertical NUL en cellule contrainte (CR-IFFD-37)** : le slot
+  /// **participe** à la hauteur allouée au lieu de s'y **ajouter** — espacement
+  /// compris. Une grille dense (hauteur d'item fixe) débordait sur *chaque*
+  /// carte dès que le slot était rempli ; désormais, toute hauteur où la carte
+  /// tient **sans** le slot est une hauteur où elle tient **avec**. À l'extrême,
+  /// c'est le contenu du slot qui se borne au reliquat, jamais la carte qui
+  /// déborde. Même correction sur `ZFolderCard` et, par passe-plat, sur
+  /// `ZStudyNoteCard` : les trois cartes sœurs se comportent à l'identique.
+  ///
   /// `null` ⇒ **rendu strictement inchangé** (aucun nœud, aucun espacement).
   final Widget? belowSubtitle;
 
@@ -286,10 +295,28 @@ class ZStudyToolsItemCard extends StatelessWidget {
                 // locale). Volontairement HORS `ExcludeSemantics`, comme
                 // `badge` (CR-LEX-71) : ce contenu n'est pas dans le `label` de
                 // la carte, l'exclure le rendrait muet sans rien dédupliquer.
-                if (belowSubtitle != null) ...<Widget>[
-                  SizedBox(height: theme.gapS),
-                  belowSubtitle!,
-                ],
+                //
+                // 🔴 CR-IFFD-37 — le slot AJOUTAIT sa hauteur à la colonne au
+                // lieu d'y PARTICIPER : dans une cellule de hauteur fixe
+                // (grille dense), cette `Column` sizée au contenu et à enfants
+                // tous INFLEXIBLES débordait la hauteur que la `Row` lui prête
+                // (`RenderFlex overflowed` mesuré dès 210 dp). Le `Flexible`
+                // (fit LOOSE) rend le slot — espacement COMPRIS, d'où le
+                // `Padding` en lieu et place du `SizedBox` — comptable de la
+                // contrainte : hauteur naturelle tant qu'il y a la place,
+                // reliquat sinon. Le titre et le sous-titre, eux, gardent
+                // exactement le comportement qu'ils avaient sans le slot : le
+                // slot ne coûte donc plus rien de plus que son absence.
+                // En hauteur NON BORNÉE, un `Flexible` en fit LOOSE sous une
+                // `Column(MainAxisSize.min)` est licite : `RenderFlex` le
+                // traite alors comme un enfant ordinaire (rendu inchangé).
+                if (belowSubtitle != null)
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(top: theme.gapS),
+                      child: belowSubtitle!,
+                    ),
+                  ),
               ],
             ),
           ),
