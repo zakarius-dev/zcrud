@@ -240,6 +240,89 @@ Widget _zBuildTitle(
   return _resolveTitleWidget(title);
 }
 
+/// Tranche **titre + sous-titre** partagée (CR-IFFD-34) — mode fixe ET slivers.
+///
+/// 🔴 **Défaut strictement inchangé** : [subtitle] nul ⇒ cette fonction rend
+/// **exactement** ce que rendait [_zBuildTitle] (le titre nu), sans `Column`
+/// interposée, sans boîte vide. Aucun hôte existant ne voit son arbre bouger.
+///
+/// En mode recherche le titre morphe en champ de saisie : le sous-titre est
+/// alors **absent de l'arbre** (il qualifie le titre, pas la requête, et le
+/// champ occupe déjà la zone titre).
+///
+/// **Nommage — pourquoi `subtitle` et non `belowSubtitle`** : sur les cartes
+/// (`ZStudyToolsItemCard`/`ZStudyNoteCard`/`ZFolderCard`) `belowSubtitle`
+/// désigne un slot rendu **sous un sous-titre déjà existant**. Une app-bar n'a
+/// pas de sous-titre : ce slot **EST** le sous-titre. Réutiliser
+/// `belowSubtitle` ici nommerait une position relative à un élément absent —
+/// donc une 4ᵉ sémantique déguisée en 3ᵉ. Le nom `subtitle` décrit ce que la
+/// chose est ; le **type** (`Widget?`) et le **traitement** (`null` ⇒ absence
+/// structurelle, contenu opaque, sémantique laissée au widget de l'hôte)
+/// restent identiques aux slots des cartes.
+Widget _zBuildTitleBlock(
+  BuildContext context,
+  _ZSearchController controller,
+  Object title,
+  Widget? subtitle,
+  ZAppBarSearchConfig? search,
+  bool searching,
+) {
+  final Widget titleSlice = _zBuildTitle(
+    context,
+    controller,
+    title,
+    search,
+    searching,
+  );
+  if (subtitle == null || (search != null && searching)) return titleSlice;
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    // `CrossAxisAlignment.start` est DIRECTIONNEL (AD-13) : jamais `left`.
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[titleSlice, _zSubtitleSlice(context, subtitle)],
+  );
+}
+
+/// Sous-titre d'app-bar : métriques **dérivées du thème** (`titleSmall`), jamais
+/// de littéral. 🔴 La **couleur n'est pas touchée** : elle reste héritée du
+/// `DefaultTextStyle` de l'app-bar (donc du `foregroundColor`, y compris celui
+/// imposé par un dégradé d'identité). Forcer ici une couleur de `textTheme`
+/// rendrait le sous-titre illisible sur une app-bar teintée.
+Widget _zSubtitleSlice(BuildContext context, Widget subtitle) {
+  final TextStyle? small = Theme.of(context).textTheme.titleSmall;
+  return DefaultTextStyle.merge(
+    style: TextStyle(
+      fontSize: small?.fontSize,
+      fontWeight: small?.fontWeight,
+      letterSpacing: small?.letterSpacing,
+      height: small?.height,
+    ),
+    child: subtitle,
+  );
+}
+
+/// Dégradé d'identité de l'app-bar (CR-IFFD-34) — **réutilise** la couture
+/// `zResolveGradient` de `zcrud_core` (v0.20.0), celle-là même que consomme
+/// `ZFolderCardGradientAccent` : la même entité colore donc sa carte ET l'en-tête
+/// de sa page, par le même seam.
+///
+/// 🔴 **Chaîne inchangée : seam hôte → `null`.** Aucun repli dérivé n'est
+/// réintroduit ici (`zDerivedGradientResolver` reste OPT-IN, arbitrage VIS-1
+/// AC4/AC9) : sans `ZcrudScope.gradientResolver` injecté, ou avec une clé nulle
+/// ou vide, ou si le resolver de l'hôte rend `null`, cette fonction rend `null`
+/// et l'app-bar est **strictement identique** à ce qu'elle était.
+ZGradientSpec? _zAppBarGradient(BuildContext context, String? gradientKey) {
+  if (gradientKey == null || gradientKey.isEmpty) return null;
+  return zResolveGradient(context, gradientKey);
+}
+
+/// Fond dégradé de l'app-bar (`null` ⇒ slot `flexibleSpace` **absent**).
+/// `Container` (et non `DecoratedBox`) : sans enfant il occupe les contraintes
+/// que lui passe la `Stack` de l'app-bar — c'est l'idiome Flutter du fond plein.
+Widget? _zGradientFlexibleSpace(ZGradientSpec? spec) => spec == null
+    ? null
+    : Container(decoration: BoxDecoration(gradient: spec.gradient));
+
 /// Tranche **actions** partagée : chaque [ZAppBarAction] non-débordement rend
 /// **un** `IconButton` (cible ≥ 48 dp par défaut, `Semantics` via
 /// `Icon.semanticLabel`) ; les actions `isOverflow` alimentent un

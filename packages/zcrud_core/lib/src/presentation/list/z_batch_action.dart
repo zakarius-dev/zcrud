@@ -24,6 +24,17 @@ import 'z_list_selection.dart';
 /// Cible de taille interactive minimale (AD-13/NFR-S6).
 const double _kMinTapTarget = 48.0;
 
+/// Emprise horizontale RÉSERVÉE par la barre pour UN bouton d'action.
+///
+/// `_BarButton` contraint son `IconButton` à `minWidth: _kMinTapTarget` ; un
+/// `IconButton` Material par défaut (glyphe 24 dp + rembourrage 8 dp) mesure
+/// 40 dp et est donc porté à EXACTEMENT 48 dp par cette contrainte. La barre
+/// réserve un « créneau » de cette largeur par bouton pour décider du repli
+/// (cf. [ZBatchActionBar]) — un thème hôte qui gonflerait `IconButton` au-delà
+/// de 48 dp sortirait de ce contrat (le compteur `Flexible` absorbe alors le
+/// dépassement résiduel, cf. `build`).
+const double _kActionSlot = _kMinTapTarget;
+
 /// Nature d'une action de **lot** — enum EXTENSIBLE additif (AD-4).
 ///
 /// [delete]/[move] sont les natures intégrées ; [custom] couvre toute action
@@ -79,6 +90,28 @@ class ZBatchAction {
 /// **badge compteur** ([selectedCount]), un bouton « tout sélectionner »
 /// (présent SEULEMENT si [onSelectAll] non `null`), puis les [actions] déclarées
 /// dont `onSelected != null`.
+///
+/// **Résilience à la contrainte de largeur (CR-IFFD-36)** : la rangée ne peut
+/// plus COUPER son contenu sur une largeur réduite (mesuré : `RenderFlex
+/// overflowed by 50 pixels` à 800 dp). Deux mécanismes, tous deux INACTIFS tant
+/// que la largeur suffit (rendu identique) :
+///
+/// 1. le **badge compteur est `Flexible`** — un libellé localisé long se rétrécit
+///    (ellipse) au lieu de pousser les boutons hors du cadre ;
+/// 2. **repli en menu de dépassement** — sous `LayoutBuilder`, si les boutons ne
+///    tiennent pas dans la largeur disponible, les DERNIERS basculent dans un
+///    `PopupMenuButton` (un créneau de [_kActionSlot] lui est réservé).
+///
+/// La convention de dépassement suit celle de `ZAppBarAction.isOverflow`
+/// (`zcrud_ui_kit`) — même présentation (`Icons.more_vert` + entrées
+/// `icône + libellé`) — mais elle est **INSPIRÉE, jamais importée** : une arête
+/// `zcrud_core → zcrud_ui_kit` violerait AD-1 (CORE OUT = 0). Différence
+/// assumée : `isOverflow` est un choix DÉCLARÉ par l'appelant, ici le repli est
+/// PILOTÉ PAR LA LARGEUR (l'appelant ne peut pas connaître la largeur de rendu).
+/// Les actions repliées restent atteignables ET annoncées (chaque entrée porte
+/// son libellé visible ; le bouton de dépassement porte [overflowLabel], à
+/// défaut le libellé localisé que `PopupMenuButton` applique lui-même —
+/// `MaterialLocalizations.showMenuTooltip`).
 class ZBatchActionBar extends StatelessWidget {
   /// Construit la barre.
   ///
@@ -94,6 +127,7 @@ class ZBatchActionBar extends StatelessWidget {
     this.countLabelBuilder,
     this.selectAllLabel,
     this.onSelectAll,
+    this.overflowLabel,
     super.key,
   }) : assert(
           onSelectAll == null || selectAllLabel != null,
@@ -124,6 +158,15 @@ class ZBatchActionBar extends StatelessWidget {
   /// ⇒ [selectAllLabel] DOIT l'être aussi (nom accessible a11y, AD-13).
   final VoidCallback? onSelectAll;
 
+  /// Label LOCALISÉ INJECTÉ du bouton de **dépassement** (a11y + tooltip).
+  ///
+  /// N'a d'effet que sur une largeur trop étroite pour toutes les actions
+  /// (CR-IFFD-36). `null` ⇒ le libellé localisé STANDARD
+  /// `MaterialLocalizations.showMenuTooltip` appliqué par `PopupMenuButton`
+  /// lui-même (jamais une chaîne codée en dur ; jamais un bouton MUET pour un
+  /// lecteur d'écran — récidive su-9).
+  final String? overflowLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
@@ -142,31 +185,142 @@ class ZBatchActionBar extends StatelessWidget {
         // annoncé DEUX FOIS (« 3 sélectionné(s) 3 sélectionné(s) »). Le
         // conteneur ne fait que grouper la barre (frontière sémantique), sans
         // libellé propre.
+        // Entrées de barre, ordre PRÉSERVÉ : « tout sélectionner » (si fourni)
+        // puis les actions visibles. Le repli de dépassement mord par la FIN.
+        final entries = <_BarEntry>[
+          if (onSelectAll != null)
+            _BarEntry(
+              icon: Icons.select_all,
+              label: selectAllLabel!,
+              onPressed: onSelectAll!,
+            ),
+          for (final action in visible)
+            _BarEntry(
+              icon: action.icon,
+              label: action.label,
+              onPressed: action.onSelected!,
+            ),
+        ];
         return Semantics(
           container: true,
-          child: Row(
-            children: [
-              // Badge compteur (tranche réactive `selectedCount`).
-              Padding(
-                padding: EdgeInsetsDirectional.only(end: theme.gapM),
-                child: Text(countLabel, textAlign: TextAlign.start),
-              ),
-              if (onSelectAll != null)
-                _BarButton(
-                  icon: Icons.select_all,
-                  label: selectAllLabel,
-                  onPressed: onSelectAll,
-                ),
-              for (final action in visible)
-                _BarButton(
-                  icon: action.icon,
-                  label: action.label,
-                  onPressed: action.onSelected,
-                ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // CR-IFFD-36 — combien de boutons tiennent réellement ? Sur une
+              // largeur INFINIE (Row/ListView horizontal hôte) aucune contrainte
+              // ne s'applique : tout reste en ligne (rendu inchangé).
+              var inlineCount = entries.length;
+              if (constraints.maxWidth.isFinite) {
+                final slots = (constraints.maxWidth / _kActionSlot).floor();
+                if (slots < entries.length) {
+                  // Un créneau est RÉSERVÉ au bouton de dépassement lui-même.
+                  inlineCount = slots > 0 ? slots - 1 : 0;
+                }
+              }
+              final overflow = entries.sublist(inlineCount);
+              return Row(
+                children: [
+                  // Badge compteur (tranche réactive `selectedCount`).
+                  // `Flexible` (CR-IFFD-36) : un libellé localisé long se
+                  // rétrécit au lieu de pousser les boutons hors du cadre. Sur
+                  // une largeur suffisante il reçoit sa largeur intrinsèque —
+                  // rendu INCHANGÉ.
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(end: theme.gapM),
+                      child: Text(
+                        countLabel,
+                        textAlign: TextAlign.start,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  for (final entry in entries.take(inlineCount))
+                    _BarButton(
+                      icon: entry.icon,
+                      label: entry.label,
+                      onPressed: entry.onPressed,
+                    ),
+                  if (overflow.isNotEmpty)
+                    _OverflowMenu(entries: overflow, label: overflowLabel),
+                ],
+              );
+            },
           ),
         );
       },
+    );
+  }
+}
+
+/// Entrée de barre RÉSOLUE (callback non-`null` : les actions ABSENTES ont déjà
+/// été filtrées). Purement interne — sert au repli de dépassement (CR-IFFD-36).
+@immutable
+class _BarEntry {
+  const _BarEntry({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+}
+
+/// Menu de **dépassement** de la barre (CR-IFFD-36) — présentation calquée sur
+/// `ZAppBarAction.isOverflow` (`zcrud_ui_kit`) SANS l'importer (AD-1).
+///
+/// a11y (AD-13) : le bouton porte un `tooltip` (nom accessible + `button:
+/// true` fournis par `PopupMenuButton`), jamais un `Semantics(label:)`
+/// supplémentaire qui DOUBLERAIT l'annonce (su-8/AC20). Chaque entrée du menu
+/// porte son libellé VISIBLE — une action repliée reste annoncée, jamais
+/// invisible au lecteur d'écran. Cible ≥ 48 dp. Aucune couleur littérale
+/// (FR-26) : le menu hérite du thème.
+class _OverflowMenu extends StatelessWidget {
+  const _OverflowMenu({required this.entries, this.label});
+
+  final List<_BarEntry> entries;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ZcrudTheme.of(context);
+    // `tooltip: null` n'est PAS un bouton muet : `PopupMenuButton` applique
+    // lui-même `?? MaterialLocalizations.of(context).showMenuTooltip`
+    // (popup_menu.dart) — le nom accessible de repli est donc LOCALISÉ par le
+    // framework, jamais une chaîne codée en dur ici (FR-23/su-9). On se garde
+    // bien de dupliquer ce repli : un `?? showMenuTooltip` local serait du code
+    // MORT, indistinguable de son absence (mesuré : l'injection R3 qui le
+    // supprimait laissait la garde VERTE).
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: _kMinTapTarget,
+        minHeight: _kMinTapTarget,
+      ),
+      child: PopupMenuButton<int>(
+        icon: const Icon(Icons.more_vert),
+        tooltip: label,
+        itemBuilder: (context) => <PopupMenuEntry<int>>[
+          for (var i = 0; i < entries.length; i++)
+            PopupMenuItem<int>(
+              value: i,
+              child: Row(
+                children: [
+                  Icon(entries[i].icon),
+                  SizedBox(width: theme.gapM),
+                  Flexible(
+                    child: Text(
+                      entries[i].label,
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        onSelected: (i) => entries[i].onPressed(),
+      ),
     );
   }
 }

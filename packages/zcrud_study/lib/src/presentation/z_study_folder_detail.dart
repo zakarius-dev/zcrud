@@ -101,6 +101,9 @@ class ZStudyFolderDetail extends StatefulWidget {
     required this.materialSectionsBuilder,
     required this.notebookBuilder,
     required this.nav,
+    this.subtitle,
+    this.gradientKey,
+    this.progressionBuilder,
     this.materialHeaderBuilder,
     this.materialFooterBuilder,
     this.colorKey,
@@ -140,6 +143,21 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
+
+  /// CR-IFFD-34 — sous-titre d'app-bar, **propagé tel quel** à
+  /// `ZPageScaffold.subtitle`. `null` (défaut) ⇒ absent de l'arbre : le rendu
+  /// est strictement celui d'avant la CR.
+  final Widget? subtitle;
+
+  /// CR-IFFD-34 — identité **opaque et persistante** du dossier ouvert (son id),
+  /// propagée à `ZPageScaffold.gradientKey` pour teinter l'en-tête de sa propre
+  /// page comme `ZFolderCardGradientAccent` teinte sa carte — **même couture**
+  /// (`zResolveGradient`), même clé.
+  ///
+  /// 🔴 Sans `ZcrudScope.gradientResolver` injecté par l'hôte, **aucun** dégradé
+  /// n'apparaît (chaîne `seam hôte → null`, aucun repli dérivé) : le rendu par
+  /// défaut reste inchangé.
+  final String? gradientKey;
 
   /// Clé de couleur **opaque** de l'accent du dossier (`null` ⇒ slot de repli).
   final String? colorKey;
@@ -213,6 +231,25 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Constructeur du corps de l'onglet Notebook (slot).
   final WidgetBuilder notebookBuilder;
 
+  /// CR-IFFD-33 — constructeur LIBRE du corps de l'onglet Progression, **au même
+  /// contrat que [notebookBuilder]** : un `WidgetBuilder` branché directement
+  /// sur `ZPageTab.contentBuilder`, qui possède donc tout l'onglet.
+  ///
+  /// `null` (défaut) ⇒ comportement HISTORIQUE **strictement** conservé :
+  /// [ZStudyProgressRings] + [progressStatCards] quand [progressData] est
+  /// fourni, [progressEmptyState] sinon. Aucune rupture pour un hôte existant.
+  ///
+  /// Fourni ⇒ il **prime** sur l'anneau : une progression n'a pas
+  /// nécessairement la forme d'un ratio global (des barres linéaires par
+  /// catégorie, par exemple, ne se réduisent pas à un anneau).
+  ///
+  /// 🔴 **Pourquoi pas [progressEmptyState]** : ce slot signifie « aucune
+  /// donnée » ; y injecter un onglet PLEIN inverserait le sens du paramètre et
+  /// piégerait le prochain lecteur. [progressEmptyState] conserve donc son sens
+  /// exact — il n'est rendu que lorsque [progressData] est `null` **et** qu'aucun
+  /// [progressionBuilder] n'est fourni.
+  final WidgetBuilder? progressionBuilder;
+
   /// DTO d'affichage PRÉ-CALCULÉ de progression (`null` ⇒ état vide neutre).
   final ZProgressRingsData? progressData;
 
@@ -272,6 +309,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
 
     return ZPageScaffold(
       title: _titleWidget(context),
+      // CR-IFFD-34 — pass-through pur : `null` ⇒ slots absents côté shell.
+      subtitle: widget.subtitle,
+      gradientKey: widget.gradientKey,
       leading: widget.leading,
       actions: actions,
       search: widget.search,
@@ -301,7 +341,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
         ZPageTab(
           label: widget.progressionTabLabel,
           icon: widget.progressionTabIcon,
-          contentBuilder: _progressionTab,
+          // CR-IFFD-33 — même câblage que l'onglet Notebook : le builder INJECTÉ
+          // possède l'onglet ; absent ⇒ anneau historique (`_progressionTab`).
+          contentBuilder: widget.progressionBuilder ?? _progressionTab,
         ),
       ],
     );

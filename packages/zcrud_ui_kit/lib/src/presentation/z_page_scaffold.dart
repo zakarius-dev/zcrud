@@ -51,6 +51,8 @@ class ZPageScaffold extends StatefulWidget {
   /// conservent les défauts de `Scaffold` (cf. doc de classe).
   const ZPageScaffold({
     required this.title,
+    this.subtitle,
+    this.gradientKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -79,6 +81,17 @@ class ZPageScaffold extends StatefulWidget {
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
+
+  /// Sous-titre optionnel de l'app-bar (CR-IFFD-34), propagé aux deux modes
+  /// (fixe et sliver). Voir [ZSearchableAppBar.subtitle] : `null` (défaut) ⇒
+  /// **absent de l'arbre**, rendu strictement identique à l'existant.
+  final Widget? subtitle;
+
+  /// Identité opaque de l'entité ouverte, alimentant le dégradé d'app-bar via
+  /// la couture `zResolveGradient` (CR-IFFD-34). Voir
+  /// [ZSearchableAppBar.gradientKey] : sans `ZcrudScope.gradientResolver`
+  /// injecté par l'hôte, **aucun** dégradé — rendu inchangé (neutralité VIS-1).
+  final String? gradientKey;
 
   /// Leading optionnel (rendu si et seulement si fourni — AC1).
   final Widget? leading;
@@ -203,6 +216,8 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
       appBar: ZSearchableAppBar._controlled(
         title: widget.title,
         controller: _controller,
+        subtitle: widget.subtitle,
+        gradientKey: widget.gradientKey,
         leading: widget.leading,
         actions: widget.actions,
         search: widget.search,
@@ -230,6 +245,8 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
   Widget _buildSliver(BuildContext context) => _scaffold(
     body: ZPageShellBody._controlled(
       title: widget.title,
+      subtitle: widget.subtitle,
+      gradientKey: widget.gradientKey,
       leading: widget.leading,
       actions: widget.actions,
       search: widget.search,

@@ -360,6 +360,8 @@ class ZFlashcardListView extends StatefulWidget {
     this.contentBuilder,
     this.selection,
     this.searchDebounce = _kSearchDebounce,
+    this.crossAxisMaxColumns,
+    this.crossAxisItemHeight,
     super.key,
   });
 
@@ -434,6 +436,49 @@ class ZFlashcardListView extends StatefulWidget {
 
   /// Délai de débounce de la recherche (injectable pour les tests).
   final Duration searchDebounce;
+
+  // ── CR-IFFD-35 : mise en grille bornée, AU MÊME CONTRAT que le layout ───────
+  // Noms, types et défauts sont IDENTIQUES à `ZStudyToolsSectionSpec`
+  // (`crossAxisMaxColumns` / `crossAxisItemHeight`) — pas une variante : c'est
+  // précisément le reproche de la CR (« ne pas figer, sur un widget, une
+  // décision qu'un autre widget du même paquet expose déjà »). La primitive est
+  // la MÊME (`ZAdaptiveGrid` → `computeCrossAxisCount`) : aucune seconde
+  // mécanique de grille n'est écrite ici.
+
+  /// **Plafond** du nombre de colonnes de la grille (CR-IFFD-35).
+  ///
+  /// `null` (défaut) ⇒ **illimité** : le nombre de colonnes reste dérivé de la
+  /// seule largeur LOCALE (une colonne par tranche de [_kMinTileWidth]) —
+  /// **rendu strictement inchangé** pour tout hôte qui ne renseigne pas ce slot.
+  ///
+  /// Non-null ⇒ le nombre de colonnes est borné en haut. Le plafond ne mord
+  /// qu'au-dessus de la largeur où la responsive donne déjà moins de colonnes ;
+  /// sous ce seuil le rendu est identique avec ou sans plafond.
+  ///
+  /// **AD-10 — repli défensif ALIGNÉ sur la primitive** : la valeur est
+  /// transmise TELLE QUELLE à `ZAdaptiveGrid`, donc à `computeCrossAxisCount`,
+  /// dont le contrat est déjà écrit : un plafond `< minColumns` (donc `0` ou
+  /// négatif) est **remonté au plancher** (≥ 1 colonne garantie) — jamais de
+  /// grille vide, jamais de `RangeError`. Aucun assainissement local : un
+  /// plafond qui se comporterait autrement ici que sur `ZSectionedStudyLayout`
+  /// serait exactement la « variante » que la CR refuse.
+  ///
+  /// ⚠️ **Ne s'applique PAS au mode réordonnable** (tri manuel + aucun filtre de
+  /// contenu actif) : ce chemin est un `ReorderableListView.builder` mono-colonne
+  /// du SDK, où la notion de colonne n'existe pas. L'écart est le MÊME que sur
+  /// `ZStudyToolsSectionSpec` avant CR-IFFD-15, et il est **visible** (l'ordre
+  /// manuel est un mode explicitement choisi par l'utilisateur), jamais silencieux.
+  final int? crossAxisMaxColumns;
+
+  /// Hauteur fixe d'une cellule de grille (CR-IFFD-35), pendant de
+  /// [crossAxisMaxColumns] — MÊME nom et MÊME type que sur
+  /// `ZStudyToolsSectionSpec`.
+  ///
+  /// `null` (défaut) ⇒ la hauteur historique de tuile de cette vue (180 dp) —
+  /// **rendu strictement inchangé**. (Le défaut diffère donc de celui du layout
+  /// sectionné, où `null` signifie « forme par défaut de la grille » : ici la
+  /// vue AVAIT déjà une hauteur, et la non-régression prime.)
+  final double? crossAxisItemHeight;
 
   /// Clé du champ de recherche (testabilité).
   static const ValueKey<String> searchFieldKey =
@@ -857,7 +902,11 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       key: ZFlashcardListView.gridKey,
       itemCount: visible.length,
       minItemWidth: _kMinTileWidth,
-      itemHeight: _kTileHeight,
+      // CR-IFFD-35 — hauteur d'item INJECTABLE ; `null` ⇒ hauteur historique.
+      itemHeight: widget.crossAxisItemHeight ?? _kTileHeight,
+      // CR-IFFD-35 — plafond de colonnes transmis TEL QUEL à la primitive
+      // (`null` ⇒ illimité, rendu inchangé ; absurde ⇒ plancher, AD-10).
+      maxColumns: widget.crossAxisMaxColumns,
       itemBuilder: (context, i) =>
           _buildTile(context, visible[i], visible, i,
               grid: true, reorderable: false),

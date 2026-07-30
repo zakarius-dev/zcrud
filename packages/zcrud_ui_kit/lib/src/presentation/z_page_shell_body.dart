@@ -39,6 +39,8 @@ class ZPageShellBody extends StatefulWidget {
   /// sliver de contenu** (absence structurelle, pas de boîte vide).
   const ZPageShellBody({
     required this.title,
+    this.subtitle,
+    this.gradientKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -60,6 +62,8 @@ class ZPageShellBody extends StatefulWidget {
   const ZPageShellBody._controlled({
     required this.title,
     required _ZSearchController this._controller,
+    this.subtitle,
+    this.gradientKey,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
@@ -76,6 +80,15 @@ class ZPageShellBody extends StatefulWidget {
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
+
+  /// Sous-titre optionnel (CR-IFFD-34). Voir [ZSearchableAppBar.subtitle] :
+  /// `null` ⇒ absent de l'arbre, rendu strictement inchangé.
+  final Widget? subtitle;
+
+  /// Clé d'identité du dégradé d'app-bar (CR-IFFD-34). Voir
+  /// [ZSearchableAppBar.gradientKey] : sans resolver hôte injecté, rendu
+  /// strictement inchangé.
+  final String? gradientKey;
 
   /// Leading optionnel (rendu si et seulement si fourni — AC1).
   final Widget? leading;
@@ -157,33 +170,44 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
         mode == ZPageAppBarMode.floatingPinned;
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isSearching,
-      builder: (context, searching, _) => SliverAppBar(
-        floating: floating,
-        pinned: pinned,
-        leading: _zBuildLeading(
+      builder: (context, searching, _) {
+        // Resolver hôte appelé UNE seule fois par build (jamais deux fois pour
+        // la même clé) ; `null` ⇒ slots absents ⇒ sliver strictement inchangé.
+        final ZGradientSpec? gradient = _zAppBarGradient(
           context,
-          _controller,
-          widget.leading,
-          widget.search,
-          searching,
-        ),
-        title: _zBuildTitle(
-          context,
-          _controller,
-          widget.title,
-          widget.search,
-          searching,
-        ),
-        centerTitle: false,
-        actions: _zBuildActions(
-          context,
-          _controller,
-          widget.actions,
-          widget.search,
-          searching,
-        ),
-        bottom: bottom,
-      ),
+          widget.gradientKey,
+        );
+        return SliverAppBar(
+          floating: floating,
+          pinned: pinned,
+          flexibleSpace: _zGradientFlexibleSpace(gradient),
+          foregroundColor: gradient?.onGradient,
+          leading: _zBuildLeading(
+            context,
+            _controller,
+            widget.leading,
+            widget.search,
+            searching,
+          ),
+          title: _zBuildTitleBlock(
+            context,
+            _controller,
+            widget.title,
+            widget.subtitle,
+            widget.search,
+            searching,
+          ),
+          centerTitle: false,
+          actions: _zBuildActions(
+            context,
+            _controller,
+            widget.actions,
+            widget.search,
+            searching,
+          ),
+          bottom: bottom,
+        );
+      },
     );
   }
 

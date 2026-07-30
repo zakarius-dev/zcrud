@@ -80,16 +80,42 @@ class ZItemAction {
   final VoidCallback? onSelected;
 }
 
+/// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
+///
+/// Reçoit :
+/// * [context] — le contexte de la **surface flottante** (celui du menu ouvert,
+///   pas celui du déclencheur) ;
+/// * `actions` — la liste **DÉJÀ FILTRÉE** par la règle d'absence (AD-4) :
+///   toute action à [ZItemAction.onSelected] `null` en est ABSENTE. L'hôte n'a
+///   donc **jamais** à refaire ce filtrage, et ne peut pas le contourner par
+///   inadvertance en rendant une entrée grisée ;
+/// * `select` — invoque l'action ET ferme la surface, par le **MÊME chemin** que
+///   le rendu par défaut (`Navigator.pop(context, action)` ⇒ `onSelected` du
+///   `PopupMenuButton`). L'hôte n'a ni à fermer à la main, ni à appeler
+///   `action.onSelected` : une présentation alternative ne peut pas diverger du
+///   comportement de la colonne par défaut.
+///
+/// Le socle **n'impose rien** sur la forme rendue (grille bornée, colonnes
+/// multiples, sections…) : c'est précisément l'objet du slot.
+typedef ZItemActionsMenuBuilder = Widget Function(
+  BuildContext context,
+  List<ZItemAction> actions,
+  void Function(ZItemAction action) select,
+);
+
 /// Menu d'actions par item paramétrique (déclencheur `PopupMenuButton`).
 class ZItemActionsMenu extends StatelessWidget {
   /// Construit le menu à partir des actions (ordre préservé).
   ///
   /// [icon] : glyphe INJECTÉ du déclencheur (`null` ⇒ repli neutre documenté).
   /// [tooltip] : label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
+  /// [menuBuilder] : présentation INJECTÉE du contenu (`null` ⇒ **colonne
+  /// unique**, rendu strictement inchangé).
   const ZItemActionsMenu({
     required this.actions,
     this.icon,
     this.tooltip,
+    this.menuBuilder,
     super.key,
   });
 
@@ -103,17 +129,56 @@ class ZItemActionsMenu extends StatelessWidget {
   /// Label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
   final String? tooltip;
 
+  /// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
+  ///
+  /// `null` (défaut) ⇒ **colonne unique** de `PopupMenuItem` — rendu
+  /// **strictement inchangé** pour tout hôte qui ne renseigne pas ce slot.
+  ///
+  /// Non-null ⇒ la surface flottante ne contient plus qu'UNE entrée, dont le
+  /// contenu est celui rendu par l'hôte. Ce qui reste **la propriété du socle**,
+  /// et qui ne peut donc pas régresser : la liste transmise est déjà filtrée par
+  /// la règle « `onSelected == null` ⇒ action ABSENTE » (AD-4), et la sélection
+  /// passe par le même `Navigator.pop(context, action)` que le rendu par défaut.
+  ///
+  /// **Pourquoi un SLOT et pas une option de grille** (arbitrage CR-IFFD-32) :
+  /// au-delà de six ou sept entrées, une colonne unique impose un balayage
+  /// vertical long sur une surface flottante — le plafond de lisibilité est
+  /// réel. Mais y répondre par un `crossAxisMaxColumns` figerait dans le socle
+  /// *une* ergonomie de menu flottant (largeur de panneau, ordre de lecture,
+  /// parcours clavier, position du séparateur destructif) alors que ces
+  /// décisions dépendent de l'hôte — ce serait exactement le défaut que
+  /// CR-LEX-61/73 et CR-IFFD-35 reprochent au socle : figer sur un widget une
+  /// décision qui ne lui appartient pas. Le slot n'engage RIEN sur le rendu tout
+  /// en préservant l'abstraction jugée juste (`List<ZItemAction>` + règle
+  /// d'absence). Une option de disposition reste ajoutable par-dessus, plus
+  /// tard, sans rupture.
+  ///
+  /// ⚠️ **A11y (AD-13) — ce que le socle ne peut plus garantir** : les cibles
+  /// ≥ 48 dp, les `Semantics` et la directionnalité du contenu rendu par l'hôte
+  /// sont à SA charge (le socle ne les impose que sur sa colonne par défaut).
+  final ZItemActionsMenuBuilder? menuBuilder;
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     // AD-4 — action sans callback ⇒ ABSENTE (jamais rendue grisée/no-op).
+    // 🔴 Filtrage AMONT, PARTAGÉ par les deux présentations : le slot reçoit la
+    // MÊME liste que la colonne par défaut. La règle d'absence n'est donc pas
+    // « re-demandée » à l'hôte — elle lui est INOPPOSABLE.
     final visible =
         actions.where((a) => a.onSelected != null).toList(growable: false);
+    final builder = menuBuilder;
     return PopupMenuButton<ZItemAction>(
       icon: Icon(icon ?? _kMenuFallbackIcon),
       tooltip: tooltip,
       onSelected: (action) => action.onSelected?.call(),
       itemBuilder: (context) => <PopupMenuEntry<ZItemAction>>[
+        if (builder != null)
+          _ZActionsPanelEntry(
+            builder: builder,
+            actions: visible,
+          )
+        else
         for (final action in visible)
           PopupMenuItem<ZItemAction>(
             value: action,
@@ -153,4 +218,50 @@ class ZItemActionsMenu extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Entrée UNIQUE portant la présentation INJECTÉE (CR-IFFD-32).
+///
+/// C'est un `PopupMenuEntry` **nu** — délibérément PAS un `PopupMenuItem` :
+/// * un `PopupMenuItem` impose sa hauteur minimale, son `padding` et son
+///   `TextStyle` (couleur « désactivée » comprise si `enabled: false`) au
+///   sous-arbre de l'hôte : la présentation injectée serait re-décorée par le
+///   socle, ce que le slot promet justement de ne pas faire ;
+/// * il pose surtout un `InkWell` qui **ferme le menu au moindre tap** tombé
+///   entre deux cellules (`Navigator.pop(context, null)`), un comportement
+///   invisible en revue et déroutant sur un panneau à plusieurs colonnes.
+///
+/// [height] ne sert qu'à l'**estimation de défilement** du `PopupMenu` (le
+/// contenu se dimensionne lui-même) ; [represents] est `false` : cette entrée ne
+/// représente AUCUNE valeur, donc aucune mise en surbrillance d'« item courant ».
+class _ZActionsPanelEntry extends PopupMenuEntry<ZItemAction> {
+  const _ZActionsPanelEntry({required this.builder, required this.actions});
+
+  /// Présentation INJECTÉE par l'hôte.
+  final ZItemActionsMenuBuilder builder;
+
+  /// Actions DÉJÀ filtrées par la règle d'absence (AD-4).
+  final List<ZItemAction> actions;
+
+  @override
+  double get height => _kMinTapTarget;
+
+  @override
+  bool represents(ZItemAction? value) => false;
+
+  @override
+  State<_ZActionsPanelEntry> createState() => _ZActionsPanelEntryState();
+}
+
+class _ZActionsPanelEntryState extends State<_ZActionsPanelEntry> {
+  @override
+  Widget build(BuildContext context) => widget.builder(
+        context,
+        widget.actions,
+        // MÊME chemin de sortie que la colonne par défaut : la valeur poppée est
+        // récupérée par `onSelected` du `PopupMenuButton`, qui invoque
+        // `action.onSelected`. Une présentation injectée ne peut donc ni oublier
+        // de fermer, ni invoquer deux fois, ni diverger du défaut.
+        (action) => Navigator.of(context).pop(action),
+      );
 }

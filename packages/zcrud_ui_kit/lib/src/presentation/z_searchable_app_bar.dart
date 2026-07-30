@@ -18,10 +18,12 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// hauteur préférée.
   const ZSearchableAppBar({
     required this.title,
+    this.subtitle,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
     this.bottom,
+    this.gradientKey,
     super.key,
   }) : assert(
          title is Widget || title is String,
@@ -34,10 +36,12 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   const ZSearchableAppBar._controlled({
     required this.title,
     required _ZSearchController this._controller,
+    this.subtitle,
     this.leading,
     this.actions = const <ZAppBarAction>[],
     this.search,
     this.bottom,
+    this.gradientKey,
   }) : assert(
          title is Widget || title is String,
          'title doit être un Widget ou un String',
@@ -45,6 +49,24 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
+
+  /// Sous-titre optionnel rendu **sous le titre** (CR-IFFD-34). `null` (défaut)
+  /// ⇒ **absent de l'arbre** : aucune `Column` interposée, rendu strictement
+  /// identique à celui d'avant l'ajout du slot. En mode recherche il n'est pas
+  /// rendu (le champ occupe la zone titre). Voir `_zBuildTitleBlock` pour
+  /// l'arbitrage de nommage (`subtitle` vs `belowSubtitle`).
+  final Widget? subtitle;
+
+  /// Identité **opaque et persistante** de l'entité ouverte (ex. l'id du
+  /// dossier), passée à la couture `zResolveGradient` de `zcrud_core`
+  /// (CR-IFFD-34) — jamais un index de liste, de tri ou de pagination.
+  ///
+  /// 🔴 Le dégradé n'apparaît **que** si l'hôte a injecté un
+  /// `ZcrudScope.gradientResolver` **et** que celui-ci rend une spec pour cette
+  /// clé. Sans injection (ou clé nulle/vide, ou resolver rendant `null`) le
+  /// rendu est **inchangé** : c'est l'invariant de neutralité de VIS-1, aucun
+  /// repli dérivé n'est appliqué automatiquement.
+  final String? gradientKey;
 
   /// Leading optionnel (rendu **si et seulement si** fourni — AC1).
   final Widget? leading;
@@ -111,7 +133,15 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isSearching,
       builder: (context, searching, _) {
+        // Dégradé d'identité : `null` (défaut, aucun resolver hôte) ⇒ ni
+        // `flexibleSpace` ni `foregroundColor` ⇒ AppBar strictement inchangée.
+        final ZGradientSpec? gradient = _zAppBarGradient(
+          context,
+          widget.gradientKey,
+        );
         return AppBar(
+          flexibleSpace: _zGradientFlexibleSpace(gradient),
+          foregroundColor: gradient?.onGradient,
           leading: _zBuildLeading(
             context,
             _controller,
@@ -119,10 +149,11 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
             widget.search,
             searching,
           ),
-          title: _zBuildTitle(
+          title: _zBuildTitleBlock(
             context,
             _controller,
             widget.title,
+            widget.subtitle,
             widget.search,
             searching,
           ),
