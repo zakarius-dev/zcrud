@@ -62,24 +62,31 @@ class ZSubfolderCompactSelector extends StatelessWidget {
     // Rangée EAGER défilant horizontalement (peu d'items) : hauteur bornée par le
     // contenu (jamais un `ListView` horizontal à hauteur non bornée dans une
     // `Column`). `ListView(children:)` interdit (AD-13) — d'où `Row`.
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _kMinTapTarget),
-      child: SingleChildScrollView(
-        key: compactKey,
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _chip(
-              context,
-              theme,
-              refOrNull: null,
-              label: spec.allSubfoldersLabel,
-            ),
-            for (final ref in spec.subfolders)
-              _chip(context, theme, refOrNull: ref, label: ref.label),
-            if (spec.addAction != null) _addButton(context, theme),
-          ],
+    // Scope de mode posé AU-DESSUS du `ChoiceChip` (donc au-dessus du dry layout
+    // qu'il calcule) : l'`itemBuilder` injecté lit
+    // `ZSubfolderLayoutMode.of(context) == compact` et sait que sa largeur n'est
+    // PAS bornée (CR-IFFD-31) — sans 4ᵉ paramètre, sans `LayoutBuilder`.
+    return ZSubfolderLayoutScope(
+      mode: ZSubfolderLayoutMode.compact,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: _kMinTapTarget),
+        child: SingleChildScrollView(
+          key: compactKey,
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _chip(
+                context,
+                theme,
+                refOrNull: null,
+                label: spec.allSubfoldersLabel,
+              ),
+              for (final ref in spec.subfolders)
+                _chip(context, theme, refOrNull: ref, label: ref.label),
+              if (spec.addAction != null) _addButton(context, theme),
+            ],
+          ),
         ),
       ),
     );

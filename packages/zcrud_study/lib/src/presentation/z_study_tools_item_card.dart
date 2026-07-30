@@ -31,6 +31,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_folder_card.dart' show zResolveCardShadowDecoration;
+
 /// Hauteur minimale d'une cible tactile (AD-13). La carte ne descend jamais
 /// en dessous, quels que soient les slots fournis.
 const double kZStudyToolsItemMinHeight = 48;
@@ -333,6 +335,46 @@ class ZStudyToolsItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.all(theme.radiusM),
               );
 
+    // CR-IFFD-27 — les jetons `ZcrudTheme.cardShadow*` n'étaient lus par AUCUN
+    // widget. La CR visait les DEUX cartes porteuses du défaut, pour ne pas le
+    // voir réapparaître sur une troisième. `null` (aucun jeton) ⇒ arbre et
+    // rendu STRICTEMENT identiques à l'historique.
+    final BoxDecoration? shadow = zResolveCardShadowDecoration(
+      context,
+      shape: shape,
+    );
+    // Priorité slot > thème > zéro (le défaut historique).
+    final EdgeInsetsGeometry cardMargin =
+        margin ?? cardTheme.margin ?? EdgeInsets.zero;
+
+    final Widget innerCard = Card(
+      // CR-LEX-73 — même motif que `shape` : une marge en dur rendait la
+      // marge du `CardTheme` de l'hôte inatteignable et l'obligeait à la
+      // réécrire dans un `Padding` externe.
+      //
+      // Quand l'ombre des jetons est active, la marge passe à un `Padding`
+      // externe : la boîte ombrée doit épouser la carte, pas sa marge.
+      margin: shadow == null ? cardMargin : EdgeInsets.zero,
+      shape: shape,
+      // Deux ombres ne se superposent pas : l'élévation native cède la place.
+      elevation: shadow == null ? null : 0,
+      clipBehavior: Clip.antiAlias,
+      child: tap == null
+          // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
+          // structurelle, elle ne se rend pas comme un bouton éteint.
+          ? _withAccent(content)
+          : InkWell(
+              onTap: tap,
+              customBorder: shape,
+              // `excludeFromSemantics` : l'encre et le tap de pointeur sont
+              // conservés, mais l'action sémantique est portée UNE SEULE fois
+              // — par le nœud de la carte. Sans cela, le lecteur d'écran
+              // verrait un bouton imbriqué dans un bouton.
+              excludeFromSemantics: true,
+              child: _withAccent(content),
+            ),
+    );
+
     return Semantics(
       container: true,
       button: tap != null,
@@ -346,29 +388,12 @@ class ZStudyToolsItemCard extends StatelessWidget {
           semanticLabel ?? (subtitle == null ? title : '$title, ${subtitle!}'),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: kZStudyToolsItemMinHeight),
-        child: Card(
-          // CR-LEX-73 — même motif que `shape` : une marge en dur rendait la
-          // marge du `CardTheme` de l'hôte inatteignable et l'obligeait à la
-          // réécrire dans un `Padding` externe. Priorité slot > thème > zéro
-          // (le défaut historique, préservé quand rien n'est fourni).
-          margin: margin ?? cardTheme.margin ?? EdgeInsets.zero,
-          shape: shape,
-          clipBehavior: Clip.antiAlias,
-          child: tap == null
-              // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
-              // structurelle, elle ne se rend pas comme un bouton éteint.
-              ? _withAccent(content)
-              : InkWell(
-                  onTap: tap,
-                  customBorder: shape,
-                  // `excludeFromSemantics` : l'encre et le tap de pointeur sont
-                  // conservés, mais l'action sémantique est portée UNE SEULE fois
-                  // — par le nœud de la carte. Sans cela, le lecteur d'écran
-                  // verrait un bouton imbriqué dans un bouton.
-                  excludeFromSemantics: true,
-                  child: _withAccent(content),
-                ),
-        ),
+        child: shadow == null
+            ? innerCard
+            : Padding(
+                padding: cardMargin,
+                child: DecoratedBox(decoration: shadow, child: innerCard),
+              ),
       ),
     );
   }

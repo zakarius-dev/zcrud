@@ -90,7 +90,38 @@ class ZSubfolderSidebar extends StatelessWidget {
   /// Sidebar repliée (~[ZSubfolderNavSpec.collapsedWidth]) — icône + badge.
   final bool collapsed;
 
-  /// Largeur déployée courante (dp), pilotée par le parent (ignorée si repliée).
+  /// **État courant** du redimensionnement (dp), détenu par le PARENT (AD-2).
+  ///
+  /// 🔴 **Ce paramètre n'applique AUCUNE contrainte de layout.** Ce n'est pas un
+  /// oubli : la sidebar ne décide pas de sa taille (AD-2) — elle rend une `Row`
+  /// d'`Expanded` et occupe donc **toute la largeur que son parent lui donne**.
+  ///
+  /// Ce que `width` FAIT réellement :
+  /// * elle alimente la **poignée de redimensionnement** (valeur de départ du
+  ///   drag, des pas clavier et des actions sémantiques `increase`/`decrease`,
+  ///   clampés dans `[minWidth, maxWidth]`) ;
+  /// * elle est **annoncée** par la sémantique de cette poignée
+  ///   (`value: '${width.round()}'`).
+  ///
+  /// Ce que `width` NE FAIT PAS : aucun `SizedBox`, aucun `ConstrainedBox`,
+  /// aucune borne de layout. **C'est à l'hôte de poser la contrainte**, comme le
+  /// fait `ZStudyFolderDetail` :
+  ///
+  /// ```dart
+  /// SizedBox(
+  ///   width: clamped,
+  ///   child: ZSubfolderSidebar(width: clamped, /* … */),
+  /// )
+  /// ```
+  ///
+  /// ⚠️ **Symptôme si on l'oublie** — placer la sidebar dans une `Row` (ou tout
+  /// parent à largeur non bornée) sans `SizedBox` produit des **milliers**
+  /// d'exceptions de rendu `Failed assertion: … 'hasSize'`, levées **loin du
+  /// site fautif** (dans les descendants, pas ici). Si vous voyez ce symptôme,
+  /// la contrainte manquante est chez vous, pas dans le socle.
+  ///
+  /// (Sans effet visuel quand [collapsed] est vrai : le parent pose alors
+  /// `ZSubfolderNavSpec.collapsedWidth`.)
   final double width;
 
   /// Borne basse de largeur (dp) — [ZSubfolderNavSpec.minSidebarWidth].
@@ -119,9 +150,15 @@ class ZSubfolderSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    return collapsed
-        ? _buildCollapsed(context, theme)
-        : _buildExpanded(context, theme);
+    // Scope de mode posé AU-DESSUS de tout le sous-arbre d'items : un
+    // `itemBuilder` injecté lit `ZSubfolderLayoutMode.of(context) == sidebar` et
+    // sait donc que sa largeur est BORNÉE (CR-IFFD-31) — sans 4ᵉ paramètre.
+    return ZSubfolderLayoutScope(
+      mode: ZSubfolderLayoutMode.sidebar,
+      child: collapsed
+          ? _buildCollapsed(context, theme)
+          : _buildExpanded(context, theme),
+    );
   }
 
   // --- Repliée ---------------------------------------------------------------
@@ -154,6 +191,11 @@ class ZSubfolderSidebar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _collapseToggle(context, theme),
+              // En-tête INJECTÉ (CR-IFFD-30) : `null` ⇒ slot absent, rendu
+              // inchangé. Rendu ICI, donc UNIQUEMENT à l'état déployé — il
+              // disparaît au repli sans que l'hôte ait à s'abonner à
+              // `collapsed` (`_buildCollapsed` ne le rend pas).
+              if (spec.sidebarHeader != null) spec.sidebarHeader!,
               _rootItem(context, theme),
               Expanded(child: _list(context, theme)),
               if (spec.addAction != null) _addButton(context, theme),

@@ -21,11 +21,98 @@ import 'z_subfolder_ref.dart';
 /// Construit l'item visuel d'un sous-dossier. [selected] permet à l'hôte de
 /// styler la sélection ; le widget applique DÉJÀ sa propre surbrillance neutre
 /// autour de l'item (ce builder n'est donc PAS obligé de la gérer).
+///
+/// **Le même builder sert les DEUX côtés du seuil de bascule** (sidebar ≥ 600 dp
+/// / sélecteur compact < 600 dp — contrat R-SUF2), or leurs contraintes de mise
+/// en page sont INCOMPATIBLES : la sidebar borne la largeur, le sélecteur
+/// compact ne la borne pas (rangée défilante). Un `ListTile`, un `Expanded` ou
+/// un `Spacer` exigent une largeur bornée et lèvent
+/// `BoxConstraints forces an infinite width` côté compact.
+///
+/// ⚠️ **Ne PAS tenter de lire la contrainte via un `LayoutBuilder`** : côté
+/// compact l'item est enveloppé dans un `ChoiceChip`, qui calcule un *dry
+/// layout* de son enfant ⇒ `The _RenderLayoutBuilder class does not support dry
+/// layout`. La voie est structurellement fermée.
+///
+/// ✅ **Lire le mode via le `context` DÉJÀ reçu** — aucun paramètre
+/// supplémentaire, aucune duplication de la connaissance du seuil :
+///
+/// ```dart
+/// itemBuilder: (context, ref, selected) =>
+///     switch (ZSubfolderLayoutMode.of(context)) {
+///       ZSubfolderLayoutMode.sidebar => ListTile(title: Text(ref.label)),
+///       ZSubfolderLayoutMode.compact => Text(ref.label),
+///     };
+/// ```
 typedef ZSubfolderItemBuilder = Widget Function(
   BuildContext context,
   ZSubfolderRef ref,
   bool selected,
 );
+
+/// Côté du seuil de bascule sur lequel un [ZSubfolderItemBuilder] est invoqué.
+///
+/// Publié pour lever l'ambiguïté de mise en page décrite sur
+/// [ZSubfolderItemBuilder] : `ZSubfolderSidebar` et `ZSubfolderCompactSelector`
+/// posent chacun un [ZSubfolderLayoutScope] AU-DESSUS de l'item (donc au-dessus
+/// du `ChoiceChip` du sélecteur compact), et l'hôte le lit par [of]/[maybeOf].
+///
+/// **Non cassant par construction** : la signature de [ZSubfolderItemBuilder]
+/// reste à TROIS paramètres — un builder existant continue de compiler et de
+/// rendre à l'identique. C'est le choix retenu contre un 4ᵉ paramètre `mode`,
+/// qui aurait forcé chaque hôte à réécrire son builder.
+enum ZSubfolderLayoutMode {
+  /// Colonne verticale de la sidebar : **largeur BORNÉE**. `ListTile`,
+  /// `Expanded`, `Spacer`, `Row` pleine largeur sont utilisables.
+  sidebar,
+
+  /// Rangée horizontale défilante du sélecteur compact : **largeur NON bornée**.
+  /// L'item doit se dimensionner sur son contenu (`MainAxisSize.min`, aucun
+  /// `Expanded`, aucun `ListTile`).
+  compact;
+
+  /// Mode courant, ou `null` hors d'une surface de navigation zcrud (l'hôte
+  /// réutilise alors son builder ailleurs et décide seul).
+  static ZSubfolderLayoutMode? maybeOf(BuildContext context) =>
+      ZSubfolderLayoutScope.maybeOf(context);
+
+  /// Mode courant, avec repli documenté sur [compact].
+  ///
+  /// [compact] est le repli parce que c'est le SEUL mode dont les contraintes
+  /// sont satisfaites partout : un item qui se dimensionne sur son contenu rend
+  /// sans exception sous une largeur bornée COMME non bornée. Le repli inverse
+  /// (`sidebar`) transformerait une absence de scope en
+  /// `BoxConstraints forces an infinite width`.
+  static ZSubfolderLayoutMode of(BuildContext context) =>
+      maybeOf(context) ?? ZSubfolderLayoutMode.compact;
+}
+
+/// Scope exposant le [ZSubfolderLayoutMode] courant à l'`itemBuilder` injecté.
+///
+/// Posé par `ZSubfolderSidebar` ([ZSubfolderLayoutMode.sidebar]) et par
+/// `ZSubfolderCompactSelector` ([ZSubfolderLayoutMode.compact]) AU-DESSUS de
+/// tout le sous-arbre d'items. L'hôte n'a normalement pas à l'instancier : il
+/// lit `ZSubfolderLayoutMode.of(context)`.
+class ZSubfolderLayoutScope extends InheritedWidget {
+  /// Pose [mode] sur tout [child].
+  const ZSubfolderLayoutScope({
+    required this.mode,
+    required super.child,
+    super.key,
+  });
+
+  /// Côté du seuil rendu par la surface englobante.
+  final ZSubfolderLayoutMode mode;
+
+  /// Mode courant, ou `null` si aucun scope n'englobe [context].
+  static ZSubfolderLayoutMode? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<ZSubfolderLayoutScope>()
+      ?.mode;
+
+  @override
+  bool updateShouldNotify(ZSubfolderLayoutScope oldWidget) =>
+      oldWidget.mode != mode;
+}
 
 /// Descripteur immuable de la navigation de sous-dossiers.
 @immutable
@@ -35,6 +122,7 @@ class ZSubfolderNavSpec {
     required this.subfolders,
     required this.allSubfoldersLabel,
     this.itemBuilder,
+    this.sidebarHeader,
     this.addAction,
     this.addLabel,
     this.addIcon,
@@ -67,6 +155,25 @@ class ZSubfolderNavSpec {
 
   /// Constructeur d'item **injectable** (défaut : rangée neutre thémée, D3).
   final ZSubfolderItemBuilder? itemBuilder;
+
+  /// En-tête **injecté** de la sidebar (titre de panneau, p. ex. « Sous-dossiers »).
+  ///
+  /// **`null` ⇒ slot ABSENT** (AD-4) : rendu strictement inchangé par défaut.
+  ///
+  /// Rendu UNIQUEMENT par `ZSubfolderSidebar` à l'état **déployé**, sous le
+  /// contrôle de repli. Il **disparaît automatiquement à l'état replié** (56 dp)
+  /// et n'existe pas dans le sélecteur compact : c'est précisément la décision
+  /// qu'un hôte ne peut PAS prendre proprement de l'extérieur sans s'abonner
+  /// lui-même à l'état `collapsed`, donc sans rejouer une logique détenue par le
+  /// widget (CR-IFFD-30).
+  ///
+  /// Il vit dans la spec (et non en paramètre de `ZSubfolderSidebar`) pour
+  /// traverser la façade `ZStudyFolderDetail`, qui instancie la sidebar
+  /// elle-même : un paramètre de widget serait inatteignable pour l'hôte.
+  ///
+  /// zcrud ne pose AUCUN style dessus (ni typographie, ni gouttière, ni couleur
+  /// — FR-26) : l'hôte fournit un widget déjà habillé.
+  final Widget? sidebarHeader;
 
   /// Action d'ajout d'un sous-dossier. `null` ⇒ bouton « Ajouter » ABSENT
   /// (AD-4), dans la sidebar comme dans le sélecteur compact (AC13).
