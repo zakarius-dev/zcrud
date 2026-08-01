@@ -65,6 +65,16 @@ workspace:
   # portent pas. Arêtes SORTANTES : zcrud_chat + zcrud_chat_kernel + zcrud_core.
   # ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe (aucune arête entrante).
   - packages/zcrud_chat_syncfusion
+  # CHAT-8 : PONT conversation → SRS. Mapper (message/conversation →
+  # `ZFlashcardGenerationRequest` + provenance `ZConversationSource`), câblage du
+  # `ZFlashcardGenerationPort` EXISTANT (qui n'avait aucun consommateur) et
+  # constitution du pool de session (cartes du dossier ∪ cartes de la
+  # conversation, DÉDOUBLONNÉES — IFFD n'en dédoublonne aucune). Existe pour que
+  # `zcrud_chat`/`zcrud_chat_kernel` n'aient JAMAIS à dépendre de
+  # `zcrud_flashcard` (DODLP/DLCFTI porteraient le domaine d'étude sans usage).
+  # Arêtes SORTANTES : core + chat_kernel + flashcard + study_kernel + study.
+  # ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe (aucune arête entrante).
+  - packages/zcrud_chat_study
   # ES-4.2 : runtime de session SRS en CYCLE (`ZStudySessionEngine` :
   # ChangeNotifier pur + reducer PUR, réinsertion +2/+4 sur lapse). Écrit le SRS
   # UNIQUEMENT via un seam injecté (= `reviewCard`, voie unique AD-9/AD-23) —

@@ -1,0 +1,88 @@
+# zcrud_chat_study — membre du workspace zcrud (resolution: workspace).
+#
+# 🔴 POURQUOI CE PAQUET EXISTE (CHAT-8) — c'est un **PONT**, et rien d'autre.
+#
+# La cible fonctionnelle (« Commencer à apprendre » d'IFFD) fait se rencontrer
+# DEUX domaines qui doivent rester séparés :
+#   - le domaine CHAT  (`zcrud_chat_kernel` : conversation, message, blocs) ;
+#   - le domaine ÉTUDE (`zcrud_flashcard` + `zcrud_study_kernel` + le port de
+#     génération de `zcrud_study`).
+#
+# ⛔ On NE fait PAS dépendre `zcrud_chat`/`zcrud_chat_kernel` de `zcrud_flashcard` :
+#    DODLP et DLCFTI utilisent le chat SANS le domaine d'étude et en porteraient
+#    tout le poids sans usage — c'est l'erreur EXACTE que la relocalisation
+#    CHAT-0r a corrigée (le chat vivait dans `zcrud_core`). Le pont est ICI :
+#    les deux kernels s'ignorent, ce paquet seul les connaît.
+#
+# ⛔ On NE redéclare NI le port de génération (`ZFlashcardGenerationPort`,
+#    `zcrud_study`), NI la provenance « issue d'une conversation »
+#    (`ZConversationSource`, `zcrud_flashcard`), NI le sélecteur de session
+#    (`ZStudySessionSelector`, `zcrud_study_kernel`), NI les modes
+#    (`ZReviewMode`). Tout existe : ce paquet CÂBLE (piège CR-LEX-78, déjà payé
+#    trois fois dans ce dépôt). Gardé par machine :
+#    `test/z_no_duplicate_seam_test.dart`.
+name: zcrud_chat_study
+description: "Chat-to-SRS bridge for zcrud: maps AI conversations/messages onto the existing ZFlashcardGenerationPort, stamps ZConversationSource provenance, and builds a deduplicated study pool (folder cards union conversation cards) for the existing session engine."
+version: 0.31.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_study
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - study
+  - flashcards
+  - spaced-repetition
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* SORTANTES seules (AD-1, graphe ACYCLIQUE,
+# CORE OUT=0 ; jamais l'inverse — PROUVÉ sur disque par
+# `test/z_acyclicity_proof_test.dart`, qui lit les pubspecs RÉELS et refuse
+# toute arête entrante vers ce paquet).
+#
+# - `flutter`            : tiré TRANSITIVEMENT par `zcrud_flashcard` (paquet
+#                          Flutter) ⇒ déclaré explicitement pour que la CI
+#                          aiguille sur `flutter test` et non `dart test`
+#                          (même convention que `zcrud_flashcard`/`zcrud_session`).
+#                          ⚠️ Ce paquet ne rend AUCUN widget : le pont est du
+#                          DOMAINE pur (mapper + pool). L'UI du bouton
+#                          « Commencer à apprendre » reste côté hôte/`zcrud_study`.
+# - `zcrud_core`         : `ZResult`/`Either`/`ZFailure` (AD-5/AD-11) +
+#                          `zSanitizeExtra`/`ZSyncMeta.reservedKeys` (AD-19.1).
+# - `zcrud_chat_kernel`  : `ZChatConversation`/`ZChatMessage`/`ZContentBlock` —
+#                          la SOURCE du mapper. PUR-DART, out-degree 1 (core).
+# - `zcrud_flashcard`    : `ZFlashcard` (cible du mapper) + `ZConversationSource`
+#                          (provenance DÉJÀ modélisée — jamais redéclarée).
+# - `zcrud_study_kernel` : `ZReviewMode` + `ZStudySessionConfig` +
+#                          `ZStudySessionSelector` (filtrage du pool RÉUTILISÉ,
+#                          jamais recopié).
+# - `zcrud_study`        : `ZFlashcardGenerationPort`/`ZFlashcardGenerationRequest`
+#                          + `zClampGenerationCount`/`zNormalizeTypesDistribution`.
+#                          🔴 C'est l'arête qui matérialise « CÂBLE-LE, ne le
+#                          double pas » : sans elle, ce paquet redéclarerait un
+#                          port de génération APPAUVRI (sans `typesDistribution`,
+#                          sans `provenance`). `zcrud_study` ne dépend PAS de
+#                          `zcrud_chat_study` ⇒ aucun cycle.
+#
+# ⛔ AUCUN gestionnaire d'état, AUCUN SDK IA / client HTTP, AUCUNE dépendance
+#    TIERCE (les impls IA — routeur, prompts, clés, SSE — restent CÔTÉ APP,
+#    AD-11/AD-12).
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_core: ^0.31.0
+  zcrud_chat_kernel: ^0.31.0
+  zcrud_flashcard: ^0.31.0
+  zcrud_study_kernel: ^0.31.0
+  zcrud_study: ^0.31.0
+
+# Paquet Flutter (cf. ci-dessus) → `flutter test`. Aucun codegen (aucun
+# `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet ;
+# gate `web-determinism` hors couverture — paquet non pur-Dart).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

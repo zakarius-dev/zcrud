@@ -46,6 +46,7 @@ import '../z_chat_source.dart';
 import '../z_chat_suggestion.dart';
 import '../z_chat_thinking_step.dart';
 import '../z_content_block.dart';
+import 'z_chat_response_metadata.dart';
 
 /// Clé persistée du discriminant d'événement.
 const String kZChatStreamEventTypeKey = 'type';
@@ -488,7 +489,31 @@ class ZChatDoneEvent extends ZChatStreamEvent {
   final String conversationId;
 
   /// Métadonnées libres du fournisseur, **verbatim**.
+  ///
+  /// 🔴 Reste la **source de vérité brute** : rien n'est retiré ni normalisé à
+  /// la réception. La lecture typée passe par [responseMetadata], qui **dérive**
+  /// de cette carte au lieu de la doubler — deux représentations stockées
+  /// pourraient diverger, et l'une afficherait alors un verdict que l'autre
+  /// contredit.
   final Map<String, dynamic> metadata;
+
+  /// Lecture **typée et ouverte** de [metadata] (CHAT-7).
+  ///
+  /// Ne lève jamais (AD-10) : une carte absente, vide ou mal typée rend
+  /// `ZChatResponseMetadata.empty`. Aucun champ n'est fabriqué — un backend
+  /// sans contrat de fin de réponse (IFFD) rend simplement une carte vide.
+  ///
+  /// [verifiedSourceCount]/[totalSourceCount] sont les comptes de sources du
+  /// message, connus de l'appelant seul : le serveur ne les émet pas dans
+  /// `done.metadata`, ils se dérivent des drapeaux de vérification des sources.
+  ZChatResponseMetadata responseMetadata({
+    int? verifiedSourceCount,
+    int? totalSourceCount,
+  }) => ZChatResponseMetadata.fromJson(
+    metadata,
+    verifiedSourceCount: verifiedSourceCount,
+    totalSourceCount: totalSourceCount,
+  );
 
   @override
   String get kind => 'done';

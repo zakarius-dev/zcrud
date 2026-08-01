@@ -97,11 +97,35 @@ s'est arrêté — comportement exemplaire. Coût réel : le paquet laissé **ro
    par construction, et l'agent a dû restaurer à la main puis tout rejouer depuis une sauvegarde
    privée. **La disjonction des packages ne suffit pas : il faut aussi disjoindre les scratchpads**
    (un sous-dossier par agent, nommé dans le prompt).
-7. 🔴 **Après TOUT arrêt d'agent, vérifier qu'aucune INJECTION R3 ne subsiste** (grep du marqueur **et**
+7. 🔴 **`.dart_tool/package_config` est PARTAGÉ par le workspace** : chaque `flutter test` le réécrit.
+   Deux workstreams parallèles produisent donc des échecs de **CHARGEMENT** qui n'appartiennent à
+   personne. Un rouge concomitant d'un autre run se qualifie **avant** d'être imputé au code.
+8. 🔴 **Toute affirmation d'ABSENCE porte son grep négatif MONTRÉ.** « Je n'ai pas trouvé » n'est pas
+   un constat. Vaut pour les rapports d'agent comme pour les miens.
+9. 🔴 **Après TOUT arrêt d'agent, vérifier qu'aucune INJECTION R3 ne subsiste** (grep du marqueur **et**
    rejeu des tests). Un agent interrompu en pleine campagne R3 laisse le code **cassé par construction** :
    constaté sur `zcrud_chat`, paquet trouvé rouge avec un jeton d'instance injecté et **deux** sites
    d'usage — dont un qu'un grep naïf masquait. Le retrait doit être **ciblé** (motif asserté), jamais
    `git checkout`.
+
+## 🔴 Une garde hérite de l'angle mort de son auteur (rétrospective epic CHAT, 2026-08-01)
+
+**R3 corrige la RIGUEUR d'une garde, jamais le CHOIX DE LA PROPRIÉTÉ qu'elle mesure.** Une garde
+peut être verte, mordante, correctement écrite — et regarder à côté. Trois des huit familles de
+défauts recensées sont **structurellement invisibles** à une R3 menée par l'auteur lui-même :
+elle mesure le plancher du SDK au lieu du nôtre, elle vise un sujet non monté, ou **elle défend le
+défaut** (deux gardes assertaient « sans registre, c'est la CLÉ qui s'affiche »).
+
+Mesuré : **1 378 tests verts** au moment où la revue multi-lentilles établissait **3 HIGH / 9 MAJEUR**.
+
+⇒ **Seul un changement de LENTILLE y accède** — c'est ce qui justifie la revue multi-agent, et ce
+qui rend une revue à agent unique insuffisante sur une epic large. Les huit familles et leur règle
+actionnable : `_bmad-output/implementation-artifacts/stories/epic-chat-retrospective.md`.
+
+🟢 **Comportements à reproduire**, observés pendant cette epic : refuser de **fabriquer** une donnée
+que la source n'a pas ; **rejeter sa propre solution** après l'avoir mesurée inerte plutôt que de
+re-promettre le défaut ; **refuser d'écrire une garde** là où le scénario n'est pas atteignable ;
+**arrêter un script R3** dès qu'un motif d'injection est ambigu.
 
 ## Surveillance des sous-agents en arrière-plan (NON-NÉGOCIABLE)
 

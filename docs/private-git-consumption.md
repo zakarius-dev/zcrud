@@ -125,7 +125,7 @@ sans lui, il se défera au premier override rajouté par réflexe.
 
 ## Fermeture COMPLÈTE des paquets (à jour, vérifiée par gate)
 
-Les **35** paquets du dépôt. Listez dans `dependency_overrides` **tous** ceux que votre
+Les **36** paquets du dépôt. Listez dans `dependency_overrides` **tous** ceux que votre
 graphe atteint — pas seulement ceux que vous importez.
 
 ```yaml
@@ -138,6 +138,8 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_kernel }
   zcrud_chat_syncfusion:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_syncfusion }
+  zcrud_chat_study:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_study }
   zcrud_core:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_core }
   zcrud_dnd:

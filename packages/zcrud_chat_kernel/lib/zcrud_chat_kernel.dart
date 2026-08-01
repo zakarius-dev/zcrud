@@ -48,7 +48,23 @@ export 'src/domain/ai/z_chat_generation_port.dart';
 export 'src/domain/ai/z_chat_generation_style.dart';
 export 'src/domain/ai/z_chat_quota_metadata.dart';
 export 'src/domain/ai/z_chat_request_token.dart';
+// CHAT-7 — carte OUVERTE de fin de réponse : les VERDICTS déjà calculés par le
+// serveur (scores, garde-citations, couverture, fraîcheur des datasets)
+// traversent le socle sans être perdus ni inventés. `ZChatResponseConfidence`
+// et `ZChatSourceFreshness` (CHAT-0) y sont CÂBLÉS, jamais redéclarés.
+export 'src/domain/ai/z_chat_response_metadata.dart';
 export 'src/domain/ai/z_chat_stream_event.dart';
+// CHAT-10 — saisie ASSISTÉE (dictée, OCR) : des PORTS (AD-57), et la relecture
+// obligatoire rendue STRUCTURELLE — `ZUnreviewedText` n'expose AUCUNE `String`,
+// son unique sortie est un dépôt `void` dans une surface éditable.
+export 'src/domain/capture/z_chat_capture_port.dart';
+// CHAT-9 — gestion de conversation en PORTS (AD-11) : recherche, épinglage
+// (un seul verbe), partage en lecture seule, et cycle de vie **SOFT** — le
+// `batch.delete` de `delete_messages_after` de lex est refusé, pas porté.
+export 'src/domain/conversation/z_chat_conversation_ports.dart';
+// CHAT-9 — diffusion vocale : la chaîne de repli de lex devient une DONNÉE
+// (`ZChatSpeechChain`), site unique du repli, échecs conservés.
+export 'src/domain/diffusion/z_chat_speech_port.dart';
 export 'src/domain/z_chat_attachment.dart';
 export 'src/domain/z_chat_conversation.dart';
 export 'src/domain/z_chat_enums.dart';

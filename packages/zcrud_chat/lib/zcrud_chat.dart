@@ -61,6 +61,13 @@ export 'src/presentation/attachment/z_chat_attachment_controller.dart';
 export 'src/presentation/attachment/z_chat_attachment_failure.dart';
 export 'src/presentation/attachment/z_chat_attachment_ports.dart';
 export 'src/presentation/attachment/z_pending_attachment.dart';
+// CHAT-10 — saisie ASSISTÉE : la dictée et l'OCR entrent par des PORTS du
+// kernel, et la relecture est STRUCTURELLE — `ZChatCaptureController.acceptInto`
+// rend `ZResult<Unit>`, aucune `String` ne s'en échappe vers l'envoi.
+export 'src/presentation/capture/z_chat_capture_controller.dart';
+// CHAT-9 — diffusion : la voix par la chaîne de repli du kernel, l'export et le
+// partage DÉLÉGUÉS à `ZChatExportService` (CHAT-5), jamais redéfinis ici.
+export 'src/presentation/diffusion/z_chat_diffusion_service.dart';
 export 'src/presentation/export/z_chat_export_format.dart';
 export 'src/presentation/export/z_chat_export_ports.dart';
 export 'src/presentation/export/z_chat_export_result.dart';
@@ -75,7 +82,10 @@ export 'src/presentation/render/z_chat_shell_renderer.dart';
 export 'src/presentation/render/z_chat_shell_renderer_scope.dart';
 export 'src/presentation/view/z_chat_attachment_strip.dart';
 export 'src/presentation/view/z_chat_block_view.dart';
+export 'src/presentation/view/z_chat_capture_bar.dart';
+export 'src/presentation/view/z_chat_capture_review_field.dart';
 export 'src/presentation/view/z_chat_conversation_view.dart';
+export 'src/presentation/view/z_chat_diffusion_bar.dart';
 export 'src/presentation/view/z_chat_labels.dart';
 export 'src/presentation/view/z_chat_message_tile.dart';
 export 'src/presentation/z_chat_controller.dart';

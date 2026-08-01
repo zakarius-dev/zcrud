@@ -62,6 +62,50 @@ const String kZChatLabelAttachments = '${kZChatLabelPrefix}attachments';
 const String kZChatLabelRemoveAttachment =
     '${kZChatLabelPrefix}removeAttachment';
 
+/// Action « lire à voix haute » (CHAT-9, diffusion vocale).
+const String kZChatLabelSpeak = '${kZChatLabelPrefix}speak';
+
+/// Action « arrêter la lecture » (CHAT-9).
+const String kZChatLabelStopSpeaking = '${kZChatLabelPrefix}stopSpeaking';
+
+/// Action « partager la conversation » (CHAT-9).
+const String kZChatLabelShare = '${kZChatLabelPrefix}share';
+
+/// Étiquette sémantique de la barre de diffusion (CHAT-9).
+const String kZChatLabelDiffusion = '${kZChatLabelPrefix}diffusion';
+
+/// Étiquette sémantique de la barre de saisie assistée (CHAT-10) — l'état de
+/// repos de sa région live.
+const String kZChatLabelAssistedInput = '${kZChatLabelPrefix}assistedInput';
+
+/// Action « dicter le message » (CHAT-10, saisie assistée).
+const String kZChatLabelDictate = '${kZChatLabelPrefix}dictate';
+
+/// Action « arrêter la dictée » (CHAT-10).
+const String kZChatLabelStopDictation = '${kZChatLabelPrefix}stopDictation';
+
+/// 🔴 Annonce de la région live pendant l'écoute (CHAT-10, AD-13).
+///
+/// Chez lex, l'écoute est VISIBLE (une icône change) mais jamais ANNONCÉE : un
+/// utilisateur non-voyant ne sait pas que le micro écoute. Cette clé existe pour
+/// que ce ne soit plus le cas.
+const String kZChatLabelListening = '${kZChatLabelPrefix}listening';
+
+/// Action « extraire le texte d'une image » (CHAT-10, OCR).
+const String kZChatLabelScanText = '${kZChatLabelPrefix}scanText';
+
+/// Annonce de la région live pendant l'analyse d'une image (CHAT-10).
+const String kZChatLabelRecognizing = '${kZChatLabelPrefix}recognizing';
+
+/// Étiquette sémantique de la surface de RELECTURE (CHAT-10).
+const String kZChatLabelReviewCapture = '${kZChatLabelPrefix}reviewCapture';
+
+/// Action « insérer le texte relu dans le message » (CHAT-10).
+const String kZChatLabelAcceptCapture = '${kZChatLabelPrefix}acceptCapture';
+
+/// Action « abandonner la relecture » — n'efface JAMAIS la saisie (CHAT-10).
+const String kZChatLabelCancelCapture = '${kZChatLabelPrefix}cancelCapture';
+
 /// Toutes les clés du rendu neutre — surface exhaustive pour un hôte qui
 /// alimente son registre, et cible de la garde « aucune chaîne en dur ».
 const List<String> kZChatLabelKeys = <String>[
@@ -75,6 +119,19 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelStreaming,
   kZChatLabelAttachments,
   kZChatLabelRemoveAttachment,
+  kZChatLabelSpeak,
+  kZChatLabelStopSpeaking,
+  kZChatLabelShare,
+  kZChatLabelDiffusion,
+  kZChatLabelAssistedInput,
+  kZChatLabelDictate,
+  kZChatLabelStopDictation,
+  kZChatLabelListening,
+  kZChatLabelScanText,
+  kZChatLabelRecognizing,
+  kZChatLabelReviewCapture,
+  kZChatLabelAcceptCapture,
+  kZChatLabelCancelCapture,
 ];
 
 /// Repli **lisible** de chaque clé — jamais prioritaire sur l'hôte (HIGH-1).
@@ -100,6 +157,19 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelStreaming: 'Réponse en cours',
   kZChatLabelAttachments: 'Pièces jointes',
   kZChatLabelRemoveAttachment: 'Retirer',
+  kZChatLabelSpeak: 'Lire à voix haute',
+  kZChatLabelStopSpeaking: 'Arrêter la lecture',
+  kZChatLabelShare: 'Partager',
+  kZChatLabelDiffusion: 'Diffusion',
+  kZChatLabelAssistedInput: 'Saisie assistée',
+  kZChatLabelDictate: 'Dicter',
+  kZChatLabelStopDictation: 'Arrêter la dictée',
+  kZChatLabelListening: 'Micro à l\'écoute',
+  kZChatLabelScanText: 'Extraire le texte d\'une image',
+  kZChatLabelRecognizing: 'Extraction du texte en cours',
+  kZChatLabelReviewCapture: 'Relire avant envoi',
+  kZChatLabelAcceptCapture: 'Insérer dans le message',
+  kZChatLabelCancelCapture: 'Abandonner',
 };
 
 /// Résout une clé du chat — **l'UNIQUE** site d'appel de `label()` du package.
