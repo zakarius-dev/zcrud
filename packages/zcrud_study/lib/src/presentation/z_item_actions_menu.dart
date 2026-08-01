@@ -1,21 +1,62 @@
 /// `ZItemActionsMenu` — menu d'actions par item PARAMÉTRIQUE (ES-5.3, AD-25).
 ///
-/// Comble l'absence IFFD (menu d'item **diffus**, aucun `PopupMenuButton`
-/// centralisé) par une abstraction propre : le menu est paramétré par une
-/// `List<ZItemAction>`, chacune portant une **nature** ([ZItemActionKind]) +
-/// [label]/[icon] INJECTÉS + un callback. **`onSelected == null` ⇒ action ABSENTE
-/// du menu** (AD-4 — jamais un item grisé silencieux ni un no-op).
+/// 🔴 **CHAT-4b — ce widget est désormais un CONSOMMATEUR de `zcrud_menu`.**
+///
+/// Il ne construit plus AUCUN `PopupMenuButton`/`PopupMenuItem`/`PopupMenuEntry` :
+/// il traduit sa `List<ZItemAction>` en `List<ZMenuEntry>` et délègue à
+/// [ZActionMenu]. Le doublon que CR-LEX-78 interdit (deux menus vivant côte à
+/// côte dans le socle) est donc SUPPRIMÉ, pas différé — la garde
+/// `packages/zcrud_menu/test/z_menu_supersedes_test.dart` le mesure sur disque.
+///
+/// Ce qui NE change pas pour un appelant qui n'utilise aucune capacité neuve :
+/// la surface publique ([ZItemAction], [ZItemActionKind], [ZItemActionsMenu],
+/// [ZItemActionsMenuBuilder]) est INCHANGÉE, et le rendu est celui d'avant
+/// (même déclencheur `PopupMenuButton` sous le repli [ZDefaultMenuRenderer],
+/// même colonne de `PopupMenuItem`, même info-bulle, mêmes `Semantics`).
+///
+/// Ce que la délégation REND ACCESSIBLE, en ADDITIF :
+/// * [ZItemAction.permitted] — le **droit** séparé de l'**effet** (IFFD a dû
+///   écrire `IffdMenuAction`/`iffdMenuActions()` faute de cette distinction) ;
+/// * [ZItemAction.disabledReason] — entrée **présente, inerte, MOTIVÉE** (lex
+///   réécrit 297 lignes de `PopupMenuButton` pour l'obtenir) ;
+/// * [ZItemAction.id] / [ZMenuEntryIds] — le vocabulaire d'identités PARTAGÉ ;
+/// * [ZMenuEntryTile] — la cellule ≥ 48 dp à `Semantics` NON dupliquées, offerte
+///   au [menuBuilder] (le renoncement a11y du slot est levé) ;
+/// * [renderer] / [ZMenuScope] — le déclencheur ET la surface substituables.
+///
+/// ⚠️ **Seule divergence de rendu assumée** : un menu dont AUCUNE action n'est
+/// visible et qui n'a pas de [menuBuilder] rend un déclencheur **inerte**
+/// (AD-10 : jamais une surface flottante vide). Avant CHAT-4b il s'ouvrait sur
+/// une surface vide. Aucun appelant du dépôt n'est dans ce cas.
 ///
 /// Invariants (AD-2/AD-13/AD-15) : AUCUN gestionnaire d'état ; labels/icônes
 /// INJECTÉS (jamais codés en dur) ; cibles ≥ 48 dp ; `Semantics` explicites ;
-/// directionnel ; thème injecté (`ZcrudTheme.of`, repli `Theme.of`).
+/// directionnel ; thème injecté.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_menu/zcrud_menu.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
-const double _kMinTapTarget = 48.0;
+/// Couture de menu RÉEXPORTÉE : un hôte qui compose un [menuBuilder] a besoin de
+/// [ZMenuEntryTile] (cellule a11y) et de [ZMenuEntryIds] (identités partagées)
+/// sans avoir à déclarer une dépendance de plus. Ce sont les MÊMES déclarations
+/// que celles de `package:zcrud_menu/zcrud_menu.dart` : importer les deux ne
+/// crée aucune ambiguïté.
+export 'package:zcrud_menu/zcrud_menu.dart'
+    show
+        ZActionMenu,
+        ZDefaultMenuRenderer,
+        ZMenuContentBuilder,
+        ZMenuEntry,
+        ZMenuEntryIds,
+        ZMenuEntryTile,
+        ZMenuRenderer,
+        ZMenuRequest,
+        ZMenuScope,
+        ZMenuTrigger,
+        kZMenuMinTapTarget,
+        zResolveMenuRenderer,
+        zVisibleMenuEntries;
 
 /// Glyphe « menu » de REPLI du déclencheur (défaut neutre conventionnel
 /// documenté, même patron justifié que le repli d'icône d'ajout du layout). Ne
@@ -24,6 +65,10 @@ const IconData _kMenuFallbackIcon = Icons.more_vert;
 
 /// Nature d'une action d'item — enum EXTENSIBLE (AD-4). [custom] couvre toute
 /// action hors nomenclature (l'appelant porte le [ZItemAction.label]/[icon]).
+///
+/// 🔴 Depuis CHAT-4b, chaque membre a un pendant dans le vocabulaire d'identités
+/// PARTAGÉ [ZMenuEntryIds] ([ZItemAction.entryId]) — adoptable par un package
+/// qui ne peut pas dépendre de `zcrud_study` (`zcrud_core`, CORE OUT = 0).
 enum ZItemActionKind {
   /// Ouvrir/consulter l'item.
   open,
@@ -53,19 +98,69 @@ enum ZItemActionKind {
   custom,
 }
 
+/// Identité PARTAGÉE ([ZMenuEntryIds]) correspondant à une [ZItemActionKind].
+///
+/// [ZItemActionKind.custom] n'a pas d'identité canonique : l'appelant fournit la
+/// sienne via [ZItemAction.id] (pendant exact du variant `custom`).
+String zMenuEntryIdForKind(ZItemActionKind kind) => switch (kind) {
+      ZItemActionKind.open => ZMenuEntryIds.open,
+      ZItemActionKind.rename => ZMenuEntryIds.rename,
+      ZItemActionKind.move => ZMenuEntryIds.move,
+      ZItemActionKind.share => ZMenuEntryIds.share,
+      ZItemActionKind.duplicate => ZMenuEntryIds.duplicate,
+      ZItemActionKind.delete => ZMenuEntryIds.delete,
+      ZItemActionKind.custom => 'custom',
+    };
+
 /// Une action d'item — data-class de présentation immuable (`const`).
 ///
-/// [label]/[icon] sont INJECTÉS (i18n, jamais codés en dur). [onSelected] `null`
-/// ⇒ action ABSENTE du menu (AD-4).
+/// [label]/[icon] sont INJECTÉS (i18n, jamais codés en dur).
+///
+/// ## Les TROIS états (CHAT-4b — le troisième était inexprimable)
+///
+/// | [onSelected] | [disabledReason] | État rendu |
+/// |---|---|---|
+/// | non-`null` | `null` | **présente et actionnable** |
+/// | `null` | `null` | **ABSENTE** — règle AD-4 HISTORIQUE, préservée |
+/// | `null` | non-`null` | **présente, INERTE, motif ANNONCÉ** |
+///
+/// [permitted] `false` force l'absence, quoi qu'il en soit du reste de la ligne.
+///
+/// Les deux premières lignes reproduisent EXACTEMENT la sémantique d'avant : un
+/// appelant qui ne renseigne ni [disabledReason] ni [permitted] obtient le
+/// comportement historique, au caractère près.
 @immutable
 class ZItemAction {
   /// Construit une action d'item.
+  ///
+  /// [id] : identité OPAQUE et STABLE (jamais affichée). `null` ⇒ dérivée de
+  /// [kind] via [zMenuEntryIdForKind]. À renseigner pour une action
+  /// [ZItemActionKind.custom] afin qu'elle porte une identité distinctive
+  /// (`ZMenuEntryIds.moveUp`…).
+  ///
+  /// [permitted] : l'utilisateur a-t-il le DROIT de voir cette action ? `false`
+  /// ⇒ action ABSENTE, quels que soient [onSelected]/[disabledReason]. Défaut
+  /// `true` : un appelant qui ne gère pas de droits n'en voit rien.
+  ///
+  /// [disabledReason] : motif LOCALISÉ INJECTÉ de désactivation. Non-`null` ⇒
+  /// l'action est rendue **présente mais inerte**, motif ANNONCÉ (AD-13).
+  /// Incompatible avec un [onSelected] non-`null` (assert) : une action ne peut
+  /// pas être à la fois actionnable et désactivée.
   const ZItemAction({
     required this.kind,
     required this.label,
     required this.icon,
     this.onSelected,
-  });
+    this.id,
+    this.permitted = true,
+    this.disabledReason,
+  }) : assert(
+          onSelected == null || disabledReason == null,
+          'ZItemAction: une action ACTIONNABLE (onSelected non nul) ne peut pas '
+          'porter un disabledReason — les deux états sont exclusifs. Pour une '
+          'action désactivée, laisser onSelected nul et fournir le motif ; pour '
+          'une action absente, laisser les deux nuls.',
+        );
 
   /// Nature de l'action ([ZItemActionKind]).
   final ZItemActionKind kind;
@@ -76,8 +171,39 @@ class ZItemAction {
   /// Glyphe INJECTÉ de l'action (jamais codé en dur).
   final IconData icon;
 
-  /// Callback de sélection. `null` ⇒ action ABSENTE du menu (AD-4).
+  /// Callback de sélection. `null` (et [disabledReason] `null`) ⇒ action
+  /// ABSENTE du menu (AD-4).
   final VoidCallback? onSelected;
+
+  /// Identité opaque PARTAGÉE (`null` ⇒ dérivée de [kind]).
+  final String? id;
+
+  /// Droit de l'utilisateur sur cette action. `false` ⇒ ABSENTE.
+  final bool permitted;
+
+  /// Motif LOCALISÉ INJECTÉ de désactivation (`null` ⇒ pas de désactivation).
+  final String? disabledReason;
+
+  /// Identité effective de l'action ([id], à défaut dérivée de [kind]).
+  String get entryId => id ?? zMenuEntryIdForKind(kind);
+
+  /// Projection vers l'entrée NEUTRE de `zcrud_menu`.
+  ///
+  /// Publique à dessein : une présentation injectée ([ZItemActionsMenuBuilder])
+  /// peut ainsi rendre chaque action avec [ZMenuEntryTile] — cible ≥ 48 dp,
+  /// `Semantics` NON dupliquées, directionnalité — au lieu de les réécrire.
+  ///
+  /// [ZMenuEntry.isDestructive] est dérivé de [kind] : c'est une **donnée**, pas
+  /// un style (FR-26 — le socle ne lui associe aucune couleur).
+  ZMenuEntry toMenuEntry() => ZMenuEntry(
+        id: entryId,
+        label: label,
+        icon: icon,
+        onSelected: onSelected,
+        disabledReason: disabledReason,
+        permitted: permitted,
+        isDestructive: kind == ZItemActionKind.delete,
+      );
 }
 
 /// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
@@ -86,14 +212,15 @@ class ZItemAction {
 /// * [context] — le contexte de la **surface flottante** (celui du menu ouvert,
 ///   pas celui du déclencheur) ;
 /// * `actions` — la liste **DÉJÀ FILTRÉE** par la règle d'absence (AD-4) :
-///   toute action à [ZItemAction.onSelected] `null` en est ABSENTE. L'hôte n'a
-///   donc **jamais** à refaire ce filtrage, et ne peut pas le contourner par
-///   inadvertance en rendant une entrée grisée ;
+///   toute action ni actionnable ni motivée, ou non [ZItemAction.permitted], en
+///   est ABSENTE. L'hôte n'a donc **jamais** à refaire ce filtrage, et ne peut
+///   pas le contourner par inadvertance ;
 /// * `select` — invoque l'action ET ferme la surface, par le **MÊME chemin** que
-///   le rendu par défaut (`Navigator.pop(context, action)` ⇒ `onSelected` du
-///   `PopupMenuButton`). L'hôte n'a ni à fermer à la main, ni à appeler
+///   le rendu par défaut. L'hôte n'a ni à fermer à la main, ni à appeler
 ///   `action.onSelected` : une présentation alternative ne peut pas diverger du
-///   comportement de la colonne par défaut.
+///   comportement de la colonne par défaut. Sans effet sur une action
+///   DÉSACTIVÉE (garanti par `ZMenuRequest.select`, pas par la bonne volonté de
+///   l'hôte).
 ///
 /// Le socle **n'impose rien** sur la forme rendue (grille bornée, colonnes
 /// multiples, sections…) : c'est précisément l'objet du slot.
@@ -103,7 +230,7 @@ typedef ZItemActionsMenuBuilder = Widget Function(
   void Function(ZItemAction action) select,
 );
 
-/// Menu d'actions par item paramétrique (déclencheur `PopupMenuButton`).
+/// Menu d'actions par item paramétrique — façade sur [ZActionMenu].
 class ZItemActionsMenu extends StatelessWidget {
   /// Construit le menu à partir des actions (ordre préservé).
   ///
@@ -111,22 +238,31 @@ class ZItemActionsMenu extends StatelessWidget {
   /// [tooltip] : label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
   /// [menuBuilder] : présentation INJECTÉE du contenu (`null` ⇒ **colonne
   /// unique**, rendu strictement inchangé).
+  /// [renderer] : surcharge PONCTUELLE du [ZMenuRenderer] (prioritaire sur
+  /// [ZMenuScope]). `null` ⇒ scope de l'hôte, puis repli `ZDefaultMenuRenderer`.
   const ZItemActionsMenu({
     required this.actions,
     this.icon,
     this.tooltip,
     this.menuBuilder,
+    this.renderer,
     super.key,
   });
 
-  /// Actions candidates. Celles à [ZItemAction.onSelected] `null` sont FILTRÉES
-  /// (absentes du menu, AD-4).
+  /// Actions candidates. Celles qui ne sont ni actionnables ni motivées, et
+  /// celles non [ZItemAction.permitted], sont FILTRÉES (absentes, AD-4).
   final List<ZItemAction> actions;
 
   /// Glyphe INJECTÉ du déclencheur (`null` ⇒ [_kMenuFallbackIcon]).
   final IconData? icon;
 
   /// Label a11y LOCALISÉ INJECTÉ du déclencheur (optionnel).
+  ///
+  /// `null` ⇒ repli LOCALISÉ du SDK (`MaterialLocalizations.showMenuTooltip`) —
+  /// exactement la chaîne que `PopupMenuButton` utilisait déjà de lui-même.
+  /// Elle est désormais résolue ICI parce que `ZMenuTrigger.semanticLabel` est
+  /// REQUIS : un déclencheur muet sous un renderer injecté (hors Material) est
+  /// proscrit (AD-13, récidive `su-9`).
   final String? tooltip;
 
   /// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
@@ -137,8 +273,8 @@ class ZItemActionsMenu extends StatelessWidget {
   /// Non-null ⇒ la surface flottante ne contient plus qu'UNE entrée, dont le
   /// contenu est celui rendu par l'hôte. Ce qui reste **la propriété du socle**,
   /// et qui ne peut donc pas régresser : la liste transmise est déjà filtrée par
-  /// la règle « `onSelected == null` ⇒ action ABSENTE » (AD-4), et la sélection
-  /// passe par le même `Navigator.pop(context, action)` que le rendu par défaut.
+  /// la règle d'absence (AD-4), et la sélection passe par le même chemin que le
+  /// rendu par défaut.
   ///
   /// **Pourquoi un SLOT et pas une option de grille** (arbitrage CR-IFFD-32) :
   /// au-delà de six ou sept entrées, une colonne unique impose un balayage
@@ -146,122 +282,73 @@ class ZItemActionsMenu extends StatelessWidget {
   /// réel. Mais y répondre par un `crossAxisMaxColumns` figerait dans le socle
   /// *une* ergonomie de menu flottant (largeur de panneau, ordre de lecture,
   /// parcours clavier, position du séparateur destructif) alors que ces
-  /// décisions dépendent de l'hôte — ce serait exactement le défaut que
-  /// CR-LEX-61/73 et CR-IFFD-35 reprochent au socle : figer sur un widget une
-  /// décision qui ne lui appartient pas. Le slot n'engage RIEN sur le rendu tout
-  /// en préservant l'abstraction jugée juste (`List<ZItemAction>` + règle
-  /// d'absence). Une option de disposition reste ajoutable par-dessus, plus
-  /// tard, sans rupture.
+  /// décisions dépendent de l'hôte.
   ///
-  /// ⚠️ **A11y (AD-13) — ce que le socle ne peut plus garantir** : les cibles
-  /// ≥ 48 dp, les `Semantics` et la directionnalité du contenu rendu par l'hôte
-  /// sont à SA charge (le socle ne les impose que sur sa colonne par défaut).
+  /// 🟢 **A11y (AD-13) — le renoncement est LEVÉ depuis CHAT-4b.** La cellule
+  /// [ZMenuEntryTile] est offerte à l'hôte : `ZMenuEntryTile(entry:
+  /// action.toMenuEntry(), onSelected: () => select(action))` lui donne la cible
+  /// ≥ 48 dp, les `Semantics` NON dupliquées et la directionnalité sans les
+  /// réécrire. La DISPOSITION reste sa liberté ; la CELLULE reste la propriété
+  /// du socle. S'il rend autre chose, l'a11y de ce qu'il rend est à sa charge.
   final ZItemActionsMenuBuilder? menuBuilder;
+
+  /// Surcharge ponctuelle du renderer de menu (prioritaire sur [ZMenuScope]).
+  final ZMenuRenderer? renderer;
 
   @override
   Widget build(BuildContext context) {
-    final theme = ZcrudTheme.of(context);
-    // AD-4 — action sans callback ⇒ ABSENTE (jamais rendue grisée/no-op).
-    // 🔴 Filtrage AMONT, PARTAGÉ par les deux présentations : le slot reçoit la
-    // MÊME liste que la colonne par défaut. La règle d'absence n'est donc pas
-    // « re-demandée » à l'hôte — elle lui est INOPPOSABLE.
-    final visible =
-        actions.where((a) => a.onSelected != null).toList(growable: false);
-    final builder = menuBuilder;
-    return PopupMenuButton<ZItemAction>(
-      icon: Icon(icon ?? _kMenuFallbackIcon),
-      tooltip: tooltip,
-      onSelected: (action) => action.onSelected?.call(),
-      itemBuilder: (context) => <PopupMenuEntry<ZItemAction>>[
-        if (builder != null)
-          _ZActionsPanelEntry(
-            builder: builder,
-            actions: visible,
-          )
-        else
-        for (final action in visible)
-          PopupMenuItem<ZItemAction>(
-            value: action,
-            // PopupMenuItem impose déjà kMinInteractiveDimension (48) ; on le
-            // rend explicite (AD-13/NFR-S6).
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: _kMinTapTarget),
-              child: Semantics(
-                button: true,
-                label: action.label,
-                // 🔴 `excludeSemantics: true` (SU-8/AC20 — DÉFAUT RÉEL CORRIGÉ).
-                //
-                // `PopupMenuItem` **fusionne** son sous-arbre (`MergeSemantics`).
-                // Sans cette exclusion, le label de ce nœud **ET** celui du
-                // `Text(action.label)` enfant fusionnent tous deux : le lecteur
-                // d'écran annonce l'action **DEUX FOIS** — mesuré sur l'arbre
-                // sémantique réel : `label was "Ouvrir\nOuvrir"`.
-                //
-                // ⚠️ Retirer le `label:` d'ici **ne marche PAS** (essayé,
-                // mesuré) : le nœud devient **MUET** (`label: ""`) — l'action
-                // disparaîtrait purement et simplement pour un lecteur d'écran.
-                // Le couple `label:` + `excludeSemantics:` est la **seule**
-                // combinaison qui annonce l'action **exactement une fois**.
-                excludeSemantics: true,
-                child: Row(
-                  children: [
-                    Icon(action.icon),
-                    SizedBox(width: theme.gapM),
-                    Expanded(
-                      child: Text(action.label, textAlign: TextAlign.start),
-                    ),
-                  ],
-                ),
+    // 🔴 Traduction 1:1, ordre PRÉSERVÉ. Le filtrage AD-4 n'est PAS refait ici :
+    // il a un site UNIQUE, `ZActionMenu` (`zVisibleMenuEntries`). Le refaire
+    // serait la seconde source que ce lot supprime.
+    final entries = <ZMenuEntry>[];
+    // Correspondance par IDENTITÉ : deux actions distinctes peuvent être ÉGALES
+    // au sens de `==` (mêmes kind/label/icône/callback). Une `Map` ordinaire les
+    // confondrait ; `Map.identity()` non.
+    final versAction = Map<ZMenuEntry, ZItemAction>.identity();
+    final versEntree = Map<ZItemAction, ZMenuEntry>.identity();
+    for (final action in actions) {
+      final entry = action.toMenuEntry();
+      entries.add(entry);
+      versAction[entry] = action;
+      versEntree[action] = entry;
+    }
+
+    final hote = menuBuilder;
+    return ZActionMenu(
+      entries: entries,
+      renderer: renderer,
+      trigger: ZMenuTrigger(
+        icon: icon ?? _kMenuFallbackIcon,
+        // Nom accessible : à défaut d'injection, le repli LOCALISÉ du SDK — la
+        // chaîne même que `PopupMenuButton` posait auparavant (aucune chaîne
+        // codée en dur, FR-26/FR-23).
+        semanticLabel: tooltip ?? _defaultTooltip(context),
+        // `null` ⇒ le renderer retombe sur `semanticLabel`, donc sur la même
+        // info-bulle qu'avant : rendu INCHANGÉ pour un appelant sans tooltip.
+        tooltip: tooltip,
+      ),
+      contentBuilder: hote == null
+          ? null
+          : (surfaceContext, visibles, select) => hote(
+                surfaceContext,
+                <ZItemAction>[
+                  for (final entry in visibles) versAction[entry]!,
+                ],
+                // MÊME chemin de sortie que la colonne par défaut : l'hôte ne
+                // peut ni oublier de fermer, ni invoquer deux fois, ni diverger.
+                (action) {
+                  final entry = versEntree[action];
+                  if (entry != null) select(entry);
+                },
               ),
-            ),
-          ),
-      ],
     );
   }
-}
 
-/// Entrée UNIQUE portant la présentation INJECTÉE (CR-IFFD-32).
-///
-/// C'est un `PopupMenuEntry` **nu** — délibérément PAS un `PopupMenuItem` :
-/// * un `PopupMenuItem` impose sa hauteur minimale, son `padding` et son
-///   `TextStyle` (couleur « désactivée » comprise si `enabled: false`) au
-///   sous-arbre de l'hôte : la présentation injectée serait re-décorée par le
-///   socle, ce que le slot promet justement de ne pas faire ;
-/// * il pose surtout un `InkWell` qui **ferme le menu au moindre tap** tombé
-///   entre deux cellules (`Navigator.pop(context, null)`), un comportement
-///   invisible en revue et déroutant sur un panneau à plusieurs colonnes.
-///
-/// [height] ne sert qu'à l'**estimation de défilement** du `PopupMenu` (le
-/// contenu se dimensionne lui-même) ; [represents] est `false` : cette entrée ne
-/// représente AUCUNE valeur, donc aucune mise en surbrillance d'« item courant ».
-class _ZActionsPanelEntry extends PopupMenuEntry<ZItemAction> {
-  const _ZActionsPanelEntry({required this.builder, required this.actions});
-
-  /// Présentation INJECTÉE par l'hôte.
-  final ZItemActionsMenuBuilder builder;
-
-  /// Actions DÉJÀ filtrées par la règle d'absence (AD-4).
-  final List<ZItemAction> actions;
-
-  @override
-  double get height => _kMinTapTarget;
-
-  @override
-  bool represents(ZItemAction? value) => false;
-
-  @override
-  State<_ZActionsPanelEntry> createState() => _ZActionsPanelEntryState();
-}
-
-class _ZActionsPanelEntryState extends State<_ZActionsPanelEntry> {
-  @override
-  Widget build(BuildContext context) => widget.builder(
-        context,
-        widget.actions,
-        // MÊME chemin de sortie que la colonne par défaut : la valeur poppée est
-        // récupérée par `onSelected` du `PopupMenuButton`, qui invoque
-        // `action.onSelected`. Une présentation injectée ne peut donc ni oublier
-        // de fermer, ni invoquer deux fois, ni diverger du défaut.
-        (action) => Navigator.of(context).pop(action),
-      );
+  /// Repli LOCALISÉ de l'info-bulle du déclencheur.
+  ///
+  /// `MaterialLocalizations.of` LÈVE en l'absence de localisations Material —
+  /// exactement comme le faisait `PopupMenuButton` lui-même quand `tooltip`
+  /// était nul. Le contrat d'échec est donc inchangé, pas relâché.
+  String _defaultTooltip(BuildContext context) =>
+      MaterialLocalizations.of(context).showMenuTooltip;
 }

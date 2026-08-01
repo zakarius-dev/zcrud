@@ -571,17 +571,25 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
         onPressed: () => _openAddDialog(),
       );
     }
-    return PopupMenuButton<int>(
+    // 🔴 Résolution par IDENTITÉ, JAMAIS par position (CR-MENU) : la valeur
+    // portée est le GABARIT lui-même, jamais son index. Avec `value: i` +
+    // `templates[i]`, un rebuild survenu entre l'ouverture du menu et la
+    // sélection (la sous-liste rebâtit à chaque `setState` d'item) et qui
+    // RÉORDONNE les gabarits ouvrait un dialog pré-rempli avec les valeurs
+    // d'un AUTRE gabarit ; un rebuild qui les RACCOURCIT levait un `RangeError`
+    // dans un gestionnaire de tap. Même sémantique que `ZDefaultMenuRenderer`
+    // (`zcrud_menu`) — non importable ici (AD-1, out-degree zcrud de 0).
+    return PopupMenuButton<ZSubListItemTemplate>(
       icon: const Icon(Icons.add),
       tooltip: _addLabel(context),
-      onSelected: (i) =>
-          _openAddDialog(templateDefaults: templates[i].defaults),
-      itemBuilder: (context) => <PopupMenuEntry<int>>[
-        for (var i = 0; i < templates.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            child: Text(label(context, templates[i].labelKey,
-                fallback: templates[i].labelKey)),
+      onSelected: (template) =>
+          _openAddDialog(templateDefaults: template.defaults),
+      itemBuilder: (context) => <PopupMenuEntry<ZSubListItemTemplate>>[
+        for (final template in templates)
+          PopupMenuItem<ZSubListItemTemplate>(
+            value: template,
+            child: Text(label(context, template.labelKey,
+                fallback: template.labelKey)),
           ),
       ],
     );

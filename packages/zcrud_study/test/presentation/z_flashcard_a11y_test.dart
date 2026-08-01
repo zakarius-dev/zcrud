@@ -177,19 +177,45 @@ void main() {
               reason: 'sonde : « $label » doit être rendue');
         }
 
-        // Chaque item du menu est une cible ≥ 48 dp.
+        // 🔴 GARDE RETENDUE (finding F1 de la revue de fin d'epic CHAT).
+        //
+        // La mesure d'origine portait sur l'ancêtre `PopupMenuItem`, qui impose
+        // DÉJÀ `kMinInteractiveDimension` (48 dp) par Material : elle mesurait
+        // le plancher du SDK, jamais le NÔTRE. Preuve : plancher de
+        // `ZMenuEntryTile` mis à 0 ⇒ ce fichier restait à **19/19 verts**.
+        // C'est le jumeau exact que `chat4b_item_actions_menu_delegation_test`
+        // avait resserré chez lui sans reporter le resserrement ici.
+        //
+        // On mesure donc les DEUX, chacune pour ce qu'elle prouve :
+        //  - la CELLULE (`ZMenuEntryTile`) — notre plancher, seul mordant ;
+        //  - l'ITEM (`PopupMenuItem`) — la composition de bout en bout, qui
+        //    resterait fausse si un jour l'item rétrécissait sous sa cellule.
+        //
         // ⚠️ `.first` porte sur le RÉSULTAT de `find.ancestor` (l'ancêtre le
         // plus PROCHE), jamais sur le finder `matching:` — l'y mettre le
-        // réduirait au 1er ConstrainedBox de tout l'arbre, qui n'a rien à voir
-        // avec ce label (constaté en l'écrivant).
+        // réduirait au 1er widget de ce type de tout l'arbre, qui n'a rien à
+        // voir avec ce label (constaté en l'écrivant).
+        final cellules = find.byType(ZMenuEntryTile);
+        expect(cellules, findsWidgets,
+            reason: 'contrôle positif : sans cellule montée, la boucle '
+                'ci-dessous serait verte à vide');
         for (final label in expected) {
-          final target = find
+          final cellule = find
+              .ancestor(of: find.text(label), matching: cellules)
+              .first;
+          final tailleCellule = tester.getSize(cellule);
+          expect(tailleCellule.height, greaterThanOrEqualTo(_kMinTapTarget),
+              reason: '🔴 « $label » : la CELLULE du socle mesure '
+                  '${tailleCellule.height} dp < 48 dp — son plancher propre a '
+                  'disparu (le 48 dp de PopupMenuItem le masquerait).');
+
+          final item = find
               .ancestor(
                 of: find.text(label),
-                matching: find.byType(PopupMenuItem<ZItemAction>),
+                matching: find.byType(PopupMenuItem<ZMenuEntry>),
               )
               .first;
-          final size = tester.getSize(target);
+          final size = tester.getSize(item);
           expect(size.height, greaterThanOrEqualTo(_kMinTapTarget),
               reason: '🔴 « $label » : ${size.height} dp < 48 dp — un item de '
                   'menu trop petit est intappable au doigt');
@@ -269,7 +295,7 @@ void main() {
         final node = tester.getSemantics(find
             .ancestor(
               of: find.text(label),
-              matching: find.byType(PopupMenuItem<ZItemAction>),
+              matching: find.byType(PopupMenuItem<ZMenuEntry>),
             )
             .first);
 

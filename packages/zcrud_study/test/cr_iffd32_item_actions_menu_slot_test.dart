@@ -75,7 +75,12 @@ void main() {
       await tester.tap(find.byType(ZItemActionsMenu));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PopupMenuItem<ZItemAction>), findsNWidgets(2),
+      // ⚠️ CHAT-4b : le paramètre de type est passé de `ZItemAction` à
+      // `ZMenuEntry` — `ZItemActionsMenu` DÉLÈGUE désormais à `ZActionMenu`
+      // (`zcrud_menu`), dont la colonne par défaut porte l'entrée neutre. Le
+      // pouvoir discriminant est INCHANGÉ : c'est toujours « une, et une seule,
+      // cellule de socle par action visible » qui est mesurée.
+      expect(find.byType(PopupMenuItem<ZMenuEntry>), findsNWidgets(2),
           reason: 'le rendu par défaut reste la colonne de PopupMenuItem');
       expect(find.text(kOpen), findsOneWidget);
       expect(find.text(kRename), findsOneWidget);
@@ -109,7 +114,7 @@ void main() {
       expect(find.byKey(_cellKey(kRename)), findsOneWidget);
       // 🔴 Le socle ne DOUBLE pas la présentation : si la colonne par défaut
       // était encore construite, la surface porterait les deux.
-      expect(find.byType(PopupMenuItem<ZItemAction>), findsNothing,
+      expect(find.byType(PopupMenuItem<ZMenuEntry>), findsNothing,
           reason: 'le slot REMPLACE la colonne, il ne s\'y ajoute pas');
     });
 

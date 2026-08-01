@@ -68,6 +68,41 @@ Chaque étape BMAD est exécutée via le tool **`Workflow`** — pour régler le
 - ✅ **L'orchestrateur vérifie lui-même sur disque** tout finding structurant avant de l'appliquer — un rapport d'agent n'est **jamais** une preuve (cf. surveillance des sous-agents).
 - ✅ Le triage des findings reste inchangé (HIGH/MAJEUR obligatoires, MEDIUM par défaut, LOW consignés) et la **vérif verte est rejouée par l'orchestrateur** avant tout `done`.
 
+## 🔴 Un message envoyé à un agent TERMINÉ le RÉVEILLE (incident du 2026-08-01)
+
+`SendMessage` vers un agent **déjà complété** ne dépose pas une note : il **reprend l'agent depuis son
+transcript** et le remet à écrire. Constaté : une correction envoyée à l'agent CHAT-1 après son rapport
+final l'a relancé sur `zcrud_chat_kernel` — pendant que CHAT-1b, lancé pour le même travail, y écrivait
+aussi. **Deux rédacteurs sur les mêmes fichiers, du seul fait de l'orchestrateur.** Le second agent l'a
+détecté (horodatages de fichiers changeant sous lui), a **restauré son unique écriture par copie** et
+s'est arrêté — comportement exemplaire. Coût réel : le paquet laissé **rouge** (13 erreurs, toutes dues
+à un paramètre rendu obligatoire) et un lot à reprendre.
+
+**Règles** :
+1. Une correction qui arrive **après** la fin d'un lot n'est pas un message : c'est un **nouveau lot**.
+   La transmettre par `Agent`, jamais par `SendMessage` à l'agent terminé.
+2. `SendMessage` ne s'utilise que vers un agent **encore en vol**, et seulement si son travail n'est pas
+   déjà couvert par un autre agent lancé entre-temps.
+3. Avant de lancer un rédacteur sur un paquet : **vérifier qu'aucun fichier n'y a bougé récemment**
+   (`find lib test -newermt '-90 seconds'`) et que les transcripts des agents concernés sont figés.
+4. Ne jamais écrire « aucun autre agent n'édite » dans un prompt sans l'avoir **mesuré** — le sous-agent
+   s'y fie pour décider s'il peut faire confiance à ses propres mesures.
+5. 🔴 **Un `TaskStop` ne prend pas forcément effet tout de suite** : un agent arrêté a continué d'écrire
+   ~10 min. Un retour « stopped » n'est **pas** une preuve d'arrêt — le vérifier par les horodatages
+   avant de lancer un remplaçant.
+6. 🔴 **Deux agents parallèles doivent avoir des SCRATCHPADS DISTINCTS.** Constaté le 2026-08-01 : les
+   lots C3 et C4, lancés en parallèle sur des packages pourtant disjoints, partageaient le même
+   répertoire de travail temporaire. Le `rmtree`/`copytree` de l'un a **détruit la sauvegarde de
+   l'autre en pleine campagne R3**, laissant **8 injections en place**. Le package était donc cassé
+   par construction, et l'agent a dû restaurer à la main puis tout rejouer depuis une sauvegarde
+   privée. **La disjonction des packages ne suffit pas : il faut aussi disjoindre les scratchpads**
+   (un sous-dossier par agent, nommé dans le prompt).
+7. 🔴 **Après TOUT arrêt d'agent, vérifier qu'aucune INJECTION R3 ne subsiste** (grep du marqueur **et**
+   rejeu des tests). Un agent interrompu en pleine campagne R3 laisse le code **cassé par construction** :
+   constaté sur `zcrud_chat`, paquet trouvé rouge avec un jeton d'instance injecté et **deux** sites
+   d'usage — dont un qu'un grep naïf masquait. Le retrait doit être **ciblé** (motif asserté), jamais
+   `git checkout`.
+
 ## Surveillance des sous-agents en arrière-plan (NON-NÉGOCIABLE)
 
 Les sous-agents/Workflows lancés en arrière-plan peuvent **planter ou se figer silencieusement** sans notifier.
@@ -143,7 +178,31 @@ dart run melos run test         # ou: flutter test  (par package)
 dart pub get --dry-run
 ```
 
-**Vérif verte (à rejouer réellement avant tout `done`)** : `melos run generate` OK → `analyze` RC=0 → `flutter test` RC=0. La CI exécute le codegen avant analyze/test.
+**Vérif verte (à rejouer réellement avant tout `done`)** : `melos run generate` OK → `analyze` RC=0 → `flutter test` RC=0.
+
+🔴 **`flutter test` DOIT être lancé DEPUIS LE DOSSIER DU PACKAGE** (`cd packages/<pkg> && flutter test`),
+jamais depuis la racine (`flutter test packages/<pkg>`). Mesuré le 2026-08-01 : depuis la racine,
+`zcrud_study` rend **48 rouges**, `zcrud_session` **27**, `zcrud_flashcard` **11** — et **0 depuis le
+dossier du package**. Cause : des dizaines de gardes lisent des sources par **chemin relatif**
+(`Directory('lib')`, `File('pubspec.yaml')`), résolu contre le répertoire courant. C'est la convention
+de `melos exec`. Un rouge obtenu depuis la racine **n'est pas un rouge du code** — et un vert obtenu au
+mauvais endroit ne prouve rien non plus. Ancrage correct pour toute nouvelle garde : `_repoRoot()`
+(remontée jusqu'au dossier portant `melos.yaml`), pas un `../` relatif.
+
+🔴 **La CI est MORTE — elle ne vérifie plus RIEN.** Constaté le 2026-08-01 : **75 runs sur 75 en échec**,
+durées de 3 à 10 s, annotation GitHub *« The job was not started because your account is locked due to a
+billing issue »*. Le job `codegen → analyze → test → gates` **n'a jamais démarré**. Conséquence : tous
+les gates CI sont **décoratifs** depuis ~75 pushes, et le rouge permanent de la CI est devenu du bruit
+sans signal. **La vérif verte locale rejouée par l'orchestrateur est donc la SEULE ligne de défense** —
+elle n'est plus un doublon de la CI. Un test rouge a ainsi été **taggé et livré en v0.29.0**
+(`zcrud_firestore`, garde CR-LEX-26 laissée sur `ZDomainFailure` après que CR-LEX-44 eut délibérément
+substitué `ZUnsupportedOperationFailure`). ⚠️ Action **owner** requise : débloquer la facturation.
+
+⚠️ **Une CR qui change un contrat doit chercher ses gardes JUMELLES dans les autres packages**
+(`grep -rn "<TypeChangé>" packages/*/test`). CR-LEX-44 a mis à jour ses tests locaux et laissé la garde
+équivalente de `zcrud_firestore` sur l'ancien type — pendant symétrique du tripwire côté aval.
+
+⚠️ **`melos run test` HANGE** — ne pas compter dessus : lancer package par package.
 
 ---
 

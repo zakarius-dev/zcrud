@@ -9,7 +9,7 @@
 # champ = ES-5.2 ; les sections réordonnables = ES-5.3.
 name: zcrud_study
 description: "Study-tools orchestration (presentation) for zcrud: parametric section descriptor (ZStudyToolsSectionSpec) and a decomposed sectioned layout (ZSectionedStudyLayout) proven by a discriminant golden harness."
-version: 0.29.0
+version: 0.30.0
 publish_to: none
 resolution: workspace
 
@@ -131,18 +131,37 @@ environment:
 #                          ZÉRO dépendance tierce nouvelle (`zcrud_ui_kit` ne tire
 #                          que `zcrud_core` + SDK Flutter). Patron identique à
 #                          l'arête `zcrud_responsive` ajoutée par SU-8.
+#
+# - `zcrud_menu`        : arête AJOUTÉE par CHAT-4b (première story qui la
+#                          consomme réellement) — `ZItemActionsMenu` devient un
+#                          CONSOMMATEUR de la couture `ZActionMenu`/`ZMenuEntry`/
+#                          `ZMenuTrigger`/`ZMenuRenderer` au lieu de construire
+#                          son `PopupMenuButton` EN DUR. Sans cette arête, le
+#                          dépôt garderait DEUX menus côte à côte — exactement le
+#                          doublon appauvri que CR-LEX-78 interdit.
+#                          Arête ACYCLIQUE, PROUVÉE sur disque : `zcrud_menu` a
+#                          `zcrud_core` pour UNIQUE dépendance zcrud (out-degree
+#                          1) et n'a AUCUNE arête entrante vers `zcrud_study`
+#                          (`grep -rn 'zcrud_study' packages/zcrud_menu/lib` =
+#                          vide) ⇒ aucun cycle. CORE OUT=0 préservé (`zcrud_core`
+#                          ne dépend ni de `zcrud_menu` ni de `zcrud_study`).
+#                          ZÉRO dépendance tierce nouvelle (`zcrud_menu` n'a
+#                          AUCUNE dépendance hors SDK Flutter + `zcrud_core`).
+#                          Patron identique aux arêtes `zcrud_responsive` (SU-8)
+#                          et `zcrud_ui_kit` (ME-2).
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.29.0
-  zcrud_study_kernel: ^0.29.0
-  zcrud_annotations: ^0.29.0
-  zcrud_mindmap: ^0.29.0
-  zcrud_flashcard: ^0.29.0
-  zcrud_exam: ^0.29.0
-  zcrud_responsive: ^0.29.0
-  zcrud_session: ^0.29.0
-  zcrud_ui_kit: ^0.29.0
+  zcrud_core: ^0.30.0
+  zcrud_study_kernel: ^0.30.0
+  zcrud_annotations: ^0.30.0
+  zcrud_mindmap: ^0.30.0
+  zcrud_flashcard: ^0.30.0
+  zcrud_exam: ^0.30.0
+  zcrud_responsive: ^0.30.0
+  zcrud_session: ^0.30.0
+  zcrud_ui_kit: ^0.30.0
+  zcrud_menu: ^0.30.0
 
 # Package Flutter → tests golden via `flutter test` (R14). Aucun codegen
 # (aucun `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet).

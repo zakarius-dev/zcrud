@@ -350,23 +350,32 @@ List<Widget> _zBuildActions(
         ),
     if (overflow.isNotEmpty &&
         !(searching && (search?.hidesHostActions ?? false)))
-      PopupMenuButton<int>(
+      // 🔴 Résolution par IDENTITÉ, JAMAIS par position (CR-MENU) : la valeur
+      // portée par chaque entrée est l'ACTION elle-même, pas son index. Avec
+      // `value: i` + `overflow[i]`, la liste était relue APRÈS la sélection :
+      // un rebuild de l'app-bar (props réactives — `ZPageShell` rebâtit ses
+      // actions à chaque notification) qui RÉORDONNE le débordement entre
+      // l'ouverture et le tap exécutait une AUTRE action, sans aucune trace ;
+      // un rebuild qui le RACCOURCIT levait un `RangeError` dans un
+      // gestionnaire de tap. Même lecture que `ZDefaultMenuRenderer`
+      // (`zcrud_menu`, `PopupMenuButton<ZMenuEntry>`).
+      PopupMenuButton<ZAppBarAction>(
         icon: const Icon(Icons.more_vert),
-        itemBuilder: (context) => <PopupMenuEntry<int>>[
-          for (var i = 0; i < overflow.length; i++)
-            PopupMenuItem<int>(
-              value: i,
-              enabled: overflow[i].onPressed != null,
+        itemBuilder: (context) => <PopupMenuEntry<ZAppBarAction>>[
+          for (final action in overflow)
+            PopupMenuItem<ZAppBarAction>(
+              value: action,
+              enabled: action.onPressed != null,
               child: Row(
                 children: <Widget>[
-                  _zActionChild(overflow[i]),
+                  _zActionChild(action),
                   const SizedBox(width: 12),
-                  Text(overflow[i].semanticLabel),
+                  Text(action.semanticLabel),
                 ],
               ),
             ),
         ],
-        onSelected: (i) => overflow[i].onPressed?.call(),
+        onSelected: (action) => action.onPressed?.call(),
       ),
     if (search != null)
       IconButton(

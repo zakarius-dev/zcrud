@@ -1,0 +1,65 @@
+# zcrud_chat — membre du workspace zcrud (resolution: workspace).
+#
+# CHAT-2 : le **contrôleur de conversation** `ZChatController`. Ce que
+# `zcrud_study` est à `zcrud_study_kernel` (pur-Dart), `zcrud_chat` l'est à
+# `zcrud_chat_kernel` : le kernel porte le DOMAINE pur (modèle, contrat
+# d'action, ports IA), ce package porte l'ÉTAT RÉACTIF Flutter-native.
+#
+# 🔴 POURQUOI CE PACKAGE EXISTE PLUTÔT QU'UN AJOUT AU KERNEL
+# `zcrud_chat_kernel` n'a AUCUN `flutter:` dans son pubspec (paquet PUR-DART,
+# suite sous `dart test`, balayé par le gate `web-determinism`). Un
+# `ChangeNotifier` / `ValueListenable` vient de
+# `package:flutter/foundation.dart` : l'y écrire aurait imposé le SDK Flutter à
+# un noyau que sa pureté rend consommable partout. Le contrôleur vit donc ici,
+# et le kernel reste pur.
+name: zcrud_chat
+description: "Flutter-native conversation controller for zcrud: ZChatController with granular ValueListenable slices, one request token per request, resumable streams and a single dispatch site per action verb."
+version: 0.30.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - conversation
+  - assistant
+  - crud
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe ACYCLIQUE, CORE OUT=0).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+#
+# - `flutter`           : réactivité Flutter-native (AD-2/AD-15) —
+#                         `ChangeNotifier`, `ValueListenable`,
+#                         `TextEditingController`. Aiguille aussi la CI sur
+#                         `flutter test` (R14) : `dart test` échouerait sur
+#                         `dart:ui`.
+# - `zcrud_core`        : surface PURE-DART `package:zcrud_core/domain.dart`
+#                         (`ZResult`/`ZFailure`/`Left`/`Right`). JAMAIS
+#                         l'inverse — CORE OUT = 0.
+# - `zcrud_chat_kernel` : le domaine du chat (modèle, `ZChatActionDispatcher`,
+#                         ports IA, `ZChatRequestToken`). Arête SORTANTE seule :
+#                         `zcrud_chat -> zcrud_chat_kernel -> zcrud_core`,
+#                         jamais l'inverse (le kernel ne dépend de rien d'autre
+#                         que du cœur — vérifié sur disque). ACYCLIQUE.
+#
+# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`) — AD-2/AD-15,
+#    garde `test/z_chat_purity_test.dart` (grep NÉGATIF outillé).
+# ⛔ AUCUNE dépendance TIERCE (ni client HTTP, ni SDK IA) : le transport et les
+#    prompts restent CÔTÉ APP (AD-11/AD-12), derrière `ZChatStreamPort`.
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_chat_kernel: ^0.30.0
+  zcrud_core: ^0.30.0
+
+# Package Flutter → tests via `flutter test`. Aucun codegen (aucun
+# `@ZcrudModel` : l'état de conversation est un runtime NON persisté ⇒ pas de
+# `*.g.dart`, gate `codegen-distribution` sans objet).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

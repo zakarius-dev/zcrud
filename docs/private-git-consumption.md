@@ -94,6 +94,13 @@ exacte — et l'extrapolait à la **résolution**, qui n'avait pas été exécut
 paquet `zcrud_*` du dépôt n'est pas listé ici. À sa première exécution il en a trouvé
 **dix**, pas un — le piège était bien plus large que le cas rencontré.
 
+🔁 **Récidive à surveiller (CHAT-4b)** : `zcrud_study` dépend désormais de **`zcrud_menu`**
+(`ZItemActionsMenu` délègue à `ZActionMenu`). C'est la MÊME situation qu'en `v0.16.0` : la
+surface publique de `ZItemActionsMenu` est inchangée, mais un hôte qui consomme
+`zcrud_study` en dépendance git et dont le `dependency_overrides` a été recopié
+partiellement **ne résoudra pas** tant qu'il n'aura pas ajouté l'entrée `zcrud_menu`. La
+liste complète ci-dessous la contient déjà.
+
 ### Piège 2 — un `dependency_overrides` EST une arête directe : l'alléger exige DEUX gestes
 
 Mesuré par lex en adoptant la scission :
@@ -118,13 +125,19 @@ sans lui, il se défera au premier override rajouté par réflexe.
 
 ## Fermeture COMPLÈTE des paquets (à jour, vérifiée par gate)
 
-Les **31** paquets du dépôt. Listez dans `dependency_overrides` **tous** ceux que votre
+Les **35** paquets du dépôt. Listez dans `dependency_overrides` **tous** ceux que votre
 graphe atteint — pas seulement ceux que vous importez.
 
 ```yaml
 dependency_overrides:
   zcrud_annotations:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_annotations }
+  zcrud_chat:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat }
+  zcrud_chat_kernel:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_kernel }
+  zcrud_chat_syncfusion:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_chat_syncfusion }
   zcrud_core:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_core }
   zcrud_dnd:
@@ -161,6 +174,8 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_markdown }
   zcrud_media:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_media }
+  zcrud_menu:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_menu }
   zcrud_mindmap:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_mindmap }
   zcrud_navigation:

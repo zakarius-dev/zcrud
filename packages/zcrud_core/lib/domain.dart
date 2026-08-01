@@ -24,6 +24,18 @@ export 'package:dartz/dartz.dart' show Either, Left, Right, Unit, unit;
 export 'src/data/adapters/json_serializable_adapter.dart';
 export 'src/data/adapters/z_model_adapter.dart';
 
+// 🔴 CHAT-0r — le modèle de conversation IA (CHAT-0 / CHAT-0b) a QUITTÉ le cœur
+// pour `package:zcrud_chat_kernel/zcrud_chat_kernel.dart`. Motif : 30 packages
+// sur 31 dépendent de `zcrud_core` — DODLP et DLCFTI, sans aucun usage du chat,
+// en portaient les 3863 lignes. Et le patron du dépôt est SANS EXCEPTION :
+// aucun domaine MÉTIER ne vit dans le cœur (`ZFlashcard`→`zcrud_flashcard`,
+// `ZStudyFolder`→`zcrud_study_kernel`, `ZSmartNote`→`zcrud_note`,
+// `ZExam`→`zcrud_exam`) ; `domain/` du cœur ne porte que des mécanismes
+// TRANSVERSES (collection, contracts, data, edition, extension, failures, json,
+// ports, registry, sync).
+// RESTENT ICI, car TRANSVERSES et PRÉEXISTANTS au chat : les primitives de
+// lecture défensive `src/domain/json/z_json_read.dart` et la hiérarchie
+// `ZFailure` (dont `ZQuotaExceededFailure`).
 // Contrats de domaine (E2-1) + hiérarchie d'erreurs/`ZResult` (AD-11) + méta de
 // sync hors-entité (AD-16) + marqueur d'API. Ports & value objects (E2-2).
 export 'src/domain/collection/z_immutable_view.dart';
@@ -69,6 +81,12 @@ export 'src/domain/extension/z_json_equality.dart';
 // personne n'a su typer.
 export 'src/domain/extension/z_opaque_extension.dart';
 export 'src/domain/failures/z_failure.dart';
+// 🔴 LECTURE JSON DÉFENSIVE PARTAGÉE (AD-10) — pendant, pour la LECTURE, de ce
+// que `zJsonEquals`/`zJsonHash` sont pour l'ÉGALITÉ : une implémentation UNIQUE
+// des primitives que toute entité écrite à la main reconstruisait jusqu'ici en
+// privé (`_coerceStringMap`, `_asString`, `_guard`…). Destinée à TOUS les
+// modules — c'est la classe de duplication qui a produit DW-ES22-4.
+export 'src/domain/json/z_json_read.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
 // Port neutre + registre de source d'options CALCULÉES du champ `select` (DP-15,

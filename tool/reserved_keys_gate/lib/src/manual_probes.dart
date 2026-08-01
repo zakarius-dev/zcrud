@@ -17,6 +17,7 @@
 /// littéral (jamais interpolé).
 library;
 
+import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
 import 'assertions.dart';
@@ -100,6 +101,65 @@ final List<ZManualProbe> kManualProbes = <ZManualProbe>[
       ),
     ],
   ),
+  // ═════════════════════════════════════════════════════════════════════════
+  // CHAT-0 — `ZChatMessage` / `ZChatConversation` (**`zcrud_chat_kernel`**
+  // depuis CHAT-0r : le domaine chat a quitté `zcrud_core`, dont 30 packages sur
+  // 31 dépendent, pour son propre satellite — patron du dépôt, aucun domaine
+  // MÉTIER dans le cœur).
+  //
+  // Ni `zcrud_core` ni `zcrud_chat_kernel` n'ont de **codegen** (aucune
+  // dépendance de génération, aucun `.g.dart` sous `lib/`) : le cœur ne peut pas
+  // en gagner (`zcrud_annotations` dépend de lui, l'inverse serait un CYCLE ⇒
+  // `graph_proof` ROUGE) et le kernel s'en tient volontairement à la
+  // (dé)sérialisation ÉCRITE À LA MAIN héritée de CHAT-0 (D1).
+  // Ces deux entités mixent donc `ZExtensible` **hors registre** : elles
+  // tombent EXACTEMENT dans le trou que ce fichier existe pour boucher —
+  // sans ces deux sondes, la règle (3) du gate (`E_disk \ E_covered ≠ ∅`)
+  // rend `melos run verify` ROUGE.
+  //
+  // ⚠️ Contrairement à `ZMindmap`, leur constructeur nominal est **`const`** :
+  // il ne peut appeler AUCUNE fonction dans son initializer ⇒ il ne filtre
+  // RIEN. C'est l'**ACCESSEUR** `extra` (`zNormalizeExtra`) qui porte la
+  // garde ⇒ `eagerlyNormalized: false` sur la voie `ctor` (assertion (i.3) :
+  // la COPIE à la lecture PROUVE que l'accesseur a réellement travaillé, et
+  // démasquerait un writer auto-sanitisant — MAJEUR-2).
+  // `copyWith`, lui, sanitise EAGER ⇒ `eagerlyNormalized: true`.
+  ZManualProbe(
+    className: 'ZChatMessage',
+    body: const <String, dynamic>{'id': 'm', 'conversation_id': 'c'},
+    decode: ZChatMessage.fromMap,
+    encode: (Object e) => (e as ZChatMessage).toMap(),
+    writes: <ZExtraWriter>[
+      ZExtraWriter(
+        voie: 'ctor',
+        eagerlyNormalized: false, // ctor `const` ⇒ l'ACCESSEUR filtre.
+        write: _ctorChatMessage,
+      ),
+      ZExtraWriter(
+        voie: 'copyWith',
+        eagerlyNormalized: true,
+        write: _copyWithChatMessage,
+      ),
+    ],
+  ),
+  ZManualProbe(
+    className: 'ZChatConversation',
+    body: const <String, dynamic>{'id': 'c', 'title': 't'},
+    decode: ZChatConversation.fromMap,
+    encode: (Object e) => (e as ZChatConversation).toMap(),
+    writes: <ZExtraWriter>[
+      ZExtraWriter(
+        voie: 'ctor',
+        eagerlyNormalized: false, // ctor `const` ⇒ l'ACCESSEUR filtre.
+        write: _ctorChatConversation,
+      ),
+      ZExtraWriter(
+        voie: 'copyWith',
+        eagerlyNormalized: true,
+        write: _copyWithChatConversation,
+      ),
+    ],
+  ),
 ];
 
 Object _copyWithMindmap(Object e, Map<String, dynamic> x) =>
@@ -114,6 +174,53 @@ Object _ctorMindmap(Object e, Map<String, dynamic> x) {
     description: m.description,
     nodes: m.nodes,
     extension: m.extension,
+    extra: x,
+  );
+}
+
+// ⚠️ `x` est transmis **VERBATIM** — la règle AST (k) l'exige (un writer qui
+// pré-sanitiserait rendrait (i.1) trivialement verte : finding MAJEUR-2).
+Object _copyWithChatMessage(Object e, Map<String, dynamic> x) =>
+    (e as ZChatMessage).copyWith(extra: x);
+
+Object _ctorChatMessage(Object e, Map<String, dynamic> x) {
+  final ZChatMessage m = e as ZChatMessage;
+  return ZChatMessage(
+    id: m.id,
+    conversationId: m.conversationId,
+    role: m.role,
+    contentBlocks: m.contentBlocks,
+    sources: m.sources,
+    attachments: m.attachments,
+    createdAt: m.createdAt,
+    thinking: m.thinking,
+    suggestions: m.suggestions,
+    feedbackRating: m.feedbackRating,
+    feedbackCategory: m.feedbackCategory,
+    feedbackComment: m.feedbackComment,
+    agentsCalled: m.agentsCalled,
+    confidence: m.confidence,
+    sourceFreshness: m.sourceFreshness,
+    versionKey: m.versionKey,
+    extension: m.extension,
+    extra: x,
+  );
+}
+
+Object _copyWithChatConversation(Object e, Map<String, dynamic> x) =>
+    (e as ZChatConversation).copyWith(extra: x);
+
+Object _ctorChatConversation(Object e, Map<String, dynamic> x) {
+  final ZChatConversation c = e as ZChatConversation;
+  return ZChatConversation(
+    id: c.id,
+    title: c.title,
+    createdAt: c.createdAt,
+    lastMessageAt: c.lastMessageAt,
+    messageCount: c.messageCount,
+    pinned: c.pinned,
+    pinnedAt: c.pinnedAt,
+    extension: c.extension,
     extra: x,
   );
 }

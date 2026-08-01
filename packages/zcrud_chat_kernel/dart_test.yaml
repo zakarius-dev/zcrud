@@ -1,0 +1,20 @@
+# Déclare le tag du slot de rétro-compat sérialisation (AD-10) pour éviter tout
+# avertissement « tag non déclaré ». OPT-IN de la population REDEVABLE du gate
+# `scripts/ci/verify_serialization.dart` (helper `_declaresCompatTag`, ES-3.5/D7) :
+# un package qui déclare ce tag DOIT porter un corpus vert sous
+# `ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1`, sinon RC=1.
+#
+# CHAT-0 (relocalisé ici par CHAT-0r) sème le CORPUS de documents ÉTRANGERS
+# du modèle de conversation —
+# `test/z_chat_serialization_compat_test.dart`
+# (`@Tags(['serialization-compat'])`) : documents lex authentiques (blocs
+# PascalCase, `off_topic`, `updated_at` en corps), documents tronqués, documents
+# « futurs » à clés inconnues.
+#
+# Runner : `dart test` — `zcrud_chat_kernel` est PUR-DART (aucune dépendance
+# Flutter, même convention que `zcrud_study_kernel`). C'est `zcrud_core` qui
+# exige `flutter test` (SDK Flutter pour sa couche présentation, `dart test` y
+# donnant un faux rouge `dart:ui`) ; le kernel relocalisé s'en affranchit.
+tags:
+  serialization-compat:
+    description: "Round-trip / désérialisation défensive de documents legacy (AD-10)."

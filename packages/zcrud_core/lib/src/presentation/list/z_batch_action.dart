@@ -298,20 +298,31 @@ class _OverflowMenu extends StatelessWidget {
         minWidth: _kMinTapTarget,
         minHeight: _kMinTapTarget,
       ),
-      child: PopupMenuButton<int>(
+      // 🔴 Résolution par IDENTITÉ, JAMAIS par position (CR-MENU). La valeur
+      // portée par chaque entrée est l'ENTRÉE ELLE-MÊME, pas son index : le
+      // callback invoqué est donc TOUJOURS celui de l'action que l'utilisateur
+      // a vue et touchée. Un `PopupMenuButton<int>` + `entries[i].onPressed()`
+      // relisait la liste APRÈS coup — un rebuild qui RÉORDONNE entre
+      // l'ouverture et la sélection exécutait une AUTRE action (silencieusement),
+      // et un rebuild qui RACCOURCIT la liste levait un `RangeError` DANS un
+      // gestionnaire de tap. C'est la même lecture que `ZDefaultMenuRenderer`
+      // (`zcrud_menu`, `PopupMenuButton<ZMenuEntry>`) — que l'on ne peut PAS
+      // importer ici (AD-1 : `zcrud_core` a un out-degree zcrud de 0), d'où
+      // l'adoption de la SÉMANTIQUE, pas de la couture.
+      child: PopupMenuButton<_BarEntry>(
         icon: const Icon(Icons.more_vert),
         tooltip: label,
-        itemBuilder: (context) => <PopupMenuEntry<int>>[
-          for (var i = 0; i < entries.length; i++)
-            PopupMenuItem<int>(
-              value: i,
+        itemBuilder: (context) => <PopupMenuEntry<_BarEntry>>[
+          for (final entry in entries)
+            PopupMenuItem<_BarEntry>(
+              value: entry,
               child: Row(
                 children: [
-                  Icon(entries[i].icon),
+                  Icon(entry.icon),
                   SizedBox(width: theme.gapM),
                   Flexible(
                     child: Text(
-                      entries[i].label,
+                      entry.label,
                       textAlign: TextAlign.start,
                     ),
                   ),
@@ -319,7 +330,7 @@ class _OverflowMenu extends StatelessWidget {
               ),
             ),
         ],
-        onSelected: (i) => entries[i].onPressed(),
+        onSelected: (entry) => entry.onPressed(),
       ),
     );
   }

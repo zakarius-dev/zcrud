@@ -1,0 +1,82 @@
+/// Barrel d'API publique de `zcrud_chat`.
+///
+/// CHAT-2 — le **contrôleur de conversation** Flutter-native :
+/// - `ZChatController` : tranches `ValueListenable` **granulaires** (composer,
+///   messages, texte en cours **par requête**, progression **par requête**,
+///   échec typé, annonce a11y), **un** jeton `ZChatRequestToken` **par
+///   requête**, reprise d'un flux interrompu **sous la même identité** (aucun
+///   rejeu du tour), et **un seul point d'entrée** pour tous les verbes
+///   (`runAction`) — l'invariant « un verbe = un seul site d'appel ».
+/// - `ZChatPhase` / `ZChatStreamProgress` : progression **grossière** d'une
+///   requête, volontairement séparée du texte à haute fréquence (SM-1).
+/// - `ZChatConfirm` / `ZChatRequestIdFactory` / `ZChatRequestBuilder` : les
+///   seams d'hôte (dialogue de confirmation, fabrique d'identité, construction
+///   de la requête). Aucun libellé, aucune couleur, aucun prompt ici
+///   (AD-11/AD-12/FR-26).
+///
+/// CHAT-3 — le **rendu neutre de conversation** :
+/// - `ZChatRenderer` : le **port de rendu**, sur le patron strict de
+///   `ZListRenderer`/`ZReorderRenderer` (AD-8/AD-57). `null` = « garde le rendu
+///   neutre » — la sémantique de `zResolveGradient`.
+/// - `ZChatRendererScope` / `zResolveChatBlock` : l'injection et la **chaîne
+///   totale** `seam hôte → null`, qui ne lève jamais (AD-10).
+/// - `ZChatConversationView` / `ZChatMessageTile` / `ZChatBlockView` : le rendu
+///   **par défaut, à ZÉRO dépendance tierce** — `ListView.builder`, région live
+///   a11y, dépli **inline** réel, libellés résolus par `ZcrudLabels`, tokens de
+///   `ZcrudTheme`. Le rendu riche (Markdown/LaTeX de `zcrud_markdown`, vue
+///   Syncfusion du lot C6) s'y branche **par la couture**, sans que ce package
+///   ne dépende ni de Quill ni de Syncfusion.
+///
+/// Dépend de `zcrud_chat_kernel` (domaine du chat) et `zcrud_core`
+/// (`ZResult`/`ZFailure`, `ZcrudTheme`, `label`) — arêtes SORTANTES seules,
+/// graphe ACYCLIQUE, CORE OUT = 0. ⛔ AUCUN gestionnaire d'état (AD-2/AD-15),
+/// ⛔ AUCUNE dépendance tierce (AD-57).
+///
+/// API publique = ce barrel ; implémentation sous `lib/src/`.
+/// CHAT-5 — **pièces jointes** et **export agrégé** :
+/// - `ZChatAttachmentController` : le contrôleur de lex
+///   (`chat_attachment_controller.dart`) PORTÉ — mêmes bornes, même ordre de
+///   validation — en `ChangeNotifier` + tranches `ValueListenable`, avec
+///   `ZResult` partout (AD-5) et `ZChatAttachment` du **kernel** câblé en
+///   sortie de téléversement (aucun modèle concurrent).
+/// - `ZChatAttachmentPicker` / `ZChatAttachmentUploader` : les coutures qui
+///   tiennent `image_picker`/`file_picker` et le transport HORS du socle
+///   (AD-57). Sans elles, le chat reste fonctionnel — on ne peut simplement pas
+///   joindre de fichier.
+/// - `ZChatExportService` : le service de lex
+///   (`chat_export_service_impl.dart`, déjà conforme `Either`/AD-5) PORTÉ, avec
+///   l'**agrégat de toute la conversation** qu'IFFD vise
+///   (`chatbot_conversation_screen.dart:4441`). Les quatre formats TEXTUELS
+///   sont produits ici, sans aucune dépendance.
+/// - `ZChatPdfComposer` / `ZChatExportSink` : les coutures du PDF et de la
+///   destination système. 🔴 **`ZPdfShareService` (`zcrud_export_ui`) n'est pas
+///   dupliqué** — il est CÂBLÉ par l'implémentation d'hôte de `ZChatExportSink` ;
+///   en dépendre en dur ferait entrer `printing` **et** Syncfusion dans ce
+///   package (AD-1/AD-57).
+/// - `ZChatAttachmentStrip` : le rendu neutre des pièces en attente — cible
+///   ≥ 48 dp, variantes directionnelles, `Semantics` (AD-13).
+library;
+
+export 'src/presentation/attachment/z_chat_attachment_controller.dart';
+export 'src/presentation/attachment/z_chat_attachment_failure.dart';
+export 'src/presentation/attachment/z_chat_attachment_ports.dart';
+export 'src/presentation/attachment/z_pending_attachment.dart';
+export 'src/presentation/export/z_chat_export_format.dart';
+export 'src/presentation/export/z_chat_export_ports.dart';
+export 'src/presentation/export/z_chat_export_result.dart';
+export 'src/presentation/export/z_chat_export_service.dart';
+export 'src/presentation/render/z_chat_accessible_text_scope.dart';
+export 'src/presentation/render/z_chat_render_request.dart';
+export 'src/presentation/render/z_chat_renderer.dart';
+export 'src/presentation/render/z_chat_renderer_scope.dart';
+export 'src/presentation/render/z_chat_seam_failure.dart';
+export 'src/presentation/render/z_chat_shell_render_request.dart';
+export 'src/presentation/render/z_chat_shell_renderer.dart';
+export 'src/presentation/render/z_chat_shell_renderer_scope.dart';
+export 'src/presentation/view/z_chat_attachment_strip.dart';
+export 'src/presentation/view/z_chat_block_view.dart';
+export 'src/presentation/view/z_chat_conversation_view.dart';
+export 'src/presentation/view/z_chat_labels.dart';
+export 'src/presentation/view/z_chat_message_tile.dart';
+export 'src/presentation/z_chat_controller.dart';
+export 'src/presentation/z_chat_stream_progress.dart';

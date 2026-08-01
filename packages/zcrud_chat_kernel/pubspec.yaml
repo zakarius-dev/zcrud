@@ -1,0 +1,51 @@
+# zcrud_chat_kernel — membre du workspace zcrud (resolution: workspace).
+# Noyau de conversation IA (CHAT-0r) : source UNIQUE du modèle neutre de chat
+# (`ZChatConversation`, `ZChatMessage`, blocs de contenu, sources, suggestions,
+# quotas) et du contrat d'ACTION de message (CHAT-0b : intentions scellées +
+# répartiteur UNIQUE).
+#
+# 🔴 POURQUOI CE PACKAGE EXISTE (CHAT-0r) — le domaine chat vivait dans
+# `zcrud_core`, que 30 packages sur 31 tirent : DODLP et DLCFTI, qui n'ont AUCUN
+# usage du chat, en portaient tout le poids (18 fichiers, 3863 lignes). C'est
+# aussi le patron du dépôt : AUCUN domaine métier ne vit dans le cœur
+# (`ZFlashcard`→`zcrud_flashcard`, `ZStudyFolder`→`zcrud_study_kernel`,
+# `ZSmartNote`→`zcrud_note`, `ZExam`→`zcrud_exam`). Le `domain/` du cœur ne porte
+# que des mécanismes TRANSVERSES.
+name: zcrud_chat_kernel
+description: "Neutral AI conversation kernel for zcrud: ZChatConversation, ZChatMessage, content blocks, sources, suggestions, quotas and the sealed message-action contract. Depends only on zcrud_core."
+version: 0.30.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_kernel
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - conversation
+  - assistant
+  - crud
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1/AD-17, graphe acyclique).
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+# UNE SEULE arête sortante : `zcrud_core` (surface PURE-DART
+# `package:zcrud_core/domain.dart` — aucun SDK Flutter, aucune dép lourde).
+# JAMAIS l'inverse : `zcrud_core` garde CORE OUT = 0 (graph_proof).
+#
+# ⚠️ PAS de `zcrud_annotations` / `zcrud_generator` (contrairement à
+# `zcrud_study_kernel`) : la (dé)sérialisation du modèle de chat est ÉCRITE À LA
+# MAIN (décision CHAT-0/D1, gardée par `test/z_chat_naming_guard_test.dart`) —
+# aucun `part`, aucun `.g.dart`, donc aucune toolchain codegen à tirer.
+# ⚠️ PAS de `dartz` en direct : `Either`/`Left`/`Right`/`Unit`/`unit` sont
+# RÉEXPORTÉS par `package:zcrud_core/domain.dart` (une dépendance de moins).
+dependencies:
+  zcrud_core: ^0.30.0
+
+# Package PUR-DART (aucun `flutter:` ici) : sa suite tourne sous `dart test`,
+# comme `zcrud_study_kernel` — même convention, même runner (`melos run
+# test:dart` le route automatiquement).
+dev_dependencies:
+  test: ^1.25.0

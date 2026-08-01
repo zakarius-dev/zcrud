@@ -1000,12 +1000,16 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       // `null` ⇒ ABSENT : le 1er ne remonte pas, le dernier ne descend pas.
       ZItemAction(
         kind: ZItemActionKind.custom,
+        // Identité PARTAGÉE (CHAT-4b) : un geste que d'autres écrans exposent
+        // aussi doit porter le MÊME identifiant, pas un `custom` anonyme.
+        id: ZMenuEntryIds.moveUp,
         label: labels.moveUpAction,
         icon: Icons.arrow_upward,
         onSelected: _moveCallback(card, visible, reorderable: reorderable, up: true),
       ),
       ZItemAction(
         kind: ZItemActionKind.custom,
+        id: ZMenuEntryIds.moveDown,
         label: labels.moveDownAction,
         icon: Icons.arrow_downward,
         onSelected:
@@ -1016,6 +1020,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       // `if (kEnableAi)`, jamais un booléen local.
       ZItemAction(
         kind: ZItemActionKind.custom,
+        id: 'generateWithAi',
         label: labels.generateWithAiAction,
         icon: Icons.auto_awesome,
         onSelected: availability.gate(

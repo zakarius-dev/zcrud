@@ -1,0 +1,73 @@
+# zcrud_chat_syncfusion — membre du workspace zcrud (resolution: workspace).
+#
+# CHAT-6 : le satellite d'ADAPTATION du chat. Il porte DEUX frontières, et
+# c'est délibérément le MÊME paquet :
+#
+#   1. `syncfusion_flutter_chat` — la SEULE arête « Syncfusion chat » du graphe
+#      (AD-57). `SfAIAssistView` ne s'implémente pas derrière le port
+#      `ZChatRenderer` de `zcrud_chat` : c'est une COQUILLE de conversation, pas
+#      un rendu de bloc. Elle vit donc ici, et `zcrud_chat` reste
+#      zéro-dépendance.
+#   2. La NORMALISATION du flux TEXTUEL d'IFFD (`###LINE###`, sentinelles
+#      pseudo-XML `<RAG_THINKING>`/`<ROUND n>`/`<RAG_ITERATION_n>`/…, erreurs
+#      écrites en clair avec emoji dans le canal de réponse) vers les événements
+#      TYPÉS de `zcrud_chat_kernel`.
+#
+# 🔴 POURQUOI LA NORMALISATION EST ICI ET PAS DANS LE NOYAU
+# IFFD n'a pas de contrat d'événements : il a un FLUX DE TEXTE. Vérifié dans son
+# backend (`smart_learn_cloudfunctions`) : `tools.py:42` encode TOUS les sauts de
+# ligne en `###LINE###` ; `shared/layers/orchestrator/*.py` insère des balises
+# pseudo-XML dans le corps même du message ; `synthesizer_executor.py:225`,
+# `evaluator_executor.py:151`, `supervisor_executor.py:118` écrivent
+# `⚠️ Erreur <Agent> : <exception>` DANS LE MÊME CANAL que la réponse. Faire
+# entrer ces compensations dans `zcrud_chat_kernel` ou `zcrud_chat` les ferait
+# porter par DODLP et DLCFTI, qui n'en ont aucun usage — exactement l'erreur que
+# CHAT-0r vient de corriger en relocalisant le domaine du chat hors de
+# `zcrud_core`. Le décodage vit donc dans l'ADAPTATEUR, et lui seul.
+#
+# ⛔ AUCUN client HTTP, AUCUN SDK IA : le transport (Dio, SSE, `LineSplitter`)
+#    reste CÔTÉ APP (AD-11/AD-12). Ce paquet consomme un `Stream<String>` déjà
+#    décadré, fourni par l'hôte.
+# ⛔ AUCUN gestionnaire d'état (AD-2/AD-15) — garde `z_sf_purity_test.dart`.
+# ⛔ AUCUNE clé/licence Syncfusion committée : l'enregistrement de licence est
+#    une config plateforme de l'app hôte.
+name: zcrud_chat_syncfusion
+description: "Syncfusion AI AssistView shell and IFFD textual-stream normalization for zcrud chat, isolated behind the neutral ZChatRenderer seam and the typed ZChatStreamPort."
+version: 0.30.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_syncfusion
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - assistant
+  - syncfusion
+  - streaming
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe ACYCLIQUE, CORE OUT=0) :
+#   zcrud_chat_syncfusion -> zcrud_chat -> zcrud_chat_kernel -> zcrud_core
+# Aucune arête entrante : ce paquet est un PUITS (personne ne dépend de lui).
+dependencies:
+  flutter:
+    sdk: flutter
+  # Stack Syncfusion de l'architecture (^34.1.x — bump coordonné avec
+  # `zcrud_list`/`zcrud_export`, qui partagent `syncfusion_flutter_core`).
+  # SEULE arête `syncfusion_flutter_chat` du graphe (AD-57).
+  syncfusion_flutter_chat: ^34.1.31
+  zcrud_chat: ^0.30.0
+  zcrud_chat_kernel: ^0.30.0
+  zcrud_core: ^0.30.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# `SfAIAssistView` utilise les icônes Material (bouton d'envoi, barre d'outils) :
+# requis pour un rendu correct côté app hôte.
+flutter:
+  uses-material-design: true

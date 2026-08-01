@@ -39,6 +39,32 @@ workspace:
   # zcrud_core + zcrud_annotations (PUR-DART, aucun import kernel — folderId est
   # une clé NEUTRE). ACYCLIQUE ; CORE OUT=0 ; aucune arête entrante (NFR-S10).
   - packages/zcrud_exam
+  # CHAT-0r : noyau de conversation IA (`ZChatConversation`/`ZChatMessage`/
+  # `ZContentBlock` + contrat d'ACTION de message), RELOCALISÉ hors de
+  # `zcrud_core` — 30 packages sur 31 dépendent du cœur et en portaient les 3863
+  # lignes sans usage (DODLP, DLCFTI). Aligne le chat sur le patron du dépôt :
+  # aucun domaine MÉTIER dans le cœur. Dépend UNIQUEMENT de zcrud_core (PUR-DART,
+  # aucun codegen : sérialisation écrite à la main). ACYCLIQUE ; CORE OUT=0 ;
+  # aucune arête entrante (PUITS du graphe).
+  - packages/zcrud_chat_kernel
+  # CHAT-2 : contrôleur de conversation `ZChatController` (ChangeNotifier +
+  # tranches ValueListenable granulaires, un jeton PAR requête, reprise sans
+  # rejeu, UN SEUL point d'entrée pour tous les verbes). Ce que `zcrud_study`
+  # est à `zcrud_study_kernel`, `zcrud_chat` l'est à `zcrud_chat_kernel` : le
+  # kernel reste PUR-DART (un ChangeNotifier vient de `flutter/foundation`).
+  # Dépend UNIQUEMENT de zcrud_core + zcrud_chat_kernel (arêtes SORTANTES
+  # seules) ; ACYCLIQUE ; CORE OUT=0 ; aucune dépendance TIERCE. Package
+  # Flutter → `flutter test`.
+  - packages/zcrud_chat
+  # CHAT-6 : satellite d'ADAPTATION du chat (AD-57). Porte la SEULE arête
+  # `syncfusion_flutter_chat` du graphe (coquille `SfAIAssistView`, que le port
+  # `ZChatRenderer` — un rendu de BLOC — ne peut pas exprimer) ET la
+  # normalisation du flux TEXTUEL d'IFFD (`###LINE###`, sentinelles pseudo-XML,
+  # erreurs en clair dans le canal de réponse) vers les événements TYPÉS du
+  # kernel. Ces compensations restent HORS du socle : DODLP et DLCFTI ne les
+  # portent pas. Arêtes SORTANTES : zcrud_chat + zcrud_chat_kernel + zcrud_core.
+  # ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe (aucune arête entrante).
+  - packages/zcrud_chat_syncfusion
   # ES-4.2 : runtime de session SRS en CYCLE (`ZStudySessionEngine` :
   # ChangeNotifier pur + reducer PUR, réinsertion +2/+4 sur lapse). Écrit le SRS
   # UNIQUEMENT via un seam injecté (= `reviewCard`, voie unique AD-9/AD-23) —
@@ -119,6 +145,15 @@ workspace:
   # Monorepo et apps consommatrices résolvent ainsi EXACTEMENT le même code.
   # Confinement toujours gardé par
   # packages/zcrud_select/test/z_select_confinement_test.dart.
+  # CHAT-4 : couture de MENU contextuel (`ZMenuRenderer`) — le déclencheur ET le
+  # contenu sont découplés du socle ; repli SDK zéro-dépendance (AD-57).
+  # Foyer NEUTRE et ATTEIGNABLE que `ZItemActionsMenu` (`zcrud_study`, satellite
+  # MÉTIER) ne pouvait pas être : `zcrud_chat` ne peut pas dépendre du domaine
+  # d'étude, et `zcrud_core` ne peut dépendre d'aucun satellite (CORE OUT=0 —
+  # cf. la duplication déjà ASSUMÉE dans `z_batch_action.dart`).
+  # Dépend UNIQUEMENT de zcrud_core (arête SORTANTE seule) ; ACYCLIQUE ;
+  # CORE OUT=0 ; aucune arête entrante (PUITS du graphe) ; aucune dép. TIERCE.
+  - packages/zcrud_menu
   - packages/zcrud_riverpod
   - packages/zcrud_get
   - packages/zcrud_provider

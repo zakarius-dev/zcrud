@@ -1,0 +1,72 @@
+# zcrud_menu — membre du workspace zcrud (resolution: workspace).
+#
+# CHAT-4 : **couture de menu contextuel** — le DÉCLENCHEUR et le CONTENU sont
+# découplés du socle. L'hôte branche SON package de menus derrière
+# `ZMenuRenderer` ; sans injection, le repli `ZDefaultMenuRenderer`
+# (Flutter/Material seul, ZÉRO dépendance tierce — AD-57) reste pleinement
+# fonctionnel.
+#
+# 🔴 POURQUOI CE PACKAGE EXISTE PLUTÔT QU'UNE EXTENSION DE L'EXISTANT
+# Le dépôt portait DÉJÀ trois modèles d'action déclarée en données :
+#   * `ZItemAction`/`ZItemActionsMenu` — packages/zcrud_study (satellite MÉTIER) ;
+#   * `ZBatchAction`/`ZBatchActionBar` — packages/zcrud_core (+ `_OverflowMenu`) ;
+#   * `ZAppBarAction`                 — packages/zcrud_ui_kit (+ débordement).
+# Trois faits mesurés sur disque interdisent de s'y greffer :
+#   1. `ZItemActionsMenu` vit dans `zcrud_study`. `zcrud_chat` (CHAT-2) ne peut
+#      PAS en dépendre sans tirer tout le domaine d'étude — d'où la dartdoc
+#      NORMATIVE de `z_chat_action.dart` (« types de rendu RÉUTILISÉS, pas
+#      dupliqués ») qui, faute de foyer atteignable, n'a AUCUNE cible.
+#      `zcrud_core` ne peut pas non plus l'accueillir : `z_batch_action.dart`
+#      documente déjà que l'arête core→study serait un cycle AD-1.
+#   2. le DÉCLENCHEUR est figé : les trois implémentations construisent en dur
+#      un `PopupMenuButton` Material. Le slot `menuBuilder` de `ZItemActionsMenu`
+#      n'ouvre QUE le contenu À L'INTÉRIEUR de la surface Material — ni le
+#      geste, ni la surface, ni le placement ne sont substituables.
+#   3. l'état « présente mais DÉSACTIVÉE avec son motif » est INEXPRIMABLE
+#      (`onSelected == null ⇒ ABSENTE`, règle absolue). C'est exactement ce que
+#      lex_douane réécrit à la main dans
+#      `packages/lex_ui/lib/presentation/widgets/study/study_item_actions_menu.dart`
+#      (`enabled: available` + `_DeferredEntry(label, hint)`, `enabled:
+#      canMoveUp/canMoveDown`) : la couture manquante, mesurée chez l'hôte.
+#
+# ⚠️ Ce que ce package NE résout PAS : `zcrud_core` ne pourra JAMAIS en dépendre
+# (CORE OUT = 0), donc le menu de débordement de `ZBatchActionBar` reste, par
+# construction, une implémentation distincte.
+#
+# AD-1 : arête SORTANTE unique vers `zcrud_core`, jamais l'inverse. Aucune arête
+# entrante (PUITS du graphe à cette date).
+name: zcrud_menu
+description: "Decoupled contextual menus for zcrud: ZMenuRenderer lets a host plug its own menu package behind a neutral seam, with a zero-third-party Material fallback, disabled-with-reason entries and injected trigger and content."
+version: 0.30.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_menu
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - flutter
+  - menu
+  - context-menu
+  - actions
+  - ui
+
+environment:
+  sdk: ^3.12.2
+
+# ⛔ AUCUNE dépendance TIERCE (AD-57) : le repli par défaut n'utilise que le SDK
+#    Flutter. Un package de menus de l'écosystème se branche via `ZMenuRenderer`,
+#    dans un satellite adaptateur SÉPARÉ — jamais ici.
+# ⛔ AUCUN gestionnaire d'état (`flutter_riverpod`/`get`/`provider`) — AD-2/AD-15,
+#    garde `test/z_menu_purity_test.dart` (grep NÉGATIF outillé).
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_core: ^0.30.0
+
+# Package Flutter → tests via `flutter test`, DEPUIS CE DOSSIER. Aucun codegen
+# (aucun `@ZcrudModel` : une entrée de menu est une donnée de PRÉSENTATION, jamais
+# persistée) ⇒ pas de `*.g.dart`, gate `codegen-distribution` sans objet.
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
