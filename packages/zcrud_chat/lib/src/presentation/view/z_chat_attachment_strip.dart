@@ -23,6 +23,8 @@
 /// budget et le cache pour le faire (et peut le brancher par [thumbnailBuilder]).
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -55,8 +57,22 @@ class ZChatAttachmentStrip extends StatelessWidget {
   /// Couture d'aperçu, ou `null` (aucune vignette).
   final ZChatAttachmentThumbnailBuilder? thumbnailBuilder;
 
-  /// Hauteur de la bande.
+  /// Hauteur de la bande **demandée** par l'hôte.
+  ///
+  /// 🔴 Lire [effectiveHeight], jamais ce champ, pour dimensionner : une
+  /// hauteur inférieure à `kZChatMinTapTarget` **écraserait la cible tactile**
+  /// (AD-13). Le `ConstrainedBox` du bouton ne protège de rien ici : sous une
+  /// contrainte de hauteur **serrée** venue du parent, il est écrasé en
+  /// silence — mesuré, `height: 30` rendait une cible de **30 dp** sans
+  /// exception ni avertissement.
   final double height;
+
+  /// Hauteur réellement appliquée : jamais sous le plancher tactile.
+  ///
+  /// Le plancher passe ainsi de l'ENFANT (qui ne peut pas être plus grand que
+  /// la place imposée — protocole de Flutter) au CONTENEUR, qui la décide.
+  /// Même remède que `ZMenuEntryTile.gridDelegate`.
+  double get effectiveHeight => math.max(height, kZChatMinTapTarget);
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +92,7 @@ class ZChatAttachmentStrip extends StatelessWidget {
               container: true,
               label: zChatLabel(context, kZChatLabelAttachments),
               child: SizedBox(
-                height: height,
+                height: effectiveHeight,
                 child: ListView.builder(
                   // 🔴 `.builder` — JAMAIS `ListView(children: [...])`.
                   scrollDirection: Axis.horizontal,

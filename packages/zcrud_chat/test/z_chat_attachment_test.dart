@@ -375,6 +375,46 @@ void main() {
       expect(size.width, greaterThanOrEqualTo(kZChatMinTapTarget));
     });
 
+    // 🔴 La garde ci-dessus était AVEUGLE, mesuré : avec le `ConstrainedBox`
+    // du bouton mis à `minHeight: 0`, elle restait VERTE — la hauteur venait
+    // du parent (`height`), jamais de notre plancher. Elle ne prouvait donc
+    // rien de ce qu'elle prétendait défendre.
+    //
+    // Ce qui protège réellement l'utilisateur est ici : une hauteur d'hôte
+    // SOUS le plancher ne doit pas écraser la cible. C'est le motif
+    // CR-IFFD-37 — une contrainte déclarée que le parent écrase en silence.
+    testWidgets(
+      '🔴 une hauteur d\'hôte SOUS le plancher n\'écrase pas la cible (AD-13)',
+      (WidgetTester tester) async {
+        final ZChatAttachmentController c = ZChatAttachmentController();
+        addTearDown(c.dispose);
+        c.add(_png(name: 'photo.png'));
+        await tester.pumpWidget(
+          harness(ZChatAttachmentStrip(controller: c, height: 30)),
+        );
+
+        final Size size = tester.getSize(find.byType(GestureDetector));
+        // Le plancher est la SEULE raison possible : 30 < 48 a été demandé.
+        expect(size.height, greaterThanOrEqualTo(kZChatMinTapTarget));
+        // Borne HAUTE : sans elle, un widget qui occuperait tout l'écran
+        // passerait pour conforme — le défaut mesuré à 600 dp ailleurs.
+        expect(size.height, lessThanOrEqualTo(96.0));
+      },
+    );
+
+    testWidgets('la hauteur demandée est honorée AU-DESSUS du plancher', (
+      WidgetTester tester,
+    ) async {
+      final ZChatAttachmentController c = ZChatAttachmentController();
+      addTearDown(c.dispose);
+      c.add(_png(name: 'photo.png'));
+      await tester.pumpWidget(
+        harness(ZChatAttachmentStrip(controller: c, height: 80)),
+      );
+      // Contrôle NÉGATIF : le plancher ne doit pas écraser une demande valide.
+      expect(tester.getSize(find.byType(GestureDetector)).height, 80.0);
+    });
+
     testWidgets('RTL : la bande s\'ordonne à l\'envers, sans code miroir', (
       WidgetTester tester,
     ) async {
