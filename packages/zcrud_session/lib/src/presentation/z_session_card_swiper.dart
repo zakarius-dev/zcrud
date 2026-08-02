@@ -29,6 +29,15 @@
 ///   [_queueGeneration] existe précisément pour fermer.
 /// - **AC9 n'en demande pas** : « l'apprenant veut **avancer** dans la pile ».
 ///
+/// ⚠️ **Ce que [ZSessionCardSwiper.indexController] ne remet PAS en cause**
+/// (CR-IFFD-38) : le widget n'expose toujours **aucun bouton** de retour, et
+/// aucune de ses voies internes ne recule. Ce qui change, c'est qu'un hôte qui
+/// possède **déjà** une barre de navigation externe (flèches, saut direct à un
+/// index) cesse d'obtenir des **boutons morts** : il commande la carte courante
+/// par un [ZIndexController], et le composant lit/écrit **chez lui**. La
+/// synchronisation avec le `cursor` d'un moteur (qui, lui, ne recule pas) reste
+/// la charge de cet hôte — c'est **sa** commande, pas une voie du widget.
+///
 /// 🚫 Un bouton `previousButtonKey` étiqueté « carte précédente » a existé ici
 /// et **a été RETIRÉ** : câblé sur `swipe(left)`, il **avançait** (mesuré :
 /// index 0→1→**2**). Il ne mentait pas à n'importe qui — il mentait à
@@ -153,6 +162,7 @@ class ZSessionCardSwiper extends StatefulWidget {
     this.progressStyle = ZSessionProgressStyle.dots,
     this.qualityOf,
     this.swipeDuration = const Duration(milliseconds: 200),
+    this.indexController,
     super.key,
   });
 
@@ -182,6 +192,29 @@ class ZSessionCardSwiper extends StatefulWidget {
 
   /// Durée d'animation de swipe (`Duration.zero` sous Reduce Motion).
   final Duration swipeDuration;
+
+  /// Pilote **optionnel** de la carte courante (CR-IFFD-38, patron
+  /// [ZDisplayStateBinding]).
+  ///
+  /// - `null` (défaut) ⇒ l'index vit **en interne**, comportement et rendu
+  ///   **strictement inchangés** ;
+  /// - non-null ⇒ **le contrôleur EST la source de vérité** : le composant n'en
+  ///   garde **aucun miroir** (il lit et écrit chez l'hôte), de sorte que deux
+  ///   états ne peuvent pas diverger. Une écriture de l'hôte (`value = 3`,
+  ///   `next()`, `previous()`) **déplace réellement la carte de devant** via
+  ///   `CardSwiperController.moveTo` — c'est ce qui distingue ce paramètre d'un
+  ///   passe-plat inerte.
+  ///
+  /// **AD-10 — commande hors bornes** : une valeur `< 0` ou `>= queue.length`
+  /// est **ramenée dans les bornes ET RÉÉCRITE dans le contrôleur** (jamais
+  /// simplement ignorée) : ignorer laisserait le contrôleur de l'hôte affirmer
+  /// un index que rien n'affiche — exactement la divergence que le contrat
+  /// interdit.
+  ///
+  /// [onIndexChanged] reste émis, quelle que soit l'origine (geste, bouton
+  /// d'accessibilité, **ou commande de l'hôte**) — la notification sortante
+  /// n'est pas remplacée par le pilote, elle lui survit (clause 3).
+  final ZIndexController? indexController;
 
   /// Clé du bouton de navigation **suivant** (alternative accessible, AC9).
   ///
@@ -217,8 +250,28 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// (`dispose()` est `Future<void>` et le recréer par frame fuirait).
   late final CardSwiperController _controller = CardSwiperController();
 
-  /// Index de la carte courante (source de vérité de l'indicateur).
-  int _index = 0;
+  /// Carte courante — **liaison** CR-IFFD-38, jamais un miroir.
+  ///
+  /// Sans [ZSessionCardSwiper.indexController], l'état vit dans le
+  /// `ValueNotifier` interne de la liaison (comportement d'origine). Avec un
+  /// contrôleur, **toute** lecture et **toute** écriture le traversent : il n'y
+  /// a qu'un seul état, donc rien qui puisse diverger.
+  late final ZDisplayStateBinding<int> _current;
+
+  /// Index sur lequel se trouve **le paquet** (`CardSwiper._currentIndex`).
+  ///
+  /// ⚠️ Ce n'est **pas** un miroir de l'état d'affichage : c'est notre
+  /// connaissance du curseur **interne d'une dépendance tierce**, que rien
+  /// n'expose en lecture. Il sert à décider si une nouvelle valeur vient du
+  /// paquet (rien à faire) ou de l'hôte (le paquet doit être déplacé) — sans
+  /// lui, chaque swipe déclencherait un `moveTo` redondant sur l'index où le
+  /// paquet se trouve déjà.
+  int _swiperIndex = 0;
+
+  /// Vrai pendant la remise à zéro consécutive à un changement de file : la
+  /// réconciliation et l'émission sont alors **suspendues** (avant CR-IFFD-38,
+  /// ce reset n'émettait rien — il ne doit pas se mettre à émettre).
+  bool _resettingQueue = false;
 
   /// 🔒 **Verrou ONE-SHOT de [ZSessionCardSwiper.onIndexChanged]** : le dernier
   /// index réellement émis — dédoublonne toute ré-émission d'un même index.
@@ -281,15 +334,52 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   int _queueGeneration = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _current = ZDisplayStateBinding<int>(consumer: this, initialValue: 0)
+      ..bind(widget.indexController);
+    // 🔒 VOIE UNIQUE de réaction : geste du paquet, bouton d'accessibilité ET
+    // commande de l'hôte convergent ici. Deux voies feraient diverger le
+    // comptage émis de la carte affichée.
+    _current.listenable.addListener(_onCurrentChanged);
+    // Un contrôleur d'hôte peut arriver DÉJÀ positionné (reprise de session).
+    _swiperIndex = _clampIndex(_current.value);
+    if (_swiperIndex != _current.value) {
+      // Commande initiale hors bornes : corrigée À LA SOURCE, mais en fin de
+      // frame — écrire ici notifierait l'hôte pendant son propre `build`.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _current.value = _swiperIndex;
+      });
+    }
+  }
+
+  /// Ramène [index] dans les bornes de la file (AD-10) — file vide ⇒ `0`.
+  int _clampIndex(int index) {
+    final int last = widget.queue.length - 1;
+    if (last < 0) return 0;
+    return index < 0 ? 0 : (index > last ? last : index);
+  }
+
+  @override
   void didUpdateWidget(ZSessionCardSwiper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // L'hôte a le droit de changer (ou de retirer) son pilote — sans quoi le
+    // composant resterait branché sur l'ancien, muet pour le nouveau.
+    _current.bind(widget.indexController);
     // Invalidation UNIQUEMENT sur changement réel de la file : sinon le cache
     // rendrait une carte périmée (et un `identical` mensonger).
     if (!listEquals(oldWidget.queue, widget.queue)) {
       _cardCache.clear();
       _lastEmittedIndex = null;
       _stackEnded = false;
-      _index = 0;
+      _swiperIndex = 0;
+      // Écrit À LA SOURCE (donc chez l'hôte quand il pilote) : la file a
+      // changé, l'index 0 est le seul vrai. Suspendre la voie unique le temps
+      // de cette écriture préserve le comportement d'origine — ce reset
+      // n'émettait pas `onIndexChanged`, et ne doit pas se mettre à le faire.
+      _resettingQueue = true;
+      _current.value = 0;
+      _resettingQueue = false;
       // 🔑 Remonte le `CardSwiper` : sans cela son index interne survivrait à la
       // file (crash / indicateur menteur / cul-de-sac — cf. [_queueGeneration]).
       _queueGeneration++;
@@ -299,17 +389,47 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   @override
   void dispose() {
     _controller.dispose();
+    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // appartient pas (son propriétaire est un `State` de l'hôte).
+    _current.listenable.removeListener(_onCurrentChanged);
+    _current.dispose();
     super.dispose();
   }
 
-  /// Émission **UNIQUE** de l'avancée (arbitrage A6 : geste et bouton
-  /// d'accessibilité passent par **la même** voie — deux voies donneraient deux
-  /// comptages divergents).
+  /// Écrit l'avancée **à la source** (interne, ou contrôleur de l'hôte).
+  ///
+  /// Ne fait QUE écrire : la réconciliation du paquet et l'émission sont la
+  /// charge de [_onCurrentChanged], qui écoute la source. Émettre ici laisserait
+  /// **muet** le chemin qui ne passe pas par le composant (l'hôte écrivant dans
+  /// son contrôleur), et la promesse « émis à chaque avancée » ne vaudrait que
+  /// pour les chemins internes.
   void _emitIndexChanged(int index) {
-    if (_lastEmittedIndex == index) return; // 🔒 one-shot
-    _lastEmittedIndex = index;
-    if (mounted) setState(() => _index = index);
-    widget.onIndexChanged?.call(index);
+    _swiperIndex = index; // le paquet est DÉJÀ là : aucun `moveTo` à demander.
+    _current.value = index;
+  }
+
+  /// **Voie UNIQUE** de réaction à un changement de carte courante, d'où qu'il
+  /// vienne : swipe, bouton d'accessibilité, **ou commande de l'hôte**.
+  void _onCurrentChanged() {
+    if (_resettingQueue) return;
+    final int raw = _current.value;
+    final int clamped = _clampIndex(raw);
+    if (clamped != raw) {
+      // AD-10 — commande hors bornes : corrigée À LA SOURCE (ré-entrée avec la
+      // valeur valide). L'ignorer laisserait le contrôleur de l'hôte affirmer
+      // un index que rien n'affiche.
+      _current.value = clamped;
+      return;
+    }
+    if (clamped != _swiperIndex) {
+      // Origine HÔTE : le paquet ne bouge pas tout seul. Sans ce `moveTo`, le
+      // paramètre serait un passe-plat inerte — un bouton mort de plus.
+      _swiperIndex = clamped;
+      _controller.moveTo(clamped);
+    }
+    if (_lastEmittedIndex == clamped) return; // 🔒 one-shot
+    _lastEmittedIndex = clamped;
+    widget.onIndexChanged?.call(clamped);
   }
 
   /// `onSwipe` du paquet — **navigation SEULE**, et **SYNCHRONE** (AC12).
@@ -407,6 +527,11 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
             key: ValueKey<int>(_queueGeneration),
             controller: _controller,
             cardsCount: widget.queue.length,
+            // Un contrôleur d'hôte peut arriver DÉJÀ positionné : la première
+            // carte montée est alors la SIENNE, jamais l'index 0 (sans quoi
+            // l'affichage contredirait la source de vérité dès le montage).
+            // Borné : `assert(initialIndex < cardsCount)` dans le ctor du paquet.
+            initialIndex: _clampIndex(_swiperIndex),
             // 🔴 défaut `2` ⇒ `assert(numberOfCardsDisplayed <= cardsCount)`
             // ⇒ CRASH sur une file d'UNE carte — une session parfaitement
             // normale.
@@ -457,12 +582,19 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   Widget _navigationRow(BuildContext context, ZcrudTheme theme) => Row(
         children: <Widget>[
           Expanded(
-            child: ZSessionProgressIndicator(
-              total: widget.queue.length,
-              currentIndex: _index,
-              passThreshold: widget.passThreshold,
-              style: widget.progressStyle,
-              qualityOf: widget.qualityOf,
+            // AD-2/SM-1 — l'avancée ne reconstruit QUE l'indicateur : la valeur
+            // est lue **à la source** (interne ou contrôleur de l'hôte), jamais
+            // dans une copie locale rafraîchie par `setState`.
+            child: ValueListenableBuilder<int>(
+              valueListenable: _current.listenable,
+              builder: (BuildContext context, int currentIndex, Widget? _) =>
+                  ZSessionProgressIndicator(
+                total: widget.queue.length,
+                currentIndex: currentIndex,
+                passThreshold: widget.passThreshold,
+                style: widget.progressStyle,
+                qualityOf: widget.qualityOf,
+              ),
             ),
           ),
           _NavButton(

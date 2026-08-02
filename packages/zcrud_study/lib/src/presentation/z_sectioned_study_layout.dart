@@ -20,7 +20,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZcrudScope, ZcrudTheme, ZReorderRenderRequest;
+    show
+        ZcrudScope,
+        ZcrudTheme,
+        ZDisplayStateBinding,
+        ZReorderRenderRequest;
 import 'package:zcrud_responsive/zcrud_responsive.dart'
     show ZAdaptiveGrid, ZDefaultReorderRenderer;
 
@@ -849,12 +853,20 @@ class _CountBadge extends StatelessWidget {
   }
 }
 
-/// Corps repliable d'une section (CR-IFFD-10 §1) — **état LOCAL délibéré**.
+/// Corps repliable d'une section (CR-IFFD-10 §1) — **état local par DÉFAUT**,
+/// **commandable par l'hôte** quand la spec porte un
+/// [ZStudyToolsSectionSpec.expandController] (CR-IFFD-38).
 ///
 /// `StatefulWidget` sous la frontière keyée `ValueKey('section:$id')` : basculer
 /// le repli ne déclenche AUCUN `setState` au niveau page/section et ne
 /// reconstruit NI les autres sections NI la page (SM-1/AD-2), exactement comme
 /// l'ordre optimiste de `_ReorderableItems`.
+///
+/// 🔴 Depuis CR-IFFD-38, le repli n'est même plus reconstruit par un `setState`
+/// **de section** : il est lu par un `ValueListenableBuilder` branché sur la
+/// liaison. Et quand l'hôte pilote, la valeur est lue **et écrite chez lui** —
+/// la section n'en garde aucune copie, donc rien ne peut diverger (le chevron
+/// et le second chemin de l'hôte commandent le même et unique état).
 class _CollapsibleBody extends StatefulWidget {
   const _CollapsibleBody({
     required this.spec,
@@ -871,14 +883,53 @@ class _CollapsibleBody extends StatefulWidget {
 }
 
 class _CollapsibleBodyState extends State<_CollapsibleBody> {
-  late bool _expanded = widget.spec.initiallyExpanded;
+  /// Liaison CR-IFFD-38 — état interne par défaut, contrôleur de l'hôte s'il
+  /// y en a un. **Jamais un miroir** : quand l'hôte pilote, lecture et écriture
+  /// le traversent (cf. `ZDisplayStateBinding`).
+  late final ZDisplayStateBinding<bool> _expanded;
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    _expanded = ZDisplayStateBinding<bool>(
+      consumer: this,
+      initialValue: widget.spec.initiallyExpanded,
+    )..bind(widget.spec.expandController);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CollapsibleBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // L'hôte a le droit de changer (ou de retirer) son pilote : sans cela la
+    // section resterait branchée sur l'ancien, muette pour le nouveau.
+    _expanded.bind(widget.spec.expandController);
+  }
+
+  @override
+  void dispose() {
+    // ⚠️ Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas.
+    _expanded.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // AD-2/SM-1 — SEULE la tranche de repli se reconstruit : ni la page,
+          // ni les autres sections, ni le corps déjà construit.
+          ValueListenableBuilder<bool>(
+            valueListenable: _expanded.listenable,
+            builder: _buildCollapse,
+          ),
+        ],
+      );
+
+  Widget _buildCollapse(BuildContext context, bool expanded, Widget? _) {
     // CR-IFFD-11 §3 — libellés INJECTÉS (repli FR conservé). C'était le seul
     // libellé en dur de ce layout : un hôte non francophone obtenait un
     // `semanticLabel` français sur un contrôle d'accessibilité (AD-13).
-    final label = _expanded
+    final label = expanded
         ? (widget.spec.collapseSemanticLabel ?? 'Replier')
         : (widget.spec.expandSemanticLabel ?? 'Déplier');
     return Column(
@@ -893,10 +944,12 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
             ),
             child: IconButton(
               key: ValueKey<String>('section:${widget.spec.id}:collapse'),
-              onPressed: () => setState(() => _expanded = !_expanded),
+              // Écrit À LA SOURCE : avec un contrôleur, le chevron commande
+              // l'état de l'hôte — les deux chemins n'en font qu'un.
+              onPressed: () => _expanded.value = !_expanded.value,
               tooltip: label,
               icon: Icon(
-                _expanded ? Icons.expand_less : Icons.expand_more,
+                expanded ? Icons.expand_less : Icons.expand_more,
                 semanticLabel: '$label ${widget.spec.title}',
               ),
             ),
@@ -910,7 +963,7 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
         // l'état final sans frame intermédiaire : une seule branche de rendu,
         // jamais deux arbres divergents (AD-13).
         _AnimatedCollapse(
-          expanded: _expanded,
+          expanded: expanded,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

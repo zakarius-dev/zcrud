@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZToggleController;
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
@@ -53,6 +54,7 @@ class ZStudyToolsSectionSpec {
     this.secondaryAction,
     this.secondaryActionIcon,
     this.secondaryActionSemanticLabel,
+    this.expandController,
   })  : assert(itemCount >= 0, 'itemCount ne peut être négatif'),
         // AD-4/AD-10 — cohérence de développement (assert, jamais de throw
         // runtime persistant) : une section réordonnable ([onReorder] non-null)
@@ -323,4 +325,35 @@ class ZStudyToolsSectionSpec {
 
   /// Libellé accessible de [secondaryAction] (a11y AD-13 — repli sur [title]).
   final String? secondaryActionSemanticLabel;
+
+  /// Pilote **optionnel** du déplié/replié de CETTE section (CR-IFFD-38, patron
+  /// `ZDisplayState` de `zcrud_core`).
+  ///
+  /// - `null` (défaut) ⇒ l'état de repli vit **localement** dans la section,
+  ///   initialisé par [initiallyExpanded] : rendu et comportement **strictement
+  ///   inchangés** pour tout hôte qui ne renseigne pas ce slot ;
+  /// - non-null ⇒ **le contrôleur EST la source de vérité**. Le repli devient
+  ///   commandable depuis un **second chemin** (un en-tête cliquable, un
+  ///   sommaire externe, un « tout replier ») **et** depuis le chevron de la
+  ///   section — sans jamais deux états à synchroniser : la section ne garde
+  ///   aucun miroir. [initiallyExpanded] est alors **ignoré** (la valeur
+  ///   initiale appartient au contrôleur, seul propriétaire de l'état).
+  ///
+  /// 🔴 **POSSESSION — qui crée le contrôleur quand il y a N sections.**
+  /// L'hôte, **jamais** ce package. Une section est un **élément de liste** :
+  /// c'est le `State` qui construit la liste de specs qui possède les N
+  /// contrôleurs (un champ, une `Map<String, ZToggleController>` indexée par
+  /// [id], ou `initState`), avec `ZDisplayStateOwnerMixin` qui les libère et
+  /// **refuse** une création dans `build`. Faire créer les contrôleurs par le
+  /// layout aurait exigé de les créer là où les specs sont lues — c'est-à-dire
+  /// **dans `build`** : chaque rebuild aurait remplacé les instances, et la
+  /// commande de l'hôte serait devenue silencieusement inerte. C'est
+  /// exactement le défaut mesuré chez l'hôte, et le patron existe pour le
+  /// rendre impossible, pas pour l'industrialiser.
+  ///
+  /// ⚠️ Un contrôleur déclaré et **jamais passé** dans une spec rendue reste
+  /// détectable (`wasEverConsumed` — assert au `dispose` du mixin) : un
+  /// « tout replier » câblé sur un contrôleur orphelin ne peut pas passer pour
+  /// branché.
+  final ZToggleController? expandController;
 }
