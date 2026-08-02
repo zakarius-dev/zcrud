@@ -97,6 +97,7 @@ class ZFlashcardReviewCard extends StatefulWidget {
     this.questionTypeBadgeBuilder,
     this.instructionBanner,
     this.transitionDuration,
+    this.revealController,
     this.onRevealChanged,
     this.onEdit,
     this.onDelete,
@@ -132,7 +133,41 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// lui aussi absent, la durée historique de 250 ms est conservée.
   final Duration? transitionDuration;
 
+  /// Pilotage EXTERNE de la révélation — `null` ⇒ la carte se gouverne seule
+  /// (comportement historique, **strictement inchangé**).
+  ///
+  /// ## Pourquoi ce paramètre existe (CR-IFFD-38)
+  ///
+  /// [onRevealChanged] ne fait que **constater**. Un hôte qui possède un second
+  /// chemin de déclenchement — un bouton « Voir la réponse » à côté de la carte,
+  /// un bouton « Masquer la réponse » posé par le PARENT sur la face arrière —
+  /// n'avait alors aucune façon de **commander** la révélation : le bouton
+  /// restait affiché, cliquable et **sans effet**. *Une commande morte est plus
+  /// coûteuse qu'une commande absente, parce qu'elle promet.*
+  ///
+  /// ## Le contrat
+  ///
+  /// Fourni, le contrôleur devient **LA SOURCE DE VÉRITÉ** : la carte ne garde
+  /// aucun miroir de la révélation (cf. [ZDisplayStateBinding]) ⇒ les deux états
+  /// ne peuvent pas diverger, parce qu'il n'y en a qu'un. Le geste de tap sur la
+  /// carte écrit **dans le contrôleur**, et [onRevealChanged] reste émis dans
+  /// les deux sens.
+  ///
+  /// ⚠️ Le passage à la carte suivante (AC7) **écrit `false` dans le
+  /// contrôleur** : c'est la contrepartie de la source unique — la carte ne peut
+  /// pas revenir en face question sans le dire à son pilote.
+  ///
+  /// 🔒 Le contrôleur doit être **possédé hors `build`** : c'est imposé par
+  /// [ZDisplayStateOwnerMixin], qui refuse un enregistrement postérieur à la
+  /// première frame de son `State`. Un contrôleur créé dans `build` serait
+  /// remplacé à chaque rebuild — donc silencieusement inerte.
+  final ZToggleController? revealController;
+
   /// Notifié à chaque bascule de révélation (`true` = réponse affichée).
+  ///
+  /// **Conservé** malgré [revealController] : un hôte qui n'a pas besoin de
+  /// commander a toujours besoin de savoir (su-4 conditionne l'affichage de
+  /// `ZSrsQualityButtons` à la révélation).
   final ValueChanged<bool>? onRevealChanged;
 
   /// Action d'édition — `null` ⇒ **absente** de l'arbre (jamais grisée, AD-45).
@@ -225,7 +260,17 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// État logique de révélation — **stable**, créé une fois, disposé (AD-2).
   /// Lu par un `ValueListenableBuilder` : la révélation ne reconstruit QUE la
   /// tranche de face, jamais la carte entière.
-  late final ValueNotifier<bool> _revealed;
+  ///
+  /// 🔴 CR-IFFD-38 : ce n'est plus un `ValueNotifier` privé mais une
+  /// **liaison** — état interne par défaut, contrôleur de l'hôte quand il y en
+  /// a un. La liaison ne **copie** rien : quand l'hôte pilote, la valeur est lue
+  /// et écrite **chez lui**. `_reveal.listenable` reste **stable** au travers
+  /// d'un changement de contrôleur, ce qui évite un `setState` d'échelle carte
+  /// (AD-2) sur la bascule.
+  late final ZDisplayStateBinding<bool> _reveal;
+
+  /// Reporte la prochaine notification en fin de frame — cf. [_emitReveal].
+  bool _deferNextNotification = false;
 
   /// Face **visuellement** au premier plan (`true` = dos/réponse) — **stable**.
   ///
@@ -253,14 +298,25 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   @override
   void initState() {
     super.initState();
-    _revealed = ValueNotifier<bool>(false);
-    _showBack = ValueNotifier<bool>(false);
+    _reveal = ZDisplayStateBinding<bool>(consumer: this, initialValue: false)
+      ..bind(widget.revealController);
+    // 🔒 VOIE UNIQUE : tout changement de révélation — tap, commande de l'hôte,
+    // reset de carte — passe par ce listener. Une seconde voie ferait diverger
+    // l'animation de l'état, ou tairait la notification sur l'un des chemins.
+    _reveal.listenable.addListener(_onRevealChanged);
+    // ⚠️ Un contrôleur d'hôte peut arriver DÉJÀ révélé (l'hôte restaure une
+    // session). L'état VISUEL part alors de la face arrière : sans cela, la
+    // carte s'afficherait question tandis que sa source de vérité dit réponse —
+    // exactement la divergence que le contrat interdit.
+    final bool revealed = _reveal.value;
+    _showBack = ValueNotifier<bool>(revealed);
     _controller = AnimationController(
       vsync: this,
       // `initState` ne peut pas dépendre d'un InheritedWidget. La durée de
       // thème est appliquée juste après dans `didChangeDependencies`, sur ce
       // controller unique et déjà stable.
       duration: widget.transitionDuration ?? _fallbackTransitionDuration,
+      value: revealed ? 1 : 0,
     )..addListener(_syncShowBack);
   }
 
@@ -283,9 +339,14 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     // Durée ajustée SUR le controller existant — jamais de recréation (AD-2).
     final duration = _effectiveTransitionDuration(context);
     if (_controller.duration != duration) _controller.duration = duration;
+    // L'hôte a le droit de changer (ou de retirer) son pilote — sans quoi la
+    // carte resterait branchée sur l'ancien, muette pour le nouveau.
+    _reveal.bind(widget.revealController);
     if (widget.card != oldWidget.card) {
       // Carte suivante ⇒ retour à la face QUESTION (AC7). Sans ce reset, la
       // carte suivante s'ouvrirait réponse déjà révélée — bug fonctionnel réel.
+      // Quand l'hôte pilote, ce reset est ÉCRIT CHEZ LUI : la source de vérité
+      // est unique, la carte ne peut pas revenir en question en cachette.
       _setRevealed(false, deferNotification: true);
       _controller.value = 0;
     }
@@ -297,17 +358,22 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       ..removeListener(_syncShowBack)
       ..dispose();
     _showBack.dispose();
-    _revealed.dispose();
+    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // appartient pas (son propriétaire est un `State` de l'hôte).
+    _reveal.listenable.removeListener(_onRevealChanged);
+    _reveal.dispose();
     super.dispose();
   }
 
-  /// **Voie UNIQUE** de changement de l'état de révélation.
+  /// Écrit l'état de révélation **à la source** (interne, ou contrôleur de
+  /// l'hôte). Ne fait QUE écrire : l'animation et la notification sont la
+  /// charge de [_onRevealChanged], qui écoute la source.
   ///
-  /// Les deux voies (tap et reset de carte) convergent ici : le dartdoc de
-  /// [ZFlashcardReviewCard.onRevealChanged] promet une notification à **chaque**
-  /// bascule — une voie muette ferait diverger l'état de l'hôte du nôtre (su-4
-  /// afficherait `ZSrsQualityButtons` sur une carte non révélée ⇒ note SRS
-  /// faussée).
+  /// 🔴 CR-IFFD-38 — pourquoi la notification n'est PAS émise ici : il existe
+  /// désormais un chemin d'écriture qui ne passe **pas** par la carte (l'hôte
+  /// écrit dans son contrôleur). Émettre depuis l'écriture aurait laissé ce
+  /// chemin-là **muet**, et la promesse « notifié à chaque bascule » aurait été
+  /// tenue pour les seuls chemins internes.
   ///
   /// [deferNotification] : `didUpdateWidget` s'exécute **pendant le build du
   /// parent** — notifier synchroniquement y ferait planter tout hôte qui réagit
@@ -315,10 +381,38 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// notification est alors reportée en fin de frame ; l'**état**, lui, est juste
   /// immédiatement.
   void _setRevealed(bool next, {required bool deferNotification}) {
-    if (_revealed.value == next) return;
-    _revealed.value = next;
+    if (_reveal.value == next) return;
+    _deferNextNotification = deferNotification;
+    _reveal.value = next;
+    _deferNextNotification = false;
+  }
+
+  /// **Voie UNIQUE** de réaction à un changement de révélation, d'où qu'il
+  /// vienne : tap sur la carte, reset de carte, **ou commande de l'hôte**.
+  ///
+  /// Le dartdoc de [ZFlashcardReviewCard.onRevealChanged] promet une
+  /// notification à **chaque** bascule — une voie muette ferait diverger l'état
+  /// de l'hôte du nôtre (su-4 afficherait `ZSrsQualityButtons` sur une carte non
+  /// révélée ⇒ note SRS faussée).
+  void _onRevealChanged() {
+    final bool next = _reveal.value;
+    // Reduce Motion **prime** jusque sur le controller : aucune animation n'est
+    // même lancée (dégradation de l'ANIMATION, jamais de la FONCTION — AC3).
+    if (zReduceMotionOf(context)) {
+      _controller.value = next ? 1 : 0;
+    } else if (next) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+    _emitReveal(next);
+  }
+
+  /// Émet [ZFlashcardReviewCard.onRevealChanged], en reportant la notification
+  /// quand elle tomberait pendant le build du parent.
+  void _emitReveal(bool next) {
     if (widget.onRevealChanged == null) return;
-    if (!deferNotification) {
+    if (!_deferNextNotification) {
       widget.onRevealChanged!(next);
       return;
     }
@@ -329,19 +423,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
 
   /// Bascule question↔réponse (geste de révélation — tap sur la carte).
   ///
-  /// Reduce Motion **prime** jusque sur le controller : aucune animation n'est
-  /// même lancée (dégradation de l'ANIMATION, jamais de la FONCTION — AC3).
-  void _toggle() {
-    final next = !_revealed.value;
-    _setRevealed(next, deferNotification: false);
-    if (zReduceMotionOf(context)) {
-      _controller.value = next ? 1 : 0;
-    } else if (next) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
-    }
-  }
+  /// N'écrit QUE l'état : l'animation suit dans [_onRevealChanged], au même
+  /// endroit que pour une commande de l'hôte. C'est ce qui garantit que le
+  /// bouton externe et le tap produisent **exactement** le même effet visuel.
+  void _toggle() =>
+      _setRevealed(!_reveal.value, deferNotification: false);
 
   /// **Unique** call-site du slot AD-40 : tout contenu de carte passe par ici.
   ///
@@ -826,7 +912,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
 
     // Seule tranche reconstruite à la révélation (AD-2/SM-1).
     final face = ValueListenableBuilder<bool>(
-      valueListenable: _revealed,
+      valueListenable: _reveal.listenable,
       builder: (BuildContext context, bool revealed, Widget? _) => Semantics(
         container: true,
         // ⚠️ SANS ceci, le nœud FUSIONNE tous ses descendants : le lecteur

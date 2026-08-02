@@ -182,6 +182,10 @@ export 'src/presentation/list/z_tabbed_list.dart';
 // paquet de l'ecosysteme, ou impl de l'hote). Aucun type tiers en surface.
 export 'src/presentation/reorder/z_reorder_render_request.dart';
 export 'src/presentation/reorder/z_reorder_renderer.dart';
+// CR-IFFD-38 — patron général « état d'affichage détenu par un composant, mais
+// PILOTABLE par l'hôte » : contrôleur optionnel qui devient la source de vérité,
+// possession hors `build` imposée, contrôleur jamais consommé détectable.
+export 'src/presentation/state/z_display_state.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_theme.dart';

@@ -106,6 +106,101 @@ const String kZChatLabelAcceptCapture = '${kZChatLabelPrefix}acceptCapture';
 /// Action « abandonner la relecture » — n'efface JAMAIS la saisie (CHAT-10).
 const String kZChatLabelCancelCapture = '${kZChatLabelPrefix}cancelCapture';
 
+/// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
+const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
+
+/// 🔴 Annonce de l'état de **CHARGEMENT** de la liste (CR-IFFD-39, AD-13).
+///
+/// Chez IFFD, `conversation_list_widget.dart:164` passe `initialData: const []`
+/// et le `builder` ne teste **ni `connectionState` ni `hasError`** : la première
+/// frame tombe dans `EmptyConversationsState` (`:198-205`). L'utilisateur lit
+/// « aucune conversation » **avant** que la moindre donnée soit arrivée. Le
+/// chargement doit donc avoir sa propre clé, et son propre état.
+const String kZChatLabelLoadingConversations =
+    '${kZChatLabelPrefix}loadingConversations';
+
+/// 🔴 État d'**ERREUR** de la liste — inexistant chez IFFD (même mesure que
+/// ci-dessus : un échec Firestore y est indiscernable d'une liste vide).
+const String kZChatLabelConversationsError =
+    '${kZChatLabelPrefix}conversationsError';
+
+/// Action « réessayer » après une erreur de liste (CR-IFFD-39).
+const String kZChatLabelRetry = '${kZChatLabelPrefix}retry';
+
+/// État vide — variante « **aucun élément** » (CR-IFFD-39).
+const String kZChatLabelNoConversations =
+    '${kZChatLabelPrefix}noConversations';
+
+/// État vide — variante « **aucun résultat** » (recherche en cours).
+///
+/// Les deux variantes sont distinctes parce que l'action qui les accompagne
+/// l'est : créer une conversation répond à « la liste est vide », **jamais** à
+/// « votre recherche ne rend rien ».
+const String kZChatLabelNoResults = '${kZChatLabelPrefix}noResults';
+
+/// Action « nouvelle conversation » — **masquée en recherche** (CR-IFFD-39).
+const String kZChatLabelNewConversation =
+    '${kZChatLabelPrefix}newConversation';
+
+/// Action « charger la suite » — pagination par **curseur** (CR-IFFD-39).
+const String kZChatLabelLoadMore = '${kZChatLabelPrefix}loadMore';
+
+/// Compte des conversations sélectionnées — porte [kZChatCountPlaceholder].
+const String kZChatLabelSelectedCount = '${kZChatLabelPrefix}selectedCount';
+
+/// Action « quitter la sélection » — la sortie **explicite** du mode.
+const String kZChatLabelExitSelection = '${kZChatLabelPrefix}exitSelection';
+
+/// Étiquette sémantique d'une ligne **sélectionnée** (AD-13).
+const String kZChatLabelRowSelected = '${kZChatLabelPrefix}rowSelected';
+
+/// Action « épingler » — `ZChatConversationPinPort.setPinned(pinned: true)`.
+const String kZChatLabelPin = '${kZChatLabelPrefix}pin';
+
+/// Action « désépingler » — `setPinned(pinned: false)`. **Un port, deux
+/// libellés** : c'est le libellé qui varie, pas le verbe (invariant du port).
+const String kZChatLabelUnpin = '${kZChatLabelPrefix}unpin';
+
+/// Action « retirer » — `ZChatConversationLifecyclePort.retire` (**soft**).
+const String kZChatLabelRetire = '${kZChatLabelPrefix}retire';
+
+/// 🔴 Action « restaurer » — `ZChatConversationLifecyclePort.restore`.
+///
+/// **Aucun des deux hôtes n'a ce chemin** : lex soft-supprime en base et
+/// n'expose ni route ni UI de restauration (grep client négatif sur
+/// `restoreConversation|/restore`), IFFD n'a rien. C'est la capacité que le
+/// soft-delete rend possible, et c'est ce qui rend l'annulation **triviale**
+/// sans qu'on ait à l'imposer.
+const String kZChatLabelRestore = '${kZChatLabelPrefix}restore';
+
+/// Action « reprendre à partir d'ici » — `trimAfter` (**soft**, jamais purge).
+const String kZChatLabelTrim = '${kZChatLabelPrefix}trim';
+
+/// Action de **lot** « retirer la sélection » — `retireAll`.
+const String kZChatLabelRetireSelected =
+    '${kZChatLabelPrefix}retireSelected';
+
+/// Horodatage relatif — moins d'une minute.
+const String kZChatLabelTimeNow = '${kZChatLabelPrefix}timeNow';
+
+/// Horodatage relatif — minutes. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeMinutes = '${kZChatLabelPrefix}timeMinutes';
+
+/// Horodatage relatif — heures. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeHours = '${kZChatLabelPrefix}timeHours';
+
+/// Horodatage relatif — jours. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeDays = '${kZChatLabelPrefix}timeDays';
+
+/// Horodatage relatif — semaines. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeWeeks = '${kZChatLabelPrefix}timeWeeks';
+
+/// Horodatage relatif — mois. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeMonths = '${kZChatLabelPrefix}timeMonths';
+
+/// Horodatage relatif — années. Porte [kZChatCountPlaceholder].
+const String kZChatLabelTimeYears = '${kZChatLabelPrefix}timeYears';
+
 /// Toutes les clés du rendu neutre — surface exhaustive pour un hôte qui
 /// alimente son registre, et cible de la garde « aucune chaîne en dur ».
 const List<String> kZChatLabelKeys = <String>[
@@ -132,6 +227,30 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelReviewCapture,
   kZChatLabelAcceptCapture,
   kZChatLabelCancelCapture,
+  kZChatLabelConversations,
+  kZChatLabelLoadingConversations,
+  kZChatLabelConversationsError,
+  kZChatLabelRetry,
+  kZChatLabelNoConversations,
+  kZChatLabelNoResults,
+  kZChatLabelNewConversation,
+  kZChatLabelLoadMore,
+  kZChatLabelSelectedCount,
+  kZChatLabelExitSelection,
+  kZChatLabelRowSelected,
+  kZChatLabelPin,
+  kZChatLabelUnpin,
+  kZChatLabelRetire,
+  kZChatLabelRestore,
+  kZChatLabelTrim,
+  kZChatLabelRetireSelected,
+  kZChatLabelTimeNow,
+  kZChatLabelTimeMinutes,
+  kZChatLabelTimeHours,
+  kZChatLabelTimeDays,
+  kZChatLabelTimeWeeks,
+  kZChatLabelTimeMonths,
+  kZChatLabelTimeYears,
 ];
 
 /// Repli **lisible** de chaque clé — jamais prioritaire sur l'hôte (HIGH-1).
@@ -170,7 +289,96 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelReviewCapture: 'Relire avant envoi',
   kZChatLabelAcceptCapture: 'Insérer dans le message',
   kZChatLabelCancelCapture: 'Abandonner',
+  kZChatLabelConversations: 'Conversations',
+  kZChatLabelLoadingConversations: 'Chargement des conversations',
+  kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',
+  kZChatLabelRetry: 'Réessayer',
+  kZChatLabelNoConversations: 'Aucune conversation',
+  kZChatLabelNoResults: 'Aucun résultat',
+  kZChatLabelNewConversation: 'Nouvelle conversation',
+  kZChatLabelLoadMore: 'Charger la suite',
+  kZChatLabelSelectedCount: '$kZChatCountPlaceholder sélectionnée(s)',
+  kZChatLabelExitSelection: 'Quitter la sélection',
+  kZChatLabelRowSelected: 'Sélectionnée',
+  kZChatLabelPin: 'Épingler',
+  kZChatLabelUnpin: 'Désépingler',
+  kZChatLabelRetire: 'Retirer la conversation',
+  kZChatLabelRestore: 'Restaurer',
+  kZChatLabelTrim: 'Reprendre à partir d\'ici',
+  kZChatLabelRetireSelected: 'Retirer la sélection',
+  kZChatLabelTimeNow: 'à l\'instant',
+  kZChatLabelTimeMinutes: 'il y a $kZChatCountPlaceholder min',
+  kZChatLabelTimeHours: 'il y a $kZChatCountPlaceholder h',
+  kZChatLabelTimeDays: 'il y a $kZChatCountPlaceholder j',
+  kZChatLabelTimeWeeks: 'il y a $kZChatCountPlaceholder sem.',
+  kZChatLabelTimeMonths: 'il y a $kZChatCountPlaceholder mois',
+  kZChatLabelTimeYears: 'il y a $kZChatCountPlaceholder an(s)',
 };
+
+/// 🔴 Marqueur de substitution du **compte**, dans un repli comme dans une
+/// traduction d'hôte.
+///
+/// Il est déclaré ici, à côté des replis qui le portent, et **consommé par un
+/// seul site** ([zChatCountLabel]). Un hôte qui traduit `zchat.timeMinutes`
+/// garde le marqueur dans sa chaîne ; s'il l'omet, le compte n'apparaît
+/// simplement pas — aucune exception, aucun texte cassé (AD-10).
+const String kZChatCountPlaceholder = '{n}';
+
+/// Résout [key] et y substitue [count] à [kZChatCountPlaceholder].
+String zChatCountLabel(BuildContext context, String key, int count) =>
+    zChatLabel(context, key).replaceAll(kZChatCountPlaceholder, '$count');
+
+/// Formate un horodatage **relatif** — couture d'hôte (CR-IFFD-39).
+///
+/// [now] est passé explicitement : un formateur qui lit l'horloge lui-même
+/// n'est pas testable, et deux lignes d'une même liste peuvent alors se référer
+/// à deux instants différents.
+typedef ZChatRelativeTimeFormatter =
+    String Function(BuildContext context, DateTime value, DateTime now);
+
+/// Formateur **par défaut** — buckets grossiers, entièrement résolus par clés.
+///
+/// 🔴 **Aucune locale, aucun mot en dur.** Le défaut mesuré chez IFFD
+/// (`conversation_item_widget.dart:49-63`) écrit `'Hier'` en toutes lettres
+/// (`:57`) et fige `DateFormat.MMMd('fr_FR')` (`:61`) — la ligne reste en
+/// français quelle que soit la langue de l'application. Chez lex, la même faute
+/// existe à un endroit et pas à l'autre : `search_result_tile.dart:55` passe
+/// `locale: 'fr'` en dur alors que `conversations_screen.dart:249` passe bien
+/// `Localizations.localeOf(context).languageCode`. **La même conversation change
+/// donc de langue selon qu'on la regarde en recherche ou non.**
+///
+/// Ici, chaque bucket est une **clé** : un hôte qui alimente son registre
+/// obtient sa langue, et un hôte qui veut `timeago`/`intl` passe son propre
+/// [ZChatRelativeTimeFormatter]. Le socle, lui, ne dépend d'aucun paquet de
+/// dates (AD-57).
+String zChatDefaultRelativeTime(
+  BuildContext context,
+  DateTime value,
+  DateTime now,
+) {
+  final Duration d = now.difference(value);
+  // Une date FUTURE (horloge décalée, écriture serveur en avance) ne devient
+  // jamais « il y a -3 min » : elle se lit « à l'instant » (AD-10).
+  if (d.isNegative || d.inMinutes < 1) {
+    return zChatLabel(context, kZChatLabelTimeNow);
+  }
+  if (d.inHours < 1) {
+    return zChatCountLabel(context, kZChatLabelTimeMinutes, d.inMinutes);
+  }
+  if (d.inDays < 1) {
+    return zChatCountLabel(context, kZChatLabelTimeHours, d.inHours);
+  }
+  if (d.inDays < 7) {
+    return zChatCountLabel(context, kZChatLabelTimeDays, d.inDays);
+  }
+  if (d.inDays < 30) {
+    return zChatCountLabel(context, kZChatLabelTimeWeeks, d.inDays ~/ 7);
+  }
+  if (d.inDays < 365) {
+    return zChatCountLabel(context, kZChatLabelTimeMonths, d.inDays ~/ 30);
+  }
+  return zChatCountLabel(context, kZChatLabelTimeYears, d.inDays ~/ 365);
+}
 
 /// Résout une clé du chat — **l'UNIQUE** site d'appel de `label()` du package.
 ///

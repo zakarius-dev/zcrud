@@ -57,6 +57,22 @@
 ///   ≥ 48 dp, variantes directionnelles, `Semantics` (AD-13).
 library;
 
+/// CR-IFFD-39 — la surface de **LISTE de conversations** :
+/// - `ZChatConversationTile` : la tuile neutre (titre à `maxLines` paramétrable,
+///   horodatage relatif **localisable** dont le champ source **et** le formateur
+///   sont injectables, pastille teintable, badges par **prédicat**, slot
+///   `trailing`, `Semantics` de ligne complet, cible ≥ 48 dp bornée par le
+///   CONTENEUR).
+/// - `ZChatConversationList` : `ListView.builder`, **trois** états distincts
+///   (erreur testée **avant** chargement), squelette annoncé, état vide à deux
+///   variantes, tri **exposé**, pagination par curseur, sélection multiple,
+///   groupes à clé **opaque** repliés par un contrôleur **externe**.
+/// - `ZChatConversationSelection` / `ZChatGroupExpansion` : les deux contrôleurs
+///   d'hôte — jamais créés dans un `build` (le défaut mesuré chez IFFD).
+/// - `zChatConversationActions` : les descripteurs d'action, **absents quand
+///   leur callback est nul** — ce qui rend les huit ports de conversation du
+///   kernel câblables sans qu'aucun verbe ne soit codé en dur.
+/// - `ZChatHighlightedText` / `zChatHighlightRanges` : **l'unique** surlignage.
 export 'src/presentation/attachment/z_chat_attachment_controller.dart';
 export 'src/presentation/attachment/z_chat_attachment_failure.dart';
 export 'src/presentation/attachment/z_chat_attachment_ports.dart';
@@ -65,6 +81,8 @@ export 'src/presentation/attachment/z_pending_attachment.dart';
 // kernel, et la relecture est STRUCTURELLE — `ZChatCaptureController.acceptInto`
 // rend `ZResult<Unit>`, aucune `String` ne s'en échappe vers l'envoi.
 export 'src/presentation/capture/z_chat_capture_controller.dart';
+export 'src/presentation/conversation/z_chat_conversation_selection.dart';
+export 'src/presentation/conversation/z_chat_group_expansion.dart';
 // CHAT-9 — diffusion : la voix par la chaîne de repli du kernel, l'export et le
 // partage DÉLÉGUÉS à `ZChatExportService` (CHAT-5), jamais redéfinis ici.
 export 'src/presentation/diffusion/z_chat_diffusion_service.dart';
@@ -84,8 +102,12 @@ export 'src/presentation/view/z_chat_attachment_strip.dart';
 export 'src/presentation/view/z_chat_block_view.dart';
 export 'src/presentation/view/z_chat_capture_bar.dart';
 export 'src/presentation/view/z_chat_capture_review_field.dart';
+export 'src/presentation/view/z_chat_conversation_actions.dart';
+export 'src/presentation/view/z_chat_conversation_list.dart';
+export 'src/presentation/view/z_chat_conversation_tile.dart';
 export 'src/presentation/view/z_chat_conversation_view.dart';
 export 'src/presentation/view/z_chat_diffusion_bar.dart';
+export 'src/presentation/view/z_chat_highlight.dart';
 export 'src/presentation/view/z_chat_labels.dart';
 export 'src/presentation/view/z_chat_message_tile.dart';
 export 'src/presentation/z_chat_controller.dart';
