@@ -187,6 +187,7 @@ export 'src/presentation/reorder/z_reorder_renderer.dart';
 // possession hors `build` imposée, contrôleur jamais consommé détectable.
 export 'src/presentation/state/z_display_state.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
+export 'src/presentation/theme/z_foreground_override.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
 export 'src/presentation/theme/z_inverted_surface.dart';
 export 'src/presentation/theme/z_theme.dart';

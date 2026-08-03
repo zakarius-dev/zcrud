@@ -23,6 +23,13 @@
 /// surface d'inversion à venir (sélection, mise en avant, état actif) l'obtienne
 /// **gratuitement**, au lieu de rejouer le même défaut une troisième fois.
 ///
+/// 🔵 **Depuis v0.38.0, l'imposition du premier plan n'est plus écrite ici.**
+/// Elle est déléguée à [ZForegroundOverride], la primitive générale
+/// « couleur de premier plan imposée, aucun fond peint ». [ZInvertedSurface] en
+/// est le **cas particulier** : le fond `ColorScheme.inverseSurface` plus le
+/// premier plan `ColorScheme.onInverseSurface`. Deux mécanismes concurrents
+/// auraient divergé — celui-ci n'en est qu'un usage.
+///
 /// **FR-26** : aucune couleur littérale — l'inversion se modélise par le couple
 /// de rôles `ColorScheme.inverseSurface` / `ColorScheme.onInverseSurface`, qui
 /// est par définition le contraste maximal disponible dans n'importe quel
@@ -34,6 +41,8 @@
 library;
 
 import 'package:flutter/material.dart';
+
+import 'z_foreground_override.dart';
 
 /// Surface dont le premier plan est **retourné** pour rester lisible sur un fond
 /// `ColorScheme.inverseSurface`.
@@ -95,38 +104,13 @@ class ZInvertedSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData ambient = Theme.of(context);
-    final ColorScheme scheme = ambient.colorScheme;
-    final Color foreground = scheme.onInverseSurface;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // 🔴 LE point de la CR : `textTheme.apply(bodyColor:, displayColor:)`
-    // repeint la couleur de CHAQUE rôle typographique (`titleSmall` compris).
-    // Sans lui, un hôte stylant depuis `Theme.of(context).textTheme.*` récupère
-    // la couleur AMBIANTE, qui écrase le `DefaultTextStyle` ci-dessous.
-    //
-    // `copyWith` cible les seuls rôles de TEXTE et d'ICÔNE : le `ColorScheme`
-    // reste celui de l'hôte, donc ses boutons ne sont pas détournés.
-    final ThemeData inverted = ambient.copyWith(
-      textTheme: ambient.textTheme.apply(
-        bodyColor: foreground,
-        displayColor: foreground,
-      ),
-      iconTheme: ambient.iconTheme.copyWith(color: foreground),
-    );
-
-    // Le widget `Theme` réinstalle lui-même un `IconTheme` (celui de
-    // `ThemeData.iconTheme`) au-dessus de son enfant ; les `merge` internes
-    // restent néanmoins nécessaires pour les contenus qui héritent sans passer
-    // par `Theme.of` — et, posés SOUS le `Theme`, ils gagnent.
-    final Widget content = Theme(
-      data: inverted,
-      child: IconTheme.merge(
-        data: IconThemeData(color: foreground),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: foreground),
-          child: child,
-        ),
-      ),
+    // 🔵 Le retournement du premier plan est la primitive générale ; l'inversion
+    // n'en fixe que la COULEUR (`onInverseSurface`) et y ajoute le fond.
+    final Widget content = ZForegroundOverride(
+      color: scheme.onInverseSurface,
+      child: child,
     );
 
     if (!paintBackground) {

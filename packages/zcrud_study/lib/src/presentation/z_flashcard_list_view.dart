@@ -60,6 +60,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZBatchActionBar,
         ZBatchActionKind,
         ZBatchDeletionReport,
+        ZForegroundOverride,
         ZListSelectionController,
         ZListSelectionMode,
         ZResult,
@@ -1270,18 +1271,35 @@ class _FlashcardTile extends StatelessWidget {
               ),
               SizedBox(height: theme.gapS),
               // Question TRONQUÉE (AC3) — slot AD-40, défaut texte brut thématisé.
+              // 🔵 CR-IFFD-43 — le slot AD-40 est du contenu d'HÔTE. Un
+              // `DefaultTextStyle.merge` n'atteint que le texte qui HÉRITE :
+              // un slot stylé depuis `Theme.of(context).textTheme.*` gardait
+              // la couleur AMBIANTE au lieu de `foreground`, parce que les
+              // rôles de `TextTheme` sont `inherit: false`.
+              // `ZForegroundOverride` réécrit aussi le `TextTheme`.
               Flexible(
-                child: DefaultTextStyle.merge(
-                  style: TextStyle(color: foreground),
-                  child: _content(context, card.question, maxLines: 2),
+                child: ZForegroundOverride(
+                  color: foreground,
+                  // 🔴 `Builder` OBLIGATOIRE : le slot AD-40 est un *builder*.
+                  // L'invoquer avec le `context` de la tuile le ferait résoudre
+                  // `Theme.of` AU-DESSUS de l'enveloppe — la couleur imposée
+                  // n'atteindrait alors rien du tout. Mesuré, pas supposé.
+                  child: Builder(
+                    builder: (BuildContext inner) =>
+                        _content(inner, card.question, maxLines: 2),
+                  ),
                 ),
               ),
               if (showAnswerPreview && preview != null) ...<Widget>[
                 SizedBox(height: theme.gapS),
+                // 🔵 CR-IFFD-43 — même slot AD-40, même correctif (aperçu).
                 Flexible(
-                  child: DefaultTextStyle.merge(
-                    style: TextStyle(color: foreground),
-                    child: _content(context, preview, maxLines: 1),
+                  child: ZForegroundOverride(
+                    color: foreground,
+                    child: Builder(
+                      builder: (BuildContext inner) =>
+                          _content(inner, preview, maxLines: 1),
+                    ),
                   ),
                 ),
               ],

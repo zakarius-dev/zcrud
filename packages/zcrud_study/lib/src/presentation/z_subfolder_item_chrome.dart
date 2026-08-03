@@ -18,7 +18,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZColorPair, ZcrudTheme, zResolveColorKeyOrSlot;
+    show ZColorPair, ZForegroundOverride, ZcrudTheme, zResolveColorKeyOrSlot;
 
 /// Diamètre de la pastille d'accent d'un item (dimension de layout — parité
 /// `ZFolderCard`).
@@ -146,8 +146,15 @@ class ZCountBadge extends StatelessWidget {
               SizedBox(
                 width: iconSize,
                 height: iconSize,
-                child: IconTheme.merge(
-                  data: IconThemeData(size: iconSize, color: iconColor),
+                // 🔵 CR-IFFD-43 — `icon` est un slot d'HÔTE. Un
+                // `IconTheme.merge` n'atteint que l'icône qui HÉRITE : une
+                // `Icon` dont l'hôte tire la couleur de
+                // `Theme.of(context).iconTheme.color` gardait la couleur
+                // ambiante, donc un contraste faux sur le fond du badge.
+                // `ZForegroundOverride` réécrit aussi `ThemeData.iconTheme`.
+                child: ZForegroundOverride(
+                  color: iconColor,
+                  iconSize: iconSize,
                   child: icon,
                 ),
               ),
