@@ -182,6 +182,53 @@ enum ZSubfolderNarrowMode {
   compact,
 }
 
+/// **Où** la navigation de fratrie est rendue dans une page à onglets
+/// (`ZStudyFolderDetail`) — CR-IFFD-43.
+///
+/// 🔴 **Axe INDÉPENDANT du point de rupture.** Ce jeton dit *à quel niveau de la
+/// page* vit la navigation ; [ZSubfolderNarrowMode] dit *quelle surface* est
+/// rendue sous le seuil. Déduire le placement de la largeur reproduirait, sur
+/// l'axe « onglet », l'erreur que CR-IFFD-40 a corrigée sur l'axe « largeur ».
+enum ZSubfolderNavPlacement {
+  /// **DÉFAUT** — la navigation est construite **dans** l'onglet Matériel, sous
+  /// `ZResponsiveLayout` : sidebar ≥ 600 dp, surface étroite < 600 dp. Rendu
+  /// strictement identique à celui d'avant CR-IFFD-43.
+  ///
+  /// Conséquence assumée (c'est le comportement historique) : la navigation
+  /// **disparaît** sur les autres onglets.
+  withinTab,
+
+  /// La navigation est rendue **une seule fois**, au-dessus de la zone
+  /// d'onglets (créneau `ZPageScaffold.aboveTabViews`) : elle devient le
+  /// contexte de la page entière, donc visible et actionnable depuis **tous**
+  /// les onglets. L'onglet Matériel ne rend alors que son corps filtré — la
+  /// navigation n'y est **pas** dupliquée.
+  ///
+  /// 🔴 **Ce que devient la sidebar en forme large — arbitrage MESURÉ.**
+  /// Sous `aboveTabs`, **aucune sidebar n'est rendue, à aucune largeur** : la
+  /// surface hissée est la **bande** (`ZSubfolderNarrowNav` : coquille de
+  /// l'hôte, barre de sélection, ou rangée de puces selon
+  /// [ZSubfolderNavSpec.narrowMode]).
+  ///
+  /// Ce n'est pas une préférence esthétique, c'est une contrainte de layout
+  /// **mesurée** : le créneau `aboveTabViews` est un enfant de `Column` dont le
+  /// frère porte l'`Expanded` — il reçoit donc une hauteur **NON bornée**.
+  /// `ZSubfolderSidebar` déployée contient un `Expanded` dans sa propre
+  /// `Column` (la liste défilante) et lève, mesuré :
+  /// *« RenderFlex children have non-zero flex but incoming height constraints
+  /// are unbounded »*. Hisser la sidebar est donc **structurellement
+  /// impossible**, pas seulement discutable.
+  ///
+  /// Le sens le confirme : une sidebar est par définition **une colonne du
+  /// corps** — donc du contenu d'onglet. Déclarer la navigation « contexte de
+  /// page » et la vouloir en colonne de corps sont deux demandes contradictoires
+  /// ; `aboveTabs` tranche pour la première.
+  ///
+  /// Un hôte qui veut la sidebar en forme large et la bande en forme étroite
+  /// garde exactement cela : c'est le défaut [withinTab].
+  aboveTabs,
+}
+
 /// Descripteur immuable de la navigation de sous-dossiers.
 @immutable
 class ZSubfolderNavSpec {

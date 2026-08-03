@@ -47,6 +47,23 @@ final ZSubfolderNarrowMode kProductionDefaultNarrowMode = const ZSubfolderNavSpe
   allSubfoldersLabel: '',
 ).narrowMode;
 
+/// Placement par DÉFAUT **lu sur le socle** (jamais recopié en dur) — même
+/// discipline que [kProductionDefaultNarrowMode] : si le défaut de production
+/// changeait, la garde « rendu inchangé » suivrait au lieu de rester verte.
+final ZSubfolderNavPlacement kProductionDefaultNavPlacement =
+    ZStudyFolderDetail(
+      title: '',
+      materialTabLabel: '',
+      notebookTabLabel: '',
+      progressionTabLabel: '',
+      materialSectionsBuilder: (_) => const <ZStudyToolsSectionSpec>[],
+      notebookBuilder: (_) => const SizedBox.shrink(),
+      nav: const ZSubfolderNavSpec(
+        subfolders: <ZSubfolderRef>[],
+        allSubfoldersLabel: '',
+      ),
+    ).subfolderNavPlacement;
+
 /// Quelques sous-dossiers de référence.
 List<ZSubfolderRef> refs({int n = 3}) => <ZSubfolderRef>[
   for (var i = 0; i < n; i++)
@@ -137,6 +154,12 @@ Future<ZStudyFolderDetail> pumpDetail(
   bool extendBody = false,
   bool extendBodyBehindAppBar = false,
   String? initialSelectedSubfolderId,
+  // CR-IFFD-43 — `null` ⇒ le DÉFAUT DE PRODUCTION s'applique (le harnais ne
+  // recopie jamais un défaut : une garde qui mesure « quel placement par
+  // défaut » doit mesurer celui du socle).
+  ZSubfolderNavPlacement? subfolderNavPlacement,
+  Widget? aboveTabViews,
+  ZPageAppBarMode mode = ZPageAppBarMode.fixed,
   TextDirection textDirection = TextDirection.ltr,
   // CR-IFFD-40 — enveloppe optionnelle posée AUTOUR de la page (p. ex. un
   // `ZSubfolderNavRendererScope`). `null` ⇒ arbre STRICTEMENT inchangé.
@@ -176,6 +199,10 @@ Future<ZStudyFolderDetail> pumpDetail(
     extendBody: extendBody,
     extendBodyBehindAppBar: extendBodyBehindAppBar,
     initialSelectedSubfolderId: initialSelectedSubfolderId,
+    subfolderNavPlacement:
+        subfolderNavPlacement ?? kProductionDefaultNavPlacement,
+    aboveTabViews: aboveTabViews,
+    mode: mode,
   );
   await tester.pumpWidget(
     MaterialApp(

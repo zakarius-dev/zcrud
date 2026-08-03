@@ -128,6 +128,8 @@ class ZStudyFolderDetail extends StatefulWidget {
     this.resizeToAvoidBottomInset,
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
+    this.aboveTabViews,
+    this.subfolderNavPlacement = ZSubfolderNavPlacement.withinTab,
     this.progressData,
     this.progressStatCards = const <Widget>[],
     this.progressEmptyState,
@@ -260,6 +262,37 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// (message via label injecté). `null` ⇒ `SizedBox.shrink()` (jamais de throw).
   final Widget? progressEmptyState;
 
+  /// CR-IFFD-43 — créneau persistant rendu **sous le `TabBar` et au-dessus du
+  /// `TabBarView`**, donc commun à tous les onglets.
+  ///
+  /// 🔴 **Chaînon CÂBLÉ, pas créé** : le créneau existait déjà côté socle
+  /// (`ZPageScaffold.aboveTabViews`, lui-même délégué à `ZPageShellBody` en mode
+  /// sliver) ; seule sa relève par cette façade manquait — comme
+  /// [persistentFooterButtons] et [bottomNavigationBar], déjà relayés.
+  ///
+  /// `null` (défaut) ⇒ slot ABSENT côté shell : aucun wrapper ajouté, rendu
+  /// strictement inchangé.
+  ///
+  /// ⚠️ **Conflit avec [ZSubfolderNavPlacement.aboveTabs] — résolu par
+  /// COMPOSITION, jamais par priorité ni par `assert`.** Si l'hôte fournit ce
+  /// slot *et* demande `aboveTabs`, les deux sont rendus dans une `Column` :
+  /// **la navigation d'abord** (directement sous le `TabBar`), puis ce slot.
+  ///
+  /// Justification du choix : une **priorité** ferait disparaître silencieusement
+  /// l'un des deux contenus demandés (le pire mode d'échec — un slot fourni qui
+  /// n'apparaît pas) ; un **`assert`** transformerait une composition légitime en
+  /// panne d'exécution en debug et en divergence debug/release (contraire à
+  /// AD-10). L'ordre retenu place la navigation au plus près des onglets parce
+  /// qu'elle **désigne le sujet** dont tout ce qui suit — le slot de l'hôte comme
+  /// les vues d'onglets — parle.
+  final Widget? aboveTabViews;
+
+  /// CR-IFFD-43 — **où** vit la navigation de fratrie. Défaut
+  /// [ZSubfolderNavPlacement.withinTab] ⇒ rendu strictement inchangé pour tout
+  /// hôte existant. Voir [ZSubfolderNavPlacement.aboveTabs] pour l'arbitrage
+  /// **mesuré** sur la forme large (aucune sidebar hissée).
+  final ZSubfolderNavPlacement subfolderNavPlacement;
+
   /// Navigation de sous-dossiers (données + labels + bornes, tout injecté).
   final ZSubfolderNavSpec nav;
 
@@ -327,6 +360,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
       extendBody: widget.extendBody,
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
+      // CR-IFFD-43 — relève du chaînon manquant (+ composition avec la
+      // navigation hissée). `null` ⇒ créneau structurellement absent.
+      aboveTabViews: _aboveTabViews(context),
       tabs: <ZPageTab>[
         ZPageTab(
           label: widget.materialTabLabel,
@@ -376,9 +412,59 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     );
   }
 
+  // --- CR-IFFD-43 : créneau AU-DESSUS des onglets ----------------------------
+
+  /// Contenu du créneau `aboveTabViews` du shell.
+  ///
+  /// Trois cas, dans cet ordre :
+  /// 1. placement [ZSubfolderNavPlacement.withinTab] (défaut) ⇒ **pass-through
+  ///    pur** du slot de l'hôte (`null` ⇒ créneau absent) — la navigation reste
+  ///    dans l'onglet Matériel, rendu strictement inchangé ;
+  /// 2. `aboveTabs` sans slot d'hôte ⇒ la **bande** de navigation seule ;
+  /// 3. `aboveTabs` **et** slot d'hôte ⇒ COMPOSITION (cf. doc de
+  ///    [ZStudyFolderDetail.aboveTabViews]) : navigation d'abord, slot ensuite.
+  ///
+  /// La bande est construite **hors** de l'arbre des onglets et n'écoute que la
+  /// tranche `_selected` en son sein (`ValueListenableBuilder` interne à la
+  /// surface) : changer de fratrie ne reconstruit ni les onglets ni la structure
+  /// de page (AD-2/SM-1).
+  Widget? _aboveTabViews(BuildContext context) {
+    final Widget? hostSlot = widget.aboveTabViews;
+    if (widget.subfolderNavPlacement == ZSubfolderNavPlacement.withinTab) {
+      return hostSlot;
+    }
+    final Widget nav = ZSubfolderNarrowNav(
+      spec: widget.nav,
+      selected: _selected,
+      onSelect: _select,
+    );
+    // 🔴 **Aucun étirement explicite** : un `SizedBox(width: double.infinity)`
+    // a été écrit, puis MESURÉ INERTE (les deux surfaces du socle rendent déjà
+    // 500 dp sur 500 dp de large sans lui — leur `Row` interne est en
+    // `mainAxisSize.max`) et retiré. Une garde le confirmait verte avec ET sans
+    // le wrapper : c'était une boîte vide, pas une propriété.
+    if (hostSlot == null) return nav;
+    // 🔴 **Aucun `crossAxisAlignment` non plus** — et c'est LOAD-BEARING :
+    // `ZPageScaffold` pose déjà son créneau dans une `Column` en alignement
+    // transversal PAR DÉFAUT. En étirant ici, le slot de l'hôte serait mis en
+    // page **différemment** selon qu'il demande ou non `aboveTabs` — un widget
+    // sans largeur propre passerait de 0 dp à pleine largeur pour une raison
+    // qui n'a rien à voir avec lui. Le défaut préserve l'équivalence.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[nav, hostSlot],
+    );
+  }
+
   // --- Onglet Matériel : nav adaptative + corps filtré -----------------------
 
   Widget _materialTab(BuildContext context) {
+    // CR-IFFD-43 — navigation hissée : l'onglet ne rend QUE son corps filtré.
+    // C'est ce qui garantit qu'elle est rendue **une seule fois** (pas de
+    // duplication bande + sidebar), et donc que la sélection n'a qu'une source.
+    if (widget.subfolderNavPlacement == ZSubfolderNavPlacement.aboveTabs) {
+      return _materialBody();
+    }
     return ZResponsiveLayout(
       // < 600 dp : sélecteur compact, AUCUNE sidebar dans l'arbre (AC7).
       compact: (context) => Column(
