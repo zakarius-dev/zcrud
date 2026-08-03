@@ -55,6 +55,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
+        ZInvertedSurface,
         ZSubfolderSelectedEmphasis,
         ZSubfolderTriggerVariant,
         ZcrudScope,
@@ -568,9 +569,11 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   ///
   /// 🔴 [ZSubfolderSelectedEmphasis.inverted] **retourne le couple** : fond
   /// `inverseSurface` ET premier plan forcé à `onInverseSurface` via
-  /// `IconTheme` + `DefaultTextStyle`, de sorte qu'un `itemBuilder` injecté
-  /// s'inverse lui aussi. Un simple fond opaque laisserait le texte de l'hôte
-  /// illisible — c'est le contraste RÉEL qui est la capacité, pas la décoration.
+  /// [ZInvertedSurface] (`zcrud_core`), de sorte qu'un `itemBuilder` injecté
+  /// s'inverse lui aussi — **y compris** quand il se style depuis
+  /// `Theme.of(context).textTheme.*` (CR-IFFD-42). Un simple fond opaque
+  /// laisserait le texte de l'hôte illisible — c'est le contraste RÉEL qui est
+  /// la capacité, pas la décoration.
   ///
   /// `null`/`highlight` ⇒ chemin d'origine, **sans** enveloppes de premier plan.
   Widget _emphasis(
@@ -599,19 +602,15 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
         child: Builder(builder: builder),
       );
     }
-    return Container(
+    // CR-IFFD-42 — l'inversion est déléguée à l'enveloppe PARTAGÉE de
+    // `zcrud_core` : elle seule atteint le contenu stylé depuis
+    // `Theme.of(context).textTheme.*` (chaque rôle porte sa propre couleur, qui
+    // écrasait le `DefaultTextStyle` posé ici). Toute surface d'inversion à
+    // venir en hérite au lieu de rejouer le défaut.
+    return ZInvertedSurface(
       padding: padding,
-      decoration: BoxDecoration(
-        color: scheme.inverseSurface,
-        borderRadius: BorderRadius.all(theme.radiusM),
-      ),
-      child: IconTheme.merge(
-        data: IconThemeData(color: scheme.onInverseSurface),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: scheme.onInverseSurface),
-          child: Builder(builder: builder),
-        ),
-      ),
+      borderRadius: BorderRadius.all(theme.radiusM),
+      child: Builder(builder: builder),
     );
   }
 

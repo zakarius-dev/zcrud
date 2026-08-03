@@ -188,6 +188,7 @@ export 'src/presentation/reorder/z_reorder_renderer.dart';
 export 'src/presentation/state/z_display_state.dart';
 export 'src/presentation/theme/z_color_key_resolver.dart';
 export 'src/presentation/theme/z_gradient_resolver.dart';
+export 'src/presentation/theme/z_inverted_surface.dart';
 export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';
