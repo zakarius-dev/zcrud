@@ -12,6 +12,14 @@
 /// Le chargement paresseux du catalogue déclenche un `setState` **local** (rebuild
 /// ciblé de ce champ uniquement, jamais du formulaire).
 ///
+/// **ZDisplayState (CR-IFFD-38)** : l'état « déplié » accepte un
+/// [ZCountryPickerField.openController] **optionnel**. Sans lui, comportement
+/// **strictement inchangé** (état interne). Avec lui, le contrôleur est **LA
+/// source de vérité** — aucun miroir n'est conservé (cf. [ZDisplayStateBinding]).
+/// Toute fermeture décidée par le composant (sélection, `readOnly`) est écrite
+/// **à travers** le contrôleur : l'hôte ne peut donc jamais croire le panneau
+/// ouvert alors qu'il est fermé.
+///
 /// **Interne** : jamais exporté par le barrel. N'expose aucun type de lib tierce.
 library;
 
@@ -36,6 +44,7 @@ class ZCountryPickerField extends StatefulWidget {
     this.listMaxHeight = 240,
     this.preferredIsos = const <String>[],
     this.searchable = true,
+    this.openController,
     super.key,
   });
 
@@ -72,6 +81,16 @@ class ZCountryPickerField extends StatefulWidget {
   /// Affiche la boîte de recherche (option neutre, défaut `true`).
   final bool searchable;
 
+  /// Commande **optionnelle** du déploiement depuis l'hôte (AD-4).
+  ///
+  /// `null` ⇒ le champ se gouverne seul, comportement **strictement inchangé**.
+  /// Fourni ⇒ il devient la **source de vérité** de l'ouverture : l'hôte peut
+  /// déplier (retour de validation pointant le champ fautif, bouton « choisir »
+  /// placé ailleurs, restauration d'état) **et** replier (navigation).
+  ///
+  /// Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`).
+  final ZToggleController? openController;
+
   @override
   State<ZCountryPickerField> createState() => _ZCountryPickerFieldState();
 }
@@ -79,13 +98,26 @@ class ZCountryPickerField extends StatefulWidget {
 class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
   late final TextEditingController _searchController;
   late final FocusNode _searchFocus;
-  bool _open = false;
+
+  /// État « déplié » : interne par défaut, **traversant** vers
+  /// [ZCountryPickerField.openController] dès qu'il est fourni. Aucun miroir
+  /// `bool` n'est conservé ⇒ les deux états ne peuvent pas diverger.
+  late final ZDisplayStateBinding<bool> _open;
+
+  /// Vrai pendant `didUpdateWidget` : le rebuild vient de toute façon, un
+  /// `setState` y serait illégal (on est dans la phase de build).
+  bool _inDidUpdate = false;
+
+  bool _readOnlyCloseScheduled = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
     _searchFocus = FocusNode();
+    _open = ZDisplayStateBinding<bool>(consumer: this, initialValue: false)
+      ..bind(widget.openController);
+    _open.listenable.addListener(_onOpenChanged);
     // Chargement paresseux : au premier montage, si le catalogue n'est pas encore
     // résolu, on le charge puis on rebuild CE champ (setState local, SM-1 intact).
     if (!widget.catalog.isLoaded) {
@@ -96,24 +128,59 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
   }
 
   @override
+  void didUpdateWidget(covariant ZCountryPickerField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // L'hôte a le droit de changer (ou de retirer) son contrôleur.
+    _inDidUpdate = true;
+    _open.bind(widget.openController);
+    _inDidUpdate = false;
+    if (widget.readOnly && _open.value) _scheduleReadOnlyClose();
+  }
+
+  @override
   void dispose() {
     // Anti-fuite (learning E5) : libérer contrôleur + focus de recherche.
     _searchController.dispose();
     _searchFocus.dispose();
+    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // appartient pas (son propriétaire est un `State` de l'hôte).
+    _open.listenable.removeListener(_onOpenChanged);
+    _open.dispose();
     super.dispose();
   }
 
+  void _onOpenChanged() {
+    if (widget.readOnly && _open.value) _scheduleReadOnlyClose();
+    if (!mounted || _inDidUpdate) return;
+    setState(() {});
+  }
+
+  /// `readOnly` **prime** : le panneau ne se déplie jamais. On REND alors la
+  /// vérité au contrôleur (post-frame, pour ne jamais écrire pendant un build)
+  /// — sans quoi l'hôte croirait le sélecteur ouvert alors qu'il est fermé.
+  void _scheduleReadOnlyClose() {
+    if (_readOnlyCloseScheduled) return;
+    _readOnlyCloseScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _readOnlyCloseScheduled = false;
+      if (!mounted || !widget.readOnly) return;
+      _open.value = false;
+    });
+  }
+
+  /// Vrai si le panneau est effectivement déplié dans l'arbre rendu.
+  bool get _isOpen => _open.value && !widget.readOnly;
+
   void _toggle() {
     if (widget.readOnly) return;
-    setState(() => _open = !_open);
+    _open.value = !_open.value;
   }
 
   void _select(ZCountryInfo country) {
     widget.onSelected(country);
-    setState(() {
-      _open = false;
-      _searchController.clear();
-    });
+    _searchController.clear();
+    // Fermeture décidée par le composant : elle passe **par** le contrôleur.
+    _open.value = false;
   }
 
   @override
@@ -126,7 +193,7 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         _trigger(theme, selected),
-        if (_open) ...<Widget>[
+        if (_isOpen) ...<Widget>[
           SizedBox(height: theme.gapS),
           if (widget.searchable) ...<Widget>[
             _searchBox(theme),
@@ -176,7 +243,7 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
                     ),
                   ),
                   Icon(
-                    _open ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
                     color: theme.labelColor,
                   ),
                 ],

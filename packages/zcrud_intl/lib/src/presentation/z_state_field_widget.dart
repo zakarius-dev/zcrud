@@ -35,6 +35,7 @@ class ZStateField extends StatefulWidget {
     this.countryIso,
     this.onInit,
     this.onBuild,
+    this.openController,
     super.key,
   });
 
@@ -56,6 +57,19 @@ class ZStateField extends StatefulWidget {
   /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
   @visibleForTesting
   final VoidCallback? onBuild;
+
+  /// Commande **optionnelle** du déploiement du sélecteur depuis l'hôte (AD-4).
+  ///
+  /// `null` ⇒ comportement **strictement inchangé**. Fourni ⇒ il devient la
+  /// **source de vérité** de l'ouverture : l'hôte peut déplier le sélecteur
+  /// (retour de validation pointant ce champ, bouton « choisir » placé ailleurs,
+  /// restauration d'état) **et** le replier (navigation).
+  ///
+  /// ⚠️ Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`) et
+  /// **propre à ce montage** : c'est pourquoi il n'est PAS exposé par
+  /// `builder()`, qui sert *toutes* les instances du même `kind` et partagerait
+  /// donc un unique contrôleur entre plusieurs champs.
+  final ZToggleController? openController;
 
   /// Fabrique un [ZFieldWidgetBuilder] enregistrable sous un `kind` au choix de
   /// l'app. Le [catalog] est capturé par closure ; [countryIso] fixe le pays.
@@ -213,6 +227,7 @@ class _ZStateFieldState extends State<ZStateField> {
       itemKey: (s) => s.code,
       itemTitle: (s) => s.name ?? s.code,
       itemTrailing: (s) => s.code,
+      openController: widget.openController,
       onSelected: _onSubdivisionSelected,
     );
   }

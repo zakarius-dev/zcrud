@@ -54,6 +54,7 @@ class ZChatMessageTile extends StatefulWidget {
     required this.message,
     this.collapsedMaxHeight,
     this.isStreaming = false,
+    this.expandController,
     super.key,
   });
 
@@ -68,6 +69,38 @@ class ZChatMessageTile extends StatefulWidget {
   /// `true` si ce message est une réponse encore en cours.
   final bool isStreaming;
 
+  /// Pilotage EXTERNE du dépli — `null` ⇒ la tuile se gouverne seule
+  /// (comportement historique, **strictement inchangé**).
+  ///
+  /// ## Pourquoi ce paramètre existe (patron `ZDisplayState`, CR-IFFD-38)
+  ///
+  /// Le dépli est le cas d'ORIGINE de ce chantier : chez IFFD, « Afficher
+  /// plus » était cassé par un bug de shadowing (cf. la note de bibliothèque)
+  /// et nous avons livré le vrai dépli inline. Mais il restait **commandable
+  /// depuis le seul bouton** : un hôte qui veut un « tout déplier » dans sa
+  /// barre d'outils, ou déplier le message qu'une recherche vient de cibler,
+  /// n'avait aucun second chemin de déclenchement. *Une commande absente est
+  /// moins coûteuse qu'une commande morte, mais elle reste une capacité
+  /// manquante.*
+  ///
+  /// ## Le contrat
+  ///
+  /// Fourni, le contrôleur devient **LA SOURCE DE VÉRITÉ** : la tuile ne garde
+  /// aucun miroir du dépli (cf. [ZDisplayStateBinding]) ⇒ les deux états ne
+  /// peuvent pas diverger, parce qu'il n'y en a qu'un. Le tap sur « Afficher
+  /// plus » écrit **dans le contrôleur** — l'hôte lit donc le geste interne
+  /// sans qu'aucun callback ne soit nécessaire.
+  ///
+  /// ⚠️ Sans [collapsedMaxHeight], il n'y a **ni repli ni bouton** : le
+  /// contrôleur est alors accepté mais sans effet visible, exactement comme le
+  /// dépli interne l'était.
+  ///
+  /// 🔒 Le contrôleur doit être **possédé hors `build`** : c'est imposé par
+  /// [ZDisplayStateOwnerMixin], qui refuse un enregistrement postérieur à la
+  /// première frame de son `State`. Un contrôleur créé dans `build` serait
+  /// remplacé à chaque rebuild — donc silencieusement inerte.
+  final ZToggleController? expandController;
+
   @override
   State<ZChatMessageTile> createState() => _ZChatMessageTileState();
 }
@@ -76,7 +109,13 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
   /// 🔴 `ValueNotifier` et non `setState` (AD-2) : basculer le dépli d'UNE tuile
   /// ne doit pas reconstruire la conversation. `setState` ici remonterait au
   /// `build` de la tuile entière, blocs compris.
-  final ValueNotifier<bool> _expanded = ValueNotifier<bool>(false);
+  ///
+  /// 🔴 Ce n'est plus un `ValueNotifier` privé mais une **liaison** : état
+  /// interne par défaut, contrôleur de l'hôte quand il y en a un. La liaison ne
+  /// **copie** rien — quand l'hôte pilote, la valeur est lue et écrite chez
+  /// lui. `_expanded.listenable` reste **stable** au travers d'un changement de
+  /// contrôleur, ce qui évite un `setState` d'échelle tuile (AD-2).
+  late final ZDisplayStateBinding<bool> _expanded;
 
   /// `true` quand le contenu **dépasse réellement** la hauteur repliée. Mesuré
   /// à la mise en page, pas deviné : sans cela, un message d'une ligne
@@ -84,7 +123,24 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
   final ValueNotifier<bool> _overflowed = ValueNotifier<bool>(false);
 
   @override
+  void initState() {
+    super.initState();
+    _expanded = ZDisplayStateBinding<bool>(consumer: this, initialValue: false)
+      ..bind(widget.expandController);
+  }
+
+  @override
+  void didUpdateWidget(covariant ZChatMessageTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // L'hôte a le droit de changer (ou de retirer) son pilote — sans quoi la
+    // tuile resterait branchée sur l'ancien, muette pour le nouveau.
+    _expanded.bind(widget.expandController);
+  }
+
+  @override
   void dispose() {
+    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // appartient pas (son propriétaire est un `State` de l'hôte).
     _expanded.dispose();
     _overflowed.dispose();
     super.dispose();
@@ -106,7 +162,10 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     if (maxHeight == null) return content;
 
     return ValueListenableBuilder<bool>(
-      valueListenable: _expanded,
+      // 🔴 L'écoute STABLE de la liaison — pas la source courante : brancher le
+      // `ValueListenableBuilder` sur le contrôleur lui-même obligerait à
+      // reconstruire la tuile entière quand l'hôte change de pilote.
+      valueListenable: _expanded.listenable,
       builder: (BuildContext context, bool expanded, Widget? child) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,6 +185,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
                 if (!overflowed && !expanded) return const SizedBox.shrink();
                 return _ZToggleButton(
                   expanded: expanded,
+                  // 🔴 Le geste INTERNE écrit **à la source** : quand l'hôte
+                  // pilote, le tap est écrit chez lui et lui reste donc
+                  // lisible. Une écriture dans un miroir local aurait laissé
+                  // sa barre d'outils annoncer « déplier » sur un message
+                  // déjà déplié.
                   onToggle: () => _expanded.value = !_expanded.value,
                 );
               },

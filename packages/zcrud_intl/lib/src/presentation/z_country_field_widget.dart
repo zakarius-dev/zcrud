@@ -29,6 +29,7 @@ class ZCountryFieldWidget extends StatefulWidget {
     required this.catalog,
     this.onInit,
     this.onBuild,
+    this.openController,
     super.key,
   });
 
@@ -46,6 +47,19 @@ class ZCountryFieldWidget extends StatefulWidget {
   /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
   @visibleForTesting
   final VoidCallback? onBuild;
+
+  /// Commande **optionnelle** du déploiement du sélecteur depuis l'hôte (AD-4).
+  ///
+  /// `null` ⇒ comportement **strictement inchangé**. Fourni ⇒ il devient la
+  /// **source de vérité** de l'ouverture : l'hôte peut déplier le sélecteur
+  /// (retour de validation pointant ce champ, bouton « choisir » placé ailleurs,
+  /// restauration d'état) **et** le replier (navigation).
+  ///
+  /// ⚠️ Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`) et
+  /// **propre à ce montage** : c'est pourquoi il n'est PAS exposé par
+  /// `builder()`, qui sert *toutes* les instances du même `kind` et partagerait
+  /// donc un unique contrôleur entre plusieurs champs.
+  final ZToggleController? openController;
 
   /// Fabrique un [ZFieldWidgetBuilder] enregistrable sous le `kind` `"country"`.
   /// Le [catalog] est **capturé par closure** (immuable, partageable — ce n'est
@@ -121,6 +135,7 @@ class _ZCountryFieldWidgetState extends State<ZCountryFieldWidget> {
               preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
               searchable: _config?.searchable ?? true,
               semanticLabel: resolvedLabel,
+              openController: widget.openController,
               onSelected: (ZCountryInfo c) =>
                   // Voie unique (AD-2) : émet le CODE ISO string neutre.
                   widget.ctx.onChanged(c.isoCode),
