@@ -64,6 +64,14 @@ final ZSubfolderNavPlacement kProductionDefaultNavPlacement =
       ),
     ).subfolderNavPlacement;
 
+/// Placement de l'affordance d'ajout par DÉFAUT **lu sur le socle** (jamais
+/// recopié en dur) — même discipline que [kProductionDefaultNarrowMode].
+final ZSubfolderAddPlacement kProductionDefaultAddPlacement =
+    const ZSubfolderNavSpec(
+      subfolders: <ZSubfolderRef>[],
+      allSubfoldersLabel: '',
+    ).addPlacement;
+
 /// Quelques sous-dossiers de référence.
 List<ZSubfolderRef> refs({int n = 3}) => <ZSubfolderRef>[
   for (var i = 0; i < n; i++)
@@ -86,6 +94,9 @@ ZSubfolderNavSpec navSpec({
   // sélection). Le harnais ne recopie JAMAIS ce défaut : une garde qui mesure
   // « quel mode par défaut » doit mesurer celui du socle, pas celui du harnais.
   ZSubfolderNarrowMode? narrowMode,
+  // CR-IFFD-44 — `null` ⇒ le DÉFAUT DE PRODUCTION s'applique (le harnais ne
+  // recopie jamais un défaut).
+  ZSubfolderAddPlacement? addPlacement,
   double initialSidebarWidth = 320,
   double minSidebarWidth = 300,
   double maxSidebarWidthFraction = 0.5,
@@ -99,6 +110,7 @@ ZSubfolderNavSpec navSpec({
     addAction: addAction,
     addLabel: kAddLabel,
     addIcon: Icons.create_new_folder,
+    addPlacement: addPlacement ?? kProductionDefaultAddPlacement,
     onReorder: onReorder,
     reorderHandleLabel: kHandleLabel,
     moveBeforeLabel: kMoveBefore,

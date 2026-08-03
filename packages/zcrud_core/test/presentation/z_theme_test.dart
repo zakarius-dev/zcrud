@@ -277,4 +277,82 @@ void main() {
       expect(ZSubfolderSelectedEmphasis.values, hasLength(2));
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // CR-IFFD-44 — marge EXTÉRIEURE de la barre de fratrie
+  // ---------------------------------------------------------------------------
+  group('CR-IFFD-44 — `subfolderBarPadding`', () {
+    test('`null` par DÉFAUT ⇒ aucune enveloppe chez le consommateur', () {
+      expect(const ZcrudTheme().subfolderBarPadding, isNull);
+    });
+
+    test('copyWith transporte le token', () {
+      expect(
+        const ZcrudTheme()
+            .copyWith(
+              subfolderBarPadding: const EdgeInsetsDirectional.only(start: 12),
+            )
+            .subfolderBarPadding,
+        const EdgeInsetsDirectional.only(start: 12),
+      );
+    });
+
+    test('🔴 lerp de deux `null` RESTE `null` — l\'héritage n\'est pas GELÉ',
+        () {
+      // Le piège déjà rencontré ici : matérialiser `EdgeInsets.zero` figerait
+      // « pas d'enveloppe dans l'arbre » dès la PREMIÈRE transition de thème,
+      // sans que le rendu immédiat change — la régression n'apparaîtrait qu'au
+      // changement suivant.
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        expect(
+          a.lerp(const ZcrudTheme(), t).subfolderBarPadding,
+          isNull,
+          reason: 't=$t',
+        );
+      }
+    });
+
+    test('lerp INTERPOLE réellement (ce n\'est pas une bascule)', () {
+      const ZcrudTheme a = ZcrudTheme(
+        subfolderBarPadding: EdgeInsetsDirectional.only(start: 0),
+      );
+      const ZcrudTheme b = ZcrudTheme(
+        subfolderBarPadding: EdgeInsetsDirectional.only(start: 40),
+      );
+      // Trois points DISTINCTS : une bascule au point milieu resterait verte
+      // sur les seules extrémités.
+      expect(a.lerp(b, 0).subfolderBarPadding, b.lerp(a, 1).subfolderBarPadding);
+      expect(
+        (a.lerp(b, 0.5).subfolderBarPadding! as EdgeInsetsDirectional).start,
+        20,
+      );
+      expect(
+        (a.lerp(b, 1).subfolderBarPadding! as EdgeInsetsDirectional).start,
+        40,
+      );
+    });
+
+    test('🔴 lerp PRÉSERVE la nature DIRECTIONNELLE (AD-13)', () {
+      // Une interpolation contre un `EdgeInsets` physique dégraderait un inset
+      // directionnel en inset physique : la marge cesserait de basculer en RTL
+      // pendant la transition de thème — un défaut qui ne se verrait QUE là.
+      const ZcrudTheme a = ZcrudTheme();
+      const ZcrudTheme b = ZcrudTheme(
+        subfolderBarPadding: EdgeInsetsDirectional.only(start: 40),
+      );
+      for (final double t in <double>[0.25, 0.5, 1]) {
+        expect(
+          a.lerp(b, t).subfolderBarPadding,
+          isA<EdgeInsetsDirectional>(),
+          reason: 't=$t (null → directionnel)',
+        );
+        expect(
+          b.lerp(a, t).subfolderBarPadding,
+          isA<EdgeInsetsDirectional>(),
+          reason: 't=$t (directionnel → null)',
+        );
+      }
+    });
+  });
 }

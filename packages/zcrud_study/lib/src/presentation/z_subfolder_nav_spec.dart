@@ -229,6 +229,61 @@ enum ZSubfolderNavPlacement {
   aboveTabs,
 }
 
+/// **Où** l'affordance d'ajout de la barre de fratrie est offerte — CR-IFFD-44,
+/// manque 1.
+///
+/// Avant CR-IFFD-44, `ZSubfolderNavSpec.addAction != null` commandait
+/// **simultanément** le bouton `+` de la BARRE et le pied « Ajouter… » de la
+/// FEUILLE : un hôte dont la référence pose l'ajout à un seul des deux endroits
+/// n'avait que « les deux » ou « aucun » — et « aucun » **retire une action
+/// réelle**. Ce n'est donc pas un réglage de masquage : l'action est la même,
+/// sa cible est la même ; seul son **emplacement** devient adressable.
+///
+/// 🔴 **Ce jeton vit dans la SPEC, pas dans le thème — et c'est mesuré, pas
+/// stylistique.** Trois raisons, dans l'ordre de force :
+/// 1. Il décide de la **présence d'un contrôle interactif** dans l'arbre. Faire
+///    dépendre l'atteignabilité d'une action d'un `ThemeExtension` ferait de
+///    l'a11y une conséquence du thème — un thème doit pouvoir être remplacé
+///    sans qu'une action disparaisse. C'est de la **structure** (le même
+///    critère qui a placé [ZSubfolderNavPlacement] hors du thème).
+/// 2. Il gouverne le rendu de `addAction`/`addLabel`/`addIcon`, qui vivent
+///    **déjà** dans la spec. Séparer les deux couperait la capacité en deux
+///    canaux d'injection (« tu me donnes l'action ici, tu dis où elle
+///    apparaît là »).
+/// 3. Un thème est **ambiant** : posé à la racine, il vaudrait pour toutes les
+///    fratries de l'app. Le placement de l'ajout est une décision par
+///    **descripteur de navigation** — deux pages peuvent légitimement diverger.
+///
+/// À l'inverse, `ZcrudTheme.subfolderBarPadding` (manque 2) est bien un token de
+/// thème : une marge ne fait apparaître ni disparaître aucune action.
+///
+/// ⚠️ **Sans effet hors de la barre de sélection** ([ZSubfolderNarrowMode.selector]) :
+/// la rangée de puces et la sidebar n'ont **pas de feuille**, donc pas de second
+/// emplacement à arbitrer. Leur bouton d'ajout reste commandé par le seul
+/// `addAction` — y appliquer [sheetOnly] retirerait une action sans lui offrir
+/// de remplaçante, ce qui est exactement ce que ce jeton refuse.
+enum ZSubfolderAddPlacement {
+  /// **DÉFAUT** — l'ajout est offert **aux deux endroits** : bouton `+` de la
+  /// barre ET pied de la feuille. Rendu strictement identique à celui d'avant
+  /// CR-IFFD-44 ⇒ aucun hôte existant ne bouge.
+  barAndSheet,
+
+  /// L'ajout n'est offert que dans la **feuille** (pied). Le `+` de la barre est
+  /// **absent de l'arbre** (AD-4) — la barre gagne d'autant en largeur pour son
+  /// déclencheur.
+  sheetOnly,
+
+  /// L'ajout n'est offert que sur la **barre** (`+`). Le pied de la feuille est
+  /// **absent de l'arbre** (AD-4).
+  barOnly;
+
+  /// L'affordance est-elle offerte sur la BARRE ?
+  bool get inBar => this != ZSubfolderAddPlacement.sheetOnly;
+
+  /// L'affordance est-elle offerte dans la FEUILLE ?
+  bool get inSheet => this != ZSubfolderAddPlacement.barOnly;
+}
+
 /// Descripteur immuable de la navigation de sous-dossiers.
 @immutable
 class ZSubfolderNavSpec {
@@ -244,6 +299,7 @@ class ZSubfolderNavSpec {
     this.addAction,
     this.addLabel,
     this.addIcon,
+    this.addPlacement = ZSubfolderAddPlacement.barAndSheet,
     this.onReorder,
     this.reorderHandleLabel,
     this.moveBeforeLabel,
@@ -336,6 +392,15 @@ class ZSubfolderNavSpec {
   /// Glyphe **injecté** du bouton « Ajouter » (repli neutre `Icons.add` côté
   /// widget — un `IconData` conventionnel, jamais un libellé).
   final IconData? addIcon;
+
+  /// **Où** l'affordance d'ajout est offerte sur la barre de sélection
+  /// (CR-IFFD-44, manque 1).
+  ///
+  /// Défaut [ZSubfolderAddPlacement.barAndSheet] ⇒ **rendu strictement
+  /// inchangé** pour tout hôte existant. Sans effet quand [addAction] est
+  /// `null` (aucune affordance nulle part, AD-4) ni hors de
+  /// [ZSubfolderNarrowMode.selector] — voir [ZSubfolderAddPlacement].
+  final ZSubfolderAddPlacement addPlacement;
 
   /// Callback de réordonnancement des sous-dossiers. **`null` ⇒ capacité
   /// ABSENTE** (AD-4) : aucune poignée de drag, aucune action sémantique de

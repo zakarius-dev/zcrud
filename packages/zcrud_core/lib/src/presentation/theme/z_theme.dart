@@ -131,6 +131,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subfolderTriggerCollapsedIcon,
     this.subfolderTriggerExpandedIcon,
     this.subfolderSelectedEmphasis,
+    this.subfolderBarPadding,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -332,6 +333,23 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `null` ⇒ [ZSubfolderSelectedEmphasis.highlight], rendu **inchangé**.
   final ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis;
 
+  /// Marge EXTÉRIEURE de la barre de fratrie (CR-IFFD-44, manque 2).
+  /// `null` ⇒ **aucune enveloppe dans l'arbre**, rendu strictement inchangé
+  /// (la barre reste bord à bord dans son parent).
+  ///
+  /// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : les quatre
+  /// réglages déjà existants de cette surface (`subfolderTriggerVariant`,
+  /// les deux glyphes de chevron, `subfolderSelectedEmphasis`) sont des tokens
+  /// de thème, et une marge est une décision d'**apparence**, pas de structure.
+  /// La poser dans la spec la ferait voyager avec les données de fratrie, qui
+  /// n'en savent rien.
+  ///
+  /// **AD-13** : type `EdgeInsetsGeometry` — un `EdgeInsetsDirectional` y est
+  /// admis tel quel et bascule en RTL. Un `EdgeInsets.only(left:)` reste
+  /// possible pour l'hôte qui veut délibérément une marge physique ; c'est SON
+  /// choix, jamais un défaut du socle.
+  final EdgeInsetsGeometry? subfolderBarPadding;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -497,6 +515,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     IconData? subfolderTriggerCollapsedIcon,
     IconData? subfolderTriggerExpandedIcon,
     ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis,
+    EdgeInsetsGeometry? subfolderBarPadding,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -556,6 +575,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         subfolderTriggerExpandedIcon ?? this.subfolderTriggerExpandedIcon,
     subfolderSelectedEmphasis:
         subfolderSelectedEmphasis ?? this.subfolderSelectedEmphasis,
+    subfolderBarPadding: subfolderBarPadding ?? this.subfolderBarPadding,
   );
 
   @override
@@ -728,6 +748,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subfolderSelectedEmphasis: t < 0.5
           ? subfolderSelectedEmphasis
           : other.subfolderSelectedEmphasis,
+      // Marge CONTINUE : elle s'interpole. `null` des DEUX côtés RESTE `null`
+      // (même invariant que `countPillPadding`) — matérialiser
+      // `EdgeInsets.zero` ici GÈLERAIT « pas d'enveloppe dans l'arbre » à la
+      // première transition de thème.
+      subfolderBarPadding: _lerpNullableInsets(
+        subfolderBarPadding,
+        other.subfolderBarPadding,
+        t,
+      ),
     );
   }
 }
@@ -744,6 +773,27 @@ Radius? _lerpNullableRadius(Radius? a, Radius? b, double t) =>
     a == null && b == null
     ? null
     : Radius.lerp(a ?? Radius.zero, b ?? Radius.zero, t);
+
+/// Interpolation d'une marge NULLABLE **directionnelle-compatible**.
+///
+/// ⚠️ `EdgeInsetsGeometry.lerp` préserve la nature des deux bornes (un
+/// `EdgeInsetsDirectional` interpolé avec `EdgeInsetsDirectional.zero` reste
+/// directionnel — AD-13). `null` des deux côtés reste `null`.
+EdgeInsetsGeometry? _lerpNullableInsets(
+  EdgeInsetsGeometry? a,
+  EdgeInsetsGeometry? b,
+  double t,
+) => a == null && b == null
+    ? null
+    : EdgeInsetsGeometry.lerp(
+        a ?? (b is EdgeInsetsDirectional
+            ? EdgeInsetsDirectional.zero
+            : EdgeInsets.zero),
+        b ?? (a is EdgeInsetsDirectional
+            ? EdgeInsetsDirectional.zero
+            : EdgeInsets.zero),
+        t,
+      );
 
 EdgeInsetsDirectional? _lerpNullablePadding(
   EdgeInsetsDirectional? a,

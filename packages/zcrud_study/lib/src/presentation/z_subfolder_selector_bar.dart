@@ -53,6 +53,7 @@ library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderProxyBox;
 import 'package:zcrud_core/zcrud_core.dart'
     show
         ZInvertedSurface,
@@ -122,8 +123,12 @@ class ZSubfolderSelectorBar extends StatefulWidget {
   static const Key addKey = ValueKey<String>('suf3:selector:add');
 
   /// Clé stable du **pied** « Ajouter » de la feuille (point 9) — absent si
-  /// `addAction` nul.
+  /// `addAction` nul **ou** sous [ZSubfolderAddPlacement.barOnly].
   static const Key footerAddKey = ValueKey<String>('suf3:selector:sheet:add');
+
+  /// Clé stable de l'enveloppe de **marge extérieure** (CR-IFFD-44, manque 2) —
+  /// **ABSENTE de l'arbre** tant que `ZcrudTheme.subfolderBarPadding` est `null`.
+  static const Key barPaddingKey = ValueKey<String>('suf3:selector:padding');
 
   /// Clé stable d'un item de la feuille ([id] vide = item racine « tous »).
   static Key itemKey(String id) => ValueKey<String>('suf3:selector:item:$id');
@@ -205,13 +210,40 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   // --- Ligne unique : élément courant + chevron (+ « Ajouter ») -------------
 
   Widget _bar(BuildContext context, ZcrudTheme theme) {
-    return Row(
+    final EdgeInsetsGeometry? padding = theme.subfolderBarPadding;
+    // 🔴 Le sujet de la garde est le DÉCLENCHEUR, pas la barre. Mesuré : sous
+    // une marge horizontale, la `Row` garde la largeur qu'on lui donne et le
+    // bouton `+` garde ses 48 dp intrinsèques — c'est l'`Expanded` du
+    // déclencheur qui absorbe TOUT le retrait. Garder la barre aurait produit
+    // une garde verte pendant que la cible réelle s'écrase.
+    final Widget trigger = padding == null
+        ? _trigger(context, theme)
+        : _ZTapTargetGuard(
+            minSize: _kMinTapTarget,
+            child: _trigger(context, theme),
+          );
+    final Row row = Row(
       children: <Widget>[
-        Expanded(child: _trigger(context, theme)),
+        Expanded(child: trigger),
         // Slot d'ajout — MÊME capacité que la rangée de puces et que la sidebar
         // (AD-4 : `addAction` null ⇒ bouton ABSENT de l'arbre).
-        if (widget.spec.addAction != null) _addButton(context, theme),
+        // CR-IFFD-44 — …et son EMPLACEMENT est désormais adressable : sous
+        // `sheetOnly`, l'action reste offerte (pied de la feuille) mais le `+`
+        // quitte l'arbre.
+        if (widget.spec.addAction != null && widget.spec.addPlacement.inBar)
+          _addButton(context, theme),
       ],
+    );
+    // CR-IFFD-44, manque 2 — marge EXTÉRIEURE adressable. `null` ⇒ AUCUNE
+    // enveloppe dans l'arbre : la neutralité est littérale (même arbre, pas
+    // seulement « même apparence »), comme pour `_triggerChrome`.
+    if (padding == null) return row;
+    return Padding(
+      key: ZSubfolderSelectorBar.barPaddingKey,
+      // `EdgeInsetsGeometry` : un `EdgeInsetsDirectional` est résolu par la
+      // `Directionality` ambiante et bascule donc en RTL (AD-13).
+      padding: padding,
+      child: row,
     );
   }
 
@@ -464,7 +496,12 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                   ),
                   // Point 9 — pied d'ajout CÂBLÉ sur les slots existants
                   // (`addAction`/`addLabel`/`addIcon`) : aucun nouveau champ.
-                  if (widget.spec.addAction != null) _footerAdd(context, theme),
+                  // CR-IFFD-44 — son emplacement est adressable : sous
+                  // `barOnly`, le pied quitte l'arbre et le `+` de la barre
+                  // reste la seule affordance.
+                  if (widget.spec.addAction != null &&
+                      widget.spec.addPlacement.inSheet)
+                    _footerAdd(context, theme),
                 ],
               ),
             ),
@@ -658,5 +695,127 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   void _select(BuildContext sheetContext, String? id) {
     Navigator.of(sheetContext).maybePop();
     widget.onSelect(id);
+  }
+}
+
+/// Dénonciation en DEBUG d'une cible tactile écrasée par la marge extérieure
+/// (CR-IFFD-44) — jamais une correction silencieuse.
+///
+/// ## L'arbitrage, et ce qui l'a décidé (MESURÉ, pas supposé)
+///
+/// L'hôte a signalé n'avoir PAS mesuré l'effet d'une marge horizontale sur la
+/// cible du déclencheur en largeur contrainte. Mesures rejouées ici (écran
+/// 320 dp et 400 dp, `addAction` fourni donc `+` présent) :
+///
+/// | largeur | marge/côté | déclencheur rendu |
+/// |---|---|---|
+/// | 320 | 0 | 272 × 48 |
+/// | 320 | 24 | 224 × 48 |
+/// | 320 | 48 | 176 × 48 |
+/// | 320 | 96 | 80 × 48 |
+/// | 320 | **112** | **48 × 48** ← plancher atteint |
+/// | 320 | 130 | **12 × 48** ← plancher ROMPU |
+/// | 400 | 48 | 256 × 48 |
+/// | 400 | 130 | 92 × 48 |
+///
+/// Trois enseignements :
+/// 1. **La HAUTEUR ne bouge jamais** (48 dp) : le `ConstrainedBox` du
+///    déclencheur la tient, et la marge n'intervient pas sur un axe libre.
+/// 2. **Le bouton `+` ne rétrécit pas** : il garde ses 48 dp intrinsèques ;
+///    c'est l'`Expanded` du déclencheur qui absorbe **tout** le retrait.
+/// 3. La rupture n'arrive qu'au-delà de **112 dp par côté à 320 dp** (soit 70 %
+///    de la largeur écran en marge) — **152 dp à 400 dp**. Aucune marge
+///    plausible n'y touche.
+///
+/// ## Pourquoi DÉNONCER plutôt que BORNER, ou que ne rien faire
+///
+/// * **Borner** la marge ferait rendre au socle autre chose que ce que l'hôte a
+///   demandé, **en silence**. C'est précisément le grief que CR-IFFD-44 vient
+///   corriger (un socle qui décide à la place de l'hôte) : le remède ne peut
+///   pas rejouer le défaut.
+/// * **Ne rien faire** serait tenable si le cas était inatteignable — il ne
+///   l'est pas : mesuré à 12 dp. Un plancher a11y rompu sans le moindre signal
+///   est le pire des trois.
+/// * **Dénoncer** en debug ne coûte rien en production, rougit dans les tests
+///   de l'hôte, s'affiche dans sa console, et **nomme le remède** (réduire la
+///   marge). Même idiome que `ZMenuEntryTile` / `RenderFlex overflowed`.
+///
+/// La garde n'est posée QUE lorsque la marge est fournie : sans marge, l'arbre
+/// est strictement celui d'avant CR-IFFD-44.
+class _ZTapTargetGuard extends SingleChildRenderObjectWidget {
+  const _ZTapTargetGuard({required this.minSize, required Widget super.child});
+
+  /// Cible minimale exigée sur les DEUX axes (dp).
+  final double minSize;
+
+  @override
+  _RenderZTapTargetGuard createRenderObject(BuildContext context) =>
+      _RenderZTapTargetGuard(minSize: minSize);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderZTapTargetGuard renderObject,
+  ) {
+    renderObject.minSize = minSize;
+  }
+}
+
+class _RenderZTapTargetGuard extends RenderProxyBox {
+  // Champ privé à SETTER (chaque écriture doit `markNeedsLayout`) : un formal
+  // d'initialisation ne conviendrait pas.
+  // ignore: prefer_initializing_formals
+  _RenderZTapTargetGuard({required double minSize}) : _minSize = minSize;
+
+  double get minSize => _minSize;
+  double _minSize;
+  set minSize(double value) {
+    if (value == _minSize) return;
+    _minSize = value;
+    markNeedsLayout();
+  }
+
+  /// Tolérance d'arrondi : 47,7 dp n'est pas le défaut visé (le cas mesuré
+  /// était 12 dp).
+  static const double _tolerance = 0.5;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    assert(() {
+      if (size.width >= _minSize - _tolerance &&
+          size.height >= _minSize - _tolerance) {
+        return true;
+      }
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary(
+              'ZSubfolderSelectorBar : cible tactile ÉCRASÉE — '
+              '${size.width.toStringAsFixed(1)} × '
+              '${size.height.toStringAsFixed(1)} dp au lieu de '
+              '${_minSize.toStringAsFixed(0)} dp minimum (AD-13/NFR-S6).',
+            ),
+            ErrorDescription(
+              'La marge extérieure `ZcrudTheme.subfolderBarPadding` retire de '
+              'la largeur au déclencheur, qui est le seul élément élastique de '
+              'la barre : au-delà d\'un certain retrait, il passe sous le '
+              'plancher de cible tactile.',
+            ),
+            ErrorHint(
+              'Remède : RÉDUIRE `subfolderBarPadding`. Le socle ne la borne pas '
+              'de lui-même — il rendrait alors autre chose que la marge '
+              'demandée, en silence. Mesuré : à 320 dp de large, la rupture '
+              'n\'apparaît qu\'au-delà de 112 dp de marge PAR CÔTÉ.',
+            ),
+          ]),
+          library: 'zcrud_study',
+          context: ErrorDescription(
+            'pendant la disposition de la barre de sélection de fratrie',
+          ),
+        ),
+      );
+      return true;
+    }());
   }
 }
