@@ -27,12 +27,15 @@ const String _kTileKey = 'cr31:tile';
 ZSubfolderNavSpec _nav({
   Widget? sidebarHeader,
   ZSubfolderItemBuilder? itemBuilder,
+  // CR-IFFD-40 — `null` ⇒ DÉFAUT DE PRODUCTION (jamais recopié en dur ici).
+  ZSubfolderNarrowMode? narrowMode,
 }) {
   return ZSubfolderNavSpec(
     subfolders: refs(n: 2),
     allSubfoldersLabel: kAllLabel,
     sidebarHeader: sidebarHeader,
     itemBuilder: itemBuilder,
+    narrowMode: narrowMode ?? kProductionDefaultNarrowMode,
     collapseLabel: kCollapseLabel,
     expandLabel: kExpandLabel,
     resizeLabel: kResizeLabel,
@@ -78,7 +81,16 @@ void main() {
     ) async {
       await setScreen(tester, 500, 800);
       final seen = <ZSubfolderLayoutMode?>{};
-      await pumpDetail(tester, nav: _nav(itemBuilder: recorder(seen)));
+      await pumpDetail(
+        tester,
+        // CR-IFFD-40 — surface NOMMÉE : cette garde vise la rangée de puces,
+        // qui n'est plus le défaut. Le scope de la surface par DÉFAUT est gardé
+        // par `cr_iffd40_subfolder_selector_test.dart`.
+        nav: _nav(
+          itemBuilder: recorder(seen),
+          narrowMode: ZSubfolderNarrowMode.compact,
+        ),
+      );
 
       expect(find.byType(ZSubfolderCompactSelector), findsOneWidget);
       // GARDE MORDANTE : scope absent — ou posé SOUS le `ChoiceChip`, donc
@@ -156,6 +168,9 @@ void main() {
             // Builder qui IGNORE le mode — la faute d'IFFD, reproduite.
             itemBuilder: (context, ref, selected) =>
                 ListTile(title: Text(ref.label)),
+            // CR-IFFD-40 — c'est la rangée de puces qui ne borne PAS la
+            // largeur : la contre-preuve n'a de sens que sur CETTE surface.
+            narrowMode: ZSubfolderNarrowMode.compact,
           ),
         );
 
@@ -211,7 +226,13 @@ void main() {
       tester,
     ) async {
       await setScreen(tester, 500, 800);
-      await pumpDetail(tester, nav: _nav(sidebarHeader: header));
+      await pumpDetail(
+        tester,
+        nav: _nav(
+          sidebarHeader: header,
+          narrowMode: ZSubfolderNarrowMode.compact,
+        ),
+      );
       expect(find.byType(ZSubfolderCompactSelector), findsOneWidget);
       expect(headerFinder, findsNothing);
     });

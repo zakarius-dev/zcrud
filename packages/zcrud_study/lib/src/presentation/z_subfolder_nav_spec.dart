@@ -114,6 +114,40 @@ class ZSubfolderLayoutScope extends InheritedWidget {
       oldWidget.mode != mode;
 }
 
+/// Surface de navigation rendue SOUS le seuil de bascule (< 600 dp) —
+/// CR-IFFD-40.
+///
+/// 🔴 **Enum SÉPARÉ de [ZSubfolderLayoutMode], et c'est délibéré.** Ajouter une
+/// troisième valeur à [ZSubfolderLayoutMode] aurait cassé tout `switch`
+/// exhaustif d'hôte sur ce type — or c'est **le patron que son dartdoc
+/// recommande** et qu'un test de ce dépôt exerce
+/// (`cr_iffd30_31_lex81_subfolder_nav_test.dart`, `switch (…of(context))` à deux
+/// bras). Deux axes distincts, deux types : [ZSubfolderLayoutMode] dit à
+/// l'`itemBuilder` **quelles contraintes de layout** il subit ; ce type-ci dit
+/// **quelle surface** rend la navigation étroite.
+///
+/// Les deux surfaces posent `ZSubfolderLayoutMode.compact` : l'item doit se
+/// dimensionner sur son contenu dans l'une comme dans l'autre — un `itemBuilder`
+/// existant continue donc de rendre à l'identique.
+enum ZSubfolderNarrowMode {
+  /// **DÉFAUT** — barre de sélection : une seule ligne pleine largeur montrant
+  /// l'élément COURANT (repli sur [ZSubfolderNavSpec.allSubfoldersLabel] quand
+  /// aucun n'est sélectionné) avec un chevron ; la fratrie ne se déploie qu'à la
+  /// demande.
+  ///
+  /// Corrige le défaut CR-IFFD-40 : dans une rangée défilante, un seul balayage
+  /// sortait la sélection du champ visible et l'utilisateur perdait le « où
+  /// suis-je ». La question de l'utilisateur est « lequel est actif ? » **avant**
+  /// « lesquels existent ? ».
+  selector,
+
+  /// Rangée de puces défilant horizontalement — comportement **historique**
+  /// (≤ v0.33.1), conservé à l'identique pour l'hôte qui le demande
+  /// explicitement. Aucune rupture d'API : la valeur reste valide et son rendu
+  /// est inchangé.
+  compact,
+}
+
 /// Descripteur immuable de la navigation de sous-dossiers.
 @immutable
 class ZSubfolderNavSpec {
@@ -122,6 +156,7 @@ class ZSubfolderNavSpec {
     required this.subfolders,
     required this.allSubfoldersLabel,
     this.itemBuilder,
+    this.narrowMode = ZSubfolderNarrowMode.selector,
     this.sidebarHeader,
     this.addAction,
     this.addLabel,
@@ -155,6 +190,17 @@ class ZSubfolderNavSpec {
 
   /// Constructeur d'item **injectable** (défaut : rangée neutre thémée, D3).
   final ZSubfolderItemBuilder? itemBuilder;
+
+  /// Surface de navigation SOUS le seuil de bascule (< 600 dp).
+  ///
+  /// **Défaut : [ZSubfolderNarrowMode.selector]** (CR-IFFD-40) — changement de
+  /// COMPORTEMENT par défaut, **sans rupture d'API** : un hôte qui veut la
+  /// rangée de puces historique la redemande en une ligne
+  /// (`narrowMode: ZSubfolderNarrowMode.compact`) et retrouve un rendu
+  /// strictement identique.
+  ///
+  /// Sans effet ≥ 600 dp (la sidebar est alors rendue).
+  final ZSubfolderNarrowMode narrowMode;
 
   /// En-tête **injecté** de la sidebar (titre de panneau, p. ex. « Sous-dossiers »).
   ///

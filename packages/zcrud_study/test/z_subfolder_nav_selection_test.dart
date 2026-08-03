@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zcrud_study/zcrud_study.dart';
 
 import 'support/suf3_harness.dart';
 
@@ -70,7 +71,13 @@ void main() {
     testWidgets('sélecteur compact : la puce filtre aussi le corps Matériel',
         (tester) async {
       await setScreen(tester, 500, 800);
-      await pumpDetail(tester);
+      // CR-IFFD-40 — surface NOMMÉE : cette garde vise la rangée de puces. La
+      // même voie de sélection est gardée sur la surface par DÉFAUT dans
+      // `cr_iffd40_subfolder_selector_test.dart`.
+      await pumpDetail(
+        tester,
+        nav: navSpec(narrowMode: ZSubfolderNarrowMode.compact),
+      );
 
       expect(find.byKey(const ValueKey<String>('empty:null')), findsOneWidget);
       await tester.tap(find.text('Sous-dossier 0'));

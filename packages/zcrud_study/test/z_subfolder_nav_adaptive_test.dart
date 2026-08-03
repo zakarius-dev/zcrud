@@ -9,13 +9,32 @@ import 'package:zcrud_study/zcrud_study.dart';
 import 'support/suf3_harness.dart';
 
 void main() {
-  testWidgets('< 600 dp : sélecteur compact, AUCUNE sidebar', (tester) async {
+  testWidgets('< 600 dp : surface étroite, AUCUNE sidebar', (tester) async {
     await setScreen(tester, 500, 800);
     await pumpDetail(tester);
 
-    expect(find.byType(ZSubfolderCompactSelector), findsOneWidget);
+    // CR-IFFD-40 — la surface étroite par DÉFAUT est la barre de sélection ;
+    // la rangée de puces reste atteignable par `narrowMode: compact` (cf. le
+    // test suivant).
+    expect(find.byType(ZSubfolderSelectorBar), findsOneWidget);
     // GARDE MORDANTE : rendre la sidebar dans le builder `compact` ferait
     // apparaître une sidebar à 500 dp.
+    expect(find.byType(ZSubfolderSidebar), findsNothing);
+  });
+
+  testWidgets('< 600 dp : `narrowMode: compact` REDONNE la rangée de puces', (
+    tester,
+  ) async {
+    await setScreen(tester, 500, 800);
+    await pumpDetail(
+      tester,
+      nav: navSpec(narrowMode: ZSubfolderNarrowMode.compact),
+    );
+
+    expect(find.byType(ZSubfolderCompactSelector), findsOneWidget);
+    // GARDE MORDANTE : si l'aiguillage ignorait `narrowMode`, la barre de
+    // sélection resterait dans l'arbre.
+    expect(find.byType(ZSubfolderSelectorBar), findsNothing);
     expect(find.byType(ZSubfolderSidebar), findsNothing);
   });
 
@@ -27,12 +46,13 @@ void main() {
     // GARDE MORDANTE : rendre le sélecteur compact dans le builder `expanded`
     // ferait apparaître des chips à 900 dp.
     expect(find.byType(ZSubfolderCompactSelector), findsNothing);
+    expect(find.byType(ZSubfolderSelectorBar), findsNothing);
   });
 
-  testWidgets('juste sous le seuil (599) reste compact', (tester) async {
+  testWidgets('juste sous le seuil (599) reste étroit', (tester) async {
     await setScreen(tester, 599, 800);
     await pumpDetail(tester);
-    expect(find.byType(ZSubfolderCompactSelector), findsOneWidget);
+    expect(find.byType(ZSubfolderSelectorBar), findsOneWidget);
     expect(find.byType(ZSubfolderSidebar), findsNothing);
   });
 
@@ -41,5 +61,6 @@ void main() {
     await pumpDetail(tester);
     expect(find.byType(ZSubfolderSidebar), findsOneWidget);
     expect(find.byType(ZSubfolderCompactSelector), findsNothing);
+    expect(find.byType(ZSubfolderSelectorBar), findsNothing);
   });
 }

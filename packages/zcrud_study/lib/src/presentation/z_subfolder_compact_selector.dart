@@ -23,7 +23,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 
-import 'z_subfolder_item_chrome.dart';
+import 'z_subfolder_item_content.dart';
 import 'z_subfolder_nav_spec.dart';
 import 'z_subfolder_ref.dart';
 
@@ -113,14 +113,19 @@ class ZSubfolderCompactSelector extends StatelessWidget {
         valueListenable: selected,
         builder: (context, current, _) {
           final isSelected = current == id;
-          final content = spec.itemBuilder?.call(
-                context,
-                // MÊME convention que la sidebar pour l'item racine : aucune
-                // divergence de contrat entre les deux chemins.
-                refOrNull ?? ZSubfolderRef(id: '', label: label),
-                isSelected,
-              ) ??
-              _defaultContent(theme, refOrNull, label);
+          // Fabrique PARTAGÉE avec la barre de sélection (CR-IFFD-40) : mêmes
+          // `itemBuilder` injecté et même chrome neutre de repli — aucune
+          // seconde source. Le rendu est inchangé (fonction, pas widget : aucun
+          // élément intermédiaire n'est ajouté à cet arbre).
+          final content = zBuildSubfolderItemContent(
+            context,
+            spec: spec,
+            // MÊME convention que la sidebar pour l'item racine : aucune
+            // divergence de contrat entre les deux chemins.
+            refOrNull: refOrNull,
+            label: label,
+            selected: isSelected,
+          );
           return ChoiceChip(
             label: content,
             selected: isSelected,
@@ -128,26 +133,6 @@ class ZSubfolderCompactSelector extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-
-  /// Contenu neutre par défaut d'une puce : pastille d'accent (si `colorKey`) +
-  /// libellé + badge de compteur (si `count`) — MÊMES informations que la rangée
-  /// par défaut de la sidebar.
-  Widget _defaultContent(ZcrudTheme theme, ZSubfolderRef? ref, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (ref?.colorKey != null) ...<Widget>[
-          ZSubfolderAccentPastille(colorKey: ref!.colorKey!),
-          SizedBox(width: theme.gapS),
-        ],
-        Text(label, textAlign: TextAlign.start),
-        if (ref?.count != null) ...<Widget>[
-          SizedBox(width: theme.gapS),
-          ZSubfolderCountPill(count: ref!.count!),
-        ],
-      ],
     );
   }
 

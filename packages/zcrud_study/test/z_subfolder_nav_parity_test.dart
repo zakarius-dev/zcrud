@@ -42,6 +42,14 @@ const Map<String, double> _sides = <String, double>{
   'sidebar (≥600)': 900,
 };
 
+/// CR-IFFD-40 — sous le seuil, ces gardes visent la RANGÉE DE PUCES
+/// (`ZSubfolderCompactSelector`), qui n'est plus la surface par DÉFAUT. Le mode
+/// est donc NOMMÉ explicitement : c'est exactement ce qu'un hôte écrit pour
+/// revenir au comportement historique, et ces gardes deviennent du même coup la
+/// preuve de non-régression de ce mode. La parité de la nouvelle surface par
+/// défaut est gardée par `cr_iffd40_subfolder_selector_test.dart`.
+const ZSubfolderNarrowMode _chips = ZSubfolderNarrowMode.compact;
+
 void main() {
   group('R-SUF2 — le seam itemBuilder est honoré des DEUX côtés du seuil', () {
     _sides.forEach((String side, double width) {
@@ -52,6 +60,7 @@ void main() {
         await pumpDetail(
           tester,
           nav: navSpec(
+            narrowMode: _chips,
             itemBuilder: (context, ref, selected) {
               seen.add('${ref.id}:$selected');
               return Text(
@@ -84,6 +93,7 @@ void main() {
         await pumpDetail(
           tester,
           nav: navSpec(
+            narrowMode: _chips,
             itemBuilder: (context, ref, selected) {
               seen.add('${ref.id}:$selected');
               return Text(
@@ -113,6 +123,7 @@ void main() {
         await pumpDetail(
           tester,
           nav: navSpec(
+            narrowMode: _chips,
             itemBuilder: (context, ref, selected) => Text(
               'CUSTOM:${ref.id}',
               key: ValueKey<String>('custom:${ref.id}'),
@@ -170,6 +181,7 @@ void main() {
       await pumpDetail(
         tester,
         nav: navSpec(
+          narrowMode: _chips,
           itemBuilder: (context, ref, selected) => Text(
             'CUSTOM:${ref.id}',
             key: ValueKey<String>('custom:${ref.id}'),
@@ -205,7 +217,10 @@ void main() {
       testWidgets('$side : compteur et pastille d\'accent rendus',
           (tester) async {
         await setScreen(tester, width, 800);
-        await pumpDetail(tester); // refs() : count 0..2, colorKey alternée
+        await pumpDetail(
+          tester,
+          nav: navSpec(narrowMode: _chips),
+        ); // refs() : count 0..2, colorKey alternée
 
         // GARDE MORDANTE : le sélecteur compact n'affichait NI `ref.count` NI
         // `ref.colorKey` (chips en texte nu) ⇒ ces attentes rougissaient à

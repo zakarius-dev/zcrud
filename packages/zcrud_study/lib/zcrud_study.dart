@@ -162,8 +162,13 @@ export 'src/presentation/z_study_tools_section_spec.dart';
 // SUF-3 — descripteurs de nav de sous-dossiers (VO opaque + spec agrégé) et les
 // deux briques de nav adaptative (sidebar grand écran / sélecteur compact).
 export 'src/presentation/z_subfolder_compact_selector.dart';
+// CR-IFFD-40 — surface étroite par DÉFAUT (barre de sélection), aiguillage et
+// seam de SUBSTITUTION DE SURFACE (patron `ZListRenderer`/`ZChatShellRenderer`).
+export 'src/presentation/z_subfolder_narrow_nav.dart';
+export 'src/presentation/z_subfolder_nav_renderer.dart';
 export 'src/presentation/z_subfolder_nav_spec.dart';
 export 'src/presentation/z_subfolder_ref.dart';
+export 'src/presentation/z_subfolder_selector_bar.dart';
 export 'src/presentation/z_subfolder_sidebar.dart';
 export 'src/presentation/z_tag_chips.dart';
 export 'src/presentation/z_tag_editor.dart';

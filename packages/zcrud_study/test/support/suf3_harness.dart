@@ -39,6 +39,14 @@ List<ZStudyToolsSectionSpec> defaultSections(String? id) {
   ];
 }
 
+/// Mode étroit par DÉFAUT **lu sur le socle** (jamais recopié en dur) : si le
+/// défaut de production change, ce harnais suit — une garde ne peut donc pas
+/// rester verte en mesurant un défaut de test qui aurait divergé.
+final ZSubfolderNarrowMode kProductionDefaultNarrowMode = const ZSubfolderNavSpec(
+  subfolders: <ZSubfolderRef>[],
+  allSubfoldersLabel: '',
+).narrowMode;
+
 /// Quelques sous-dossiers de référence.
 List<ZSubfolderRef> refs({int n = 3}) => <ZSubfolderRef>[
   for (var i = 0; i < n; i++)
@@ -57,6 +65,10 @@ ZSubfolderNavSpec navSpec({
   void Function(int, int)? onReorder,
   ValueChanged<double>? onSidebarWidthChanged,
   ZSubfolderItemBuilder? itemBuilder,
+  // CR-IFFD-40 — `null` ⇒ le DÉFAUT DE PRODUCTION s'applique (barre de
+  // sélection). Le harnais ne recopie JAMAIS ce défaut : une garde qui mesure
+  // « quel mode par défaut » doit mesurer celui du socle, pas celui du harnais.
+  ZSubfolderNarrowMode? narrowMode,
   double initialSidebarWidth = 320,
   double minSidebarWidth = 300,
   double maxSidebarWidthFraction = 0.5,
@@ -66,6 +78,7 @@ ZSubfolderNavSpec navSpec({
     subfolders: subfolders ?? refs(),
     allSubfoldersLabel: kAllLabel,
     itemBuilder: itemBuilder,
+    narrowMode: narrowMode ?? kProductionDefaultNarrowMode,
     addAction: addAction,
     addLabel: kAddLabel,
     addIcon: Icons.create_new_folder,
@@ -125,6 +138,9 @@ Future<ZStudyFolderDetail> pumpDetail(
   bool extendBodyBehindAppBar = false,
   String? initialSelectedSubfolderId,
   TextDirection textDirection = TextDirection.ltr,
+  // CR-IFFD-40 — enveloppe optionnelle posée AUTOUR de la page (p. ex. un
+  // `ZSubfolderNavRendererScope`). `null` ⇒ arbre STRICTEMENT inchangé.
+  Widget Function(Widget child)? wrap,
 }) async {
   final widget = ZStudyFolderDetail(
     title: title,
@@ -163,7 +179,10 @@ Future<ZStudyFolderDetail> pumpDetail(
   );
   await tester.pumpWidget(
     MaterialApp(
-      home: Directionality(textDirection: textDirection, child: widget),
+      home: Directionality(
+        textDirection: textDirection,
+        child: wrap == null ? widget : wrap(widget),
+      ),
     ),
   );
   await tester.pumpAndSettle();

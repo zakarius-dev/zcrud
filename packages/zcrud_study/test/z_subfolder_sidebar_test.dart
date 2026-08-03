@@ -160,7 +160,13 @@ void main() {
         (tester) async {
       await setScreen(tester, 500, 800);
       var hits = 0;
-      await pumpDetail(tester, nav: navSpec(addAction: () => hits++));
+      await pumpDetail(
+        tester,
+        nav: navSpec(
+          addAction: () => hits++,
+          narrowMode: ZSubfolderNarrowMode.compact,
+        ),
+      );
       final btn = find.byKey(const ValueKey<String>('suf3:compact:add'));
       expect(btn, findsOneWidget);
       await tester.ensureVisible(btn);

@@ -50,7 +50,7 @@ import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
 
 import 'z_sectioned_study_layout.dart';
 import 'z_study_tools_section_spec.dart';
-import 'z_subfolder_compact_selector.dart';
+import 'z_subfolder_narrow_nav.dart';
 import 'z_subfolder_nav_spec.dart';
 import 'z_subfolder_sidebar.dart';
 
@@ -383,7 +383,10 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       // < 600 dp : sélecteur compact, AUCUNE sidebar dans l'arbre (AC7).
       compact: (context) => Column(
         children: <Widget>[
-          ZSubfolderCompactSelector(
+          // CR-IFFD-40 — aiguillage : coquille de l'hôte (seam de SURFACE) →
+          // barre de sélection (DÉFAUT) → rangée de puces (`narrowMode:
+          // compact`, historique).
+          ZSubfolderNarrowNav(
             spec: widget.nav,
             selected: _selected,
             onSelect: _select,
