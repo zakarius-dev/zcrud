@@ -46,6 +46,8 @@ class ZPageShellBody extends StatefulWidget {
     this.search,
     this.tabs,
     this.body,
+    this.aboveTabBar,
+    this.aboveTabBarHeight,
     this.aboveTabViews,
     this.mode = ZPageAppBarMode.pinned,
     this.tabController,
@@ -69,6 +71,8 @@ class ZPageShellBody extends StatefulWidget {
     this.search,
     this.tabs,
     this.body,
+    this.aboveTabBar,
+    this.aboveTabBarHeight,
     this.aboveTabViews,
     this.mode = ZPageAppBarMode.pinned,
     this.tabController,
@@ -104,6 +108,25 @@ class ZPageShellBody extends StatefulWidget {
 
   /// Contenu affiché quand il n'y a **pas** d'onglets (nul ⇒ absent).
   final Widget? body;
+
+  /// Créneau de **contexte de page** posé entre l'app-bar et le `TabBar`
+  /// (CR-IFFD-45), dans le `bottom:` de la `SliverAppBar` — **même endroit
+  /// logique** que dans [ZPageScaffold.aboveTabBar], dont il partage la doc et
+  /// le code (`_zAppBarBottom`).
+  ///
+  /// `null` (défaut) ⇒ arbre strictement inchangé. Mode `pinned` : la surface
+  /// reste **visible** au défilement (le `bottom:` d'une `SliverAppBar` épinglée
+  /// l'est aussi) ; mode `floating` : elle se replie avec l'app-bar.
+  ///
+  /// 🔴 Ne pas router cet usage vers [subtitle] : voir
+  /// [ZPageScaffold.aboveTabBar] pour les mesures (chevauchement **silencieux**
+  /// de 10 dp du `TabBar` avec un `subtitle` de 48 dp).
+  final Widget? aboveTabBar;
+
+  /// Hauteur déclarée de [aboveTabBar] (`null` ⇒ `preferredSize` du créneau
+  /// s'il est `PreferredSizeWidget`, sinon `kToolbarHeight`). Voir
+  /// [ZPageScaffold.aboveTabBarHeight].
+  final double? aboveTabBarHeight;
 
   /// Slot sous le `TabBar` et au-dessus des vues (`null` ⇒ absent).
   final Widget? aboveTabViews;
@@ -213,20 +236,22 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
 
   @override
   Widget build(BuildContext context) {
+    // Composition UNIQUE du `bottom:` (partagée avec le mode fixe) : sans
+    // `aboveTabBar`, `_zAppBarBottom` rend le `TabBar` tel quel — ou `null`.
+    final PreferredSizeWidget? bottom = _zAppBarBottom(
+      aboveTabBar: widget.aboveTabBar,
+      aboveTabBarHeight: widget.aboveTabBarHeight,
+      tabBar: _hasTabs
+          ? _zTabBar(widget.tabs!, widget.tabController, widget.tabAlignment)
+          : null,
+    );
     if (_hasTabs) {
       return _zWrapTabs(
         length: widget.tabs!.length,
         controller: widget.tabController,
         child: NestedScrollView(
           headerSliverBuilder: (context, _) => <Widget>[
-            _sliverAppBar(
-              context,
-              bottom: _zTabBar(
-                widget.tabs!,
-                widget.tabController,
-                widget.tabAlignment,
-              ),
-            ),
+            _sliverAppBar(context, bottom: bottom),
           ],
           body: _buildTabBody(),
         ),
@@ -234,7 +259,7 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
     }
     return CustomScrollView(
       slivers: <Widget>[
-        _sliverAppBar(context),
+        _sliverAppBar(context, bottom: bottom),
         // Corps non fourni ⇒ sliver ABSENT (jamais un `SizedBox.shrink` inerte).
         if (widget.body != null) SliverToBoxAdapter(child: widget.body),
       ],

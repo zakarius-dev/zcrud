@@ -17,6 +17,7 @@ library;
 import 'package:flutter/widgets.dart';
 
 import 'z_subfolder_ref.dart';
+import 'z_subfolder_selection_controller.dart';
 
 /// Construit l'item visuel d'un sous-dossier. [selected] permet à l'hôte de
 /// styler la sélection ; le widget applique DÉJÀ sa propre surbrillance neutre
@@ -227,6 +228,42 @@ enum ZSubfolderNavPlacement {
   /// Un hôte qui veut la sidebar en forme large et la bande en forme étroite
   /// garde exactement cela : c'est le défaut [withinTab].
   aboveTabs,
+
+  /// La navigation est rendue **une seule fois**, **entre l'app-bar et la barre
+  /// d'onglets** (créneau `ZPageScaffold.aboveTabBar`) — CR-IFFD-45.
+  ///
+  /// Ordre de lecture obtenu : **titre → contexte (la fratrie) → onglets →
+  /// contenu**. Comme [aboveTabs], la navigation devient le contexte de la page
+  /// entière : visible et actionnable depuis **tous** les onglets, et l'onglet
+  /// Matériel ne rend que son corps filtré (aucune duplication, **une seule**
+  /// source de sélection).
+  ///
+  /// 🔴 **Pourquoi un créneau DÉDIÉ et pas `subtitle` — mesuré, pas préféré.**
+  /// `subtitle` vit dans le `title:` de l'`AppBar`, donc dans une toolbar de
+  /// 56 dp **dont la hauteur ne dépend pas de son contenu**. Mesuré sur disque
+  /// (écran 500×800, 3 onglets) : une bande de 48 dp y **recouvre le `TabBar`
+  /// de 10 dp** ; une bande de 96 dp sort **hors de l'écran par le haut**
+  /// (rect `dy = -6`) ; l'app-bar reste à 104 dp dans les deux cas et **aucune
+  /// exception de layout n'est levée**. Le défaut serait donc invisible en test
+  /// comme à l'œil. Le créneau `aboveTabBar` du socle, lui, fait **réellement
+  /// grandir** l'app-bar de la hauteur déclarée.
+  ///
+  /// ⚠️ **La hauteur est DÉCLARÉE, jamais mesurée** (contrainte du socle : la
+  /// hauteur doit être connue avant la mise en page, sans quoi le `Scaffold` a
+  /// déjà réservé celle de l'app-bar). `ZStudyFolderDetail` la calcule à partir
+  /// de la hauteur mesurée des deux surfaces du socle (48 dp) et de la marge de
+  /// thème éventuelle ; un rendu plus haut (coquille d'hôte, `itemBuilder`
+  /// volumineux, très gros facteur de texte) se déclare via
+  /// `ZStudyFolderDetail.subfolderNavBandHeight`. Un contenu plus haut que ce
+  /// qui est déclaré **déborde bruyamment** (overflow signalé par Flutter) — il
+  /// ne recouvre jamais le `TabBar` en silence.
+  ///
+  /// Comme sous [aboveTabs], **aucune sidebar n'est rendue, à aucune largeur** :
+  /// la surface hissée est la bande (`ZSubfolderNarrowNav`). La raison est ici
+  /// encore plus forte que pour `aboveTabViews` : le créneau vit dans le
+  /// `bottom:` de l'app-bar, à hauteur **fixe déclarée** — une sidebar y serait
+  /// écrasée à 48 dp.
+  aboveTabBar,
 }
 
 /// **Où** l'affordance d'ajout de la barre de fratrie est offerte — CR-IFFD-44,
@@ -312,6 +349,8 @@ class ZSubfolderNavSpec {
     this.collapsedWidth = 56,
     this.initialSidebarWidth = 300,
     this.onSidebarWidthChanged,
+    this.selectionController,
+    this.onSelectionChanged,
   })  : assert(minSidebarWidth > 0, 'minSidebarWidth doit être > 0'),
         assert(
           maxSidebarWidthFraction > 0 && maxSidebarWidthFraction <= 1,
@@ -453,4 +492,52 @@ class ZSubfolderNavSpec {
   /// persistance (SharedPreferences/fichier/repo) est du ressort de l'hôte
   /// (AC10).
   final ValueChanged<double>? onSidebarWidthChanged;
+
+  /// CR-IFFD-45 — **pilotage externe optionnel** de la sélection de fratrie
+  /// (patron `ZDisplayState` de `zcrud_core`, cf.
+  /// [ZSubfolderSelectionController]).
+  ///
+  /// * `null` (**défaut**) ⇒ la sélection vit dans `ZStudyFolderDetail` comme
+  ///   avant cette CR : rendu, cycle de vie et rebuilds **strictement
+  ///   inchangés** (AD-4) ;
+  /// * non-null ⇒ **le contrôleur EST la source de vérité**. La page ne garde
+  ///   aucun miroir : la barre, la sidebar, le corps Matériel filtré et le
+  ///   second chemin de l'hôte commandent tous le **même et unique** état.
+  ///
+  /// 🔴 **PRÉCÉDENCE tranchée — le contrôleur PRIME sur
+  /// `ZStudyFolderDetail.initialSelectedSubfolderId`, qui est alors IGNORÉ.**
+  /// C'est la clause 2 du patron appliquée sans exception : recopier l'amorce
+  /// de la page dans le contrôleur reviendrait à ce que le socle **écrive**
+  /// dans l'état de l'hôte au montage — donc à écraser, sans qu'il l'ait
+  /// demandé, une sélection que l'hôte a pu restaurer d'un lien profond ou
+  /// d'une préférence. L'amorce appartient au propriétaire de l'état : quand
+  /// l'hôte prend l'état, il prend l'amorce avec (via `initialValue` du
+  /// contrôleur). Même arbitrage, même motif que
+  /// `ZStudyToolsSectionSpec.expandController` vs `initiallyExpanded`.
+  ///
+  /// 🔴 **POSSESSION** : l'hôte crée et détient le contrôleur (mixin
+  /// `ZDisplayStateOwnerMixin` sur son `State`), **jamais** ce package — un
+  /// contrôleur créé dans `build` serait remplacé à chaque rebuild et la
+  /// commande deviendrait silencieusement inerte. Le patron le **refuse** au
+  /// lieu de l'industrialiser.
+  final ZSubfolderSelectionController? selectionController;
+
+  /// CR-IFFD-45 — **notification** de changement de sélection (`null` = item
+  /// racine). `null` ⇒ capacité absente (AD-4), aucun listener installé.
+  ///
+  /// C'est le pendant *observation* de [selectionController] : l'hôte qui n'a
+  /// pas besoin de **commander** a tout de même besoin de **savoir** (clause 3
+  /// du patron — la notification ne suffit pas, mais elle reste nécessaire).
+  ///
+  /// ⚠️ Émis à **chaque changement effectif de l'état, quelle qu'en soit
+  /// l'origine** : un tap dans la barre, un tap dans la sidebar, **ou** une
+  /// écriture de l'hôte sur [selectionController]. C'est délibéré : il n'y a
+  /// qu'un état, donc un seul flux de vérité à constater ; filtrer les
+  /// changements « venus de l'hôte » supposerait de distinguer deux sources —
+  /// exactement ce que le patron supprime. Un hôte qui commande **et** observe
+  /// doit donc tolérer l'écho (le contrôleur ne notifie que sur changement
+  /// réel : réécrire la même valeur n'émet rien).
+  ///
+  /// Jamais appelé pendant `build` : l'émission suit la notification de l'état.
+  final ValueChanged<String?>? onSelectionChanged;
 }

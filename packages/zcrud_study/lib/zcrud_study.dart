@@ -149,7 +149,14 @@ export 'src/presentation/z_sectioned_study_layout.dart';
 // `ZMaterialSectionsBuilder` qui reste INCHANGÉ) : slots libres en-tête/pied de
 // l'onglet Matériel, par sous-dossier sélectionné.
 export 'src/presentation/z_study_folder_detail.dart'
-    show ZStudyFolderDetail, ZMaterialSectionsBuilder, ZMaterialSlotBuilder;
+    show
+        ZStudyFolderDetail,
+        ZMaterialSectionsBuilder,
+        ZMaterialSlotBuilder,
+        // CR-IFFD-45 — hauteur MESURÉE de la bande de navigation hissée : elle
+        // est publique pour que l'hôte puisse composer sa propre déclaration
+        // (`subfolderNavBandHeight`) à partir d'elle, au lieu de recopier 48.
+        kZSubfolderNavBandHeight;
 export 'src/presentation/z_study_mindmap_section.dart';
 // CR-IFFD-16 (voie B) — carte d'item de BASE à slots : le socle fournit la
 // structure et l'accessibilite (>= 48 dp, Semantics, RTL) une fois pour toutes ;
@@ -168,6 +175,10 @@ export 'src/presentation/z_subfolder_narrow_nav.dart';
 export 'src/presentation/z_subfolder_nav_renderer.dart';
 export 'src/presentation/z_subfolder_nav_spec.dart';
 export 'src/presentation/z_subfolder_ref.dart';
+// CR-IFFD-45 — pilotage EXTERNE optionnel de la sélection de fratrie (patron
+// `ZDisplayState` de `zcrud_core`, décliné sur `String?`). `null` ⇒ la page
+// détient l'état comme avant : aucun hôte existant ne bouge.
+export 'src/presentation/z_subfolder_selection_controller.dart';
 export 'src/presentation/z_subfolder_selector_bar.dart';
 export 'src/presentation/z_subfolder_sidebar.dart';
 export 'src/presentation/z_tag_chips.dart';

@@ -154,6 +154,120 @@ PreferredSizeWidget _zTabBar(
   ],
 );
 
+/// Hauteur **par défaut** du créneau `aboveTabBar` quand l'hôte n'en déclare
+/// aucune et que le widget fourni n'est pas lui-même un `PreferredSizeWidget`.
+///
+/// Vaut `kToolbarHeight` (56 dp) : c'est la hauteur Material d'une bande
+/// secondaire d'en-tête, et la seule métrique de la plateforme disponible ici
+/// (aucun littéral inventé, aucune couleur — FR-26/NFR-S7).
+const double _kZAboveTabBarDefaultHeight = kToolbarHeight;
+
+/// Hauteur **déclarée** du créneau `aboveTabBar`, par ordre de priorité :
+/// 1. la hauteur explicitement passée par l'hôte (`aboveTabBarHeight`) ;
+/// 2. la `preferredSize.height` du créneau s'il est un `PreferredSizeWidget`
+///    (l'hôte a alors déjà déclaré sa hauteur dans le widget lui-même) ;
+/// 3. [_kZAboveTabBarDefaultHeight].
+///
+/// La hauteur est toujours **connue avant la mise en page** — c'est la
+/// condition pour que `AppBar.preferredSize` (mode fixe) et l'extension du
+/// `SliverAppBar` (modes sliver) l'intègrent réellement. Aucune mesure
+/// a posteriori n'est tentée : elle arriverait **après** que le `Scaffold` a
+/// déjà réservé la hauteur de l'app-bar, donc trop tard.
+double _zAboveTabBarHeight(Widget slot, double? declared) {
+  if (declared != null) return declared;
+  if (slot is PreferredSizeWidget) return slot.preferredSize.height;
+  return _kZAboveTabBarDefaultHeight;
+}
+
+/// Compose le slot `bottom:` de l'app-bar (mode fixe **et** modes sliver) —
+/// **unique** site de composition, partagé par [ZPageScaffold] et
+/// [ZPageShellBody] : les deux façades posent donc le créneau au **même endroit
+/// logique**, exactement comme `subtitle`/`aboveTabViews`.
+///
+/// ## Neutralité stricte (CR-IFFD-45, invariant prouvé par garde)
+///
+/// [aboveTabBar] nul (défaut) ⇒ cette fonction retourne **[tabBar] tel quel**
+/// (ou `null` sans onglets). Aucune `PreferredSize` interposée, aucune `Column`
+/// inerte, aucun `SizedBox` fantôme : l'arbre d'un hôte existant est
+/// **strictement inchangé**, et `preferredSize` reste la valeur d'avant.
+///
+/// ## Pourquoi PAS `subtitle` (mesuré sur disque, écran 500×800, 3 onglets)
+///
+/// `subtitle` est posé dans le `title:` de l'`AppBar` (cf. [_zBuildTitleBlock])
+/// — donc **dans la toolbar de 56 dp**, dont la hauteur ne dépend pas de son
+/// contenu. Y router une surface de contexte livre un défaut **silencieux** :
+///
+/// | contenu de `subtitle`  | rect obtenu     | AppBar totale | verdict                       |
+/// |------------------------|-----------------|---------------|-------------------------------|
+/// | `Text` court           | —               | 104 dp        | ok                            |
+/// | `SizedBox(height: 48)` | dy 18 → 66      | 104 dp (idem) | **10 dp de chevauchement**    |
+/// | `SizedBox(height: 96)` | dy -6 → 90      | 104 dp (idem) | déborde hors écran, 34 dp     |
+///
+/// **Zéro exception de layout dans les trois cas** : la bande recouvre le
+/// `TabBar`, qui reste tapable dessous — un défaut invisible en test comme à
+/// l'œil. C'est pourquoi CR-IFFD-45 ouvre un créneau **distinct** au lieu de
+/// réutiliser `subtitle`.
+///
+/// ## Où le créneau est posé
+///
+/// Dans le `bottom:` de l'app-bar, **au-dessus** du `TabBar` :
+/// * avec onglets ⇒ `PreferredSize` de hauteur `h(créneau) + h(TabBar)`, enfant
+///   `Column [créneau, TabBar]`. L'app-bar **grandit réellement** de `h`, donc
+///   aucun chevauchement possible ;
+/// * sans onglets ⇒ le créneau devient à lui seul le `bottom:` de l'app-bar
+///   (`PreferredSize` de hauteur `h`) ;
+/// * en mode sliver, le créneau est câblé dans le `bottom:` de la
+///   `SliverAppBar`. **Mesuré** (écran 500×800, créneau de 48 dp, corps de
+///   2000 dp, glissement de −400 dp) :
+///
+///   | mode            | rect avant scroll | rect après scroll   | lecture                                   |
+///   |-----------------|-------------------|---------------------|-------------------------------------------|
+///   | `pinned`        | dy 56 → 104       | dy 56 → 104         | **inchangé** : la surface reste visible    |
+///   | `floating`      | dy 56 → 104       | hors arbre          | se replie **avec** l'app-bar               |
+///   | `floatingPinned`| dy 56 → 104       | dy 0 → 48           | la toolbar se replie, le créneau reste épinglé en tête |
+///
+/// ## Débordement : bruyant, jamais silencieux
+///
+/// Le créneau est contraint à la hauteur **déclarée** (`SizedBox`). Un contenu
+/// plus haut que ce qui a été déclaré produit un `RenderFlex`/overflow **visible
+/// et signalé** par Flutter — pas un recouvrement muet du `TabBar`. C'est
+/// exactement l'inverse du comportement de `subtitle` documenté ci-dessus.
+///
+/// **AD-13** : `Column` + `CrossAxisAlignment.stretch` — aucune notion de
+/// left/right n'est introduite (RTL-safe), et `stretch` préserve la largeur
+/// pleine que le `TabBar` recevait déjà quand il était le `bottom:` direct.
+PreferredSizeWidget? _zAppBarBottom({
+  required Widget? aboveTabBar,
+  required double? aboveTabBarHeight,
+  required PreferredSizeWidget? tabBar,
+}) {
+  // 🔴 Neutralité : sans créneau, l'arbre est celui d'avant, à l'identique.
+  if (aboveTabBar == null) return tabBar;
+  final double slotHeight = _zAboveTabBarHeight(aboveTabBar, aboveTabBarHeight);
+  final Widget slot = SizedBox(height: slotHeight, child: aboveTabBar);
+  if (tabBar == null) {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(slotHeight),
+      child: slot,
+    );
+  }
+  final double tabHeight = tabBar.preferredSize.height;
+  return PreferredSize(
+    // Hauteur préférée = SOMME : c'est elle qui fait grandir l'app-bar.
+    preferredSize: Size.fromHeight(slotHeight + tabHeight),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        slot,
+        // Le `TabBar` reçoit EXACTEMENT la hauteur qu'`AppBar` lui donnait
+        // quand il était le `bottom:` direct (sa `preferredSize`).
+        SizedBox(height: tabHeight, child: tabBar),
+      ],
+    ),
+  );
+}
+
 /// `TabBarView` déclaratif **partagé** (mêmes propriétaires que [_zTabBar]).
 Widget _zTabBarView(List<ZPageTab> tabs, TabController? controller) =>
     TabBarView(

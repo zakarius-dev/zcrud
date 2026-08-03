@@ -58,6 +58,8 @@ class ZPageScaffold extends StatefulWidget {
     this.search,
     this.tabs,
     this.body,
+    this.aboveTabBar,
+    this.aboveTabBarHeight,
     this.aboveTabViews,
     this.mode = ZPageAppBarMode.fixed,
     this.tabController,
@@ -107,6 +109,38 @@ class ZPageScaffold extends StatefulWidget {
 
   /// Corps affiché quand il n'y a **pas** d'onglets (nul ⇒ aucun corps).
   final Widget? body;
+
+  /// Créneau de **contexte de page** rendu **entre l'app-bar et le `TabBar`**
+  /// (CR-IFFD-45) — dans le `bottom:` de l'app-bar, donc dans une zone dont la
+  /// hauteur est **déclarée** et qui fait réellement grandir l'app-bar.
+  ///
+  /// * `null` (défaut) ⇒ **arbre strictement inchangé** : le `bottom:` reste
+  ///   exactement ce qu'il était (le `TabBar` seul, ou `null` sans onglets) ;
+  /// * avec onglets ⇒ `Column [aboveTabBar, TabBar]` de hauteur préférée égale
+  ///   à la **somme** des deux ;
+  /// * **sans** onglets ⇒ le créneau devient à lui seul le `bottom:` de
+  ///   l'app-bar ;
+  /// * en mode sliver, il est câblé dans le `bottom:` de la `SliverAppBar` :
+  ///   `pinned` le garde visible au défilement, `floating` le replie avec
+  ///   l'app-bar.
+  ///
+  /// 🔴 **Ne pas utiliser [subtitle] pour cet usage.** `subtitle` vit dans le
+  /// `title:` de l'`AppBar`, c'est-à-dire dans la toolbar de 56 dp qui **ne
+  /// grandit pas** : mesuré (écran 500×800, mode fixe, 3 onglets), un
+  /// `SizedBox(height: 48)` en `subtitle` laisse l'app-bar à 104 dp et
+  /// **recouvre le `TabBar` de 10 dp** ; un `SizedBox(height: 96)` déborde hors
+  /// de l'écran par le haut (34 dp de chevauchement). Dans les deux cas **zéro
+  /// exception de layout** : le défaut est totalement silencieux et le `TabBar`
+  /// reste tapable sous la bande qui le recouvre. Voir `_zAppBarBottom`.
+  final Widget? aboveTabBar;
+
+  /// Hauteur **déclarée** de [aboveTabBar]. `null` (défaut) ⇒ la
+  /// `preferredSize.height` du créneau s'il est un `PreferredSizeWidget`, sinon
+  /// `kToolbarHeight` (56 dp).
+  ///
+  /// Un contenu plus haut que la hauteur déclarée produit un **débordement
+  /// signalé par Flutter** (bruyant), jamais un recouvrement muet du `TabBar`.
+  final double? aboveTabBarHeight;
 
   /// Slot rendu sous le [TabBar] et au-dessus du [TabBarView] si des onglets
   /// sont fournis. `null` conserve le corps historique sans wrapper ajouté.
@@ -221,9 +255,17 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
         leading: widget.leading,
         actions: widget.actions,
         search: widget.search,
-        bottom: _hasTabs
-            ? _zTabBar(widget.tabs!, widget.tabController, widget.tabAlignment)
-            : null,
+        bottom: _zAppBarBottom(
+          aboveTabBar: widget.aboveTabBar,
+          aboveTabBarHeight: widget.aboveTabBarHeight,
+          tabBar: _hasTabs
+              ? _zTabBar(
+                  widget.tabs!,
+                  widget.tabController,
+                  widget.tabAlignment,
+                )
+              : null,
+        ),
       ),
       body: _hasTabs ? _buildTabBody() : widget.body,
     );
@@ -252,6 +294,8 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
       search: widget.search,
       tabs: widget.tabs,
       body: widget.body,
+      aboveTabBar: widget.aboveTabBar,
+      aboveTabBarHeight: widget.aboveTabBarHeight,
       aboveTabViews: widget.aboveTabViews,
       mode: widget.mode,
       tabController: widget.tabController,

@@ -101,6 +101,11 @@ ZSubfolderNavSpec navSpec({
   double minSidebarWidth = 300,
   double maxSidebarWidthFraction = 0.5,
   double collapsedWidth = 56,
+  // CR-IFFD-45 — pilotage/observation EXTERNES de la sélection. `null` ⇒
+  // capacité absente (défaut de production) : le harnais ne fabrique JAMAIS de
+  // contrôleur, sans quoi les gardes de neutralité mesureraient un chemin piloté.
+  ZSubfolderSelectionController? selectionController,
+  ValueChanged<String?>? onSelectionChanged,
 }) {
   return ZSubfolderNavSpec(
     subfolders: subfolders ?? refs(),
@@ -123,6 +128,8 @@ ZSubfolderNavSpec navSpec({
     maxSidebarWidthFraction: maxSidebarWidthFraction,
     collapsedWidth: collapsedWidth,
     onSidebarWidthChanged: onSidebarWidthChanged,
+    selectionController: selectionController,
+    onSelectionChanged: onSelectionChanged,
   );
 }
 
@@ -171,6 +178,13 @@ Future<ZStudyFolderDetail> pumpDetail(
   // défaut » doit mesurer celui du socle).
   ZSubfolderNavPlacement? subfolderNavPlacement,
   Widget? aboveTabViews,
+  // CR-IFFD-45 — créneau ENTRE l'app-bar et le `TabBar` + hauteurs DÉCLARÉES.
+  // `null` ⇒ défauts de production (le harnais ne recopie aucun défaut : la
+  // hauteur de bande est celle que le socle calcule, jamais une constante de
+  // test — une garde qui la mesure doit mesurer celle du socle).
+  Widget? aboveTabBar,
+  double? aboveTabBarHeight,
+  double? subfolderNavBandHeight,
   ZPageAppBarMode mode = ZPageAppBarMode.fixed,
   TextDirection textDirection = TextDirection.ltr,
   // CR-IFFD-40 — enveloppe optionnelle posée AUTOUR de la page (p. ex. un
@@ -214,6 +228,9 @@ Future<ZStudyFolderDetail> pumpDetail(
     subfolderNavPlacement:
         subfolderNavPlacement ?? kProductionDefaultNavPlacement,
     aboveTabViews: aboveTabViews,
+    aboveTabBar: aboveTabBar,
+    aboveTabBarHeight: aboveTabBarHeight,
+    subfolderNavBandHeight: subfolderNavBandHeight,
     mode: mode,
   );
   await tester.pumpWidget(

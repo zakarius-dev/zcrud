@@ -34,9 +34,10 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZColorPair, ZcrudTheme, zResolveColorKeyOrSlot;
+    show ZColorPair, ZDisplayStateBinding, ZcrudTheme, zResolveColorKeyOrSlot;
 import 'package:zcrud_responsive/zcrud_responsive.dart' show ZResponsiveLayout;
 import 'package:zcrud_session/zcrud_session.dart'
     show ZProgressRingsData, ZStudyProgressRings;
@@ -56,6 +57,31 @@ import 'z_subfolder_sidebar.dart';
 
 /// Diamètre de la pastille d'accent de l'en-tête (dimension de layout).
 const double _kHeaderAccentSize = 12.0;
+
+/// Hauteur **mesurée** de la bande `ZSubfolderNarrowNav` du socle — CR-IFFD-45.
+///
+/// 🔴 Ce n'est pas un littéral choisi : c'est le résultat d'une mesure sur
+/// disque des **deux** variantes, à 360 / 500 / 800 dp de large et avec le
+/// bouton d'ajout présent :
+///
+/// | surface                                | hauteur rendue |
+/// |----------------------------------------|----------------|
+/// | `ZSubfolderSelectorBar` (défaut)       | 48 dp          |
+/// | `ZSubfolderCompactSelector` (`compact`)| 48 dp          |
+///
+/// Les deux convergent parce qu'elles sont toutes deux gouvernées par la
+/// **cible tactile minimale AD-13** (`ConstrainedBox(minHeight: 48)` autour de
+/// la rangée), et par rien d'autre : une constante unique convient donc aux
+/// deux, et il n'y a **pas** à tronquer l'une pour servir l'autre.
+///
+/// Ce qui peut la dépasser, et qui se déclare alors explicitement via
+/// [ZStudyFolderDetail.subfolderNavBandHeight] : une coquille d'hôte
+/// (`ZSubfolderNavRendererScope`), un `itemBuilder` plus haut que 48 dp, un
+/// facteur d'échelle de texte élevé. La marge de thème
+/// `ZcrudTheme.subfolderBarPadding`, elle, est ajoutée **automatiquement**
+/// (cf. `_navBandHeight`) : c'est un token de ce socle, il serait absurde de
+/// demander à l'hôte de refaire l'addition.
+const double kZSubfolderNavBandHeight = 48.0;
 
 /// Construit les sections « Matériel » pour le sous-dossier [selectedSubfolderId]
 /// (`null` = tous). Le widget ne filtre AUCUNE donnée lui-même (AD-2) : il
@@ -129,6 +155,9 @@ class ZStudyFolderDetail extends StatefulWidget {
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
     this.aboveTabViews,
+    this.aboveTabBar,
+    this.aboveTabBarHeight,
+    this.subfolderNavBandHeight,
     this.subfolderNavPlacement = ZSubfolderNavPlacement.withinTab,
     this.progressData,
     this.progressStatCards = const <Widget>[],
@@ -287,6 +316,63 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// les vues d'onglets — parle.
   final Widget? aboveTabViews;
 
+  /// CR-IFFD-45 — créneau rendu **entre l'app-bar et la barre d'onglets**
+  /// (`ZPageScaffold.aboveTabBar`), donc **dans** l'app-bar, qui grandit
+  /// réellement de la hauteur déclarée.
+  ///
+  /// 🔴 **Chaînon CÂBLÉ, pas créé** : le créneau vient d'être ouvert côté socle
+  /// (site unique `_zAppBarBottom`, partagé par le mode fixe et les modes
+  /// sliver) ; cette façade ne fait que le relever, comme [aboveTabViews].
+  ///
+  /// `null` (défaut) ⇒ slot ABSENT côté shell — et la neutralité y est stricte
+  /// : sans créneau, le socle rend le `TabBar` **tel quel**, sans `PreferredSize`
+  /// interposée. Rendu strictement inchangé.
+  ///
+  /// ⚠️ **Conflit avec [ZSubfolderNavPlacement.aboveTabBar] — résolu par
+  /// COMPOSITION**, exactement comme [aboveTabViews] vs `aboveTabs` : si l'hôte
+  /// fournit ce slot *et* demande `aboveTabBar`, les deux sont rendus dans une
+  /// `Column` — **la navigation d'abord** (au plus près du titre, dont elle
+  /// précise le sujet), puis ce slot. Une priorité ferait disparaître
+  /// silencieusement un contenu demandé ; un `assert` transformerait une
+  /// composition légitime en panne d'exécution en debug (contraire à AD-10).
+  final Widget? aboveTabBar;
+
+  /// Hauteur **déclarée** du slot [aboveTabBar] de l'hôte.
+  ///
+  /// `null` (défaut) ⇒ repli du socle : `preferredSize` du slot s'il est un
+  /// `PreferredSizeWidget`, sinon `kToolbarHeight`.
+  ///
+  /// ⚠️ **Elle décrit le slot de l'hôte, PAS la bande de navigation** : sous
+  /// [ZSubfolderNavPlacement.aboveTabBar] avec un slot d'hôte, la hauteur
+  /// transmise au socle est la **somme** `bande + slot` (cf.
+  /// [subfolderNavBandHeight]). Les deux réglages restent donc indépendants :
+  /// déclarer l'un ne force jamais à redéclarer l'autre.
+  final double? aboveTabBarHeight;
+
+  /// CR-IFFD-45 — hauteur **déclarée** de la bande de navigation hissée sous
+  /// [ZSubfolderNavPlacement.aboveTabBar].
+  ///
+  /// `null` (défaut) ⇒ [kZSubfolderNavBandHeight] (48 dp, **mesuré** sur les
+  /// deux surfaces du socle) **plus** la marge verticale de
+  /// `ZcrudTheme.subfolderBarPadding` quand elle s'applique (barre de sélection
+  /// uniquement — la rangée de puces n'en pose pas).
+  ///
+  /// 🔴 **Pourquoi une hauteur DÉCLARÉE et non mesurée** : le créneau vit dans
+  /// le `bottom:` de l'app-bar, dont la `preferredSize` doit être connue
+  /// **avant** la mise en page — le `Scaffold` a déjà réservé la hauteur de
+  /// l'app-bar quand une mesure a posteriori arriverait. C'est la contrainte du
+  /// socle, pas un raccourci.
+  ///
+  /// À renseigner quand la bande rendue n'est **pas** celle du socle ou n'a pas
+  /// sa hauteur : coquille d'hôte injectée via `ZSubfolderNavRendererScope`,
+  /// `ZSubfolderNavSpec.itemBuilder` plus haut que 48 dp, facteur d'échelle de
+  /// texte élevé. Sous-déclarer produit un **overflow signalé par Flutter** —
+  /// bruyant, jamais un recouvrement muet du `TabBar` (c'est précisément ce que
+  /// la voie `subtitle`, elle, aurait fait en silence).
+  ///
+  /// Sans effet hors de [ZSubfolderNavPlacement.aboveTabBar].
+  final double? subfolderNavBandHeight;
+
   /// CR-IFFD-43 — **où** vit la navigation de fratrie. Défaut
   /// [ZSubfolderNavPlacement.withinTab] ⇒ rendu strictement inchangé pour tout
   /// hôte existant. Voir [ZSubfolderNavPlacement.aboveTabs] pour l'arbitrage
@@ -297,6 +383,13 @@ class ZStudyFolderDetail extends StatefulWidget {
   final ZSubfolderNavSpec nav;
 
   /// Sélection initiale (`null` = item racine « Tous les sous-dossiers »).
+  ///
+  /// 🔴 **IGNORÉ quand `nav.selectionController` est fourni** (CR-IFFD-45) : le
+  /// contrôleur est alors le **propriétaire** de l'état, donc de son amorce
+  /// (`initialValue`). Recopier cette valeur dedans au montage ferait écrire le
+  /// socle dans l'état de l'hôte — et écraserait une sélection que l'hôte a pu
+  /// restaurer d'un lien profond. Même arbitrage que
+  /// `ZStudyToolsSectionSpec.expandController` vs `initiallyExpanded`.
   final String? initialSelectedSubfolderId;
 
   @override
@@ -304,28 +397,84 @@ class ZStudyFolderDetail extends StatefulWidget {
 }
 
 class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
+  /// CR-IFFD-45 — liaison de sélection : **état interne par défaut**,
+  /// contrôleur de l'hôte quand `nav.selectionController` est fourni.
+  ///
+  /// Ce n'est PAS un miroir (patron `ZDisplayState`, clause 2) : quand l'hôte
+  /// pilote, lecture **et** écriture le traversent — la page ne garde aucune
+  /// copie, donc rien ne peut diverger entre la barre, la sidebar, le corps
+  /// filtré et le second chemin de l'hôte.
+  late final ZDisplayStateBinding<String?> _selection;
+
   // État DÉTENU (propriétaire unique) — créé une fois, disposé une fois (AD-2).
-  late final ValueNotifier<String?> _selected;
   late final ValueNotifier<bool> _collapsed;
   late final ValueNotifier<double> _sidebarWidth;
+
+  /// Écoute **STABLE** de la sélection, y compris au travers d'un changement de
+  /// contrôleur : c'est un relais d'écoute, jamais un relais de valeur. Sans
+  /// cette stabilité, un changement de contrôleur exigerait un `setState` à
+  /// l'échelle de la page — ce qu'AD-2 interdit.
+  ValueListenable<String?> get _selected => _selection.listenable;
 
   @override
   void initState() {
     super.initState();
-    _selected = ValueNotifier<String?>(widget.initialSelectedSubfolderId);
+    _selection = ZDisplayStateBinding<String?>(
+      consumer: this,
+      // Amorce de l'état INTERNE. Sans contrôleur c'est la sélection initiale ;
+      // avec contrôleur, `bind` bascule la source et cette valeur n'est jamais
+      // lue (précédence documentée : le contrôleur prime).
+      initialValue: widget.initialSelectedSubfolderId,
+    )..bind(widget.nav.selectionController);
+    // ⚠️ `bind(null)` au montage est un NO-OP (early-return sur `identical`) —
+    // vérifié dans `ZDisplayStateBinding.bind`. C'est exactement ce qu'il faut
+    // ici : la liaison naît déjà repliée sur son état interne, amorcé
+    // ci-dessus. Aucune notification ne part donc au montage.
+    if (widget.nav.onSelectionChanged != null) {
+      _selection.listenable.addListener(_emitSelection);
+    }
     _collapsed = ValueNotifier<bool>(false);
     _sidebarWidth = ValueNotifier<double>(widget.nav.initialSidebarWidth);
   }
 
   @override
+  void didUpdateWidget(covariant ZStudyFolderDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // L'hôte a le droit de changer (ou de retirer) son pilote : sans cela la
+    // page resterait branchée sur l'ancien, muette pour le nouveau.
+    _selection.bind(widget.nav.selectionController);
+    // Le listener est installé selon la PRÉSENCE du callback, jamais selon son
+    // identité : une closure recréée à chaque build ne doit pas provoquer un
+    // désabonnement/réabonnement (elle est relue à l'émission).
+    final bool had = oldWidget.nav.onSelectionChanged != null;
+    final bool has = widget.nav.onSelectionChanged != null;
+    if (had == has) return;
+    if (has) {
+      _selection.listenable.addListener(_emitSelection);
+    } else {
+      _selection.listenable.removeListener(_emitSelection);
+    }
+  }
+
+  @override
   void dispose() {
-    _selected.dispose();
+    _selection.listenable.removeListener(_emitSelection);
+    // ⚠️ Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas
+    // (son propriétaire est un `State` de l'hôte, via `ZDisplayStateOwnerMixin`).
+    _selection.dispose();
     _collapsed.dispose();
     _sidebarWidth.dispose();
     super.dispose();
   }
 
-  void _select(String? id) => _selected.value = id;
+  /// Constate le changement de sélection vers l'hôte (clause 3 du patron).
+  /// Le callback est relu à l'émission — jamais capturé au moment de l'abonnement.
+  void _emitSelection() =>
+      widget.nav.onSelectionChanged?.call(_selection.value);
+
+  /// Écrit À LA SOURCE : avec un contrôleur, un tap dans la barre ou la sidebar
+  /// commande l'état de l'hôte — les deux chemins n'en font qu'un.
+  void _select(String? id) => _selection.value = id;
 
   void _toggleCollapsed() => _collapsed.value = !_collapsed.value;
 
@@ -363,6 +512,10 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       // CR-IFFD-43 — relève du chaînon manquant (+ composition avec la
       // navigation hissée). `null` ⇒ créneau structurellement absent.
       aboveTabViews: _aboveTabViews(context),
+      // CR-IFFD-45 — créneau ENTRE l'app-bar et le `TabBar`. `null` ⇒ créneau
+      // structurellement absent côté shell (neutralité stricte du socle).
+      aboveTabBar: _aboveTabBar(context),
+      aboveTabBarHeight: _aboveTabBarHeight(context),
       tabs: <ZPageTab>[
         ZPageTab(
           label: widget.materialTabLabel,
@@ -417,9 +570,10 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// Contenu du créneau `aboveTabViews` du shell.
   ///
   /// Trois cas, dans cet ordre :
-  /// 1. placement [ZSubfolderNavPlacement.withinTab] (défaut) ⇒ **pass-through
-  ///    pur** du slot de l'hôte (`null` ⇒ créneau absent) — la navigation reste
-  ///    dans l'onglet Matériel, rendu strictement inchangé ;
+  /// 1. placement ≠ [ZSubfolderNavPlacement.aboveTabs] ⇒ **pass-through pur**
+  ///    du slot de l'hôte (`null` ⇒ créneau absent) : sous `withinTab` (défaut)
+  ///    la navigation reste dans l'onglet Matériel, sous `aboveTabBar` elle est
+  ///    hissée dans l'app-bar — dans les deux cas ce créneau-ci est inchangé ;
   /// 2. `aboveTabs` sans slot d'hôte ⇒ la **bande** de navigation seule ;
   /// 3. `aboveTabs` **et** slot d'hôte ⇒ COMPOSITION (cf. doc de
   ///    [ZStudyFolderDetail.aboveTabViews]) : navigation d'abord, slot ensuite.
@@ -430,14 +584,13 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// de page (AD-2/SM-1).
   Widget? _aboveTabViews(BuildContext context) {
     final Widget? hostSlot = widget.aboveTabViews;
-    if (widget.subfolderNavPlacement == ZSubfolderNavPlacement.withinTab) {
+    // CR-IFFD-45 — ce créneau n'accueille la navigation QUE sous `aboveTabs` :
+    // `withinTab` la laisse dans l'onglet, `aboveTabBar` la hisse dans
+    // l'app-bar. Dans les deux cas, pass-through pur du slot de l'hôte.
+    if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabs) {
       return hostSlot;
     }
-    final Widget nav = ZSubfolderNarrowNav(
-      spec: widget.nav,
-      selected: _selected,
-      onSelect: _select,
-    );
+    final Widget nav = _navBand();
     // 🔴 **Aucun étirement explicite** : un `SizedBox(width: double.infinity)`
     // a été écrit, puis MESURÉ INERTE (les deux surfaces du socle rendent déjà
     // 500 dp sur 500 dp de large sans lui — leur `Row` interne est en
@@ -456,13 +609,113 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     );
   }
 
+  // --- CR-IFFD-45 : créneau ENTRE l'app-bar et la barre d'onglets ------------
+
+  /// La bande de navigation hissée — **une seule** construction, partagée par
+  /// les deux créneaux (`aboveTabViews` et `aboveTabBar`), donc **une seule**
+  /// source de sélection (`_selected`) et une seule surface possible.
+  ///
+  /// Elle n'écoute la tranche `_selected` qu'en son sein
+  /// (`ValueListenableBuilder` interne aux surfaces) : changer de fratrie ne
+  /// reconstruit ni les onglets ni la structure de page (AD-2/SM-1).
+  Widget _navBand() => ZSubfolderNarrowNav(
+    spec: widget.nav,
+    selected: _selected,
+    onSelect: _select,
+  );
+
+  /// Contenu du créneau `aboveTabBar` du shell.
+  ///
+  /// Trois cas, symétriques de [_aboveTabViews] :
+  /// 1. placement ≠ [ZSubfolderNavPlacement.aboveTabBar] ⇒ **pass-through pur**
+  ///    du slot de l'hôte (`null` ⇒ créneau absent, arbre inchangé) ;
+  /// 2. `aboveTabBar` sans slot d'hôte ⇒ la **bande** seule ;
+  /// 3. `aboveTabBar` **et** slot d'hôte ⇒ COMPOSITION : navigation d'abord,
+  ///    slot ensuite.
+  Widget? _aboveTabBar(BuildContext context) {
+    final Widget? hostSlot = widget.aboveTabBar;
+    if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabBar) {
+      return hostSlot;
+    }
+    final Widget nav = _navBand();
+    if (hostSlot == null) return nav;
+    // 🔴 `crossAxisAlignment: stretch` — et c'est LOAD-BEARING, **à l'inverse**
+    // du site `aboveTabViews` juste au-dessus. La règle est la même (« composer
+    // ne doit pas changer la mise en page du slot de l'hôte »), la réponse est
+    // opposée parce que le socle n'aligne pas pareil des deux côtés :
+    // * `aboveTabViews` est posé dans une `Column` en alignement transversal
+    //   PAR DÉFAUT ⇒ y étirer changerait la largeur du slot de l'hôte ;
+    // * `aboveTabBar` est posé, lui, dans une `Column`
+    //   `CrossAxisAlignment.stretch` (site `_zAppBarBottom` du socle) ⇒ un slot
+    //   d'hôte SEUL y reçoit la largeur pleine. Sans `stretch` ici, il passerait
+    //   de pleine largeur à sa largeur intrinsèque du seul fait qu'on lui a
+    //   adjoint la navigation. C'est la même exigence d'équivalence, pas une
+    //   incohérence : elle se lit sur le site réel, jamais par recopie.
+    // `stretch` n'introduit par ailleurs aucune notion de left/right (AD-13).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[nav, hostSlot],
+    );
+  }
+
+  /// Hauteur **déclarée** transmise au créneau `aboveTabBar`.
+  ///
+  /// Hors [ZSubfolderNavPlacement.aboveTabBar] : pass-through pur de
+  /// [ZStudyFolderDetail.aboveTabBarHeight] — le repli du socle (`preferredSize`
+  /// puis `kToolbarHeight`) s'applique alors intact.
+  ///
+  /// Sous `aboveTabBar` : hauteur de la bande, **plus** celle du slot de l'hôte
+  /// quand il y en a un (le créneau porte alors les deux).
+  double? _aboveTabBarHeight(BuildContext context) {
+    if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabBar) {
+      return widget.aboveTabBarHeight;
+    }
+    final double band = _navBandHeight(context);
+    final Widget? hostSlot = widget.aboveTabBar;
+    if (hostSlot == null) return band;
+    // Même chaîne de repli que le socle pour la part de l'hôte — elle doit être
+    // rejouée ici parce qu'on additionne : le socle ne peut plus l'appliquer sur
+    // un composé dont il ignore la décomposition. `kToolbarHeight` est une
+    // métrique de la plateforme, pas un littéral inventé (FR-26).
+    final double host =
+        widget.aboveTabBarHeight ??
+        (hostSlot is PreferredSizeWidget
+            ? hostSlot.preferredSize.height
+            : kToolbarHeight);
+    return band + host;
+  }
+
+  /// Hauteur déclarée de la BANDE seule.
+  ///
+  /// Ordre : réglage explicite de l'hôte → [kZSubfolderNavBandHeight] (mesuré)
+  /// augmenté de la marge verticale de thème quand elle s'applique.
+  ///
+  /// La marge n'est ajoutée que pour [ZSubfolderNarrowMode.selector] : c'est la
+  /// seule surface qui pose `ZcrudTheme.subfolderBarPadding` (CR-IFFD-44) — la
+  /// rangée de puces n'en pose aucune, l'y compter réserverait du vide.
+  double _navBandHeight(BuildContext context) {
+    final double? declared = widget.subfolderNavBandHeight;
+    if (declared != null) return declared;
+    if (widget.nav.narrowMode != ZSubfolderNarrowMode.selector) {
+      return kZSubfolderNavBandHeight;
+    }
+    final EdgeInsetsGeometry? padding = ZcrudTheme.of(
+      context,
+    ).subfolderBarPadding;
+    if (padding == null) return kZSubfolderNavBandHeight;
+    return kZSubfolderNavBandHeight +
+        padding.resolve(Directionality.of(context)).vertical;
+  }
+
   // --- Onglet Matériel : nav adaptative + corps filtré -----------------------
 
   Widget _materialTab(BuildContext context) {
-    // CR-IFFD-43 — navigation hissée : l'onglet ne rend QUE son corps filtré.
-    // C'est ce qui garantit qu'elle est rendue **une seule fois** (pas de
-    // duplication bande + sidebar), et donc que la sélection n'a qu'une source.
-    if (widget.subfolderNavPlacement == ZSubfolderNavPlacement.aboveTabs) {
+    // CR-IFFD-43/45 — navigation hissée (dans l'un OU l'autre créneau) :
+    // l'onglet ne rend QUE son corps filtré. C'est ce qui garantit qu'elle est
+    // rendue **une seule fois** (pas de duplication bande + sidebar), et donc
+    // que la sélection n'a qu'une source.
+    if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.withinTab) {
       return _materialBody();
     }
     return ZResponsiveLayout(
