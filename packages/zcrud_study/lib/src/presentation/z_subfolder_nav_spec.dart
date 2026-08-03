@@ -50,6 +50,28 @@ typedef ZSubfolderItemBuilder = Widget Function(
   bool selected,
 );
 
+/// Construit l'**action** d'un item de fratrie — slot TRAILING, distinct du
+/// contenu (CR-IFFD-41, point 8).
+///
+/// 🔴 **Mesuré avant d'ajouter** : ni [ZSubfolderItemBuilder] ni
+/// `ZSubfolderNavRenderer` ne servaient déjà ce besoin.
+/// * `itemBuilder` construit le CONTENU, qui vit **à l'intérieur** de la zone
+///   tapable de l'item : une action posée là est avalée par la sélection (et
+///   se retrouverait inversée avec le reste du contenu quand l'item est
+///   courant).
+/// * `ZSubfolderNavRenderer` le permet, mais au prix du **remplacement de toute
+///   la surface** — donc de la feuille modale, de l'indentation et de
+///   l'inversion que ce socle rend justement. Ce n'est pas un slot d'action,
+///   c'est une sortie de route.
+///
+/// [refOrNull] `null` ⇒ item RACINE. Rendre `null` ⇒ **aucune action pour cet
+/// item** (AD-4) : c'est ainsi que la maquette IFFD n'en pose pas sur la racine.
+typedef ZSubfolderItemActionBuilder = Widget? Function(
+  BuildContext context,
+  ZSubfolderRef? refOrNull,
+  bool selected,
+);
+
 /// Côté du seuil de bascule sur lequel un [ZSubfolderItemBuilder] est invoqué.
 ///
 /// Publié pour lever l'ambiguïté de mise en page décrite sur
@@ -139,6 +161,18 @@ enum ZSubfolderNarrowMode {
   /// sortait la sélection du champ visible et l'utilisateur perdait le « où
   /// suis-je ». La question de l'utilisateur est « lequel est actif ? » **avant**
   /// « lesquels existent ? ».
+  ///
+  /// 🔴 **CR-IFFD-41 — CHANGEMENT DE COMPORTEMENT** (nom du mode inchangé, API
+  /// inchangée) : la fratrie se déploie désormais en **feuille modale** (≤ 80 %
+  /// de la hauteur d'écran), et non plus **en ligne** sous la barre comme en
+  /// v0.34.0. L'hôte de référence (IFFD) a explicitement repris la main sur la
+  /// forme, et il ne prétend PAS que le déploiement en ligne fût un défaut :
+  /// c'est un arbitrage de gouvernance visuelle, pas une correction.
+  ///
+  /// Conséquence pour un hôte qui vient d'adopter v0.34.0 : la fratrie n'est
+  /// plus poussée dans le flux de la page — elle flotte. Un hôte qui
+  /// **compensait** le déploiement en ligne (réserve de hauteur, `scrollTo`,
+  /// fermeture pilotée à la sélection) doit **RETIRER sa compensation**.
   selector,
 
   /// Rangée de puces défilant horizontalement — comportement **historique**
@@ -156,8 +190,10 @@ class ZSubfolderNavSpec {
     required this.subfolders,
     required this.allSubfoldersLabel,
     this.itemBuilder,
+    this.itemActionBuilder,
     this.narrowMode = ZSubfolderNarrowMode.selector,
     this.sidebarHeader,
+    this.sheetTitle,
     this.addAction,
     this.addLabel,
     this.addIcon,
@@ -190,6 +226,26 @@ class ZSubfolderNavSpec {
 
   /// Constructeur d'item **injectable** (défaut : rangée neutre thémée, D3).
   final ZSubfolderItemBuilder? itemBuilder;
+
+  /// Slot d'**action par item** de la feuille de fratrie (CR-IFFD-41, point 8).
+  ///
+  /// **`null` ⇒ capacité ABSENTE** (AD-4) : aucun élément trailing dans l'arbre,
+  /// rendu strictement inchangé. Cf. [ZSubfolderItemActionBuilder] pour la
+  /// mesure qui a justifié un slot dédié plutôt qu'un détournement de
+  /// [itemBuilder].
+  final ZSubfolderItemActionBuilder? itemActionBuilder;
+
+  /// Titre **injecté** de la feuille de fratrie (CR-IFFD-41, point 4).
+  ///
+  /// **`null` ⇒ slot ABSENT** (AD-4). C'est un LIBELLÉ : il ne peut donc PAS
+  /// être un token de thème (FR-26/NFR-S7 — un paquet ne code aucune chaîne, et
+  /// une chaîne visible relève de la l10n de l'hôte). Le préréglage « façon
+  /// IFFD » le fournit depuis `example/`, seul endroit du dépôt où une valeur
+  /// décorative est admise.
+  ///
+  /// zcrud ne pose dessus qu'une **typographie dérivée** (`titleLarge`) —
+  /// aucune couleur.
+  final String? sheetTitle;
 
   /// Surface de navigation SOUS le seuil de bascule (< 600 dp).
   ///

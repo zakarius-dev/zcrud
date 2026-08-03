@@ -12,6 +12,17 @@
 /// Ce fichier garde AUSSI le seam de **SURFACE** (`ZSubfolderNavRenderer`), qui
 /// répond à la cause racine nommée par l'hôte : `itemBuilder` construit un
 /// ÉLÉMENT, jamais le CONTENEUR.
+///
+/// ⚠️ **CR-IFFD-41 a changé la FORME du déploiement** — la fratrie s'ouvre
+/// désormais en feuille modale, plus en ligne. Les gardes ci-dessous portent sur
+/// des propriétés qui, elles, n'ont PAS changé (l'élément courant reste sous les
+/// yeux, la fratrie ne se déploie qu'à la demande, le repli n'est jamais vide,
+/// `compact` est intact). La forme elle-même est gardée par
+/// `cr_iffd41_subfolder_sheet_test.dart`.
+///
+/// `panelKey` désigne toujours la liste de la fratrie ; elle vit maintenant dans
+/// l'`Overlay` — `find.byKey` la trouve donc encore, mais elle n'est plus
+/// descendante de la barre (c'est CR-IFFD-41 qui le mesure).
 library;
 
 import 'package:flutter/material.dart';
@@ -105,8 +116,8 @@ void main() {
       await setScreen(tester, 500, 800);
       await pumpDetail(tester, nav: navSpec(subfolders: _manyRefs()));
 
-      // GARDE MORDANTE : rendre la fratrie en ligne (rangée défilante) ferait
-      // réapparaître un `Scrollable` ici — c'est LE défaut corrigé.
+      // GARDE MORDANTE : rendre la fratrie DANS la barre (rangée défilante)
+      // ferait réapparaître un `Scrollable` ici — c'est LE défaut corrigé.
       expect(
         find.descendant(
           of: find.byType(ZSubfolderSelectorBar),
@@ -141,6 +152,8 @@ void main() {
         reason: 'la barre reste en place quand la fratrie se déploie',
       );
 
+      // Fermeture par le MÊME geste que l'ouverture : depuis CR-IFFD-41 le
+      // second tap traverse le barrier modal, ce qui referme la feuille.
       await toggle(); // fermeture
       expect(find.byKey(ZSubfolderSelectorBar.panelKey), findsNothing);
       expect(find.text('Sous-dossier 11'), findsOneWidget);
@@ -376,9 +389,11 @@ void main() {
     testWidgets('RTL RÉEL : le chevron passe de l\'autre côté du libellé', (
       tester,
     ) async {
-      // Surface EN LIGNE (aucun `Overlay`) : la `Directionality` posée par le
-      // harnais s'y applique réellement — c'est précisément ce qu'un test bâti
-      // sur une surface flottante ne mesurerait pas.
+      // Mesure faite sur la BARRE, qui est en ligne : la `Directionality` posée
+      // par le harnais s'y applique directement. Le RTL de la FEUILLE (surface
+      // flottante, donc hors de ce `Directionality`) est mesuré séparément dans
+      // `cr_iffd41_subfolder_sheet_test.dart`, via un
+      // `LocalizationsDelegate<WidgetsLocalizations>`.
       await setScreen(tester, 500, 800);
       await pumpDetail(tester, textDirection: TextDirection.ltr);
       final double ltrChevron = tester

@@ -17,6 +17,47 @@ import 'package:flutter/material.dart';
 
 import '../zcrud_scope.dart';
 
+/// Habillage du **déclencheur** d'une surface de navigation (barre repliée
+/// montrant l'élément courant) — token de LOOK, jamais de structure.
+///
+/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un RÔLE de conteneur Material,
+/// que le consommateur traduit en `ColorScheme` : c'est ce qui permet à un hôte
+/// de demander « contour » ou « rempli » sans qu'un seul hex n'entre dans un
+/// paquet (FR-26/NFR-S7).
+enum ZSubfolderTriggerVariant {
+  /// Aucun conteneur : le déclencheur est une simple ligne cliquable.
+  /// **Rendu historique** — c'est ce que rend un thème qui ne déclare rien.
+  flat,
+
+  /// Conteneur à **contour** (bordure `ColorScheme.outlineVariant`, fond
+  /// transparent) — l'habillage `Card.outlined` de la maquette IFFD.
+  outlined,
+
+  /// Conteneur **rempli** (`ColorScheme.surfaceContainerHighest`, sans bordure).
+  filled,
+}
+
+/// Manière dont l'élément COURANT se distingue dans une liste de navigation —
+/// token de LOOK.
+///
+/// 🔴 **L'inversion n'est pas un surlignage plus foncé.** `highlight` teinte le
+/// fond en laissant le texte hériter de la couleur ambiante ; [inverted]
+/// **retourne le couple** : fond `ColorScheme.inverseSurface`, **texte ET icônes
+/// en `onInverseSurface`**. C'est ce couple de rôles — et non deux hex — qui
+/// porte la capacité : quel que soit le `ColorScheme` (clair, sombre, seedé),
+/// `inverseSurface`/`onInverseSurface` sont par définition le contraste maximal
+/// disponible, et le paquet n'a jamais à connaître une couleur.
+enum ZSubfolderSelectedEmphasis {
+  /// Fond `ColorScheme.secondaryContainer`, premier plan **inchangé** (hérité).
+  /// **Rendu historique.**
+  highlight,
+
+  /// Fond `ColorScheme.inverseSurface`, premier plan **forcé** à
+  /// `ColorScheme.onInverseSurface` (texte *et* glyphes, y compris ceux d'un
+  /// `itemBuilder` injecté).
+  inverted,
+}
+
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 /// repli ; espacements/rayons/insets directionnels comme tokens injectables.
 @immutable
@@ -86,6 +127,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.celebrationCurve,
     this.flipDuration,
     this.flipCurve,
+    this.subfolderTriggerVariant,
+    this.subfolderTriggerCollapsedIcon,
+    this.subfolderTriggerExpandedIcon,
+    this.subfolderSelectedEmphasis,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -268,6 +313,25 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Courbe de retournement. `null` conserve v0.19.3 inchangé.
   final Curve? flipCurve;
 
+  /// Habillage du déclencheur de navigation de fratrie (CR-IFFD-41, point 1).
+  /// `null` ⇒ [ZSubfolderTriggerVariant.flat], rendu **strictement inchangé**.
+  final ZSubfolderTriggerVariant? subfolderTriggerVariant;
+
+  /// Glyphe du chevron quand la fratrie est **fermée** (CR-IFFD-41, point 2).
+  /// `null` ⇒ repli conventionnel du consommateur (`Icons.expand_more`).
+  ///
+  /// Un `IconData` est un **glyphe**, jamais un libellé : il ne se traduit pas.
+  /// Il reste néanmoins un choix de LOOK, donc injecté et non figé.
+  final IconData? subfolderTriggerCollapsedIcon;
+
+  /// Glyphe du chevron quand la fratrie est **ouverte** (CR-IFFD-41, point 2).
+  /// `null` ⇒ repli conventionnel du consommateur (`Icons.expand_less`).
+  final IconData? subfolderTriggerExpandedIcon;
+
+  /// Mise en évidence de l'élément courant (CR-IFFD-41, point 6).
+  /// `null` ⇒ [ZSubfolderSelectedEmphasis.highlight], rendu **inchangé**.
+  final ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -429,6 +493,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Curve? celebrationCurve,
     Duration? flipDuration,
     Curve? flipCurve,
+    ZSubfolderTriggerVariant? subfolderTriggerVariant,
+    IconData? subfolderTriggerCollapsedIcon,
+    IconData? subfolderTriggerExpandedIcon,
+    ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -480,6 +548,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     celebrationCurve: celebrationCurve ?? this.celebrationCurve,
     flipDuration: flipDuration ?? this.flipDuration,
     flipCurve: flipCurve ?? this.flipCurve,
+    subfolderTriggerVariant:
+        subfolderTriggerVariant ?? this.subfolderTriggerVariant,
+    subfolderTriggerCollapsedIcon:
+        subfolderTriggerCollapsedIcon ?? this.subfolderTriggerCollapsedIcon,
+    subfolderTriggerExpandedIcon:
+        subfolderTriggerExpandedIcon ?? this.subfolderTriggerExpandedIcon,
+    subfolderSelectedEmphasis:
+        subfolderSelectedEmphasis ?? this.subfolderSelectedEmphasis,
   );
 
   @override
@@ -635,6 +711,23 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       ),
       flipDuration: _lerpNullableDuration(flipDuration, other.flipDuration, t),
       flipCurve: _chooseNullableCurve(flipCurve, other.flipCurve, t),
+      // Tokens DISCRETS nullables (variante, glyphe, emphase) : aucune valeur
+      // intermédiaire n'existe — bascule au point milieu. `null` des DEUX côtés
+      // RESTE `null` (même invariant que `badgeRadius`) : matérialiser une
+      // valeur ici GÈLERAIT le repli du consommateur à la première transition
+      // de thème, et le rendu par défaut cesserait ensuite de suivre.
+      subfolderTriggerVariant: t < 0.5
+          ? subfolderTriggerVariant
+          : other.subfolderTriggerVariant,
+      subfolderTriggerCollapsedIcon: t < 0.5
+          ? subfolderTriggerCollapsedIcon
+          : other.subfolderTriggerCollapsedIcon,
+      subfolderTriggerExpandedIcon: t < 0.5
+          ? subfolderTriggerExpandedIcon
+          : other.subfolderTriggerExpandedIcon,
+      subfolderSelectedEmphasis: t < 0.5
+          ? subfolderSelectedEmphasis
+          : other.subfolderSelectedEmphasis,
     );
   }
 }

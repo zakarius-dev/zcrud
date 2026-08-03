@@ -191,4 +191,90 @@ void main() {
     expect(resolved.surfaceColor, theme.colorScheme.surface);
     expect(resolved.errorColor, theme.colorScheme.error);
   });
+
+  // ---------------------------------------------------------------------------
+  // CR-IFFD-41 — tokens de LOOK de la navigation de fratrie
+  // ---------------------------------------------------------------------------
+  group('CR-IFFD-41 — tokens nullables : absence ⇒ rendu inchangé', () {
+    test('les quatre tokens sont `null` par DÉFAUT', () {
+      const ZcrudTheme t = ZcrudTheme();
+      // 🔴 C'est LA condition de la neutralité : un défaut non nul imposerait
+      // la maquette d'un hôte à tous les autres.
+      expect(t.subfolderTriggerVariant, isNull);
+      expect(t.subfolderTriggerCollapsedIcon, isNull);
+      expect(t.subfolderTriggerExpandedIcon, isNull);
+      expect(t.subfolderSelectedEmphasis, isNull);
+    });
+
+    test('copyWith transporte chaque token', () {
+      final ZcrudTheme t = const ZcrudTheme().copyWith(
+        subfolderTriggerVariant: ZSubfolderTriggerVariant.outlined,
+        subfolderTriggerCollapsedIcon: Icons.arrow_drop_down,
+        subfolderTriggerExpandedIcon: Icons.arrow_drop_up,
+        subfolderSelectedEmphasis: ZSubfolderSelectedEmphasis.inverted,
+      );
+      expect(t.subfolderTriggerVariant, ZSubfolderTriggerVariant.outlined);
+      expect(t.subfolderTriggerCollapsedIcon, Icons.arrow_drop_down);
+      expect(t.subfolderTriggerExpandedIcon, Icons.arrow_drop_up);
+      expect(t.subfolderSelectedEmphasis, ZSubfolderSelectedEmphasis.inverted);
+    });
+
+    test('lerp de deux défauts RESTE nul — l\'héritage n\'est pas GELÉ', () {
+      // Même invariant que `badgeRadius` : Flutter interpole le thème à CHAQUE
+      // transition. Matérialiser une valeur ici figerait le repli du
+      // consommateur dès la première transition, sans que le rendu immédiat
+      // change — la régression n'apparaîtrait qu'au changement suivant.
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        final ZcrudTheme r = a.lerp(const ZcrudTheme(), t);
+        expect(r.subfolderTriggerVariant, isNull, reason: 't=$t');
+        expect(r.subfolderTriggerCollapsedIcon, isNull, reason: 't=$t');
+        expect(r.subfolderTriggerExpandedIcon, isNull, reason: 't=$t');
+        expect(r.subfolderSelectedEmphasis, isNull, reason: 't=$t');
+      }
+    });
+
+    test('lerp de tokens DISCRETS bascule au point milieu', () {
+      const ZcrudTheme a = ZcrudTheme(
+        subfolderTriggerVariant: ZSubfolderTriggerVariant.outlined,
+        subfolderSelectedEmphasis: ZSubfolderSelectedEmphasis.inverted,
+      );
+      const ZcrudTheme b = ZcrudTheme(
+        subfolderTriggerVariant: ZSubfolderTriggerVariant.filled,
+        subfolderSelectedEmphasis: ZSubfolderSelectedEmphasis.highlight,
+      );
+      // Le compteur DOIT pouvoir varier : mesurer une seule extrémité serait
+      // vert sur tout défaut.
+      expect(
+        a.lerp(b, 0.0).subfolderTriggerVariant,
+        ZSubfolderTriggerVariant.outlined,
+      );
+      expect(
+        a.lerp(b, 0.49).subfolderTriggerVariant,
+        ZSubfolderTriggerVariant.outlined,
+      );
+      expect(
+        a.lerp(b, 0.51).subfolderTriggerVariant,
+        ZSubfolderTriggerVariant.filled,
+      );
+      expect(
+        a.lerp(b, 1.0).subfolderSelectedEmphasis,
+        ZSubfolderSelectedEmphasis.highlight,
+      );
+    });
+
+    test('AUCUNE couleur n\'est portée par ces tokens', () {
+      // Garde de CONCEPTION : le jour où quelqu'un voudra « juste » ajouter un
+      // `subfolderSelectedColor`, ceci le nommera. L'inversion est un couple de
+      // RÔLES du `ColorScheme`, résolu par le consommateur — pas deux hex.
+      const ZcrudTheme t = ZcrudTheme(
+        subfolderTriggerVariant: ZSubfolderTriggerVariant.outlined,
+        subfolderSelectedEmphasis: ZSubfolderSelectedEmphasis.inverted,
+      );
+      expect(t.subfolderTriggerVariant, isNot(isA<Color>()));
+      expect(t.subfolderSelectedEmphasis, isNot(isA<Color>()));
+      expect(ZSubfolderTriggerVariant.values, hasLength(3));
+      expect(ZSubfolderSelectedEmphasis.values, hasLength(2));
+    });
+  });
 }

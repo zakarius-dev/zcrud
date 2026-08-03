@@ -28,7 +28,57 @@ const ZcrudTheme iffdVisualTheme = ZcrudTheme(
   gradientEnd: AlignmentDirectional.centerEnd,
   celebrationDuration: Duration(seconds: 5),
   celebrationCurve: Curves.easeOutCubic,
+  // --- CR-IFFD-41 — les QUATRE points de LOOK de la fratrie -----------------
+  // Le socle rend la STRUCTURE (feuille modale, indentation, racine-item, slot
+  // d'action, pied d'ajout) ; ces tokens seuls décident de l'apparence. Aucun
+  // d'eux n'est une couleur : ce sont une variante, deux glyphes et un mode de
+  // contraste — les hex de la maquette n'existent nulle part, ici comme dans
+  // les paquets.
+  //
+  // Point 1 — `Card.outlined` du déclencheur
+  // (`public_folders_details_page.dart:426`).
+  subfolderTriggerVariant: ZSubfolderTriggerVariant.outlined,
+  // Point 2 — triangle PLEIN `arrow_drop_down` (idem:480), et son symétrique à
+  // l'ouverture : le chevron reste un état lisible, pas un décor figé.
+  subfolderTriggerCollapsedIcon: Icons.arrow_drop_down,
+  subfolderTriggerExpandedIcon: Icons.arrow_drop_up,
+  // Point 6 — INVERSION, pas surlignage. IFFD peignait `Colors.black87` /
+  // `Colors.white70` en fond avec le texte et les icônes en blanc/noir
+  // (`folder_subfolder_selection_dialog_widget.dart:60-130`) : c'est le couple
+  // `inverseSurface`/`onInverseSurface`, exprimé en RÔLES et donc valable dans
+  // les deux luminosités sans qu'aucune valeur ne soit recopiée.
+  subfolderSelectedEmphasis: ZSubfolderSelectedEmphasis.inverted,
 );
+
+/// Libellés du préréglage de fratrie « façon IFFD » (CR-IFFD-41, points 4 et 9).
+///
+/// 🔴 **Ils ne peuvent PAS être des tokens de thème** : ce sont des chaînes
+/// VISIBLES, donc de la l10n de l'hôte (FR-26/NFR-S7 — un paquet n'en code
+/// aucune, y compris quand la maquette de référence en fixe le texte). Le socle
+/// expose les slots correspondants à `null` (absents de l'arbre) ; c'est l'hôte
+/// qui les remplit, et `example/` est le seul endroit du dépôt où une valeur
+/// rédactionnelle est admise.
+///
+/// ⚠️ **Non typés ici, et c'est structurel** : `example/` **ne dépend pas** de
+/// `zcrud_study` (écart consigné su-10 de son `pubspec.yaml`), donc
+/// `ZSubfolderNavSpec` n'y est pas atteignable. Ces constantes documentent donc
+/// la recette sans pouvoir l'assembler ; un hôte la câble ainsi :
+///
+/// ```dart
+/// ZSubfolderNavSpec(
+///   …,
+///   sheetTitle: kIffdSubfolderSheetTitle,      // point 4
+///   addAction: () => …,                        // point 9 — slot PRÉEXISTANT
+///   addLabel: kIffdSubfolderAddLabel,          //   désormais AFFICHÉ au pied
+///   addIcon: Icons.add,
+///   itemActionBuilder: (context, ref, selected) =>
+///       ref == null ? null : monMenu(ref),     // point 8 — jamais sur la racine
+/// );
+/// ```
+const String kIffdSubfolderSheetTitle = 'Aperçu des sous-dossiers';
+
+/// Libellé du pied d'ajout — cf. [kIffdSubfolderSheetTitle].
+const String kIffdSubfolderAddLabel = 'Ajouter un sous-dossier';
 
 /// Recette stable de célébration pour le parcours de session de démonstration.
 const ZCelebrationSpec iffdCelebrationSpec = ZCelebrationSpec(
