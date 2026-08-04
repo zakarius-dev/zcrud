@@ -11,11 +11,15 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZToggleController;
+import 'package:zcrud_exam/zcrud_exam.dart' show ZExam;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
+import 'package:zcrud_mindmap/zcrud_mindmap.dart' show ZMindmap;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag;
 
+import 'z_default_exam_card.dart';
 import 'z_default_flashcard_card.dart';
+import 'z_default_mindmap_card.dart';
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
@@ -102,6 +106,10 @@ class ZStudyToolsSectionSpec {
     Map<String, String>? typeLabels,
     List<ZFlashcardTag> Function(ZFlashcard card)? tagsOf,
     String? Function(ZFlashcard card)? colorKeyOf,
+    // CR-IFFD-48 (complément CR-47) — le libellé sémantique de la carte est
+    // relayé PAR CARTE, patron `colorKeyOf`/`tagsOf`. `null` (ou retour `null`)
+    // ⇒ repli de la carte (l'énoncé) — strictement le rendu antérieur.
+    String? Function(ZFlashcard card)? semanticLabelOf,
     String? emptyTagsLabel,
     void Function(ZFlashcard card)? onTagsTap,
     void Function(ZFlashcard card)? onCardTap,
@@ -155,6 +163,157 @@ class ZStudyToolsSectionSpec {
             onTap: onCardTap == null ? null : () => onCardTap(card),
             onLongPress:
                 onCardLongPress == null ? null : () => onCardLongPress(card),
+            semanticLabel: semanticLabelOf?.call(card),
+          );
+        });
+
+  /// Section de **cartes mentales** dont le socle fournit le rendu d'item
+  /// (**CR-IFFD-48**) — la voie TYPÉE qui **porte les données**.
+  ///
+  /// Mêmes règles que [ZStudyToolsSectionSpec.flashcards] : [itemBuilder]
+  /// reste `required` dans le constructeur principal (non-cassant par
+  /// construction) ; le réordonnancement n'est **pas** proposé par cette voie
+  /// (une carte éphémère — `id` vide — ferait diverger l'espace d'indices de
+  /// l'espace persistable) ; **parité complète** avec [ZDefaultMindmapCard]
+  /// (chaque option de la carte a son pendant ici — garde de source
+  /// CR-IFFD-48, table de correspondance nominale).
+  ///
+  /// [ZMindmap] vient de `zcrud_mindmap`, dépendance **déjà déclarée**
+  /// (ES-7.1) — aucune arête nouvelle (AD-1).
+  ZStudyToolsSectionSpec.mindmaps({
+    required this.id,
+    required this.title,
+    required List<ZMindmap> maps,
+    required this.emptyState,
+    String? untitledLabel,
+    String Function(int nodeCount)? nodeCountLabel,
+    String? Function(ZMindmap map)? colorKeyOf,
+    String? Function(ZMindmap map)? semanticLabelOf,
+    void Function(ZMindmap map)? onCardTap,
+    void Function(ZMindmap map)? onCardLongPress,
+    Widget? Function(BuildContext context, ZMindmap map)? cardTrailingBuilder,
+    ZColorPalette palette = const ZColorPalette.defaultStudy(),
+    int titleMaxLines = 2,
+    this.addAction,
+    this.addActionIcon,
+    this.addActionSemanticLabel,
+    this.axis = Axis.vertical,
+    this.collapsible = false,
+    this.initiallyExpanded = true,
+    this.crossAxisMinItemWidth,
+    this.crossAxisItemHeight,
+    this.crossAxisAspectRatio,
+    this.crossAxisMaxColumns,
+    this.crossAxisVirtualized = false,
+    this.crossAxisViewportHeight,
+    this.collapseSemanticLabel,
+    this.expandSemanticLabel,
+    this.headerCount,
+    this.secondaryAction,
+    this.secondaryActionIcon,
+    this.secondaryActionSemanticLabel,
+    this.expandController,
+  })  : itemCount = maps.length,
+        itemIds = null,
+        onReorder = null,
+        reorderHandleSemanticLabel = null,
+        reorderHandleIcon = null,
+        reorderMoveBeforeSemanticLabel = null,
+        reorderMoveAfterSemanticLabel = null,
+        itemBuilder = ((BuildContext context, int index) {
+          final ZMindmap map = maps[index];
+          return ZDefaultMindmapCard(
+            // Clé STABLE par carte (AD-2) : l'identité suit la carte, jamais
+            // sa position (`id` vide = éphémère, patron `.flashcards`).
+            key: ValueKey<String>(
+              'zDefaultMindmapCard-${map.id.isNotEmpty ? map.id : 'ephemeral-$index'}',
+            ),
+            map: map,
+            untitledLabel: untitledLabel,
+            nodeCountLabel: nodeCountLabel,
+            palette: palette,
+            colorKey: colorKeyOf?.call(map),
+            titleMaxLines: titleMaxLines,
+            trailing: cardTrailingBuilder?.call(context, map),
+            onTap: onCardTap == null ? null : () => onCardTap(map),
+            onLongPress:
+                onCardLongPress == null ? null : () => onCardLongPress(map),
+            semanticLabel: semanticLabelOf?.call(map),
+          );
+        });
+
+  /// Section d'**examens** dont le socle fournit le rendu d'item
+  /// (**CR-IFFD-48**) — la voie TYPÉE qui **porte les données**.
+  ///
+  /// Mêmes règles que [ZStudyToolsSectionSpec.flashcards] : [itemBuilder]
+  /// reste `required` dans le constructeur principal ; pas de
+  /// réordonnancement par cette voie (`id` nullable ⇒ carte éphémère
+  /// possible) ; **parité complète** avec [ZDefaultExamCard] (garde de source
+  /// CR-IFFD-48). [dateLabelOf] rend une date **déjà formatée et localisée**
+  /// par l'hôte — le socle ne formate jamais (FR-26/AD-13).
+  ///
+  /// [ZExam] vient de `zcrud_exam`, dépendance **déjà déclarée** (ES-9.2) —
+  /// aucune arête nouvelle (AD-1).
+  ZStudyToolsSectionSpec.exams({
+    required this.id,
+    required this.title,
+    required List<ZExam> exams,
+    required this.emptyState,
+    String? untitledLabel,
+    String? Function(ZExam exam)? dateLabelOf,
+    String? reminderLabel,
+    String? Function(ZExam exam)? colorKeyOf,
+    String? Function(ZExam exam)? semanticLabelOf,
+    void Function(ZExam exam)? onCardTap,
+    void Function(ZExam exam)? onCardLongPress,
+    Widget? Function(BuildContext context, ZExam exam)? cardTrailingBuilder,
+    ZColorPalette palette = const ZColorPalette.defaultStudy(),
+    int titleMaxLines = 2,
+    this.addAction,
+    this.addActionIcon,
+    this.addActionSemanticLabel,
+    this.axis = Axis.vertical,
+    this.collapsible = false,
+    this.initiallyExpanded = true,
+    this.crossAxisMinItemWidth,
+    this.crossAxisItemHeight,
+    this.crossAxisAspectRatio,
+    this.crossAxisMaxColumns,
+    this.crossAxisVirtualized = false,
+    this.crossAxisViewportHeight,
+    this.collapseSemanticLabel,
+    this.expandSemanticLabel,
+    this.headerCount,
+    this.secondaryAction,
+    this.secondaryActionIcon,
+    this.secondaryActionSemanticLabel,
+    this.expandController,
+  })  : itemCount = exams.length,
+        itemIds = null,
+        onReorder = null,
+        reorderHandleSemanticLabel = null,
+        reorderHandleIcon = null,
+        reorderMoveBeforeSemanticLabel = null,
+        reorderMoveAfterSemanticLabel = null,
+        itemBuilder = ((BuildContext context, int index) {
+          final ZExam exam = exams[index];
+          return ZDefaultExamCard(
+            // Clé STABLE par carte (AD-2), patron `.flashcards`.
+            key: ValueKey<String>(
+              'zDefaultExamCard-${exam.id ?? 'ephemeral-$index'}',
+            ),
+            exam: exam,
+            untitledLabel: untitledLabel,
+            dateLabel: dateLabelOf?.call(exam),
+            reminderLabel: reminderLabel,
+            palette: palette,
+            colorKey: colorKeyOf?.call(exam),
+            titleMaxLines: titleMaxLines,
+            trailing: cardTrailingBuilder?.call(context, exam),
+            onTap: onCardTap == null ? null : () => onCardTap(exam),
+            onLongPress:
+                onCardLongPress == null ? null : () => onCardLongPress(exam),
+            semanticLabel: semanticLabelOf?.call(exam),
           );
         });
 

@@ -72,7 +72,23 @@ export 'src/presentation/z_content_hub_sheet.dart';
 // aucune carte réécrite. La voie TYPÉE qui porte les données est
 // `ZStudyToolsSectionSpec.flashcards(cards:)` ; `itemBuilder` reste REQUIS dans
 // le constructeur principal (aucune régression possible pour un hôte existant).
+// CR-IFFD-48 — la règle généralisée : quand le socle offre une fonctionnalité,
+// il offre un rendu par défaut. Quatre cartes : document (icône TYPÉE par
+// format — mapping ouvert injectable, jamais un enum fermé), note, carte
+// mentale (vignette structurelle déterministe) et examen. Structure et
+// proportions portées par le socle ; couleurs et graisses exprimées en RÔLES
+// du `ColorScheme`/`TextTheme` de l'hôte (zéro jeton nouveau — mesuré).
+// Voies typées : `.mindmaps(maps:)` (`ZMindmap`, arête ES-7.1) et
+// `.exams(exams:)` (`ZExam`, arête ES-9.2). Documents et notes restent des
+// cartes AUTONOMES sur primitives : leurs modèles (`ZStudyDocument`/
+// `ZSmartNote`) vivent dans `zcrud_document`/`zcrud_note`, qui ne sont PAS des
+// dépendances de `zcrud_study` — une voie typée exigerait une arête nouvelle
+// (interdite, AD-1).
+export 'src/presentation/z_default_document_card.dart';
+export 'src/presentation/z_default_exam_card.dart';
 export 'src/presentation/z_default_flashcard_card.dart';
+export 'src/presentation/z_default_mindmap_card.dart';
+export 'src/presentation/z_default_note_card.dart';
 export 'src/presentation/z_exam_editor.dart';
 export 'src/presentation/z_exam_reminders.dart'
     show
