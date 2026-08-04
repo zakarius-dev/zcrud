@@ -466,4 +466,115 @@ void main() {
       expect(a.lerp(b, 0.75).subfolderSheetTitleAlign, TextAlign.end);
     });
   });
+
+  group('CR-IFFD-49 — `railItemWidth` (largeur d\'item de rail horizontal)', () {
+    test('`null` par DÉFAUT ⇒ le consommateur applique SON défaut', () {
+      expect(const ZcrudTheme().railItemWidth, isNull);
+    });
+
+    test('copyWith transporte le token', () {
+      expect(
+        const ZcrudTheme().copyWith(railItemWidth: 300).railItemWidth,
+        300,
+      );
+    });
+
+    test('🔴 lerp de deux `null` RESTE `null` — le repli n\'est pas GELÉ', () {
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        expect(
+          a.lerp(const ZcrudTheme(), t).railItemWidth,
+          isNull,
+          reason: 't=$t',
+        );
+      }
+    });
+
+    test('lerp INTERPOLE réellement (ce n\'est pas une bascule)', () {
+      const ZcrudTheme a = ZcrudTheme(railItemWidth: 200);
+      const ZcrudTheme b = ZcrudTheme(railItemWidth: 400);
+      expect(a.lerp(b, 0.25).railItemWidth, 250);
+      expect(a.lerp(b, 0.5).railItemWidth, 300);
+      expect(a.lerp(b, 0.75).railItemWidth, 350);
+    });
+  });
+
+  group('CR-IFFD-50 — jetons d\'en-tête de section d\'étude', () {
+    test('`null` par DÉFAUT (les quatre) ⇒ rendu antérieur du consommateur',
+        () {
+      const ZcrudTheme t = ZcrudTheme();
+      expect(t.studySectionTitleStyle, isNull);
+      expect(t.studySectionCountShape, isNull);
+      expect(t.studySectionCountRole, isNull);
+      expect(t.studySectionCollapsePlacement, isNull);
+    });
+
+    test('copyWith transporte les quatre jetons', () {
+      final ZcrudTheme t = const ZcrudTheme().copyWith(
+        studySectionTitleStyle: const TextStyle(fontSize: 28),
+        studySectionCountShape: ZStudySectionCountShape.pill,
+        studySectionCountRole: ZStudySectionCountRole.primary,
+        studySectionCollapsePlacement:
+            ZStudySectionCollapsePlacement.inHeaderRow,
+      );
+      expect(t.studySectionTitleStyle?.fontSize, 28);
+      expect(t.studySectionCountShape, ZStudySectionCountShape.pill);
+      expect(t.studySectionCountRole, ZStudySectionCountRole.primary);
+      expect(
+        t.studySectionCollapsePlacement,
+        ZStudySectionCollapsePlacement.inHeaderRow,
+      );
+    });
+
+    test('🔴 lerp de deux `null` RESTE `null` — le repli n\'est pas GELÉ '
+        '(les quatre jetons)', () {
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        final ZcrudTheme l = a.lerp(const ZcrudTheme(), t);
+        expect(l.studySectionTitleStyle, isNull, reason: 't=$t');
+        expect(l.studySectionCountShape, isNull, reason: 't=$t');
+        expect(l.studySectionCountRole, isNull, reason: 't=$t');
+        expect(l.studySectionCollapsePlacement, isNull, reason: 't=$t');
+      }
+    });
+
+    test('lerp du STYLE de titre INTERPOLE réellement', () {
+      const ZcrudTheme a =
+          ZcrudTheme(studySectionTitleStyle: TextStyle(fontSize: 20));
+      const ZcrudTheme b =
+          ZcrudTheme(studySectionTitleStyle: TextStyle(fontSize: 28));
+      expect(a.lerp(b, 0.5).studySectionTitleStyle?.fontSize, 24);
+    });
+
+    test('lerp des jetons DISCRETS bascule au point milieu', () {
+      const ZcrudTheme a = ZcrudTheme(
+        studySectionCountShape: ZStudySectionCountShape.rounded,
+        studySectionCountRole: ZStudySectionCountRole.secondaryContainer,
+        studySectionCollapsePlacement:
+            ZStudySectionCollapsePlacement.belowTitle,
+      );
+      const ZcrudTheme b = ZcrudTheme(
+        studySectionCountShape: ZStudySectionCountShape.pill,
+        studySectionCountRole: ZStudySectionCountRole.primary,
+        studySectionCollapsePlacement:
+            ZStudySectionCollapsePlacement.inHeaderRow,
+      );
+      expect(
+        a.lerp(b, 0.25).studySectionCountShape,
+        ZStudySectionCountShape.rounded,
+      );
+      expect(
+        a.lerp(b, 0.75).studySectionCountShape,
+        ZStudySectionCountShape.pill,
+      );
+      expect(
+        a.lerp(b, 0.75).studySectionCountRole,
+        ZStudySectionCountRole.primary,
+      );
+      expect(
+        a.lerp(b, 0.75).studySectionCollapsePlacement,
+        ZStudySectionCollapsePlacement.inHeaderRow,
+      );
+    });
+  });
 }

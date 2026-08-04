@@ -153,6 +153,10 @@ export 'src/presentation/z_multi_flashcard_editor_controller.dart';
 // dans `lib/src/data/` (importe `ZRepetitionStore`, banni de la présentation) —
 // le widget de liste reste PUR (seam injecté). CORE OUT=0, arête existante.
 export 'src/data/z_flashcard_cascade_delete.dart';
+// CR-IFFD-49 — item de RAIL borné en largeur, PUBLIC : même résolution
+// (paramètre > token `ZcrudTheme.railItemWidth` > repli 280 dp) pour les voies
+// typées du socle ET les surfaces assemblées par l'hôte.
+export 'src/presentation/z_rail_item.dart';
 export 'src/presentation/z_reorder_ids.dart';
 // CR-LEX-74 — ce fichier expose DEUX enveloppes du MÊME contenu de sections :
 // `ZSectionedStudyLayout` (boîte, `ListView.builder`) et `ZSectionedStudySliver`

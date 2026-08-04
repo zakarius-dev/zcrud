@@ -24,7 +24,10 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZcrudScope,
         ZcrudTheme,
         ZDisplayStateBinding,
-        ZReorderRenderRequest;
+        ZReorderRenderRequest,
+        ZStudySectionCollapsePlacement,
+        ZStudySectionCountRole,
+        ZStudySectionCountShape;
 import 'package:zcrud_responsive/zcrud_responsive.dart'
     show ZAdaptiveGrid, ZDefaultReorderRenderer;
 
@@ -275,6 +278,16 @@ class _ZStudySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final isEmpty = spec.itemCount == 0;
+    // CR-IFFD-50 ④ — placement de l'affordance de repli. `null` ⇒ SOUS le
+    // titre (rendu historique, strictement inchangé). `inHeaderRow` ⇒ le
+    // chevron entre dans la LIGNE d'en-tête, côté fin : l'en-tête est alors
+    // construit PAR `_CollapsibleBody` (qui possède l'état de repli), via
+    // `headerBuilder` — même `_buildHeader`, jamais un second en-tête.
+    final ZStudySectionCollapsePlacement placement =
+        theme.studySectionCollapsePlacement ??
+            ZStudySectionCollapsePlacement.belowTitle;
+    final bool collapseInHeader = spec.collapsible &&
+        placement == ZStudySectionCollapsePlacement.inHeaderRow;
 
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(
@@ -284,7 +297,7 @@ class _ZStudySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, theme),
+          if (!collapseInHeader) _buildHeader(context, theme),
           // CR-IFFD-10 §1 — le corps est masqué quand la section est repliée.
           // L'état vit LOCALEMENT (`_CollapsibleBody`, sous la frontière keyée
           // de la section) : replier ne reconstruit NI les autres sections NI la
@@ -294,6 +307,14 @@ class _ZStudySection extends StatelessWidget {
               spec: spec,
               theme: theme,
               body: _body(context, theme, isEmpty),
+              headerBuilder: collapseInHeader
+                  ? (BuildContext context, Widget trailingCollapse) =>
+                      _buildHeader(
+                        context,
+                        theme,
+                        trailingCollapse: trailingCollapse,
+                      )
+                  : null,
             )
           else ...[
             SizedBox(height: theme.gapS),
@@ -516,7 +537,17 @@ class _ZStudySection extends StatelessWidget {
   }
 
   /// En-tête : titre + badge compteur + (optionnel) action d'ajout ≥ 48 dp.
-  Widget _buildHeader(BuildContext context, ZcrudTheme theme) {
+  ///
+  /// [trailingCollapse] (CR-IFFD-50 ④) : chevron de repli à poser EN FIN de
+  /// ligne quand le thème demande `inHeaderRow`. `null` ⇒ ligne inchangée. Le
+  /// titre est le SEUL enfant flexible (`Expanded`) : les cibles tactiles
+  /// (actions, chevron) gardent leur largeur ≥ 48 dp même quand le titre est
+  /// long — c'est le titre qui s'ellipse, jamais une cible qui rétrécit.
+  Widget _buildHeader(
+    BuildContext context,
+    ZcrudTheme theme, {
+    Widget? trailingCollapse,
+  }) {
     final addAction = spec.addAction;
     return Semantics(
       header: true,
@@ -526,7 +557,11 @@ class _ZStudySection extends StatelessWidget {
             child: Text(
               spec.title,
               textAlign: TextAlign.start,
-              style: theme.labelTextStyle ??
+              // CR-IFFD-50 ① — le style du titre est un JETON
+              // (`studySectionTitleStyle`) : `null` ⇒ repli historique
+              // strictement inchangé (`labelTextStyle`, puis `titleMedium`).
+              style: theme.studySectionTitleStyle ??
+                  theme.labelTextStyle ??
                   Theme.of(context).textTheme.titleMedium,
             ),
           ),
@@ -541,16 +576,44 @@ class _ZStudySection extends StatelessWidget {
                 minWidth: _kMinTapTarget,
                 minHeight: _kMinTapTarget,
               ),
-              child: IconButton(
-                key: ValueKey<String>('section:${spec.id}:secondaryAction'),
-                onPressed: spec.secondaryAction,
-                tooltip: spec.secondaryActionSemanticLabel ?? spec.title,
-                icon: Icon(
-                  spec.secondaryActionIcon ?? Icons.arrow_forward,
-                  semanticLabel:
-                      spec.secondaryActionSemanticLabel ?? spec.title,
-                ),
-              ),
+              // CR-IFFD-50 ③ — libellé VISIBLE à côté de l'icône quand
+              // `secondaryActionLabel` est fourni (c'est de l'INFORMATION :
+              // une icône seule n'est pas auto-descriptive, AD-13). `null` ⇒
+              // icône seule, strictement le rendu antérieur.
+              child: spec.secondaryActionLabel == null
+                  ? IconButton(
+                      key: ValueKey<String>(
+                        'section:${spec.id}:secondaryAction',
+                      ),
+                      onPressed: spec.secondaryAction,
+                      tooltip: spec.secondaryActionSemanticLabel ?? spec.title,
+                      icon: Icon(
+                        spec.secondaryActionIcon ?? Icons.arrow_forward,
+                        semanticLabel:
+                            spec.secondaryActionSemanticLabel ?? spec.title,
+                      ),
+                    )
+                  : TextButton.icon(
+                      key: ValueKey<String>(
+                        'section:${spec.id}:secondaryAction',
+                      ),
+                      onPressed: spec.secondaryAction,
+                      // Glyphe DÉCORATIF (aucun `semanticLabel`) : l'annonce
+                      // vient du libellé — UNE seule source de sémantique,
+                      // jamais deux annonces divergentes (règle v0.36.0,
+                      // feuille de fratrie).
+                      icon: Icon(spec.secondaryActionIcon ?? Icons.arrow_forward),
+                      // `secondaryActionSemanticLabel` fourni ⇒ il PRIME comme
+                      // annonce (l'hôte sait) — le libellé visible reste rendu,
+                      // sa sémantique propre est REMPLACÉE (pas doublée).
+                      label: spec.secondaryActionSemanticLabel == null
+                          ? Text(spec.secondaryActionLabel!)
+                          : Semantics(
+                              label: spec.secondaryActionSemanticLabel,
+                              excludeSemantics: true,
+                              child: Text(spec.secondaryActionLabel!),
+                            ),
+                    ),
             ),
           ],
           // Callback `null` = action ABSENTE (AD-4) : aucun bouton rendu.
@@ -577,6 +640,13 @@ class _ZStudySection extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+          // CR-IFFD-50 ④ — chevron de repli DANS la ligne d'en-tête, côté fin
+          // (après les actions), quand le thème le demande. `null` ⇒ absent
+          // (le chevron reste rendu sous le titre, rendu historique).
+          if (trailingCollapse != null) ...[
+            SizedBox(width: theme.gapS),
+            trailingCollapse,
           ],
         ],
       ),
@@ -826,6 +896,21 @@ bool _listEquals(List<String> a, List<String> b) {
 /// [ZcrudTheme.radiusM]/[ZcrudTheme.gapS]/[ZcrudTheme.gapM] (plus de
 /// `circular(10)`/`8`/`2` en dur) ; `Semantics(label:)` redondant supprimé (le
 /// `Text('$count')` porte déjà l'annonce — une seule source de sémantique).
+///
+/// CR-IFFD-50 ② — forme ([ZcrudTheme.studySectionCountShape]) et RÔLE de
+/// couleur ([ZcrudTheme.studySectionCountRole]) adressables : la couleur vient
+/// TOUJOURS d'un rôle du `ColorScheme` choisi par l'hôte, jamais d'un hex
+/// (FR-26 — la frontière CR-IFFD-48 : la forme monte, la matière reste au
+/// thème). `null`/`null` ⇒ rectangle arrondi `secondaryContainer`, rendu
+/// **strictement inchangé**.
+///
+/// 🔵 **Pourquoi PAS [ZCountBadge]** (public, `z_subfolder_item_chrome.dart`) :
+/// ce n'est pas un doublon divergent mais un contrat DIFFÉRENT — `ZCountBadge`
+/// (1) **exige une icône** injectée (le compteur d'en-tête n'en a pas),
+/// (2) **refuse `count == 0`** par assert (une section vide affiche
+/// légitimement « 0 »), (3) impose une cible `kMinInteractiveDimension`
+/// (≥ 48 dp) là où ce badge est une annotation informative non interactive —
+/// l'adopter changerait la géométrie par défaut de tous les en-têtes.
 class _CountBadge extends StatelessWidget {
   const _CountBadge({required this.count, required this.theme});
 
@@ -835,19 +920,51 @@ class _CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // CR-IFFD-50 ② — rôle → couple (fond, premier plan) du `ColorScheme`
+    // COURANT. Aucun hex : l'hôte nomme un rôle, le schéma fournit la matière.
+    final ZStudySectionCountRole role =
+        theme.studySectionCountRole ?? ZStudySectionCountRole.secondaryContainer;
+    final (Color background, Color foreground) = switch (role) {
+      ZStudySectionCountRole.secondaryContainer => (
+          scheme.secondaryContainer,
+          scheme.onSecondaryContainer,
+        ),
+      ZStudySectionCountRole.primaryContainer => (
+          scheme.primaryContainer,
+          scheme.onPrimaryContainer,
+        ),
+      ZStudySectionCountRole.primary => (scheme.primary, scheme.onPrimary),
+      ZStudySectionCountRole.tertiaryContainer => (
+          scheme.tertiaryContainer,
+          scheme.onTertiaryContainer,
+        ),
+      ZStudySectionCountRole.inverseSurface => (
+          scheme.inverseSurface,
+          scheme.onInverseSurface,
+        ),
+    };
+    final ZStudySectionCountShape shape =
+        theme.studySectionCountShape ?? ZStudySectionCountShape.rounded;
     return Container(
       padding: EdgeInsetsDirectional.symmetric(
         horizontal: theme.gapM,
         vertical: theme.gapS,
       ),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.all(theme.radiusM),
-      ),
+      // `pill` = stadium (coins à la demi-hauteur, quel que soit le contenu) ;
+      // `rounded` (défaut) = rectangle `radiusM`, rendu historique inchangé.
+      decoration: shape == ZStudySectionCountShape.pill
+          ? ShapeDecoration(
+              color: background,
+              shape: const StadiumBorder(),
+            )
+          : BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.all(theme.radiusM),
+            ),
       child: Text(
         '$count',
         textAlign: TextAlign.start,
-        style: TextStyle(color: scheme.onSecondaryContainer),
+        style: TextStyle(color: foreground),
       ),
     );
   }
@@ -872,11 +989,20 @@ class _CollapsibleBody extends StatefulWidget {
     required this.spec,
     required this.theme,
     required this.body,
+    this.headerBuilder,
   });
 
   final ZStudyToolsSectionSpec spec;
   final ZcrudTheme theme;
   final Widget body;
+
+  /// CR-IFFD-50 ④ — non-null quand le thème place le chevron DANS la ligne
+  /// d'en-tête : ce widget possède l'état de repli, il construit donc AUSSI
+  /// l'en-tête (via le `_buildHeader` de la section — jamais un second
+  /// en-tête) en lui passant le chevron. `null` ⇒ l'en-tête reste construit
+  /// par la section, le chevron est rendu SOUS le titre (rendu historique).
+  final Widget Function(BuildContext context, Widget trailingCollapse)?
+      headerBuilder;
 
   @override
   State<_CollapsibleBody> createState() => _CollapsibleBodyState();
@@ -913,7 +1039,12 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final Widget Function(BuildContext, Widget)? headerBuilder =
+        widget.headerBuilder;
+    if (headerBuilder == null) {
+      // Rendu HISTORIQUE (chevron sous le titre) — structure inchangée.
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // AD-2/SM-1 — SEULE la tranche de repli se reconstruit : ni la page,
@@ -924,54 +1055,89 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
           ),
         ],
       );
+    }
+    // CR-IFFD-50 ④ — chevron DANS la ligne d'en-tête, côté fin. L'en-tête
+    // lui-même reste STATIQUE (hors tranche réactive) : seuls le glyphe du
+    // chevron et le corps replié écoutent l'état — SM-1 préservé.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        headerBuilder(
+          context,
+          ValueListenableBuilder<bool>(
+            valueListenable: _expanded.listenable,
+            builder: (BuildContext context, bool expanded, Widget? _) =>
+                _collapseButton(expanded),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _expanded.listenable,
+          builder: (BuildContext context, bool expanded, Widget? _) =>
+              _animatedBody(expanded),
+        ),
+      ],
+    );
+  }
 
-  Widget _buildCollapse(BuildContext context, bool expanded, Widget? _) {
-    // CR-IFFD-11 §3 — libellés INJECTÉS (repli FR conservé). C'était le seul
-    // libellé en dur de ce layout : un hôte non francophone obtenait un
-    // `semanticLabel` français sur un contrôle d'accessibilité (AD-13).
+  /// Chevron de repli — MÊME bouton (clé, libellés, cible ≥ 48 dp) quel que
+  /// soit le placement (CR-IFFD-50 ④) : une seule source, aucune divergence.
+  ///
+  /// CR-IFFD-11 §3 — libellés INJECTÉS ; les replis `'Replier'`/`'Déplier'`
+  /// sont un HÉRITAGE assumé (chaînes FR en dur, écart FR-26 documenté et
+  /// conservé pour la rétro-compatibilité stricte — tout hôte i18n DOIT
+  /// fournir `collapseSemanticLabel`/`expandSemanticLabel`).
+  Widget _collapseButton(bool expanded) {
     final label = expanded
         ? (widget.spec.collapseSemanticLabel ?? 'Replier')
         : (widget.spec.expandSemanticLabel ?? 'Déplier');
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: _kMinTapTarget,
+        minHeight: _kMinTapTarget,
+      ),
+      child: IconButton(
+        key: ValueKey<String>('section:${widget.spec.id}:collapse'),
+        // Écrit À LA SOURCE : avec un contrôleur, le chevron commande
+        // l'état de l'hôte — les deux chemins n'en font qu'un.
+        onPressed: () => _expanded.value = !_expanded.value,
+        tooltip: label,
+        icon: Icon(
+          expanded ? Icons.expand_less : Icons.expand_more,
+          semanticLabel: '$label ${widget.spec.title}',
+        ),
+      ),
+    );
+  }
+
+  /// Corps replié/déplié animé — partagé par les deux placements.
+  ///
+  /// CR-IFFD-11 §5 — transition ANIMÉE, sauf sous Reduce Motion.
+  /// Comportement demandé et retenu : ~200 ms, courbe standard ; sous
+  /// `MediaQuery.disableAnimationsOf` la transition est INSTANTANÉE (durée
+  /// nulle) — aucun mouvement, mais **état final identique** dans les deux
+  /// modes. `AnimatedSize` avec `duration: Duration.zero` rend exactement
+  /// l'état final sans frame intermédiaire : une seule branche de rendu,
+  /// jamais deux arbres divergents (AD-13).
+  Widget _animatedBody(bool expanded) => _AnimatedCollapse(
+        expanded: expanded,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(height: widget.theme.gapS),
+            widget.body,
+          ],
+        ),
+      );
+
+  Widget _buildCollapse(BuildContext context, bool expanded, Widget? _) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: _kMinTapTarget,
-              minHeight: _kMinTapTarget,
-            ),
-            child: IconButton(
-              key: ValueKey<String>('section:${widget.spec.id}:collapse'),
-              // Écrit À LA SOURCE : avec un contrôleur, le chevron commande
-              // l'état de l'hôte — les deux chemins n'en font qu'un.
-              onPressed: () => _expanded.value = !_expanded.value,
-              tooltip: label,
-              icon: Icon(
-                expanded ? Icons.expand_less : Icons.expand_more,
-                semanticLabel: '$label ${widget.spec.title}',
-              ),
-            ),
-          ),
+          child: _collapseButton(expanded),
         ),
-        // CR-IFFD-11 §5 — transition ANIMÉE, sauf sous Reduce Motion.
-        // Comportement demandé et retenu : ~200 ms, courbe standard ; sous
-        // `MediaQuery.disableAnimationsOf` la transition est INSTANTANÉE (durée
-        // nulle) — aucun mouvement, mais **état final identique** dans les deux
-        // modes. `AnimatedSize` avec `duration: Duration.zero` rend exactement
-        // l'état final sans frame intermédiaire : une seule branche de rendu,
-        // jamais deux arbres divergents (AD-13).
-        _AnimatedCollapse(
-          expanded: expanded,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              SizedBox(height: widget.theme.gapS),
-              widget.body,
-            ],
-          ),
-        ),
+        _animatedBody(expanded),
       ],
     );
   }

@@ -58,6 +58,70 @@ enum ZSubfolderSelectedEmphasis {
   inverted,
 }
 
+/// Forme du compteur d'items d'un en-tête de section d'étude (CR-IFFD-50 ②) —
+/// token de LOOK.
+///
+/// 🔴 **Aucune couleur ici** : la forme est indépendante de la matière (le rôle
+/// de couleur vit dans [ZStudySectionCountRole]) — même frontière que
+/// CR-IFFD-48 : la forme monte, la matière reste au thème.
+enum ZStudySectionCountShape {
+  /// Rectangle arrondi (`badgeRadius`, repli `radiusM`). **Rendu historique** —
+  /// c'est ce que rend un thème qui ne déclare rien.
+  rounded,
+
+  /// Pastille (stadium) : les coins suivent la demi-hauteur du badge, quel que
+  /// soit son contenu — la « pastille ronde » de la référence, sans rayon
+  /// magique.
+  pill,
+}
+
+/// RÔLE de couleur du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+///
+/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un **couple de rôles**
+/// Material (fond / premier plan) que le consommateur traduit depuis le
+/// `ColorScheme` courant : l'hôte choisit un rôle, jamais un hex (FR-26/NFR-S7)
+/// — même patron que [ZSubfolderSelectedEmphasis].
+enum ZStudySectionCountRole {
+  /// Fond `secondaryContainer`, texte `onSecondaryContainer`.
+  /// **Rendu historique.**
+  secondaryContainer,
+
+  /// Fond `primaryContainer`, texte `onPrimaryContainer`.
+  primaryContainer,
+
+  /// Fond `primary`, texte `onPrimary` — l'« accent, texte inversé » de la
+  /// référence, exprimé comme rôle et non comme couleur.
+  primary,
+
+  /// Fond `tertiaryContainer`, texte `onTertiaryContainer`.
+  tertiaryContainer,
+
+  /// Fond `inverseSurface`, texte `onInverseSurface` — contraste maximal
+  /// disponible quel que soit le `ColorScheme` (cf.
+  /// [ZSubfolderSelectedEmphasis.inverted]).
+  inverseSurface,
+}
+
+/// Placement de l'affordance de REPLI d'une section d'étude (CR-IFFD-50 ④) —
+/// token de LOOK (structure d'en-tête).
+///
+/// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : c'est une
+/// décision d'apparence **par application** (toutes les sections d'une app
+/// replient au même endroit), pas par descripteur — une spec par section
+/// inviterait des en-têtes incohérents entre sections voisines. Même arbitrage
+/// que [ZcrudTheme.subfolderBarPadding] (apparence ⇒ thème).
+enum ZStudySectionCollapsePlacement {
+  /// Chevron rendu **sous** le titre, aligné au début. **Rendu historique** —
+  /// c'est ce que rend un thème qui ne déclare rien.
+  belowTitle,
+
+  /// Chevron rendu **dans la ligne d'en-tête, côté fin** (après les actions) —
+  /// l'en-tête redevient une ligne unique, le repère de repli reste dans le
+  /// rang qu'il commande. Cible ≥ 48 dp GARANTIE par le consommateur, même
+  /// titre long (le titre est flexible, jamais le chevron).
+  inHeaderRow,
+}
+
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 /// repli ; espacements/rayons/insets directionnels comme tokens injectables.
 @immutable
@@ -134,6 +198,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subfolderBarPadding,
     this.subfolderSheetPadding,
     this.subfolderSheetTitleAlign,
+    this.railItemWidth,
+    this.studySectionTitleStyle,
+    this.studySectionCountShape,
+    this.studySectionCountRole,
+    this.studySectionCollapsePlacement,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -395,6 +464,49 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// la spec (`sheetTitle`), car un paquet ne code aucune chaîne (FR-26).
   final TextAlign? subfolderSheetTitleAlign;
 
+  /// Largeur d'un item de **rail horizontal** rendu PAR DÉFAUT par un
+  /// consommateur (CR-IFFD-49 — voies typées `ZStudyToolsSectionSpec` de
+  /// `zcrud_study`).
+  ///
+  /// `null` ⇒ le consommateur applique SON défaut documenté (280 dp côté
+  /// `zcrud_study`) — rendu **strictement inchangé** pour tout thème existant.
+  /// La priorité chez le consommateur est : paramètre explicite de la voie
+  /// typée > ce token > défaut du consommateur.
+  ///
+  /// 🔵 **Pourquoi un token de THÈME** : une largeur d'item est une décision
+  /// d'apparence (densité), pas de structure — même arbitrage que
+  /// [subfolderBarPadding]. La valeur mesurée chez un hôte (300 dp IFFD) reste
+  /// SA valeur : il la pose ici, jamais dans le socle.
+  final double? railItemWidth;
+
+  /// Style du TITRE d'un en-tête de section d'étude (CR-IFFD-50 ①).
+  ///
+  /// `null` ⇒ le consommateur applique son repli documenté
+  /// (`labelTextStyle`, puis `TextTheme.titleMedium`) — rendu **strictement
+  /// inchangé** pour tout thème existant. Non-null ⇒ ce style PRIME : la
+  /// référence peut dire « repère de navigation, plus grand et plus gras »
+  /// sans qu'aucun rôle de texte ne soit figé dans un paquet.
+  final TextStyle? studySectionTitleStyle;
+
+  /// FORME du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+  ///
+  /// `null` ⇒ [ZStudySectionCountShape.rounded] (rectangle arrondi,
+  /// `badgeRadius` repli `radiusM`) — rendu **strictement inchangé**.
+  final ZStudySectionCountShape? studySectionCountShape;
+
+  /// RÔLE de couleur du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+  ///
+  /// `null` ⇒ [ZStudySectionCountRole.secondaryContainer] — rendu
+  /// **strictement inchangé**. La couleur vient TOUJOURS du `ColorScheme`
+  /// courant : ce token nomme un rôle, jamais un hex (FR-26).
+  final ZStudySectionCountRole? studySectionCountRole;
+
+  /// PLACEMENT de l'affordance de repli d'une section d'étude (CR-IFFD-50 ④).
+  ///
+  /// `null` ⇒ [ZStudySectionCollapsePlacement.belowTitle] (chevron sous le
+  /// titre) — rendu **strictement inchangé**.
+  final ZStudySectionCollapsePlacement? studySectionCollapsePlacement;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -563,6 +675,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     EdgeInsetsGeometry? subfolderBarPadding,
     EdgeInsetsGeometry? subfolderSheetPadding,
     TextAlign? subfolderSheetTitleAlign,
+    double? railItemWidth,
+    TextStyle? studySectionTitleStyle,
+    ZStudySectionCountShape? studySectionCountShape,
+    ZStudySectionCountRole? studySectionCountRole,
+    ZStudySectionCollapsePlacement? studySectionCollapsePlacement,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -626,6 +743,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     subfolderSheetPadding: subfolderSheetPadding ?? this.subfolderSheetPadding,
     subfolderSheetTitleAlign:
         subfolderSheetTitleAlign ?? this.subfolderSheetTitleAlign,
+    railItemWidth: railItemWidth ?? this.railItemWidth,
+    studySectionTitleStyle:
+        studySectionTitleStyle ?? this.studySectionTitleStyle,
+    studySectionCountShape:
+        studySectionCountShape ?? this.studySectionCountShape,
+    studySectionCountRole: studySectionCountRole ?? this.studySectionCountRole,
+    studySectionCollapsePlacement:
+        studySectionCollapsePlacement ?? this.studySectionCollapsePlacement,
   );
 
   @override
@@ -822,6 +947,32 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subfolderSheetTitleAlign: t < 0.5
           ? subfolderSheetTitleAlign
           : other.subfolderSheetTitleAlign,
+      // CR-IFFD-49 — largeur CONTINUE : elle s'interpole. `null` des DEUX
+      // côtés RESTE `null` (même invariant que `accentBarHeight`) —
+      // matérialiser une valeur ici GÈLERAIT le défaut du consommateur à la
+      // première transition de thème.
+      railItemWidth: _lerpNullableDouble(railItemWidth, other.railItemWidth, t),
+      // CR-IFFD-50 ① — style CONTINU : `TextStyle.lerp` rend déjà `null` quand
+      // les DEUX côtés sont `null` (même invariant que `labelTextStyle`) — le
+      // repli du consommateur (`labelTextStyle` puis `titleMedium`) n'est
+      // jamais GELÉ par une transition de thème.
+      studySectionTitleStyle: TextStyle.lerp(
+        studySectionTitleStyle,
+        other.studySectionTitleStyle,
+        t,
+      ),
+      // CR-IFFD-50 ②/④ — tokens DISCRETS (aucune forme/rôle/placement
+      // intermédiaire n'existe) : bascule au point milieu, `null` des DEUX
+      // côtés RESTE `null` (même invariant que `subfolderTriggerVariant`).
+      studySectionCountShape: t < 0.5
+          ? studySectionCountShape
+          : other.studySectionCountShape,
+      studySectionCountRole: t < 0.5
+          ? studySectionCountRole
+          : other.studySectionCountRole,
+      studySectionCollapsePlacement: t < 0.5
+          ? studySectionCollapsePlacement
+          : other.studySectionCollapsePlacement,
     );
   }
 }

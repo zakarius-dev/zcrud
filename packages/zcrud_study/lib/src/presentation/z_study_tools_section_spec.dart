@@ -20,6 +20,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'z_default_exam_card.dart';
 import 'z_default_flashcard_card.dart';
 import 'z_default_mindmap_card.dart';
+import 'z_rail_item.dart';
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
@@ -62,6 +63,7 @@ class ZStudyToolsSectionSpec {
     this.headerCount,
     this.secondaryAction,
     this.secondaryActionIcon,
+    this.secondaryActionLabel,
     this.secondaryActionSemanticLabel,
     this.expandController,
   })  : assert(itemCount >= 0, 'itemCount ne peut être négatif'),
@@ -90,14 +92,59 @@ class ZStudyToolsSectionSpec {
   /// constructeur principal — un hôte qui fournit déjà le sien n'est **pas**
   /// touché, et ne **peut pas** l'être (aucune branche de repli n'existe).
   ///
-  /// ⚠️ **Ne propose PAS le réordonnancement** ([onReorder]/[itemIds] restent
-  /// `null`), délibérément. Il exigerait une clé stable par item, or une carte
-  /// **éphémère** (`id == null`, ex. une duplication non persistée) fait
-  /// diverger l'espace d'indices affiché de l'espace persistable : un glisser
-  /// déplacerait **silencieusement la mauvaise carte**. C'est le défaut mesuré
-  /// et fermé dans `ZFlashcardListView` (D1/R3) ; on ne le rouvre pas ici. Un
-  /// hôte qui veut réordonner passe par le constructeur principal, avec ses
-  /// propres `itemIds`.
+  /// 🔴 **CR-IFFD-52 — réordonnancement SANS affaiblir l'invariant.** La voie
+  /// typée accepte désormais [onReorder] (et les libellés/glyphes de
+  /// réordonnancement), mais [itemIds] n'est **jamais** fourni par l'hôte : il
+  /// est **DÉRIVÉ ici** de `cards[i].id`, et la garde du constructeur principal
+  /// (« onReorder ⇒ identité stable par item ») passe de **déclarée** à
+  /// **vérifiée sur pièces** — plus forte, pas assouplie. Une carte
+  /// **éphémère** (`id == null`, ex. une duplication non persistée) ferait
+  /// diverger l'espace d'indices affiché de l'espace persistable (un glisser
+  /// déplacerait **silencieusement la mauvaise carte** — défaut mesuré et fermé
+  /// dans `ZFlashcardListView`, D1/R3) : avec [onReorder] fourni, elle est
+  /// **refusée à la construction** (assert bruyant nommant l'index et le
+  /// remède) ; en release (AD-10), le réordonnancement est **retiré**
+  /// ([onReorder]/[itemIds] `null`, capacité absente AD-4) plutôt que de
+  /// risquer de déplacer la mauvaise carte. Même refus pour un `id` DUPLIQUÉ
+  /// (le mapping id→index serait ambigu — même classe de défaut).
+  /// [onReorder] exige `axis: Axis.vertical` (le rail horizontal n'est pas
+  /// réordonnable — documenté sur [axis] — et un rail TRONQUÉ par
+  /// [railPreviewCount] rendrait l'espace visible ≠ l'espace persistable :
+  /// exactement le défaut original).
+  ///
+  /// 🔴 **CR-IFFD-49 ① — le rendu par défaut tient dans les DEUX axes.** En
+  /// `axis: Axis.horizontal`, chaque carte fabriquée ici est **bornée en
+  /// largeur** (sans quoi une carte à largeur non bornée dans un défileur
+  /// horizontal ne peint RIEN en release, et lève en rafale « non-zero flex but
+  /// incoming width constraints are unbounded » en debug). Priorité de la
+  /// largeur : [railItemWidth] (paramètre explicite) >
+  /// `ZcrudTheme.railItemWidth` (token) > 280 dp ([zRailItemFallbackWidth],
+  /// arbitrage motivé sur place). L'enveloppe est le widget PUBLIC [ZRailItem]
+  /// — réutilisable par un hôte qui assemble son propre défileur avec les mêmes
+  /// cartes par défaut. Un `itemBuilder` d'HÔTE (constructeur
+  /// principal) reste, lui, responsable de son propre bornage — neutralité
+  /// stricte, aucun emballage n'y est ajouté.
+  ///
+  /// 🔴 **CR-IFFD-49 ② — le COUPLAGE « rail des N premiers → grille
+  /// complète »** est porté par [railPreviewCount]. Fourni (et `> 0`, avec
+  /// `axis: Axis.horizontal` — assert sinon), il câble ENSEMBLE les quatre
+  /// décisions que l'hôte devait réussir séparément :
+  /// - le rail ne rend que `min(N, total)` items ([itemCount] borné) ;
+  /// - le badge d'en-tête porte le **TOTAL réel** (`cards.length`), jamais le
+  ///   nombre rendu — [headerCount] explicite PRIME (cas légitime : données
+  ///   paginées où `cards.length` est lui-même partiel) ;
+  /// - l'action « afficher tout » passe par les créneaux EXISTANTS
+  ///   ([secondaryAction] + [secondaryActionIcon] +
+  ///   [secondaryActionSemanticLabel]) — aucun canal neuf : le libellé et
+  ///   l'écran de destination restent à l'hôte (frontière CR-48) ;
+  /// - **total ≤ N** (cas non mesuré par la CR, tranché ici) : le rail montre
+  ///   déjà tout, « afficher tout » n'ajouterait rien ⇒ [secondaryAction] est
+  ///   SUPPRIMÉE (absente de l'arbre, AD-4 — jamais « présente et inutile ») ;
+  ///   le badge, lui, reste rendu (total == rendu, information vraie).
+  ///
+  /// La **grille complète de destination** n'est pas à recopier : la MÊME voie
+  /// typée en `axis: Axis.vertical` (sans [railPreviewCount]) EST la grille
+  /// responsive complète — l'hôte ne construit que la navigation.
   ZStudyToolsSectionSpec.flashcards({
     required this.id,
     required this.title,
@@ -120,7 +167,20 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
-    this.axis = Axis.vertical,
+    Axis axis = Axis.vertical,
+    // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
+    // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
+    double? railItemWidth,
+    // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
+    // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
+    int? railPreviewCount,
+    // CR-IFFD-52 — réordonnancement sur la voie typée : `itemIds` DÉRIVÉ des
+    // modèles (jamais fourni par l'hôte), garde vérifiée SUR PIÈCES.
+    void Function(int oldIndex, int newIndex)? onReorder,
+    this.reorderHandleSemanticLabel,
+    this.reorderHandleIcon,
+    this.reorderMoveBeforeSemanticLabel,
+    this.reorderMoveAfterSemanticLabel,
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.crossAxisMinItemWidth,
@@ -131,21 +191,64 @@ class ZStudyToolsSectionSpec {
     this.crossAxisViewportHeight,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
-    this.headerCount,
-    this.secondaryAction,
+    int? headerCount,
+    VoidCallback? secondaryAction,
     this.secondaryActionIcon,
+    this.secondaryActionLabel,
     this.secondaryActionSemanticLabel,
     this.expandController,
-  })  : itemCount = cards.length,
-        itemIds = null,
-        onReorder = null,
-        reorderHandleSemanticLabel = null,
-        reorderHandleIcon = null,
-        reorderMoveBeforeSemanticLabel = null,
-        reorderMoveAfterSemanticLabel = null,
+  })  : assert(
+          railPreviewCount == null || railPreviewCount > 0,
+          'railPreviewCount doit être strictement positif',
+        ),
+        assert(
+          railPreviewCount == null || axis == Axis.horizontal,
+          'railPreviewCount ne s\'applique qu\'au rail (axis: Axis.horizontal) '
+          '— la même voie typée en Axis.vertical EST déjà la grille complète',
+        ),
+        // CR-IFFD-52 — le rail horizontal n'est PAS réordonnable (documenté sur
+        // `axis`) : accepter `onReorder` en horizontal serait un no-op
+        // silencieux (AD-4). Transitivement, `railPreviewCount` (qui exige
+        // l'horizontal) est INCOMPATIBLE avec `onReorder` : un rail tronqué
+        // réordonnable ferait diverger l'espace visible de l'espace
+        // persistable — le défaut original que la garde ferme.
+        assert(
+          onReorder == null || axis == Axis.vertical,
+          'ZStudyToolsSectionSpec.flashcards : onReorder exige axis: '
+          'Axis.vertical — le rail horizontal n\'est pas réordonnable, et un '
+          'rail tronqué (railPreviewCount) réordonnable ferait diverger '
+          'l\'espace visible de l\'espace persistable.',
+        ),
+        // CR-IFFD-49 ② — rail des N premiers : itemCount borné à min(N, total).
+        // Hors couplage (ou axe vertical, repli AD-10 en release), total.
+        itemCount = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                railPreviewCount < cards.length
+            ? railPreviewCount
+            : cards.length,
+        // Badge = TOTAL réel, jamais le nombre rendu. Un [headerCount]
+        // explicite PRIME (données paginées : la liste locale est partielle).
+        headerCount = headerCount ??
+            (railPreviewCount != null && axis == Axis.horizontal
+                ? cards.length
+                : null),
+        // total ≤ N ⇒ « afficher tout » n'ajoute rien : ABSENTE (AD-4).
+        secondaryAction = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                cards.length <= railPreviewCount
+            ? null
+            : secondaryAction,
+        axis = axis,
+        // CR-IFFD-52 — identité DÉRIVÉE des modèles, vérifiée sur pièces
+        // (id nul/vide ou dupliqué ⇒ assert à la construction ; en release,
+        // capacité RETIRÉE — les deux champs retombent à `null` ENSEMBLE).
+        itemIds = _zDeriveReorderIds<ZFlashcard>(
+            cards, _zFlashcardReorderId, onReorder, axis, 'flashcards'),
+        onReorder = _zGuardReorder<ZFlashcard>(
+            cards, _zFlashcardReorderId, onReorder, axis),
         itemBuilder = ((BuildContext context, int index) {
           final ZFlashcard card = cards[index];
-          return ZDefaultFlashcardCard(
+          final Widget item = ZDefaultFlashcardCard(
             // Clé STABLE par carte (AD-2) : l'identité d'un item suit sa carte,
             // jamais sa position — patron `ZFlashcardListView._buildTile`.
             key: ValueKey<String>(
@@ -165,6 +268,12 @@ class ZStudyToolsSectionSpec {
                 onCardLongPress == null ? null : () => onCardLongPress(card),
             semanticLabel: semanticLabelOf?.call(card),
           );
+          if (axis != Axis.horizontal) return item;
+          // CR-IFFD-49 ① — item de RAIL borné en largeur (une carte non bornée
+          // dans un défileur horizontal ne peint rien). Priorité : paramètre
+          // explicite > token de thème > repli 280 dp. UNIQUEMENT sur la voie
+          // typée : un itemBuilder d'hôte reste responsable de son bornage.
+          return ZRailItem(width: railItemWidth, child: item);
         });
 
   /// Section de **cartes mentales** dont le socle fournit le rendu d'item
@@ -172,9 +281,11 @@ class ZStudyToolsSectionSpec {
   ///
   /// Mêmes règles que [ZStudyToolsSectionSpec.flashcards] : [itemBuilder]
   /// reste `required` dans le constructeur principal (non-cassant par
-  /// construction) ; le réordonnancement n'est **pas** proposé par cette voie
-  /// (une carte éphémère — `id` vide — ferait diverger l'espace d'indices de
-  /// l'espace persistable) ; **parité complète** avec [ZDefaultMindmapCard]
+  /// construction) ; le réordonnancement est proposé sous garde **vérifiée sur
+  /// pièces** (CR-IFFD-52 — [itemIds] DÉRIVÉ de `maps[i].id`, un `id` vide =
+  /// carte éphémère refusée à la construction, capacité retirée en release,
+  /// cf. la doc de référence sur `.flashcards`) ; **parité complète** avec
+  /// [ZDefaultMindmapCard]
   /// (chaque option de la carte a son pendant ici — garde de source
   /// CR-IFFD-48, table de correspondance nominale).
   ///
@@ -197,7 +308,20 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
-    this.axis = Axis.vertical,
+    Axis axis = Axis.vertical,
+    // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
+    // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
+    double? railItemWidth,
+    // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
+    // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
+    int? railPreviewCount,
+    // CR-IFFD-52 — mêmes règles que `.flashcards` (itemIds DÉRIVÉ, garde sur
+    // pièces), voir la doc de référence sur cette voie-là.
+    void Function(int oldIndex, int newIndex)? onReorder,
+    this.reorderHandleSemanticLabel,
+    this.reorderHandleIcon,
+    this.reorderMoveBeforeSemanticLabel,
+    this.reorderMoveAfterSemanticLabel,
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.crossAxisMinItemWidth,
@@ -208,21 +332,55 @@ class ZStudyToolsSectionSpec {
     this.crossAxisViewportHeight,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
-    this.headerCount,
-    this.secondaryAction,
+    int? headerCount,
+    VoidCallback? secondaryAction,
     this.secondaryActionIcon,
+    this.secondaryActionLabel,
     this.secondaryActionSemanticLabel,
     this.expandController,
-  })  : itemCount = maps.length,
-        itemIds = null,
-        onReorder = null,
-        reorderHandleSemanticLabel = null,
-        reorderHandleIcon = null,
-        reorderMoveBeforeSemanticLabel = null,
-        reorderMoveAfterSemanticLabel = null,
+    // CR-IFFD-49 ①/② — mêmes règles que `.flashcards` (rail borné, couplage
+    // rail → grille), voir la doc de référence sur cette voie-là.
+  })  : assert(
+          railPreviewCount == null || railPreviewCount > 0,
+          'railPreviewCount doit être strictement positif',
+        ),
+        assert(
+          railPreviewCount == null || axis == Axis.horizontal,
+          'railPreviewCount ne s\'applique qu\'au rail (axis: Axis.horizontal) '
+          '— la même voie typée en Axis.vertical EST déjà la grille complète',
+        ),
+        // CR-IFFD-52 — cf. le même assert de `.flashcards`.
+        assert(
+          onReorder == null || axis == Axis.vertical,
+          'ZStudyToolsSectionSpec.mindmaps : onReorder exige axis: '
+          'Axis.vertical — le rail horizontal n\'est pas réordonnable, et un '
+          'rail tronqué (railPreviewCount) réordonnable ferait diverger '
+          'l\'espace visible de l\'espace persistable.',
+        ),
+        itemCount = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                railPreviewCount < maps.length
+            ? railPreviewCount
+            : maps.length,
+        headerCount = headerCount ??
+            (railPreviewCount != null && axis == Axis.horizontal
+                ? maps.length
+                : null),
+        secondaryAction = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                maps.length <= railPreviewCount
+            ? null
+            : secondaryAction,
+        axis = axis,
+        // CR-IFFD-52 — identité DÉRIVÉE de `maps[i].id` (String non-nullable :
+        // `''` = éphémère), même garde sur pièces que `.flashcards`.
+        itemIds = _zDeriveReorderIds<ZMindmap>(
+            maps, _zMindmapReorderId, onReorder, axis, 'mindmaps'),
+        onReorder = _zGuardReorder<ZMindmap>(
+            maps, _zMindmapReorderId, onReorder, axis),
         itemBuilder = ((BuildContext context, int index) {
           final ZMindmap map = maps[index];
-          return ZDefaultMindmapCard(
+          final Widget item = ZDefaultMindmapCard(
             // Clé STABLE par carte (AD-2) : l'identité suit la carte, jamais
             // sa position (`id` vide = éphémère, patron `.flashcards`).
             key: ValueKey<String>(
@@ -240,15 +398,20 @@ class ZStudyToolsSectionSpec {
                 onCardLongPress == null ? null : () => onCardLongPress(map),
             semanticLabel: semanticLabelOf?.call(map),
           );
+          if (axis != Axis.horizontal) return item;
+          // CR-IFFD-49 ① — cf. `.flashcards` (même règle, même priorité).
+          return ZRailItem(width: railItemWidth, child: item);
         });
 
   /// Section d'**examens** dont le socle fournit le rendu d'item
   /// (**CR-IFFD-48**) — la voie TYPÉE qui **porte les données**.
   ///
   /// Mêmes règles que [ZStudyToolsSectionSpec.flashcards] : [itemBuilder]
-  /// reste `required` dans le constructeur principal ; pas de
-  /// réordonnancement par cette voie (`id` nullable ⇒ carte éphémère
-  /// possible) ; **parité complète** avec [ZDefaultExamCard] (garde de source
+  /// reste `required` dans le constructeur principal ; réordonnancement sous
+  /// garde **vérifiée sur pièces** (CR-IFFD-52 — [itemIds] DÉRIVÉ de
+  /// `exams[i].id`, `id` nul = examen éphémère refusé à la construction,
+  /// capacité retirée en release, cf. la doc de référence sur `.flashcards`) ;
+  /// **parité complète** avec [ZDefaultExamCard] (garde de source
   /// CR-IFFD-48). [dateLabelOf] rend une date **déjà formatée et localisée**
   /// par l'hôte — le socle ne formate jamais (FR-26/AD-13).
   ///
@@ -272,7 +435,20 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
-    this.axis = Axis.vertical,
+    Axis axis = Axis.vertical,
+    // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
+    // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
+    double? railItemWidth,
+    // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
+    // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
+    int? railPreviewCount,
+    // CR-IFFD-52 — mêmes règles que `.flashcards` (itemIds DÉRIVÉ, garde sur
+    // pièces), voir la doc de référence sur cette voie-là.
+    void Function(int oldIndex, int newIndex)? onReorder,
+    this.reorderHandleSemanticLabel,
+    this.reorderHandleIcon,
+    this.reorderMoveBeforeSemanticLabel,
+    this.reorderMoveAfterSemanticLabel,
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.crossAxisMinItemWidth,
@@ -283,21 +459,55 @@ class ZStudyToolsSectionSpec {
     this.crossAxisViewportHeight,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
-    this.headerCount,
-    this.secondaryAction,
+    int? headerCount,
+    VoidCallback? secondaryAction,
     this.secondaryActionIcon,
+    this.secondaryActionLabel,
     this.secondaryActionSemanticLabel,
     this.expandController,
-  })  : itemCount = exams.length,
-        itemIds = null,
-        onReorder = null,
-        reorderHandleSemanticLabel = null,
-        reorderHandleIcon = null,
-        reorderMoveBeforeSemanticLabel = null,
-        reorderMoveAfterSemanticLabel = null,
+    // CR-IFFD-49 ①/② — mêmes règles que `.flashcards` (rail borné, couplage
+    // rail → grille), voir la doc de référence sur cette voie-là.
+  })  : assert(
+          railPreviewCount == null || railPreviewCount > 0,
+          'railPreviewCount doit être strictement positif',
+        ),
+        assert(
+          railPreviewCount == null || axis == Axis.horizontal,
+          'railPreviewCount ne s\'applique qu\'au rail (axis: Axis.horizontal) '
+          '— la même voie typée en Axis.vertical EST déjà la grille complète',
+        ),
+        // CR-IFFD-52 — cf. le même assert de `.flashcards`.
+        assert(
+          onReorder == null || axis == Axis.vertical,
+          'ZStudyToolsSectionSpec.exams : onReorder exige axis: '
+          'Axis.vertical — le rail horizontal n\'est pas réordonnable, et un '
+          'rail tronqué (railPreviewCount) réordonnable ferait diverger '
+          'l\'espace visible de l\'espace persistable.',
+        ),
+        itemCount = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                railPreviewCount < exams.length
+            ? railPreviewCount
+            : exams.length,
+        headerCount = headerCount ??
+            (railPreviewCount != null && axis == Axis.horizontal
+                ? exams.length
+                : null),
+        secondaryAction = railPreviewCount != null &&
+                axis == Axis.horizontal &&
+                exams.length <= railPreviewCount
+            ? null
+            : secondaryAction,
+        axis = axis,
+        // CR-IFFD-52 — identité DÉRIVÉE de `exams[i].id`, même garde sur
+        // pièces que `.flashcards`.
+        itemIds = _zDeriveReorderIds<ZExam>(
+            exams, _zExamReorderId, onReorder, axis, 'exams'),
+        onReorder = _zGuardReorder<ZExam>(
+            exams, _zExamReorderId, onReorder, axis),
         itemBuilder = ((BuildContext context, int index) {
           final ZExam exam = exams[index];
-          return ZDefaultExamCard(
+          final Widget item = ZDefaultExamCard(
             // Clé STABLE par carte (AD-2), patron `.flashcards`.
             key: ValueKey<String>(
               'zDefaultExamCard-${exam.id ?? 'ephemeral-$index'}',
@@ -315,6 +525,9 @@ class ZStudyToolsSectionSpec {
                 onCardLongPress == null ? null : () => onCardLongPress(exam),
             semanticLabel: semanticLabelOf?.call(exam),
           );
+          if (axis != Axis.horizontal) return item;
+          // CR-IFFD-49 ① — cf. `.flashcards` (même règle, même priorité).
+          return ZRailItem(width: railItemWidth, child: item);
         });
 
   /// Identifiant STABLE de la section (String opaque). Sert de clé de frontière
@@ -562,6 +775,10 @@ class ZStudyToolsSectionSpec {
   ///
   /// Permet le patron d'origine « badge = total (42), rail = `take(10)` » :
   /// `itemCount: 10, headerCount: 42`.
+  ///
+  /// **CR-IFFD-49 ②** — sur une voie typée avec `railPreviewCount`, ce champ
+  /// est **résolu au TOTAL réel** de la liste quand l'appelant ne le fournit
+  /// pas : le badge ne peut plus afficher silencieusement le nombre rendu.
   final int? headerCount;
 
   /// Action d'en-tête **secondaire**, en plus de [addAction] (CR-IFFD-10 §3) —
@@ -569,12 +786,34 @@ class ZStudyToolsSectionSpec {
   ///
   /// Sans elle, un hôte devait détourner [addAction] pour la navigation : jamais
   /// les deux à la fois, et une sémantique approximative.
+  ///
+  /// **CR-IFFD-49 ②** — sur une voie typée avec `railPreviewCount`, c'est le
+  /// créneau EXISTANT de l'action « afficher tout » (aucun canal neuf) ; elle
+  /// est SUPPRIMÉE (absente de l'arbre, AD-4) quand le total ≤ N — le rail
+  /// montre déjà tout.
   final VoidCallback? secondaryAction;
 
   /// Icône de [secondaryAction] (repli neutre si absente).
   final IconData? secondaryActionIcon;
 
-  /// Libellé accessible de [secondaryAction] (a11y AD-13 — repli sur [title]).
+  /// Libellé **VISIBLE** de [secondaryAction] (CR-IFFD-50 ③) — ex. « Afficher
+  /// tout », rendu **à côté** de l'icône.
+  ///
+  /// `null` (défaut) ⇒ icône seule, rendu **strictement inchangé**. Non-null ⇒
+  /// le libellé est affiché dans le bouton, à côté de l'icône ; cible ≥ 48 dp
+  /// conservée. C'est de l'**information**, pas du style — une icône seule
+  /// n'est pas auto-descriptive (AD-13 : la forme ne peut pas être le seul
+  /// canal) — d'où un champ de SPEC (libellé localisé par l'hôte, FR-26) et
+  /// non un token de thème.
+  ///
+  /// A11y : le libellé visible devient l'annonce du bouton — **une seule source
+  /// de sémantique** (règle appliquée sur la feuille de fratrie, v0.36.0) :
+  /// [secondaryActionSemanticLabel] n'est utilisé en plus que s'il est fourni,
+  /// et il PRIME alors comme annonce (jamais deux annonces divergentes).
+  final String? secondaryActionLabel;
+
+  /// Libellé accessible de [secondaryAction] (a11y AD-13 — repli sur [title],
+  /// ou sur [secondaryActionLabel] visible quand il existe).
   final String? secondaryActionSemanticLabel;
 
   /// Pilote **optionnel** du déplié/replié de CETTE section (CR-IFFD-38, patron
@@ -607,4 +846,86 @@ class ZStudyToolsSectionSpec {
   /// « tout replier » câblé sur un contrôleur orphelin ne peut pas passer pour
   /// branché.
   final ZToggleController? expandController;
+}
+
+// ---------------------------------------------------------------------------
+// CR-IFFD-52 — dérivation d'identité des voies typées (garde SUR PIÈCES)
+// ---------------------------------------------------------------------------
+
+/// Id de réordonnancement d'une [ZFlashcard] (`null` = éphémère).
+String? _zFlashcardReorderId(ZFlashcard card) => card.id;
+
+/// Id de réordonnancement d'une [ZMindmap] (`''` = éphémère, id non-nullable).
+String? _zMindmapReorderId(ZMindmap map) => map.id;
+
+/// Id de réordonnancement d'un [ZExam] (`null` = éphémère).
+String? _zExamReorderId(ZExam exam) => exam.id;
+
+/// Dérive les `itemIds` d'une voie typée depuis ses modèles (CR-IFFD-52).
+///
+/// La garde du constructeur principal (« [ZStudyToolsSectionSpec.onReorder] ⇒
+/// identité stable par item ») y est **déclarée par l'hôte** ; ici elle est
+/// **vérifiée sur pièces** — la voie typée détient les données :
+/// - `onReorder == null` (ou axe non vertical) ⇒ `null` — capacité absente,
+///   rendu antérieur **strictement inchangé** ;
+/// - un id **nul/vide** (item éphémère, ex. duplication non persistée) ⇒
+///   **assert à la construction** nommant l'index et le remède ; en release
+///   (AD-10), retour `null` — le réordonnancement est **retiré** (AD-4, jamais
+///   un glisser qui déplacerait la mauvaise carte) ;
+/// - un id **dupliqué** ⇒ même refus : le mapping id→index du rendu
+///   (`itemIds.indexOf`) serait ambigu — même classe de défaut que l'éphémère.
+///
+/// [_zGuardReorder] applique la MÊME décision au callback : les deux champs
+/// retombent à `null` ENSEMBLE (l'invariant du constructeur principal reste
+/// vrai par construction).
+List<String>? _zDeriveReorderIds<T>(
+  List<T> items,
+  String? Function(T item) idOf,
+  void Function(int oldIndex, int newIndex)? onReorder,
+  Axis axis,
+  String ctor,
+) {
+  if (onReorder == null || axis != Axis.vertical) return null;
+  final List<String> ids = <String>[];
+  final Set<String> seen = <String>{};
+  for (int i = 0; i < items.length; i++) {
+    final String? id = idOf(items[i]);
+    assert(
+      id != null && id.isNotEmpty,
+      'ZStudyToolsSectionSpec.$ctor : onReorder est fourni mais l\'item '
+      'd\'index $i a un id nul/vide (item ÉPHÉMÈRE, ex. duplication non '
+      'persistée). Un glisser déplacerait silencieusement la mauvaise carte. '
+      'Remède : persiste l\'item avant de le rendre réordonnable, ou retire '
+      'onReorder (ou filtre les items éphémères de la liste).',
+    );
+    if (id == null || id.isEmpty) return null;
+    assert(
+      !seen.contains(id),
+      'ZStudyToolsSectionSpec.$ctor : onReorder est fourni mais l\'id "$id" '
+      '(index $i) est DUPLIQUÉ — le mapping id→index du réordonnancement '
+      'serait ambigu. Remède : garantis l\'unicité des ids de la liste.',
+    );
+    if (!seen.add(id)) return null;
+    ids.add(id);
+  }
+  return List<String>.unmodifiable(ids);
+}
+
+/// Pendant de [_zDeriveReorderIds] pour le callback : rend [onReorder] tel
+/// quel si (et seulement si) la dérivation d'ids aboutirait — sinon `null`
+/// (capacité retirée, AD-10/AD-4). Les deux décisions sont prises sur les
+/// MÊMES pièces : elles ne peuvent pas diverger.
+void Function(int oldIndex, int newIndex)? _zGuardReorder<T>(
+  List<T> items,
+  String? Function(T item) idOf,
+  void Function(int oldIndex, int newIndex)? onReorder,
+  Axis axis,
+) {
+  if (onReorder == null || axis != Axis.vertical) return null;
+  final Set<String> seen = <String>{};
+  for (final T item in items) {
+    final String? id = idOf(item);
+    if (id == null || id.isEmpty || !seen.add(id)) return null;
+  }
+  return onReorder;
 }
