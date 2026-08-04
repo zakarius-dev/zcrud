@@ -54,6 +54,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// Construit une carte d'item ; seul [title] est requis.
   const ZStudyToolsItemCard({
     required this.title,
+    this.titleWidget,
     this.leading,
     this.aboveTitle,
     this.subtitle,
@@ -80,7 +81,22 @@ class ZStudyToolsItemCard extends StatelessWidget {
   });
 
   /// Libellé principal — **seul slot requis**.
+  ///
+  /// Reste requis même quand [titleWidget] est fourni : il demeure la **source
+  /// sémantique** de la carte (le `label` du nœud `Semantics` et le repli de
+  /// [semanticLabel] en dérivent — un rendu riche n'est pas lisible par le
+  /// lecteur d'écran sans lui).
   final String title;
+
+  /// Rendu **RICHE** du titre (**CR-IFFD-59**) — quand fourni, il REMPLACE le
+  /// `Text` de [title] dans la même position (même `Row`, même `Flexible`,
+  /// même [badge] à sa suite). [title] reste la source sémantique (le widget
+  /// est exclu de la sémantique comme l'était le `Text` : le `label` de la
+  /// carte le porte déjà). [titleStyle] et [titleMaxLines] ne s'appliquent
+  /// QU'au `Text` par défaut — un rendu fourni porte son propre style.
+  ///
+  /// `null` ⇒ **rendu strictement inchangé** (le `Text` historique).
+  final Widget? titleWidget;
 
   /// Icône ou vignette en tête de carte (`null` ⇒ aucun espace réservé).
   final Widget? leading;
@@ -344,13 +360,17 @@ class ZStudyToolsItemCard extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Flexible(
+                      // CR-IFFD-59 — [titleWidget] remplace le `Text` à la
+                      // MÊME position ; l'exclusion sémantique est identique
+                      // (le `label` de la carte porte déjà [title]).
                       child: ExcludeSemantics(
-                        child: Text(
-                          title,
-                          style: titleStyle ?? textTheme.titleSmall,
-                          maxLines: titleMaxLines > 0 ? titleMaxLines : 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: titleWidget ??
+                            Text(
+                              title,
+                              style: titleStyle ?? textTheme.titleSmall,
+                              maxLines: titleMaxLines > 0 ? titleMaxLines : 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                       ),
                     ),
                     if (badge != null) ...<Widget>[

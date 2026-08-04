@@ -175,4 +175,70 @@ abstract final class ZFlashcardCardReference {
 
   /// Graisse du libellé de type (`w500` — legacy).
   static const FontWeight typeLabelFontWeight = FontWeight.w500;
+
+  // ── Énoncé (CR-IFFD-59 — 13/w600, hauteur bornée, rendu RICHE) ────────────
+
+  /// Corps de l'énoncé (13 — legacy `fontSize: 13`,
+  /// `flashcard_widgets.dart:397`). Appliqué au rendu RICHE par mise à
+  /// l'échelle (`questionFontSize / quillBaseFontSize`) COMPOSÉE avec le
+  /// `TextScaler` ambiant — jamais un `fontSize:` littéral (a11y).
+  static const double questionFontSize = 13;
+
+  /// Graisse de l'énoncé (`w600` — legacy, `flashcard_widgets.dart:398`).
+  static const FontWeight questionFontWeight = FontWeight.w600;
+
+  /// Hauteur maximale de l'énoncé (`kToolbarHeight × 0.65` — legacy,
+  /// `flashcard_widgets.dart:385-387`). C'est la borne de HAUTEUR du legacy
+  /// (jamais un `maxLines` : le rendu riche n'a pas de notion de ligne).
+  static const double questionMaxHeight = kToolbarHeight * 0.65;
+
+  /// Corps de paragraphe de BASE du moteur rich-text (Quill fixe 16 —
+  /// `DefaultStyles.getInstance`, mesuré sur pièces flutter_quill 11.5.1).
+  /// Sert UNIQUEMENT de dénominateur à la mise à l'échelle vers
+  /// [questionFontSize].
+  static const double quillBaseFontSize = 16;
+
+  // ── Aperçu de réponse (CR-IFFD-59 — le `isInGrid` legacy) ─────────────────
+
+  /// Hauteur du `Divider` qui sépare l'énoncé de l'aperçu (12 — legacy,
+  /// `flashcard_widgets.dart:413` ; couleur = rôle `outlineVariant`).
+  static const double answerDividerHeight = 12;
+
+  /// Largeur du tampon « Vrai »/« Faux » (200 — legacy,
+  /// `flashcard_widgets.dart:580`).
+  static const double stampWidth = 200;
+
+  /// Hauteur du tampon (40 — legacy).
+  static const double stampHeight = 40;
+
+  /// Rotation du tampon en radians (−0.45 — legacy,
+  /// `flashcard_widgets.dart:587`).
+  static const double stampRotationRadians = -0.45;
+
+  /// Translation verticale du tampon, appliquée APRÈS la rotation (40 —
+  /// legacy `..translateByDouble(0.0, 40.0, …)`).
+  static const double stampTranslationY = 40;
+
+  /// Opacité du fond du tampon (legacy `withAlpha(100)` = 100/255).
+  static const double stampBackgroundAlpha = 100 / 255;
+
+  /// Rayon du tampon (12 — legacy).
+  static const Radius stampRadius = Radius.circular(12);
+
+  // ── Liseré teinté par type (complément owner CR-IFFD-59) ──────────────────
+
+  /// Opacité du liseré TEINTÉ PAR TYPE de la carte (amélioration UX demandée
+  /// par l'owner sur ce lot : « au lieu d'une bordure grise entière, une
+  /// bordure très fine légèrement colorée en fonction du type » — la bande
+  /// épaisse de tête reste). Le legacy peignait `Colors.grey` ; ici la couleur
+  /// primaire du type à cette opacité, surchargeable par
+  /// `ZDefaultFlashcardCard.borderSide`.
+  static const double borderTintAlpha = 0.35;
+
+  /// Couleur de NEUTRALISATION du liseré de champ du lecteur rich-text
+  /// (alpha 0 — aucune couleur « nouvelle » : elle ne peint RIEN). Le lecteur
+  /// `ZMarkdownReader` dessine toujours un liseré de champ ; dans la carte,
+  /// l'énoncé n'est pas un champ — ce jeton l'éteint sans toucher au layout
+  /// (le `DecoratedBox` du lecteur ne réserve aucune place au trait).
+  static const Color neutralizedFieldBorder = Color(0x00000000);
 }

@@ -52,6 +52,7 @@ class ZStudyNoteCard extends StatelessWidget {
     this.semanticLabel,
     this.contentPadding,
     this.margin,
+    this.titleWidget,
     this.titleStyle,
     this.subtitleStyle,
     this.titleMaxLines = 1,
@@ -127,6 +128,10 @@ class ZStudyNoteCard extends StatelessWidget {
   /// Style du titre. Voir [ZStudyToolsItemCard.titleStyle].
   final TextStyle? titleStyle;
 
+  /// Rendu RICHE du titre (passe-plat `ZStudyToolsItemCard.titleWidget`,
+  /// CR-IFFD-59) — `title` reste la source sémantique.
+  final Widget? titleWidget;
+
   /// Style du sous-titre. Voir [ZStudyToolsItemCard.subtitleStyle].
   final TextStyle? subtitleStyle;
 
@@ -157,6 +162,7 @@ class ZStudyNoteCard extends StatelessWidget {
         semanticLabel ?? (subtitle == null ? title : '$title, $subtitle'),
     contentPadding: contentPadding,
     margin: margin,
+    titleWidget: titleWidget,
     titleStyle: titleStyle,
     subtitleStyle: subtitleStyle,
     titleMaxLines: titleMaxLines,

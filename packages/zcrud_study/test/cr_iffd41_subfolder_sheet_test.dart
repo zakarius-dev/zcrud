@@ -223,16 +223,18 @@ void main() {
 
       final Finder chrome = find.byKey(ZSubfolderSelectorBar.triggerChromeKey);
       expect(chrome, findsOneWidget);
-      final BoxDecoration d =
-          tester.widget<DecoratedBox>(chrome).decoration as BoxDecoration;
+      // CR-IFFD-60 : le chrome est un `Material` (l'encre de l'`InkWell` doit
+      // se dessiner AU-DESSUS du fond — un `DecoratedBox` opaque l'avalerait).
+      final Material m = tester.widget<Material>(chrome);
       final ColorScheme scheme =
           Theme.of(tester.element(chrome)).colorScheme;
-      // CONTOUR : bordure présente, fond ABSENT — « rempli » serait l'inverse,
-      // et c'est ce qui distingue les deux valeurs de l'enum.
-      expect(d.border, isNotNull);
-      expect(d.color, isNull);
+      // CONTOUR : bordure présente, fond ABSENT (alpha 0) — « rempli » serait
+      // l'inverse, et c'est ce qui distingue les deux valeurs de l'enum.
+      final RoundedRectangleBorder shape = m.shape! as RoundedRectangleBorder;
+      expect(shape.side, isNot(BorderSide.none));
+      expect(m.color?.a, 0.0, reason: 'outlined ne peint AUCUN fond');
       expect(
-        (d.border! as Border).top.color,
+        shape.side.color,
         scheme.outlineVariant,
         reason: 'aucun hex : la bordure est un RÔLE du ColorScheme',
       );
@@ -254,11 +256,10 @@ void main() {
       );
 
       final Finder chrome = find.byKey(ZSubfolderSelectorBar.triggerChromeKey);
-      final BoxDecoration d =
-          tester.widget<DecoratedBox>(chrome).decoration as BoxDecoration;
-      expect(d.border, isNull);
+      final Material m = tester.widget<Material>(chrome);
+      expect((m.shape! as RoundedRectangleBorder).side, BorderSide.none);
       expect(
-        d.color,
+        m.color,
         Theme.of(tester.element(chrome)).colorScheme.surfaceContainerHighest,
       );
     });

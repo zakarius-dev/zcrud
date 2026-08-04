@@ -58,6 +58,8 @@ import 'package:zcrud_core/zcrud_core.dart'
     show
         ZInvertedSurface,
         ZSubfolderSelectedEmphasis,
+        ZSubfolderTriggerBorder,
+        ZSubfolderTriggerFill,
         ZSubfolderTriggerVariant,
         ZcrudScope,
         ZcrudTheme;
@@ -359,29 +361,99 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     );
   }
 
-  /// Point 1 — habillage du déclencheur, piloté par un token NULLABLE.
+  /// Point 1 — habillage du déclencheur, piloté par un token NULLABLE ;
+  /// **CR-IFFD-60** : trois attributs COMPOSABLES (fond, bordure, élévation).
   ///
-  /// `null` / [ZSubfolderTriggerVariant.flat] ⇒ [child] rendu **tel quel**,
-  /// aucun élément supplémentaire dans l'arbre : c'est la neutralité littérale
-  /// (pas seulement « même apparence », mais même arbre).
+  /// ## Précédence (contrat CR-IFFD-60, gardé par test)
+  ///
+  /// `subfolderTriggerVariant` reste l'API publiée (v0.36.0) et décide par
+  /// défaut ; les jetons `subfolderTriggerFill` / `subfolderTriggerBorder` /
+  /// `subfolderTriggerElevation` la **raffinent attribut par attribut** :
+  /// fourni, un jeton PRIME sur ce que la variante décide pour SON attribut —
+  /// et seulement pour lui ; `null`, la variante décide. Les trois attributs
+  /// effectifs se COMPOSENT (fond + bordure + relief ensemble — c'était
+  /// l'exclusivité dénoncée par la CR).
+  ///
+  /// `flat` + aucun jeton effectif ⇒ [child] rendu **tel quel**, aucun élément
+  /// supplémentaire dans l'arbre : neutralité littérale (même arbre, pas
+  /// seulement même apparence) — la garde CR-IFFD-41 reste tenue. Même chose
+  /// quand tous les attributs effectifs sont retirés explicitement
+  /// (`fill: none` sur une variante `filled`, etc.) : rien à peindre ⇒ rien
+  /// dans l'arbre.
+  ///
+  /// ## Élévation : TONALE M3, jamais d'ombre portée (MESURÉ)
+  ///
+  /// Le déclencheur vit dans le `bottom:` de l'app-bar (`aboveTabBar`),
+  /// **bord à bord** au-dessus du `TabBar` (écart mesuré : 0 dp) et la zone
+  /// n'est PAS rognée : une `BoxShadow` descendante (blur 8, offset (0, 4))
+  /// repeint réellement la bande du `TabBar` (mesuré au pixel : 796 pixels
+  /// modifiés sur 3 lignes échantillonnées, delta max 254/255 — la sonde
+  /// CR-IFFD-60 versionnée dans le rapport). L'élévation est donc rendue en
+  /// **voile tonal** ([ElevationOverlay.applySurfaceTint] —
+  /// `ColorScheme.surfaceTint` gradué par l'élévation), calculé ICI et passé en
+  /// fond : `Material.elevation` reste à 0 **par construction**, aucune ombre
+  /// portée n'existe, quel que soit `useMaterial3` de l'hôte. Les jetons
+  /// `cardShadow*` (epic VIS) ne sont pas réutilisés : aucune ombre n'est
+  /// retenue nulle part sur cette surface.
+  ///
+  /// ## Ordre Material/Décoration : l'encre reste VISIBLE (piège B-53)
+  ///
+  /// Le chrome est un [Material] (plus un `DecoratedBox`) : l'`InkWell` du
+  /// déclencheur y trouve son ancêtre `Material` LE PLUS PROCHE, et l'encre se
+  /// dessine AU-DESSUS du fond — un fond opaque posé en `DecoratedBox`
+  /// au-dessus du `Material` ambiant l'aurait avalée (piège M3 payé en B-53
+  /// chez IFFD). Gardé par test : le `Material` du chrome est bien l'ancêtre
+  /// d'encre de l'`InkWell`, et le splash y est réellement peint.
   Widget _triggerChrome(BuildContext context, ZcrudTheme theme, Widget child) {
     final ZSubfolderTriggerVariant variant =
         theme.subfolderTriggerVariant ?? ZSubfolderTriggerVariant.flat;
-    if (variant == ZSubfolderTriggerVariant.flat) return child;
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
+    // Attribut par attribut : jeton fourni ⇒ il prime ; absent ⇒ la variante
+    // décide. Aucune couleur littérale : uniquement des RÔLES du `ColorScheme`.
+    final Color? fill = switch (theme.subfolderTriggerFill) {
+      null => variant == ZSubfolderTriggerVariant.filled
+          ? scheme.surfaceContainerHighest
+          : null,
+      ZSubfolderTriggerFill.none => null,
+      ZSubfolderTriggerFill.surface => scheme.surface,
+      ZSubfolderTriggerFill.surfaceContainerLowest =>
+        scheme.surfaceContainerLowest,
+      ZSubfolderTriggerFill.surfaceContainerLow => scheme.surfaceContainerLow,
+      ZSubfolderTriggerFill.surfaceContainer => scheme.surfaceContainer,
+      ZSubfolderTriggerFill.surfaceContainerHigh =>
+        scheme.surfaceContainerHigh,
+      ZSubfolderTriggerFill.surfaceContainerHighest =>
+        scheme.surfaceContainerHighest,
+    };
+    final BorderSide? side = switch (theme.subfolderTriggerBorder) {
+      null => variant == ZSubfolderTriggerVariant.outlined
+          ? BorderSide(color: scheme.outlineVariant)
+          : null,
+      ZSubfolderTriggerBorder.none => null,
+      ZSubfolderTriggerBorder.outlineVariant =>
+        BorderSide(color: scheme.outlineVariant),
+      ZSubfolderTriggerBorder.outline => BorderSide(color: scheme.outline),
+    };
+    // Aucune variante n'a d'élévation : `null` ⇒ 0 (rendu inchangé).
+    final double elevation = theme.subfolderTriggerElevation ?? 0;
+    // Rien à peindre ⇒ RIEN dans l'arbre (neutralité littérale, AD-4).
+    if (fill == null && side == null && elevation <= 0) return child;
+    // Voile TONAL calculé ici (jamais d'ombre portée — cf. dartdoc). Sans
+    // fond, le voile se pose sur un fond DÉRIVÉ rendu invisible (alpha 0) :
+    // la garde couleur interdit tout littéral, et `MaterialType.transparency`
+    // ne peindrait pas la bordure.
+    final Color base = fill ?? scheme.surface.withAlpha(0);
+    final Color painted = elevation > 0
+        ? ElevationOverlay.applySurfaceTint(base, scheme.surfaceTint, elevation)
+        : base;
+    return Material(
       key: ZSubfolderSelectorBar.triggerChromeKey,
-      decoration: BoxDecoration(
+      color: painted,
+      // 🔴 0 par CONSTRUCTION : le relief est déjà dans `painted` (tonal).
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(theme.radiusM),
-        // Aucune couleur littérale : deux RÔLES du `ColorScheme` courant.
-        color: variant == ZSubfolderTriggerVariant.filled
-            ? scheme.surfaceContainerHighest
-            : null,
-        border: variant == ZSubfolderTriggerVariant.outlined
-            ? Border.fromBorderSide(
-                BorderSide(color: scheme.outlineVariant),
-              )
-            : null,
+        side: side ?? BorderSide.none,
       ),
       child: child,
     );

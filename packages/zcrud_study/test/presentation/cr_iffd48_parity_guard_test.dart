@@ -182,7 +182,13 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       'onTagsTap': 'onTagsTap',
       'palette': 'palette',
       'colorKey': 'colorKeyOf',
-      'questionMaxLines': 'questionMaxLines',
+      // CR-IFFD-59 : rendu riche + borne de hauteur legacy + aperçu en mode.
+      // (`questionMaxLines` a disparu AVEC l'option de la carte : le rendu
+      // riche n'a pas de notion de ligne — la borne est une hauteur.)
+      'questionBuilder': 'questionBuilder',
+      'questionMaxHeight': 'questionMaxHeight',
+      'showAnswerPreview': 'showAnswerPreview',
+      'answerLabels': 'answerLabels',
       'trailing': 'cardTrailingBuilder',
       'onTap': 'onCardTap',
       'onLongPress': 'onCardLongPress',

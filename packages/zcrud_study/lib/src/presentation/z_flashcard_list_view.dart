@@ -384,6 +384,7 @@ class ZFlashcardListView extends StatefulWidget {
     this.contentBuilder,
     this.itemStyle,
     this.typeColors,
+    this.answerLabels,
     this.selection,
     this.searchDebounce = _kSearchDebounce,
     this.crossAxisMaxColumns,
@@ -479,6 +480,15 @@ class ZFlashcardListView extends StatefulWidget {
   /// patron `ZDefaultFlashcardCard.typeColors`, même chaîne de priorité).
   /// Sans effet en mode [ZFlashcardListItemStyle.tile].
   final Map<String, ZGradientSpec>? typeColors;
+
+  /// Libellés LOCALISÉS du tampon Vrai/Faux de l'**aperçu de réponse**
+  /// (**CR-IFFD-59** — patron `ZDefaultFlashcardCard.answerLabels`, clés
+  /// opaques `'true'`/`'false'`, repli sur la clé). En mode
+  /// [ZFlashcardListItemStyle.card], l'aperçu est ACTIF (« une carte, toutes
+  /// les surfaces » — la liste est une surface de consultation, comme la
+  /// grille legacy `isInGrid`). Sans effet en mode tuile (la tuile porte son
+  /// propre aperçu historique).
+  final Map<String, String>? answerLabels;
 
   /// Sélection multiple **opt-in** (me-3, FR-SU19). `null` ⇒ la liste est
   /// **exactement** su-8 (zéro case, zéro barre — AC2, non-régression su-8).
@@ -1011,6 +1021,11 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         card: card,
         typeLabels: widget.typeLabels,
         typeColors: widget.typeColors,
+        // CR-IFFD-59 — le style `card` ACTIVE l'aperçu de réponse (CR-58 :
+        // « une carte, toutes les surfaces » — la liste est une surface de
+        // consultation, l'équivalent du `isInGrid` legacy).
+        showAnswerPreview: true,
+        answerLabels: widget.answerLabels,
         // Balises SANS store (AD-2) : reconstruites depuis les ids + la table
         // `tagLabels` INJECTÉE — même source que la recherche de la liste.
         tags: <ZFlashcardTag>[

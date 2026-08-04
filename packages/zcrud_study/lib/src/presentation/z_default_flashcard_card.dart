@@ -1,5 +1,8 @@
 /// `ZDefaultFlashcardCard` — **carte de flashcard PAR DÉFAUT** du socle
-/// (CR-IFFD-47, rendu de référence CR-IFFD-57).
+/// (CR-IFFD-47, rendu de référence CR-IFFD-57, réplication ACHEVÉE CR-IFFD-59 :
+/// ligne d'en-tête tuile+balises, énoncé RICHE borné en dessous pleine
+/// largeur, aperçu de réponse en MODE, tampon Vrai/Faux, liseré teinté par
+/// type — complément owner).
 ///
 /// ## Le besoin, et la forme qu'il ne pouvait PAS prendre
 ///
@@ -72,11 +75,14 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
         ZColorPair,
+        ZForegroundOverride,
         ZGradientSpec,
+        ZcrudScope,
         ZcrudTheme,
         zResolveColorKeyOrSlot,
         zResolveGradient;
-import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
+import 'package:zcrud_flashcard/zcrud_flashcard.dart'
+    show ZChoice, ZFlashcard, ZFlashcardContentBuilder, ZFlashcardMarkdownContent;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag, remapColorKey;
 
@@ -156,7 +162,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     this.colorKey,
     this.typeColors,
     this.icon,
-    this.questionMaxLines = 3,
+    this.questionBuilder,
+    this.questionMaxHeight = ZFlashcardCardReference.questionMaxHeight,
+    this.showAnswerPreview = false,
+    this.answerLabels,
     this.trailing,
     this.onTap,
     this.onLongPress,
@@ -167,9 +176,9 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     this.height = ZFlashcardCardReference.cardHeight,
     super.key,
   }) : assert(
-          questionMaxLines > 0,
-          'questionMaxLines doit être ≥ 1 (l\'énoncé est le contenu principal '
-          'de la carte : le tronquer à zéro ligne la viderait).',
+          questionMaxHeight > 0,
+          'questionMaxHeight doit être > 0 (l\'énoncé est le contenu principal '
+          'de la carte : le borner à zéro la viderait).',
         );
 
   /// Carte rendue — **seule** entrée requise. Le dessin ne lit que `type`,
@@ -228,8 +237,42 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// Glyphe de la tuile d'icône. `null` ⇒ [ZFlashcardCardReference.glyph].
   final IconData? icon;
 
-  /// Nombre maximal de lignes de l'énoncé (2-3 en pratique). Défaut `3`.
-  final int questionMaxLines;
+  /// Rendu de l'énoncé **INJECTABLE** (**CR-IFFD-59**) — l'hôte qui veut SON
+  /// moteur fournit ici son builder ; il gouverne AUSSI l'aperçu de réponse
+  /// (« l'aperçu riche suit le même rendu que l'énoncé »).
+  ///
+  /// `null` (défaut) ⇒ **rendu RICHE** par [ZFlashcardMarkdownContent]
+  /// (markdown + LaTeX, `zcrud_flashcard` → `zcrud_markdown`, dépendances déjà
+  /// déclarées — AD-1 : aucune arête nouvelle). Un simple `Text` tronquait
+  /// silencieusement l'information mathématique — le point le plus grave du
+  /// tableau de la CR. Le style de référence (13/w600) est appliqué au défaut ;
+  /// un builder fourni porte son propre style.
+  ///
+  /// ⚠️ Remplace `questionMaxLines` (v0.46) : le rendu riche n'a pas de notion
+  /// de ligne — la borne legacy est une HAUTEUR ([questionMaxHeight]).
+  final ZFlashcardContentBuilder? questionBuilder;
+
+  /// Hauteur maximale de l'énoncé (**CR-IFFD-59**, legacy
+  /// `kToolbarHeight × 0.65`). Défaut :
+  /// [ZFlashcardCardReference.questionMaxHeight].
+  final double questionMaxHeight;
+
+  /// Aperçu de réponse **en MODE** (**CR-IFFD-59** — le `isInGrid` legacy).
+  ///
+  /// `false` (défaut) ⇒ aperçu **ABSENT** (AD-4) — le rail de sections ne
+  /// l'affiche pas. `true` ⇒ `Divider` (hauteur
+  /// [ZFlashcardCardReference.answerDividerHeight]) puis aperçu **teinté par
+  /// type** : tampon « Vrai »/« Faux » pour `trueOrFalse` ([answerLabels]),
+  /// liste des choix (✓/✕) pour `multipleChoice` (fidélité legacy — leur code
+  /// dit plus que leur CR), réponse riche sinon. Une carte SANS donnée de
+  /// réponse (`answer`/`isTrue`/`choices` absents) ne rend NI divider NI
+  /// aperçu — jamais une donnée fabriquée (AD-10).
+  final bool showAnswerPreview;
+
+  /// Libellés LOCALISÉS **INJECTÉS** du tampon Vrai/Faux (FR-26 — patron
+  /// [typeLabels]) : clés opaques `'true'` / `'false'`. `null` ou clé absente
+  /// ⇒ repli sur la clé opaque — le socle ne traduit **jamais** en dur.
+  final Map<String, String>? answerLabels;
 
   /// Créneau d'actions de fin de carte (menu contextuel de l'hôte, avec ses
   /// propres règles de droits — que le socle ignore). `null` ⇒ absent (AD-4).
@@ -316,7 +359,6 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final ThemeData material = Theme.of(context);
-    final ColorScheme scheme = material.colorScheme;
     final ZColorPair pair = _identityPair(context);
     final ZGradientSpec? spec = _typeSpec(context);
     // Couleur « primaire » du type : la PREMIÈRE couleur du dégradé (legacy :
@@ -353,13 +395,19 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     );
 
     final Widget cardWidget = ZStudyToolsItemCard(
-      // Chrome de référence CR-IFFD-57 (priorité paramètre > référence ; les
-      // couleurs sont des RÔLES — le seul hex du dessin vit dans la référence
-      // des dégradés, exception FR-26 encadrée).
+      // Chrome de référence CR-IFFD-57/59 (priorité paramètre > référence ;
+      // les couleurs sont des RÔLES ou DÉRIVÉES de la référence des dégradés,
+      // exception FR-26 encadrée).
       borderRadius: corner,
+      // CR-IFFD-59 (complément owner) — liseré TEINTÉ PAR TYPE, très fin et
+      // léger (la bande épaisse de tête reste) : amélioration UX sur le
+      // `Colors.grey` legacy. Couleur DÉRIVÉE de la primaire du type (chaîne
+      // totale — jamais une couleur nouvelle), surchargeable par [borderSide].
       borderSide: borderSide ??
           BorderSide(
-            color: scheme.outline,
+            color: primary.withValues(
+              alpha: ZFlashcardCardReference.borderTintAlpha,
+            ),
             width: ZFlashcardCardReference.borderWidth,
           ),
       color: backgroundColor ?? material.scaffoldBackgroundColor,
@@ -376,18 +424,20 @@ class ZDefaultFlashcardCard extends StatelessWidget {
               : BoxDecoration(gradient: spec.gradient),
         ),
       ),
-      // ② Tuile d'icône teintée par le type (15 %, rayon 8, glyphe teinté).
-      leading: _buildIconTile(primary, readable),
-      // ③ Zone de balises AU-DESSUS de l'énoncé (ordre de lecture de la
-      // référence) — ABSENTE si vide sans appel à l'action (AD-4).
-      aboveTitle: tagsZone,
-      // ④ Énoncé, tronqué proprement sur 2-3 lignes.
+      // ② + ③ Ligne d'EN-TÊTE de référence (CR-IFFD-59) : tuile d'icône ET
+      // zone de balises SUR LA MÊME LIGNE (+ le créneau d'actions de l'hôte,
+      // à la place du `more_horiz` legacy) — l'énoncé vient EN DESSOUS pleine
+      // largeur. C'est pourquoi la tuile ne passe PAS par `leading` (qui
+      // vivrait À CÔTÉ de toute la colonne) ni les actions par `trailing`.
+      aboveTitle: _buildHeaderRow(theme, primary, readable, tagsZone),
+      // ④ Énoncé — [title] reste la SOURCE SÉMANTIQUE ; le rendu est RICHE
+      // (markdown + LaTeX) par défaut, borné à [questionMaxHeight] (legacy).
       title: card.question,
-      titleMaxLines: questionMaxLines,
-      // ⑤ Pied : pastille de type — point dégradé + libellé, le type redit
-      // **en TEXTE** (AD-13 : la couleur n'est jamais le seul canal).
-      belowSubtitle: _buildTypePill(context, spec, primary, readable),
-      trailing: trailing,
+      titleWidget: _buildQuestion(context),
+      // ⑤ Pied : aperçu de réponse EN MODE (divider + aperçu teinté par type,
+      // CR-IFFD-59) puis pastille de type — le type redit **en TEXTE**
+      // (AD-13 : la couleur n'est jamais le seul canal).
+      belowSubtitle: _buildFooter(context, spec, primary, readable),
       onTap: onTap,
       onLongPress: onLongPress,
       semanticLabel: semanticLabel ?? card.question,
@@ -401,6 +451,221 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     return fixedHeight == null
         ? cardWidget
         : SizedBox(height: fixedHeight, child: cardWidget);
+  }
+
+  /// ② + ③ Ligne d'en-tête de référence (**CR-IFFD-59**) : tuile d'icône et
+  /// zone de balises **sur la même ligne** (l'énoncé vient en dessous, pleine
+  /// largeur) + le créneau [trailing] de l'hôte en fin de ligne (la place du
+  /// `more_horiz` legacy — sa sémantique est PRÉSERVÉE, patron CR-LEX-71).
+  Widget _buildHeaderRow(
+    ZcrudTheme theme,
+    Color primary,
+    Color readable,
+    Widget? tagsZone,
+  ) =>
+      Row(
+        key: headerRowKey,
+        children: <Widget>[
+          _buildIconTile(primary, readable),
+          SizedBox(width: theme.gapS),
+          Expanded(child: tagsZone ?? const SizedBox.shrink()),
+          if (trailing != null) ...<Widget>[
+            SizedBox(width: theme.gapS),
+            trailing!,
+          ],
+        ],
+      );
+
+  /// ④ Énoncé — rendu RICHE par défaut ([questionBuilder] en surcharge),
+  /// borné en HAUTEUR ([questionMaxHeight], legacy `kToolbarHeight × 0.65`).
+  ///
+  /// Le débordement est ABSORBÉ (défileur inerte, patron legacy
+  /// `SingleChildScrollView`) : jamais un `RenderFlex overflowed` par
+  /// construction, jamais un contenu qui déborde la carte.
+  Widget _buildQuestion(BuildContext context) {
+    final ZFlashcardContentBuilder? custom = questionBuilder;
+    final Widget content = custom != null
+        ? custom(context, card.question)
+        : _ZFlashcardRichText(
+            content: card.question,
+            fontWeight: ZFlashcardCardReference.questionFontWeight,
+          );
+    // IgnorePointer — MESURÉ : le lecteur rich-text (Quill) porte ses propres
+    // gestes (sélection à l'appui long) et VOLE l'arène au `InkWell` de la
+    // carte (l'appui long de l'hôte ne déclenchait plus). Dans une carte,
+    // l'énoncé est un APERÇU : aucun geste propre.
+    return ConstrainedBox(
+      key: questionKey,
+      constraints: BoxConstraints(maxHeight: questionMaxHeight),
+      child: IgnorePointer(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: content,
+        ),
+      ),
+    );
+  }
+
+  /// ⑤ Pied de carte : aperçu de réponse **en mode** (CR-IFFD-59) puis
+  /// pastille de type. Sans donnée de réponse, NI divider NI aperçu (AD-4).
+  Widget _buildFooter(
+    BuildContext context,
+    ZGradientSpec? spec,
+    Color primary,
+    Color readable,
+  ) {
+    final Widget? preview =
+        showAnswerPreview ? _buildAnswerPreview(context, readable) : null;
+    final Widget pill = _buildTypePill(context, spec, primary, readable);
+    if (preview == null) return pill;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Divider(
+          key: answerDividerKey,
+          height: ZFlashcardCardReference.answerDividerHeight,
+          // Rôle : le trait de séparation legacy (`grey.shade200/800`) est le
+          // rôle `outlineVariant` — jamais un hex (FR-26).
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        Flexible(
+          // IgnorePointer — même mesure que l'énoncé : l'aperçu est INERTE,
+          // les gestes appartiennent à la carte.
+          child: IgnorePointer(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: preview,
+            ),
+          ),
+        ),
+        SizedBox(height: ZcrudTheme.of(context).gapS),
+        pill,
+      ],
+    );
+  }
+
+  /// Aperçu de réponse **teinté par type** (CR-IFFD-59) — trois formes :
+  ///
+  /// - `trueOrFalse` ⇒ **tampon** « Vrai »/« Faux » ([answerLabels], clés
+  ///   opaques) — vrai = teinte de type LISIBLE, faux = rôle `error` (le
+  ///   legacy peignait teal/rouge en dur ; l'information reste AUSSI en texte,
+  ///   AD-13). `isTrue` absent ⇒ aperçu ABSENT — jamais un « Faux » fabriqué
+  ///   depuis `null` (écart assumé avec le legacy `isTrue ?? false`) ;
+  /// - `multipleChoice` ⇒ liste des choix « ✓/✕ » (fidélité au CODE legacy,
+  ///   qui dit plus que sa CR) — corrects en teinte de type, incorrects en
+  ///   rôle `error`, contenu RICHE ;
+  /// - sinon ⇒ [ZFlashcard.answer] en rendu riche teinté par type ; réponse
+  ///   absente/vide ⇒ `null` (l'appelant n'affiche pas non plus le divider).
+  Widget? _buildAnswerPreview(BuildContext context, Color readable) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    switch (card.type.name) {
+      case 'trueOrFalse':
+        final bool? isTrue = card.isTrue;
+        if (isTrue == null) return null;
+        final Color tint = isTrue ? readable : scheme.error;
+        final String label = answerLabels?[isTrue ? 'true' : 'false'] ??
+            (isTrue ? 'true' : 'false');
+        // Tampon legacy : 200×40, rotation −0.45 rad puis translation (0, 40),
+        // fond teinté (alpha 100/255), liseré teinté, texte italique gras.
+        // Taille : `headlineSmall` (24 en Material — la valeur legacy) via le
+        // thème, jamais un `fontSize:` littéral (a11y/`textScaler`).
+        return Center(
+          child: Container(
+            key: stampKey,
+            width: ZFlashcardCardReference.stampWidth,
+            height: ZFlashcardCardReference.stampHeight,
+            transform: Matrix4.rotationZ(
+              ZFlashcardCardReference.stampRotationRadians,
+            )..translateByDouble(
+                0, ZFlashcardCardReference.stampTranslationY, 0, 1),
+            decoration: BoxDecoration(
+              color: tint.withValues(
+                alpha: ZFlashcardCardReference.stampBackgroundAlpha,
+              ),
+              borderRadius:
+                  BorderRadius.all(ZFlashcardCardReference.stampRadius),
+              border: Border.all(color: tint),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                key: stampLabelKey,
+                style: (Theme.of(context).textTheme.headlineSmall ??
+                        const TextStyle())
+                    .copyWith(
+                  color: tint,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        );
+      case 'multipleChoice':
+        final List<ZChoice> choices = card.choices ?? const <ZChoice>[];
+        final List<ZChoice> visible = <ZChoice>[
+          for (final ZChoice c in choices)
+            if (c.content.trim().isNotEmpty) c,
+        ];
+        if (visible.isEmpty) {
+          // Sans choix, replie sur la réponse libre si elle existe (AD-10).
+          return _buildRichAnswer(context, readable);
+        }
+        return Column(
+          key: answerPreviewKey,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (final ZChoice choice in visible)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // Marque TEXTUELLE (✓/✕) — l'information n'est jamais
+                  // portée par la seule couleur (AD-13). Legacy :
+                  // `flashcard_widgets.dart:513-514`.
+                  Text(
+                    choice.isCorrect ? '✓ ' : '✕ ',
+                    style: (Theme.of(context).textTheme.labelSmall ??
+                            const TextStyle())
+                        .copyWith(
+                      color: choice.isCorrect ? readable : scheme.error,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildContent(
+                      context,
+                      choice.content,
+                      tint: choice.isCorrect ? readable : scheme.error,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        );
+      default:
+        return _buildRichAnswer(context, readable);
+    }
+  }
+
+  /// Réponse libre riche teintée par type ; absente/vide ⇒ `null` (AD-4).
+  /// Passe par [_buildContent] : « l'aperçu SUIT le rendu de l'énoncé »
+  /// (un [questionBuilder] injecté gouverne aussi ici).
+  Widget? _buildRichAnswer(BuildContext context, Color readable) {
+    final String? answer = card.answer;
+    if (answer == null || answer.trim().isEmpty) return null;
+    return KeyedSubtree(
+      key: answerPreviewKey,
+      child: _buildContent(context, answer, tint: readable),
+    );
+  }
+
+  /// Contenu riche via [questionBuilder] s'il est fourni (« l'aperçu suit le
+  /// même rendu que l'énoncé »), sinon le rendu riche par défaut teinté.
+  Widget _buildContent(BuildContext context, String content, {Color? tint}) {
+    final ZFlashcardContentBuilder? custom = questionBuilder;
+    if (custom != null) return custom(context, content);
+    return _ZFlashcardRichText(content: content, tint: tint);
   }
 
   /// ② Tuile d'icône — **décorative et MUETTE** (le glyphe ne porte aucune
@@ -596,4 +861,146 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// Clé de l'appel à l'action « aucune balise » (testabilité).
   static const ValueKey<String> emptyTagsKey =
       ValueKey<String>('zDefaultFlashcardCard_emptyTags');
+
+  /// Clé de la ligne d'en-tête tuile + balises (testabilité — CR-IFFD-59).
+  static const ValueKey<String> headerRowKey =
+      ValueKey<String>('zDefaultFlashcardCard_headerRow');
+
+  /// Clé de l'énoncé borné (testabilité — CR-IFFD-59).
+  static const ValueKey<String> questionKey =
+      ValueKey<String>('zDefaultFlashcardCard_question');
+
+  /// Clé du `Divider` de l'aperçu de réponse (testabilité — CR-IFFD-59).
+  static const ValueKey<String> answerDividerKey =
+      ValueKey<String>('zDefaultFlashcardCard_answerDivider');
+
+  /// Clé de l'aperçu de réponse (testabilité — CR-IFFD-59).
+  static const ValueKey<String> answerPreviewKey =
+      ValueKey<String>('zDefaultFlashcardCard_answerPreview');
+
+  /// Clé du tampon « Vrai »/« Faux » (testabilité — CR-IFFD-59).
+  static const ValueKey<String> stampKey =
+      ValueKey<String>('zDefaultFlashcardCard_stamp');
+
+  /// Clé du **texte** du tampon (testabilité — AD-13).
+  static const ValueKey<String> stampLabelKey =
+      ValueKey<String>('zDefaultFlashcardCard_stampLabel');
+}
+
+/// Rendu **RICHE par défaut** d'un contenu de carte (**CR-IFFD-59**) —
+/// [ZFlashcardMarkdownContent] (markdown + LaTeX) ADAPTÉ au chrome d'une
+/// carte, mesures à l'appui :
+///
+/// - **liseré de champ ÉTEINT** : `ZMarkdownReader` peint toujours le liseré
+///   `fieldBorderColor`/`outline` d'un CHAMP de formulaire — dans une carte,
+///   l'énoncé n'en est pas un. Neutralisé par une ré-injection LOCALE du thème
+///   ([ZFlashcardCardReference.neutralizedFieldBorder], alpha 0 — le
+///   `DecoratedBox` du lecteur ne réservant aucune place au trait, le layout
+///   est STRICTEMENT celui d'un contenu nu) ;
+/// - **padding de champ ÉTEINT** (`fieldPadding` → zéro, même mécanisme) ;
+/// - **corps 13** : Quill fixe son paragraphe à 16
+///   ([ZFlashcardCardReference.quillBaseFontSize], mesuré sur pièces) et
+///   ignore la taille du `DefaultTextStyle` ambiant — la référence (13) est
+///   obtenue par un `TextScaler` COMPOSÉ avec l'échelle ambiante (le facteur
+///   utilisateur reste appliqué : a11y) ;
+/// - **graisse/teinte** : passées par `DefaultTextStyle.merge` — Quill les
+///   hérite (seuls `fontSize`/`height`/`decoration` sont forcés par sa base).
+///
+/// La ré-injection du thème copie le [ZcrudScope] parent seam par seam quand
+/// il existe (le lecteur continue de voir les coutures de l'hôte), et passe
+/// par une extension de `Theme` sinon — dans les DEUX cas, seule la paire
+/// `fieldBorderColor`/`fieldPadding` change, pour le SEUL sous-arbre du
+/// lecteur.
+class _ZFlashcardRichText extends StatelessWidget {
+  const _ZFlashcardRichText({
+    required this.content,
+    this.tint,
+    this.fontWeight,
+  });
+
+  /// Source markdown/LaTeX (l'énoncé, une réponse ou un choix).
+  final String content;
+
+  /// Teinte du premier plan (aperçu de réponse « teinté par type »). `null`
+  /// ⇒ couleur ambiante.
+  final Color? tint;
+
+  /// Graisse (l'énoncé de référence : `w600`). `null` ⇒ graisse ambiante.
+  final FontWeight? fontWeight;
+
+  /// Impose [tint] par la primitive — ou rend [child] TEL QUEL si nul (AD-4).
+  Widget _withTint(Widget child) {
+    final Color? color = tint;
+    if (color == null) return child;
+    return ZForegroundOverride(color: color, child: child);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ZcrudTheme neutralized = ZcrudTheme.of(context).copyWith(
+      fieldBorderColor: ZFlashcardCardReference.neutralizedFieldBorder,
+      fieldPadding: EdgeInsetsDirectional.zero,
+    );
+
+    // Échelle 16 → 13 COMPOSÉE avec l'échelle utilisateur : la cible est
+    // « ce que rendrait un Text(13) sous l'échelle ambiante ».
+    final TextScaler ambient = MediaQuery.textScalerOf(context);
+    final TextScaler scaler = TextScaler.linear(
+      ambient.scale(ZFlashcardCardReference.questionFontSize) /
+          ZFlashcardCardReference.quillBaseFontSize,
+    );
+
+    Widget child = MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: scaler),
+      // La COULEUR passe par la primitive (garde v0.39.0 : aucun `merge`
+      // coloré hors de `ZForegroundOverride` — elle seule ferme les trois
+      // chemins, `textTheme` compris). Le `merge` ne porte que la GRAISSE,
+      // ajustement expressément légitime pour la garde. `tint` nul ⇒ la
+      // primitive est ABSENTE de l'arbre (AD-4), couleur ambiante conservée.
+      child: _withTint(
+        DefaultTextStyle.merge(
+          style: TextStyle(fontWeight: fontWeight),
+          // Vide ⇒ RIEN (placeholder vide) : la carte rendait déjà un énoncé
+          // vide comme un blanc — jamais un « Aucun contenu » non injecté.
+          child: ZFlashcardMarkdownContent(content: content, placeholder: ''),
+        ),
+      ),
+    );
+
+    final ZcrudScope? scope = ZcrudScope.maybeOf(context);
+    if (scope != null) {
+      // Copie seam par seam — SEUL `theme` change (neutralisation locale).
+      return ZcrudScope(
+        resolver: scope.resolver,
+        acl: scope.acl,
+        labels: scope.labels,
+        theme: neutralized,
+        widgetRegistry: scope.widgetRegistry,
+        relationSourceRegistry: scope.relationSourceRegistry,
+        choicesSourceRegistry: scope.choicesSourceRegistry,
+        relationCrudRegistry: scope.relationCrudRegistry,
+        filePicker: scope.filePicker,
+        cloudStorage: scope.cloudStorage,
+        listRenderer: scope.listRenderer,
+        reorderRenderer: scope.reorderRenderer,
+        dropRegionRenderer: scope.dropRegionRenderer,
+        selectPresenter: scope.selectPresenter,
+        iconResolver: scope.iconResolver,
+        colorPicker: scope.colorPicker,
+        colorKeyResolver: scope.colorKeyResolver,
+        gradientResolver: scope.gradientResolver,
+        child: child,
+      );
+    }
+    final ThemeData material = Theme.of(context);
+    return Theme(
+      data: material.copyWith(
+        extensions: (Map<Object, ThemeExtension<dynamic>>.of(
+          material.extensions,
+        )..[ZcrudTheme] = neutralized)
+            .values,
+      ),
+      child: child,
+    );
+  }
 }

@@ -38,6 +38,64 @@ enum ZSubfolderTriggerVariant {
   filled,
 }
 
+/// RÔLE de **fond** du déclencheur de navigation de fratrie (CR-IFFD-60) —
+/// token de LOOK, attribut COMPOSABLE.
+///
+/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un RÔLE de surface Material
+/// que le consommateur traduit depuis le `ColorScheme` courant (FR-26/NFR-S7)
+/// — même patron que [ZStudySectionCountRole].
+///
+/// **Précédence** (CR-IFFD-60) : fourni, ce token PRIME sur ce que
+/// [ZSubfolderTriggerVariant] décide pour le FOND (et seulement pour lui) ;
+/// `null` ⇒ la variante décide. [none] est un choix EXPLICITE (« aucun fond »),
+/// distinct de `null` (« je ne dis rien ») : il retire le fond d'une variante
+/// `filled` sans toucher à sa bordure ni à son élévation.
+enum ZSubfolderTriggerFill {
+  /// AUCUN fond — retire explicitement le fond que la variante poserait.
+  none,
+
+  /// Fond `ColorScheme.surface`.
+  surface,
+
+  /// Fond `ColorScheme.surfaceContainerLowest`.
+  surfaceContainerLowest,
+
+  /// Fond `ColorScheme.surfaceContainerLow`.
+  surfaceContainerLow,
+
+  /// Fond `ColorScheme.surfaceContainer`.
+  surfaceContainer,
+
+  /// Fond `ColorScheme.surfaceContainerHigh`.
+  surfaceContainerHigh,
+
+  /// Fond `ColorScheme.surfaceContainerHighest` — le fond de la variante
+  /// `filled` historique, exprimé comme attribut composable.
+  surfaceContainerHighest,
+}
+
+/// RÔLE de **bordure** du déclencheur de navigation de fratrie (CR-IFFD-60) —
+/// token de LOOK, attribut COMPOSABLE.
+///
+/// 🔴 **Aucune couleur ici** : chaque valeur nomme un rôle de contour du
+/// `ColorScheme` courant (FR-26/NFR-S7).
+///
+/// **Précédence** : fourni, ce token PRIME sur ce que
+/// [ZSubfolderTriggerVariant] décide pour la BORDURE (et seulement pour elle) ;
+/// `null` ⇒ la variante décide. [none] retire explicitement la bordure d'une
+/// variante `outlined` sans toucher à son fond.
+enum ZSubfolderTriggerBorder {
+  /// AUCUNE bordure — retire explicitement la bordure que la variante poserait.
+  none,
+
+  /// Bordure `ColorScheme.outlineVariant` — la bordure de la variante
+  /// `outlined` historique, exprimée comme attribut composable.
+  outlineVariant,
+
+  /// Bordure `ColorScheme.outline` (contraste plus appuyé).
+  outline,
+}
+
 /// Manière dont l'élément COURANT se distingue dans une liste de navigation —
 /// token de LOOK.
 ///
@@ -211,6 +269,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.flipDuration,
     this.flipCurve,
     this.subfolderTriggerVariant,
+    this.subfolderTriggerFill,
+    this.subfolderTriggerBorder,
+    this.subfolderTriggerElevation,
     this.subfolderTriggerCollapsedIcon,
     this.subfolderTriggerExpandedIcon,
     this.subfolderSelectedEmphasis,
@@ -418,7 +479,41 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Habillage du déclencheur de navigation de fratrie (CR-IFFD-41, point 1).
   /// `null` ⇒ [ZSubfolderTriggerVariant.flat], rendu **strictement inchangé**.
+  ///
+  /// **CR-IFFD-60** : la variante reste l'API publiée (v0.36.0) et reste
+  /// fonctionnelle telle quelle. Les trois attributs composables
+  /// ([subfolderTriggerFill], [subfolderTriggerBorder],
+  /// [subfolderTriggerElevation]) la **raffinent** : fournis, ils priment
+  /// **attribut par attribut** ; absents (`null`), la variante décide.
   final ZSubfolderTriggerVariant? subfolderTriggerVariant;
+
+  /// RÔLE de fond du déclencheur de fratrie (CR-IFFD-60) — composable.
+  ///
+  /// `null` ⇒ [subfolderTriggerVariant] décide du fond (rendu **strictement
+  /// inchangé** pour tout thème existant). Fourni, il PRIME sur le fond de la
+  /// variante — et seulement sur lui. [ZSubfolderTriggerFill.none] est le
+  /// retrait EXPLICITE du fond.
+  final ZSubfolderTriggerFill? subfolderTriggerFill;
+
+  /// RÔLE de bordure du déclencheur de fratrie (CR-IFFD-60) — composable.
+  ///
+  /// `null` ⇒ [subfolderTriggerVariant] décide de la bordure (rendu
+  /// **strictement inchangé**). Fourni, il PRIME sur la bordure de la variante
+  /// — et seulement sur elle. [ZSubfolderTriggerBorder.none] est le retrait
+  /// EXPLICITE de la bordure.
+  final ZSubfolderTriggerBorder? subfolderTriggerBorder;
+
+  /// RELIEF du déclencheur de fratrie (CR-IFFD-60) — composable, en dp
+  /// d'élévation Material.
+  ///
+  /// `null` ⇒ aucune variante n'a d'élévation : rendu **strictement
+  /// inchangé**. Fourni (> 0), le consommateur rend une élévation **TONALE M3**
+  /// (voile `ColorScheme.surfaceTint` gradué par l'élévation), **JAMAIS une
+  /// ombre portée** — arbitrage MESURÉ côté `zcrud_study` : le déclencheur vit
+  /// dans le `bottom:` de l'app-bar (`aboveTabBar`), bord à bord au-dessus du
+  /// `TabBar`, sans aucun clip interposé ; toute ombre portée descendante s'y
+  /// projetterait. Cf. `_triggerChrome` (`z_subfolder_selector_bar.dart`).
+  final double? subfolderTriggerElevation;
 
   /// Glyphe du chevron quand la fratrie est **fermée** (CR-IFFD-41, point 2).
   /// `null` ⇒ repli conventionnel du consommateur (`Icons.expand_more`).
@@ -774,6 +869,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Duration? flipDuration,
     Curve? flipCurve,
     ZSubfolderTriggerVariant? subfolderTriggerVariant,
+    ZSubfolderTriggerFill? subfolderTriggerFill,
+    ZSubfolderTriggerBorder? subfolderTriggerBorder,
+    double? subfolderTriggerElevation,
     IconData? subfolderTriggerCollapsedIcon,
     IconData? subfolderTriggerExpandedIcon,
     ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis,
@@ -850,6 +948,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     flipCurve: flipCurve ?? this.flipCurve,
     subfolderTriggerVariant:
         subfolderTriggerVariant ?? this.subfolderTriggerVariant,
+    subfolderTriggerFill: subfolderTriggerFill ?? this.subfolderTriggerFill,
+    subfolderTriggerBorder:
+        subfolderTriggerBorder ?? this.subfolderTriggerBorder,
+    subfolderTriggerElevation:
+        subfolderTriggerElevation ?? this.subfolderTriggerElevation,
     subfolderTriggerCollapsedIcon:
         subfolderTriggerCollapsedIcon ?? this.subfolderTriggerCollapsedIcon,
     subfolderTriggerExpandedIcon:
@@ -1048,6 +1151,23 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subfolderTriggerVariant: t < 0.5
           ? subfolderTriggerVariant
           : other.subfolderTriggerVariant,
+      // CR-IFFD-60 — fill/border DISCRETS (aucun rôle intermédiaire n'existe) :
+      // bascule au point milieu, `null` des DEUX côtés RESTE `null` (même
+      // invariant que `subfolderTriggerVariant` : matérialiser une valeur
+      // GÈLERAIT « la variante décide » à la première transition de thème).
+      subfolderTriggerFill: t < 0.5
+          ? subfolderTriggerFill
+          : other.subfolderTriggerFill,
+      subfolderTriggerBorder: t < 0.5
+          ? subfolderTriggerBorder
+          : other.subfolderTriggerBorder,
+      // Élévation CONTINUE : elle s'interpole. `null` des DEUX côtés RESTE
+      // `null` (même invariant que `accentBarHeight`).
+      subfolderTriggerElevation: _lerpNullableDouble(
+        subfolderTriggerElevation,
+        other.subfolderTriggerElevation,
+        t,
+      ),
       subfolderTriggerCollapsedIcon: t < 0.5
           ? subfolderTriggerCollapsedIcon
           : other.subfolderTriggerCollapsedIcon,

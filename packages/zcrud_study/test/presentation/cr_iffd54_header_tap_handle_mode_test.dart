@@ -370,13 +370,15 @@ void main() {
       expect(find.byIcon(Icons.drag_handle), findsNothing,
           reason: '🔴 mode masqué : la poignée doit être ABSENTE de l\'arbre');
 
-      double dy(String text) => tester.getTopLeft(find.text(text)).dy;
+      double dy(String text) =>
+          tester.getTopLeft(find.text(text, findRichText: true)).dy;
       expect(dy('Question numéro 0'), lessThan(dy('Question numéro 1')));
 
       // Drag RÉEL par APPUI LONG sur la carte 0 (patron cr_iffd52 : la carte
       // saisie est celle qui bouge).
       final TestGesture gesture = await tester
-          .startGesture(tester.getCenter(find.text('Question numéro 0')));
+          .startGesture(
+              tester.getCenter(find.text('Question numéro 0', findRichText: true)));
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       await gesture.moveBy(const Offset(0, 160));
       await tester.pump();
@@ -436,7 +438,8 @@ void main() {
           reason: '🔴 mode masqué : l\'action « $moveDownLabel » doit rester '
               'atteignable au lecteur d\'écran (sémantique conservée, CR-54 ②)');
 
-      double dy(String text) => tester.getTopLeft(find.text(text)).dy;
+      double dy(String text) =>
+          tester.getTopLeft(find.text(text, findRichText: true)).dy;
       expect(dy('Question numéro 0'), lessThan(dy('Question numéro 1')));
       // Premier porteur en ordre préfixe = item 0 — VALIDÉ par l'effet mesuré
       // ci-dessous (indices notifiés + géométrie), pas supposé.
@@ -481,7 +484,8 @@ void main() {
 
       // Geste : appui long sur la CELLULE (renderer par défaut) — réel.
       final TestGesture gesture = await tester
-          .startGesture(tester.getCenter(find.text('Question numéro 0')));
+          .startGesture(
+              tester.getCenter(find.text('Question numéro 0', findRichText: true)));
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       await gesture.moveBy(const Offset(0, 250));
       await tester.pump();
@@ -536,7 +540,8 @@ void main() {
       // l'arène — le drag ne démarre JAMAIS (mesure fondatrice du refus
       // hiddenLongPress × onCardLongPress).
       final TestGesture g1 = await tester
-          .startGesture(tester.getCenter(find.text('Question numéro 0')));
+          .startGesture(
+              tester.getCenter(find.text('Question numéro 0', findRichText: true)));
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       await g1.moveBy(const Offset(0, 250));
       await tester.pump();

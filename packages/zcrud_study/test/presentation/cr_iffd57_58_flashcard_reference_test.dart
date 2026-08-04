@@ -334,8 +334,9 @@ void main() {
               'explicite (carte courte ⇒ moins de 200 dp).');
     });
 
-    testWidgets('rayon 12, fond scaffold, liseré `outline` (rôles, pas de hex '
-        'hors référence)', (tester) async {
+    testWidgets('rayon 12, fond scaffold, liseré TEINTÉ PAR TYPE — très fin '
+        'et léger (complément owner CR-IFFD-59, jamais un hex hors référence)',
+        (tester) async {
       await tester.pumpWidget(_host(ZDefaultFlashcardCard(card: _card('a'))));
       await tester.pumpAndSettle();
       final Card card = tester.widget<Card>(find.byType(Card));
@@ -346,9 +347,20 @@ void main() {
           card.shape! as RoundedRectangleBorder;
       expect(shape.borderRadius,
           BorderRadius.all(ZFlashcardCardReference.cardRadius));
-      expect(shape.side.color, theme.colorScheme.outline,
-          reason: 'la « bordure grise » legacy est rendue par le RÔLE '
-              '`outline` (dérivable ⇒ jamais un hex, CR-48).');
+      // CR-IFFD-59 (owner) — le `Colors.grey` legacy est REMPLACÉ par la
+      // couleur primaire du type à l'opacité de référence : couleur DÉRIVÉE
+      // (première du dégradé `openQuestion`), jamais une couleur nouvelle.
+      final Color primary = (ZFlashcardCardReference
+              .typeGradients['openQuestion']!.gradient as LinearGradient)
+          .colors
+          .first;
+      expect(
+          shape.side.color,
+          primary.withValues(alpha: ZFlashcardCardReference.borderTintAlpha),
+          reason: '🔴 liseré teinté par type, très fin et léger — '
+              'l\'amélioration UX demandée par l\'owner sur CR-IFFD-59 '
+              '(la bande épaisse de tête reste).');
+      expect(shape.side.width, ZFlashcardCardReference.borderWidth);
     });
   });
 
@@ -547,7 +559,7 @@ void main() {
       // AUCUN onLongPress (mesure CR-54 : l'InkWell gagnerait l'arène et le
       // drag ne partirait jamais) — le listener de réordonnancement est donc
       // SEUL dans l'arène d'appui long.
-      final Offset from = tester.getCenter(find.text('Alpha'));
+      final Offset from = tester.getCenter(find.text('Alpha', findRichText: true));
       final TestGesture gesture = await tester.startGesture(from);
       await tester.pump(kLongPressTimeout + kPressTimeout);
       // Déplacement INCRÉMENTAL (le recognizer de drag consomme le mouvement

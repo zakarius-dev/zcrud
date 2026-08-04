@@ -13,7 +13,8 @@ import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show ZGradientSpec, ZStudyCardHierarchy, ZToggleController;
 import 'package:zcrud_exam/zcrud_exam.dart' show ZExam;
-import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
+import 'package:zcrud_flashcard/zcrud_flashcard.dart'
+    show ZFlashcard, ZFlashcardContentBuilder;
 import 'package:zcrud_mindmap/zcrud_mindmap.dart' show ZMindmap;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag;
@@ -252,7 +253,16 @@ class ZStudyToolsSectionSpec {
     // Hauteur FIXE de référence (200, legacy) — `null` EXPLICITE ⇒ hauteur
     // intrinsèque, même contrat que `ZDefaultFlashcardCard.height`.
     double? cardHeight = ZFlashcardCardReference.cardHeight,
-    int questionMaxLines = 3,
+    // CR-IFFD-59 — rendu riche injectable, borne de hauteur legacy, aperçu de
+    // réponse en MODE et libellés de tampon (pendants nominaux des options de
+    // la carte — garde de parité CR-IFFD-48).
+    ZFlashcardContentBuilder? questionBuilder,
+    double questionMaxHeight = ZFlashcardCardReference.questionMaxHeight,
+    // `null` (défaut) ⇒ le MODE suit la surface (le `isInGrid` legacy) : la
+    // grille (axis vertical) affiche l'aperçu de réponse, le rail horizontal
+    // NON. Explicite ⇒ la valeur gouverne les deux axes.
+    bool? showAnswerPreview,
+    Map<String, String>? answerLabels,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -400,7 +410,12 @@ class ZStudyToolsSectionSpec {
             borderRadius: cardBorderRadius,
             backgroundColor: cardBackgroundColor,
             height: cardHeight,
-            questionMaxLines: questionMaxLines,
+            questionBuilder: questionBuilder,
+            questionMaxHeight: questionMaxHeight,
+            // CR-IFFD-59 — le `isInGrid` legacy : aperçu en grille (axe
+            // vertical), jamais dans le rail — sauf choix EXPLICITE de l'hôte.
+            showAnswerPreview: showAnswerPreview ?? axis == Axis.vertical,
+            answerLabels: answerLabels,
             trailing: cardTrailingBuilder?.call(context, card),
             onTap: onCardTap == null ? null : () => onCardTap(card),
             onLongPress:

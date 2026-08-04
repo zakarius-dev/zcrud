@@ -95,6 +95,19 @@ String _mergedSemantics(WidgetTester tester) =>
 int _semanticsCount(WidgetTester tester, String needle) =>
     RegExp(RegExp.escape(needle)).allMatches(_mergedSemantics(tester)).length;
 
+
+/// Questions RENDUES, dans l'ordre de l'arbre — `Text` (tuile) ET `RichText`
+/// (carte au rendu riche, CR-IFFD-59).
+List<String?> _questionTexts(WidgetTester tester) => <String?>[
+      for (final Widget w in tester.widgetList(find.byWidgetPredicate(
+          (Widget w) => w is Text || w is RichText)))
+        if (w is Text && (w.data?.startsWith('Question ') ?? false))
+          w.data
+        else if (w is RichText &&
+            w.text.toPlainText().startsWith('Question '))
+          w.text.toPlainText(),
+    ];
+
 void main() {
   group('🔴 AC1/NFR-SU9 — grille responsive VIRTUALISÉE via ZAdaptiveGrid', () {
     testWidgets('la grille est un ZAdaptiveGrid (jamais une grille réécrite)',
@@ -223,11 +236,13 @@ void main() {
           reason: 'le slot REMPLACE le défaut, il ne s\'y ajoute pas');
     });
 
-    testWidgets('AD-40 — défaut = texte BRUT thématisé (aucun rendu riche en dur)',
+    testWidgets('AD-40 — la TUILE reste au texte BRUT thématisé (CR-IFFD-59 : '
+        'le rendu riche est le défaut de la CARTE, jamais imposé à la tuile)',
         (tester) async {
       await tester.pumpWidget(_harness(ZFlashcardListView(
         cards: <ZFlashcard>[_card('c1', question: '**gras**')],
         labels: _labels,
+        itemStyle: ZFlashcardListItemStyle.tile,
       )));
       await tester.pump();
 
@@ -603,11 +618,7 @@ void main() {
 
       // Assère l'ordre RENDU (pas seulement la clé) : `applyOrder` étant TOTAL,
       // une clé fautive rendrait l'ordre d'entrée SANS lever.
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .where((t) => t != null && t.startsWith('Question '))
-          .toList();
+      final texts = _questionTexts(tester);
       expect(texts, <String>['Question c', 'Question a', 'Question b'],
           reason: '🔴 l\'ordre personnel doit piloter le RENDU RÉEL');
     });
@@ -628,11 +639,7 @@ void main() {
       )));
       await tester.pump();
 
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .where((t) => t != null && t.startsWith('Question '))
-          .toList();
+      final texts = _questionTexts(tester);
       expect(texts, <String>['Question b', 'Question a', 'Question neuve'],
           reason: '🔴 la carte neuve est APPENDÉE, jamais perdue');
     });
@@ -648,11 +655,7 @@ void main() {
       )));
       await tester.pump();
 
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .where((t) => t != null && t.startsWith('Question '))
-          .toList();
+      final texts = _questionTexts(tester);
       expect(texts.first, 'Question recent');
     });
   });
@@ -692,7 +695,7 @@ void main() {
         labels: _labels,
       )));
       await tester.pump();
-      expect(find.text('Unique'), findsOneWidget);
+      expect(find.text('Unique', findRichText: true), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -702,7 +705,7 @@ void main() {
         labels: _labels,
       )));
       await tester.pump();
-      expect(find.text('Éphémère'), findsOneWidget);
+      expect(find.text('Éphémère', findRichText: true), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -718,7 +721,7 @@ void main() {
       )));
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('Question a'), findsOneWidget);
+      expect(find.text('Question a', findRichText: true), findsOneWidget);
     });
 
     testWidgets('ordre PÉRIMÉ (orphelins) ⇒ cohérent, aucune carte perdue',
@@ -738,11 +741,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .where((t) => t != null && t.startsWith('Question '))
-          .toList();
+      final texts = _questionTexts(tester);
       expect(texts, <String>['Question b', 'Question a'],
           reason: 'orphelins ignorés, aucune carte réelle perdue');
     });
@@ -827,7 +826,7 @@ void main() {
                 'remplacer — constaté en dumpant l\'arbre réel).');
 
         // …et le canal VISUEL la rend, une seule fois aussi.
-        expect(find.text('Annoncée'), findsOneWidget);
+        expect(find.text('Annoncée', findRichText: true), findsOneWidget);
         handle.dispose();
       },
     );
@@ -870,7 +869,7 @@ void main() {
 
       expect(tester.takeException(), isNull,
           reason: 'aucun RenderFlex overflow en RTL');
-      expect(find.text('سؤال'), findsOneWidget);
+      expect(find.text('سؤال', findRichText: true), findsOneWidget);
     });
 
     testWidgets('étroit (mobile) : rend sans débordement', (tester) async {
@@ -1145,16 +1144,16 @@ void main() {
         (tester) async {
       await tester.pumpWidget(build(''));
       await tester.pump();
-      expect(find.text('Physique'), findsOneWidget);
-      expect(find.text('Histoire'), findsOneWidget,
+      expect(find.text('Physique', findRichText: true), findsOneWidget);
+      expect(find.text('Histoire', findRichText: true), findsOneWidget,
           reason: 'au montage, rien n\'est filtré');
 
       // Le parent pousse query='physique' (deep-link, filtre restauré, puce).
       await tester.pumpWidget(build('physique'));
       await tester.pump();
 
-      expect(find.text('Physique'), findsOneWidget);
-      expect(find.text('Histoire'), findsNothing,
+      expect(find.text('Physique', findRichText: true), findsOneWidget);
+      expect(find.text('Histoire', findRichText: true), findsNothing,
           reason: '🔴 D5 : la query poussée est VIVANTE. Avant, elle était GELÉE '
               'au montage et ignorée en silence, alors que `searchFields`/'
               '`sources` étaient vivants — un filtre à moitié appliqué');

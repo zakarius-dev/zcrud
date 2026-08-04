@@ -367,7 +367,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Question a'), findsOneWidget);
+      expect(find.text('Question a', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Reduce Motion : l\'aperçu délègue à su-2 (qui le respecte)',

@@ -162,7 +162,7 @@ void main() {
           tester.getTopLeft(find.byKey(ZDefaultFlashcardCard.typeDotKey));
       final Offset tags =
           tester.getTopLeft(find.byKey(ZDefaultFlashcardCard.tagsKey));
-      final Offset question = tester.getTopLeft(find.text(kLongQuestion));
+      final Offset question = tester.getTopLeft(find.text(kLongQuestion, findRichText: true));
       final Offset chip =
           tester.getTopLeft(find.byKey(ZDefaultFlashcardCard.typeChipKey));
 
@@ -188,22 +188,27 @@ void main() {
       expect(dot.dx, greaterThanOrEqualTo(chip.dx));
     });
 
-    testWidgets('④ l\'énoncé est tronqué sur 2-3 lignes (jamais déroulé)',
-        (WidgetTester tester) async {
+    testWidgets(
+        '④ l\'énoncé est BORNÉ EN HAUTEUR (CR-IFFD-59 — la borne legacy '
+        'kToolbarHeight × 0.65, jamais déroulé)', (WidgetTester tester) async {
       _wideSurface(tester);
-      for (final int maxLines in <int>[2, 3]) {
+      for (final double maxHeight in <double>[
+        ZFlashcardCardReference.questionMaxHeight,
+        60,
+      ]) {
         await tester.pumpWidget(_host(
           ZDefaultFlashcardCard(
             card: _card(question: kLongQuestion),
-            questionMaxLines: maxLines,
+            questionMaxHeight: maxHeight,
           ),
           width: 300,
         ));
         await tester.pumpAndSettle();
-        final Text text = tester.widget<Text>(find.text(kLongQuestion));
-        expect(text.maxLines, maxLines);
-        expect(text.overflow, TextOverflow.ellipsis,
-            reason: '🔴 « tronqué proprement » = ellipse, pas un texte coupé.');
+        final Size box =
+            tester.getSize(find.byKey(ZDefaultFlashcardCard.questionKey));
+        expect(box.height, lessThanOrEqualTo(maxHeight),
+            reason: '🔴 l\'énoncé ne dépasse JAMAIS sa borne de hauteur '
+                '(legacy `constraints: maxHeight kToolbarHeight × 0.65`).');
       }
     });
   });
@@ -543,8 +548,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ZDefaultFlashcardCard), findsNWidgets(2));
-      expect(find.text('Énoncé A'), findsOneWidget);
-      expect(find.text('Énoncé B'), findsOneWidget);
+      expect(find.text('Énoncé A', findRichText: true), findsOneWidget);
+      expect(find.text('Énoncé B', findRichText: true), findsOneWidget);
       // Clé STABLE par carte (AD-2) : l'identité suit la carte, pas la position.
       expect(
         find.byKey(const ValueKey<String>('zDefaultFlashcardCard-a')),
