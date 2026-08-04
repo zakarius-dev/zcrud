@@ -122,6 +122,24 @@ enum ZStudySectionCollapsePlacement {
   inHeaderRow,
 }
 
+/// Hiérarchie tuile/glyphe d'une **carte d'item d'étude par défaut**
+/// (CR-IFFD-55/56) — token de LOOK.
+///
+/// 🔴 **Aucune couleur ici** : la hiérarchie dit OÙ la couleur d'accent se
+/// pose, jamais laquelle (la couleur reste un rôle/une entrée injectable —
+/// CR-48). Même frontière que [ZStudySectionCountShape] : la forme monte, la
+/// matière reste au thème.
+enum ZStudyCardHierarchy {
+  /// **Rendu de référence** (défaut CR-IFFD-56) : tuile NEUTRE (`surface`),
+  /// glyphe teinté par l'accent résolu. C'est ce que rend un thème qui ne
+  /// déclare rien.
+  tintedGlyph,
+
+  /// Rendu **v0.43.0** : tuile colorée par l'accent, glyphe en `onColor`
+  /// apparié. Atteignable par réglage — plus un défaut (CR-IFFD-56).
+  tintedTile,
+}
+
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 /// repli ; espacements/rayons/insets directionnels comme tokens injectables.
 @immutable
@@ -203,6 +221,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studySectionCountShape,
     this.studySectionCountRole,
     this.studySectionCollapsePlacement,
+    this.studyCardHierarchy,
+    this.studyCardRadius,
+    this.studyCardContentPadding,
+    this.studyCardMargin,
+    this.studyCardIconTileSize,
+    this.studyCardIconTileRadius,
+    this.studyCardTitleStyle,
+    this.studyCardSubtitleStyle,
+    this.studyCardBorderSide,
+    this.studyCardBadgeRadius,
+    this.studyCardGlyphSize,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -507,6 +536,66 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// titre) — rendu **strictement inchangé**.
   final ZStudySectionCollapsePlacement? studySectionCollapsePlacement;
 
+  // ── Tokens des CARTES D'ITEM D'ÉTUDE par défaut (CR-IFFD-55/56) ───────────
+  // Directive owner : les défauts du consommateur (`zcrud_study`) sont le
+  // RENDU DE RÉFÉRENCE IFFD, centralisé dans `ZStudyCardReference` côté
+  // consommateur. Chaque token `null` ⇒ le consommateur applique la valeur de
+  // référence documentée. Priorité, partout : paramètre de carte > token >
+  // défaut-référence. Aucune couleur figée ici (FR-26) : ce qui porte une
+  // couleur ([studyCardBorderSide], les styles) est INJECTÉ par l'hôte.
+
+  /// Hiérarchie tuile/glyphe des cartes d'étude par défaut (CR-IFFD-56).
+  /// `null` ⇒ [ZStudyCardHierarchy.tintedGlyph] — le rendu de RÉFÉRENCE.
+  /// [ZStudyCardHierarchy.tintedTile] restitue exactement le rendu v0.43.0.
+  final ZStudyCardHierarchy? studyCardHierarchy;
+
+  /// Rayon de la carte d'étude par défaut. `null` ⇒ 16 (référence).
+  final Radius? studyCardRadius;
+
+  /// Padding INTERNE de la carte d'étude par défaut.
+  /// `null` ⇒ `EdgeInsetsDirectional.all(12)` (référence).
+  final EdgeInsetsGeometry? studyCardContentPadding;
+
+  /// Marge EXTERNE de la carte d'étude par défaut.
+  /// `null` ⇒ `CardThemeData.margin` de l'hôte s'il est fourni, sinon
+  /// `EdgeInsetsDirectional.all(4)` (référence) — la marge du `CardTheme`
+  /// reste atteignable (leçon CR-LEX-73).
+  final EdgeInsetsGeometry? studyCardMargin;
+
+  /// Côté de la tuile d'icône de tête. `null` ⇒ 48 (référence).
+  ///
+  /// ⚠️ Token DISTINCT de [iconContainerSize] : celui-là a déjà un
+  /// consommateur (`ZFolderCardGradientAccent`, repli `gapL`) — le détourner
+  /// redimensionnerait la barre d'accent chez tout hôte l'ayant réglée (même
+  /// arbitrage que CR-IFFD-27 côté `ZFolderCard`).
+  final double? studyCardIconTileSize;
+
+  /// Rayon de la tuile d'icône. `null` ⇒ 12 (référence). Distinct de
+  /// [iconContainerRadius] (pris par la pastille de `ZFolderCard`).
+  final Radius? studyCardIconTileRadius;
+
+  /// Style du TITRE des cartes d'étude par défaut. `null` ⇒
+  /// `titleMedium` en `w600`/15 (référence). Un style fourni PRIME.
+  final TextStyle? studyCardTitleStyle;
+
+  /// Style du SOUS-TITRE. `null` ⇒ `bodySmall` en `onSurfaceVariant`
+  /// (référence — la couleur reste un RÔLE dérivé, jamais un hex du socle).
+  final TextStyle? studyCardSubtitleStyle;
+
+  /// Liseré de la carte d'étude par défaut. `null` ⇒ `outlineVariant` à 50 %,
+  /// épaisseur 1 (référence, couleur DÉRIVÉE du `ColorScheme` courant). Une
+  /// valeur fournie est le choix de l'hôte — elle peut porter sa couleur.
+  final BorderSide? studyCardBorderSide;
+
+  /// Rayon du badge d'extension en surimpression (carte de document).
+  /// `null` ⇒ [radiusS] (défaut 4 = référence).
+  final Radius? studyCardBadgeRadius;
+
+  /// Taille du glyphe dans la tuile d'icône des cartes d'étude par défaut.
+  /// `null` ⇒ 28 dp (référence legacy IFFD, `kStudyToolsLeadingIconSize`) —
+  /// PAS la taille d'icône ambiante (24) : la référence est plus grande.
+  final double? studyCardGlyphSize;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -680,6 +769,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     ZStudySectionCountShape? studySectionCountShape,
     ZStudySectionCountRole? studySectionCountRole,
     ZStudySectionCollapsePlacement? studySectionCollapsePlacement,
+    ZStudyCardHierarchy? studyCardHierarchy,
+    Radius? studyCardRadius,
+    EdgeInsetsGeometry? studyCardContentPadding,
+    EdgeInsetsGeometry? studyCardMargin,
+    double? studyCardIconTileSize,
+    Radius? studyCardIconTileRadius,
+    TextStyle? studyCardTitleStyle,
+    TextStyle? studyCardSubtitleStyle,
+    BorderSide? studyCardBorderSide,
+    Radius? studyCardBadgeRadius,
+    double? studyCardGlyphSize,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -751,6 +851,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     studySectionCountRole: studySectionCountRole ?? this.studySectionCountRole,
     studySectionCollapsePlacement:
         studySectionCollapsePlacement ?? this.studySectionCollapsePlacement,
+    studyCardHierarchy: studyCardHierarchy ?? this.studyCardHierarchy,
+    studyCardRadius: studyCardRadius ?? this.studyCardRadius,
+    studyCardContentPadding:
+        studyCardContentPadding ?? this.studyCardContentPadding,
+    studyCardMargin: studyCardMargin ?? this.studyCardMargin,
+    studyCardIconTileSize:
+        studyCardIconTileSize ?? this.studyCardIconTileSize,
+    studyCardIconTileRadius:
+        studyCardIconTileRadius ?? this.studyCardIconTileRadius,
+    studyCardTitleStyle: studyCardTitleStyle ?? this.studyCardTitleStyle,
+    studyCardSubtitleStyle:
+        studyCardSubtitleStyle ?? this.studyCardSubtitleStyle,
+    studyCardBorderSide: studyCardBorderSide ?? this.studyCardBorderSide,
+    studyCardBadgeRadius: studyCardBadgeRadius ?? this.studyCardBadgeRadius,
+    studyCardGlyphSize: studyCardGlyphSize ?? this.studyCardGlyphSize,
   );
 
   @override
@@ -973,6 +1088,71 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       studySectionCollapsePlacement: t < 0.5
           ? studySectionCollapsePlacement
           : other.studySectionCollapsePlacement,
+      // CR-IFFD-56 — tokens des cartes d'étude par défaut. Même invariant que
+      // TOUS les tokens nullables ci-dessus : `null` des DEUX côtés RESTE
+      // `null` (matérialiser une valeur GÈLERAIT la référence du consommateur
+      // à la première transition de thème). Discrets ⇒ bascule au point
+      // milieu ; continus ⇒ interpolation null-préservante.
+      studyCardHierarchy:
+          t < 0.5 ? studyCardHierarchy : other.studyCardHierarchy,
+      studyCardRadius: _lerpNullableRadius(
+        studyCardRadius,
+        other.studyCardRadius,
+        t,
+      ),
+      studyCardContentPadding: _lerpNullableInsets(
+        studyCardContentPadding,
+        other.studyCardContentPadding,
+        t,
+      ),
+      studyCardMargin: _lerpNullableInsets(
+        studyCardMargin,
+        other.studyCardMargin,
+        t,
+      ),
+      studyCardIconTileSize: _lerpNullableDouble(
+        studyCardIconTileSize,
+        other.studyCardIconTileSize,
+        t,
+      ),
+      studyCardIconTileRadius: _lerpNullableRadius(
+        studyCardIconTileRadius,
+        other.studyCardIconTileRadius,
+        t,
+      ),
+      studyCardTitleStyle: TextStyle.lerp(
+        studyCardTitleStyle,
+        other.studyCardTitleStyle,
+        t,
+      ),
+      studyCardSubtitleStyle: TextStyle.lerp(
+        studyCardSubtitleStyle,
+        other.studyCardSubtitleStyle,
+        t,
+      ),
+      studyCardBorderSide:
+          studyCardBorderSide == null && other.studyCardBorderSide == null
+              ? null
+              : BorderSide.lerp(
+                  studyCardBorderSide ?? BorderSide.none,
+                  other.studyCardBorderSide ?? BorderSide.none,
+                  t,
+                ),
+      studyCardBadgeRadius: _lerpNullableRadius(
+        studyCardBadgeRadius,
+        other.studyCardBadgeRadius,
+        t,
+      ),
+      // Court-circuit null-null : l'héritage documenté (28 = référence) ne
+      // doit pas être matérialisé par une transition de thème.
+      studyCardGlyphSize:
+          studyCardGlyphSize == null && other.studyCardGlyphSize == null
+          ? null
+          : _lerpNullableDouble(
+              studyCardGlyphSize,
+              other.studyCardGlyphSize,
+              t,
+            ),
     );
   }
 }

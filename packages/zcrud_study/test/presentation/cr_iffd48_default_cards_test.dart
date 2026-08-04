@@ -13,6 +13,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZStudyCardHierarchy;
 import 'package:zcrud_exam/zcrud_exam.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
@@ -229,6 +230,10 @@ void main() {
           subtitle: 'Modifié hier',
           formatKey: 'application/pdf',
           formatLabel: 'PDF',
+          // CR-IFFD-56 : l'icône TYPÉE par la table v0.43.0 vit dans la
+          // hiérarchie `tintedTile` (réglage) — la référence rend un glyphe
+          // UNIQUE + badge, testée dans cr_iffd56_reference_cards_test.dart.
+          hierarchy: ZStudyCardHierarchy.tintedTile,
         ),
         width: 400,
       ));
@@ -270,7 +275,12 @@ void main() {
       for (final String title in <String>['Premier', 'Second']) {
         await tester.pumpWidget(_host(
           ZDefaultDocumentCard(
-              title: title, formatKey: 'pdf', formatLabel: 'PDF'),
+              title: title,
+              formatKey: 'pdf',
+              formatLabel: 'PDF',
+              // CR-IFFD-56 : la tuile COLORÉE par la paire est le rendu
+              // v0.43.0 (`tintedTile`) — en référence la tuile est NEUTRE.
+              hierarchy: ZStudyCardHierarchy.tintedTile),
           width: 400,
         ));
         await tester.pumpAndSettle();
@@ -332,6 +342,10 @@ void main() {
           subtitle: 'Modifiée hier',
           excerpt: kLongExcerpt,
           tags: _longTags(2),
+          // CR-IFFD-56 : la barre d'accent est le rendu v0.43.0
+          // (`tintedTile`) ; l'extrait et les balises restent des OPTIONS
+          // rendues dans les DEUX hiérarchies.
+          hierarchy: ZStudyCardHierarchy.tintedTile,
         ),
         width: 400,
       ));
@@ -364,7 +378,10 @@ void main() {
       final List<Color?> seen = <Color?>[];
       for (int i = 0; i < 2; i++) {
         await tester.pumpWidget(_host(
-          const ZDefaultNoteCard(title: 'Note de synthèse'),
+          const ZDefaultNoteCard(
+              title: 'Note de synthèse',
+              // CR-IFFD-56 : barre d'accent = rendu v0.43.0 (`tintedTile`).
+              hierarchy: ZStudyCardHierarchy.tintedTile),
           width: 400,
         ));
         await tester.pumpAndSettle();

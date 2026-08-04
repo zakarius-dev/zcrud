@@ -10,7 +10,8 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZToggleController;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZStudyCardHierarchy, ZToggleController;
 import 'package:zcrud_exam/zcrud_exam.dart' show ZExam;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
 import 'package:zcrud_mindmap/zcrud_mindmap.dart' show ZMindmap;
@@ -21,6 +22,64 @@ import 'z_default_exam_card.dart';
 import 'z_default_flashcard_card.dart';
 import 'z_default_mindmap_card.dart';
 import 'z_rail_item.dart';
+
+/// Mode de PRÉSENTATION de la poignée de réordonnancement (CR-IFFD-54 ②).
+///
+/// ## Pourquoi un réglage de SPEC et non un token de thème
+///
+/// Le mode ne déplace pas du chrome : il change le **contrat de geste** de la
+/// section, et sa validité dépend du CONTENU de la section — un item dont la
+/// carte consomme déjà l'appui long ([hiddenLongPress] serait un glisser MORT,
+/// cf. la mesure ci-dessous) ne peut pas être en mode appui-long. Seule la
+/// spec (qui connaît `onCardLongPress` sur les voies typées) peut REFUSER ce
+/// conflit à la construction ; un token de thème l'aurait rendu indétectable
+/// (le thème ne sait rien du contenu). C'est aussi la surface où vit déjà
+/// TOUTE la famille poignée (`reorderHandleIcon`/`reorderHandleSemanticLabel`) —
+/// éclater le mode vers le thème aurait réparti une capacité sur deux
+/// surfaces. Un hôte qui veut des grilles calmes PARTOUT le règle au point
+/// unique où il fabrique ses specs. (Le précédent thème
+/// `studySectionCollapsePlacement` place du chrome uniforme ; il ne change pas
+/// ce qu'un geste FAIT.)
+enum ZStudyReorderHandleMode {
+  /// Poignée AFFICHÉE (défaut — rendu strictement inchangé) : glyphe
+  /// `reorderHandleIcon` + nœud `Semantics` ≥ 48 dp sur chaque item.
+  visible,
+
+  /// Poignée MASQUÉE, réordonnancement par **appui long sur l'item** (la
+  /// convention de plateforme de la référence IFFD). La sémantique est
+  /// CONSERVÉE (CR-IFFD-54 ②, exigence explicite) :
+  /// - chemin LISTE : les actions sémantiques du SDK
+  ///   (`SliverReorderableList._wrapWithSemantics` — « move up/down/to
+  ///   start/to end », `WidgetsLocalizations`) sont posées sur CHAQUE item
+  ///   indépendamment de toute poignée — prouvé par garde (le lecteur d'écran
+  ///   réordonne encore, poignée absente) ;
+  /// - chemin GRILLE : les actions `reorderMoveBeforeSemanticLabel` /
+  ///   `reorderMoveAfterSemanticLabel` vivent dans `ZReorderRenderRequest`,
+  ///   PAS dans la poignée (qui n'y a jamais été un déclencheur) — inchangées.
+  ///
+  /// 🔴 **Conflit de geste MESURÉ** (2026-08-04, gardes CR-54) : une carte qui
+  /// consomme l'appui long (`onLongPress` d'`InkWell`) GAGNE l'arène de gestes
+  /// contre `LongPressDraggable` (grille) comme contre
+  /// `ReorderableDelayedDragStartListener` (liste) — le drag ne démarre
+  /// JAMAIS depuis la carte (mesuré : `moves=[]`, callback carte invoqué). En
+  /// mode [visible] la poignée reste un déclencheur qui échappe à l'InkWell
+  /// de la carte (mesuré : drag OK depuis la poignée) ; en mode masqué il ne
+  /// resterait AUCUN déclencheur tactile. Les voies typées REFUSENT donc
+  /// `hiddenLongPress` + `onCardLongPress` + `onReorder` à la construction
+  /// (assert ; en release, repli AD-10 : mode [visible] — capacité conservée,
+  /// jamais un glisser mort). Sur le constructeur principal, l'`itemBuilder`
+  /// est OPAQUE : le socle ne peut pas détecter un appui long consommé par
+  /// l'item de l'hôte — c'est documenté ici, à l'hôte d'arbitrer.
+  ///
+  /// ⚠️ Seam `ZReorderRenderer` (AD-57) : côté grille, ce mode se traduit par
+  /// « aucune décoration de poignée EN AMONT du renderer ». Le renderer par
+  /// défaut (`zcrud_responsive`) réordonne déjà par appui long : le mode le
+  /// traverse intact. Pour un renderer INJECTÉ par l'hôte, le socle garantit
+  /// l'absence de poignée amont mais PAS le geste du renderer (il ne peut pas
+  /// simuler un comportement qu'il ne possède pas) : le déclencheur et la
+  /// sémantique du drag y appartiennent à l'hôte.
+  hiddenLongPress,
+}
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
@@ -50,8 +109,10 @@ class ZStudyToolsSectionSpec {
     this.reorderHandleIcon,
     this.reorderMoveBeforeSemanticLabel,
     this.reorderMoveAfterSemanticLabel,
+    this.reorderHandleMode = ZStudyReorderHandleMode.visible,
     this.collapsible = false,
     this.initiallyExpanded = true,
+    this.collapseOnHeaderTap = false,
     this.crossAxisMinItemWidth,
     this.crossAxisItemHeight,
     this.crossAxisAspectRatio,
@@ -75,6 +136,23 @@ class ZStudyToolsSectionSpec {
           onReorder == null ||
               (itemIds != null && itemIds.length == itemCount),
           'onReorder != null exige itemIds non-null de longueur itemCount',
+        ),
+        // CR-IFFD-54 ② — un mode de poignée sur une section NON réordonnable
+        // serait un réglage silencieusement inerte (AD-4 : jamais de no-op).
+        assert(
+          reorderHandleMode == ZStudyReorderHandleMode.visible ||
+              onReorder != null,
+          'reorderHandleMode: hiddenLongPress exige onReorder — le mode de '
+          'poignée n\'a de sens que sur une section réordonnable (AD-4 : '
+          'jamais un réglage silencieusement inerte).',
+        ),
+        // CR-IFFD-54 ① — même règle : une zone de bascule sur une section non
+        // repliable serait un réglage silencieusement inerte (AD-4).
+        assert(
+          !collapseOnHeaderTap || collapsible,
+          'collapseOnHeaderTap exige collapsible: true — la ligne d\'en-tête '
+          'ne peut être une zone de bascule que si la section se replie '
+          '(AD-4 : jamais un réglage silencieusement inerte).',
         );
 
   /// Section de **flashcards** dont le socle fournit le rendu d'item
@@ -181,8 +259,15 @@ class ZStudyToolsSectionSpec {
     this.reorderHandleIcon,
     this.reorderMoveBeforeSemanticLabel,
     this.reorderMoveAfterSemanticLabel,
+    // CR-IFFD-54 ② — mode de poignée, mêmes règles que le constructeur
+    // principal + refus MESURÉ du conflit avec `onCardLongPress` (assert ;
+    // repli AD-10 en release : mode `visible`, jamais un glisser mort).
+    ZStudyReorderHandleMode reorderHandleMode = ZStudyReorderHandleMode.visible,
     this.collapsible = false,
     this.initiallyExpanded = true,
+    // CR-IFFD-54 ① — la ligne d'en-tête comme zone de bascule (exige
+    // `collapsible: true`, cf. constructeur principal).
+    this.collapseOnHeaderTap = false,
     this.crossAxisMinItemWidth,
     this.crossAxisItemHeight,
     this.crossAxisAspectRatio,
@@ -219,6 +304,42 @@ class ZStudyToolsSectionSpec {
           'rail tronqué (railPreviewCount) réordonnable ferait diverger '
           'l\'espace visible de l\'espace persistable.',
         ),
+        // CR-IFFD-54 ② — conflit de geste MESURÉ (doc :
+        // [ZStudyReorderHandleMode.hiddenLongPress]) : l'InkWell de la carte
+        // gagne l'arène d'appui long, le drag ne démarre jamais depuis
+        // l'item ; poignée masquée, il ne resterait AUCUN déclencheur tactile.
+        assert(
+          !(reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+              onReorder != null &&
+              onCardLongPress != null),
+          'ZStudyToolsSectionSpec.flashcards : reorderHandleMode: '
+          'hiddenLongPress est INCOMPATIBLE avec onCardLongPress — la carte '
+          'consomme l\'appui long (mesuré : le drag ne démarre jamais depuis '
+          'l\'item) et, poignée masquée, il ne reste aucun déclencheur '
+          'tactile. Remède : garde le mode visible, ou retire onCardLongPress '
+          'de cette section.',
+        ),
+        assert(
+          reorderHandleMode == ZStudyReorderHandleMode.visible ||
+              onReorder != null,
+          'ZStudyToolsSectionSpec.flashcards : reorderHandleMode: '
+          'hiddenLongPress exige onReorder (AD-4 : jamais un réglage '
+          'silencieusement inerte).',
+        ),
+        assert(
+          !collapseOnHeaderTap || collapsible,
+          'ZStudyToolsSectionSpec.flashcards : collapseOnHeaderTap exige '
+          'collapsible: true (AD-4 : jamais un réglage silencieusement '
+          'inerte).',
+        ),
+        // Repli AD-10 (release) du conflit ci-dessus : mode `visible` —
+        // capacité et affordance CONSERVÉES, jamais un glisser mort.
+        reorderHandleMode =
+            reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+                    onReorder != null &&
+                    onCardLongPress != null
+                ? ZStudyReorderHandleMode.visible
+                : reorderHandleMode,
         // CR-IFFD-49 ② — rail des N premiers : itemCount borné à min(N, total).
         // Hors couplage (ou axe vertical, repli AD-10 en release), total.
         itemCount = railPreviewCount != null &&
@@ -304,7 +425,25 @@ class ZStudyToolsSectionSpec {
     void Function(ZMindmap map)? onCardLongPress,
     Widget? Function(BuildContext context, ZMindmap map)? cardTrailingBuilder,
     ZColorPalette palette = const ZColorPalette.defaultStudy(),
-    int titleMaxLines = 2,
+    // CR-IFFD-56 — nul vaut défaut de la hiérarchie de la carte, soit 1 en
+    // référence et 2 en tintedTile, comme sur ZDefaultMindmapCard.
+    int? titleMaxLines,
+    // CR-IFFD-56 — relais de PARITÉ avec ZDefaultMindmapCard, garde CR-48 :
+    // hiérarchie, glyphe, styles, géométrie, progression. Chaque valeur
+    // nulle laisse la carte appliquer sa priorité jeton puis référence.
+    ZStudyCardHierarchy? hierarchy,
+    IconData? cardIcon,
+    TextStyle? cardTitleStyle,
+    TextStyle? cardSubtitleStyle,
+    EdgeInsetsGeometry? cardContentPadding,
+    EdgeInsetsGeometry? cardMargin,
+    BorderSide? cardBorderSide,
+    Radius? cardBorderRadius,
+    // CR-IFFD-56, « non mesuré » n°2 — progression PAR CARTE : le repli
+    // par item des hôtes n'est plus nécessaire.
+    Widget? Function(BuildContext context, ZMindmap map)? progressOf,
+    double progressMaxWidth = 120,
+    bool hidesTrailingWhileBusy = true,
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
@@ -322,8 +461,15 @@ class ZStudyToolsSectionSpec {
     this.reorderHandleIcon,
     this.reorderMoveBeforeSemanticLabel,
     this.reorderMoveAfterSemanticLabel,
+    // CR-IFFD-54 ② — mode de poignée, mêmes règles que le constructeur
+    // principal + refus MESURÉ du conflit avec `onCardLongPress` (assert ;
+    // repli AD-10 en release : mode `visible`, jamais un glisser mort).
+    ZStudyReorderHandleMode reorderHandleMode = ZStudyReorderHandleMode.visible,
     this.collapsible = false,
     this.initiallyExpanded = true,
+    // CR-IFFD-54 ① — la ligne d'en-tête comme zone de bascule (exige
+    // `collapsible: true`, cf. constructeur principal).
+    this.collapseOnHeaderTap = false,
     this.crossAxisMinItemWidth,
     this.crossAxisItemHeight,
     this.crossAxisAspectRatio,
@@ -357,6 +503,38 @@ class ZStudyToolsSectionSpec {
           'rail tronqué (railPreviewCount) réordonnable ferait diverger '
           'l\'espace visible de l\'espace persistable.',
         ),
+        // CR-IFFD-54 ②/① — cf. les mêmes gardes de `.flashcards` (conflit
+        // MESURÉ carte×appui-long, réglages jamais inertes, repli AD-10).
+        assert(
+          !(reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+              onReorder != null &&
+              onCardLongPress != null),
+          'ZStudyToolsSectionSpec.mindmaps : reorderHandleMode: '
+          'hiddenLongPress est INCOMPATIBLE avec onCardLongPress — la carte '
+          'consomme l\'appui long (mesuré : le drag ne démarre jamais depuis '
+          'l\'item) et, poignée masquée, il ne reste aucun déclencheur '
+          'tactile. Remède : garde le mode visible, ou retire onCardLongPress '
+          'de cette section.',
+        ),
+        assert(
+          reorderHandleMode == ZStudyReorderHandleMode.visible ||
+              onReorder != null,
+          'ZStudyToolsSectionSpec.mindmaps : reorderHandleMode: '
+          'hiddenLongPress exige onReorder (AD-4 : jamais un réglage '
+          'silencieusement inerte).',
+        ),
+        assert(
+          !collapseOnHeaderTap || collapsible,
+          'ZStudyToolsSectionSpec.mindmaps : collapseOnHeaderTap exige '
+          'collapsible: true (AD-4 : jamais un réglage silencieusement '
+          'inerte).',
+        ),
+        reorderHandleMode =
+            reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+                    onReorder != null &&
+                    onCardLongPress != null
+                ? ZStudyReorderHandleMode.visible
+                : reorderHandleMode,
         itemCount = railPreviewCount != null &&
                 axis == Axis.horizontal &&
                 railPreviewCount < maps.length
@@ -391,8 +569,19 @@ class ZStudyToolsSectionSpec {
             nodeCountLabel: nodeCountLabel,
             palette: palette,
             colorKey: colorKeyOf?.call(map),
+            hierarchy: hierarchy,
+            icon: cardIcon,
             titleMaxLines: titleMaxLines,
+            titleStyle: cardTitleStyle,
+            subtitleStyle: cardSubtitleStyle,
+            contentPadding: cardContentPadding,
+            margin: cardMargin,
+            borderSide: cardBorderSide,
+            borderRadius: cardBorderRadius,
             trailing: cardTrailingBuilder?.call(context, map),
+            progress: progressOf?.call(context, map),
+            progressMaxWidth: progressMaxWidth,
+            hidesTrailingWhileBusy: hidesTrailingWhileBusy,
             onTap: onCardTap == null ? null : () => onCardTap(map),
             onLongPress:
                 onCardLongPress == null ? null : () => onCardLongPress(map),
@@ -449,8 +638,15 @@ class ZStudyToolsSectionSpec {
     this.reorderHandleIcon,
     this.reorderMoveBeforeSemanticLabel,
     this.reorderMoveAfterSemanticLabel,
+    // CR-IFFD-54 ② — mode de poignée, mêmes règles que le constructeur
+    // principal + refus MESURÉ du conflit avec `onCardLongPress` (assert ;
+    // repli AD-10 en release : mode `visible`, jamais un glisser mort).
+    ZStudyReorderHandleMode reorderHandleMode = ZStudyReorderHandleMode.visible,
     this.collapsible = false,
     this.initiallyExpanded = true,
+    // CR-IFFD-54 ① — la ligne d'en-tête comme zone de bascule (exige
+    // `collapsible: true`, cf. constructeur principal).
+    this.collapseOnHeaderTap = false,
     this.crossAxisMinItemWidth,
     this.crossAxisItemHeight,
     this.crossAxisAspectRatio,
@@ -484,6 +680,38 @@ class ZStudyToolsSectionSpec {
           'rail tronqué (railPreviewCount) réordonnable ferait diverger '
           'l\'espace visible de l\'espace persistable.',
         ),
+        // CR-IFFD-54 ②/① — cf. les mêmes gardes de `.flashcards` (conflit
+        // MESURÉ carte×appui-long, réglages jamais inertes, repli AD-10).
+        assert(
+          !(reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+              onReorder != null &&
+              onCardLongPress != null),
+          'ZStudyToolsSectionSpec.exams : reorderHandleMode: '
+          'hiddenLongPress est INCOMPATIBLE avec onCardLongPress — la carte '
+          'consomme l\'appui long (mesuré : le drag ne démarre jamais depuis '
+          'l\'item) et, poignée masquée, il ne reste aucun déclencheur '
+          'tactile. Remède : garde le mode visible, ou retire onCardLongPress '
+          'de cette section.',
+        ),
+        assert(
+          reorderHandleMode == ZStudyReorderHandleMode.visible ||
+              onReorder != null,
+          'ZStudyToolsSectionSpec.exams : reorderHandleMode: '
+          'hiddenLongPress exige onReorder (AD-4 : jamais un réglage '
+          'silencieusement inerte).',
+        ),
+        assert(
+          !collapseOnHeaderTap || collapsible,
+          'ZStudyToolsSectionSpec.exams : collapseOnHeaderTap exige '
+          'collapsible: true (AD-4 : jamais un réglage silencieusement '
+          'inerte).',
+        ),
+        reorderHandleMode =
+            reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress &&
+                    onReorder != null &&
+                    onCardLongPress != null
+                ? ZStudyReorderHandleMode.visible
+                : reorderHandleMode,
         itemCount = railPreviewCount != null &&
                 axis == Axis.horizontal &&
                 railPreviewCount < exams.length
@@ -641,6 +869,22 @@ class ZStudyToolsSectionSpec {
   /// réordonnable (CR-IFFD-15). Voir [reorderMoveBeforeSemanticLabel].
   final String? reorderMoveAfterSemanticLabel;
 
+  /// Mode de présentation de la poignée de réordonnancement (CR-IFFD-54 ②).
+  ///
+  /// [ZStudyReorderHandleMode.visible] (défaut) ⇒ rendu **strictement
+  /// inchangé** (poignée + `Semantics` ≥ 48 dp sur chaque item).
+  /// [ZStudyReorderHandleMode.hiddenLongPress] ⇒ poignée absente de l'arbre
+  /// (AD-4), réordonnancement par **appui long sur l'item entier** —
+  /// sémantique CONSERVÉE dans les deux modes et sur les deux chemins
+  /// (liste : actions du SDK ; grille : actions
+  /// [reorderMoveBeforeSemanticLabel]/[reorderMoveAfterSemanticLabel] —
+  /// détail, arbitrage spec-vs-thème et conflit MESURÉ avec l'appui long des
+  /// cartes : doc de [ZStudyReorderHandleMode]).
+  ///
+  /// N'a de sens que si [onReorder] est fourni (assert — AD-4 : jamais un
+  /// réglage silencieusement inerte).
+  final ZStudyReorderHandleMode reorderHandleMode;
+
   // ── CR-IFFD-10 : capacités de la page d'origine absentes du portage ────────
 
   /// Section **repliable** (CR-IFFD-10 §1). `false` par défaut — le rendu
@@ -656,6 +900,47 @@ class ZStudyToolsSectionSpec {
   /// Permet le patron d'origine « déplié seulement si la section a des
   /// éléments » : `initiallyExpanded: items.isNotEmpty`.
   final bool initiallyExpanded;
+
+  /// CR-IFFD-54 ① — **toute la ligne d'en-tête** devient zone de bascule du
+  /// repli. `false` (défaut) ⇒ rendu et arbre **strictement inchangés** : le
+  /// chevron reste la seule cible (AD-4 : la zone est ABSENTE de l'arbre).
+  ///
+  /// ## Pourquoi un réglage de SPEC et non un token de thème
+  ///
+  /// Le geste dépend du **contenu** de la section : une ligne d'en-tête qui
+  /// porte des actions cliquables ([secondaryAction], [addAction]) n'a pas le
+  /// même arbitrage qu'une ligne nue — et c'est la spec, pas le thème, qui
+  /// sait ce que SA ligne contient. La capacité qu'il étend ([collapsible])
+  /// est elle-même un champ de spec : porter le geste au thème aurait créé un
+  /// réglage global inerte sur toute section non repliable (no-op silencieux,
+  /// AD-4) et non débrayable par section. Le précédent thème
+  /// (`studySectionCollapsePlacement`, CR-IFFD-50 ④) place du CHROME uniforme ;
+  /// il ne décide pas ce qu'un GESTE fait sur un contenu que l'hôte injecte.
+  /// Un hôte qui veut la bascule partout la règle au point unique où il
+  /// fabrique ses specs.
+  ///
+  /// ## Priorité tactile (MESURÉE, gardée)
+  ///
+  /// Les contrôles INTERNES de la ligne gagnent l'arène contre la zone de
+  /// bascule (résolution d'arène : le reconnaisseur le plus profond gagne) :
+  /// un tap sur [secondaryAction]/[addAction] déclenche l'action et ne replie
+  /// JAMAIS ; un tap sur le chevron bascule UNE fois (jamais deux) ; un tap
+  /// sur le titre, le badge ou l'espace libre bascule. Vaut aussi sous
+  /// `studySectionCollapsePlacement: inHeaderRow` et en RTL.
+  ///
+  /// ## Sémantique — une seule annonce (règle v0.36.0)
+  ///
+  /// La ligne est une **extension de cible pour le pointeur**, pas un second
+  /// nœud d'action : sa zone de tap est EXCLUE de la sémantique
+  /// (`excludeFromSemantics`), et l'annonce de bascule reste portée par le
+  /// seul chevron (libellés injectés, ≥ 48 dp) — l'arbre sémantique est
+  /// STRICTEMENT celui d'avant, jamais deux annonces de bascule. La demande
+  /// est le GESTE, pas la structure : la ligne reste STATIQUE (hors tranche
+  /// réactive — elle n'écoute pas l'état, le closure de tap écrit à la
+  /// source), SM-1 préservé et gardé par comptage de builds.
+  ///
+  /// Exige [collapsible] (assert — AD-4 : jamais un réglage inerte).
+  final bool collapseOnHeaderTap;
 
   /// Largeur minimale d'un item pour un rendu **multi-colonnes** (CR-IFFD-10 §2).
   ///

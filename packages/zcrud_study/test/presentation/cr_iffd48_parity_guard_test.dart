@@ -206,6 +206,18 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       'onTap': 'onCardTap',
       'onLongPress': 'onCardLongPress',
       'semanticLabel': 'semanticLabelOf',
+      // CR-IFFD-56 : hiérarchie, glyphe, styles, géométrie, progression.
+      'hierarchy': 'hierarchy',
+      'icon': 'cardIcon',
+      'titleStyle': 'cardTitleStyle',
+      'subtitleStyle': 'cardSubtitleStyle',
+      'contentPadding': 'cardContentPadding',
+      'margin': 'cardMargin',
+      'borderSide': 'cardBorderSide',
+      'borderRadius': 'cardBorderRadius',
+      'progress': 'progressOf',
+      'progressMaxWidth': 'progressMaxWidth',
+      'hidesTrailingWhileBusy': 'hidesTrailingWhileBusy',
     },
   ),
   _ParityPair(

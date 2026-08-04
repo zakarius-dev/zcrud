@@ -46,6 +46,7 @@ class ZStudyDocumentCard extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.borderSide,
+    this.borderRadius,
     this.accent,
     this.semanticLabel,
     this.contentPadding,
@@ -99,6 +100,10 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// Contour explicite. Voir [ZStudyToolsItemCard.borderSide].
   final BorderSide? borderSide;
 
+  /// Rayon d'angle explicite (CR-IFFD-56). Voir
+  /// [ZStudyToolsItemCard.borderRadius] — passe-plat, aucun défaut local.
+  final Radius? borderRadius;
+
   /// Décor d'accent superposé. Voir [ZStudyToolsItemCard.accent].
   final Widget? accent;
 
@@ -137,6 +142,7 @@ class ZStudyDocumentCard extends StatelessWidget {
     onTap: onTap,
     onLongPress: onLongPress,
     borderSide: borderSide,
+    borderRadius: borderRadius,
     accent: accent,
     semanticLabel:
         semanticLabel ?? (subtitle == null ? title : '$title, $subtitle'),

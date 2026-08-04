@@ -66,6 +66,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.borderSide,
+    this.borderRadius,
     this.accent,
     this.semanticLabel,
     this.contentPadding,
@@ -211,6 +212,16 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// jeton `radiusM` — c'est-à-dire **exactement** le rendu antérieur. Ce slot
   /// est une capacité qui manquait, pas un changement de défaut.
   final BorderSide? borderSide;
+
+  /// Rayon d'angle EXPLICITE de la carte (**CR-IFFD-56**).
+  ///
+  /// `null` ⇒ le rayon vient du jeton `radiusM` (ou de `CardThemeData.shape`
+  /// s'il est fourni et qu'aucun [borderSide] n'est passé) — c'est-à-dire
+  /// **exactement** le rendu antérieur. Ce slot est une capacité qui manquait
+  /// (le rendu de référence des cartes d'étude exige un rayon de carte
+  /// distinct du `radiusM` global), pas un changement de défaut — même motif
+  /// que [borderSide] (CR-IFFD-19).
+  final Radius? borderRadius;
 
   /// Décor d'accent superposé, fourni par l'hôte.
   ///
@@ -399,14 +410,18 @@ class ZStudyToolsItemCard extends StatelessWidget {
     // (le défaut historique, strictement préservé quand rien n'est fourni).
     final CardThemeData cardTheme = CardTheme.of(context);
     final themed = cardTheme.shape;
-    final ShapeBorder shape = borderSide != null
+    // CR-IFFD-56 — `borderRadius` explicite > `CardThemeData.shape` du thème
+    // (comme `borderSide` : un slot explicite prime le thème) > jeton
+    // `radiusM` (défaut historique, strictement préservé à `null`).
+    final Radius corner = borderRadius ?? theme.radiusM;
+    final ShapeBorder shape = borderSide != null || borderRadius != null
         ? RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(theme.radiusM),
-            side: borderSide!,
+            borderRadius: BorderRadius.all(corner),
+            side: borderSide ?? BorderSide.none,
           )
         : themed ??
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(theme.radiusM),
+                borderRadius: BorderRadius.all(corner),
               );
 
     // CR-IFFD-27 — les jetons `ZcrudTheme.cardShadow*` n'étaient lus par AUCUN

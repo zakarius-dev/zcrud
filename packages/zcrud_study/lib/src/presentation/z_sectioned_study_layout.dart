@@ -288,6 +288,13 @@ class _ZStudySection extends StatelessWidget {
             ZStudySectionCollapsePlacement.belowTitle;
     final bool collapseInHeader = spec.collapsible &&
         placement == ZStudySectionCollapsePlacement.inHeaderRow;
+    // CR-IFFD-54 ① — l'en-tête doit être construit PAR `_CollapsibleBody`
+    // (propriétaire de l'état de repli) dès que la ligne est zone de bascule
+    // OU que le chevron y entre (CR-50 ④) : même `_buildHeader`, jamais un
+    // second en-tête. La ligne reste STATIQUE (le closure de tap écrit à la
+    // source, il n'écoute pas l'état — SM-1).
+    final bool headerInBody = spec.collapsible &&
+        (collapseInHeader || spec.collapseOnHeaderTap);
 
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(
@@ -297,7 +304,7 @@ class _ZStudySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!collapseInHeader) _buildHeader(context, theme),
+          if (!headerInBody) _buildHeader(context, theme),
           // CR-IFFD-10 §1 — le corps est masqué quand la section est repliée.
           // L'état vit LOCALEMENT (`_CollapsibleBody`, sous la frontière keyée
           // de la section) : replier ne reconstruit NI les autres sections NI la
@@ -307,8 +314,9 @@ class _ZStudySection extends StatelessWidget {
               spec: spec,
               theme: theme,
               body: _body(context, theme, isEmpty),
-              headerBuilder: collapseInHeader
-                  ? (BuildContext context, Widget trailingCollapse) =>
+              collapseInHeader: collapseInHeader,
+              headerBuilder: headerInBody
+                  ? (BuildContext context, Widget? trailingCollapse) =>
                       _buildHeader(
                         context,
                         theme,
@@ -476,16 +484,28 @@ class _ZStudySection extends StatelessWidget {
     // modification de `zcrud_responsive` n'est requise.
     final IconData handleIcon = spec.reorderHandleIcon ?? _kDragHandleFallbackIcon;
     final String handleLabel = spec.reorderHandleSemanticLabel ?? spec.title;
+    // CR-IFFD-54 ② — mode `hiddenLongPress` : AUCUNE décoration de poignée en
+    // amont du renderer (absence STRUCTURELLE, AD-4). Le geste du renderer par
+    // défaut est DÉJÀ l'appui long sur la cellule, et la sémantique du
+    // déplacement ne vit PAS dans la poignée : les actions « déplacer
+    // avant/après » traversent la requête ci-dessous, identiques dans les deux
+    // modes (exigence « sémantique conservée » de la CR). Pour un renderer
+    // INJECTÉ par l'hôte, le socle garantit l'absence de poignée amont mais
+    // pas le geste du renderer (documenté sur [ZStudyReorderHandleMode]).
+    final bool hiddenHandle =
+        spec.reorderHandleMode == ZStudyReorderHandleMode.hiddenLongPress;
     return renderer.build(
       context,
       ZReorderRenderRequest(
         itemIds: spec.itemIds!,
-        itemBuilder: (context, index) => _ReorderableGridCell(
-          icon: handleIcon,
-          handleSemanticLabel: handleLabel,
-          theme: theme,
-          child: spec.itemBuilder(context, index),
-        ),
+        itemBuilder: hiddenHandle
+            ? spec.itemBuilder
+            : (context, index) => _ReorderableGridCell(
+                  icon: handleIcon,
+                  handleSemanticLabel: handleLabel,
+                  theme: theme,
+                  child: spec.itemBuilder(context, index),
+                ),
         onReorder: spec.onReorder!,
         minItemWidth: minWidth,
         spacing: theme.gapS,
@@ -739,6 +759,28 @@ class _ReorderableItemListState extends State<_ReorderableItemList> {
           // Index d'origine (côté appelant) de l'item courant : `itemBuilder`
           // rend par l'index de `spec.itemIds`, or l'ordre local a pu permuter.
           final originalIndex = spec.itemIds!.indexOf(id);
+          // CR-IFFD-54 ② — mode `hiddenLongPress` : la poignée est ABSENTE de
+          // l'arbre (AD-4) et le déclencheur devient l'APPUI LONG sur l'item
+          // entier (`ReorderableDelayedDragStartListener` du SDK — mesuré : le
+          // drag délayé réordonne réellement). La sémantique est CONSERVÉE
+          // sans la poignée : `SliverReorderableList` pose ses actions
+          // « move up/down/to start/to end » (`WidgetsLocalizations`) sur
+          // CHAQUE item, indépendamment de tout drag handle — prouvé par
+          // garde (l'action sémantique répond encore en mode masqué).
+          if (spec.reorderHandleMode ==
+              ZStudyReorderHandleMode.hiddenLongPress) {
+            return ReorderableDelayedDragStartListener(
+              // Clé STABLE requise par ReorderableListView — même règle que le
+              // mode visible (l'id opaque, jamais l'index).
+              key: ValueKey(id),
+              index: index,
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(bottom: theme.gapS),
+                child: spec.itemBuilder(
+                    context, originalIndex < 0 ? index : originalIndex),
+              ),
+            );
+          }
           return _ReorderableItemRow(
             // Clé STABLE requise par ReorderableListView (« every item must have
             // a key ») — l'id opaque de l'item, jamais l'index.
@@ -989,6 +1031,7 @@ class _CollapsibleBody extends StatefulWidget {
     required this.spec,
     required this.theme,
     required this.body,
+    required this.collapseInHeader,
     this.headerBuilder,
   });
 
@@ -996,12 +1039,18 @@ class _CollapsibleBody extends StatefulWidget {
   final ZcrudTheme theme;
   final Widget body;
 
-  /// CR-IFFD-50 ④ — non-null quand le thème place le chevron DANS la ligne
-  /// d'en-tête : ce widget possède l'état de repli, il construit donc AUSSI
-  /// l'en-tête (via le `_buildHeader` de la section — jamais un second
-  /// en-tête) en lui passant le chevron. `null` ⇒ l'en-tête reste construit
-  /// par la section, le chevron est rendu SOUS le titre (rendu historique).
-  final Widget Function(BuildContext context, Widget trailingCollapse)?
+  /// CR-IFFD-50 ④ — `true` quand le thème place le chevron DANS la ligne
+  /// d'en-tête. Distinct de la présence de [headerBuilder] depuis CR-IFFD-54 ①
+  /// (une ligne-bascule en placement historique construit AUSSI l'en-tête ici,
+  /// chevron restant SOUS le titre).
+  final bool collapseInHeader;
+
+  /// Non-null quand l'en-tête doit être construit PAR ce widget (propriétaire
+  /// de l'état de repli) : chevron dans la ligne (CR-50 ④, `trailingCollapse`
+  /// non-null) et/ou ligne-bascule (CR-54 ①). Toujours via le `_buildHeader`
+  /// de la section — jamais un second en-tête. `null` ⇒ l'en-tête reste
+  /// construit par la section, chevron SOUS le titre (rendu historique).
+  final Widget Function(BuildContext context, Widget? trailingCollapse)?
       headerBuilder;
 
   @override
@@ -1040,7 +1089,7 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget Function(BuildContext, Widget)? headerBuilder =
+    final Widget Function(BuildContext, Widget?)? headerBuilder =
         widget.headerBuilder;
     if (headerBuilder == null) {
       // Rendu HISTORIQUE (chevron sous le titre) — structure inchangée.
@@ -1059,22 +1108,61 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
     // CR-IFFD-50 ④ — chevron DANS la ligne d'en-tête, côté fin. L'en-tête
     // lui-même reste STATIQUE (hors tranche réactive) : seuls le glyphe du
     // chevron et le corps replié écoutent l'état — SM-1 préservé.
+    Widget header = headerBuilder(
+      context,
+      widget.collapseInHeader
+          ? ValueListenableBuilder<bool>(
+              valueListenable: _expanded.listenable,
+              builder: (BuildContext context, bool expanded, Widget? _) =>
+                  _collapseButton(expanded),
+            )
+          : null,
+    );
+    if (widget.spec.collapseOnHeaderTap) {
+      // CR-IFFD-54 ① — TOUTE la ligne d'en-tête est zone de bascule.
+      //
+      // La demande est le GESTE, pas la structure : l'`InkWell` n'écoute pas
+      // l'état (le closure ÉCRIT à la source au tap) — la ligne reste hors
+      // tranche réactive, SM-1 intact (gardé par comptage de builds).
+      //
+      // Priorité tactile MESURÉE : les reconnaisseurs INTERNES (chevron,
+      // `secondaryAction`, `addAction`) gagnent l'arène contre cette zone —
+      // un tap sur « Afficher tout » ne replie JAMAIS ; un tap sur le chevron
+      // bascule UNE fois (l'arène n'accorde qu'un vainqueur).
+      //
+      // UNE seule annonce (règle v0.36.0) : la zone est EXCLUE de la
+      // sémantique — l'annonce de bascule reste portée par le seul chevron
+      // (libellés injectés). L'arbre sémantique est STRICTEMENT inchangé.
+      //
+      // AD-13 : la ligne entière ≥ 48 dp (elle est désormais interactive).
+      header = InkWell(
+        key: ValueKey<String>('section:${widget.spec.id}:headerToggle'),
+        onTap: () => _expanded.value = !_expanded.value,
+        excludeFromSemantics: true,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: _kMinTapTarget),
+          child: header,
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        headerBuilder(
-          context,
+        header,
+        if (widget.collapseInHeader)
           ValueListenableBuilder<bool>(
             valueListenable: _expanded.listenable,
             builder: (BuildContext context, bool expanded, Widget? _) =>
-                _collapseButton(expanded),
+                _animatedBody(expanded),
+          )
+        else
+          // CR-IFFD-54 ① en placement HISTORIQUE (`belowTitle`) : le chevron
+          // reste rendu SOUS le titre — même tranche `_buildCollapse` que le
+          // rendu historique, seule la ligne d'en-tête a migré ci-dessus.
+          ValueListenableBuilder<bool>(
+            valueListenable: _expanded.listenable,
+            builder: _buildCollapse,
           ),
-        ),
-        ValueListenableBuilder<bool>(
-          valueListenable: _expanded.listenable,
-          builder: (BuildContext context, bool expanded, Widget? _) =>
-              _animatedBody(expanded),
-        ),
       ],
     );
   }
