@@ -130,6 +130,13 @@ class ZSubfolderSelectorBar extends StatefulWidget {
   /// **ABSENTE de l'arbre** tant que `ZcrudTheme.subfolderBarPadding` est `null`.
   static const Key barPaddingKey = ValueKey<String>('suf3:selector:padding');
 
+  /// Clé stable de l'enveloppe de **marge extérieure de la FEUILLE**
+  /// (CR-IFFD-46, point 4) — **ABSENTE de l'arbre** tant que
+  /// `ZcrudTheme.subfolderSheetPadding` est `null`.
+  static const Key sheetPaddingKey = ValueKey<String>(
+    'suf3:selector:sheet:padding',
+  );
+
   /// Clé stable d'un item de la feuille ([id] vide = item racine « tous »).
   static Key itemKey(String id) => ValueKey<String>('suf3:selector:item:$id');
 
@@ -178,7 +185,13 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     return null;
   }
 
-  Widget _itemContent(
+  /// Contenu du DÉCLENCHEUR — il annonce le **filtre actif**.
+  ///
+  /// 🔴 Repli sur [ZSubfolderNavSpec.allSubfoldersLabel], **jamais** sur
+  /// `rootItemLabel` : « aucun filtre » se dit « tous les sous-dossiers », alors
+  /// que la ligne racine de la feuille désigne le CONTENEUR (CR-IFFD-46,
+  /// point 1). Aucun `rootIcon` non plus, pour la même raison.
+  Widget _triggerContent(
     BuildContext context,
     ZSubfolderRef? refOrNull,
     bool selected,
@@ -190,6 +203,20 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     selected: selected,
   );
 
+  /// Contenu d'un ITEM de la feuille — la ligne racine y désigne le conteneur.
+  Widget _sheetItemContent(
+    BuildContext context,
+    ZSubfolderRef? refOrNull,
+    bool selected,
+  ) => zBuildSubfolderItemContent(
+    context,
+    spec: widget.spec,
+    refOrNull: refOrNull,
+    label: refOrNull?.label ?? zSubfolderRootItemLabel(widget.spec),
+    selected: selected,
+    rootIcon: widget.spec.rootItemIcon,
+  );
+
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
@@ -198,6 +225,11 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     // — un builder existant rend donc à l'identique (CR-IFFD-31/CR-IFFD-40).
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.compact,
+      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE. Le déclencheur
+      // et la feuille posent le même `mode` (leurs contraintes de layout sont
+      // les mêmes) mais des `surface` DIFFÉRENTES : c'est ce qui rend les deux
+      // surfaces enfin discernables pour un `itemBuilder` injecté.
+      surface: ZSubfolderSurface.selectorTrigger,
       child: Column(
         key: ZSubfolderSelectorBar.barKey,
         mainAxisSize: MainAxisSize.min,
@@ -220,6 +252,16 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
         ? _trigger(context, theme)
         : _ZTapTargetGuard(
             minSize: _kMinTapTarget,
+            subject: 'déclencheur',
+            token: 'ZcrudTheme.subfolderBarPadding',
+            cause:
+                'La marge extérieure `ZcrudTheme.subfolderBarPadding` retire '
+                'de la largeur au déclencheur, qui est le seul élément '
+                'élastique de la barre : au-delà d\'un certain retrait, il '
+                'passe sous le plancher de cible tactile.',
+            remedy:
+                'Mesuré : à 320 dp de large, la rupture n\'apparaît qu\'au-delà '
+                'de 112 dp de marge PAR CÔTÉ.',
             child: _trigger(context, theme),
           );
     final Row row = Row(
@@ -288,7 +330,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                           Expanded(
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,
-                              child: _itemContent(context, ref, true),
+                              child: _triggerContent(context, ref, true),
                             ),
                           ),
                           SizedBox(width: theme.gapS),
@@ -455,15 +497,28 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     // `null` au lieu de `compact` et pourrait rendre différemment.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.compact,
+      surface: ZSubfolderSurface.selectorSheet,
       child: Builder(
         builder: (BuildContext context) {
           final ZcrudTheme theme = ZcrudTheme.of(context);
           final List<ZSubfolderRef> subfolders = widget.spec.subfolders;
           final String? title = widget.spec.sheetTitle;
           return SafeArea(
-            child: Padding(
-              padding: EdgeInsetsDirectional.all(theme.gapM),
-              child: Column(
+            // CR-IFFD-46, point 4 — marge EXTÉRIEURE adressable, pendant exact
+            // de `subfolderBarPadding` : `null` ⇒ AUCUNE enveloppe dans l'arbre
+            // (neutralité littérale, pas seulement « même apparence »).
+            // Posée SOUS la `SafeArea` et AU-DESSUS de la gouttière interne :
+            // elle s'AJOUTE à `gapM` au lieu de la remplacer — cf. le dartdoc
+            // du token. Elle est aussi sous le `constraints` de
+            // `showModalBottomSheet` : le plafond de 80 % de hauteur d'écran
+            // (v0.36.0) reste posé sur la feuille elle-même, cette marge ne
+            // peut donc pas le déborder — elle réduit la hauteur du CONTENU,
+            // que la liste `Flexible` absorbe.
+            child: _sheetPadding(
+              theme,
+              Padding(
+                padding: EdgeInsetsDirectional.all(theme.gapM),
+                child: Column(
                 key: ZSubfolderSelectorBar.sheetKey,
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -475,7 +530,15 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                       child: Text(
                         title,
                         key: ZSubfolderSelectorBar.sheetTitleKey,
-                        textAlign: TextAlign.start,
+                        // CR-IFFD-46, point 2 — alignement ADRESSABLE.
+                        // `null` ⇒ `start`, rendu strictement inchangé.
+                        // La `Column` est en `crossAxisAlignment: stretch` : le
+                        // `Text` reçoit donc TOUTE la largeur, et l'alignement
+                        // est réellement observable (sur une boîte ajustée au
+                        // texte, il n'aurait rien fait — c'est ce que la garde
+                        // vérifie par une mesure de position, pas de propriété).
+                        textAlign:
+                            theme.subfolderSheetTitleAlign ?? TextAlign.start,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
@@ -502,7 +565,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                   if (widget.spec.addAction != null &&
                       widget.spec.addPlacement.inSheet)
                     _footerAdd(context, theme),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -511,10 +575,52 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     );
   }
 
+  /// Point 4 de CR-IFFD-46 — enveloppe de marge extérieure de la FEUILLE.
+  ///
+  /// `null` ⇒ [child] rendu tel quel : aucun élément supplémentaire dans
+  /// l'arbre (AD-4), exactement comme `_triggerChrome` et l'enveloppe de la
+  /// barre.
+  Widget _sheetPadding(ZcrudTheme theme, Widget child) {
+    final EdgeInsetsGeometry? padding = theme.subfolderSheetPadding;
+    if (padding == null) return child;
+    return Padding(
+      key: ZSubfolderSelectorBar.sheetPaddingKey,
+      // `EdgeInsetsGeometry` : un `EdgeInsetsDirectional` est résolu par la
+      // `Directionality` re-posée dans la feuille et bascule en RTL (AD-13).
+      padding: padding,
+      child: child,
+    );
+  }
+
+  /// Dénonciation de cible tactile pour les ITEMS de la feuille — posée
+  /// UNIQUEMENT sous `subfolderSheetPadding`, comme son pendant de la barre.
+  Widget _sheetTapGuard(ZcrudTheme theme, Widget child) {
+    if (theme.subfolderSheetPadding == null) return child;
+    return _ZTapTargetGuard(
+      minSize: _kMinTapTarget,
+      subject: 'item de la feuille',
+      token: 'ZcrudTheme.subfolderSheetPadding',
+      cause:
+          'La marge extérieure `ZcrudTheme.subfolderSheetPadding` retire de la '
+          'largeur aux items, seuls éléments élastiques de la feuille : au-delà '
+          'd\'un certain retrait, ils passent sous le plancher de cible '
+          'tactile. Le plafond de 80 % de hauteur d\'écran de la feuille, lui, '
+          'n\'est PAS en cause — il est posé au-dessus de cette marge et reste '
+          'tenu.',
+      remedy:
+          'Mesuré : à 320 dp de large, la rupture n\'apparaît qu\'au-delà de '
+          '128 dp de marge PAR CÔTÉ.',
+      child: child,
+    );
+  }
+
   /// Un item de la feuille. [refOrNull] `null` ⇒ item racine (non indenté).
   Widget _item(BuildContext context, ZcrudTheme theme, ZSubfolderRef? ref) {
     final String? id = ref?.id;
-    final String label = ref?.label ?? widget.spec.allSubfoldersLabel;
+    // CR-IFFD-46, point 1 — l'ANNONCE a11y de l'item suit le libellé RENDU :
+    // les laisser diverger ferait dire au lecteur d'écran autre chose que ce
+    // que l'œil lit, ce qui est pire que l'absence du réglage (AD-13).
+    final String label = ref?.label ?? zSubfolderRootItemLabel(widget.spec);
     final Widget row = ValueListenableBuilder<String?>(
       valueListenable: widget.selected,
       builder: (context, current, _) {
@@ -536,14 +642,21 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
         return Row(
           children: <Widget>[
             Expanded(
-              child: Semantics(
-                container: true,
-                button: true,
-                selected: isSelected,
-                label: label,
-                excludeSemantics: true,
-                onTap: () => _select(context, id),
-                child: InkWell(
+              // CR-IFFD-46, point 4 — MÊME arbitrage que CR-IFFD-44, même
+              // garde : sous marge de feuille, l'item est le seul élément
+              // élastique, et c'est sa LARGEUR qui rompt (mesuré jusqu'à 0 dp).
+              // Sans marge, la garde n'est PAS dans l'arbre : rendu strictement
+              // inchangé.
+              child: _sheetTapGuard(
+                theme,
+                Semantics(
+                  container: true,
+                  button: true,
+                  selected: isSelected,
+                  label: label,
+                  excludeSemantics: true,
+                  onTap: () => _select(context, id),
+                  child: InkWell(
                   key: ZSubfolderSelectorBar.itemKey(id ?? ''),
                   onTap: () => _select(context, id),
                   excludeFromSemantics: true,
@@ -565,7 +678,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                       // que chez l'hôte qui fait bien son travail.
                       builder: (BuildContext inner) => Align(
                         alignment: AlignmentDirectional.centerStart,
-                        child: _itemContent(inner, ref, isSelected),
+                        child: _sheetItemContent(inner, ref, isSelected),
+                      ),
                       ),
                     ),
                   ),
@@ -742,22 +856,78 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 ///
 /// La garde n'est posée QUE lorsque la marge est fournie : sans marge, l'arbre
 /// est strictement celui d'avant CR-IFFD-44.
+/// ## CR-IFFD-46, point 4 — la MÊME garde sert la marge de la FEUILLE
+///
+/// Mesures rejouées (écran 320 × 800, 12 sous-dossiers, titre fourni) :
+///
+/// | marge/côté | feuille rendue | colonne de contenu | item racine |
+/// |---|---|---|---|
+/// | *(aucune)* | 320 × 640 | 304 × 624 | 304 × 48 |
+/// | 24 | **320 × 640** | 256 × 576 | 256 × 48 |
+/// | 120 | **320 × 640** | 64 × 384 | **64 × 48** |
+/// | 300 | **320 × 640** | 0 × 24 | **0 × 48** ← plancher ROMPU |
+///
+/// Trois enseignements, symétriques de ceux de la barre :
+/// 1. **Le plafond de 80 % de hauteur d'écran ne bouge JAMAIS** (640 dp =
+///    0,8 × 800 dans les quatre cas) : il est posé en `constraints` sur la
+///    feuille elle-même, donc AU-DESSUS de cette marge. Une marge verticale
+///    généreuse réduit la hauteur du CONTENU, que la liste `Flexible` absorbe.
+/// 2. C'est la **LARGEUR** de l'item qui rompt, pas sa hauteur (miroir exact de
+///    la barre, où c'était aussi l'axe libre qui cédait) — et elle tombe
+///    jusqu'à **0 dp**.
+/// 3. La rupture n'arrive qu'au-delà de **128 dp par côté à 320 dp** (soit 80 %
+///    de la largeur écran en marge). Aucune marge plausible n'y touche.
+///
+/// Le sujet gardé est **chaque ITEM**, pas la colonne : les items de la liste
+/// sont **plus étroits que la racine** de l'indentation de hiérarchie (mesuré :
+/// 279 contre 304 dp). Garder la seule racine aurait laissé une fenêtre de
+/// 25 dp où les items réels rompent pendant que la garde reste verte.
 class _ZTapTargetGuard extends SingleChildRenderObjectWidget {
-  const _ZTapTargetGuard({required this.minSize, required Widget super.child});
+  const _ZTapTargetGuard({
+    required this.minSize,
+    required this.subject,
+    required this.token,
+    required this.cause,
+    required this.remedy,
+    required Widget super.child,
+  });
 
   /// Cible minimale exigée sur les DEUX axes (dp).
   final double minSize;
 
+  /// Élément mesuré, nommé dans le message (« déclencheur », « item »…).
+  final String subject;
+
+  /// Jeton de thème RESPONSABLE — le message doit NOMMER le remède.
+  final String token;
+
+  /// Pourquoi ce jeton écrase cette cible-là.
+  final String cause;
+
+  /// Ce que l'hôte doit faire, avec le seuil MESURÉ.
+  final String remedy;
+
   @override
   _RenderZTapTargetGuard createRenderObject(BuildContext context) =>
-      _RenderZTapTargetGuard(minSize: minSize);
+      _RenderZTapTargetGuard(
+        minSize: minSize,
+        subject: subject,
+        token: token,
+        cause: cause,
+        remedy: remedy,
+      );
 
   @override
   void updateRenderObject(
     BuildContext context,
     _RenderZTapTargetGuard renderObject,
   ) {
-    renderObject.minSize = minSize;
+    renderObject
+      ..minSize = minSize
+      ..subject = subject
+      ..token = token
+      ..cause = cause
+      ..remedy = remedy;
   }
 }
 
@@ -765,7 +935,20 @@ class _RenderZTapTargetGuard extends RenderProxyBox {
   // Champ privé à SETTER (chaque écriture doit `markNeedsLayout`) : un formal
   // d'initialisation ne conviendrait pas.
   // ignore: prefer_initializing_formals
-  _RenderZTapTargetGuard({required double minSize}) : _minSize = minSize;
+  _RenderZTapTargetGuard({
+    required double minSize,
+    required this.subject,
+    required this.token,
+    required this.cause,
+    required this.remedy,
+  }) : _minSize = minSize;
+
+  /// Textes du message — purement diagnostiques (console de debug), jamais
+  /// rendus à l'écran : ils ne relèvent donc pas de la l10n (FR-26).
+  String subject;
+  String token;
+  String cause;
+  String remedy;
 
   double get minSize => _minSize;
   double _minSize;
@@ -791,22 +974,16 @@ class _RenderZTapTargetGuard extends RenderProxyBox {
         FlutterErrorDetails(
           exception: FlutterError.fromParts(<DiagnosticsNode>[
             ErrorSummary(
-              'ZSubfolderSelectorBar : cible tactile ÉCRASÉE — '
+              'ZSubfolderSelectorBar : cible tactile ÉCRASÉE ($subject) — '
               '${size.width.toStringAsFixed(1)} × '
               '${size.height.toStringAsFixed(1)} dp au lieu de '
               '${_minSize.toStringAsFixed(0)} dp minimum (AD-13/NFR-S6).',
             ),
-            ErrorDescription(
-              'La marge extérieure `ZcrudTheme.subfolderBarPadding` retire de '
-              'la largeur au déclencheur, qui est le seul élément élastique de '
-              'la barre : au-delà d\'un certain retrait, il passe sous le '
-              'plancher de cible tactile.',
-            ),
+            ErrorDescription(cause),
             ErrorHint(
-              'Remède : RÉDUIRE `subfolderBarPadding`. Le socle ne la borne pas '
-              'de lui-même — il rendrait alors autre chose que la marge '
-              'demandée, en silence. Mesuré : à 320 dp de large, la rupture '
-              'n\'apparaît qu\'au-delà de 112 dp de marge PAR CÔTÉ.',
+              'Remède : RÉDUIRE `$token`. Le socle ne la borne pas de '
+              'lui-même — il rendrait alors autre chose que la marge '
+              'demandée, en silence. $remedy',
             ),
           ]),
           library: 'zcrud_study',

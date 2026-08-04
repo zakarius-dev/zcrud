@@ -11,6 +11,11 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZToggleController;
+import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
+import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
+    show ZColorPalette, ZFlashcardTag;
+
+import 'z_default_flashcard_card.dart';
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
@@ -65,6 +70,93 @@ class ZStudyToolsSectionSpec {
               (itemIds != null && itemIds.length == itemCount),
           'onReorder != null exige itemIds non-null de longueur itemCount',
         );
+
+  /// Section de **flashcards** dont le socle fournit le rendu d'item
+  /// (**CR-IFFD-47**) — la voie TYPÉE qui **porte les données**.
+  ///
+  /// 🔴 **Pourquoi un constructeur nommé et PAS un `itemBuilder` facultatif.**
+  /// Le descripteur porte `itemCount` + `itemBuilder(context, index)` et
+  /// **aucune donnée** : rendre `itemBuilder` facultatif ne permettrait au socle
+  /// de rendre **rien du tout**, faute de savoir ce qu'est l'item numéro *i*. Ce
+  /// constructeur fournit l'information manquante ([cards]) et fabrique
+  /// lui-même [itemCount] **et** un [itemBuilder] bâti sur
+  /// [ZDefaultFlashcardCard].
+  ///
+  /// ✅ **Non-cassant par construction** : [itemBuilder] reste `required` dans le
+  /// constructeur principal — un hôte qui fournit déjà le sien n'est **pas**
+  /// touché, et ne **peut pas** l'être (aucune branche de repli n'existe).
+  ///
+  /// ⚠️ **Ne propose PAS le réordonnancement** ([onReorder]/[itemIds] restent
+  /// `null`), délibérément. Il exigerait une clé stable par item, or une carte
+  /// **éphémère** (`id == null`, ex. une duplication non persistée) fait
+  /// diverger l'espace d'indices affiché de l'espace persistable : un glisser
+  /// déplacerait **silencieusement la mauvaise carte**. C'est le défaut mesuré
+  /// et fermé dans `ZFlashcardListView` (D1/R3) ; on ne le rouvre pas ici. Un
+  /// hôte qui veut réordonner passe par le constructeur principal, avec ses
+  /// propres `itemIds`.
+  ZStudyToolsSectionSpec.flashcards({
+    required this.id,
+    required this.title,
+    required List<ZFlashcard> cards,
+    required this.emptyState,
+    Map<String, String>? typeLabels,
+    List<ZFlashcardTag> Function(ZFlashcard card)? tagsOf,
+    String? Function(ZFlashcard card)? colorKeyOf,
+    String? emptyTagsLabel,
+    void Function(ZFlashcard card)? onTagsTap,
+    void Function(ZFlashcard card)? onCardTap,
+    void Function(ZFlashcard card)? onCardLongPress,
+    Widget? Function(BuildContext context, ZFlashcard card)? cardTrailingBuilder,
+    ZColorPalette palette = const ZColorPalette.defaultStudy(),
+    int questionMaxLines = 3,
+    this.addAction,
+    this.addActionIcon,
+    this.addActionSemanticLabel,
+    this.axis = Axis.vertical,
+    this.collapsible = false,
+    this.initiallyExpanded = true,
+    this.crossAxisMinItemWidth,
+    this.crossAxisItemHeight,
+    this.crossAxisAspectRatio,
+    this.crossAxisMaxColumns,
+    this.crossAxisVirtualized = false,
+    this.crossAxisViewportHeight,
+    this.collapseSemanticLabel,
+    this.expandSemanticLabel,
+    this.headerCount,
+    this.secondaryAction,
+    this.secondaryActionIcon,
+    this.secondaryActionSemanticLabel,
+    this.expandController,
+  })  : itemCount = cards.length,
+        itemIds = null,
+        onReorder = null,
+        reorderHandleSemanticLabel = null,
+        reorderHandleIcon = null,
+        reorderMoveBeforeSemanticLabel = null,
+        reorderMoveAfterSemanticLabel = null,
+        itemBuilder = ((BuildContext context, int index) {
+          final ZFlashcard card = cards[index];
+          return ZDefaultFlashcardCard(
+            // Clé STABLE par carte (AD-2) : l'identité d'un item suit sa carte,
+            // jamais sa position — patron `ZFlashcardListView._buildTile`.
+            key: ValueKey<String>(
+              'zDefaultFlashcardCard-${card.id ?? 'ephemeral-$index'}',
+            ),
+            card: card,
+            typeLabels: typeLabels,
+            tags: tagsOf?.call(card) ?? const <ZFlashcardTag>[],
+            emptyTagsLabel: emptyTagsLabel,
+            onTagsTap: onTagsTap == null ? null : () => onTagsTap(card),
+            palette: palette,
+            colorKey: colorKeyOf?.call(card),
+            questionMaxLines: questionMaxLines,
+            trailing: cardTrailingBuilder?.call(context, card),
+            onTap: onCardTap == null ? null : () => onCardTap(card),
+            onLongPress:
+                onCardLongPress == null ? null : () => onCardLongPress(card),
+          );
+        });
 
   /// Identifiant STABLE de la section (String opaque). Sert de clé de frontière
   /// de widget (`ValueKey('section:$id')`) — DOIT être unique dans une page.

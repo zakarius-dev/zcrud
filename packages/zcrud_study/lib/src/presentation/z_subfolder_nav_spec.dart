@@ -110,31 +110,109 @@ enum ZSubfolderLayoutMode {
       maybeOf(context) ?? ZSubfolderLayoutMode.compact;
 }
 
-/// Scope exposant le [ZSubfolderLayoutMode] courant à l'`itemBuilder` injecté.
+/// **Quelle surface concrète** invoque un [ZSubfolderItemBuilder] — CR-IFFD-46,
+/// point 1.
+///
+/// 🔴 **Le défaut que ce type ferme, et pourquoi [ZSubfolderLayoutMode] ne le
+/// fermait pas.** Avant CR-IFFD-46, la barre de sélection posait
+/// `ZSubfolderLayoutMode.compact` sur son DÉCLENCHEUR *et* sur sa FEUILLE, et
+/// `zBuildSubfolderItemContent` remettait la MÊME sentinelle
+/// (`ZSubfolderRef(id: '', label: …)`) dans les deux cas. Un `itemBuilder`
+/// injecté était donc **incapable de savoir laquelle des deux surfaces il
+/// rendait** — alors qu'elles répondent à deux questions différentes :
+/// * le **déclencheur** annonce le FILTRE ACTIF (« aucun » se dit « tous ») ;
+/// * la **ligne racine** de la feuille désigne le CONTENEUR (elle porte
+///   naturellement son nom).
+///
+/// [ZSubfolderNavSpec.rootItemLabel] résout le cas du libellé par défaut ; ce
+/// type-ci résout le cas GÉNÉRAL, pour l'hôte qui rend son propre contenu.
+///
+/// 🔵 **Second axe du scope EXISTANT, jamais un canal concurrent.** Trois voies
+/// étaient possibles, une seule tient :
+/// 1. ajouter une valeur à [ZSubfolderLayoutMode] — **refusé** : ce dépôt a
+///    déjà tranché (cf. [ZSubfolderNarrowMode]) qu'une valeur de plus casse
+///    tout `switch` exhaustif d'hôte, or c'est le patron que le dartdoc de
+///    [ZSubfolderItemBuilder] recommande ;
+/// 2. un SECOND `InheritedWidget` — **refusé** : deux scopes à poser, donc deux
+///    occasions d'en oublier un (le socle en pose déjà cinq) ;
+/// 3. un **second champ du scope existant** — retenu. Un seul widget à poser,
+///    une seule occasion de se tromper, et les deux axes voyagent ensemble.
+///
+/// Les deux axes restent bien **orthogonaux** : [ZSubfolderLayoutMode] dit
+/// quelles CONTRAINTES DE LAYOUT l'item subit ([selectorSheet] et [chips] sont
+/// toutes deux `compact`, et pourtant l'une borne la largeur et l'autre pas) ;
+/// ce type-ci dit QUELLE SURFACE le demande.
+enum ZSubfolderSurface {
+  /// Colonne verticale de `ZSubfolderSidebar` (≥ 600 dp).
+  sidebar,
+
+  /// Rangée de puces défilante de `ZSubfolderCompactSelector`
+  /// ([ZSubfolderNarrowMode.compact], historique).
+  chips,
+
+  /// **Ligne unique** de `ZSubfolderSelectorBar` — elle annonce l'élément
+  /// COURANT, pas un choix offert. Un seul item y est rendu à la fois, et il
+  /// n'est **jamais** cliqué pour sélectionner : le tap OUVRE la feuille.
+  selectorTrigger,
+
+  /// **Feuille modale** déployée par `ZSubfolderSelectorBar` — la liste des
+  /// choix offerts, item racine compris.
+  selectorSheet;
+
+  /// La surface borne-t-elle la largeur de l'item ?
+  ///
+  /// `false` pour [chips] seule (rangée défilante horizontale) : y poser un
+  /// `Flexible`/`Expanded` lèverait *« RenderFlex children have non-zero flex
+  /// but incoming width constraints are unbounded »*. C'est la propriété que
+  /// [ZSubfolderNavSpec.itemMaxLines] consulte avant d'autoriser le retour à la
+  /// ligne — et la démonstration que ce second axe est **porteur**, pas
+  /// décoratif : [selectorSheet] et [chips] partagent le même
+  /// [ZSubfolderLayoutMode] et diffèrent ici.
+  bool get boundsWidth => this != ZSubfolderSurface.chips;
+
+  /// Surface courante, ou `null` hors d'une surface de navigation zcrud — et
+  /// aussi sous une **coquille d'hôte** (`ZSubfolderNavRendererScope`), dont le
+  /// socle ne peut pas nommer la forme. `null` ⇒ l'hôte décide seul (AD-4).
+  static ZSubfolderSurface? maybeOf(BuildContext context) =>
+      ZSubfolderLayoutScope.maybeOf2(context)?.surface;
+}
+
+/// Scope exposant le [ZSubfolderLayoutMode] **et** la [ZSubfolderSurface]
+/// courants à l'`itemBuilder` injecté.
 ///
 /// Posé par `ZSubfolderSidebar` ([ZSubfolderLayoutMode.sidebar]) et par
 /// `ZSubfolderCompactSelector` ([ZSubfolderLayoutMode.compact]) AU-DESSUS de
 /// tout le sous-arbre d'items. L'hôte n'a normalement pas à l'instancier : il
-/// lit `ZSubfolderLayoutMode.of(context)`.
+/// lit `ZSubfolderLayoutMode.of(context)` / `ZSubfolderSurface.maybeOf(context)`.
 class ZSubfolderLayoutScope extends InheritedWidget {
-  /// Pose [mode] sur tout [child].
+  /// Pose [mode] (et, depuis CR-IFFD-46, [surface]) sur tout [child].
   const ZSubfolderLayoutScope({
     required this.mode,
     required super.child,
+    this.surface,
     super.key,
   });
 
   /// Côté du seuil rendu par la surface englobante.
   final ZSubfolderLayoutMode mode;
 
+  /// Surface concrète qui rend l'item (CR-IFFD-46, point 1).
+  ///
+  /// Paramètre **optionnel** : un scope posé par du code existant (hôte
+  /// compris) reste valide et rend `null` ici — aucune rupture d'API.
+  final ZSubfolderSurface? surface;
+
   /// Mode courant, ou `null` si aucun scope n'englobe [context].
-  static ZSubfolderLayoutMode? maybeOf(BuildContext context) => context
-      .dependOnInheritedWidgetOfExactType<ZSubfolderLayoutScope>()
-      ?.mode;
+  static ZSubfolderLayoutMode? maybeOf(BuildContext context) =>
+      maybeOf2(context)?.mode;
+
+  /// Scope courant complet (les deux axes), ou `null`.
+  static ZSubfolderLayoutScope? maybeOf2(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ZSubfolderLayoutScope>();
 
   @override
   bool updateShouldNotify(ZSubfolderLayoutScope oldWidget) =>
-      oldWidget.mode != mode;
+      oldWidget.mode != mode || oldWidget.surface != surface;
 }
 
 /// Surface de navigation rendue SOUS le seuil de bascule (< 600 dp) —
@@ -328,6 +406,9 @@ class ZSubfolderNavSpec {
   const ZSubfolderNavSpec({
     required this.subfolders,
     required this.allSubfoldersLabel,
+    this.rootItemLabel,
+    this.rootItemIcon,
+    this.itemMaxLines,
     this.itemBuilder,
     this.itemActionBuilder,
     this.narrowMode = ZSubfolderNarrowMode.selector,
@@ -351,7 +432,11 @@ class ZSubfolderNavSpec {
     this.onSidebarWidthChanged,
     this.selectionController,
     this.onSelectionChanged,
-  })  : assert(minSidebarWidth > 0, 'minSidebarWidth doit être > 0'),
+  })  : assert(
+          itemMaxLines == null || itemMaxLines > 0,
+          'itemMaxLines doit être > 0 (0 ligne = libellé invisible)',
+        ),
+        assert(minSidebarWidth > 0, 'minSidebarWidth doit être > 0'),
         assert(
           maxSidebarWidthFraction > 0 && maxSidebarWidthFraction <= 1,
           'maxSidebarWidthFraction ∈ ]0, 1]',
@@ -365,6 +450,106 @@ class ZSubfolderNavSpec {
   /// Libellé **injecté** de l'item racine « Tous les sous-dossiers »
   /// (`id` de sélection `null`). Toujours présent en tête (AC8).
   final String allSubfoldersLabel;
+
+  /// Libellé **injecté** de la **LIGNE RACINE** des surfaces de liste
+  /// (CR-IFFD-46, point 1). `null` ⇒ repli sur [allSubfoldersLabel] ⇒ rendu
+  /// strictement inchangé.
+  ///
+  /// 🔴 **Deux surfaces, deux questions — c'est le défaut corrigé.**
+  /// [allSubfoldersLabel] servait indistinctement :
+  /// * le **DÉCLENCHEUR** de `ZSubfolderSelectorBar`, qui annonce le FILTRE
+  ///   ACTIF — « aucun filtre » s'y dit bien « tous les sous-dossiers » ;
+  /// * la **ligne racine** de la feuille, de la sidebar et de la rangée de
+  ///   puces, qui désigne le CONTENEUR — elle porte naturellement son nom
+  ///   (« Chimie organique », « Racine du dossier »…).
+  ///
+  /// Une seule chaîne ne peut pas répondre aux deux : c'est ce que ce champ
+  /// sépare. [allSubfoldersLabel] reste le libellé du **déclencheur** (et le
+  /// repli universel des libellés a11y) ; ce champ-ci ne vaut QUE pour la
+  /// ligne racine **en tant qu'item d'une liste** —
+  /// [ZSubfolderSurface.selectorSheet], [ZSubfolderSurface.sidebar],
+  /// [ZSubfolderSurface.chips]. Le déclencheur ne le lit **jamais**.
+  ///
+  /// ⚠️ Un [itemBuilder] injecté le reçoit dans la sentinelle racine
+  /// (`ZSubfolderRef(id: '', label: …)`) : il rend donc le bon libellé sans
+  /// rien changer. Pour discriminer plus finement, il lit
+  /// [ZSubfolderSurface.maybeOf].
+  final String? rootItemLabel;
+
+  /// Glyphe **injecté** de tête de la ligne racine (CR-IFFD-46, point 1, par
+  /// symétrie avec [rootItemLabel]). `null` ⇒ **absent de l'arbre** (AD-4).
+  ///
+  /// Même portée que [rootItemLabel] : les surfaces de LISTE, jamais le
+  /// déclencheur. Il occupe la place que la pastille d'accent tient sur un
+  /// sous-dossier — la racine n'ayant ni `colorKey` ni `count`, sa ligne était
+  /// jusqu'ici la seule sans repère visuel.
+  ///
+  /// Rendu par le **chrome neutre** du socle : un [itemBuilder] injecté rend son
+  /// propre contenu et décide seul (le socle n'a alors rien à surimposer).
+  final IconData? rootItemIcon;
+
+  /// Nombre MAXIMAL de lignes du libellé d'item (CR-IFFD-46, point 3).
+  ///
+  /// `null` (**défaut**) ⇒ rendu strictement inchangé : `Text` sans `maxLines`,
+  /// **sans** `Flexible` — donc exactement l'arbre d'avant CR-IFFD-46.
+  /// Non-null ⇒ le libellé est autorisé à revenir à la ligne jusqu'à cette
+  /// borne, puis s'abrège en `…` ([TextOverflow.ellipsis]).
+  ///
+  /// 🔴 **Sans effet sur [ZSubfolderSurface.chips], et c'est MESURÉ, pas
+  /// omis.** Le retour à la ligne exige une largeur bornée ; la rangée de puces
+  /// défile horizontalement, donc sa largeur est **non bornée**. Y poser le
+  /// `Flexible` qu'exige le retour à la ligne lève *« RenderFlex children have
+  /// non-zero flex but incoming width constraints are unbounded »* — la voie
+  /// est structurellement fermée, comme l'est déjà le `LayoutBuilder` décrit
+  /// sur [ZSubfolderItemBuilder]. Le socle **n'y applique donc rien** plutôt que
+  /// d'y planter. C'est [ZSubfolderSurface.boundsWidth] qui tranche.
+  ///
+  /// 🔴 **Ce réglage CORRIGE un défaut, il ne fait pas qu'offrir un choix.**
+  /// Mesuré sur le rendu ACTUEL (`null`), feuille ouverte à 320 dp avec un
+  /// libellé de 73 caractères : le `Text` est laissé à sa largeur intrinsèque de
+  /// **1040,3 dp** dans une boîte de 279 dp et le socle lève
+  /// *« A RenderFlex overflowed by 777 pixels on the right »* — sans `…`, sans
+  /// retour à la ligne. C'est le pire des états, et c'est celui d'aujourd'hui.
+  /// Le défaut n'est pas modifié pour autant (neutralité littérale exigée par
+  /// AD-4) ; il est désormais **réparable en un champ**.
+  ///
+  /// ⚠️ **ARBITRAGE TRANCHÉ — la bande hissée n'est PAS recalculée, et la
+  /// mesure dit pourquoi.** Le même libellé sert la ligne racine **et** le
+  /// déclencheur : la borne peut donc rendre le déclencheur plus haut, or sous
+  /// [ZSubfolderNavPlacement.aboveTabBar] la hauteur de bande est **déclarée**
+  /// (`ZStudyFolderDetail.subfolderNavBandHeight`). Mesures rejouées (écran
+  /// 500 × 800, libellé long **sélectionné**, bande laissée au défaut de 48 dp) :
+  ///
+  /// | `itemMaxLines` | `Text` rendu | déclencheur | bande déclarée 48 |
+  /// |---|---|---|---|
+  /// | `null` *(défaut)* | 1040,3 × 20 | 48 dp | **débordement horizontal de 584 dp** |
+  /// | `2` | 263 × 40 | **48 dp** | **aucune exception** |
+  /// | `3` | 263 × 60 | 68 dp | *« overflowed by 20 pixels on the bottom »* |
+  /// | `4` | 263 × 60 | 68 dp | idem (le texte plafonne à 3 lignes rendues) |
+  ///
+  /// Deux conclusions, aucune supposée :
+  /// 1. **À 2 lignes, la bande ne coûte RIEN** : 40 dp de texte + 8 dp de
+  ///    gouttière = exactement les 48 dp du plancher de cible tactile. Le cas
+  ///    que l'hôte redoutait ne se produit pas — il ne l'avait pas mesuré.
+  /// 2. **À 3 lignes et plus, la bande sous-déclarée DÉBORDE bruyamment**
+  ///    (20 dp, signalés par Flutter) et jamais en silence ; déclarer
+  ///    `subfolderNavBandHeight: 68` suffit (mesuré : aucune exception).
+  ///
+  /// Recalculer aurait supposé de connaître la largeur rendue et la longueur du
+  /// libellé **avant** la mise en page, ce que le créneau `bottom:` de l'app-bar
+  /// interdit (cf. [ZSubfolderNavPlacement.aboveTabBar]) : le socle rendrait
+  /// alors une hauteur devinée, donc autre chose que ce que l'hôte a déclaré.
+  /// **Dénoncer plutôt que borner en silence.**
+  ///
+  /// ✅ **Aucune régression de cible tactile** : mesuré, elles **grandissent**
+  /// (48 → 68 dp à 3 lignes) — le `ConstrainedBox(minHeight: 48)` est un
+  /// plancher, jamais un plafond.
+  ///
+  /// ✅ **Aucun effet sur la hauteur de la FEUILLE** : mesuré à 12 sous-dossiers
+  /// aux libellés longs, la colonne de contenu vaut 304 × 624 dp avec `null`
+  /// **comme** avec `2` — le plafond de 80 % de hauteur d'écran est tenu par la
+  /// feuille elle-même et les items restent dans la liste défilante.
+  final int? itemMaxLines;
 
   /// Constructeur d'item **injectable** (défaut : rangée neutre thémée, D3).
   final ZSubfolderItemBuilder? itemBuilder;

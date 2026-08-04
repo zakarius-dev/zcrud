@@ -50,6 +50,15 @@ class ZSubfolderNarrowNav extends StatelessWidget {
         spec: spec,
         selected: selected,
         onSelect: onSelect,
+        // 🔵 CR-IFFD-46, point 1 — la coquille d'hôte garde
+        // `allSubfoldersLabel` pour la racine, et **ne reçoit AUCUNE
+        // `ZSubfolderSurface`** (`maybeOf` y rend `null`). Ce n'est pas un
+        // oubli : le socle ne sait pas quelle FORME la coquille rend — un
+        // déclencheur ? une liste ? les deux ? Lui imposer `rootItemLabel`
+        // reviendrait à décider à sa place laquelle des deux questions elle
+        // pose, soit exactement le défaut que ce point corrige. La coquille
+        // détient sa forme : elle lit `spec.rootItemLabel` elle-même si elle
+        // rend une liste.
         itemContentBuilder: (context, refOrNull, isSelected) =>
             zBuildSubfolderItemContent(
               context,

@@ -132,6 +132,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subfolderTriggerExpandedIcon,
     this.subfolderSelectedEmphasis,
     this.subfolderBarPadding,
+    this.subfolderSheetPadding,
+    this.subfolderSheetTitleAlign,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -350,6 +352,49 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// choix, jamais un défaut du socle.
   final EdgeInsetsGeometry? subfolderBarPadding;
 
+  /// Marge EXTÉRIEURE du contenu de la **feuille** de fratrie (CR-IFFD-46,
+  /// point 4) — **pendant exact** de [subfolderBarPadding], côté feuille.
+  ///
+  /// `null` ⇒ **aucune enveloppe dans l'arbre**, rendu strictement inchangé (la
+  /// feuille conserve sa seule gouttière interne `gapM`).
+  ///
+  /// ⚠️ **S'ajoute à la gouttière interne, il ne la remplace pas** : la
+  /// neutralité littérale exige que `null` laisse l'arbre d'avant CR-IFFD-46.
+  /// Remplacer la gouttière aurait fait de « je veux 4 dp de plus » un « je
+  /// perds les 16 dp que j'avais ».
+  ///
+  /// ⚠️ **Elle n'entame PAS le plafond de 80 % de hauteur d'écran** de la
+  /// feuille (v0.36.0) : ce plafond est posé en `constraints` sur la feuille
+  /// ELLE-MÊME par `showModalBottomSheet`, donc au-DESSUS de cette marge. Une
+  /// marge verticale généreuse réduit la hauteur du CONTENU, jamais celle de la
+  /// feuille — et la liste, `Flexible`, absorbe la différence.
+  ///
+  /// **AD-13** : `EdgeInsetsGeometry` — un `EdgeInsetsDirectional` bascule en
+  /// RTL. Un `EdgeInsets.only(left:)` reste possible pour l'hôte qui veut
+  /// délibérément une marge physique ; c'est SON choix, jamais un défaut du
+  /// socle (même arbitrage que [subfolderBarPadding]).
+  final EdgeInsetsGeometry? subfolderSheetPadding;
+
+  /// Alignement du **titre** de la feuille de fratrie (CR-IFFD-46, point 2).
+  ///
+  /// `null` ⇒ [TextAlign.start], rendu strictement inchangé.
+  ///
+  /// **AD-13** : préférer les valeurs **directionnelles** ([TextAlign.start],
+  /// [TextAlign.end]) ou la valeur neutre [TextAlign.center] — elles basculent
+  /// (ou restent neutres) en RTL. [TextAlign.left]/[TextAlign.right] restent
+  /// acceptées : ce sont des alignements **physiques**, donc un choix délibéré
+  /// de l'hôte, jamais une décision du socle. Même arbitrage que
+  /// [subfolderBarPadding] vis-à-vis d'`EdgeInsets.only(left:)` : le socle ne
+  /// borne pas ce que l'hôte demande, il documente ce qu'il recommande.
+  ///
+  /// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : c'est une
+  /// décision d'**apparence** pure — elle ne fait apparaître ni disparaître
+  /// aucun contrôle, et n'altère aucune donnée de fratrie (critère posé par
+  /// `ZSubfolderAddPlacement`, qui est resté dans la spec pour la raison
+  /// inverse). Le titre lui-même, en revanche, est un LIBELLÉ : il reste dans
+  /// la spec (`sheetTitle`), car un paquet ne code aucune chaîne (FR-26).
+  final TextAlign? subfolderSheetTitleAlign;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -516,6 +561,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     IconData? subfolderTriggerExpandedIcon,
     ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis,
     EdgeInsetsGeometry? subfolderBarPadding,
+    EdgeInsetsGeometry? subfolderSheetPadding,
+    TextAlign? subfolderSheetTitleAlign,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -576,6 +623,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     subfolderSelectedEmphasis:
         subfolderSelectedEmphasis ?? this.subfolderSelectedEmphasis,
     subfolderBarPadding: subfolderBarPadding ?? this.subfolderBarPadding,
+    subfolderSheetPadding: subfolderSheetPadding ?? this.subfolderSheetPadding,
+    subfolderSheetTitleAlign:
+        subfolderSheetTitleAlign ?? this.subfolderSheetTitleAlign,
   );
 
   @override
@@ -757,6 +807,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.subfolderBarPadding,
         t,
       ),
+      // CR-IFFD-46, point 4 — même nature que `subfolderBarPadding` : marge
+      // CONTINUE qui s'interpole, `null` des DEUX côtés RESTE `null` (sans quoi
+      // « aucune enveloppe dans l'arbre » serait GELÉ à la première transition
+      // de thème).
+      subfolderSheetPadding: _lerpNullableInsets(
+        subfolderSheetPadding,
+        other.subfolderSheetPadding,
+        t,
+      ),
+      // CR-IFFD-46, point 2 — token DISCRET (aucun alignement intermédiaire
+      // n'existe entre `start` et `center`) : bascule au point milieu, même
+      // invariant de `null` que les tokens discrets ci-dessus.
+      subfolderSheetTitleAlign: t < 0.5
+          ? subfolderSheetTitleAlign
+          : other.subfolderSheetTitleAlign,
     );
   }
 }

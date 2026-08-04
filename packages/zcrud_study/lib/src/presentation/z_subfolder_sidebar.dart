@@ -36,6 +36,7 @@ import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent,
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 
 import 'z_subfolder_item_chrome.dart';
+import 'z_subfolder_item_content.dart' show zSubfolderRootItemLabel;
 import 'z_subfolder_nav_spec.dart';
 import 'z_subfolder_ref.dart';
 
@@ -155,6 +156,8 @@ class ZSubfolderSidebar extends StatelessWidget {
     // sait donc que sa largeur est BORNÉE (CR-IFFD-31) — sans 4ᵉ paramètre.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.sidebar,
+      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE.
+      surface: ZSubfolderSurface.sidebar,
       child: collapsed
           ? _buildCollapsed(context, theme)
           : _buildExpanded(context, theme),
@@ -238,7 +241,11 @@ class ZSubfolderSidebar extends StatelessWidget {
         theme: theme,
         // Item racine : id de sélection `null`, aucune couleur/compteur.
         refOrNull: null,
-        label: spec.allSubfoldersLabel,
+        // CR-IFFD-46, point 1 — la ligne racine désigne le CONTENEUR ; elle
+        // suit donc `rootItemLabel` (repli : `allSubfoldersLabel`), via la
+        // source UNIQUE de ce repli.
+        label: zSubfolderRootItemLabel(spec),
+        rootIcon: spec.rootItemIcon,
         index: -1,
         selected: selected,
         onSelect: onSelect,
@@ -483,6 +490,7 @@ class _SubfolderRow extends StatelessWidget {
     required this.refOrNull,
     required this.label,
     required this.index,
+    this.rootIcon,
     required this.selected,
     required this.onSelect,
     super.key,
@@ -494,6 +502,11 @@ class _SubfolderRow extends StatelessWidget {
   /// `null` pour l'item racine « Tous les sous-dossiers ».
   final ZSubfolderRef? refOrNull;
   final String label;
+
+  /// CR-IFFD-46, point 1 — glyphe de tête de la ligne RACINE (`null` ⇒ absent
+  /// de l'arbre, AD-4). Passé explicitement par le site racine : `refOrNull`
+  /// seul ne suffirait pas à distinguer les surfaces.
+  final IconData? rootIcon;
 
   /// Index LINÉAIRE dans `subfolders` (−1 pour la racine, non réordonnable).
   final int index;
@@ -582,6 +595,13 @@ class _SubfolderRow extends StatelessWidget {
         isSelected ? scheme.onSecondaryContainer : scheme.onSurface;
 
     final children = <Widget>[
+      // CR-IFFD-46, point 1 — glyphe de tête de la RACINE, à la place que la
+      // pastille d'accent tient sur un sous-dossier. `null` ⇒ absent (AD-4).
+      // Couleur DÉRIVÉE du premier plan de l'item (jamais littérale, FR-26).
+      if (ref == null && rootIcon != null) ...<Widget>[
+        Icon(rootIcon, color: fg),
+        SizedBox(width: theme.gapS),
+      ],
       if (ref?.colorKey != null) ...<Widget>[
         ZSubfolderAccentPastille(colorKey: ref!.colorKey!),
         SizedBox(width: theme.gapS),
@@ -589,7 +609,11 @@ class _SubfolderRow extends StatelessWidget {
       Expanded(
         child: Text(
           label,
-          maxLines: 1,
+          // CR-IFFD-46, point 3 — borne ADRESSABLE. `null` ⇒ 1 ligne, rendu
+          // strictement inchangé. La largeur est BORNÉE ici (`Expanded` dans
+          // une colonne de largeur finie) : le retour à la ligne y est
+          // réellement possible, contrairement à la rangée de puces.
+          maxLines: spec.itemMaxLines ?? 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.start,
           style: (Theme.of(context).textTheme.bodyMedium ?? const TextStyle())

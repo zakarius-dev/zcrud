@@ -355,4 +355,115 @@ void main() {
       }
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // CR-IFFD-46 — marge de la FEUILLE + alignement de son TITRE
+  // ---------------------------------------------------------------------------
+  group('CR-IFFD-46 — `subfolderSheetPadding` (marge CONTINUE)', () {
+    test('`null` par DÉFAUT ⇒ aucune enveloppe chez le consommateur', () {
+      expect(const ZcrudTheme().subfolderSheetPadding, isNull);
+    });
+
+    test('copyWith transporte le token', () {
+      expect(
+        const ZcrudTheme()
+            .copyWith(
+              subfolderSheetPadding: const EdgeInsetsDirectional.only(top: 12),
+            )
+            .subfolderSheetPadding,
+        const EdgeInsetsDirectional.only(top: 12),
+      );
+    });
+
+    test('🔴 lerp de deux `null` RESTE `null` — l\'héritage n\'est pas GELÉ',
+        () {
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        expect(
+          a.lerp(const ZcrudTheme(), t).subfolderSheetPadding,
+          isNull,
+          reason: 't=$t',
+        );
+      }
+    });
+
+    test('lerp INTERPOLE réellement (ce n\'est pas une bascule)', () {
+      const ZcrudTheme a = ZcrudTheme(
+        subfolderSheetPadding: EdgeInsetsDirectional.only(start: 0),
+      );
+      const ZcrudTheme b = ZcrudTheme(
+        subfolderSheetPadding: EdgeInsetsDirectional.only(start: 40),
+      );
+      expect(
+        (a.lerp(b, 0.5).subfolderSheetPadding! as EdgeInsetsDirectional).start,
+        20,
+      );
+      expect(
+        (a.lerp(b, 1).subfolderSheetPadding! as EdgeInsetsDirectional).start,
+        40,
+      );
+    });
+
+    test('🔴 lerp PRÉSERVE la nature DIRECTIONNELLE (AD-13)', () {
+      const ZcrudTheme a = ZcrudTheme();
+      const ZcrudTheme b = ZcrudTheme(
+        subfolderSheetPadding: EdgeInsetsDirectional.only(start: 40),
+      );
+      for (final double t in <double>[0.25, 0.5, 1]) {
+        expect(a.lerp(b, t).subfolderSheetPadding, isA<EdgeInsetsDirectional>());
+        expect(b.lerp(a, t).subfolderSheetPadding, isA<EdgeInsetsDirectional>());
+      }
+    });
+
+    test('🔴 les DEUX marges de fratrie sont INDÉPENDANTES', () {
+      // Une garde qui ne mesurerait qu'un seul token resterait verte si les
+      // deux étaient câblés sur le MÊME champ — défaut invisible au rendu tant
+      // que l'hôte n'en règle qu'un.
+      const ZcrudTheme t = ZcrudTheme(
+        subfolderBarPadding: EdgeInsetsDirectional.only(start: 4),
+      );
+      expect(t.subfolderSheetPadding, isNull);
+      expect(
+        t
+            .copyWith(
+              subfolderSheetPadding: const EdgeInsetsDirectional.only(start: 9),
+            )
+            .subfolderBarPadding,
+        const EdgeInsetsDirectional.only(start: 4),
+      );
+    });
+  });
+
+  group('CR-IFFD-46 — `subfolderSheetTitleAlign` (token DISCRET)', () {
+    test('`null` par DÉFAUT ⇒ repli `TextAlign.start` chez le consommateur', () {
+      expect(const ZcrudTheme().subfolderSheetTitleAlign, isNull);
+    });
+
+    test('copyWith transporte le token', () {
+      expect(
+        const ZcrudTheme()
+            .copyWith(subfolderSheetTitleAlign: TextAlign.center)
+            .subfolderSheetTitleAlign,
+        TextAlign.center,
+      );
+    });
+
+    test('🔴 lerp de deux `null` RESTE `null` — le repli n\'est pas GELÉ', () {
+      const ZcrudTheme a = ZcrudTheme();
+      for (final double t in <double>[0, 0.25, 0.5, 0.75, 1]) {
+        expect(
+          a.lerp(const ZcrudTheme(), t).subfolderSheetTitleAlign,
+          isNull,
+          reason: 't=$t',
+        );
+      }
+    });
+
+    test('lerp BASCULE au point milieu (aucun alignement intermédiaire)', () {
+      const ZcrudTheme a = ZcrudTheme(subfolderSheetTitleAlign: TextAlign.start);
+      const ZcrudTheme b = ZcrudTheme(subfolderSheetTitleAlign: TextAlign.end);
+      expect(a.lerp(b, 0.25).subfolderSheetTitleAlign, TextAlign.start);
+      expect(a.lerp(b, 0.75).subfolderSheetTitleAlign, TextAlign.end);
+    });
+  });
 }

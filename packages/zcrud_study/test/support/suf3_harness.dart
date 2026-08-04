@@ -106,10 +106,21 @@ ZSubfolderNavSpec navSpec({
   // contrôleur, sans quoi les gardes de neutralité mesureraient un chemin piloté.
   ZSubfolderSelectionController? selectionController,
   ValueChanged<String?>? onSelectionChanged,
+  // CR-IFFD-46 — `null` ⇒ défauts de production (aucun recopiage de défaut).
+  String? rootItemLabel,
+  IconData? rootItemIcon,
+  int? itemMaxLines,
+  String? sheetTitle,
+  ZSubfolderItemActionBuilder? itemActionBuilder,
 }) {
   return ZSubfolderNavSpec(
     subfolders: subfolders ?? refs(),
     allSubfoldersLabel: kAllLabel,
+    rootItemLabel: rootItemLabel,
+    rootItemIcon: rootItemIcon,
+    itemMaxLines: itemMaxLines,
+    sheetTitle: sheetTitle,
+    itemActionBuilder: itemActionBuilder,
     itemBuilder: itemBuilder,
     narrowMode: narrowMode ?? kProductionDefaultNarrowMode,
     addAction: addAction,

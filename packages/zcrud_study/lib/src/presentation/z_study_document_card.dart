@@ -35,6 +35,7 @@ class ZStudyDocumentCard extends StatelessWidget {
   const ZStudyDocumentCard({
     required this.title,
     this.leading,
+    this.aboveTitle,
     this.subtitle,
     this.belowSubtitle,
     this.metadata,
@@ -43,6 +44,7 @@ class ZStudyDocumentCard extends StatelessWidget {
     this.progressMaxWidth = 120,
     this.hidesTrailingWhileBusy = true,
     this.onTap,
+    this.onLongPress,
     this.borderSide,
     this.accent,
     this.semanticLabel,
@@ -66,6 +68,10 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// Contenu rendu sous [subtitle]. Voir [ZStudyToolsItemCard.belowSubtitle].
   final Widget? belowSubtitle;
 
+  /// Contenu au-dessus du titre (CR-IFFD-47). Voir
+  /// [ZStudyToolsItemCard.aboveTitle] — passe-plat, aucun défaut local.
+  final Widget? aboveTitle;
+
   /// Qualificatif court, transmis à [ZStudyToolsItemCard.badge].
   final Widget? metadata;
 
@@ -85,6 +91,10 @@ class ZStudyDocumentCard extends StatelessWidget {
 
   /// Activation de la carte. Voir [ZStudyToolsItemCard.onTap].
   final VoidCallback? onTap;
+
+  /// Appui long (CR-IFFD-47). Voir [ZStudyToolsItemCard.onLongPress] —
+  /// passe-plat, aucun défaut local.
+  final VoidCallback? onLongPress;
 
   /// Contour explicite. Voir [ZStudyToolsItemCard.borderSide].
   final BorderSide? borderSide;
@@ -117,6 +127,7 @@ class ZStudyDocumentCard extends StatelessWidget {
     title: title,
     leading: leading,
     subtitle: subtitle,
+    aboveTitle: aboveTitle,
     belowSubtitle: belowSubtitle,
     badge: metadata,
     trailing: actions,
@@ -124,6 +135,7 @@ class ZStudyDocumentCard extends StatelessWidget {
     progressMaxWidth: progressMaxWidth,
     hidesTrailingWhileBusy: hidesTrailingWhileBusy,
     onTap: onTap,
+    onLongPress: onLongPress,
     borderSide: borderSide,
     accent: accent,
     semanticLabel:

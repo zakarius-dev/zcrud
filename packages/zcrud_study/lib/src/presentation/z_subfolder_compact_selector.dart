@@ -68,6 +68,11 @@ class ZSubfolderCompactSelector extends StatelessWidget {
     // PAS bornée (CR-IFFD-31) — sans 4ᵉ paramètre, sans `LayoutBuilder`.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.compact,
+      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE. C'est ici que
+      // les deux axes se séparent visiblement : cette surface partage le
+      // `mode` de la feuille de la barre de sélection, mais **pas** sa
+      // contrainte de largeur (`ZSubfolderSurface.boundsWidth`).
+      surface: ZSubfolderSurface.chips,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: _kMinTapTarget),
         child: SingleChildScrollView(
@@ -80,7 +85,11 @@ class ZSubfolderCompactSelector extends StatelessWidget {
                 context,
                 theme,
                 refOrNull: null,
-                label: spec.allSubfoldersLabel,
+                // CR-IFFD-46, point 1 — la puce racine désigne le CONTENEUR
+                // (source UNIQUE du repli, partagée avec la sidebar et la
+                // feuille) ; seul le DÉCLENCHEUR de la barre de sélection garde
+                // `allSubfoldersLabel`, car il annonce le filtre ACTIF.
+                label: zSubfolderRootItemLabel(spec),
               ),
               for (final ref in spec.subfolders)
                 _chip(context, theme, refOrNull: ref, label: ref.label),
@@ -125,6 +134,7 @@ class ZSubfolderCompactSelector extends StatelessWidget {
             refOrNull: refOrNull,
             label: label,
             selected: isSelected,
+            rootIcon: spec.rootItemIcon,
           );
           return ChoiceChip(
             label: content,

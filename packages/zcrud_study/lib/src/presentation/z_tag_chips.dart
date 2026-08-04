@@ -163,10 +163,24 @@ class ZTagChips extends StatelessWidget {
             ),
             SizedBox(width: theme.gapS),
             // AC6 — TITRE TEXTUEL TOUJOURS rendu (couleur jamais seul canal).
-            Text(
-              tag.title,
-              textAlign: TextAlign.start,
-              style: TextStyle(color: pair.onColor),
+            //
+            // 🔴 **CR-IFFD-47 — `Flexible` MESURÉ, pas décoratif.** La `Row` a
+            // `mainAxisSize.min` et ce `Text` n'avait **aucune borne** : dans
+            // une colonne ÉTROITE (rail de 300 dp), un titre de balise un peu
+            // long faisait déborder la puce — `RenderFlex overflowed by 21
+            // pixels on the right`, mesuré. Le `Wrap` parent contraint pourtant
+            // bien ses enfants : c'est la puce elle-même qui refusait la
+            // contrainte. Le titre se tronque désormais proprement au lieu de
+            // peindre une bannière de débordement — et reste **entier** dès que
+            // la place existe (rendu inchangé en largeur confortable).
+            Flexible(
+              child: Text(
+                tag.title,
+                textAlign: TextAlign.start,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: pair.onColor),
+              ),
             ),
             if (showUsageCount) ...<Widget>[
               SizedBox(width: theme.gapS),

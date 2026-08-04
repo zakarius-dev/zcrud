@@ -64,6 +64,15 @@ export 'src/domain/z_study_sharing_port.dart';
 // — planification OS app-side, AC5). `ZExam`/`ZReminderTime` NON ré-exportés (le
 // consommateur importe `package:zcrud_exam/…`).
 export 'src/presentation/z_content_hub_sheet.dart';
+// CR-IFFD-47 — carte de flashcard PAR DÉFAUT du socle : widget AUTONOME sur le
+// modèle `ZFlashcard` (accent dérivé d'une clé STABLE, pastille de type, zone de
+// balises affichée MÊME VIDE en appel à l'action, énoncé tronqué, puce de pied
+// redisant le type EN TEXTE — AD-13). Composé de primitives existantes
+// (`ZStudyToolsItemCard` + `ZTagChips` + `remapColorKey`/`zResolveColorKeyOrSlot`),
+// aucune carte réécrite. La voie TYPÉE qui porte les données est
+// `ZStudyToolsSectionSpec.flashcards(cards:)` ; `itemBuilder` reste REQUIS dans
+// le constructeur principal (aucune régression possible pour un hôte existant).
+export 'src/presentation/z_default_flashcard_card.dart';
 export 'src/presentation/z_exam_editor.dart';
 export 'src/presentation/z_exam_reminders.dart'
     show

@@ -55,6 +55,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   const ZStudyToolsItemCard({
     required this.title,
     this.leading,
+    this.aboveTitle,
     this.subtitle,
     this.belowSubtitle,
     this.badge,
@@ -63,6 +64,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.progressMaxWidth = 120,
     this.hidesTrailingWhileBusy = true,
     this.onTap,
+    this.onLongPress,
     this.borderSide,
     this.accent,
     this.semanticLabel,
@@ -79,6 +81,25 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Icône ou vignette en tête de carte (`null` ⇒ aucun espace réservé).
   final Widget? leading;
+
+  /// Contenu rendu **AU-DESSUS de [title]**, dans la même colonne (**CR-IFFD-47**).
+  ///
+  /// Pendant EXACT de [belowSubtitle] (CR-LEX-75/CR-IFFD-37) : même type, même
+  /// colonne, même espacement (`gapS`), même traitement sémantique (contenu
+  /// d'hôte **non repris** dans le `label` de la carte, donc **non exclu** — le
+  /// masquer le rendrait muet sans rien dédupliquer), et même **coût vertical
+  /// nul en cellule contrainte** (`Flexible` en fit LOOSE : le slot *participe*
+  /// à la hauteur allouée au lieu de s'y *ajouter*).
+  ///
+  /// ⚠️ **Pourquoi [leading] ne pouvait pas en tenir lieu** : il vit dans la
+  /// `Row` de tête, donc **à côté** du bloc titre — pas au-dessus. Un ordre de
+  /// lecture « ornement, puis énoncé » (celui de la carte de flashcard de
+  /// référence : accent, badge de type, balises, **puis** énoncé) était donc
+  /// **inatteignable** avec les slots existants, et obligeait à réécrire la
+  /// carte au lieu de la composer.
+  ///
+  /// `null` ⇒ **rendu strictement inchangé** (aucun nœud, aucun espacement).
+  final Widget? aboveTitle;
 
   /// Libellé secondaire sous le titre.
   final String? subtitle;
@@ -166,10 +187,23 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// Un tel hôte doit passer `false`.
   final bool hidesTrailingWhileBusy;
 
-  /// Activation de la carte. `null` ⇒ carte non interactive : **aucun**
-  /// `InkWell`, et pas de rôle `button` annoncé (AD-45 : l'absence de capacité
-  /// est structurelle, pas un bouton désactivé).
+  /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ carte non
+  /// interactive : **aucun** `InkWell`, et pas de rôle `button` annoncé (AD-45 :
+  /// l'absence de capacité est structurelle, pas un bouton désactivé).
   final VoidCallback? onTap;
+
+  /// Appui long sur la carte (**CR-IFFD-47**) — typiquement l'ouverture d'un
+  /// menu contextuel par l'hôte. `null` ⇒ capacité **ABSENTE** (AD-4).
+  ///
+  /// ♿ Un appui long est **inatteignable au lecteur d'écran** s'il n'est pas
+  /// déclaré : il est donc porté par le **nœud sémantique de la carte**
+  /// (`Semantics(onLongPress:)`), comme l'est déjà [onTap] — jamais laissé au
+  /// seul `InkWell`, dont la sémantique est exclue.
+  ///
+  /// ⚠️ Il ne rend **pas** la carte « bouton » à lui seul : le rôle `button`
+  /// reste conditionné à [onTap] (un appui long n'est pas une activation
+  /// primaire, et l'annoncer comme telle mentirait sur la cible).
+  final VoidCallback? onLongPress;
 
   /// Contour explicite de la carte (**CR-IFFD-19**).
   ///
@@ -261,6 +295,18 @@ class ZStudyToolsItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                // CR-IFFD-47 — pendant EXACT de `belowSubtitle` : `Flexible`
+                // en fit LOOSE (espacement COMPRIS, d'où le `Padding` et non
+                // un `SizedBox` frère), pour que le slot PARTICIPE à la hauteur
+                // allouée en cellule contrainte au lieu de s'y AJOUTER (leçon
+                // CR-IFFD-37 : une grille dense débordait sur *chaque* carte).
+                if (aboveTitle != null)
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(bottom: theme.gapS),
+                      child: aboveTitle!,
+                    ),
+                  ),
                 Row(
                   children: <Widget>[
                     Flexible(
@@ -343,6 +389,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     );
 
     final tap = onTap;
+    final longPress = onLongPress;
     // CR-IFFD-19 — un `shape:` explicite l'emporte sur `CardThemeData.shape` :
     // en le construisant en dur, la carte rendait TOUTE bordure d'hôte
     // inatteignable — ni par le thème, ni par un slot. Le rayon venait bien d'un
@@ -386,12 +433,15 @@ class ZStudyToolsItemCard extends StatelessWidget {
       // Deux ombres ne se superposent pas : l'élévation native cède la place.
       elevation: shadow == null ? null : 0,
       clipBehavior: Clip.antiAlias,
-      child: tap == null
+      child: tap == null && longPress == null
           // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
           // structurelle, elle ne se rend pas comme un bouton éteint.
+          // CR-IFFD-47 : la condition porte désormais sur les DEUX gestes —
+          // une carte qui n'a QUE l'appui long doit bien être activable.
           ? _withAccent(content)
           : InkWell(
               onTap: tap,
+              onLongPress: longPress,
               customBorder: shape,
               // `excludeFromSemantics` : l'encre et le tap de pointeur sont
               // conservés, mais l'action sémantique est portée UNE SEULE fois
@@ -411,6 +461,10 @@ class ZStudyToolsItemCard extends StatelessWidget {
       // l'action tactile de l'`InkWell`. Sans ce `onTap`, la carte serait
       // annoncée « bouton » et resterait INACTIVABLE au lecteur d'écran.
       onTap: tap,
+      // CR-IFFD-47 — MÊME raison pour l'appui long : l'`InkWell` étant exclu de
+      // la sémantique, un `onLongPress` qui n'y serait pas déclaré serait
+      // INATTEIGNABLE au lecteur d'écran (AD-13).
+      onLongPress: longPress,
       label:
           semanticLabel ?? (subtitle == null ? title : '$title, ${subtitle!}'),
       child: ConstrainedBox(
