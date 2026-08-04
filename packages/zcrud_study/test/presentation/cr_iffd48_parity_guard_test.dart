@@ -188,6 +188,13 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       'onLongPress': 'onCardLongPress',
       // CR-IFFD-48 (complément CR-47) : le relais qui MANQUAIT.
       'semanticLabel': 'semanticLabelOf',
+      // CR-IFFD-57 : axe TYPE (dégradés) + chrome de référence.
+      'typeColors': 'typeColors',
+      'icon': 'cardIcon',
+      'borderSide': 'cardBorderSide',
+      'borderRadius': 'cardBorderRadius',
+      'backgroundColor': 'cardBackgroundColor',
+      'height': 'cardHeight',
     },
   ),
   _ParityPair(

@@ -67,6 +67,8 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.onLongPress,
     this.borderSide,
     this.borderRadius,
+    this.color,
+    this.defaultShadow,
     this.accent,
     this.semanticLabel,
     this.contentPadding,
@@ -222,6 +224,27 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// distinct du `radiusM` global), pas un changement de défaut — même motif
   /// que [borderSide] (CR-IFFD-19).
   final Radius? borderRadius;
+
+  /// Fond EXPLICITE de la carte (**CR-IFFD-57**).
+  ///
+  /// `null` ⇒ le fond vient du `CardTheme`/`ColorScheme` de l'hôte, comme
+  /// avant — **rendu strictement inchangé**. Ce slot est une capacité qui
+  /// manquait (la carte de flashcard de référence pose son fond sur
+  /// `scaffoldBackgroundColor`, pas sur la surface de `Card`), pas un
+  /// changement de défaut — même motif que [borderSide] (CR-IFFD-19).
+  final Color? color;
+
+  /// Ombre de **REPLI** appliquée quand AUCUN jeton `cardShadow*` n'est fourni
+  /// (**CR-IFFD-57**).
+  ///
+  /// Priorité : jetons `ZcrudTheme.cardShadow*` (le canal EXISTANT, CR-IFFD-27)
+  /// > ce repli > ombre native de `Card`. `null` ⇒ rendu strictement inchangé.
+  /// Volontairement un **repli SOUS le thème** — et non un paramètre qui le
+  /// primerait : l'ombre de référence d'une carte par défaut ne doit jamais
+  /// rendre les jetons d'ombre de l'hôte inatteignables (leçon CR-IFFD-19,
+  /// inversée : ici c'est la carte par défaut qui fournit la valeur, l'hôte
+  /// qui doit pouvoir la remplacer).
+  final BoxDecoration? defaultShadow;
 
   /// Décor d'accent superposé, fourni par l'hôte.
   ///
@@ -428,10 +451,14 @@ class ZStudyToolsItemCard extends StatelessWidget {
     // widget. La CR visait les DEUX cartes porteuses du défaut, pour ne pas le
     // voir réapparaître sur une troisième. `null` (aucun jeton) ⇒ arbre et
     // rendu STRICTEMENT identiques à l'historique.
+    // CR-IFFD-57 — les jetons `cardShadow*` PRIMENT le repli [defaultShadow] :
+    // l'ombre de référence d'une carte par défaut ne rend jamais le canal
+    // d'ombre de l'hôte inatteignable.
     final BoxDecoration? shadow = zResolveCardShadowDecoration(
-      context,
-      shape: shape,
-    );
+          context,
+          shape: shape,
+        ) ??
+        defaultShadow;
     // Priorité slot > thème > zéro (le défaut historique).
     final EdgeInsetsGeometry cardMargin =
         margin ?? cardTheme.margin ?? EdgeInsets.zero;
@@ -444,6 +471,8 @@ class ZStudyToolsItemCard extends StatelessWidget {
       // Quand l'ombre des jetons est active, la marge passe à un `Padding`
       // externe : la boîte ombrée doit épouser la carte, pas sa marge.
       margin: shadow == null ? cardMargin : EdgeInsets.zero,
+      // CR-IFFD-57 — fond explicite ; `null` ⇒ CardTheme/ColorScheme (inchangé).
+      color: color,
       shape: shape,
       // Deux ombres ne se superposent pas : l'élévation native cède la place.
       elevation: shadow == null ? null : 0,

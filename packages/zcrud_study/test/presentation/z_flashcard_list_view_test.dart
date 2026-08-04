@@ -153,6 +153,9 @@ void main() {
               source: ZCustomSource('pdf', const <String, dynamic>{})),
         ],
         labels: _labels,
+        // CR-IFFD-58 : AC3 est le contrat de la TUILE — mode explicité depuis
+        // que le défaut de la liste est la carte (CR-IFFD-58).
+        itemStyle: ZFlashcardListItemStyle.tile,
       )));
       await tester.pump();
 
@@ -175,6 +178,8 @@ void main() {
           ]),
         ],
         labels: _labels,
+        // CR-IFFD-58 : l'aperçu de réponse en grille est un contrat de TUILE.
+        itemStyle: ZFlashcardListItemStyle.tile,
       )));
       await tester.pump();
 
@@ -900,6 +905,10 @@ void main() {
         labels: _labels,
         typeLabels: const <String, String>{'openQuestion': 'Question ouverte'},
         sourceLabels: const <String, String>{'pdf': 'Document PDF'},
+        // CR-IFFD-58 : la SOURCE n'est rendue que par la tuile — le contrat
+        // D2 est mesuré sur elle (le libellé de type de la carte est gardé
+        // par cr_iffd47/57).
+        itemStyle: ZFlashcardListItemStyle.tile,
       )));
       await tester.pump();
 
@@ -922,6 +931,7 @@ void main() {
           _card('c1', source: ZCustomSource('pdf', const <String, dynamic>{})),
         ],
         labels: _labels,
+        itemStyle: ZFlashcardListItemStyle.tile,
       )));
       await tester.pump();
 

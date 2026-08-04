@@ -137,9 +137,32 @@ void main() {
       expect(tester.getSize(_tile(0)).height, closeTo(260, 0.5));
     });
 
-    testWidgets('null (défaut) ⇒ hauteur historique 180 dp (rendu inchangé)',
+    testWidgets(
+        'null (défaut, mode CARTE — CR-IFFD-58) ⇒ hauteur de RÉFÉRENCE 200 dp',
         (tester) async {
+      // CR-IFFD-57/58 (complément owner) : le défaut de la liste est la CARTE
+      // à hauteur fixe de référence (200, legacy `SizedBox(height: 200)`) —
+      // c'est elle qui rend la grille régulière et confortable.
       await _pump(tester, width: 1400);
+      expect(tester.getSize(_tile(0)).height,
+          closeTo(ZFlashcardCardReference.cardHeight, 0.5));
+    });
+
+    testWidgets('null + mode TUILE ⇒ hauteur historique 180 dp (non-régression)',
+        (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ZFlashcardListView(
+            cards: _cards(),
+            labels: _labels,
+            itemStyle: ZFlashcardListItemStyle.tile,
+          ),
+        ),
+      ));
+      await tester.pump();
       expect(tester.getSize(_tile(0)).height, closeTo(180, 0.5));
     });
   });

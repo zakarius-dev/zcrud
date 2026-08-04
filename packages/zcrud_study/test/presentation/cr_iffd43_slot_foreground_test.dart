@@ -160,6 +160,10 @@ Future<void> _pumpList(
         ],
         labels: _labels,
         contentBuilder: builder,
+        // CR-IFFD-58 : le slot AD-40 (et son texte brut de repli) est un
+        // contrat de la TUILE — le mode est explicité depuis que le défaut de
+        // la liste est la carte.
+        itemStyle: ZFlashcardListItemStyle.tile,
       ),
     ),
   );

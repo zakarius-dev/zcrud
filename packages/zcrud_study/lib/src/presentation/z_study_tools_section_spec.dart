@@ -11,7 +11,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZStudyCardHierarchy, ZToggleController;
+    show ZGradientSpec, ZStudyCardHierarchy, ZToggleController;
 import 'package:zcrud_exam/zcrud_exam.dart' show ZExam;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
 import 'package:zcrud_mindmap/zcrud_mindmap.dart' show ZMindmap;
@@ -21,6 +21,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'z_default_exam_card.dart';
 import 'z_default_flashcard_card.dart';
 import 'z_default_mindmap_card.dart';
+import 'z_flashcard_card_reference.dart';
 import 'z_rail_item.dart';
 
 /// Mode de PRÉSENTATION de la poignée de réordonnancement (CR-IFFD-54 ②).
@@ -241,6 +242,16 @@ class ZStudyToolsSectionSpec {
     void Function(ZFlashcard card)? onCardLongPress,
     Widget? Function(BuildContext context, ZFlashcard card)? cardTrailingBuilder,
     ZColorPalette palette = const ZColorPalette.defaultStudy(),
+    // CR-IFFD-57 — l'axe TYPE et le chrome de référence, relayés à la carte
+    // (garde de parité CR-IFFD-48 : chaque option de carte a son pendant ici).
+    Map<String, ZGradientSpec>? typeColors,
+    IconData? cardIcon,
+    BorderSide? cardBorderSide,
+    Radius? cardBorderRadius,
+    Color? cardBackgroundColor,
+    // Hauteur FIXE de référence (200, legacy) — `null` EXPLICITE ⇒ hauteur
+    // intrinsèque, même contrat que `ZDefaultFlashcardCard.height`.
+    double? cardHeight = ZFlashcardCardReference.cardHeight,
     int questionMaxLines = 3,
     this.addAction,
     this.addActionIcon,
@@ -382,6 +393,13 @@ class ZStudyToolsSectionSpec {
             onTagsTap: onTagsTap == null ? null : () => onTagsTap(card),
             palette: palette,
             colorKey: colorKeyOf?.call(card),
+            // CR-IFFD-57 — relais de l'axe type + chrome (parité CR-48).
+            typeColors: typeColors,
+            icon: cardIcon,
+            borderSide: cardBorderSide,
+            borderRadius: cardBorderRadius,
+            backgroundColor: cardBackgroundColor,
+            height: cardHeight,
             questionMaxLines: questionMaxLines,
             trailing: cardTrailingBuilder?.call(context, card),
             onTap: onCardTap == null ? null : () => onCardTap(card),

@@ -105,6 +105,7 @@ export 'src/presentation/z_feature_availability.dart';
 // RISQUE DE DONNÉES : toute dérive orphelinerait l'ordre persisté EN SILENCE, car
 // `applyOrder` est TOTAL), et `zMoveUpIndices`/`zMoveDownIndices` (`null` ⇒ bouton
 // ABSENT : le 1er ne remonte pas, le dernier ne descend pas).
+export 'src/presentation/z_flashcard_card_reference.dart';
 export 'src/presentation/z_flashcard_list_view.dart';
 // SU-9 (AC1..AC13, AD-37/AD-43) — flux UI de génération IA : contrôleur pur
 // `ChangeNotifier` (statut ENUM, jeton de fraîcheur, handoff `onGenerated` — AUCUN

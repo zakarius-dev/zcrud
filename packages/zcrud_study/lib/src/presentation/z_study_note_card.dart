@@ -46,6 +46,8 @@ class ZStudyNoteCard extends StatelessWidget {
     this.onLongPress,
     this.borderSide,
     this.borderRadius,
+    this.color,
+    this.defaultShadow,
     this.accent,
     this.semanticLabel,
     this.contentPadding,
@@ -103,6 +105,12 @@ class ZStudyNoteCard extends StatelessWidget {
   /// [ZStudyToolsItemCard.borderRadius] — passe-plat, aucun défaut local.
   final Radius? borderRadius;
 
+  /// Passe-plat du fond explicite du socle (CR-IFFD-57 / CR-LEX-78).
+  final Color? color;
+
+  /// Passe-plat de l'ombre de repli du socle (CR-IFFD-57 / CR-LEX-78).
+  final BoxDecoration? defaultShadow;
+
   /// Décor d'accent superposé. Voir [ZStudyToolsItemCard.accent].
   final Widget? accent;
 
@@ -142,6 +150,8 @@ class ZStudyNoteCard extends StatelessWidget {
     onLongPress: onLongPress,
     borderSide: borderSide,
     borderRadius: borderRadius,
+    color: color,
+    defaultShadow: defaultShadow,
     accent: accent,
     semanticLabel:
         semanticLabel ?? (subtitle == null ? title : '$title, $subtitle'),

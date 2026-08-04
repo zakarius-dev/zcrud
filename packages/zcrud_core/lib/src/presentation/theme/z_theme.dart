@@ -16,6 +16,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../zcrud_scope.dart';
+import 'z_gradient_resolver.dart';
 
 /// Habillage du **déclencheur** d'une surface de navigation (barre repliée
 /// montrant l'élément courant) — token de LOOK, jamais de structure.
@@ -232,6 +233,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studyCardBorderSide,
     this.studyCardBadgeRadius,
     this.studyCardGlyphSize,
+    this.flashcardTypeGradients,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -596,6 +598,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// PAS la taille d'icône ambiante (24) : la référence est plus grande.
   final double? studyCardGlyphSize;
 
+  /// Dégradés **par TYPE de flashcard** de la carte de flashcard par défaut
+  /// (**CR-IFFD-57**) — clé = `ZFlashcardType.name` OPAQUE (`'multipleChoice'`,
+  /// `'trueOrFalse'`, `'openQuestion'`, `'exercise'`, ou toute clé future).
+  ///
+  /// `null` (défaut) ⇒ le consommateur applique sa **RÉFÉRENCE** (patron
+  /// `studyCard*`/CR-IFFD-56 : priorité paramètre > ce jeton > seam
+  /// `ZcrudScope.gradientResolver` > défaut-référence). Chaque entrée est un
+  /// [ZGradientSpec] : le premier plan [ZGradientSpec.onGradient] est **CHOISI**
+  /// par l'hôte (contraste mesuré), jamais deviné depuis le dégradé.
+  ///
+  /// ⚠️ Un dégradé n'est PAS un rôle de `ColorScheme` (CR-IFFD-57) : la matière
+  /// reste REMPLAÇABLE (ce jeton) même quand elle ne peut pas être DÉRIVÉE.
+  final Map<String, ZGradientSpec>? flashcardTypeGradients;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -780,6 +796,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     BorderSide? studyCardBorderSide,
     Radius? studyCardBadgeRadius,
     double? studyCardGlyphSize,
+    Map<String, ZGradientSpec>? flashcardTypeGradients,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -866,6 +883,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     studyCardBorderSide: studyCardBorderSide ?? this.studyCardBorderSide,
     studyCardBadgeRadius: studyCardBadgeRadius ?? this.studyCardBadgeRadius,
     studyCardGlyphSize: studyCardGlyphSize ?? this.studyCardGlyphSize,
+    flashcardTypeGradients:
+        flashcardTypeGradients ?? this.flashcardTypeGradients,
   );
 
   @override
@@ -1153,6 +1172,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
               other.studyCardGlyphSize,
               t,
             ),
+      // CR-IFFD-57 — DISCRET (une map de specs ne s'interpole pas) et
+      // null-préservant PAR CONSTRUCTION : `null`↔`null` reste `null` — la
+      // référence du consommateur n'est jamais matérialisée par une
+      // transition de thème (leçon `studyCardBadgeRadius`).
+      flashcardTypeGradients:
+          t < 0.5 ? flashcardTypeGradients : other.flashcardTypeGradients,
     );
   }
 }

@@ -75,14 +75,19 @@ void _wideSurface(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-Color? _accentColor(WidgetTester tester) => tester
-    .widget<ColoredBox>(
+/// Décor RÉELLEMENT peint de la bande d'accent (CR-IFFD-57 : dégradé par type
+/// par défaut, couleur UNIE sur l'axe identité — on lit la `BoxDecoration`,
+/// jamais une intention déclarée).
+BoxDecoration _accentDecoration(WidgetTester tester) => tester
+    .widget<DecoratedBox>(
       find.descendant(
         of: find.byKey(ZDefaultFlashcardCard.accentKey),
-        matching: find.byType(ColoredBox),
+        matching: find.byType(DecoratedBox),
       ),
     )
-    .color;
+    .decoration as BoxDecoration;
+
+Color? _accentColor(WidgetTester tester) => _accentDecoration(tester).color;
 
 /// Couleur de fond RÉELLEMENT peinte sous [key] — la clé peut être portée par
 /// la boîte elle-même ou par son enveloppe de taille : on descend jusqu'au
@@ -164,17 +169,23 @@ void main() {
       // ① l'accent est bien EN TÊTE de la carte (pas un décor perdu au milieu).
       expect(accent.dy, cardTop,
           reason: '🔴 l\'accent doit coiffer la carte (élément ①).');
-      // ② puis ③ — même ligne, dans le sens de lecture (directionnel).
-      expect(dot.dx, lessThan(tags.dx),
-          reason: '🔴 la pastille de type précède la zone de balises (② → ③).');
-      // ② et ③ sont AU-DESSUS de l'énoncé…
-      expect(dot.dy, lessThan(question.dy),
-          reason: '🔴 la pastille (②) doit précéder l\'énoncé (④).');
+      // ② CR-IFFD-57 — la tuile d'icône est EN TÊTE, à côté du bloc contenu.
+      final Offset iconTile =
+          tester.getTopLeft(find.byKey(ZDefaultFlashcardCard.iconTileKey));
+      expect(iconTile.dx, lessThan(tags.dx),
+          reason: '🔴 la tuile d\'icône précède le contenu (② → ③) — sens de '
+              'lecture directionnel.');
+      // ③ les balises sont AU-DESSUS de l'énoncé…
       expect(tags.dy, lessThan(question.dy),
           reason: '🔴 les balises (③) doivent précéder l\'énoncé (④).');
-      // …et ⑤ est bien EN PIED.
+      // …⑤ est bien EN PIED…
       expect(question.dy, lessThan(chip.dy),
-          reason: '🔴 la puce de type (⑤) est en PIED, après l\'énoncé (④).');
+          reason: '🔴 la pastille de type (⑤) est en PIED, après l\'énoncé (④).');
+      // …et le point de type vit DANS la pastille de pied (CR-IFFD-57 : plus
+      // de pastille d'en-tête — point + libellé teintés, ensemble).
+      expect(dot.dy, greaterThanOrEqualTo(chip.dy),
+          reason: '🔴 le point de type appartient à la pastille de pied.');
+      expect(dot.dx, greaterThanOrEqualTo(chip.dx));
     });
 
     testWidgets('④ l\'énoncé est tronqué sur 2-3 lignes (jamais déroulé)',
@@ -266,7 +277,7 @@ void main() {
   group('CR-IFFD-47 §3 — accent DÉRIVÉ d\'une clé stable (jamais un hex)', () {
     testWidgets('même type ⇒ même accent (déterministe, cartes différentes)',
         (WidgetTester tester) async {
-      final List<Color?> seen = <Color?>[];
+      final List<Gradient?> seen = <Gradient?>[];
       for (final ZFlashcard card in <ZFlashcard>[
         _card(id: 'a', question: 'Première'),
         _card(id: 'b', question: 'Seconde'),
@@ -274,9 +285,13 @@ void main() {
         await tester.pumpWidget(
             _host(ZDefaultFlashcardCard(card: card), width: 400));
         await tester.pumpAndSettle();
-        seen.add(_accentColor(tester));
+        // CR-IFFD-57 : l'accent par défaut est le DÉGRADÉ de référence du
+        // type — mesuré sur le décor réellement peint.
+        seen.add(_accentDecoration(tester).gradient);
       }
-      expect(seen.first, isNotNull);
+      expect(seen.first, isNotNull,
+          reason: '🔴 CR-IFFD-57 : la bande par défaut est DÉGRADÉE (peinte '
+              'en `BoxDecoration.gradient`, pas en couleur unie).');
       expect(seen[1], seen.first,
           reason: '🔴 l\'accent doit dériver d\'une clé STABLE (le type), pas '
               'de l\'identité ni de l\'ordre de rendu.');
@@ -295,26 +310,38 @@ void main() {
 
       expect(_accentColor(tester), scheme.tertiaryContainer,
           reason: '🔴 la couleur doit être DÉRIVÉE du ColorScheme.');
+      // CR-IFFD-57 (préséance arbitrée) : un colorKey EXPLICITE rend la bande
+      // UNIE — le dégradé de type (défaut) est écarté, pas superposé.
+      expect(_accentDecoration(tester).gradient, isNull,
+          reason: '🔴 colorKey explicite ⇒ accent d\'IDENTITÉ uni (le dégradé '
+              'de type est un DÉFAUT, jamais superposé au choix de l\'hôte).');
       // 🔴 NON-VACUITÉ : `tertiaryContainer` doit se DISTINGUER de la surface,
       // sinon « l\'accent est peint » serait indiscernable de « rien n\'est peint ».
       expect(scheme.tertiaryContainer, isNot(scheme.surface));
-      // …et se distinguer de l\'accent DÉRIVÉ du type, sinon l\'injection ne
-      // prouverait pas qu\'elle a primé.
+      // …et le DÉFAUT (sans clé) ne rend PAS cet uni : il rend le dégradé de
+      // type — sinon l'injection ne prouverait pas qu'elle a primé.
       await tester.pumpWidget(
           _host(ZDefaultFlashcardCard(card: _card()), width: 400));
       await tester.pumpAndSettle();
-      expect(_accentColor(tester), isNot(scheme.tertiaryContainer),
-          reason: '🔴 garde VACUELLE : l\'accent dérivé du type vaut déjà la '
-              'clé injectée — l\'injection ne prouverait rien.');
+      expect(_accentDecoration(tester).gradient, isNotNull,
+          reason: '🔴 garde VACUELLE : sans clé injectée la bande doit être le '
+              'DÉGRADÉ de type — l\'injection prouverait sinon rien.');
     });
 
-    testWidgets('la pastille de tête porte le MÊME accent que la barre',
+    testWidgets('le point de la pastille porte le MÊME dégradé que la bande',
         (WidgetTester tester) async {
       await tester.pumpWidget(
           _host(ZDefaultFlashcardCard(card: _card()), width: 400));
       await tester.pumpAndSettle();
-      expect(_boxColor(tester, ZDefaultFlashcardCard.typeDotKey),
-          _accentColor(tester));
+      // CR-IFFD-57 : point de pied et bande de tête partagent le dégradé du
+      // type — mesuré sur les décors réellement peints.
+      final Finder dotBox = find.descendant(
+          of: find.byKey(ZDefaultFlashcardCard.typeDotKey),
+          matching: find.byType(DecoratedBox));
+      final BoxDecoration dot =
+          tester.widget<DecoratedBox>(dotBox).decoration as BoxDecoration;
+      expect(dot.gradient, isNotNull);
+      expect(dot.gradient, _accentDecoration(tester).gradient);
     });
   });
 
@@ -704,6 +731,10 @@ void main() {
           ZDefaultFlashcardCard(
             card: _card(question: kLongQuestion),
             tags: _longTags(),
+            // CR-IFFD-57 : le DÉFAUT est la hauteur FIXE de référence (200) ;
+            // cette mesure porte sur la capacité de hauteur INTRINSÈQUE, qui
+            // reste atteignable par `height: null` EXPLICITE.
+            height: null,
           ),
           width: w,
         ));

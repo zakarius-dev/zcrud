@@ -327,6 +327,7 @@ Chaque entité canonique expose : (1) un slot `ZExtension?` typé additif **vers
 - **Never** `ListView(children: [...])` — `ListView.builder`.
 - **Never** éditer un `*.g.dart` à la main (généré par build_runner) — mais **TOUJOURS committer** ceux de `packages/*/lib/` après régénération (suivis par git : distribution en dép. git ; cf. gate `codegen-distribution`).
 - **Never** style/couleur codé en dur dans un package — thème injecté via `ZcrudScope`/`ThemeExtension` (FR-26), repli `Theme.of(context)`.
+  ⚠️ **Exception FR-26 encadrée (owner, 2026-08-04, CR-IFFD-57)** : les **valeurs de référence legacy IFFD** (y compris des hex de dégradés non dérivables du `ColorScheme`) peuvent entrer comme **défauts de jetons NULLABLES**, à trois conditions strictes : (1) centralisées dans un **unique fichier de référence audité** par famille (patron `ZStudyCardReference` — jamais éparpillées dans les widgets) ; (2) **remplaçables** par thème et par paramètre (priorité paramètre > jeton > référence) ; (3) la garde de source anti-couleurs **exempte nominativement** ces fichiers de référence et eux seuls. Partout ailleurs, FR-26 s'applique inchangé.
 - **Always** `const` pour les widgets immuables ; `Semantics` explicites + cibles ≥ 48 dp (AD-13).
 
 ---

@@ -55,6 +55,26 @@ const List<String> _bannedColorPatterns = <String>[
   'AppColors.',
 ];
 
+/// 🔒 **Exception FR-26 ENCADRÉE** (arbitrage owner 2026-08-04, CR-IFFD-57) —
+/// exemption **NOMINATIVE** de la garde couleur, chemin EXACT par famille,
+/// **jamais un motif large** (pas de glob, pas de `contains`, pas de dossier).
+///
+/// Conditions de l'exception, toutes trois vérifiables sur pièces :
+/// 1. UNIQUE fichier de référence audité de la famille « carte de flashcard »
+///    (patron `ZStudyCardReference`) — les hex des 4 dégradés par type, non
+///    dérivables d'un `ColorScheme`, n'ont le droit de vivre QUE là ;
+/// 2. remplaçables par thème (`ZcrudTheme.flashcardTypeGradients`, seam
+///    `gradientResolver`) ET par paramètre (`typeColors`) — priorité
+///    paramètre > jeton > seam > référence ;
+/// 3. cette liste est l'exemption nominative — la garde MORD ENCORE sur tout
+///    autre fichier (contre-preuves ci-dessous).
+///
+/// L'exemption ne couvre QUE les motifs de COULEUR : libellés, RTL et
+/// `fontSize:` restent gardés dans ce fichier comme partout.
+const Set<String> _colorGuardExemptFiles = <String>{
+  'lib/src/presentation/z_flashcard_card_reference.dart',
+};
+
 /// Motifs **non-directionnels** interdits (AD-13 — RTL).
 const List<String> _bannedDirectionalPatterns = <String>[
   'EdgeInsets.only(left:',
@@ -196,8 +216,13 @@ void main() {
       final files = _presentationFiles();
       expect(files, isNotEmpty, reason: 'sonde cassée : aucun fichier scanné');
 
+      // Exemption NOMINATIVE (chemin EXACT normalisé — jamais un motif) : le
+      // fichier de référence des dégradés de flashcard, et lui seul.
       final violations = <String>[];
       for (final path in files) {
+        if (_colorGuardExemptFiles.contains(path.replaceAll('\\', '/'))) {
+          continue;
+        }
         violations.addAll(scanForPatterns(
             File(path).readAsLinesSync(), path, _bannedColorPatterns));
       }
@@ -263,6 +288,47 @@ void main() {
         scanForPatterns(
             <String>['  color: Colors.red,'], 'f.dart', _bannedColorPatterns),
         isNotEmpty,
+      );
+    });
+
+    test(
+        '🔴 CR-IFFD-57 — l\'exemption couleur est NOMINATIVE : chaque chemin '
+        'exempté existe, et la garde mord ENCORE ailleurs', () {
+      // 1) Aucune exemption MORTE : un chemin exempté qui n'existe plus
+      //    masquerait un renommage (le fichier renommé serait re-gardé, mais
+      //    l'entrée fantôme laisserait croire à une exception encore active).
+      for (final exempt in _colorGuardExemptFiles) {
+        expect(File(exempt).existsSync(), isTrue,
+            reason: '🔴 exemption FANTÔME : `$exempt` n\'existe pas — '
+                'retire l\'entrée ou corrige le chemin.');
+        // …et le fichier exempté porte RÉELLEMENT des hex (sinon l\'exemption
+        // ne protège rien et doit être retirée — une exception encadrée ne
+        // se garde pas « au cas où »).
+        expect(
+          scanForPatterns(File(exempt).readAsLinesSync(), exempt,
+              _bannedColorPatterns),
+          isNotEmpty,
+          reason: '🔴 exemption INUTILE : `$exempt` ne contient plus aucune '
+              'couleur littérale — retire son entrée.',
+        );
+      }
+      // 2) La garde mord ENCORE sur tout chemin NON exempté : même contenu,
+      //    autre fichier ⇒ attrapé. (L'exemption est un `Set.contains` sur le
+      //    chemin EXACT — jamais un motif : un fichier voisin du même dossier
+      //    reste gardé.)
+      const line = '  static const Color c = Color(0xFF667EEA);';
+      expect(
+        scanForPatterns(<String>[line],
+            'lib/src/presentation/z_default_flashcard_card.dart',
+            _bannedColorPatterns),
+        isNotEmpty,
+        reason: '🔴 sonde cassée : un hex hors du fichier de référence doit '
+            'être attrapé.',
+      );
+      expect(
+        _colorGuardExemptFiles
+            .contains('lib/src/presentation/z_default_flashcard_card.dart'),
+        isFalse,
       );
     });
 
