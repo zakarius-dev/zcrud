@@ -53,7 +53,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZColorPair, ZcrudTheme, zResolveColorKeyOrSlot;
+    show
+        ZColorPair,
+        ZFolderCardFooterPlacement,
+        ZcrudTheme,
+        zResolveColorKeyOrSlot;
 
 /// Hauteur minimale de la cible d'activation d'une [ZFolderCard] (AD-13). La
 /// carte activable ne descend jamais en dessous, quel que soit son contenu.
@@ -86,6 +90,33 @@ const double kZCardShadowAlpha = 0.12;
 /// Parité lex (`14×14`).
 const double _kPastilleSize = 14;
 
+/// Seuil de largeur (dp) au-delà duquel [ZFolderCardFooterPlacement.adaptive]
+/// rend le bas de carte **côte à côte** (**CR-IFFD-68**). Mesuré sur la largeur
+/// RÉELLEMENT offerte au bas de carte — padding interne déjà retranché, pas la
+/// largeur de la carte.
+///
+/// 📐 **D'où vient ce 740, et pourquoi il est si haut.** Côte à côte, le
+/// créneau compteur ne reçoit que `(largeur − gapS) / 2` : le côte-à-côte cesse
+/// donc d'amputer exactement à `2 × largeurNaturelleDeLaRangée + gapS`. Ce
+/// point d'équilibre a été **mesuré** (police de test, corpus réel de badges
+/// d'un dossier d'étude : « 12 fiches », « 3 notes », « 5 documents »,
+/// « 2 sous-dossiers ») : rangée de **569 dp**, quatre badges visibles sur
+/// quatre à partir d'une carte de **1200 dp**, trois sur quatre à 900. La
+/// police de test est un carré cadratin (~2× l'avance de la police d'interface
+/// sur ce corpus) ; corrigé de ce facteur sur la seule part TEXTE, l'équilibre
+/// réel tombe vers **740 dp de bas de carte**.
+///
+/// 🔴 **Ce seuil dépend du CONTENU, pas seulement de la largeur** : avec des
+/// libellés courts (« 12 », « 34 »…) l'équilibre est à ~350 dp, avec cinq
+/// badges verbeux il dépasse 900. C'est la raison pour laquelle
+/// [ZFolderCardFooterPlacement.adaptive] **n'est pas** le défaut de
+/// `ZDefaultFolderCard` : un seuil fixe placé trop bas RÉINTRODUIT l'amputation
+/// à la largeur où il bascule (mesuré : à 600 dp, côte à côte ne montre plus
+/// que **2 badges sur 4** du corpus réel, contre 4 empilés). Le régime
+/// adaptatif reste offert à l'hôte qui connaît ses libellés — c'est lui, et lui
+/// seul, qui peut calibrer le seuil.
+const double kZFolderCardFooterBesideMinWidth = 740;
+
 /// Carte d'un dossier d'étude dans une grille (SUF-2).
 ///
 /// ```dart
@@ -115,6 +146,8 @@ class ZFolderCard extends StatelessWidget {
     this.belowSubtitle,
     this.counts,
     this.footer,
+    this.footerPlacement,
+    this.footerBesideMinWidth,
     this.menu,
     this.archivedLabel,
     this.isArchived = false,
@@ -196,10 +229,41 @@ class ZFolderCard extends StatelessWidget {
   /// réservé). Le widget n'en interprète jamais le contenu.
   final Widget? counts;
 
-  /// Slot de pied rendu sous le contenu. Il partage la même ligne que le badge
-  /// archivé éventuel : ce dernier reste donc visible et n'est jamais remplacé.
-  /// `null` ⇒ aucun espace réservé.
+  /// Slot de pied rendu sous le contenu. Par défaut il partage la même ligne
+  /// que le créneau [counts] et que le badge archivé éventuel : ce dernier
+  /// reste donc visible et n'est jamais remplacé. `null` ⇒ aucun espace
+  /// réservé.
+  ///
+  /// Voir [footerPlacement] pour l'**empiler sous** [counts] (**CR-IFFD-68**).
   final Widget? footer;
+
+  /// DISPOSITION du bas de carte : [counts] et [footer] côte à côte, empilés,
+  /// ou adaptatif (**CR-IFFD-68**).
+  ///
+  /// 🔴 **Le défaut mesuré qui a fait exister ce slot** : les deux créneaux
+  /// étaient assemblés dans une même `Row`, chacun en `Expanded` — donc chacun
+  /// à la MOITIÉ de la largeur, sans aucun réglage pour en sortir. Mesuré chez
+  /// IFFD : une carte à quatre badges de compteur n'en montrait plus que
+  /// **deux**, et le pied venait s'accoler au dernier badge visible. Le seul
+  /// contournement possible était de recomposer soi-même le créneau [counts] —
+  /// ce qui **rend le rendu des badges à l'hôte**, donc lui fait perdre le
+  /// plancher de contraste garanti par `ZDefaultFolderCard` (CR-IFFD-64).
+  ///
+  /// Priorité : ce paramètre > le jeton `ZcrudTheme.folderCardFooterPlacement`
+  /// > [ZFolderCardFooterPlacement.beside] (rendu **historique** de la
+  /// primitive). `null` **et** jeton absent ⇒ **rendu strictement inchangé**.
+  ///
+  /// ⚠️ La disposition n'a d'effet que si [counts] **et** [footer] sont tous
+  /// deux fournis : avec un seul créneau il n'y a rien à empiler, et les trois
+  /// valeurs rendent alors le même pixel (dont la place du badge « Archivé »).
+  final ZFolderCardFooterPlacement? footerPlacement;
+
+  /// Seuil de largeur (dp) du régime [ZFolderCardFooterPlacement.adaptive],
+  /// mesuré sur la largeur RÉELLEMENT offerte au bas de carte (padding interne
+  /// déjà retranché). Priorité : ce paramètre > le jeton
+  /// `ZcrudTheme.folderCardFooterBesideMinWidth` >
+  /// [kZFolderCardFooterBesideMinWidth]. Sans effet hors du régime adaptatif.
+  final double? footerBesideMinWidth;
 
   /// Slot menu/trailing (ex. `IconButton` ⋮) rendu en tête, aligné en fin
   /// (RTL-safe). `null` ⇒ **absent**. **Non exclu** de la sémantique : un menu
@@ -345,6 +409,15 @@ class ZFolderCard extends StatelessWidget {
     // Pied de carte : slots compteur/pied + badge « Archivé » conditionnel.
     // Rendu SEULEMENT s'il a du contenu (AD-4 : aucun espace réservé quand les
     // trois sont absents).
+    //
+    // ExcludeSemantics : le texte du badge est DÉJÀ porté par le `label` du
+    // nœud de la carte (repli enrichi) — le répéter le ferait annoncer deux
+    // fois. Le badge reste visuellement présent. Construit UNE fois : les deux
+    // dispositions le posent au même endroit sémantique (CR-IFFD-68).
+    final Widget? archivedBadge = showArchived
+        ? ExcludeSemantics(child: _ArchivedBadge(label: archivedLabel!))
+        : null;
+
     final List<Widget> footerChildren = <Widget>[
       if (counts != null)
         Expanded(child: counts!)
@@ -355,14 +428,78 @@ class ZFolderCard extends StatelessWidget {
       if (counts != null && semanticFooter != null) SizedBox(width: theme.gapS),
       if (counts != null && semanticFooter != null)
         Expanded(child: semanticFooter),
-      if (showArchived) ...<Widget>[
+      if (archivedBadge != null) ...<Widget>[
         SizedBox(width: theme.gapS),
-        // ExcludeSemantics : le texte du badge est DÉJÀ porté par le `label` du
-        // nœud de la carte (repli enrichi) — le répéter le ferait annoncer deux
-        // fois. Le badge reste visuellement présent.
-        ExcludeSemantics(child: _ArchivedBadge(label: archivedLabel!)),
+        archivedBadge,
       ],
     ];
+
+    // ── CR-IFFD-68 — DISPOSITION du bas de carte ─────────────────────────────
+    // Priorité paramètre > jeton > défaut HISTORIQUE (`beside`) : un hôte qui
+    // ne déclare rien rend exactement le pixel d'avant.
+    final ZFolderCardFooterPlacement placement =
+        footerPlacement ??
+        theme.folderCardFooterPlacement ??
+        ZFolderCardFooterPlacement.beside;
+
+    // Ligne UNIQUE (rendu historique) : les deux créneaux en `Expanded` d'une
+    // même `Row`, donc chacun à la moitié de la largeur.
+    Widget besideRow() => Row(children: footerChildren);
+
+    // Pile : le créneau compteur reçoit la largeur ENTIÈRE (il peut donc
+    // défiler sur toute la carte), le pied vient dessous.
+    //
+    // 🔴 Le badge « Archivé » suit la DERNIÈRE ligne de la pile, jamais celle
+    // des compteurs : l'y poser recréerait exactement l'amputation que cette
+    // disposition corrige (le badge est inflexible, il mangerait la largeur
+    // rendue aux compteurs). Sur la ligne du pied, il partage la place avec un
+    // pied court — qui est le cas nominal (« Par toi », une ligne de méta).
+    Widget stackedColumn() => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(children: <Widget>[Expanded(child: counts!)]),
+        SizedBox(height: theme.gapS),
+        Row(
+          children: <Widget>[
+            Expanded(child: semanticFooter!),
+            if (archivedBadge != null) ...<Widget>[
+              SizedBox(width: theme.gapS),
+              archivedBadge,
+            ],
+          ],
+        ),
+      ],
+    );
+
+    // Avec un seul créneau il n'y a RIEN à empiler : les trois dispositions
+    // rendent alors strictement la ligne historique (badge compris).
+    final bool stackable = counts != null && semanticFooter != null;
+
+    Widget footerArea() {
+      if (!stackable) return besideRow();
+      switch (placement) {
+        case ZFolderCardFooterPlacement.beside:
+          return besideRow();
+        case ZFolderCardFooterPlacement.below:
+          return stackedColumn();
+        case ZFolderCardFooterPlacement.adaptive:
+          final double threshold =
+              footerBesideMinWidth ??
+              theme.folderCardFooterBesideMinWidth ??
+              kZFolderCardFooterBesideMinWidth;
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              // AD-10 — largeur non bornée : aucun seuil n'a de sens, on rend
+              // le régime que la primitive a toujours rendu.
+              final bool wide =
+                  !constraints.maxWidth.isFinite ||
+                  constraints.maxWidth >= threshold;
+              return wide ? besideRow() : stackedColumn();
+            },
+          );
+      }
+    }
 
     // ExcludeSemantics CIBLÉ sur le SEUL titre : le nœud de la carte le porte
     // déjà dans son `label`. Volontairement NON étendu au menu ni au slot counts
@@ -516,7 +653,7 @@ class ZFolderCard extends StatelessWidget {
                 titleBlockFor(bounded: false),
               if (footerChildren.isNotEmpty) ...<Widget>[
                 SizedBox(height: theme.gapS),
-                Row(children: footerChildren),
+                footerArea(),
               ],
             ],
           ),

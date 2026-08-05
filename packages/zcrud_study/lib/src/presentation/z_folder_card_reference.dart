@@ -41,6 +41,9 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZFolderCardFooterPlacement;
+
+import 'z_folder_card.dart' show kZFolderCardFooterBesideMinWidth;
 
 /// Les valeurs de RÉFÉRENCE de la carte de dossier d'étude (mesurées chez
 /// IFFD, `folder_card_zcrud.dart:84-140` — portage annoté de
@@ -76,6 +79,52 @@ abstract final class ZFolderCardReference {
 
   /// Hauteur de la bande d'accent de tête (**4** — `kFolderCardAccentHeight`).
   static const double accentBandHeight = 4;
+
+  // ── Bas de carte : compteurs / pied (CR-IFFD-68) ──────────────────────────
+
+  /// DISPOSITION de référence du bas de carte
+  /// (**[ZFolderCardFooterPlacement.below]** — CR-IFFD-68).
+  ///
+  /// 🔴 **C'est un CHANGEMENT DE DÉFAUT** de `ZDefaultFolderCard` (livrée la
+  /// veille en v0.49.0, adoptée par un seul hôte — l'émetteur de la CR). La
+  /// primitive `ZFolderCard`, elle, garde `beside` : **aucun hôte de la
+  /// primitive ne bouge d'un pixel** (garde dédiée).
+  ///
+  /// **Ce qui change à l'écran pour un hôte PASSIF de la carte par défaut**,
+  /// et rien d'autre : une carte qui passe `counts` **et** `footer` empile
+  /// désormais le pied sous les compteurs — le pied descend de `gapS` + une
+  /// ligne (mesuré : **+18 dp** de hauteur en régime non borné, à ×1), et les
+  /// compteurs récupèrent la largeur ENTIÈRE (mesuré à 320 dp : la fenêtre
+  /// passe de **146 à 296 dp**, les badges visibles de **2 à 4**). Une carte
+  /// SANS pied, ou SANS compteurs, ne bouge pas d'un pixel : il n'y a rien à
+  /// empiler, et la ligne historique (badge « Archivé » compris) est rendue
+  /// telle quelle.
+  ///
+  /// 📐 **Pourquoi `below` et NON un défaut adaptatif** — la piste que la CR
+  /// suggérait sans l'avoir éprouvée. Le côte-à-côte cesse d'amputer à
+  /// `2 × largeurDeLaRangée + gapS`, soit ~**740 dp de bas de carte** pour le
+  /// corpus réel de l'émetteur (mesures : rangée de 569 dp en police de test,
+  /// 4 badges visibles sur 4 seulement à partir d'une carte de 1200 dp). Aucune
+  /// cellule de grille de dossiers n'approche cette largeur. Et surtout : le
+  /// point d'équilibre dépend des LIBELLÉS (≈350 dp pour des libellés courts,
+  /// >900 dp pour cinq badges verbeux), donc **aucun seuil fixe ne peut être
+  /// juste pour tous les hôtes** — placé trop bas, il réintroduit le défaut
+  /// exactement à la largeur où il bascule (mesuré : à 600 dp, côte à côte ne
+  /// montre plus que 2 badges sur 4). Le régime adaptatif reste **offert**
+  /// (paramètre `footerPlacement` + jeton `folderCardFooterPlacement`), avec un
+  /// seuil réglable : seul l'hôte connaît ses libellés.
+  ///
+  /// CR-56 est donc respectée dans les deux sens : le côte-à-côte reste
+  /// « raisonnable pour un pied court et UN compteur » — et le reste, puisqu'un
+  /// seul créneau ne s'empile pas.
+  static const ZFolderCardFooterPlacement footerPlacement =
+      ZFolderCardFooterPlacement.below;
+
+  /// Seuil du régime adaptatif (**[kZFolderCardFooterBesideMinWidth]**) — même
+  /// constante que la primitive, pour qu'il n'existe **qu'un** seuil dans le
+  /// socle. Réglable par paramètre (`footerBesideMinWidth`) et par jeton
+  /// (`ZcrudTheme.folderCardFooterBesideMinWidth`).
+  static const double footerBesideMinWidth = kZFolderCardFooterBesideMinWidth;
 
   // ── Ombre douce (couleur = rôle `shadowColor`, JAMAIS un littéral) ─────────
 

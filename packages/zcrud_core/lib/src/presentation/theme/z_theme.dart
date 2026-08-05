@@ -246,6 +246,50 @@ enum ZStudyCardContentAlignment {
   bottom,
 }
 
+/// DISPOSITION du bas de carte d'une carte de dossier d'étude
+/// (`ZFolderCard` / `ZDefaultFolderCard`, **CR-IFFD-68**) — token de LOOK :
+/// il dit OÙ va le pied, jamais ce qu'il contient.
+///
+/// 🔴 **Le défaut mesuré qui l'a fait exister** : la primitive assemblait le
+/// créneau compteur et le créneau pied dans la MÊME `Row`, chacun en
+/// `Expanded` — donc chacun à la MOITIÉ de la largeur. Mesuré chez IFFD : une
+/// carte à quatre badges de compteur n'en montrait plus que **deux**, et le
+/// pied (« Par toi ») venait s'accoler au dernier badge visible. Le seul
+/// contournement possible — recomposer soi-même le créneau compteur — **rend
+/// à l'hôte le rendu des badges**, donc lui fait perdre le plancher de
+/// contraste que `ZDefaultFolderCard` garantit (CR-IFFD-64).
+///
+/// Priorité, partout : paramètre de carte > ce jeton > défaut-référence.
+enum ZFolderCardFooterPlacement {
+  /// Compteur et pied **côte à côte**, chacun en `Expanded` d'une même ligne —
+  /// **rendu HISTORIQUE de la primitive** `ZFolderCard`, et ce qu'elle rend
+  /// toujours quand personne ne déclare rien (aucun hôte passif ne bouge).
+  ///
+  /// Raisonnable pour un pied court **et un seul** compteur ; c'est au-delà
+  /// que la moitié de largeur devient une amputation.
+  beside,
+
+  /// Pied **EMPILÉ SOUS** le compteur : le compteur reçoit la largeur ENTIÈRE
+  /// de la carte (il peut donc défiler sur toute la largeur), le pied vient
+  /// dessous. Coût : une ligne de plus, donc la hauteur d'une ligne de texte
+  /// plus `gapS`.
+  ///
+  /// 🔴 **Le badge « Archivé » suit la DERNIÈRE ligne de la pile** : le poser
+  /// sur la ligne des compteurs recréerait exactement l'amputation corrigée
+  /// ici. Quand il n'y a qu'une ligne (pied ou compteur absent), cette règle
+  /// rend donc STRICTEMENT ce que rend [beside].
+  below,
+
+  /// **Empilé en étroit, côte à côte en large** : bascule sur [beside] dès que
+  /// la largeur offerte au bas de carte atteint le seuil
+  /// (`ZcrudTheme.folderCardFooterBesideMinWidth`, paramètre `footerBesideMinWidth`).
+  ///
+  /// Largeur NON BORNÉE ⇒ repli sur [beside] (AD-10) : sans largeur finie il
+  /// n'y a pas de seuil à comparer, et la ligne unique est le régime que la
+  /// primitive a toujours rendu.
+  adaptive,
+}
+
 /// Densité du **hub d'ajout de contenu** (`ZContentHubSheet`, **CR-IFFD-65**).
 ///
 /// 🔴 **Le défaut a CHANGÉ le 2026-08-05, sur décision du propriétaire du
@@ -388,6 +432,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.folderCardIconTileTintAlpha,
     this.folderCardGlyphSize,
     this.folderCardMinContrast,
+    this.folderCardFooterPlacement,
+    this.folderCardFooterBesideMinWidth,
     this.contentHubDensity,
     this.contentHubItemExtent,
     this.contentHubItemRadius,
@@ -993,6 +1039,27 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// plancher du TEXTE normal ; l'abaisser sous 3.0 sort de WCAG AA.
   final double? folderCardMinContrast;
 
+  /// DISPOSITION du bas de carte — compteur et pied côte à côte, empilés, ou
+  /// adaptatif (**CR-IFFD-68**). `null` ⇒ le consommateur applique SA
+  /// référence : la primitive `ZFolderCard` reste sur
+  /// [ZFolderCardFooterPlacement.beside] (rendu historique, aucun hôte passif
+  /// ne bouge), `ZDefaultFolderCard` applique
+  /// `ZFolderCardReference.footerPlacement`.
+  ///
+  /// 🔴 Ce jeton ne dit pas QUOI rendre, il dit OÙ : les deux créneaux restent
+  /// rendus par la carte dans les trois valeurs, donc le plancher de contraste
+  /// des badges de `ZDefaultFolderCard` tient dans toutes.
+  final ZFolderCardFooterPlacement? folderCardFooterPlacement;
+
+  /// Seuil de largeur (dp) au-delà duquel [ZFolderCardFooterPlacement.adaptive]
+  /// bascule sur le côte-à-côte, mesuré sur la largeur RÉELLEMENT offerte au
+  /// bas de carte (padding interne déjà retranché). `null` ⇒ référence.
+  ///
+  /// 🔴 **DISCRET comme un plancher** : un point de rupture interpolé pendant
+  /// une transition de thème est un point de rupture que personne n'a choisi —
+  /// et il ferait basculer la mise en page au milieu de l'animation.
+  final double? folderCardFooterBesideMinWidth;
+
   // ── Hub d'ajout de CONTENU (CR-IFFD-65) ───────────────────────────────────
   // Aucun jeton `contentHub*` n'existait : la forme du hub n'était atteignable
   // NI par paramètre NI par thème (grief ④ de la CR, MESURÉ). La seule voie
@@ -1340,6 +1407,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? folderCardIconTileTintAlpha,
     double? folderCardGlyphSize,
     double? folderCardMinContrast,
+    ZFolderCardFooterPlacement? folderCardFooterPlacement,
+    double? folderCardFooterBesideMinWidth,
     ZContentHubDensity? contentHubDensity,
     double? contentHubItemExtent,
     Radius? contentHubItemRadius,
@@ -1479,6 +1548,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     folderCardGlyphSize: folderCardGlyphSize ?? this.folderCardGlyphSize,
     folderCardMinContrast:
         folderCardMinContrast ?? this.folderCardMinContrast,
+    folderCardFooterPlacement:
+        folderCardFooterPlacement ?? this.folderCardFooterPlacement,
+    folderCardFooterBesideMinWidth:
+        folderCardFooterBesideMinWidth ?? this.folderCardFooterBesideMinWidth,
     contentHubDensity: contentHubDensity ?? this.contentHubDensity,
     contentHubItemExtent: contentHubItemExtent ?? this.contentHubItemExtent,
     contentHubItemRadius: contentHubItemRadius ?? this.contentHubItemRadius,
@@ -1934,6 +2007,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       folderCardMinContrast: t < 0.5
           ? folderCardMinContrast
           : other.folderCardMinContrast,
+      // CR-IFFD-68 — une DISPOSITION et un POINT DE RUPTURE sont discrets : ni
+      // demi-empilement, ni seuil intermédiaire (qui ferait basculer la mise en
+      // page au milieu d'une transition de thème).
+      folderCardFooterPlacement: t < 0.5
+          ? folderCardFooterPlacement
+          : other.folderCardFooterPlacement,
+      folderCardFooterBesideMinWidth: t < 0.5
+          ? folderCardFooterBesideMinWidth
+          : other.folderCardFooterBesideMinWidth,
       // CR-IFFD-65 — chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
       // reste `null`, donc la valeur de RÉFÉRENCE du consommateur n'est JAMAIS
       // matérialisée par une transition de thème (leçon `studyCardBadgeRadius`).

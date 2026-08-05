@@ -65,7 +65,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZColorPair, ZcrudTheme, zResolveColorKeyOrSlot;
+    show
+        ZColorPair,
+        ZFolderCardFooterPlacement,
+        ZcrudTheme,
+        zResolveColorKeyOrSlot;
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, remapColorKey;
 
@@ -147,6 +151,8 @@ class ZDefaultFolderCard extends StatelessWidget {
     this.belowSubtitle,
     this.menu,
     this.footer,
+    this.footerPlacement,
+    this.footerBesideMinWidth,
     this.accent,
     this.archivedLabel,
     this.isArchived = false,
@@ -204,7 +210,32 @@ class ZDefaultFolderCard extends StatelessWidget {
 
   /// Slot de pied rendu **verbatim** (ligne de créateur, méta…). `null` ⇒
   /// **absent**.
+  ///
+  /// 🔴 **Il n'AMPUTE plus les compteurs** (**CR-IFFD-68**) : voir
+  /// [footerPlacement].
   final Widget? footer;
+
+  /// DISPOSITION du bas de carte (**CR-IFFD-68**). `null` ⇒ jeton
+  /// `ZcrudTheme.folderCardFooterPlacement`, puis
+  /// [ZFolderCardReference.footerPlacement]
+  /// (**[ZFolderCardFooterPlacement.below]** — le pied EMPILÉ sous les
+  /// compteurs, à toute largeur ; voir cette constante pour les mesures qui ont
+  /// écarté un défaut adaptatif, et pour ce qui change à l'écran).
+  ///
+  /// 🔴 **Ce que la CR a mesuré** : avec [counts] **et** [footer], la primitive
+  /// donnait la MOITIÉ de la largeur à chacun — une carte à quatre badges n'en
+  /// montrait plus que deux, et le pied s'accolait au dernier badge visible. Le
+  /// seul contournement, recomposer le créneau compteur via [countsSlot], rend
+  /// le rendu des badges à l'hôte et lui fait donc perdre le **plancher de
+  /// contraste** que cette carte garantit (CR-IFFD-64). Empiler le ferme sans
+  /// rien rendre à l'hôte : les badges restent peints ici, par `zReadableTintOn`.
+  final ZFolderCardFooterPlacement? footerPlacement;
+
+  /// Seuil de largeur du régime [ZFolderCardFooterPlacement.adaptive], mesuré
+  /// sur la largeur offerte au bas de carte. `null` ⇒ jeton
+  /// `ZcrudTheme.folderCardFooterBesideMinWidth`, puis
+  /// [ZFolderCardReference.footerBesideMinWidth].
+  final double? footerBesideMinWidth;
 
   /// Bande d'accent de tête **de remplacement** (ex. un dégradé d'identité).
   /// `null` ⇒ la bande de référence, unie, dérivée de la couleur du dossier et
@@ -378,6 +409,16 @@ class ZDefaultFolderCard extends StatelessWidget {
       belowSubtitle: _buildBelowSubtitle(context, theme, pair, cardSurface),
       counts: _buildCounts(context, theme, pair, cardSurface),
       footer: footer,
+      // CR-IFFD-68 — priorité paramètre > jeton > RÉFÉRENCE de la carte par
+      // défaut : la primitive, elle, reste sur son défaut historique quand
+      // personne ne déclare rien (elle ne reçoit jamais `null` d'ici).
+      footerPlacement:
+          footerPlacement ??
+          theme.folderCardFooterPlacement ??
+          ZFolderCardReference.footerPlacement,
+      // Laissé tel quel (donc `null` par défaut) : la primitive applique la
+      // MÊME chaîne jeton > constante, et il n'existe qu'un seuil dans le socle.
+      footerBesideMinWidth: footerBesideMinWidth,
       archivedLabel: archivedLabel,
       isArchived: isArchived,
       onTap: onTap,
