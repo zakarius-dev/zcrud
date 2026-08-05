@@ -44,7 +44,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZGradientSpec;
+import 'package:zcrud_core/zcrud_core.dart'
+    show ZGradientSpec, ZStudyCardContentAlignment;
 
 /// Les valeurs de RÉFÉRENCE de la carte de flashcard (mesurées chez IFFD,
 /// `flashcard_widgets.dart:88-156, 265-340` — CR-IFFD-57), le point d'audit
@@ -191,6 +192,24 @@ abstract final class ZFlashcardCardReference {
   /// `flashcard_widgets.dart:385-387`). C'est la borne de HAUTEUR du legacy
   /// (jamais un `maxLines` : le rendu riche n'a pas de notion de ligne).
   static const double questionMaxHeight = kToolbarHeight * 0.65;
+
+  /// Étendue du **fondu de continuation** appliqué au bas de l'énoncé quand
+  /// il déborde sa borne (**CR-IFFD-62 ③**, 12 dp).
+  ///
+  /// 🔴 **Ce n'est PAS une valeur du legacy** : le legacy ne signalait RIEN
+  /// (le texte était coupé net en milieu de ligne — le grief le plus grave de
+  /// la CR). C'est une valeur de socle, choisie ≈ à la hauteur d'une ligne du
+  /// corps de référence (13 × 1.15 ≈ 15) pour que l'effacement porte sur la
+  /// dernière ligne visible et se lise comme « ça continue », sans manger une
+  /// ligne entière. Réglable par paramètre de carte.
+  static const double questionFadeExtent = 12;
+
+  /// Alignement vertical de RÉFÉRENCE du contenu de la carte
+  /// (**CR-IFFD-62 ⑤**) : `spread` — l'énoncé absorbe l'espace libre du cadre
+  /// et POUSSE la pastille de type au bas de la carte. C'est la cascade des
+  /// deux `Expanded` du legacy (`flashcard_widgets.dart:188-425`).
+  static const ZStudyCardContentAlignment contentAlignment =
+      ZStudyCardContentAlignment.spread;
 
   /// Corps de paragraphe de BASE du moteur rich-text (Quill fixe 16 —
   /// `DefaultStyles.getInstance`, mesuré sur pièces flutter_quill 11.5.1).

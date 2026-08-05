@@ -589,7 +589,12 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
             child: _sheetPadding(
               theme,
               Padding(
-                padding: EdgeInsetsDirectional.all(theme.gapM),
+                // CR-IFFD-61 ③ — la gouttière de la feuille cesse de rider
+                // `gapM`, que l'hôte règle déjà pour le padding de ses cartes
+                // (12) alors que sa feuille en demande 8 : aucune valeur de
+                // `gapM` ne pouvait satisfaire les deux. `null` ⇒ `gapM`, le
+                // rendu strictement historique.
+                padding: _sheetGutter(theme),
                 child: Column(
                 key: ZSubfolderSelectorBar.sheetKey,
                 mainAxisSize: MainAxisSize.min,
@@ -598,7 +603,9 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                   // Point 4 — titre INJECTÉ ; `null` ⇒ absent de l'arbre (AD-4).
                   if (title != null)
                     Padding(
-                      padding: EdgeInsetsDirectional.all(theme.gapM),
+                      // CR-IFFD-61 ③ — même jeton que la gouttière : le titre
+                      // fait partie de la STRUCTURE de la feuille.
+                      padding: _sheetGutter(theme),
                       child: Text(
                         title,
                         key: ZSubfolderSelectorBar.sheetTitleKey,
@@ -663,6 +670,20 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       child: child,
     );
   }
+
+  /// Padding STRUCTUREL interne de la feuille (**CR-IFFD-61 ③**) : gouttière,
+  /// titre, pied « ajouter ».
+  ///
+  /// `null` ⇒ `EdgeInsetsDirectional.all(gapM)` — **rendu strictement
+  /// inchangé**. Motif identique à `contentPadding` de la carte (CR-LEX-70) et
+  /// à `leadingGap` (CR-IFFD-61 ①) : un jeton générique portait plusieurs
+  /// valeurs de référence incompatibles, on lui en retire une.
+  ///
+  /// ⚠️ NE couvre PAS le padding des ITEMS de la feuille (`_emphasis`), qui
+  /// reste `gapM`/`gapS` : c'est un rôle d'ITEM, pas de structure de feuille.
+  EdgeInsetsGeometry _sheetGutter(ZcrudTheme theme) =>
+      theme.subfolderSheetContentPadding ??
+      EdgeInsetsDirectional.all(theme.gapM);
 
   /// Dénonciation de cible tactile pour les ITEMS de la feuille — posée
   /// UNIQUEMENT sous `subfolderSheetPadding`, comme son pendant de la barre.
@@ -847,7 +868,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     final String? label = widget.spec.addLabel;
     final Icon icon = Icon(widget.spec.addIcon ?? _kAddFallbackIcon);
     return Padding(
-      padding: EdgeInsetsDirectional.all(theme.gapM),
+      // CR-IFFD-61 ③ — même jeton que la gouttière et le titre.
+      padding: _sheetGutter(theme),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: _kMinTapTarget),
         child: label == null

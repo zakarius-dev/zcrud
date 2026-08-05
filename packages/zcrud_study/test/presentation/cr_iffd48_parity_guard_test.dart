@@ -187,6 +187,9 @@ const List<_ParityPair> _pairs = <_ParityPair>[
       // riche n'a pas de notion de ligne — la borne est une hauteur.)
       'questionBuilder': 'questionBuilder',
       'questionMaxHeight': 'questionMaxHeight',
+      // CR-IFFD-62 ③/④ : fondu de continuation + alignement vertical.
+      'questionFadeExtent': 'cardQuestionFadeExtent',
+      'contentAlignment': 'cardContentAlignment',
       'showAnswerPreview': 'showAnswerPreview',
       'answerLabels': 'answerLabels',
       'trailing': 'cardTrailingBuilder',

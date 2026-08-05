@@ -26,6 +26,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZDisplayStateBinding,
         ZReorderRenderRequest,
         ZStudySectionCollapsePlacement,
+        ZStudySectionCountPlacement,
         ZStudySectionCountRole,
         ZStudySectionCountShape;
 import 'package:zcrud_responsive/zcrud_responsive.dart'
@@ -296,15 +297,27 @@ class _ZStudySection extends StatelessWidget {
     final bool headerInBody = spec.collapsible &&
         (collapseInHeader || spec.collapseOnHeaderTap);
 
+    // CR-IFFD-62 ④ — retrait latéral PROPRE du rail. Quand il est demandé
+    // (paramètre de spec, ou jeton de thème), le padding horizontal de section
+    // cesse de s'appliquer au RAIL (il reste sur l'en-tête et l'état vide) :
+    // sans cela le retrait demandé s'AJOUTERAIT au padding de section et ne
+    // serait jamais atteignable. `null` des deux côtés ⇒ arbre et rendu
+    // STRICTEMENT inchangés.
+    final EdgeInsetsGeometry? railPadding = spec.axis == Axis.horizontal
+        ? (spec.railPadding ?? theme.railPadding)
+        : null;
     return Padding(
-      padding: EdgeInsetsDirectional.symmetric(
-        horizontal: theme.gapM,
-        vertical: theme.gapS,
-      ),
+      padding: railPadding == null
+          ? EdgeInsetsDirectional.symmetric(
+              horizontal: theme.gapM,
+              vertical: theme.gapS,
+            )
+          : EdgeInsetsDirectional.symmetric(vertical: theme.gapS),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!headerInBody) _buildHeader(context, theme),
+          if (!headerInBody)
+            _inset(railPadding, theme, _buildHeader(context, theme)),
           // CR-IFFD-10 §1 — le corps est masqué quand la section est repliée.
           // L'état vit LOCALEMENT (`_CollapsibleBody`, sous la frontière keyée
           // de la section) : replier ne reconstruit NI les autres sections NI la
@@ -313,38 +326,79 @@ class _ZStudySection extends StatelessWidget {
             _CollapsibleBody(
               spec: spec,
               theme: theme,
-              body: _body(context, theme, isEmpty),
+              body: _body(context, theme, isEmpty, railPadding),
               collapseInHeader: collapseInHeader,
               headerBuilder: headerInBody
                   ? (BuildContext context, Widget? trailingCollapse) =>
-                      _buildHeader(
-                        context,
+                      _inset(
+                        railPadding,
                         theme,
-                        trailingCollapse: trailingCollapse,
+                        _buildHeader(
+                          context,
+                          theme,
+                          trailingCollapse: trailingCollapse,
+                        ),
                       )
                   : null,
             )
           else ...[
             SizedBox(height: theme.gapS),
-            _body(context, theme, isEmpty),
+            _body(context, theme, isEmpty, railPadding),
           ],
         ],
       ),
     );
   }
 
+  /// Restitue le retrait horizontal de section RETIRÉ du `Padding` externe
+  /// quand un retrait de rail propre est demandé (**CR-IFFD-62 ④**).
+  /// [railPadding] `null` ⇒ enfant restitué TEL QUEL (aucun nœud ajouté).
+  Widget _inset(
+    EdgeInsetsGeometry? railPadding,
+    ZcrudTheme theme,
+    Widget child,
+  ) =>
+      railPadding == null
+          ? child
+          : Padding(
+              padding: EdgeInsetsDirectional.symmetric(horizontal: theme.gapM),
+              child: child,
+            );
+
   /// Corps de la section : `emptyState` si vide, items sinon (jamais l'inverse,
   /// AC3). Extrait pour être partagé entre le rendu direct et le rendu repliable.
-  Widget _body(BuildContext context, ZcrudTheme theme, bool isEmpty) => isEmpty
-      ? Semantics(container: true, label: spec.title, child: spec.emptyState)
-      : _buildItems(context, theme);
+  ///
+  /// [railPadding] non-`null` ⇒ le RAIL porte ce retrait à la place du padding
+  /// de section (CR-IFFD-62 ④) ; l'état vide, lui, garde le retrait de section
+  /// (il s'aligne sur le titre, pas sur les cartes).
+  Widget _body(
+    BuildContext context,
+    ZcrudTheme theme,
+    bool isEmpty,
+    EdgeInsetsGeometry? railPadding,
+  ) =>
+      isEmpty
+          ? _inset(
+              railPadding,
+              theme,
+              Semantics(
+                container: true,
+                label: spec.title,
+                child: spec.emptyState,
+              ),
+            )
+          : _buildItems(context, theme, railPadding);
 
   /// Items de la section selon [ZStudyToolsSectionSpec.axis] :
   /// - [Axis.vertical] réordonnable ([onReorder] non-null) → grille
   ///   `ReorderableListView` (ES-5.3, sous-arbre local isolé) ;
   /// - [Axis.vertical] (défaut) → empilement (grille) ;
   /// - [Axis.horizontal] → **rail** défilant horizontalement (flashcards).
-  Widget _buildItems(BuildContext context, ZcrudTheme theme) {
+  Widget _buildItems(
+    BuildContext context,
+    ZcrudTheme theme,
+    EdgeInsetsGeometry? railPadding,
+  ) {
     // ES-5.3 — réordonnabilité UNIQUEMENT sur les grilles verticales. `null` =
     // capacité absente (AD-4) ⇒ rendu ES-5.2 inchangé (non-régression).
     //
@@ -377,14 +431,24 @@ class _ZStudySection extends StatelessWidget {
       return _ReorderableItemList(spec: spec, theme: theme);
     }
     if (spec.axis == Axis.horizontal) {
+      // CR-IFFD-62 ④ — espacement inter-items ADRESSABLE : paramètre de spec >
+      // jeton `ZcrudTheme.railItemGap` > `gapS` (repli HISTORIQUE). Les voies
+      // typées posent la référence (12) ; le constructeur principal garde
+      // `gapS` — rendu strictement inchangé pour un hôte qui compose son rail.
+      final double itemGap =
+          spec.railItemGap ?? theme.railItemGap ?? theme.gapS;
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        // CR-IFFD-62 ④ — retrait latéral PROPRE du rail (`null` ⇒ aucun
+        // padding sur le défileur : le retrait vient du padding de section,
+        // rendu inchangé).
+        padding: railPadding,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (var i = 0; i < spec.itemCount; i++)
               Padding(
-                padding: EdgeInsetsDirectional.only(end: theme.gapS),
+                padding: EdgeInsetsDirectional.only(end: itemGap),
                 child: spec.itemBuilder(context, i),
               ),
           ],
@@ -569,24 +633,65 @@ class _ZStudySection extends StatelessWidget {
     Widget? trailingCollapse,
   }) {
     final addAction = spec.addAction;
+    final Widget title = Text(
+      spec.title,
+      textAlign: TextAlign.start,
+      // CR-IFFD-50 ① — le style du titre est un JETON
+      // (`studySectionTitleStyle`) : `null` ⇒ repli historique
+      // strictement inchangé (`labelTextStyle`, puis `titleMedium`).
+      style: theme.studySectionTitleStyle ??
+          theme.labelTextStyle ??
+          Theme.of(context).textTheme.titleMedium,
+      // CR-IFFD-61 ④ — le titre s'ELLIPSE, dans les DEUX placements. En
+      // `adjacentToTitle` il n'est plus `Expanded` mais `Flexible` : sans
+      // ellipse, un titre long déborderait au lieu de rétrécir (mesuré à
+      // 320 dp). En `lineEnd` le comportement est INCHANGÉ (le `Text` d'un
+      // `Expanded` était déjà borné en largeur, et sans `maxLines` il
+      // enroulait — c'est pourquoi l'ellipse n'est posée QUE sur le chemin
+      // adjacent, ci-dessous).
+    );
+    // CR-IFFD-61 ④ — écart titre↔compteur ADRESSABLE (`null` ⇒ `gapS`, le
+    // rendu historique) : il ridait `gapS`, partagé avec toutes les autres
+    // gouttières de l'en-tête, alors que la référence pose 12 ICI seulement.
+    final double countGap = theme.studySectionCountGap ?? theme.gapS;
+    final Widget countBadge =
+        _CountBadge(count: spec.headerCount ?? spec.itemCount, theme: theme);
+    // CR-IFFD-61 ④ — PLACEMENT du compteur. `null`/`lineEnd` ⇒ titre `Expanded`
+    // qui POUSSE le compteur à l'extrémité (rendu historique, strictement
+    // inchangé). `adjacentToTitle` ⇒ le compteur SUIT le titre : c'est le titre
+    // qu'il qualifie (« Notes — 6 »), pas le bord de l'écran.
+    //
+    // 🔴 Le compteur n'est JAMAIS écrasé par un titre long : il reste
+    // INFLEXIBLE et c'est le titre qui est `Flexible` + ellipsé. Le `Expanded`
+    // enveloppant l'ensemble garde les cibles tactiles (actions, chevron) à
+    // leur largeur pleine — l'invariant de CR-IFFD-50 est préservé.
+    final bool adjacent = theme.studySectionCountPlacement ==
+        ZStudySectionCountPlacement.adjacentToTitle;
     return Semantics(
       header: true,
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              spec.title,
-              textAlign: TextAlign.start,
-              // CR-IFFD-50 ① — le style du titre est un JETON
-              // (`studySectionTitleStyle`) : `null` ⇒ repli historique
-              // strictement inchangé (`labelTextStyle`, puis `titleMedium`).
-              style: theme.studySectionTitleStyle ??
-                  theme.labelTextStyle ??
-                  Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          SizedBox(width: theme.gapS),
-          _CountBadge(count: spec.headerCount ?? spec.itemCount, theme: theme),
+          if (adjacent)
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: DefaultTextStyle.merge(
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      child: title,
+                    ),
+                  ),
+                  SizedBox(width: countGap),
+                  countBadge,
+                ],
+              ),
+            )
+          else ...[
+            Expanded(child: title),
+            SizedBox(width: countGap),
+            countBadge,
+          ],
           // CR-IFFD-10 §3 — action secondaire (ex. « Afficher tout »), rendue
           // AVANT l'ajout : consultation avant création. `null` ⇒ ABSENTE (AD-4).
           if (spec.secondaryAction != null) ...[

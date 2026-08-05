@@ -11,7 +11,11 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart'
-    show ZGradientSpec, ZStudyCardHierarchy, ZToggleController;
+    show
+        ZGradientSpec,
+        ZStudyCardContentAlignment,
+        ZStudyCardHierarchy,
+        ZToggleController;
 import 'package:zcrud_exam/zcrud_exam.dart' show ZExam;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show ZFlashcard, ZFlashcardContentBuilder;
@@ -24,6 +28,15 @@ import 'z_default_flashcard_card.dart';
 import 'z_default_mindmap_card.dart';
 import 'z_flashcard_card_reference.dart';
 import 'z_rail_item.dart';
+
+/// Espacement de RÉFÉRENCE entre deux items d'un rail horizontal
+/// (**CR-IFFD-62 ④**) — 12 dp, mesuré sur le legacy IFFD
+/// (`Padding(EdgeInsets.only(right: 12))` autour de chaque `FlashcardCard`,
+/// `folder_study_tools_page.dart:1124-1127`).
+///
+/// C'est le défaut des voies TYPÉES (qui rendent les cartes par défaut) ; le
+/// constructeur principal, lui, garde `gapS` — cf. `railItemGap`.
+const double kZRailItemReferenceGap = 12;
 
 /// Mode de PRÉSENTATION de la poignée de réordonnancement (CR-IFFD-54 ②).
 ///
@@ -121,6 +134,8 @@ class ZStudyToolsSectionSpec {
     this.crossAxisMaxColumns,
     this.crossAxisVirtualized = false,
     this.crossAxisViewportHeight,
+    this.railItemGap,
+    this.railPadding,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
     this.headerCount,
@@ -258,6 +273,12 @@ class ZStudyToolsSectionSpec {
     // la carte — garde de parité CR-IFFD-48).
     ZFlashcardContentBuilder? questionBuilder,
     double questionMaxHeight = ZFlashcardCardReference.questionMaxHeight,
+    // CR-IFFD-62 ③/④ — fondu de continuation de l'énoncé et alignement
+    // vertical du contenu de carte (pendants nominaux — garde de parité
+    // CR-IFFD-48).
+    double cardQuestionFadeExtent =
+        ZFlashcardCardReference.questionFadeExtent,
+    ZStudyCardContentAlignment? cardContentAlignment,
     // `null` (défaut) ⇒ le MODE suit la surface (le `isInGrid` legacy) : la
     // grille (axis vertical) affiche l'aperçu de réponse, le rail horizontal
     // NON. Explicite ⇒ la valeur gouverne les deux axes.
@@ -270,6 +291,11 @@ class ZStudyToolsSectionSpec {
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
     double? railItemWidth,
+    // CR-IFFD-62 ① — hauteur d'item du rail horizontal, patron EXACT de
+    // `railItemWidth`. `null` ⇒ token `ZcrudTheme.railItemHeight`, puis
+    // AUCUNE contrainte (asymétrie motivée sur `ZRailItem.height`). Ignoré en
+    // vertical.
+    double? railItemHeight,
     // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
     // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
     int? railPreviewCount,
@@ -295,6 +321,8 @@ class ZStudyToolsSectionSpec {
     this.crossAxisMaxColumns,
     this.crossAxisVirtualized = false,
     this.crossAxisViewportHeight,
+    this.railItemGap = kZRailItemReferenceGap,
+    this.railPadding,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
     int? headerCount,
@@ -412,6 +440,8 @@ class ZStudyToolsSectionSpec {
             height: cardHeight,
             questionBuilder: questionBuilder,
             questionMaxHeight: questionMaxHeight,
+            questionFadeExtent: cardQuestionFadeExtent,
+            contentAlignment: cardContentAlignment,
             // CR-IFFD-59 — le `isInGrid` legacy : aperçu en grille (axe
             // vertical), jamais dans le rail — sauf choix EXPLICITE de l'hôte.
             showAnswerPreview: showAnswerPreview ?? axis == Axis.vertical,
@@ -427,7 +457,11 @@ class ZStudyToolsSectionSpec {
           // dans un défileur horizontal ne peint rien). Priorité : paramètre
           // explicite > token de thème > repli 280 dp. UNIQUEMENT sur la voie
           // typée : un itemBuilder d'hôte reste responsable de son bornage.
-          return ZRailItem(width: railItemWidth, child: item);
+          return ZRailItem(
+            width: railItemWidth,
+            height: railItemHeight,
+            child: item,
+          );
         });
 
   /// Section de **cartes mentales** dont le socle fournit le rendu d'item
@@ -484,6 +518,11 @@ class ZStudyToolsSectionSpec {
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
     double? railItemWidth,
+    // CR-IFFD-62 ① — hauteur d'item du rail horizontal, patron EXACT de
+    // `railItemWidth`. `null` ⇒ token `ZcrudTheme.railItemHeight`, puis
+    // AUCUNE contrainte (asymétrie motivée sur `ZRailItem.height`). Ignoré en
+    // vertical.
+    double? railItemHeight,
     // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
     // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
     int? railPreviewCount,
@@ -509,6 +548,8 @@ class ZStudyToolsSectionSpec {
     this.crossAxisMaxColumns,
     this.crossAxisVirtualized = false,
     this.crossAxisViewportHeight,
+    this.railItemGap = kZRailItemReferenceGap,
+    this.railPadding,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
     int? headerCount,
@@ -622,7 +663,11 @@ class ZStudyToolsSectionSpec {
           );
           if (axis != Axis.horizontal) return item;
           // CR-IFFD-49 ① — cf. `.flashcards` (même règle, même priorité).
-          return ZRailItem(width: railItemWidth, child: item);
+          return ZRailItem(
+            width: railItemWidth,
+            height: railItemHeight,
+            child: item,
+          );
         });
 
   /// Section d'**examens** dont le socle fournit le rendu d'item
@@ -661,6 +706,11 @@ class ZStudyToolsSectionSpec {
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
     double? railItemWidth,
+    // CR-IFFD-62 ① — hauteur d'item du rail horizontal, patron EXACT de
+    // `railItemWidth`. `null` ⇒ token `ZcrudTheme.railItemHeight`, puis
+    // AUCUNE contrainte (asymétrie motivée sur `ZRailItem.height`). Ignoré en
+    // vertical.
+    double? railItemHeight,
     // CR-IFFD-49 ② — rail des N premiers (couplage badge-total + « afficher
     // tout »). `null` ⇒ aucun couplage, rendu antérieur strictement inchangé.
     int? railPreviewCount,
@@ -686,6 +736,8 @@ class ZStudyToolsSectionSpec {
     this.crossAxisMaxColumns,
     this.crossAxisVirtualized = false,
     this.crossAxisViewportHeight,
+    this.railItemGap = kZRailItemReferenceGap,
+    this.railPadding,
     this.collapseSemanticLabel,
     this.expandSemanticLabel,
     int? headerCount,
@@ -788,7 +840,11 @@ class ZStudyToolsSectionSpec {
           );
           if (axis != Axis.horizontal) return item;
           // CR-IFFD-49 ① — cf. `.flashcards` (même règle, même priorité).
-          return ZRailItem(width: railItemWidth, child: item);
+          return ZRailItem(
+            width: railItemWidth,
+            height: railItemHeight,
+            child: item,
+          );
         });
 
   /// Identifiant STABLE de la section (String opaque). Sert de clé de frontière
@@ -1075,6 +1131,58 @@ class ZStudyToolsSectionSpec {
   /// cause un **défilement imbriqué** — le prix de la virtualisation à ce
   /// niveau. Sans elle, la grille retombe défensivement en mode *eager*.
   final double? crossAxisViewportHeight;
+
+  /// ESPACEMENT entre deux items du **rail horizontal** (**CR-IFFD-62 ④**).
+  ///
+  /// Sans effet en [Axis.vertical].
+  ///
+  /// Priorité : ce paramètre > jeton `ZcrudTheme.railItemGap` > `gapS` (le
+  /// repli HISTORIQUE).
+  ///
+  /// 🔴 **Le défaut DIFFÈRE selon le constructeur, et c'est l'arbitrage
+  /// CR-IFFD-61 ① reconduit** :
+  /// - constructeur PRINCIPAL (l'hôte fournit son `itemBuilder`) ⇒ `null`,
+  ///   donc `gapS` : **rendu strictement inchangé** pour un hôte qui compose
+  ///   son propre rail (mesuré : lex_douane est exactement dans ce cas) ;
+  /// - voies TYPÉES (`.flashcards`/`.mindmaps`/`.exams`, qui fabriquent les
+  ///   cartes PAR DÉFAUT) ⇒ [kZRailItemReferenceGap] (12), la valeur de
+  ///   référence legacy IFFD (`EdgeInsets.only(right: 12)`,
+  ///   `folder_study_tools_page.dart:1124-1127`) — « le défaut EST la
+  ///   référence » (CR-IFFD-56) ne vaut que des rendus par défaut.
+  ///
+  /// Ce réglage existe parce que l'espacement du rail ridait `gapS`, jeton que
+  /// l'hôte règle déjà pour ses écarts inter-slots (même maladie que
+  /// CR-IFFD-61 ③, où `gapM` portait TROIS valeurs de référence).
+  final double? railItemGap;
+
+  /// PADDING du défileur du **rail horizontal** — son retrait latéral propre
+  /// (**CR-IFFD-62 ④**). Sans effet en [Axis.vertical].
+  ///
+  /// `null` (défaut, TOUS constructeurs) ⇒ le rail est inséré dans le padding
+  /// de section (`horizontal: gapM`) — **rendu strictement inchangé**.
+  /// Non-null ⇒ le padding horizontal de section n'est PLUS appliqué au rail
+  /// (il reste appliqué à l'EN-TÊTE et à l'état vide) : le retrait du rail
+  /// devient ABSOLU et atteignable, y compris `EdgeInsets.zero` pour un rail
+  /// qui affleure le bord.
+  ///
+  /// Priorité : ce paramètre > jeton `ZcrudTheme.railPadding` > padding de
+  /// section (comportement historique).
+  ///
+  /// 🔴 **Pourquoi le défaut n'est PAS la valeur de référence (8 dp), contre
+  /// la règle habituelle** — mesuré, pas supposé : dans le legacy, le MÊME
+  /// `Padding(all(8))` insère le titre de section ET le rail
+  /// (`folder_study_tools_page.dart`), exactement comme notre padding de
+  /// section. Poser 8 ici, alors que l'en-tête reste à `gapM`,
+  /// DÉSALIGNERAIT le titre et les cartes — un défaut pire que l'écart
+  /// mesuré. La valeur de référence reste atteignable en une ligne, mais
+  /// c'est une décision de PAGE, que seul l'hôte peut prendre en cohérence
+  /// avec son en-tête.
+  ///
+  /// ⚠️ **Le retrait mesuré au bord de la première CARTE vaut ce padding PLUS
+  /// la marge externe de la carte** (`CardThemeData.margin` de l'hôte, ou
+  /// `ZcrudTheme.studyCardMargin`) : les deux s'AJOUTENT. C'est l'origine
+  /// exacte des « 45 px » de la CR — cf. le rapport de lot.
+  final EdgeInsetsGeometry? railPadding;
 
   /// Libellé accessible du contrôle de repli quand la section est DÉPLIÉE
   /// (CR-IFFD-11 §3). Repli : `'Replier'`.

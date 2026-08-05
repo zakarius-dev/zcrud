@@ -46,6 +46,29 @@ abstract final class ZStudyCardReference {
   static const EdgeInsetsGeometry contentPadding =
       EdgeInsetsDirectional.all(12);
 
+  /// Écart entre la tuile d'icône de tête et le titre (**16** —
+  /// `SizedBox(width: 16)` du legacy IFFD `_buildGridItemCard`, CR-IFFD-61 ①).
+  ///
+  /// 🔴 **Distinct du padding de carte (12)** : c'est précisément le point de
+  /// la CR — les deux ridaient le MÊME jeton `gapM`, donc aucune valeur ne
+  /// pouvait satisfaire les deux. Mesuré : la carte par défaut rendait
+  /// `gapM` (8 en thème nu, 12 sous le thème IFFD) là où la référence pose 16.
+  static const double leadingGap = 16;
+
+  /// Élévation Material de la carte (**0** — `Card(elevation: 0)` du legacy
+  /// IFFD, CR-IFFD-61 ②).
+  ///
+  /// 🔴 **Ce que ce défaut corrige, MESURÉ** : sans élévation explicite, `Card`
+  /// retombe sur le défaut Material 3 (**1.0**) et porte une **ombre portée**
+  /// que la référence n'a pas. Capture de pixels comparée (carte par défaut vs
+  /// réplique littérale du legacy) : les deux rendus étaient byte-identiques
+  /// SUR TOUTE la face de la carte — la seule divergence était la bande de
+  /// 1 dp juste HORS de la face, noire à la carte par défaut, transparente au
+  /// legacy. C'est cette ombre qui assombrit les pixels autour de la tête de
+  /// carte, et non un accent (l'accent n'existe QUE dans la hiérarchie
+  /// `tintedTile`, jamais au défaut — mesuré par absence de clé dans l'arbre).
+  static const double cardElevation = 0;
+
   /// Marge externe de la carte (4, directionnelle — AD-13).
   static const EdgeInsetsGeometry margin = EdgeInsetsDirectional.all(4);
 
@@ -99,6 +122,8 @@ class ZStudyCardChrome {
     required this.neutralGlyphColor,
     required this.badgeRadius,
     required this.glyphSize,
+    required this.leadingGap,
+    required this.elevation,
   });
 
   /// Liseré effectif de la carte.
@@ -136,6 +161,13 @@ class ZStudyCardChrome {
 
   /// Taille effective du glyphe dans la tuile (référence : 28).
   final double glyphSize;
+
+  /// Écart effectif tuile→titre (**CR-IFFD-61 ①**, référence : 16).
+  final double leadingGap;
+
+  /// Élévation Material effective de la carte (**CR-IFFD-61 ②**, référence :
+  /// 0 — aucune ombre portée, liseré seul).
+  final double elevation;
 }
 
 /// Résout le chrome de référence depuis le contexte (rôles du `ColorScheme`)
@@ -149,6 +181,8 @@ ZStudyCardChrome zStudyCardChromeOf(
   EdgeInsetsGeometry? margin,
   TextStyle? titleStyle,
   TextStyle? subtitleStyle,
+  double? leadingGap,
+  double? elevation,
 }) {
   final ZcrudTheme theme = ZcrudTheme.of(context);
   final ThemeData material = Theme.of(context);
@@ -191,5 +225,19 @@ ZStudyCardChrome zStudyCardChromeOf(
     neutralGlyphColor: scheme.onSurfaceVariant,
     badgeRadius: theme.studyCardBadgeRadius ?? theme.radiusS,
     glyphSize: theme.studyCardGlyphSize ?? ZStudyCardReference.glyphSize,
+    // CR-IFFD-61 ① — l'écart tuile→titre cesse de rider `gapM`. La primitive
+    // de BASE garde `gapM` (neutralité pour les hôtes qui la composent
+    // eux-mêmes) ; c'est le CHROME des cartes par défaut qui porte la
+    // référence, parce que « le défaut EST la référence » ne vaut que des
+    // cartes par défaut (CR-IFFD-56).
+    leadingGap: leadingGap ??
+        theme.studyCardLeadingGap ??
+        ZStudyCardReference.leadingGap,
+    // CR-IFFD-61 ② — élévation 0 = référence (liseré seul). Le défaut
+    // antérieur laissait `Card` retomber sur l'élévation M3 (1.0), donc sur une
+    // ombre portée absente du legacy.
+    elevation: elevation ??
+        theme.studyCardElevation ??
+        ZStudyCardReference.cardElevation,
   );
 }

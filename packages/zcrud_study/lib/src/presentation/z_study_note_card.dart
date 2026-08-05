@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart' show ZStudyCardContentAlignment;
 
 import 'z_study_tools_item_card.dart';
 
@@ -56,6 +57,9 @@ class ZStudyNoteCard extends StatelessWidget {
     this.titleStyle,
     this.subtitleStyle,
     this.titleMaxLines = 1,
+    this.leadingGap,
+    this.elevation,
+    this.contentAlignment,
     super.key,
   });
 
@@ -139,6 +143,19 @@ class ZStudyNoteCard extends StatelessWidget {
   /// [ZStudyToolsItemCard.titleMaxLines].
   final int titleMaxLines;
 
+  /// Écart tuile→titre (CR-IFFD-61 ①). Voir
+  /// [ZStudyToolsItemCard.leadingGap] — passe-plat, aucun défaut local.
+  final double? leadingGap;
+
+  /// Élévation Material (CR-IFFD-61 ②). Voir
+  /// [ZStudyToolsItemCard.elevation] — passe-plat, aucun défaut local.
+  final double? elevation;
+
+  /// [ZStudyToolsItemCard.contentAlignment] — passe-plat, aucun défaut local
+  /// (**CR-IFFD-62 ④**). `null` ⇒ rendu strictement inchangé ; sans hauteur
+  /// imposée, ce slot n'a de toute façon aucun effet.
+  final ZStudyCardContentAlignment? contentAlignment;
+
   @override
   Widget build(BuildContext context) => ZStudyToolsItemCard(
     title: title,
@@ -166,5 +183,8 @@ class ZStudyNoteCard extends StatelessWidget {
     titleStyle: titleStyle,
     subtitleStyle: subtitleStyle,
     titleMaxLines: titleMaxLines,
+    leadingGap: leadingGap,
+    elevation: elevation,
+    contentAlignment: contentAlignment,
   );
 }

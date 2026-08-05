@@ -154,9 +154,15 @@ export 'src/presentation/z_multi_flashcard_editor_controller.dart';
 // dans `lib/src/data/` (importe `ZRepetitionStore`, banni de la présentation) —
 // le widget de liste reste PUR (seam injecté). CORE OUT=0, arête existante.
 export 'src/data/z_flashcard_cascade_delete.dart';
+// CR-IFFD-62 ③ — borne de hauteur qui SIGNALE la coupure (fondu conditionnel),
+// PUBLIQUE : tout hôte qui borne du contenu RICHE (où `TextOverflow.ellipsis`
+// n'a aucune prise) a le même besoin — et le fondu doit être mesurable par
+// l'extérieur (`ZRenderFadedOverflow.isTruncated`).
+export 'src/presentation/z_faded_overflow.dart';
 // CR-IFFD-49 — item de RAIL borné en largeur, PUBLIC : même résolution
 // (paramètre > token `ZcrudTheme.railItemWidth` > repli 280 dp) pour les voies
-// typées du socle ET les surfaces assemblées par l'hôte.
+// typées du socle ET les surfaces assemblées par l'hôte. CR-IFFD-62 ① : la
+// HAUTEUR suit le même patron (`railItemHeight`), sans repli chiffré.
 export 'src/presentation/z_rail_item.dart';
 export 'src/presentation/z_reorder_ids.dart';
 // CR-LEX-74 — ce fichier expose DEUX enveloppes du MÊME contenu de sections :

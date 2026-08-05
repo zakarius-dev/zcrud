@@ -77,6 +77,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZColorPair,
         ZForegroundOverride,
         ZGradientSpec,
+        ZStudyCardContentAlignment,
         ZcrudScope,
         ZcrudTheme,
         zResolveColorKeyOrSlot,
@@ -86,6 +87,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag, remapColorKey;
 
+import 'z_faded_overflow.dart';
 import 'z_flashcard_card_reference.dart';
 import 'z_study_tools_item_card.dart';
 import 'z_tag_chips.dart';
@@ -164,6 +166,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     this.icon,
     this.questionBuilder,
     this.questionMaxHeight = ZFlashcardCardReference.questionMaxHeight,
+    this.questionFadeExtent = ZFlashcardCardReference.questionFadeExtent,
     this.showAnswerPreview = false,
     this.answerLabels,
     this.trailing,
@@ -174,6 +177,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     this.borderRadius,
     this.backgroundColor,
     this.height = ZFlashcardCardReference.cardHeight,
+    this.contentAlignment,
     super.key,
   }) : assert(
           questionMaxHeight > 0,
@@ -257,6 +261,26 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// [ZFlashcardCardReference.questionMaxHeight].
   final double questionMaxHeight;
 
+  /// Étendue du **fondu de continuation** peint au bas de l'énoncé **quand il
+  /// déborde réellement** [questionMaxHeight] (**CR-IFFD-62 ③**).
+  ///
+  /// Défaut : [ZFlashcardCardReference.questionFadeExtent] (12 dp). `0` ⇒
+  /// aucun fondu — l'énoncé est simplement écrêté, c'est-à-dire **exactement**
+  /// le rendu v0.47.0 (voie de retour explicite pour un hôte que le fondu
+  /// dérange).
+  ///
+  /// 🔴 **Ce n'est PAS une ellipse, et le mot serait un mensonge** :
+  /// `TextOverflow.ellipsis` est une propriété de *paragraphe*, sans prise sur
+  /// le rendu RICHE par défaut (une colonne de blocs markdown/Quill — cf.
+  /// [ZFadedOverflow]). Un hôte qui veut une VRAIE ellipse passe un
+  /// [questionBuilder] rendant un `Text(overflow: TextOverflow.ellipsis)` :
+  /// ce texte-là ne déborde alors jamais, donc aucun fondu ne se peint —
+  /// les deux mécanismes ne se superposent pas.
+  ///
+  /// ♿ Le fondu n'est **pas** le seul canal : le `label` sémantique de la
+  /// carte porte l'énoncé INTÉGRAL (AD-13).
+  final double questionFadeExtent;
+
   /// Aperçu de réponse **en MODE** (**CR-IFFD-59** — le `isInGrid` legacy).
   ///
   /// `false` (défaut) ⇒ aperçu **ABSENT** (AD-4) — le rail de sections ne
@@ -310,6 +334,19 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// à hauteur imposée), la contrainte du parent PRIME — jamais de
   /// débordement par construction.
   final double? height;
+
+  /// Alignement VERTICAL du contenu **dans le cadre** (**CR-IFFD-62 ②/④/⑤**).
+  ///
+  /// `null` ⇒ jeton `ZcrudTheme.studyCardContentAlignment`, puis la RÉFÉRENCE
+  /// [ZFlashcardCardReference.contentAlignment] (`spread` : l'énoncé absorbe
+  /// l'espace libre, la pastille de type est POUSSÉE au bas de la carte —
+  /// toutes les cartes d'un rail ont alors la même ligne de base).
+  ///
+  /// 🔴 **Sans cadre, il n'a AUCUN effet** : passer `height: null` **et** ne
+  /// pas borner la carte de l'extérieur rend exactement la hauteur
+  /// intrinsèque, identique pour les trois valeurs (il n'y a pas d'espace
+  /// libre à répartir). La bascule est mesurée sur les contraintes reçues.
+  final ZStudyCardContentAlignment? contentAlignment;
 
   /// Libellé de type **affiché** : injecté, repli sur la clé opaque.
   String get _typeLabel => typeLabels?[card.type.name] ?? card.type.name;
@@ -441,6 +478,13 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       semanticLabel: semanticLabel ?? card.question,
+      // CR-IFFD-62 ②/⑤ — la carte est construite en CONTRAINTES DESCENDANTES :
+      // sous un cadre de hauteur (le sien, [height], ou celui d'un
+      // `ZRailItem(height:)`/d'une cellule), le corps le REMPLIT et le pied
+      // est poussé en bas. Priorité paramètre > jeton > référence (`spread`).
+      contentAlignment: contentAlignment ??
+          theme.studyCardContentAlignment ??
+          ZFlashcardCardReference.contentAlignment,
     );
     // CR-IFFD-57 (complément owner) — hauteur FIXE de référence (200,
     // legacy `SizedBox(height: 200)`) : c'est elle qui rend grille et rail
@@ -479,9 +523,12 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// ④ Énoncé — rendu RICHE par défaut ([questionBuilder] en surcharge),
   /// borné en HAUTEUR ([questionMaxHeight], legacy `kToolbarHeight × 0.65`).
   ///
-  /// Le débordement est ABSORBÉ (défileur inerte, patron legacy
-  /// `SingleChildScrollView`) : jamais un `RenderFlex overflowed` par
-  /// construction, jamais un contenu qui déborde la carte.
+  /// Le débordement est ABSORBÉ **et SIGNALÉ** (CR-IFFD-62 ③) : la hauteur
+  /// rendue reste `min(contenu, borne)` — exactement le shrink-wrap du
+  /// défileur inerte qu'il remplace — mais un **fondu de continuation** est
+  /// peint sur les dernières [questionFadeExtent] dp **quand, et seulement
+  /// quand, le contenu déborde réellement**. Jamais un `RenderFlex overflowed`
+  /// par construction, jamais un contenu qui déborde la carte.
   Widget _buildQuestion(BuildContext context) {
     final ZFlashcardContentBuilder? custom = questionBuilder;
     final Widget content = custom != null
@@ -490,6 +537,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
             content: card.question,
             fontWeight: ZFlashcardCardReference.questionFontWeight,
           );
+    // FR-26 — les deux bornes du masque sont DÉRIVÉES d'un rôle : sous
+    // `BlendMode.dstIn` seul leur ALPHA compte, elles ne peignent aucune
+    // matière (aucune couleur nouvelle n'entre par cette porte).
+    final Color stencil = Theme.of(context).colorScheme.onSurface;
     // IgnorePointer — MESURÉ : le lecteur rich-text (Quill) porte ses propres
     // gestes (sélection à l'appui long) et VOLE l'arène au `InkWell` de la
     // carte (l'appui long de l'hôte ne déclenchait plus). Dans une carte,
@@ -498,8 +549,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       key: questionKey,
       constraints: BoxConstraints(maxHeight: questionMaxHeight),
       child: IgnorePointer(
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
+        child: ZFadedOverflow(
+          fadeExtent: questionFadeExtent,
+          opaque: stencil.withValues(alpha: 1),
+          clear: stencil.withValues(alpha: 0),
           child: content,
         ),
       ),

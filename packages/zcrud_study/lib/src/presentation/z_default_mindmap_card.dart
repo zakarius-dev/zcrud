@@ -278,6 +278,12 @@ class ZDefaultMindmapCard extends StatelessWidget {
       margin: chrome.margin,
       borderSide: chrome.borderSide,
       borderRadius: chrome.borderRadius,
+      // CR-IFFD-61 ①/② — l'écart tuile→titre (16) et l'élévation (0) de
+      // la RÉFÉRENCE, résolus par le chrome. Ils ne sont pas écrits en
+      // dur dans la primitive de base : celle-ci garde `gapM` et
+      // l'élévation du `CardTheme` pour ses hôtes directs.
+      leadingGap: chrome.leadingGap,
+      elevation: chrome.elevation,
       belowSubtitle:
           countText == null ? null : _buildCountChip(context, theme, pair),
       trailing: trailing,

@@ -77,6 +77,9 @@ class ZStudyToolsItemCard extends StatelessWidget {
     this.titleStyle,
     this.subtitleStyle,
     this.titleMaxLines = 1,
+    this.leadingGap,
+    this.elevation,
+    this.contentAlignment,
     super.key,
   });
 
@@ -309,21 +312,128 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// plutôt que de produire une contrainte invalide (AD-10).
   final int titleMaxLines;
 
+  /// Écart entre [leading] et la colonne de contenu (**CR-IFFD-61 ①**).
+  ///
+  /// `null` ⇒ `gapM` — **le rendu historique, strictement préservé**.
+  ///
+  /// 🔴 **Pourquoi le défaut de la BASE ne devient PAS la valeur de référence
+  /// (16)** : cette primitive n'est pas une carte par défaut. Des hôtes la
+  /// composent EUX-MÊMES (lex_douane, et le socle lui-même via les cartes de
+  /// flashcard) ; leur écart de tête vaut aujourd'hui `gapM`, jeton qu'ils
+  /// règlent. Y écrire 16 en dur changerait leur rendu **sans qu'ils l'aient
+  /// demandé** — exactement la classe d'erreur des handoffs v0.16/19.1/22
+  /// (affirmer une propriété sur l'hôte alors qu'on n'a vérifié que la sienne).
+  ///
+  /// La valeur de RÉFÉRENCE (16) est donc portée par le **chrome des cartes
+  /// par défaut** (`zStudyCardChromeOf`, `ZStudyCardReference.leadingGap`),
+  /// qui la passe par ce slot. Les deux chemins restent atteignables : une
+  /// carte par défaut rend la référence sans réglage, un hôte de la base garde
+  /// `gapM` — et peut demander autre chose par ce slot.
+  final double? leadingGap;
+
+  /// Élévation Material de la carte (**CR-IFFD-61 ②**).
+  ///
+  /// `null` ⇒ comportement historique : élévation laissée au `CardTheme`/défaut
+  /// Material (donc **1.0** en M3, ombre portée comprise) — sauf quand une
+  /// ombre de jetons `cardShadow*`/[defaultShadow] est active, cas où
+  /// l'élévation native reste forcée à 0 (invariant CR-IFFD-27/57 : deux ombres
+  /// ne se superposent jamais).
+  ///
+  /// ⚠️ Une ombre de jetons PRIME toujours : quand elle est active, cette
+  /// valeur est ignorée et l'élévation native vaut 0. Sans quoi la carte
+  /// porterait deux ombres.
+  final double? elevation;
+
+  /// Alignement VERTICAL du contenu **dans le cadre reçu** (**CR-IFFD-62 ②**).
+  ///
+  /// `null` ⇒ **rendu strictement inchangé** : la colonne de contenu se
+  /// dimensionne sur son contenu (`MainAxisSize.min`) et la `Row` la centre —
+  /// c'est le comportement historique, et il le reste pour tout hôte qui ne
+  /// demande rien.
+  ///
+  /// 🔴 **Ce que la CR a mesuré, et que ce slot corrige** : une carte placée
+  /// dans un `SizedBox(height: 200)` occupait bien 200 dp, mais son CONTENU
+  /// restait centré au milieu — le pied (pastille de type) remontait contre le
+  /// texte et le bas du rail était dentelé. « Donner une hauteur » ne suffisait
+  /// donc pas : il fallait que la carte soit construite en **contraintes
+  /// descendantes** (CR-IFFD-62 ⑤ : cadre imposé → corps qui remplit → pied en
+  /// bas).
+  ///
+  /// 🔴 **Il n'a d'effet QUE sous une hauteur IMPOSÉE** (contrainte verticale
+  /// TIGHT : `SizedBox(height:)`, `ZRailItem(height:)`, cellule de grille à
+  /// hauteur fixe). Sans cadre, il n'y a aucun espace libre à répartir et la
+  /// carte garde EXACTEMENT sa hauteur intrinsèque : la bascule est mesurée au
+  /// `build` (`BoxConstraints.hasTightHeight`), jamais supposée. C'est ce qui
+  /// interdit l'`Expanded` inconditionnel — dans un parent non borné il
+  /// lèverait (« RenderFlex children have non-zero flex but incoming height
+  /// constraints are unbounded »).
+  final ZStudyCardContentAlignment? contentAlignment;
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final textTheme = Theme.of(context).textTheme;
     final busy = progress != null;
 
+    // CR-IFFD-62 ② — la bascule « cadre imposé » est MESURÉE sur les
+    // contraintes réellement reçues, jamais déduite d'un paramètre. Sans
+    // [contentAlignment], AUCUN `LayoutBuilder` n'est introduit : l'arbre reste
+    // strictement celui d'avant.
+    final Widget content = contentAlignment == null
+        ? _buildContent(context, theme, textTheme, busy: busy, filled: false)
+        : LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) =>
+                _buildContent(
+              context,
+              theme,
+              textTheme,
+              busy: busy,
+              filled: constraints.hasTightHeight,
+            ),
+          );
+    return _buildCard(context, theme, content);
+  }
+
+  /// Corps de la carte. [filled] `true` ⇒ un cadre de hauteur est IMPOSÉ : la
+  /// colonne de contenu le remplit et [contentAlignment] gouverne la
+  /// répartition de l'espace libre.
+  Widget _buildContent(
+    BuildContext context,
+    ZcrudTheme theme,
+    TextTheme textTheme, {
+    required bool busy,
+    required bool filled,
+  }) {
+    // `spread` : l'espace libre est POUSSÉ entre le bloc haut (en-tête +
+    // énoncé) et le PIED, qui va au bas du cadre.
+    //
+    // 🔴 **Pourquoi PAS un `Expanded` sur l'énoncé, et c'est MESURÉ** : rendre
+    // l'énoncé `Expanded` obligeait à rendre l'en-tête et le pied INFLEXIBLES
+    // (sans quoi `RenderFlex` répartit l'espace entre trois enfants flexibles
+    // et **perd** le reliquat des enfants LOOSE — la colonne ne remplit alors
+    // pas le cadre). Inflexibles, ils débordaient dès qu'un cadre était plus
+    // petit que le contenu : gardes CR-IFFD-47 §9 rouges, `RenderFlex
+    // overflowed by 82 pixels` sur une cellule 300 × 120 — exactement la
+    // régression que CR-IFFD-37 avait fermée (« le slot PARTICIPE à la
+    // hauteur, il ne s'y AJOUTE pas »).
+    //
+    // La forme retenue produit le MÊME rendu (en-tête en haut, énoncé
+    // immédiatement dessous, pied en bas) en gardant les deux groupes
+    // FLEXIBLES : sous pression, ils cèdent au lieu de déborder.
+    final bool spread =
+        filled && contentAlignment == ZStudyCardContentAlignment.spread;
     // CR-LEX-70 — le padding de carte et l'espacement inter-slots sont deux
     // rôles distincts : le premier est injectable, le second reste le jeton.
-    final content = Padding(
+    return Padding(
       padding: contentPadding ?? EdgeInsetsDirectional.all(theme.gapM),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[
             leading!,
-            SizedBox(width: theme.gapM),
+            // CR-IFFD-61 ① — l'écart tuile→titre est ADRESSABLE. `null` ⇒
+            // `gapM`, le rendu historique (voir la dartdoc de [leadingGap]
+            // pour l'arbitrage base vs cartes par défaut).
+            SizedBox(width: leadingGap ?? theme.gapM),
           ],
           // ExcludeSemantics CIBLÉ sur les seuls libellés : le nœud de la carte
           // les porte déjà dans son `label`, et les répéter ferait annoncer
@@ -343,8 +453,13 @@ class ZStudyToolsItemCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
+              // CR-IFFD-62 ② — sous cadre imposé la colonne REMPLIT la hauteur
+              // reçue ; sans cadre elle reste `min` (rendu historique).
+              mainAxisSize: filled ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: _mainAxisAlignment(filled),
+              children: spread
+                  ? _spreadChildren(theme, textTheme)
+                  : <Widget>[
                 // CR-IFFD-47 — pendant EXACT de `belowSubtitle` : `Flexible`
                 // en fit LOOSE (espacement COMPRIS, d'où le `Padding` et non
                 // un `SizedBox` frère), pour que le slot PARTICIPE à la hauteur
@@ -357,28 +472,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
                       child: aboveTitle!,
                     ),
                   ),
-                Row(
-                  children: <Widget>[
-                    Flexible(
-                      // CR-IFFD-59 — [titleWidget] remplace le `Text` à la
-                      // MÊME position ; l'exclusion sémantique est identique
-                      // (le `label` de la carte porte déjà [title]).
-                      child: ExcludeSemantics(
-                        child: titleWidget ??
-                            Text(
-                              title,
-                              style: titleStyle ?? textTheme.titleSmall,
-                              maxLines: titleMaxLines > 0 ? titleMaxLines : 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                      ),
-                    ),
-                    if (badge != null) ...<Widget>[
-                      SizedBox(width: theme.gapS),
-                      badge!,
-                    ],
-                  ],
-                ),
+                _titleRow(theme, textTheme),
                 if (subtitle != null)
                   ExcludeSemantics(
                     child: Text(
@@ -441,7 +535,96 @@ class ZStudyToolsItemCard extends StatelessWidget {
         ],
       ),
     );
+  }
 
+  /// Alignement principal de la colonne de contenu (**CR-IFFD-62 ④**).
+  /// Hors cadre, ou sans [contentAlignment], c'est `start` — l'historique.
+  MainAxisAlignment _mainAxisAlignment(bool filled) {
+    if (!filled) return MainAxisAlignment.start;
+    switch (contentAlignment) {
+      case ZStudyCardContentAlignment.bottom:
+        return MainAxisAlignment.end;
+      case ZStudyCardContentAlignment.spread:
+        // L'espace libre est poussé ENTRE le bloc haut et le pied.
+        return MainAxisAlignment.spaceBetween;
+      case ZStudyCardContentAlignment.top:
+      case null:
+        return MainAxisAlignment.start;
+    }
+  }
+
+  /// Colonne de contenu en mode **`spread` sous cadre** (**CR-IFFD-62 ⑤**) :
+  /// DEUX groupes flexibles — « en-tête + énoncé » collé en haut, « pied »
+  /// collé en bas, tout l'espace libre entre les deux.
+  ///
+  /// 🔴 Les deux groupes restent `Flexible` (fit LOOSE) : c'est ce qui les
+  /// fait CÉDER quand le cadre est plus petit que le contenu, au lieu de
+  /// déborder (invariant CR-IFFD-37, mesuré rouge sur une cellule 300 × 120
+  /// avec la variante `Expanded` + enfants inflexibles).
+  List<Widget> _spreadChildren(ZcrudTheme theme, TextTheme textTheme) =>
+      <Widget>[
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (aboveTitle != null)
+                Flexible(
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.only(bottom: theme.gapS),
+                    child: aboveTitle!,
+                  ),
+                ),
+              _titleRow(theme, textTheme),
+              if (subtitle != null)
+                ExcludeSemantics(
+                  child: Text(
+                    subtitle!,
+                    style: subtitleStyle ?? textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (belowSubtitle != null)
+          Flexible(
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(top: theme.gapS),
+              child: belowSubtitle!,
+            ),
+          ),
+      ];
+
+  /// Ligne du TITRE (titre riche ou `Text`, + [badge]) — extraite pour être
+  /// posée telle quelle OU dans l'`Expanded` du mode `spread`.
+  Widget _titleRow(ZcrudTheme theme, TextTheme textTheme) => Row(
+        children: <Widget>[
+          Flexible(
+            // CR-IFFD-59 — [titleWidget] remplace le `Text` à la MÊME
+            // position ; l'exclusion sémantique est identique (le `label` de
+            // la carte porte déjà [title]).
+            child: ExcludeSemantics(
+              child: titleWidget ??
+                  Text(
+                    title,
+                    style: titleStyle ?? textTheme.titleSmall,
+                    maxLines: titleMaxLines > 0 ? titleMaxLines : 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+            ),
+          ),
+          if (badge != null) ...<Widget>[
+            SizedBox(width: theme.gapS),
+            badge!,
+          ],
+        ],
+      );
+
+  /// Chrome de la carte (forme, ombre, marge, encre, sémantique) autour du
+  /// [content] déjà construit.
+  Widget _buildCard(BuildContext context, ZcrudTheme theme, Widget content) {
     final tap = onTap;
     final longPress = onLongPress;
     // CR-IFFD-19 — un `shape:` explicite l'emporte sur `CardThemeData.shape` :
@@ -495,7 +678,10 @@ class ZStudyToolsItemCard extends StatelessWidget {
       color: color,
       shape: shape,
       // Deux ombres ne se superposent pas : l'élévation native cède la place.
-      elevation: shadow == null ? null : 0,
+      // CR-IFFD-61 ② — hors ombre de jetons, l'élévation est ADRESSABLE :
+      // `null` ⇒ `CardTheme`/défaut Material (rendu historique), une valeur
+      // fournie PRIME (les cartes par défaut y passent la référence, 0).
+      elevation: shadow == null ? elevation : 0,
       clipBehavior: Clip.antiAlias,
       child: tap == null && longPress == null
           // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est

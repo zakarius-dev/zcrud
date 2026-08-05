@@ -181,6 +181,29 @@ enum ZStudySectionCollapsePlacement {
   inHeaderRow,
 }
 
+/// PLACEMENT du compteur d'en-tête d'une section d'étude (**CR-IFFD-61 ④**) —
+/// token de LOOK (structure d'en-tête).
+///
+/// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : même arbitrage
+/// que [ZStudySectionCollapsePlacement] — toutes les sections d'une même app
+/// qualifient leur titre de la même façon ; un champ par section inviterait
+/// des en-têtes incohérents entre sections voisines.
+enum ZStudySectionCountPlacement {
+  /// Compteur renvoyé à l'**extrémité** de la ligne d'en-tête : le titre est
+  /// `Expanded` et POUSSE le compteur près des actions/du chevron. **Rendu
+  /// historique** — c'est ce que rend un thème qui ne déclare rien.
+  lineEnd,
+
+  /// Compteur **ADJACENT au titre** : le titre n'est plus `Expanded` mais
+  /// `Flexible` (il s'ellipse), le compteur le SUIT immédiatement, et l'espace
+  /// restant est laissé libre avant les actions. Le compteur qualifie alors le
+  /// titre (« Notes — 6 ») et non le bord de l'écran.
+  ///
+  /// Le compteur n'est JAMAIS écrasé par un titre long : il reste inflexible,
+  /// c'est le titre qui rétrécit (invariant mesuré à 320 dp, LTR et RTL).
+  adjacentToTitle,
+}
+
 /// Hiérarchie tuile/glyphe d'une **carte d'item d'étude par défaut**
 /// (CR-IFFD-55/56) — token de LOOK.
 ///
@@ -197,6 +220,30 @@ enum ZStudyCardHierarchy {
   /// Rendu **v0.43.0** : tuile colorée par l'accent, glyphe en `onColor`
   /// apparié. Atteignable par réglage — plus un défaut (CR-IFFD-56).
   tintedTile,
+}
+
+/// Alignement VERTICAL du contenu d'une **carte d'item d'étude**
+/// (**CR-IFFD-62 ④**) — token de LOOK, aucune couleur, aucune dimension.
+///
+/// 🔴 **N'a d'effet QUE sous une hauteur IMPOSÉE** (cadre reçu du parent :
+/// `SizedBox(height:)`, cellule de grille, `ZRailItem(height:)`). Sans cadre,
+/// la carte se dimensionne sur son contenu : il n'y a **aucun espace libre à
+/// répartir**, et les trois valeurs rendent alors STRICTEMENT la même chose —
+/// c'est ce qui rend ce token neutre par construction pour les hôtes qui ne
+/// bornent pas leurs cartes.
+enum ZStudyCardContentAlignment {
+  /// Contenu collé en HAUT du cadre ; l'espace libre reste sous le pied.
+  top,
+
+  /// **Rendu de référence** de la carte de flashcard (CR-IFFD-62 ⑤) :
+  /// l'espace libre est absorbé par le **bloc de titre** (l'énoncé), ce qui
+  /// pousse le pied (pastille de type) au **bas** du cadre. C'est la cascade
+  /// `Expanded` du legacy IFFD — en-tête fixe, énoncé extensible, pied en bas.
+  spread,
+
+  /// Contenu collé en BAS du cadre ; l'espace libre reste au-dessus de
+  /// l'en-tête.
+  bottom,
 }
 
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
@@ -279,11 +326,19 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.subfolderSheetPadding,
     this.subfolderSheetTitleAlign,
     this.railItemWidth,
+    this.railItemHeight,
+    this.railItemGap,
+    this.railPadding,
     this.studySectionTitleStyle,
     this.studySectionCountShape,
     this.studySectionCountRole,
     this.studySectionCollapsePlacement,
+    this.studySectionCountPlacement,
+    this.studySectionCountGap,
+    this.subfolderSheetContentPadding,
     this.studyCardHierarchy,
+    this.studyCardLeadingGap,
+    this.studyCardElevation,
     this.studyCardRadius,
     this.studyCardContentPadding,
     this.studyCardMargin,
@@ -294,6 +349,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studyCardBorderSide,
     this.studyCardBadgeRadius,
     this.studyCardGlyphSize,
+    this.studyCardContentAlignment,
     this.flashcardTypeGradients,
   });
 
@@ -605,6 +661,52 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// SA valeur : il la pose ici, jamais dans le socle.
   final double? railItemWidth;
 
+  /// HAUTEUR d'un item de **rail horizontal** (**CR-IFFD-62 ①**) — pendant
+  /// exact de [railItemWidth].
+  ///
+  /// `null` ⇒ **aucune contrainte de hauteur** n'est posée : l'item garde la
+  /// hauteur que lui donne son contenu (rendu **strictement inchangé** pour
+  /// tout thème existant). Priorité chez le consommateur : paramètre explicite
+  /// > ce token > absence de contrainte.
+  ///
+  /// 🔴 **Pourquoi PAS de repli chiffré ici, contrairement à [railItemWidth]**
+  /// (asymétrie assumée, motivée) : une largeur NON BORNÉE dans un défileur
+  /// horizontal est une **faute de layout** (« non-zero flex but incoming
+  /// width constraints are unbounded »), d'où un repli obligatoire côté
+  /// consommateur ; une hauteur non bornée, elle, est parfaitement licite —
+  /// c'est le rendu actuel de tous les rails. Y écrire 200 « parce que c'est
+  /// la référence » imposerait cette hauteur à **tous** les items de rail de
+  /// **tous** les hôtes, y compris ceux qui n'y mettent pas des flashcards.
+  /// La hauteur de RÉFÉRENCE (200) reste portée par la carte de flashcard
+  /// par défaut (`ZFlashcardCardReference.cardHeight`), là où elle a un sens.
+  final double? railItemHeight;
+
+  /// ESPACEMENT entre deux items d'un **rail horizontal** (**CR-IFFD-62 ④**).
+  ///
+  /// `null` ⇒ le consommateur applique son repli documenté ([gapS] côté
+  /// `zcrud_study`) — rendu **strictement inchangé**. Priorité : paramètre
+  /// explicite de la voie typée > ce token > repli du consommateur.
+  ///
+  /// Ce token existe pour la même raison que [studyCardLeadingGap]
+  /// (CR-IFFD-61 ③) : l'espacement du rail ridait [gapS], jeton que l'hôte
+  /// règle déjà pour ses écarts inter-slots — aucune valeur de [gapS] ne
+  /// pouvait satisfaire à la fois l'un et le 12 de la référence.
+  final double? railItemGap;
+
+  /// PADDING du défileur d'un **rail horizontal** (**CR-IFFD-62 ④**) — le
+  /// retrait latéral du rail lui-même.
+  ///
+  /// `null` ⇒ le rail hérite du padding de section du consommateur (chez
+  /// `zcrud_study` : `horizontal: gapM`) — rendu **strictement inchangé**.
+  /// Non-null ⇒ le retrait latéral du rail devient ABSOLU : le padding
+  /// horizontal de section ne s'y AJOUTE plus (il reste appliqué à l'en-tête).
+  ///
+  /// ⚠️ Le retrait mesuré au **bord de la première carte** vaut ce padding
+  /// **plus la marge externe de la carte** (`CardThemeData.margin` /
+  /// `studyCardMargin`) : les deux s'additionnent, et c'est précisément le
+  /// cumul mesuré par CR-IFFD-62 (12 + 4 = 16 dp).
+  final EdgeInsetsGeometry? railPadding;
+
   /// Style du TITRE d'un en-tête de section d'étude (CR-IFFD-50 ①).
   ///
   /// `null` ⇒ le consommateur applique son repli documenté
@@ -633,6 +735,35 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// titre) — rendu **strictement inchangé**.
   final ZStudySectionCollapsePlacement? studySectionCollapsePlacement;
 
+  /// PLACEMENT du compteur d'en-tête d'une section d'étude (**CR-IFFD-61 ④**).
+  ///
+  /// `null` ⇒ [ZStudySectionCountPlacement.lineEnd] (compteur à l'extrémité de
+  /// la ligne) — rendu **strictement inchangé**.
+  final ZStudySectionCountPlacement? studySectionCountPlacement;
+
+  /// ÉCART entre le titre d'en-tête de section et son compteur
+  /// (**CR-IFFD-61 ④**), dans les DEUX placements.
+  ///
+  /// `null` ⇒ [gapS] — le rendu historique. Ce token existe parce que l'écart
+  /// titre↔compteur ridait [gapS], jeton générique partagé avec toutes les
+  /// autres gouttières de l'en-tête : aucune valeur de [gapS] ne pouvait à la
+  /// fois satisfaire la référence (12 entre titre et compteur) et les
+  /// espacements inter-actions. Même arbitrage que [studyCardLeadingGap].
+  final double? studySectionCountGap;
+
+  /// Padding STRUCTUREL **interne** de la feuille de fratrie
+  /// (**CR-IFFD-61 ③**) : gouttière de la feuille, padding de son titre,
+  /// padding de son pied « ajouter ».
+  ///
+  /// `null` ⇒ `EdgeInsetsDirectional.all(gapM)` — rendu **strictement
+  /// inchangé**. Ce token existe pour la même raison que
+  /// [studyCardLeadingGap] : la feuille ridait [gapM], que l'hôte règle déjà
+  /// pour le padding de ses cartes (12) alors que sa feuille en demande 8.
+  ///
+  /// ⚠️ DISTINCT de [subfolderSheetPadding], qui est la marge **EXTÉRIEURE**
+  /// de la feuille (CR-IFFD-46) et qui s'AJOUTE à celle-ci.
+  final EdgeInsetsGeometry? subfolderSheetContentPadding;
+
   // ── Tokens des CARTES D'ITEM D'ÉTUDE par défaut (CR-IFFD-55/56) ───────────
   // Directive owner : les défauts du consommateur (`zcrud_study`) sont le
   // RENDU DE RÉFÉRENCE IFFD, centralisé dans `ZStudyCardReference` côté
@@ -648,6 +779,29 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Rayon de la carte d'étude par défaut. `null` ⇒ 16 (référence).
   final Radius? studyCardRadius;
+
+  /// ÉCART entre la tuile d'icône de tête et le titre, dans les cartes d'étude
+  /// **par défaut** (**CR-IFFD-61 ①**). `null` ⇒ 16 (référence legacy IFFD).
+  ///
+  /// ⚠️ Ne concerne QUE les cartes par défaut : la primitive de base
+  /// `ZStudyToolsItemCard` garde son écart historique [gapM] pour les hôtes qui
+  /// la composent eux-mêmes (neutralité — cf. son slot `leadingGap`).
+  ///
+  /// Ce token existe parce que cet écart ridait [gapM], que l'hôte règle déjà
+  /// pour le padding de carte (12) alors que la référence demande 16 : aucune
+  /// valeur de [gapM] ne pouvait satisfaire les deux.
+  final double? studyCardLeadingGap;
+
+  /// ÉLÉVATION Material de la carte d'étude par défaut (**CR-IFFD-61 ②**).
+  ///
+  /// `null` ⇒ **0** (référence legacy IFFD : `Card(elevation: 0)`, liseré seul,
+  /// AUCUNE ombre portée). Le défaut antérieur laissait l'élévation à `null`,
+  /// donc au défaut Material 3 (**1.0**) — une ombre que la référence n'a pas.
+  ///
+  /// ⚠️ Sans effet quand une ombre de jetons `cardShadow*` est active : deux
+  /// ombres ne se superposent jamais, l'élévation native cède alors la place
+  /// (invariant CR-IFFD-27/57, inchangé).
+  final double? studyCardElevation;
 
   /// Padding INTERNE de la carte d'étude par défaut.
   /// `null` ⇒ `EdgeInsetsDirectional.all(12)` (référence).
@@ -692,6 +846,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `null` ⇒ 28 dp (référence legacy IFFD, `kStudyToolsLeadingIconSize`) —
   /// PAS la taille d'icône ambiante (24) : la référence est plus grande.
   final double? studyCardGlyphSize;
+
+  /// ALIGNEMENT VERTICAL du contenu des cartes d'étude **par défaut**
+  /// (**CR-IFFD-62 ④**), quand un cadre de hauteur leur est imposé.
+  ///
+  /// `null` ⇒ le consommateur applique sa valeur de RÉFÉRENCE
+  /// ([ZStudyCardContentAlignment.spread] pour la carte de flashcard : énoncé
+  /// extensible, pied poussé en bas — la cascade du legacy IFFD).
+  ///
+  /// ⚠️ **Sans hauteur imposée, ce jeton n'a AUCUN effet** : il n'y a pas
+  /// d'espace libre à répartir (cf. la dartdoc de l'énumération).
+  final ZStudyCardContentAlignment? studyCardContentAlignment;
 
   /// Dégradés **par TYPE de flashcard** de la carte de flashcard par défaut
   /// (**CR-IFFD-57**) — clé = `ZFlashcardType.name` OPAQUE (`'multipleChoice'`,
@@ -879,12 +1044,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     EdgeInsetsGeometry? subfolderSheetPadding,
     TextAlign? subfolderSheetTitleAlign,
     double? railItemWidth,
+    double? railItemHeight,
+    double? railItemGap,
+    EdgeInsetsGeometry? railPadding,
     TextStyle? studySectionTitleStyle,
     ZStudySectionCountShape? studySectionCountShape,
     ZStudySectionCountRole? studySectionCountRole,
     ZStudySectionCollapsePlacement? studySectionCollapsePlacement,
+    ZStudySectionCountPlacement? studySectionCountPlacement,
+    double? studySectionCountGap,
+    EdgeInsetsGeometry? subfolderSheetContentPadding,
     ZStudyCardHierarchy? studyCardHierarchy,
     Radius? studyCardRadius,
+    double? studyCardLeadingGap,
+    double? studyCardElevation,
     EdgeInsetsGeometry? studyCardContentPadding,
     EdgeInsetsGeometry? studyCardMargin,
     double? studyCardIconTileSize,
@@ -894,6 +1067,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     BorderSide? studyCardBorderSide,
     Radius? studyCardBadgeRadius,
     double? studyCardGlyphSize,
+    ZStudyCardContentAlignment? studyCardContentAlignment,
     Map<String, ZGradientSpec>? flashcardTypeGradients,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
@@ -964,6 +1138,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     subfolderSheetTitleAlign:
         subfolderSheetTitleAlign ?? this.subfolderSheetTitleAlign,
     railItemWidth: railItemWidth ?? this.railItemWidth,
+    railItemHeight: railItemHeight ?? this.railItemHeight,
+    railItemGap: railItemGap ?? this.railItemGap,
+    railPadding: railPadding ?? this.railPadding,
     studySectionTitleStyle:
         studySectionTitleStyle ?? this.studySectionTitleStyle,
     studySectionCountShape:
@@ -971,8 +1148,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     studySectionCountRole: studySectionCountRole ?? this.studySectionCountRole,
     studySectionCollapsePlacement:
         studySectionCollapsePlacement ?? this.studySectionCollapsePlacement,
+    studySectionCountPlacement:
+        studySectionCountPlacement ?? this.studySectionCountPlacement,
+    studySectionCountGap: studySectionCountGap ?? this.studySectionCountGap,
+    subfolderSheetContentPadding:
+        subfolderSheetContentPadding ?? this.subfolderSheetContentPadding,
     studyCardHierarchy: studyCardHierarchy ?? this.studyCardHierarchy,
     studyCardRadius: studyCardRadius ?? this.studyCardRadius,
+    studyCardLeadingGap: studyCardLeadingGap ?? this.studyCardLeadingGap,
+    studyCardElevation: studyCardElevation ?? this.studyCardElevation,
     studyCardContentPadding:
         studyCardContentPadding ?? this.studyCardContentPadding,
     studyCardMargin: studyCardMargin ?? this.studyCardMargin,
@@ -986,6 +1170,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     studyCardBorderSide: studyCardBorderSide ?? this.studyCardBorderSide,
     studyCardBadgeRadius: studyCardBadgeRadius ?? this.studyCardBadgeRadius,
     studyCardGlyphSize: studyCardGlyphSize ?? this.studyCardGlyphSize,
+    studyCardContentAlignment:
+        studyCardContentAlignment ?? this.studyCardContentAlignment,
     flashcardTypeGradients:
         flashcardTypeGradients ?? this.flashcardTypeGradients,
   );
@@ -1206,6 +1392,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       // matérialiser une valeur ici GÈLERAIT le défaut du consommateur à la
       // première transition de thème.
       railItemWidth: _lerpNullableDouble(railItemWidth, other.railItemWidth, t),
+      // CR-IFFD-62 ① — MÊME invariant : `null` des DEUX côtés reste `null`
+      // (`_lerpNullableDouble` court-circuite le cas null-null), sans quoi la
+      // première transition de thème matérialiserait une hauteur là où le
+      // contrat dit « aucune contrainte ».
+      railItemHeight: _lerpNullableDouble(
+        railItemHeight,
+        other.railItemHeight,
+        t,
+      ),
+      railItemGap: _lerpNullableDouble(railItemGap, other.railItemGap, t),
+      // Padding CONTINU et directionnel-préservant (AD-13) ; null-null ⇒ null.
+      railPadding: _lerpNullableInsets(railPadding, other.railPadding, t),
       // CR-IFFD-50 ① — style CONTINU : `TextStyle.lerp` rend déjà `null` quand
       // les DEUX côtés sont `null` (même invariant que `labelTextStyle`) — le
       // repli du consommateur (`labelTextStyle` puis `titleMedium`) n'est
@@ -1227,6 +1425,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       studySectionCollapsePlacement: t < 0.5
           ? studySectionCollapsePlacement
           : other.studySectionCollapsePlacement,
+      // CR-IFFD-61 ④ — discret ⇒ bascule au point milieu ; continu ⇒
+      // interpolation null-préservante.
+      studySectionCountPlacement: t < 0.5
+          ? studySectionCountPlacement
+          : other.studySectionCountPlacement,
+      studySectionCountGap: _lerpNullableDouble(
+        studySectionCountGap,
+        other.studySectionCountGap,
+        t,
+      ),
+      // CR-IFFD-61 ③ — gouttière interne de la feuille de fratrie.
+      subfolderSheetContentPadding: _lerpNullableInsets(
+        subfolderSheetContentPadding,
+        other.subfolderSheetContentPadding,
+        t,
+      ),
       // CR-IFFD-56 — tokens des cartes d'étude par défaut. Même invariant que
       // TOUS les tokens nullables ci-dessus : `null` des DEUX côtés RESTE
       // `null` (matérialiser une valeur GÈLERAIT la référence du consommateur
@@ -1237,6 +1451,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       studyCardRadius: _lerpNullableRadius(
         studyCardRadius,
         other.studyCardRadius,
+        t,
+      ),
+      // CR-IFFD-61 ①/② — écart tuile→titre et élévation des cartes par défaut.
+      studyCardLeadingGap: _lerpNullableDouble(
+        studyCardLeadingGap,
+        other.studyCardLeadingGap,
+        t,
+      ),
+      studyCardElevation: _lerpNullableDouble(
+        studyCardElevation,
+        other.studyCardElevation,
         t,
       ),
       studyCardContentPadding: _lerpNullableInsets(
@@ -1296,6 +1521,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       // null-préservant PAR CONSTRUCTION : `null`↔`null` reste `null` — la
       // référence du consommateur n'est jamais matérialisée par une
       // transition de thème (leçon `studyCardBadgeRadius`).
+      // CR-IFFD-62 ④ — token DISCRET (un alignement ne s'interpole pas) et
+      // null-préservant PAR CONSTRUCTION : `null`↔`null` reste `null`.
+      studyCardContentAlignment: t < 0.5
+          ? studyCardContentAlignment
+          : other.studyCardContentAlignment,
       flashcardTypeGradients:
           t < 0.5 ? flashcardTypeGradients : other.flashcardTypeGradients,
     );

@@ -33,23 +33,49 @@ const double zRailItemFallbackWidth = 280;
 /// de l'app consommatrice) > [zRailItemFallbackWidth]. La résolution du token
 /// se fait au `build` (thème courant, réactif au changement de thème), jamais
 /// figée à la construction.
+///
+/// **CR-IFFD-62 ①** — la HAUTEUR suit le MÊME patron (paramètre [height] >
+/// token `ZcrudTheme.railItemHeight`) à une différence près, assumée et
+/// motivée : il n'y a **pas de repli chiffré**. Voir [height].
 class ZRailItem extends StatelessWidget {
   /// Construit un item de rail borné. [width] `null` ⇒ token de thème, puis
-  /// repli du socle.
-  const ZRailItem({required this.child, this.width, super.key});
+  /// repli du socle ; [height] `null` ⇒ token de thème, puis AUCUNE contrainte.
+  const ZRailItem({required this.child, this.width, this.height, super.key});
 
   /// Largeur EXPLICITE demandée par l'appelant. `null` ⇒ token
   /// `ZcrudTheme.railItemWidth`, puis [zRailItemFallbackWidth].
   final double? width;
 
+  /// Hauteur EXPLICITE demandée par l'appelant (**CR-IFFD-62 ①**). `null` ⇒
+  /// token `ZcrudTheme.railItemHeight`, puis **aucune contrainte de hauteur**
+  /// (l'item garde la hauteur de son contenu — rendu strictement inchangé).
+  ///
+  /// 🔴 **Pourquoi aucun repli chiffré, contrairement à [width]** : une
+  /// largeur non bornée dans un défileur horizontal est une FAUTE de layout
+  /// (rien n'est peint, et le debug lève en rafale), donc un repli y est
+  /// obligatoire ; une hauteur non bornée est licite et c'est le rendu actuel
+  /// de tous les rails. Poser 200 ici l'imposerait à tout item de rail de tout
+  /// hôte — y compris ceux qui n'y mettent pas des flashcards. La hauteur de
+  /// RÉFÉRENCE (200) reste portée par la carte de flashcard par défaut, là où
+  /// elle a un sens (`ZFlashcardCardReference.cardHeight`).
+  ///
+  /// ⚠️ La hauteur ainsi posée est **TIGHT** : elle est le « cadre » au sens
+  /// de CR-IFFD-62 ⑤. Une carte du socle qui la reçoit **la remplit** (son
+  /// pied est poussé au bas) au lieu d'additionner ses hauteurs.
+  final double? height;
+
   /// Le contenu borné (typiquement une carte par défaut du socle).
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: width ??
-            ZcrudTheme.of(context).railItemWidth ??
-            zRailItemFallbackWidth,
-        child: child,
-      );
+  Widget build(BuildContext context) {
+    final ZcrudTheme theme = ZcrudTheme.of(context);
+    return SizedBox(
+      width: width ?? theme.railItemWidth ?? zRailItemFallbackWidth,
+      // AD-4 — `null` des DEUX côtés ⇒ capacité ABSENTE : `SizedBox(height:
+      // null)` ne contraint rien, l'item garde exactement sa hauteur actuelle.
+      height: height ?? theme.railItemHeight,
+      child: child,
+    );
+  }
 }
