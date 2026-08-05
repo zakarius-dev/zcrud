@@ -23,11 +23,19 @@
 /// callback par verbe. Le verbe est une **donnée** (`ZChatAction`, famille
 /// scellée de CHAT-0b), pas une méthode.
 ///
-/// Gardes : `test/z_chat_single_call_site_test.dart` (surface publique en
-/// ÉGALITÉ d'ensemble + unicité des appels au répartiteur) et **G-U1** du
-/// kernel (`z_chat_action_contract_guard_test.dart`), qui balaie **tous** les
+/// Gardes : **G-CH1** (surface publique en ÉGALITÉ d'ensemble) et **G-CH2**
+/// (unicité des appels au répartiteur), toutes deux dans
+/// `test/z_chat_structure_guard_test.dart` ; plus **G-U1** du kernel
+/// (`z_chat_action_contract_guard_test.dart`), qui balaie **tous** les
 /// `packages/*/lib` et rougirait en nommant ce fichier s'il court-circuitait le
 /// répartiteur.
+///
+/// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
+/// `test/z_chat_single_call_site_test.dart`, **qui n'existe nulle part** dans le
+/// dépôt (`find packages -name '*single_call_site*'` → vide). La propriété était
+/// bien gardée — mais sous un autre nom, et un lecteur qui aurait ouvert le
+/// fichier cité aurait conclu à une garde absente. Une référence pendante ment
+/// exactement comme une garde vacante.
 ///
 /// ## 🔴 SM-1 — objectif produit n°1 du dépôt
 ///
@@ -323,9 +331,17 @@ class ZChatController extends ChangeNotifier {
   /// de « Réflexion en cours » appelle l'arrêt **puis** supprime la question
   /// tapée — n'est pas une erreur d'inattention : c'est ce qui arrive quand
   /// cinq chemins peuvent écrire dans le champ de saisie. Ici il y en a **un**,
-  /// et la garde `z_chat_composer_write_site_test.dart` en fait une propriété
-  /// **structurelle** : le chemin d'annulation ne peut pas l'appeler sans faire
-  /// rougir la garde.
+  /// et **deux** gardes en font une propriété **structurelle** :
+  /// * **G-CH4** (`test/z_chat_structure_guard_test.dart`) — dans ce fichier,
+  ///   la seule écriture est celle de [_setComposer], et le chemin
+  ///   d'annulation ne l'appelle pas ;
+  /// * **G10-P2** (`test/z_chat_capture_guard_test.dart`) — dans tout le reste
+  ///   de `lib/`, la seule écriture est `ZChatCaptureController.acceptInto`.
+  ///
+  /// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
+  /// `z_chat_composer_write_site_test.dart`, **qui n'existe nulle part** dans le
+  /// dépôt (`find packages -name '*composer_write_site*'` → vide). La propriété
+  /// était bien gardée, mais par les deux fichiers ci-dessus.
   void _setComposer(ZChatDraft draft) {
     if (composer.text != draft.text) composer.text = draft.text;
     _attachmentIds.value = List<String>.unmodifiable(draft.attachmentIds);
@@ -385,7 +401,35 @@ class ZChatController extends ChangeNotifier {
   /// La saisie est vidée à la soumission ; si le tour échoue **sans avoir rien
   /// produit**, elle est **restituée** et le message optimiste est retiré
   /// (AD-10 : une panne ne coûte jamais la frappe de l'utilisateur).
-  Future<ZResult<ZChatRequestToken>> send() async {
+  ///
+  /// ## 🔴 Lot γ0 — les réglages arrivent APRÈS le builder, et c'est le point
+  ///
+  /// [settings] et [corpusScope] sont les porteurs neutres du kernel
+  /// (`ZChatGenerationSettings`, `ZChatCorpusScope` — lot β). Ils sont
+  /// **optionnels** : omis, ils laissent le chemin d'exécution *strictement*
+  /// inchangé — `withSettings(null)` rend `identical(this)`, si bien que le
+  /// port reçoit **l'objet même** que le builder de l'hôte a construit.
+  ///
+  /// Ils sont appliqués **après** [_buildRequest], jamais passés dedans. Ce
+  /// n'est pas un détail d'ordre : c'est ce qui rend le défaut mesuré chez IFFD
+  /// **inexprimable**. Là-bas, six drapeaux de corpus sont transmis par le
+  /// contrôleur puis **jetés** par `IffdAiRepositoryImpl` (le payload `explain`
+  /// ne porte que `message`, `model`, `enableWebSearch`) : l'utilisateur croit
+  /// avoir restreint sa recherche, et rien ne le détrompe. Un hôte qui
+  /// recevrait les réglages dans son builder pourrait faire exactement cela ;
+  /// ici il n'a pas la main sur ce site — le socle écrit les réglages sur la
+  /// requête, et le port les lit sur les champs du contrat.
+  ///
+  /// ⚠️ [settings] est un **remplacement**, pas une fusion (règle du kernel) :
+  /// un porteur *vide* remet les quatre réglages à « l'hôte décide », y compris
+  /// ceux que le builder avait posés. C'est délibéré — une feuille de réglages
+  /// qui **retire** un réglage doit pouvoir le retirer. [corpusScope] `null`,
+  /// lui, ne retire **rien** : la portée éventuellement posée par le builder est
+  /// conservée (l'absence d'argument n'est pas une demande d'élargissement).
+  Future<ZResult<ZChatRequestToken>> send({
+    ZChatGenerationSettings? settings,
+    ZChatCorpusScope? corpusScope,
+  }) async {
     final ZChatDraft draft = currentDraft;
     if (draft.text.trim().isEmpty && draft.attachmentIds.isEmpty) {
       const ZFailure failure = ZDomainFailure(
@@ -399,12 +443,18 @@ class ZChatController extends ChangeNotifier {
     final ZChatRequestToken token = ZChatRequestToken(requestId);
     _tokens[requestId] = token;
 
-    final ZChatGenerationRequest request;
+    final ZChatGenerationRequest built;
     try {
-      request = _buildRequest(draft);
+      built = _buildRequest(draft);
     } catch (e) {
       return _abort(requestId, 'chat request builder threw ${e.runtimeType}');
     }
+    // 🔴 UN SEUL site d'application des réglages, et il est HORS d'atteinte de
+    // l'hôte. `withSettings(null)` rend `identical(built)` : sans argument, la
+    // requête envoyée est l'objet même du builder — aucun défaut n'a bougé.
+    final ZChatGenerationRequest request = corpusScope == null
+        ? built.withSettings(settings)
+        : built.withSettings(settings).withCorpusScope(corpusScope);
     _states[requestId] = _ZRequestState(request);
 
     _setComposer(const ZChatDraft());
@@ -719,9 +769,9 @@ class ZChatController extends ChangeNotifier {
   ///
   /// Un raccourci de confort (`delete(id)`, `stop()`, …) serait un **second
   /// site d'appel**, donc la possibilité d'une divergence entre deux surfaces
-  /// d'UI : c'est exactement ce qu'IFFD a produit. La garde
-  /// `z_chat_single_call_site_test.dart` asserte l'**égalité d'ensemble** de la
-  /// surface publique — « contient runAction » ne mordrait pas.
+  /// d'UI : c'est exactement ce qu'IFFD a produit. La garde **G-CH1**
+  /// (`test/z_chat_structure_guard_test.dart`) asserte l'**égalité d'ensemble**
+  /// de la surface publique — « contient runAction » ne mordrait pas.
   Future<ZResult<ZChatActionOutcome>> runAction(ZChatAction action) async {
     final ZResult<ZChatActionPlan> planned = await _dispatcher.prepare(action);
     final ZChatActionPlan? plan = planned.fold(

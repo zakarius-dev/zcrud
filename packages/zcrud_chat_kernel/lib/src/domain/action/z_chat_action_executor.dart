@@ -83,3 +83,48 @@ abstract interface class ZChatActionExecutor {
   /// touchées.
   Future<ZResult<List<String>>> executeCustom(ZChatCustomAction action);
 }
+
+/// 🔴 **Extension OPTIONNELLE** du port d'effet — lot β.
+///
+/// ## Pourquoi une seconde interface, et non un paramètre de plus
+///
+/// `ZChatRegenerateAction` porte désormais des réglages et une portée
+/// (lot β). Il fallait qu'ils **atteignent l'hôte** — un réglage qui n'arrive
+/// pas au fournisseur est exactement le défaut IFFD du § 1.1 de l'étude
+/// CR-IFFD-72 (six drapeaux transmis puis jetés, sans signal).
+///
+/// Mais ajouter un paramètre — **même optionnel** — à
+/// [ZChatActionExecutor.regenerate] aurait invalidé **toutes** les
+/// implémentations existantes : en Dart, un override doit accepter tous les
+/// paramètres nommés de la déclaration qu'il redéfinit. C'est très exactement
+/// l'incident du 2026-08-01 sur ce volet (un paramètre rendu obligatoire, 13
+/// erreurs, paquet laissé rouge).
+///
+/// ⇒ Le port historique est **INTOUCHÉ**. Un hôte qui veut recevoir les
+/// réglages d'une régénération implémente **en plus** cette interface :
+///
+/// ```dart
+/// class MonExecutor implements ZChatActionExecutor,
+///     ZChatSettingsAwareActionExecutor { … }
+/// ```
+///
+/// ## La règle du répartiteur — jamais un abandon silencieux
+///
+/// | Action | Executor | Chemin |
+/// |---|---|---|
+/// | `settings`/`corpusScope` **absents** | quelconque | `regenerate(messageId:)` — **inchangé**, à l'identique d'avant le lot |
+/// | présents | implémente cette interface | [regenerateWithSettings] — l'action **entière** est remise |
+/// | présents | ne l'implémente **pas** | `Left(ZUnsupportedOperationFailure)` — **jamais** un repli muet |
+///
+/// La troisième ligne est la propriété qui compte : un hôte ne peut pas
+/// **croire** avoir restreint le corpus alors que sa demande a été jetée.
+abstract interface class ZChatSettingsAwareActionExecutor {
+  /// Régénère en recevant l'action **complète** (donc ses réglages et sa
+  /// portée) ; rend les identités touchées.
+  ///
+  /// 🚫 Même règle que les sept membres ci-dessus : invocable **uniquement**
+  /// depuis `z_chat_action_dispatcher.dart` (garde **G-U1**).
+  Future<ZResult<List<String>>> regenerateWithSettings(
+    ZChatRegenerateAction action,
+  );
+}

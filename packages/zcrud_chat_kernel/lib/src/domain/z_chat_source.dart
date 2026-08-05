@@ -21,6 +21,7 @@ const Set<String> _kCommonKeys = <String>{
   'breadcrumb',
   'ranker',
   'corpus',
+  'corpus_key',
   'usage_status',
 };
 
@@ -57,6 +58,7 @@ class ZChatSource {
     this.breadcrumb,
     this.ranker,
     this.corpus,
+    this.corpusKey,
     this.usageStatusRaw,
     this.payload = const <String, dynamic>{},
   });
@@ -91,8 +93,29 @@ class ZChatSource {
   /// Outil/ranker ayant récupéré la source.
   final String? ranker;
 
-  /// Libellé du corpus d'origine.
+  /// **Libellé** du corpus d'origine — texte d'affichage, traduisible.
+  ///
+  /// ⛔ **Jamais une clé.** Confronter ce champ à une portée demandée
+  /// (`ZChatCorpusScope`) reviendrait à comparer un libellé à un identifiant :
+  /// la comparaison passerait quand les deux se ressemblent et échouerait dès
+  /// qu'un hôte traduit son interface. Utiliser [corpusKey].
   final String? corpus;
+
+  /// 🔴 **Clé stable** du corpus d'origine (lot β) — l'autre moitié du
+  /// bouclage lecture/écriture.
+  ///
+  /// L'étude CR-IFFD-72 (§ 4.2) a mesuré que `ZChatGenerationRequest` n'avait
+  /// aucune portée documentaire **et** que ce type ne portait qu'un libellé :
+  /// même en ajoutant un champ de restriction, aucune restriction n'aurait été
+  /// **vérifiable**, faute de pouvoir confronter les sources rendues à la
+  /// portée demandée. Ce champ est ce qui rend `ZChatCorpusScope.audit`
+  /// possible.
+  ///
+  /// Opaque et **ouvert** : le socle ne connaît aucune valeur (les codes
+  /// documentaires appartiennent aux hôtes). `null` ⇒ source non attribuée —
+  /// ce qui, sous une portée restrictive, compte fail-safe comme une
+  /// **violation** et non comme une conformité présumée.
+  final String? corpusKey;
 
   /// Statut d'usage **brut** — conservé tel quel pour un round-trip sans perte
   /// même si la valeur est inconnue du cœur (cf. [usageStatus] pour la version
@@ -160,6 +183,7 @@ class ZChatSource {
       breadcrumb: zJsonStringOrNull(map['breadcrumb']),
       ranker: zJsonStringOrNull(map['ranker']),
       corpus: zJsonStringOrNull(map['corpus']),
+      corpusKey: zJsonStringOrNull(map['corpus_key']),
       usageStatusRaw: zJsonStringOrNull(map['usage_status']),
       payload: Map<String, dynamic>.unmodifiable(payload),
     );
@@ -184,6 +208,7 @@ class ZChatSource {
       if (breadcrumb != null) 'breadcrumb': breadcrumb,
       if (ranker != null) 'ranker': ranker,
       if (corpus != null) 'corpus': corpus,
+      if (corpusKey != null) 'corpus_key': corpusKey,
       if (usageStatusRaw != null) 'usage_status': usageStatusRaw,
     };
   }
@@ -201,6 +226,7 @@ class ZChatSource {
           breadcrumb == other.breadcrumb &&
           ranker == other.ranker &&
           corpus == other.corpus &&
+          corpusKey == other.corpusKey &&
           usageStatusRaw == other.usageStatusRaw &&
           zJsonEquals(payload, other.payload);
 
@@ -215,6 +241,7 @@ class ZChatSource {
         breadcrumb,
         ranker,
         corpus,
+        corpusKey,
         usageStatusRaw,
         zJsonHash(payload),
       );

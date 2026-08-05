@@ -98,10 +98,23 @@ export 'src/presentation/render/z_chat_seam_failure.dart';
 export 'src/presentation/render/z_chat_shell_render_request.dart';
 export 'src/presentation/render/z_chat_shell_renderer.dart';
 export 'src/presentation/render/z_chat_shell_renderer_scope.dart';
+// Lot γ0/δ (CR-IFFD-72) — les **réglages de génération**, du contrat à l'écran :
+// `ZChatSettingsController` porte l'état (hors de `ZChatController` : G-CH1
+// asserte l'égalité d'ensemble de ses membres), `ZChatController.send(settings:,
+// corpusScope:)` le transporte APRÈS le builder de l'hôte — donc sans qu'aucun
+// hôte puisse le jeter en silence — et `ZChatSettingsSheet` le rend, tuile par
+// tuile remplaçable. Aucun enum réinventé : tout vient du kernel (lot β).
+export 'src/presentation/settings/z_chat_settings_controller.dart';
 export 'src/presentation/view/z_chat_attachment_strip.dart';
 export 'src/presentation/view/z_chat_block_view.dart';
 export 'src/presentation/view/z_chat_capture_bar.dart';
 export 'src/presentation/view/z_chat_capture_review_field.dart';
+// Lot α (CR-IFFD-72) — la **zone de saisie PARTAGÉE** : `ZChatComposer` rend
+// `ZChatController.composer` (le contrôleur existait, le WIDGET manquait), et
+// les DEUX surfaces le montent par la fabrique unique `_zChatComposeSurface`.
+// Aucun membre ajouté au contrôleur (G-CH1), aucun nouveau chemin d'exécution
+// (l'envoi passe par `send()`), créneaux nullables (AD-4).
+export 'src/presentation/view/z_chat_composer.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
 export 'src/presentation/view/z_chat_conversation_list.dart';
 export 'src/presentation/view/z_chat_conversation_tile.dart';
@@ -119,5 +132,6 @@ export 'src/presentation/view/z_chat_message_tile.dart';
 // enregistrer en note) s'exécutent par `runAction(ZChatCustomAction(...))` —
 // aucun nouveau chemin d'exécution.
 export 'src/presentation/view/z_chat_notebook_view.dart';
+export 'src/presentation/view/z_chat_settings_sheet.dart';
 export 'src/presentation/z_chat_controller.dart';
 export 'src/presentation/z_chat_stream_progress.dart';

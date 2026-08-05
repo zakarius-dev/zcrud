@@ -70,6 +70,7 @@ class ZChatNotebookView extends StatelessWidget {
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
+    this.composer,
     super.key,
   });
 
@@ -95,6 +96,16 @@ class ZChatNotebookView extends StatelessWidget {
   /// Liste inversée — relayée telle quelle.
   final bool reverse;
 
+  /// La **zone de saisie** — relayée telle quelle à la racine commune (lot α).
+  ///
+  /// 🔴 Le notebook n'en monte pas une à lui : il **relaie**. C'est la même
+  /// discipline que pour la tuile — la saisie du notebook et celle de la
+  /// conversation sont rendues par la fabrique UNIQUE
+  /// (`_zChatComposeSurface`), donc elles ne peuvent pas diverger.
+  /// `null` ⇒ absent de l'arbre (AD-4) : un notebook en lecture seule reste un
+  /// notebook, et l'hôte passif ne bouge pas.
+  final Widget? composer;
+
   @override
   Widget build(BuildContext context) {
     // 🔴 LA composition : rien d'autre. Toute logique ajoutée ici serait un
@@ -107,6 +118,9 @@ class ZChatNotebookView extends StatelessWidget {
       // Identité : PAS de paramètre sur cette surface — le masquage n'est pas
       // un défaut réglable, c'est la définition de l'usage notebook.
       actionsBuilder: actionsBuilder,
+      // 🔴 RELAI, jamais une seconde saisie : la fabrique unique
+      // (`_zChatComposeSurface`) rend les deux surfaces.
+      composer: composer,
     );
   }
 }

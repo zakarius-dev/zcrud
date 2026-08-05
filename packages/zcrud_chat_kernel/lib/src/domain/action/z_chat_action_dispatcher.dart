@@ -91,10 +91,43 @@ final class ZChatActionDispatcher {
           ),
         );
       case final ZChatRegenerateAction a:
-        final ZResult<List<String>> r = await _guard<List<String>>(
-          () => executor.regenerate(messageId: a.messageId),
-          'regenerate',
-        );
+        // 🔴 Lot β — les réglages d'une régénération DOIVENT atteindre l'hôte,
+        // ou être REFUSÉS ; jamais tomber en silence. Le défaut mesuré au
+        // § 1.1 de l'étude CR-IFFD-72 est exactement là : six drapeaux de
+        // corpus transmis par le contrôleur d'IFFD puis jetés par le
+        // repository, sans qu'aucun appelant puisse s'en apercevoir.
+        //
+        // Le port historique reste INTOUCHÉ (ajouter un paramètre, même
+        // optionnel, invalide tout override existant — incident du
+        // 2026-08-01). L'hôte opte pour la forme riche en implémentant
+        // `ZChatSettingsAwareActionExecutor` EN PLUS.
+        final ZChatActionExecutor ex = executor;
+        if (a.overridesRequest && ex is! ZChatSettingsAwareActionExecutor) {
+          return Left<ZFailure, ZChatActionOutcome>(
+            const ZUnsupportedOperationFailure(
+              'this executor cannot honour regeneration settings or corpus '
+              'scope',
+              operation: 'regenerateWithSettings',
+            ),
+          );
+        }
+        final ZResult<List<String>> r;
+        if (a.overridesRequest) {
+          // Le `as` ne peut pas échouer : le refus ci-dessus l'a garanti. Les
+          // deux interfaces sont SŒURS (aucune n'étend l'autre), d'où la
+          // conversion explicite plutôt qu'une promotion de type.
+          final ZChatSettingsAwareActionExecutor aware =
+              ex as ZChatSettingsAwareActionExecutor;
+          r = await _guard<List<String>>(
+            () => aware.regenerateWithSettings(a),
+            'regenerateWithSettings',
+          );
+        } else {
+          r = await _guard<List<String>>(
+            () => executor.regenerate(messageId: a.messageId),
+            'regenerate',
+          );
+        }
         return r.map(
           (List<String> ids) =>
               ZChatActionOutcome(verb: a.verb, affectedMessageIds: ids),

@@ -44,7 +44,17 @@ export 'src/domain/action/z_chat_action_plan.dart';
 export 'src/domain/ai/z_chat_ai_failure.dart';
 export 'src/domain/ai/z_chat_compute_effort.dart';
 export 'src/domain/ai/z_chat_context_port.dart';
+// Lot β — PORTÉE documentaire VÉRIFIABLE : la portée s'exprime en CLÉS stables
+// sur la requête (`ZChatCorpusScope`), et `ZChatCorpusScope.audit` confronte
+// les sources RENDUES à la portée DEMANDÉE. Sans ce bouclage lecture/écriture,
+// une restriction ne vaudrait rien : `ZChatSource.corpus` n'est qu'un libellé,
+// c'est `ZChatSource.corpusKey` (lot β) qui se compare.
+export 'src/domain/ai/z_chat_corpus_scope.dart';
 export 'src/domain/ai/z_chat_generation_port.dart';
+// Lot β — PORTEUR de réglages neutre, transportable sur la requête ET sur
+// `ZChatRegenerateAction` (ce qui rend `ZChatLengthBias` atteignable sur son
+// propre cas d'usage). Il COMPOSE les types existants, n'en redéclare AUCUN.
+export 'src/domain/ai/z_chat_generation_settings.dart';
 export 'src/domain/ai/z_chat_generation_style.dart';
 export 'src/domain/ai/z_chat_quota_metadata.dart';
 export 'src/domain/ai/z_chat_request_token.dart';

@@ -20,7 +20,14 @@
 /// 🔴 **Un seul site de résolution : [zChatLabel].** Aucun autre fichier du
 /// package n'appelle `label(` directement — c'est ce qui rend « aucune clé sans
 /// repli » **structurel** plutôt que promis, et c'est ce que vérifie
-/// `test/z_chat_label_fallback_guard_test.dart` (volets carte, source et rendu).
+/// `test/z_chat_epic_review_guard_test.dart`, groupe **HIGH-1** (volets CARTE,
+/// SOURCE et RENDU).
+///
+/// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
+/// `test/z_chat_label_fallback_guard_test.dart`, **qui n'existe nulle part**
+/// (`ls test | grep -i 'label\|fallback'` → vide). La propriété était bien
+/// gardée, mais sous un autre nom — une référence pendante ment exactement comme
+/// une garde vacante.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -105,6 +112,92 @@ const String kZChatLabelAcceptCapture = '${kZChatLabelPrefix}acceptCapture';
 
 /// Action « abandonner la relecture » — n'efface JAMAIS la saisie (CHAT-10).
 const String kZChatLabelCancelCapture = '${kZChatLabelPrefix}cancelCapture';
+
+/// Étiquette sémantique de la **zone de saisie** partagée (lot α, CR-IFFD-72).
+const String kZChatLabelComposer = '${kZChatLabelPrefix}composer';
+
+/// Invite du champ de saisie — elle sert de **placeholder visuel** ET de
+/// libellé du champ pour un lecteur d'écran (lot α, CR-IFFD-72).
+const String kZChatLabelComposerHint = '${kZChatLabelPrefix}composerHint';
+
+// ── Feuille de réglages de génération (lot γ0/δ, CR-IFFD-72) ───────────────
+//
+// 🔴 AUCUNE valeur métier ici : les paliers nommés ci-dessous sont ceux des
+// enums du KERNEL (`ZChatResponseLength`, `ZChatLengthBias`), jamais des corpus
+// ni des codes d'un hôte. Le catalogue de corpus est une **donnée d'hôte** —
+// ses libellés viennent de `ZChatCorpusOption.label`, pas d'une clé du socle.
+
+/// Étiquette sémantique de la **feuille de réglages** (lot γ0).
+const String kZChatLabelSettings = '${kZChatLabelPrefix}settings';
+
+/// Groupe « verbosité de la réponse » — axe `ZChatResponseLength`.
+const String kZChatLabelResponseLength = '${kZChatLabelPrefix}responseLength';
+
+/// Palier `ZChatResponseLength.concise`.
+const String kZChatLabelLengthConcise = '${kZChatLabelPrefix}lengthConcise';
+
+/// Palier `ZChatResponseLength.standard`.
+const String kZChatLabelLengthStandard = '${kZChatLabelPrefix}lengthStandard';
+
+/// Palier `ZChatResponseLength.detailed`.
+const String kZChatLabelLengthDetailed = '${kZChatLabelPrefix}lengthDetailed';
+
+/// Groupe « biais de régénération » — axe `ZChatLengthBias`, **orthogonal** au
+/// précédent (le kernel refuse de les fusionner : cf. G16).
+const String kZChatLabelLengthBias = '${kZChatLabelPrefix}lengthBias';
+
+/// Palier `ZChatLengthBias.shorter`.
+const String kZChatLabelBiasShorter = '${kZChatLabelPrefix}biasShorter';
+
+/// Palier `ZChatLengthBias.asIs`.
+const String kZChatLabelBiasAsIs = '${kZChatLabelPrefix}biasAsIs';
+
+/// Palier `ZChatLengthBias.longer`.
+const String kZChatLabelBiasLonger = '${kZChatLabelPrefix}biasLonger';
+
+/// 🔴 Groupe « budget de calcul » — l'axe porté par `ZChatComputeEffort`.
+///
+/// **Le nom de cette constante évite délibérément le mot `Effort`.** La garde
+/// **G16** (`zcrud_chat_kernel/test/z_chat_naming_guard_test.dart`) n'autorise,
+/// pour ce radical, que les DEUX orthographes exactes `ZChatComputeEffort` et
+/// `computeEffort`, **avec limites de mot** — précisément pour qu'aucune famille
+/// d'orthographes voisines (`computeEffortLevel`, `ZChatComputeEffortV2`) ne se
+/// glisse à côté de l'axe qu'elle protège. `kZChatLabelComputeEffort` en serait
+/// une : son `Effort` survit au retrait des deux formes autorisées. G16 ne
+/// balaie pas `zcrud_chat` **aujourd'hui** (son second volet lit
+/// `chatDartFiles()`, borné au kernel) — mais son premier volet, lui, balaie
+/// déjà `packages/*/lib`, et une garde jumelle qui s'élargirait trouverait ce
+/// paquet propre. Le concept, lui, est nommé sans ambiguïté par le kernel :
+/// « budget de calcul ».
+const String kZChatLabelComputeBudget = '${kZChatLabelPrefix}computeBudget';
+
+/// Un palier `1..5` du budget de calcul — porte [kZChatCountPlaceholder].
+const String kZChatLabelComputeBudgetLevel =
+    '${kZChatLabelPrefix}computeBudgetLevel';
+
+/// Réglage « exposer les étapes de raisonnement »
+/// (`ZChatGenerationSettings.revealThinkingSteps`).
+const String kZChatLabelRevealThinking =
+    '${kZChatLabelPrefix}revealThinking';
+
+/// Groupe « portée documentaire » — `ZChatCorpusScope`, exprimée en **clés
+/// stables** d'hôte.
+const String kZChatLabelCorpusScope = '${kZChatLabelPrefix}corpusScope';
+
+/// 🔴 Option « aucune restriction » de la portée documentaire.
+///
+/// Elle est **rendue**, jamais implicite : une portée vide qui n'apparaît pas à
+/// l'écran est indiscernable d'une portée oubliée. C'est le pendant, côté UI,
+/// du fail-safe de `ZChatCorpusScope.audit` (en l'absence de signal, jamais de
+/// présomption).
+const String kZChatLabelCorpusAll = '${kZChatLabelPrefix}corpusAll';
+
+/// Option « l'hôte décide » d'un réglage — l'état `null`, rendu **explicitement**.
+///
+/// Sans elle, un utilisateur ne pourrait jamais REVENIR à « non réglé » : il
+/// n'existerait que trois paliers, et le quatrième état — le défaut — serait
+/// atteignable une seule fois, avant le premier choix.
+const String kZChatLabelSettingAuto = '${kZChatLabelPrefix}settingAuto';
 
 /// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
@@ -227,6 +320,23 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelReviewCapture,
   kZChatLabelAcceptCapture,
   kZChatLabelCancelCapture,
+  kZChatLabelComposer,
+  kZChatLabelComposerHint,
+  kZChatLabelSettings,
+  kZChatLabelResponseLength,
+  kZChatLabelLengthConcise,
+  kZChatLabelLengthStandard,
+  kZChatLabelLengthDetailed,
+  kZChatLabelLengthBias,
+  kZChatLabelBiasShorter,
+  kZChatLabelBiasAsIs,
+  kZChatLabelBiasLonger,
+  kZChatLabelComputeBudget,
+  kZChatLabelComputeBudgetLevel,
+  kZChatLabelRevealThinking,
+  kZChatLabelCorpusScope,
+  kZChatLabelCorpusAll,
+  kZChatLabelSettingAuto,
   kZChatLabelConversations,
   kZChatLabelLoadingConversations,
   kZChatLabelConversationsError,
@@ -263,8 +373,10 @@ const List<String> kZChatLabelKeys = <String>[
 /// atteint dans ce cas (`label()` ne le consulte qu'en dernier ressort).
 ///
 /// Une clé absente de cette carte ferait rougir
-/// `test/z_chat_label_fallback_guard_test.dart` (volet **carte**) : la carte et
-/// [kZChatLabelKeys] sont assertées **égales en ensemble**, jamais « incluses ».
+/// `test/z_chat_epic_review_guard_test.dart`, groupe **HIGH-1**, volet
+/// **CARTE** (référence corrigée au lot γ0 — cf. le dartdoc de bibliothèque) :
+/// la carte et [kZChatLabelKeys] y sont assertées **égales en ensemble**,
+/// jamais « incluses ».
 const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelShowMore: 'Afficher plus',
   kZChatLabelShowLess: 'Afficher moins',
@@ -289,6 +401,23 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelReviewCapture: 'Relire avant envoi',
   kZChatLabelAcceptCapture: 'Insérer dans le message',
   kZChatLabelCancelCapture: 'Abandonner',
+  kZChatLabelComposer: 'Zone de saisie',
+  kZChatLabelComposerHint: 'Écrivez votre message',
+  kZChatLabelSettings: 'Réglages de génération',
+  kZChatLabelResponseLength: 'Longueur de réponse',
+  kZChatLabelLengthConcise: 'Concise',
+  kZChatLabelLengthStandard: 'Standard',
+  kZChatLabelLengthDetailed: 'Détaillée',
+  kZChatLabelLengthBias: 'Régénération',
+  kZChatLabelBiasShorter: 'Plus court',
+  kZChatLabelBiasAsIs: 'Tel quel',
+  kZChatLabelBiasLonger: 'Plus long',
+  kZChatLabelComputeBudget: 'Budget de calcul',
+  kZChatLabelComputeBudgetLevel: 'Niveau $kZChatCountPlaceholder',
+  kZChatLabelRevealThinking: 'Afficher le raisonnement',
+  kZChatLabelCorpusScope: 'Portée documentaire',
+  kZChatLabelCorpusAll: 'Tous les corpus',
+  kZChatLabelSettingAuto: 'Automatique',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
   kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',

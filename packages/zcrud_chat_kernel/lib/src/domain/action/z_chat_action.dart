@@ -73,6 +73,9 @@ library;
 
 import 'package:zcrud_core/domain.dart';
 
+import '../ai/z_chat_corpus_scope.dart';
+import '../ai/z_chat_generation_settings.dart';
+
 /// Saisie en cours de l'utilisateur (« composer ») transportée par une action.
 ///
 /// 🔴 D3 : l'annulation **porte** la saisie pour que le contrat puisse imposer
@@ -202,12 +205,50 @@ class ZChatEditAction extends ZChatAction {
 /// (`:1979` delete+resend, `:2000` `refresh:true`, `:2026` `create` additif).
 /// Ici la règle est **uniforme** : c'est le **plan** qui décide de la
 /// confirmation, jamais le verbe pris isolément (D6).
+///
+/// ## 🔴 Lot β — le défaut STRUCTUREL que ce variant portait
+///
+/// L'étude CR-IFFD-72 (§ 4.3) l'a mesuré : ce variant ne portait que
+/// `{messageId}`, alors que `ZChatLengthBias` est défini — dans
+/// `z_chat_enums.dart:116` — comme le « biais d'une **régénération** ». Le seul
+/// réglage dont le cas d'usage EST ce verbe lui était donc **structurellement
+/// inatteignable** : régénérer « plus court » n'était pas exprimable.
+///
+/// [settings] et [corpusScope] ferment ce défaut, **par champs optionnels** —
+/// jamais par un nouveau variant (qui aurait exigé un `case` de plus au
+/// répartiteur, garde G-SEAL). Les deux valent `null` par défaut : une
+/// régénération écrite avant ce lot se comporte **exactement** comme avant, et
+/// emprunte le même chemin d'exécution.
 class ZChatRegenerateAction extends ZChatAction {
   /// Construit une régénération.
-  const ZChatRegenerateAction({required this.messageId});
+  const ZChatRegenerateAction({
+    required this.messageId,
+    this.settings,
+    this.corpusScope,
+  });
 
   /// Identité opaque du message dont la réponse est régénérée.
   final String messageId;
+
+  /// Réglages demandés pour **cette** régénération, ou `null` (« comme la
+  /// requête d'origine ») — lot β.
+  ///
+  /// C'est ici que `ZChatLengthBias` redevient atteignable sur son propre cas
+  /// d'usage.
+  final ZChatGenerationSettings? settings;
+
+  /// Portée documentaire demandée pour **cette** régénération, ou `null`
+  /// (aucune restriction) — lot β.
+  final ZChatCorpusScope? corpusScope;
+
+  /// `true` si la régénération demande autre chose que « refais pareil ».
+  ///
+  /// 🔴 C'est ce prédicat qui rend l'oubli **détectable** : le répartiteur
+  /// refuse explicitement (`ZUnsupportedOperationFailure`) plutôt que de
+  /// laisser tomber en silence des réglages que l'appelant a demandés — le
+  /// défaut IFFD mesuré au § 1.1 de l'étude (six drapeaux de corpus transmis
+  /// par le contrôleur puis **jetés** par le repository, sans aucun signal).
+  bool get overridesRequest => settings != null || corpusScope != null;
 
   @override
   String get verb => 'regenerate';
@@ -224,10 +265,13 @@ class ZChatRegenerateAction extends ZChatAction {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ZChatRegenerateAction && messageId == other.messageId;
+      other is ZChatRegenerateAction &&
+          messageId == other.messageId &&
+          settings == other.settings &&
+          corpusScope == other.corpusScope;
 
   @override
-  int get hashCode => Object.hash(verb, messageId);
+  int get hashCode => Object.hash(verb, messageId, settings, corpusScope);
 }
 
 /// Retirer un message — **soft-delete uniquement** (D7, AD-9).

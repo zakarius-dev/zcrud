@@ -42,6 +42,8 @@ import '../z_chat_enums.dart';
 import '../z_content_block.dart';
 import 'z_chat_compute_effort.dart';
 import 'z_chat_context_port.dart';
+import 'z_chat_corpus_scope.dart';
+import 'z_chat_generation_settings.dart';
 import 'z_chat_generation_style.dart';
 import 'z_chat_request_token.dart';
 import 'z_chat_stream_event.dart';
@@ -70,6 +72,8 @@ class ZChatGenerationRequest {
     this.responseLength,
     this.lengthBias,
     this.computeEffort,
+    this.revealThinkingSteps,
+    this.corpusScope,
     this.languageTag,
     this.instructions,
     this.modelId,
@@ -127,6 +131,28 @@ class ZChatGenerationRequest {
   /// `base_request.py:104`) ; l'enum `low/medium/high` d'IFFD s'y projette.
   final ZChatComputeEffort? computeEffort;
 
+  /// Demande d'exposer les **étapes de raisonnement** (`ZChatThinkingStep`),
+  /// ou `null` (l'hôte décide) — lot β.
+  ///
+  /// Pendant, côté DEMANDE, d'un type qui n'existait que côté réponse. C'est
+  /// le quatrième réglage du porteur [ZChatGenerationSettings] ; il est déclaré
+  /// ici, comme les trois autres, pour que la projection soit une **bijection**
+  /// et non une perte.
+  final bool? revealThinkingSteps;
+
+  /// 🔴 **Portée documentaire** de la génération, ou `null` — lot β.
+  ///
+  /// `null` ⇒ **aucune restriction**, c'est-à-dire exactement le comportement
+  /// d'avant ce champ (garde de rétro-compatibilité du lot). Renseignée, elle
+  /// s'exprime en **clés stables** ([ZChatCorpusScope]) et se confronte aux
+  /// sources rendues par `ZChatCorpusScope.audit` : c'est ce bouclage — et non
+  /// la seule présence du champ — qui fait qu'une restriction **vaut quelque
+  /// chose**.
+  ///
+  /// ⚠️ Le socle ne connaît **aucune** valeur de corpus : les clés sont celles
+  /// de l'hôte (AD-12/FR-26).
+  final ZChatCorpusScope? corpusScope;
+
   /// Étiquette de langue BCP-47 (`'fr'`), ou `null`.
   final String? languageTag;
 
@@ -147,6 +173,81 @@ class ZChatGenerationRequest {
 
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
+  /// **Vue** des réglages portés par cette requête — lot β.
+  ///
+  /// 🔴 Une **projection**, jamais un second stockage : les quatre réglages
+  /// restent des champs de premier niveau (la garde G16/CHAT-1b l'exige, pour
+  /// que verbosité et budget de calcul demeurent non confondables). Un porteur
+  /// stocké EN PLUS aurait créé deux sources de vérité — « deux lectures
+  /// conformes mais incompatibles ».
+  ///
+  /// `settings` et [withSettings] forment un aller-retour **fidèle** :
+  /// `r.withSettings(r.settings) == r` (garde du lot).
+  ZChatGenerationSettings get settings => ZChatGenerationSettings(
+    responseLength: responseLength,
+    lengthBias: lengthBias,
+    computeEffort: computeEffort,
+    revealThinkingSteps: revealThinkingSteps,
+  );
+
+  /// Rend une requête **identique**, sauf les réglages, remplacés par ceux de
+  /// [settings] — lot β.
+  ///
+  /// * `null` ⇒ la requête est rendue **telle quelle** (`identical`) : un hôte
+  ///   qui ne règle rien ne paie rien, et le chemin d'exécution est inchangé ;
+  /// * un porteur **vide** remet les quatre réglages à « l'hôte décide ».
+  ///   C'est délibérément un **remplacement**, pas une fusion : une feuille de
+  ///   réglages qui retire un réglage doit pouvoir le retirer.
+  ///
+  /// C'est le membre par lequel les réglages d'une `ZChatRegenerateAction`
+  /// rejoignent la requête effectivement envoyée au port.
+  ZChatGenerationRequest withSettings(ZChatGenerationSettings? settings) {
+    if (settings == null) return this;
+    return ZChatGenerationRequest(
+      style: style,
+      subject: subject,
+      notes: notes,
+      conversationId: conversationId,
+      sourceMessageId: sourceMessageId,
+      context: context,
+      attachmentIds: attachmentIds,
+      responseLength: settings.responseLength,
+      lengthBias: settings.lengthBias,
+      computeEffort: settings.computeEffort,
+      revealThinkingSteps: settings.revealThinkingSteps,
+      corpusScope: corpusScope,
+      languageTag: languageTag,
+      instructions: instructions,
+      modelId: modelId,
+      extra: extra,
+    );
+  }
+
+  /// Rend une requête **identique**, sauf la portée documentaire — lot β.
+  ///
+  /// `null` ⇒ portée **retirée** (aucune restriction). Séparé de
+  /// [withSettings] parce que ce sont deux axes distincts : régler la verbosité
+  /// ne doit jamais, par effet de bord, élargir ou restreindre le corpus.
+  ZChatGenerationRequest withCorpusScope(ZChatCorpusScope? scope) =>
+      ZChatGenerationRequest(
+        style: style,
+        subject: subject,
+        notes: notes,
+        conversationId: conversationId,
+        sourceMessageId: sourceMessageId,
+        context: context,
+        attachmentIds: attachmentIds,
+        responseLength: responseLength,
+        lengthBias: lengthBias,
+        computeEffort: computeEffort,
+        revealThinkingSteps: revealThinkingSteps,
+        corpusScope: scope,
+        languageTag: languageTag,
+        instructions: instructions,
+        modelId: modelId,
+        extra: extra,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -161,6 +262,8 @@ class ZChatGenerationRequest {
           responseLength == other.responseLength &&
           lengthBias == other.lengthBias &&
           computeEffort == other.computeEffort &&
+          revealThinkingSteps == other.revealThinkingSteps &&
+          corpusScope == other.corpusScope &&
           languageTag == other.languageTag &&
           instructions == other.instructions &&
           modelId == other.modelId &&
@@ -178,6 +281,8 @@ class ZChatGenerationRequest {
     responseLength,
     lengthBias,
     computeEffort,
+    revealThinkingSteps,
+    corpusScope,
     languageTag,
     instructions,
     modelId,

@@ -64,6 +64,7 @@ class ZChatConversationView extends StatelessWidget {
     this.reverse = false,
     this.identityBuilder,
     this.actionsBuilder,
+    this.composer,
     super.key,
   });
 
@@ -91,10 +92,23 @@ class ZChatConversationView extends StatelessWidget {
   /// `runAction(ZChatCustomAction(...))`, jamais par un canal parallèle.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
+  /// La **zone de saisie** montée sous le fil — typiquement un `ZChatComposer`
+  /// (lot α, CR-IFFD-72).
+  ///
+  /// 🔴 `null` (défaut) ⇒ **l'arbre est STRICTEMENT celui d'avant le lot** : la
+  /// vue rend son fil, et rien d'autre. Un hôte passif ne voit donc aucune
+  /// différence — c'est ce qu'assertent les gardes CMP-P1/CMP-P2, et c'est la
+  /// leçon de l'incident du 2026-08-01 sur ce volet (un paramètre rendu
+  /// obligatoire avait laissé le paquet rouge).
+  ///
+  /// [ZChatNotebookView] relaie ce créneau **tel quel** : les deux surfaces
+  /// passent donc par [_zChatComposeSurface], la fabrique UNIQUE.
+  final Widget? composer;
+
   @override
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
-    return ValueListenableBuilder<List<ZChatMessage>>(
+    final Widget thread = ValueListenableBuilder<List<ZChatMessage>>(
       valueListenable: controller.messages,
       builder:
           (BuildContext context, List<ZChatMessage> messages, Widget? child) {
@@ -121,7 +135,37 @@ class ZChatConversationView extends StatelessWidget {
             );
           },
     );
+    // 🔴 LA fabrique UNIQUE de la zone de saisie — cf. son dartdoc. Le fil est
+    // construit AU-DESSUS d'elle : le composer est donc un FRÈRE des tranches
+    // `messages`/`activeRequests`, jamais leur descendant (SM-1 — un tour ne le
+    // reconstruit pas).
+    return _zChatComposeSurface(thread: thread, composer: composer);
   }
+}
+
+/// Compose le fil et la zone de saisie — **le SEUL endroit du paquet** qui
+/// place un composer dans une surface.
+///
+/// 🔴 C'est l'anti-divergence, au patron exact de la fabrique de tuile
+/// (`_ZChatList._item`, garde G-S5/G-N1) : [ZChatNotebookView] délègue à
+/// [ZChatConversationView], qui appelle cette fonction — il n'existe donc
+/// **aucun second endroit** où monter une saisie. Une régression ici fait
+/// rougir les DEUX surfaces ensemble (gardes CMP-N1a/CMP-N1b), et c'est ce que
+/// l'injection R3 du lot démontre.
+///
+/// 🔴 `composer == null` ⇒ **[thread] est rendu tel quel**. Pas une `Column`
+/// d'un seul enfant, pas un `SizedBox.shrink()` en second : rien (AD-4).
+/// L'arbre de l'hôte passif est identique à celui d'avant le lot.
+Widget _zChatComposeSurface({required Widget thread, required Widget? composer}) {
+  if (composer == null) return thread;
+  return Column(
+    children: <Widget>[
+      // Le fil prend la place restante ; la saisie garde SA hauteur naturelle —
+      // c'est la disposition des deux hôtes (lex et IFFD).
+      Expanded(child: thread),
+      composer,
+    ],
+  );
 }
 
 /// Le CONTENEUR de la conversation : coquille de l'hôte, sinon liste neutre.
