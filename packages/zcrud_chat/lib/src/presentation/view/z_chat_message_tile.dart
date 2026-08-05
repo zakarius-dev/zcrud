@@ -34,8 +34,26 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import '../render/z_chat_accessible_text_scope.dart';
 import '../render/z_chat_render_request.dart';
+import '../render/z_chat_seam_failure.dart';
 import 'z_chat_block_view.dart';
 import 'z_chat_labels.dart';
+
+/// Construit le contenu d'un **créneau par message** (CR-IFFD-71) — couture
+/// d'hôte, sur le modèle des builders de seam existants.
+///
+/// 🔴 **Un BUILDER, jamais un jeu de booléens.** Chez IFFD, l'identité de
+/// l'interlocuteur est réglée par `showAuthorAvatar`/`showAuthorName`
+/// (`AssistMessageSettings`, un type Syncfusion consommé à la carte par chaque
+/// écran hôte) : le socle refuse par construction de porter ces réglages
+/// d'apparence (FR-26 — il déciderait d'une icône, d'un libellé, d'une
+/// couleur). Il offre à la place un **emplacement structurel** : l'hôte
+/// construit ce qu'il veut y voir, le socle décide seulement OÙ cela se rend.
+///
+/// Rendre `null` ⇒ **aucun widget inséré** pour CE message (AD-4 : slot nul,
+/// absent de l'arbre) — c'est ce qui permet à un même builder de ne cibler que
+/// les réponses de l'assistant, par exemple.
+typedef ZChatMessageSlotBuilder =
+    Widget? Function(BuildContext context, ZChatMessage message);
 
 /// Hauteur de cible tactile minimale (AD-13). Ce n'est pas un style : c'est un
 /// **seuil d'accessibilité**, non négociable et donc non injectable.
@@ -55,6 +73,8 @@ class ZChatMessageTile extends StatefulWidget {
     this.collapsedMaxHeight,
     this.isStreaming = false,
     this.expandController,
+    this.identityBuilder,
+    this.actionsBuilder,
     super.key,
   });
 
@@ -100,6 +120,31 @@ class ZChatMessageTile extends StatefulWidget {
   /// première frame de son `State`. Un contrôleur créé dans `build` serait
   /// remplacé à chaque rebuild — donc silencieusement inerte.
   final ZToggleController? expandController;
+
+  /// Créneau d'**identité** (CR-IFFD-71) — rendu **au-dessus** des blocs.
+  ///
+  /// C'est le manque n°2 mesuré par l'étude : `showAuthorAvatar`/
+  /// `showAuthorName` n'existent nulle part dans le socle (grep négatif
+  /// repo-wide), et `ZSfAssistShellRenderer` les laisse délibérément à l'hôte.
+  /// Ce builder comble la **présence structurelle** sans jamais décider de
+  /// l'apparence : avatar, nom, les deux, ou rien — c'est le widget de l'hôte.
+  ///
+  /// `null` (défaut) ⇒ comportement actuel **strictement inchangé**. Un builder
+  /// qui rend `null` pour un message ⇒ aucun en-tête pour CE message (AD-4).
+  final ZChatMessageSlotBuilder? identityBuilder;
+
+  /// Créneau d'**actions par message** (CR-IFFD-71) — rendu **sous** les blocs,
+  /// hors de la zone repliable (une action ne doit jamais être tronquée par le
+  /// repli, ni cliquable sous un clip).
+  ///
+  /// 🔴 Le socle ne connaît **aucun verbe** ici : les capacités notebook d'IFFD
+  /// (carte mentale, flashcards, variantes, export, enregistrer en note) se
+  /// montent par ce conteneur, et leurs rappels transitent par
+  /// `ZChatController.runAction(ZChatCustomAction(...))` — l'unique point
+  /// d'entrée des verbes (G-CH1/G-U1). Aucun nouveau chemin d'exécution.
+  ///
+  /// `null` (défaut) ⇒ comportement actuel **strictement inchangé**.
+  final ZChatMessageSlotBuilder? actionsBuilder;
 
   @override
   State<ZChatMessageTile> createState() => _ZChatMessageTileState();
@@ -159,8 +204,60 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     );
 
     final double? maxHeight = widget.collapsedMaxHeight;
-    if (maxHeight == null) return content;
+    final Widget core = maxHeight == null
+        ? content
+        : _collapsible(content, maxHeight);
 
+    // CR-IFFD-71 — créneaux ADDITIFS. Construits ICI, dans `build`, donc HORS
+    // du `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
+    // ré-invoque AUCUN builder d'hôte (SM-1). Aucun créneau ⇒ l'arbre rendu est
+    // EXACTEMENT celui d'avant cette CR — pas même une `Column` de plus.
+    final Widget? identity = _slot(
+      context,
+      widget.identityBuilder,
+      kZChatSeamIdentitySlot,
+    );
+    final Widget? actions = _slot(
+      context,
+      widget.actionsBuilder,
+      kZChatSeamActionsSlot,
+    );
+    if (identity == null && actions == null) return core;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // L'identité PRÉCÈDE le contenu (ordre de lecture, AD-13) ; les actions
+        // le SUIVENT et restent des SŒURS du nœud annoncé (`_announced` exclut
+        // la sémantique de ses seuls enfants) : leurs boutons gardent leur
+        // sémantique propre. Aucun interligne imposé : l'espacement appartient
+        // au widget de l'hôte (le socle ne décide pas d'une apparence, FR-26).
+        ?identity,
+        core,
+        ?actions,
+      ],
+    );
+  }
+
+  /// Invoque un builder de créneau — chaîne TOTALE (AD-10) : un créneau d'hôte
+  /// qui lève perd LE CRÉNEAU, jamais le message. L'exception est relayée à
+  /// `FlutterError` avec le nom du seam, comme pour les coquilles.
+  Widget? _slot(
+    BuildContext context,
+    ZChatMessageSlotBuilder? builder,
+    String seam,
+  ) {
+    if (builder == null) return null;
+    try {
+      return builder(context, widget.message);
+    } catch (error, stack) {
+      zChatReportSeamFailure(error: error, stack: stack, seam: seam);
+      return null;
+    }
+  }
+
+  /// Le cœur repliable — strictement le comportement historique (CHAT-3).
+  Widget _collapsible(Widget content, double maxHeight) {
     return ValueListenableBuilder<bool>(
       // 🔴 L'écoute STABLE de la liaison — pas la source courante : brancher le
       // `ValueListenableBuilder` sur le contrôleur lui-même obligerait à

@@ -62,6 +62,8 @@ class ZChatConversationView extends StatelessWidget {
     this.collapsedMaxHeight,
     this.padding,
     this.reverse = false,
+    this.identityBuilder,
+    this.actionsBuilder,
     super.key,
   });
 
@@ -77,6 +79,17 @@ class ZChatConversationView extends StatelessWidget {
 
   /// Liste inversée (dernier message en bas, ancrage naturel d'un chat).
   final bool reverse;
+
+  /// Créneau d'**identité par message** (CR-IFFD-71) — relayé tel quel à la
+  /// fabrique de tuile UNIQUE ([_ZChatList._item]). `null` (défaut) ⇒ rendu
+  /// strictement inchangé. Cf. [ZChatMessageTile.identityBuilder].
+  final ZChatMessageSlotBuilder? identityBuilder;
+
+  /// Créneau d'**actions par message** (CR-IFFD-71) — relayé tel quel à la
+  /// fabrique de tuile UNIQUE. `null` (défaut) ⇒ rendu strictement inchangé.
+  /// Cf. [ZChatMessageTile.actionsBuilder] — les verbes passent par
+  /// `runAction(ZChatCustomAction(...))`, jamais par un canal parallèle.
+  final ZChatMessageSlotBuilder? actionsBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +113,8 @@ class ZChatConversationView extends StatelessWidget {
                         collapsedMaxHeight: collapsedMaxHeight,
                         padding: padding ?? theme.formPadding,
                         reverse: reverse,
+                        identityBuilder: identityBuilder,
+                        actionsBuilder: actionsBuilder,
                       ),
                     );
                   },
@@ -124,6 +139,8 @@ class _ZChatList extends StatelessWidget {
     required this.collapsedMaxHeight,
     required this.padding,
     required this.reverse,
+    required this.identityBuilder,
+    required this.actionsBuilder,
   });
 
   final ZChatController controller;
@@ -132,6 +149,8 @@ class _ZChatList extends StatelessWidget {
   final double? collapsedMaxHeight;
   final EdgeInsetsDirectional padding;
   final bool reverse;
+  final ZChatMessageSlotBuilder? identityBuilder;
+  final ZChatMessageSlotBuilder? actionsBuilder;
 
   /// La tuile de l'index [index] — **le seul** constructeur de tuile du package.
   Widget _item(BuildContext context, int index) {
@@ -141,6 +160,13 @@ class _ZChatList extends StatelessWidget {
         key: ValueKey<String>(message.id ?? 'msg#$index'),
         message: message,
         collapsedMaxHeight: collapsedMaxHeight,
+        // CR-IFFD-71 — les créneaux traversent LA fabrique unique : une
+        // coquille tierce (Syncfusion) qui rappelle `itemBuilder` les obtient
+        // donc AUSSI, sans rien savoir d'eux. C'est ce qui rend l'anti-
+        // divergence structurelle : il n'existe aucun second endroit où les
+        // brancher.
+        identityBuilder: identityBuilder,
+        actionsBuilder: actionsBuilder,
       );
     }
     final int active = index - messages.length;

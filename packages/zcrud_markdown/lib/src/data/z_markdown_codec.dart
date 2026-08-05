@@ -193,6 +193,38 @@ final class _ZBridgeInlineSyntax extends md.InlineSyntax {
   }
 }
 
+/// Bouclier littéral LaTeX du **chemin sans pont** (CR-IFFD-69) — moitié
+/// DÉCODAGE.
+///
+/// Reconnaît les mêmes régions que le pont correspondant (même motif, même
+/// garde `acceptsMatch`) mais les émet en **texte LITTÉRAL**, jamais en embed :
+/// le contenu d'une formule échappe ainsi à la résolution des échappements
+/// CommonMark (`\,` → `,`, perte IRRÉVERSIBLE mesurée) sans qu'aucune
+/// sémantique nouvelle n'apparaisse — sans pont, `$$x$$` reste du texte, comme
+/// le contrat AD-57 le fige.
+final class _ZLatexShieldSyntax extends md.InlineSyntax {
+  _ZLatexShieldSyntax(this.bridge) : super(bridge.pattern.pattern);
+
+  final ZMarkdownEmbedBridge bridge;
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final String matched = match[0] ?? '';
+    if (matched.isEmpty) return false;
+    if (!bridge.acceptsMatch(match)) {
+      // Même mécanique de refus que `_ZBridgeInlineSyntax` : réémettre le
+      // premier caractère en littéral et avancer d'UN, sans quoi
+      // `InlineParser.parse` reboucle à la même position (boucle infinie,
+      // mesurée sur la lib).
+      parser.addNode(md.Text(matched.substring(0, 1)));
+      parser.consume(1);
+      return false;
+    }
+    parser.addNode(md.Text(matched));
+    return true;
+  }
+}
+
 /// Nom d'élément Markdown interne portant une **image avec son texte ALT**
 /// (CR-LEX-46).
 const String _kImageTag = 'z-image';
@@ -397,6 +429,34 @@ final class ZMarkdownCodec implements ZCodec {
         for (final bridge in bridges) bridge.embedType,
       };
 
+  /// Bouclier littéral LaTeX (CR-IFFD-69) : ponts LaTeX de référence rejoués en
+  /// mode **texte littéral** sur le chemin SANS pont, et sur lui seul.
+  ///
+  /// Mesuré avant correction : `ZMarkdownCodec()` (la construction par défaut,
+  /// donc le chemin EXPOSÉ au sens de CR-56) altérait `$$\int_0^1 x\,dx$$` en
+  /// `$$\\int\_0^1 x,dx$$` au premier cycle — antislash doublé par
+  /// l'échappement, `\,` détruit par la résolution CommonMark. Altération de
+  /// DONNÉE, irréversible.
+  ///
+  /// - Actif UNIQUEMENT quand [bridges] est vide : un hôte qui a déclaré des
+  ///   ponts — quels qu'ils soient — a arbitré lui-même le sens de `$…$`, et
+  ///   son comportement ne bouge pas d'un octet (les deux moitiés du bouclier
+  ///   sont court-circuitées structurellement).
+  /// - N'émet JAMAIS d'embed : sans pont, `$$x$$` reste du texte (AD-57), il
+  ///   est simplement soustrait à l'échappement (encodage) et à la résolution
+  ///   des échappements (décodage). Un hôte sans `EmbedBuilder` LaTeX ne voit
+  ///   donc aucun type d'insert nouveau.
+  /// - Les régions sont désignées par les MÊMES motifs et la MÊME garde
+  ///   (`zLatexPayloadLooksLikeFormula`) que `ZMarkdownBridges.latex` : un
+  ///   prix `5$ … 9$` ou `100$$ … 200$$` n'est pas une région, et ses octets
+  ///   persistés sont STRICTEMENT inchangés.
+  /// - Limite documentée : une formule dont le texte est fragmenté sur
+  ///   plusieurs ops STYLÉES (gras au milieu d'un `$$…$$`) n'est pas
+  ///   reconnaissable comme région à l'encodage et dégrade comme avant.
+  List<ZMarkdownEmbedBridge> get _latexShield => bridges.isEmpty
+      ? ZMarkdownBridges.latex
+      : const <ZMarkdownEmbedBridge>[];
+
   /// Nom d'élément Markdown interne porteur d'un pont. Préfixé pour ne jamais
   /// entrer en collision avec une balise réelle ni avec les clés natives de
   /// `MarkdownToDelta` (qui, elles, ne sont pas surchargeables).
@@ -449,6 +509,10 @@ final class ZMarkdownCodec implements ZCodec {
           // `$…$` sur l'interprétation ordinaire du texte.
           for (var i = 0; i < bridges.length; i++)
             _ZBridgeInlineSyntax(bridges[i], _bridgeTag(i)),
+          // CR-IFFD-69 : bouclier littéral LaTeX du chemin SANS pont, à la
+          // place exacte qu'occuperaient les ponts (vide dès qu'un pont est
+          // déclaré — les deux listes sont exclusives par construction).
+          for (final bridge in _latexShield) _ZLatexShieldSyntax(bridge),
           // CR-LEX-46 : image AVEC son texte ALT (la clé native `img` n'est pas
           // surchargeable — seule une syntaxe prioritaire y donne accès).
           _ZImageSyntax(),
@@ -555,10 +619,13 @@ final class ZMarkdownCodec implements ZCodec {
       return DeltaToMarkdown(
         // CR-IFFD-23 §2 : n'échappe les ouvreurs de bloc qu'en tête de ligne,
         // ET les caractères que les ponts déclarés rendent significatifs.
+        // CR-IFFD-69 : sur le chemin SANS pont, les régions LaTeX reconnues
+        // passent VERBATIM (moitié encodage du bouclier littéral).
         customContentHandler: zMarkdownContentEscaper(
           extraDangerous: <String>{
             for (final bridge in bridges) ...bridge.escapedCharacters,
           },
+          latexShield: _latexShield,
         ),
         customTextAttrsHandlers: <String, CustomAttributeHandler>{
           for (final marker in _kMarkerAttrs)

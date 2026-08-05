@@ -24,6 +24,84 @@ library;
 import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
+/// Source de génération **RÉSOLUE** (CR-IFFD-70) — value-object immuable.
+///
+/// La feuille de génération permet de **choisir** des sources du contexte
+/// courant (documents, notes) et d'en **acquérir** sur place ; leur contenu est
+/// résolu **à la demande** par l'hôte (le socle ne sait ni lire un PDF ni
+/// scanner — l'extraction appartient à l'hôte, comme la génération appartient à
+/// [ZFlashcardGenerationPort]). Une source résolue prend l'une de TROIS formes,
+/// toutes légitimes :
+///
+/// * **texte composé** — [text] non nul ;
+/// * **contenu PAGINÉ, éventuellement PARTIEL** — [pagesContents] non nul :
+///   index de page → contenu, pour les **seules pages choisies** (une source
+///   volumineuse — PDF de 300 pages — n'oblige jamais à tout résoudre ; le
+///   legacy IFFD passe exactement cette forme,
+///   `generateFlashcardsFromDocumentPagesContents(pagesContents: Map<int,String>)`) ;
+/// * **PAR RÉFÉRENCE** — [text] et [pagesContents] nuls : la [provenance]
+///   (variant `ZSourceRegistry`, ex. `documentId`) porte la référence et l'impl
+///   app-side du port extrait côté serveur — couvre l'appel legacy
+///   `generateFlashcardsFromWholeDocument(documentId)` (commenté chez IFFD).
+///
+/// Le contrat n'impose **ni** que la source acquise soit conservée dans le
+/// dossier **ni** qu'elle reste éphémère : question de PRODUIT, tranchée par
+/// l'hôte hors de ce type (AD-4).
+class ZResolvedGenerationSource {
+  /// Construit une source résolue (toutes formes optionnelles — cf. classe).
+  const ZResolvedGenerationSource({this.text, this.pagesContents, this.provenance});
+
+  /// Contenu texte composé, ou `null` (forme paginée ou par référence).
+  final String? text;
+
+  /// Contenu paginé PARTIEL (index de page → contenu des pages **choisies**),
+  /// ou `null`.
+  final Map<int, String>? pagesContents;
+
+  /// Provenance de CETTE source (variant `ZSourceRegistry`), ou `null`.
+  /// Porte la référence dans la forme « par référence ».
+  final ZFlashcardSource? provenance;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZResolvedGenerationSource &&
+          text == other.text &&
+          provenance == other.provenance &&
+          _pagesEquals(pagesContents, other.pagesContents);
+
+  @override
+  int get hashCode => Object.hash(text, provenance, _pagesHash(pagesContents));
+
+  /// Égalité PROFONDE de deux contenus paginés, `null`-safe.
+  static bool _pagesEquals(Map<int, String>? a, Map<int, String>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key) || b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  /// Hash indépendant de l'ordre d'un contenu paginé (`null` → `0`).
+  static int _pagesHash(Map<int, String>? m) => m == null
+      ? 0
+      : Object.hashAllUnordered(
+          m.entries.map((e) => Object.hash(e.key, e.value)),
+        );
+}
+
+/// Résolveur **À LA DEMANDE** du contenu d'une source (CR-IFFD-70 — AD-5/AD-10).
+///
+/// Fourni par l'hôte, invoqué par le flux de génération **au moment de la
+/// soumission seulement** (jamais à l'ouverture de la feuille — un dossier peut
+/// porter 50 documents, SM-1). Tout échec (fichier illisible, OCR raté) revient
+/// en `Left(ZFailure)` — **jamais** un throw exigé ; un throw est néanmoins
+/// capté par le contrôleur (AD-10) et converti en échec affiché.
+typedef ZGenerationSourceResolver = Future<ZResult<ZResolvedGenerationSource>>
+    Function();
+
 /// Requête **immuable** de génération de flashcards (value-object, `==`/`hashCode`
 /// par valeur).
 ///
@@ -53,6 +131,7 @@ class ZFlashcardGenerationRequest {
     this.typesDistribution,
     this.instructions,
     this.modelId,
+    this.resolvedSources,
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
@@ -91,6 +170,40 @@ class ZFlashcardGenerationRequest {
   /// décide.
   final String? modelId;
 
+  /// Sources du contexte **résolues à la demande** (CR-IFFD-70), ou `null`.
+  ///
+  /// Champ **ADDITIF et OPTIONNEL** (même discipline que l'extension SU-9) :
+  /// tout hôte existant construit sa requête sans y toucher — `null` = flux
+  /// historique inchangé, le contenu vient de [content]. Quand la feuille porte
+  /// des sources sélectionnées, chacune arrive ici **dans l'ordre de
+  /// présentation**, sous sa forme résolue (texte, pages CHOISIES, ou par
+  /// référence — cf. [ZResolvedGenerationSource]). Les sources sont COMPOSITES :
+  /// la liste peut en porter plusieurs, l'impl app-side du port compose.
+  ///
+  /// [content] et [provenance] gardent leur sémantique historique (champ de
+  /// texte libre de la feuille ; provenance du sélecteur single-select) — les
+  /// provenances PAR SOURCE voyagent dans chaque élément de cette liste.
+  final List<ZResolvedGenerationSource>? resolvedSources;
+
+  /// Copie de la requête portant [resolvedSources] (tout le reste inchangé).
+  ///
+  /// Utilisée par le contrôleur pour apposer les sources résolues au moment de
+  /// la soumission — la requête reste un value-object immuable.
+  ZFlashcardGenerationRequest withResolvedSources(
+    List<ZResolvedGenerationSource> sources,
+  ) =>
+      ZFlashcardGenerationRequest(
+        content: content,
+        count: count,
+        languageTag: languageTag,
+        provenance: provenance,
+        typesDistribution: typesDistribution,
+        instructions: instructions,
+        modelId: modelId,
+        resolvedSources: List<ZResolvedGenerationSource>.unmodifiable(sources),
+        extra: _extra,
+      );
+
   /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
   final Map<String, dynamic> _extra;
 
@@ -114,6 +227,7 @@ class ZFlashcardGenerationRequest {
           instructions == other.instructions &&
           modelId == other.modelId &&
           _typesDistEquals(typesDistribution, other.typesDistribution) &&
+          _sourcesEquals(resolvedSources, other.resolvedSources) &&
           zJsonEquals(extra, other.extra);
 
   @override
@@ -125,8 +239,29 @@ class ZFlashcardGenerationRequest {
         instructions,
         modelId,
         _typesDistHash(typesDistribution),
+        _sourcesHash(resolvedSources),
         zJsonHash(extra),
       );
+
+  /// Égalité PROFONDE et ORDONNÉE de deux listes de sources résolues (CR-70),
+  /// `null`-safe — deux requêtes qui n'en diffèrent que par ces sources ne sont
+  /// PAS égales (value-object).
+  static bool _sourcesEquals(
+    List<ZResolvedGenerationSource>? a,
+    List<ZResolvedGenerationSource>? b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// Hash ORDONNÉ des sources résolues (`null` → `0`).
+  static int _sourcesHash(List<ZResolvedGenerationSource>? s) =>
+      s == null ? 0 : Object.hashAll(s);
 
   /// Égalité PROFONDE de deux répartitions (clés + valeurs), `null`-safe (AC1).
   static bool _typesDistEquals(

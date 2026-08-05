@@ -131,7 +131,20 @@ class ZFlashcardGenerationController extends ChangeNotifier {
   bool _disposed = false;
 
   /// Lance une génération (AC7/AC8). Anti-double-tap : ignoré si déjà `generating`.
-  Future<void> generate(ZFlashcardGenerationRequest request) async {
+  ///
+  /// [sourceResolvers] (CR-IFFD-70, additif — défaut `const []` : aucun appelant
+  /// existant ne change) : résolveurs **à la demande** des sources sélectionnées,
+  /// invoqués ICI — donc SOUS l'anti-double-tap et le jeton de fraîcheur — et
+  /// **jamais avant** (SM-1 : ouvrir la feuille ne résout rien). Chaque `Left`
+  /// (fichier illisible…) ⇒ `failed` avec le message du `ZFailure`, saisie
+  /// préservée, feuille utilisable (AD-5/AD-10) ; un throw d'hôte est capté
+  /// comme celui du port. Les sources résolues sont apposées à la requête via
+  /// `withResolvedSources` avant l'appel du port.
+  Future<void> generate(
+    ZFlashcardGenerationRequest request, {
+    List<ZGenerationSourceResolver> sourceResolvers =
+        const <ZGenerationSourceResolver>[],
+  }) async {
     if (_status == ZFlashcardGenerationStatus.generating) {
       return; // anti-double-tap : une seule requête en vol à la fois.
     }
@@ -139,6 +152,35 @@ class ZFlashcardGenerationController extends ChangeNotifier {
     _lastRequest = request; // saisie préservée (AC7).
     _errorMessage = null;
     _setStatus(ZFlashcardGenerationStatus.generating);
+
+    final resolved = <ZResolvedGenerationSource>[];
+    for (final resolve in sourceResolvers) {
+      ZResult<ZResolvedGenerationSource> sourceResult;
+      try {
+        sourceResult = await resolve();
+      } catch (_) {
+        // Le résolveur d'hôte a LEVÉ (AD-10) : capté, converti en `failed`.
+        if (_isStale(token)) return;
+        _fail(messages.unexpectedError);
+        return;
+      }
+      if (_isStale(token)) return; // feuille abandonnée pendant la résolution.
+      final failed = sourceResult.fold(
+        (failure) {
+          _fail(failure.message); // Left typé (AD-5) : feuille utilisable.
+          return true;
+        },
+        (source) {
+          resolved.add(source);
+          return false;
+        },
+      );
+      if (failed) return;
+    }
+    if (resolved.isNotEmpty) {
+      request = request.withResolvedSources(resolved);
+      _lastRequest = request; // la requête EFFECTIVE (sources apposées).
+    }
 
     ZResult<List<ZFlashcard>> result;
     try {

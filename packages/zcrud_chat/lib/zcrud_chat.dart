@@ -110,5 +110,14 @@ export 'src/presentation/view/z_chat_diffusion_bar.dart';
 export 'src/presentation/view/z_chat_highlight.dart';
 export 'src/presentation/view/z_chat_labels.dart';
 export 'src/presentation/view/z_chat_message_tile.dart';
+// CR-IFFD-71 — la distinction NOTEBOOK / CONVERSATION : créneaux additifs
+// (`identityBuilder` / `actionsBuilder`, builders nullables — défauts
+// strictement inchangés) sur `ZChatMessageTile`/`ZChatConversationView`, et
+// `ZChatNotebookView`, composition MINCE sur la MÊME racine (même fabrique de
+// tuile — G-S5/G-N1) : identité structurellement masquée, actions par message
+// exposées. Les capacités notebook (mindmap, flashcards, variantes, export,
+// enregistrer en note) s'exécutent par `runAction(ZChatCustomAction(...))` —
+// aucun nouveau chemin d'exécution.
+export 'src/presentation/view/z_chat_notebook_view.dart';
 export 'src/presentation/z_chat_controller.dart';
 export 'src/presentation/z_chat_stream_progress.dart';

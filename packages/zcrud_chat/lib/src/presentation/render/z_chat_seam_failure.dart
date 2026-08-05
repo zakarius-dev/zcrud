@@ -24,6 +24,12 @@ const String kZChatSeamBlock = 'ZChatRenderer.buildBlock';
 /// Nom du seam de **coquille** — idem.
 const String kZChatSeamShell = 'ZChatShellRenderer.buildShell';
 
+/// Nom du seam d'**identité par message** (CR-IFFD-71) — idem.
+const String kZChatSeamIdentitySlot = 'ZChatMessageTile.identityBuilder';
+
+/// Nom du seam d'**actions par message** (CR-IFFD-71) — idem.
+const String kZChatSeamActionsSlot = 'ZChatMessageTile.actionsBuilder';
+
 /// Relaie l'échec d'un seam d'hôte **sans** faire tomber le rendu.
 ///
 /// [seam] nomme le membre fautif (`'ZChatRenderer.buildBlock'`…) : sans lui,

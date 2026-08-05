@@ -25,7 +25,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
+import 'package:zcrud_core/zcrud_core.dart'
+    show Right, ZFailure, ZResult, ZcrudTheme;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZColorPalette, ZFlashcardTag, ZSuggestedTag;
@@ -42,16 +43,76 @@ const double _kMinTapTarget = 48.0;
 /// Option de source SÉLECTIONNABLE (AC1). L'app la construit depuis
 /// `ZSourceRegistry` (document/pages, sujets, texte libre, article, note…) — la
 /// feuille reste registre-agnostique et EXTENSIBLE sans toucher zcrud.
+///
+/// ## CR-IFFD-70 — sources du CONTEXTE COURANT, résolues À LA DEMANDE
+///
+/// Passée à [ZFlashcardGenerationSheet.contextSources], l'option représente une
+/// source du contexte (document du dossier, note…) que l'utilisateur peut
+/// **choisir sur place** (multi-sélection — les sources sont composites). Son
+/// contenu n'est **jamais embarqué d'avance** : [resolveContent] est invoqué à
+/// la **soumission seulement** (SM-1 — un dossier de 50 documents s'ouvre sans
+/// rien charger). `resolveContent == null` + [provenance] non nulle ⇒ source
+/// **par référence** (l'impl du port extrait côté serveur — couvre le legacy
+/// `…FromWholeDocument`).
 @immutable
 class ZGenerationSourceOption {
   /// Construit une option. [provenance] `null` ⇒ « texte libre » (aucune source).
-  const ZGenerationSourceOption({required this.label, this.provenance});
+  const ZGenerationSourceOption({
+    required this.label,
+    this.provenance,
+    this.resolveContent,
+  });
 
   /// Libellé INJECTÉ de l'option (i18n).
   final String label;
 
   /// Provenance à estampiller dans les cartes (AC5) — issue de `ZSourceRegistry`.
   final ZFlashcardSource? provenance;
+
+  /// Résolveur À LA DEMANDE du contenu (CR-IFFD-70), ou `null`.
+  ///
+  /// `null` : comportement historique inchangé dans [ZFlashcardGenerationSheet.sources]
+  /// (l'option n'est qu'un estampillage de provenance) ; dans
+  /// [ZFlashcardGenerationSheet.contextSources], `null` = source **par
+  /// référence** (la provenance porte la référence). Peut résoudre
+  /// **PARTIELLEMENT** une source volumineuse (pages choisies —
+  /// `ZResolvedGenerationSource.pagesContents`).
+  final ZGenerationSourceResolver? resolveContent;
+}
+
+/// Geste d'**ACQUISITION** de source branché par l'hôte (CR-IFFD-70) —
+/// « uploader », « scanner »… Libellé et icône INJECTÉS, jamais en dur.
+///
+/// Le socle ne connaît ni le sélecteur de fichiers ni le scanner : il offre le
+/// créneau et reçoit ce que le geste produit — une [ZGenerationSourceOption]
+/// utilisable dans la **même session de feuille** (ajoutée aux sources du
+/// contexte et pré-sélectionnée), **sans rompre le flux** : le paramétrage déjà
+/// saisi (contenu, nombre, types, instructions, modelId) survit à l'acquisition.
+///
+/// Conserver le fichier acquis dans le dossier ou le laisser éphémère est une
+/// décision de PRODUIT prise par l'hôte DANS [acquire] — le contrat ne
+/// l'impose pas (AD-4).
+@immutable
+class ZSourceAcquisitionGesture {
+  /// Construit un geste d'acquisition injecté.
+  const ZSourceAcquisitionGesture({
+    required this.label,
+    required this.acquire,
+    this.icon,
+  });
+
+  /// Libellé INJECTÉ du geste (i18n).
+  final String label;
+
+  /// Icône INJECTÉE optionnelle.
+  final IconData? icon;
+
+  /// Produit une source utilisable dans la même session (AD-5) :
+  /// `Right(option)` = source acquise ; `Right(null)` = **annulation
+  /// utilisateur** (pas un échec — rien ne s'affiche) ; `Left(ZFailure)` =
+  /// échec, message affiché, feuille utilisable. Un throw est capté (AD-10) et
+  /// rendu comme `ZFlashcardGenerationMessages.unexpectedError`.
+  final Future<ZResult<ZGenerationSourceOption?>> Function() acquire;
 }
 
 /// Libellés INJECTÉS de la feuille de génération (i18n — AC12).
@@ -78,6 +139,7 @@ class ZFlashcardGenerationLabels {
     required this.tagInputLabel,
     required this.tagInputHint,
     required this.tagAddSemanticLabel,
+    this.contextSourcesLabel,
   });
 
   /// Libellé du champ de contenu source.
@@ -137,6 +199,11 @@ class ZFlashcardGenerationLabels {
 
   /// Libellé sémantique INJECTÉ du bouton d'ajout de tag (transmis au [ZTagEditor]).
   final String tagAddSemanticLabel;
+
+  /// Titre INJECTÉ de la section « sources du contexte » (CR-IFFD-70), ou
+  /// `null` (aucun en-tête — champ ADDITIF et optionnel : les hôtes existants ne
+  /// changent pas leur construction).
+  final String? contextSourcesLabel;
 }
 
 /// Feuille de génération IA d'un lot de flashcards.
@@ -153,6 +220,8 @@ class ZFlashcardGenerationSheet extends StatefulWidget {
     this.palette = const ZColorPalette.defaultStudy(),
     this.languageTag,
     this.initialModelId,
+    this.contextSources = const <ZGenerationSourceOption>[],
+    this.acquisitionGestures = const <ZSourceAcquisitionGesture>[],
     super.key,
   });
 
@@ -186,6 +255,17 @@ class ZFlashcardGenerationSheet extends StatefulWidget {
   /// `modelId` OPAQUE pré-rempli (AC2) — l'app peut proposer un défaut éditable.
   final String? initialModelId;
 
+  /// Sources du **CONTEXTE COURANT** présentées par l'hôte (CR-IFFD-70) —
+  /// documents du dossier, notes… Multi-sélection ; contenu résolu **à la
+  /// demande** à la soumission (jamais à l'ouverture — SM-1). Défaut `const []` :
+  /// **l'hôte passif ne voit rien changer** (aucune section rendue).
+  final List<ZGenerationSourceOption> contextSources;
+
+  /// Gestes d'**acquisition** branchés par l'hôte (CR-IFFD-70) — « uploader »,
+  /// « scanner »… Défaut `const []` : aucun bouton rendu (jamais grisé — même
+  /// discipline qu'AC11).
+  final List<ZSourceAcquisitionGesture> acquisitionGestures;
+
   @override
   State<ZFlashcardGenerationSheet> createState() =>
       _ZFlashcardGenerationSheetState();
@@ -202,6 +282,15 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
   late final ValueNotifier<Set<ZFlashcardType>> _selectedTypes;
   late final ValueNotifier<int> _sourceIndex;
 
+  // CR-IFFD-70 — sources du contexte : tranches LOCALES granulaires (SM-1).
+  // Sélection par IDENTITÉ d'option (survit à un changement de liste hôte via
+  // didUpdateWidget) ; les sources ACQUISES vivent à part (jamais perdues quand
+  // l'hôte repasse une nouvelle liste).
+  late final ValueNotifier<List<ZGenerationSourceOption>> _acquiredSources;
+  late final ValueNotifier<Set<ZGenerationSourceOption>> _selectedContextSources;
+  late final ValueNotifier<String?> _acquisitionError;
+  late final ValueNotifier<bool> _acquiring;
+
   late final ZFlashcardGenerationController _generation;
 
   @override
@@ -215,11 +304,35 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
       <ZFlashcardType>{...ZFlashcardType.values},
     );
     _sourceIndex = ValueNotifier<int>(0);
+    _acquiredSources =
+        ValueNotifier<List<ZGenerationSourceOption>>(const <ZGenerationSourceOption>[]);
+    _selectedContextSources =
+        ValueNotifier<Set<ZGenerationSourceOption>>(const <ZGenerationSourceOption>{});
+    _acquisitionError = ValueNotifier<String?>(null);
+    _acquiring = ValueNotifier<bool>(false);
     _generation = ZFlashcardGenerationController(
       port: widget.port,
       messages: widget.messages,
       onGenerated: widget.onGenerated,
     );
+  }
+
+  @override
+  void didUpdateWidget(ZFlashcardGenerationSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // CR-70 : l'hôte a repassé une autre liste de sources du contexte — la
+    // sélection ne garde que les options encore présentées (+ les acquises).
+    // Les controllers de texte, RESTÉS STABLES, ne sont pas touchés (SM-1).
+    if (!identical(oldWidget.contextSources, widget.contextSources)) {
+      final present = <ZGenerationSourceOption>{
+        ...widget.contextSources,
+        ..._acquiredSources.value,
+      };
+      _selectedContextSources.value = <ZGenerationSourceOption>{
+        for (final option in _selectedContextSources.value)
+          if (present.contains(option)) option,
+      };
+    }
   }
 
   @override
@@ -230,9 +343,18 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
     _count.dispose();
     _selectedTypes.dispose();
     _sourceIndex.dispose();
+    _acquiredSources.dispose();
+    _selectedContextSources.dispose();
+    _acquisitionError.dispose();
+    _acquiring.dispose();
     _generation.dispose();
     super.dispose();
   }
+
+  /// Sources du contexte EFFECTIVES : celles de l'hôte + celles acquises dans
+  /// cette session, dans l'ordre de présentation (CR-70).
+  List<ZGenerationSourceOption> get _allContextSources =>
+      <ZGenerationSourceOption>[...widget.contextSources, ..._acquiredSources.value];
 
   /// Construit la requête d'union (AC1) — source unique de bornage/répartition.
   ZFlashcardGenerationRequest _buildRequest() {
@@ -260,7 +382,78 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
     );
   }
 
-  void _submit() => _generation.generate(_buildRequest());
+  /// Soumission : les sources du contexte SÉLECTIONNÉES sont résolues À LA
+  /// DEMANDE par le contrôleur (sous anti-double-tap + jeton de fraîcheur),
+  /// jamais avant (CR-70/SM-1).
+  void _submit() => _generation.generate(
+        _buildRequest(),
+        sourceResolvers: <ZGenerationSourceResolver>[
+          for (final option in _allContextSources)
+            if (_selectedContextSources.value.contains(option))
+              _resolverFor(option),
+        ],
+      );
+
+  /// Enveloppe le résolveur d'une option (CR-70) :
+  /// * sans [ZGenerationSourceOption.resolveContent] ⇒ source **par référence**
+  ///   (la provenance porte la référence — couvre `…FromWholeDocument`) ;
+  /// * avec ⇒ résolution hôte, la provenance de l'option est estampillée sur la
+  ///   source résolue si l'hôte ne l'a pas déjà posée.
+  ZGenerationSourceResolver _resolverFor(ZGenerationSourceOption option) {
+    final resolve = option.resolveContent;
+    return () async {
+      if (resolve == null) {
+        return Right<ZFailure, ZResolvedGenerationSource>(
+          ZResolvedGenerationSource(provenance: option.provenance),
+        );
+      }
+      final resolved = await resolve();
+      return resolved.map(
+        (source) => source.provenance == null && option.provenance != null
+            ? ZResolvedGenerationSource(
+                text: source.text,
+                pagesContents: source.pagesContents,
+                provenance: option.provenance,
+              )
+            : source,
+      );
+    };
+  }
+
+  /// Acquisition d'une source SUR PLACE (CR-70) : le geste de l'hôte produit une
+  /// option, ajoutée aux sources du contexte et PRÉ-SÉLECTIONNÉE — sans toucher
+  /// au paramétrage saisi (controllers stables, tranches non réinitialisées).
+  Future<void> _acquire(ZSourceAcquisitionGesture gesture) async {
+    if (_acquiring.value) return; // anti-double-tap d'acquisition.
+    _acquiring.value = true;
+    _acquisitionError.value = null;
+    ZResult<ZGenerationSourceOption?> result;
+    try {
+      result = await gesture.acquire();
+    } catch (_) {
+      // Le geste d'hôte a LEVÉ (AD-10) : capté, message injecté, feuille intacte.
+      if (!mounted) return;
+      _acquiring.value = false;
+      _acquisitionError.value = widget.messages.unexpectedError;
+      return;
+    }
+    if (!mounted) return;
+    _acquiring.value = false;
+    result.fold(
+      (failure) => _acquisitionError.value = failure.message, // AD-5.
+      (option) {
+        if (option == null) return; // annulation utilisateur — pas un échec.
+        _acquiredSources.value = <ZGenerationSourceOption>[
+          ..._acquiredSources.value,
+          option,
+        ];
+        _selectedContextSources.value = <ZGenerationSourceOption>{
+          ..._selectedContextSources.value,
+          option,
+        };
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +485,9 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
             children: <Widget>[
               _buildSourceSelector(theme, labels),
               SizedBox(height: theme.gapM),
+              // CR-70 — section AUTO-PORTÉE (gap inclus quand visible) : l'hôte
+              // passif (deux listes vides) garde un arbre STRICTEMENT identique.
+              _buildContextSourcesSection(theme, labels),
               // Champ de contenu — controller STABLE (AC13), hors des tranches
               // réactives : taper ne reconstruit pas l'aperçu ni ne perd le focus.
               TextField(
@@ -362,6 +558,129 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Section « sources du contexte » + gestes d'acquisition (CR-70).
+  ///
+  /// **Chaîne de repli totale (AD-4/AD-10)** : sans sources présentées ET sans
+  /// geste d'acquisition, retourne `SizedBox.shrink()` — l'hôte passif rend
+  /// EXACTEMENT la feuille d'aujourd'hui (le gap de la section vit À L'INTÉRIEUR,
+  /// jamais dans la colonne parente).
+  Widget _buildContextSourcesSection(
+    ZcrudTheme theme,
+    ZFlashcardGenerationLabels labels,
+  ) {
+    if (widget.contextSources.isEmpty && widget.acquisitionGestures.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final title = labels.contextSourcesLabel;
+    return Column(
+      key: const ValueKey<String>('z-generation-context-sources'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        if (title != null) ...<Widget>[
+          Text(title, textAlign: TextAlign.start),
+          SizedBox(height: theme.gapS),
+        ],
+        // Multi-sélection (sources COMPOSITES — CR-70) : tranche granulaire,
+        // taper ailleurs ne reconstruit pas cette aire et réciproquement (SM-1).
+        ListenableBuilder(
+          listenable: Listenable.merge(
+            <Listenable>[_acquiredSources, _selectedContextSources],
+          ),
+          builder: (context, _) {
+            final options = _allContextSources;
+            final selected = _selectedContextSources.value;
+            return Wrap(
+              spacing: theme.gapM,
+              runSpacing: theme.gapS,
+              children: <Widget>[
+                for (var i = 0; i < options.length; i++)
+                  FilterChip(
+                    key: ValueKey<String>('z-generation-context-source-$i'),
+                    label: Text(options[i].label, textAlign: TextAlign.start),
+                    selected: selected.contains(options[i]),
+                    onSelected: (on) {
+                      final next = <ZGenerationSourceOption>{...selected};
+                      if (on) {
+                        next.add(options[i]);
+                      } else {
+                        next.remove(options[i]);
+                      }
+                      _selectedContextSources.value = next;
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
+        if (widget.acquisitionGestures.isNotEmpty) ...<Widget>[
+          SizedBox(height: theme.gapS),
+          ValueListenableBuilder<bool>(
+            valueListenable: _acquiring,
+            builder: (context, acquiring, _) => Wrap(
+              spacing: theme.gapM,
+              runSpacing: theme.gapS,
+              children: <Widget>[
+                for (var i = 0; i < widget.acquisitionGestures.length; i++)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: _kMinTapTarget,
+                      minHeight: _kMinTapTarget,
+                    ),
+                    child: _buildAcquisitionButton(
+                      widget.acquisitionGestures[i],
+                      index: i,
+                      acquiring: acquiring,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        ValueListenableBuilder<String?>(
+          valueListenable: _acquisitionError,
+          builder: (context, error, _) => error == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: EdgeInsetsDirectional.only(top: theme.gapS),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      error,
+                      key: const ValueKey<String>('z-generation-acquisition-error'),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ),
+        ),
+        SizedBox(height: theme.gapM), // gap AUTO-PORTÉ (cf. dartdoc).
+      ],
+    );
+  }
+
+  /// Bouton d'un geste d'acquisition (libellé/icône INJECTÉS — jamais en dur).
+  /// Anti-double-tap : inactif pendant une acquisition en vol.
+  Widget _buildAcquisitionButton(
+    ZSourceAcquisitionGesture gesture, {
+    required int index,
+    required bool acquiring,
+  }) {
+    final key = ValueKey<String>('z-generation-acquire-$index');
+    final onPressed = acquiring ? null : () => _acquire(gesture);
+    final label = Text(gesture.label, textAlign: TextAlign.center);
+    final icon = gesture.icon;
+    if (icon == null) {
+      return OutlinedButton(key: key, onPressed: onPressed, child: label);
+    }
+    // Pas de `semanticLabel` sur l'icône : le `Text(label)` porte DÉJÀ le
+    // libellé fusionné (même leçon que le launcher, D3/su-8).
+    return OutlinedButton.icon(
+      key: key,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: label,
     );
   }
 
