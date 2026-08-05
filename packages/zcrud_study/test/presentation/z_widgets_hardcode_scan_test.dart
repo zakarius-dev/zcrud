@@ -59,20 +59,34 @@ const List<String> _bannedColorPatterns = <String>[
 /// exemption **NOMINATIVE** de la garde couleur, chemin EXACT par famille,
 /// **jamais un motif large** (pas de glob, pas de `contains`, pas de dossier).
 ///
+/// 🔴 L'exception vaut **PAR FAMILLE**, jamais globalement : chaque entrée
+/// ci-dessous est le fichier de référence audité d'UNE famille de rendu, et
+/// porte des couleurs qu'aucun rôle de `ColorScheme` ne produit.
+///
 /// Conditions de l'exception, toutes trois vérifiables sur pièces :
-/// 1. UNIQUE fichier de référence audité de la famille « carte de flashcard »
-///    (patron `ZStudyCardReference`) — les hex des 4 dégradés par type, non
-///    dérivables d'un `ColorScheme`, n'ont le droit de vivre QUE là ;
-/// 2. remplaçables par thème (`ZcrudTheme.flashcardTypeGradients`, seam
-///    `gradientResolver`) ET par paramètre (`typeColors`) — priorité
-///    paramètre > jeton > seam > référence ;
+/// 1. UNIQUE fichier de référence audité de sa famille (patron
+///    `ZStudyCardReference`) — les hex non dérivables d'un `ColorScheme`
+///    n'ont le droit de vivre QUE là :
+///    * `z_flashcard_card_reference.dart` — les 4 dégradés par type de
+///      flashcard (CR-IFFD-57) ;
+///    * `z_content_hub_reference.dart` — les 6 teintes d'identité du hub
+///      d'ajout de contenu et le vert du badge de mise en avant
+///      (**CR-IFFD-65**, décision du propriétaire du 2026-08-05 : le rendu
+///      legacy devient le DÉFAUT du hub) ;
+/// 2. remplaçables par thème ET par paramètre — priorité paramètre > jeton >
+///    (seam) > référence :
+///    * flashcard : `ZcrudTheme.flashcardTypeGradients` / seam
+///      `gradientResolver` / `typeColors` ;
+///    * hub : `ZcrudTheme.contentHubAccents` + `ZcrudTheme.contentHubBadgeColor`
+///      / `ZContentHubSheet.accents` + `.badgeColor` / `ZContentHubEntry.tint` ;
 /// 3. cette liste est l'exemption nominative — la garde MORD ENCORE sur tout
 ///    autre fichier (contre-preuves ci-dessous).
 ///
 /// L'exemption ne couvre QUE les motifs de COULEUR : libellés, RTL et
-/// `fontSize:` restent gardés dans ce fichier comme partout.
+/// `fontSize:` restent gardés dans ces fichiers comme partout.
 const Set<String> _colorGuardExemptFiles = <String>{
   'lib/src/presentation/z_flashcard_card_reference.dart',
+  'lib/src/presentation/z_content_hub_reference.dart',
 };
 
 /// Motifs **non-directionnels** interdits (AD-13 — RTL).

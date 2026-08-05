@@ -24,6 +24,8 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.search,
     this.bottom,
     this.gradientKey,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
     super.key,
   }) : assert(
          title is Widget || title is String,
@@ -42,6 +44,8 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.search,
     this.bottom,
     this.gradientKey,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
   }) : assert(
          title is Widget || title is String,
          'title doit être un Widget ou un String',
@@ -49,6 +53,56 @@ class ZSearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
+
+  /// Typographie du TITRE (**CR-IFFD-63**) — priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderTitleStyle` > défaut de l'app-bar de l'hôte**.
+  ///
+  /// `null` des deux côtés ⇒ **aucune** enveloppe de style dans l'arbre : le
+  /// titre est rendu exactement comme avant (`AppBarTheme.titleTextStyle`,
+  /// repli `TextTheme.titleLarge`).
+  ///
+  /// 🔴 Seules les **métriques** sont retenues (taille, graisse, style, famille,
+  /// interlettrage, interlignage). La **couleur est ignorée** : elle reste
+  /// héritée du `foregroundColor` de l'app-bar — sans quoi un titre deviendrait
+  /// illisible sous un dégradé d'identité (`gradientKey`). Pour imposer une
+  /// couleur de premier plan, c'est `ZForegroundOverride` (zcrud_core) ou le
+  /// `AppBarTheme` de l'hôte, jamais ce paramètre.
+  ///
+  /// ⚠️ Sans effet en **mode recherche** : le titre cède alors la place au champ
+  /// de saisie, qui n'est pas un titre.
+  ///
+  /// ## Ellipse : ce qui la déplace, et ce qui ne la déplace pas (mesuré)
+  ///
+  /// La largeur **offerte** au titre — donc le seuil d'ellipse — ne dépend pas
+  /// du style mais de la place restante. Mesuré (mode fixe, densité 1.0) :
+  ///
+  /// | écran  | sans leading ni action | avec leading + 1 action |
+  /// |--------|------------------------|-------------------------|
+  /// | 320 dp | 288 dp                 | 184 dp                  |
+  /// | 400 dp | 368 dp                 | 264 dp                  |
+  /// | 600 dp | 568 dp                 | 464 dp                  |
+  ///
+  /// Ce qui la déplace : la **taille**. À 368 dp de large, `titleLarge` (22)
+  /// laisse ≈ 16 caractères ; 24 ⇒ 15 ; 26 ⇒ 14 ; 28 ⇒ 13.
+  ///
+  /// 🔴 Ce qui **ne** la déplace **pas** dans nos mesures : la **graisse** (la
+  /// police du harnais de test a des avances indépendantes du poids — largeur
+  /// strictement identique en w400/w500/w600/w700). Sur une police réelle un
+  /// tracé gras est un peu plus large : l'effet existe, mais il n'est pas
+  /// mesurable ici et n'a donc PAS été chiffré.
+  ///
+  /// ⚠️ **Le facteur d'échelle de texte sature.** `AppBar` borne le
+  /// `textScaler` du titre à **1.34** : à 22 dp de base, la taille effective
+  /// plafonne à **29,5 dp** et le seuil d'ellipse à ≈ 12 caractères pour 368 dp
+  /// — identique à `textScaler` 1.6, 2.0 ou 3.0 (mesuré). Le titre s'**ellipse**
+  /// donc, il n'est jamais rogné horizontalement, et la hauteur de sa boîte
+  /// plafonne à 37 dp.
+  final TextStyle? titleTextStyle;
+
+  /// Typographie du SOUS-TITRE (**CR-IFFD-63**) — priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderSubtitleStyle` > métriques de `TextTheme.titleSmall`**
+  /// (le repli historique). Couleur ignorée, comme [titleTextStyle].
+  final TextStyle? subtitleTextStyle;
 
   /// Sous-titre optionnel rendu **sous le titre** (CR-IFFD-34). `null` (défaut)
   /// ⇒ **absent de l'arbre** : aucune `Column` interposée, rendu strictement
@@ -156,6 +210,8 @@ class ZSearchableAppBarState extends State<ZSearchableAppBar> {
             widget.subtitle,
             widget.search,
             searching,
+            titleTextStyle: widget.titleTextStyle,
+            subtitleTextStyle: widget.subtitleTextStyle,
           ),
           centerTitle: false,
           actions: _zBuildActions(

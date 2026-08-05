@@ -246,6 +246,33 @@ enum ZStudyCardContentAlignment {
   bottom,
 }
 
+/// Densité du **hub d'ajout de contenu** (`ZContentHubSheet`, **CR-IFFD-65**).
+///
+/// 🔴 **Le défaut a CHANGÉ le 2026-08-05, sur décision du propriétaire du
+/// socle** : le rendu de RÉFÉRENCE (legacy IFFD — sections titrées, pastille
+/// d'identité, badge de mise en avant, entrées en cartes, chevron) devient le
+/// défaut, hauteur d'item de référence **assumée** et **défilement attendu**.
+///
+/// ⚠️ **La densité d'avant ne disparaît pas — elle cesse d'être le défaut.**
+/// L'argument d'ÉCHELLE de CR-IFFD-65 reste vrai (« à douze types, la mise en
+/// page legacy demanderait trois ou quatre écrans ») : [compact] y répond, et
+/// il est atteignable **par paramètre** (`ZContentHubSheet.density`) **ET par
+/// jeton** ([ZcrudTheme.contentHubDensity]) — priorité paramètre > jeton >
+/// référence.
+enum ZContentHubDensity {
+  /// **Rendu de référence** (défaut depuis CR-IFFD-65) : entrées en cartes à la
+  /// hauteur d'item de référence (112), pastille circulaire teintée, chevron
+  /// d'affordance, intitulés de section, grille à deux colonnes au-delà du
+  /// point de rupture.
+  comfortable,
+
+  /// **La densité d'AVANT CR-IFFD-65**, restituée par réglage : une entrée =
+  /// une ligne au plancher de 48 dp, glyphe nu (aucune pastille), ni chevron ni
+  /// carte, **une seule colonne** quelle que soit la largeur. Les intitulés de
+  /// section restent rendus (ils sont une capacité, pas une décoration).
+  compact,
+}
+
 /// Extension de thème du chrome CRUD (FR-26). Couleurs sémantiques dérivées au
 /// repli ; espacements/rayons/insets directionnels comme tokens injectables.
 @immutable
@@ -351,6 +378,34 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.studyCardGlyphSize,
     this.studyCardContentAlignment,
     this.flashcardTypeGradients,
+    this.folderCardRadius,
+    this.folderCardBorderSide,
+    this.folderCardContentPadding,
+    this.folderCardAccentHeight,
+    this.folderCardTintAlpha,
+    this.folderCardIconTileSize,
+    this.folderCardIconTileRadius,
+    this.folderCardIconTileTintAlpha,
+    this.folderCardGlyphSize,
+    this.folderCardMinContrast,
+    this.contentHubDensity,
+    this.contentHubItemExtent,
+    this.contentHubItemRadius,
+    this.contentHubItemPadding,
+    this.contentHubItemTintAlpha,
+    this.contentHubAvatarSize,
+    this.contentHubAvatarTintAlpha,
+    this.contentHubGlyphSize,
+    this.contentHubAccents,
+    this.contentHubBadgeColor,
+    this.contentHubGridBreakpoint,
+    this.contentHubGridCrossAxisCount,
+    this.contentHubMinContrast,
+    this.contentHubSectionTitleStyle,
+    this.pageHeaderTitleStyle,
+    this.pageHeaderSubtitleStyle,
+    this.pageHeaderTabSelectedLabelStyle,
+    this.pageHeaderTabUnselectedLabelStyle,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -872,6 +927,212 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// reste REMPLAÇABLE (ce jeton) même quand elle ne peut pas être DÉRIVÉE.
   final Map<String, ZGradientSpec>? flashcardTypeGradients;
 
+  // ── Carte de DOSSIER d'étude par défaut (CR-IFFD-64) ──────────────────────
+  // La carte de dossier était la SEULE des six de la famille à n'avoir aucun
+  // rendu par défaut, et son liseré n'était atteignable NI par paramètre NI par
+  // jeton : la forme était bâtie sans `side:`, et les seuls jetons de carte
+  // (`cardShadow*`) visaient l'OMBRE. Ces dix jetons répliquent, pour la
+  // famille « carte de dossier », le patron déjà en place pour la famille sœur
+  // (`studyCard*`) — ils n'en inventent pas un second.
+  //
+  // 🔴 Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
+  // applique sa valeur de RÉFÉRENCE » (`ZFolderCardReference`) — jamais « rien
+  // ne se rend ». Priorité, partout : paramètre de carte > ce jeton >
+  // défaut-référence.
+
+  /// Rayon de la carte de dossier. `null` ⇒ `CardThemeData.shape` de l'hôte
+  /// s'il en pose un, sinon le jeton [radiusM] (défaut historique de la
+  /// primitive) — la carte PAR DÉFAUT, elle, applique sa référence (12).
+  final Radius? folderCardRadius;
+
+  /// Liseré du pourtour de la carte de dossier — **le manque net de
+  /// CR-IFFD-64**. `null` ⇒ aucune bordure imposée (rendu historique) ; la
+  /// carte PAR DÉFAUT dérive le sien de la couleur du dossier, avec un
+  /// plancher de contraste MESURÉ ([folderCardMinContrast]).
+  final BorderSide? folderCardBorderSide;
+
+  /// Padding interne de la carte de dossier. `null` ⇒ `gapM` (défaut
+  /// historique de la primitive) ; référence de la carte par défaut : 12.
+  ///
+  /// ⚠️ Ce jeton existe parce que `gapM` vaut 8 en thème nu : sans lui, la
+  /// carte par défaut ne pouvait atteindre sa référence qu'en ridant `gapM`
+  /// pour TOUT le sous-arbre (défaut corrigé par CR-IFFD-61 ① ailleurs).
+  final EdgeInsetsGeometry? folderCardContentPadding;
+
+  /// Hauteur de la bande d'accent de tête de la carte de dossier. `null` ⇒
+  /// référence (4).
+  final double? folderCardAccentHeight;
+
+  /// Opacité de la teinte de FOND de la carte de dossier par défaut. `null` ⇒
+  /// jeton [cardTintAlpha], puis référence (**0** — carte NEUTRE, la couleur
+  /// du dossier vivant dans la bande, le liseré et la tuile).
+  final double? folderCardTintAlpha;
+
+  /// Côté de la tuile d'icône de la carte de dossier. `null` ⇒ référence (36 —
+  /// ni le 48 des cartes d'étude, ni le 32 de la carte de flashcard).
+  final double? folderCardIconTileSize;
+
+  /// Rayon de la tuile d'icône de la carte de dossier. `null` ⇒ référence (8).
+  final Radius? folderCardIconTileRadius;
+
+  /// Opacité de la teinte de fond de la tuile d'icône. `null` ⇒ référence
+  /// (0.15).
+  final double? folderCardIconTileTintAlpha;
+
+  /// Taille du glyphe dans la tuile d'icône. `null` ⇒ référence (20).
+  final double? folderCardGlyphSize;
+
+  /// Plancher de contraste (WCAG 2.x) imposé aux SURFACES et COMPOSANTS
+  /// graphiques dérivés de la couleur du dossier — bande d'accent, liseré,
+  /// glyphe de tuile. `null` ⇒ référence (**3.0:1**, §1.4.11).
+  ///
+  /// 🔴 **Ce jeton n'est pas un réglage cosmétique** : une couleur de dossier
+  /// est choisie par l'utilisateur, donc ARBITRAIRE, et aucune fenêtre de
+  /// clarté HSL ne borne son contraste (mesuré : `#FFFF00` rendait 2.13:1 sur
+  /// thème clair, `#FFFFFE` 1.28:1). Le relever à 4.5 aligne la carte sur le
+  /// plancher du TEXTE normal ; l'abaisser sous 3.0 sort de WCAG AA.
+  final double? folderCardMinContrast;
+
+  // ── Hub d'ajout de CONTENU (CR-IFFD-65) ───────────────────────────────────
+  // Aucun jeton `contentHub*` n'existait : la forme du hub n'était atteignable
+  // NI par paramètre NI par thème (grief ④ de la CR, MESURÉ). La seule voie
+  // ouverte à un hôte était d'envelopper la feuille dans un `Theme` écrasant
+  // `ListTileTheme` pour TOUT le sous-arbre — donc de changer l'ambiance d'un
+  // écran pour atteindre une carte.
+  //
+  // 🔴 Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
+  // applique sa valeur de RÉFÉRENCE » (`ZContentHubReference`) — jamais « rien
+  // ne se rend ». Priorité, partout : paramètre de feuille/entrée > ce jeton >
+  // défaut-référence.
+
+  /// Densité du hub. `null` ⇒ référence ([ZContentHubDensity.comfortable] —
+  /// le rendu legacy, défaut depuis CR-IFFD-65).
+  ///
+  /// 🔴 C'est le jeton qui **restitue la densité d'avant CR-IFFD-65**
+  /// ([ZContentHubDensity.compact]) sans toucher au code de l'hôte : la densité
+  /// n'a pas disparu, elle a cessé d'être le défaut.
+  final ZContentHubDensity? contentHubDensity;
+
+  /// Hauteur d'item de référence du hub. `null` ⇒ référence (**112** =
+  /// `kToolbarHeight × 2`). En densité compacte, le plancher de 48 dp gouverne.
+  final double? contentHubItemExtent;
+
+  /// Rayon d'une carte d'entrée. `null` ⇒ référence (16).
+  final Radius? contentHubItemRadius;
+
+  /// Padding interne d'une carte d'entrée. `null` ⇒ référence (8,
+  /// directionnel).
+  final EdgeInsetsGeometry? contentHubItemPadding;
+
+  /// Opacité de la teinte de FOND d'une carte d'entrée. `null` ⇒ référence
+  /// (**0** — carte NEUTRE : mesuré sur pièces, le legacy ne teinte PAS le fond
+  /// de la carte, seulement la pastille et le badge).
+  final double? contentHubItemTintAlpha;
+
+  /// Diamètre de la pastille circulaire d'identité. `null` ⇒ référence (40).
+  final double? contentHubAvatarSize;
+
+  /// Opacité du fond de la pastille. `null` ⇒ référence (0.1).
+  final double? contentHubAvatarTintAlpha;
+
+  /// Taille du glyphe dans la pastille. `null` ⇒ référence (24).
+  final double? contentHubGlyphSize;
+
+  /// Palette des teintes d'IDENTITÉ des entrées — le jeton qui remplace les six
+  /// teintes littérales de `ZContentHubReference`. `null` ⇒ référence.
+  ///
+  /// Une entrée sans teinte explicite reçoit un créneau **déterministe de son
+  /// identité** (`colorKey`, à défaut son libellé) — donc STABLE quand une
+  /// application insère un type au milieu (jamais un index d'affichage). Une
+  /// liste VIDE ⇒ aucune teinte d'identité (chaîne totale, AD-10 : jamais un
+  /// échec de rendu).
+  final List<Color>? contentHubAccents;
+
+  /// Teinte du badge de mise en avant. `null` ⇒ référence (le vert du legacy).
+  final Color? contentHubBadgeColor;
+
+  /// Largeur à partir de laquelle le hub passe en grille. `null` ⇒ référence
+  /// (**600** — mesuré dans le legacy, que la CR déclarait « non mesuré »).
+  final double? contentHubGridBreakpoint;
+
+  /// Nombre de colonnes au-delà de [contentHubGridBreakpoint]. `null` ⇒
+  /// référence (2). `1` ⇒ colonne unique à toute largeur.
+  final int? contentHubGridCrossAxisCount;
+
+  /// Plancher de contraste (WCAG 2.x) imposé aux teintes d'identité peintes —
+  /// pastille, glyphe. `null` ⇒ référence (**3.0:1**, §1.4.11).
+  ///
+  /// 🔴 Le legacy n'en a **aucun** : il peint la teinte brute et n'a **aucune**
+  /// branche de luminosité (recherche négative sur son fichier). Une teinte
+  /// d'entrée pouvant être injectée par l'hôte, elle est arbitraire.
+  final double? contentHubMinContrast;
+
+  /// Style des intitulés de SECTION du hub. `null` ⇒ `titleMedium` du thème,
+  /// à la graisse de référence (`w600`) — jamais une taille en dur.
+  final TextStyle? contentHubSectionTitleStyle;
+
+  // ── Typographie de l'EN-TÊTE DE PAGE (CR-IFFD-63) ─────────────────────────
+  // L'en-tête de page était le seul endroit de l'écran dont la hiérarchie
+  // typographique n'était atteignable NI par paramètre NI par thème : le titre
+  // retombait sur `AppBarTheme.titleTextStyle` et les onglets sur le défaut M3,
+  // sans qu'aucun jeton ne les vise. Un hôte n'avait qu'un recours — envelopper
+  // la page dans un `Theme` réécrivant `AppBarTheme`/`TabBarTheme`, donc
+  // changer l'ambiance de tout un sous-arbre pour atteindre deux textes.
+  //
+  // 🔴 **Ces quatre jetons ne portent que des MÉTRIQUES.** Le consommateur
+  // (`zcrud_ui_kit`) en retient taille, graisse, style, famille, interlettrage,
+  // interlignage — et **ignore délibérément la couleur**, pour deux raisons
+  // MESURÉES :
+  // * pour le TITRE et le SOUS-TITRE, la couleur doit rester héritée du
+  //   `foregroundColor` de l'app-bar, sans quoi un en-tête sous dégradé
+  //   d'identité (`ZGradientSpec.onGradient`) redeviendrait illisible — c'est
+  //   l'invariant que `_zSubtitleSlice` documente déjà côté `zcrud_ui_kit` ;
+  // * pour les ONGLETS, `TabBar` dérive sa couleur de sélection de
+  //   `labelStyle?.color` quand aucun `labelColor` n'est donné : un style
+  //   coloré **écrase la distinction sélectionné/non-sélectionné** (mesuré :
+  //   les deux onglets rendus dans la MÊME couleur). La couleur serait donc
+  //   payée par la perte d'un canal d'accessibilité.
+  //
+  // `null` (défaut) ⇒ le consommateur ne pose **rien** : aucune enveloppe de
+  // style n'entre dans l'arbre, le rendu est strictement celui d'avant.
+
+  /// Style du TITRE de l'en-tête de page (**CR-IFFD-63**), consommé par
+  /// `ZPageScaffold`/`ZSearchableAppBar`/`ZPageShellBody` de `zcrud_ui_kit`.
+  ///
+  /// `null` ⇒ le titre garde le style de l'app-bar de l'hôte
+  /// (`AppBarTheme.titleTextStyle`, repli `TextTheme.titleLarge`) — rendu
+  /// **strictement inchangé**. Non-null ⇒ ses **métriques** sont fusionnées
+  /// par-dessus (la couleur est ignorée, cf. l'encadré ci-dessus).
+  ///
+  /// ⚠️ Le paramètre `titleTextStyle` du widget **prime** sur ce jeton.
+  final TextStyle? pageHeaderTitleStyle;
+
+  /// Style du SOUS-TITRE de l'en-tête de page (**CR-IFFD-63**).
+  ///
+  /// `null` ⇒ repli historique du consommateur (métriques de
+  /// `TextTheme.titleSmall`) — rendu **strictement inchangé**. Sans objet quand
+  /// aucun sous-titre n'est fourni (le slot reste absent de l'arbre).
+  final TextStyle? pageHeaderSubtitleStyle;
+
+  /// Style du libellé d'onglet **SÉLECTIONNÉ** de l'en-tête de page
+  /// (**CR-IFFD-63**) — le troisième canal de distinction, à côté de la couleur
+  /// et de l'indicateur.
+  ///
+  /// `null` ⇒ défaut Material 3 (`TextTheme.titleSmall`) — rendu **strictement
+  /// inchangé**.
+  ///
+  /// ⚠️ Régler CE jeton seul ne touche QUE l'onglet sélectionné : le
+  /// consommateur neutralise explicitement la retombée de `TabBar`
+  /// (`unselectedLabelStyle ?? labelStyle`) qui, sans cela, appliquerait le
+  /// style sélectionné aux onglets non sélectionnés — donc annulerait la
+  /// distinction qu'on vient de demander.
+  final TextStyle? pageHeaderTabSelectedLabelStyle;
+
+  /// Style du libellé d'onglet **NON SÉLECTIONNÉ** de l'en-tête de page
+  /// (**CR-IFFD-63**). `null` ⇒ défaut Material 3 — rendu **strictement
+  /// inchangé**.
+  final TextStyle? pageHeaderTabUnselectedLabelStyle;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -1069,6 +1330,34 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? studyCardGlyphSize,
     ZStudyCardContentAlignment? studyCardContentAlignment,
     Map<String, ZGradientSpec>? flashcardTypeGradients,
+    Radius? folderCardRadius,
+    BorderSide? folderCardBorderSide,
+    EdgeInsetsGeometry? folderCardContentPadding,
+    double? folderCardAccentHeight,
+    double? folderCardTintAlpha,
+    double? folderCardIconTileSize,
+    Radius? folderCardIconTileRadius,
+    double? folderCardIconTileTintAlpha,
+    double? folderCardGlyphSize,
+    double? folderCardMinContrast,
+    ZContentHubDensity? contentHubDensity,
+    double? contentHubItemExtent,
+    Radius? contentHubItemRadius,
+    EdgeInsetsGeometry? contentHubItemPadding,
+    double? contentHubItemTintAlpha,
+    double? contentHubAvatarSize,
+    double? contentHubAvatarTintAlpha,
+    double? contentHubGlyphSize,
+    List<Color>? contentHubAccents,
+    Color? contentHubBadgeColor,
+    double? contentHubGridBreakpoint,
+    int? contentHubGridCrossAxisCount,
+    double? contentHubMinContrast,
+    TextStyle? contentHubSectionTitleStyle,
+    TextStyle? pageHeaderTitleStyle,
+    TextStyle? pageHeaderSubtitleStyle,
+    TextStyle? pageHeaderTabSelectedLabelStyle,
+    TextStyle? pageHeaderTabUnselectedLabelStyle,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -1174,6 +1463,50 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         studyCardContentAlignment ?? this.studyCardContentAlignment,
     flashcardTypeGradients:
         flashcardTypeGradients ?? this.flashcardTypeGradients,
+    folderCardRadius: folderCardRadius ?? this.folderCardRadius,
+    folderCardBorderSide: folderCardBorderSide ?? this.folderCardBorderSide,
+    folderCardContentPadding:
+        folderCardContentPadding ?? this.folderCardContentPadding,
+    folderCardAccentHeight:
+        folderCardAccentHeight ?? this.folderCardAccentHeight,
+    folderCardTintAlpha: folderCardTintAlpha ?? this.folderCardTintAlpha,
+    folderCardIconTileSize:
+        folderCardIconTileSize ?? this.folderCardIconTileSize,
+    folderCardIconTileRadius:
+        folderCardIconTileRadius ?? this.folderCardIconTileRadius,
+    folderCardIconTileTintAlpha:
+        folderCardIconTileTintAlpha ?? this.folderCardIconTileTintAlpha,
+    folderCardGlyphSize: folderCardGlyphSize ?? this.folderCardGlyphSize,
+    folderCardMinContrast:
+        folderCardMinContrast ?? this.folderCardMinContrast,
+    contentHubDensity: contentHubDensity ?? this.contentHubDensity,
+    contentHubItemExtent: contentHubItemExtent ?? this.contentHubItemExtent,
+    contentHubItemRadius: contentHubItemRadius ?? this.contentHubItemRadius,
+    contentHubItemPadding: contentHubItemPadding ?? this.contentHubItemPadding,
+    contentHubItemTintAlpha:
+        contentHubItemTintAlpha ?? this.contentHubItemTintAlpha,
+    contentHubAvatarSize: contentHubAvatarSize ?? this.contentHubAvatarSize,
+    contentHubAvatarTintAlpha:
+        contentHubAvatarTintAlpha ?? this.contentHubAvatarTintAlpha,
+    contentHubGlyphSize: contentHubGlyphSize ?? this.contentHubGlyphSize,
+    contentHubAccents: contentHubAccents ?? this.contentHubAccents,
+    contentHubBadgeColor: contentHubBadgeColor ?? this.contentHubBadgeColor,
+    contentHubGridBreakpoint:
+        contentHubGridBreakpoint ?? this.contentHubGridBreakpoint,
+    contentHubGridCrossAxisCount:
+        contentHubGridCrossAxisCount ?? this.contentHubGridCrossAxisCount,
+    contentHubMinContrast:
+        contentHubMinContrast ?? this.contentHubMinContrast,
+    contentHubSectionTitleStyle:
+        contentHubSectionTitleStyle ?? this.contentHubSectionTitleStyle,
+    pageHeaderTitleStyle: pageHeaderTitleStyle ?? this.pageHeaderTitleStyle,
+    pageHeaderSubtitleStyle:
+        pageHeaderSubtitleStyle ?? this.pageHeaderSubtitleStyle,
+    pageHeaderTabSelectedLabelStyle:
+        pageHeaderTabSelectedLabelStyle ?? this.pageHeaderTabSelectedLabelStyle,
+    pageHeaderTabUnselectedLabelStyle:
+        pageHeaderTabUnselectedLabelStyle ??
+        this.pageHeaderTabUnselectedLabelStyle,
   );
 
   @override
@@ -1528,6 +1861,189 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           : other.studyCardContentAlignment,
       flashcardTypeGradients:
           t < 0.5 ? flashcardTypeGradients : other.flashcardTypeGradients,
+      // CR-IFFD-64 — chaque jeton de carte de dossier est null-PRÉSERVANT :
+      // `null`↔`null` reste `null`, donc la valeur de RÉFÉRENCE du
+      // consommateur n'est JAMAIS matérialisée par une transition de thème
+      // (leçon `studyCardBadgeRadius`/`studyCardGlyphSize`).
+      folderCardRadius: _lerpNullableRadius(
+        folderCardRadius,
+        other.folderCardRadius,
+        t,
+      ),
+      folderCardBorderSide:
+          folderCardBorderSide == null && other.folderCardBorderSide == null
+          ? null
+          : BorderSide.lerp(
+              folderCardBorderSide ?? BorderSide.none,
+              other.folderCardBorderSide ?? BorderSide.none,
+              t,
+            ),
+      folderCardContentPadding: _lerpNullableInsets(
+        folderCardContentPadding,
+        other.folderCardContentPadding,
+        t,
+      ),
+      folderCardAccentHeight:
+          folderCardAccentHeight == null && other.folderCardAccentHeight == null
+          ? null
+          : _lerpNullableDouble(
+              folderCardAccentHeight,
+              other.folderCardAccentHeight,
+              t,
+            ),
+      folderCardTintAlpha:
+          folderCardTintAlpha == null && other.folderCardTintAlpha == null
+          ? null
+          : _lerpNullableDouble(
+              folderCardTintAlpha,
+              other.folderCardTintAlpha,
+              t,
+            ),
+      folderCardIconTileSize:
+          folderCardIconTileSize == null && other.folderCardIconTileSize == null
+          ? null
+          : _lerpNullableDouble(
+              folderCardIconTileSize,
+              other.folderCardIconTileSize,
+              t,
+            ),
+      folderCardIconTileRadius: _lerpNullableRadius(
+        folderCardIconTileRadius,
+        other.folderCardIconTileRadius,
+        t,
+      ),
+      folderCardIconTileTintAlpha:
+          folderCardIconTileTintAlpha == null &&
+              other.folderCardIconTileTintAlpha == null
+          ? null
+          : _lerpNullableDouble(
+              folderCardIconTileTintAlpha,
+              other.folderCardIconTileTintAlpha,
+              t,
+            ),
+      folderCardGlyphSize:
+          folderCardGlyphSize == null && other.folderCardGlyphSize == null
+          ? null
+          : _lerpNullableDouble(
+              folderCardGlyphSize,
+              other.folderCardGlyphSize,
+              t,
+            ),
+      // Un PLANCHER ne s'interpole pas : une valeur intermédiaire pendant une
+      // transition de thème serait un plancher que personne n'a choisi.
+      folderCardMinContrast: t < 0.5
+          ? folderCardMinContrast
+          : other.folderCardMinContrast,
+      // CR-IFFD-65 — chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
+      // reste `null`, donc la valeur de RÉFÉRENCE du consommateur n'est JAMAIS
+      // matérialisée par une transition de thème (leçon `studyCardBadgeRadius`).
+      // Les jetons DISCRETS (densité, palette, nombre de colonnes) ne
+      // s'interpolent pas : une demi-densité ou une demi-colonne n'existe pas.
+      contentHubDensity: t < 0.5 ? contentHubDensity : other.contentHubDensity,
+      contentHubItemExtent:
+          contentHubItemExtent == null && other.contentHubItemExtent == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubItemExtent,
+              other.contentHubItemExtent,
+              t,
+            ),
+      contentHubItemRadius: _lerpNullableRadius(
+        contentHubItemRadius,
+        other.contentHubItemRadius,
+        t,
+      ),
+      contentHubItemPadding: _lerpNullableInsets(
+        contentHubItemPadding,
+        other.contentHubItemPadding,
+        t,
+      ),
+      contentHubItemTintAlpha:
+          contentHubItemTintAlpha == null &&
+              other.contentHubItemTintAlpha == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubItemTintAlpha,
+              other.contentHubItemTintAlpha,
+              t,
+            ),
+      contentHubAvatarSize:
+          contentHubAvatarSize == null && other.contentHubAvatarSize == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubAvatarSize,
+              other.contentHubAvatarSize,
+              t,
+            ),
+      contentHubAvatarTintAlpha:
+          contentHubAvatarTintAlpha == null &&
+              other.contentHubAvatarTintAlpha == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubAvatarTintAlpha,
+              other.contentHubAvatarTintAlpha,
+              t,
+            ),
+      contentHubGlyphSize:
+          contentHubGlyphSize == null && other.contentHubGlyphSize == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubGlyphSize,
+              other.contentHubGlyphSize,
+              t,
+            ),
+      contentHubAccents: t < 0.5 ? contentHubAccents : other.contentHubAccents,
+      contentHubBadgeColor: Color.lerp(
+        contentHubBadgeColor,
+        other.contentHubBadgeColor,
+        t,
+      ),
+      contentHubGridBreakpoint:
+          contentHubGridBreakpoint == null &&
+              other.contentHubGridBreakpoint == null
+          ? null
+          : _lerpNullableDouble(
+              contentHubGridBreakpoint,
+              other.contentHubGridBreakpoint,
+              t,
+            ),
+      contentHubGridCrossAxisCount: t < 0.5
+          ? contentHubGridCrossAxisCount
+          : other.contentHubGridCrossAxisCount,
+      // Un PLANCHER ne s'interpole pas : une valeur intermédiaire serait un
+      // plancher que personne n'a choisi.
+      contentHubMinContrast: t < 0.5
+          ? contentHubMinContrast
+          : other.contentHubMinContrast,
+      contentHubSectionTitleStyle: TextStyle.lerp(
+        contentHubSectionTitleStyle,
+        other.contentHubSectionTitleStyle,
+        t,
+      ),
+      // CR-IFFD-63 — `TextStyle.lerp` est null-préservant : `null`↔`null` rend
+      // `null`, donc le repli documenté du consommateur (« rien n'est posé »)
+      // n'est JAMAIS matérialisé par une transition de thème (même invariant
+      // que `studySectionTitleStyle`/`labelTextStyle`).
+      pageHeaderTitleStyle: TextStyle.lerp(
+        pageHeaderTitleStyle,
+        other.pageHeaderTitleStyle,
+        t,
+      ),
+      pageHeaderSubtitleStyle: TextStyle.lerp(
+        pageHeaderSubtitleStyle,
+        other.pageHeaderSubtitleStyle,
+        t,
+      ),
+      pageHeaderTabSelectedLabelStyle: TextStyle.lerp(
+        pageHeaderTabSelectedLabelStyle,
+        other.pageHeaderTabSelectedLabelStyle,
+        t,
+      ),
+      pageHeaderTabUnselectedLabelStyle: TextStyle.lerp(
+        pageHeaderTabUnselectedLabelStyle,
+        other.pageHeaderTabUnselectedLabelStyle,
+        t,
+      ),
     );
   }
 }

@@ -138,21 +138,98 @@ class _ZSearchController {
   }
 }
 
+/// Ne retient d'un style que ses **MÉTRIQUES** — jamais sa couleur (CR-IFFD-63).
+///
+/// 🔴 **Pourquoi la couleur est retirée, et non « laissée passer ».** Deux
+/// raisons distinctes, toutes deux mesurées sur disque :
+///
+/// 1. **Titre / sous-titre.** La couleur du texte d'app-bar doit rester
+///    **héritée** du `foregroundColor` — donc du `ZGradientSpec.onGradient`
+///    quand un dégradé d'identité est actif. Un style coloré posé ici rendrait
+///    un titre illisible sur une app-bar teintée. C'est exactement l'arbitrage
+///    que `_zSubtitleSlice` porte depuis CR-IFFD-34, ici généralisé.
+/// 2. **Onglets.** `TabBar` dérive sa couleur de sélection de
+///    `labelStyle?.color` lorsqu'aucun `labelColor` n'est fourni (SDK,
+///    `_TabStyle._resolveWithLabelColor`). MESURÉ en passant
+///    `labelStyle: titleSmall` **et** `unselectedLabelStyle: titleSmall` : les
+///    deux onglets rendent la MÊME couleur (`onSurface`) au lieu de
+///    `primary`/`onSurfaceVariant` — la distinction chromatique disparaît. Le
+///    poids devait AJOUTER un canal, pas en retirer un.
+///
+/// `inherit` reste `true` (défaut) : le style est donc **fusionné** sur
+/// l'ambiant, jamais substitué. Un style ne portant qu'une couleur se réduit
+/// ici à un style vide — c'est-à-dire à un non-effet, jamais à une régression.
+TextStyle? _zMetricsOnly(TextStyle? style) => style == null
+    ? null
+    : TextStyle(
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        fontFamily: style.fontFamily,
+        fontFamilyFallback: style.fontFamilyFallback,
+        letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+        height: style.height,
+        textBaseline: style.textBaseline,
+        leadingDistribution: style.leadingDistribution,
+      );
+
+/// Résout un style d'en-tête : **paramètre > jeton de thème > `null`**
+/// (CR-IFFD-63). `null` en sortie ⇒ le site appelant ne pose **rien**.
+TextStyle? _zResolveHeaderStyle(TextStyle? parameter, TextStyle? token) =>
+    _zMetricsOnly(parameter ?? token);
+
 /// `TabBar` déclaratif **partagé** par [ZPageScaffold] (mode fixe) et
 /// [ZPageShellBody] (modes sliver) — le motif n'est écrit qu'une fois.
+///
+/// ## Typographie des libellés (CR-IFFD-63)
+///
+/// Les deux styles sont résolus **paramètre > jeton `ZcrudTheme` > `null`**, et
+/// réduits à leurs métriques par [_zMetricsOnly]. Les deux `null` ⇒ `labelStyle`
+/// et `unselectedLabelStyle` restent `null` : le `TabBar` est **strictement**
+/// celui d'avant.
+///
+/// 🔴 **Neutralisation de la retombée du SDK.** `TabBar` résout son style non
+/// sélectionné par `unselectedLabelStyle ?? tabBarTheme.unselectedLabelStyle ??
+/// labelStyle`. MESURÉ : en ne réglant QUE `labelStyle` (gras), les onglets
+/// **non sélectionnés deviennent gras eux aussi** — la demande « distinguer
+/// l'onglet courant » produisait donc l'inverse, en silence. Quand seul le
+/// style sélectionné est déclaré, on passe donc explicitement le style non
+/// sélectionné **du thème de l'hôte** (ou un style vide, qui fusionné sur les
+/// défauts M3 ne change rien) : un créneau qu'on n'a pas réglé ne bouge pas.
 PreferredSizeWidget _zTabBar(
+  BuildContext context,
   List<ZPageTab> tabs,
   TabController? controller,
   TabAlignment? tabAlignment,
-) => TabBar(
-  controller: controller,
-  tabAlignment: tabAlignment,
-  isScrollable: true,
-  tabs: <Widget>[
-    for (final tab in tabs)
-      Tab(text: tab.label, icon: tab.icon == null ? null : Icon(tab.icon)),
-  ],
-);
+  TextStyle? selectedLabelStyle,
+  TextStyle? unselectedLabelStyle,
+) {
+  final ZcrudTheme tokens = ZcrudTheme.of(context);
+  final TextStyle? selected = _zResolveHeaderStyle(
+    selectedLabelStyle,
+    tokens.pageHeaderTabSelectedLabelStyle,
+  );
+  final TextStyle? unselected = _zResolveHeaderStyle(
+    unselectedLabelStyle,
+    tokens.pageHeaderTabUnselectedLabelStyle,
+  );
+  return TabBar(
+    controller: controller,
+    tabAlignment: tabAlignment,
+    isScrollable: true,
+    labelStyle: selected,
+    unselectedLabelStyle: unselected ??
+        (selected == null
+            ? null
+            : TabBarTheme.of(context).unselectedLabelStyle ??
+                  const TextStyle()),
+    tabs: <Widget>[
+      for (final tab in tabs)
+        Tab(text: tab.label, icon: tab.icon == null ? null : Icon(tab.icon)),
+    ],
+  );
+}
 
 /// Hauteur **par défaut** du créneau `aboveTabBar` quand l'hôte n'en déclare
 /// aucune et que le widget fourni n'est pas lui-même un `PreferredSizeWidget`.
@@ -373,44 +450,87 @@ Widget _zBuildTitle(
 /// chose est ; le **type** (`Widget?`) et le **traitement** (`null` ⇒ absence
 /// structurelle, contenu opaque, sémantique laissée au widget de l'hôte)
 /// restent identiques aux slots des cartes.
+/// ## Typographie (CR-IFFD-63)
+///
+/// [titleTextStyle] / [subtitleTextStyle] sont résolus **paramètre > jeton
+/// `ZcrudTheme` > défaut** puis réduits à leurs **métriques** ([_zMetricsOnly]).
+/// Sans paramètre ni jeton, le titre n'est enveloppé d'**aucune** enveloppe de
+/// style : l'arbre est celui d'avant, au widget près.
+///
+/// 🔴 **Le champ de recherche n'est PAS restylé.** En mode recherche le titre
+/// n'est pas dans l'arbre (mesuré : zéro occurrence) — c'est un champ de saisie,
+/// pas un titre. Lui imposer la graisse d'un titre ferait taper l'utilisateur en
+/// gras ; et le style du champ est déjà `titleLarge` **avec** `inherit: false`,
+/// donc une couleur explicite qu'une fusion de métriques ne pourrait pas
+/// atteindre sans la réécrire.
 Widget _zBuildTitleBlock(
   BuildContext context,
   _ZSearchController controller,
   Object title,
   Widget? subtitle,
   ZAppBarSearchConfig? search,
-  bool searching,
-) {
-  final Widget titleSlice = _zBuildTitle(
-    context,
-    controller,
-    title,
-    search,
-    searching,
+  bool searching, {
+  TextStyle? titleTextStyle,
+  TextStyle? subtitleTextStyle,
+}) {
+  final ZcrudTheme tokens = ZcrudTheme.of(context);
+  final Widget titleSlice = _zTitleTypography(
+    _zBuildTitle(context, controller, title, search, searching),
+    // Le champ de recherche garde son style : il occupe la zone titre mais
+    // n'EST pas le titre (cf. encadré ci-dessus).
+    search != null && searching
+        ? null
+        : _zResolveHeaderStyle(titleTextStyle, tokens.pageHeaderTitleStyle),
   );
   if (subtitle == null || (search != null && searching)) return titleSlice;
   return Column(
     mainAxisSize: MainAxisSize.min,
     // `CrossAxisAlignment.start` est DIRECTIONNEL (AD-13) : jamais `left`.
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[titleSlice, _zSubtitleSlice(context, subtitle)],
+    children: <Widget>[
+      titleSlice,
+      _zSubtitleSlice(
+        context,
+        subtitle,
+        _zResolveHeaderStyle(
+          subtitleTextStyle,
+          tokens.pageHeaderSubtitleStyle,
+        ),
+      ),
+    ],
   );
 }
+
+/// Enveloppe typographique du titre. `null` ⇒ **aucune** enveloppe : la tranche
+/// est rendue telle quelle (neutralité stricte, AD-4 — pas de widget inerte).
+Widget _zTitleTypography(Widget titleSlice, TextStyle? style) => style == null
+    ? titleSlice
+    : DefaultTextStyle.merge(style: style, child: titleSlice);
 
 /// Sous-titre d'app-bar : métriques **dérivées du thème** (`titleSmall`), jamais
 /// de littéral. 🔴 La **couleur n'est pas touchée** : elle reste héritée du
 /// `DefaultTextStyle` de l'app-bar (donc du `foregroundColor`, y compris celui
 /// imposé par un dégradé d'identité). Forcer ici une couleur de `textTheme`
 /// rendrait le sous-titre illisible sur une app-bar teintée.
-Widget _zSubtitleSlice(BuildContext context, Widget subtitle) {
+///
+/// CR-IFFD-63 : [override] (paramètre > jeton, déjà réduit aux métriques)
+/// **remplace** les métriques de `titleSmall` quand il est fourni ; `null` ⇒
+/// repli historique, à l'identique.
+Widget _zSubtitleSlice(
+  BuildContext context,
+  Widget subtitle, [
+  TextStyle? override,
+]) {
   final TextStyle? small = Theme.of(context).textTheme.titleSmall;
   return DefaultTextStyle.merge(
-    style: TextStyle(
-      fontSize: small?.fontSize,
-      fontWeight: small?.fontWeight,
-      letterSpacing: small?.letterSpacing,
-      height: small?.height,
-    ),
+    style:
+        override ??
+        TextStyle(
+          fontSize: small?.fontSize,
+          fontWeight: small?.fontWeight,
+          letterSpacing: small?.letterSpacing,
+          height: small?.height,
+        ),
     child: subtitle,
   );
 }

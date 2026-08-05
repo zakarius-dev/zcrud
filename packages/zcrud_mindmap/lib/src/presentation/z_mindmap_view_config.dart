@@ -142,13 +142,16 @@ class ZMindmapViewConfig {
     this.minTapTarget = 48,
     this.borderWidth,
     this.selectedBorderWidth,
+    this.emptyIconSize,
   })  : assert(minScale > 0 && minScale <= maxScale,
             'minScale doit être > 0 et ≤ maxScale'),
         assert(minTapTarget >= 48, 'cible tactile ≥ 48 dp (AD-13)'),
         assert(borderWidth == null || borderWidth >= 0,
             'borderWidth doit être ≥ 0'),
         assert(selectedBorderWidth == null || selectedBorderWidth >= 0,
-            'selectedBorderWidth doit être ≥ 0');
+            'selectedBorderWidth doit être ≥ 0'),
+        assert(emptyIconSize == null || emptyIconSize > 0,
+            'emptyIconSize doit être > 0');
 
   /// Échelle minimale de l'`InteractiveViewer` interne de `graphite` (zoom).
   final double minScale;
@@ -183,7 +186,21 @@ class ZMindmapViewConfig {
   /// distinction de la sélection. C'est l'hôte qui arbitre (ex. trait constant),
   /// pas le socle.
   final double? selectedBorderWidth;
+
+  /// Côté de l'illustration de l'**état vide** de l'éditeur outline (CR-IFFD-67).
+  ///
+  /// `null` ⇒ repli sur [kZMindmapDefaultEmptyIconSize]. C'est une dimension de
+  /// layout structurel, donc sa place est ici (pas dans les libellés, pas en dur
+  /// dans le widget). Chaîne de priorité de l'état vide :
+  /// **paramètre `emptyBuilder` > `config.emptyIconSize` > référence**.
+  final double? emptyIconSize;
 }
+
+/// Côté par défaut de l'illustration de l'état vide (CR-IFFD-67).
+///
+/// Valeur de **référence** : elle n'entre en jeu que si l'hôte ne fournit ni
+/// `emptyBuilder` ni [ZMindmapViewConfig.emptyIconSize].
+const double kZMindmapDefaultEmptyIconSize = 72;
 
 /// Épaisseur de trait par défaut d'un nœud **non sélectionné** (CR-LEX-80).
 ///

@@ -117,10 +117,19 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.bySemanticsLabel('Ajouter une racine'), findsOneWidget);
+      // CR-IFFD-67 ② : sur forêt vide il y a désormais DEUX affordances d'ajout
+      // portant la même annonce — celle de la barre d'outils ET celle, centrée,
+      // de l'état vide (même action, donc même libellé a11y).
+      expect(find.bySemanticsLabel('Ajouter une racine'), findsNWidgets(2));
 
-      await tester.tap(find.bySemanticsLabel('Ajouter une racine'));
+      // On tape celle de l'ÉTAT VIDE (la dernière dans l'ordre de l'arbre) :
+      // c'est elle qui doit réellement muter la forêt.
+      await tester.tap(find.bySemanticsLabel('Ajouter une racine').last);
       await tester.pump();
+
+      // La forêt n'est plus vide ⇒ l'état vide quitte l'arbre, il ne reste que
+      // l'affordance de la barre d'outils.
+      expect(find.bySemanticsLabel('Ajouter une racine'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Enregistrer'));
       await tester.pump();
 
@@ -416,8 +425,18 @@ void main() {
       await tester.pump();
 
       final size = tester.getSize(find.bySemanticsLabel('Supprimer').first);
-      expect(size.width, greaterThanOrEqualTo(48));
       expect(size.height, greaterThanOrEqualTo(48));
+
+      // 🔴 CR-IFFD-67 — cette garde était **VACANTE SUR LA LARGEUR** : le bouton
+      // prenait toute la largeur du `Wrap` (720 dp mesurés), donc `width >= 48`
+      // passait même avec un plancher injecté à 1 dp. Prouvé par R3 : `minWidth: 1`
+      // → garde restée VERTE. Le plancher doit être la contrainte ACTIVE, ce que
+      // seule une borne SUPÉRIEURE peut établir.
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.width, lessThan(200),
+          reason: 'le bouton s\'approprie la largeur disponible '
+              '(${size.width} dp) — la cible « ≥ 48 dp » ne prouve alors rien. '
+              'Gardes de géométrie complètes : cr_iffd67_action_row_test.dart');
     });
 
     _tw('les champs éditables (label/content) sont ≥ 48 dp de haut (MEDIUM-1)',

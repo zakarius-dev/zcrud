@@ -122,6 +122,10 @@ class ZFolderCard extends StatelessWidget {
     this.onLongPress,
     this.semanticLabel,
     this.tintAlpha,
+    this.borderSide,
+    this.borderRadius,
+    this.contentPadding,
+    this.defaultShadow,
     super.key,
   });
 
@@ -250,6 +254,52 @@ class ZFolderCard extends StatelessWidget {
   /// compensation**, sans quoi sa décoration s'ajoute désormais à celle du
   /// `CardTheme`.
   final double? tintAlpha;
+
+  /// Liseré du pourtour de la carte (**CR-IFFD-64**).
+  ///
+  /// 🔴 **Le manque que ce slot ferme** : la forme de la carte était construite
+  /// sans `side:`, et aucun jeton de bordure ne la visait — le liseré fin
+  /// teinté que pose la carte de flashcard n'avait **aucun équivalent
+  /// atteignable** ici. Ce n'était pas une absence de patron dans le socle : le
+  /// patron existe pour la famille sœur (`ZcrudTheme.studyCardBorderSide`,
+  /// consommé par `zStudyCardChromeOf`) — c'était une absence de RÉPLICATION.
+  /// Ce slot réplique donc le patron existant à l'identique, il n'en invente
+  /// pas un second.
+  ///
+  /// Priorité : ce slot > le jeton `ZcrudTheme.folderCardBorderSide` >
+  /// `CardThemeData.shape` de l'hôte (CR-LEX-61/73 : *ne pas imposer une
+  /// décision que le `CardTheme` exprime déjà*) > forme historique sans
+  /// bordure. `null` **et** jeton absent ⇒ **rendu strictement inchangé**.
+  final BorderSide? borderSide;
+
+  /// Rayon de la carte (**CR-IFFD-64**). Priorité : ce slot > le jeton
+  /// `ZcrudTheme.folderCardRadius` > `CardThemeData.shape` de l'hôte > jeton
+  /// `radiusM` (défaut historique). `null` partout ⇒ **rendu inchangé**.
+  ///
+  /// Comme sur `ZStudyToolsItemCard` (CR-IFFD-56), fournir [borderSide] **ou**
+  /// [borderRadius] fait construire une forme explicite : un slot explicite
+  /// prime le thème.
+  final Radius? borderRadius;
+
+  /// Padding interne de la carte (**CR-IFFD-64**). Priorité : ce slot > le
+  /// jeton `ZcrudTheme.folderCardContentPadding` > `EdgeInsetsDirectional.all`
+  /// de `gapM` (défaut historique).
+  ///
+  /// 🔴 **Pourquoi il fallait un slot** : la référence pose **12**, et `gapM`
+  /// vaut **8** en thème nu — sans ce slot, la carte par défaut ne pouvait
+  /// atteindre la référence qu'en ridant `gapM` pour TOUT le sous-arbre
+  /// (exactement le défaut corrigé par CR-IFFD-61 ① sur `leadingGap`).
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// Ombre de **REPLI** (**CR-IFFD-64**, patron `ZStudyToolsItemCard`) :
+  /// utilisée lorsqu'aucun des trois jetons `ZcrudTheme.cardShadow*` n'est
+  /// fourni. Les jetons de l'hôte **PRIMENT** toujours — l'ombre de référence
+  /// d'une carte par défaut ne rend jamais le canal d'ombre de l'hôte
+  /// inatteignable.
+  ///
+  /// `null` (défaut) ⇒ **rendu strictement inchangé** : aucune ombre peinte,
+  /// élévation native de `Card` conservée.
+  final BoxDecoration? defaultShadow;
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +462,11 @@ class ZFolderCard extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool bounded = constraints.maxHeight.isFinite;
         return Padding(
-          padding: EdgeInsetsDirectional.all(theme.gapM),
+          // CR-IFFD-64 — priorité slot > jeton > défaut historique (`gapM`).
+          padding:
+              contentPadding ??
+              theme.folderCardContentPadding ??
+              EdgeInsetsDirectional.all(theme.gapM),
           child: Column(
             mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,9 +527,24 @@ class ZFolderCard extends StatelessWidget {
     // Le thème Material de l'hôte décide la forme complète (dont sa bordure)
     // lorsqu'il en fournit une. La même instance est donnée au `Card` et à
     // l'`InkWell` pour que le clip et l'encre restent parfaitement cohérents.
-    final ShapeBorder shape =
-        cardTheme.shape ??
-        RoundedRectangleBorder(borderRadius: BorderRadius.all(theme.radiusM));
+    //
+    // CR-IFFD-64 — le LISERÉ devient atteignable, par le MÊME patron que la
+    // famille sœur (`ZStudyToolsItemCard`, CR-IFFD-19/56) : un slot explicite
+    // (`borderSide`/`borderRadius`) ou son jeton construit la forme ; sinon
+    // `CardThemeData.shape` de l'hôte prime, inchangé ; sinon le rayon `radiusM`
+    // historique. Aucun de ces deux slots ⇒ arbre et pixel STRICTEMENT
+    // identiques à l'historique.
+    final BorderSide? resolvedSide = borderSide ?? theme.folderCardBorderSide;
+    final Radius? resolvedCorner = borderRadius ?? theme.folderCardRadius;
+    final ShapeBorder shape = resolvedSide != null || resolvedCorner != null
+        ? RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(resolvedCorner ?? theme.radiusM),
+            side: resolvedSide ?? BorderSide.none,
+          )
+        : cardTheme.shape ??
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(theme.radiusM),
+              );
 
     // 🔴 Même traitement pour la MARGE (CR-LEX-73). Elle était figée à
     // `EdgeInsets.zero`, si bien que chaque hôte la restituait par un `Padding`
@@ -507,10 +576,10 @@ class ZFolderCard extends StatelessWidget {
 
     // CR-IFFD-27 — ombre pilotée par les jetons `cardShadow*`. `null` (aucun
     // jeton) ⇒ chemin d'arbre STRICTEMENT identique à l'historique.
-    final BoxDecoration? shadow = zResolveCardShadowDecoration(
-      context,
-      shape: shape,
-    );
+    // CR-IFFD-64 — les jetons de l'hôte PRIMENT le repli [defaultShadow]
+    // (patron `ZStudyToolsItemCard`, CR-IFFD-57).
+    final BoxDecoration? shadow =
+        zResolveCardShadowDecoration(context, shape: shape) ?? defaultShadow;
 
     final Widget innerCard = Card(
       // Quand l'ombre est peinte par la décoration, la marge doit rester HORS

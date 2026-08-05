@@ -104,6 +104,25 @@
 ///   plusieurs selon l'état. Pour un app-bar **fixe**, la brique équivalente est
 ///   [ZSearchableAppBar] dans `Scaffold(appBar:)`.
 ///
+/// **CR-IFFD-63 — la typographie de l'en-tête devient ATTEIGNABLE.** Quatre
+/// créneaux (`titleTextStyle`, `subtitleTextStyle`, `tabLabelStyle`,
+/// `tabUnselectedLabelStyle`) sur [ZPageScaffold] / [ZPageShellBody] (les deux
+/// premiers aussi sur [ZSearchableAppBar]), doublés de quatre jetons de
+/// `ZcrudTheme` (`pageHeaderTitleStyle`, `pageHeaderSubtitleStyle`,
+/// `pageHeaderTabSelectedLabelStyle`, `pageHeaderTabUnselectedLabelStyle`).
+/// Priorité stricte **paramètre > jeton > défaut**. Un hôte n'a donc plus à
+/// envelopper sa page dans un `Theme` réécrivant `AppBarTheme`/`TabBarTheme`
+/// pour atteindre deux textes.
+///
+/// 🔴 **Défaut strictement inchangé** : sans paramètre ni jeton, **aucune**
+/// enveloppe de style n'entre dans l'arbre et le rendu est celui d'une app-bar
+/// Material nue (gardé par test). 🔴 **Métriques seules** : la couleur d'un
+/// style fourni est délibérément **ignorée** — pour le titre parce qu'elle doit
+/// rester héritée du `foregroundColor` (lisibilité sous dégradé d'identité),
+/// pour les onglets parce que `TabBar` dérive sa couleur de sélection de
+/// `labelStyle?.color` et qu'un style coloré **supprimerait** la distinction
+/// sélectionné/non-sélectionné (mesuré).
+///
 /// **Dépendance (AD-29)** : ce package **dépend de `zcrud_core`** et **consomme**
 /// ses seams (`ZcrudScope` / `ZcrudTheme` / `ZcrudLocalizations`) en lecture, avec
 /// repli systématique sur `Theme.of(context)` / `MaterialLocalizations.of(context)`

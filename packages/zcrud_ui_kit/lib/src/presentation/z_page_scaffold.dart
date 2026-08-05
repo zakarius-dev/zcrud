@@ -75,6 +75,10 @@ class ZPageScaffold extends StatefulWidget {
     this.resizeToAvoidBottomInset,
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
+    this.tabLabelStyle,
+    this.tabUnselectedLabelStyle,
     super.key,
   }) : assert(
          title is Widget || title is String,
@@ -190,6 +194,51 @@ class ZPageScaffold extends StatefulWidget {
   /// sliver (cf. doc de classe).
   final bool extendBodyBehindAppBar;
 
+  /// Typographie du TITRE de l'en-tête (**CR-IFFD-63**) — priorité
+  /// **paramètre > jeton `ZcrudTheme.pageHeaderTitleStyle` > défaut de
+  /// l'app-bar de l'hôte**. Propagé aux DEUX modes (fixe et sliver).
+  ///
+  /// `null` des deux côtés ⇒ **aucune** enveloppe de style : rendu strictement
+  /// inchangé. Voir [ZSearchableAppBar.titleTextStyle] pour la règle
+  /// « métriques seules, couleur héritée » et son motif mesuré.
+  final TextStyle? titleTextStyle;
+
+  /// Typographie du SOUS-TITRE (**CR-IFFD-63**) — priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderSubtitleStyle` > métriques de `titleSmall`**. Sans
+  /// objet si [subtitle] est nul (le slot reste absent de l'arbre).
+  final TextStyle? subtitleTextStyle;
+
+  /// Typographie du libellé d'onglet **SÉLECTIONNÉ** (**CR-IFFD-63**) —
+  /// priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderTabSelectedLabelStyle` > défaut Material 3**
+  /// (`TextTheme.titleSmall`).
+  ///
+  /// 🔴 **Métriques seules, couleur ignorée** — et ce n'est pas un choix de
+  /// style : `TabBar` dérive sa couleur de sélection de `labelStyle?.color`
+  /// quand aucun `labelColor` n'est fourni. MESURÉ avec un style coloré des
+  /// deux côtés : les onglets sélectionné et non sélectionné rendent la MÊME
+  /// couleur — le canal chromatique de la sélection disparaît. Le poids doit
+  /// AJOUTER un canal de distinction, jamais en retirer un (AD-13 : la couleur
+  /// n'est pas le seul canal, mais elle reste UN canal).
+  ///
+  /// ⚠️ Réglé SEUL, ce paramètre ne touche que l'onglet sélectionné : la
+  /// retombée `unselectedLabelStyle ?? labelStyle` du SDK est explicitement
+  /// neutralisée (sans quoi tous les onglets adopteraient le style
+  /// « sélectionné » — mesuré).
+  ///
+  /// ⚠️ **Un libellé plus GRAND n'agrandit pas la bande d'onglets** (mesuré :
+  /// `TabBar.preferredSize.height` reste 48 dp, la tuile `Tab` 46 dp, pour
+  /// `fontSize` 14, 18 **et** 24). La cible tactile reste donc ≥ 48 dp, mais
+  /// au-delà d'une vingtaine de dp le glyphe est rogné verticalement par le
+  /// SDK. Le **poids** n'a pas cet effet : il ne change pas la hauteur de ligne.
+  final TextStyle? tabLabelStyle;
+
+  /// Typographie du libellé d'onglet **NON SÉLECTIONNÉ** (**CR-IFFD-63**) —
+  /// priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderTabUnselectedLabelStyle` > défaut Material 3**.
+  /// Couleur ignorée, pour le motif mesuré exposé dans [tabLabelStyle].
+  final TextStyle? tabUnselectedLabelStyle;
+
   @override
   State<ZPageScaffold> createState() => _ZPageScaffoldState();
 }
@@ -255,14 +304,19 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
         leading: widget.leading,
         actions: widget.actions,
         search: widget.search,
+        titleTextStyle: widget.titleTextStyle,
+        subtitleTextStyle: widget.subtitleTextStyle,
         bottom: _zAppBarBottom(
           aboveTabBar: widget.aboveTabBar,
           aboveTabBarHeight: widget.aboveTabBarHeight,
           tabBar: _hasTabs
               ? _zTabBar(
+                  context,
                   widget.tabs!,
                   widget.tabController,
                   widget.tabAlignment,
+                  widget.tabLabelStyle,
+                  widget.tabUnselectedLabelStyle,
                 )
               : null,
         ),
@@ -300,6 +354,10 @@ class _ZPageScaffoldState extends State<ZPageScaffold> {
       mode: widget.mode,
       tabController: widget.tabController,
       tabAlignment: widget.tabAlignment,
+      titleTextStyle: widget.titleTextStyle,
+      subtitleTextStyle: widget.subtitleTextStyle,
+      tabLabelStyle: widget.tabLabelStyle,
+      tabUnselectedLabelStyle: widget.tabUnselectedLabelStyle,
       controller: _controller,
     ),
   );

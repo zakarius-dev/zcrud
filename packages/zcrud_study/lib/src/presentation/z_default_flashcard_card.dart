@@ -89,6 +89,7 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_faded_overflow.dart';
 import 'z_flashcard_card_reference.dart';
+import 'z_readable_tint.dart';
 import 'z_study_tools_item_card.dart';
 import 'z_tag_chips.dart';
 
@@ -118,7 +119,36 @@ const double _kMinTapTarget = 48.0;
 /// ramenée dans la fenêtre lisible de la luminosité courante (0.25-0.45 en
 /// clair, 0.55-0.75 en sombre). Les FONDS décoratifs (tuile à 15 %, pastille
 /// à 10 %) gardent la couleur brute — seul le premier plan est ajusté.
-Color zReadableTypeTint(Color base, {required bool isDark}) {
+///
+/// ## 🔴 CR-IFFD-64 — la fenêtre HSL ne GARANTIT rien, [surface] la garantit
+///
+/// Mesuré sur pièces : la fenêtre de clarté ci-dessus est une bande de
+/// **clarté HSL**, pas de **luminance relative WCAG**. Sur une couleur
+/// **arbitraire** (une couleur de dossier est choisie par l'utilisateur), elle
+/// rend `#FFFF00 → #B3B300` à **2.13:1** et `#FFFFFE → #E5E500` à **1.28:1**
+/// sur thème clair — c'est-à-dire PIRE que la couleur non traitée.
+///
+/// Passer [surface] (la couleur réellement peinte SOUS le premier plan) ajoute
+/// une correction de luminance qui **garantit** [minContrast] sur la couleur
+/// retournée (cf. [zReadableTintOn]).
+///
+/// ⚠️ **Rendu INCHANGÉ sur le jeu fermé des quatre types** : leurs contrastes
+/// mesurés valent 5.28 à 9.59 en clair et 7.49 à 13.00 en sombre — tous
+/// au-dessus de [kZTextMinContrast], donc la correction ne s'y applique pas et
+/// les quatre sorties RVB restent bit-identiques (garde
+/// `cr_iffd64_readable_tint_test.dart`).
+///
+/// ⚠️ `surface == null` ⇒ comportement legacy STRICT, **sans garantie** : la
+/// fonction ne peut pas deviner la surface, et fabriquer une surface de repli
+/// serait coder une couleur en dur (FR-26). Préférer [zReadableTintOn], dont
+/// la surface est REQUISE — et qui préserve en outre les teintes achromatiques
+/// (`#808080` reste gris au lieu de virer au rouge `#7D3636`).
+Color zReadableTypeTint(
+  Color base, {
+  required bool isDark,
+  Color? surface,
+  double minContrast = kZTextMinContrast,
+}) {
   final HSLColor hsl = HSLColor.fromColor(base);
   final double saturation = hsl.saturation < 0.4 ? 0.4 : hsl.saturation;
   final double lightness;
@@ -131,10 +161,13 @@ Color zReadableTypeTint(Color base, {required bool isDark}) {
         ? 0.45 - ((1 - hsl.lightness) * 0.2)
         : (hsl.lightness - 0.1 < 0.25 ? 0.25 : hsl.lightness - 0.1);
   }
-  return hsl
+  final Color placed = hsl
       .withSaturation(saturation)
       .withLightness(lightness.clamp(0.0, 1.0))
       .toColor();
+  final Color? measured = surface;
+  if (measured == null) return placed;
+  return zReadableTintOn(placed, surface: measured, minContrast: minContrast);
 }
 
 /// Carte de flashcard **par défaut** du socle — autonome, sur le modèle
@@ -413,7 +446,16 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     final bool isDark = material.brightness == Brightness.dark;
     // Premier plan teinté LISIBLE (texte/glyphe) — cf. [zReadableTypeTint] :
     // la teinte brute mesurait 2,30:1 sur clair, sous le plancher AA.
-    final Color readable = zReadableTypeTint(primary, isDark: isDark);
+    // CR-IFFD-64 — la SURFACE réellement peinte sous ces premiers plans est
+    // passée : la fenêtre HSL seule ne borne pas le contraste (elle rendait
+    // 2.13:1 sur un jaune). Sur les quatre types de référence la correction ne
+    // mord pas (contrastes mesurés 5.28 à 13.00) : rendu bit-identique.
+    final Color cardSurface = backgroundColor ?? material.scaffoldBackgroundColor;
+    final Color readable = zReadableTypeTint(
+      primary,
+      isDark: isDark,
+      surface: cardSurface,
+    );
     final Radius corner =
         borderRadius ?? ZFlashcardCardReference.cardRadius;
     final BoxDecoration referenceShadow = BoxDecoration(
@@ -447,7 +489,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
             ),
             width: ZFlashcardCardReference.borderWidth,
           ),
-      color: backgroundColor ?? material.scaffoldBackgroundColor,
+      color: cardSurface,
       defaultShadow: referenceShadow,
       // ① Bande d'accent de tête — DÉGRADÉE par type (uni sur l'axe identité
       // ou clé inconnue). Décor : ni geste, ni sémantique — c'est

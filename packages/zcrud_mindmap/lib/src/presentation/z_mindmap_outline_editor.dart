@@ -31,6 +31,17 @@ import 'z_mindmap_view_config.dart';
 /// Callback recevant une forêt `ZMindmapNode` (sauvegarde / changement).
 typedef ZMindmapForestCallback = void Function(List<ZMindmapNode> forest);
 
+/// Constructeur injectable de l'**état vide** de l'éditeur outline (CR-IFFD-67).
+///
+/// Reçoit [onAddRoot] — l'ajout de racine, EXACTEMENT celui de la barre d'outils
+/// — pour que l'état vide substitué reste une vraie affordance et pas un décor.
+/// Fourni ⇒ remplace intégralement l'état vide du socle (priorité **paramètre >
+/// config > référence**).
+typedef ZMindmapOutlineEmptyBuilder = Widget Function(
+  BuildContext context,
+  VoidCallback onAddRoot,
+);
+
 /// Éditeur outline indenté et éditable d'une forêt de cartes mentales.
 ///
 /// Par défaut, crée et possède un [ZMindmapOutlineController] interne (initialisé
@@ -48,6 +59,7 @@ class ZMindmapOutlineEditor extends StatefulWidget {
     this.config = const ZMindmapViewConfig(),
     this.editContentField = true,
     this.editFieldBuilder,
+    this.emptyBuilder,
     this.padding,
     super.key,
   });
@@ -94,6 +106,16 @@ class ZMindmapOutlineEditor extends StatefulWidget {
   /// Les `TextEditingController` stables et la voie d'écriture texte brut restent
   /// inchangés (SM-1) ; l'adaptateur riche écrit un slot AD-4 séparé (`extra`).
   final ZMindmapEditFieldBuilder? editFieldBuilder;
+
+  /// **État vide injectable** (CR-IFFD-67). `null` (défaut) ⇒ état vide du socle :
+  /// illustration + bouton d'ajout CENTRÉ (≥ [ZMindmapViewConfig.minTapTarget]),
+  /// plus les textes de [ZMindmapOutlineLabels] `emptyTitle`/`emptyMessage`/
+  /// `emptyActionLabel` **s'ils sont fournis** (sinon absents de l'arbre, AD-4 —
+  /// aucun libellé imposé par le package, FR-26).
+  ///
+  /// Fourni ⇒ remplace intégralement cet état vide (priorité **paramètre >
+  /// config > référence**).
+  final ZMindmapOutlineEmptyBuilder? emptyBuilder;
 
   /// Marge externe optionnelle de la liste (directionnelle recommandée).
   final EdgeInsetsGeometry? padding;
@@ -171,6 +193,14 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
 
   void _notifyChanged() => widget.onChanged?.call(_controller.forest);
 
+  /// Ajout d'une racine — voie UNIQUE partagée par la barre d'outils ET l'état
+  /// vide (CR-IFFD-67) : deux affordances, un seul chemin de mutation.
+  /// Référence de méthode STABLE (pas une closure recréée à chaque build, SM-1).
+  void _addRoot() {
+    _controller.addRoot();
+    _notifyChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
@@ -181,10 +211,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
           labels: widget.labels,
           config: widget.config,
           theme: theme,
-          onAddRoot: () {
-            _controller.addRoot();
-            _notifyChanged();
-          },
+          onAddRoot: _addRoot,
           onSave: widget.onSave == null
               ? null
               : () => widget.onSave!(_controller.forest),
@@ -197,6 +224,20 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
             listenable: _controller,
             builder: (context, _) {
               final flat = _flatten(_controller.forest);
+              if (flat.isEmpty) {
+                // CR-IFFD-67 ② — une forêt vide ne laisse plus une page blanche
+                // avec une affordance en coin : elle GUIDE vers le premier geste.
+                // Priorité paramètre > config > référence.
+                final injected = widget.emptyBuilder;
+                if (injected != null) return injected(context, _addRoot);
+                return _OutlineEmptyState(
+                  labels: widget.labels,
+                  config: widget.config,
+                  theme: theme,
+                  padding: widget.padding,
+                  onAddRoot: _addRoot,
+                );
+              }
               return ListView.builder(
                 padding: widget.padding,
                 itemCount: flat.length,
@@ -270,6 +311,200 @@ class _OutlineToolbar extends StatelessWidget {
               onTap: onSave!,
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// **État vide** du socle (CR-IFFD-67 ②) : illustration + textes optionnels +
+/// bouton d'ajout CENTRÉ, à la place de la page blanche.
+///
+/// 🔴 **Argumentaire du défaut (CR-56 — « un défaut se juge à ce qu'il donne
+/// SANS réglage »)**, parce que deux exigences se croisent ici :
+/// - FR-26/NFR-S7 interdit qu'un package impose un libellé métier dans une
+///   langue ; on ne peut donc PAS livrer « Aucun nœud » en dur.
+/// - CR-56 interdit qu'un défaut non réglé reproduise le défaut signalé ; rendre
+///   l'état vide *entièrement* absent tant que l'hôte n'injecte rien redonnerait
+///   EXACTEMENT la page blanche que la CR mesure.
+///
+/// Repli retenu : **la structure est toujours rendue, le texte jamais imposé.**
+/// Sans aucune injection, l'hôte obtient une affordance d'ajout **visible,
+/// centrée et actionnable** (illustration + bouton ≥ [ZMindmapViewConfig
+/// .minTapTarget], annoncée par `labels.addRoot` dont le repli est non-nul) —
+/// donc jamais un widget inerte, et pas un mot de français de plus qu'avant.
+/// Chaque ligne de texte (`emptyTitle`, `emptyMessage`, `emptyActionLabel`) n'est
+/// **montée que si l'hôte la fournit** (AD-4) : `null` ⇒ absente de l'arbre.
+///
+/// AD-13 : `EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlign.center`,
+/// cible ≥ 48 dp réellement active (mêmes facteurs d'alignement que
+/// [_OutlineActionButton] — cf. le commentaire CR-IFFD-67 qui y figure).
+class _OutlineEmptyState extends StatelessWidget {
+  const _OutlineEmptyState({
+    required this.labels,
+    required this.config,
+    required this.theme,
+    required this.padding,
+    required this.onAddRoot,
+  });
+
+  final ZMindmapOutlineLabels labels;
+  final ZMindmapViewConfig config;
+  final ZcrudTheme theme;
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback onAddRoot;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final foreground = theme.labelColor ?? scheme.onSurface;
+    // Priorité config > référence (le paramètre `emptyBuilder` court-circuite
+    // tout ce widget en amont — cf. `ZMindmapOutlineEditor.emptyBuilder`).
+    final iconSize = config.emptyIconSize ?? kZMindmapDefaultEmptyIconSize;
+    final title = labels.emptyTitle;
+    final message = labels.emptyMessage;
+
+    return Padding(
+      padding: padding ?? EdgeInsets.zero,
+      child: Align(
+        // AD-13 : centrage directionnel (pas `Alignment.center` nu).
+        alignment: AlignmentDirectional.center,
+        child: SingleChildScrollView(
+          // À fort facteur d'échelle de texte, la colonne peut dépasser la
+          // hauteur disponible : on défile au lieu de déborder (AD-10 — repli,
+          // jamais d'exception de layout).
+          child: Padding(
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: theme.gapL,
+              vertical: theme.gapM,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                // Illustration décorative : ExcludeSemantics — l'information
+                // n'est jamais portée par la seule image (AD-13), le bouton
+                // ci-dessous porte l'annonce.
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.account_tree_outlined,
+                    size: iconSize,
+                    color: foreground,
+                  ),
+                ),
+                if (title != null) ...<Widget>[
+                  SizedBox(height: theme.gapM),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: theme.labelTextStyle ??
+                        textTheme.titleMedium?.copyWith(color: foreground),
+                  ),
+                ],
+                if (message != null) ...<Widget>[
+                  SizedBox(height: theme.gapS),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: theme.hintTextStyle ??
+                        textTheme.bodyMedium?.copyWith(color: foreground),
+                  ),
+                ],
+                SizedBox(height: theme.gapM),
+                _OutlineEmptyAction(
+                  labels: labels,
+                  config: config,
+                  theme: theme,
+                  onTap: onAddRoot,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bouton central de l'état vide : icône **toujours**, texte **seulement si
+/// l'hôte le fournit** ([ZMindmapOutlineLabels.emptyActionLabel]).
+///
+/// Son libellé a11y retombe sur `labels.addRoot` (repli non-nul) : l'action est
+/// la même que celle de la barre d'outils, donc son annonce doit l'être aussi.
+class _OutlineEmptyAction extends StatelessWidget {
+  const _OutlineEmptyAction({
+    required this.labels,
+    required this.config,
+    required this.theme,
+    required this.onTap,
+  });
+
+  final ZMindmapOutlineLabels labels;
+  final ZMindmapViewConfig config;
+  final ZcrudTheme theme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = theme.labelColor ?? scheme.onSurface;
+    final borderColor = theme.fieldBorderColor ?? scheme.outline;
+    final text = labels.emptyActionLabel;
+
+    return Semantics(
+      button: true,
+      label: labels.emptyActionLabel ?? labels.addRoot,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.fromBorderSide(BorderSide(color: borderColor)),
+            borderRadius: BorderRadius.all(theme.radiusM),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: config.minTapTarget,
+              minHeight: config.minTapTarget,
+            ),
+            // Mêmes facteurs qu'en `_OutlineActionButton` : sans eux le bouton
+            // s'approprierait toute la largeur offerte et le plancher tactile
+            // redeviendrait une contrainte inerte (CR-IFFD-67 ①).
+            child: Align(
+              alignment: AlignmentDirectional.center,
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Padding(
+                padding: EdgeInsetsDirectional.symmetric(
+                  horizontal: theme.gapM,
+                ),
+                child: ExcludeSemantics(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.add_box_outlined, color: foreground),
+                      if (text != null) ...<Widget>[
+                        SizedBox(width: theme.gapS),
+                        Flexible(
+                          child: Text(
+                            text,
+                            textAlign: TextAlign.center,
+                            style: theme.labelTextStyle ??
+                                Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(color: foreground),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -536,7 +771,36 @@ class _OutlineActionButton extends StatelessWidget {
             minWidth: config.minTapTarget,
             minHeight: config.minTapTarget,
           ),
-          child: Center(
+          // 🔴 CR-IFFD-67 — `widthFactor`/`heightFactor` OBLIGATOIRES. Sans eux
+          // (`Center` nu, ou `Align` sans facteurs), l'alignement **prend tout le
+          // maximum offert** : dans le `Wrap` des actions de nœud, chaque bouton
+          // mesurait la largeur ENTIÈRE du `Wrap` (mesuré : 720 dp à 720 dp de
+          // viewport, 1200 dp à 1200) et le `Wrap` n'en plaçait qu'UN par ligne —
+          // sept lignes, un nœud de 472 dp de haut.
+          //
+          // Avec les facteurs à 1, l'alignement se dimensionne sur l'icône, puis
+          // le `ConstrainedBox` REMONTE la taille au plancher : le `minTapTarget`
+          // devient la contrainte **réellement active** (48×48), au lieu d'être un
+          // minimum masqué par un maximum pris d'office.
+          //
+          // ⚠️ Même défaut, même correction que
+          // `zcrud_chat/…/z_chat_diffusion_bar.dart` : là aussi la garde « ≥ 48 dp »
+          // passait pour la mauvaise raison. Ici la garde de LARGEUR était vacante
+          // (prouvé : `minWidth: 1` injecté, garde restée VERTE) — voir
+          // `cr_iffd67_action_row_test.dart`, qui mesure désormais la GÉOMÉTRIE
+          // rendue (largeur du bouton + nombre de lignes du `Wrap`).
+          //
+          // ⚠️ Honnêteté de mesure : SEUL `widthFactor` est porteur ici. Mesuré
+          // en R3 — retirer `heightFactor` seul ne change RIEN (le `Wrap` comme
+          // la `Row` de la barre d'outils offrent une hauteur NON bornée, donc
+          // l'alignement se dimensionne déjà sur l'icône). Il est conservé pour
+          // que le bouton reste borné si un futur parent impose une hauteur
+          // (`IntrinsicHeight`, `crossAxisAlignment: stretch`, `SizedBox`) — pas
+          // parce qu'une garde le prouverait aujourd'hui.
+          child: Align(
+            alignment: AlignmentDirectional.center,
+            widthFactor: 1,
+            heightFactor: 1,
             child: ExcludeSemantics(
               child: Icon(icon, color: iconColor),
             ),

@@ -63,6 +63,14 @@ export 'src/domain/z_study_sharing_port.dart';
 // `ZApproachingExam` + `aggregateDailyStudyTasks`, `now` INJECTÉ, exposition à l'app
 // — planification OS app-side, AC5). `ZExam`/`ZReminderTime` NON ré-exportés (le
 // consommateur importe `package:zcrud_exam/…`).
+// CR-IFFD-65 — le hub d'ajout de contenu au RENDU DE RÉFÉRENCE (décision du
+// propriétaire du socle, 2026-08-05) : sections titrées (`ZContentHubSection`),
+// pastille d'identité teintée par entrée, badge de mise en avant TEXTUEL
+// (`badgeLabel` — le détournement de `hint` déclaré par la CR devient inutile),
+// entrées en cartes, chevron RTL-safe, grille à deux colonnes au-delà de 600 lp.
+// La densité d'AVANT reste atteignable (`ZContentHubDensity.compact`, paramètre
+// ET jeton). Valeurs de référence centralisées dans `ZContentHubReference`.
+export 'src/presentation/z_content_hub_reference.dart';
 export 'src/presentation/z_content_hub_sheet.dart';
 // CR-IFFD-47 — carte de flashcard PAR DÉFAUT du socle : widget AUTONOME sur le
 // modèle `ZFlashcard` (accent dérivé d'une clé STABLE, pastille de type, zone de
@@ -87,6 +95,11 @@ export 'src/presentation/z_content_hub_sheet.dart';
 export 'src/presentation/z_default_document_card.dart';
 export 'src/presentation/z_default_exam_card.dart';
 export 'src/presentation/z_default_flashcard_card.dart';
+// CR-IFFD-64 — sixième et dernier rendu par DÉFAUT de la famille : la carte de
+// dossier d'étude, bâtie SUR `ZFolderCard` (la primitive n'est pas remplacée),
+// avec bande d'accent, liseré teinté et un plancher de contraste MESURÉ pour
+// une couleur de dossier ARBITRAIRE (choisie par l'utilisateur).
+export 'src/presentation/z_default_folder_card.dart';
 export 'src/presentation/z_default_mindmap_card.dart';
 export 'src/presentation/z_default_note_card.dart';
 export 'src/presentation/z_exam_editor.dart';
@@ -106,6 +119,10 @@ export 'src/presentation/z_feature_availability.dart';
 // `applyOrder` est TOTAL), et `zMoveUpIndices`/`zMoveDownIndices` (`null` ⇒ bouton
 // ABSENT : le 1er ne remonte pas, le dernier ne descend pas).
 export 'src/presentation/z_flashcard_card_reference.dart';
+// CR-IFFD-64 — contraste WCAG MESURÉ (luminance relative, rapport de
+// contraste, composition d'un aplat semi-transparent) et dérivation de teinte
+// LISIBLE à plancher garanti pour une couleur ARBITRAIRE.
+export 'src/presentation/z_readable_tint.dart';
 export 'src/presentation/z_flashcard_list_view.dart';
 // SU-9 (AC1..AC13, AD-37/AD-43) — flux UI de génération IA : contrôleur pur
 // `ChangeNotifier` (statut ENUM, jeton de fraîcheur, handoff `onGenerated` — AUCUN
@@ -123,6 +140,7 @@ export 'src/presentation/z_flashcard_list_view.dart';
 // neutre du natif lex `FolderCard` sans gestionnaire d'état (AD-2).
 export 'src/presentation/z_folder_card.dart';
 export 'src/presentation/z_folder_card_chrome.dart';
+export 'src/presentation/z_folder_card_reference.dart';
 export 'src/presentation/z_subfolder_item_chrome.dart'
     show ZCountBadge, ZCountBadgeRow, ZCountBadgeSpec;
 export 'src/presentation/z_flashcard_generation_controller.dart';

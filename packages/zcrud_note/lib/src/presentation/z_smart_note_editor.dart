@@ -18,6 +18,22 @@
 /// Preuve exécutable = round-trip d'un corps `'# Titre markdown legacy'` sans
 /// perte (test `z_smart_note_editor_test.dart` › AC5).
 ///
+/// ## 🔴 CR-IFFD-66 — le CANAL DE FOI (défaut MESURÉ, corrigé de façon ADDITIVE)
+///
+/// Un hôte migré double son corps de note : le champ TYPÉ [ZSmartNote.content]
+/// **et** une clé d'[ZSmartNote.extra] qui **fait FOI** à la relecture. L'éditeur
+/// ne remontait que `copyWith(content: ops)` — `extra` étant préservé verbatim,
+/// **la clé de foi restait figée sur l'état d'AVANT l'édition** et la note se
+/// rouvrait sans la modification. **Mesuré** (mapper hôte + éditeur + frappe
+/// réelle) : `content` portait `'… MODIF'`, la relecture rendait `'…'` — perte
+/// **silencieuse**, sans erreur ni champ vide.
+///
+/// ⇒ [ZSmartNoteEditor.faithChannel] (**facultatif**, `null` par défaut) fait
+/// écrire les **DEUX** canaux dans la **même** remontée, depuis les **mêmes** ops.
+/// Un producteur zcrud pur (sans canal doublé) est **strictement inchangé**
+/// (AD-10) — c'est le cas qui rendait le défaut invisible en test, et il porte
+/// désormais sa garde dédiée.
+///
 /// INVARIANTS (AD-2/AD-7, OBJECTIF PRODUIT N°1 / SM-1) :
 /// - **Controller ISOLÉ + place stable** : le [ZFormController] est créé UNE FOIS
 ///   en [State.initState] (seed `{content: note.content}`), disposé en
@@ -37,6 +53,7 @@ import 'package:flutter/widgets.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_markdown/zcrud_markdown.dart';
 
+import '../domain/z_note_faith_channel.dart';
 import '../domain/z_smart_note.dart';
 
 /// Éditeur du corps riche d'une [ZSmartNote] à controller ISOLÉ.
@@ -47,10 +64,13 @@ class ZSmartNoteEditor extends StatefulWidget {
   /// Construit l'éditeur pour [note].
   ///
   /// [onChanged] reçoit `note.copyWith(content: <ops neutres>)` à chaque mutation
-  /// du corps (sens unique). Titre/dossier/extension/extra sont **préservés**.
+  /// du corps (sens unique). Titre/dossier/extension/extra sont **préservés** —
+  /// **sauf** la clé déclarée par [faithChannel], **RE-SYNCHRONISÉE** sur les
+  /// mêmes ops (CR-IFFD-66).
   const ZSmartNoteEditor({
     required this.note,
     required this.onChanged,
+    this.faithChannel,
     super.key,
   });
 
@@ -59,6 +79,19 @@ class ZSmartNoteEditor extends StatefulWidget {
 
   /// Remontée à SENS UNIQUE de la note mise à jour (corps neutre).
   final ValueChanged<ZSmartNote> onChanged;
+
+  /// 🔴 **CR-IFFD-66** — canal d'[ZSmartNote.extra] qui **fait FOI** pour le corps
+  /// chez l'hôte, à tenir en cohérence avec le champ typé.
+  ///
+  /// **`null` par défaut** ⇒ comportement **strictement identique** à avant
+  /// (producteur zcrud pur : rien à doubler — AD-10). Renseigné, chaque remontée
+  /// écrit `content` **et** la clé de foi depuis les **mêmes** ops : les deux ne
+  /// peuvent plus diverger, et une édition ne peut plus être perdue au
+  /// rechargement.
+  ///
+  /// ⚠️ Son `encode` est appelé **à chaque frappe** — cf.
+  /// [ZNoteContentFaithChannel.encode].
+  final ZNoteContentFaithChannel? faithChannel;
 
   @override
   State<ZSmartNoteEditor> createState() => _ZSmartNoteEditorState();
@@ -97,9 +130,17 @@ class _ZSmartNoteEditorState extends State<ZSmartNoteEditor> {
   /// On NE réécrit JAMAIS la tranche (aucune ré-injection) : `copyWith` préserve
   /// titre/dossier/extension/extra, et `normalizeNoteContentOps` (dans `copyWith`)
   /// garde les ops neutres verbatim.
+  ///
+  /// 🔴 **CR-IFFD-66** — quand un [ZSmartNoteEditor.faithChannel] est déclaré, la
+  /// clé de foi est **RE-SYNCHRONISÉE dans la MÊME remontée**, depuis les
+  /// **MÊMES** ops que le champ typé. C'est ce qui rend la divergence
+  /// **structurellement impossible** : il n'existe pas d'instant où l'un est écrit
+  /// et l'autre pas.
   void _onContentChanged() {
     final Object? ops = _form.valueOf(_contentSpec.name);
-    widget.onChanged(widget.note.copyWith(content: ops));
+    final ZSmartNote updated = widget.note.copyWith(content: ops);
+    final ZNoteContentFaithChannel? channel = widget.faithChannel;
+    widget.onChanged(channel == null ? updated : channel.applyTo(updated));
   }
 
   @override

@@ -28,6 +28,9 @@ class ZMindmapOutlineLabels {
     this.save = 'Enregistrer',
     this.labelHint = 'Titre',
     this.contentHint = 'Contenu',
+    this.emptyTitle,
+    this.emptyMessage,
+    this.emptyActionLabel,
   });
 
   /// Libellé a11y du bouton « ajouter un enfant ».
@@ -62,4 +65,28 @@ class ZMindmapOutlineLabels {
 
   /// Hint a11y / placeholder du champ d'édition de `content`.
   final String contentHint;
+
+  /// Titre **visible** de l'état vide (CR-IFFD-67) — `null` par défaut.
+  ///
+  /// 🔴 **Volontairement NULLABLE, sans repli littéral.** Les champs ci-dessus
+  /// portent un repli français parce qu'ils sont d'abord des libellés *a11y*
+  /// (annonce d'un bouton-icône) ; ceux de l'état vide sont du **texte de page**
+  /// affiché tel quel. Un repli en dur y serait un libellé métier codé dans le
+  /// package (FR-26/NFR-S7) et imposerait une langue à tout hôte.
+  ///
+  /// `null` ⇒ la ligne de texte est **absente de l'arbre** (AD-4) — jamais un
+  /// widget inerte, jamais un mot dans une langue non choisie.
+  final String? emptyTitle;
+
+  /// Message **visible** d'accompagnement de l'état vide — `null` ⇒ absent.
+  ///
+  /// Même raison de nullabilité que [emptyTitle].
+  final String? emptyMessage;
+
+  /// Libellé **visible** du bouton central de l'état vide — `null` ⇒ le bouton
+  /// reste présent et actionnable, mais **icône seule** (aucun texte imposé).
+  ///
+  /// Son libellé a11y, lui, n'est jamais vide : il retombe sur [addRoot] (repli
+  /// non-nul), car l'action est exactement la même que celle de la barre d'outils.
+  final String? emptyActionLabel;
 }

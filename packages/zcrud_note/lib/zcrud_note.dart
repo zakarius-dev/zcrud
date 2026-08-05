@@ -71,6 +71,28 @@
 /// `Delta`, AC8/AD-1/AD-7). Cette moitié `presentation/` fait de `zcrud_note` un
 /// package **Flutter** (tests sous `flutter test`) ; le DOMAINE reste PUR-DART.
 ///
+/// ## 🔴 CR-IFFD-66 — `ZNoteContentFaithChannel` : À LIRE SI VOS DONNÉES
+/// PRÉCÈDENT LA MIGRATION
+///
+/// Un hôte migré par *strangler fig* **double** son corps de note : le champ TYPÉ
+/// `ZSmartNote.content` (ops, lisible par un consommateur zcrud pur) **et** une
+/// clé d'`extra` portant son format d'origine, laquelle **FAIT FOI** à la
+/// relecture. `ZSmartNoteEditor` ne remontait que `copyWith(content: ops)` :
+/// **MESURÉ**, la clé de foi restait figée et la note se rouvrait **sans la
+/// modification**, silencieusement.
+///
+/// ⇒ Déclarer `ZSmartNoteEditor.faithChannel` (**facultatif**) fait écrire les
+/// **DEUX** canaux dans la **même** remontée, depuis les **mêmes** ops. Un
+/// producteur zcrud pur (aucun doublage) est **strictement inchangé** — le
+/// paramètre est `null` par défaut, aucune rupture d'API.
+///
+/// ⚠️ Le round-trip `String → ops → String` n'est **pas** fidèle à l'octet
+/// (mesuré sur 46 constructions markdown : **2 %** en octet, **67 %** en tolérant
+/// le `\n` terminal ; cassent notamment le **LaTeX bloc**, la fusion du **saut de
+/// ligne simple**, les lignes vides multiples, les entités HTML). C'est pourquoi
+/// le canal de foi reste nécessaire — et pourquoi il doit être **écrit à chaque
+/// édition**. Détail dans la dartdoc de `ZNoteContentFaithChannel`.
+///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
@@ -78,6 +100,7 @@ export 'src/data/z_note_table_migration.dart'
     show zMigrateNoteTables, zMigrateStickyNote, zUpgradeLegacyNoteContent;
 export 'src/domain/z_note_audio.dart';
 export 'src/domain/z_note_content.dart';
+export 'src/domain/z_note_faith_channel.dart';
 export 'src/domain/z_opaque_note_extension.dart';
 export 'src/domain/z_smart_note.dart' hide ZSmartNoteZcrud;
 export 'src/presentation/z_smart_note_editor.dart' show ZSmartNoteEditor;

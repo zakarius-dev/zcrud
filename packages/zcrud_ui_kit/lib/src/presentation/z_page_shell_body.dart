@@ -52,6 +52,10 @@ class ZPageShellBody extends StatefulWidget {
     this.mode = ZPageAppBarMode.pinned,
     this.tabController,
     this.tabAlignment,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
+    this.tabLabelStyle,
+    this.tabUnselectedLabelStyle,
     super.key,
   }) : assert(
          title is Widget || title is String,
@@ -77,6 +81,10 @@ class ZPageShellBody extends StatefulWidget {
     this.mode = ZPageAppBarMode.pinned,
     this.tabController,
     this.tabAlignment,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
+    this.tabLabelStyle,
+    this.tabUnselectedLabelStyle,
   }) : assert(
          title is Widget || title is String,
          'title doit être un Widget ou un String',
@@ -140,6 +148,24 @@ class ZPageShellBody extends StatefulWidget {
 
   /// Alignement optionnel des onglets (`null` ⇒ défaut Flutter).
   final TabAlignment? tabAlignment;
+
+  /// Typographie du TITRE (**CR-IFFD-63**). Voir
+  /// [ZSearchableAppBar.titleTextStyle] : priorité **paramètre > jeton
+  /// `ZcrudTheme.pageHeaderTitleStyle` > défaut**, **métriques seules** (la
+  /// couleur reste héritée du `foregroundColor` du sliver).
+  final TextStyle? titleTextStyle;
+
+  /// Typographie du SOUS-TITRE (**CR-IFFD-63**). Voir
+  /// [ZSearchableAppBar.subtitleTextStyle].
+  final TextStyle? subtitleTextStyle;
+
+  /// Typographie du libellé d'onglet **SÉLECTIONNÉ** (**CR-IFFD-63**). Voir
+  /// [ZPageScaffold.tabLabelStyle].
+  final TextStyle? tabLabelStyle;
+
+  /// Typographie du libellé d'onglet **NON SÉLECTIONNÉ** (**CR-IFFD-63**). Voir
+  /// [ZPageScaffold.tabUnselectedLabelStyle].
+  final TextStyle? tabUnselectedLabelStyle;
 
   final _ZSearchController? _controller;
 
@@ -219,6 +245,8 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
             widget.subtitle,
             widget.search,
             searching,
+            titleTextStyle: widget.titleTextStyle,
+            subtitleTextStyle: widget.subtitleTextStyle,
           ),
           centerTitle: false,
           actions: _zBuildActions(
@@ -242,7 +270,14 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
       aboveTabBar: widget.aboveTabBar,
       aboveTabBarHeight: widget.aboveTabBarHeight,
       tabBar: _hasTabs
-          ? _zTabBar(widget.tabs!, widget.tabController, widget.tabAlignment)
+          ? _zTabBar(
+              context,
+              widget.tabs!,
+              widget.tabController,
+              widget.tabAlignment,
+              widget.tabLabelStyle,
+              widget.tabUnselectedLabelStyle,
+            )
           : null,
     );
     if (_hasTabs) {
