@@ -2368,11 +2368,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       // ne décrit — une bascule de mise en page au milieu de l'animation, non
       // choisie. Il bascule à mi-course, comme `folderCardFooterBesideMinWidth`
       // (même nature : un point de rupture, pas une dimension).
-      dailyTasksMonthBreakpoint: _lerpNullableDouble(
-        dailyTasksMonthBreakpoint,
-        other.dailyTasksMonthBreakpoint,
-        t,
-      ),
+      dailyTasksMonthBreakpoint: t < 0.5
+          ? dailyTasksMonthBreakpoint
+          : other.dailyTasksMonthBreakpoint,
       // CR-IFFD-65 — chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
       // reste `null`, donc la valeur de RÉFÉRENCE du consommateur n'est JAMAIS
       // matérialisée par une transition de thème (leçon `studyCardBadgeRadius`).

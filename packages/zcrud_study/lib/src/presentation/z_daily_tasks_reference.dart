@@ -85,27 +85,31 @@ abstract final class ZDailyTasksReference {
 
   /// Padding du bandeau (**8 / 4**, directionnel — `daily_tasks_page.dart:147`).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksBandPadding` (`EdgeInsetsGeometry?`).
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksBandPadding` (`EdgeInsetsGeometry?`).
   static const EdgeInsetsGeometry bandPadding =
       EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4);
 
   /// Marge externe d'une cellule de jour (**horizontal 2**, directionnelle —
   /// `daily_tasks_page.dart:164`).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksDayCellMargin`.
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksDayCellMargin`.
   static const EdgeInsetsGeometry dayCellMargin =
       EdgeInsetsDirectional.symmetric(horizontal: 2);
 
   /// Padding interne d'une cellule de jour (**vertical 8**, directionnel —
   /// `daily_tasks_page.dart:166`).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksDayCellPadding`.
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksDayCellPadding`.
   static const EdgeInsetsGeometry dayCellPadding =
       EdgeInsetsDirectional.symmetric(vertical: 8);
 
   /// Rayon d'une cellule de jour (**12** — `daily_tasks_page.dart:178`).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksDayCellRadius` (`Radius?`).
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksDayCellRadius` (`Radius?`).
   static const Radius dayCellRadius = Radius.circular(12);
 
   /// Épaisseur du liseré d'une cellule NON sélectionnée (**1** —
@@ -146,7 +150,8 @@ abstract final class ZDailyTasksReference {
   /// choix-là appartient à l'hôte, qui reçoit la largeur ambiante et formate
   /// lui-même (aucun `DateFormat` dans le socle — cf. FR-26).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksMonthBreakpoint` (`double?`).
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksMonthBreakpoint` (`double?`).
   static const double monthBreakpoint = 600;
 
   /// Graisse de l'intitulé de jour (`bold` — `daily_tasks_page.dart:199`).
@@ -164,7 +169,8 @@ abstract final class ZDailyTasksReference {
   /// Padding d'une ligne de tâche (**12 / 6**, directionnel —
   /// `daily_tasks_page.dart:674`).
   ///
-  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] : `ZcrudTheme.dailyTasksItemPadding`.
+  /// Jeton dédié, POSÉ et lu par [zDailyTasksChromeOf] :
+  /// `ZcrudTheme.dailyTasksItemPadding`.
   static const EdgeInsetsGeometry itemPadding =
       EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6);
 
