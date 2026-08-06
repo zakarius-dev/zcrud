@@ -91,9 +91,20 @@ final RegExp _hardcodedUiString = RegExp(
 ///
 /// 🔴 La liste est assertée **de taille exacte** par la garde de narrowness :
 /// on ne peut pas y ajouter un fichier sans que quelqu'un le voie.
+/// * `z_chat_notebook_reference.dart` — le fichier de RÉFÉRENCE audité du lot γ
+///   (CR-IFFD-72), patron `ZFlashcardCardReference`. Ses littéraux ne sont pas
+///   des libellés : ce sont des **clés de capacité** (`'mindmap'`,
+///   `'flashcards'`, …) et un **motif de format** legacy
+///   (`'dd/MM/yyyy HH:mm:ss'`, dont le mot `yyyy` déclenche le détecteur). Aucun
+///   n'est affiché ni annoncé — le seul texte de ce fichier, l'état « déjà
+///   généré », y est une **clé** (`kZChatLabelGenerated`) résolue par
+///   `zChatLabel`, exactement comme partout ailleurs. L'exemption est
+///   NOMINATIVE, par nom de fichier exact : un littéral déplacé d'un pixel hors
+///   de ce fichier rougit (prouvé par injection R3).
 const List<String> _kLiteralExemptFiles = <String>[
   'z_chat_labels.dart',
   'z_chat_seam_failure.dart',
+  'z_chat_notebook_reference.dart',
 ];
 
 final RegExp _wordBearingLiteral = RegExp(r'[A-Za-zÀ-ÖØ-öø-ÿ]{4,}');
@@ -373,9 +384,10 @@ void main() {
     });
 
     test('🔬 les exemptions de littéral restent NOMINATIVES et étroites', () {
-      // Une exemption qui grossit sans bruit vide la garde. Deux fichiers, pas
-      // un de plus — et tous deux justifiés au point de déclaration.
-      expect(_kLiteralExemptFiles, hasLength(2),
+      // Une exemption qui grossit sans bruit vide la garde. TROIS fichiers, pas
+      // un de plus — et tous trois justifiés au point de déclaration (le
+      // troisième au lot γ, CR-IFFD-72 : le fichier de référence audité).
+      expect(_kLiteralExemptFiles, hasLength(3),
           reason: '🔴 une exemption a été AJOUTÉE au grep de littéraux. '
               'Justifiez-la au point de déclaration et mettez ce compte à '
               'jour — délibérément, jamais par accident.');

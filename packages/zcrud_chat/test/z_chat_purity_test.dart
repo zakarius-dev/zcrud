@@ -86,6 +86,35 @@ bool _isController(String path) => _norm(path).endsWith(_controllerPath);
 bool _isRenderFile(String path) =>
     _renderDirs.any((String d) => _norm(path).contains(d));
 
+/// Les règles de [_hardcoded] qui portent sur une **COULEUR**, et elles seules.
+///
+/// 🔴 C'est la granularité de l'exemption : le fichier de référence audité du
+/// lot γ est exempté de CES DEUX règles, **jamais** des règles AD-13
+/// (directionnalité) ni de `TextStyle(`. Une exemption « de fichier » en bloc
+/// aurait laissé entrer un `Positioned(left:)` dans le seul fichier que
+/// personne ne relit ligne à ligne.
+const Set<String> _colorRules = <String>{r'\bColors\.', r'\bColor\(0x'};
+
+/// Fichiers de RÉFÉRENCE audités, exemptés des seules règles de [_colorRules].
+///
+/// ⚠️ **Exception FR-26 ENCADRÉE** (arbitrage owner, 2026-08-04, étendu au chat
+/// par le lot γ / CR-IFFD-72). Les trois conditions sont tenues :
+/// 1. **centralisation** — c'est le fichier unique de sa famille ;
+/// 2. **remplaçabilité** — chaque couleur a un jeton (`ZcrudTheme.chat*`) et un
+///    paramètre (`ZChatNotebookSkin`), priorité paramètre > jeton > référence ;
+/// 3. **exemption NOMINATIVE** — par nom de fichier exact, jamais un motif,
+///    jamais un répertoire. Le même mécanisme que `_kLiteralExemptFiles`
+///    (`z_chat_render_guard_test.dart`), et pour la même raison : une exemption
+///    qui grossit sans bruit vide la garde, donc son cardinal est asserté.
+///
+/// 🔴 Ce que l'exemption **ne couvre pas**, et qui est mesuré ailleurs : que les
+/// couleurs y soient *justifiées* (non dérivables d'un `ColorScheme`). Quatre
+/// des sept familles du relevé legacy ont été REFUSÉES à ce titre —
+/// cf. `z_chat_notebook_reference.dart` et sa garde dédiée.
+const List<String> _kColorExemptFiles = <String>[
+  'z_chat_notebook_reference.dart',
+];
+
 /// Motifs de style / couleur codés en dur (FR-26) et de directionnalité
 /// interdite (AD-13).
 const Map<String, String> _hardcoded = <String, String>{
@@ -233,16 +262,30 @@ void main() {
   group('🔴 AUCUNE couleur ni style codés en dur (FR-26, AD-13)', () {
     test('grep NÉGATIF sur toutes les sources de `lib/`', () {
       final List<String> offenders = <String>[];
+      int colorScanned = 0;
       for (final MapEntry<String, List<String>> e in strippedLib().entries) {
+        final bool colorExempt = _kColorExemptFiles
+            .any((String f) => _norm(e.key).endsWith(f));
         for (int i = 0; i < e.value.length; i++) {
           for (final MapEntry<String, String> rule in _hardcoded.entries) {
-            if (RegExp(rule.key).hasMatch(e.value[i])) {
-              offenders.add('${e.key}:${i + 1} (${rule.value}) '
-                  '${e.value[i].trim()}');
+            final bool isColorRule = _colorRules.contains(rule.key);
+            if (!RegExp(rule.key).hasMatch(e.value[i])) continue;
+            if (isColorRule && colorExempt) {
+              colorScanned++;
+              continue;
             }
+            offenders.add('${e.key}:${i + 1} (${rule.value}) '
+                '${e.value[i].trim()}');
           }
         }
       }
+      // 🔴 NON-VACUITÉ de l'exemption : si le fichier de référence cessait de
+      // porter la moindre couleur, l'exemption deviendrait décorative et
+      // personne ne s'en apercevrait.
+      expect(colorScanned, greaterThan(0),
+          reason: '🔴 aucune couleur EXEMPTÉE n\'a été vue : soit le fichier de '
+              'référence a perdu ses couleurs, soit le chemin d\'exemption ne '
+              'passe plus par là — dans les deux cas, retirez l\'exemption.');
       expect(
         offenders,
         isEmpty,
@@ -285,6 +328,46 @@ void main() {
               reason: '🔴 FAUX POSITIF : `$rule` accuse `$ok`');
         }
       }
+    });
+
+    test('🔬 l\'exemption de COULEUR est NOMINATIVE, ÉTROITE et non pendante',
+        () {
+      // 1. Cardinal asserté : une exemption ne grossit jamais par accident.
+      expect(_kColorExemptFiles, hasLength(1),
+          reason: '🔴 une exemption a été AJOUTÉE à la garde anti-couleurs. '
+              'L\'exception FR-26 vaut PAR FAMILLE et exige un fichier de '
+              'référence UNIQUE : justifiez-la au point de déclaration et '
+              'mettez ce compte à jour, délibérément.');
+      // 2. Elle désigne un fichier qui EXISTE (une exemption pendante est une
+      //    porte ouverte sur un nom que plus personne ne relit).
+      final Iterable<String> paths = strippedLib().keys.map(_norm);
+      for (final String f in _kColorExemptFiles) {
+        expect(paths.any((String p) => p.endsWith(f)), isTrue,
+            reason: '🔴 exemption PENDANTE : `$f` n\'existe plus.');
+      }
+      // 3. Elle est NOMINATIVE, pas un motif : un voisin du MÊME répertoire,
+      //    au nom proche, n'en bénéficie PAS.
+      bool exempt(String path) =>
+          _kColorExemptFiles.any((String f) => _norm(path).endsWith(f));
+      expect(
+          exempt('/x/lib/src/presentation/view/z_chat_notebook_reference.dart'),
+          isTrue);
+      for (final String voisin in <String>[
+        '/x/lib/src/presentation/view/z_chat_notebook_skin.dart',
+        '/x/lib/src/presentation/view/z_chat_notebook_view.dart',
+        '/x/lib/src/presentation/view/z_chat_notebook_reference_extra.dart',
+        '/x/lib/src/presentation/render/z_chat_notebook_reference.dart.bak',
+      ]) {
+        expect(exempt(voisin), isFalse,
+            reason: '🔴 l\'exemption attrape `$voisin` : elle n\'est plus '
+                'nominative, c\'est un motif.');
+      }
+      // 4. Elle ne couvre QUE la couleur : les règles AD-13 restent opposables
+      //    au fichier exempté lui-même.
+      expect(_colorRules, hasLength(2));
+      expect(_hardcoded.keys.toSet().difference(_colorRules), hasLength(5),
+          reason: '🔴 le partage couleur / non-couleur a bougé : cinq règles '
+              'AD-13+`TextStyle` doivent rester HORS exemption.');
     });
   });
 

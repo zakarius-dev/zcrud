@@ -452,6 +452,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.pageHeaderSubtitleStyle,
     this.pageHeaderTabSelectedLabelStyle,
     this.pageHeaderTabUnselectedLabelStyle,
+    this.chatBubbleWidthFactor,
+    this.chatRequestBubbleRadius,
+    this.chatResponseBubbleRadius,
+    this.chatBubbleShowAuthorAvatar,
+    this.chatBubbleShowAuthorName,
+    this.chatBubbleShowTimestamp,
+    this.chatToolAccentColor,
+    this.chatCapabilityAccents,
+    this.chatBusyPalette,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -1200,6 +1209,53 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// inchangé**.
   final TextStyle? pageHeaderTabUnselectedLabelStyle;
 
+  // ── Rendu du CHAT — surface « notebook » (lot γ, CR-IFFD-72) ──────────────
+  //
+  // 🔴 Ces jetons sont le NIVEAU 2 de la chaîne `paramètre > jeton >
+  // référence` de `ZChatNotebookSkin` (`zcrud_chat`). `null` des deux côtés
+  // reste `null` à travers `lerp` : la valeur de RÉFÉRENCE du consommateur
+  // n'est jamais matérialisée par une transition de thème (même invariant que
+  // `studyCardBadgeRadius`).
+  //
+  // ⚠️ Les trois jetons de COULEUR sont la contrepartie de l'exception FR-26
+  // encadrée accordée à `ZChatNotebookReference` : sans eux, la condition
+  // « remplaçable par jeton » ne serait pas tenue. Ils ne portent, eux, aucune
+  // valeur littérale.
+
+  /// Fraction de largeur d'une bulle de message (**CR-IFFD-72**).
+  /// `null` ⇒ référence IFFD (`0.95` en notebook).
+  final double? chatBubbleWidthFactor;
+
+  /// Rayon de la bulle de **requête**. `null` ⇒ référence (12).
+  final Radius? chatRequestBubbleRadius;
+
+  /// Rayon de la bulle de **réponse**. `null` ⇒ référence, qui vaut elle-même
+  /// `null` : le legacy ne pose aucun `shape` sur la réponse.
+  final Radius? chatResponseBubbleRadius;
+
+  /// Avatar d'auteur affiché dans une bulle ? `null` ⇒ référence (`false`).
+  final bool? chatBubbleShowAuthorAvatar;
+
+  /// Nom d'auteur affiché dans une bulle ? `null` ⇒ référence (`false`).
+  final bool? chatBubbleShowAuthorName;
+
+  /// Horodatage affiché dans une bulle ? `null` ⇒ référence (`true`).
+  final bool? chatBubbleShowTimestamp;
+
+  /// Teinte d'identité des affordances d'outils du chat. `null` ⇒ référence.
+  final Color? chatToolAccentColor;
+
+  /// Accents **par capacité** du notebook (`mindmap`, `flashcards`, …).
+  ///
+  /// 🔴 Ce jeton ne remplace que le canal **chromatique** : les canaux textuel
+  /// et de forme de `ZChatNotebookCapabilityStyle` ne sont pas thémables, sans
+  /// quoi un thème pourrait rétablir le défaut « information portée par la
+  /// seule couleur ».
+  final Map<String, Color>? chatCapabilityAccents;
+
+  /// Séquence de teintes de l'indicateur d'occupation. `null` ⇒ référence.
+  final List<Color>? chatBusyPalette;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -1427,6 +1483,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     TextStyle? pageHeaderSubtitleStyle,
     TextStyle? pageHeaderTabSelectedLabelStyle,
     TextStyle? pageHeaderTabUnselectedLabelStyle,
+    double? chatBubbleWidthFactor,
+    Radius? chatRequestBubbleRadius,
+    Radius? chatResponseBubbleRadius,
+    bool? chatBubbleShowAuthorAvatar,
+    bool? chatBubbleShowAuthorName,
+    bool? chatBubbleShowTimestamp,
+    Color? chatToolAccentColor,
+    Map<String, Color>? chatCapabilityAccents,
+    List<Color>? chatBusyPalette,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -1580,6 +1645,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     pageHeaderTabUnselectedLabelStyle:
         pageHeaderTabUnselectedLabelStyle ??
         this.pageHeaderTabUnselectedLabelStyle,
+    chatBubbleWidthFactor:
+        chatBubbleWidthFactor ?? this.chatBubbleWidthFactor,
+    chatRequestBubbleRadius:
+        chatRequestBubbleRadius ?? this.chatRequestBubbleRadius,
+    chatResponseBubbleRadius:
+        chatResponseBubbleRadius ?? this.chatResponseBubbleRadius,
+    chatBubbleShowAuthorAvatar:
+        chatBubbleShowAuthorAvatar ?? this.chatBubbleShowAuthorAvatar,
+    chatBubbleShowAuthorName:
+        chatBubbleShowAuthorName ?? this.chatBubbleShowAuthorName,
+    chatBubbleShowTimestamp:
+        chatBubbleShowTimestamp ?? this.chatBubbleShowTimestamp,
+    chatToolAccentColor: chatToolAccentColor ?? this.chatToolAccentColor,
+    chatCapabilityAccents:
+        chatCapabilityAccents ?? this.chatCapabilityAccents,
+    chatBusyPalette: chatBusyPalette ?? this.chatBusyPalette,
   );
 
   @override
@@ -2126,6 +2207,48 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.pageHeaderTabUnselectedLabelStyle,
         t,
       ),
+      // CR-IFFD-72 — jetons du rendu de chat. Chaque helper est
+      // null-PRÉSERVANT : `null`↔`null` reste `null`, donc la valeur de
+      // RÉFÉRENCE de `ZChatNotebookSkin` n'est jamais matérialisée par une
+      // transition de thème.
+      chatBubbleWidthFactor:
+          chatBubbleWidthFactor == null && other.chatBubbleWidthFactor == null
+          ? null
+          : _lerpNullableDouble(
+              chatBubbleWidthFactor,
+              other.chatBubbleWidthFactor,
+              t,
+            ),
+      chatRequestBubbleRadius: _lerpNullableRadius(
+        chatRequestBubbleRadius,
+        other.chatRequestBubbleRadius,
+        t,
+      ),
+      chatResponseBubbleRadius: _lerpNullableRadius(
+        chatResponseBubbleRadius,
+        other.chatResponseBubbleRadius,
+        t,
+      ),
+      // Un BOOLÉEN, une TABLE et une SÉQUENCE sont discrets : ni demi-avatar,
+      // ni demi-palette. Ils basculent au milieu de la transition.
+      chatBubbleShowAuthorAvatar: t < 0.5
+          ? chatBubbleShowAuthorAvatar
+          : other.chatBubbleShowAuthorAvatar,
+      chatBubbleShowAuthorName: t < 0.5
+          ? chatBubbleShowAuthorName
+          : other.chatBubbleShowAuthorName,
+      chatBubbleShowTimestamp: t < 0.5
+          ? chatBubbleShowTimestamp
+          : other.chatBubbleShowTimestamp,
+      chatToolAccentColor: Color.lerp(
+        chatToolAccentColor,
+        other.chatToolAccentColor,
+        t,
+      ),
+      chatCapabilityAccents: t < 0.5
+          ? chatCapabilityAccents
+          : other.chatCapabilityAccents,
+      chatBusyPalette: t < 0.5 ? chatBusyPalette : other.chatBusyPalette,
     );
   }
 }

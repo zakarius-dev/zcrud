@@ -199,6 +199,15 @@ const String kZChatLabelCorpusAll = '${kZChatLabelPrefix}corpusAll';
 /// atteignable une seule fois, avant le premier choix.
 const String kZChatLabelSettingAuto = '${kZChatLabelPrefix}settingAuto';
 
+/// 🔴 État « cette capacité a **déjà** produit un contenu » — le canal TEXTUEL
+/// des capacités du notebook (lot γ, CR-IFFD-72).
+///
+/// Chez IFFD, cet état ne se signale que par la **couleur** d'une icône
+/// (`chatbot_conversation_screen.dart:1720-1889`) : un utilisateur daltonien, ou
+/// un thème qui écrase la teinte, perd l'information. Cette clé est le canal
+/// non chromatique que `ZChatNotebookCapabilityStyle` rend **obligatoire**.
+const String kZChatLabelGenerated = '${kZChatLabelPrefix}generated';
+
 /// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
 
@@ -337,6 +346,7 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelCorpusScope,
   kZChatLabelCorpusAll,
   kZChatLabelSettingAuto,
+  kZChatLabelGenerated,
   kZChatLabelConversations,
   kZChatLabelLoadingConversations,
   kZChatLabelConversationsError,
@@ -418,6 +428,7 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelCorpusScope: 'Portée documentaire',
   kZChatLabelCorpusAll: 'Tous les corpus',
   kZChatLabelSettingAuto: 'Automatique',
+  kZChatLabelGenerated: 'Déjà généré',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
   kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',

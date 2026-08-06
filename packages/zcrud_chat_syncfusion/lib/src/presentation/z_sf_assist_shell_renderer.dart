@@ -37,13 +37,21 @@
 /// `messages:`, `composer: AssistComposer.builder(...)`, `placeholderBehavior`,
 /// `placeholderBuilder` (`chatbot_conversation_screen.dart:3417-3436`). On
 /// adapte ces quatre membres plus `messageContentBuilder` — par lequel le
-/// contenu repart vers le socle. Cinq membres, pas un de plus.
+/// contenu repart vers le socle. Cinq membres.
 ///
-/// Délibérément laissés à l'hôte (`AssistMessageSettings`,
-/// `AssistMessageToolbarSettings`, `messageHeaderBuilder`,
-/// `messageAvatarBuilder`, `responseLoadingBuilder`, `onToolbarItemSelected`,
-/// `actionButton`) : ce sont des choix d'**apparence et d'actions produit**, et
-/// FR-26 interdit au socle de décider d'une couleur ou d'un libellé.
+/// 🔴 **Le lot γ (CR-IFFD-72) en ajoute DEUX, et seulement deux** :
+/// `requestMessageSettings` / `responseMessageSettings`. Ce ne sont pas des
+/// membres « de plus » choisis par le socle — ce sont **exactement** ceux que le
+/// legacy IFFD règle (`chatbot_conversation_screen.dart:3568-3594`), et ils ne
+/// sont posés que si l'hôte fournit un [ZSfAssistShellRenderer.notebookSkin].
+/// Sans skin, ils valent `const AssistMessageSettings()` — le défaut de
+/// Syncfusion, donc l'arbre d'avant.
+///
+/// Délibérément laissés à l'hôte (`AssistMessageToolbarSettings`,
+/// `messageHeaderBuilder`, `messageAvatarBuilder`, `responseLoadingBuilder`,
+/// `onToolbarItemSelected`, `actionButton`) : ce sont des choix d'**apparence et
+/// d'actions produit**, et FR-26 interdit au socle de décider d'une couleur ou
+/// d'un libellé.
 ///
 /// 🔴 **`data:` n'est jamais le corps rendu.** Syncfusion exige un `String` pour
 /// `AssistMessage.data` ; on lui donne le **résumé accessible du kernel**, et le
@@ -91,6 +99,7 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
     this.composerBuilder,
     this.placeholderBuilder,
     this.accessibleTextResolver,
+    this.notebookSkin,
   });
 
   /// Constructeur du composeur (`AssistComposer.builder`) — l'hôte décide de
@@ -118,6 +127,54 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
   /// autre à l'utilisateur : la divergence exacte que CHAT-3b avait supprimée.
   /// `null` ⇒ le résolveur du scope, sinon le résumé du kernel seul.
   final ZAccessibleTextResolver? accessibleTextResolver;
+
+  /// 🔴 **Skin de RÉFÉRENCE du notebook — OPT-IN** (lot γ, CR-IFFD-72).
+  ///
+  /// `null` (le défaut) ⇒ **aucun** réglage de bulle n'est posé : les deux
+  /// `AssistMessageSettings` restent ceux de Syncfusion, à l'octet près, et
+  /// l'arbre d'un hôte passif est celui d'avant ce lot. La garde
+  /// `test/z_sf_notebook_skin_test.dart` le mesure sur le widget monté (les
+  /// deux réglages sont `== const AssistMessageSettings()` champ par champ).
+  ///
+  /// Renseigné, il apporte **exactement** les paramètres que le legacy IFFD
+  /// fige autour de `SfAIAssistView`
+  /// (`chatbot_conversation_screen.dart:3568-3594`) : la fraction de largeur, le
+  /// rayon de la bulle de **requête**, et le masquage avatar/nom. Rien d'autre —
+  /// la géométrie fine de la bulle appartient à Syncfusion et n'est pas
+  /// mesurable depuis le dépôt legacy.
+  ///
+  /// ⚠️ Il n'y a **pas** de rayon de réponse : le legacy ne pose `shape:` que
+  /// sur la requête. En inventer un serait une valeur que personne n'a mesurée.
+  ///
+  /// ⚠️ Le **format d'horodatage** n'est pas repris : le motif legacy
+  /// (`dd/MM/yyyy HH:mm:ss`) est un format EU figé, insensible à la locale.
+  /// Le publier dans la référence sert l'hôte qui veut la parité stricte ;
+  /// l'imposer ici reproduirait le défaut « libellé en dur » une couche plus
+  /// bas. `timestampFormat` reste donc nul, et la coquille suit la locale.
+  ///
+  /// Le skin est un objet **pur** de `zcrud_chat` : la chaîne
+  /// `paramètre > jeton > référence` est arbitrée là-bas, sans Syncfusion. Ce
+  /// fichier ne fait que **mapper** le résultat.
+  final ZChatNotebookSkin? notebookSkin;
+
+  /// Traduit un style résolu en réglages Syncfusion. `shape` n'est posé que si
+  /// un rayon existe (AD-4 : rien de nul n'entre dans l'arbre).
+  AssistMessageSettings _settings({
+    required ZChatNotebookStyle style,
+    required Radius? radius,
+  }) => AssistMessageSettings(
+    widthFactor: style.bubbleWidthFactor,
+    showAuthorAvatar: style.showAuthorAvatar,
+    showAuthorName: style.showAuthorName,
+    showTimestamp: style.showTimestamp,
+    shape: radius == null
+        ? null
+        // AD-13 : rayon DIRECTIONNEL — le legacy écrit `BorderRadius.circular`,
+        // symétrique par accident, jamais par décision.
+        : RoundedRectangleBorder(
+            borderRadius: BorderRadiusDirectional.all(radius),
+          ),
+  );
 
   @override
   Widget? buildShell(BuildContext context, ZChatShellRenderRequest request) {
@@ -149,8 +206,20 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
         ),
     ];
 
+    // 🔴 `null` ⇒ on passe LE MÊME objet que le défaut de `SfAIAssistView`
+    // (`const AssistMessageSettings()`), donc l'arbre est inchangé pour un hôte
+    // passif. Le résoudre systématiquement aurait matérialisé la référence IFFD
+    // chez tout le monde — l'inverse de « strictement additif ».
+    final ZChatNotebookStyle? style = notebookSkin?.resolve(context);
+
     return SfAIAssistView(
       messages: assistMessages,
+      requestMessageSettings: style == null
+          ? const AssistMessageSettings()
+          : _settings(style: style, radius: style.requestBubbleRadius),
+      responseMessageSettings: style == null
+          ? const AssistMessageSettings()
+          : _settings(style: style, radius: style.responseBubbleRadius),
       composer: composerBuilder == null
           ? null
           : AssistComposer.builder(builder: composerBuilder!),

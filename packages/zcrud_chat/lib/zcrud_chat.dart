@@ -131,6 +131,13 @@ export 'src/presentation/view/z_chat_message_tile.dart';
 // exposées. Les capacités notebook (mindmap, flashcards, variantes, export,
 // enregistrer en note) s'exécutent par `runAction(ZChatCustomAction(...))` —
 // aucun nouveau chemin d'exécution.
+// Lot γ (CR-IFFD-72) — le rendu de RÉFÉRENCE du notebook : un fichier de
+// valeurs audité (exception FR-26 encadrée, exemption NOMINATIVE dans les deux
+// gardes de source) et sa chaîne de résolution `paramètre > jeton > référence`.
+// 🔴 Aucune vue ne les monte : le skin est OPT-IN, consommé par le backend de
+// coquille auquel l'hôte le passe. L'arbre d'un hôte passif ne bouge pas.
+export 'src/presentation/view/z_chat_notebook_reference.dart';
+export 'src/presentation/view/z_chat_notebook_skin.dart';
 export 'src/presentation/view/z_chat_notebook_view.dart';
 export 'src/presentation/view/z_chat_settings_sheet.dart';
 export 'src/presentation/z_chat_controller.dart';
