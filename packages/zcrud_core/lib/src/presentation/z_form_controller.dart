@@ -34,13 +34,15 @@ class ZFormController extends ChangeNotifier {
   ///
   /// [initialValues] pré-remplit des tranches (identité stable dès la
   /// construction). [visibleFields] fixe l'ensemble structurel initial ; à
-  /// défaut il reprend les clés de [initialValues] (ou vide). Les tranches
+  /// défaut il reprend les clés de [initialValues] (ou vide) — **amorçage de
+  /// repli**, remplacé par l'ordre canonique du schéma dès qu'un
+  /// `DynamicEdition` est monté (voir [hasExplicitVisibleFields]). Les tranches
   /// demandées ultérieurement via [fieldListenable] sont créées paresseusement
   /// et mémoïsées (voir [fieldListenable]).
   ZFormController({
     Map<String, Object?>? initialValues,
     List<String>? visibleFields,
-  }) {
+  }) : hasExplicitVisibleFields = visibleFields != null {
     if (initialValues != null) {
       initialValues.forEach((name, value) {
         _slices[name] = ValueNotifier<Object?>(value);
@@ -53,6 +55,23 @@ class ZFormController extends ChangeNotifier {
       List<String>.unmodifiable(initial),
     );
   }
+
+  /// `true` ssi l'hôte a fourni `visibleFields` **à la construction** (CR-DODLP
+  /// F1). C'est la SEULE information qui distingue un ensemble structurel
+  /// **voulu par l'hôte** d'un amorçage de repli dérivé des clés de
+  /// `initialValues` — le constructeur la perdait, ce qui rendait l'ordre
+  /// d'affichage tributaire de l'ordre de la Map de persistance,
+  /// **silencieusement**.
+  ///
+  /// `DynamicEdition` la lit pour décider s'il doit AMORCER `visibleFields` sur
+  /// l'ordre canonique de son schéma (`fields`) : `false` ⇒ le schéma fait foi ;
+  /// `true` ⇒ l'hôte est autoritaire, rien n'est réamorcé.
+  ///
+  /// Fixée une fois pour toutes : un [setVisibleFields] ultérieur (par l'hôte ou
+  /// par le formulaire lui-même) ne la modifie PAS — sinon la première écriture
+  /// du formulaire s'auto-déclarerait « explicite » et neutraliserait tout
+  /// réamorçage sur changement de schéma.
+  final bool hasExplicitVisibleFields;
 
   /// Registre `name → tranche` (identité stable ; jamais recréé pour un `name`).
   final Map<String, ValueNotifier<Object?>> _slices =

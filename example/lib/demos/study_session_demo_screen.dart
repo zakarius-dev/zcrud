@@ -40,6 +40,8 @@ ZReviewMode zReviewModeForKind(ZSessionModeKind kind) {
       return ZReviewMode.spaced;
     case ZSessionModeKind.test:
       return ZReviewMode.whiteExam;
+    case ZSessionModeKind.cramming:
+      return ZReviewMode.cramming;
   }
 }
 

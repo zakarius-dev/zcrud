@@ -32,6 +32,7 @@ import 'package:zcrud_core/zcrud_core.dart'
 import 'package:zcrud_responsive/zcrud_responsive.dart'
     show ZAdaptiveGrid, ZDefaultReorderRenderer;
 
+import 'z_content_hub_launcher.dart';
 import 'z_reorder_ids.dart';
 import 'z_study_tools_section_spec.dart';
 
@@ -632,7 +633,17 @@ class _ZStudySection extends StatelessWidget {
     ZcrudTheme theme, {
     Widget? trailingCollapse,
   }) {
-    final addAction = spec.addAction;
+    // **Lot 2** — commande du `+` : paramètre de l'hôte > hub en portée >
+    // ABSENT. `addOpensContentHub == false` (défaut) ⇒ `spec.addAction` tel
+    // quel : AUCUNE lecture d'`InheritedWidget`, aucun chemin nouveau, rendu
+    // strictement antérieur.
+    //
+    // 🔴 La résolution du hub est **non dépendante** (`ZContentHubScope.openerOf`
+    // → `getInheritedWidgetOfExactType`) : cet en-tête ne s'inscrit PAS comme
+    // dépendant du scope. Un hôte qui recompose son launcher à chaque frame ne
+    // reconstruit donc AUCUNE section (SM-1, mesuré par garde).
+    final VoidCallback? addAction = spec.addAction ??
+        (spec.addOpensContentHub ? ZContentHubScope.openerOf(context) : null);
     final Widget title = Text(
       spec.title,
       textAlign: TextAlign.start,

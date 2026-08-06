@@ -364,6 +364,29 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// recalcul structurel : sans elle, rien ne change par rapport à E3-4).
   bool _hasDerivedVisibility = false;
 
+  /// **CR-DODLP F1** — `true` si ce formulaire doit AMORCER `visibleFields` sur
+  /// l'**ordre canonique du schéma** ([DynamicEdition.fields]).
+  ///
+  /// Le piège corrigé : `ZFormController` amorce `visibleFields` sur
+  /// `initialValues.keys` quand l'hôte ne le fournit pas. Migrer en passant le
+  /// `toMap()` d'un modèle faisait donc dépendre l'ENSEMBLE **et l'ORDRE** des
+  /// champs affichés de l'ordre de la Map de persistance — sans aucune erreur :
+  /// un champ du schéma absent de la Map n'était jamais rendu, et les champs
+  /// rendus l'étaient dans un ordre arbitraire.
+  ///
+  /// Deux gardes, toutes deux nécessaires :
+  /// - `!controller.hasExplicitVisibleFields` : un hôte qui a fourni
+  ///   `visibleFields` reste **autoritaire** (ensemble ET ordre intacts) — c'est
+  ///   aussi l'échappatoire documentée pour piloter la composition à la main ;
+  /// - `fields.isNotEmpty` : un formulaire sans catalogue n'a **rien** de
+  ///   canonique à dire ; il ne doit pas EFFACER l'ensemble visible d'un autre
+  ///   écrivain (AD-10, repli plutôt qu'écrasement).
+  ///
+  /// Coût nul pour SM-1 : ce gate n'intervient QUE dans la voie structurelle
+  /// (`initState` / changement de controller ou de schéma), jamais par frappe.
+  bool get _shouldSeedCanonicalOrder =>
+      widget.fields.isNotEmpty && !widget.controller.hasExplicitVisibleFields;
+
   @override
   void initState() {
     super.initState();
@@ -377,10 +400,12 @@ class _DynamicEditionState extends State<DynamicEdition> {
       _collapsed,
     ]);
     // Amorçage : calcule la visibilité initiale depuis les valeurs du controller,
-    // la baseline (persisted) et le contexte (uniquement s'il existe des
-    // conditions — sinon on respecte l'ensemble visible fourni par l'hôte, compat
-    // ascendante ; une condition `context`/`persisted` seule doit aussi amorcer).
-    if (widget.manageVisibility && (_hasConditions || _hasDerivedVisibility)) {
+    // la baseline (persisted) et le contexte. Trois déclencheurs — conditions,
+    // visibilité dérivée, et (CR-DODLP F1) absence de `visibleFields` explicite,
+    // auquel cas le SCHÉMA fait foi. Un hôte qui a fourni `visibleFields` reste
+    // autoritaire (compat ascendante stricte).
+    if (widget.manageVisibility &&
+        (_hasConditions || _hasDerivedVisibility || _shouldSeedCanonicalOrder)) {
       _recomputeVisibility();
     }
   }
@@ -401,7 +426,10 @@ class _DynamicEditionState extends State<DynamicEdition> {
           _collapsed,
         ]);
       }
-      if (widget.manageVisibility && (_hasConditions || _hasDerivedVisibility)) {
+      if (widget.manageVisibility &&
+          (_hasConditions ||
+              _hasDerivedVisibility ||
+              _shouldSeedCanonicalOrder)) {
         _recomputeVisibility();
       }
       return;

@@ -81,7 +81,7 @@ void main() {
     return (kinds: kinds, queues: queues);
   }
 
-  group('AC7 — les 3 options : ACTIONNÉES, pas seulement présentes', () {
+  group('AC7 — les 4 options : ACTIONNÉES, pas seulement présentes', () {
     testWidgets('🔴 « Apprendre +N » TAPÉE ⇒ onStart reçoit learnNew ET la file '
         'des jamais-apprises', (tester) async {
       final cards = <ZFlashcard>[_card('a'), _card('b'), _card('c')];
@@ -139,6 +139,82 @@ void main() {
 
       expect(opened, equals(1), reason: '🔴 le dialog n\'est pas ouvert');
       expect(spy.kinds, equals(<ZSessionModeKind>[ZSessionModeKind.test]));
+    });
+
+    testWidgets('🔴 « Bachotage » TAPÉE ⇒ onStart reçoit cramming ET le CORPUS '
+        'ENTIER (pas une catégorie SRS)', (tester) async {
+      // 🔴 Le point d'entrée manquant : le mode `cramming` était exécutable
+      // (`zSessionRuntimeForMode` : `list || cramming => linear`) mais AUCUN
+      // sélecteur n'y menait. On assert ce que le callback REÇOIT — pas la
+      // présence de la tuile.
+      //
+      // Le corpus mélange délibérément les trois états SRS : jamais-apprise,
+      // due, apprise-non-due. Le bachotage doit les prendre TOUTES — s'il
+      // renvoyait `categories.due` ou `learnBatch`, ce test rougirait.
+      final cards = <ZFlashcard>[_card('neuve'), _card('due'), _card('future')];
+      final srsById = zIndexSrsById(<ZRepetitionInfo>[
+        _due('due', at.subtract(const Duration(days: 2))),
+        _due('future', at.add(const Duration(days: 9))),
+      ]);
+
+      final spy = await pump(tester, cards: cards, srsById: srsById);
+
+      await tester.tap(find.byKey(ZSessionModeSelector.crammingKey));
+      await tester.pump();
+
+      expect(spy.kinds, equals(<ZSessionModeKind>[ZSessionModeKind.cramming]));
+      expect(
+        spy.queues.single.map((c) => c.id).toList(),
+        equals(<String>['neuve', 'due', 'future']),
+        reason: '🔴 le bachotage ne porte PAS sur le corpus entier, ou son '
+            'ordre d\'entrée n\'est pas préservé (un `shuffle()` dans le '
+            '`build()` rendrait ce widget non déterministe — AD-14).',
+      );
+    });
+
+    testWidgets('🔴 « Bachotage » ne consomme AUCUN budget : `batchSize` ne le '
+        'borne pas (60 cartes ⇒ 60 reçues, pas 30)', (tester) async {
+      // Anti-copier-coller : si la file du bachotage était dérivée de
+      // `learnBatch` (ou passée par `_batch`), elle serait plafonnée à 30 comme
+      // « Apprendre +N » — et l'apprenant qui veut bachoter tout son dossier en
+      // perdrait la moitié EN SILENCE.
+      final cards = <ZFlashcard>[for (var i = 0; i < 60; i++) _card('c$i')];
+
+      final spy = await pump(
+        tester,
+        cards: cards,
+        srsById: const <String, ZRepetitionInfo>{},
+      );
+
+      await tester.tap(find.byKey(ZSessionModeSelector.crammingKey));
+      await tester.pump();
+
+      expect(spy.queues.single, hasLength(60));
+    });
+
+    testWidgets('🔴 le mode que le bachotage désigne est LINÉAIRE — donc SANS '
+        'aucun seam d\'écriture SRS (AD-33/AD-34)', (tester) async {
+      // 🔴 Une garde qui ne vérifierait que « onStart reçoit `cramming` » serait
+      // satisfaite d'un point d'entrée qui mène à un runtime SRS. Ce que le
+      // membre PROMET est un parcours **sans effet sur la planification** : on
+      // le confronte donc à la TABLE DE PROD (`zSessionRuntimeForMode`), la
+      // seule voie qui désigne un runtime.
+      //
+      // ⚠️ La traduction `ZSessionModeKind → ZReviewMode` (`zReviewModeForKind`)
+      // vit dans `zcrud_study`, qui dépend de CE package : elle ne peut pas être
+      // appelée d'ici (le cycle serait interdit par AD-1). On assert donc le
+      // maillon aval, qui est celui qui porte l'invariant.
+      expect(
+        zSessionRuntimeForMode(ZReviewMode.cramming),
+        ZSessionRuntimeKind.linear,
+        reason: '🔴 `cramming` ne serait plus servi par `ZLinearSessionState` : '
+            'le point d\'entrée du sélecteur mènerait à un runtime qui PEUT '
+            'écrire du SRS — exactement la porte dérobée qu\'AD-34 interdit.',
+      );
+      expect(
+        zSessionRuntimeForMode(ZReviewMode.cramming),
+        isNot(ZSessionRuntimeKind.srsEngine),
+      );
     });
 
     testWidgets('🔴 le lot par défaut est 30 : 60 jamais-apprises ⇒ EXACTEMENT '
@@ -247,9 +323,36 @@ void main() {
 
       expect(find.byKey(ZSessionModeSelector.learnKey), findsNothing);
       expect(find.byKey(ZSessionModeSelector.reviewKey), findsNothing);
+      // 🔴 « Bachotage » aussi : bachoter un dossier VIDE n'a aucun sens, et le
+      // patron AD-45 exige l'ABSENCE, jamais une tuile grisée qui démarrerait
+      // une session sur une file vide.
+      expect(find.byKey(ZSessionModeSelector.crammingKey), findsNothing);
       // « Test » est TOUJOURS là (elle ouvre le dialog, elle ne démarre rien).
       expect(find.byKey(ZSessionModeSelector.testKey), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('🔴 corpus NON vide mais entièrement HORS catégories ⇒ seul le '
+        'bachotage reste (avec « Test »)', (tester) async {
+      // Discriminant : une carte apprise et due PLUS TARD n'alimente ni
+      // « Apprendre », ni « À réviser ». Si le bachotage était (par recopie)
+      // conditionné à une catégorie SRS, il disparaîtrait ici — alors que c'est
+      // EXACTEMENT le cas d'usage du mode (« je veux réviser quand même,
+      // sans toucher à mon planning »).
+      final cards = <ZFlashcard>[_card('a')];
+      final srsById = zIndexSrsById(<ZRepetitionInfo>[
+        _due('a', at.add(const Duration(days: 10))),
+      ]);
+
+      final spy = await pump(tester, cards: cards, srsById: srsById);
+
+      expect(find.byKey(ZSessionModeSelector.learnKey), findsNothing);
+      expect(find.byKey(ZSessionModeSelector.reviewKey), findsNothing);
+      expect(find.byKey(ZSessionModeSelector.crammingKey), findsOneWidget);
+
+      await tester.tap(find.byKey(ZSessionModeSelector.crammingKey));
+      await tester.pump();
+      expect(spy.queues.single.map((c) => c.id).toList(), equals(<String>['a']));
     });
 
     testWidgets('🔴 AUCUNE carte due ⇒ « À réviser » ABSENTE (jamais grisée)',
@@ -335,6 +438,11 @@ void main() {
       'zcrud.study.mode.learnNew': 'L10N_LEARN',
       'zcrud.study.mode.review': 'L10N_REVIEW',
       'zcrud.study.mode.test': 'L10N_TEST',
+      // 🔴 4ᵉ option (point d'entrée « bachotage ») — ÉTEND cette énumération,
+      // jamais une garde parallèle (AC14). C'est précisément le motif su-5
+      // (« une tuile corrigée, 3 laissées cassées ») : une tuile neuve ajoutée
+      // SANS être portée ici serait la seule non gardée du sélecteur.
+      'zcrud.study.mode.cramming': 'L10N_CRAMMING',
       'zcrud.study.streak': 'L10N_STREAK',
       'zcrud.study.mastery.bad': 'L10N_BAD',
       'zcrud.study.mastery.good': 'L10N_GOOD',
@@ -369,7 +477,7 @@ void main() {
       // composant, sous `zcrud.session.progress`.
     });
 
-    testWidgets('SÉLECTEUR — les 3 options ET le badge portent un '
+    testWidgets('SÉLECTEUR — les 4 options ET le badge portent un '
         'Semantics(label:) issu de ZcrudLabels (valeur EXACTE)', (tester) async {
       final cards = <ZFlashcard>[_card('neuf'), _card('due')];
       final srsById = zIndexSrsById(<ZRepetitionInfo>[
@@ -394,12 +502,13 @@ void main() {
         ),
       );
 
-      // 🔴 ÉNUMÉRATION : les 3 tuiles + le badge. su-5 a corrigé UNE tuile et
+      // 🔴 ÉNUMÉRATION : les 4 tuiles + le badge. su-5 a corrigé UNE tuile et
       // laissé 3 autres cassées — ici, aucune ne peut être oubliée.
       final expected = <ValueKey<String>, String>{
         ZSessionModeSelector.learnKey: 'L10N_LEARN',
         ZSessionModeSelector.reviewKey: 'L10N_REVIEW',
         ZSessionModeSelector.testKey: 'L10N_TEST',
+        ZSessionModeSelector.crammingKey: 'L10N_CRAMMING',
         ZStreakBadge.badgeKey: 'L10N_STREAK',
       };
 
@@ -537,7 +646,7 @@ void main() {
       }
     });
 
-    testWidgets('les cibles tactiles des 3 options sont >= 48 dp (AD-13)',
+    testWidgets('les cibles tactiles des 4 options sont >= 48 dp (AD-13)',
         (tester) async {
       final cards = <ZFlashcard>[_card('neuf'), _card('due')];
       final srsById = zIndexSrsById(<ZRepetitionInfo>[
@@ -550,6 +659,7 @@ void main() {
         ZSessionModeSelector.learnKey,
         ZSessionModeSelector.reviewKey,
         ZSessionModeSelector.testKey,
+        ZSessionModeSelector.crammingKey,
       ]) {
         final size = tester.getSize(find.byKey(key));
         expect(

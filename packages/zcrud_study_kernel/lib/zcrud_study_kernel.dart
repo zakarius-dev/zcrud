@@ -94,8 +94,19 @@ export 'src/domain/z_review_mode.dart';
 // `sectionOrders` (canal persisté). Fonction pure, aucune extension générée.
 export 'src/domain/z_section_key.dart';
 export 'src/domain/z_session_candidate.dart';
+// Ports NEUTRES `ZStudyDocumentRef` / `ZStudyNoteRef` (option C, arbitrage
+// owner) — la voie typée `.documents(…)`/`.notes(…)` de `ZStudyToolsSectionSpec`
+// manque parce que les arêtes `zcrud_study → zcrud_document`/`→ zcrud_note`
+// n'existent pas (AD-1, absence GELÉE par
+// `zcrud_study/test/presentation/cr_iffd48_parity_guard_test.dart`). Le contrat
+// est donc défini ICI et implémenté côté satellite — précédents EXACTS
+// `ZSessionCandidate` et `ZApproachingExam`. Surface pur-Dart, zéro import,
+// zéro codegen (aucune extension générée) ⇒ exportés SANS `hide`.
+// Hors surface flashcard ⇒ classés au `hide` de `zcrud_flashcard` (règle D3).
+export 'src/domain/z_study_document_ref.dart';
 export 'src/domain/z_study_folder.dart' hide ZStudyFolderZcrud;
 export 'src/domain/z_study_folder_hierarchy.dart';
+export 'src/domain/z_study_note_ref.dart';
 // ES-2.8 (FR-S11) — `ZStudyPodcast` (`ZEntity` + `ZExtensible`) : l'extension
 // GÉNÉRÉE `ZStudyPodcastZcrud` est masquée (règle (h) — son `copyWith`/`toMap`
 // généré remettrait `extra`/`extension` aux défauts → perte silencieuse H3).

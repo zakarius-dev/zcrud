@@ -184,6 +184,10 @@ Future<ZStudyFolderDetail> pumpDetail(
   bool extendBody = false,
   bool extendBodyBehindAppBar = false,
   String? initialSelectedSubfolderId,
+  // **Lot 2** — `null` ⇒ DÉFAUT DE PRODUCTION (aucun hub branché) : le harnais
+  // ne fabrique JAMAIS de launcher, sans quoi la garde « sans slot, l'arbre est
+  // identique » mesurerait un chemin déjà branché.
+  ZContentHubLauncher? contentHubLauncher,
   // CR-IFFD-43 — `null` ⇒ le DÉFAUT DE PRODUCTION s'applique (le harnais ne
   // recopie jamais un défaut : une garde qui mesure « quel placement par
   // défaut » doit mesurer celui du socle).
@@ -236,6 +240,7 @@ Future<ZStudyFolderDetail> pumpDetail(
     extendBody: extendBody,
     extendBodyBehindAppBar: extendBodyBehindAppBar,
     initialSelectedSubfolderId: initialSelectedSubfolderId,
+    contentHubLauncher: contentHubLauncher,
     subfolderNavPlacement:
         subfolderNavPlacement ?? kProductionDefaultNavPlacement,
     aboveTabViews: aboveTabViews,

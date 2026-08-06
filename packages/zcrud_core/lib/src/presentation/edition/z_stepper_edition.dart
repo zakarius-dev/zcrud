@@ -63,9 +63,11 @@ import '../z_form_controller.dart';
 import 'dynamic_edition.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
+import 'z_step_index_store.dart';
 import 'z_stepper_config.dart';
 import 'z_validator_compiler.dart';
 
+export 'z_step_index_store.dart';
 export 'z_stepper_config.dart';
 
 /// Descripteur **présentation** d'une étape : un titre + le sous-ensemble de
@@ -90,6 +92,8 @@ class ZEditionStep {
     this.subtitle,
     this.nestedSteps,
     this.nestedConfig,
+    this.condition,
+    this.optional = false,
   });
 
   /// Titre affiché de l'étape (clé l10n ou littéral — résolu côté hôte).
@@ -119,6 +123,45 @@ class ZEditionStep {
   /// Son `validateOnNext` est **indépendant** de celui du parent.
   final ZStepperConfig? nestedConfig;
 
+  /// Condition d'**EXISTENCE** de l'étape (lot G1+). `null` (défaut) ⇒ l'étape
+  /// est toujours là — comportement historique **strictement inchangé**.
+  ///
+  /// ## Le besoin, nommé
+  ///
+  /// Un formulaire multi-étapes avancé **branche** : le mode de cargaison
+  /// choisi à l'étape 1 décide si l'étape « conteneurs » existe (cas réel
+  /// DODLP `cargaison_stepper_form`). Jusqu'ici, seuls les **CHAMPS** étaient
+  /// conditionnels (`ZFieldSpec.condition`) : une étape dont tous les champs
+  /// disparaissaient restait **présente et vide**, comptée dans le « k/N » et
+  /// traversée par la navigation. L'hôte n'avait qu'un recours — recomposer
+  /// lui-même sa `List<ZEditionStep>` à chaque frappe, donc reconstruire le
+  /// stepper entier (exactement ce que SM-1 interdit).
+  ///
+  /// ## Ce que la condition gouverne
+  ///
+  /// Une étape dont la condition est **fausse** est **absente** : pas rendue,
+  /// pas comptée dans le total, non atteignable par « suivant »/tap, non
+  /// validée par le gate, et ses champs ne sont pas dans la fenêtre.
+  ///
+  /// 🔴 Le mécanisme **réutilise `ZCondition`** — l'arbre déjà utilisé par les
+  /// champs — et son évaluateur : aucun second langage de condition n'est
+  /// introduit. Les champs de garde référencés sont abonnés **nommément**
+  /// (SM-1 : une frappe sur un champ non-garde ne recalcule rien).
+  final ZCondition? condition;
+
+  /// Étape **OPTIONNELLE** (lot G1+) : le gate `validateOnNext` ne s'y applique
+  /// pas. Défaut `false` ⇒ comportement historique inchangé.
+  ///
+  /// Besoin nommé : les formulaires longs ont des étapes « pièces jointes » /
+  /// « commentaires » qu'un utilisateur doit pouvoir **traverser sans rien
+  /// saisir**, sans pour autant relâcher le gate des étapes obligatoires — ce
+  /// que `ZStepperConfig.validateOnNext: false` ferait globalement, tout ou
+  /// rien.
+  ///
+  /// ⚠️ Ne dispense PAS de la validation à la **soumission** (E3-6) : c'est un
+  /// assouplissement de la NAVIGATION, pas de la validité des données.
+  final bool optional;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -130,7 +173,9 @@ class ZEditionStep {
           icon == other.icon &&
           subtitle == other.subtitle &&
           listEquals(nestedSteps, other.nestedSteps) &&
-          nestedConfig == other.nestedConfig;
+          nestedConfig == other.nestedConfig &&
+          condition == other.condition &&
+          optional == other.optional;
 
   @override
   int get hashCode => Object.hash(
@@ -141,12 +186,15 @@ class ZEditionStep {
         subtitle,
         nestedSteps == null ? null : Object.hashAll(nestedSteps!),
         nestedConfig,
+        condition,
+        optional,
       );
 
   @override
   String toString() => 'ZEditionStep(title: $title, fields: $fields, '
       'icon: $icon, subtitle: $subtitle, '
-      'nested: ${nestedSteps?.length ?? 0})';
+      'nested: ${nestedSteps?.length ?? 0}, '
+      'conditional: ${condition != null}, optional: $optional)';
 }
 
 /// Constructeur d'un widget de champ d'étape. Reçoit le [autovalidateMode]
@@ -185,8 +233,21 @@ class ZStepperEdition extends StatefulWidget {
     this.nested = false,
     this.onNestedWindowChanged,
     this.revealTrigger,
+    this.stepStore,
+    this.formId,
     super.key,
   });
+
+  /// Seam de **reprise** : persiste/restaure l'étape courante (lot G1+).
+  /// `null` (défaut) ⇒ aucune persistance, comportement inchangé.
+  ///
+  /// Même patron que `DynamicEdition.collapseStore` — un hôte branche le même
+  /// stockage pour les deux, et le cœur n'en dépend pas (AD-1).
+  final ZStepIndexStore? stepStore;
+
+  /// Clé de portée opaque du formulaire pour [stepStore] (`null` ⇒ portée
+  /// « globale »). Ignoré si [stepStore] est `null`.
+  final String? formId;
 
   /// Contrôleur **unique** détenant l'état (créé/possédé par l'hôte ; jamais
   /// recréé ici, jamais un par étape/niveau).
@@ -303,12 +364,42 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// (`null` = pas encore remontée ⇒ on retombe sur le calcul structurel initial).
   List<String>? _childContribution;
 
-  int get _lastStep => widget.steps.length - 1;
+  /// Étapes **EFFECTIVES** : celles dont la [ZEditionStep.condition] est
+  /// satisfaite, dans l'ordre déclaré. Recalculées UNIQUEMENT quand un champ de
+  /// garde change (SM-1) — jamais à chaque frappe.
+  ///
+  /// 🔴 Tout le reste de l'état raisonne sur CETTE liste, jamais sur
+  /// `widget.steps` : un index d'étape est donc toujours un index EFFECTIF.
+  /// C'est ce qui rend l'absence d'une étape indistinguable, pour la
+  /// navigation, le « k/N » et le gate, d'une étape jamais déclarée.
+  List<ZEditionStep> _effective = const <ZEditionStep>[];
+
+  List<ZEditionStep> get _steps => _effective;
+
+  /// Tic structurel bumpé quand l'ENSEMBLE des étapes effectives change — le
+  /// chrome le observe au même titre que l'index courant (canal STRUCTUREL,
+  /// jamais une tranche de valeur).
+  late final ValueNotifier<int> _stepsTick = ValueNotifier<int>(0);
+
+  /// Recalcule les étapes effectives. Rend `true` si l'ensemble a CHANGÉ.
+  bool _recomputeEffective() {
+    final List<ZEditionStep> next = <ZEditionStep>[
+      for (final ZEditionStep s in widget.steps)
+        if (s.condition == null ||
+            evaluateZCondition(s.condition!, widget.controller.valueOf))
+          s,
+    ];
+    final bool changed = !listEquals(next, _effective);
+    _effective = next;
+    return changed;
+  }
+
+  int get _lastStep => _steps.length - 1;
 
   ZStepperConfig get _config => widget.config;
 
   /// `true` si au moins une étape porte un sous-stepper imbriqué.
-  bool get _hasNesting => widget.steps.any((s) => s.nestedSteps != null);
+  bool get _hasNesting => _steps.any((s) => s.nestedSteps != null);
 
   /// **Mode « pilotage racine/nesting »** : ce stepper (racine avec nesting, ou
   /// lui-même imbriqué) gère la fenêtre = union du chemin actif, et rend ses
@@ -320,7 +411,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   @override
   void initState() {
     super.initState();
-    final start = widget.initialStep.clamp(0, _lastStep < 0 ? 0 : _lastStep);
+    _recomputeEffective();
+    final start = _resolveStartStep();
     _currentStep = ValueNotifier<int>(start);
     _reveal = ValueNotifier<bool>(false);
     _childRevealTick = ValueNotifier<int>(0);
@@ -334,8 +426,41 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   Listenable _mergeStructural() => Listenable.merge(<Listenable?>[
         _currentStep,
         _reveal,
+        _stepsTick,
         widget.controller.visibleFields,
       ]);
+
+  /// Étape de DÉPART : reprise persistée si un [ZStepIndexStore] est branché et
+  /// rend un index exploitable, sinon [ZStepperEdition.initialStep]. Bornée
+  /// dans tous les cas.
+  ///
+  /// AD-10 — un store d'hôte qui lève ou qui rend un index hors bornes ne fait
+  /// PAS échouer le montage : on retombe sur `initialStep`.
+  int _resolveStartStep() {
+    final int max = _lastStep < 0 ? 0 : _lastStep;
+    int? resumed;
+    final ZStepIndexStore? store = widget.stepStore;
+    if (store != null) {
+      try {
+        resumed = store.loadStepIndex(widget.formId);
+      } catch (_) {
+        resumed = null;
+      }
+    }
+    if (resumed != null && resumed >= 0 && resumed <= max) return resumed;
+    return widget.initialStep.clamp(0, max);
+  }
+
+  /// Persiste l'étape courante si un store est branché (jamais bloquant).
+  void _persistStep(int index) {
+    final ZStepIndexStore? store = widget.stepStore;
+    if (store == null) return;
+    try {
+      store.saveStepIndex(widget.formId, index);
+    } catch (_) {
+      // Une persistance fautive ne casse pas la navigation (AD-10).
+    }
+  }
 
   @override
   void didUpdateWidget(ZStepperEdition oldWidget) {
@@ -345,6 +470,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       _rebuildIndexes();
       _validatorCache.clear();
       _bindStepperGuards();
+    }
+    if (!identical(oldWidget.steps, widget.steps)) {
+      _bindStepperGuards();
+      if (_recomputeEffective()) _onEffectiveStepsChanged();
     }
     if (controllerChanged) {
       _structural = _mergeStructural();
@@ -370,6 +499,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
     _guardListenables.clear();
     _currentStep.dispose();
+    _stepsTick.dispose();
     _reveal.dispose();
     _childRevealTick.dispose();
     super.dispose();
@@ -379,7 +509,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
 
   /// Specs (dans l'ordre déclaré de l'étape) des champs connus de l'étape [i].
   List<ZFieldSpec> _stepSpecs(int i) => <ZFieldSpec>[
-        for (final name in widget.steps[i].fields)
+        for (final name in _steps[i].fields)
           if (_specByName[name] != null) _specByName[name]!,
       ];
 
@@ -398,7 +528,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// Fenêtre directe (compat E3-5) des champs visibles de l'étape [i].
-  List<String> _windowFor(int i) => _visibleDirectOf(widget.steps[i]);
+  List<String> _windowFor(int i) => _visibleDirectOf(_steps[i]);
 
   /// Calcul **structurel** récursif de la fenêtre = union du chemin actif à
   /// partir de [steps]/[index], en supposant chaque nested à sa sous-étape 0.
@@ -420,7 +550,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   List<String> _contribution() {
     final i = _currentStep.value.clamp(0, _lastStep < 0 ? 0 : _lastStep);
     final base = _windowFor(i);
-    final nested = widget.steps[i].nestedSteps;
+    final nested = _steps[i].nestedSteps;
     if (nested == null) return base;
     final childPart = _childContribution ?? _initialUnion(nested, 0);
     return <String>[...base, ...childPart];
@@ -471,7 +601,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
     if (_driving) {
       // Racine avec nesting : seul écrivain — pose l'union initiale du chemin.
-      widget.controller.setVisibleFields(_initialUnion(widget.steps, start));
+      widget.controller.setVisibleFields(_initialUnion(_steps, start));
       return;
     }
     // LEGACY (aucun nesting) : comportement E3-5 exact.
@@ -515,12 +645,21 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       l.removeListener(_onGuardChanged);
     }
     _guardListenables.clear();
-    if (!_driving) return;
     final conditions = <ZCondition?>[
+      // Conditions de CHAMP : uniquement en mode pilotage (en LEGACY, c'est
+      // `DynamicEdition` qui gère la fenêtre — inchangé).
+      if (_driving)
+        for (final step in widget.steps)
+          for (final name in step.fields)
+            if (_specByName[name]?.condition != null)
+              _specByName[name]!.condition,
+      // Conditions d'ÉTAPE : dans TOUS les modes — c'est le stepper, et lui
+      // seul, qui décide de l'existence d'une étape. Sans cet abonnement, une
+      // étape conditionnelle n'apparaîtrait qu'au prochain rebuild fortuit.
       for (final step in widget.steps)
-        for (final name in step.fields)
-          if (_specByName[name]?.condition != null) _specByName[name]!.condition,
+        if (step.condition != null) step.condition,
     ];
+    if (conditions.isEmpty) return;
     for (final g in zGuardFieldsOf(conditions)) {
       final l = widget.controller.fieldListenable(g);
       l.addListener(_onGuardChanged);
@@ -528,7 +667,33 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
   }
 
-  void _onGuardChanged() => _publishWindow();
+  void _onGuardChanged() {
+    final bool changed = _recomputeEffective();
+    if (changed) {
+      _onEffectiveStepsChanged();
+      return;
+    }
+    if (_driving) _publishWindow();
+  }
+
+  /// L'ensemble des étapes effectives vient de changer : borner l'étape
+  /// courante, republier la fenêtre, et réveiller le chrome par le canal
+  /// STRUCTUREL.
+  ///
+  /// 🔴 Bornage, pas remise à zéro : si l'étape qui disparaît est APRÈS la
+  /// courante, l'utilisateur ne doit rien sentir ; si c'est la dernière et
+  /// qu'on y était, on recule d'un cran plutôt que de rejeter à l'étape 0 (ce
+  /// qui ferait perdre le contexte de saisie).
+  void _onEffectiveStepsChanged() {
+    final int max = _lastStep < 0 ? 0 : _lastStep;
+    if (_currentStep.value > max) _currentStep.value = max;
+    if (_driving || widget.nested) {
+      _publishWindow();
+    } else {
+      _syncWindow(_currentStep.value);
+    }
+    _stepsTick.value = _stepsTick.value + 1;
+  }
 
   void _onRevealTrigger() {
     _reveal.value = true;
@@ -578,8 +743,16 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// Gate de l'étape courante : en mode `_driving`, valide l'**union** du chemin
   /// actif (parent direct + sous-étape active du nested — AC12) ; en LEGACY,
   /// valide la fenêtre directe (E3-5 exact).
-  bool _validateGate(int i) =>
-      _driving ? _validateNames(_contribution()) : _validateStep(i);
+  bool _validateGate(int i) {
+    // Une étape OPTIONNELLE ne bloque jamais la navigation (le gate global
+    // reste strict pour les autres — c'est tout l'intérêt face à
+    // `validateOnNext: false`, qui relâche TOUT).
+    if (_isOptional(i)) return true;
+    return _driving ? _validateNames(_contribution()) : _validateStep(i);
+  }
+
+  bool _isOptional(int i) =>
+      i >= 0 && i <= _lastStep && _steps[i].optional;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
@@ -596,6 +769,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       _syncWindow(target);
       _currentStep.value = target;
     }
+    _persistStep(target);
     widget.onStepChanged?.call(target);
   }
 
@@ -648,6 +822,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         return;
       }
       for (var k = current + 1; k < target; k++) {
+        if (_isOptional(k)) continue;
         if (!_validateStep(k)) {
           _revealBlock();
           return;
@@ -661,7 +836,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.steps.isEmpty) return const SizedBox.shrink();
+    if (_steps.isEmpty) return const SizedBox.shrink();
     // Chrome scellé sur les canaux STRUCTURELS uniquement (SM-1/AC11).
     return ListenableBuilder(
       listenable: _structural,
@@ -671,8 +846,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         final reveal = _reveal.value;
         final indicator = _StepIndicator(
           index: index,
-          total: widget.steps.length,
-          steps: widget.steps,
+          total: _steps.length,
+          steps: _steps,
           config: _config,
           onStepTap: _config.allowStepTap ? _jumpTo : null,
         );
@@ -732,7 +907,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// Si l'étape porte un sous-stepper (AC11), il est rendu **après** les champs
   /// directs sur le MÊME controller (imbriqué, mode « sans fenêtre »).
   Widget _stepContent(int index, bool reveal) {
-    final step = widget.steps[index];
+    final step = _steps[index];
     final mode = reveal
         ? AutovalidateMode.always
         : AutovalidateMode.onUserInteraction;

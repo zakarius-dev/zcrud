@@ -70,8 +70,25 @@ export 'src/domain/z_study_sharing_port.dart';
 // entrées en cartes, chevron RTL-safe, grille à deux colonnes au-delà de 600 lp.
 // La densité d'AVANT reste atteignable (`ZContentHubDensity.compact`, paramètre
 // ET jeton). Valeurs de référence centralisées dans `ZContentHubReference`.
+// **Lot 2** — le hub cesse d'être « disponible mais jamais composé » (grep
+// négatif MONTRÉ dans la dartdoc de `z_content_hub_launcher.dart`) :
+// `ZContentHubLauncher` porte sa configuration en VALEUR, `ZContentHubScope`
+// la partage entre le `+` d'app-bar (`ZStudyFolderDetail.contentHubLauncher`)
+// et le `+` d'une section (`ZStudyToolsSectionSpec.addOpensContentHub`). Slots
+// absents ⇒ arbre STRICTEMENT identique. Le socle n'ajoute AUCUN libellé.
+export 'src/presentation/z_content_hub_launcher.dart';
 export 'src/presentation/z_content_hub_reference.dart';
 export 'src/presentation/z_content_hub_sheet.dart';
+// **Lot 4** — la vue des tâches du jour : le kernel ES-2.7
+// (`aggregateDailyStudyTasks`, `ZDueCardsTask`, `ZExamTask`) n'avait AUCUNE
+// UI — seuls les examens étaient rendus (`ZExamRemindersSection`, appelée avec
+// `dueCount: 0`). `ZDailyTasksView` est un CORPS composable (aucun `Scaffold`) :
+// bandeau de 7 jours, liste virtualisée, état vide INJECTÉ, dispatch sur
+// `task.kind` avec `default` OBLIGATOIRE (famille ouverte AD-4), horloge `now`
+// INJECTÉE. Valeurs de référence dans `ZDailyTasksReference` — sans AUCUNE
+// couleur littérale (aucune exemption FR-26 demandée).
+export 'src/presentation/z_daily_tasks_reference.dart';
+export 'src/presentation/z_daily_tasks_view.dart';
 // CR-IFFD-47 — carte de flashcard PAR DÉFAUT du socle : widget AUTONOME sur le
 // modèle `ZFlashcard` (accent dérivé d'une clé STABLE, pastille de type, zone de
 // balises affichée MÊME VIDE en appel à l'action, énoncé tronqué, puce de pied
@@ -218,6 +235,38 @@ export 'src/presentation/z_study_mindmap_section.dart';
 export 'src/presentation/z_study_card_reference.dart';
 export 'src/presentation/z_study_document_card.dart';
 export 'src/presentation/z_study_note_card.dart';
+// ── Lot 1 « étude » — l'ÉCRAN DE SESSION DE RÉVISION ASSEMBLÉ ──────────────
+//
+// Le moteur était entièrement porté (`zcrud_session` : 3 runtimes, swiper,
+// saisie, notation, résumé) mais l'ASSEMBLAGE n'existait qu'en démo
+// (`example/lib/demos/study_session_demo_screen.dart`) — donc chaque hôte réel
+// l'aurait réécrit, avec ses pièges. Ce lot le fait monter dans le socle, en
+// TROIS types de responsabilité disjointe :
+//
+//  * `ZStudySessionView`     — le CORPS composable (aucun `Scaffold`/route) ;
+//  * `ZStudySessionHost`     — le DÉTENTEUR du runtime (via la table unique
+//                              `zSessionRuntimeForMode`, jamais redécidée), qui
+//                              REÇOIT son `ZSessionReviewer` injecté ;
+//  * `ZStudySessionScaffold` — l'enveloppe de page MINCE sur `ZPageScaffold`.
+//
+// 🔴 Cet écran vit dans `zcrud_study` et non dans `zcrud_session` : la garde
+// `zcrud_session/test/presentation/z_widgets_purity_test.dart` interdit
+// `ZSessionReviewer` et les trois moteurs dans SA présentation (widgets purs).
+// Détenir un runtime y est donc structurellement impossible — c'est la
+// frontière que ce lot respecte, pas qu'il contourne.
+//
+// Les valeurs de rendu sont centralisées dans `ZStudySessionReference`
+// (patron `ZStudyCardReference`) — ZÉRO couleur littérale : rôles `ColorScheme`
+// seuls, aucune exemption FR-26 demandée.
+//
+// `zReviewModeForKind` (table `ZSessionModeKind → ZReviewMode`) monte ici
+// depuis la démo : sans elle, chaque hôte la réécrirait.
+export 'src/presentation/z_study_session_host.dart';
+export 'src/presentation/z_study_session_mode.dart';
+export 'src/presentation/z_study_session_reference.dart';
+export 'src/presentation/z_study_session_scaffold.dart';
+export 'src/presentation/z_study_session_slices.dart';
+export 'src/presentation/z_study_session_view.dart';
 export 'src/presentation/z_study_tools_item_card.dart';
 export 'src/presentation/z_study_tools_page.dart';
 export 'src/presentation/z_study_tools_section_spec.dart';

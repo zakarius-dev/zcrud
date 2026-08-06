@@ -434,6 +434,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.folderCardMinContrast,
     this.folderCardFooterPlacement,
     this.folderCardFooterBesideMinWidth,
+    this.studySessionStackFlex,
+    this.studySessionInputFlex,
+    this.studySessionContentPadding,
+    this.studySessionDividerThickness,
+    this.studySessionSectionGap,
+    this.studySessionMinTarget,
+    this.studySessionCounterStyle,
+    this.dailyTasksBandPadding,
+    this.dailyTasksDayCellMargin,
+    this.dailyTasksDayCellPadding,
+    this.dailyTasksDayCellRadius,
+    this.dailyTasksMinTapTarget,
+    this.dailyTasksMonthBreakpoint,
+    this.dailyTasksItemPadding,
     this.contentHubDensity,
     this.contentHubItemExtent,
     this.contentHubItemRadius,
@@ -1069,6 +1083,130 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// et il ferait basculer la mise en page au milieu de l'animation.
   final double? folderCardFooterBesideMinWidth;
 
+  // ── Écran de SESSION de révision (lot 1 « étude ») ────────────────────────
+  //
+  // 🔴 Ces sept jetons sont le **maillon du milieu** de la chaîne
+  // `paramètre > jeton > référence` de `zStudySessionChromeOf`
+  // (`zcrud_study/…/z_study_session_reference.dart`), qui n'avait jusqu'ici
+  // QUE deux maillons (MESURÉ : `grep -n "studySession" z_theme.dart` → vide).
+  // Sans eux, un hôte ne pouvait régler l'écran de session que site par site,
+  // en repassant chaque paramètre à chaque montage.
+  //
+  // 🚫 **Aucun jeton GÉNÉRIQUE n'est monté en maillon** — ni `gapM` pour
+  // l'écart de section, ni `radiusM` pour un rayon. C'est le défaut exact que
+  // CR-IFFD-61 a corrigé : un jeton générique portait trois valeurs de
+  // référence différentes, donc aucune valeur ne pouvait les satisfaire toutes.
+  // Chaque jeton ci-dessous vise UNE propriété, d'UN écran.
+  //
+  // `null` (défaut) ⇒ le consommateur applique sa valeur de RÉFÉRENCE : le
+  // rendu d'aujourd'hui est strictement inchangé tant qu'aucun n'est posé.
+
+  /// Part verticale de la **pile de cartes** de l'écran de session.
+  /// `null` ⇒ référence (`ZStudySessionReference.stackFlex` = 3).
+  ///
+  /// 🔴 **DISCRET** : un `flex` est un entier de contrainte, pas une dimension.
+  /// `lerp` le fait donc BASCULER à mi-course (jamais d'entier intermédiaire
+  /// fabriqué), et un `null` ne se matérialise jamais en `0` — un `Expanded`
+  /// de flex 0 s'effondrerait, faisant disparaître la pile en pleine
+  /// transition de thème.
+  final int? studySessionStackFlex;
+
+  /// Part verticale de la **zone de saisie/notation** de l'écran de session.
+  /// `null` ⇒ référence (`ZStudySessionReference.inputFlex` = 2).
+  ///
+  /// Même traitement discret que [studySessionStackFlex]. Les deux flex
+  /// matérialisent l'invariant « la saisie est un FRÈRE de la pile, jamais un
+  /// descendant » (arène des gestes) : les régler ne le remet pas en cause.
+  final int? studySessionInputFlex;
+
+  /// Padding interne des zones défilantes de l'écran de session.
+  /// `null` ⇒ référence (`EdgeInsetsDirectional.all(12)` — AD-13).
+  final EdgeInsetsGeometry? studySessionContentPadding;
+
+  /// Épaisseur du séparateur pile ↔ saisie. `null` ⇒ référence (1).
+  final double? studySessionDividerThickness;
+
+  /// Écart vertical entre deux blocs de l'écran de session (repli « session
+  /// vide » notamment). `null` ⇒ référence (12).
+  final double? studySessionSectionGap;
+
+  /// Cible tap minimale (dp) des affordances de l'écran de session.
+  /// `null` ⇒ référence (48, plancher Material/AD-13).
+  ///
+  /// 🔴 **PLANCHER, donc discret comme une contrainte, mais interpolable comme
+  /// une dimension** : il est ici interpolé (c'est une longueur en dp, et deux
+  /// planchers valides encadrent une valeur valide). En revanche `null` ne se
+  /// matérialise JAMAIS en `0` : un plancher nul est l'absence de plancher,
+  /// et une transition de thème ne doit pas ouvrir une fenêtre pendant
+  /// laquelle les cibles descendent sous 48 dp.
+  final double? studySessionMinTarget;
+
+  /// Style du compteur de session. `null` ⇒ le consommateur applique son repli
+  /// (`TextTheme.labelLarge` du thème courant) — jamais une taille en dur.
+  final TextStyle? studySessionCounterStyle;
+
+  // ── Vue des TÂCHES DU JOUR (lot 4 « étude ») ──────────────────────────────
+  //
+  // 🔴 Ces sept jetons sont le **maillon du milieu** de la chaîne
+  // `paramètre > jeton > référence` de `zDailyTasksChromeOf`
+  // (`zcrud_study/…/z_daily_tasks_reference.dart`), qui n'en avait jusqu'ici
+  // QUE deux (MESURÉ : `grep -n "dailyTasks" z_theme.dart` → vide). Sans eux,
+  // un hôte ne pouvait régler la vue des tâches du jour qu'en repassant chaque
+  // paramètre à CHAQUE montage — donc jamais depuis son thème.
+  //
+  // 🚫 **Aucun jeton GÉNÉRIQUE n'est monté en maillon** : ni `gapM` pour un
+  // écart, ni `radiusM` pour le rayon de cellule. C'est le défaut exact que
+  // CR-IFFD-61 a corrigé — un jeton générique portant plusieurs valeurs de
+  // référence ne peut en satisfaire aucune. Chaque jeton ci-dessous vise UNE
+  // propriété, d'UN écran.
+  //
+  // `null` (défaut) ⇒ le consommateur applique sa valeur de RÉFÉRENCE
+  // (`ZDailyTasksReference`) : le rendu d'aujourd'hui est strictement inchangé
+  // tant qu'aucun n'est posé.
+
+  /// Padding du bandeau de semaine. `null` ⇒ référence
+  /// (`EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4)` — AD-13).
+  final EdgeInsetsGeometry? dailyTasksBandPadding;
+
+  /// Marge EXTERNE d'une cellule de jour. `null` ⇒ référence
+  /// (`EdgeInsetsDirectional.symmetric(horizontal: 2)`).
+  final EdgeInsetsGeometry? dailyTasksDayCellMargin;
+
+  /// Padding INTERNE d'une cellule de jour. `null` ⇒ référence
+  /// (`EdgeInsetsDirectional.symmetric(vertical: 8)`).
+  ///
+  /// ⚠️ Distinct de [dailyTasksDayCellMargin] : la marge écarte les cellules
+  /// entre elles, le padding gonfle la cible tapable. Les confondre en un seul
+  /// jeton rendrait l'un des deux réglages inatteignable.
+  final EdgeInsetsGeometry? dailyTasksDayCellPadding;
+
+  /// Rayon des coins d'une cellule de jour. `null` ⇒ référence
+  /// (`Radius.circular(12)`).
+  final Radius? dailyTasksDayCellRadius;
+
+  /// Cible tap minimale (dp) d'une cellule de jour. `null` ⇒ référence
+  /// (48, plancher Material/AD-13).
+  ///
+  /// 🔴 **PLANCHER** : interpolable comme une longueur (deux planchers valides
+  /// encadrent une valeur valide), mais `null` ne se matérialise JAMAIS en `0`
+  /// — un plancher nul est l'ABSENCE de plancher, et une transition de thème
+  /// n'a pas à ouvrir une fenêtre pendant laquelle les sept cibles du bandeau
+  /// descendent sous 48 dp. Même traitement que [studySessionMinTarget].
+  final double? dailyTasksMinTapTarget;
+
+  /// Largeur (dp) en deçà de laquelle le libellé de mois n'est **pas** rendu.
+  /// `null` ⇒ référence (600).
+  ///
+  /// 🔴 **SEUIL, donc DISCRET** : un point de rupture interpolé est un point de
+  /// rupture qu'aucun des deux thèmes ne décrit — la mise en page basculerait
+  /// au milieu de l'animation, à une largeur que personne n'a choisie. Il
+  /// BASCULE donc à mi-course, comme [folderCardFooterBesideMinWidth].
+  final double? dailyTasksMonthBreakpoint;
+
+  /// Padding d'une ligne de tâche de la liste. `null` ⇒ référence
+  /// (`EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6)`).
+  final EdgeInsetsGeometry? dailyTasksItemPadding;
+
   // ── Hub d'ajout de CONTENU (CR-IFFD-65) ───────────────────────────────────
   // Aucun jeton `contentHub*` n'existait : la forme du hub n'était atteignable
   // NI par paramètre NI par thème (grief ④ de la CR, MESURÉ). La seule voie
@@ -1465,6 +1603,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     double? folderCardMinContrast,
     ZFolderCardFooterPlacement? folderCardFooterPlacement,
     double? folderCardFooterBesideMinWidth,
+    int? studySessionStackFlex,
+    int? studySessionInputFlex,
+    EdgeInsetsGeometry? studySessionContentPadding,
+    double? studySessionDividerThickness,
+    double? studySessionSectionGap,
+    double? studySessionMinTarget,
+    TextStyle? studySessionCounterStyle,
+    EdgeInsetsGeometry? dailyTasksBandPadding,
+    EdgeInsetsGeometry? dailyTasksDayCellMargin,
+    EdgeInsetsGeometry? dailyTasksDayCellPadding,
+    Radius? dailyTasksDayCellRadius,
+    double? dailyTasksMinTapTarget,
+    double? dailyTasksMonthBreakpoint,
+    EdgeInsetsGeometry? dailyTasksItemPadding,
     ZContentHubDensity? contentHubDensity,
     double? contentHubItemExtent,
     Radius? contentHubItemRadius,
@@ -1617,6 +1769,29 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         folderCardFooterPlacement ?? this.folderCardFooterPlacement,
     folderCardFooterBesideMinWidth:
         folderCardFooterBesideMinWidth ?? this.folderCardFooterBesideMinWidth,
+    studySessionStackFlex: studySessionStackFlex ?? this.studySessionStackFlex,
+    studySessionInputFlex: studySessionInputFlex ?? this.studySessionInputFlex,
+    studySessionContentPadding:
+        studySessionContentPadding ?? this.studySessionContentPadding,
+    studySessionDividerThickness:
+        studySessionDividerThickness ?? this.studySessionDividerThickness,
+    studySessionSectionGap:
+        studySessionSectionGap ?? this.studySessionSectionGap,
+    studySessionMinTarget: studySessionMinTarget ?? this.studySessionMinTarget,
+    studySessionCounterStyle:
+        studySessionCounterStyle ?? this.studySessionCounterStyle,
+    dailyTasksBandPadding: dailyTasksBandPadding ?? this.dailyTasksBandPadding,
+    dailyTasksDayCellMargin:
+        dailyTasksDayCellMargin ?? this.dailyTasksDayCellMargin,
+    dailyTasksDayCellPadding:
+        dailyTasksDayCellPadding ?? this.dailyTasksDayCellPadding,
+    dailyTasksDayCellRadius:
+        dailyTasksDayCellRadius ?? this.dailyTasksDayCellRadius,
+    dailyTasksMinTapTarget:
+        dailyTasksMinTapTarget ?? this.dailyTasksMinTapTarget,
+    dailyTasksMonthBreakpoint:
+        dailyTasksMonthBreakpoint ?? this.dailyTasksMonthBreakpoint,
+    dailyTasksItemPadding: dailyTasksItemPadding ?? this.dailyTasksItemPadding,
     contentHubDensity: contentHubDensity ?? this.contentHubDensity,
     contentHubItemExtent: contentHubItemExtent ?? this.contentHubItemExtent,
     contentHubItemRadius: contentHubItemRadius ?? this.contentHubItemRadius,
@@ -2097,6 +2272,107 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       folderCardFooterBesideMinWidth: t < 0.5
           ? folderCardFooterBesideMinWidth
           : other.folderCardFooterBesideMinWidth,
+      // ── Session de révision (lot 1 « étude ») ─────────────────────────────
+      // Les deux FLEX sont DISCRETS : un `flex` est un entier de contrainte.
+      // L'interpoler fabriquerait des entiers que personne n'a choisis (et,
+      // arrondis, une pile 3/2 passerait par 2/2 — une répartition qu'aucun
+      // des deux thèmes ne décrit). Ils BASCULENT donc à mi-course, comme
+      // `contentHubGridCrossAxisCount`.
+      studySessionStackFlex: t < 0.5
+          ? studySessionStackFlex
+          : other.studySessionStackFlex,
+      studySessionInputFlex: t < 0.5
+          ? studySessionInputFlex
+          : other.studySessionInputFlex,
+      // Padding CONTINU et directionnel-préservant (AD-13) ; null-null ⇒ null.
+      studySessionContentPadding: _lerpNullableInsets(
+        studySessionContentPadding,
+        other.studySessionContentPadding,
+        t,
+      ),
+      // Épaisseur et écart : dimensions CONTINUES. Un côté absent traité comme
+      // `0` est ici acceptable (un séparateur qui s'amincit, un écart qui se
+      // referme sont des rendus plausibles) ; `null` des DEUX côtés reste
+      // `null`, donc la référence du consommateur n'est jamais matérialisée.
+      studySessionDividerThickness: _lerpNullableDouble(
+        studySessionDividerThickness,
+        other.studySessionDividerThickness,
+        t,
+      ),
+      studySessionSectionGap: _lerpNullableDouble(
+        studySessionSectionGap,
+        other.studySessionSectionGap,
+        t,
+      ),
+      // 🔴 Le PLANCHER de cible, lui, n'a PAS droit au traitement précédent :
+      // `_lerpNullableDouble(null, 48, 0)` rendrait **0**, c'est-à-dire une
+      // fenêtre — courte mais réelle — pendant laquelle les cibles tapables de
+      // la session n'ont plus AUCUN plancher (AD-13 violé au milieu d'une
+      // transition de thème). Même leçon que `celebrationDuration` : pour une
+      // CONTRAINTE, `0` n'est pas une absence, c'est une valeur invalide.
+      studySessionMinTarget: _lerpNullableFloor(
+        studySessionMinTarget,
+        other.studySessionMinTarget,
+        t,
+      ),
+      // Style CONTINU : `TextStyle.lerp` rend déjà `null` quand les DEUX côtés
+      // sont `null` — le repli `labelLarge` du consommateur n'est jamais gelé.
+      studySessionCounterStyle: TextStyle.lerp(
+        studySessionCounterStyle,
+        other.studySessionCounterStyle,
+        t,
+      ),
+      // ── Tâches du jour (lot 4 « étude ») ──────────────────────────────────
+      // Marges CONTINUES et directionnel-préservantes (AD-13) ; `null` des deux
+      // côtés reste `null`, donc la référence du consommateur n'est jamais
+      // matérialisée par une transition de thème.
+      dailyTasksBandPadding: _lerpNullableInsets(
+        dailyTasksBandPadding,
+        other.dailyTasksBandPadding,
+        t,
+      ),
+      dailyTasksDayCellMargin: _lerpNullableInsets(
+        dailyTasksDayCellMargin,
+        other.dailyTasksDayCellMargin,
+        t,
+      ),
+      dailyTasksDayCellPadding: _lerpNullableInsets(
+        dailyTasksDayCellPadding,
+        other.dailyTasksDayCellPadding,
+        t,
+      ),
+      dailyTasksItemPadding: _lerpNullableInsets(
+        dailyTasksItemPadding,
+        other.dailyTasksItemPadding,
+        t,
+      ),
+      // Rayon CONTINU, null-préservant (helper partagé avec les autres rayons).
+      dailyTasksDayCellRadius: _lerpNullableRadius(
+        dailyTasksDayCellRadius,
+        other.dailyTasksDayCellRadius,
+        t,
+      ),
+      // 🔴 Le PLANCHER de cible n'a PAS droit au traitement des dimensions :
+      // `_lerpNullableDouble(null, 48, 0)` rendrait **0**, c'est-à-dire une
+      // fenêtre — courte mais réelle — pendant laquelle les sept cibles du
+      // bandeau n'ont plus AUCUN plancher (AD-13 violé en pleine transition de
+      // thème). Pour une CONTRAINTE, `0` n'est pas une absence : c'est une
+      // valeur invalide. Même arbitrage que `studySessionMinTarget`.
+      dailyTasksMinTapTarget: _lerpNullableFloor(
+        dailyTasksMinTapTarget,
+        other.dailyTasksMinTapTarget,
+        t,
+      ),
+      // 🔴 Le SEUIL de mois est DISCRET : interpolé, il ferait apparaître ou
+      // disparaître le libellé de mois à une largeur qu'AUCUN des deux thèmes
+      // ne décrit — une bascule de mise en page au milieu de l'animation, non
+      // choisie. Il bascule à mi-course, comme `folderCardFooterBesideMinWidth`
+      // (même nature : un point de rupture, pas une dimension).
+      dailyTasksMonthBreakpoint: _lerpNullableDouble(
+        dailyTasksMonthBreakpoint,
+        other.dailyTasksMonthBreakpoint,
+        t,
+      ),
       // CR-IFFD-65 — chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
       // reste `null`, donc la valeur de RÉFÉRENCE du consommateur n'est JAMAIS
       // matérialisée par une transition de thème (leçon `studyCardBadgeRadius`).
@@ -2255,6 +2531,23 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
 double? _lerpNullableDouble(double? a, double? b, double t) =>
     a == null && b == null ? null : (a ?? 0) + ((b ?? 0) - (a ?? 0)) * t;
+
+/// Interpole deux **PLANCHERS** nullables — sans jamais matérialiser `0`.
+///
+/// 🔴 Différence VOLONTAIRE avec [_lerpNullableDouble], pour la même raison que
+/// [_lerpNullableDuration] : pour une DIMENSION, traiter un côté absent comme
+/// `0` est plausible (une barre qui grandit depuis rien) ; pour une CONTRAINTE
+/// de plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
+/// régression d'accessibilité (AD-13) le temps de la transition.
+///
+/// Règle : un côté `null` signifie « le consommateur applique SON plancher de
+/// référence », valeur que le thème ignore. Aucune interpolation n'est alors
+/// possible ; on rend l'autre côté, seule valeur réellement connue.
+double? _lerpNullableFloor(double? a, double? b, double t) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return a + (b - a) * t;
+}
 
 Offset? _lerpNullableOffset(Offset? a, Offset? b, double t) =>
     a == null && b == null

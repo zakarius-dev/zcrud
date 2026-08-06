@@ -35,10 +35,38 @@
 /// équivalent canonique (`type`, `content`, `contentLength`, `cloudUrl`,
 /// `assistantFileId`, `subjectId`, `creatorId`…) passent par **là**, jamais par le
 /// schéma partagé.
+///
+/// ## 🔒 `implements ZStudyDocumentRef` — STRICTEMENT ADDITIF
+///
+/// L'entité implémente le port neutre `ZStudyDocumentRef` (`zcrud_study_kernel`)
+/// pour que le socle de présentation puisse la **nommer** sans l'arête
+/// `zcrud_study → zcrud_document` (AD-1/AD-17). Trois points, tous vérifiables :
+///
+/// 1. **Aucune arête nouvelle** : `zcrud_document → zcrud_study_kernel` est
+///    **déjà déclarée** (`pubspec.yaml`, « arête DÉCLARÉE d'emblée »), et déjà
+///    importée par `lib/src/presentation/`. Le kernel est **pur-Dart** (son
+///    `pubspec` n'a aucun `flutter:`), donc l'importer ici ne casse pas la
+///    pureté du domaine (`source_policy_test.dart`, AC13(a)).
+/// 2. **Aucun champ ajouté**. [title] et [formatKey] sont des **getters
+///    DÉRIVÉS** de [fileName]. Le schéma `@ZcrudField` est inchangé ⇒ `toMap`,
+///    `fromMap`, `copyWith`, `==`/`hashCode`, `$ZStudyDocumentFieldSpecs` et
+///    `_reservedKeys` sont **identiques au bit près**. Rien n'entre ni ne sort
+///    de la persistance (le gate `verify:serialization` est intouché).
+/// 3. **Aucune signature modifiée** : rien n'est renommé, rien ne change de
+///    type, rien ne devient requis.
+///
+/// ⛔ **Le membre du port s'appelle `formatKey`, JAMAIS `extension`** — et ce
+/// n'est pas une préférence de style : [extension] existe déjà ici et vaut
+/// `ZExtension?` (slot d'extensibilité AD-4). Un `String? get extension`
+/// entrerait en **collision de type** avec le champ hérité et ferait de ce
+/// `implements` une **erreur de compilation**. Le port le dit lui-même
+/// (`z_study_document_ref.dart`, « le nom est INTERDIT ICI »).
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
 import 'package:zcrud_core/domain.dart';
+import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
+    show ZStudyDocumentRef;
 
 import 'z_document_status.dart';
 
@@ -54,7 +82,9 @@ typedef ZStudyDocumentExtensionParser = ZExtension? Function(
 
 /// Document d'étude rattaché à un dossier — **contenu partageable** (AD-26).
 @ZcrudModel(kind: 'study_document')
-class ZStudyDocument extends ZEntity with ZExtensible {
+class ZStudyDocument extends ZEntity
+    with ZExtensible
+    implements ZStudyDocumentRef {
   /// Construit un document (primitif `const`).
   const ZStudyDocument({
     this.id,
@@ -171,6 +201,36 @@ class ZStudyDocument extends ZEntity with ZExtensible {
   /// (AD-19 / D2).
   @ZcrudField()
   final DateTime? createdAt;
+
+  /// Libellé principal affiché — **`ZStudyDocumentRef.title`**, alias DÉRIVÉ de
+  /// [fileName].
+  ///
+  /// Ce n'est pas un champ : c'est la même donnée sous le nom que le port (et
+  /// les cartes du socle) emploie. La dartdoc de [fileName] annonçait d'ailleurs
+  /// déjà « titre de la carte » — le port ne fait que la rendre **adressable**.
+  ///
+  /// Jamais `null` : [fileName] a pour défaut `''`. Le repli VISIBLE (« sans
+  /// titre ») est un **libellé localisé**, donc l'affaire de l'hôte (FR-26) —
+  /// jamais du domaine.
+  @override
+  String get title => fileName;
+
+  /// Clé de format **OPAQUE** — **`ZStudyDocumentRef.formatKey`**, DÉRIVÉE de
+  /// [fileName] par [deriveFormatKey]. `null` si le nom ne porte aucun suffixe
+  /// exploitable.
+  ///
+  /// ⚠️ **Ce getter PRODUIT une clé, il ne la NORMALISE pas.** La normalisation
+  /// de consommation (minuscules, point retiré, éclatement d'un type MIME en
+  /// sous-type/famille) est `zDocumentFormatKeyCandidates`, qui vit dans la
+  /// **présentation** de `zcrud_study` — un package dont `zcrud_document` **ne
+  /// dépend pas** (grep négatif : `grep -n "zcrud_study:" pubspec.yaml` → RC=1)
+  /// et dont dépendre serait une **arête nouvelle**, interdite (AD-1). Ce n'est
+  /// donc pas une duplication : les deux fonctions font des travaux
+  /// **différents** (produire vs. résoudre), aux deux bouts de la même clé
+  /// opaque. Sa sortie est déjà en minuscules et sans point, soit un
+  /// **point fixe** de la normalisation aval.
+  @override
+  String? get formatKey => deriveFormatKey(fileName);
 
   /// Slot type additif **versionné** (AD-4 pt.1), `null` si absent. Hors-codegen.
   @override
@@ -298,6 +358,54 @@ class ZStudyDocument extends ZEntity with ZExtensible {
   /// Ramène une taille de fichier dans son domaine de définition — **jamais
   /// négative** (repli `0`). Cf. [sanitizePageCount].
   static int sanitizeSizeBytes(int raw) => raw < 0 ? 0 : raw;
+
+  /// Dérive la clé de format **OPAQUE** d'un nom de fichier — **jamais de throw**
+  /// (AD-10), **jamais un enum** (AD-4). `null` quand aucun suffixe exploitable.
+  ///
+  /// 🔴 **Le nom est `deriveFormatKey`, PAS `extension`** : `ZStudyDocument`
+  /// **a déjà** un membre `extension` de type `ZExtension?` (slot AD-4). Publique
+  /// et **NOMMÉE** — même discipline que [sanitizePageCount]/[sanitizeSizeBytes] :
+  /// une règle testable directement, plutôt qu'enfouie dans un getter.
+  ///
+  /// ## Règles EXACTES (dans cet ordre)
+  ///
+  /// | Entrée | Sortie | Pourquoi |
+  /// |---|---|---|
+  /// | `'cours.PDF'` | `'pdf'` | minuscules — point fixe de la normalisation aval |
+  /// | `'cours.pdf '` | `'pdf'` | le nom est **trimé** d'abord |
+  /// | `'archive.tar.gz'` | `'gz'` | **dernier** point, jamais le premier |
+  /// | `'notes/2026.v2/README'` | `null` | le point est dans un segment de CHEMIN, pas dans le nom |
+  /// | `'.gitignore'` | `null` | un point **en tête** nomme un fichier caché — ce n'est pas un suffixe |
+  /// | `'README'` | `null` | aucun point |
+  /// | `'cours.'` | `null` | suffixe **vide** |
+  /// | `'Dr. Smith notes'` | `null` | un suffixe contenant une **espace** n'en est pas un |
+  /// | `''` | `null` | rien à dériver |
+  ///
+  /// La règle « espace ⇒ pas un suffixe » n'est pas cosmétique : sans elle,
+  /// `'Dr. Smith notes'` produirait la clé `'smith notes'`, c'est-à-dire une clé
+  /// **FAUSSE** (et non pas simplement absente). Une clé fausse résout un glyphe
+  /// et une couleur de format arbitraires côté carte ; une clé absente retombe
+  /// proprement sur le repli total (AD-10).
+  static String? deriveFormatKey(String fileName) {
+    final String trimmed = fileName.trim();
+    if (trimmed.isEmpty) return null;
+
+    // Le nom seul : ce qui suit le dernier séparateur de chemin. Sans cela,
+    // `'2026.v2/README'` rendrait `'v2/readme'` — une clé fausse.
+    final int slash = trimmed.lastIndexOf('/');
+    final int backslash = trimmed.lastIndexOf(r'\');
+    final int sep = slash > backslash ? slash : backslash;
+    final String base = sep < 0 ? trimmed : trimmed.substring(sep + 1);
+
+    // `> 0` : un point EN TÊTE nomme un fichier caché (`.gitignore`), il
+    // n'introduit aucun suffixe.
+    final int dot = base.lastIndexOf('.');
+    if (dot <= 0 || dot == base.length - 1) return null;
+
+    final String suffix = base.substring(dot + 1);
+    if (suffix.contains(RegExp(r'\s'))) return null;
+    return suffix.toLowerCase();
+  }
 
   /// Décode défensivement l'extension via [parser] (repli `null`).
   static ZExtension? _decodeExtension(

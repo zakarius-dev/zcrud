@@ -117,6 +117,7 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
+    this.addOpensContentHub = false,
     this.axis = Axis.vertical,
     this.itemIds,
     this.onReorder,
@@ -287,6 +288,7 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
+    this.addOpensContentHub = false,
     Axis axis = Axis.vertical,
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
@@ -514,6 +516,7 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
+    this.addOpensContentHub = false,
     Axis axis = Axis.vertical,
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
@@ -702,6 +705,7 @@ class ZStudyToolsSectionSpec {
     this.addAction,
     this.addActionIcon,
     this.addActionSemanticLabel,
+    this.addOpensContentHub = false,
     Axis axis = Axis.vertical,
     // CR-IFFD-49 ① — largeur d'item du rail horizontal. `null` ⇒ token
     // `ZcrudTheme.railItemWidth`, puis repli 280 dp. Ignoré en vertical.
@@ -885,6 +889,29 @@ class ZStudyToolsSectionSpec {
   /// l'en-tête homonyme). JAMAIS de « Ajouter »/« Add » codé en dur (i18n —
   /// AD-13/FR-23).
   final String? addActionSemanticLabel;
+
+  /// **Lot 2** — le `+` de cette section ouvre le **hub d'ajout partagé** en
+  /// portée (`ZContentHubScope`), au lieu d'une commande propre.
+  ///
+  /// `false` (défaut) ⇒ comportement STRICTEMENT antérieur : le `+` est rendu
+  /// ssi [addAction] est non-null, et il n'invoque qu'elle.
+  ///
+  /// `true` ⇒ la commande du `+` est résolue ainsi, **dans cet ordre** :
+  ///
+  /// | 1 | [addAction] non-null | **elle gagne** — le paramètre de l'hôte prime |
+  /// | 2 | un `ZContentHubScope` est en portée | le hub s'ouvre |
+  /// | 3 | aucun scope | le `+` est **ABSENT de l'arbre** (AD-4) |
+  ///
+  /// 🔴 **Le cas 3 est le point qui compte** : un `+` déclaré « ouvre le hub »
+  /// alors qu'aucun hub n'est branché ne doit pas être un bouton grisé, ni un
+  /// bouton qui ne fait rien — deux façons de mentir à l'utilisateur. La
+  /// capacité est absente, la commande l'est aussi (garde dédiée).
+  ///
+  /// 🔴 **Aucune apparence n'est fournie par le socle** : [addActionIcon] et
+  /// [addActionSemanticLabel] restent les seules sources de glyphe et
+  /// d'annonce, exactement comme sur le chemin `addAction`. Ce drapeau
+  /// n'apporte qu'une **commande**.
+  final bool addOpensContentHub;
 
   /// Orientation de la disposition des items de la section.
   ///

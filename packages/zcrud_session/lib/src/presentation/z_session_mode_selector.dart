@@ -10,15 +10,37 @@
 /// touche **aucun** moteur (AD-34/D7) et n'écrit **aucun** SRS (AD-33 — gardé par
 /// `z_widgets_purity_test.dart`).
 ///
-/// ## Les 3 options (FR-SU10)
+/// ## Les 4 options (FR-SU10 + point d'entrée « bachotage »)
 ///
 /// | Option | Règle | Visibilité |
 /// |---|---|---|
 /// | « Apprendre +N » | `repetitions == 0`, lot **configurable, défaut 30** ; anneau de progression | si > 0 |
 /// | « À réviser » | dues (`nextReviewDate <= at`), triées par **urgence** | **si > 0 seulement** |
 /// | « Test » | ouvre le dialog de filtres | **toujours** |
+/// | « Bachotage » | **tout le corpus**, ordre d'entrée, **aucune** lecture SRS | si le corpus > 0 |
 ///
 /// **Patron AD-45** : une option à `0` est **ABSENTE**, jamais grisée.
+///
+/// ## Le point d'entrée « bachotage » (`ZSessionModeKind.cramming`)
+///
+/// Le mode était déjà **entièrement exécutable** — `zSessionRuntimeForMode`
+/// (`z_session_runtime.dart:67`) envoie `list || cramming` sur
+/// `ZLinearSessionState` (runtime **sans aucun seam SRS**, AD-23/AD-34) — mais
+/// **aucun sélecteur n'y menait**. Ce widget est le point d'entrée manquant ; il
+/// ne change **rien** au runtime ni au régime d'écriture.
+///
+/// 🔒 **Aucune lecture SRS** pour cette option : le bachotage porte sur le
+/// **corpus entier**, pas sur une catégorie SRS. La file est donc `cards` dans
+/// son **ordre d'entrée**, sans consulter [srsById] — cohérent avec un runtime
+/// qui n'écrit aucun SRS.
+///
+/// ⚠️ **Aucun mélange ici** (l'assemblage de référence IFFD, lui, `shuffle()` sa
+/// file avant d'entrer en cramming). Ce widget est **PUR et déterministe**
+/// (AD-14) : un `Random` dans un `build()` rendrait la file différente à chaque
+/// rebuild — donc un ordre qui change sous les doigts de l'apprenant, et un
+/// widget intestable. Le mélange, s'il est voulu, est la responsabilité de
+/// l'**hôte**, dans son `onStart` (là où il compose la file avant de démarrer le
+/// runtime).
 ///
 /// **Widget PUR** (AD-2/AD-15) : `StatelessWidget`, aucun gestionnaire d'état,
 /// controllers inexistants (rien de mutable), callbacks/thème/labels **INJECTÉS**.
@@ -52,9 +74,26 @@ enum ZSessionModeKind {
 
   /// « Test » — ouvre le dialog de filtres.
   test,
+
+  /// « Bachotage » — parcours du **corpus entier** avec re-boucle des ratés,
+  /// **sans aucune écriture SRS** (`ZReviewMode.cramming` → `ZLinearSessionState`).
+  ///
+  /// 🔴 **AJOUTÉ EN QUEUE, jamais inséré.** Ce membre est le 4ᵉ et il l'est
+  /// *après* [test] : l'insérer au milieu décalerait l'`index` de [test]. Aucun
+  /// `.index` n'est consommé aujourd'hui (mesuré : `grep -rn "ZSessionModeKind"`
+  /// ne rend aucun `.index`/`.values[`), mais l'ordre d'un `enum` est un contrat
+  /// implicite qu'on ne rompt pas sans raison.
+  ///
+  /// ⚠️ **Ce membre CASSE la compilation de tout `switch` exhaustif** sur ce
+  /// type — c'est **délibéré** (cf. `zSessionRuntimeForMode` : « une valeur de
+  /// plus casse la compilation plutôt que de retomber silencieusement dans le
+  /// régime du voisin, potentiellement un régime qui ÉCRIT du SRS »). Les deux
+  /// `switch` concernés sont, à cette date, `zReviewModeForKind`
+  /// (`zcrud_study`) et son ancêtre de démonstration (`example/`).
+  cramming,
 }
 
-/// Sélecteur de session : 3 options + badge flamme (FR-SU10).
+/// Sélecteur de session : 4 options + badge flamme (FR-SU10).
 class ZSessionModeSelector extends StatelessWidget {
   /// Construit le sélecteur.
   ///
@@ -85,6 +124,10 @@ class ZSessionModeSelector extends StatelessWidget {
 
   /// Clé de l'option « Test ».
   static const ValueKey<String> testKey = ValueKey<String>('zModeTest');
+
+  /// Clé de l'option « Bachotage ».
+  static const ValueKey<String> crammingKey =
+      ValueKey<String>('zModeCramming');
 
   /// Corpus de cartes.
   final Iterable<ZFlashcard> cards;
@@ -119,6 +162,12 @@ class ZSessionModeSelector extends StatelessWidget {
     // Lot « Apprendre +N » : borné par `batchSize` (défaut 30). `batchSize <= 0`
     // ⇒ file vide (l'option disparaît) — cohérent avec `count <= 0 ⇒ vide`.
     final learnBatch = _batch(categories.neverLearned, batchSize);
+
+    // 🔒 Bachotage : le corpus ENTIER, ordre d'entrée, **sans consulter le SRS**
+    // (le runtime linéaire n'en écrit aucun — AD-23/AD-34). Matérialisé une
+    // seule fois : `cards` est une `Iterable`, et la ré-itérer à chaque tap
+    // rendrait la file dépendante du moment du geste.
+    final List<ZFlashcard> crammingQueue = cards.toList(growable: false);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -195,6 +244,27 @@ class ZSessionModeSelector extends StatelessWidget {
             onStart(ZSessionModeKind.test, const <ZFlashcard>[]);
           },
         ),
+
+        // « Bachotage » — ABSENTE sur un corpus vide (patron AD-45 : jamais
+        // grisée). Le gap est porté ICI, en TÊTE du bloc conditionnel : « Test »
+        // reste la tuile terminale quand le corpus est vide, exactement comme
+        // avant ce membre.
+        if (crammingQueue.isNotEmpty) ...<Widget>[
+          SizedBox(height: theme.gapS),
+          _ModeTile(
+            tileKey: crammingKey,
+            labelKey: 'zcrud.study.mode.cramming',
+            labelFallback: 'Bachotage',
+            countValue: crammingQueue.length,
+            // Rôle NEUTRE : le bachotage n'est ni une échéance (secondary) ni un
+            // engagement noté (tertiary) — il ne consomme aucune dette SRS. Les
+            // rôles disponibles sont bornés par `ZColorSlot`
+            // (primary/secondary/tertiary/error/neutral) ; `error` serait un
+            // contresens.
+            colorKeyName: 'neutral',
+            onTap: () => onStart(ZSessionModeKind.cramming, crammingQueue),
+          ),
+        ],
       ],
     );
   }
@@ -210,9 +280,11 @@ class ZSessionModeSelector extends StatelessWidget {
 /// Tuile d'option — **le SEUL patron de tuile** du sélecteur.
 ///
 /// 🔴 **Un défaut est un MOTIF** (leçon su-5 : `Semantics`+`Text` corrigé sur une
-/// tuile, **3 autres laissées cassées**). Les 3 options traversent donc **CE**
+/// tuile, **3 autres laissées cassées**). Les 4 options traversent donc **CE**
 /// widget : il n'existe **aucune** tuile écrite à part qui pourrait diverger.
-/// Le test A11y **énumère** les 3 tuiles — jamais une seule.
+/// Le test A11y **énumère** les 4 tuiles — jamais une seule. C'est ce qui rend
+/// l'ajout du point d'entrée « bachotage » **gratuit** en a11y/contraste/RTL :
+/// la tuile neuve hérite du patron, elle ne le re-décrit pas.
 class _ModeTile extends StatelessWidget {
   const _ModeTile({
     required this.tileKey,

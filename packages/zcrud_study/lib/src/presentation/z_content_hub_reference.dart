@@ -73,6 +73,59 @@ import 'package:flutter/material.dart';
 /// `folder_content_add_dialog_widget.dart:109-550` — CR-IFFD-65), le point
 /// d'audit unique. Modifier une valeur ici change le défaut du hub partout.
 abstract final class ZContentHubReference {
+  // ── Clés de couleur STABLES (Lot 2) — le SEUL vocabulaire ajouté ──────────
+
+  /// Les clés d'identité **stables** des familles de contenu courantes, à passer
+  /// à `ZContentHubEntry.colorKey`.
+  ///
+  /// 🔴 **Ce ne sont PAS des libellés** — ni rendus, ni traduits, ni affichés.
+  /// Ce sont des **identités opaques** dont la seule fonction est de fixer le
+  /// créneau de teinte d'une entrée (`zAccentSlot`). C'est ce qui rend la teinte
+  /// STABLE quand une application **insère un type au milieu** de sa liste
+  /// (« non mesuré » n°4 de CR-IFFD-65) et **d'une langue à l'autre** — le repli
+  /// par libellé, lui, change de créneau dès que le libellé change.
+  ///
+  /// ⚠️ **Aucune table type → teinte n'est introduite ici** : le socle ne
+  /// connaît toujours aucun « type de contenu » (cf. [accents], « c'est une
+  /// PALETTE, pas une table par type »). Ces constantes ne font que **nommer**
+  /// des identités, pour que deux écrans d'une même application n'inventent pas
+  /// deux orthographes de la même chose et ne se retrouvent pas avec deux
+  /// teintes pour un même type.
+  ///
+  /// Une application libre d'en utiliser d'autres : `colorKey` reste un `String`
+  /// opaque quelconque.
+  static const String colorKeyFlashcards = 'flashcards';
+
+  /// Clé d'identité stable de la famille « note » — cf. [colorKeyFlashcards].
+  static const String colorKeyNote = 'note';
+
+  /// Clé d'identité stable de la famille « document » — cf. [colorKeyFlashcards].
+  static const String colorKeyDocument = 'document';
+
+  /// Clé d'identité stable de la famille « carte mentale » — cf.
+  /// [colorKeyFlashcards].
+  static const String colorKeyMindmap = 'mindmap';
+
+  /// Clé d'identité stable de la famille « examen » — cf. [colorKeyFlashcards].
+  static const String colorKeyExam = 'exam';
+
+  /// Clé d'identité stable de la famille « podcast » — cf. [colorKeyFlashcards].
+  static const String colorKeyPodcast = 'podcast';
+
+  /// Les six clés ci-dessus, dans un ordre **stable et déclaré** (support de
+  /// garde : une clé ajoutée sans être recensée fait rougir).
+  ///
+  /// ⚠️ L'ordre de cette liste n'a **aucun** effet sur les teintes : le créneau
+  /// est une fonction de l'identité, jamais de la position (`zAccentSlot`).
+  static const List<String> colorKeys = <String>[
+    colorKeyFlashcards,
+    colorKeyNote,
+    colorKeyDocument,
+    colorKeyMindmap,
+    colorKeyExam,
+    colorKeyPodcast,
+  ];
+
   // ── Teintes d'identité (exception FR-26 encadrée — cf. dartdoc de tête) ────
 
   /// Les **six teintes d'identité** de la référence legacy, dans l'ordre de

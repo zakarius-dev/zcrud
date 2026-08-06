@@ -106,6 +106,13 @@ export 'src/presentation/edition/z_select_presenter.dart';
 // directionnel) configure style/orientation/position d'indicateur, icône +
 // sous-titre par étape, gate `validateOnNext` configurable, navigation par tap,
 // et steppers IMBRIQUÉS (single-writer racine de `visibleFields`).
+// **G1 (CR d'exploration DODLP)** — `z_step_partition.dart` livre l'adaptateur
+// *data-driven inline* : une liste PLATE de `ZFieldSpec` annotés
+// (`ZStepFieldConfig`) est regroupée en `List<ZEditionStep>` par une fonction
+// PURE et TOTALE, consommée telle quelle par `ZStepperEdition`. Helper de
+// construction — `EditionFieldType.stepper` reste délibérément `unsupported`
+// (un stepper est un regroupement single-writer, pas un widget-feuille).
+export 'src/presentation/edition/z_step_partition.dart';
 export 'src/presentation/edition/z_stepper_config.dart';
 export 'src/presentation/edition/z_stepper_edition.dart';
 export 'src/presentation/edition/z_submission.dart';

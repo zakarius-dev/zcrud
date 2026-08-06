@@ -49,6 +49,7 @@ import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
         ZPageScaffold,
         ZPageTab;
 
+import 'z_content_hub_launcher.dart';
 import 'z_sectioned_study_layout.dart';
 import 'z_study_tools_section_spec.dart';
 import 'z_subfolder_narrow_nav.dart';
@@ -159,6 +160,7 @@ class ZStudyFolderDetail extends StatefulWidget {
     this.aboveTabBarHeight,
     this.subfolderNavBandHeight,
     this.subfolderNavPlacement = ZSubfolderNavPlacement.withinTab,
+    this.contentHubLauncher,
     this.progressData,
     this.progressStatCards = const <Widget>[],
     this.progressEmptyState,
@@ -382,6 +384,34 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Navigation de sous-dossiers (données + labels + bornes, tout injecté).
   final ZSubfolderNavSpec nav;
 
+  /// **Lot 2** — le hub d'ajout de contenu partagé par tous les `+` de la page.
+  ///
+  /// `null` (défaut) ⇒ capacité ABSENTE et **arbre STRICTEMENT identique** à
+  /// avant ce lot : aucun `ZContentHubScope` n'est inséré, [addAction] est
+  /// projetée telle quelle, aucune section ne peut résoudre de hub. Garde
+  /// dédiée (comparaison d'arbre, pas de simple absence d'exception).
+  ///
+  /// Non-null ⇒ **deux** effets, tous deux additifs :
+  ///
+  /// 1. un [ZContentHubScope] enveloppe la page — c'est ce qui fait que le `+`
+  ///    d'app-bar et le `+` d'une section
+  ///    (`ZStudyToolsSectionSpec.addOpensContentHub`) ouvrent **le même** hub,
+  ///    configuré **une seule fois** ;
+  /// 2. si (et seulement si) [addAction] est fournie **avec un `onPressed`
+  ///    nul**, sa commande est complétée par l'ouverture du hub.
+  ///
+  /// 🔴 **Le paramètre de l'hôte PRIME, toujours.** Une [addAction] qui porte
+  /// déjà un `onPressed` n'est **jamais** réécrite : le hub ne peut pas
+  /// détourner silencieusement une commande que l'hôte a explicitement câblée.
+  /// C'est la même priorité que partout ailleurs dans ce package (paramètre >
+  /// jeton > référence), appliquée ici au comportement.
+  ///
+  /// 🔴 **Le socle n'invente ni glyphe ni libellé** : sans [addAction], aucun
+  /// bouton n'apparaît — `ZAppBarAction` exige un `icon` **et** un
+  /// `semanticLabel`, que seul l'hôte peut fournir (FR-26/AD-13). Le launcher
+  /// apporte la *commande*, jamais l'*apparence*.
+  final ZContentHubLauncher? contentHubLauncher;
+
   /// Sélection initiale (`null` = item racine « Tous les sous-dossiers »).
   ///
   /// 🔴 **IGNORÉ quand `nav.selectionController` est fourni** (CR-IFFD-45) : le
@@ -483,13 +513,18 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
 
   @override
   Widget build(BuildContext context) {
+    // Lot 2 — `null` (défaut) ⇒ TOUT ce qui suit est le chemin d'avant : aucune
+    // action réécrite, aucun nœud ajouté.
+    final ZContentHubLauncher? hub = widget.contentHubLauncher;
+    final ZAppBarAction? addAction = widget.addAction;
     final actions = <ZAppBarAction>[
       if (widget.sortAction != null) widget.sortAction!,
-      if (widget.addAction != null) widget.addAction!,
+      if (addAction != null)
+        hub == null ? addAction : _hubBoundAddAction(addAction, hub),
       ...widget.menuActions,
     ];
 
-    return ZPageScaffold(
+    final Widget scaffold = ZPageScaffold(
       title: _titleWidget(context),
       // CR-IFFD-34 — pass-through pur : `null` ⇒ slots absents côté shell.
       subtitle: widget.subtitle,
@@ -536,6 +571,50 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
         ),
       ],
     );
+
+    // 🔴 AD-4 — sans hub, AUCUN nœud n'est ajouté au-dessus du shell : l'arbre
+    // rendu est celui d'avant le lot 2, à l'identique (garde de comparaison
+    // d'arbre, pas une simple absence d'exception).
+    if (hub == null) return scaffold;
+    return ZContentHubScope(launcher: hub, child: scaffold);
+  }
+
+  /// Complète la commande d'une action d'ajout par l'ouverture du hub — **et
+  /// seulement si l'hôte ne l'a pas câblée lui-même**.
+  ///
+  /// 🔴 Priorité **paramètre de l'hôte > hub** : une action qui porte déjà un
+  /// `onPressed` est rendue TELLE QUELLE (`identical`, aucun `ZAppBarAction`
+  /// neuf). Réécrire une commande explicite serait un détournement silencieux —
+  /// le pire mode d'échec pour un hôte qui a fourni son propre callback.
+  ///
+  /// Ne touche **que** l'action d'ajout : `sortAction` et `menuActions` sont
+  /// projetées inchangées. Un `+` qui ouvre le hub est un contrat nommé ; un
+  /// menu de débordement dont les entrées changeraient de commande n'en serait
+  /// pas un.
+  ZAppBarAction _hubBoundAddAction(
+    ZAppBarAction action,
+    ZContentHubLauncher hub,
+  ) {
+    if (action.onPressed != null) return action;
+    void open() => hub.open(context);
+    final Widget? child = action.child;
+    // Les deux constructeurs de `ZAppBarAction` sont distincts (icône vs
+    // widget) : reconstruire par le mauvais perdrait le widget porté.
+    return child == null
+        ? ZAppBarAction(
+            icon: action.icon,
+            semanticLabel: action.semanticLabel,
+            onPressed: open,
+            tooltip: action.tooltip,
+            isOverflow: action.isOverflow,
+          )
+        : ZAppBarAction.widget(
+            child: child,
+            semanticLabel: action.semanticLabel,
+            onPressed: open,
+            tooltip: action.tooltip,
+            isOverflow: action.isOverflow,
+          );
   }
 
   // --- En-tête (accent dérivé, jamais codé en dur) ---------------------------

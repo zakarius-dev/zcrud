@@ -82,7 +82,8 @@ export 'src/presentation/z_list_session_view.dart';
 // de `flutter_card_swiper` (`CardSwiper`/`CardSwiperDirection`/
 // `CardSwiperController`/`AllowedSwipeDirection`) — le paquet tiers reste privé
 // à `src/presentation/z_session_card_swiper.dart` (gardé par
-// `test/z_card_swiper_confinement_test.dart`).
+// `test/z_third_party_confinement_test.dart`, qui couvre `flutter_card_swiper`
+// ET `confetti`).
 export 'src/presentation/z_session_card_swiper.dart';
 // SU-5 (AC5, FR-SU9/NFR-SU4) — banques de feedback FR/EN par défaut, EMBARQUÉES
 // ici : les tables du cœur sont fermées et hors périmètre (D5), et

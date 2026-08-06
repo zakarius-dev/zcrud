@@ -85,6 +85,15 @@ export 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
         ZExamTask,
         ZApproachingExam,
         aggregateDailyStudyTasks,
+        // Ports NEUTRES `ZStudyDocumentRef`/`ZStudyNoteRef` (option C) : ils
+        // existent pour que le socle de PRÉSENTATION study puisse nommer un
+        // document/une note sans arête vers `zcrud_document`/`zcrud_note`
+        // (AD-1). Aucun rapport avec la surface flashcard historique ⇒ hors
+        // surface publique flashcard. Précédent EXACT et de MÊME FAMILLE :
+        // `ZApproachingExam` (port au kernel, implémenté côté satellite), juste
+        // au-dessus.
+        ZStudyDocumentRef,
+        ZStudyNoteRef,
         // ES-2.8 — podcast *content-addressed* (`ZStudyPodcast` + 3 enums +
         // fraîcheur `ZPodcastFreshness`/`podcastFreshness`) : symboles
         // study-niveau, NON pertinents flashcard ⇒ hors surface publique
