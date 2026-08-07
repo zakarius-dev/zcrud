@@ -358,11 +358,19 @@ void main() {
             'd\'une famille à l\'autre — c\'est ainsi que la CR n\'a trouvé le '
             'défaut que sur le catalogue de corpus.',
       );
-      expect(RegExp(r'_optionStyles\(').allMatches(src).length, 2,
-          reason: '🔴 la résolution du style d\'option doit exister à UN seul '
-              'site d\'appel (plus sa déclaration) : un second site est un '
-              'second rendu possible pour le même état.');
-      // …et les CINQ familles passent bien par cette primitive.
+      // Lot Tile (2026-08-07) : la déclaration + DEUX sites d'appel nommés —
+      // la primitive d'option ET la tuile `toggle` du mode Tile, qui partage
+      // la MÊME résolution (c'est le point : aucun site ne peut styler l'état
+      // choisi autrement que par `_optionStyles`). Un 4ᵉ site rougit.
+      expect(RegExp(r'_optionStyles\(').allMatches(src).length, 3,
+          reason: '🔴 la résolution du style d\'option doit exister aux seuls '
+              'sites recensés (déclaration + primitive d\'option + tuile '
+              'toggle) : un site de plus est un rendu divergent possible pour '
+              'le même état.');
+      // …et les CINQ familles passent bien par la voie COMMUNE de rendu
+      // (re-expression CR-LEX-78) : chaque famille construit une entrée rendue
+      // par `_renderEntry`, dont le rendu segments (`_choicesGroup`) est le
+      // SEUL à instancier la primitive — la chaîne est assertée aux deux bouts.
       for (final String method in <String>[
         '_responseLength',
         '_lengthBias',
@@ -389,11 +397,23 @@ void main() {
         }
         expect(
           lines.sublist(start, end).join('\n'),
-          contains('_ZChatSettingsOption'),
-          reason: '🔴 la famille `$method` ne passe PAS par la primitive '
-              'commune : son état choisi ne porterait aucun canal visible.',
+          contains('_renderEntry('),
+          reason: '🔴 la famille `$method` ne passe PAS par la voie commune '
+              'de rendu (`_renderEntry`) : elle pourrait styler son état '
+              'choisi autrement que les autres.',
         );
       }
+      // Le bout AVAL de la chaîne : le rendu segments instancie la primitive
+      // commune — sans quoi les cinq assertions ci-dessus seraient vides.
+      final int groupStart = lines.indexWhere(
+        (String l) => l.contains('_choicesGroup('),
+      );
+      expect(groupStart, greaterThanOrEqualTo(0),
+          reason: '🔴 `_choicesGroup` introuvable — la voie commune a changé '
+              'de nom : réancrer cette garde sur la chaîne réelle.');
+      expect(src, contains('_ZChatSettingsOption.key('),
+          reason: '🔴 la primitive commune n\'est plus instanciée : le canal '
+              'visible CR-74 n\'a plus de porteur.');
     });
 
     test('🔴 le drapeau sémantique est TOUJOURS écrit dans la primitive', () {

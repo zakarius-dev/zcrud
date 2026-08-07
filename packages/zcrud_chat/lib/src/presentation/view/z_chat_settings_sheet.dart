@@ -139,6 +139,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../settings/z_chat_settings_controller.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
+import 'z_chat_settings_entry.dart';
 
 /// Marge **de référence** de la feuille — dernier ressort, quand l'hôte n'a ni
 /// passé de paramètre ni injecté de `ZcrudScope.theme`.
@@ -165,6 +166,11 @@ const FontWeight kZChatSettingsReferenceSelectedWeight = FontWeight.w700;
 /// différence survit au style de l'hôte **et** aux deux luminosités.
 const TextDecoration kZChatSettingsReferenceSelectedDecoration =
     TextDecoration.underline;
+
+/// Écart de **référence** entre la coche d'hôte ([ZChatScaleControl
+/// .selectionMark]) et le libellé d'un segment choisi — même régime que
+/// [kZChatSettingsReferenceGap].
+const double kZChatSettingsReferenceMarkGap = 4;
 
 /// Une entrée du **catalogue de corpus de l'hôte**.
 ///
@@ -266,6 +272,18 @@ class ZChatSettingsSlot {
 typedef ZChatSettingsTileBuilder =
     Widget? Function(BuildContext context, ZChatSettingsSlot slot);
 
+/// Construit — ou retire — la tuile d'une **entrée déclarative**
+/// ([ZChatSettingsEntry]) : cible des `entryBuilders` (par id), des
+/// `kindBuilders` (par kind) et de `unknownEntryBuilder`.
+///
+/// Rendre `null` ⇒ **entrée absente de l'arbre** (AD-4).
+typedef ZChatSettingsEntryTileBuilder =
+    Widget? Function(
+      BuildContext context,
+      ZChatSettingsSlot slot,
+      ZChatSettingsEntry entry,
+    );
+
 /// Rend les réglages de génération d'un [ZChatSettingsController] — **zéro
 /// dépendance tierce**, aucune couleur, aucun libellé en dur.
 ///
@@ -288,6 +306,12 @@ class ZChatSettingsSheet extends StatelessWidget {
     this.revealThinkingBuilder,
     this.capabilitiesBuilder,
     this.corpusBuilder,
+    this.entries = const <ZChatSettingsEntry>[],
+    this.sections = const <ZChatSettingsSection>[],
+    this.entryBuilders = const <String, ZChatSettingsEntryTileBuilder>{},
+    this.kindBuilders = const <String, ZChatSettingsEntryTileBuilder>{},
+    this.sectionBuilders = const <String, ZChatSettingsTileBuilder>{},
+    this.unknownEntryBuilder,
     this.padding,
     this.spacing,
     this.selectedWeight,
@@ -347,6 +371,41 @@ class ZChatSettingsSheet extends StatelessWidget {
 
   /// Remplace la tuile de portée documentaire (`ZChatCorpusScope`).
   final ZChatSettingsTileBuilder? corpusBuilder;
+
+  /// Les **entrées déclaratives** de l'HÔTE (lot Tile, arbitrage 1) — elles
+  /// s'injectent dans les MÊMES sections que les familles standard :
+  /// `sectionId` nul ⇒ section de génération, après les familles ;
+  /// `kZChatSettingsSectionCorpus` ⇒ après la portée documentaire ; tout autre
+  /// id ⇒ section d'hôte (déclarée dans [sections], ou anonyme en fin de
+  /// feuille — une entrée n'est **jamais** silencieusement perdue, AD-10).
+  final List<ZChatSettingsEntry> entries;
+
+  /// Les **sections** déclarées par l'hôte : ordre des sections d'hôte, et
+  /// titres — y compris pour les deux sections du socle, sans titre par
+  /// défaut (l'arbre d'un hôte passif ne bouge pas).
+  final List<ZChatSettingsSection> sections;
+
+  /// Builder **par entrée** (clé = [ZChatSettingsEntry.id]) — prioritaire sur
+  /// [kindBuilders]. Règle des trois cas ; les cinq familles standard sont
+  /// ciblables par leurs ids `kZChatSettingsEntry*` (les builders historiques
+  /// `responseLengthBuilder`… restent, eux, prioritaires — API inchangée).
+  final Map<String, ZChatSettingsEntryTileBuilder> entryBuilders;
+
+  /// Builder **par kind** (clé = [ZChatSettingsControl.kind]) — c'est la porte
+  /// d'un kind d'HÔTE : un contrôle à kind inconnu du socle est rendu par son
+  /// builder de kind, sinon par [unknownEntryBuilder], sinon **absent** —
+  /// jamais un throw (AD-10).
+  final Map<String, ZChatSettingsEntryTileBuilder> kindBuilders;
+
+  /// Builder **par section** (clé = id de section) — remplace le BLOC entier
+  /// (en-tête + tuiles). Règle des trois cas.
+  final Map<String, ZChatSettingsTileBuilder> sectionBuilders;
+
+  /// Rendu de secours d'une entrée dont le kind n'a **aucun** renderer (ni
+  /// défaut du socle, ni [kindBuilders], ni [entryBuilders]). `null` ⇒
+  /// l'entrée est **absente** (AD-10 : jamais un throw, jamais un placeholder
+  /// inerte inventé).
+  final ZChatSettingsEntryTileBuilder? unknownEntryBuilder;
 
   /// Marge **directionnelle** (AD-13). `null` ⇒ jeton puis référence.
   final EdgeInsetsDirectional? padding;
@@ -457,12 +516,25 @@ class ZChatSettingsSheet extends StatelessWidget {
     final List<Widget> tiles = <Widget>[
       ?_tile(context, slot, headerBuilder, _header),
       ?_tile(context, slot, presetsBuilder, _presets),
-      ?_tile(context, slot, responseLengthBuilder, _responseLength),
-      ?_tile(context, slot, lengthBiasBuilder, _lengthBias),
-      ?_tile(context, slot, computeBudgetBuilder, _computeBudget),
-      ?_tile(context, slot, revealThinkingBuilder, _revealThinking),
+      // 🔴 RE-EXPRESSION (CR-LEX-78, arbitrage 1) : les familles standard ne
+      // sont plus des tuiles ad hoc — ce sont des [ZChatSettingsEntry] rendues
+      // par la MÊME voie que les entrées d'hôte (`_renderEntry`). La feuille
+      // par défaut rend un arbre STRICTEMENT identique à l'avant-re-expression
+      // (garde RX-1, étalon versionné).
+      ..._sectionBlock(context, slot, kZChatSettingsSectionGeneration, <Widget>[
+        ?_tile(context, slot, responseLengthBuilder, _responseLength),
+        ?_tile(context, slot, lengthBiasBuilder, _lengthBias),
+        ?_tile(context, slot, computeBudgetBuilder, _computeBudget),
+        ?_tile(context, slot, revealThinkingBuilder, _revealThinking),
+      ]),
       ?_tile(context, slot, capabilitiesBuilder, _capabilities),
-      ?_tile(context, slot, corpusBuilder, _corpus),
+      ..._sectionBlock(context, slot, kZChatSettingsSectionCorpus, <Widget>[
+        ?_tile(context, slot, corpusBuilder, _corpus),
+      ]),
+      // Sections d'HÔTE : celles déclarées d'abord (dans leur ordre), puis les
+      // ids orphelins par ordre d'apparition — une entrée n'est jamais perdue.
+      for (final String id in _hostSectionIds())
+        ..._sectionBlock(context, slot, id, const <Widget>[]),
     ];
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -486,6 +558,219 @@ class ZChatSettingsSheet extends StatelessWidget {
   ) => override == null
       ? fallback(context, slot)
       : override(context, slot);
+
+  // ── Le pipeline d'ENTRÉES — l'unique voie de rendu (CR-LEX-78) ────────────
+
+  /// Section d'appartenance d'une entrée — `null` ⇒ génération.
+  String _entrySection(ZChatSettingsEntry e) =>
+      e.sectionId ?? kZChatSettingsSectionGeneration;
+
+  /// Ids de sections d'HÔTE, dans l'ordre : les déclarées d'abord, puis les
+  /// orphelines (id référencé par une entrée mais jamais déclaré — rendue
+  /// quand même, AD-10) par ordre d'apparition.
+  List<String> _hostSectionIds() {
+    const Set<String> socle = <String>{
+      kZChatSettingsSectionGeneration,
+      kZChatSettingsSectionCorpus,
+    };
+    final List<String> ids = <String>[
+      for (final ZChatSettingsSection s in sections)
+        if (!socle.contains(s.id)) s.id,
+    ];
+    for (final ZChatSettingsEntry e in entries) {
+      final String id = _entrySection(e);
+      if (!socle.contains(id) && !ids.contains(id)) ids.add(id);
+    }
+    return ids;
+  }
+
+  /// Le BLOC d'une section : en-tête éventuel + tuiles par défaut + entrées
+  /// d'hôte de la section — ou le remplacement/retrait de `sectionBuilders`
+  /// (règle des trois cas, appliquée au bloc ENTIER).
+  List<Widget> _sectionBlock(
+    BuildContext context,
+    ZChatSettingsSlot slot,
+    String id,
+    List<Widget> defaults,
+  ) {
+    final ZChatSettingsTileBuilder? override = sectionBuilders[id];
+    if (override != null) {
+      final Widget? replaced = override(context, slot);
+      return replaced == null ? const <Widget>[] : <Widget>[replaced];
+    }
+    final List<Widget> tiles = <Widget>[
+      ...defaults,
+      for (final ZChatSettingsEntry e in entries)
+        if (_entrySection(e) == id) ?_renderEntry(context, slot, e),
+    ];
+    // Section VIDE ⇒ absente, en-tête compris (AD-4 : jamais un titre inerte).
+    if (tiles.isEmpty) return const <Widget>[];
+    return <Widget>[?_sectionHeader(context, id), ...tiles];
+  }
+
+  /// L'EN-TÊTE d'une section — rendu **seulement** si l'hôte a déclaré la
+  /// section avec un titre ([ZChatSettingsSection.title] non nul). Les deux
+  /// sections du socle n'en ont pas par défaut : l'arbre d'un hôte passif ne
+  /// bouge pas (garde RX-1).
+  Widget? _sectionHeader(BuildContext context, String id) {
+    ZChatSettingsSection? declared;
+    for (final ZChatSettingsSection s in sections) {
+      if (s.id == id) {
+        declared = s;
+        break;
+      }
+    }
+    final ZChatSettingsLabel? title = declared?.title;
+    if (title == null) return null;
+    final String resolved = _resolveLabel(context, title, null);
+    return Semantics(
+      header: true,
+      label: resolved,
+      excludeSemantics: true,
+      child: Text(resolved, textAlign: TextAlign.start),
+    );
+  }
+
+  /// Résout un [ZChatSettingsLabel] — la clé passe par le registre + repli
+  /// ([zChatLabel], convention `kZChatLabelFallbacks`), le texte d'hôte est
+  /// rendu tel quel.
+  String _resolveLabel(
+    BuildContext context,
+    ZChatSettingsLabel label,
+    int? count,
+  ) {
+    final String? key = label.labelKey;
+    if (key == null) return label.text!;
+    return count == null
+        ? zChatLabel(context, key)
+        : zChatCountLabel(context, key, count);
+  }
+
+  /// Rend une entrée : `entryBuilders[id]` > `kindBuilders[kind]` > défaut du
+  /// socle > [unknownEntryBuilder] > **absente** (AD-4/AD-10 — un kind inconnu
+  /// ne lève jamais).
+  Widget? _renderEntry(
+    BuildContext context,
+    ZChatSettingsSlot slot,
+    ZChatSettingsEntry entry,
+  ) {
+    final ZChatSettingsEntryTileBuilder? override =
+        entryBuilders[entry.id] ?? kindBuilders[entry.kind];
+    if (override != null) return override(context, slot, entry);
+    return _defaultEntryTile(context, slot, entry);
+  }
+
+  /// Le rendu PAR DÉFAUT d'une entrée — le mode Tile IFFD (icône + titre +
+  /// sous-titre + contrôle) sur les contrôles au rendu lex (segments à
+  /// emphase CR-74, échelle labellisée). Un kind que le socle ne sait pas
+  /// rendre retombe sur [unknownEntryBuilder], sinon l'entrée est absente.
+  Widget? _defaultEntryTile(
+    BuildContext context,
+    ZChatSettingsSlot slot,
+    ZChatSettingsEntry entry,
+  ) {
+    final double gap = resolveGap(context);
+    final ZChatSettingsControl control = entry.control;
+    Widget? tile;
+    if (control is ZChatSelectControl) {
+      tile = _choicesGroup(
+        context,
+        entry,
+        control.choices,
+        control.selectionMark,
+        control.footer,
+        gap,
+      );
+    } else if (control is ZChatScaleControl) {
+      tile = _choicesGroup(
+        context,
+        entry,
+        control.choices,
+        control.selectionMark,
+        control.footer,
+        gap,
+      );
+    } else if (control is ZChatToggleControl) {
+      tile = _ZChatSettingsToggleTile(
+        title: _resolveLabel(context, entry.title, null),
+        subtitle: entry.subtitle == null
+            ? null
+            : _resolveLabel(context, entry.subtitle!, null),
+        value: control.value,
+        onChanged: control.onChanged,
+        gap: gap,
+      );
+    } else if (control is ZChatNavigationControl) {
+      tile = _ZChatSettingsNavigationTile(
+        title: _resolveLabel(context, entry.title, null),
+        subtitle: entry.subtitle == null
+            ? null
+            : _resolveLabel(context, entry.subtitle!, null),
+        value: control.value == null
+            ? null
+            : _resolveLabel(context, control.value!, null),
+        trailing: control.trailing,
+        onTap: control.onTap,
+        gap: gap,
+      );
+    } else if (control is ZChatNumberControl) {
+      tile = _ZChatSettingsNumberTile(
+        title: _resolveLabel(context, entry.title, null),
+        subtitle: entry.subtitle == null
+            ? null
+            : _resolveLabel(context, entry.subtitle!, null),
+        control: control,
+        gap: gap,
+      );
+    } else {
+      // 🔴 Kind INCONNU : jamais un throw — le repli de l'hôte, sinon rien.
+      return unknownEntryBuilder?.call(context, slot, entry);
+    }
+    final Widget? icon = entry.icon;
+    if (icon == null) return tile;
+    return _ZChatSettingsIconRow(icon: icon, gap: gap, child: tile);
+  }
+
+  /// Le rendu commun des kinds à SEGMENTS (`select`/`scale`) — la primitive
+  /// exacte des familles standard : même groupe, mêmes options, même emphase
+  /// CR-74 (c'est ce qui rend la re-expression indolore, garde RX-1).
+  Widget _choicesGroup(
+    BuildContext context,
+    ZChatSettingsEntry entry,
+    List<ZChatSettingsChoice> choices,
+    Widget? selectionMark,
+    Widget? footer,
+    double gap,
+  ) => _ZChatSettingsGroup(
+    labelKey: entry.title.labelKey,
+    text: entry.title.text,
+    subtitle: entry.subtitle == null
+        ? null
+        : _resolveLabel(context, entry.subtitle!, null),
+    gap: gap,
+    options: <_ZChatSettingsOption>[
+      for (final ZChatSettingsChoice c in choices)
+        if (c.label.labelKey != null && c.enabled)
+          _ZChatSettingsOption.key(
+            labelKey: c.label.labelKey!,
+            count: c.count,
+            selected: c.selected,
+            onTap: c.onTap,
+            mark: selectionMark,
+          )
+        else
+          _ZChatSettingsOption.host(
+            text: _resolveLabel(context, c.label, c.count),
+            enabled: c.enabled,
+            selected: c.selected,
+            onTap: c.onTap,
+            mark: selectionMark,
+          ),
+    ],
+    footer: footer,
+  );
+
+  // ── Les CINQ familles standard, RE-EXPRIMÉES en entrées (arbitrage 1) ─────
 
   /// L'EN-TÊTE par défaut — la forme lex (`tools_sheet.dart:44-61`) : le titre,
   /// « réinitialiser » (le `reset()` déjà corrigé du contrôleur), et
@@ -561,116 +846,150 @@ class ZChatSettingsSheet extends StatelessWidget {
     );
   }
 
+  /// La famille « verbosité » — une [ZChatSettingsEntry] de kind `select`,
+  /// rendue par la voie commune. Rendu STRICTEMENT identique à l'ancienne
+  /// tuile (garde RX-1) ; les gestes restent ceux du contrôleur.
   Widget? _responseLength(BuildContext context, ZChatSettingsSlot slot) =>
-      _ZChatSettingsGroup(
-        labelKey: kZChatLabelResponseLength,
-        gap: resolveGap(context),
-        options: <_ZChatSettingsOption>[
-          _ZChatSettingsOption.key(
-            labelKey: kZChatLabelSettingAuto,
-            selected: slot.settings.responseLength == null,
-            onTap: () => slot.controller.setResponseLength(null),
-          ),
-          for (final MapEntry<ZChatResponseLength, String> e
-              in _kResponseLengthLabels.entries)
-            _ZChatSettingsOption.key(
-              labelKey: e.value,
-              selected: slot.settings.responseLength == e.key,
-              onTap: () => slot.controller.setResponseLength(e.key),
-            ),
-        ],
-      );
-
-  Widget? _lengthBias(BuildContext context, ZChatSettingsSlot slot) =>
-      _ZChatSettingsGroup(
-        labelKey: kZChatLabelLengthBias,
-        gap: resolveGap(context),
-        options: <_ZChatSettingsOption>[
-          _ZChatSettingsOption.key(
-            labelKey: kZChatLabelSettingAuto,
-            selected: slot.settings.lengthBias == null,
-            onTap: () => slot.controller.setLengthBias(null),
-          ),
-          for (final MapEntry<ZChatLengthBias, String> e
-              in _kLengthBiasLabels.entries)
-            _ZChatSettingsOption.key(
-              labelKey: e.value,
-              selected: slot.settings.lengthBias == e.key,
-              onTap: () => slot.controller.setLengthBias(e.key),
-            ),
-        ],
-      );
-
-  Widget? _computeBudget(BuildContext context, ZChatSettingsSlot slot) =>
-      _ZChatSettingsGroup(
-        labelKey: kZChatLabelComputeBudget,
-        gap: resolveGap(context),
-        options: <_ZChatSettingsOption>[
-          _ZChatSettingsOption.key(
-            labelKey: kZChatLabelSettingAuto,
-            selected: slot.settings.computeEffort == null,
-            onTap: () => slot.controller.setComputeEffort(null),
-          ),
-          // 🔴 Les paliers viennent des BORNES du kernel (`1..5`, l'intervalle
-          // commun aux deux backends), jamais d'une liste recopiée ici : élargir
-          // l'intervalle côté kernel élargit la feuille, sans retouche.
-          for (
-            int level = ZChatComputeEffort.min;
-            level <= ZChatComputeEffort.max;
-            level++
-          )
-            _ZChatSettingsOption.key(
-              labelKey: kZChatLabelComputeBudgetLevel,
-              count: level,
-              selected: slot.settings.computeEffort?.level == level,
-              onTap: () =>
-                  slot.controller.setComputeEffort(ZChatComputeEffort(level)),
-            ),
-        ],
-        // 🔴 Lot K2 (T1) — l'ÉCHELLE LABELLISÉE de lex (`tools_sheet.dart:
-        // 322-392`, labels Rapide/Équilibré/Profond du slider) : trois repères
-        // qualitatifs SOUS les paliers. Hors de l'arbre sémantique — l'état est
-        // déjà annoncé par les options ; les dupliquer ferait annoncer chaque
-        // palier deux fois (leçon MAJEUR-doublon).
-        footer: ExcludeSemantics(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                zChatLabel(context, kZChatLabelComputeBudgetFast),
-                textAlign: TextAlign.start,
+      _renderEntry(
+        context,
+        slot,
+        ZChatSettingsEntry(
+          id: kZChatSettingsEntryResponseLength,
+          title: const ZChatSettingsLabel.key(kZChatLabelResponseLength),
+          control: ZChatSelectControl(
+            choices: <ZChatSettingsChoice>[
+              ZChatSettingsChoice(
+                label: const ZChatSettingsLabel.key(kZChatLabelSettingAuto),
+                selected: slot.settings.responseLength == null,
+                onTap: () => slot.controller.setResponseLength(null),
               ),
-              Text(
-                zChatLabel(context, kZChatLabelComputeBudgetBalanced),
-                textAlign: TextAlign.start,
-              ),
-              Text(
-                zChatLabel(context, kZChatLabelComputeBudgetDeep),
-                textAlign: TextAlign.start,
-              ),
+              for (final MapEntry<ZChatResponseLength, String> e
+                  in _kResponseLengthLabels.entries)
+                ZChatSettingsChoice(
+                  label: ZChatSettingsLabel.key(e.value),
+                  selected: slot.settings.responseLength == e.key,
+                  onTap: () => slot.controller.setResponseLength(e.key),
+                ),
             ],
           ),
         ),
       );
 
-  Widget? _revealThinking(BuildContext context, ZChatSettingsSlot slot) =>
-      _ZChatSettingsGroup(
-        labelKey: kZChatLabelRevealThinking,
-        gap: resolveGap(context),
-        options: <_ZChatSettingsOption>[
-          _ZChatSettingsOption.key(
-            labelKey: kZChatLabelSettingAuto,
-            selected: slot.settings.revealThinkingSteps == null,
-            onTap: () => slot.controller.setRevealThinkingSteps(null),
+  Widget? _lengthBias(BuildContext context, ZChatSettingsSlot slot) =>
+      _renderEntry(
+        context,
+        slot,
+        ZChatSettingsEntry(
+          id: kZChatSettingsEntryLengthBias,
+          title: const ZChatSettingsLabel.key(kZChatLabelLengthBias),
+          control: ZChatSelectControl(
+            choices: <ZChatSettingsChoice>[
+              ZChatSettingsChoice(
+                label: const ZChatSettingsLabel.key(kZChatLabelSettingAuto),
+                selected: slot.settings.lengthBias == null,
+                onTap: () => slot.controller.setLengthBias(null),
+              ),
+              for (final MapEntry<ZChatLengthBias, String> e
+                  in _kLengthBiasLabels.entries)
+                ZChatSettingsChoice(
+                  label: ZChatSettingsLabel.key(e.value),
+                  selected: slot.settings.lengthBias == e.key,
+                  onTap: () => slot.controller.setLengthBias(e.key),
+                ),
+            ],
           ),
-          _ZChatSettingsOption.key(
-            labelKey: kZChatLabelRevealThinking,
-            selected: slot.settings.revealThinkingSteps ?? false,
-            onTap: () => slot.controller.setRevealThinkingSteps(
-              !(slot.settings.revealThinkingSteps ?? false),
+        ),
+      );
+
+  Widget? _computeBudget(BuildContext context, ZChatSettingsSlot slot) =>
+      _renderEntry(
+        context,
+        slot,
+        ZChatSettingsEntry(
+          id: kZChatSettingsEntryComputeBudget,
+          title: const ZChatSettingsLabel.key(kZChatLabelComputeBudget),
+          // Une ÉCHELLE : les paliers sont ordonnés — et ils viennent des
+          // BORNES du kernel (`1..5`), jamais d'une liste recopiée ici :
+          // élargir l'intervalle côté kernel élargit la feuille, sans retouche.
+          control: ZChatScaleControl(
+            choices: <ZChatSettingsChoice>[
+              ZChatSettingsChoice(
+                label: const ZChatSettingsLabel.key(kZChatLabelSettingAuto),
+                selected: slot.settings.computeEffort == null,
+                onTap: () => slot.controller.setComputeEffort(null),
+              ),
+              for (
+                int level = ZChatComputeEffort.min;
+                level <= ZChatComputeEffort.max;
+                level++
+              )
+                ZChatSettingsChoice(
+                  label: const ZChatSettingsLabel.key(
+                    kZChatLabelComputeBudgetLevel,
+                  ),
+                  count: level,
+                  selected: slot.settings.computeEffort?.level == level,
+                  onTap: () => slot.controller.setComputeEffort(
+                    ZChatComputeEffort(level),
+                  ),
+                ),
+            ],
+            // 🔴 Lot K2 (T1) — l'ÉCHELLE LABELLISÉE de lex (`tools_sheet.dart:
+            // 322-392`) : trois repères qualitatifs SOUS les paliers. Hors de
+            // l'arbre sémantique — l'état est déjà annoncé par les options ;
+            // les dupliquer ferait annoncer chaque palier deux fois (leçon
+            // MAJEUR-doublon).
+            footer: ExcludeSemantics(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(
+                    zChatLabel(context, kZChatLabelComputeBudgetFast),
+                    textAlign: TextAlign.start,
+                  ),
+                  Text(
+                    zChatLabel(context, kZChatLabelComputeBudgetBalanced),
+                    textAlign: TextAlign.start,
+                  ),
+                  Text(
+                    zChatLabel(context, kZChatLabelComputeBudgetDeep),
+                    textAlign: TextAlign.start,
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
+      );
+
+  Widget? _revealThinking(BuildContext context, ZChatSettingsSlot slot) =>
+      _renderEntry(
+        context,
+        slot,
+        ZChatSettingsEntry(
+          id: kZChatSettingsEntryRevealThinking,
+          title: const ZChatSettingsLabel.key(kZChatLabelRevealThinking),
+          // ⚠️ PAS un kind `toggle` : l'axe du kernel est TERNAIRE
+          // (`null`/`true`/`false` — « l'hôte décide » est un état rendu,
+          // cf. kZChatLabelSettingAuto). Deux options, comme avant la
+          // re-expression — et c'est ce que RX-1 fige.
+          control: ZChatSelectControl(
+            choices: <ZChatSettingsChoice>[
+              ZChatSettingsChoice(
+                label: const ZChatSettingsLabel.key(kZChatLabelSettingAuto),
+                selected: slot.settings.revealThinkingSteps == null,
+                onTap: () => slot.controller.setRevealThinkingSteps(null),
+              ),
+              ZChatSettingsChoice(
+                label: const ZChatSettingsLabel.key(kZChatLabelRevealThinking),
+                selected: slot.settings.revealThinkingSteps ?? false,
+                onTap: () => slot.controller.setRevealThinkingSteps(
+                  !(slot.settings.revealThinkingSteps ?? false),
+                ),
+              ),
+            ],
+          ),
+        ),
       );
 
   /// La famille « CAPACITÉS » par défaut — lot K4, le raccord de la tuile
@@ -758,39 +1077,47 @@ class ZChatSettingsSheet extends StatelessWidget {
             ),
           ),
     ];
-    return _ZChatSettingsGroup(
-      labelKey: kZChatLabelCorpusScope,
-      gap: gap,
-      options: <_ZChatSettingsOption>[
-        _ZChatSettingsOption.key(
-          labelKey: kZChatLabelCorpusAll,
-          selected: slot.corpusScope == null,
-          onTap: () => slot.controller.setCorpusScope(null),
-        ),
-        for (final ZChatCorpusOption option in slot.corpusCatalog)
-          _ZChatSettingsOption.host(
-            // 🔴 Le libellé vient de l'HÔTE : pas de clé, pas de traduction du
-            // socle. C'est ce qui tient « aucune valeur métier ici ».
-            text: option.label,
-            enabled: option.enabled,
-            selected: slot.controller.selectsCorpusKey(option.key),
-            onTap: () => option.children.isNotEmpty &&
-                    slot.controller.selectsCorpusKey(option.key)
-                // Désélection d'un parent : ses enfants sortent AVEC lui.
-                ? _removeKeys(slot, <String>[
-                    option.key,
-                    ...option.children.map((ZChatCorpusOption c) => c.key),
-                  ])
-                : slot.controller.toggleCorpusKey(option.key),
-          ),
-      ],
-      footer: childRows.isEmpty
-          ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: childRows,
+    return _renderEntry(
+      context,
+      slot,
+      ZChatSettingsEntry(
+        id: kZChatSettingsEntryCorpus,
+        sectionId: kZChatSettingsSectionCorpus,
+        title: const ZChatSettingsLabel.key(kZChatLabelCorpusScope),
+        control: ZChatSelectControl(
+          choices: <ZChatSettingsChoice>[
+            ZChatSettingsChoice(
+              label: const ZChatSettingsLabel.key(kZChatLabelCorpusAll),
+              selected: slot.corpusScope == null,
+              onTap: () => slot.controller.setCorpusScope(null),
             ),
+            for (final ZChatCorpusOption option in slot.corpusCatalog)
+              ZChatSettingsChoice(
+                // 🔴 Le libellé vient de l'HÔTE : pas de clé, pas de
+                // traduction du socle. C'est ce qui tient « aucune valeur
+                // métier ici ».
+                label: ZChatSettingsLabel.text(option.label),
+                enabled: option.enabled,
+                selected: slot.controller.selectsCorpusKey(option.key),
+                onTap: () => option.children.isNotEmpty &&
+                        slot.controller.selectsCorpusKey(option.key)
+                    // Désélection d'un parent : ses enfants sortent AVEC lui.
+                    ? _removeKeys(slot, <String>[
+                        option.key,
+                        ...option.children.map((ZChatCorpusOption c) => c.key),
+                      ])
+                    : slot.controller.toggleCorpusKey(option.key),
+              ),
+          ],
+          footer: childRows.isEmpty
+              ? null
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: childRows,
+                ),
+        ),
+      ),
     );
   }
 
@@ -896,23 +1223,40 @@ TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
 /// filtres du corpus). `null` ⇒ absent (AD-4).
 class _ZChatSettingsGroup extends StatelessWidget {
   const _ZChatSettingsGroup({
-    required this.labelKey,
     required this.options,
     required this.gap,
+    this.labelKey,
+    this.text,
+    this.subtitle,
     this.footer,
-  });
+  }) : assert((labelKey == null) != (text == null));
 
-  final String labelKey;
+  /// Titre par CLÉ du socle — exclusif de [text]. La distinction reste une
+  /// propriété du site d'appel (les familles standard passent la clé, les
+  /// entrées d'hôte leur texte déjà localisé).
+  final String? labelKey;
+
+  /// Titre d'HÔTE, déjà résolu. Exclusif de [labelKey].
+  final String? text;
+
+  /// Sous-titre déjà résolu (mode Tile, arbitrage 1). `null` ⇒ absent (AD-4)
+  /// — et l'arbre redevient EXACTEMENT celui d'avant la re-expression.
+  final String? subtitle;
+
   final List<_ZChatSettingsOption> options;
   final double gap;
   final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
+    final String title = text ?? zChatLabel(context, labelKey!);
+    final String? sub = subtitle;
     return Semantics(
       container: true,
       explicitChildNodes: true,
-      label: zChatLabel(context, labelKey),
+      // Le sous-titre entre dans le libellé du groupe : un lecteur d'écran
+      // l'entend, sans nœud supplémentaire (leçon MAJEUR-doublon).
+      label: sub == null ? title : '$title\n$sub',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         // AD-13 : alignement DIRECTIONNEL.
@@ -924,11 +1268,15 @@ class _ZChatSettingsGroup extends StatelessWidget {
           // `contains` était aveugle à la concaténation).
           ExcludeSemantics(
             child: Text(
-              zChatLabel(context, labelKey),
+              title,
               // AD-13 : jamais `TextAlign.left`.
               textAlign: TextAlign.start,
             ),
           ),
+          if (sub != null)
+            ExcludeSemantics(
+              child: Text(sub, textAlign: TextAlign.start),
+            ),
           SizedBox(height: gap),
           Wrap(spacing: gap, runSpacing: gap, children: options),
           ?footer,
@@ -1160,6 +1508,7 @@ class _ZChatSettingsOption extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.count,
+    this.mark,
   }) : text = null,
        enabled = true;
 
@@ -1173,6 +1522,7 @@ class _ZChatSettingsOption extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.enabled = true,
+    this.mark,
   }) : labelKey = null,
        count = null;
 
@@ -1193,6 +1543,12 @@ class _ZChatSettingsOption extends StatelessWidget {
   /// SANS couleur : sémantique `enabled: false` + italique (lot K2). Le geste
   /// est retiré, jamais silencieusement ignoré.
   final bool enabled;
+
+  /// Glyphe d'HÔTE posé DEVANT le libellé de l'option **choisie** — la coche
+  /// des segments lex (lot Tile). `null` ⇒ l'emphase CR-74 seule, et l'arbre
+  /// redevient EXACTEMENT celui d'avant ce lot (garde RX-1). Décoratif :
+  /// hors de l'arbre sémantique — l'état est déjà annoncé par `selected`.
+  final Widget? mark;
 
   @override
   Widget build(BuildContext context) {
@@ -1278,15 +1634,327 @@ class _ZChatSettingsOption extends StatelessWidget {
             // jumelle le vérifie.
             widthFactor: 1,
             heightFactor: 1,
-            child: Text(
-              resolved,
-              // 🔴 Le style est posé EXPLICITEMENT sur les deux états : c'est
-              // ce qui rend la différence mesurable sur le `RenderParagraph`,
-              // et non « présente quelque part dans l'arbre ».
-              style: selected ? styles.chosen : styles.plain,
-              // AD-13 : jamais `TextAlign.left`.
-              textAlign: TextAlign.start,
+            child: _withMark(
+              Text(
+                resolved,
+                // 🔴 Le style est posé EXPLICITEMENT sur les deux états :
+                // c'est ce qui rend la différence mesurable sur le
+                // `RenderParagraph`, et non « présente quelque part dans
+                // l'arbre ».
+                style: selected ? styles.chosen : styles.plain,
+                // AD-13 : jamais `TextAlign.left`.
+                textAlign: TextAlign.start,
+              ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Pose le glyphe d'hôte devant le libellé de l'option CHOISIE — et rend le
+  /// libellé SEUL partout ailleurs : sans [mark], l'arbre est celui d'avant ce
+  /// lot, au widget près (garde RX-1).
+  Widget _withMark(Widget label) {
+    final Widget? m = mark;
+    if (m == null || !selected) return label;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // Décoratif : l'état est déjà porté par `Semantics(selected:)`.
+        ExcludeSemantics(child: m),
+        const SizedBox(width: kZChatSettingsReferenceMarkGap),
+        label,
+      ],
+    );
+  }
+}
+
+/// La rangée « icône + tuile » du mode Tile (IFFD/f007) — l'icône est un
+/// glyphe d'HÔTE, décoratif (hors arbre sémantique : le titre est déjà
+/// annoncé par la tuile).
+class _ZChatSettingsIconRow extends StatelessWidget {
+  const _ZChatSettingsIconRow({
+    required this.icon,
+    required this.gap,
+    required this.child,
+  });
+
+  final Widget icon;
+  final double gap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        ExcludeSemantics(child: icon),
+        SizedBox(width: gap),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+/// Le corps « titre + sous-titre » commun aux tuiles non segmentées.
+class _ZChatSettingsTileBody extends StatelessWidget {
+  const _ZChatSettingsTileBody({required this.title, this.subtitle, this.value});
+
+  final String title;
+  final String? subtitle;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      // AD-13 : alignement DIRECTIONNEL.
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, textAlign: TextAlign.start),
+        if (subtitle != null) Text(subtitle!, textAlign: TextAlign.start),
+        if (value != null) Text(value!, textAlign: TextAlign.start),
+      ],
+    );
+  }
+}
+
+/// Tuile par défaut du kind `toggle` — la `ToolTile` d'IFFD sans sa coche
+/// orange en dur : l'état est porté par la sémantique (`toggled:`) ET par un
+/// canal visible non chromatique (libellé Activé/Désactivé + emphase CR-74
+/// quand actif). Toute la tuile est la cible (≥ 48 dp en géométrie rendue).
+class _ZChatSettingsToggleTile extends StatelessWidget {
+  const _ZChatSettingsToggleTile({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    required this.gap,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final String state = zChatLabel(
+      context,
+      value ? kZChatLabelToggleOn : kZChatLabelToggleOff,
+    );
+    final _ZChatSettingsEmphasis? emphasis =
+        _ZChatSettingsEmphasis.maybeOf(context);
+    final ({TextStyle plain, TextStyle chosen}) styles = _optionStyles(
+      DefaultTextStyle.of(context).style,
+      weight: emphasis?.weight ?? kZChatSettingsReferenceSelectedWeight,
+      decoration:
+          emphasis?.decoration ?? kZChatSettingsReferenceSelectedDecoration,
+    );
+    void toggle() => onChanged(!value);
+    return Semantics(
+      // 🔴 L'état par le drapeau `toggled` (lecteur d'écran) ET par le texte
+      // d'état stylé (vue) — deux canaux, aucun chromatique (leçon CR-74).
+      button: true,
+      toggled: value,
+      label: subtitle == null ? title : '$title\n$subtitle',
+      value: state,
+      excludeSemantics: true,
+      onTap: toggle,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: toggle,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: _ZChatSettingsTileBody(title: title, subtitle: subtitle),
+              ),
+              SizedBox(width: gap),
+              Text(
+                state,
+                style: value ? styles.chosen : styles.plain,
+                textAlign: TextAlign.start,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tuile par défaut du kind `navigation` — le « Domaine d'expertise » d'IFFD :
+/// titre, valeur courante d'hôte, glyphe de fin d'hôte. La destination
+/// appartient à l'hôte ; le socle rend l'affordance (`Semantics(button:)`,
+/// cible ≥ 48 dp).
+class _ZChatSettingsNavigationTile extends StatelessWidget {
+  const _ZChatSettingsNavigationTile({
+    required this.title,
+    required this.onTap,
+    required this.gap,
+    this.subtitle,
+    this.value,
+    this.trailing,
+  });
+
+  final String title;
+  final String? subtitle;
+  final String? value;
+  final Widget? trailing;
+  final VoidCallback onTap;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget? end = trailing;
+    return Semantics(
+      button: true,
+      label: subtitle == null ? title : '$title\n$subtitle',
+      value: value,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: kZChatMinTapTarget),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: _ZChatSettingsTileBody(
+                  title: title,
+                  subtitle: subtitle,
+                  value: value,
+                ),
+              ),
+              if (end != null) ...<Widget>[
+                SizedBox(width: gap),
+                // Décoratif (le chevron) : l'affordance est déjà annoncée.
+                ExcludeSemantics(child: end),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tuile par défaut du kind `numberBounded` — les bornes sont APPLIQUÉES :
+/// l'affordance hors borne est désactivée (sémantique `enabled: false`) et le
+/// geste n'émet jamais une valeur hors `[min, max]` (AD-10). Le
+/// `MinMaxFormatter` mort d'IFFD n'est pas porté ; la saisie texte
+/// pixel-perfect est l'affaire du satellite Material.
+class _ZChatSettingsNumberTile extends StatelessWidget {
+  const _ZChatSettingsNumberTile({
+    required this.title,
+    required this.control,
+    required this.gap,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final ZChatNumberControl control;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Valeur ÉCRÊTÉE au rendu : un hôte qui passe 12 sur [0, 9] voit 9 —
+    // jamais un throw, jamais un état inatteignable (AD-10).
+    final int value = control.value.clamp(control.min, control.max);
+    final bool canDecrease = value - control.step >= control.min;
+    final bool canIncrease = value + control.step <= control.max;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: subtitle == null ? title : '$title\n$subtitle',
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: ExcludeSemantics(
+              child: _ZChatSettingsTileBody(title: title, subtitle: subtitle),
+            ),
+          ),
+          _ZChatSettingsStepTarget(
+            labelKey: kZChatLabelDecrease,
+            enabled: canDecrease,
+            glyph: control.decrementGlyph,
+            onTap: () => control.onChanged(value - control.step),
+          ),
+          SizedBox(width: gap),
+          Semantics(
+            // La valeur courante, annoncée comme telle.
+            label: title,
+            value: '$value',
+            excludeSemantics: true,
+            child: Text(value.toString(), textAlign: TextAlign.start),
+          ),
+          SizedBox(width: gap),
+          _ZChatSettingsStepTarget(
+            labelKey: kZChatLabelIncrease,
+            enabled: canIncrease,
+            glyph: control.incrementGlyph,
+            onTap: () => control.onChanged(value + control.step),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Une affordance de PAS du nombre borné : cible ≥ 48 dp en géométrie rendue,
+/// `Semantics(button:, enabled:)` — le geste est RETIRÉ hors borne, jamais
+/// silencieusement ignoré.
+class _ZChatSettingsStepTarget extends StatelessWidget {
+  const _ZChatSettingsStepTarget({
+    required this.labelKey,
+    required this.enabled,
+    required this.onTap,
+    this.glyph,
+  });
+
+  final String labelKey;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  /// Glyphe d'HÔTE. `null` ⇒ le libellé résolu (le socle n'invente aucun
+  /// glyphe — `material` banni).
+  final Widget? glyph;
+
+  @override
+  Widget build(BuildContext context) {
+    final String resolved = zChatLabel(context, labelKey);
+    final Widget face = glyph == null
+        ? Text(resolved, textAlign: TextAlign.start)
+        : glyph!;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: resolved,
+      excludeSemantics: true,
+      onTap: enabled ? onTap : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? onTap : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: kZChatMinTapTarget,
+            minWidth: kZChatMinTapTarget,
+          ),
+          child: Align(
+            // AD-13 : alignement DIRECTIONNEL. Facteurs posés : sous un `Row`
+            // parent la boîte épouse déjà son enfant, mais la défense vaut si
+            // cette cible est un jour posée sous des contraintes bornées
+            // (précédent `_ZChatComposerTarget`, mesuré).
+            alignment: AlignmentDirectional.center,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: face,
           ),
         ),
       ),

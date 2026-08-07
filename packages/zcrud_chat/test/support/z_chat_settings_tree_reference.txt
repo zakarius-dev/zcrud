@@ -1,0 +1,364 @@
+ZChatSettingsSheet
+  Semantics sem[label=Réglages de génération sel=null btn=null en=null cont=true]
+    _ZChatSettingsEmphasis
+      Padding p=EdgeInsetsDirectional(12.0, 12.0, 12.0, 12.0)
+        ValueListenableBuilder<ZChatGenerationSettings>
+          ValueListenableBuilder<ZChatCorpusScope?>
+            Column
+              Semantics sem[label=null sel=null btn=null en=null cont=true]
+                Row
+                  Expanded
+                    ExcludeSemantics
+                      Text text=Réglages de génération
+                        RichText rich=Réglages de génération w=FontWeight.w400 d=TextDecoration.none i=null
+                  _ZChatSettingsAction
+                    Semantics sem[label=Réinitialiser sel=null btn=true en=null cont=false]
+                      GestureDetector
+                        RawGestureDetector
+                          _GestureSemantics
+                            Listener
+                              ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                  Text text=Réinitialiser
+                                    RichText rich=Réinitialiser w=FontWeight.w400 d=TextDecoration.none i=null
+                  _ZChatSettingsAction
+                    Semantics sem[label=Fermer sel=null btn=true en=null cont=false]
+                      GestureDetector
+                        RawGestureDetector
+                          _GestureSemantics
+                            Listener
+                              ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                  Text text=Fermer
+                                    RichText rich=Fermer w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              ValueListenableBuilder<String?>
+                _ZChatSettingsGroup
+                  Semantics sem[label=Préréglages sel=null btn=null en=null cont=true]
+                    Column
+                      ExcludeSemantics
+                        Text text=Préréglages
+                          RichText rich=Préréglages w=FontWeight.w400 d=TextDecoration.none i=null
+                      SizedBox sz=nullx8.0
+                      Wrap sp=8.0/8.0
+                        _ZChatSettingsOption
+                          Semantics sem[label=Aucun sel=true btn=true en=null cont=false]
+                            GestureDetector
+                              RawGestureDetector
+                                _GestureSemantics
+                                  Listener
+                                    ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                      Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                        Text text=Aucun
+                                          RichText rich=Aucun w=FontWeight.w700 d=TextDecoration.underline i=null
+                        _ZChatSettingsOption
+                          Semantics sem[label=Préréglage Un sel=false btn=true en=null cont=false]
+                            GestureDetector
+                              RawGestureDetector
+                                _GestureSemantics
+                                  Listener
+                                    ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                      Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                        Text text=Préréglage Un
+                                          RichText rich=Préréglage Un w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              _ZChatSettingsGroup
+                Semantics sem[label=Longueur de réponse sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Longueur de réponse
+                        RichText rich=Longueur de réponse w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Automatique sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Automatique
+                                        RichText rich=Automatique w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Concise sel=true btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Concise
+                                        RichText rich=Concise w=FontWeight.w700 d=TextDecoration.underline i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Standard sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Standard
+                                        RichText rich=Standard w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Détaillée sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Détaillée
+                                        RichText rich=Détaillée w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              _ZChatSettingsGroup
+                Semantics sem[label=Régénération sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Régénération
+                        RichText rich=Régénération w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Automatique sel=true btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Automatique
+                                        RichText rich=Automatique w=FontWeight.w700 d=TextDecoration.underline i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Plus court sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Plus court
+                                        RichText rich=Plus court w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Tel quel sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Tel quel
+                                        RichText rich=Tel quel w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Plus long sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Plus long
+                                        RichText rich=Plus long w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              _ZChatSettingsGroup
+                Semantics sem[label=Budget de calcul sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Budget de calcul
+                        RichText rich=Budget de calcul w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Automatique sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Automatique
+                                        RichText rich=Automatique w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Niveau 1 sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Niveau 1
+                                        RichText rich=Niveau 1 w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Niveau 2 sel=true btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Niveau 2
+                                        RichText rich=Niveau 2 w=FontWeight.w700 d=TextDecoration.underline i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Niveau 3 sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Niveau 3
+                                        RichText rich=Niveau 3 w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Niveau 4 sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Niveau 4
+                                        RichText rich=Niveau 4 w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Niveau 5 sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Niveau 5
+                                        RichText rich=Niveau 5 w=FontWeight.w400 d=TextDecoration.none i=null
+                    ExcludeSemantics
+                      Row
+                        Text text=Rapide
+                          RichText rich=Rapide w=FontWeight.w400 d=TextDecoration.none i=null
+                        Text text=Équilibré
+                          RichText rich=Équilibré w=FontWeight.w400 d=TextDecoration.none i=null
+                        Text text=Profond
+                          RichText rich=Profond w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              _ZChatSettingsGroup
+                Semantics sem[label=Afficher le raisonnement sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Afficher le raisonnement
+                        RichText rich=Afficher le raisonnement w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Automatique sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Automatique
+                                        RichText rich=Automatique w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Afficher le raisonnement sel=true btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Afficher le raisonnement
+                                        RichText rich=Afficher le raisonnement w=FontWeight.w700 d=TextDecoration.underline i=null
+              SizedBox sz=nullx8.0
+              ZChatSettingsCapabilityTile
+                Semantics sem[label=Capacités sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Capacités
+                        RichText rich=Capacités w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Recherche web sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Recherche web
+                                        RichText rich=Recherche web w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Capacité hôte sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Capacité hôte
+                                        RichText rich=Capacité hôte w=FontWeight.w400 d=TextDecoration.none i=null
+              SizedBox sz=nullx8.0
+              _ZChatSettingsGroup
+                Semantics sem[label=Portée documentaire sel=null btn=null en=null cont=true]
+                  Column
+                    ExcludeSemantics
+                      Text text=Portée documentaire
+                        RichText rich=Portée documentaire w=FontWeight.w400 d=TextDecoration.none i=null
+                    SizedBox sz=nullx8.0
+                    Wrap sp=8.0/8.0
+                      _ZChatSettingsOption
+                        Semantics sem[label=Tous les corpus sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Tous les corpus
+                                        RichText rich=Tous les corpus w=FontWeight.w400 d=TextDecoration.none i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Alpha sel=true btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Alpha
+                                        RichText rich=Alpha w=FontWeight.w700 d=TextDecoration.underline i=null
+                      _ZChatSettingsOption
+                        Semantics sem[label=Bêta sel=false btn=true en=null cont=false]
+                          GestureDetector
+                            RawGestureDetector
+                              _GestureSemantics
+                                Listener
+                                  ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                    Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                      Text text=Bêta
+                                        RichText rich=Bêta w=FontWeight.w400 d=TextDecoration.none i=null
+                    Column
+                      Padding p=EdgeInsetsDirectional(16.0, 8.0, 0.0, 0.0)
+                        Wrap sp=8.0/8.0
+                          _ZChatSettingsOption
+                            Semantics sem[label=Tous les corpus sel=false btn=true en=null cont=false]
+                              GestureDetector
+                                RawGestureDetector
+                                  _GestureSemantics
+                                    Listener
+                                      ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                        Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                          Text text=Tous les corpus
+                                            RichText rich=Tous les corpus w=FontWeight.w400 d=TextDecoration.none i=null
+                          _ZChatSettingsOption
+                            Semantics sem[label=Alpha-Un sel=true btn=true en=null cont=false]
+                              GestureDetector
+                                RawGestureDetector
+                                  _GestureSemantics
+                                    Listener
+                                      ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                        Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                          Text text=Alpha-Un
+                                            RichText rich=Alpha-Un w=FontWeight.w700 d=TextDecoration.underline i=null
+                          _ZChatSettingsOption
+                            Semantics sem[label=Alpha-Deux sel=null btn=true en=false cont=false]
+                              ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                  Text text=Alpha-Deux
+                                    RichText rich=Alpha-Deux w=FontWeight.w400 d=TextDecoration.none i=FontStyle.italic

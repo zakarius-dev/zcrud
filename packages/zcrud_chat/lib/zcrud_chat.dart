@@ -118,6 +118,7 @@ export 'src/presentation/view/z_chat_composer.dart';
 // Lot K2 (chantier composer-lex) — la référence visuelle lex du composer, sa
 // chaîne paramètre > jeton > référence et les créneaux par défaut PURS.
 export 'src/presentation/view/z_chat_composer_chrome.dart';
+export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
 export 'src/presentation/view/z_chat_conversation_list.dart';
@@ -143,6 +144,13 @@ export 'src/presentation/view/z_chat_message_tile.dart';
 export 'src/presentation/view/z_chat_notebook_reference.dart';
 export 'src/presentation/view/z_chat_notebook_skin.dart';
 export 'src/presentation/view/z_chat_notebook_view.dart';
+// Lot « mode Tile + sélecteur de modèle » (arbitrage owner 2026-08-07) — le
+// modèle d'entrées DÉCLARATIF de la feuille (kind OUVERT, AD-4 ; kind inconnu
+// absent sans throw, AD-10), sur lequel les cinq familles standard sont
+// RE-EXPRIMÉES en interne (une seule voie de rendu, arbre par défaut identique
+// — garde RX-1), et le sélecteur de modèle d'IA du composer (contrat opaque
+// `ZChatModelOption`, menu par défaut au rendu des vidéos, coche sur l'actif).
+export 'src/presentation/view/z_chat_settings_entry.dart';
 export 'src/presentation/view/z_chat_settings_sheet.dart';
 export 'src/presentation/z_chat_controller.dart';
 export 'src/presentation/z_chat_stream_progress.dart';

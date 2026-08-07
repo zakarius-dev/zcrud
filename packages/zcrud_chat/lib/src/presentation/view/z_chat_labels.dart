@@ -259,6 +259,27 @@ const String kZChatLabelCapabilityWebSearch =
 /// (le `preExpertToolsContext` de lex, généralisé).
 const String kZChatLabelPresetNone = '${kZChatLabelPrefix}presetNone';
 
+// ── Lot « mode Tile + sélecteur de modèle » (arbitrage owner 2026-08-07) ───
+
+/// État VISIBLE « interrupteur actif » du kind `toggle` — le canal textuel non
+/// chromatique (la coche orange d'IFFD portait l'état par la seule couleur).
+const String kZChatLabelToggleOn = '${kZChatLabelPrefix}toggleOn';
+
+/// État VISIBLE « interrupteur inactif » du kind `toggle`.
+const String kZChatLabelToggleOff = '${kZChatLabelPrefix}toggleOff';
+
+/// Action « diminuer » du kind `numberBounded`.
+const String kZChatLabelDecrease = '${kZChatLabelPrefix}decrease';
+
+/// Action « augmenter » du kind `numberBounded`.
+const String kZChatLabelIncrease = '${kZChatLabelPrefix}increase';
+
+/// Étiquette sémantique du **sélecteur de modèle d'IA** du composer
+/// (arbitrage 2). 🔴 GÉNÉRIQUE : aucun nom de modèle n'entre au socle — les
+/// options (`ZChatModelOption`) viennent de l'hôte, id opaque + libellé déjà
+/// localisé.
+const String kZChatLabelModelSelector = '${kZChatLabelPrefix}modelSelector';
+
 /// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
 
@@ -408,6 +429,11 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelPresetNone,
   kZChatLabelCapabilities,
   kZChatLabelCapabilityWebSearch,
+  kZChatLabelToggleOn,
+  kZChatLabelToggleOff,
+  kZChatLabelDecrease,
+  kZChatLabelIncrease,
+  kZChatLabelModelSelector,
   kZChatLabelConversations,
   kZChatLabelLoadingConversations,
   kZChatLabelConversationsError,
@@ -500,6 +526,11 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelPresetNone: 'Aucun',
   kZChatLabelCapabilities: 'Capacités',
   kZChatLabelCapabilityWebSearch: 'Recherche web',
+  kZChatLabelToggleOn: 'Activé',
+  kZChatLabelToggleOff: 'Désactivé',
+  kZChatLabelDecrease: 'Diminuer',
+  kZChatLabelIncrease: 'Augmenter',
+  kZChatLabelModelSelector: 'Modèle',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
   kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',

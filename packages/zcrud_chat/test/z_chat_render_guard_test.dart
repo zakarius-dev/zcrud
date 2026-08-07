@@ -105,6 +105,13 @@ const List<String> _kLiteralExemptFiles = <String>[
   'z_chat_labels.dart',
   'z_chat_seam_failure.dart',
   'z_chat_notebook_reference.dart',
+  // Lot Tile (2026-08-07) : le MODÈLE d'entrées — ses littéraux sont des CLÉS
+  // MACHINE opaques (kinds ouverts `toggle`/`scale`/…, ids `zchat.entry.*`,
+  // `zchat.section.*`), jamais un texte affiché : tout libellé du modèle passe
+  // par `ZChatSettingsLabel` (clé de registre ou texte d'HÔTE). Même catégorie
+  // que `z_chat_labels.dart`. Le fichier ne rend AUCUN widget — un `Text(`
+  // qui y apparaîtrait serait attrapé par la garde de structure du lot.
+  'z_chat_settings_entry.dart',
 ];
 
 final RegExp _wordBearingLiteral = RegExp(r'[A-Za-zÀ-ÖØ-öø-ÿ]{4,}');
@@ -387,7 +394,7 @@ void main() {
       // Une exemption qui grossit sans bruit vide la garde. TROIS fichiers, pas
       // un de plus — et tous trois justifiés au point de déclaration (le
       // troisième au lot γ, CR-IFFD-72 : le fichier de référence audité).
-      expect(_kLiteralExemptFiles, hasLength(3),
+      expect(_kLiteralExemptFiles, hasLength(4),
           reason: '🔴 une exemption a été AJOUTÉE au grep de littéraux. '
               'Justifiez-la au point de déclaration et mettez ce compte à '
               'jour — délibérément, jamais par accident.');
