@@ -85,6 +85,16 @@ workspace:
   # Arêtes SORTANTES : zcrud_chat + zcrud_chat_kernel + zcrud_core +
   # zcrud_markdown. ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe.
   - packages/zcrud_chat_markdown
+  # Lot K3 (composer-lex, arbitrage S2) : builders MATERIAL pixel-perfect du
+  # composer (FAB d'envoi, chips d'effort, badges, chips de pièces jointes,
+  # slider de budget labellisé) — le rendu lex_douane en Material VRAI, que le
+  # socle `zcrud_chat` (chromatiquement nu, material banni) ne peut pas porter.
+  # Toute valeur passe par `zChatComposerChromeOf`/`ZChatComposerReference`
+  # (K2) — garde de source « zéro littéral ». OPT-IN (AD-57) : builders sur les
+  # créneaux du socle, jamais une vue parallèle (motif CR-LEX-78). Arêtes
+  # SORTANTES : zcrud_chat + zcrud_chat_kernel + zcrud_core. ACYCLIQUE ;
+  # CORE OUT=0 ; PUITS du graphe (aucune arête entrante).
+  - packages/zcrud_chat_material
   # ES-4.2 : runtime de session SRS en CYCLE (`ZStudySessionEngine` :
   # ChangeNotifier pur + reducer PUR, réinsertion +2/+4 sur lapse). Écrit le SRS
   # UNIQUEMENT via un seam injecté (= `reviewCard`, voie unique AD-9/AD-23) —

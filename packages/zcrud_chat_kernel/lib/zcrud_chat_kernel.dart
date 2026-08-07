@@ -42,6 +42,11 @@ export 'src/domain/action/z_chat_action_plan.dart';
 // de lex), contexte d'étude, jeton d'annulation PAR REQUÊTE, familles d'échec
 // IA (`ZQuotaExceededFailure` du cœur est CÂBLÉE, pas redéclarée).
 export 'src/domain/ai/z_chat_ai_failure.dart';
+// Lot K1 — CAPACITÉS booléennes vérifiables : recherche web TYPÉE + canal
+// OUVERT (`ZChatGenerationSettings.capabilities`, clés opaques — AD-4), et le
+// bouclage anti-repli-muet `auditCapabilities` → `ZChatCapabilityAudit`
+// (pendant exact de `ZChatCorpusScope.audit`).
+export 'src/domain/ai/z_chat_capability_audit.dart';
 export 'src/domain/ai/z_chat_compute_effort.dart';
 export 'src/domain/ai/z_chat_context_port.dart';
 // Lot β — PORTÉE documentaire VÉRIFIABLE : la portée s'exprime en CLÉS stables

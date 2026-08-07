@@ -475,6 +475,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.chatToolAccentColor,
     this.chatCapabilityAccents,
     this.chatBusyPalette,
+    this.chatComposerSendTargetSize,
+    this.chatComposerSendScaleIdle,
+    this.chatComposerSendScaleActive,
+    this.chatComposerSendScaleDuration,
+    this.chatComposerMobileBreakpoint,
+    this.chatComposerHintRotationPeriod,
+    this.chatComposerHintSwitchDuration,
+    this.chatResponseLengthAccents,
+    this.chatSelectedEmphasisWeight,
+    this.chatSelectedEmphasisDecoration,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -1394,6 +1404,85 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Séquence de teintes de l'indicateur d'occupation. `null` ⇒ référence.
   final List<Color>? chatBusyPalette;
 
+  // ── Chrome du COMPOSER de chat (chantier composer-lex, lot K4) ────────────
+  //
+  // 🔴 Niveau 2 de la chaîne `paramètre > jeton > référence` de
+  // `zChatComposerChromeOf` (`zcrud_chat`) — le régime exact des jetons
+  // notebook ci-dessus : `null` des deux côtés reste `null` à travers `lerp`,
+  // la référence lex du consommateur n'est jamais matérialisée par une
+  // transition de thème.
+
+  /// Côté de la cible d'ENVOI du composer. `null` ⇒ référence (48).
+  ///
+  /// 🔴 Le consommateur l'ÉCRÊTE à son plancher AD-13 (48 dp) : un jeton qui
+  /// demanderait les 40 dp du legacy rend quand même 48. Et son `lerp` est un
+  /// lerp de PLANCHER ([_lerpNullableFloor]) : une transition de thème ne
+  /// matérialise jamais `0` — une cible de 0 dp le temps d'une animation est
+  /// une régression d'accessibilité, pas une dimension qui « grandit ».
+  final double? chatComposerSendTargetSize;
+
+  /// Échelle du glyphe d'envoi, saisie VIDE. `null` ⇒ référence (0.7).
+  ///
+  /// `lerp` par [_lerpNullableFloor] — même raison que les durées : pour une
+  /// ÉCHELLE, `0` n'est pas une absence, c'est un glyphe invisible. Traiter un
+  /// côté `null` comme `0` ferait disparaître le bouton d'envoi le temps de la
+  /// transition.
+  final double? chatComposerSendScaleIdle;
+
+  /// Échelle du glyphe d'envoi, saisie NON vide. `null` ⇒ référence (1).
+  ///
+  /// Même règle de `lerp` que [chatComposerSendScaleIdle].
+  final double? chatComposerSendScaleActive;
+
+  /// Durée de la transition d'échelle de l'envoi. `null` ⇒ référence (150 ms).
+  /// `lerp` par [_lerpNullableDuration] — jamais `Duration.zero` matérialisé.
+  final Duration? chatComposerSendScaleDuration;
+
+  /// Largeur sous laquelle le composer passe en mode « icône seule ».
+  /// `null` ⇒ référence (400).
+  ///
+  /// 🔴 SEUIL, donc `lerp` **DISCRET** à `t = 0.5` — le précédent exact de
+  /// [dailyTasksMonthBreakpoint] (v0.54.1) : un breakpoint interpolé
+  /// continûment ferait BASCULER la mise en page plusieurs fois pendant une
+  /// transition de thème, au gré des largeurs intermédiaires. Un seuil n'a pas
+  /// d'états intermédiaires légitimes.
+  final double? chatComposerMobileBreakpoint;
+
+  /// Période de rotation du placeholder animé. `null` ⇒ référence (4 s).
+  /// `lerp` par [_lerpNullableDuration].
+  final Duration? chatComposerHintRotationPeriod;
+
+  /// Durée du fondu de changement de texte du placeholder.
+  /// `null` ⇒ référence (350 ms). `lerp` par [_lerpNullableDuration].
+  final Duration? chatComposerHintSwitchDuration;
+
+  /// Accents des paliers de verbosité du chat, indexés par le **nom** du
+  /// palier kernel (`'concise'`, `'standard'`, `'detailed'` —
+  /// `ZChatResponseLength.name`, AD-1 : ce package ne peut pas importer
+  /// l'enum). `null`/clé absente ⇒ référence.
+  ///
+  /// ⚠️ Contrepartie de l'exception FR-26 encadrée des 3 hex d'effort de
+  /// `ZChatComposerReference` : c'est ce jeton qui tient la condition
+  /// « remplaçable par thème ». TABLE, donc `lerp` **discret** à `t = 0.5` —
+  /// même règle que [chatCapabilityAccents] (pas de demi-palette).
+  final Map<String, Color>? chatResponseLengthAccents;
+
+  /// Graisse de l'option **choisie** des feuilles de réglages du chat
+  /// (CR-IFFD-74, canal visible n°1). `null` ⇒ référence (`w700`).
+  ///
+  /// `lerp` par [_lerpNullableFontWeight] : `FontWeight.lerp` avec un côté
+  /// `null` substituerait `w400` — la transition matérialiserait une graisse
+  /// NORMALE par-dessus la référence d'emphase du consommateur, c'est-à-dire
+  /// ferait disparaître la sélection visible le temps de l'animation.
+  final FontWeight? chatSelectedEmphasisWeight;
+
+  /// Décoration de l'option **choisie** (CR-IFFD-74, canal visible n°2).
+  /// `null` ⇒ référence (souligné).
+  ///
+  /// Une `TextDecoration` n'a pas d'états intermédiaires (pas de
+  /// demi-soulignement) : `lerp` **discret** à `t = 0.5`, comme les booléens.
+  final TextDecoration? chatSelectedEmphasisDecoration;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -1644,6 +1733,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Color? chatToolAccentColor,
     Map<String, Color>? chatCapabilityAccents,
     List<Color>? chatBusyPalette,
+    double? chatComposerSendTargetSize,
+    double? chatComposerSendScaleIdle,
+    double? chatComposerSendScaleActive,
+    Duration? chatComposerSendScaleDuration,
+    double? chatComposerMobileBreakpoint,
+    Duration? chatComposerHintRotationPeriod,
+    Duration? chatComposerHintSwitchDuration,
+    Map<String, Color>? chatResponseLengthAccents,
+    FontWeight? chatSelectedEmphasisWeight,
+    TextDecoration? chatSelectedEmphasisDecoration,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     errorColor: errorColor ?? this.errorColor,
@@ -1836,6 +1935,26 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     chatCapabilityAccents:
         chatCapabilityAccents ?? this.chatCapabilityAccents,
     chatBusyPalette: chatBusyPalette ?? this.chatBusyPalette,
+    chatComposerSendTargetSize:
+        chatComposerSendTargetSize ?? this.chatComposerSendTargetSize,
+    chatComposerSendScaleIdle:
+        chatComposerSendScaleIdle ?? this.chatComposerSendScaleIdle,
+    chatComposerSendScaleActive:
+        chatComposerSendScaleActive ?? this.chatComposerSendScaleActive,
+    chatComposerSendScaleDuration:
+        chatComposerSendScaleDuration ?? this.chatComposerSendScaleDuration,
+    chatComposerMobileBreakpoint:
+        chatComposerMobileBreakpoint ?? this.chatComposerMobileBreakpoint,
+    chatComposerHintRotationPeriod:
+        chatComposerHintRotationPeriod ?? this.chatComposerHintRotationPeriod,
+    chatComposerHintSwitchDuration:
+        chatComposerHintSwitchDuration ?? this.chatComposerHintSwitchDuration,
+    chatResponseLengthAccents:
+        chatResponseLengthAccents ?? this.chatResponseLengthAccents,
+    chatSelectedEmphasisWeight:
+        chatSelectedEmphasisWeight ?? this.chatSelectedEmphasisWeight,
+    chatSelectedEmphasisDecoration:
+        chatSelectedEmphasisDecoration ?? this.chatSelectedEmphasisDecoration,
   );
 
   @override
@@ -2523,8 +2642,76 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           ? chatCapabilityAccents
           : other.chatCapabilityAccents,
       chatBusyPalette: t < 0.5 ? chatBusyPalette : other.chatBusyPalette,
+      // Lot K4 (chantier composer-lex) — chrome du composer. Les arguments de
+      // chaque choix de lerp sont sur les DÉCLARATIONS des jetons.
+      // 🔴 PLANCHER de cible et ÉCHELLES : jamais `0` matérialisé — une cible
+      // de 0 dp est une régression AD-13, une échelle 0 un glyphe invisible.
+      chatComposerSendTargetSize: _lerpNullableFloor(
+        chatComposerSendTargetSize,
+        other.chatComposerSendTargetSize,
+        t,
+      ),
+      chatComposerSendScaleIdle: _lerpNullableFloor(
+        chatComposerSendScaleIdle,
+        other.chatComposerSendScaleIdle,
+        t,
+      ),
+      chatComposerSendScaleActive: _lerpNullableFloor(
+        chatComposerSendScaleActive,
+        other.chatComposerSendScaleActive,
+        t,
+      ),
+      chatComposerSendScaleDuration: _lerpNullableDuration(
+        chatComposerSendScaleDuration,
+        other.chatComposerSendScaleDuration,
+        t,
+      ),
+      // 🔴 SEUIL : DISCRET à t=.5 — le correctif v0.54.1
+      // (`dailyTasksMonthBreakpoint`) est né d'un lerp continu tagué rouge.
+      chatComposerMobileBreakpoint: t < 0.5
+          ? chatComposerMobileBreakpoint
+          : other.chatComposerMobileBreakpoint,
+      chatComposerHintRotationPeriod: _lerpNullableDuration(
+        chatComposerHintRotationPeriod,
+        other.chatComposerHintRotationPeriod,
+        t,
+      ),
+      chatComposerHintSwitchDuration: _lerpNullableDuration(
+        chatComposerHintSwitchDuration,
+        other.chatComposerHintSwitchDuration,
+        t,
+      ),
+      // TABLE : discrète, comme `chatCapabilityAccents` (pas de demi-palette).
+      chatResponseLengthAccents: t < 0.5
+          ? chatResponseLengthAccents
+          : other.chatResponseLengthAccents,
+      chatSelectedEmphasisWeight: _lerpNullableFontWeight(
+        chatSelectedEmphasisWeight,
+        other.chatSelectedEmphasisWeight,
+        t,
+      ),
+      // Pas de demi-soulignement : discret, comme les booléens.
+      chatSelectedEmphasisDecoration: t < 0.5
+          ? chatSelectedEmphasisDecoration
+          : other.chatSelectedEmphasisDecoration,
     );
   }
+}
+
+/// Interpole deux graisses nullables — **sans jamais matérialiser `w400`**.
+///
+/// 🔴 Même famille de raisons que [_lerpNullableDuration] et
+/// [_lerpNullableFloor] : `FontWeight.lerp` substitue `FontWeight.normal` à un
+/// côté `null`. Or `null` signifie ici « le consommateur applique SA graisse
+/// d'emphase de référence » (`w700` pour la sélection CR-IFFD-74) : interpoler
+/// depuis `w400` ferait passer l'option choisie par une graisse NORMALE — la
+/// sélection visible disparaîtrait le temps de la transition, exactement le
+/// défaut que CR-IFFD-74 corrige. Un côté `null` ⇒ on rend l'autre côté, seule
+/// valeur réellement connue.
+FontWeight? _lerpNullableFontWeight(FontWeight? a, FontWeight? b, double t) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return FontWeight.lerp(a, b, t);
 }
 
 double? _lerpNullableDouble(double? a, double? b, double t) =>

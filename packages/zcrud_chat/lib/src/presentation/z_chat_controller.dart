@@ -156,6 +156,39 @@ class _ZRequestState {
   String? conversationId;
 }
 
+/// Session d'ÉDITION d'un message déjà envoyé — lot K2 (chantier composer-lex,
+/// arbitrage owner 2026-08-07).
+///
+/// C'est l'état `editingMessageId`/`editingOriginalText` du
+/// `ChatInputController` de lex (`chat_input_controller.dart:31-35`), porté en
+/// **valeur immuable d'une tranche** : le mode édition n'est pas un booléen
+/// éparpillé, c'est une donnée qu'on lit d'un coup ou pas du tout.
+@immutable
+class ZChatEditingSession {
+  /// Construit une session d'édition.
+  const ZChatEditingSession({
+    required this.messageId,
+    required this.originalText,
+  });
+
+  /// Identité **opaque** du message utilisateur en cours d'édition.
+  final String messageId;
+
+  /// Texte d'origine du message — celui que [ZChatController.startEditing]
+  /// pré-remplit dans la saisie.
+  final String originalText;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZChatEditingSession &&
+          messageId == other.messageId &&
+          originalText == other.originalText;
+
+  @override
+  int get hashCode => Object.hash(messageId, originalText);
+}
+
 /// Le contrôleur de conversation : **un** point d'entrée par geste, des
 /// tranches réactives **granulaires**, un jeton **par requête**.
 class ZChatController extends ChangeNotifier {
@@ -231,6 +264,17 @@ class ZChatController extends ChangeNotifier {
       ValueNotifier<List<String>>(const <String>[]);
   final ValueNotifier<ZFailure?> _lastFailure = ValueNotifier<ZFailure?>(null);
   final ValueNotifier<String> _liveAnnouncement = ValueNotifier<String>('');
+  final ValueNotifier<ZChatEditingSession?> _editing =
+      ValueNotifier<ZChatEditingSession?>(null);
+  final ValueNotifier<int> _draftSeeds = ValueNotifier<int>(0);
+
+  /// Saisie en cours AVANT l'entrée en mode édition — restituée à la sortie.
+  ///
+  /// 🔴 Amélioration MESURÉE sur lex : là-bas, entrer en édition **écrase** le
+  /// brouillon en cours (`chat_input.dart:433-436`) et l'annuler **vide** le
+  /// champ (`:438-440`) — le texte que l'utilisateur composait est perdu deux
+  /// fois. Ici il est restitué, dans les deux cas.
+  ZChatDraft? _preEditingDraft;
 
   /// 🔴 Jetons indexés **PAR `requestId`** — jamais un champ « jeton courant ».
   ///
@@ -293,6 +337,26 @@ class ZChatController extends ChangeNotifier {
   /// socle : aucune chaîne traduisible n'est codée en dur ici (FR-26).
   ValueListenable<String> get liveAnnouncement => _liveAnnouncement;
 
+  /// Session d'ÉDITION en cours, ou `null` — lot K2 (G-CH1 étendue, arbitrage
+  /// owner 2026-08-07).
+  ///
+  /// Tranche **granulaire** (AD-2/SM-1) : elle ne signale qu'à l'entrée et à
+  /// la sortie du mode — jamais à la frappe. C'est elle que l'hôte lit dans son
+  /// créneau `trailing` pour troquer l'icône d'envoi contre l'icône de
+  /// validation (lex `chat_input.dart:695-697`) et monter son bandeau
+  /// (`:488-526` — les valeurs de rendu sont dans `ZChatComposerReference`).
+  ValueListenable<ZChatEditingSession?> get editing => _editing;
+
+  /// Compteur MONOTONE des brouillons acceptés par [seedDraft] — lot K2.
+  ///
+  /// 🔴 C'est le `draftSuggestionSeq` de lex (`chat_input_controller.dart:
+  /// 45-48`), et il existe pour la même raison ici que là-bas : re-semer un
+  /// texte **identique** ne change pas la valeur du `TextEditingController`,
+  /// donc ne notifie personne. Un hôte qui veut réagir au geste (donner le
+  /// focus, dérouler la vue) écoute CETTE tranche — elle signale chaque semis,
+  /// même à texte égal.
+  ValueListenable<int> get draftSeeds => _draftSeeds;
+
   /// Saisie courante, telle qu'un verbe la transporte (`ZChatDraft`).
   ZChatDraft get currentDraft => ZChatDraft(
     text: composer.text,
@@ -324,6 +388,63 @@ class ZChatController extends ChangeNotifier {
   /// dartdoc) : aucun chemin d'action ne peut la toucher par mégarde.
   void setAttachments(List<String> ids) =>
       _setComposer(ZChatDraft(text: composer.text, attachmentIds: ids));
+
+  /// Entre en mode ÉDITION du message [messageId] — lot K2 (mécanisme lex
+  /// 68.3, `chat_input_controller.dart:357-364`).
+  ///
+  /// La saisie est pré-remplie avec [originalText] (via [_setComposer], le seul
+  /// écrivain — G-CH4), et le brouillon que l'utilisateur composait est
+  /// **sauvegardé** pour être restitué à la sortie (cf. [_preEditingDraft] :
+  /// lex le perd, le socle non). Ré-appeler pendant une édition change de
+  /// cible sans écraser cette sauvegarde — le patron `preExpertToolsContext`.
+  ///
+  /// La **soumission** de l'édition reste [runAction] avec `ZChatEditAction`
+  /// (impact chiffré, confirmation, exécution par l'hôte) : ce verbe-ci ne
+  /// fait qu'installer l'état. [send] est REFUSÉ tant que le mode est actif —
+  /// c'est ce qui rend le doublon « Entrée poste un nouveau message pendant
+  /// l'édition » inexprimable.
+  void startEditing({required String messageId, required String originalText}) {
+    _preEditingDraft ??= currentDraft;
+    _editing.value = ZChatEditingSession(
+      messageId: messageId,
+      originalText: originalText,
+    );
+    _setComposer(
+      ZChatDraft(text: originalText, attachmentIds: _attachmentIds.value),
+    );
+  }
+
+  /// Sort du mode édition SANS soumettre — lot K2 (lex `cancelEditing`,
+  /// `chat_input_controller.dart:366-370`).
+  ///
+  /// 🔴 La saisie d'avant l'édition est **restituée**, jamais simplement
+  /// vidée : le geste d'annuler ne coûte aucun texte (AD-10 ; lex, lui, fait
+  /// `_controller.clear()` — `chat_input.dart:438-440`). Sans session active,
+  /// l'appel est sans effet.
+  void cancelEditing() {
+    if (_editing.value == null) return;
+    final ZChatDraft restored = _preEditingDraft ?? const ZChatDraft();
+    _preEditingDraft = null;
+    _editing.value = null;
+    _setComposer(restored);
+  }
+
+  /// Sème un BROUILLON dans la saisie, sans envoyer — lot K2 (mécanisme lex
+  /// 103.5, `seedDraftSuggestion`, `chat_input_controller.dart:381-392`).
+  ///
+  /// Passe par [_setComposer] (G-CH4/G10-P2 : le seed d'un widget qui poserait
+  /// `composer.text` lui-même est resté inexprimable). **Refusé pendant une
+  /// édition** — la règle de priorité de lex (`chat_input.dart:447-451` : « on
+  /// ne touche pas au champ pendant un mode édition actif ») — et le compteur
+  /// [draftSeeds] n'est alors PAS incrémenté : il ne compte que les semis
+  /// appliqués.
+  void seedDraft(String text) {
+    if (_editing.value != null) return;
+    _setComposer(
+      ZChatDraft(text: text, attachmentIds: _attachmentIds.value),
+    );
+    _draftSeeds.value = _draftSeeds.value + 1;
+  }
 
   /// 🔴 **L'UNIQUE écrivain de la saisie de l'utilisateur.**
   ///
@@ -386,6 +507,11 @@ class ZChatController extends ChangeNotifier {
     _activeRequests.value = const <String>[];
     _lastFailure.value = null;
     _liveAnnouncement.value = '';
+    // Lot K2 : une session d'édition appartient à SA conversation — elle ne
+    // survit pas au changement. Le compteur de brouillons, lui, reste monotone
+    // (c'est un signal de geste, pas un état de conversation).
+    _editing.value = null;
+    _preEditingDraft = null;
     _setComposer(const ZChatDraft());
     notifyListeners();
   }
@@ -430,6 +556,22 @@ class ZChatController extends ChangeNotifier {
     ZChatGenerationSettings? settings,
     ZChatCorpusScope? corpusScope,
   }) async {
+    // 🔴 Lot K2 — pendant une ÉDITION, l'envoi « nouveau message » est REFUSÉ,
+    // par un échec typé. Chez lex, la touche Entrée pendant l'édition est
+    // interceptée par l'écran (`chat_screen.dart:1088-1090`) et route vers le
+    // flux confirmé d'édition ; ici la soumission d'une édition est
+    // `runAction(ZChatEditAction(...))` — le point d'entrée UNIQUE des verbes,
+    // avec son impact chiffré et sa confirmation. Laisser `send()` passer
+    // créerait la fourche exacte que ce refus rend inexprimable : le même
+    // texte tantôt nouveau message, tantôt ré-exécution, selon la surface.
+    if (_editing.value != null) {
+      const ZFailure failure = ZDomainFailure(
+        'chat send is unavailable while editing a message: submit the edit '
+        'via runAction(ZChatEditAction) or cancelEditing() first',
+      );
+      _lastFailure.value = failure;
+      return const Left<ZFailure, ZChatRequestToken>(failure);
+    }
     final ZChatDraft draft = currentDraft;
     if (draft.text.trim().isEmpty && draft.attachmentIds.isEmpty) {
       const ZFailure failure = ZDomainFailure(
@@ -820,7 +962,7 @@ class ZChatController extends ChangeNotifier {
     );
     outcome.fold(
       (ZFailure failure) => _lastFailure.value = failure,
-      _applyOutcome,
+      (ZChatActionOutcome o) => _applyOutcome(action, o),
     );
     return outcome;
   }
@@ -835,10 +977,25 @@ class ZChatController extends ChangeNotifier {
     }
   }
 
-  /// Applique l'issue d'une action. 🔴 **Aucune écriture de la saisie ici** :
-  /// `preservedDraft` est une *restitution* — la saisie n'a jamais été touchée,
-  /// il n'y a donc rien à restaurer.
-  void _applyOutcome(ZChatActionOutcome outcome) {
+  /// Applique l'issue d'une action. 🔴 **La saisie n'y est écrite que pour être
+  /// RESTITUÉE** : `preservedDraft` est une restitution (la saisie n'a jamais
+  /// été touchée, rien à restaurer), et la sortie d'édition ci-dessous REND le
+  /// brouillon sauvegardé — elle ne détruit jamais un texte tapé. Le chemin
+  /// d'ANNULATION, lui, reste incapable d'atteindre la saisie (G-CH4).
+  void _applyOutcome(ZChatAction action, ZChatActionOutcome outcome) {
+    // Lot K2 — une ÉDITION exécutée avec succès clôt sa session : l'exécuteur
+    // de l'hôte a consommé le texte édité (`editAndResend` régénère côté hôte,
+    // contrat CHAT-0b — le socle ne double-stream pas). La saisie d'AVANT
+    // l'édition est restituée, comme à `cancelEditing`.
+    final ZChatEditingSession? session = _editing.value;
+    if (action is ZChatEditAction &&
+        session != null &&
+        action.messageId == session.messageId) {
+      final ZChatDraft restored = _preEditingDraft ?? const ZChatDraft();
+      _preEditingDraft = null;
+      _editing.value = null;
+      _setComposer(restored);
+    }
     if (!outcome.softDeleted || outcome.affectedMessageIds.isEmpty) return;
     final Set<String> removed = outcome.affectedMessageIds.toSet();
     _messages.value = List<ZChatMessage>.unmodifiable(<ZChatMessage>[
@@ -880,6 +1037,8 @@ class ZChatController extends ChangeNotifier {
     _activeRequests.dispose();
     _lastFailure.dispose();
     _liveAnnouncement.dispose();
+    _editing.dispose();
+    _draftSeeds.dispose();
     for (final ValueNotifier<String> n in _streamTexts.values) {
       n.dispose();
     }

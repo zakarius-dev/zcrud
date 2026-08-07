@@ -100,6 +100,22 @@ void main() {
           'setAttachments',
           'attach',
           'send',
+          // 🔴 EXTENSION ARBITRÉE (owner, 2026-08-07 — chantier composer-lex,
+          // lot K2). Le mode ÉDITION et le BROUILLON À COMPTEUR de lex
+          // (`chat_input_controller.dart:31-48, :357-392`) entrent comme
+          // membres du contrôleur — et PAS ailleurs, précisément à cause de
+          // G10-P2 : le seul écrivain légitime de la saisie hors capture est ce
+          // contrôleur. Aucun de ces membres n'EXÉCUTE un verbe de
+          // conversation : ce sont deux tranches de lecture et trois gestes de
+          // saisie — la soumission d'une édition reste `runAction`
+          // (`ZChatEditAction`), l'unique point d'entrée. La garde a rougi le
+          // 2026-08-07 en montrant exactement ces cinq noms, puis a été étendue
+          // ICI, délibérément.
+          'editing',
+          'draftSeeds',
+          'startEditing',
+          'cancelEditing',
+          'seedDraft',
           // 🔴 L'UNIQUE point d'entrée des verbes.
           'runAction',
           'dispose',

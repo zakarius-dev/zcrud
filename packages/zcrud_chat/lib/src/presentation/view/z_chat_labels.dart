@@ -208,6 +208,57 @@ const String kZChatLabelSettingAuto = '${kZChatLabelPrefix}settingAuto';
 /// non chromatique que `ZChatNotebookCapabilityStyle` rend **obligatoire**.
 const String kZChatLabelGenerated = '${kZChatLabelPrefix}generated';
 
+// ── Chantier composer-lex, lot K2 (arbitrage owner 2026-08-07) ─────────────
+
+/// Action « envoyer le message » — libellé du créneau d'envoi par défaut
+/// (`ZChatComposerSendTarget`). Lex n'a qu'un tooltip Material ; ici la clé
+/// traverse le registre de l'hôte comme toutes les autres.
+const String kZChatLabelSend = '${kZChatLabelPrefix}send';
+
+/// Action « réinitialiser les réglages » — l'en-tête par défaut de la feuille
+/// (forme lex, `tools_sheet.dart:53-56`).
+const String kZChatLabelSettingsReset = '${kZChatLabelPrefix}settingsReset';
+
+/// Action « fermer la feuille de réglages » — l'en-tête par défaut
+/// (forme lex, `tools_sheet.dart:57-60`). Rendue **seulement** si l'hôte a
+/// fourni un `onClose` (AD-4 : pas d'affordance inerte).
+const String kZChatLabelSettingsClose = '${kZChatLabelPrefix}settingsClose';
+
+/// Borne BASSE de l'échelle du budget de calcul — le « Rapide » du slider
+/// labellisé de lex (`tools_sheet.dart:322-392`).
+const String kZChatLabelComputeBudgetFast =
+    '${kZChatLabelPrefix}computeBudgetFast';
+
+/// Point MÉDIAN de l'échelle — « Équilibré » (même source lex).
+const String kZChatLabelComputeBudgetBalanced =
+    '${kZChatLabelPrefix}computeBudgetBalanced';
+
+/// Borne HAUTE de l'échelle — « Profond » (même source lex).
+const String kZChatLabelComputeBudgetDeep =
+    '${kZChatLabelPrefix}computeBudgetDeep';
+
+/// Groupe « préréglages » — le mécanisme expert-de-lex rendu neutre (T2).
+/// Les préréglages eux-mêmes (id, libellé, valeurs) viennent de l'HÔTE.
+const String kZChatLabelPresets = '${kZChatLabelPrefix}presets';
+
+// ── Chantier composer-lex, lot K4 (raccord kernel K1) ──────────────────────
+
+/// Groupe « capacités » — la famille par défaut câblée sur
+/// `ZChatGenerationSettings.capabilities` (kernel, lot K1).
+const String kZChatLabelCapabilities = '${kZChatLabelPrefix}capabilities';
+
+/// 🔴 L'UNIQUE capacité que le socle nomme : la recherche web
+/// (`kZChatCapabilityWebSearch`), champ TYPÉ du kernel parce que mesuré vivant
+/// chez les DEUX hôtes (lex `enable_web_search`, IFFD `enableWebSearch`).
+/// Toute autre capacité vient du catalogue de l'hôte — clé opaque, libellé
+/// déjà localisé par lui : le socle n'en connaît aucune valeur (FR-26).
+const String kZChatLabelCapabilityWebSearch =
+    '${kZChatLabelPrefix}capabilityWebSearch';
+
+/// Option « aucun préréglage » — restaure l'état d'avant le préréglage
+/// (le `preExpertToolsContext` de lex, généralisé).
+const String kZChatLabelPresetNone = '${kZChatLabelPrefix}presetNone';
+
 /// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
 
@@ -347,6 +398,16 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelCorpusAll,
   kZChatLabelSettingAuto,
   kZChatLabelGenerated,
+  kZChatLabelSend,
+  kZChatLabelSettingsReset,
+  kZChatLabelSettingsClose,
+  kZChatLabelComputeBudgetFast,
+  kZChatLabelComputeBudgetBalanced,
+  kZChatLabelComputeBudgetDeep,
+  kZChatLabelPresets,
+  kZChatLabelPresetNone,
+  kZChatLabelCapabilities,
+  kZChatLabelCapabilityWebSearch,
   kZChatLabelConversations,
   kZChatLabelLoadingConversations,
   kZChatLabelConversationsError,
@@ -429,6 +490,16 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelCorpusAll: 'Tous les corpus',
   kZChatLabelSettingAuto: 'Automatique',
   kZChatLabelGenerated: 'Déjà généré',
+  kZChatLabelSend: 'Envoyer',
+  kZChatLabelSettingsReset: 'Réinitialiser',
+  kZChatLabelSettingsClose: 'Fermer',
+  kZChatLabelComputeBudgetFast: 'Rapide',
+  kZChatLabelComputeBudgetBalanced: 'Équilibré',
+  kZChatLabelComputeBudgetDeep: 'Profond',
+  kZChatLabelPresets: 'Préréglages',
+  kZChatLabelPresetNone: 'Aucun',
+  kZChatLabelCapabilities: 'Capacités',
+  kZChatLabelCapabilityWebSearch: 'Recherche web',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
   kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',

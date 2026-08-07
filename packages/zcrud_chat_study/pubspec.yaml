@@ -23,7 +23,7 @@
 #    `test/z_no_duplicate_seam_test.dart`.
 name: zcrud_chat_study
 description: "Chat-to-SRS bridge for zcrud: maps AI conversations/messages onto the existing ZFlashcardGenerationPort, stamps ZConversationSource provenance, and builds a deduplicated study pool (folder cards union conversation cards) for the existing session engine."
-version: 0.55.0
+version: 0.56.0
 publish_to: none
 resolution: workspace
 
@@ -74,11 +74,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zcrud_core: ^0.55.0
-  zcrud_chat_kernel: ^0.55.0
-  zcrud_flashcard: ^0.55.0
-  zcrud_study_kernel: ^0.55.0
-  zcrud_study: ^0.55.0
+  zcrud_core: ^0.56.0
+  zcrud_chat_kernel: ^0.56.0
+  zcrud_flashcard: ^0.56.0
+  zcrud_study_kernel: ^0.56.0
+  zcrud_study: ^0.56.0
 
 # Paquet Flutter (cf. ci-dessus) → `flutter test`. Aucun codegen (aucun
 # `@ZcrudModel` : pas de `*.g.dart`, gate `codegen-distribution` sans objet ;

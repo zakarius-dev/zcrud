@@ -253,8 +253,13 @@ void main() {
       // fichier de test que personne ne relie à celui-ci.
       final List<String> offenders = <String>[];
       for (final MapEntry<String, List<String>> e in strippedLib().entries) {
-        if (e.key.replaceAll(r'\', '/')
-            .endsWith('view/z_chat_notebook_reference.dart')) {
+        final String path = e.key.replaceAll(r'\', '/');
+        if (path.endsWith('view/z_chat_notebook_reference.dart') ||
+            // Lot K2 (arbitrage owner 2026-08-07) : la famille « composer » a
+            // son PROPRE fichier de référence audité — même exception FR-26
+            // encadrée, même exemption NOMINATIVE (miroir de
+            // `_kColorExemptFiles` dans `z_chat_purity_test.dart`).
+            path.endsWith('view/z_chat_composer_reference.dart')) {
           continue;
         }
         for (int i = 0; i < e.value.length; i++) {

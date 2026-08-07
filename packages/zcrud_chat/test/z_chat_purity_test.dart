@@ -113,6 +113,15 @@ const Set<String> _colorRules = <String>{r'\bColors\.', r'\bColor\(0x'};
 /// cf. `z_chat_notebook_reference.dart` et sa garde dédiée.
 const List<String> _kColorExemptFiles = <String>[
   'z_chat_notebook_reference.dart',
+  // 🔴 EXTENSION ARBITRÉE (owner, 2026-08-07 — chantier composer-lex, lot K2).
+  // La famille « composer » a son fichier de référence unique : il porte les
+  // TROIS teintes d'identité des paliers de verbosité de lex
+  // (`chat_enums.dart:42-46` — vert/bleu/violet), non dérivables d'un
+  // `ColorScheme`, remplaçables par paramètre (`ZChatComposerChrome.
+  // responseLengthAccents`) et par le jeton demandé à `zcrud_core`
+  // (`chatResponseLengthAccents`). Une famille = un fichier : le cardinal
+  // passe de 1 à 2, délibérément.
+  'z_chat_composer_reference.dart',
 ];
 
 /// Motifs de style / couleur codés en dur (FR-26) et de directionnalité
@@ -333,7 +342,9 @@ void main() {
     test('🔬 l\'exemption de COULEUR est NOMINATIVE, ÉTROITE et non pendante',
         () {
       // 1. Cardinal asserté : une exemption ne grossit jamais par accident.
-      expect(_kColorExemptFiles, hasLength(1),
+      // Cardinal 2 depuis le lot K2 (2026-08-07) : famille « notebook » +
+      // famille « composer », un fichier de référence audité par famille.
+      expect(_kColorExemptFiles, hasLength(2),
           reason: '🔴 une exemption a été AJOUTÉE à la garde anti-couleurs. '
               'L\'exception FR-26 vaut PAR FAMILLE et exige un fichier de '
               'référence UNIQUE : justifiez-la au point de déclaration et '
@@ -352,11 +363,19 @@ void main() {
       expect(
           exempt('/x/lib/src/presentation/view/z_chat_notebook_reference.dart'),
           isTrue);
+      expect(
+          exempt('/x/lib/src/presentation/view/z_chat_composer_reference.dart'),
+          isTrue);
       for (final String voisin in <String>[
         '/x/lib/src/presentation/view/z_chat_notebook_skin.dart',
         '/x/lib/src/presentation/view/z_chat_notebook_view.dart',
         '/x/lib/src/presentation/view/z_chat_notebook_reference_extra.dart',
         '/x/lib/src/presentation/render/z_chat_notebook_reference.dart.bak',
+        // Voisins du fichier « composer » (lot K2) : la chaîne de résolution
+        // et le composer lui-même ne bénéficient d'AUCUNE exemption.
+        '/x/lib/src/presentation/view/z_chat_composer_chrome.dart',
+        '/x/lib/src/presentation/view/z_chat_composer.dart',
+        '/x/lib/src/presentation/view/z_chat_composer_reference_extra.dart',
       ]) {
         expect(exempt(voisin), isFalse,
             reason: '🔴 l\'exemption attrape `$voisin` : elle n\'est plus '

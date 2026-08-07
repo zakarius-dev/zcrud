@@ -148,6 +148,7 @@ class ZChatComposer extends StatefulWidget {
     this.trailing,
     this.tools,
     this.capture,
+    this.hint,
     this.settings,
     this.focusNode,
     this.padding,
@@ -185,6 +186,22 @@ class ZChatComposer extends StatefulWidget {
   /// **déjà meilleure** que celle de lex (l'écoute y est annoncée, pas
   /// seulement affichée).
   final ZChatComposerSlotBuilder? capture;
+
+  /// Créneau du **placeholder visuel** — lot K2 (chantier composer-lex). Règle
+  /// des trois cas, la même que les tuiles de `ZChatSettingsSheet` :
+  ///
+  /// | Builder | Effet |
+  /// |---|---|
+  /// | absent (`null`) | l'invite par défaut du socle (le libellé résolu) |
+  /// | fourni, rend un widget | ce widget remplace l'invite — c'est ici que se branche `ZChatComposerAnimatedHint` (le placeholder animé de lex) |
+  /// | fourni, rend `null` | aucune invite visuelle (AD-4) |
+  ///
+  /// 🔴 Quel que soit le cas, le rendu reste **ExcludeSemantics +
+  /// IgnorePointer** et sa visibilité reste pilotée par la vacuité de la
+  /// saisie : le libellé du champ pour un lecteur d'écran ne change pas
+  /// (CMP-R1), et le seul abonnement à la frappe reste celui de l'invite
+  /// (SM-1).
+  final ZChatComposerSlotBuilder? hint;
 
   /// Réglages de génération **soumis avec la saisie** — lot γ0. `null` ⇒ le
   /// comportement est **strictement** celui d'avant ce lot : `send()` est appelé
@@ -273,6 +290,11 @@ class _ZChatComposerState extends State<ZChatComposer> {
     final Widget? leading = _slot(context, widget.leading);
     final Widget? trailing = _slot(context, widget.trailing);
     final Widget? tools = _slot(context, widget.tools);
+    // Règle des trois cas du créneau `hint` (cf. son dartdoc) : la distinction
+    // « builder absent » / « builder rendant null » se lit ici, jamais dans le
+    // champ.
+    final Widget? hostHint = _slot(context, widget.hint);
+    final bool suppressHint = widget.hint != null && hostHint == null;
 
     return Semantics(
       container: true,
@@ -297,6 +319,8 @@ class _ZChatComposerState extends State<ZChatComposer> {
                     cursorColor: widget.cursorColor,
                     minLines: widget.minLines,
                     maxLines: widget.maxLines,
+                    hint: hostHint,
+                    suppressHint: suppressHint,
                     // Le MÊME site de soumission que celui du créneau d'envoi.
                     onSubmit: _submit,
                   ),
@@ -325,6 +349,8 @@ class _ZChatComposerField extends StatelessWidget {
     required this.minLines,
     required this.maxLines,
     required this.onSubmit,
+    this.hint,
+    this.suppressHint = false,
   });
 
   final ZChatController controller;
@@ -333,6 +359,13 @@ class _ZChatComposerField extends StatelessWidget {
   final int minLines;
   final int maxLines;
   final VoidCallback onSubmit;
+
+  /// Invite visuelle d'HÔTE — `null` ⇒ le libellé par défaut (sauf
+  /// [suppressHint]).
+  final Widget? hint;
+
+  /// `true` ⇒ aucune invite visuelle (le builder d'hôte a rendu `null`, AD-4).
+  final bool suppressHint;
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +382,7 @@ class _ZChatComposerField extends StatelessWidget {
         // verticalement se décalerait dès que le champ passe à deux lignes.
         alignment: AlignmentDirectional.topStart,
         children: <Widget>[
-          _ZChatComposerHint(controller: controller),
+          if (!suppressHint) _ZChatComposerHint(controller: controller, hint: hint),
           EditableText(
             // 🔴 LA tranche du contrôleur, telle quelle. Instance STABLE : elle
             // n'est ni créée ni recréée ici, donc le curseur et la sélection
@@ -378,9 +411,16 @@ class _ZChatComposerField extends StatelessWidget {
 /// c'est une **feuille** : une frappe reconstruit un `Text`, jamais le champ,
 /// jamais les créneaux de l'hôte, jamais la liste des messages (SM-1, mesuré).
 class _ZChatComposerHint extends StatelessWidget {
-  const _ZChatComposerHint({required this.controller});
+  const _ZChatComposerHint({required this.controller, this.hint});
 
   final ZChatController controller;
+
+  /// Invite d'HÔTE (créneau `hint`, lot K2). `null` ⇒ le libellé par défaut.
+  ///
+  /// 🔴 Quel que soit le porteur, il reste sous **ExcludeSemantics +
+  /// IgnorePointer**, et sa visibilité reste pilotée ici : un hôte ne peut pas
+  /// faire d'une invite un widget interactif ni un doublon sémantique.
+  final Widget? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -393,11 +433,13 @@ class _ZChatComposerHint extends StatelessWidget {
                   value.text.isEmpty ? child! : const SizedBox.shrink(),
           // Construit UNE fois et passé en `child` : la frappe ne le
           // reconstruit pas, elle ne fait que le montrer ou le cacher.
-          child: Text(
-            zChatLabel(context, kZChatLabelComposerHint),
-            // AD-13 : jamais `TextAlign.left`.
-            textAlign: TextAlign.start,
-          ),
+          child:
+              hint ??
+              Text(
+                zChatLabel(context, kZChatLabelComposerHint),
+                // AD-13 : jamais `TextAlign.left`.
+                textAlign: TextAlign.start,
+              ),
         ),
       ),
     );

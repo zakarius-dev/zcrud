@@ -115,6 +115,10 @@ export 'src/presentation/view/z_chat_capture_review_field.dart';
 // Aucun membre ajouté au contrôleur (G-CH1), aucun nouveau chemin d'exécution
 // (l'envoi passe par `send()`), créneaux nullables (AD-4).
 export 'src/presentation/view/z_chat_composer.dart';
+// Lot K2 (chantier composer-lex) — la référence visuelle lex du composer, sa
+// chaîne paramètre > jeton > référence et les créneaux par défaut PURS.
+export 'src/presentation/view/z_chat_composer_chrome.dart';
+export 'src/presentation/view/z_chat_composer_reference.dart';
 export 'src/presentation/view/z_chat_conversation_actions.dart';
 export 'src/presentation/view/z_chat_conversation_list.dart';
 export 'src/presentation/view/z_chat_conversation_tile.dart';

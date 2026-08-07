@@ -73,6 +73,8 @@ class ZChatGenerationRequest {
     this.lengthBias,
     this.computeEffort,
     this.revealThinkingSteps,
+    bool? webSearch,
+    Map<String, bool> capabilities = const <String, bool>{},
     this.corpusScope,
     this.languageTag,
     this.instructions,
@@ -82,6 +84,14 @@ class ZChatGenerationRequest {
          ZChatContextFragment.ordered(context),
        ),
        attachmentIds = List<String>.unmodifiable(attachmentIds),
+       // Canonicalisation EAGER (lot K1) : la clé réservée du canal ouvert est
+       // hissée dans le champ typé (champ typé prioritaire), le reste est
+       // rogné/dédupliqué/trié — une requête n'a qu'UNE écriture possible.
+       webSearch =
+           webSearch ?? ZChatGenerationSettings.hoistedWebSearch(capabilities),
+       capabilities = Map<String, bool>.unmodifiable(
+         ZChatGenerationSettings.sanitizeCapabilities(capabilities),
+       ),
        extra = Map<String, dynamic>.unmodifiable(
          zSanitizeExtra(extra, _reservedKeys),
        );
@@ -140,6 +150,23 @@ class ZChatGenerationRequest {
   /// et non une perte.
   final bool? revealThinkingSteps;
 
+  /// Demande d'activer/couper la **recherche web**, ou `null` (l'hôte
+  /// décide) — lot K1. Champ typé parce que les DEUX backends le lisent
+  /// (preuves dans `z_chat_generation_settings.dart`) ; cinquième réglage du
+  /// porteur [ZChatGenerationSettings], déclaré ici, comme les quatre autres,
+  /// pour que la projection reste une **bijection**.
+  final bool? webSearch;
+
+  /// Capacités booléennes **OUVERTES** demandées à l'exécuteur (AD-4) —
+  /// lot K1. Clés opaques d'hôte, **canonicalisées à la construction** (la
+  /// clé réservée `web_search` vit dans [webSearch], jamais ici).
+  ///
+  /// 🔴 Exprimée ≠ honorée : le bouclage est
+  /// `ZChatGenerationSettings.auditCapabilities` — un hôte confronte l'écho
+  /// des clés comprises par son port à `settings.expressedCapabilityKeys`
+  /// pour DÉTECTER un repli muet.
+  final Map<String, bool> capabilities;
+
   /// 🔴 **Portée documentaire** de la génération, ou `null` — lot β.
   ///
   /// `null` ⇒ **aucune restriction**, c'est-à-dire exactement le comportement
@@ -188,6 +215,8 @@ class ZChatGenerationRequest {
     lengthBias: lengthBias,
     computeEffort: computeEffort,
     revealThinkingSteps: revealThinkingSteps,
+    webSearch: webSearch,
+    capabilities: capabilities,
   );
 
   /// Rend une requête **identique**, sauf les réglages, remplacés par ceux de
@@ -215,6 +244,8 @@ class ZChatGenerationRequest {
       lengthBias: settings.lengthBias,
       computeEffort: settings.computeEffort,
       revealThinkingSteps: settings.revealThinkingSteps,
+      webSearch: settings.webSearch,
+      capabilities: settings.capabilities,
       corpusScope: corpusScope,
       languageTag: languageTag,
       instructions: instructions,
@@ -241,6 +272,8 @@ class ZChatGenerationRequest {
         lengthBias: lengthBias,
         computeEffort: computeEffort,
         revealThinkingSteps: revealThinkingSteps,
+        webSearch: webSearch,
+        capabilities: capabilities,
         corpusScope: scope,
         languageTag: languageTag,
         instructions: instructions,
@@ -263,6 +296,8 @@ class ZChatGenerationRequest {
           lengthBias == other.lengthBias &&
           computeEffort == other.computeEffort &&
           revealThinkingSteps == other.revealThinkingSteps &&
+          webSearch == other.webSearch &&
+          zJsonEquals(capabilities, other.capabilities) &&
           corpusScope == other.corpusScope &&
           languageTag == other.languageTag &&
           instructions == other.instructions &&
@@ -282,6 +317,8 @@ class ZChatGenerationRequest {
     lengthBias,
     computeEffort,
     revealThinkingSteps,
+    webSearch,
+    zJsonHash(capabilities),
     corpusScope,
     languageTag,
     instructions,

@@ -851,6 +851,13 @@ void main() {
       final ZChatSettingsController settings = ZChatSettingsController();
       addTearDown(settings.dispose);
 
+      // Lot K4 : la feuille par défaut a gagné la famille « capacités »
+      // (raccord kernel K1) — la fenêtre 800×600 débordait de 40 px. La
+      // propriété mesurée ici est la COUTURE feuille↔composer, pas la
+      // hauteur : on agrandit la fenêtre, sans toucher à la mesure.
+      tester.view.physicalSize = const Size(2400, 2700);
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         harness(
           ZChatConversationView(

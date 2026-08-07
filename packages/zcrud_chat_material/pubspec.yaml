@@ -1,0 +1,68 @@
+# zcrud_chat_material — membre du workspace zcrud (resolution: workspace).
+#
+# Lot K3 (chantier composer-lex, arbitrage owner S1+S2 du 2026-08-07) : le
+# satellite de BUILDERS MATERIAL pixel-perfect du composer de chat. Le socle
+# `zcrud_chat` reste chromatiquement NU par construction (`material.dart` y est
+# banni, FR-26) ; ce paquet est l'endroit — et le SEUL — où le rendu lex_douane
+# est reproduit en Material VRAI (FAB, ChoiceChip, Slider, rôles `ColorScheme`).
+#
+# 🔴 AUCUNE valeur recopiée : toute dimension/durée/couleur passe par
+# `zChatComposerChromeOf` (paramètre > jeton > référence) ou par les constantes
+# de `ZChatComposerReference` (lot K2). Une garde de source
+# (`z_material_source_guard_test.dart`) interdit tout littéral numérique,
+# `Color(`, `Colors.` et `Duration(` dans `lib/` — exemption ZÉRO.
+#
+# 🔴 DES BUILDERS SUR LES CRÉNEAUX DU SOCLE, JAMAIS UNE VUE PARALLÈLE
+# (motif CR-LEX-78, déjà payé par ce dépôt) : chaque widget se branche sur un
+# créneau de `ZChatComposer` (`trailing`, `tools`, `leading`) ou un builder de
+# `ZChatSettingsSheet` (`computeBudgetBuilder`). Aucun composer bis, aucune
+# feuille bis, aucun second site d'envoi (`slot.submit` est LE site).
+#
+# 🔴 OPT-IN (AD-57, patron AD-4) : un consommateur de `zcrud_chat` qui ne monte
+# pas ce paquet ne tire RIEN — aucune arête entrante (PUITS du graphe, prouvé
+# par `z_material_graph_test.dart`). Chaque builder est indépendant : l'hôte en
+# monte un, plusieurs ou aucun.
+#
+# ⛔ AUCUN gestionnaire d'état (AD-2/AD-15) — l'état vit dans les contrôleurs
+#    du socle (`ZChatController`, `ZChatSettingsController`,
+#    `ZChatAttachmentController`), jamais ici.
+# ⛔ Les défauts lex NE SONT PAS reproduits : cibles ≥ 48 dp en géométrie
+#    RENDUE (retirer-PJ 20 dp, micro compact… inexprimables ici), directionnel
+#    partout (AD-13), Reduce-Motion respecté (les primitives K2 du socle le
+#    portent — ce paquet n'anime rien lui-même : garde de source).
+name: zcrud_chat_material
+description: "Pixel-perfect Material builders (lex_douane reference) for the zcrud chat composer and settings slots — send FAB, effort chips, badges, attachment chips, labelled budget slider."
+version: 0.56.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_material
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - material
+  - composer
+  - theming
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe ACYCLIQUE, CORE OUT=0) :
+#   zcrud_chat_material -> zcrud_chat -> zcrud_chat_kernel -> zcrud_core
+# Aucune arête entrante : ce paquet est un PUITS (personne ne dépend de lui).
+# AUCUNE dépendance TIERCE : Material vient du SDK Flutter lui-même.
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_chat: ^0.56.0
+  zcrud_chat_kernel: ^0.56.0
+  zcrud_core: ^0.56.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# Les builders rendent des glyphes `Icons.*` (envoi, pièce jointe).
+flutter:
+  uses-material-design: true

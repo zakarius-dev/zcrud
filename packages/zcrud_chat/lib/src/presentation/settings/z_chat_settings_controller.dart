@@ -52,6 +52,53 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 
+/// Un PRÉRÉGLAGE de génération fourni par l'HÔTE — lot K2 (chantier
+/// composer-lex, T2).
+///
+/// C'est l'« expert IA » de lex rendu **neutre** : un identifiant stable, un
+/// libellé **déjà localisé par l'hôte**, et les valeurs qu'appliquer
+/// ([settings] + [corpusScope]). Le socle ne connaît ni douane ni pédagogie :
+/// il applique, mémorise l'état d'avant, et sait le rendre
+/// ([ZChatSettingsController.applyPreset]/[ZChatSettingsController.clearPreset]).
+///
+/// Le contre-modèle mesuré est l'écrasement destructif d'IFFD (`setAiExpert`
+/// écrase 13 réglages et sa branche `null` remet des défauts DIFFÉRENTS des
+/// défauts initiaux — `discovry_page_controller.dart:733-781`).
+@immutable
+class ZChatSettingsPreset {
+  /// Construit un préréglage.
+  const ZChatSettingsPreset({
+    required this.id,
+    required this.label,
+    this.settings = const ZChatGenerationSettings(),
+    this.corpusScope,
+  });
+
+  /// Identifiant **stable et opaque** — jamais un libellé.
+  final String id;
+
+  /// Libellé affiché, **fourni et localisé par l'hôte**.
+  final String label;
+
+  /// Réglages appliqués par le préréglage.
+  final ZChatGenerationSettings settings;
+
+  /// Portée documentaire appliquée, ou `null` ⇒ aucune restriction.
+  final ZChatCorpusScope? corpusScope;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZChatSettingsPreset &&
+          id == other.id &&
+          label == other.label &&
+          settings == other.settings &&
+          corpusScope == other.corpusScope;
+
+  @override
+  int get hashCode => Object.hash(id, label, settings, corpusScope);
+}
+
 /// Porte les réglages de génération choisis par l'utilisateur, en **tranches
 /// réactives granulaires**.
 ///
@@ -70,10 +117,24 @@ class ZChatSettingsController {
     ZChatGenerationSettings settings = const ZChatGenerationSettings(),
     ZChatCorpusScope? corpusScope,
   }) : _settings = ValueNotifier<ZChatGenerationSettings>(settings),
-       _corpusScope = ValueNotifier<ZChatCorpusScope?>(corpusScope);
+       _corpusScope = ValueNotifier<ZChatCorpusScope?>(corpusScope),
+       _activeCount = ValueNotifier<int>(
+         _countOf(settings, corpusScope),
+       );
 
   final ValueNotifier<ZChatGenerationSettings> _settings;
   final ValueNotifier<ZChatCorpusScope?> _corpusScope;
+  final ValueNotifier<String?> _activePresetId = ValueNotifier<String?>(null);
+  final ValueNotifier<int> _activeCount;
+
+  /// État sauvegardé AVANT le premier préréglage — restitué par [clearPreset].
+  ///
+  /// C'est le `preExpertToolsContext` de lex
+  /// (`chat_input_controller.dart:333-350`), généralisé : sauvegardé seulement
+  /// si aucun préréglage n'était actif, CONSERVÉ quand on passe d'un
+  /// préréglage à un autre — restaurer rend toujours l'état d'AVANT le
+  /// premier.
+  ({ZChatGenerationSettings settings, ZChatCorpusScope? scope})? _prePreset;
 
   // ── Tranches réactives ────────────────────────────────────────────────────
 
@@ -90,6 +151,22 @@ class ZChatSettingsController {
   /// liste des corpus (AD-2).
   ValueListenable<ZChatCorpusScope?> get corpusScope => _corpusScope;
 
+  /// Identifiant du PRÉRÉGLAGE actif, ou `null` — lot K2 (T2).
+  ///
+  /// Il reste actif tant qu'on ne l'a pas retiré ([clearPreset]/[reset]) : un
+  /// réglage manuel par-dessus ne le révoque pas — même règle que lex, où
+  /// modifier un outil ne désélectionne pas l'expert.
+  ValueListenable<String?> get activePresetId => _activePresetId;
+
+  /// Nombre de demandes ACTIVES — lot K2 (F12, le `toolsCount` des deux apps
+  /// rendu neutre) : axes non-« l'hôte décide » + clés de la portée (une portée
+  /// sans clé — familles seules — compte pour 1).
+  ///
+  /// Tranche dédiée : le badge du bouton « outils » (créneau `tools` de
+  /// l'hôte) l'écoute sans se reconstruire à chaque frappe ni s'abonner aux
+  /// deux tranches sources (SM-1).
+  ValueListenable<int> get activeCount => _activeCount;
+
   // ── Écriture — un seul écrivain par tranche ───────────────────────────────
 
   /// **L'unique écrivain** de la tranche [settings].
@@ -98,11 +175,52 @@ class ZChatSettingsController {
   /// directement dans le notifier serait un second site, donc la possibilité
   /// que deux gestes divergent — la classe de défaut que ce dépôt combat
   /// partout (garde de source `SET-F1`).
-  void update(ZChatGenerationSettings value) => _settings.value = value;
+  void update(ZChatGenerationSettings value) {
+    _settings.value = value;
+    _activeCount.value = _countOf(value, _corpusScope.value);
+  }
 
   /// **L'unique écrivain** de la tranche [corpusScope]. `null` ⇒ restriction
   /// retirée.
-  void setCorpusScope(ZChatCorpusScope? value) => _corpusScope.value = value;
+  void setCorpusScope(ZChatCorpusScope? value) {
+    _corpusScope.value = value;
+    _activeCount.value = _countOf(_settings.value, value);
+  }
+
+  /// Applique le préréglage [id] — lot K2 (T2, le `selectExpert` de lex rendu
+  /// neutre, `chat_input_controller.dart:333-341`).
+  ///
+  /// Si aucun préréglage n'était actif, l'état courant est **sauvegardé**
+  /// d'abord ; passer d'un préréglage à un autre conserve cette sauvegarde
+  /// (c'est l'état d'AVANT le premier que [clearPreset] restitue). L'écriture
+  /// passe par [update]/[setCorpusScope] — les uniques écrivains (SET-F4).
+  void applyPreset(
+    String id,
+    ZChatGenerationSettings settings,
+    ZChatCorpusScope? scope,
+  ) {
+    _prePreset ??= (settings: _settings.value, scope: _corpusScope.value);
+    update(settings);
+    setCorpusScope(scope);
+    _activePresetId.value = id;
+  }
+
+  /// Retire le préréglage actif et RESTITUE l'état d'avant — lot K2 (T2, le
+  /// `clearExpert` de lex, `chat_input_controller.dart:344-350`).
+  ///
+  /// Sans préréglage actif, l'appel est sans effet. La restitution est
+  /// **exacte** (mesurée par la garde du lot, snapshot non vacant) — jamais des
+  /// « défauts » réinventés, le contre-modèle IFFD.
+  void clearPreset() {
+    if (_activePresetId.value == null) return;
+    final ({ZChatGenerationSettings settings, ZChatCorpusScope? scope})?
+    saved = _prePreset;
+    _prePreset = null;
+    _activePresetId.value = null;
+    if (saved == null) return;
+    update(saved.settings);
+    setCorpusScope(saved.scope);
+  }
 
   /// Choisit la verbosité, ou la retire (`null` ⇒ « l'hôte décide »).
   void setResponseLength(ZChatResponseLength? value) =>
@@ -119,6 +237,40 @@ class ZChatSettingsController {
   /// Demande — ou cesse de demander — l'exposition des étapes de raisonnement.
   void setRevealThinkingSteps(bool? value) =>
       update(_with(revealThinkingSteps: value, keepThinking: false));
+
+  /// Exprime — ou retire (`null` ⇒ « l'hôte décide ») — la capacité [key]
+  /// (kernel K1, lot K4). `true` la demande, `false` demande son **absence**
+  /// (les deux comptent dans [activeCount] : ce sont des demandes).
+  ///
+  /// La clé réservée `kZChatCapabilityWebSearch` écrit le champ **typé**
+  /// `webSearch` et n'entre jamais dans le canal ouvert — une seule écriture
+  /// pour une seule lecture, l'invariant canonique du kernel. Toute autre clé
+  /// va au canal ouvert, **rognée** ; une clé blanche est ignorée (AD-10).
+  /// L'écriture passe par [update] — l'unique écrivain (SET-F1).
+  void setCapability(String key, bool? value) {
+    final String trimmed = key.trim();
+    if (trimmed.isEmpty) return;
+    if (trimmed == kZChatCapabilityWebSearch) {
+      update(_with(webSearch: value, keepWebSearch: false));
+      return;
+    }
+    final Map<String, bool> next = <String, bool>{
+      for (final MapEntry<String, bool> e
+          in _settings.value.capabilities.entries)
+        if (e.key.trim() != trimmed) e.key: e.value,
+      trimmed: ?value,
+    };
+    update(_with(capabilities: next, keepCapabilities: false));
+  }
+
+  /// Bascule la capacité [key] entre **demandée** (`true`) et **non exprimée**
+  /// (« l'hôte décide ») — le geste de la tuile par défaut. Exprimer `false`
+  /// (couper une capacité) reste possible par [setCapability] : la feuille par
+  /// défaut n'offre que le couple demandé/retiré, comme la chip lex.
+  void toggleCapability(String key) => setCapability(
+        key,
+        (_settings.value.capability(key) ?? false) ? null : true,
+      );
 
   /// Bascule l'appartenance de [key] à la portée documentaire.
   ///
@@ -149,18 +301,52 @@ class ZChatSettingsController {
   /// valeurs *inventées par l'application*, ici il remet l'**absence de
   /// demande** — le socle n'a aucun défaut à imposer (FR-26).
   void reset() {
+    // Lot K2 : un préréglage encore affiché après un reset mentirait — il est
+    // retiré, et sa sauvegarde avec lui (l'état restitué par `clearPreset`
+    // n'aurait plus de sens une fois tout remis à « l'hôte décide »).
+    _prePreset = null;
+    _activePresetId.value = null;
     update(const ZChatGenerationSettings());
     setCorpusScope(null);
   }
 
-  /// Libère les deux tranches. À appeler par l'hôte, qui possède l'instance.
+  /// Libère les tranches. À appeler par l'hôte, qui possède l'instance.
   void dispose() {
     _settings.dispose();
     _corpusScope.dispose();
+    _activePresetId.dispose();
+    _activeCount.dispose();
   }
 
-  /// Construit la valeur suivante en **nommant les quatre champs** — la seule
+  /// Le comptage de [activeCount] — fonction PURE, donc mesurable seule.
+  ///
+  /// Lot K4 : les **capacités exprimées** comptent aussi —
+  /// `expressedCapabilityKeys` est la forme CANONIQUE du kernel (le champ typé
+  /// `webSearch` y figure sous `kZChatCapabilityWebSearch`, jamais compté
+  /// deux fois), et `false` est une DEMANDE (couper une capacité est une
+  /// demande active, pas une absence).
+  static int _countOf(ZChatGenerationSettings s, ZChatCorpusScope? scope) {
+    int count = 0;
+    if (s.responseLength != null) count++;
+    if (s.lengthBias != null) count++;
+    if (s.computeEffort != null) count++;
+    if (s.revealThinkingSteps != null) count++;
+    count += s.expressedCapabilityKeys.length;
+    if (scope != null) {
+      final int keys = scope.corpusKeys.length;
+      count += keys == 0 ? 1 : keys;
+    }
+    return count;
+  }
+
+  /// Construit la valeur suivante en **nommant chaque champ** — la seule
   /// forme qui permette de RETIRER un réglage (cf. le dartdoc de bibliothèque).
+  ///
+  /// 🔴 Lot K4 : les champs du kernel K1 ([ZChatGenerationSettings.webSearch],
+  /// [ZChatGenerationSettings.capabilities]) sont TRANSPORTÉS tels quels —
+  /// sans quoi régler la verbosité effacerait silencieusement les capacités
+  /// (la construction explicite nomme TOUS les champs, pas seulement ceux
+  /// d'avant K1).
   ZChatGenerationSettings _with({
     ZChatResponseLength? responseLength,
     bool keepResponseLength = true,
@@ -170,6 +356,10 @@ class ZChatSettingsController {
     bool keepComputeEffort = true,
     bool? revealThinkingSteps,
     bool keepThinking = true,
+    bool? webSearch,
+    bool keepWebSearch = true,
+    Map<String, bool>? capabilities,
+    bool keepCapabilities = true,
   }) {
     final ZChatGenerationSettings current = _settings.value;
     return ZChatGenerationSettings(
@@ -179,6 +369,9 @@ class ZChatSettingsController {
       computeEffort: keepComputeEffort ? current.computeEffort : computeEffort,
       revealThinkingSteps:
           keepThinking ? current.revealThinkingSteps : revealThinkingSteps,
+      webSearch: keepWebSearch ? current.webSearch : webSearch,
+      capabilities: (keepCapabilities ? current.capabilities : capabilities) ??
+          const <String, bool>{},
     );
   }
 }

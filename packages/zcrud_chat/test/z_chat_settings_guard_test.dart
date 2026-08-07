@@ -386,6 +386,30 @@ void main() {
           'toggleCorpusKey',
           'reset',
           'dispose',
+          // 🔴 EXTENSION ARBITRÉE (owner, 2026-08-07 — chantier composer-lex,
+          // lot K2, volet T2). Les PRÉRÉGLAGES À MÉMOIRE (le
+          // `preExpertToolsContext` de lex, `chat_input_controller.dart:
+          // 333-350`, généralisé) et le COMPTEUR de demandes actives (F12, le
+          // `toolsCount` des deux apps). Aucun membre n'ENVOIE : `applyPreset`
+          // et `clearPreset` écrivent par `update`/`setCorpusScope` — les deux
+          // écrivains que SET-F4 continue d'asserter — et les deux tranches
+          // sont en lecture. La garde a rougi le 2026-08-07 en montrant ces
+          // quatre noms, puis a été étendue ICI, délibérément.
+          'activePresetId',
+          'activeCount',
+          'applyPreset',
+          'clearPreset',
+          // 🔴 EXTENSION ARBITRÉE (owner, 2026-08-07 — chantier composer-lex,
+          // lot K4, raccord kernel K1). Les CAPACITÉS du kernel
+          // (`ZChatGenerationSettings.webSearch` + `capabilities`) gagnent
+          // leurs gestes : `setCapability` (exprimer/couper/retirer, clé
+          // réservée routée vers le champ TYPÉ) et `toggleCapability` (le
+          // couple demandé⇔non-exprimé de la tuile par défaut). Aucun membre
+          // n'ENVOIE : les deux écrivent par `update` — l'écrivain que SET-F1
+          // continue d'asserter. La garde a rougi le 2026-08-07 en montrant
+          // ces deux noms, puis a été étendue ICI, délibérément.
+          'setCapability',
+          'toggleCapability',
         },
         reason: '🔴 ÉGALITÉ D\'ENSEMBLE, pas « contient » (leçon G-CH1). Un '
             'membre ajouté qui ENVERRAIT — `sendWith()`, `applyTo(request)` — '
