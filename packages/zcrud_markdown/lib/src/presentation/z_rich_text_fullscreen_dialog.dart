@@ -166,6 +166,12 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
                 config: QuillEditorConfig(
                   padding: EdgeInsetsDirectional.zero,
                   embedBuilders: kZEmbedBuilders,
+                  // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+                  // d'embed inconnu — d'un hôte, d'une version future, ou né
+                  // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
+                  // BUILD, donc irrattrapable : écran rouge, puis cascade de
+                  // `RenderErrorBox`. Mesuré sur `divider`.
+                  unknownEmbedBuilder: kZUnknownEmbedBuilder,
                   // MIN-1 : styles de titres dérivés du thème (FR-26).
                   customStyles: zQuillThemedStyles(context),
                 ),

@@ -75,6 +75,16 @@ workspace:
   # Arêtes SORTANTES : core + chat_kernel + flashcard + study_kernel + study.
   # ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe (aucune arête entrante).
   - packages/zcrud_chat_study
+  # CR-IFFD-73 : backend de RENDU RICHE du port `ZChatRenderer` — ce que
+  # `zcrud_list` est à `ZListRenderer`. Le port publiait une table
+  # d'implémentations dont la ligne « rendu riche Markdown/LaTeX » n'avait aucun
+  # paquet : la couture était offerte et VIDE. Ce satellite la remplit en
+  # s'adossant à `zcrud_markdown` (Quill atteint UNIQUEMENT via son API neutre —
+  # aucune arête `flutter_quill` directe). OPT-IN (AD-57) : `zcrud_chat` reste
+  # zéro-dépendance tierce et un hôte qui ne monte pas ce paquet ne tire rien.
+  # Arêtes SORTANTES : zcrud_chat + zcrud_chat_kernel + zcrud_core +
+  # zcrud_markdown. ACYCLIQUE ; CORE OUT=0 ; PUITS du graphe.
+  - packages/zcrud_chat_markdown
   # ES-4.2 : runtime de session SRS en CYCLE (`ZStudySessionEngine` :
   # ChangeNotifier pur + reducer PUR, réinsertion +2/+4 sur lapse). Écrit le SRS
   # UNIQUEMENT via un seam injecté (= `reviewCard`, voie unique AD-9/AD-23) —

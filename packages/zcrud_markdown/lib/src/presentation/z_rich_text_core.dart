@@ -21,10 +21,16 @@ import '../data/delta_neutral_ops.dart';
 // SOURCE UNIQUE du type d'embed tableau (SM-S4 / ES-6.2) : re-câblage D3 sur la
 // couture NEUTRE, `z_table_embed.dart` ne re-déclare plus `kTableEmbedType`.
 import '../data/z_table_ops.dart';
+import 'z_divider_embed.dart';
 import 'z_latex_embed.dart';
 import 'z_media_embed.dart';
 import 'z_rich_text_toolbar_config.dart';
 import 'z_table_embed.dart';
+
+// Le repli d'embed inconnu (AD-10) est consommé par les TROIS voies rich-text
+// qui importent déjà ce noyau. Re-exporté ici — et NULLE PART ailleurs : le
+// barrel public n'exporte pas ce fichier, la surface publique reste NEUTRE.
+export 'z_divider_embed.dart' show kZUnknownEmbedBuilder;
 
 /// Cible de tap minimale (AD-13) — dimensionne les boutons de la toolbar et sa
 /// hauteur minimale. PARTAGÉE par toutes les voies rich-text.
@@ -37,12 +43,20 @@ const double kZMinTapTarget = 48;
 /// allocation à chaque (re)build de tranche (SM-1/AD-2). MÊME liste pour LaTeX
 /// (E6-3) ET tableau (E6-4), en édition ET en lecture. Définie HORS de la
 /// surface publique scannée par les tests d'isolation de signature.
+/// 🔴 **CR-IFFD-73 — `ZDividerEmbedBuilder` comblait un TROU, pas un manque de
+/// confort.** `ZMarkdownCodec` compte `divider` parmi ses types d'embed
+/// NATIFS : un `---` de Markdown produisait donc une op que **rien** ne savait
+/// rendre, et le lecteur comme l'éditeur levaient un `UnimplementedError` suivi
+/// de quatre `RenderErrorBox` en cascade. Mesuré, écran rouge. Le trou a
+/// survécu parce que les gardes éprouvaient le CODEC (qui produisait l'op
+/// correctement) et jamais le RENDU de l'op produite.
 const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZLatexEmbedBuilder(),
   ZLatexBlockEmbedBuilder(),
   ZTableEmbedBuilder(),
   ZMediaEmbedBuilder(ZMediaKind.image),
   ZMediaEmbedBuilder(ZMediaKind.video),
+  ZDividerEmbedBuilder(),
 ];
 
 /// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant (MIN-1,

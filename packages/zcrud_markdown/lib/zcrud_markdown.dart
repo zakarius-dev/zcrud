@@ -28,7 +28,8 @@ export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;
 export 'src/presentation/z_markdown_codec_scope.dart';
 export 'src/presentation/z_markdown_field.dart'
     show ZMarkdownField, ZMarkdownFieldMode, ZMarkdownFieldDebug;
-export 'src/presentation/z_markdown_reader.dart' show ZMarkdownReader;
+export 'src/presentation/z_markdown_reader.dart'
+    show ZMarkdownReader, ZMarkdownReaderChrome;
 export 'src/presentation/z_markdown_registration.dart'
     show registerZMarkdownFields;
 // DP-22 (M20) : seam NEUTRE de résolution de source média (image/vidéo). N'EXPOSE

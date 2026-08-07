@@ -1,0 +1,62 @@
+# zcrud_chat_markdown — membre du workspace zcrud (resolution: workspace).
+#
+# CR-IFFD-73 : le backend de RENDU RICHE du port `ZChatRenderer`. C'est au chat
+# ce que `zcrud_list` est à `ZListRenderer` : le port existait, son
+# implémentation manquait, et chaque hôte réécrivait — moins bien — un rendu
+# Markdown que `zcrud_markdown` résout déjà (GFM borné, LaTeX derrière `ZCodec`,
+# AD-7).
+#
+# 🔴 AUCUNE arête `flutter_quill` DIRECTE, et c'est structurel.
+# Quill est atteint UNIQUEMENT à travers l'API neutre de `zcrud_markdown`
+# (`ZMarkdownReader` + `ZCodec`), dont le barrel n'exporte aucun symbole Quill.
+# Ce paquet ne nomme donc jamais un type Quill : le confinement n'est pas une
+# convention, il est vérifié par `z_quill_confinement_test.dart` (source ET
+# fermeture de dépendances).
+#
+# 🔴 OPT-IN (AD-57). Un consommateur de `zcrud_chat` qui ne monte pas ce paquet
+# ne tire RIEN de nouveau : `zcrud_chat` reste zéro-dépendance tierce, sa garde
+# de pureté verrouille son allowlist, et la fermeture de `zcrud_chat` ne contient
+# ni `flutter_quill` ni `flutter_math_fork`.
+#
+# ⛔ AUCUN gestionnaire d'état (AD-2/AD-15).
+# ⛔ AUCUN libellé ni couleur codés en dur (FR-26) — thème et libellés viennent
+#    de l'hôte.
+name: zcrud_chat_markdown
+description: "Rich Markdown/LaTeX rendering backend for zcrud chat, isolated behind the neutral ZChatRenderer seam and backed by zcrud_markdown."
+version: 0.55.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_chat_markdown
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - chat
+  - markdown
+  - latex
+  - streaming
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe ACYCLIQUE, CORE OUT=0) :
+#   zcrud_chat_markdown -> zcrud_chat        -> zcrud_chat_kernel -> zcrud_core
+#   zcrud_chat_markdown -> zcrud_markdown    -> zcrud_core
+# Aucune arête entrante : ce paquet est un PUITS (personne ne dépend de lui).
+# AUCUNE dépendance TIERCE directe : Quill/`flutter_math_fork` ne sont atteints
+# que TRANSITIVEMENT, via `zcrud_markdown`.
+dependencies:
+  flutter:
+    sdk: flutter
+  zcrud_chat: ^0.55.0
+  zcrud_chat_kernel: ^0.55.0
+  zcrud_core: ^0.55.0
+  zcrud_markdown: ^0.55.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# Le rendu Quill (transitif via `zcrud_markdown`) utilise les icônes Material.
+flutter:
+  uses-material-design: true

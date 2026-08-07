@@ -66,6 +66,72 @@
 /// choisi est porté par le **drapeau sémantique `selected`**, jamais par la
 /// seule couleur — c'est l'un des 18 défauts structurants que l'étude a relevés
 /// dans le legacy (§ 2.3, « information portée par la seule couleur »).
+///
+/// ## 🔴 AD-13, son SYMÉTRIQUE — et pourquoi il manquait (CR-IFFD-74)
+///
+/// AD-13 énonce qu'une information ne doit **jamais** être portée par la seule
+/// **couleur**. Son symétrique n'était écrit nulle part, et son absence a coûté
+/// exactement un défaut :
+///
+/// > 🔴 **Un état doit être perceptible par au moins un canal VISIBLE** — le
+/// > drapeau sémantique n'en est pas un.
+///
+/// Mesuré sur appareil le 2026-08-07 : on touchait une option, **rien ne
+/// changeait à l'écran** (deux captures identiques au pixel). La correction
+/// d'origine — porter l'état dans l'arbre sémantique — était juste, et elle est
+/// **conservée intacte** ; le tort était de l'avoir substituée au canal visible
+/// au lieu de l'ajouter à côté. On était passé de « un seul canal, visuel » à
+/// « un seul canal, sémantique ».
+///
+/// ⇒ Les deux canaux coexistent désormais, et **aucun ne remplace l'autre** :
+///
+/// | Canal | Porteur | Public |
+/// |---|---|---|
+/// | sémantique | `Semantics(selected:)` | lecteur d'écran |
+/// | **graisse** | [kZChatSettingsReferenceSelectedWeight] | vue |
+/// | **soulignement** | [kZChatSettingsReferenceSelectedDecoration] | vue |
+///
+/// ### Pourquoi ni couleur, ni forme, mais graisse + soulignement
+///
+/// * **Aucune couleur** — mesuré : sur un `ZcrudTheme` sans réglage d'hôte,
+///   **tous** les jetons de couleur sont `null` (`labelColor`, `surfaceColor`,
+///   `fieldBorderColor`, `chatToolAccentColor`…). Un canal de couleur serait
+///   donc *absent par défaut*, c'est-à-dire le défaut même que CR-IFFD-74
+///   corrige, et le socle n'a pas le droit d'en inventer une (FR-26). Peindre
+///   « en primaire » supposerait de plus un `ColorScheme`, que ce package
+///   n'importe pas (AD-57 : `material` est banni de `lib/`).
+/// * **Deux canaux, pas un** — mesuré : une graisse *seule* s'ANNULE sous un
+///   `DefaultTextStyle` ambiant déjà gras (l'option choisie et les autres
+///   redeviennent identiques). Le soulignement survit à ce cas ; et le cas
+///   symétrique (ambiant déjà souligné) est fermé par la règle de non-annulation
+///   ci-dessous.
+/// * **Invariant de luminosité** — graisse et soulignement ne dépendent d'aucune
+///   couleur : ils rendent la **même** différence en clair et en sombre
+///   (mesuré), là où un canal coloré doit être re-décidé par thème.
+///
+/// ### 🔴 Le canal ne peut pas s'ANNULER (AD-10)
+///
+/// Si le style hérité porte **déjà** la graisse ET le soulignement d'emphase, la
+/// paire s'effondrerait — une option choisie redeviendrait indiscernable. Dans
+/// ce seul cas, le socle **retire** le soulignement des options NON choisies :
+/// la différence est alors garantie, sans jamais dépendre de ce que l'hôte a
+/// posé au-dessus. Hors de ce cas, le rendu des options non choisies est
+/// **strictement inchangé**.
+///
+/// ### Remplaçabilité (FR-26)
+///
+/// Les deux canaux se règlent par **paramètre** ([selectedWeight],
+/// [selectedDecoration]) et retombent sinon sur la **référence** du socle.
+/// ⚠️ Le niveau **jeton** n'existe pas encore : `ZcrudTheme` ne porte aucune
+/// graisse ni décoration d'emphase de sélection, et `zcrud_core` est hors du
+/// périmètre de cette CR. Deux jetons **nullables** sont demandés —
+/// `chatSelectedEmphasisWeight` (`FontWeight?`) et
+/// `chatSelectedEmphasisDecoration` (`TextDecoration?`), tous deux `null` par
+/// défaut. Ils s'inséreront **entre** le paramètre et la référence, lus sur
+/// `ZcrudScope.maybeOf(context)?.theme` — jamais sur `ZcrudTheme.of`, pour la
+/// raison écrite plus haut. `floatingLabelWeight` n'a **pas** été détourné pour
+/// tenir ce rôle : c'est le jeton du *label flottant d'un formulaire*, et un
+/// hôte qui le règle ne demande pas de changer l'emphase d'un choix de chat.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -84,6 +150,23 @@ const EdgeInsetsDirectional kZChatSettingsReferencePadding =
 /// Interligne **de référence** de la feuille — même régime que
 /// [kZChatSettingsReferencePadding].
 const double kZChatSettingsReferenceGap = 8;
+
+/// Graisse **de référence** de l'option CHOISIE — le premier des deux canaux
+/// visibles exigés par CR-IFFD-74.
+///
+/// 🔴 Une graisse, pas une couleur : le socle n'a le droit d'en inventer aucune
+/// (FR-26), et tous les jetons de couleur d'un `ZcrudTheme` non réglé sont
+/// `null` — un canal coloré serait donc *absent par défaut*, c'est-à-dire le
+/// défaut même que cette CR corrige.
+const FontWeight kZChatSettingsReferenceSelectedWeight = FontWeight.w700;
+
+/// Soulignement **de référence** de l'option CHOISIE — le second canal visible.
+///
+/// 🔴 Il existe parce qu'une graisse SEULE s'annule sous un `DefaultTextStyle`
+/// ambiant déjà gras (mesuré). Deux canaux indépendants, aucun coloré : la
+/// différence survit au style de l'hôte **et** aux deux luminosités.
+const TextDecoration kZChatSettingsReferenceSelectedDecoration =
+    TextDecoration.underline;
 
 /// Une entrée du **catalogue de corpus de l'hôte**.
 ///
@@ -170,6 +253,8 @@ class ZChatSettingsSheet extends StatelessWidget {
     this.corpusBuilder,
     this.padding,
     this.spacing,
+    this.selectedWeight,
+    this.selectedDecoration,
     super.key,
   });
 
@@ -203,6 +288,20 @@ class ZChatSettingsSheet extends StatelessWidget {
   /// Interligne entre les tuiles. `null` ⇒ jeton puis référence.
   final double? spacing;
 
+  /// Graisse de l'option **choisie** — canal visible n°1 (CR-IFFD-74).
+  ///
+  /// `null` ⇒ [kZChatSettingsReferenceSelectedWeight]. Le niveau **jeton**
+  /// s'insérera ici quand `zcrud_core` portera
+  /// `chatSelectedEmphasisWeight` (cf. le dartdoc de bibliothèque).
+  final FontWeight? selectedWeight;
+
+  /// Décoration de l'option **choisie** — canal visible n°2 (CR-IFFD-74).
+  ///
+  /// `null` ⇒ [kZChatSettingsReferenceSelectedDecoration]. Un hôte qui ne veut
+  /// que la graisse passe `TextDecoration.none` ; un hôte qui veut tout autre
+  /// chose remplace la tuile par son builder.
+  final TextDecoration? selectedDecoration;
+
   /// Résout la marge selon **paramètre > jeton > référence**.
   EdgeInsetsDirectional resolvePadding(BuildContext context) =>
       padding ??
@@ -215,6 +314,15 @@ class ZChatSettingsSheet extends StatelessWidget {
       ZcrudScope.maybeOf(context)?.theme?.gapS ??
       kZChatSettingsReferenceGap;
 
+  /// Résout la graisse d'emphase selon **paramètre > référence** (le niveau
+  /// jeton reste à poser dans `zcrud_core`).
+  FontWeight resolveSelectedWeight(BuildContext context) =>
+      selectedWeight ?? kZChatSettingsReferenceSelectedWeight;
+
+  /// Résout la décoration d'emphase selon **paramètre > référence**.
+  TextDecoration resolveSelectedDecoration(BuildContext context) =>
+      selectedDecoration ?? kZChatSettingsReferenceSelectedDecoration;
+
   @override
   Widget build(BuildContext context) {
     final double gap = resolveGap(context);
@@ -222,8 +330,16 @@ class ZChatSettingsSheet extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       label: zChatLabel(context, kZChatLabelSettings),
-      child: Padding(
-        padding: resolvePadding(context),
+      // 🔴 L'emphase visible est posée UNE fois, au-dessus des deux
+      // `ValueListenableBuilder` : les CINQ familles de tuiles la lisent au même
+      // endroit, donc aucune ne peut diverger — et la poser ici ne provoque
+      // aucun rebuild supplémentaire (elle ne change qu'à une reconfiguration
+      // de la feuille, AD-2/SM-1).
+      child: _ZChatSettingsEmphasis(
+        weight: resolveSelectedWeight(context),
+        decoration: resolveSelectedDecoration(context),
+        child: Padding(
+          padding: resolvePadding(context),
         // 🔴 Les DEUX tranches sont écoutées SÉPARÉMENT et au plus bas :
         // cocher un corpus ne reconstruit pas les tuiles de verbosité. Rien
         // ici n'écoute `ZChatController.messages` — c'est ce qui fait qu'ouvrir
@@ -245,6 +361,7 @@ class ZChatSettingsSheet extends StatelessWidget {
                       Widget? _,
                     ) => _body(context, settings, scope, gap),
               ),
+          ),
         ),
       ),
     );
@@ -422,6 +539,72 @@ const Map<ZChatLengthBias, String> _kLengthBiasLabels = <ZChatLengthBias, String
   ZChatLengthBias.longer: kZChatLabelBiasLonger,
 };
 
+/// Porte l'**emphase visible** de l'option choisie jusqu'aux CINQ familles de
+/// tuiles, sans la faire transiter par six sites de construction.
+///
+/// 🔴 Un seul porteur ⇒ **une seule** définition de « ce qu'on voit quand c'est
+/// choisi ». Le défaut d'origine (CR-IFFD-74) était partagé par les cinq
+/// familles précisément parce qu'elles partagent une primitive : le correctif
+/// doit se partager par la même arête, sinon il se corrigerait quatre fois et
+/// divergerait une cinquième.
+class _ZChatSettingsEmphasis extends InheritedWidget {
+  const _ZChatSettingsEmphasis({
+    required this.weight,
+    required this.decoration,
+    required super.child,
+  });
+
+  final FontWeight weight;
+  final TextDecoration decoration;
+
+  /// AD-10 : hors de la feuille, l'option retombe sur les **références** — elle
+  /// ne rend jamais un état invisible, et ne lève jamais.
+  static _ZChatSettingsEmphasis? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_ZChatSettingsEmphasis>();
+
+  @override
+  bool updateShouldNotify(_ZChatSettingsEmphasis old) =>
+      weight != old.weight || decoration != old.decoration;
+}
+
+/// Combine la décoration héritée et celle d'emphase — **additif** : un hôte qui
+/// barre son texte le garde barré ET souligné, il ne le perd pas.
+TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
+    base == null || base == TextDecoration.none
+    ? add
+    : TextDecoration.combine(<TextDecoration>[base, add]);
+
+/// La paire de styles d'une option : ce que rend une option **non choisie**, et
+/// ce que rend une option **choisie**. Fonction PURE, donc mesurable seule.
+///
+/// 🔴 Elle porte l'invariant de CR-IFFD-74 : sous les références du socle, les
+/// deux styles **diffèrent toujours**. Si le style hérité portait déjà la
+/// graisse ET la décoration d'emphase, les deux canaux s'annuleraient — le socle
+/// retire alors la décoration des options NON choisies, plutôt que de laisser
+/// l'état redevenir invisible (AD-10). Hors de ce cas, l'option non choisie rend
+/// **exactement** le style hérité : le correctif est strictement additif.
+({TextStyle plain, TextStyle chosen}) _optionStyles(
+  TextStyle base, {
+  required FontWeight weight,
+  required TextDecoration decoration,
+}) {
+  final TextStyle chosen = base.copyWith(
+    fontWeight: weight,
+    decoration: _mergeDecoration(base.decoration, decoration),
+  );
+  final bool collapsed =
+      chosen.fontWeight == base.fontWeight &&
+      chosen.decoration == base.decoration;
+  final bool baseDecorated =
+      base.decoration != null && base.decoration != TextDecoration.none;
+  return (
+    plain: collapsed && baseDecorated
+        ? base.copyWith(decoration: TextDecoration.none)
+        : base,
+    chosen: chosen,
+  );
+}
+
 /// Un groupe de réglage : un intitulé, puis ses options.
 class _ZChatSettingsGroup extends StatelessWidget {
   const _ZChatSettingsGroup({
@@ -464,8 +647,10 @@ class _ZChatSettingsGroup extends StatelessWidget {
   }
 }
 
-/// Une option : cible **≥ 48 dp en géométrie rendue**, état porté par le
-/// drapeau sémantique `selected` — jamais par la seule couleur (AD-13).
+/// Une option : cible **≥ 48 dp en géométrie rendue**, état porté par **deux**
+/// canaux — le drapeau sémantique `selected` (lecteur d'écran) ET l'emphase
+/// typographique (vue). Jamais par la seule couleur, et jamais par le seul
+/// drapeau sémantique (AD-13 et son symétrique, CR-IFFD-74).
 class _ZChatSettingsOption extends StatelessWidget {
   /// Option dont le libellé est une **clé du socle**.
   const _ZChatSettingsOption.key({
@@ -507,6 +692,18 @@ class _ZChatSettingsOption extends StatelessWidget {
         (count == null
             ? zChatLabel(context, labelKey!)
             : zChatCountLabel(context, labelKey!, count!));
+    // 🔴 LE CANAL VISIBLE (CR-IFFD-74). Il s'AJOUTE au drapeau sémantique
+    // ci-dessous ; il ne le remplace pas — c'est exactement l'erreur que cette
+    // CR corrige, dans l'autre sens.
+    final _ZChatSettingsEmphasis? emphasis = _ZChatSettingsEmphasis.maybeOf(
+      context,
+    );
+    final ({TextStyle plain, TextStyle chosen}) styles = _optionStyles(
+      DefaultTextStyle.of(context).style,
+      weight: emphasis?.weight ?? kZChatSettingsReferenceSelectedWeight,
+      decoration:
+          emphasis?.decoration ?? kZChatSettingsReferenceSelectedDecoration,
+    );
     return Semantics(
       button: true,
       // 🔴 L'ÉTAT, dans l'arbre sémantique. Le legacy porte le choix par la
@@ -544,7 +741,15 @@ class _ZChatSettingsOption extends StatelessWidget {
             // jumelle le vérifie.
             widthFactor: 1,
             heightFactor: 1,
-            child: Text(resolved, textAlign: TextAlign.start),
+            child: Text(
+              resolved,
+              // 🔴 Le style est posé EXPLICITEMENT sur les deux états : c'est
+              // ce qui rend la différence mesurable sur le `RenderParagraph`,
+              // et non « présente quelque part dans l'arbre ».
+              style: selected ? styles.chosen : styles.plain,
+              // AD-13 : jamais `TextAlign.left`.
+              textAlign: TextAlign.start,
+            ),
           ),
         ),
       ),

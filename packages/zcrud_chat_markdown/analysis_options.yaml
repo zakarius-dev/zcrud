@@ -1,0 +1,2 @@
+# Hérite de la baseline de lint partagée du monorepo (E1-3).
+include: ../../analysis_options.yaml

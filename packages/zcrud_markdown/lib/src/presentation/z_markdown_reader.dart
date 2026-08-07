@@ -32,6 +32,24 @@ import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
 import 'z_rich_text_core.dart';
 
+/// Habillage du [ZMarkdownReader] — CR-IFFD-73.
+///
+/// Le lecteur a été écrit pour une **place de champ de formulaire** : cadre,
+/// rayon, `fieldPadding`. Ce chrome est juste là, et il reste le défaut. Il est
+/// en revanche **faux dans une bulle de conversation**, qui porte déjà son fond,
+/// son rayon et ses marges : le cadre y devient une boîte dans une boîte.
+///
+/// AD-57 : strictement **additif**. [bordered] est le défaut, donc un appelant
+/// existant ne bouge pas d'un pixel.
+enum ZMarkdownReaderChrome {
+  /// Cadre + rayon + `fieldPadding` du thème — le rendu historique (défaut).
+  bordered,
+
+  /// **Aucun** cadre, **aucun** padding : le contenu seul. L'appelant fournit
+  /// son propre habillage (bulle de chat, carte, aperçu inline).
+  none,
+}
+
 /// Lecteur rich-text NON éditable d'une **valeur neutre** (Delta JSON).
 class ZMarkdownReader extends StatefulWidget {
   /// Construit le lecteur pour [value] (valeur neutre de la tranche).
@@ -45,6 +63,8 @@ class ZMarkdownReader extends StatefulWidget {
     this.codec,
     this.label,
     this.placeholder = 'Aucun contenu',
+    this.chrome = ZMarkdownReaderChrome.bordered,
+    this.semanticsEnabled = true,
     super.key,
   });
 
@@ -60,6 +80,20 @@ class ZMarkdownReader extends StatefulWidget {
 
   /// Texte affiché quand le contenu est vide (AD-10).
   final String placeholder;
+
+  /// Habillage du lecteur (CR-IFFD-73). Défaut [ZMarkdownReaderChrome.bordered]
+  /// = rendu historique inchangé.
+  final ZMarkdownReaderChrome chrome;
+
+  /// Pose le nœud [Semantics] `readOnly` du lecteur (défaut `true` = historique).
+  ///
+  /// 🔴 **Pourquoi c'est débrayable, et mesuré.** Un appelant qui annonce
+  /// DÉJÀ le contenu au-dessus — c'est le cas de `ZChatMessageTile`, qui pose
+  /// un `Semantics` de message alimenté par `ZContentBlock.accessibleText` —
+  /// ferait, sans ce drapeau, **deux** nœuds pour un seul contenu : le message
+  /// annoncé une fois par la tuile, une seconde par le lecteur. Le
+  /// coupe-circuit n'invente rien : il laisse l'annonce là où elle était déjà.
+  final bool semanticsEnabled;
 
   @override
   State<ZMarkdownReader> createState() => _ZMarkdownReaderState();
@@ -135,9 +169,15 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     final borderColor =
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
 
+    // CR-IFFD-73 : `none` retire cadre ET padding — l'appelant habille.
+    final bool chromeless = widget.chrome == ZMarkdownReaderChrome.none;
+    final EdgeInsetsGeometry pad = chromeless
+        ? EdgeInsetsDirectional.zero
+        : zTheme.fieldPadding;
+
     final Widget content = _isEmpty
         ? Padding(
-            padding: zTheme.fieldPadding,
+            padding: pad,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
               child: Text(
@@ -148,7 +188,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
             ),
           )
         : Padding(
-            padding: zTheme.fieldPadding,
+            padding: pad,
             child: QuillEditor(
               controller: _quill,
               focusNode: _focus,
@@ -161,25 +201,33 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 // (controller readOnly). MÊMES embed builders qu'en édition.
                 showCursor: false,
                 embedBuilders: kZEmbedBuilders,
+                // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+                // d'embed inconnu — d'un hôte, d'une version future, ou né
+                // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
+                // BUILD, donc irrattrapable : écran rouge, puis cascade de
+                // `RenderErrorBox`. Mesuré sur `divider`.
+                unknownEmbedBuilder: kZUnknownEmbedBuilder,
                 // MIN-1 : styles de titres dérivés du thème (FR-26).
                 customStyles: zQuillThemedStyles(context),
               ),
             ),
           );
 
-    final reader = Semantics(
-      // Lisible au lecteur d'écran (contenu exposé) mais SANS action d'édition
-      // (readOnly=true ⇒ pas de champ éditable annoncé). AD-13.
-      label: widget.label,
-      readOnly: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: borderColor),
-          borderRadius: BorderRadius.all(zTheme.radiusM),
-        ),
-        child: content,
-      ),
-    );
+    final Widget framed = chromeless
+        ? content
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.all(zTheme.radiusM),
+            ),
+            child: content,
+          );
+
+    final Widget reader = widget.semanticsEnabled
+        // Lisible au lecteur d'écran (contenu exposé) mais SANS action
+        // d'édition (readOnly=true ⇒ pas de champ éditable annoncé). AD-13.
+        ? Semantics(label: widget.label, readOnly: true, child: framed)
+        : framed;
 
     // Localisations Quill requises par QuillEditor (même en lecture).
     return Localizations.override(
