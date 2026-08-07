@@ -37,6 +37,14 @@ import 'support/z_chat_render_harness.dart';
 /// L'arbre de la feuille PAR DÉFAUT, sérialisé et relevé AVANT la
 /// re-expression (base 484 verte) — fichier de référence versionné.
 ///
+/// 🔴 **Régénéré au lot CR-IFFD-75** (2026-08-07, base 510 verte) : correctif
+/// de défaut SANCTIONNÉ — dégagement directionnel des deux actions de
+/// l'en-tête (« RéinitialiserFermer » mesuré sur appareil) et repères du
+/// budget rendus `Flexible` (débordement de 58 px mesuré à 280 dp). Le diff
+/// avec l'étalon précédent a été vérifié à la main : LIMITÉ à ces deux sites
+/// (Flexible + Padding autour des actions ; Flexible autour des trois
+/// repères), aucun libellé, style ni nœud sémantique ne bouge.
+///
 /// ⚠️ Chemin RELATIF au dossier du package : c'est la convention du dépôt
 /// (`flutter test` DOIT être lancé depuis `packages/zcrud_chat`, jamais depuis
 /// la racine — cf. CLAUDE.md, mesuré le 2026-08-01).

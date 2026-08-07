@@ -280,6 +280,32 @@ const String kZChatLabelIncrease = '${kZChatLabelPrefix}increase';
 /// localisé.
 const String kZChatLabelModelSelector = '${kZChatLabelPrefix}modelSelector';
 
+// ── Lot « composer assemblé » (CR-IFFD-76) ─────────────────────────────────
+
+/// Étiquette du bandeau de **mode édition** du composer (K2 : `editing` /
+/// `startEditing` / `cancelEditing` existent — le bandeau les REND).
+const String kZChatLabelEditing = '${kZChatLabelPrefix}editing';
+
+/// Action « sortir du mode édition sans soumettre » — le verbe EXISTANT
+/// `cancelEditing` (jamais un second chemin).
+const String kZChatLabelEditingCancel = '${kZChatLabelPrefix}editingCancel';
+
+/// Action « arrêter la génération en cours » — câblée sur le verbe EXISTANT
+/// `runAction(ZChatCancelAction(requestId:))` (G-CH1 : aucun membre ajouté).
+const String kZChatLabelStopGeneration =
+    '${kZChatLabelPrefix}stopGeneration';
+
+/// Déclencheur `+` des **pickers de pièces jointes** (CR-IFFD-76, pièce 2) —
+/// le socle rend le créneau ; galerie/photo/fichier restent des actions
+/// d'HÔTE (libellés, icônes et gestes injectés).
+const String kZChatLabelAttachmentPickers =
+    '${kZChatLabelPrefix}attachmentPickers';
+
+/// Déclencheur « outils » de la bande d'accessoires — il OUVRE la feuille de
+/// réglages (le créneau `tools` est une bande, jamais une page — défaut ①
+/// d'IFFD, CR-IFFD-76).
+const String kZChatLabelTools = '${kZChatLabelPrefix}tools';
+
 /// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
 
@@ -434,6 +460,11 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelDecrease,
   kZChatLabelIncrease,
   kZChatLabelModelSelector,
+  kZChatLabelEditing,
+  kZChatLabelEditingCancel,
+  kZChatLabelStopGeneration,
+  kZChatLabelAttachmentPickers,
+  kZChatLabelTools,
   kZChatLabelConversations,
   kZChatLabelLoadingConversations,
   kZChatLabelConversationsError,
@@ -531,6 +562,11 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelDecrease: 'Diminuer',
   kZChatLabelIncrease: 'Augmenter',
   kZChatLabelModelSelector: 'Modèle',
+  kZChatLabelEditing: 'Modification en cours',
+  kZChatLabelEditingCancel: 'Annuler la modification',
+  kZChatLabelStopGeneration: 'Arrêter la génération',
+  kZChatLabelAttachmentPickers: 'Ajouter',
+  kZChatLabelTools: 'Outils',
   kZChatLabelConversations: 'Conversations',
   kZChatLabelLoadingConversations: 'Chargement des conversations',
   kZChatLabelConversationsError: 'Les conversations n\'ont pas pu être chargées',

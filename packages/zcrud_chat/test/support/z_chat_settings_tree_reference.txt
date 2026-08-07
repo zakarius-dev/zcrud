@@ -11,26 +11,30 @@ ZChatSettingsSheet
                     ExcludeSemantics
                       Text text=Réglages de génération
                         RichText rich=Réglages de génération w=FontWeight.w400 d=TextDecoration.none i=null
-                  _ZChatSettingsAction
-                    Semantics sem[label=Réinitialiser sel=null btn=true en=null cont=false]
-                      GestureDetector
-                        RawGestureDetector
-                          _GestureSemantics
-                            Listener
-                              ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
-                                Align a=AlignmentDirectional.center wf=1.0 hf=1.0
-                                  Text text=Réinitialiser
-                                    RichText rich=Réinitialiser w=FontWeight.w400 d=TextDecoration.none i=null
-                  _ZChatSettingsAction
-                    Semantics sem[label=Fermer sel=null btn=true en=null cont=false]
-                      GestureDetector
-                        RawGestureDetector
-                          _GestureSemantics
-                            Listener
-                              ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
-                                Align a=AlignmentDirectional.center wf=1.0 hf=1.0
-                                  Text text=Fermer
-                                    RichText rich=Fermer w=FontWeight.w400 d=TextDecoration.none i=null
+                  Flexible
+                    _ZChatSettingsAction
+                      Semantics sem[label=Réinitialiser sel=null btn=true en=null cont=false]
+                        GestureDetector
+                          RawGestureDetector
+                            _GestureSemantics
+                              Listener
+                                ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                  Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                    Padding p=EdgeInsetsDirectional(8.0, 0.0, 8.0, 0.0)
+                                      Text text=Réinitialiser
+                                        RichText rich=Réinitialiser w=FontWeight.w400 d=TextDecoration.none i=null
+                  Flexible
+                    _ZChatSettingsAction
+                      Semantics sem[label=Fermer sel=null btn=true en=null cont=false]
+                        GestureDetector
+                          RawGestureDetector
+                            _GestureSemantics
+                              Listener
+                                ConstrainedBox c=BoxConstraints(48.0<=w<=Infinity, 48.0<=h<=Infinity)
+                                  Align a=AlignmentDirectional.center wf=1.0 hf=1.0
+                                    Padding p=EdgeInsetsDirectional(8.0, 0.0, 8.0, 0.0)
+                                      Text text=Fermer
+                                        RichText rich=Fermer w=FontWeight.w400 d=TextDecoration.none i=null
               SizedBox sz=nullx8.0
               ValueListenableBuilder<String?>
                 _ZChatSettingsGroup
@@ -230,12 +234,15 @@ ZChatSettingsSheet
                                         RichText rich=Niveau 5 w=FontWeight.w400 d=TextDecoration.none i=null
                     ExcludeSemantics
                       Row
-                        Text text=Rapide
-                          RichText rich=Rapide w=FontWeight.w400 d=TextDecoration.none i=null
-                        Text text=Équilibré
-                          RichText rich=Équilibré w=FontWeight.w400 d=TextDecoration.none i=null
-                        Text text=Profond
-                          RichText rich=Profond w=FontWeight.w400 d=TextDecoration.none i=null
+                        Flexible
+                          Text text=Rapide
+                            RichText rich=Rapide w=FontWeight.w400 d=TextDecoration.none i=null
+                        Flexible
+                          Text text=Équilibré
+                            RichText rich=Équilibré w=FontWeight.w400 d=TextDecoration.none i=null
+                        Flexible
+                          Text text=Profond
+                            RichText rich=Profond w=FontWeight.w400 d=TextDecoration.none i=null
               SizedBox sz=nullx8.0
               _ZChatSettingsGroup
                 Semantics sem[label=Afficher le raisonnement sel=null btn=null en=null cont=true]

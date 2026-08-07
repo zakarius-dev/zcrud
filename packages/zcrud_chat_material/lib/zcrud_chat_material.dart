@@ -39,5 +39,6 @@ library;
 export 'src/presentation/z_chat_material_attachment_chips.dart';
 export 'src/presentation/z_chat_material_badge.dart';
 export 'src/presentation/z_chat_material_budget_slider.dart';
+export 'src/presentation/z_chat_material_composer.dart';
 export 'src/presentation/z_chat_material_effort_chips.dart';
 export 'src/presentation/z_chat_material_send_fab.dart';

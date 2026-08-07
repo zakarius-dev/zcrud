@@ -129,6 +129,38 @@
 /// raison écrite plus haut. `floatingLabelWeight` n'a **pas** été détourné pour
 /// tenir ce rôle : c'est le jeton du *label flottant d'un formulaire*, et un
 /// hôte qui le règle ne demande pas de changer l'emphase d'un choix de chat.
+///
+/// ## 🔴 CR-IFFD-75 — deux cibles adjacentes restent DISTINCTES quel que soit
+/// leur libellé
+///
+/// Le plancher de 48 dp ([kZChatMinTapTarget]) est une borne **basse** : il
+/// garantit qu'une cible est *atteignable*, pas qu'elle est *lisible*. Un
+/// libellé plus large que 48 dp fait grandir la boîte au-delà du plancher, et
+/// deux boîtes voisines finissent bord à bord — mesuré sur appareil en
+/// français (« RéinitialiserFermer »), invisible en anglais (Reset/Close
+/// < 48 dp, donc dans la langue de développement).
+///
+/// > 🔴 **Deux cibles adjacentes doivent rester visuellement distinctes
+/// > indépendamment de la longueur de leur libellé** — le pendant GÉOMÉTRIQUE
+/// > de la règle CR-74 ci-dessus (« un état perceptible par au moins un canal
+/// > visible ») : là-bas un état sans canal visible, ici deux affordances sans
+/// > frontière visible.
+///
+/// Le correctif vit dans la **PRIMITIVE** (`_ZChatSettingsAction`), pas dans le
+/// seul en-tête — la CR le pressentait : la primitive « pourrait servir
+/// ailleurs et porter le même risque ». Chaque action réserve un dégagement
+/// horizontal autour de son libellé (la moitié de
+/// [kZChatSettingsReferenceActionGap] de chaque côté, réglable par
+/// [actionSpacing] ; le jeton de niveau 2, `chatSettingsActionGap`, est
+/// **demandé** à `zcrud_core` — hors périmètre de ce lot), si bien que deux
+/// actions posées bord à bord gardent leurs libellés écartés d'au moins cet
+/// écart :
+///
+/// * en **RTL** — l'ordre des actions s'inverse ; le dégagement étant
+///   symétrique, l'écart tient (mesuré) ;
+/// * sous un **petit écran** — les actions sont `Flexible` : un libellé plus
+///   large que la place restante passe à la ligne au lieu de faire déborder la
+///   `Row` (mesuré, l'`Expanded` du titre comprimé à quelques dp).
 library;
 
 import 'package:flutter/foundation.dart' show listEquals;
@@ -166,6 +198,18 @@ const FontWeight kZChatSettingsReferenceSelectedWeight = FontWeight.w700;
 /// différence survit au style de l'hôte **et** aux deux luminosités.
 const TextDecoration kZChatSettingsReferenceSelectedDecoration =
     TextDecoration.underline;
+
+/// Écart de **référence** GARANTI entre les libellés de deux actions
+/// adjacentes de l'en-tête (CR-IFFD-75) — chaque [_ZChatSettingsAction]
+/// réserve la **moitié** de cet écart de chaque côté de son libellé, si bien
+/// que deux actions posées bord à bord restent visuellement distinctes quel
+/// que soit leur libellé (le plancher 48 dp, borne basse, ne le garantit pas).
+///
+/// Réglable par le paramètre [ZChatSettingsSheet.actionSpacing] ; le jeton de
+/// niveau 2 (`chatSettingsActionGap`) est **demandé** à `zcrud_core` et
+/// s'insérera entre les deux, comme `chatSelectedEmphasisWeight` l'a été pour
+/// CR-74.
+const double kZChatSettingsReferenceActionGap = 16;
 
 /// Écart de **référence** entre la coche d'hôte ([ZChatScaleControl
 /// .selectionMark]) et le libellé d'un segment choisi — même régime que
@@ -314,6 +358,7 @@ class ZChatSettingsSheet extends StatelessWidget {
     this.unknownEntryBuilder,
     this.padding,
     this.spacing,
+    this.actionSpacing,
     this.selectedWeight,
     this.selectedDecoration,
     super.key,
@@ -413,6 +458,12 @@ class ZChatSettingsSheet extends StatelessWidget {
   /// Interligne entre les tuiles. `null` ⇒ jeton puis référence.
   final double? spacing;
 
+  /// Écart minimal GARANTI entre les libellés de deux actions adjacentes de
+  /// l'en-tête (CR-IFFD-75). `null` ⇒ jeton demandé (`chatSettingsActionGap`,
+  /// pas encore posé dans `zcrud_core` — listé au rapport de lot), puis
+  /// [kZChatSettingsReferenceActionGap].
+  final double? actionSpacing;
+
   /// Graisse de l'option **choisie** — canal visible n°1 (CR-IFFD-74).
   ///
   /// `null` ⇒ jeton `chatSelectedEmphasisWeight` (lot K4), puis
@@ -438,6 +489,12 @@ class ZChatSettingsSheet extends StatelessWidget {
       spacing ??
       ZcrudScope.maybeOf(context)?.theme?.gapS ??
       kZChatSettingsReferenceGap;
+
+  /// Résout l'écart entre actions adjacentes (CR-IFFD-75) — **paramètre >
+  /// référence** aujourd'hui ; le jeton `chatSettingsActionGap` (demandé à
+  /// `zcrud_core`, hors périmètre de ce lot) s'insérera entre les deux.
+  double resolveActionGap(BuildContext context) =>
+      actionSpacing ?? kZChatSettingsReferenceActionGap;
 
   /// Résout la graisse d'emphase selon **paramètre > jeton > référence** — le
   /// jeton `chatSelectedEmphasisWeight` demandé par CR-IFFD-74 a été posé au
@@ -798,13 +855,24 @@ class ZChatSettingsSheet extends StatelessWidget {
               ),
             ),
           ),
-          _ZChatSettingsAction(
-            labelKey: kZChatLabelSettingsReset,
-            onTap: slot.controller.reset,
+          // 🔴 CR-IFFD-75 : chaque action réserve la moitié de l'écart résolu
+          // de chaque côté de son libellé — deux actions bord à bord restent
+          // distinctes quel que soit leur libellé. `Flexible` (loose) : sous
+          // un petit écran, un libellé trop large passe à la ligne au lieu de
+          // faire déborder la Row (l'`Expanded` du titre se comprime déjà).
+          Flexible(
+            child: _ZChatSettingsAction(
+              labelKey: kZChatLabelSettingsReset,
+              onTap: slot.controller.reset,
+              inset: resolveActionGap(context) / 2,
+            ),
           ),
-          _ZChatSettingsAction(
-            labelKey: kZChatLabelSettingsClose,
-            onTap: close,
+          Flexible(
+            child: _ZChatSettingsAction(
+              labelKey: kZChatLabelSettingsClose,
+              onTap: close,
+              inset: resolveActionGap(context) / 2,
+            ),
           ),
         ],
       ),
@@ -939,21 +1007,32 @@ class ZChatSettingsSheet extends StatelessWidget {
             // l'arbre sémantique — l'état est déjà annoncé par les options ;
             // les dupliquer ferait annoncer chaque palier deux fois (leçon
             // MAJEUR-doublon).
+            // 🔴 Chaque repère est `Flexible` : mesuré au volet petit écran de
+            // CR-75 (280 dp), la rangée fixe débordait de 58 px — le même
+            // genre de défaut que l'en-tête (une largeur supposée, jamais
+            // bornée). Un repère trop large passe à la ligne au lieu de faire
+            // déborder la Row.
             footer: ExcludeSemantics(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text(
-                    zChatLabel(context, kZChatLabelComputeBudgetFast),
-                    textAlign: TextAlign.start,
+                  Flexible(
+                    child: Text(
+                      zChatLabel(context, kZChatLabelComputeBudgetFast),
+                      textAlign: TextAlign.start,
+                    ),
                   ),
-                  Text(
-                    zChatLabel(context, kZChatLabelComputeBudgetBalanced),
-                    textAlign: TextAlign.start,
+                  Flexible(
+                    child: Text(
+                      zChatLabel(context, kZChatLabelComputeBudgetBalanced),
+                      textAlign: TextAlign.start,
+                    ),
                   ),
-                  Text(
-                    zChatLabel(context, kZChatLabelComputeBudgetDeep),
-                    textAlign: TextAlign.start,
+                  Flexible(
+                    child: Text(
+                      zChatLabel(context, kZChatLabelComputeBudgetDeep),
+                      textAlign: TextAlign.start,
+                    ),
                   ),
                 ],
               ),
@@ -1289,11 +1368,28 @@ class _ZChatSettingsGroup extends StatelessWidget {
 /// Une ACTION de l'en-tête (réinitialiser, fermer) : cible ≥ 48 dp en
 /// géométrie rendue, `Semantics(button:)` — jamais `selected`, ce n'est pas un
 /// choix. Lot K2 (T1).
+///
+/// 🔴 **CR-IFFD-75 — le dégagement vit ICI, dans la primitive.** Le plancher
+/// 48 dp est une borne *basse* : un libellé plus large fait grandir la boîte
+/// et deux actions voisines finissent bord à bord (« RéinitialiserFermer »,
+/// mesuré sur appareil en français — invisible en anglais). Chaque action
+/// réserve donc [inset] de chaque côté de son libellé, en
+/// `EdgeInsetsDirectional` : la garantie tient en LTR comme en RTL, et pour
+/// toute surface future qui poserait cette primitive ailleurs que dans
+/// l'en-tête.
 class _ZChatSettingsAction extends StatelessWidget {
-  const _ZChatSettingsAction({required this.labelKey, required this.onTap});
+  const _ZChatSettingsAction({
+    required this.labelKey,
+    required this.onTap,
+    this.inset = kZChatSettingsReferenceActionGap / 2,
+  });
 
   final String labelKey;
   final VoidCallback onTap;
+
+  /// Dégagement horizontal réservé de CHAQUE côté du libellé — la moitié de
+  /// l'écart garanti entre deux actions adjacentes (CR-IFFD-75).
+  final double inset;
 
   @override
   Widget build(BuildContext context) {
@@ -1316,7 +1412,11 @@ class _ZChatSettingsAction extends StatelessWidget {
             alignment: AlignmentDirectional.center,
             widthFactor: 1,
             heightFactor: 1,
-            child: Text(resolved, textAlign: TextAlign.start),
+            child: Padding(
+              // 🔴 CR-IFFD-75 : le dégagement, directionnellement symétrique.
+              padding: EdgeInsetsDirectional.symmetric(horizontal: inset),
+              child: Text(resolved, textAlign: TextAlign.start),
+            ),
           ),
         ),
       ),

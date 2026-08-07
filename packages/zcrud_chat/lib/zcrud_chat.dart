@@ -117,6 +117,15 @@ export 'src/presentation/view/z_chat_capture_review_field.dart';
 export 'src/presentation/view/z_chat_composer.dart';
 // Lot K2 (chantier composer-lex) — la référence visuelle lex du composer, sa
 // chaîne paramètre > jeton > référence et les créneaux par défaut PURS.
+// Lot « composer assemblé » (CR-IFFD-76) — les SIX pièces manquantes en
+// widgets purs (conteneur, `+` pickers à contrat opaque, bascules
+// réfléchir/internet sur le MÊME `ZChatSettingsController` que la feuille —
+// un état, deux surfaces —, déclencheur « outils » à badge dans la cible,
+// STOP câblé sur le verbe EXISTANT `runAction(ZChatCancelAction)`, bandeau
+// d'édition K2) et `ZDefaultChatComposer`, l'assemblage par défaut opt-in
+// (pendant de `ZDefaultFolderCard`) qui rend les quatre défauts d'assemblage
+// d'IFFD inexprimables ou détectables.
+export 'src/presentation/view/z_chat_composer_band.dart';
 export 'src/presentation/view/z_chat_composer_chrome.dart';
 export 'src/presentation/view/z_chat_composer_model_selector.dart';
 export 'src/presentation/view/z_chat_composer_reference.dart';
@@ -152,5 +161,7 @@ export 'src/presentation/view/z_chat_notebook_view.dart';
 // `ZChatModelOption`, menu par défaut au rendu des vidéos, coche sur l'actif).
 export 'src/presentation/view/z_chat_settings_entry.dart';
 export 'src/presentation/view/z_chat_settings_sheet.dart';
+export 'src/presentation/view/z_default_chat_composer.dart';
+export 'src/presentation/z_chat_assembly_contract.dart';
 export 'src/presentation/z_chat_controller.dart';
 export 'src/presentation/z_chat_stream_progress.dart';
