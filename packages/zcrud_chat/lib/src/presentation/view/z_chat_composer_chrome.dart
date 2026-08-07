@@ -28,6 +28,9 @@
 /// | [ZChatComposerChromeStyle.containerRadius] | `radiusM` | existant |
 /// | [ZChatComposerChromeStyle.fieldContentPadding] | `inputContentPadding` | existant |
 /// | [ZChatComposerChromeStyle.badgeRadius] | `badgeRadius` | existant (nullable) |
+/// | [ZChatComposerChromeStyle.borderWidth] | `chatComposerBorderWidth` | **DEMANDÉ** (CR-IFFD-77 ③) |
+/// | `ZChatComposerSurface.borderColor` | `chatComposerBorderColor` | **DEMANDÉ** (CR-IFFD-77 ③) |
+/// | `ZDefaultChatComposer.bandDividerColor` | `chatComposerBandDividerColor` | **DEMANDÉ** (CR-IFFD-77 ③) |
 /// | [ZChatComposerChromeStyle.sendTargetSize] | `chatComposerSendTargetSize` | posé (K4) |
 /// | échelles/durées d'envoi | `chatComposerSendScaleIdle/Active/Duration` | posés (K4) |
 /// | [ZChatComposerChromeStyle.mobileBreakpoint] | `chatComposerMobileBreakpoint` | posé (K4) |
@@ -80,6 +83,7 @@ class ZChatComposerChrome {
     this.containerRadius,
     this.fieldContentPadding,
     this.badgeRadius,
+    this.borderWidth,
     this.sendTargetSize,
     this.sendScaleIdle,
     this.sendScaleActive,
@@ -102,6 +106,13 @@ class ZChatComposerChrome {
 
   /// Rayon des badges. `null` ⇒ jeton `badgeRadius`, puis référence (8).
   final Radius? badgeRadius;
+
+  /// Épaisseur du filet du conteneur (CR-IFFD-77 ③). `null` ⇒ jeton
+  /// **demandé** `chatComposerBorderWidth`, puis référence (1).
+  ///
+  /// ⚠️ L'épaisseur ne peint rien à elle seule : sans couleur résolue
+  /// (`ZChatComposerSurface.borderColor`), il n'y a **pas** de filet.
+  final double? borderWidth;
 
   /// Côté de la cible d'envoi. `null` ⇒ jeton `chatComposerSendTargetSize`,
   /// puis référence (48). Toujours **écrêté** à `kZChatMinTapTarget`.
@@ -150,6 +161,7 @@ class ZChatComposerChromeStyle {
     required this.containerRadius,
     required this.fieldContentPadding,
     required this.badgeRadius,
+    this.borderWidth = ZChatComposerReference.borderWidth,
     required this.sendTargetSize,
     required this.sendScaleIdle,
     required this.sendScaleActive,
@@ -172,6 +184,9 @@ class ZChatComposerChromeStyle {
 
   /// Rayon des badges.
   final Radius badgeRadius;
+
+  /// Épaisseur du filet du conteneur (CR-IFFD-77 ③) — jamais négative.
+  final double borderWidth;
 
   /// Côté de la cible d'envoi — **jamais** sous `kZChatMinTapTarget`.
   final double sendTargetSize;
@@ -244,6 +259,13 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
         chrome?.badgeRadius ??
         theme?.badgeRadius ??
         ZChatComposerReference.badgeRadius,
+    // 🔴 CR-IFFD-77 ③ : le jeton `chatComposerBorderWidth` est DEMANDÉ à
+    // `zcrud_core` (hors périmètre de ce lot) et s'insérera ici, entre le
+    // paramètre et la référence — comme `chatComposerMobileBreakpoint` l'a
+    // été au lot K4. Une épaisseur négative est écrêtée à 0 (AD-10 : un
+    // paramètre absurde ne fait pas lever le rendu).
+    borderWidth: (chrome?.borderWidth ?? ZChatComposerReference.borderWidth)
+        .clamp(0.0, double.infinity),
     // 🔴 AD-13 : écrêté au plancher — les 40 dp du legacy sont inexprimables,
     // par paramètre aujourd'hui comme par jeton demain.
     sendTargetSize: requestedSend < floor ? floor : requestedSend,

@@ -248,6 +248,35 @@ abstract final class ZChatNotebookReference {
   /// Opacité du filet qui sépare le champ de sa rangée d'affordances
   /// (`:2609-2615` — `dividerColor.withValues(alpha: .1)` ; la COULEUR reste un
   /// rôle, seule l'opacité est une valeur de référence).
+  ///
+  /// ## 🔴 CR-IFFD-77 ③ — pourquoi elle n'a PAS de consommateur, et ne doit
+  /// pas en avoir dans la famille « composer »
+  ///
+  /// IFFD relève (à raison) qu'un `grep` sur les 38 paquets ne trouve que cette
+  /// déclaration. Ce n'est pas un oubli, c'est la **garde REF-G7** :
+  /// *aucun fichier de `lib/` hors ce fichier et `ZChatNotebookSkin` ne peut
+  /// citer la référence notebook* — sans quoi tout hôte passif hériterait du
+  /// rendu du monolithe IFFD sans l'avoir demandé. La tentative de la câbler
+  /// dans `ZDefaultChatComposer` a été **écrite puis retirée** : la garde l'a
+  /// rougie, et elle avait raison.
+  ///
+  /// Deux raisons de fond s'y ajoutent :
+  /// * **partition des familles** — cette valeur est une mesure du *notebook*
+  ///   IFFD ; la famille composer a son propre point d'audit
+  ///   (`ZChatComposerReference`). Une consommation croisée est exactement ce
+  ///   que la partition en deux fichiers de référence interdit ;
+  /// * **lex n'a pas ce filet** — la référence du mode Chat (décision du
+  ///   2026-08-05) peint une **bordure de conteneur**
+  ///   (`Border.all(color: dividerColor)`), pas une règle interne. Le canal de
+  ///   bordure demandé par CR-IFFD-77 ③ est donc `ZChatComposerSurface.
+  ///   borderColor` + `ZChatComposerReference.borderWidth`, et il n'a rien à
+  ///   voir avec cette opacité.
+  ///
+  /// ⇒ Son unique consommateur légitime serait un champ de [ZChatNotebookSkin]
+  /// rendu par la vue notebook — un lot de la famille notebook, pas du
+  /// composer. Tant qu'il n'existe pas, elle reste ce qu'elle est : une mesure
+  /// **publiée et auditable**, que l'hôte qui veut ce filet peut lire et
+  /// appliquer lui-même.
   static const double composerHelperDividerAlpha = 0.1;
 
   /// 🔴 Côté du bouton d'envoi : **48**, et non les **40 dp** du legacy

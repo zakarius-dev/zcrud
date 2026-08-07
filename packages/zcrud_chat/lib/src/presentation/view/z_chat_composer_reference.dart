@@ -40,7 +40,7 @@
 /// | bouton « retirer la PJ » **20 dp** (`:1032`), badge OCR ~22 dp (`:1054`), micro compact < 48 dp (`:896`) | non déclarés — la valeur qu'on ne peut pas lire ici ne peut pas être reproduite par inadvertance |
 /// | `Positioned(top: 0, right: 0)` non directionnel (`:1025-1026`) | aucune constante de décalage `Right` : tout est `EdgeInsetsDirectional` (AD-13) |
 /// | placeholder animé **sans garde Reduce-Motion** (`:1162-1198`) | les durées sont publiées, mais `ZChatComposerAnimatedHint` (le widget du socle) est NEUTRALISÉ par `MediaQuery.disableAnimations` — mesuré |
-/// | `theme.dividerColor` / `fillColor` Material | non portés : rôles de thème, à câbler par l'hôte en jetons `ZcrudTheme` |
+/// | `theme.dividerColor` / `fillColor` Material | non portés : rôles de thème, à câbler par l'hôte — CR-IFFD-77 ③ a ouvert le **point de câblage** qui manquait (`ZChatComposerSurface.borderColor`), l'épaisseur restant une référence ([borderWidth]) |
 library;
 
 import 'package:flutter/widgets.dart';
@@ -60,6 +60,18 @@ abstract final class ZChatComposerReference {
 
   /// Rayon du conteneur de la barre (`:482`).
   static const Radius containerRadius = Radius.circular(12);
+
+  /// Épaisseur du FILET du conteneur (`:474-482`,
+  /// `Border.all(color: theme.dividerColor)` — largeur par défaut d'un
+  /// `BorderSide`, soit **1**).
+  ///
+  /// 🔴 CR-IFFD-77 ③ : seule l'ÉPAISSEUR est une valeur de référence. La
+  /// **couleur** reste un rôle de thème (`dividerColor` chez lex) — non
+  /// portée ici (FR-26 : le socle n'invente aucune teinte), câblée par
+  /// `ZChatComposerSurface.borderColor` puis par le jeton demandé
+  /// `ZcrudTheme.chatComposerBorderColor`. Sans couleur résolue : **aucun
+  /// filet**, jamais une bordure inerte (AD-4).
+  static const double borderWidth = 1;
 
   // ── Champ de texte (`:585-609`) ───────────────────────────────────────────
 

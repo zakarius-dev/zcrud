@@ -37,16 +37,34 @@
 /// `activeRequests` pour le STOP, `editing` pour le bandeau) — jamais les
 /// messages, jamais la frappe.
 ///
-/// ## Mode compact (« < mobileBreakpoint »)
+/// ## Mode compact (« < mobileBreakpoint ») — 🔴 corrigé par CR-IFFD-77 ①
 ///
 /// lex masque les libellés sous 400 dp et garde les badges (lex/f011). Chaque
 /// pièce accepte `showLabel: false` — mais **refuse de perdre son seul canal
-/// visible** : sans glyphe d'hôte, le libellé reste rendu (CR-74 : un état —
-/// et une affordance — doivent rester perceptibles par un canal visible).
+/// visible** (CR-74 : un état, et une affordance, doivent rester perceptibles
+/// par un canal visible).
+///
+/// La rédaction CR-76 ne tenait cette promesse que **sans glyphe**
+/// (`showLabel || face == null`) : avec un glyphe — le cas de tout téléphone —
+/// une bascule active était rendue à l'identique d'une bascule au repos. Le
+/// défaut de CR-74, rouvert par le mode compact. La règle est désormais tenue
+/// par [_labelVisible] : le compact masque le libellé des pièces qui n'ont
+/// **rien à dire**, et le garde sur toute pièce dont l'état est actif ou dont
+/// une valeur est choisie.
+///
+/// ## Deux pièces ajoutées par CR-IFFD-77
+///
+/// * le **filet** de [ZChatComposerSurface] (③) — le point de câblage qui
+///   manquait au rôle `dividerColor` ;
+/// * le **déclencheur de dictée** compact (④,
+///   [ZChatComposerDictationTrigger]) : la pièce que CR-76 comptait parmi ses
+///   six sans qu'elle y soit. Le socle livre le bouton, l'hôte garde le geste
+///   ET le moteur.
 library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -62,26 +80,52 @@ import 'z_chat_settings_sheet.dart'
         kZChatSettingsReferenceGap,
         kZChatSettingsReferenceMarkGap,
         kZChatSettingsReferenceSelectedDecoration,
-        kZChatSettingsReferenceSelectedWeight;
+        kZChatSettingsReferenceSelectedWeight,
+        zChatSelectedEmphasisStyles;
 
 /// La paire de styles emphase CR-74 — même chaîne que la feuille de réglages
-/// (jetons `chatSelectedEmphasis*`, puis références) : la bande et la feuille
-/// disent « choisi » de la MÊME façon.
+/// (jetons `chatSelectedEmphasis*`, puis références) **et la même
+/// implémentation** ([zChatSelectedEmphasisStyles], CR-IFFD-77 ①) : la bande et
+/// la feuille disent « choisi » de la MÊME façon, y compris l'anti-annulation
+/// AD-10 sous un style ambiant déjà gras/souligné.
 ({TextStyle plain, TextStyle chosen}) _emphasisStyles(BuildContext context) {
   final ZcrudTheme? theme = ZcrudScope.maybeOf(context)?.theme;
-  final TextStyle base = DefaultTextStyle.of(context).style;
-  return (
-    plain: base,
-    chosen: base.copyWith(
-      fontWeight:
-          theme?.chatSelectedEmphasisWeight ??
-          kZChatSettingsReferenceSelectedWeight,
-      decoration:
-          theme?.chatSelectedEmphasisDecoration ??
-          kZChatSettingsReferenceSelectedDecoration,
-    ),
+  return zChatSelectedEmphasisStyles(
+    DefaultTextStyle.of(context).style,
+    weight:
+        theme?.chatSelectedEmphasisWeight ??
+        kZChatSettingsReferenceSelectedWeight,
+    decoration:
+        theme?.chatSelectedEmphasisDecoration ??
+        kZChatSettingsReferenceSelectedDecoration,
   );
 }
+
+/// 🔴 **CR-IFFD-77 ① — la règle du canal visible en mode COMPACT.**
+///
+/// CR-74 pose qu'un état doit rester perceptible par au moins un canal
+/// **visible**. La rédaction CR-76 ne la tenait que sans glyphe :
+/// `showLabel || face == null`. Avec un glyphe d'hôte (le cas de tout
+/// téléphone : `ZChatMaterialComposer` en fournit toujours un) et
+/// `showLabel: false` (< 400 dp), le libellé — **seul porteur de l'emphase** —
+/// disparaissait, et le glyphe, opaque, était rendu à l'identique actif ou non.
+///
+/// ⇒ Le compact masque le libellé des pièces qui n'ont **rien à dire** ; une
+/// pièce dont l'état est ACTIF (ou dont une valeur est CHOISIE) garde le sien.
+///
+/// **Pourquoi ce canal-là**, et pas une pastille/un fond/un contour : le socle
+/// n'invente aucune couleur (FR-26) et ne peut pas re-styler un glyphe d'hôte
+/// (widget opaque). Une décoration exigerait une couleur d'hôte — donc un canal
+/// **conditionné** au câblage, c'est-à-dire zéro canal chez l'hôte qui n'a rien
+/// câblé : exactement le défaut qu'on ferme. Le libellé emphasé est le seul
+/// canal que le socle peut peindre **inconditionnellement**, et c'est déjà
+/// celui que la feuille de réglages utilise (un état, deux surfaces, une seule
+/// grammaire).
+bool _labelVisible({
+  required bool showLabel,
+  required bool hasGlyph,
+  required bool stateful,
+}) => showLabel || !hasGlyph || stateful;
 
 double _gapOf(BuildContext context) =>
     ZcrudScope.maybeOf(context)?.theme?.gapS ?? kZChatSettingsReferenceGap;
@@ -96,12 +140,40 @@ double _gapOf(BuildContext context) =>
 /// * **fond** : [backgroundColor] > jeton `surfaceColor` > **rien** — le socle
 ///   n'invente aucune couleur (FR-26) : sans fond résolu, l'enfant est rendu
 ///   tel quel, jamais une décoration inerte (AD-4).
+///
+/// ## 🔴 CR-IFFD-77 ③ — le canal de BORDURE
+///
+/// La rédaction CR-76 ne prenait que `child`/`chrome`/`backgroundColor`.
+/// L'arbitrage « les rôles Material sont à câbler par l'hôte » est juste, mais
+/// **le point de câblage n'existait pas** : poser un filet obligeait l'hôte à
+/// envelopper la surface d'un second conteneur et à faire coïncider deux rayons
+/// à la main — le montage manuel que CR-76 venait de supprimer.
+///
+/// * **couleur du filet** : [borderColor] > jeton **demandé**
+///   `chatComposerBorderColor` > **rien** (même doctrine que le fond) ;
+/// * **épaisseur** : chaîne du chrome ([ZChatComposerChromeStyle.borderWidth],
+///   référence 1 — la largeur du `Border.all` de lex) ;
+/// * **rayon** : celui du conteneur, **par construction** — les deux rayons ne
+///   peuvent plus diverger.
+///
+/// ## `clipBehavior` — porté, et par défaut INERTE
+///
+/// lex pose `Clip.antiAlias` sur son conteneur (`chat_input.dart:474-482`).
+/// Mesuré ici : sans fond ni filet, la surface ne pose **aucune** couche de
+/// rendu, et son enfant par défaut (bandeau d'édition = un `Padding`, bande =
+/// une rangée) ne peint jamais jusqu'au bord ⇒ le clip serait aujourd'hui une
+/// couche de composition pour rien. Il est donc **offert** ([clipBehavior]) et
+/// **`Clip.none` par défaut** : l'hôte dont un enfant peint jusqu'au bord (un
+/// bandeau à fond, une vignette pleine largeur) l'active, et le clip épouse
+/// alors EXACTEMENT le rayon du conteneur — jamais un second rayon à accorder.
 class ZChatComposerSurface extends StatelessWidget {
   /// Construit le conteneur.
   const ZChatComposerSurface({
     required this.child,
     this.chrome,
     this.backgroundColor,
+    this.borderColor,
+    this.clipBehavior = Clip.none,
     super.key,
   });
 
@@ -114,6 +186,15 @@ class ZChatComposerSurface extends StatelessWidget {
   /// Fond du conteneur. `null` ⇒ jeton `surfaceColor`, sinon aucun fond.
   final Color? backgroundColor;
 
+  /// Couleur du FILET (CR-IFFD-77 ③) — le `theme.dividerColor` de lex, qui est
+  /// un **rôle** : l'hôte le fournit. `null` ⇒ jeton demandé
+  /// `chatComposerBorderColor`, sinon **aucun filet** (FR-26/AD-4).
+  final Color? borderColor;
+
+  /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut —
+  /// l'arbre d'un hôte passif est inchangé (cf. dartdoc de la classe).
+  final Clip clipBehavior;
+
   @override
   Widget build(BuildContext context) {
     final ZChatComposerChromeStyle style = zChatComposerChromeOf(
@@ -122,14 +203,40 @@ class ZChatComposerSurface extends StatelessWidget {
     );
     final Color? fill =
         backgroundColor ?? ZcrudScope.maybeOf(context)?.theme?.surfaceColor;
-    if (fill == null) return child;
+    // 🔴 Le jeton `chatComposerBorderColor` est DEMANDÉ à `zcrud_core` (hors
+    // périmètre) et s'insérera ici, entre le paramètre et le « rien ».
+    final Color? line = borderColor;
+    // Symétrique : un rayon uniforme n'a pas de côté (AD-13). UN seul rayon
+    // pour le fond, le filet et le rognage — ils ne peuvent pas diverger.
+    final BorderRadius radius = BorderRadius.all(style.containerRadius);
+    // Une épaisseur nulle ne peint rien : sans couleur ET sans épaisseur
+    // utile, on ne pose pas de côté (AD-4).
+    final bool painted = line != null && style.borderWidth > 0;
+    if (fill == null && !painted) {
+      return clipBehavior == Clip.none
+          ? child
+          : ClipRRect(
+              borderRadius: radius,
+              clipBehavior: clipBehavior,
+              child: child,
+            );
+    }
+    final Widget inner = clipBehavior == Clip.none
+        ? child
+        : ClipRRect(
+            borderRadius: radius,
+            clipBehavior: clipBehavior,
+            child: child,
+          );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: fill,
-        // Symétrique : un rayon uniforme n'a pas de côté (AD-13).
-        borderRadius: BorderRadius.all(style.containerRadius),
+        border: painted
+            ? Border.all(color: line, width: style.borderWidth)
+            : null,
+        borderRadius: radius,
       ),
-      child: child,
+      child: inner,
     );
   }
 }
@@ -381,10 +488,15 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     required this.onTap,
     required this.children,
     this.toggled,
+    this.liveRegion = false,
   });
 
   final String semanticsLabel;
   final VoidCallback onTap;
+
+  /// `true` ⇒ le changement d'étiquette est **annoncé** (doctrine CHAT-10 :
+  /// une capture en cours ne doit pas être seulement visible).
+  final bool liveRegion;
 
   /// `null` ⇒ simple bouton ; sinon l'état est porté par `Semantics(toggled:)`
   /// — le canal lecteur d'écran, qui s'AJOUTE au canal visible (CR-74).
@@ -397,6 +509,7 @@ class _ZChatComposerBandTarget extends StatelessWidget {
     return Semantics(
       button: true,
       toggled: toggled,
+      liveRegion: liveRegion,
       label: semanticsLabel,
       excludeSemantics: true,
       onTap: onTap,
@@ -425,8 +538,30 @@ class _ZChatComposerBandTarget extends StatelessWidget {
 ///
 /// 🔴 **Deux surfaces, UN état** : elle lit et écrit
 /// `ZChatSettingsController.settings.revealThinkingSteps` — la MÊME tranche
-/// que la tuile de la feuille. Le badge rend le palier de budget
-/// (`computeEffort.level`), la donnée que lex badge sur sa puce « réfléchir ».
+/// que la tuile de la feuille.
+///
+/// ## 🔴 CR-IFFD-77 ② — **une pièce n'affiche que la donnée qu'elle pilote**
+///
+/// La rédaction CR-76 lisait `settings.computeEffort?.level` pour son badge et
+/// écrivait `setRevealThinkingSteps(!active)` au tap : **deux champs, un seul
+/// widget**. Le badge ne pouvait donc jamais suivre le geste — et, `computeEffort`
+/// étant `null` au défaut, il n'était jamais rendu : un canal mort posé sur un
+/// contrôle vivant. L'origine était une différence de MODÈLE — chez lex
+/// « réfléchir » est un cycle dont le badge est la valeur ; le socle l'a modélisé
+/// (lot K1) en **booléen** + un budget séparé. Le badge avait suivi lex, le
+/// contrôle avait suivi le kernel.
+///
+/// L'arbitrage retenu : **la pièce n'affiche que ce qu'elle pilote**. Elle reste
+/// une bascule (le modèle K1 n'est pas rouvert), et son [badgeBuilder] reçoit
+/// désormais l'**état booléen** — la donnée que le tap change. Piloter aussi le
+/// budget aurait fait de la bascule un déclencheur à menu, c'est-à-dire une
+/// autre pièce ([ZChatComposerEffortSelector] en est déjà une).
+///
+/// 🔴 **La règle est générale**, du même ordre que celles de CR-74/75 : *un
+/// widget ne rend que la donnée que son propre geste écrit ; afficher un champ
+/// voisin fait de l'affichage un commentaire — vrai par hasard, faux dès que le
+/// modèle bouge.* Le budget se règle et s'affiche là où il se pilote : la
+/// feuille de réglages (`ZChatSettingsSheet`) et le sélecteur d'effort.
 class ZChatComposerThinkingToggle extends StatelessWidget {
   /// Construit la bascule.
   const ZChatComposerThinkingToggle({
@@ -444,14 +579,16 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
   final Widget? glyph;
 
   /// `false` ⇒ mode compact (lex < 400 dp) : le libellé est masqué **si un
-  /// glyphe existe** — sans glyphe, il reste rendu (jamais zéro canal
-  /// visible).
+  /// glyphe existe ET que la bascule est au repos**. Active, elle garde son
+  /// libellé emphasé — son seul canal visible (CR-IFFD-77 ①, cf.
+  /// [_labelVisible]).
   final bool showLabel;
 
-  /// Rend le badge d'effort à partir du palier courant (`null` ⇒ pas de
-  /// budget réglé). Non fourni ⇒ le nombre nu, en texte (le pixel-perfect est
-  /// l'affaire du satellite Material).
-  final Widget? Function(BuildContext context, int? level)? badgeBuilder;
+  /// Rend un badge à partir de l'**état que cette pièce pilote**
+  /// (CR-IFFD-77 ②) — jamais d'un champ voisin. Non fourni ⇒ **aucun** badge :
+  /// le socle n'a rien à badger sur un booléen déjà porté par l'emphase et par
+  /// `Semantics(toggled:)`.
+  final Widget? Function(BuildContext context, bool active)? badgeBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -466,23 +603,22 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
             Widget? _,
           ) {
             final bool active = settings.revealThinkingSteps ?? false;
-            final int? level = settings.computeEffort?.level;
             final String resolved = zChatLabel(
               context,
               kZChatLabelRevealThinking,
             );
             final ({TextStyle plain, TextStyle chosen}) styles =
                 _emphasisStyles(context);
-            final Widget? badge = badgeBuilder != null
-                ? badgeBuilder!(context, level)
-                // Un NOMBRE, pas un libellé (comme `ZChatMaterialBadge`) —
-                // et sans littéral de chaîne : la garde G-R10 balaie tout
-                // `Text('…')` d'un fichier de rendu.
-                : (level == null
-                      ? null
-                      : Text(level.toString(), textAlign: TextAlign.start));
+            // 🔴 CR-IFFD-77 ② : le badge reçoit `active` — CE que le tap
+            // change. Aucun défaut du socle : un booléen n'a pas de nombre à
+            // montrer.
+            final Widget? badge = badgeBuilder?.call(context, active);
             final Widget? face = glyph;
-            final bool labelVisible = showLabel || face == null;
+            final bool labelVisible = _labelVisible(
+              showLabel: showLabel,
+              hasGlyph: face != null,
+              stateful: active,
+            );
             return _ZChatComposerBandTarget(
               semanticsLabel: resolved,
               toggled: active,
@@ -502,8 +638,8 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
                   ),
                 if (badge != null) ...<Widget>[
                   const SizedBox(width: kZChatSettingsReferenceMarkGap),
-                  // Décoratif : le palier est déjà réglé/annoncé par la
-                  // feuille ; le badge est un rappel visuel.
+                  // Décoratif : l'état est déjà porté par l'emphase (vue) et
+                  // par `Semantics(toggled:)` (lecteur d'écran).
                   ExcludeSemantics(child: badge),
                 ],
               ],
@@ -531,7 +667,8 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
   /// Glyphe d'HÔTE. `null` ⇒ libellé seul.
   final Widget? glyph;
 
-  /// `false` ⇒ compact : libellé masqué **si un glyphe existe**.
+  /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que la
+  /// bascule est au repos** (CR-IFFD-77 ①).
   final bool showLabel;
 
   @override
@@ -554,7 +691,11 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
             final ({TextStyle plain, TextStyle chosen}) styles =
                 _emphasisStyles(context);
             final Widget? face = glyph;
-            final bool labelVisible = showLabel || face == null;
+            final bool labelVisible = _labelVisible(
+              showLabel: showLabel,
+              hasGlyph: face != null,
+              stateful: active,
+            );
             return _ZChatComposerBandTarget(
               semanticsLabel: resolved,
               toggled: active,
@@ -608,13 +749,21 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
 
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe** — le badge,
   /// lui, reste (lex/f011 : libellés masqués, badges gardés).
+  ///
+  /// ⚠️ CR-IFFD-77 ① ne s'applique pas ici : ce déclencheur n'a **pas d'état**
+  /// (il ouvre une feuille). Ce qu'il a à dire — le nombre de réglages actifs —
+  /// est porté par son [badge], que le compact garde justement.
   final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
     final String resolved = zChatLabel(context, kZChatLabelTools);
     final Widget? face = glyph;
-    final bool labelVisible = showLabel || face == null;
+    final bool labelVisible = _labelVisible(
+      showLabel: showLabel,
+      hasGlyph: face != null,
+      stateful: false,
+    );
     final Widget? counter = badge;
     return _ZChatComposerBandTarget(
       semanticsLabel: resolved,
@@ -746,7 +895,14 @@ class _ZChatComposerEffortSelectorState
         ? group
         : zChatLabel(context, _labels[active]!);
     final Widget? face = widget.glyph;
-    final bool labelVisible = widget.showLabel || face == null;
+    // 🔴 CR-IFFD-77 ① : le déclencheur d'effort porte une VALEUR ; un palier
+    // explicitement choisi reste lisible en compact — « Automatique » (le
+    // défaut, `active == null`) n'a rien à dire et cède la place.
+    final bool labelVisible = _labelVisible(
+      showLabel: widget.showLabel,
+      hasGlyph: face != null,
+      stateful: active != null,
+    );
     return Semantics(
       button: true,
       expanded: open,
@@ -922,6 +1078,9 @@ class ZChatComposerStopTarget extends StatelessWidget {
   final Widget? glyph;
 
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe**.
+  ///
+  /// ⚠️ CR-IFFD-77 ① ne s'applique pas ici : le STOP n'a pas d'état à montrer
+  /// — sa **présence** EST son état (il n'existe que pendant le flux).
   final bool showLabel;
 
   @override
@@ -936,7 +1095,11 @@ class ZChatComposerStopTarget extends StatelessWidget {
           kZChatLabelStopGeneration,
         );
         final Widget? face = glyph;
-        final bool labelVisible = showLabel || face == null;
+        final bool labelVisible = _labelVisible(
+          showLabel: showLabel,
+          hasGlyph: face != null,
+          stateful: false,
+        );
         return _ZChatComposerBandTarget(
           semanticsLabel: resolved,
           onTap: () => unawaited(
@@ -1037,6 +1200,119 @@ class ZChatComposerEditingBanner extends StatelessWidget {
               ),
             );
           },
+    );
+  }
+}
+
+/// « Jamais à l'écoute » — l'état de repli quand l'hôte ne fournit AUCUNE
+/// tranche d'écoute (CR-IFFD-77 ④).
+///
+/// 🔴 Constante de fait : jamais notifiée, jamais disposée, partagée par toutes
+/// les instances. Elle existe pour qu'il n'y ait qu'**UN SEUL chemin de rendu**
+/// dans [ZChatComposerDictationTrigger] — la leçon de
+/// `ZChatComposerAnimatedHint` : une seconde branche « statique » laisse une
+/// garde verte pendant que le vrai mécanisme est cassé.
+final ValueNotifier<bool> _kZChatNeverListening = ValueNotifier<bool>(false);
+
+/// Le DÉCLENCHEUR DE DICTÉE compact (CR-IFFD-77 ④) — la forme lex : un bouton
+/// dans la rangée, qui change de glyphe et d'étiquette pendant l'écoute.
+///
+/// ## 🔴 Le socle livre la pièce, l'hôte garde le geste — et le moteur
+///
+/// Exactement le patron du `+` des pickers. Ce widget **n'écoute rien** : il
+/// n'ouvre aucun micro, ne connaît aucun `ZChatDictationPort` et ne détient
+/// aucun état. L'état d'écoute est **injecté** ([listening]) et le geste
+/// ([onTap]) appartient à l'hôte — qui branchera, s'il le veut,
+/// `ZChatCaptureController.listening` / `startDictation()`, ou son propre
+/// moteur. Un port de dictée est un choix d'application (CR-IFFD-77 ④, et le
+/// socle est d'accord) ; le déclencheur, lui, n'en était pas un.
+///
+/// ⚠️ CR-IFFD-76 comptait cette pièce parmi ses six — elle n'y était pas : le
+/// créneau `dictation` de `ZDefaultChatComposer` n'était qu'un builder nu, et
+/// `ZChatCaptureBar` est une **bande**, pas un déclencheur compact.
+///
+/// ## Canaux de l'état d'écoute — trois, dont deux non chromatiques
+///
+/// 1. l'**étiquette** change (`Dicter` ⇄ `Arrêter la dictée`) ;
+/// 2. `Semantics(toggled:)` **et** une région **live** — l'écoute est
+///    *annoncée*, pas seulement affichée (doctrine CHAT-10 : chez lex,
+///    `_isListening` ne pilote qu'une icône) ;
+/// 3. le **glyphe** bascule sur [listeningGlyph] si l'hôte en fournit un — et,
+///    en mode compact, le libellé reste rendu pendant l'écoute (CR-IFFD-77 ①,
+///    cf. [_labelVisible]) : jamais zéro canal visible.
+class ZChatComposerDictationTrigger extends StatelessWidget {
+  /// Construit le déclencheur.
+  const ZChatComposerDictationTrigger({
+    required this.onTap,
+    this.listening,
+    this.glyph,
+    this.listeningGlyph,
+    this.showLabel = true,
+    super.key,
+  });
+
+  /// Le geste d'HÔTE — démarrer si au repos, arrêter si à l'écoute. Le socle
+  /// ne décide pas lequel des deux : il n'a pas le moteur.
+  final VoidCallback onTap;
+
+  /// La tranche d'écoute, **injectée** par l'hôte (typiquement
+  /// `ZChatCaptureController.listening`). `null` ⇒ toujours au repos.
+  ///
+  /// 🔴 SM-1 : une `ValueListenable`, donc l'écoute ne reconstruit QUE ce
+  /// bouton — jamais la bande, jamais le champ.
+  final ValueListenable<bool>? listening;
+
+  /// Glyphe d'HÔTE au repos (le micro). `null` ⇒ libellé seul.
+  final Widget? glyph;
+
+  /// Glyphe d'HÔTE **pendant l'écoute**. `null` ⇒ [glyph] est conservé (l'état
+  /// reste porté par l'étiquette, la sémantique et le libellé compact).
+  final Widget? listeningGlyph;
+
+  /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que le micro
+  /// est au repos** (CR-IFFD-77 ①).
+  final bool showLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      // 🔴 UN SEUL chemin de rendu — le repli est une tranche inerte, pas une
+      // seconde branche.
+      valueListenable: listening ?? _kZChatNeverListening,
+      builder: (BuildContext context, bool active, Widget? _) {
+        final String resolved = zChatLabel(
+          context,
+          active ? kZChatLabelStopDictation : kZChatLabelDictate,
+        );
+        final ({TextStyle plain, TextStyle chosen}) styles = _emphasisStyles(
+          context,
+        );
+        final Widget? face = active ? (listeningGlyph ?? glyph) : glyph;
+        final bool labelVisible = _labelVisible(
+          showLabel: showLabel,
+          hasGlyph: face != null,
+          stateful: active,
+        );
+        return _ZChatComposerBandTarget(
+          semanticsLabel: resolved,
+          toggled: active,
+          // 🔴 L'écoute est ANNONCÉE (CHAT-10) : ce que dit l'utilisateur part
+          // dans un moteur — il doit le savoir sans regarder l'écran.
+          liveRegion: active,
+          onTap: onTap,
+          children: <Widget>[
+            if (face != null) ExcludeSemantics(child: face),
+            if (face != null && labelVisible)
+              const SizedBox(width: kZChatSettingsReferenceMarkGap),
+            if (labelVisible)
+              Text(
+                resolved,
+                style: active ? styles.chosen : styles.plain,
+                textAlign: TextAlign.start,
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -22,6 +22,7 @@
 ///   `runAction(ZChatCancelAction)` — ce satellite n'ajoute aucun verbe.
 library;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:zcrud_chat/zcrud_chat.dart';
 
@@ -40,6 +41,8 @@ class ZChatMaterialComposer extends StatelessWidget {
     this.chrome,
     this.cursorColor,
     this.backgroundColor,
+    this.borderColor,
+    this.clipBehavior = Clip.none,
     this.focusNode,
     this.hints = const <String>[],
     this.pickers = const <ZChatComposerPickerAction>[],
@@ -51,6 +54,8 @@ class ZChatMaterialComposer extends StatelessWidget {
     this.showWebSearchToggle = true,
     this.showEffortSelector = true,
     this.dictation,
+    this.onDictate,
+    this.dictationListening,
     super.key,
   });
 
@@ -68,6 +73,21 @@ class ZChatMaterialComposer extends StatelessWidget {
 
   /// Fond du conteneur. `null` ⇒ rôle `surfaceContainerHighest` de l'hôte.
   final Color? backgroundColor;
+
+  /// 🔴 Couleur du FILET du conteneur (CR-IFFD-77 ③). `null` ⇒ le
+  /// **`Theme.of(context).dividerColor`** de l'hôte — le rôle exact que lex
+  /// applique (`chat_input.dart:474-482`, `Border.all(color: dividerColor)`).
+  ///
+  /// ⚠️ **Changement visible** pour l'hôte de `ZChatMaterialComposer` : le
+  /// conteneur porte désormais un filet là où il n'en avait pas. C'est ce que
+  /// la CR demande ; un hôte qui n'en veut pas passe `Colors.transparent`.
+  /// L'hôte qui **compensait** en enveloppant la surface d'un second conteneur
+  /// doit RETIRER sa compensation, sans quoi deux filets se superposeront à
+  /// deux rayons différents.
+  final Color? borderColor;
+
+  /// Rognage du contenu au rayon du conteneur — `Clip.none` par défaut.
+  final Clip clipBehavior;
 
   /// Nœud de focus de l'hôte.
   final FocusNode? focusNode;
@@ -100,8 +120,19 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Présence du déclencheur d'effort.
   final bool showEffortSelector;
 
-  /// Slot de dictée compact d'hôte.
+  /// Créneau libre au-dessus du champ (une bande de capture d'hôte).
   final ZChatComposerSlotBuilder? dictation;
+
+  /// 🔴 Le GESTE de dictée (CR-IFFD-77 ④) — `null` ⇒ le déclencheur compact
+  /// est absent (AD-4). Le socle ne fournit **aucun moteur** : brancher
+  /// `ZChatCaptureController.startDictation()`/`stopDictation()` reste le
+  /// choix de l'hôte.
+  final VoidCallback? onDictate;
+
+  /// La tranche d'écoute injectée (typiquement
+  /// `ZChatCaptureController.listening`). Elle pilote ici le **glyphe** et le
+  /// **rôle** : micro au repos, `stop` teinté `error` pendant l'écoute.
+  final ValueListenable<bool>? dictationListening;
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +144,10 @@ class ZChatMaterialComposer extends StatelessWidget {
       chrome: chrome,
       cursorColor: cursorColor ?? scheme.primary,
       backgroundColor: backgroundColor ?? scheme.surfaceContainerHighest,
+      // 🔴 CR-IFFD-77 ③ : le rôle de lex, câblé par le point d'ancrage que le
+      // socle vient d'ouvrir — plus aucun second conteneur à faire coïncider.
+      borderColor: borderColor ?? Theme.of(context).dividerColor,
+      clipBehavior: clipBehavior,
       focusNode: focusNode,
       hints: hints,
       hintLeading: Icon(
@@ -147,6 +182,16 @@ class ZChatMaterialComposer extends StatelessWidget {
       ),
       editingCancelGlyph: Icon(Icons.close, size: glyphSide),
       dictation: dictation,
+      // 🔴 CR-IFFD-77 ④ : glyphe ET rôle changent pendant l'écoute — le socle
+      // n'écoute rien, il rend l'état que l'hôte lui injecte.
+      onDictate: onDictate,
+      dictationListening: dictationListening,
+      dictationGlyph: Icon(Icons.mic, size: glyphSide),
+      dictationListeningGlyph: Icon(
+        Icons.stop,
+        size: glyphSide,
+        color: scheme.error,
+      ),
       // 🔴 Le FAB lex (disque `primary`, échelle 0.7→1) — via le slot du
       // socle, donc le MÊME site d'envoi que la touche « valider ».
       sendBuilder: (BuildContext context, ZChatComposerSlot slot) =>

@@ -49,6 +49,7 @@
 /// bascules n'écoutent que `settings`, le bandeau n'écoute que `editing`.
 library;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import '../settings/z_chat_settings_controller.dart';
@@ -76,6 +77,8 @@ class ZDefaultChatComposer extends StatelessWidget {
     required this.cursorColor,
     this.chrome,
     this.backgroundColor,
+    this.borderColor,
+    this.clipBehavior = Clip.none,
     this.focusNode,
     this.hints = const <String>[],
     this.pickers = const <ZChatComposerPickerAction>[],
@@ -100,6 +103,11 @@ class ZDefaultChatComposer extends StatelessWidget {
     this.editingCancelGlyph,
     this.hintLeading,
     this.dictation,
+    this.onDictate,
+    this.dictationListening,
+    this.dictationGlyph,
+    this.dictationListeningGlyph,
+    this.dictationBuilder,
     this.editingBannerBuilder,
     this.plusBuilder,
     this.thinkingBuilder,
@@ -131,6 +139,17 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Fond du conteneur. `null` ⇒ jeton `surfaceColor`, sinon aucun fond
   /// (le socle n'invente aucune couleur).
   final Color? backgroundColor;
+
+  /// Couleur du FILET du conteneur (CR-IFFD-77 ③) — le `dividerColor` de lex,
+  /// un **rôle** que l'hôte fournit. `null` ⇒ jeton demandé
+  /// `chatComposerBorderColor`, sinon aucun filet (FR-26/AD-4). L'épaisseur
+  /// vient de la chaîne du chrome (référence 1).
+  final Color? borderColor;
+
+  /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut — cf.
+  /// [ZChatComposerSurface.clipBehavior] (mesuré : aujourd'hui inutile,
+  /// nécessaire dès qu'un enfant d'hôte peint jusqu'au bord).
+  final Clip clipBehavior;
 
   /// Nœud de focus de l'hôte. `null` ⇒ celui du composer.
   final FocusNode? focusNode;
@@ -211,9 +230,32 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Glyphe de la sortie d'édition.
   final Widget? editingCancelGlyph;
 
-  /// Déclencheur de dictée COMPACT (pièce 7, forme différente) — un slot
-  /// d'hôte, monté dans la bande s'il est fourni. `null` ⇒ absent (AD-4).
+  /// Créneau LIBRE au-dessus du champ (une bande de capture d'hôte, par
+  /// exemple `ZChatCaptureBar`). `null` ⇒ absent (AD-4).
+  ///
+  /// ⚠️ Ce n'est **pas** le déclencheur compact : CR-IFFD-76 comptait celui-ci
+  /// parmi ses six pièces alors qu'il n'existait pas — c'est [onDictate] qui
+  /// le monte, dans la BANDE (CR-IFFD-77 ④). Ce créneau reste inchangé pour
+  /// l'hôte qui s'en sert déjà.
   final ZChatComposerSlotBuilder? dictation;
+
+  /// 🔴 Le GESTE de dictée (CR-IFFD-77 ④) — démarrer/arrêter : le socle ne
+  /// sait pas lequel, il n'a pas le moteur. `null` ⇒ le déclencheur compact
+  /// est **absent** de la bande (AD-4), jamais un micro inerte.
+  final VoidCallback? onDictate;
+
+  /// La tranche d'écoute **injectée** par l'hôte (typiquement
+  /// `ZChatCaptureController.listening`). `null` ⇒ toujours au repos.
+  final ValueListenable<bool>? dictationListening;
+
+  /// Glyphe d'HÔTE du déclencheur au repos (le micro).
+  final Widget? dictationGlyph;
+
+  /// Glyphe d'HÔTE du déclencheur **pendant l'écoute**.
+  final Widget? dictationListeningGlyph;
+
+  /// Remplace le déclencheur de dictée (règle des trois cas).
+  final ZChatComposerSlotBuilder? dictationBuilder;
 
   /// Overrides pièce par pièce — règle des trois cas (absent ⇒ défaut ;
   /// widget ⇒ remplace ; `null` rendu ⇒ pièce absente, AD-4).
@@ -274,6 +316,8 @@ class ZDefaultChatComposer extends StatelessWidget {
     return ZChatComposerSurface(
       chrome: chrome,
       backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      clipBehavior: clipBehavior,
       child: ZChatComposer(
         controller: controller,
         cursorColor: cursorColor,
@@ -371,6 +415,8 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// créneau est alors absent de l'arbre (AD-4), jamais une rangée vide.
   bool get _bandStructurallyEmpty =>
       pickers.isEmpty &&
+      onDictate == null &&
+      dictationBuilder == null &&
       !showThinkingToggle &&
       !showWebSearchToggle &&
       !showEffortSelector &&
@@ -404,6 +450,21 @@ class ZDefaultChatComposer extends StatelessWidget {
               : ZChatComposerPickerTrigger(
                   actions: pickers,
                   glyph: pickerGlyph,
+                ),
+        );
+        final VoidCallback? dictate = onDictate;
+        final Widget? mic = _piece(
+          context,
+          slot,
+          dictationBuilder,
+          () => dictate == null
+              ? null
+              : ZChatComposerDictationTrigger(
+                  onTap: dictate,
+                  listening: dictationListening,
+                  glyph: dictationGlyph,
+                  listeningGlyph: dictationListeningGlyph,
+                  showLabel: labels,
                 ),
         );
         final Widget? thinking = _piece(
@@ -471,7 +532,13 @@ class ZDefaultChatComposer extends StatelessWidget {
                 )
               : null,
         );
-        final List<Widget> leading = <Widget>[?plus, ?thinking, ?web, ?tools];
+        final List<Widget> leading = <Widget>[
+          ?plus,
+          ?mic,
+          ?thinking,
+          ?web,
+          ?tools,
+        ];
         final List<Widget> trailing = <Widget>[?effort, ?model];
         // Les overrides peuvent avoir tout retiré (règle des trois cas) : la
         // bande rend alors le vide le plus discret possible — le retrait
@@ -482,7 +549,7 @@ class ZDefaultChatComposer extends StatelessWidget {
         // 🔴 La bande DÉFILE horizontalement plutôt que de déborder : c'est
         // une rangée d'affordances, pas une page (défaut ① : rien de haut ne
         // s'y monte ; et rien de large ne la casse — AD-10).
-        return SingleChildScrollView(
+        final Widget row = SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -497,6 +564,7 @@ class ZDefaultChatComposer extends StatelessWidget {
             ),
           ),
         );
+        return row;
       },
     );
   }

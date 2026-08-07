@@ -1279,6 +1279,24 @@ TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
   TextStyle base, {
   required FontWeight weight,
   required TextDecoration decoration,
+}) => zChatSelectedEmphasisStyles(
+  base,
+  weight: weight,
+  decoration: decoration,
+);
+
+/// 🔴 **L'UNIQUE implémentation** de la paire de styles CR-IFFD-74 — la feuille
+/// (par `_optionStyles`) **et** la bande du composer
+/// (`z_chat_composer_band.dart`) y passent.
+///
+/// Elle est devenue partagée avec CR-IFFD-77 ① : sous le seuil compact, le
+/// libellé de la pièce ACTIVE est le seul canal visible, donc l'anti-annulation
+/// AD-10 ci-dessus y devient **porteuse** — deux copies auraient divergé
+/// exactement là où la garde ne regardait pas.
+({TextStyle plain, TextStyle chosen}) zChatSelectedEmphasisStyles(
+  TextStyle base, {
+  required FontWeight weight,
+  required TextDecoration decoration,
 }) {
   final TextStyle chosen = base.copyWith(
     fontWeight: weight,
