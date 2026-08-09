@@ -707,6 +707,20 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// directs visibles + (si l'étape courante porte un nested) la contribution
   /// remontée par le sous-stepper (ou son calcul structurel initial en repli).
   List<String> _contribution() {
+    // 🔴 v0.72.0 — garde de VACUITÉ, absente ici alors qu'elle existait aux deux
+    // autres sites qui indexent `_steps` (`_initialUnion`, `build`).
+    //
+    // Un sous-stepper dont TOUTES les étapes sont filtrées par leur `condition`
+    // levait un `RangeError` — au montage comme en vol. L'écrêtage d'index
+    // ci-dessous ne suffit pas : sur une liste vide `_lastStep` vaut -1, donc
+    // `i` retombe à 0 et `_steps[0]` lève. Deux accès sont concernés (la fenêtre
+    // directe ET la lecture de `nestedSteps`), d'où la garde ici plutôt que
+    // dans `_windowFor`.
+    //
+    // Trouvé en écrivant le gabarit de la CR « prise en charge navire » : le cas
+    // n'était couvert par aucune garde (recherche négative montrée au rapport),
+    // et il est le seul des trois chemins d'indexation à lever.
+    if (_steps.isEmpty) return const <String>[];
     if (_config.showAllSteps) return _allStepsUnion();
     final i = _currentStep.value.clamp(0, _lastStep < 0 ? 0 : _lastStep);
     final base = _windowFor(i);
@@ -1038,6 +1052,18 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       listenable: _structural,
       builder: (context, _) {
         widget.onStructuralBuild?.call();
+        // 🔴 v0.72.0 — la garde de vacuité en tête de `build` ne protège PAS
+        // cette fermeture : elle est capturée une fois et rejouée à chaque
+        // notification structurelle, donc `_steps` peut devenir vide APRÈS le
+        // dernier passage dans `build`. Mesuré : filtrer toutes les étapes EN
+        // VOL faisait lever `clamp(0, -1)` — `ArgumentError`, avec la borne
+        // BASSE en argument, ce qui rendait le message trompeur.
+        //
+        // Second défaut du même scénario que celui de `_contribution` ci-dessus,
+        // mais sur un chemin distinct : l'un se produit au montage, l'autre au
+        // recalcul. Une garde posée sur un seul des deux laisserait l'autre
+        // ouvert — d'où les deux sens gardés.
+        if (_steps.isEmpty) return const SizedBox.shrink();
         final reveal = _reveal.value;
         if (_config.showAllSteps) return _allStepsLayout(reveal);
         final index = _currentStep.value.clamp(0, _lastStep);

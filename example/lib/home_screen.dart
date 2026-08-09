@@ -7,6 +7,7 @@ import 'demos/intl_demo_screen.dart';
 import 'demos/list_demo_screen.dart';
 import 'demos/markdown_demo_screen.dart';
 import 'demos/offline_demo_screen.dart';
+import 'demos/ship_documents_demo_screen.dart';
 import 'demos/showcase/showcase_screen.dart';
 import 'demos/stepper_sub_list_demo_screen.dart';
 import 'demos/study_session_demo_screen.dart';
@@ -125,6 +126,15 @@ class HomeScreen extends StatelessWidget {
           icon: Icons.account_tree_outlined,
           available: true,
           onOpen: (_) => const StepperSubListDemoScreen(),
+        ),
+        _DemoEntry(
+          title: 'Navire — documents',
+          subtitle: 'Stepper déplié contenant un sous-stepper PAGINÉ dont les '
+              'sous-étapes dérivent d\'un type chargé en async ; rowChips à '
+              'sous-titre, seams fichier (picker/storage/résolveur d\'ids)',
+          icon: Icons.directions_boat_outlined,
+          available: true,
+          onOpen: (_) => const ShipDocumentsDemoScreen(),
         ),
         _DemoEntry(
           title: 'Showcase',
