@@ -7,9 +7,14 @@
 /// `onChanged` (aucun `TextEditingController` — AD-2). La valeur stockée est un
 /// [ZDateRange] pur-Dart (sérialisé `{start, end}` ISO-8601 côté persistance).
 ///
-/// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (`minimumSize`), `Semantics` bouton
-/// + libellé + valeur (`excludeSemantics` sur le wrapper → un seul nœud, pas de
-/// double annonce). Aucune couleur codée en dur (thème hérité — FR-26).
+/// **CR-DODLP-DATE-FIELD** — comme la famille date sœur, le déclencheur est un
+/// **champ décoré** (`ZDecoratedFieldTrigger`) ; l'ancien `OutlinedButton` reste
+/// atteignable par [ZDateRangeFieldWidget.decorated] ou le jeton
+/// `ZcrudTheme.dateFieldDecorated`.
+///
+/// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
+/// bouton + libellé + valeur + `isRequired` (`excludeSemantics` sur le wrapper →
+/// un seul nœud, pas de double annonce). Aucune couleur en dur (FR-26).
 ///
 /// Patron **strict** de `z_date_field_widget.dart` (MIN-2 croix d'effacement,
 /// bornes paresseuses `firstDate`/`lastDate` évaluées au tap — AD-2).
@@ -20,6 +25,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/edition/z_date_range.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../z_decorated_field_trigger.dart';
 
 /// Champ d'édition **plage de dates** (déclencheur de picker directionnel).
 ///
@@ -37,6 +43,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     this.firstDate,
     this.lastDate,
     this.onCleared,
+    this.decorated,
     super.key,
   });
 
@@ -63,6 +70,12 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   /// plage est présente. `null` (défaut) ⇒ aucune croix.
   final VoidCallback? onCleared;
 
+  /// CR-DODLP-DATE-FIELD — **échappatoire d'apparence**, identique à
+  /// `ZDateFieldWidget.decorated` : `true` ⇒ champ décoré ; `false` ⇒ rendu
+  /// historique `OutlinedButton` ; `null` (défaut) ⇒ jeton de thème
+  /// `ZcrudTheme.dateFieldDecorated`, lui-même à défaut `true`.
+  final bool? decorated;
+
   /// Plage courante typée, ou `null` si la tranche ne porte pas de [ZDateRange].
   ZDateRange? get _range => value is ZDateRange ? value! as ZDateRange : null;
 
@@ -81,28 +94,45 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     // + éditable) ET qu'une plage existe (rien à effacer sinon).
     final showClear = onCleared != null && !field.readOnly && range != null;
 
-    // UN SEUL nœud sémantique cohérent : le wrapper porte rôle bouton + libellé +
-    // valeur + tap, et EXCLUT la sémantique descendante (double annonce).
-    final trigger = Semantics(
-      button: true,
-      enabled: !field.readOnly,
-      label: resolvedLabel,
-      value: display,
-      excludeSemantics: true,
-      onTap: field.readOnly ? null : () => _pick(context, range),
-      child: OutlinedButton(
-        // Cible tactile ≥ 48 dp (AD-13).
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-          alignment: AlignmentDirectional.centerStart,
-        ),
-        onPressed: field.readOnly ? null : () => _pick(context, range),
-        child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text('$resolvedLabel : $display'),
-        ),
-      ),
-    );
+    final onTap = field.readOnly ? null : () => _pick(context, range);
+
+    // CR-DODLP-DATE-FIELD — champ DÉCORÉ par défaut (même traitement que la
+    // famille date sœur : la CR ne nomme que `dateTime`, mais `dateRange`
+    // portait le MÊME `OutlinedButton` — le corriger d'un seul côté recréerait
+    // l'incohérence que la CR ferme).
+    final Widget trigger = zResolveDateFieldDecorated(context, decorated)
+        ? ZDecoratedFieldTrigger(
+            field: field,
+            semanticsLabel: resolvedLabel,
+            placeholder: placeholder,
+            valueText: range == null ? '' : _formatRange(range),
+            hasValue: range != null,
+            onTap: onTap,
+            trailingIcon: const Icon(Icons.date_range_outlined),
+          )
+        // ── Échappatoire : rendu historique `OutlinedButton` ────────────────
+        // UN SEUL nœud sémantique cohérent : le wrapper porte rôle bouton +
+        // libellé + valeur + tap, et EXCLUT la sémantique descendante.
+        : Semantics(
+            button: true,
+            enabled: !field.readOnly,
+            label: resolvedLabel,
+            value: display,
+            excludeSemantics: true,
+            onTap: onTap,
+            child: OutlinedButton(
+              // Cible tactile ≥ 48 dp (AD-13).
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                alignment: AlignmentDirectional.centerStart,
+              ),
+              onPressed: onTap,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text('$resolvedLabel : $display'),
+              ),
+            ),
+          );
 
     if (!showClear) return trigger;
 

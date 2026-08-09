@@ -147,6 +147,17 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // déclencheur, pour que le libellé anglais du fork ne surface nulle part.
     final String placeholder = label(context, 'select');
 
+    // CR-REQUIRED-INDICATOR — règle EXACTE de `ZFieldLabel` (cœur) :
+    // `field.isRequired && !field.readOnly`. Lue sur `field`, pas sur
+    // `presentation.readOnly` : c'est la spec du champ qui décide, comme dans le
+    // rendu natif décoré (`zFieldDecoration` → `ZFieldLabel`).
+    //
+    // 🔴 Hôte passif : un champ NON requis rend `false` ⇒ aucune des deux
+    // branches ci-dessous n'est empruntée (ni libellé enrichi, ni
+    // `modalHeaderBuilder`), le rendu antérieur est strictement conservé.
+    final bool requiredIndicator =
+        presentation.field.isRequired && !presentation.field.readOnly;
+
     // FR-26 : indice du champ de recherche du modal — l10n (clé `search`),
     // jamais le `'Search on $title'` anglais que le fork poserait sinon
     // (`s2_state.dart:289`).
@@ -235,9 +246,16 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                   ctx,
                   state,
                   presentation,
+                  title: title,
                   showActions: showActions,
+                  requiredIndicator: requiredIndicator,
                 )
-            : null,
+            // CR-REQUIRED-INDICATOR : hors multi searchable, l'en-tête du fork
+            // n'est REMPLACÉ que si l'astérisque est dû — sinon `null`, et
+            // `defaultModalHeader` reste seul en charge (rendu inchangé).
+            : (requiredIndicator
+                ? (ctx, state) => _headerWithRequiredTitle(ctx, state, title)
+                : null),
         choiceType: _s2ChoiceType(metrics.multiChoiceStyle),
         choicePageLimit: pageLimit,
         choiceStyle: choiceStyle,
@@ -272,6 +290,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           onTap: state.showModal,
           metrics: metrics,
           showChevron: spec?.showTrailingChevron ?? enabled,
+          requiredIndicator: requiredIndicator,
         ),
       );
     }
@@ -308,6 +327,11 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                 withFilterToggle: true,
               )
           : null,
+      // CR-REQUIRED-INDICATOR — même règle qu'en multi : en-tête remplacé
+      // UNIQUEMENT si l'astérisque est dû.
+      modalHeaderBuilder: requiredIndicator
+          ? (ctx, state) => _headerWithRequiredTitle(ctx, state, title)
+          : null,
       choiceType: _s2ChoiceType(metrics.monoChoiceStyle),
       choicePageLimit: pageLimit,
       choiceStyle: choiceStyle,
@@ -333,7 +357,54 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         onTap: state.showModal,
         metrics: metrics,
         showChevron: spec?.showTrailingChevron ?? enabled,
+        requiredIndicator: requiredIndicator,
       ),
+    );
+  }
+
+  /// **En-tête de modal portant l'astérisque « requis »** (CR-REQUIRED-INDICATOR).
+  ///
+  /// Reproduit `S2State.defaultModalHeader` **à l'identique** (mêmes jetons de
+  /// `modalHeaderStyle`, même `automaticallyImplyLeading`, même loupe de
+  /// filtrage, même `modalError`, mêmes `modalActions` — donc la barre d'actions
+  /// posée par `modalActionsBuilder` reste celle du présentateur), à une seule
+  /// substitution près : le titre passe de `Text` à [_labelWithRequiredIndicator].
+  ///
+  /// 🔴 Installé UNIQUEMENT quand l'astérisque est dû — sinon `modalHeaderBuilder`
+  /// vaut `null` et le fork rend son en-tête par défaut, inchangé.
+  Widget _headerWithRequiredTitle(
+    BuildContext context,
+    S2State<dynamic> state,
+    String title,
+  ) {
+    final bool isFiltering = state.filter?.activated == true;
+    final S2ModalHeaderStyle headerStyle = state.modalHeaderStyle;
+    return AppBar(
+      primary: true,
+      shape: headerStyle.shape,
+      elevation: headerStyle.elevation,
+      backgroundColor: headerStyle.backgroundColor,
+      actionsIconTheme: headerStyle.actionsIconTheme,
+      iconTheme: headerStyle.iconTheme,
+      centerTitle: headerStyle.centerTitle,
+      automaticallyImplyLeading: state.modalConfig.isFullPage || isFiltering,
+      leading: isFiltering ? const Icon(Icons.search) : null,
+      title: isFiltering
+          ? state.modalFilter
+          : Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _labelWithRequiredIndicator(
+                  context,
+                  title,
+                  required: true,
+                  style: headerStyle.textStyle,
+                ),
+                state.modalError,
+              ],
+            ),
+      actions: state.modalActions,
     );
   }
 
@@ -470,7 +541,9 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     BuildContext context,
     S2State<dynamic> state,
     ZSelectPresentation presentation, {
+    required String title,
     required bool showActions,
+    required bool requiredIndicator,
   }) {
     final S2ModalHeaderStyle headerStyle = state.modalHeaderStyle;
     return Column(
@@ -485,7 +558,18 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           iconTheme: headerStyle.iconTheme,
           centerTitle: headerStyle.centerTitle,
           automaticallyImplyLeading: state.modalConfig.isFullPage,
-          title: state.modalTitle,
+          // CR-REQUIRED-INDICATOR : le titre n'est enrichi que si l'astérisque
+          // est dû ; sinon on garde le widget du fork MOT POUR MOT
+          // (`Container(child: Text(title, style: headerStyle.textStyle))`) —
+          // aucun nœud de l'arbre ne bouge pour un champ non requis.
+          title: requiredIndicator
+              ? _labelWithRequiredIndicator(
+                  context,
+                  title,
+                  required: true,
+                  style: headerStyle.textStyle,
+                )
+              : state.modalTitle,
           actions: showActions
               ? _modalActions(
                   context,
@@ -768,6 +852,74 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   }
 }
 
+/// Libellé + **astérisque « requis » décoratif** (CR-REQUIRED-INDICATOR).
+///
+/// 🔴 **Pourquoi ce n'est PAS `ZFieldLabel`** — et ce n'est pas un choix de
+/// confort : `ZFieldLabel` **impose un style de base au libellé** (`Text.rich`
+/// dont le `TextSpan` racine porte `tokens.largeLabelTextStyle` en `large`, et
+/// `tokens.labelTextStyle ?? textTheme.bodyMedium` sinon). C'est exactement ce
+/// qu'il faut dans son habitat — `InputDecoration.label` / `ZLargeFieldCard`,
+/// où aucun style ambiant ne préexiste. Ici les deux sites ont déjà LEUR
+/// typographie, et la mesure (banc `zz_scratch`, rejouée) est sans appel :
+///
+/// | Site | style ambiant | `ZFieldLabel(large: true)` | `ZFieldLabel()` |
+/// |---|---|---|---|
+/// | `ListTile.title` | 16 / w400 | 16 / **w500** | **14** / w400 (+ couleur propre) |
+/// | `AppBar.title` (titre du modal) | **22** / w400 | **16** / w500 | 14 / w400 |
+///
+/// Le titre du modal passerait donc de 22 à 16 points : l'en-tête cesserait
+/// d'être un en-tête. Un second motif, indépendant, l'exclut aussi :
+/// `ZFieldLabel` **re-dérive** le libellé de `field.label ?? field.name` et
+/// ignore `ZSelectPresentation.label`, qui est pourtant le libellé **résolu**
+/// que le seam transporte (et qu'un hôte peut surcharger).
+///
+/// Ce qui EST repris de `ZFieldLabel`, à la lettre (garde de non-divergence
+/// `z_select_required_indicator_test.dart`) : le glyphe `' *'`, la couleur par
+/// **rôle** (`ZcrudTheme.errorColor ?? ColorScheme.error` — FR-26, aucun
+/// littéral), l'alignement `PlaceholderAlignment.middle`, et surtout le fait que
+/// l'astérisque soit **décoratif** (`ExcludeSemantics`) : l'information
+/// « requis » passe par `Semantics.isRequired` sur le déclencheur (AD-13), comme
+/// le fait `ZDecoratedFieldTrigger` du cœur — jamais par un caractère lu.
+///
+/// [style] `null` ⇒ **aucun** style imposé : le libellé hérite intégralement du
+/// `DefaultTextStyle` ambiant (c'est le cas du `ListTile.title`). L'astérisque,
+/// lui, est un `WidgetSpan` : son enfant hérite du même `DefaultTextStyle` et
+/// n'en surcharge que la **couleur** — la taille et la graisse du libellé ne
+/// bougent donc pas d'un point.
+///
+/// [required] `false` ⇒ un `Text` nu, strictement identique au rendu antérieur
+/// (aucun `WidgetSpan`, donc aucun caractère `U+FFFC` dans le texte brut : les
+/// `find.text` des hôtes et des gardes continuent de mordre).
+Widget _labelWithRequiredIndicator(
+  BuildContext context,
+  String text, {
+  required bool required,
+  TextStyle? style,
+}) {
+  if (!required) {
+    return Text(text, textAlign: TextAlign.start, style: style);
+  }
+  // FR-26 : RÔLE `error` (jeton d'abord, `ColorScheme` en repli) — exactement la
+  // résolution de `ZFieldLabel`, jamais un littéral.
+  final Color errorColor = ZcrudTheme.of(context).errorColor ??
+      Theme.of(context).colorScheme.error;
+  return Text.rich(
+    TextSpan(
+      text: text,
+      style: style,
+      children: <InlineSpan>[
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: ExcludeSemantics(
+            child: Text(' *', style: TextStyle(color: errorColor)),
+          ),
+        ),
+      ],
+    ),
+    textAlign: TextAlign.start,
+  );
+}
+
 /// Déclencheur du modal S2, à l'**apparence DODLP** (AD-13 / FR-26).
 ///
 /// Structure reproduite de `edition_screen.dart` (cf.
@@ -798,6 +950,7 @@ class _ZSmartSelectTile extends StatelessWidget {
     required this.showChevron,
     required this.onTap,
     required this.metrics,
+    required this.requiredIndicator,
     this.leading,
     this.valueText,
     this.chipLabels,
@@ -844,6 +997,12 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// Métriques déjà résolues (paramètre > jeton > référence).
   final ZSelectTileMetrics metrics;
 
+  /// CR-REQUIRED-INDICATOR — `field.isRequired && !field.readOnly`, déjà résolu
+  /// par `present()`. Pilote **deux** canaux, jamais un seul (AD-13) :
+  /// l'astérisque **visuel** (décoratif) et `Semantics.isRequired` (annoncé).
+  /// `false` ⇒ tile strictement identique au rendu antérieur.
+  final bool requiredIndicator;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -882,6 +1041,12 @@ class _ZSmartSelectTile extends StatelessWidget {
       enabled: tappable,
       label: label,
       value: semanticValue,
+      // 🔴 AD-13 — l'astérisque n'est PAS le seul canal, et surtout pas un canal
+      // audible : il est `ExcludeSemantics`, et de toute façon `excludeSemantics:
+      // true` ci-dessous écarte tous les descendants. C'est CE drapeau qui porte
+      // « requis » jusqu'au lecteur d'écran, exactement comme le fait
+      // `ZDecoratedFieldTrigger` du cœur.
+      isRequired: requiredIndicator,
       // L'action `tap` est portée par CE nœud → activable par lecteur d'écran
       // malgré `excludeSemantics` (qui n'écarte que les descendants).
       onTap: tappable ? onTap : null,
@@ -902,7 +1067,13 @@ class _ZSmartSelectTile extends StatelessWidget {
             contentPadding: metrics.contentPadding,
             // AD-4 : `null` ⇒ le slot n'existe pas dans l'arbre.
             leading: leading,
-            title: Text(label, textAlign: TextAlign.start),
+            // CR-REQUIRED-INDICATOR : aucun style imposé (`style: null`) — le
+            // titre garde la typographie de `ListTileThemeData.titleTextStyle`.
+            title: _labelWithRequiredIndicator(
+              context,
+              label,
+              required: requiredIndicator,
+            ),
             subtitle: subtitle,
             trailing: showChevron
                 ? Icon(isRtl ? Icons.chevron_left : Icons.chevron_right)

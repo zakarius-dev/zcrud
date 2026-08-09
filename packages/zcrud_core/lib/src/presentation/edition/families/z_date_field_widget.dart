@@ -7,9 +7,16 @@
 /// `TextEditingController` — AD-2). La valeur stockée est **ISO-8601** (date/
 /// heure) — conventions dates (`created_at`…).
 ///
-/// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (`minimumSize`), `Semantics`
-/// bouton + libellé (état = valeur courante ou placeholder l10n). Aucune
-/// couleur codée en dur (thème hérité — FR-26).
+/// **CR-DODLP-DATE-FIELD** — le déclencheur est désormais un **champ décoré**
+/// (`ZDecoratedFieldTrigger` : `InputDecorator` + `zFieldDecoration`), donc
+/// libellé flottant, astérisque « requis », bordure et remplissage pilotés par
+/// les mêmes jetons que `text`/`number`/`select`. L'ancien `OutlinedButton`
+/// reste atteignable par [ZDateFieldWidget.decorated] `= false` ou par le jeton
+/// `ZcrudTheme.dateFieldDecorated`.
+///
+/// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
+/// bouton + libellé + valeur + `isRequired` (état = valeur courante ou
+/// placeholder l10n). Aucune couleur codée en dur (thème hérité — FR-26).
 library;
 
 import 'package:flutter/material.dart';
@@ -18,6 +25,7 @@ import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../z_decorated_field_trigger.dart';
 
 /// Champ d'édition **date/heure** (déclencheur de picker directionnel).
 ///
@@ -39,6 +47,7 @@ class ZDateFieldWidget extends StatelessWidget {
     this.firstDate,
     this.lastDate,
     this.onCleared,
+    this.decorated,
     super.key,
   });
 
@@ -65,6 +74,14 @@ class ZDateFieldWidget extends StatelessWidget {
   /// [onCleared] est non `null` ET qu'une valeur est présente. `null` (défaut) ⇒
   /// aucune croix (rendu antérieur strictement inchangé).
   final VoidCallback? onCleared;
+
+  /// CR-DODLP-DATE-FIELD — **échappatoire d'apparence**. `true` ⇒ champ décoré
+  /// (`InputDecorator` + `zFieldDecoration`) ; `false` ⇒ rendu historique
+  /// `OutlinedButton` « Libellé : valeur ». `null` (défaut) ⇒ jeton de thème
+  /// `ZcrudTheme.dateFieldDecorated`, lui-même à défaut `true`.
+  ///
+  /// Chaîne **paramètre > jeton > référence** (référence du paquet = décoré).
+  final bool? decorated;
 
   /// Mode d'édition effectif (D2) — jamais `null`.
   ZDateMode get _mode {
@@ -94,30 +111,51 @@ class ZDateFieldWidget extends StatelessWidget {
     final showClear =
         onCleared != null && !field.readOnly && current.isNotEmpty;
 
-    // UN SEUL nœud sémantique cohérent (L-1) : le wrapper porte rôle bouton +
-    // libellé + valeur + action de tap, et EXCLUT la sémantique descendante
-    // (bouton Material + Text) pour éviter la double annonce du lecteur d'écran.
-    final trigger = Semantics(
-      button: true,
-      enabled: !field.readOnly,
-      label: resolvedLabel,
-      value: display,
-      excludeSemantics: true,
-      onTap: field.readOnly ? null : () => _pick(context, current),
-      child: OutlinedButton(
-        // Cible tactile ≥ 48 dp (AD-13) — les boutons Material sont ~40 dp par
-        // défaut, on force la hauteur minimale.
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-          alignment: AlignmentDirectional.centerStart,
-        ),
-        onPressed: field.readOnly ? null : () => _pick(context, current),
-        child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text('$resolvedLabel : $display'),
-        ),
-      ),
-    );
+    final onTap = field.readOnly ? null : () => _pick(context, current);
+
+    // CR-DODLP-DATE-FIELD — champ DÉCORÉ par défaut (même chaîne
+    // `zFieldDecoration` que `text`/`number`/`select` : libellé flottant,
+    // astérisque requis, jetons `fieldFillColor`/`fieldBorderColor`).
+    // `decorated: false` (ou le jeton de thème) restitue le rendu bouton.
+    final Widget trigger = zResolveDateFieldDecorated(context, decorated)
+        ? ZDecoratedFieldTrigger(
+            field: field,
+            semanticsLabel: resolvedLabel,
+            placeholder: placeholder,
+            valueText: current,
+            hasValue: current.isNotEmpty,
+            onTap: onTap,
+            trailingIcon: Icon(
+              _mode == ZDateMode.time
+                  ? Icons.access_time_outlined
+                  : Icons.calendar_today_outlined,
+            ),
+          )
+        // ── Échappatoire : rendu historique `OutlinedButton` ────────────────
+        // UN SEUL nœud sémantique cohérent (L-1) : le wrapper porte rôle bouton
+        // + libellé + valeur + action de tap, et EXCLUT la sémantique
+        // descendante (bouton Material + Text) — pas de double annonce.
+        : Semantics(
+            button: true,
+            enabled: !field.readOnly,
+            label: resolvedLabel,
+            value: display,
+            excludeSemantics: true,
+            onTap: onTap,
+            child: OutlinedButton(
+              // Cible tactile ≥ 48 dp (AD-13) — les boutons Material sont ~40 dp
+              // par défaut, on force la hauteur minimale.
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                alignment: AlignmentDirectional.centerStart,
+              ),
+              onPressed: onTap,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text('$resolvedLabel : $display'),
+              ),
+            ),
+          );
 
     if (!showClear) return trigger;
 

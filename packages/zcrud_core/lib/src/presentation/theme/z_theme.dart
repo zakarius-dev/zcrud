@@ -328,6 +328,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.fieldBorderColor,
     this.fieldFillColor,
     this.fieldFocusedBorderColor,
+    this.dateFieldDecorated,
     this.errorColor,
     this.labelColor,
     this.surfaceColor,
@@ -571,6 +572,25 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Séparée de [fieldBorderColor] pour que le canal d'état « focus » reste
   /// pilotable **indépendamment** de la bordure de repos (AD-13).
   final Color? fieldFocusedBorderColor;
+
+  /// **CR-DODLP-DATE-FIELD** — bascule d'apparence des familles `date`/`time`/
+  /// `dateTime` **et** `dateRange` : `true`/`null` (défaut) ⇒ **champ décoré**
+  /// (`InputDecorator` + `zFieldDecoration` : libellé flottant, astérisque
+  /// requis, `fieldFillColor`/`fieldBorderColor`) ; `false` ⇒ **rendu legacy**
+  /// `OutlinedButton` « Libellé : valeur ».
+  ///
+  /// 🔴 C'est une **échappatoire**, pas un défaut : la valeur nominale du paquet
+  /// est le champ décoré (cohérence avec `text`/`number`/`select`, demande
+  /// CR-DODLP-DATE-FIELD). Un hôte qui tenait au rendu bouton pose
+  /// `dateFieldDecorated: false` **globalement** par son thème ; un hôte qui ne
+  /// veut basculer qu'un champ passe `ZDateFieldWidget.decorated` /
+  /// `ZDateRangeFieldWidget.decorated` (le **paramètre l'emporte sur le jeton**,
+  /// chaîne « paramètre > jeton > référence »).
+  ///
+  /// `null` (et non `true`) par défaut pour que [lerp] d'un thème non renseigné
+  /// reste `null` — l'héritage n'est jamais gelé (cf. les autres jetons
+  /// nullables). Le consommateur applique son défaut (`?? true`).
+  final bool? dateFieldDecorated;
 
   /// Couleur d'erreur (repli : `ColorScheme.error`).
   final Color? errorColor;
@@ -1971,6 +1991,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Color? fieldBorderColor,
     Color? fieldFillColor,
     Color? fieldFocusedBorderColor,
+    bool? dateFieldDecorated,
     Color? errorColor,
     Color? labelColor,
     Color? surfaceColor,
@@ -2141,6 +2162,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
     fieldFocusedBorderColor:
         fieldFocusedBorderColor ?? this.fieldFocusedBorderColor,
+    dateFieldDecorated: dateFieldDecorated ?? this.dateFieldDecorated,
     errorColor: errorColor ?? this.errorColor,
     labelColor: labelColor ?? this.labelColor,
     surfaceColor: surfaceColor ?? this.surfaceColor,
@@ -2400,6 +2422,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.fieldFocusedBorderColor,
         t,
       ),
+      // Jeton DISCRET (bascule d'apparence) : aucune valeur intermédiaire n'a
+      // de sens ⇒ bascule au point milieu, comme les autres booléens nullables.
+      // `null` des deux côtés RESTE `null` (l'héritage n'est pas gelé).
+      dateFieldDecorated:
+          t < 0.5 ? dateFieldDecorated : other.dateFieldDecorated,
       errorColor: Color.lerp(errorColor, other.errorColor, t),
       labelColor: Color.lerp(labelColor, other.labelColor, t),
       surfaceColor: Color.lerp(surfaceColor, other.surfaceColor, t),

@@ -35,7 +35,7 @@ void main() {
     end: DateTime.parse('2026-01-31T00:00:00.000'),
   );
 
-  testWidgets('rend la plage courante + libellé (déclencheur bouton)',
+  testWidgets('rend la plage courante + libellé (déclencheur CHAMP DÉCORÉ)',
       (tester) async {
     final controller = ZFormController(
       initialValues: <String, Object?>{'p': range},
@@ -58,11 +58,32 @@ void main() {
     expect(find.textContaining('2026-01-31'), findsOneWidget);
     expect(find.textContaining('Période'), findsOneWidget);
 
-    // A11y : déclencheur bouton, cible ≥ 48 dp.
-    final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
-    expect(button.onPressed, isNotNull);
-    final size = tester.getSize(find.byType(OutlinedButton));
-    expect(size.height, greaterThanOrEqualTo(48));
+    // CR-DODLP-DATE-FIELD : le déclencheur est un CHAMP DÉCORÉ (plus un
+    // `OutlinedButton`) — même chaîne `zFieldDecoration` que text/number/select.
+    expect(find.byType(OutlinedButton), findsNothing);
+    final inkWell = tester.widget<InkWell>(
+      find
+          .descendant(
+            of: find.byType(ZDateRangeFieldWidget),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    expect(inkWell.onTap, isNotNull);
+
+    // A11y (AD-13) : cible ≥ 48 dp mesurée sur la CONTRAINTE LIANTE, jamais sur
+    // la hauteur RENDUE — l'`InputDecorator` dépasse déjà 48 dp avec le padding
+    // par défaut, donc une garde sur `getSize()` serait VACANTE (elle passerait
+    // même sans contrainte).
+    final constrained = tester.widget<ConstrainedBox>(
+      find
+          .descendant(
+            of: find.byType(ZDateRangeFieldWidget),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
+    );
+    expect(constrained.constraints.minHeight, greaterThanOrEqualTo(48));
   });
 
   testWidgets('reflète une valeur EXTERNE (rebuild sous la tranche)',
@@ -106,7 +127,7 @@ void main() {
     await tester.pump();
 
     // 1) Le déclencheur ouvre réellement `showDateRangePicker` (chemin tap AC-A4).
-    await tester.tap(find.byType(OutlinedButton));
+    await tester.tap(find.byType(ZDateRangeFieldWidget));
     await tester.pumpAndSettle();
     // Le picker de plage Material affiche l'action de confirmation « Save ».
     expect(find.text('Save'), findsOneWidget);
