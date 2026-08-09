@@ -209,6 +209,16 @@ abstract final class ZSelectTileReference {
   /// portent la leur) : cette métrique ne vaut que pour la branche mono.
   static const double monoValueFontSize = 15;
 
+  /// CR-SELECT-GAPS — écart (dp) entre un ornement `prefix`/`suffix` et le
+  /// contenu du sous-titre.
+  ///
+  /// 🔴 **Sans référence DODLP** : leur `tileBuilder` ne rend aucun ornement
+  /// interne (ils n'ont que `leading`). La valeur reprend celle que Material
+  /// applique entre le `prefix`/`suffix` et le texte d'un `InputDecorator`
+  /// (`_kFinalLabelScale`-indépendante : 4 dp de `gap` horizontal) — c'est le
+  /// rendu NATIF que l'enrôlement doit conserver, pas une invention de style.
+  static const double ornamentGap = 4;
+
   /// Marge intérieure horizontale du `ListTile` (dp) —
   /// `EdgeInsets.symmetric(horizontal: 16, vertical: 8)`, l. ~3067.
   ///

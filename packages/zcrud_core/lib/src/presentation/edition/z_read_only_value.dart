@@ -14,6 +14,7 @@ import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../l10n/z_localizations.dart';
 import 'edition_field_family.dart';
+import 'z_value_emptiness.dart';
 
 /// Résultat de formatage d'une valeur en mode lecture : soit un **texte**
 /// (copiable), soit un **placeholder** non copiable (« — »), soit un **Widget**
@@ -48,13 +49,7 @@ class ReadOnlyValue {
 /// `true` si une valeur compte comme **vide** (miroir de
 /// `DynamicEdition._isEmptyValue`) : `null` / chaîne / collection / map vide.
 /// `false`/`0` NE sont PAS vides.
-bool _isEmpty(Object? v) {
-  if (v == null) return true;
-  if (v is String) return v.isEmpty;
-  if (v is Iterable) return v.isEmpty;
-  if (v is Map) return v.isEmpty;
-  return false;
-}
+bool _isEmpty(Object? v) => zIsEmptyValue(v);
 
 /// Longueur maximale d'une représentation `Map`/objet complexe (borne AD-10 :
 /// jamais un dump illisible non borné).

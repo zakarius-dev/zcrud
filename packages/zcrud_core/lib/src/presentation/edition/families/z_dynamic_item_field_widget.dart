@@ -195,12 +195,22 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     _syncToParent();
   }
 
+  /// LOT 3 — **la lecture seule DESCEND dans les sous-champs.**
+  ///
+  /// `DynamicEdition._effective` ne force `readOnly: true` que sur les specs de
+  /// PREMIER NIVEAU : les `itemFields` portés par la config ne sont pas
+  /// parcourus. Sans ce report, un item ouvert en mode lecture globale restait
+  /// **entièrement éditable et focalisable** (fuite mesurée). Même correctif que
+  /// celui déjà appliqué au dialogue de la sous-liste compacte.
   Widget _buildItemField(ZFormController controller, ZFieldSpec field) {
+    final spec = widget.field.readOnly && !field.readOnly
+        ? field.copyWith(readOnly: true)
+        : field;
     final custom = widget.itemFieldBuilder;
     if (custom != null) {
-      return custom(context, controller, field, _itemId ?? '');
+      return custom(context, controller, spec, _itemId ?? '');
     }
-    return ZFieldWidget(controller: controller, field: field);
+    return ZFieldWidget(controller: controller, field: spec);
   }
 
   @override

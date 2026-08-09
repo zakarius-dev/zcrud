@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
+import '../domain/ports/z_app_file_resolver.dart';
 import '../domain/ports/z_choices_source.dart';
 import '../domain/ports/z_relation_crud.dart';
 import '../domain/ports/z_relation_source.dart';
@@ -65,6 +66,7 @@ class ZcrudScope extends InheritedWidget {
     this.relationCrudRegistry,
     this.filePicker,
     this.cloudStorage,
+    this.appFileResolver,
     this.listRenderer,
     this.reorderRenderer,
     this.dropRegionRenderer,
@@ -126,6 +128,22 @@ class ZcrudScope extends InheritedWidget {
   /// Impl concrète (Firebase Storage) fournie par `zcrud_firestore` (E5),
   /// jamais le cœur.
   final CloudStorageRepository? cloudStorage;
+
+  /// Port de résolution des **références opaques** de fichiers (`String` →
+  /// `AppFile`) — BLOQUANT DE MIGRATION DODLP (`shipDocumentsIds` : la donnée
+  /// existante porte des **ids**, pas des objets fichier).
+  ///
+  /// Défaut `null` ⇒ comportement historique **strictement conservé** : les
+  /// valeurs non-`AppFile` restent ignorées et AUCUN état n'est ajouté au rendu
+  /// (hôte passif immobile). Injecter un résolveur active la voie de résolution
+  /// **asynchrone**, tenue SOUS la frontière de rebuild du champ (AD-2/SM-1 :
+  /// jamais un rebuild du formulaire, jamais un élargissement de tranche) et
+  /// intégralement dégradée (AD-10 : erreur, délai de garde, référence
+  /// introuvable ⇒ états VISIBLES, jamais une exception ni un champ bloqué).
+  ///
+  /// Impl concrète (Firestore/Storage) hors du cœur (`zcrud_firestore`/app E7),
+  /// jamais ici (AD-1). Jamais un singleton statique mutable.
+  final ZAppFileResolver? appFileResolver;
 
   /// Seam de rendu de liste (E4-1, AD-8/SM-5 ; défaut `null` → `DynamicList`
   /// lève une [ZScopeError] actionnable tant qu'aucun backend n'est injecté).
@@ -236,6 +254,7 @@ class ZcrudScope extends InheritedWidget {
       !identical(relationCrudRegistry, oldWidget.relationCrudRegistry) ||
       !identical(filePicker, oldWidget.filePicker) ||
       !identical(cloudStorage, oldWidget.cloudStorage) ||
+      !identical(appFileResolver, oldWidget.appFileResolver) ||
       !identical(listRenderer, oldWidget.listRenderer) ||
       !identical(reorderRenderer, oldWidget.reorderRenderer) ||
       !identical(dropRegionRenderer, oldWidget.dropRegionRenderer) ||

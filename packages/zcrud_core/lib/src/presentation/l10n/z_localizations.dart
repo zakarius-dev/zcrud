@@ -107,6 +107,12 @@ const _enLabels = <String, String>{
   'fileUploadFailed': 'Upload failed',
   'filePreviewAlt': 'File preview',
   'fileMaxReached': 'Maximum number of files reached; extra files were not added',
+  // Résolution des RÉFÉRENCES opaques de fichiers (port `ZAppFileResolver`) :
+  // états VISIBLES d'une référence non encore résolue (AD-10).
+  'fileResolving': 'Loading file…',
+  'fileRefUnresolved': 'File unavailable',
+  'fileResolveFailed': 'Could not load file',
+  'fileResolveRetry': 'Retry loading',
   // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
   'copy': 'Copy',
   'copied': 'Value copied to clipboard',
@@ -199,6 +205,10 @@ const _frLabels = <String, String>{
   'filePreviewAlt': 'Aperçu du fichier',
   'fileMaxReached':
       'Nombre maximal de fichiers atteint ; les fichiers en trop n\'ont pas été ajoutés',
+  'fileResolving': 'Chargement du fichier…',
+  'fileRefUnresolved': 'Fichier indisponible',
+  'fileResolveFailed': 'Échec du chargement du fichier',
+  'fileResolveRetry': 'Réessayer le chargement',
   // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
   'copy': 'Copier',
   'copied': 'Valeur copiée dans le presse-papier',

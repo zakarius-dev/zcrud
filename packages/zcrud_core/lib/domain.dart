@@ -89,6 +89,10 @@ export 'src/domain/failures/z_failure.dart';
 export 'src/domain/json/z_json_read.dart';
 export 'src/domain/ports/cloud_storage_repository.dart';
 export 'src/domain/ports/z_acl.dart';
+// Port neutre de résolution des RÉFÉRENCES opaques de fichiers (`String`) vers
+// `AppFile` (AD-1/AD-10) — bloquant de migration DODLP (`shipDocumentsIds`).
+// Impl hors cœur (`zcrud_firestore`/app), injecté via `ZcrudScope`.
+export 'src/domain/ports/z_app_file_resolver.dart';
 // Port neutre + registre de source d'options CALCULÉES du champ `select` (DP-15,
 // M22, AD-1/AD-4/AD-5) : `ZChoicesSource` (liste `List<ZFieldChoice>` SYNCHRONE,
 // impl hors cœur) + `ZChoicesSourceRegistry` (instanciable, injecté via `ZcrudScope`).

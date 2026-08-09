@@ -42,6 +42,7 @@ import '../../../domain/edition/app_file.dart';
 import '../../../domain/edition/edition_field_type.dart';
 import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
+import '../../../domain/ports/z_app_file_resolver.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../zcrud_scope.dart';
@@ -78,7 +79,29 @@ class ZAppFileField extends StatefulWidget {
   State<ZAppFileField> createState() => _ZAppFileFieldState();
 }
 
+/// État de résolution d'une **référence opaque** (`String`) de fichier —
+/// visible dans le rendu (le silence était le défaut d'origine, AD-10).
+enum _RefState {
+  /// Résolution en cours (le port a été appelé, la réponse n'est pas arrivée).
+  resolving,
+
+  /// Le port a répondu SANS `AppFile` porteur de cet id ⇒ **introuvable**.
+  missing,
+
+  /// La résolution a **échoué** (`Error`, `Exception` — l'échec NORMAL d'une
+  /// E/S — ou dépassement du délai de garde) ⇒ réessayable.
+  failed,
+}
+
 class _ZAppFileFieldState extends State<ZAppFileField> {
+  /// Références **résolues** (référence opaque → `AppFile`). État UI local :
+  /// la résolution n'écrit JAMAIS dans la tranche (AD-2/SM-1 — écrire la
+  /// tranche élargirait la voie de rebuild ET salirait le formulaire).
+  final Map<String, AppFile> _resolved = <String, AppFile>{};
+
+  /// État visible des références NON résolues (jamais un silence).
+  final Map<String, _RefState> _refState = <String, _RefState>{};
+
   /// Refus accessible (AC8/AD-13) : `true` quand la dernière acquisition a
   /// dépassé `maxFiles` et que les fichiers en trop ont été écartés. Affiché via
   /// un message `Semantics(liveRegion: true)` (annoncé au lecteur d'écran).
@@ -91,13 +114,118 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
       ? widget.field.config! as FileFieldConfig
       : const FileFieldConfig();
 
-  /// Fichiers courants dérivés de la tranche vivante (lecture value-in-slice ;
-  /// [ZAppFileField.liveValue] pour l'état synchrone le plus récent).
-  List<AppFile> get _files {
+  /// Résolveur de références injecté (`null` ⇒ voie de références **inactive**,
+  /// comportement historique strictement conservé).
+  ZAppFileResolver? get _resolver =>
+      ZcrudScope.maybeOf(context)?.appFileResolver;
+
+  /// `true` quand la voie de résolution des références est active. Sans port
+  /// injecté, le champ se comporte EXACTEMENT comme avant (les valeurs
+  /// non-`AppFile` sont ignorées, aucun état supplémentaire, aucune référence
+  /// conservée à la réécriture) — hôte passif immobile.
+  bool get _refsEnabled => _resolver != null;
+
+  /// Entrées **brutes** de la tranche vivante, dans l'ordre : `AppFile` (objets
+  /// fichier) et `String` non vides (**références opaques**, seulement si le
+  /// port est injecté). Toute autre valeur est ignorée (AD-10).
+  List<Object> get _entries {
     final v = widget.liveValue != null ? widget.liveValue!() : widget.value;
-    if (v is AppFile) return <AppFile>[v];
-    if (v is List) return v.whereType<AppFile>().toList(growable: false);
-    return const <AppFile>[];
+    final refs = _refsEnabled;
+    if (v is AppFile) return <Object>[v];
+    if (v is String) return (refs && v.isNotEmpty) ? <Object>[v] : const <Object>[];
+    if (v is List) {
+      return <Object>[
+        for (final e in v)
+          if (e is AppFile)
+            e
+          else if (refs && e is String && e.isNotEmpty)
+            e,
+      ];
+    }
+    return const <Object>[];
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncResolution();
+  }
+
+  @override
+  void didUpdateWidget(ZAppFileField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncResolution();
+  }
+
+  /// Demande la résolution des références **pas encore demandées**.
+  ///
+  /// Appelé hors `build` (`didChangeDependencies`/`didUpdateWidget`/retry) : la
+  /// mutation d'état est directe (un `build` suit immédiatement) — c'est la
+  /// COMPLÉTION asynchrone qui passe par `setState`, sous la frontière de
+  /// rebuild du champ (AD-2/SM-1 : aucun autre champ, aucun rebuild du
+  /// formulaire, aucune écriture de tranche).
+  void _syncResolution() {
+    final resolver = _resolver;
+    if (resolver == null) return;
+    final pending = <String>[
+      for (final e in _entries)
+        if (e is String && !_resolved.containsKey(e) && !_refState.containsKey(e))
+          e,
+    ];
+    if (pending.isEmpty) return;
+    for (final ref in pending) {
+      _refState[ref] = _RefState.resolving;
+    }
+    // ignore: discarded_futures
+    _runResolve(resolver, pending);
+  }
+
+  /// Exécute la résolution et projette TOUS les issues possibles en état
+  /// VISIBLE (AD-10) : succès, référence introuvable, échec (`Error` **comme**
+  /// `Exception` — l'échec normal d'une E/S), `Future` qui ne se termine jamais
+  /// (délai de garde [ZAppFileResolver.timeout]). Ne lève JAMAIS.
+  Future<void> _runResolve(ZAppFileResolver resolver, List<String> refs) async {
+    List<AppFile>? files;
+    var failed = false;
+    try {
+      files = await resolver
+          .resolve(List<String>.unmodifiable(refs))
+          .timeout(resolver.timeout);
+    } on Object {
+      // `on Object` DÉLIBÉRÉ : un `on Error` laisserait remonter les
+      // `Exception`, c'est-à-dire l'échec NORMAL d'une E/S (incident mesuré).
+      failed = true;
+    }
+    if (!mounted) return;
+    final resolvedFiles = files;
+    setState(() {
+      if (failed || resolvedFiles == null) {
+        for (final ref in refs) {
+          _refState[ref] = _RefState.failed;
+        }
+        return;
+      }
+      final byId = <String, AppFile>{
+        for (final f in resolvedFiles)
+          if (f.id != null) f.id!: f,
+      };
+      for (final ref in refs) {
+        final file = byId[ref];
+        if (file != null) {
+          _resolved[ref] = file;
+          _refState.remove(ref);
+        } else {
+          _refState[ref] = _RefState.missing;
+        }
+      }
+    });
+  }
+
+  /// Relance la résolution d'une référence en échec (action de **lecture** —
+  /// disponible même en lecture seule).
+  void _retryResolve(String ref) {
+    setState(() => _refState.remove(ref));
+    _syncResolution();
   }
 
   /// Clé d'identité stable d'un fichier à travers les transitions d'état
@@ -105,13 +233,29 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// puis `name`.
   String _identity(AppFile f) => f.localPath ?? f.id ?? f.name;
 
-  /// Écrit la tranche selon la multiplicité (single ⇒ `AppFile?`/remplace ;
-  /// multiple ⇒ `List<AppFile>`).
-  void _commit(List<AppFile> files) {
-    if (widget.field.multiple) {
-      widget.onChanged(List<AppFile>.unmodifiable(files));
+  /// Écrit la tranche selon la multiplicité (single ⇒ élément/`null` ;
+  /// multiple ⇒ `List<Object>`).
+  ///
+  /// Les **références opaques non résolues sont PRÉSERVÉES telles quelles**
+  /// (`String`) : une acquisition ou une suppression ne doit jamais effacer
+  /// silencieusement les identifiants que l'hôte a persistés. Sans port injecté,
+  /// [_entries] ne contient que des `AppFile` ⇒ écriture strictement identique à
+  /// l'historique.
+  void _commitEntries(List<Object> entries) {
+    if (!widget.field.multiple) {
+      widget.onChanged(entries.isEmpty ? null : entries.first);
+      return;
+    }
+    // TYPE DE TRANCHE PRÉSERVÉ : tant qu'aucune référence non résolue ne
+    // subsiste, la tranche reste une `List<AppFile>` (contrat historique — un
+    // hôte qui fait `value as List<AppFile>` n'est pas déplacé). Elle ne
+    // s'élargit en `List<Object>` que s'il RESTE une référence à préserver.
+    if (entries.every((e) => e is AppFile)) {
+      widget.onChanged(
+        List<AppFile>.unmodifiable(entries.whereType<AppFile>()),
+      );
     } else {
-      widget.onChanged(files.isEmpty ? null : files.first);
+      widget.onChanged(List<Object>.unmodifiable(entries));
     }
   }
 
@@ -119,10 +263,10 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// sur la tranche COURANTE — `widget.value` reflète le dernier état).
   void _replace(AppFile oldFile, AppFile updated) {
     final id = _identity(oldFile);
-    final next = <AppFile>[
-      for (final f in _files) _identity(f) == id ? updated : f,
-    ];
-    _commit(next);
+    _commitEntries(<Object>[
+      for (final e in _entries)
+        if (e is AppFile && _identity(e) == id) updated else e,
+    ]);
   }
 
   Future<void> _pick(ZFileSource source) async {
@@ -130,13 +274,15 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
     if (picker == null) return;
     final picked = await picker.pick(source: source, config: _config);
     if (!mounted || picked.isEmpty) return;
-    final List<AppFile> next;
+    final List<Object> next;
     // Refus accessible AC8/AD-13 : au-delà de `maxFiles`, on écarte SEULEMENT
     // les fichiers en trop (les valides déjà présents et le début de la
     // sélection sont conservés) et on ANNONCE le refus (message liveRegion).
+    // Les références opaques comptent comme des entrées occupées (elles
+    // DÉSIGNENT un fichier déjà attaché).
     var maxReached = false;
     if (widget.field.multiple) {
-      final combined = <AppFile>[..._files, ...picked];
+      final combined = <Object>[..._entries, ...picked];
       final max = _config.maxFiles;
       if (max != null && combined.length > max) {
         maxReached = true;
@@ -145,12 +291,12 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
         next = combined;
       }
     } else {
-      next = <AppFile>[picked.first];
+      next = <Object>[picked.first];
     }
     if (_maxFilesReached != maxReached) {
       setState(() => _maxFilesReached = maxReached);
     }
-    _commit(next);
+    _commitEntries(next);
     // Déclenche l'upload des fichiers réellement retenus (si un storage est
     // injecté) — sinon ils restent `pending` (orchestration déférée).
     for (final f in picked) {
@@ -175,9 +321,17 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
 
   void _remove(AppFile file) {
     final id = _identity(file);
-    _commit(<AppFile>[
-      for (final f in _files)
-        if (_identity(f) != id) f,
+    _commitEntries(<Object>[
+      for (final e in _entries)
+        if (!(e is AppFile && _identity(e) == id)) e,
+    ]);
+  }
+
+  /// Retire une **référence opaque** de la tranche (action d'écriture).
+  void _removeRef(String ref) {
+    _commitEntries(<Object>[
+      for (final e in _entries)
+        if (e != ref) e,
     ]);
   }
 
@@ -214,8 +368,15 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
       fallback: widget.field.label ?? widget.field.name,
     );
     final picker = ZcrudScope.maybeOf(context)?.filePicker;
-    final actionsEnabled = picker != null && !widget.field.readOnly;
-    final files = _files;
+    // LECTURE SEULE (AD-16) : les actions d'ACQUISITION sont des actions
+    // d'ÉCRITURE — elles ne sont PLUS émises du tout (elles n'auraient jamais dû
+    // être montées, seulement grisées). Les actions de LECTURE (aperçu, retry de
+    // RÉSOLUTION) restent disponibles.
+    // Sans picker injecté, la rangée reste ÉMISE mais désactivée (contrat
+    // historique documenté : « `null` ⇒ actions désactivées proprement »).
+    final showSourceActions = !widget.field.readOnly;
+    final actionsEnabled = picker != null;
+    final entries = _entries;
 
     return Semantics(
       container: true,
@@ -232,23 +393,26 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
                 style: Theme.of(context).textTheme.bodySmall),
           ),
           // Rangée d'actions par source autorisée (directionnelle, ≥ 48 dp).
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
-            child: Wrap(
-              spacing: theme.gapS,
-              children: <Widget>[
-                for (final source in _config.allowedSources)
-                  _ActionButton(
-                    action: _actionOf(source),
-                    enabled: actionsEnabled,
-                    onPressed: () {
-                      // ignore: discarded_futures
-                      _pick(source);
-                    },
-                  ),
-              ],
+          // NON ÉMISE en lecture seule (actions d'écriture) — cf.
+          // `showSourceActions`.
+          if (showSourceActions)
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
+              child: Wrap(
+                spacing: theme.gapS,
+                children: <Widget>[
+                  for (final source in _config.allowedSources)
+                    _ActionButton(
+                      action: _actionOf(source),
+                      enabled: actionsEnabled,
+                      onPressed: () {
+                        // ignore: discarded_futures
+                        _pick(source);
+                      },
+                    ),
+                ],
+              ),
             ),
-          ),
           // Refus accessible du dépassement de `maxFiles` (AC8/AD-13) : message
           // annoncé au lecteur d'écran (`liveRegion`) + visible, couleur du thème.
           if (_maxFilesReached)
@@ -266,28 +430,60 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
                 ),
               ),
             ),
-          if (files.isNotEmpty)
+          if (entries.isNotEmpty)
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
               child: Wrap(
                 spacing: theme.gapM,
                 runSpacing: theme.gapS,
                 children: <Widget>[
-                  for (final file in files)
-                    _FilePreviewTile(
-                      file: file,
-                      icon: _iconFor(file),
-                      readOnly: widget.field.readOnly,
-                      border: theme.fieldBorderColor ?? colors.outline,
-                      radius: theme.radiusM,
-                      onRemove: widget.field.readOnly ? null : () => _remove(file),
-                      onRetry: widget.field.readOnly
-                          ? null
-                          : () {
-                              // ignore: discarded_futures
-                              _startUpload(file);
-                            },
-                    ),
+                  for (final entry in entries)
+                    if (entry is AppFile)
+                      _FilePreviewTile(
+                        file: entry,
+                        icon: _iconFor(entry),
+                        readOnly: widget.field.readOnly,
+                        border: theme.fieldBorderColor ?? colors.outline,
+                        radius: theme.radiusM,
+                        onRemove:
+                            widget.field.readOnly ? null : () => _remove(entry),
+                        onRetry: widget.field.readOnly
+                            ? null
+                            : () {
+                                // ignore: discarded_futures
+                                _startUpload(entry);
+                              },
+                      )
+                    // Référence opaque : rendue avec un état VISIBLE quel que
+                    // soit son sort (résolue / en cours / introuvable / échec) —
+                    // jamais un vide silencieux (AD-10).
+                    else if (entry is String)
+                      if (_resolved[entry] case final resolvedFile?)
+                        _FilePreviewTile(
+                          file: resolvedFile,
+                          icon: _iconFor(resolvedFile),
+                          readOnly: widget.field.readOnly,
+                          border: theme.fieldBorderColor ?? colors.outline,
+                          radius: theme.radiusM,
+                          onRemove: widget.field.readOnly
+                              ? null
+                              : () => _removeRef(entry),
+                          // Le retry d'UPLOAD est une action d'écriture : sans
+                          // objet local à renvoyer, il n'a pas de sens sur une
+                          // référence distante déjà persistée.
+                          onRetry: null,
+                        )
+                      else
+                        _RefStateTile(
+                          state: _refState[entry] ?? _RefState.resolving,
+                          border: theme.fieldBorderColor ?? colors.outline,
+                          radius: theme.radiusM,
+                          // Action de LECTURE : disponible même en lecture seule.
+                          onRetry: () => _retryResolve(entry),
+                          onRemove: widget.field.readOnly
+                              ? null
+                              : () => _removeRef(entry),
+                        ),
                 ],
               ),
             ),
@@ -319,6 +515,114 @@ class _ActionButton extends StatelessWidget {
       // `Semantics` additionnel requis. Cible ≥ 48 dp par défaut (AD-13).
       tooltip: text,
       onPressed: enabled ? onPressed : null,
+    );
+  }
+}
+
+/// Tuile d'une **référence opaque non résolue** : rend VISIBLE ce qui, avant ce
+/// correctif, disparaissait sans trace (champ migré affiché vide, sans erreur).
+///
+/// - `resolving` : indicateur de progression + libellé l10n ;
+/// - `missing` : « fichier indisponible » (le port a répondu sans cet id) ;
+/// - `failed` : « échec du chargement » + **réessai** (action de LECTURE, donc
+///   disponible même en lecture seule).
+///
+/// Chaque état terminal est annoncé (`Semantics(liveRegion: true)`), aucun
+/// littéral de couleur ni de texte (FR-26), insets directionnels (AD-13),
+/// cibles ≥ 48 dp (`IconButton`).
+class _RefStateTile extends StatelessWidget {
+  const _RefStateTile({
+    required this.state,
+    required this.border,
+    required this.radius,
+    required this.onRetry,
+    required this.onRemove,
+  });
+
+  final _RefState state;
+  final Color border;
+  final Radius radius;
+  final VoidCallback onRetry;
+  final VoidCallback? onRemove;
+
+  static const double _thumb = 56;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final resolving = state == _RefState.resolving;
+    final failed = state == _RefState.failed;
+    final String key;
+    final IconData icon;
+    switch (state) {
+      case _RefState.resolving:
+        key = 'fileResolving';
+        icon = Icons.hourglass_empty;
+      case _RefState.missing:
+        key = 'fileRefUnresolved';
+        icon = Icons.help_outline;
+      case _RefState.failed:
+        key = 'fileResolveFailed';
+        icon = Icons.error_outline;
+    }
+    final text = label(context, key);
+
+    return Semantics(
+      container: true,
+      liveRegion: !resolving,
+      label: text,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.all(radius),
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 4, 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SizedBox(
+                width: _thumb,
+                height: _thumb,
+                child: Center(
+                  child: resolving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(icon, size: 32, semanticLabel: text),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
+                child: Text(
+                  text,
+                  textAlign: TextAlign.start,
+                  style: failed
+                      ? Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colors.error)
+                      : Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              if (failed)
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: label(context, 'fileResolveRetry'),
+                  onPressed: onRetry,
+                ),
+              if (onRemove != null)
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: label(context, 'fileRemove'),
+                  onPressed: onRemove,
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

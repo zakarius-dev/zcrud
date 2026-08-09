@@ -145,7 +145,99 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // anglais `'Select one'` / `'Select one or more'` du fork. Passé à
     // `SmartSelect` (paramètre `placeholder:`) ET employé directement dans le
     // déclencheur, pour que le libellé anglais du fork ne surface nulle part.
-    final String placeholder = label(context, 'select');
+    //
+    // CR-SELECT-GAPS — `field.hintText` **et** `isLoading` se déversent ICI, et
+    // nulle part ailleurs, parce que c'est la place que leur donne le rendu
+    // NATIF :
+    //
+    // * `hintText` est, dans `zFieldDecoration`, le texte de l'ÉTAT VIDE
+    //   (`InputDecoration.hintText`) — exactement ce qu'est le placeholder du
+    //   tile. Aucun autre slot de la tuile n'a ce sens.
+    // * `isLoading` : le natif de `relation` écrit
+    //   `hintText: label(loading ? 'loading' : 'select')` — le chargement
+    //   l'emporte donc sur le hint, et « je n'ai pas encore les options » cesse
+    //   de se confondre avec « il n'y a rien à choisir ».
+    //
+    // 🔴 Hôte passif : sans `hintText` et sans chargement, l'expression vaut
+    // `label(context, 'select')` — le littéral d'avant, au caractère près.
+    final String? hintText = presentation.field.hintText == null
+        ? null
+        : label(context, presentation.field.hintText!,
+            fallback: presentation.field.hintText!);
+    final String placeholder = presentation.isLoading
+        ? label(context, 'loading')
+        : (hintText ?? label(context, 'select'));
+
+    // CR-SELECT-GAPS — `field.helperText` : ligne d'aide PERSISTANTE que le
+    // natif rend SOUS le champ (`InputDecoration.helperText`), en plus du
+    // contenu et jamais à sa place. Son équivalent en tuile est donc une ligne
+    // de plus au BAS du sous-titre — surtout pas le sous-titre lui-même, qui
+    // porte déjà la valeur ou les puces (l'y écraser aurait été une régression
+    // déguisée en correctif). `null` ⇒ aucun nœud ajouté (AD-4).
+    final String? helperText = presentation.field.helperText == null
+        ? null
+        : label(context, presentation.field.helperText!,
+            fallback: presentation.field.helperText!);
+
+    // CR-SELECT-GAPS — ornements `prefix`/`suffix`. Le natif les pose DANS le
+    // champ, de part et d'autre du CONTENU (`prefix`/`prefixIcon` et
+    // `suffix`/`suffixIcon` de l'`InputDecoration`), pas dans ses marges : la
+    // tête hors bordure est le slot `icon`, déjà occupé ici par `leading`, et la
+    // fin de ligne du tile est occupée par le chevron. L'équivalent est donc la
+    // ligne du sous-titre, qui porte la valeur.
+    //
+    // 🔴 Comme `leading`, ces deux membres étaient **déjà atteignables** via
+    // `presentation.field` : aucun élargissement du seam n'était nécessaire —
+    // seulement de les lire. `null` ⇒ slot ABSENT de l'arbre (AD-4).
+    final Widget? prefix = resolveAdornment(
+      context,
+      presentation.field.prefix,
+      field: presentation.field,
+    );
+    final Widget? suffix = resolveAdornment(
+      context,
+      presentation.field.suffix,
+      field: presentation.field,
+    );
+
+    // AD-13 — un ornement `.text` porte de l'INFORMATION (« € », « % », « kg »)
+    // et le natif la fait lire : elle vit dans l'arbre sémantique de
+    // l'`InputDecorator`. Le tile, lui, n'a qu'UNE annonce (`excludeSemantics:
+    // true` écarte tous les descendants) : sans reprise explicite, ce texte
+    // serait visible et JAMAIS annoncé — un canal purement visuel. Les
+    // ornements `.icon`/`.widget` n'ont pas de texte à reprendre ; ils restent
+    // décoratifs, exactement comme dans le natif.
+    final String? prefixText =
+        _adornmentText(context, presentation.field.prefix);
+    final String? suffixText =
+        _adornmentText(context, presentation.field.suffix);
+
+    // CR-SELECT-GAPS — **Modifier / Copier par option**. Le rendu NATIF de
+    // `relation` les expose dès qu'un `crudHandler` est résolu
+    // (`_CrudRowActions`, DP-15) ; le présentateur n'en rendait que **Créer** —
+    // enrôler le présentateur RETIRAIT donc deux actions. Le DTO porte déjà
+    // `crudHandler` : rien à élargir, seulement à lire.
+    //
+    // Priorité : un `choiceSecondaryBuilder` fourni par l'hôte l'emporte
+    // TOUJOURS (c'est le même slot, et c'est SA décision). Sans handler ⇒ slot
+    // absent (AD-4), rendu antérieur strictement conservé.
+    //
+    // 🔴 Écart ASSUMÉ avec le natif : celui-ci ne conditionne pas ces deux
+    // actions à `readOnly`. Ici elles suivent `enabled`, comme **Créer** — les
+    // trois écrivent la sélection (auto-sélection du résultat), et une écriture
+    // sur un champ en lecture seule n'a pas de sens.
+    final bool crudRowActions = presentation.choiceSecondaryBuilder == null &&
+        presentation.crudHandler != null &&
+        enabled;
+
+    // 🔴 FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
+    // passées par valeur. Mesuré : le modal est poussé sur le `Navigator`, donc
+    // **au-dessus** du `ZcrudScope` — un `label(modalContext, 'edit')` ne voit
+    // PAS les libellés injectés au scope et retombe silencieusement sur la table
+    // anglaise du cœur. C'est la même discipline de capture synchrone que
+    // `_wrapLoader`.
+    final String editTooltip = label(context, 'edit');
+    final String copyTooltip = label(context, 'copy');
 
     // CR-REQUIRED-INDICATOR — règle EXACTE de `ZFieldLabel` (cœur) :
     // `field.isRequired && !field.readOnly`. Lue sur `field`, pas sur
@@ -215,14 +307,23 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                 _buildHostChoice(ctx, presentation, choice, enabled: enabled),
         // CR-SELECT-SEAM : affordance de fin de ligne (Modifier/Copier chez
         // DODLP). `null` ⇒ slot ABSENT (AD-4), rendu antérieur inchangé.
-        choiceSecondaryBuilder: presentation.choiceSecondaryBuilder == null
-            ? null
-            : (ctx, _, choice) => _buildHostSecondary(
+        choiceSecondaryBuilder: presentation.choiceSecondaryBuilder != null
+            ? (ctx, _, choice) => _buildHostSecondary(
                   ctx,
                   presentation,
                   choice,
                   enabled: enabled,
-                ),
+                )
+            : (crudRowActions
+                ? (_, state, choice) => _crudRowActions(
+                      state,
+                      presentation,
+                      choice,
+                      multiple: true,
+                      editTooltip: editTooltip,
+                      copyTooltip: copyTooltip,
+                    )
+                : null),
         // Parité DODLP EXACTE (`choiceDivider: field.choiceBuilder != null`) :
         // un rendu d'option sur mesure a besoin d'un séparateur, le rendu natif
         // du fork non. 🔴 Hôte passif : `false` — c'est aussi le DÉFAUT du fork
@@ -291,6 +392,12 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           metrics: metrics,
           showChevron: spec?.showTrailingChevron ?? enabled,
           requiredIndicator: requiredIndicator,
+          isLoading: presentation.isLoading,
+          helperText: helperText,
+          prefix: prefix,
+          suffix: suffix,
+          prefixText: prefixText,
+          suffixText: suffixText,
         ),
       );
     }
@@ -307,14 +414,23 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           ? null
           : (ctx, _, choice) =>
               _buildHostChoice(ctx, presentation, choice, enabled: enabled),
-      choiceSecondaryBuilder: presentation.choiceSecondaryBuilder == null
-          ? null
-          : (ctx, _, choice) => _buildHostSecondary(
+      choiceSecondaryBuilder: presentation.choiceSecondaryBuilder != null
+          ? (ctx, _, choice) => _buildHostSecondary(
                 ctx,
                 presentation,
                 choice,
                 enabled: enabled,
-              ),
+              )
+          : (crudRowActions
+              ? (_, state, choice) => _crudRowActions(
+                    state,
+                    presentation,
+                    choice,
+                    multiple: false,
+                    editTooltip: editTooltip,
+                    copyTooltip: copyTooltip,
+                  )
+              : null),
       choiceDivider: presentation.choiceBuilder != null,
       // CR-SELECT-SEAM — même barre d'actions ; en MONO la recherche reste une
       // BASCULE (loupe), exactement comme DODLP (`useFilter: true`).
@@ -358,6 +474,12 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         metrics: metrics,
         showChevron: spec?.showTrailingChevron ?? enabled,
         requiredIndicator: requiredIndicator,
+        isLoading: presentation.isLoading,
+        helperText: helperText,
+        prefix: prefix,
+        suffix: suffix,
+        prefixText: prefixText,
+        suffixText: suffixText,
       ),
     );
   }
@@ -464,9 +586,12 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           IconButton(
             tooltip: label(context, 'create'),
             icon: const Icon(Icons.add),
-            onPressed: () => _createThenSelect(
+            onPressed: () => _crudThenSelect(
               state,
               presentation,
+              () => presentation.crudHandler!.create(
+                const <String, Object?>{},
+              ),
               multiple: multiple,
             ),
           ),
@@ -603,34 +728,88 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     );
   }
 
-  /// Crée une entité via le port **neutre** `ZRelationCrudHandler`, puis
-  /// **auto-sélectionne** l'option résultante (parité DODLP `_onCrud`).
+  /// **Modifier / Copier** l'entité d'une option (CR-SELECT-GAPS) — parité
+  /// `_CrudRowActions` du rendu NATIF de `relation` (DP-15), que l'enrôlement du
+  /// présentateur faisait jusqu'ici disparaître.
+  ///
+  /// Rendu dans le slot `secondary` de la tuile d'option du fork (le même que
+  /// `choiceSecondaryBuilder`), donc **uniquement** quand l'hôte n'en fournit
+  /// pas et qu'un `crudHandler` est résolu.
+  ///
+  /// AD-13 : `IconButton` porte nativement une cible de 48 dp ; chaque action a
+  /// un `tooltip` **localisé** (clés `edit`/`copy`), qui alimente aussi son
+  /// annonce accessible — l'icône n'est jamais le seul canal. FR-26 : aucune
+  /// couleur posée, les icônes héritent de l'`IconTheme` ambiant.
+  Widget _crudRowActions(
+    S2State<dynamic> state,
+    ZSelectPresentation presentation,
+    S2Choice<dynamic> choice, {
+    required bool multiple,
+    required String editTooltip,
+    required String copyTooltip,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        IconButton(
+          tooltip: editTooltip,
+          icon: const Icon(Icons.edit),
+          onPressed: () => _crudThenSelect(
+            state,
+            presentation,
+            () => presentation.crudHandler!.edit(choice.value),
+            multiple: multiple,
+            replaced: choice.value,
+          ),
+        ),
+        IconButton(
+          tooltip: copyTooltip,
+          icon: const Icon(Icons.copy),
+          onPressed: () => _crudThenSelect(
+            state,
+            presentation,
+            () => presentation.crudHandler!.copy(choice.value),
+            multiple: multiple,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Exécute une opération CRUD via le port **neutre** `ZRelationCrudHandler`
+  /// ([op] = `create` / `edit` / `copy`), puis **auto-sélectionne** l'option
+  /// résultante (parité DODLP `_onCrud` et `_selectResult` du natif).
+  ///
+  /// [replaced] (édition) : si l'entité change de valeur, l'ancienne est retirée
+  /// de la sélection multi avant l'ajout de la nouvelle — sans quoi une édition
+  /// qui ré-identifie l'entité laisserait un fantôme sélectionné.
   ///
   /// AD-10 : `Future` en erreur **ou** résultat `null` (annulation) ⇒ aucune
   /// écriture, aucun crash — équivalent exact de leur `try/catch (_) {}`.
   /// AD-2 : la sélection passe par `onChanged`, jamais par une mutation directe
   /// de l'état interne du fork (ce que DODLP fait, avec un
   /// `Future.delayed(500ms)` pour que ça « prenne »).
-  Future<void> _createThenSelect(
+  Future<void> _crudThenSelect(
     S2State<dynamic> state,
-    ZSelectPresentation presentation, {
+    ZSelectPresentation presentation,
+    Future<ZFieldChoice?> Function() op, {
     required bool multiple,
+    Object? replaced,
   }) async {
-    ZFieldChoice? created;
+    ZFieldChoice? result;
     try {
-      created = await presentation.crudHandler!.create(
-        const <String, Object?>{},
-      );
+      result = await op();
     } catch (_) {
       return;
     }
-    if (created == null) return;
+    if (result == null) return;
     if (multiple) {
       final List<Object?> next = _asList(presentation.selected);
-      if (!next.contains(created.value)) next.add(created.value);
+      if (replaced != null && replaced != result.value) next.remove(replaced);
+      if (!next.contains(result.value)) next.add(result.value);
       presentation.onChanged(next);
     } else {
-      presentation.onChanged(created.value);
+      presentation.onChanged(result.value);
     }
     if (state.mounted) state.closeModal(confirmed: false);
   }
@@ -844,6 +1023,17 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     ];
   }
 
+  /// Texte d'un ornement **`.text`** (CR-SELECT-GAPS), résolu l10n — `null`
+  /// pour toute autre nature (`.icon`, `.widget`) comme pour un ornement absent.
+  ///
+  /// Sert **uniquement** l'annonce accessible du tile : le rendu visuel, lui,
+  /// passe par `resolveAdornment` (seule voie légitime, qui connaît les trois
+  /// natures et le seam d'icônes de l'hôte).
+  static String? _adornmentText(BuildContext context, ZFieldAdornment? a) =>
+      (a == null || a.kind != ZAdornmentKind.text)
+          ? null
+          : label(context, a.value, fallback: a.value);
+
   /// Normalise la sélection multi (défensif AD-10) : scalaire/`null` → `List`.
   static List<Object?> _asList(Object? selected) {
     if (selected is List) return List<Object?>.from(selected);
@@ -951,9 +1141,15 @@ class _ZSmartSelectTile extends StatelessWidget {
     required this.onTap,
     required this.metrics,
     required this.requiredIndicator,
+    required this.isLoading,
     this.leading,
     this.valueText,
     this.chipLabels,
+    this.helperText,
+    this.prefix,
+    this.suffix,
+    this.prefixText,
+    this.suffixText,
   });
 
   /// Libellé du champ (titre du `ListTile`).
@@ -1003,6 +1199,33 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// `false` ⇒ tile strictement identique au rendu antérieur.
   final bool requiredIndicator;
 
+  /// CR-SELECT-GAPS — `ZSelectPresentation.isLoading`. Le DTO le portait déjà et
+  /// le tile ne l'AFFICHAIT pas : « pas encore chargé » se lisait comme « rien à
+  /// choisir ». Pilote deux choses, jamais une seule (AD-13) : le [placeholder]
+  /// (déjà résolu sur la clé l10n `loading` par l'appelant — un **texte**, pas
+  /// un tourniquet) et l'annonce accessible (cf. [_semanticValue]).
+  final bool isLoading;
+
+  /// CR-SELECT-GAPS — `field.helperText`, déjà résolu l10n. Rendu en ligne
+  /// SUPPLÉMENTAIRE au bas du sous-titre (jamais à la place de la valeur ou des
+  /// puces) et annoncé via `Semantics.hint`. `null` ⇒ aucun nœud (AD-4).
+  final String? helperText;
+
+  /// CR-SELECT-GAPS — ornement `field.prefix` déjà résolu en widget. `null` ⇒
+  /// aucun nœud (AD-4).
+  final Widget? prefix;
+
+  /// CR-SELECT-GAPS — ornement `field.suffix` déjà résolu en widget. `null` ⇒
+  /// aucun nœud (AD-4).
+  final Widget? suffix;
+
+  /// Texte de [prefix] quand l'ornement est de nature `.text` — repris dans
+  /// l'annonce accessible (AD-13). `null` sinon (ornement décoratif).
+  final String? prefixText;
+
+  /// Texte de [suffix] quand l'ornement est de nature `.text`. Cf. [prefixText].
+  final String? suffixText;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1021,16 +1244,8 @@ class _ZSmartSelectTile extends StatelessWidget {
       metrics.minHeight,
     );
 
-    final Widget subtitle = chipLabels == null
-        ? _monoSubtitle(theme)
-        : _multiSubtitle(context);
-
-    // Valeur annoncée : le texte mono, ou les puces jointes. `null` si vide —
-    // l'état vide N'EST donc PAS annoncé comme une valeur (AD-13 : l'état ne
-    // repose pas sur la seule couleur du placeholder).
-    final String? semanticValue = !hasValue
-        ? null
-        : (chipLabels != null ? chipLabels!.join(', ') : valueText);
+    final Widget subtitle = _subtitle(context, theme);
+    final String? semanticValue = _semanticValue();
 
     return Semantics(
       button: true,
@@ -1047,6 +1262,11 @@ class _ZSmartSelectTile extends StatelessWidget {
       // « requis » jusqu'au lecteur d'écran, exactement comme le fait
       // `ZDecoratedFieldTrigger` du cœur.
       isRequired: requiredIndicator,
+      // CR-SELECT-GAPS / AD-13 — le `helperText` est une information, pas une
+      // décoration : sous `excludeSemantics: true` il serait VU et jamais
+      // ENTENDU. `hint` est le slot que Flutter réserve à la description
+      // complémentaire d'un nœud actionnable. `null` ⇒ propriété absente.
+      hint: helperText,
       // L'action `tap` est portée par CE nœud → activable par lecteur d'écran
       // malgré `excludeSemantics` (qui n'écarte que les descendants).
       onTap: tappable ? onTap : null,
@@ -1089,6 +1309,81 @@ class _ZSmartSelectTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Sous-titre complet du tile (CR-SELECT-GAPS) : le contenu antérieur
+  /// (valeur mono ou puces multi), **encadré** des ornements `prefix`/`suffix`
+  /// et **suivi** de la ligne d'aide `helperText`.
+  ///
+  /// 🔴 **Hôte passif immobile** : sans ornement et sans aide, la méthode rend
+  /// EXACTEMENT le widget d'avant — aucune `Row`, aucune `Column`, aucun
+  /// `Padding` intercalé (AD-4 : ce qui est `null` est absent de l'arbre, pas
+  /// rendu en boîte vide).
+  Widget _subtitle(BuildContext context, ThemeData theme) {
+    Widget content =
+        chipLabels == null ? _monoSubtitle(theme) : _multiSubtitle(context);
+
+    if (prefix != null || suffix != null) {
+      // AD-13 : insets DIRECTIONNELS — en RTL le préfixe reste du côté d'où
+      // commence la lecture. `Flexible` : c'est le contenu qui cède, pas les
+      // ornements (le natif place les siens hors de la zone élastique du texte).
+      content = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (prefix != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                end: ZSelectTileReference.ornamentGap,
+              ),
+              child: prefix,
+            ),
+          Flexible(child: content),
+          if (suffix != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: ZSelectTileReference.ornamentGap,
+              ),
+              child: suffix,
+            ),
+        ],
+      );
+    }
+
+    if (helperText == null) return content;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        content,
+        // FR-26 : aucune couleur posée — la ligne hérite de la teinte de
+        // sous-titre du `ListTile` et de la typographie `bodySmall`, exactement
+        // le registre que Material donne au `helperText` d'un champ.
+        Text(
+          helperText!,
+          textAlign: TextAlign.start,
+          style: theme.textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
+  /// Valeur annoncée par l'unique nœud sémantique du tile.
+  ///
+  /// * Rien de sélectionné et **pas** de chargement ⇒ `null` : l'état vide n'est
+  ///   pas une valeur (invariant antérieur, conservé).
+  /// * Rien de sélectionné **en chargement** ⇒ le texte d'attente. 🔴 C'est un
+  ///   canal NON VISUEL du chargement, et il va plus loin que le natif : son
+  ///   `_SelectionTrigger` affiche « Chargement… » mais met `value: null`, donc
+  ///   n'annonce rien du tout.
+  /// * Une valeur ⇒ le texte mono (ou les puces jointes), **encadré** des
+  ///   ornements `.text` — sans quoi un « € » serait visible et jamais lu.
+  String? _semanticValue() {
+    if (!hasValue) return isLoading ? placeholder : null;
+    final String? base =
+        chipLabels != null ? chipLabels!.join(', ') : valueText;
+    if (base == null) return null;
+    if (prefixText == null && suffixText == null) return base;
+    return <String>[?prefixText, base, ?suffixText].join(' ');
   }
 
   /// Sous-titre **mono** — parité DODLP : le titre sélectionné, sinon le

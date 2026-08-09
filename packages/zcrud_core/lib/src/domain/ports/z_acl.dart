@@ -62,6 +62,37 @@ enum ZCrudAction {
   history,
 }
 
+/// Classification **lecture / écriture** d'une action CRUD (LOT 3).
+///
+/// origine: le mode **lecture seule** d'un formulaire filtrait ses actions sur
+/// l'ACL SEULE (`DynamicEdition._permittedFormActions`) — les actions
+/// d'**écriture** restaient donc offertes sur un formulaire en lecture. Il faut
+/// une règle explicite pour couper les unes SANS couper les autres : une
+/// consultation reste légitime en lecture seule.
+///
+/// Pur-Dart (couche `domain`) : aucune dépendance Flutter.
+extension ZCrudActionMutation on ZCrudAction {
+  /// `true` si l'action **modifie** la donnée (donc interdite en lecture seule).
+  ///
+  /// Seules [ZCrudAction.view] et [ZCrudAction.history] sont des actions de
+  /// **lecture**. Toutes les autres écrivent — y compris [ZCrudAction.copy]
+  /// (crée une entité), [ZCrudAction.validate] et [ZCrudAction.publish] (font
+  /// transiter un état persisté).
+  bool get mutatesData => switch (this) {
+        ZCrudAction.view || ZCrudAction.history => false,
+        ZCrudAction.create ||
+        ZCrudAction.update ||
+        ZCrudAction.delete ||
+        ZCrudAction.restore ||
+        ZCrudAction.copy ||
+        ZCrudAction.archive ||
+        ZCrudAction.publish ||
+        ZCrudAction.clear ||
+        ZCrudAction.validate =>
+          true,
+      };
+}
+
 /// Port d'autorisation **synchrone** fourni par l'application hôte.
 ///
 /// **Aucune règle métier** ne vit dans le cœur (AD-16) : l'implémentation

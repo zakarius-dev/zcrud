@@ -69,6 +69,7 @@ import 'z_field_label.dart';
 import 'z_large_field_card.dart';
 import 'z_read_only_field_card.dart';
 import 'z_read_only_value.dart';
+import 'z_value_emptiness.dart';
 import 'z_widget_registry.dart';
 
 /// Dispatcher de champ par type + hôte scellé sur la tranche `field.name`.
@@ -399,7 +400,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// (AD-2). Message uniforme issu du validateur mémoïsé.
   Widget _wrapError(Widget child, Object? value, bool revealed) {
     if (!revealed || _validator == null) return child;
-    final error = _validator!(_stringOf(value));
+    // LOT 2 : projection de VALIDATION (une collection/map VIDE ⇒ `''`), et
+    // non `_stringOf` (qui rendait `"[]"`, non vide ⇒ `required` acceptait un
+    // champ obligatoire NON rempli).
+    final error = _validator!(zValidationText(value));
     if (error == null) return child;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

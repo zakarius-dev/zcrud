@@ -29,6 +29,7 @@ import '../../domain/edition/z_field_spec.dart';
 import '../../domain/failures/z_failure.dart';
 import '../z_form_controller.dart';
 import 'z_cross_field_validator.dart';
+import 'z_value_emptiness.dart';
 
 /// Échec spécifique de **validation agrégée** (distinct d'un échec applicatif —
 /// AC1). Porte la table `name → message` des champs invalides.
@@ -265,11 +266,13 @@ class ZEditionSubmitController<T> {
       final validator =
           ZCrossFieldValidator.compileField(field, controller);
       if (validator == null) continue;
-      final error = validator(_stringOf(controller.valueOf(field.name)));
+      // LOT 2 : cf. `zValidationText` — une collection/map VIDE vaut `''`,
+      // donc `required` MORD sur une multi-selection non remplie.
+      final error =
+          validator(zValidationText(controller.valueOf(field.name)));
       if (error != null) errors[field.name] = error;
     }
     return errors;
   }
 
-  static String _stringOf(Object? value) => value == null ? '' : '$value';
 }

@@ -1076,6 +1076,11 @@ class _ZFlashcardRichText extends StatelessWidget {
         relationCrudRegistry: scope.relationCrudRegistry,
         filePicker: scope.filePicker,
         cloudStorage: scope.cloudStorage,
+        // v0.64.0 : même motif que `z_subfolder_selector_bar` — le port de
+        // résolution des références de fichiers doit survivre à la re-pose,
+        // sinon un champ fichier rendu ici perdrait ses valeurs persistées
+        // en silence.
+        appFileResolver: scope.appFileResolver,
         listRenderer: scope.listRenderer,
         reorderRenderer: scope.reorderRenderer,
         dropRegionRenderer: scope.dropRegionRenderer,

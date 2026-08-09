@@ -549,6 +549,12 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       relationCrudRegistry: scope.relationCrudRegistry,
       filePicker: scope.filePicker,
       cloudStorage: scope.cloudStorage,
+      // v0.64.0 : le port de RÉSOLUTION des références de fichiers. Sans cette
+      // re-pose, un champ fichier monté dans la feuille afficherait ses valeurs
+      // persistées comme VIDES — le défaut même que ce port ferme. Ajouté sur
+      // signalement de la garde de structure de `cr_iffd41_subfolder_sheet_test`,
+      // qui lit la liste RÉELLE des paramètres dans la source de `zcrud_core`.
+      appFileResolver: scope.appFileResolver,
       listRenderer: scope.listRenderer,
       reorderRenderer: scope.reorderRenderer,
       dropRegionRenderer: scope.dropRegionRenderer,

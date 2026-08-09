@@ -54,6 +54,7 @@ import 'z_derivation_engine.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
 import 'z_section_collapse_store.dart';
+import 'z_value_emptiness.dart';
 
 /// **Référence d'aération inter-champ** (CR-DODLP-DEFAULTS, 2026-08-09 —
 /// arbitrage propriétaire : « le défaut passe à ~12 dp pour tous les hôtes »).
@@ -694,13 +695,12 @@ class _DynamicEditionState extends State<DynamicEdition> {
 
   /// `true` si une valeur compte comme **vide** pour `showIfNull` : `null` ou
   /// collection/chaîne vide. `false`/`0` NE sont PAS vides (valeurs affichables).
-  static bool _isEmptyValue(Object? v) {
-    if (v == null) return true;
-    if (v is String) return v.isEmpty;
-    if (v is Iterable) return v.isEmpty;
-    if (v is Map) return v.isEmpty;
-    return false;
-  }
+  ///
+  /// LOT 2 : délégué à [zIsEmptyValue] — **règle UNIQUE** du dépôt, partagée
+  /// avec la projection de validation (`zValidationText`). Deux copies
+  /// divergentes de cette règle étaient précisément ce qui laissait `required`
+  /// accepter une collection vide.
+  static bool _isEmptyValue(Object? v) => zIsEmptyValue(v);
 
   /// En mode lecture, masque les champs vides dont `showIfNull == false`. Hors
   /// mode lecture : toujours affiché (AC11).
@@ -735,16 +735,25 @@ class _DynamicEditionState extends State<DynamicEdition> {
       widget.layout.isNotEmpty ||
       widget.sections.any((s) => s.collapsible);
 
-  /// Actions de formulaire **autorisées** (ACL), dans l'ordre déclaré. Évalué
+  /// Actions de formulaire **autorisées**, dans l'ordre déclaré. Évalué
   /// UNIQUEMENT dans la voie structurelle (jamais par frappe — SM-1). Défensif
   /// (AD-10) : une ACL app-supplied qui **lève** ⇒ action masquée (fail-closed),
   /// jamais de crash du formulaire ; liste vide ⇒ `const []`.
+  ///
+  /// LOT 3 — **la lecture seule VERROUILLE vraiment** : en mode
+  /// [DynamicEdition.readOnly], les actions d'**écriture**
+  /// (`ZCrudAction.mutatesData`) ne sont plus offertes du tout. Le filtre ACL
+  /// seul les laissait passer : un formulaire en lecture affichait « Supprimer »,
+  /// « Valider », « Archiver »… Les actions de **lecture** (`view`, `history`)
+  /// restent disponibles — la consultation n'est pas une écriture.
   List<ZFormAction> _permittedFormActions() {
     final actions = widget.formActions;
     if (actions.isEmpty) return const <ZFormAction>[];
     final acl = widget.acl;
+    final readOnly = widget.readOnly;
     final result = <ZFormAction>[];
     for (final a in actions) {
+      if (readOnly && a.requiredPermission.mutatesData) continue;
       if (_can(acl, a.requiredPermission)) result.add(a);
     }
     return result;
