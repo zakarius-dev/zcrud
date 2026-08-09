@@ -238,6 +238,16 @@ ligne de défense, et ce n'est plus un doublon.
   thème pour une propriété déjà portée (le motif de divergence CR-LEX-78).
 * Chrome : `gap` lit le jeton générique `gapM` existant plutôt qu'un jeton dédié ; le padding
   d'action reste atteignable par paramètre seul (micro-détail d'un widget, pas une décision app-wide).
-* La table type → statut demandée par votre § 7 (découvrabilité) et le stepper *data-driven inline*
-  restent **non traités** — ce lot a couvert quatre de vos cinq CR.
+* ~~La table type → statut demandée par votre § 7 (découvrabilité) et le stepper *data-driven inline*
+  restent **non traités**.~~
+  🔴 **Correction (2026-08-09, même jour)** — les deux affirmations étaient fausses :
+  * le **stepper *data-driven inline* était DÉJÀ livré** : `z_step_partition.dart` (344 lignes,
+    exporté) regroupe une liste **plate** de `ZFieldSpec` annotés `ZStepFieldConfig` en
+    `List<ZEditionStep>` par une fonction **pure et totale**, consommée telle quelle par
+    `ZStepperEdition`. C'est exactement votre G1. `EditionFieldType.stepper` reste `unsupported`
+    **délibérément** — un stepper est un regroupement single-writer de `visibleFields`, pas un
+    widget-feuille ; le router par le dispatcher casserait l'invariant. Rien à attendre de nous ;
+  * la **table type → statut** est livrée en **v0.60.1** (cf. `docs/handoff-v0.60.1.md`).
+
+  ⇒ **ce lot a couvert vos cinq CR**, et la cinquième était en partie déjà servie.
 * Dettes antérieures : cf. v0.59.0.
