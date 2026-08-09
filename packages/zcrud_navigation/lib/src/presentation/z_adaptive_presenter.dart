@@ -18,6 +18,8 @@ import 'package:flutter/material.dart';
 
 import '../domain/z_edition_presentation.dart';
 import 'z_form_presenter.dart';
+import 'z_implicit_dismiss_control.dart';
+import 'z_sheet_frame.dart';
 
 /// Fractions d'écran par défaut (dp) dérivées de `MediaQuery.sizeOf` quand
 /// `maxWidth`/`maxHeight` ne sont pas fournis — reproduit l'intention des apps
@@ -46,7 +48,7 @@ abstract final class ZAdaptivePresenterDefaults {
 /// | `page`   | `Navigator.push(MaterialPageRoute(fullscreenDialog: true))`  |
 /// | `sheet`  | `showModalBottomSheet(isScrollControlled: true, ...)`        |
 /// | `dialog` | `showDialog(→ Dialog + ConstrainedBox aux tailles max)`      |
-class ZAdaptivePresenter implements ZFormPresenter {
+class ZAdaptivePresenter implements ZFormPresenter, ZImplicitDismissControl {
   /// Construit le présentateur par défaut. `const` — aucun champ mutable.
   const ZAdaptivePresenter();
 
@@ -59,6 +61,32 @@ class ZAdaptivePresenter implements ZFormPresenter {
     double? maxHeight,
     bool useSafeArea = true,
     bool barrierDismissible = true,
+  }) =>
+      // Voie HISTORIQUE : délègue avec `allowImplicitDismiss: true`, qui rend
+      // l'arbre et les paramètres EXACTEMENT d'avant (`enableDrag` laissé à
+      // `null` ⇒ défaut SDK). Garde d'identité d'arbre : cf.
+      // `z_edition_chrome_identity_test.dart`.
+      presentWithDismissControl<T>(
+        context,
+        builder: builder,
+        mode: mode,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        useSafeArea: useSafeArea,
+        barrierDismissible: barrierDismissible,
+      );
+
+  @override
+  Future<T?> presentWithDismissControl<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    required ZEditionPresentation mode,
+    double? maxWidth,
+    double? maxHeight,
+    bool useSafeArea = true,
+    bool barrierDismissible = true,
+    bool allowImplicitDismiss = true,
+    ZSheetFrameSpec? sheetFrame,
   }) {
     // Switch EXHAUSTIF sur les 3 valeurs de l'enum ⇒ jamais de `throw` (AD-10).
     switch (mode) {
@@ -75,13 +103,41 @@ class ZAdaptivePresenter implements ZFormPresenter {
         final screen = MediaQuery.sizeOf(context);
         final effectiveMaxHeight =
             maxHeight ?? screen.height * ZAdaptivePresenterDefaults.sheetMaxHeightFraction;
+        // ── Feuille CONTRAINTE et ENCADRÉE (CR-IFFD-SHEET, 2026-08-09) ──────
+        //
+        // 🔴 Changement VISIBLE pour tout hôte passif, assumé : le défaut du
+        // socle est désormais une feuille plus étroite que l'écran, avec un
+        // cadre. Un hôte qui veut l'ancien rendu le dit explicitement :
+        // `sheetFrame: ZSheetFrameSpec(mode: ZSheetFrameMode.never)` (cadre) et
+        // `sheetFrame: ZSheetFrameSpec(widthRatio: 1, maxWidth: double.infinity)`
+        // (pleine largeur) — les deux réglages sont INDÉPENDANTS.
+        //
+        // `hasChrome: false` : ce presenter ne voit que le builder final ; la
+        // collapse de `unlessChrome` est faite en amont par `presentEdition`,
+        // seul endroit qui SAIT si un chrome a été déclaré.
+        final ZSheetFrameMetrics frame =
+            zSheetFrameMetricsOf(context, spec: sheetFrame, hasChrome: false);
+        // `maxWidth` explicite (paramètre de `present`) reste PRIORITAIRE : il
+        // était déjà la surcharge la plus haute avant la CR.
+        final double effectiveMaxWidth =
+            maxWidth ?? frame.effectiveMaxWidth(screen.width);
         return showModalBottomSheet<T>(
           context: context,
           isScrollControlled: true,
           useSafeArea: useSafeArea,
+          // 🔴 La fermeture par GLISSEMENT passe par `Navigator.pop` et
+          // COURT-CIRCUITE `PopScope` (donc `ZDiscardGuard`) — mesuré sur
+          // Flutter 3.44.4. Quand un garde d'abandon est armé, la voie est
+          // désactivée ; sinon `null` ⇒ défaut SDK, arbre INCHANGÉ.
+          // (`true` est le défaut du SDK ⇒ voie historique inchangée.)
+          enableDrag: allowImplicitDismiss,
+          // `null` quand le cadre est désactivé ⇒ AUCUNE `shape` imposée, donc
+          // la résolution native du SDK (`thème > défauts M3`) est retrouvée
+          // telle quelle (AD-4 : `null` ⇒ absent de l'arbre).
+          shape: frame.resolveShape(Theme.of(context).bottomSheetTheme.shape),
           constraints: BoxConstraints(
             maxHeight: effectiveMaxHeight,
-            maxWidth: maxWidth ?? double.infinity,
+            maxWidth: effectiveMaxWidth,
           ),
           builder: builder,
         );

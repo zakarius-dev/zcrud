@@ -212,6 +212,12 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
       // L-3 : clé sur la valeur COURANTE → reflète un changement EXTERNE
       // (un `FormField` ne relit `initialValue` qu'à l'`initState`).
       key: ValueKey<Object?>(current),
+      // CR-DODLP-SELECT-OVERFLOW (même piège que `z_select_field_widget`) :
+      // sans `isExpanded`, le bouton se dimensionne sur l'option la plus large
+      // et déborde. Les libellés de RELATION (raisons sociales, intitulés
+      // d'entités) sont typiquement longs — le champ est donc au moins aussi
+      // exposé que le `select`.
+      isExpanded: true,
       initialValue: current,
       // DP-12 (M5/M6/M1) : label enrichi (astérisque requis) + helper + leading.
       decoration: InputDecoration(

@@ -187,6 +187,13 @@ class ZSelectFieldWidget extends StatelessWidget {
       // reflète un changement EXTERNE/programmatique. Reste DANS la tranche du
       // champ (AD-2 : le rebuild est borné par `ZFieldListenableBuilder`).
       key: ValueKey<Object?>(current),
+      // CR-DODLP-SELECT-OVERFLOW : sans `isExpanded`, `DropdownButton` se
+      // dimensionne sur l'option la PLUS LARGE et déborde (`RenderFlex
+      // overflowed`) dès qu'un libellé long + les ornements de
+      // l'`InputDecoration` dépassent la largeur disponible. `true` contraint
+      // le bouton à la largeur du champ ; le libellé s'ellipse au lieu de
+      // déborder — c'est déjà le comportement attendu d'un champ de formulaire.
+      isExpanded: true,
       initialValue: current,
       // DP-12 : label enrichi + hint/helper + ornements leading/prefix/suffix.
       decoration: zFieldDecoration(context, field, bare: bare),

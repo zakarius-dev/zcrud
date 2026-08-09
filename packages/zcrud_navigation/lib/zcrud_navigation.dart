@@ -31,9 +31,15 @@
 /// * [presentEdition] : **helper de câblage** `largeur → breakpoint → politique →
 ///   mode → surface` (le maillon qu'aucune app ne réalise, AD-30).
 ///
-/// **Bindings manager (hors périmètre → EX-UI.11)** : les présentateurs GetX
-/// (`zcrud_get`) / go_router (`zcrud_riverpod`) implémenteront **ce même port**
-/// [ZFormPresenter], injectés via [ZFormPresenterScope].
+/// **Bindings manager (hors périmètre → EX-UI.11)** : les présentateurs de
+/// binding implémentent **ce même port** [ZFormPresenter], injectés via
+/// [ZFormPresenterScope]. État réel au 2026-08-09 (mesuré sur disque) :
+/// `ZGetFormPresenter` (`zcrud_get`) déclare `implements ZFormPresenter,
+/// ZImplicitDismissControl` — il porte donc aussi la capacité optionnelle de
+/// contrôle des fermetures implicites, et la feuille contrainte/encadrée. Aucun
+/// présentateur n'existe encore dans `zcrud_riverpod` ni `zcrud_provider`
+/// (`grep -rn "ZFormPresenter" packages/zcrud_riverpod packages/zcrud_provider`
+/// ⇒ **RC=1, aucune occurrence**).
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
@@ -43,5 +49,9 @@ export 'src/domain/z_form_weight.dart';
 export 'src/domain/z_presentation_policy.dart';
 export 'src/presentation/present_edition.dart';
 export 'src/presentation/z_adaptive_presenter.dart';
+export 'src/presentation/z_edition_chrome.dart';
+export 'src/presentation/z_edition_scaffold.dart';
 export 'src/presentation/z_form_presenter.dart';
 export 'src/presentation/z_form_presenter_scope.dart';
+export 'src/presentation/z_implicit_dismiss_control.dart';
+export 'src/presentation/z_sheet_frame.dart';

@@ -53,7 +53,18 @@ Widget wrapForTestWithRegistry(
 
 /// Étire la fenêtre de test pour maximiser le nombre de champs construits par le
 /// `ListView.builder` de `DynamicEdition`. Restaure automatiquement en teardown.
-void useTallSurface(WidgetTester tester, {double height = 6000}) {
+///
+/// 🔴 **2026-08-09 — défaut porté de 6000 à 7500.** `DynamicEdition.interFieldGap`
+/// est passé d'un défaut NUL à 12 dp (CR DODLP « défauts legacy », arbitrage du
+/// propriétaire), et l'écart s'applique désormais aussi à la voie PLATE. La
+/// hauteur cumulée des formulaires de démonstration croît en conséquence — le
+/// showcase (65 champs) gagne à lui seul ~768 dp. Or cette surface n'est PAS
+/// décorative : elle existe pour que le `ListView.builder` construise **tous**
+/// les champs, faute de quoi les suites cessent silencieusement de mesurer les
+/// derniers (un champ hors viewport n'est jamais monté — le test reste VERT en
+/// ayant cessé d'observer). Le nouveau plancher couvre le formulaire le plus
+/// long avec de la marge.
+void useTallSurface(WidgetTester tester, {double height = 7500}) {
   tester.view.physicalSize = Size(1200 * tester.view.devicePixelRatio,
       height * tester.view.devicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);

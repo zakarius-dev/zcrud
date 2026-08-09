@@ -326,6 +326,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// des valeurs par défaut sémantiques (aucune couleur).
   const ZcrudTheme({
     this.fieldBorderColor,
+    this.fieldFillColor,
+    this.fieldFocusedBorderColor,
     this.errorColor,
     this.labelColor,
     this.surfaceColor,
@@ -340,6 +342,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       vertical: 8,
     ),
     this.formPadding = const EdgeInsetsDirectional.all(12),
+    this.fieldGap,
     this.inputRadius = const Radius.circular(12),
     this.inputBorderWidth = 1,
     this.inputFocusedBorderWidth = 2,
@@ -485,6 +488,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.chatResponseLengthAccents,
     this.chatSelectedEmphasisWeight,
     this.chatSelectedEmphasisDecoration,
+    this.editionSheetFrameMode,
+    this.editionSheetWidthRatio,
+    this.editionSheetMaxWidth,
+    this.editionSheetBorderColor,
+    this.editionSheetBorderWidth,
+    this.editionChromeMinTouchTarget,
+    this.editionChromeHeaderPadding,
+    this.editionChromeActionBarPadding,
+    this.editionChromePageHeaderExpandedHeight,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -501,15 +513,89 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   }
 
   /// Couleur de bordure de champ (repli : `ColorScheme.outline`).
+  ///
+  /// **CR-DODLP-THEME-TOKENS** — consommée par [inputDecoration] pour `border`
+  /// et `enabledBorder` (`fieldBorderColor ?? ColorScheme.outline`). C'est déjà
+  /// le jeton de bordure de champ du paquet (consommé par `z_color_field`,
+  /// `z_tags_field`, `z_signature_field`, `z_sub_list_field`, `z_app_file_field`,
+  /// `z_dynamic_item_field`, et hors-paquet par `zcrud_markdown`/`zcrud_geo`) :
+  /// le lire ici **aligne** `inputDecoration` sur le reste du paquet.
+  ///
+  /// 🔴 Hôte **passif inchangé au pixel** : [ZcrudTheme.fallback] pose ce jeton
+  /// à `ColorScheme.outline`, exactement la valeur codée en dur auparavant.
+  ///
+  /// N'est **pas** appliquée à `focusedBorder` ni à `errorBorder` : ces deux
+  /// bordures sont des **canaux d'état** (focus, erreur), pas un choix de style.
+  /// Les teindre de la couleur de repos supprimerait la distinction
+  /// repos/focus/erreur — un canal visuel payé pour une couleur (AD-13 : la
+  /// couleur ne doit jamais être le seul canal, a fortiori elle ne doit pas en
+  /// détruire un). Le focus a son propre jeton, [fieldFocusedBorderColor].
   final Color? fieldBorderColor;
+
+  /// **Remplissage du CHAMP** (`InputDecoration.fillColor`) —
+  /// **CR-DODLP-THEME-TOKENS**. `null` (défaut, y compris au repli
+  /// [ZcrudTheme.fallback]) ⇒ `ColorScheme.surfaceContainerHighest`, soit le
+  /// comportement **strictement** antérieur.
+  ///
+  /// 🔴 **Pourquoi un jeton DÉDIÉ et non [surfaceColor]** (la CR le proposait) —
+  /// deux raisons MESURÉES :
+  /// 1. **Ce ne serait pas une rétro-compat.** [ZcrudTheme.fallback] pose
+  ///    `surfaceColor: ColorScheme.surface`, donc **non-null** sur le chemin de
+  ///    résolution par défaut ([ZcrudTheme.of] → scope → extension → repli).
+  ///    Écrire `surfaceColor ?? surfaceContainerHighest` ferait basculer **tout
+  ///    hôte passif** de `surfaceContainerHighest` (mesuré `#E6E0E9` en
+  ///    `ThemeData.light()`) à `surface` (`#FEF7FF`) : un changement visuel
+  ///    silencieux, pas un repli.
+  /// 2. **Confusion sémantique.** [surfaceColor] est documenté « couleur de
+  ///    surface » et consommé ailleurs comme fond de BANDE (bandeau composer du
+  ///    chat). Fond de section et fond de champ sont deux rôles distincts ;
+  ///    les fusionner rendrait l'un inatteignable sans déplacer l'autre.
+  ///
+  /// C'est donc ce jeton — nullable, **absent du repli** — qui rend le fond de
+  /// champ atteignable par thème (fond blanc DODLP, etc.) sans toucher au
+  /// `ColorScheme` global de l'app.
+  final Color? fieldFillColor;
+
+  /// Couleur de bordure au **focus** (`InputDecoration.focusedBorder`) —
+  /// **CR-DODLP-THEME-TOKENS**. `null` (défaut, **absent du repli**) ⇒
+  /// `ColorScheme.primary` : comportement strictement antérieur.
+  ///
+  /// Séparée de [fieldBorderColor] pour que le canal d'état « focus » reste
+  /// pilotable **indépendamment** de la bordure de repos (AD-13).
+  final Color? fieldFocusedBorderColor;
 
   /// Couleur d'erreur (repli : `ColorScheme.error`).
   final Color? errorColor;
 
   /// Couleur de libellé (repli : `TextTheme.bodyMedium.color`).
+  ///
+  /// 🔴 **DÉLIBÉRÉMENT NON consommée par [inputDecoration]** (CR-DODLP-THEME-TOKENS).
+  /// La couleur du label d'un champ passe par [labelTextStyle] (`color` non
+  /// null), jamais par ce jeton. Deux mesures le justifient :
+  /// 1. **Le canal de focus serait détruit.** [inputDecoration] pose
+  ///    `floatingLabelStyle`. Material résout le style du label flottant par
+  ///    `defaut_état.merge(floatingLabelStyle ?? labelStyle)` : une couleur
+  ///    non-null y **écrase** la couleur d'état. Mesuré : sans couleur, le
+  ///    label passe de `onSurfaceVariant` au repos à `primary` au focus ;
+  ///    avec une couleur imposée, il reste à la couleur imposée **au focus
+  ///    aussi** — la distinction repos/focus disparaît (même classe de défaut
+  ///    que `TabBar.labelStyle` coloré, cf. l'encadré CR-IFFD-63 plus haut).
+  /// 2. **Même en ne teignant que le label au repos** (`labelStyle` seul,
+  ///    forme qui préserve bien le focus — mesuré : repos = couleur imposée,
+  ///    focus = `primary`), le rendu de **tout hôte passif** changerait :
+  ///    [ZcrudTheme.fallback] pose ce jeton à `TextTheme.bodyMedium.color`
+  ///    (mesuré `#1D1B20`) alors que le label au repos rend aujourd'hui
+  ///    `onSurfaceVariant` (`#49454F`). Le câbler serait un changement visuel
+  ///    silencieux, pas un repli.
+  ///
+  /// Le jeton reste consommé par les familles qui rendent leur label
+  /// **elles-mêmes** (hors `InputDecoration`), où aucun canal d'état n'existe.
   final Color? labelColor;
 
   /// Couleur de surface (repli : `ColorScheme.surface`).
+  ///
+  /// Rôle : fond de **section/bande**. Ce n'est **pas** le fond d'un champ —
+  /// celui-ci a son jeton dédié [fieldFillColor] (cf. son dartdoc).
   final Color? surfaceColor;
 
   /// Échelle d'espacement — petit.
@@ -541,9 +627,33 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `DynamicEdition` prime toujours sur ce repli.
   final EdgeInsetsDirectional formPadding;
 
+  /// **Aération INTER-CHAMPS** (CR-DODLP-DEFAULTS, volet 2) : base d'espacement
+  /// consommée par `DynamicEdition` quand aucun `interFieldGap` n'est passé au
+  /// widget. `null` (défaut, **absent de [ZcrudTheme.fallback]**) ⇒ la
+  /// référence `zFieldGapReference` (**12 dp**, arbitrage propriétaire du
+  /// 2026-08-09).
+  ///
+  /// Chaîne de résolution : `DynamicEdition.interFieldGap` **>** [fieldGap]
+  /// **>** `zFieldGapReference`. Ce jeton rend l'aération pilotable **par
+  /// thème** ; jusqu'ici elle n'était atteignable que par paramètre, ce qui
+  /// obligeait chaque hôte à la reposer sur **chaque** `DynamicEdition`.
+  ///
+  /// 🔴 **CR-DODLP-AERATION (2026-08-09)** : l'espace est désormais **UNIFORME**
+  /// — appliqué entre **deux champs consécutifs** quel que soit leur type, sur
+  /// les DEUX voies de rendu (plate et groupée). La table type-dépendante
+  /// `zFieldGapAfter` n'est plus consultée par `DynamicEdition` (elle reste
+  /// publique et inchangée pour un hôte qui la voudrait). Sans effet en
+  /// **grille** (`layout` non vide) : l'espacement y reste `gridGutter` /
+  /// `gridRunGutter`, rien ne s'y additionne. Poser `0` ici ramène l'absence
+  /// totale d'aération.
+  final double? fieldGap;
+
   // ── Tokens de décoration d'`InputDecoration` (parité DODLP M2) ────────────
-  // Aucune couleur : les couleurs de bordure/remplissage sont TOUJOURS dérivées
-  // du `ColorScheme` courant par [inputDecoration] (FR-26).
+  // Aucune couleur codée en dur (FR-26) : les couleurs de bordure/remplissage
+  // sont dérivées du `ColorScheme` courant par [inputDecoration], sauf si un
+  // jeton NULLABLE les vise ([fieldBorderColor], [fieldFillColor],
+  // [fieldFocusedBorderColor]) — auquel cas la valeur vient du THÈME de l'hôte,
+  // jamais d'un littéral du paquet.
 
   /// Rayon de bordure des `InputDecoration` (défaut `12` — parité DODLP).
   final Radius inputRadius;
@@ -1483,10 +1593,135 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// demi-soulignement) : `lerp` **discret** à `t = 0.5`, comme les booléens.
   final TextDecoration? chatSelectedEmphasisDecoration;
 
+  // ── Feuille d'édition (CR-IFFD-SHEET, 2026-08-09) ──────────────────────────
+  //
+  // Maillon **jeton** de la chaîne `paramètre > jeton > référence` de la
+  // bottom-sheet d'édition (`ZSheetFrameSpec` / `ZSheetFrameReference`,
+  // `zcrud_navigation`). Les cinq jetons sont **absents de
+  // [ZcrudTheme.fallback]** : un hôte passif ne bouge donc pas d'un pixel, et
+  // `null` y signifie toujours « le consommateur applique SA référence ».
+
+  /// **Quand** encadrer la bottom-sheet d'édition, pour toute l'app.
+  ///
+  /// Valeurs reconnues : `'always'` (référence), `'never'`, `'unlessChrome'`.
+  /// `null` **ou valeur inconnue** ⇒ le consommateur applique sa référence
+  /// (AD-10 : **jamais** d'exception — un thème écrit à la main, ou sérialisé
+  /// depuis une version plus récente du socle, ne doit pas faire planter le
+  /// rendu).
+  ///
+  /// 🔴 **`String` et NON l'énumération.** `ZSheetFrameMode` vit dans
+  /// `zcrud_navigation` et **AD-1 interdit à `zcrud_core` de l'importer** (le
+  /// cœur ne dépend d'aucun satellite). C'est le patron déjà établi par
+  /// [chatCapabilityAccents] / [chatResponseLengthAccents], indexés par le
+  /// **nom** du palier kernel pour exactement la même raison. Côté
+  /// `zcrud_navigation`, la traduction est
+  /// `ZSheetFrameMode.values.firstWhereOrNull((m) => m.name == jeton)`.
+  ///
+  /// `lerp` **DISCRET** à `t = 0.5` (patron [subfolderTriggerVariant],
+  /// [dailyTasksMonthBreakpoint]) : il n'existe pas de demi-cadre. Interpoler
+  /// ferait clignoter la bordure pendant une transition de thème.
+  final String? editionSheetFrameMode;
+
+  /// Fraction de la largeur d'écran allouée à la feuille d'édition.
+  /// `null` ⇒ référence (`0,9` — la valeur mesurée dans IFFD).
+  ///
+  /// `lerp` par [_lerpNullableFloor] et **non** [_lerpNullableDouble] : pour
+  /// cette DIMENSION, un côté `null` signifie « la référence », jamais « zéro ».
+  /// `_lerpNullableDouble(null, 0.9, 0)` rendrait `0`, c'est-à-dire une feuille
+  /// de **largeur nulle** le temps de l'animation (même raison que [fieldGap]).
+  final double? editionSheetWidthRatio;
+
+  /// Plafond **absolu** de largeur (dp) de la feuille d'édition.
+  /// `null` ⇒ référence (`640` — le défaut de Flutter lui-même,
+  /// `_BottomSheetDefaultsM3.constraints`).
+  ///
+  /// `lerp` par [_lerpNullableFloor], même raison de plancher que
+  /// [editionSheetWidthRatio] : un plafond de `0` n'est pas une absence, c'est
+  /// une feuille invisible.
+  final double? editionSheetMaxWidth;
+
+  /// Teinte du cadre de la feuille d'édition.
+  /// `null` ⇒ **rôle** `ColorScheme.outlineVariant` côté consommateur (celui de
+  /// `Card.outlined`, donc le « gris » exact d'IFFD, en clair **comme** en
+  /// sombre) — jamais un littéral (FR-26).
+  ///
+  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait un cadre
+  /// **par-dessus** le rôle de repli du consommateur pendant la transition
+  /// (précédent exact : [fieldFillColor], [fieldFocusedBorderColor]).
+  final Color? editionSheetBorderColor;
+
+  /// Épaisseur du cadre de la feuille d'édition (dp). `null` ⇒ référence (`1`).
+  /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est un cadre **absent**,
+  /// pas une absence de réglage.
+  final double? editionSheetBorderWidth;
+
+  // ── Chrome d'édition (CR chrome-presentation-aware, 2026-08-06) ────────────
+  //
+  // Maillon **jeton** de `zEditionChromeMetricsOf` (`zcrud_navigation`), dont
+  // la référence auditée est `ZEditionChromeReference`. Mêmes règles : nullable,
+  // **absents de [ZcrudTheme.fallback]**, `lerp` motivé.
+  //
+  // 🔴 Ne sont PAS tokenisés, délibérément :
+  // * l'**écart entre deux actions** — il lit déjà [gapM], jeton générique
+  //   existant. Un `editionChromeGap` serait un SECOND canal pour la même
+  //   propriété, c'est-à-dire la « vue parallèle » que ce dépôt s'interdit ;
+  // * le **dégagement interne d'une action** (`actionPadding`) — micro-détail
+  //   d'un seul widget, pas une décision de design prise à l'échelle d'une app ;
+  //   il reste surchargeable par paramètre (`ZEditionChromeMetrics`) ;
+  // * les **dimensions de la poignée M3** et les **opacités d'état désactivé** —
+  //   ce sont des constantes M3, pas des réglages ; elles ne figurent même pas
+  //   dans le porte-valeurs résolu `ZEditionChromeMetrics`.
+
+  /// Cible tactile minimale (dp) du chrome d'édition — AD-13.
+  /// `null` ⇒ référence (`48`).
+  ///
+  /// 🔴 `lerp` par [_lerpNullableFloor], **jamais** [_lerpNullableDouble] :
+  /// exactement la leçon de [studySessionMinTarget]. Pour une CONTRAINTE de
+  /// plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
+  /// fenêtre (courte mais réelle) pendant laquelle les cibles du chrome
+  /// n'ont plus de minimum accessible au milieu d'une transition de thème.
+  final double? editionChromeMinTouchTarget;
+
+  /// Gouttière de l'en-tête du chrome d'édition.
+  /// `null` ⇒ référence (`EdgeInsetsDirectional.fromSTEB(16, 8, 8, 8)`).
+  ///
+  /// `lerp` par [_lerpNullablePadding] : marge CONTINUE et **directionnelle**
+  /// (AD-13 — l'interpolation préserve la nature `EdgeInsetsDirectional`, donc
+  /// le RTL) ; `null` des deux côtés reste `null`, la référence du consommateur
+  /// n'est jamais matérialisée.
+  final EdgeInsetsDirectional? editionChromeHeaderPadding;
+
+  /// Gouttière de la barre d'actions en pied du chrome (`dialog` / `sheet`).
+  /// `null` ⇒ référence (`EdgeInsetsDirectional.fromSTEB(8, 8, 8, 8)`).
+  /// `lerp` par [_lerpNullablePadding] — même raison que
+  /// [editionChromeHeaderPadding].
+  final EdgeInsetsDirectional? editionChromeActionBarPadding;
+
+  /// Hauteur **étendue** de l'en-tête repliable du mode `page` (dp).
+  /// `null` ⇒ référence (`112`).
+  ///
+  /// `lerp` par [_lerpNullableFloor] : une hauteur d'en-tête `0` n'est pas une
+  /// absence de réglage, c'est un en-tête **replié** — un rendu qu'aucun des
+  /// deux thèmes ne décrit et que personne n'a choisi.
+  final double? editionChromePageHeaderExpandedHeight;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
   /// dérivé de la surface). AUCUNE couleur codée en dur (FR-26).
+  ///
+  /// **CR-DODLP-THEME-TOKENS** — trois de ces couleurs sont désormais
+  /// **surchargeables par thème**, chaîne `jeton ?? rôle du ColorScheme` :
+  /// * `border`/`enabledBorder` ← [fieldBorderColor] (repli `outline`) ;
+  /// * `fillColor` ← [fieldFillColor] (repli `surfaceContainerHighest`) ;
+  /// * `focusedBorder` ← [fieldFocusedBorderColor] (repli `primary`).
+  ///
+  /// `errorBorder`/`focusedErrorBorder` restent sur `ColorScheme.error` : la
+  /// couleur d'erreur est un rôle sémantique, pas un choix de style.
+  /// La couleur du LABEL n'est **pas** pilotée par [labelColor] mais par
+  /// [labelTextStyle] — voir le dartdoc de [labelColor] pour les deux mesures
+  /// qui l'imposent (canal de focus, et rendu de l'hôte passif).
   ///
   /// En mode [bare] (usage interne à la Card `large`, AC4) : bordures `none`,
   /// `isDense`, padding zéro, non rempli, **sans** label/floating-label (le label
@@ -1546,6 +1781,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       );
     }
     final radius = BorderRadius.all(inputRadius);
+    final restBorderColor = fieldBorderColor ?? scheme.outline;
+    final focusBorderColor = fieldFocusedBorderColor ?? scheme.primary;
     OutlineInputBorder borderOf(Color color, double width) =>
         OutlineInputBorder(
           borderRadius: radius,
@@ -1568,16 +1805,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         fontWeight: floatingLabelWeight,
       ),
       filled: inputFilled,
-      fillColor: scheme.surfaceContainerHighest,
+      // CR-DODLP-THEME-TOKENS : jeton DÉDIÉ, absent du repli ⇒ hôte passif
+      // strictement inchangé (`surfaceContainerHighest`). Voir [fieldFillColor]
+      // pour les deux raisons mesurées de ne PAS réutiliser [surfaceColor].
+      fillColor: fieldFillColor ?? scheme.surfaceContainerHighest,
       contentPadding: inputContentPadding,
       prefix: prefix,
       suffix: suffix,
       suffixText: suffixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
-      border: borderOf(scheme.outline, inputBorderWidth),
-      enabledBorder: borderOf(scheme.outline, inputBorderWidth),
-      focusedBorder: borderOf(scheme.primary, inputFocusedBorderWidth),
+      // CR-DODLP-THEME-TOKENS : bordure de REPOS pilotée par le jeton
+      // (`fallback` la pose à `outline` ⇒ hôte passif inchangé au pixel).
+      // `focusedBorder`/`errorBorder` gardent leurs rôles d'ÉTAT : le jeton de
+      // repos ne les teint pas (sinon repos/focus/erreur deviendraient
+      // indiscernables) ; le focus a son propre jeton, lui aussi absent du repli.
+      border: borderOf(restBorderColor, inputBorderWidth),
+      enabledBorder: borderOf(restBorderColor, inputBorderWidth),
+      focusedBorder: borderOf(focusBorderColor, inputFocusedBorderWidth),
       errorBorder: borderOf(scheme.error, inputBorderWidth),
       focusedErrorBorder: borderOf(scheme.error, inputFocusedBorderWidth),
     );
@@ -1596,6 +1841,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   @override
   ZcrudTheme copyWith({
     Color? fieldBorderColor,
+    Color? fieldFillColor,
+    Color? fieldFocusedBorderColor,
     Color? errorColor,
     Color? labelColor,
     Color? surfaceColor,
@@ -1607,6 +1854,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Radius? badgeRadius,
     EdgeInsetsDirectional? fieldPadding,
     EdgeInsetsDirectional? formPadding,
+    double? fieldGap,
     Radius? inputRadius,
     double? inputBorderWidth,
     double? inputFocusedBorderWidth,
@@ -1743,8 +1991,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Map<String, Color>? chatResponseLengthAccents,
     FontWeight? chatSelectedEmphasisWeight,
     TextDecoration? chatSelectedEmphasisDecoration,
+    String? editionSheetFrameMode,
+    double? editionSheetWidthRatio,
+    double? editionSheetMaxWidth,
+    Color? editionSheetBorderColor,
+    double? editionSheetBorderWidth,
+    double? editionChromeMinTouchTarget,
+    EdgeInsetsDirectional? editionChromeHeaderPadding,
+    EdgeInsetsDirectional? editionChromeActionBarPadding,
+    double? editionChromePageHeaderExpandedHeight,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
+    fieldFillColor: fieldFillColor ?? this.fieldFillColor,
+    fieldFocusedBorderColor:
+        fieldFocusedBorderColor ?? this.fieldFocusedBorderColor,
     errorColor: errorColor ?? this.errorColor,
     labelColor: labelColor ?? this.labelColor,
     surfaceColor: surfaceColor ?? this.surfaceColor,
@@ -1756,6 +2016,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     badgeRadius: badgeRadius ?? this.badgeRadius,
     fieldPadding: fieldPadding ?? this.fieldPadding,
     formPadding: formPadding ?? this.formPadding,
+    fieldGap: fieldGap ?? this.fieldGap,
     inputRadius: inputRadius ?? this.inputRadius,
     inputBorderWidth: inputBorderWidth ?? this.inputBorderWidth,
     inputFocusedBorderWidth:
@@ -1955,6 +2216,23 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         chatSelectedEmphasisWeight ?? this.chatSelectedEmphasisWeight,
     chatSelectedEmphasisDecoration:
         chatSelectedEmphasisDecoration ?? this.chatSelectedEmphasisDecoration,
+    editionSheetFrameMode: editionSheetFrameMode ?? this.editionSheetFrameMode,
+    editionSheetWidthRatio:
+        editionSheetWidthRatio ?? this.editionSheetWidthRatio,
+    editionSheetMaxWidth: editionSheetMaxWidth ?? this.editionSheetMaxWidth,
+    editionSheetBorderColor:
+        editionSheetBorderColor ?? this.editionSheetBorderColor,
+    editionSheetBorderWidth:
+        editionSheetBorderWidth ?? this.editionSheetBorderWidth,
+    editionChromeMinTouchTarget:
+        editionChromeMinTouchTarget ?? this.editionChromeMinTouchTarget,
+    editionChromeHeaderPadding:
+        editionChromeHeaderPadding ?? this.editionChromeHeaderPadding,
+    editionChromeActionBarPadding:
+        editionChromeActionBarPadding ?? this.editionChromeActionBarPadding,
+    editionChromePageHeaderExpandedHeight:
+        editionChromePageHeaderExpandedHeight ??
+        this.editionChromePageHeaderExpandedHeight,
   );
 
   @override
@@ -1962,6 +2240,20 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     if (other is! ZcrudTheme) return this;
     return ZcrudTheme(
       fieldBorderColor: Color.lerp(fieldBorderColor, other.fieldBorderColor, t),
+      // 🔴 `_lerpNullableColor` et NON `Color.lerp` : ces deux jetons sont
+      // absents de [ZcrudTheme.fallback], donc `null` signifie « le
+      // consommateur applique SON rôle de repli » (`surfaceContainerHighest`,
+      // `primary`) — pas « transparent ». Or `Color.lerp(null, c, t)` rend `c`
+      // dont l'alpha est mis à l'échelle de `t` : à `t = 0` il matérialiserait
+      // une couleur FANTÔME **transparente** par-dessus le repli, faisant
+      // clignoter le fond/la bordure de tous les champs pendant une transition
+      // de thème. Même famille de raisons que `_lerpNullableFloor`/`Duration`.
+      fieldFillColor: _lerpNullableColor(fieldFillColor, other.fieldFillColor, t),
+      fieldFocusedBorderColor: _lerpNullableColor(
+        fieldFocusedBorderColor,
+        other.fieldFocusedBorderColor,
+        t,
+      ),
       errorColor: Color.lerp(errorColor, other.errorColor, t),
       labelColor: Color.lerp(labelColor, other.labelColor, t),
       surfaceColor: Color.lerp(surfaceColor, other.surfaceColor, t),
@@ -1990,6 +2282,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       formPadding:
           EdgeInsetsDirectional.lerp(formPadding, other.formPadding, t) ??
           formPadding,
+      // `_lerpNullableFloor` : pour une DIMENSION, un côté `null` signifie
+      // « repli du consommateur » (ici `0`) et non « zéro interpolable ».
+      // `_lerpNullableDouble(null, 12, 0)` rendrait `0` — indiscernable de
+      // l'absence — puis grandirait ; le plancher évite ce clignotement.
+      fieldGap: _lerpNullableFloor(fieldGap, other.fieldGap, t),
       inputRadius:
           Radius.lerp(inputRadius, other.inputRadius, t) ?? inputRadius,
       inputBorderWidth:
@@ -2694,6 +2991,64 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       chatSelectedEmphasisDecoration: t < 0.5
           ? chatSelectedEmphasisDecoration
           : other.chatSelectedEmphasisDecoration,
+      // ── Feuille d'édition (CR-IFFD-SHEET) ────────────────────────────────
+      // MODE : valeur DISCRÈTE (un nom de palier), donc bascule à mi-course —
+      // il n'existe pas de demi-cadre, et interpoler une chaîne n'a aucun sens.
+      // Même règle que `subfolderTriggerVariant`.
+      editionSheetFrameMode: t < 0.5
+          ? editionSheetFrameMode
+          : other.editionSheetFrameMode,
+      // DIMENSIONS : `lerp` de PLANCHER. Un côté `null` signifie « la référence
+      // du consommateur », jamais `0` — un ratio, un plafond ou une épaisseur
+      // nuls rendraient la feuille invisible le temps de la transition.
+      editionSheetWidthRatio: _lerpNullableFloor(
+        editionSheetWidthRatio,
+        other.editionSheetWidthRatio,
+        t,
+      ),
+      editionSheetMaxWidth: _lerpNullableFloor(
+        editionSheetMaxWidth,
+        other.editionSheetMaxWidth,
+        t,
+      ),
+      // COULEUR NULLABLE absente du repli : `_lerpNullableColor`, jamais
+      // `Color.lerp` (qui matérialiserait un cadre fantôme par-dessus le rôle
+      // `outlineVariant` du consommateur).
+      editionSheetBorderColor: _lerpNullableColor(
+        editionSheetBorderColor,
+        other.editionSheetBorderColor,
+        t,
+      ),
+      editionSheetBorderWidth: _lerpNullableFloor(
+        editionSheetBorderWidth,
+        other.editionSheetBorderWidth,
+        t,
+      ),
+      // ── Chrome d'édition ────────────────────────────────────────────────
+      // PLANCHER d'accessibilité : `_lerpNullableFloor` obligatoire (AD-13) —
+      // même leçon que `studySessionMinTarget`.
+      editionChromeMinTouchTarget: _lerpNullableFloor(
+        editionChromeMinTouchTarget,
+        other.editionChromeMinTouchTarget,
+        t,
+      ),
+      // Marges CONTINUES et directionnelles (AD-13) ; null-null ⇒ null.
+      editionChromeHeaderPadding: _lerpNullablePadding(
+        editionChromeHeaderPadding,
+        other.editionChromeHeaderPadding,
+        t,
+      ),
+      editionChromeActionBarPadding: _lerpNullablePadding(
+        editionChromeActionBarPadding,
+        other.editionChromeActionBarPadding,
+        t,
+      ),
+      // Hauteur d'en-tête : `0` serait un en-tête REPLIÉ, pas une absence.
+      editionChromePageHeaderExpandedHeight: _lerpNullableFloor(
+        editionChromePageHeaderExpandedHeight,
+        other.editionChromePageHeaderExpandedHeight,
+        t,
+      ),
     );
   }
 }
@@ -2806,6 +3161,20 @@ AlignmentGeometry? _lerpNullableAlignment(
 /// Règle retenue : un côté `null` signifie « le consommateur applique SON
 /// défaut », valeur que le thème **ignore**. Aucune interpolation n'est donc
 /// possible ; on rend l'autre côté, qui est la seule valeur réellement connue.
+/// `lerp` d'une couleur dont `null` **n'est pas** « transparent » mais « repli
+/// du consommateur » (jeton absent de [ZcrudTheme.fallback]).
+///
+/// 🔴 Différence VOLONTAIRE avec `Color.lerp`, même famille de raisons que
+/// [_lerpNullableFloor]/[_lerpNullableDuration] : `Color.lerp(null, b, t)` rend
+/// `b` avec l'alpha mis à l'échelle de `t` — à `t = 0` une couleur totalement
+/// TRANSPARENTE, c'est-à-dire une couleur fantôme substituée au rôle de repli.
+/// Ici un côté `null` rend simplement l'autre côté, seule valeur connue.
+Color? _lerpNullableColor(Color? a, Color? b, double t) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return Color.lerp(a, b, t);
+}
+
 Duration? _lerpNullableDuration(Duration? a, Duration? b, double t) {
   if (a == null) return b;
   if (b == null) return a;

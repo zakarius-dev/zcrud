@@ -55,14 +55,58 @@ import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
 import 'z_section_collapse_store.dart';
 
+/// **Référence d'aération inter-champ** (CR-DODLP-DEFAULTS, 2026-08-09 —
+/// arbitrage propriétaire : « le défaut passe à ~12 dp pour tous les hôtes »).
+///
+/// C'est une **MÉTRIQUE**, pas une couleur : FR-26 ne l'interdit pas, mais la
+/// discipline « valeur de référence centralisée » s'applique — elle vit ici,
+/// nommée et datée, et **jamais** en littéral éparpillé dans les widgets.
+///
+/// Elle n'est **pas** dérivable de l'échelle d'espacement de `ZcrudTheme`
+/// (`gapS = 4`, `gapM = 8`, `gapL = 16`) : `12` est un pas distinct, celui que
+/// portent déjà `ZcrudTheme.formPadding` (`all(12)`) et `ZcrudTheme.inputRadius`
+/// (`12`) — mêmes références DODLP. Aucune substitution n'a été faite.
+///
+/// Priorité de résolution dans [DynamicEdition] :
+/// `interFieldGap` (paramètre) **>** `ZcrudTheme.fieldGap` (jeton) **>** cette
+/// référence.
+///
+/// 🔴 **CR-DODLP-AERATION (2026-08-09)** — cette référence est désormais
+/// appliquée **UNIFORMÉMENT entre deux champs consécutifs**, sur les DEUX voies
+/// de rendu (plate ET groupée), et non plus seulement après les types « blocs »
+/// de la voie groupée. Mesure à la SOURCE DODLP
+/// (`dodlp-otr/lib/modules/data_crud/presentation/views/edition_screen.dart`
+/// l.4192-4210 + `models.dart` l.722) : la seule métrique inter-champ réelle de
+/// DODLP est **12 dp**, appliquée après les types de SAISIE
+/// (`text`/`float`/`number`/`timestamp`/`time`/`dateTime`/`phoneNumber`) — les
+/// types exclus sont des composites qui portent leur propre marge. `12` uniforme
+/// est donc le port fidèle de cette intention, et **une seule** métrique suffit :
+/// la chaîne de résolution reste à un nombre.
+const double zFieldGapReference = 12;
+
 /// MIN-2 (parité DODLP `withSpaceer`) — **espacement inter-champ type-dépendant**.
 ///
 /// DODLP insère un `SizedBox` (≈ 12 dp) APRÈS certains types de champ « blocs »
 /// (multi-ligne, sous-liste, fichier, signature…) pour aérer la densité, et rien
 /// après les champs compacts. Cette fonction **pure** projette cette règle : elle
-/// retourne [base] pour les types « blocs », et `0` sinon. `base` (défaut `0`) ⇒
-/// **aucun** espacement (rétro-compat pixel stricte) ; l'app/le formulaire l'active
-/// en passant `DynamicEdition.interFieldGap > 0`.
+/// retourne [base] pour les types « blocs », et `0` sinon.
+///
+/// 🔴 **CR-DODLP-AERATION (2026-08-09) — [DynamicEdition] NE L'APPELLE PLUS.**
+/// Le contrat de cette fonction est **inchangé** (aucune réécriture : mêmes
+/// entrées, mêmes sorties — ses gardes restent vertes) ; elle demeure publique et
+/// utilisable par un hôte qui veut reproduire l'ancienne table. Mais la politique
+/// d'aération du formulaire est passée à un **écart uniforme** entre deux champs
+/// consécutifs, parce que la mesure à la source DODLP montre que sa table réelle
+/// vise les types de SAISIE (compacts), pas les blocs — les deux ensembles étant
+/// quasi disjoints, réutiliser cette table aurait aéré l'inverse de DODLP.
+/// Superposer un supplément à l'écart uniforme aurait produit **24 dp** après un
+/// `multiline` — une valeur qui n'existe nulle part chez DODLP.
+///
+/// ⚠️ **Table effective avec `base: 12`** — l'espace n'est PAS uniforme :
+/// | Types | Espace après |
+/// |---|---|
+/// | `multiline`, `subItems`, `dynamicItem`, `signature`, `file`, `image`, `document`, `markdown` | `base` (12) |
+/// | tous les autres (`text`, `number`, `boolean`, `select`, `date`…) | `0` |
 double zFieldGapAfter(EditionFieldType type, {double base = 0}) {
   if (base <= 0) return 0;
   switch (type) {
@@ -191,7 +235,7 @@ class DynamicEdition extends StatefulWidget {
     this.collectionId,
     this.collapseStore,
     this.formId,
-    this.interFieldGap = 0,
+    this.interFieldGap,
     this.onStructuralBuild,
     super.key,
   });
@@ -291,12 +335,36 @@ class DynamicEdition extends StatefulWidget {
   /// globale). Sert à distinguer l'état de repli de plusieurs formulaires.
   final String? formId;
 
-  /// **Espacement inter-champ** (MIN-2, parité DODLP `withSpaceer`). `0` (défaut)
-  /// ⇒ **aucun** espace additionnel (rétro-compat pixel stricte). `> 0` ⇒ un
-  /// `SizedBox` type-dépendant ([zFieldGapAfter]) est inséré APRÈS les champs
-  /// « blocs » dans le rendu en colonne (jamais après un champ compact). Sans
-  /// effet en grille (l'espacement y est porté par [gridGutter]).
-  final double interFieldGap;
+  /// **Espacement inter-champ** (MIN-2 → CR-DODLP-AERATION, parité DODLP).
+  ///
+  /// 🔴 **CR-DODLP-AERATION (arbitrage propriétaire du 2026-08-09)** — l'aération
+  /// est désormais **UNIFORME et RÉELLE PARTOUT** :
+  /// - elle s'applique entre **deux champs consécutifs**, quel que soit leur
+  ///   type (plus de table type-dépendante — cf. [zFieldGapAfter]) ;
+  /// - sur les **DEUX** voies de rendu : plate (`ListView.builder` sans section
+  ///   repliable ni grille — le cas le plus courant) **et** groupée ;
+  /// - le défaut n'est plus `0` mais [zFieldGapReference] (**12 dp**).
+  ///
+  /// Elle ne s'applique **PAS** :
+  /// - en **grille** ([layout] non vide) — l'espacement y reste porté par
+  ///   [gridGutter]/[gridRunGutter] ; rien ne s'y **additionne** ;
+  /// - **avant/après un en-tête de section** — l'en-tête porte déjà ses propres
+  ///   16 dp de tête et 8 dp de pied ; y ajouter l'écart doublerait l'air ;
+  /// - **après le dernier champ** (aucun espace terminal parasite).
+  ///
+  /// C'est un changement **visible pour tout hôte passif**. Un hôte qui
+  /// compensait cette absence d'aération par ses propres `SizedBox`/`Padding`
+  /// entre les champs doit **RETIRER** sa compensation, sinon les espaces
+  /// s'additionnent.
+  ///
+  /// Chaîne de résolution : ce paramètre **>** `ZcrudTheme.fieldGap` (jeton de
+  /// thème) **>** [zFieldGapReference].
+  ///
+  /// `null` (défaut) = « non fourni » ⇒ le jeton, puis la référence.
+  /// **`0` explicite reste l'échappatoire** : il désactive toute aération, y
+  /// compris face à un jeton de thème — c'est ainsi qu'un hôte retrouve
+  /// exactement le rendu d'avant v0.60.
+  final double? interFieldGap;
 
   /// Hook d'instrumentation : appelé à chaque (re)build **structurel** — compteur
   /// de build de niveau formulaire pour SM-1 (reste inchangé pendant la saisie).
@@ -654,6 +722,15 @@ class _DynamicEditionState extends State<DynamicEdition> {
   EdgeInsetsGeometry _resolvedPadding(BuildContext context) =>
       widget.padding ?? ZcrudTheme.of(context).formPadding;
 
+  /// Base d'aération inter-champ effective (CR-DODLP-DEFAULTS) :
+  /// `interFieldGap` (paramètre, `0` compris) > `ZcrudTheme.fieldGap` (jeton) >
+  /// [zFieldGapReference]. Même patron `paramètre ?? jeton ?? référence` que
+  /// [_resolvedPadding] — d'où la nullabilité du paramètre.
+  double _resolvedInterFieldGap(BuildContext context) =>
+      widget.interFieldGap ??
+      ZcrudTheme.of(context).fieldGap ??
+      zFieldGapReference;
+
   bool get _grouped =>
       widget.layout.isNotEmpty ||
       widget.sections.any((s) => s.collapsible);
@@ -746,13 +823,37 @@ class _DynamicEditionState extends State<DynamicEdition> {
       if (k != null) keyIndex[k] = i;
     }
 
+    // CR-DODLP-AERATION : l'écart est un **habillage du champ keyé**, jamais une
+    // LIGNE d'espacement à part.
+    //
+    // 🔴 Motif (non négociable) : `_buildFlat` monte un sliver PARESSEUX dont la
+    // réconciliation d'`Element` repose sur `findChildIndexCallback` + le
+    // `keyIndex` ci-dessus. Une ligne d'espacement séparée serait (a) NON KEYÉE —
+    // donc réconciliée par POSITION, ce qui est précisément le mécanisme qui
+    // détruit le `State`/focus d'un voisin quand un champ conditionnel
+    // apparaît/disparaît — et (b) elle DOUBLERAIT `itemCount`, décalant tous les
+    // index. En l'attachant DANS le `KeyedSubtree` du champ, `itemCount`,
+    // l'indexation et la clé restent **exactement** ceux d'avant : le focus est
+    // préservé par construction (AC6/AD-2, objectif produit n°1).
+    //
+    // L'écart suit un champ UNIQUEMENT si la ligne suivante est elle aussi un
+    // champ : pas d'espace avant un en-tête de section (qui porte déjà 16 dp de
+    // tête), ni après le dernier champ.
+    final base = _resolvedInterFieldGap(context);
+
     return ListView.builder(
       padding: _resolvedPadding(context),
       shrinkWrap: widget.shrinkWrap,
       physics: widget.physics,
       itemCount: rows.length,
       findChildIndexCallback: (key) => keyIndex[key],
-      itemBuilder: (context, i) => rows[i].build(context, this),
+      itemBuilder: (context, i) {
+        final hasGap = base > 0 &&
+            rows[i].spec != null &&
+            i + 1 < rows.length &&
+            rows[i + 1].spec != null;
+        return rows[i].build(context, this, gapAfter: hasGap ? base : 0);
+      },
     );
   }
 
@@ -843,18 +944,21 @@ class _DynamicEditionState extends State<DynamicEdition> {
   /// `ValueKey(name)` (place stable NON contournable).
   Widget _membersLayout(List<ZFieldSpec> members) {
     if (widget.layout.isEmpty) {
-      // MIN-2 (`withSpaceer`) : insère un `SizedBox` type-dépendant APRÈS les
-      // champs « blocs » quand `interFieldGap > 0` (jamais après le dernier ;
-      // aucun espace si `interFieldGap == 0` — rétro-compat pixel stricte).
-      final children = <Widget>[];
-      for (var i = 0; i < members.length; i++) {
-        final spec = members[i];
-        children.add(_buildField(context, spec));
-        if (i < members.length - 1) {
-          final gap = zFieldGapAfter(spec.type, base: widget.interFieldGap);
-          if (gap > 0) children.add(SizedBox(height: gap));
-        }
-      }
+      // CR-DODLP-AERATION : écart UNIFORME entre deux membres consécutifs (plus
+      // de table type-dépendante — cf. `zFieldGapAfter`), jamais après le
+      // dernier ; aucun espace si l'écart résolu est `0` (échappatoire ⇒
+      // rétro-compat pixel stricte). L'écart habille le champ KEYÉ (même motif
+      // qu'en voie plate) : aucun `SizedBox` frère non keyé ne vient s'insérer
+      // dans la `Column`, dont la réconciliation reste positionnelle.
+      final base = _resolvedInterFieldGap(context);
+      final children = <Widget>[
+        for (var i = 0; i < members.length; i++)
+          _buildField(
+            context,
+            members[i],
+            gapAfter: i < members.length - 1 ? base : 0,
+          ),
+      ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -910,13 +1014,40 @@ class _DynamicEditionState extends State<DynamicEdition> {
           );
   }
 
-  Widget _buildField(BuildContext context, ZFieldSpec spec) {
+  Widget _buildField(
+    BuildContext context,
+    ZFieldSpec spec, {
+    double gapAfter = 0,
+  }) {
+    // CR-DODLP-AERATION : l'écart inter-champ est porté par un `Padding`
+    // ENVELOPPANT (inset **directionnel** — AD-13), jamais par une LIGNE de
+    // liste ni un frère `SizedBox` non keyé.
+    //
+    // Trois propriétés que cette forme garantit, et qu'aucune variante plus
+    // simple ne tient toutes les trois :
+    // 1. **Le `Padding` est TOUJOURS émis**, même à `0`. Un `Padding`
+    //    conditionnel ferait changer la FORME du sous-arbre quand l'écart passe
+    //    de 12 à 0 (dernier champ après le retrait d'un conditionnel voisin) →
+    //    `Element` recréé → **focus perdu**. Ici seule la VALEUR de l'inset
+    //    change : l'`Element` est réutilisé. À `0` le rendu est pixel-identique.
+    // 2. **La clé de l'item de liste (`field:<name>`) est STABLE** et
+    //    indépendante de l'écart : `findChildIndexCallback` retrouve donc
+    //    l'`Element` d'un champ qui change d'index, exactement comme avant.
+    // 3. **`ValueKey(<name>)` reste COLLÉE au champ** (sous le `Padding`) : la
+    //    boîte trouvée par `find.byKey(ValueKey(name))` n'inclut PAS l'écart —
+    //    la géométrie observable d'un champ est inchangée, et l'écart reste
+    //    mesurable comme un vrai vide entre deux champs.
+    //
     // Garde L3 (AC7) : place stable NON contournable — même si un `fieldBuilder`
     // custom omet la clé, le champ reste keyé sur `spec.name` (préserve SM-1/
     // UJ-2 : rebuild externe ⇒ Element/State réutilisés).
-    return KeyedSubtree(
-      key: ValueKey<String>(spec.name),
-      child: _fieldChild(context, spec),
+    return Padding(
+      key: ValueKey<String>('field:${spec.name}'),
+      padding: EdgeInsetsDirectional.only(bottom: gapAfter),
+      child: KeyedSubtree(
+        key: ValueKey<String>(spec.name),
+        child: _fieldChild(context, spec),
+      ),
     );
   }
 }
@@ -930,17 +1061,28 @@ class _EditionRow {
   final String? title;
   final ZFieldSpec? spec;
 
-  /// Clé du widget d'item (celle posée par `_buildField` : `ValueKey(name)`) —
-  /// `null` pour un en-tête (non keyé). Alimente `findChildIndexCallback`.
+  /// Clé du widget d'ITEM (celle posée à la RACINE par `_buildField` :
+  /// `ValueKey('field:<name>')`) — `null` pour un en-tête (non keyé). Alimente
+  /// `findChildIndexCallback`.
+  ///
+  /// 🔴 Ce doit être la clé de la **racine** de l'item, pas celle du champ :
+  /// depuis CR-DODLP-AERATION la racine est le `Padding` d'aération et le champ
+  /// est keyé un cran plus bas (`ValueKey(name)`). Renvoyer `ValueKey(name)`
+  /// ici rendrait `findChildIndexCallback` **inerte** (aucune correspondance),
+  /// et un champ décalé par un conditionnel voisin perdrait son `State`/focus.
   Key? get key {
     final s = spec;
-    return s == null ? null : ValueKey<String>(s.name);
+    return s == null ? null : ValueKey<String>('field:${s.name}');
   }
 
-  Widget build(BuildContext context, _DynamicEditionState parent) {
+  Widget build(
+    BuildContext context,
+    _DynamicEditionState parent, {
+    double gapAfter = 0,
+  }) {
     final header = title;
     if (header != null) return _SectionHeader(title: header);
-    return parent._buildField(context, spec!);
+    return parent._buildField(context, spec!, gapAfter: gapAfter);
   }
 }
 
