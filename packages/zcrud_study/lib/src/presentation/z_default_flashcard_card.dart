@@ -1081,6 +1081,8 @@ class _ZFlashcardRichText extends StatelessWidget {
         // sinon un champ fichier rendu ici perdrait ses valeurs persistées
         // en silence.
         appFileResolver: scope.appFileResolver,
+        // v0.66.0 : port de rendu riche, même motif que `appFileResolver`.
+        richTextRenderer: scope.richTextRenderer,
         listRenderer: scope.listRenderer,
         reorderRenderer: scope.reorderRenderer,
         dropRegionRenderer: scope.dropRegionRenderer,

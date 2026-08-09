@@ -33,7 +33,7 @@
 #    une config plateforme de l'app hôte.
 name: zcrud_chat_syncfusion
 description: "Syncfusion AI AssistView shell and IFFD textual-stream normalization for zcrud chat, isolated behind the neutral ZChatRenderer seam and the typed ZChatStreamPort."
-version: 0.65.0
+version: 0.66.0
 publish_to: none
 resolution: workspace
 
@@ -59,9 +59,9 @@ dependencies:
   # `zcrud_list`/`zcrud_export`, qui partagent `syncfusion_flutter_core`).
   # SEULE arête `syncfusion_flutter_chat` du graphe (AD-57).
   syncfusion_flutter_chat: ^34.1.31
-  zcrud_chat: ^0.65.0
-  zcrud_chat_kernel: ^0.65.0
-  zcrud_core: ^0.65.0
+  zcrud_chat: ^0.66.0
+  zcrud_chat_kernel: ^0.66.0
+  zcrud_core: ^0.66.0
 
 dev_dependencies:
   flutter_test:

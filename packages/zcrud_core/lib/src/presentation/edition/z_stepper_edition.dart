@@ -59,7 +59,10 @@ import '../../domain/edition/z_condition.dart';
 import '../../domain/edition/z_condition_evaluator.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../l10n/z_localizations.dart';
+import '../theme/z_theme.dart';
 import '../z_form_controller.dart';
+import '../z_rich_text_renderer.dart';
+import '../zcrud_scope.dart';
 import 'dynamic_edition.dart';
 import 'z_field_widget.dart';
 import 'z_responsive_grid.dart';
@@ -69,6 +72,26 @@ import 'z_validator_compiler.dart';
 
 export 'z_step_index_store.dart';
 export 'z_stepper_config.dart';
+
+/// Profondeur maximale de steppers imbriqués (AD-10).
+///
+/// 🔴 [ZEditionStep.nestedSteps] est une `List<ZEditionStep>?` **mutable** : un
+/// hôte PEUT construire un cycle (`l = []; s = ZEditionStep(nestedSteps: l);
+/// l.add(s);`). Sans plafond, le calcul de fenêtre comme le montage de widgets
+/// récursent sans fin (StackOverflow, écran blanc). Au-delà de ce plafond, le
+/// sous-stepper n'est **pas monté** et sa contribution n'est **pas comptée** :
+/// repli DÉFINI, jamais d'exception.
+const int kZStepperMaxNestingDepth = 8;
+
+/// Largeur maximale (dp) de référence de la bande latérale `start` — bornage du
+/// Bug 1. Surchargée par `ZcrudTheme.stepperSideBandMaxWidth`.
+const double _kStepperSideBandMaxWidth = 220;
+
+/// Épaisseur (dp) de référence du rail — mesure du legacy DODLP.
+const double _kStepperRailThickness = 1;
+
+/// Écart vertical (dp) de référence entre deux étapes dépliées — mesure legacy.
+const double _kStepperAllStepsGap = 24;
 
 /// Descripteur **présentation** d'une étape : un titre + le sous-ensemble de
 /// **noms de champs** du catalogue qu'elle regroupe (aligné sur [ZEditionSection]
@@ -90,6 +113,7 @@ class ZEditionStep {
     this.sections = const <ZEditionSection>[],
     this.icon,
     this.subtitle,
+    this.subtitleWidget,
     this.nestedSteps,
     this.nestedConfig,
     this.condition,
@@ -112,7 +136,34 @@ class ZEditionStep {
 
   /// Sous-titre d'étape (DP-9, parité `stepSubtitle`) — clé l10n ou littéral,
   /// affiché ssi `config.showSubtitles` (via `label(context, …)`). Défaut `null`.
+  ///
+  /// C'est une **`String`**, jamais un widget : la chaîne traverse le seam de
+  /// rendu riche (`ZcrudScope.richTextRenderer`) telle quelle. Pour fournir un
+  /// widget déjà construit, utiliser [subtitleWidget].
   final String? subtitle;
+
+  /// Sous-titre d'étape **déjà construit** par l'hôte. Défaut `null`.
+  ///
+  /// 🔴 **[subtitleWidget] PRIME sur [subtitle]**, et le seam de rendu riche
+  /// n'est alors **pas consulté** : le widget est rendu **tel que reçu**. C'est
+  /// exactement la règle — et le nommage — de `ZcrudTheme.inputDecoration`
+  /// (`label` widget prioritaire, `labelText` chaîne sinon) ; une troisième
+  /// convention pour la même idée serait une divergence.
+  ///
+  /// ## Pourquoi DEUX entrées, et non un seul champ `Object?`
+  ///
+  /// Le legacy DODLP stocke un `Widget` puis **redéballe la chaîne** par
+  /// `if (step.subtitle is Text) … (step.subtitle as Text).data ?? ""`
+  /// (`dynamic_stepper.dart` l. 397-407 et 789-793) : une donnée qui voyage
+  /// dans un widget et qu'on récupère au cast. Avec deux entrées typées, ce cast
+  /// n'a plus de raison d'être — le défaut devient **inexprimable**, ce qui vaut
+  /// mieux que de le corriger.
+  ///
+  /// [ZStepperConfig.showSubtitles] gouverne les **deux** entrées : le drapeau
+  /// dit « cette présentation montre des sous-titres », pas « cette présentation
+  /// montre les sous-titres de type chaîne ». Un hôte qui veut un contenu
+  /// toujours visible ne le met pas en sous-titre.
+  final Widget? subtitleWidget;
 
   /// Sous-étapes d'un **stepper imbriqué** (DP-9, AC11). Quand non `null`,
   /// l'étape rend, dans son contenu, un [ZStepperEdition] imbriqué partageant le
@@ -172,6 +223,7 @@ class ZEditionStep {
           listEquals(sections, other.sections) &&
           icon == other.icon &&
           subtitle == other.subtitle &&
+          subtitleWidget == other.subtitleWidget &&
           listEquals(nestedSteps, other.nestedSteps) &&
           nestedConfig == other.nestedConfig &&
           condition == other.condition &&
@@ -184,6 +236,7 @@ class ZEditionStep {
         Object.hashAll(sections),
         icon,
         subtitle,
+        subtitleWidget,
         nestedSteps == null ? null : Object.hashAll(nestedSteps!),
         nestedConfig,
         condition,
@@ -193,6 +246,7 @@ class ZEditionStep {
   @override
   String toString() => 'ZEditionStep(title: $title, fields: $fields, '
       'icon: $icon, subtitle: $subtitle, '
+      'subtitleWidget: ${subtitleWidget != null}, '
       'nested: ${nestedSteps?.length ?? 0}, '
       'conditional: ${condition != null}, optional: $optional)';
 }
@@ -233,6 +287,8 @@ class ZStepperEdition extends StatefulWidget {
     this.nested = false,
     this.onNestedWindowChanged,
     this.revealTrigger,
+    this.depth = 0,
+    this.unbounded = false,
     this.stepStore,
     this.formId,
     super.key,
@@ -322,6 +378,22 @@ class ZStepperEdition extends StatefulWidget {
   @visibleForTesting
   final ValueChanged<List<String>>? onNestedWindowChanged;
 
+  /// **Interne** : ce stepper est monté dans un contexte de hauteur **NON
+  /// BORNÉE** (item de `ListView.builder` du mode « tout affiché »). Il se
+  /// dimensionne alors **au contenu** (`MainAxisSize.min`, aucun `Expanded`
+  /// vertical) au lieu de remplir l'espace disponible.
+  ///
+  /// 🔴 Sans ce mode, un sous-stepper **paginé** posé dans une étape dépliée
+  /// lèverait « RenderFlex children have non-zero flex but incoming height
+  /// constraints are unbounded » — le pendant exact du Bug 1 sur l'autre axe.
+  @visibleForTesting
+  final bool unbounded;
+
+  /// **Interne** : profondeur d'imbrication de CE stepper (0 = racine). Plafonné
+  /// par [kZStepperMaxNestingDepth] — cf. AD-10 (`nestedSteps` circulaires).
+  @visibleForTesting
+  final int depth;
+
   /// **Interne (DP-9)** : signal de **révélation** poussé par le parent (gate
   /// bloqué) pour forcer ce stepper imbriqué à révéler les erreurs de sa
   /// sous-étape active. Chaque incrément déclenche `AutovalidateMode.always`.
@@ -360,9 +432,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// est abonné pour recalculer la fenêtre du chemin actif.
   final List<Listenable> _guardListenables = <Listenable>[];
 
-  /// Dernière contribution de fenêtre remontée par le sous-stepper imbriqué monté
-  /// (`null` = pas encore remontée ⇒ on retombe sur le calcul structurel initial).
-  List<String>? _childContribution;
+  /// Dernières contributions de fenêtre remontées par les sous-steppers
+  /// imbriqués montés, **indexées par index d'étape**.
+  ///
+  /// 🔴 Une `Map` et non plus un champ unique : en mode `showAllSteps`, PLUSIEURS
+  /// sous-steppers sont montés **simultanément** (une étape dépliée peut en
+  /// porter un chacune). Un champ unique ferait que la dernière remontée écrase
+  /// toutes les autres — la fenêtre publiée perdrait les champs des autres
+  /// sous-steppers. Absent = pas encore remontée ⇒ repli structurel.
+  final Map<int, List<String>> _childContributions = <int, List<String>>{};
 
   /// Étapes **EFFECTIVES** : celles dont la [ZEditionStep.condition] est
   /// satisfaite, dans l'ordre déclaré. Recalculées UNIQUEMENT quand un champ de
@@ -406,7 +484,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// zones d'étape en `DynamicEdition` **passif** (`manageVisibility:false`). En
   /// mode LEGACY (ni imbriqué, ni de nesting), le comportement E3-5 est **exact**
   /// (DynamicEdition gère `visibleFields`, `_syncWindow` sur navigation).
-  bool get _driving => widget.nested || _hasNesting;
+  /// 🔴 `showAllSteps` FORCE le mode pilotage : toutes les étapes montent leur
+  /// `DynamicEdition` **en même temps**. Si chacune gérait `visibleFields`
+  /// (`manageVisibility: true`), elles se battraient pour l'écrire — la dernière
+  /// montée gagnerait et masquerait les champs de toutes les autres. Le stepper
+  /// reste donc le **single writer** (DP-9/AC13) et publie l'union.
+  bool get _driving => widget.nested || _hasNesting || _config.showAllSteps;
+
+  /// `true` si CE niveau est au-delà du plafond d'imbrication (AD-10).
+  bool get _tooDeep => widget.depth >= kZStepperMaxNestingDepth;
 
   @override
   void initState() {
@@ -534,26 +620,62 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// partir de [steps]/[index], en supposant chaque nested à sa sous-étape 0.
   /// Sert l'amorçage racine et le repli quand un sous-stepper n'a pas encore
   /// remonté sa contribution.
-  List<String> _initialUnion(List<ZEditionStep> steps, int index) {
+  List<String> _initialUnion(List<ZEditionStep> steps, int index,
+      [int depth = 0]) {
     if (steps.isEmpty) return const <String>[];
     final i = index.clamp(0, steps.length - 1);
     final step = steps[i];
     final base = _visibleDirectOf(step);
     final nested = step.nestedSteps;
-    if (nested == null) return base;
-    return <String>[...base, ..._initialUnion(nested, 0)];
+    // AD-10 : au-delà du plafond, on ARRÊTE la descente (cycle possible).
+    if (nested == null || widget.depth + depth + 1 >= kZStepperMaxNestingDepth) {
+      return base;
+    }
+    return <String>[...base, ..._initialUnion(nested, 0, depth + 1)];
+  }
+
+  /// Union de TOUTES les étapes effectives (mode `showAllSteps`) : c'est la
+  /// fenêtre publiée, puisqu'il n'existe pas d'étape « courante ».
+  List<String> _allStepsUnion() {
+    final out = <String>[];
+    final seen = <String>{};
+    for (var i = 0; i < _steps.length; i++) {
+      for (final n in _windowFor(i)) {
+        if (seen.add(n)) out.add(n);
+      }
+      final nested = _steps[i].nestedSteps;
+      if (nested == null) continue;
+      for (final n in _childContributions[i] ?? _initialUnion(nested, 0)) {
+        if (seen.add(n)) out.add(n);
+      }
+    }
+    return out;
   }
 
   /// Contribution de fenêtre de CE stepper pour son étape courante : champs
   /// directs visibles + (si l'étape courante porte un nested) la contribution
   /// remontée par le sous-stepper (ou son calcul structurel initial en repli).
   List<String> _contribution() {
+    if (_config.showAllSteps) return _allStepsUnion();
     final i = _currentStep.value.clamp(0, _lastStep < 0 ? 0 : _lastStep);
     final base = _windowFor(i);
     final nested = _steps[i].nestedSteps;
     if (nested == null) return base;
-    final childPart = _childContribution ?? _initialUnion(nested, 0);
-    return <String>[...base, ...childPart];
+    final childPart = _childContributions[i] ?? _initialUnion(nested, 0);
+    // 🔴 UNION, pas concaténation. Un même nom peut apparaître à deux niveaux
+    // (étape parente ET sous-étape) : le publier deux fois ferait monter le
+    // champ deux fois dans `DynamicEdition` — deux widgets sur la même tranche.
+    // Mesuré sur le cas limite AD-10 (`nestedSteps` circulaires) : la fenêtre
+    // sortait à `['a'] × 10`.
+    return _dedup(<String>[...base, ...childPart]);
+  }
+
+  static List<String> _dedup(List<String> names) {
+    final seen = <String>{};
+    return <String>[
+      for (final n in names)
+        if (seen.add(n)) n,
+    ];
   }
 
   /// Amorçage de la fenêtre selon le mode.
@@ -599,6 +721,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       });
       return;
     }
+    if (_config.showAllSteps) {
+      // Racine « tout affiché » : seul écrivain — union de TOUTES les étapes.
+      widget.controller.setVisibleFields(_allStepsUnion());
+      return;
+    }
     if (_driving) {
       // Racine avec nesting : seul écrivain — pose l'union initiale du chemin.
       widget.controller.setVisibleFields(_initialUnion(_steps, start));
@@ -620,8 +747,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// Reçoit la contribution d'un sous-stepper imbriqué et ré-agrège vers le haut.
-  void _onChildWindow(List<String> w) {
-    _childContribution = w;
+  void _onChildWindow(int stepIndex, List<String> w) {
+    _childContributions[stepIndex] = w;
     _publishWindow();
   }
 
@@ -762,7 +889,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
     _reveal.value = false;
     if (_driving) {
-      _childContribution = null; // le sous-arbre change : recalcul structurel.
+      _childContributions.clear(); // le sous-arbre change : recalcul structurel.
       _currentStep.value = target;
       _publishWindow();
     } else {
@@ -842,8 +969,9 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       listenable: _structural,
       builder: (context, _) {
         widget.onStructuralBuild?.call();
-        final index = _currentStep.value.clamp(0, _lastStep);
         final reveal = _reveal.value;
+        if (_config.showAllSteps) return _allStepsLayout(reveal);
+        final index = _currentStep.value.clamp(0, _lastStep);
         final indicator = _StepIndicator(
           index: index,
           total: _steps.length,
@@ -873,32 +1001,113 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// Compose indicateur / contenu / navigation selon `indicatorPosition`
   /// (directionnel — `start` = côté début de lecture).
   Widget _layout(Widget indicator, Widget content, Widget nav) {
-    final expandedContent = Expanded(child: content);
+    final bool unbounded = widget.unbounded;
+    final Widget expandedContent =
+        unbounded ? content : Expanded(child: content);
+    final MainAxisSize axis =
+        unbounded ? MainAxisSize.min : MainAxisSize.max;
     switch (_config.indicatorPosition) {
       case ZStepIndicatorPosition.start:
+        // 🔴 CR-DODLP « Bug 1 ». Dans une `Row`, un enfant NON flexible est
+        // mesuré avec `maxWidth: infinity`. Le `_StepIndicator` étant posé nu
+        // ici, il recevait une largeur **non bornée** — et le `Expanded` de son
+        // rendu compact (`numbered`/`icons` + `showLabels`) levait alors
+        // « RenderFlex children have non-zero flex but incoming width
+        // constraints are unbounded ». Le défaut ne venait PAS de l'hôte : il
+        // se produisait même sous une largeur d'hôte parfaitement bornée.
+        //
+        // Le correctif BORNE la bande (`maxWidth`), ce qui rend le `Expanded`
+        // interne légal. La borne est thémable (`stepperSideBandMaxWidth`).
+        final Widget band = Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: ZcrudTheme.of(context).stepperSideBandMaxWidth ??
+                          _kStepperSideBandMaxWidth,
+                    ),
+                    child: indicator,
+                  ),
+                  Expanded(child: content),
+                ],
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: axis,
           children: <Widget>[
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[indicator, Expanded(child: content)],
-              ),
-            ),
+            if (unbounded) band else Expanded(child: band),
             nav,
           ],
         );
       case ZStepIndicatorPosition.bottom:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: axis,
           children: <Widget>[expandedContent, indicator, nav],
         );
       case ZStepIndicatorPosition.top:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: axis,
           children: <Widget>[indicator, expandedContent, nav],
         );
     }
+  }
+
+  /// **Mode « TOUT AFFICHÉ »** (parité legacy DODLP `showAllSteps: true`) :
+  /// toutes les étapes effectives sont dépliées, reliées par un rail vertical à
+  /// badges numérotés.
+  ///
+  /// 🔴 **VIRTUALISÉ** — `ListView.builder`, jamais `ListView(children:)` : une
+  /// racine « tout affiché » monte l'intégralité des champs du formulaire ; un
+  /// `children:` les construirait tous à chaque build du chrome.
+  ///
+  /// 🔴 **Pas de barre de navigation ni de gate** à ce niveau (il n'existe pas
+  /// d'étape courante). Un bouton final n'apparaît QUE si [onComplete] est
+  /// fourni — sinon ce canal serait mort. Les sous-steppers imbriqués, eux,
+  /// paginent normalement avec LEUR propre gate.
+  Widget _allStepsLayout(bool reveal) {
+    final int n = _steps.length;
+    final bool hasFinish = widget.onComplete != null;
+    return ListView.builder(
+      padding: widget.padding,
+      physics: widget.physics,
+      shrinkWrap: widget.unbounded,
+      itemCount: n + (hasFinish ? 1 : 0),
+      itemBuilder: (BuildContext context, int i) {
+        if (i >= n) {
+          return Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
+            child: Row(
+              children: <Widget>[
+                const Spacer(),
+                ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minHeight: 48, minWidth: 48),
+                  child: FilledButton(
+                    onPressed: widget.onComplete,
+                    child: Text(
+                      widget.finishLabel ??
+                          label(context, 'z.stepper.finish',
+                              fallback: 'Terminer'),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return _AllStepsRow(
+          index: i,
+          total: n,
+          step: _steps[i],
+          config: _config,
+          isLast: i == n - 1,
+          content: _stepContent(i, reveal, bounded: false),
+        );
+      },
+    );
   }
 
   /// Zone d'étape : réutilise [DynamicEdition] (place stable/conditionnels/
@@ -906,13 +1115,16 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// (`manageVisibility:false`) — le racine est seul écrivain de `visibleFields`.
   /// Si l'étape porte un sous-stepper (AC11), il est rendu **après** les champs
   /// directs sur le MÊME controller (imbriqué, mode « sans fenêtre »).
-  Widget _stepContent(int index, bool reveal) {
+  Widget _stepContent(int index, bool reveal, {bool? bounded}) {
+    final bool isBounded = bounded ?? !widget.unbounded;
     final step = _steps[index];
     final mode = reveal
         ? AutovalidateMode.always
         : AutovalidateMode.onUserInteraction;
     final custom = widget.fieldBuilder;
-    final hasNested = step.nestedSteps != null;
+    // AD-10 : au-delà du plafond d'imbrication, le sous-stepper n'est PAS monté
+    // (cycle possible dans `nestedSteps`) — repli défini, jamais d'exception.
+    final hasNested = step.nestedSteps != null && !_tooDeep;
 
     final edition = DynamicEdition(
       key: ValueKey<String>('zstep:$index'),
@@ -920,8 +1132,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       fields: _stepSpecs(index),
       sections: step.sections,
       padding: widget.padding,
-      physics: hasNested ? const NeverScrollableScrollPhysics() : widget.physics,
-      shrinkWrap: hasNested,
+      physics: (hasNested || !isBounded)
+          ? const NeverScrollableScrollPhysics()
+          : widget.physics,
+      shrinkWrap: hasNested || !isBounded,
       manageVisibility: !_driving,
       readOnly: widget.readOnly,
       layout: widget.layout,
@@ -939,12 +1153,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
 
     // Étape porteuse d'un sous-stepper imbriqué : champs directs (dimensionnés
     // au contenu) au-dessus, sous-stepper dans l'espace restant. MÊME controller.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (step.fields.isNotEmpty) edition,
-        Expanded(
-          child: ZStepperEdition(
+    // En mode « tout affiché », l'étape vit dans un item de `ListView.builder` :
+    // la hauteur y est **non bornée**, donc AUCUN `Expanded` (il lèverait
+    // « RenderFlex children have non-zero flex but incoming height constraints
+    // are unbounded » — le pendant exact du Bug 1 sur l'autre axe).
+    final Widget nestedStepper = ZStepperEdition(
             key: ValueKey<String>('znest:$index'),
             controller: widget.controller,
             fields: widget.fields,
@@ -960,10 +1173,20 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
             nextLabel: widget.nextLabel,
             finishLabel: widget.finishLabel,
             nested: true,
-            onNestedWindowChanged: _onChildWindow,
+            depth: widget.depth + 1,
+            unbounded: !isBounded,
+            onNestedWindowChanged: (w) => _onChildWindow(index, w),
             revealTrigger: _childRevealTick,
-          ),
-        ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: isBounded ? MainAxisSize.max : MainAxisSize.min,
+      children: <Widget>[
+        if (step.fields.isNotEmpty) edition,
+        if (isBounded)
+          Expanded(child: nestedStepper)
+        else
+          nestedStepper,
       ],
     );
   }
@@ -994,17 +1217,14 @@ class _StepIndicator extends StatelessWidget {
     final resolvedTitle = label(context, steps[index].title,
         fallback: steps[index].title);
     final subtitle = steps[index].subtitle;
+    final subtitleWidget = steps[index].subtitleWidget;
 
     final children = <Widget>[
       _indicatorBody(context, scheme, resolvedTitle),
-      if (config.showSubtitles && subtitle != null)
+      if (config.showSubtitles && (subtitleWidget != null || subtitle != null))
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
-          child: Text(
-            label(context, subtitle, fallback: subtitle),
-            textAlign: TextAlign.start,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: _StepSubtitle(source: subtitle, provided: subtitleWidget),
         ),
     ];
 
@@ -1217,6 +1437,262 @@ class _StepNavigationBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Une **étape dépliée** du mode « tout affiché » : badge circulaire numéroté,
+/// segment de rail, titre + sous-titre, puis le contenu de l'étape.
+///
+/// ## Forme (mesurée sur le legacy DODLP `_buildVerticalExpandedSteps`)
+///
+/// Le legacy peint le rail avec deux `Positioned` **`left:`** (physique) dans un
+/// `Stack`, ce qui le place du mauvais côté en RTL (AD-13). Ici le rail est peint
+/// par un [_RailPainter] qui reçoit la [TextDirection] : côté **début de
+/// lecture** dans les deux sens.
+///
+/// ## Pourquoi un `CustomPaint` et pas un `IntrinsicHeight`
+///
+/// Le legacy compose `IntrinsicHeight` + `Row(stretch)` pour qu'une colonne de
+/// rail atteigne la hauteur de l'étape. `IntrinsicHeight` mesure DEUX fois son
+/// sous-arbre — sur une étape qui contient un formulaire entier, et répété pour
+/// chaque étape d'une liste virtualisée, c'est le contraire de ce que SM-1
+/// demande. Le `CustomPaint` se dimensionne sur son enfant et peint le rail dans
+/// la gouttière : **une** passe de layout.
+class _AllStepsRow extends StatelessWidget {
+  const _AllStepsRow({
+    required this.index,
+    required this.total,
+    required this.step,
+    required this.config,
+    required this.isLast,
+    required this.content,
+  });
+
+  final int index;
+  final int total;
+  final ZEditionStep step;
+  final ZStepperConfig config;
+  final bool isLast;
+  final Widget content;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final ZcrudTheme tokens = ZcrudTheme.of(context);
+
+    // Chaîne FR-26 stricte : paramètre (`ZStepperConfig`) > jeton (`ZcrudTheme`)
+    // > rôle (`ColorScheme`) / mesure de référence. AUCUN littéral de couleur.
+    final Color badgeColor = config.activeOf(scheme);
+    final Color railColor =
+        config.railColor ?? tokens.stepperRailColor ?? scheme.outlineVariant;
+    // Le legacy écrit un BLANC LITTÉRAL — illisible dès qu'un hôte choisit
+    // un `activeColor` clair. À défaut de réglage, on DÉRIVE le contraste.
+    final Color badgeForeground = config.badgeForegroundColor ??
+        tokens.stepperBadgeForegroundColor ??
+        (ThemeData.estimateBrightnessForColor(badgeColor) == Brightness.dark
+            ? scheme.surface
+            : scheme.onSurface);
+
+    final double badgeSize = config.indicatorSize;
+    final double gutter = badgeSize + 16;
+    final double thickness =
+        tokens.stepperRailThickness ?? _kStepperRailThickness;
+    final double gap = tokens.stepperAllStepsGap ?? _kStepperAllStepsGap;
+
+    final String title = label(context, step.title, fallback: step.title);
+    final String? subtitle = step.subtitle;
+    final Widget? subtitleWidget = step.subtitleWidget;
+
+    final Widget header = Semantics(
+      header: true,
+      label: 'Étape ${index + 1} sur $total : $title',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (config.showLabels)
+            Text(
+              title,
+              textAlign: TextAlign.start,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          if (config.showSubtitles &&
+              (subtitleWidget != null || subtitle != null))
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(0, 4, 0, 0),
+              child: _StepSubtitle(source: subtitle, provided: subtitleWidget),
+            ),
+        ],
+      ),
+    );
+
+    final Widget badge = Container(
+      width: badgeSize,
+      height: badgeSize,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+      child: Text(
+        '${index + 1}',
+        textAlign: TextAlign.center,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: badgeForeground,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    final Widget body = Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(gutter, 0, 0, isLast ? 0 : gap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Align(alignment: AlignmentDirectional.centerStart, child: header),
+          const SizedBox(height: 8),
+          content,
+        ],
+      ),
+    );
+
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _RailPainter(
+              color: railColor,
+              thickness: thickness,
+              centerOffset: badgeSize / 2,
+              startY: badgeSize,
+              drawBelow: !isLast,
+              direction: Directionality.of(context),
+            ),
+          ),
+        ),
+        body,
+        PositionedDirectional(start: 0, top: 0, child: badge),
+      ],
+    );
+  }
+}
+
+/// Peint le **segment de rail** d'une étape dépliée : une ligne verticale dans
+/// la gouttière, du bas du badge jusqu'au bas de la ligne (donc jusqu'au badge
+/// suivant, dont l'écart appartient à la marge basse de CETTE ligne).
+///
+/// La position horizontale suit la [direction] : gouttière côté **début de
+/// lecture** (AD-13) — le legacy la fige à gauche.
+class _RailPainter extends CustomPainter {
+  const _RailPainter({
+    required this.color,
+    required this.thickness,
+    required this.centerOffset,
+    required this.startY,
+    required this.drawBelow,
+    required this.direction,
+  });
+
+  final Color color;
+  final double thickness;
+  final double centerOffset;
+  final double startY;
+  final bool drawBelow;
+  final TextDirection direction;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!drawBelow || thickness <= 0 || size.height <= startY) return;
+    final double dx = direction == TextDirection.rtl
+        ? size.width - centerOffset
+        : centerOffset;
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = thickness
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(dx, startY), Offset(dx, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(_RailPainter old) =>
+      old.color != color ||
+      old.thickness != thickness ||
+      old.centerOffset != centerOffset ||
+      old.startY != startY ||
+      old.drawBelow != drawBelow ||
+      old.direction != direction;
+}
+
+
+/// Sous-titre d'étape — **unique** point de rendu, partagé par l'indicateur
+/// paginé et par le rail « tout affiché ».
+///
+/// ## Le seam
+///
+/// Le legacy DODLP rend ce sous-titre en Markdown (`GptMarkdown`, deux sites).
+/// Ici, le moteur de rendu n'entre PAS dans `zcrud_core` (AD-1) : il est injecté
+/// par l'hôte via le port [ZRichTextRenderer] (`ZcrudScope.richTextRenderer`).
+///
+/// * **Aucun renderer** (défaut) ⇒ `Text` simple — comportement d'aujourd'hui,
+///   strictement inchangé pour un hôte passif.
+/// * **Renderer qui décline** (`null`) ⇒ même repli texte simple.
+/// * **Renderer qui LÈVE** ⇒ même repli texte simple (AD-10 : un seam d'hôte
+///   fautif ne fait jamais tomber le formulaire).
+///
+/// ## L'annonce au lecteur d'écran (AD-13)
+///
+/// 🔴 Les deux voies doivent annoncer **exactement une fois**. Le rendu riche
+/// porte DÉJÀ ses propres nœuds de texte : y superposer un `Semantics(label:)`
+/// **doublerait** l'annonce (précédent mesuré dans ce dépôt). Mais un renderer
+/// libre peut aussi ne produire AUCUNE sémantique (un `CustomPaint`, par
+/// exemple), et l'annonce serait alors **perdue**.
+///
+/// La seule composition qui garantit « ni perdue, ni doublée » quel que soit le
+/// renderer est donc `Semantics(label:) + ExcludeSemantics(child:)` : le socle
+/// impose l'annonce depuis la **donnée** (la source de vérité) et neutralise
+/// celle du rendu. Contrepartie assumée : la sémantique fine du balisage (rôles
+/// de lien, de titre) n'est pas exposée — un sous-titre est une phrase courte,
+/// pas un document.
+class _StepSubtitle extends StatelessWidget {
+  const _StepSubtitle({required this.source, required this.provided});
+
+  /// Clé l10n ou littéral du sous-titre (une **String**, jamais un widget).
+  final String? source;
+
+  /// Widget déjà construit par l'hôte. **Prioritaire** ; le seam de rendu riche
+  /// n'est alors pas consulté (patron `label`/`labelText`).
+  final Widget? provided;
+
+  @override
+  Widget build(BuildContext context) {
+    // VOIE 3 — widget fourni : rendu TEL QUE REÇU. Aucun cast, aucun déballage,
+    // aucun `Semantics` surajouté (il porte déjà la sienne — en ajouter une
+    // DOUBLERAIT l'annonce, et le socle n'a de toute façon aucune chaîne à
+    // annoncer à sa place).
+    if (provided != null) return provided!;
+
+    final String raw = source!;
+    final String text = label(context, raw, fallback: raw);
+    final TextStyle? style = Theme.of(context).textTheme.bodySmall;
+    final ZRichTextRenderer? renderer =
+        ZcrudScope.maybeOf(context)?.richTextRenderer;
+
+    Widget? rich;
+    if (renderer != null) {
+      try {
+        rich = renderer.build(context, text, baseStyle: style);
+      } catch (_) {
+        rich = null; // AD-10 : repli DÉFINI, jamais d'exception propagée.
+      }
+    }
+
+    if (rich == null) {
+      return Text(text, textAlign: TextAlign.start, style: style);
+    }
+    return Semantics(
+      label: text,
+      child: ExcludeSemantics(child: rich),
     );
   }
 }

@@ -77,12 +77,15 @@ class ZStepperConfig {
     this.showSubtitles = false,
     this.allowStepTap = true,
     this.validateOnNext = true,
+    this.showAllSteps = false,
     this.indicatorSize = 40,
     this.stepSpacing = 8,
     this.activeColor,
     this.completedColor,
     this.inactiveColor,
     this.errorColor,
+    this.railColor,
+    this.badgeForegroundColor,
   });
 
   /// Orientation de la bande d'étapes (défaut `horizontal`).
@@ -109,6 +112,24 @@ class ZStepperConfig {
   /// strict E3-5). `false` ⇒ navigation **libre** (parité DODLP, gap M12).
   final bool validateOnNext;
 
+  /// **Mode « TOUT AFFICHÉ »** (parité DODLP `StepperConfig.showAllSteps`) :
+  /// `false` (défaut) ⇒ assistant **paginé**, comportement E3-5/DP-9 **exact et
+  /// inchangé**. `true` ⇒ toutes les étapes sont **dépliées simultanément**,
+  /// reliées par un **rail** vertical à badges numérotés (cible visuelle du
+  /// legacy DODLP `_buildVerticalExpandedSteps`).
+  ///
+  /// 🔴 Ce mode ne PAGINE PAS : il n'y a ni étape courante, ni bouton
+  /// « Précédent/Suivant », ni **gate de validation par étape** (`validateOnNext`
+  /// devient sans objet au niveau où `showAllSteps` est posé — il reste
+  /// pleinement actif dans les sous-steppers imbriqués, qui, eux, paginent).
+  /// C'est un arbitrage assumé : une navigation par étape n'a pas de sens quand
+  /// toutes les étapes sont visibles en même temps.
+  ///
+  /// L'invariant DP-9/AC13 tient : la fenêtre `controller.visibleFields` devient
+  /// l'**UNION de toutes les étapes effectives** (+ contributions des nested), et
+  /// c'est toujours le stepper RACINE, et lui seul, qui l'écrit.
+  final bool showAllSteps;
+
   /// Taille (dp) d'un marqueur d'indicateur (`dots`/cercles) — token de config.
   final double indicatorSize;
 
@@ -127,6 +148,17 @@ class ZStepperConfig {
 
   /// Override couleur d'une étape **en erreur** (défaut `null` ⇒ `error`).
   final Color? errorColor;
+
+  /// Override couleur du **rail** reliant les badges en mode [showAllSteps].
+  /// Défaut `null` ⇒ jeton `ZcrudTheme.stepperRailColor`, puis rôle
+  /// `ColorScheme.outlineVariant` (FR-26 : aucun littéral).
+  final Color? railColor;
+
+  /// Override couleur du **numéro** peint dans le badge. Défaut `null` ⇒ jeton
+  /// `ZcrudTheme.stepperBadgeForegroundColor`, puis **contraste dérivé** de la
+  /// couleur du badge. Le legacy DODLP écrit un **blanc littéral** : illisible
+  /// dès qu'un hôte choisit un `activeColor` clair, et interdit par FR-26.
+  final Color? badgeForegroundColor;
 
   /// Couleur effective de l'étape active (override, sinon `ColorScheme.primary`).
   Color activeOf(ColorScheme scheme) => activeColor ?? scheme.primary;
@@ -150,12 +182,15 @@ class ZStepperConfig {
     bool? showSubtitles,
     bool? allowStepTap,
     bool? validateOnNext,
+    bool? showAllSteps,
     double? indicatorSize,
     double? stepSpacing,
     Color? activeColor,
     Color? completedColor,
     Color? inactiveColor,
     Color? errorColor,
+    Color? railColor,
+    Color? badgeForegroundColor,
   }) =>
       ZStepperConfig(
         orientation: orientation ?? this.orientation,
@@ -165,12 +200,15 @@ class ZStepperConfig {
         showSubtitles: showSubtitles ?? this.showSubtitles,
         allowStepTap: allowStepTap ?? this.allowStepTap,
         validateOnNext: validateOnNext ?? this.validateOnNext,
+        showAllSteps: showAllSteps ?? this.showAllSteps,
         indicatorSize: indicatorSize ?? this.indicatorSize,
         stepSpacing: stepSpacing ?? this.stepSpacing,
         activeColor: activeColor ?? this.activeColor,
         completedColor: completedColor ?? this.completedColor,
         inactiveColor: inactiveColor ?? this.inactiveColor,
         errorColor: errorColor ?? this.errorColor,
+        railColor: railColor ?? this.railColor,
+        badgeForegroundColor: badgeForegroundColor ?? this.badgeForegroundColor,
       );
 
   @override
@@ -185,12 +223,15 @@ class ZStepperConfig {
           showSubtitles == other.showSubtitles &&
           allowStepTap == other.allowStepTap &&
           validateOnNext == other.validateOnNext &&
+          showAllSteps == other.showAllSteps &&
           indicatorSize == other.indicatorSize &&
           stepSpacing == other.stepSpacing &&
           activeColor == other.activeColor &&
           completedColor == other.completedColor &&
           inactiveColor == other.inactiveColor &&
-          errorColor == other.errorColor;
+          errorColor == other.errorColor &&
+          railColor == other.railColor &&
+          badgeForegroundColor == other.badgeForegroundColor;
 
   @override
   int get hashCode => Object.hash(
@@ -201,12 +242,15 @@ class ZStepperConfig {
         showSubtitles,
         allowStepTap,
         validateOnNext,
+        showAllSteps,
         indicatorSize,
         stepSpacing,
         activeColor,
         completedColor,
         inactiveColor,
         errorColor,
+        railColor,
+        badgeForegroundColor,
       );
 
   /// Preset de parité : `top`/`horizontal`/`numbered` (= défaut E3-5).
@@ -217,6 +261,15 @@ class ZStepperConfig {
   static const ZStepperConfig defaultVertical = ZStepperConfig(
     orientation: ZStepOrientation.vertical,
     indicatorPosition: ZStepIndicatorPosition.start,
+  );
+
+  /// Preset de parité **legacy DODLP `showAllSteps: true`** : vertical, toutes
+  /// les étapes dépliées, rail numéroté. Aucune couleur figée (FR-26).
+  static const ZStepperConfig allStepsVertical = ZStepperConfig(
+    orientation: ZStepOrientation.vertical,
+    indicatorPosition: ZStepIndicatorPosition.start,
+    showAllSteps: true,
+    showSubtitles: true,
   );
 
   /// Preset de parité : `bottom`/`horizontal`/`dots`, sans titres.

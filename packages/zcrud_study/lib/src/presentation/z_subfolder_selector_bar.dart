@@ -555,6 +555,12 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       // signalement de la garde de structure de `cr_iffd41_subfolder_sheet_test`,
       // qui lit la liste RÉELLE des paramètres dans la source de `zcrud_core`.
       appFileResolver: scope.appFileResolver,
+      // v0.66.0 : port de rendu riche (sous-titres d'étape en Markdown). Même
+      // motif que `appFileResolver` ci-dessus — signalé par la MÊME garde de
+      // structure, qui a donc mordu deux fois de suite sur deux ports
+      // différents. Elle lit la liste réelle des paramètres dans la source de
+      // `zcrud_core` : tout port ajouté sans être re-posé ici la fait rougir.
+      richTextRenderer: scope.richTextRenderer,
       listRenderer: scope.listRenderer,
       reorderRenderer: scope.reorderRenderer,
       dropRegionRenderer: scope.dropRegionRenderer,

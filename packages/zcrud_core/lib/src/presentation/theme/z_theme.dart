@@ -506,6 +506,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.selectMonoChoiceStyle,
     this.selectMultiChoiceStyle,
     this.selectModalShape,
+    this.stepperRailColor,
+    this.stepperRailThickness,
+    this.stepperBadgeForegroundColor,
+    this.stepperAllStepsGap,
+    this.stepperSideBandMaxWidth,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -1854,6 +1859,61 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Même motivation `String` + `lerp` discret que [selectMonoChoiceStyle].
   final String? selectModalShape;
 
+  // ── Famille `stepper*` (CR-DODLP « Gap 0 » — rail numéroté « tout affiché »)
+  // Ces cinq jetons sont NULLABLES et **absents de [ZcrudTheme.fallback]** :
+  // l'absence de réglage doit rester distinguable d'un réglage neutre, sinon le
+  // consommateur ne peut plus appliquer son rôle de repli (FR-26). `lerp`
+  // motivé par jeton.
+
+  /// Teinte du **rail** vertical reliant les badges d'étape (mode « tout
+  /// affiché »). `null` ⇒ le consommateur applique **son rôle**
+  /// (`ColorScheme.outlineVariant`) — jamais un littéral.
+  ///
+  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait un rail
+  /// **par-dessus** le rôle de repli du consommateur pendant la transition de
+  /// thème (précédent exact : [selectTileBorderColor]).
+  final Color? stepperRailColor;
+
+  /// Épaisseur (dp) du rail vertical. `null` ⇒ référence (`1`, la mesure du
+  /// legacy DODLP `_buildVerticalExpandedSteps`).
+  ///
+  /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est un rail **absent**,
+  /// pas une absence de réglage (identique à [selectTileBorderWidth]).
+  final double? stepperRailThickness;
+
+  /// Teinte du **numéro** peint dans le badge circulaire d'étape. `null` ⇒ le
+  /// consommateur DÉRIVE le contraste de la couleur du badge
+  /// (`ThemeData.estimateBrightnessForColor` → `ColorScheme.surface` /
+  /// `onSurface`) — le legacy DODLP écrit un **blanc littéral** en dur, ce que
+  /// FR-26 interdit et qui casse dès que l'hôte personnalise `activeColor` en
+  /// clair.
+  ///
+  /// 🔴 `lerp` par [_lerpNullableColor] : même raison que [stepperRailColor] —
+  /// matérialiser une teinte pendant la transition écraserait le contraste
+  /// dérivé et rendrait le numéro illisible sur une fraction de l'animation.
+  final Color? stepperBadgeForegroundColor;
+
+  /// Écart vertical (dp) entre deux étapes dépliées du mode « tout affiché ».
+  /// `null` ⇒ référence (`24`, la mesure du legacy).
+  ///
+  /// `lerp` par [_lerpNullableFloor] : un écart `0` est un empilement collé —
+  /// un rendu qu'aucun des deux thèmes ne décrit.
+  final double? stepperAllStepsGap;
+
+  /// Largeur maximale (dp) de la **bande latérale** d'indicateur quand
+  /// `indicatorPosition: start`. `null` ⇒ référence (`220`).
+  ///
+  /// 🔴 Ce jeton n'est pas cosmétique : c'est lui qui **BORNE** la bande. Sans
+  /// borne, la `Row` de composition donne au `_StepIndicator` une largeur
+  /// **non bornée** et le `Expanded` du rendu compact lève
+  /// `RenderFlex children have non-zero flex but incoming width constraints are
+  /// unbounded` (CR-DODLP « Bug 1 »).
+  ///
+  /// `lerp` par [_lerpNullableFloor] : une largeur `0` escamoterait la bande —
+  /// pas une absence de réglage.
+  final double? stepperSideBandMaxWidth;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -2157,6 +2217,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     String? selectMonoChoiceStyle,
     String? selectMultiChoiceStyle,
     String? selectModalShape,
+    Color? stepperRailColor,
+    double? stepperRailThickness,
+    Color? stepperBadgeForegroundColor,
+    double? stepperAllStepsGap,
+    double? stepperSideBandMaxWidth,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -2401,6 +2466,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     selectMultiChoiceStyle:
         selectMultiChoiceStyle ?? this.selectMultiChoiceStyle,
     selectModalShape: selectModalShape ?? this.selectModalShape,
+    stepperRailColor: stepperRailColor ?? this.stepperRailColor,
+    stepperRailThickness: stepperRailThickness ?? this.stepperRailThickness,
+    stepperBadgeForegroundColor:
+        stepperBadgeForegroundColor ?? this.stepperBadgeForegroundColor,
+    stepperAllStepsGap: stepperAllStepsGap ?? this.stepperAllStepsGap,
+    stepperSideBandMaxWidth:
+        stepperSideBandMaxWidth ?? this.stepperSideBandMaxWidth,
   );
 
   @override
@@ -3260,6 +3332,36 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       selectMultiChoiceStyle:
           t < 0.5 ? selectMultiChoiceStyle : other.selectMultiChoiceStyle,
       selectModalShape: t < 0.5 ? selectModalShape : other.selectModalShape,
+      // COULEURS NULLABLES absentes du repli : `_lerpNullableColor`, jamais
+      // `Color.lerp` (qui matérialise la teinte dès `t > 0` et écraserait le
+      // rôle/contraste de repli du consommateur pendant la transition).
+      stepperRailColor: _lerpNullableColor(
+        stepperRailColor,
+        other.stepperRailColor,
+        t,
+      ),
+      stepperBadgeForegroundColor: _lerpNullableColor(
+        stepperBadgeForegroundColor,
+        other.stepperBadgeForegroundColor,
+        t,
+      ),
+      // DIMENSIONS : `_lerpNullableFloor` — un côté `null` ne doit pas tirer la
+      // mesure vers `0` (rail escamoté, étapes collées, bande de largeur nulle).
+      stepperRailThickness: _lerpNullableFloor(
+        stepperRailThickness,
+        other.stepperRailThickness,
+        t,
+      ),
+      stepperAllStepsGap: _lerpNullableFloor(
+        stepperAllStepsGap,
+        other.stepperAllStepsGap,
+        t,
+      ),
+      stepperSideBandMaxWidth: _lerpNullableFloor(
+        stepperSideBandMaxWidth,
+        other.stepperSideBandMaxWidth,
+        t,
+      ),
     );
   }
 }

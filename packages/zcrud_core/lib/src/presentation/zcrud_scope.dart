@@ -28,6 +28,7 @@ import 'theme/z_color_key_resolver.dart';
 import 'theme/z_gradient_resolver.dart';
 import 'theme/z_theme.dart';
 import 'z_dependency_resolver.dart';
+import 'z_rich_text_renderer.dart';
 import 'z_scope_error.dart';
 
 /// Scope d'injection Flutter-natif du cœur `zcrud_core`.
@@ -75,6 +76,7 @@ class ZcrudScope extends InheritedWidget {
     this.colorPicker,
     this.colorKeyResolver,
     this.gradientResolver,
+    this.richTextRenderer,
     super.key,
   });
 
@@ -221,6 +223,16 @@ class ZcrudScope extends InheritedWidget {
   /// Couture de dégradé hôte (VIS-1). `null` conserve le repli neutre ou
   /// l'accent uni; fournir une instance `const` ou mémoïsée hors de `build`.
   final ZGradientResolver? gradientResolver;
+
+  /// Seam de **rendu de texte riche** (CR-DODLP « Gap 0 »). `null` (défaut) ⇒
+  /// tout balisage est rendu en **texte simple**, comportement d'aujourd'hui
+  /// **strictement inchangé** pour un hôte passif.
+  ///
+  /// C'est par ce port qu'un hôte branche un moteur (p. ex. celui de
+  /// `zcrud_markdown`) pour rendre les **sous-titres d'étape** en Markdown, sans
+  /// qu'aucune arête de rendu riche n'entre dans `zcrud_core` (AD-1). Fournir
+  /// une instance `const` ou mémoïsée hors de `build`.
+  final ZRichTextRenderer? richTextRenderer;
 
   /// Retourne le [ZcrudScope] le plus proche.
   ///

@@ -201,5 +201,6 @@ export 'src/presentation/theme/z_theme.dart';
 export 'src/presentation/z_dependency_resolver.dart';
 export 'src/presentation/z_field_listenable_builder.dart';
 export 'src/presentation/z_form_controller.dart';
+export 'src/presentation/z_rich_text_renderer.dart';
 export 'src/presentation/z_scope_error.dart';
 export 'src/presentation/zcrud_scope.dart';
