@@ -561,6 +561,11 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       // différents. Elle lit la liste réelle des paramètres dans la source de
       // `zcrud_core` : tout port ajouté sans être re-posé ici la fait rougir.
       richTextRenderer: scope.richTextRenderer,
+      // v0.69.0 : port de formatage des dates. TROISIÈME port signalé par cette
+      // même garde en trois jours (`appFileResolver`, `richTextRenderer`, puis
+      // celui-ci). Le motif est clair : tout port ajouté à `ZcrudScope` doit
+      // être re-posé ici, et c'est la garde — pas la vigilance — qui le tient.
+      dateDisplayFormatter: scope.dateDisplayFormatter,
       listRenderer: scope.listRenderer,
       reorderRenderer: scope.reorderRenderer,
       dropRegionRenderer: scope.dropRegionRenderer,

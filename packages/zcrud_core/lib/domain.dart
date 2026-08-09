@@ -97,6 +97,11 @@ export 'src/domain/ports/z_app_file_resolver.dart';
 // M22, AD-1/AD-4/AD-5) : `ZChoicesSource` (liste `List<ZFieldChoice>` SYNCHRONE,
 // impl hors cœur) + `ZChoicesSourceRegistry` (instanciable, injecté via `ZcrudScope`).
 export 'src/domain/ports/z_choices_source.dart';
+// Port neutre de FORMATAGE D'AFFICHAGE des dates (CR-DODLP-GAP3BIS, AD-1/AD-10) :
+// `ZDateDisplayFormatter` (impl `intl` hors cœur, injectée via `ZcrudScope`) +
+// `zDateModeOf`. Sans port injecté, toute voie de lecture rend la chaîne BRUTE —
+// exactement l'affichage d'avant le port (hôte passif immobile).
+export 'src/domain/ports/z_date_display_formatter.dart';
 // Ports bas-niveau offline-first (E5-2) : `ZLocalStore`/`ZRemoteStore` neutres.
 export 'src/domain/ports/z_local_store.dart';
 // Port neutre + registre du CRUD inline du champ `relation` (DP-15, M8,

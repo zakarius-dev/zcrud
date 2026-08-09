@@ -13,6 +13,7 @@ import '../domain/ports/cloud_storage_repository.dart';
 import '../domain/ports/z_acl.dart';
 import '../domain/ports/z_app_file_resolver.dart';
 import '../domain/ports/z_choices_source.dart';
+import '../domain/ports/z_date_display_formatter.dart';
 import '../domain/ports/z_relation_crud.dart';
 import '../domain/ports/z_relation_source.dart';
 import 'dnd/z_drop_region_renderer.dart';
@@ -77,6 +78,7 @@ class ZcrudScope extends InheritedWidget {
     this.colorKeyResolver,
     this.gradientResolver,
     this.richTextRenderer,
+    this.dateDisplayFormatter,
     super.key,
   });
 
@@ -234,6 +236,16 @@ class ZcrudScope extends InheritedWidget {
   /// une instance `const` ou mémoïsée hors de `build`.
   final ZRichTextRenderer? richTextRenderer;
 
+  /// Seam de **formatage d'affichage des dates** (CR-DODLP « Gap 3bis »).
+  /// `null` (défaut) ⇒ toute voie de lecture rend la **chaîne stockée brute**
+  /// (l'ISO-8601) — comportement d'aujourd'hui **strictement inchangé** pour un
+  /// hôte passif. C'est un changement visible UNIQUEMENT pour qui injecte.
+  ///
+  /// L'impl localisée (`intl`) vit hors du cœur (`zcrud_intl`) : AD-1 interdit à
+  /// `zcrud_core` de dépendre d'`intl`. Fournir une instance `const` ou mémoïsée
+  /// hors de `build` (AD-2 : aucun objet coûteux recréé par build).
+  final ZDateDisplayFormatter? dateDisplayFormatter;
+
   /// Retourne le [ZcrudScope] le plus proche.
   ///
   /// Lève [ZScopeError] (message actionnable) si aucun scope n'est présent dans
@@ -274,5 +286,13 @@ class ZcrudScope extends InheritedWidget {
       !identical(iconResolver, oldWidget.iconResolver) ||
       !identical(colorPicker, oldWidget.colorPicker) ||
       !identical(colorKeyResolver, oldWidget.colorKeyResolver) ||
-      !identical(gradientResolver, oldWidget.gradientResolver);
+      !identical(gradientResolver, oldWidget.gradientResolver) ||
+      // v0.69.0 — `richTextRenderer` MANQUAIT ici depuis son introduction en
+      // v0.66.0 : le port était déclaré, propagé et consommé, mais un hôte qui
+      // en changeait à chaud ne voyait AUCUN dépendant se reconstruire. Défaut
+      // silencieux — rien ne lève, le rendu reste simplement périmé.
+      // Trouvé en traitant un autre sujet ; la garde qui l'aurait vu n'existait
+      // pas et est posée avec ce correctif (`z_scope_notify_parity_test.dart`).
+      !identical(richTextRenderer, oldWidget.richTextRenderer) ||
+      !identical(dateDisplayFormatter, oldWidget.dateDisplayFormatter);
 }

@@ -2,17 +2,26 @@
 /// le **mode lecture** (DP-13, M4). Helpers `src`-privés à l'API (non exportés) :
 /// consommés par `ZFieldWidget` (dispatch `readMode`) et `ZReadOnlyFieldCard`.
 ///
-/// AD-10 : [zReadOnlyValueOf] est **pur** (aucune tranche, aucun état) et **ne
-/// lève jamais** — toute valeur inconnue/corrompue retombe sur une représentation
-/// textuelle sûre ou un placeholder. AD-2 : aucune allocation de contrôleur.
+/// AD-10 : [zReadOnlyValueOf] ne lit **aucune tranche de formulaire**, ne porte
+/// **aucun état** et **ne lève jamais** — toute valeur inconnue/corrompue
+/// retombe sur une représentation textuelle sûre ou un placeholder. AD-2 :
+/// aucune allocation de contrôleur, aucun objet coûteux construit par appel.
+///
+/// ⚠️ La fonction n'est PAS *pure* au sens Flutter : elle lit deux seams du
+/// `ZcrudScope` (l10n via `label`, et le port de dates
+/// `ZcrudScope.dateDisplayFormatter`). Sans port injecté, la voie date rend la
+/// **chaîne brute** — l'affichage d'un hôte passif est strictement inchangé.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../domain/edition/edition_field_type.dart';
+import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/ports/z_date_display_formatter.dart';
 import '../l10n/z_localizations.dart';
+import '../zcrud_scope.dart';
 import 'edition_field_family.dart';
 import 'z_orphan_choice.dart';
 import 'z_value_emptiness.dart';
@@ -57,11 +66,18 @@ bool _isEmpty(Object? v) => zIsEmptyValue(v);
 const int _maxComplexLen = 200;
 
 /// Formate [value] pour le [field] en mode lecture (AD-10, jamais de throw).
+///
+/// [choices] **surcharge** `field.choices` pour la résolution des libellés des
+/// familles à choix. C'est le canal par lequel un appelant qui a déjà résolu les
+/// options **effectives** (source dynamique `ZChoicesSource`, `choicesFromKey`,
+/// options dérivées) évite qu'une valeur légitime soit vue comme orpheline.
+/// `null` (défaut) ⇒ `field.choices` — comportement d'origine inchangé.
 ReadOnlyValue zReadOnlyValueOf(
   BuildContext context,
   ZFieldSpec field,
-  Object? value,
-) {
+  Object? value, {
+  List<ZFieldChoice>? choices,
+}) {
   String emptyPlaceholder() => label(context, 'emptyValue', fallback: '—');
 
   // `password` : jamais la valeur en clair (masquée si présente, « — » sinon).
@@ -84,7 +100,16 @@ ReadOnlyValue zReadOnlyValueOf(
     case EditionFieldType.checkbox:
     case EditionFieldType.relation:
     case EditionFieldType.rowChips:
-      return ReadOnlyValue.text(_choiceLabels(context, field, value));
+      return ReadOnlyValue.text(
+        _choiceLabels(context, choices ?? field.choices, value),
+      );
+
+    case EditionFieldType.dateTime:
+    case EditionFieldType.time:
+      // CR-DODLP-GAP3BIS : projection d'AFFICHAGE d'une date via le port neutre
+      // `ZDateDisplayFormatter`. Port absent / valeur non parsable / port en
+      // erreur ⇒ chaîne BRUTE, soit exactement le rendu d'avant (AD-10).
+      return ReadOnlyValue.text(zDateDisplayText(context, field, value));
 
     case EditionFieldType.number:
     case EditionFieldType.integer:
@@ -126,19 +151,63 @@ String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
   return '$value';
 }
 
-/// Libellé(s) résolus depuis `field.choices` ; valeur **orpheline** (absente des
+/// Texte d'affichage d'une valeur de date (CR-DODLP-GAP3BIS).
+///
+/// **Repli DÉFINI (AD-10) = la chaîne brute**, dans TOUS les chemins dégradés :
+/// port absent, valeur non parsable en `DateTime` (dont le mode `time`, stocké
+/// `HH:mm`), port retournant `null`/vide, port qui lève. ⇒ un hôte qui n'injecte
+/// rien voit **exactement** l'affichage d'avant ce port.
+///
+/// AD-2 : aucune allocation coûteuse — un `DateTime.tryParse` et un appel de
+/// port ; l'instance du formateur appartient à l'hôte (jamais construite ici).
+String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) {
+  final raw = '$value';
+  final formatter = ZcrudScope.maybeOf(context)?.dateDisplayFormatter;
+  if (formatter == null) return raw;
+  final mode = zDateModeOf(
+    field.config,
+    isTimeType: field.type == EditionFieldType.time,
+  );
+  // `time` n'est PAS routé vers le port : sa valeur (`HH:mm`) n'est ni ISO ni
+  // portable dans un `DateTime` — et elle est déjà lisible telle quelle.
+  if (mode == ZDateMode.time) return raw;
+  final dt = value is DateTime ? value : DateTime.tryParse(raw);
+  if (dt == null) return raw;
+  try {
+    final formatted = formatter.format(dt, mode: mode, localeTag: _localeTag(context));
+    if (formatted == null || formatted.isEmpty) return raw;
+    return formatted;
+  } catch (_) {
+    // AD-10 : un port hôte qui lève ne fait jamais échouer un `build`.
+    return raw;
+  }
+}
+
+/// BCP-47 de la locale ambiante, ou `null` si l'arbre n'en porte pas
+/// (`maybeLocaleOf` — jamais `localeOf`, qui lève sans `Localizations`).
+String? _localeTag(BuildContext context) =>
+    Localizations.maybeLocaleOf(context)?.toLanguageTag();
+
+/// Libellé(s) résolus depuis [choices] ; valeur **orpheline** (absente des
 /// options) → libellé l10n d'indisponibilité, **jamais la clé technique**
 /// (CR-ORPHAN) ; liste/`multiple` → libellés joints « , ».
 ///
-/// 🔴 Le mode lecture ne dispose que des choix **statiques** de la spec : une
-/// valeur alimentée par une source dynamique y est donc structurellement
-/// orpheline. Elle rendait auparavant son **identifiant brut** — c'est le défaut
+/// 🔴 La fiche de lecture (`ZReadOnlyFieldCard`) ne passe que les choix
+/// **statiques** de la spec : une valeur alimentée par une source dynamique y
+/// est donc structurellement orpheline. (Le résumé de sous-liste compact, lui,
+/// passe les choix **effectifs** résolus par `zResolveSelectChoices` — voir le
+/// paramètre `choices` de [zReadOnlyValueOf].)
+/// Elle rendait auparavant son **identifiant brut** — c'est le défaut
 /// que ce paquet proscrit ailleurs (`fileRefUnresolved`). Elle rend désormais le
 /// même libellé que les huit voies d'édition. La valeur n'est pas altérée : le
 /// mode lecture n'écrit rien.
-String _choiceLabels(BuildContext context, ZFieldSpec field, Object? value) {
+String _choiceLabels(
+  BuildContext context,
+  List<ZFieldChoice> choices,
+  Object? value,
+) {
   String labelOf(Object? v) {
-    for (final c in field.choices) {
+    for (final c in choices) {
       if (c.value == v) return label(context, c.label, fallback: c.label);
     }
     return zOrphanChoiceLabel(context);

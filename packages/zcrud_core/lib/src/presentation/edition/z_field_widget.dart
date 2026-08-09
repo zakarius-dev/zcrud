@@ -71,6 +71,7 @@ import 'z_field_label.dart';
 import 'z_large_field_card.dart';
 import 'z_read_only_field_card.dart';
 import 'z_read_only_value.dart';
+import 'z_select_choices_resolver.dart';
 import 'z_value_emptiness.dart';
 import 'z_widget_registry.dart';
 
@@ -745,78 +746,16 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     }
   }
 
-  /// Résout les **choix effectifs** d'un `select` (DP-15/M22, défensif AD-10).
-  /// Priorité **stable** :
-  /// 1. `choicesSourceKey` (si le registre + la clé résolvent une `ZChoicesSource`)
-  ///    → options calculées depuis le `filterContext` (snapshot des `filterKeys`) ;
-  /// 2. `choicesFromKey` (si la tranche référencée porte une `List<ZFieldChoice>`
-  ///    NON vide) → parité `stateChoiceItems` ;
-  /// 3. `field.choices` (statique).
-  /// Toute résolution absente/vide/mal typée / source en erreur ⇒ repli sur le
-  /// niveau suivant, jamais un throw dans le build.
+  /// Résout les **choix effectifs** d'un `select` — **délègue** à
+  /// `zResolveSelectChoices` (source unique, cf. `z_select_choices_resolver.dart`).
+  /// La priorité et les replis y sont documentés ; ce paquet n'en garde qu'UNE
+  /// copie, partagée avec la projection d'affichage du résumé de sous-liste.
   List<ZFieldChoice> _resolveSelectChoices(
     BuildContext context,
     ZFieldSpec field,
     ZSelectConfig? selCfg,
-  ) {
-    // CR-IFFD-22 — options DÉRIVÉES, lues AVANT le repli statique et AVANT le
-    // retour anticipé ci-dessous : un champ qui déclare `derivedFrom.options`
-    // sans `ZSelectConfig` doit quand même les recevoir. Un `choicesSourceKey`
-    // ou un `choicesFromKey` EXPLICITE reste prioritaire — l'hôte qui câble à la
-    // main a le dernier mot.
-    final derived = _derivedChoices(field);
-    if (selCfg == null) return derived ?? field.choices;
-    // 1. Source CALCULÉE (registre injecté + clé).
-    final sourceKey = selCfg.choicesSourceKey;
-    if (sourceKey != null) {
-      final source = ZcrudScope.maybeOf(context)
-          ?.choicesSourceRegistry
-          ?.trySourceFor(sourceKey);
-      if (source != null) {
-        final filterContext = <String, Object?>{};
-        for (final k in selCfg.filterKeys) {
-          filterContext[k] = widget.controller.valueOf(k);
-        }
-        try {
-          // Priorité au résultat de la source résolue (même vide).
-          return source.options(filterContext);
-        } catch (_) {
-          // AD-10 : source en erreur ⇒ repli sur les niveaux suivants.
-        }
-      }
-    }
-    // 2. Lecture cross-champ directe (parité `stateChoiceItems`).
-    final fromKey = selCfg.choicesFromKey;
-    if (fromKey != null) {
-      final slice = widget.controller.valueOf(fromKey);
-      if (slice is List<ZFieldChoice> && slice.isNotEmpty) return slice;
-      if (slice is List &&
-          slice.isNotEmpty &&
-          slice.every((e) => e is ZFieldChoice)) {
-        return slice.cast<ZFieldChoice>();
-      }
-    }
-    // 3. Options DÉRIVÉES (CR-IFFD-22).
-    if (derived != null) return derived;
-    // 4. Repli statique.
-    return field.choices;
-  }
-
-  /// Options publiées par le moteur de dérivation pour ce champ, ou `null` si
-  /// le champ n'en dérive pas / si la tranche ne porte encore rien d'exploitable.
-  ///
-  /// **DÉFENSIF** (AD-10) : une tranche d'un autre type est ignorée plutôt que
-  /// de faire échouer le rendu du champ.
-  List<ZFieldChoice>? _derivedChoices(ZFieldSpec field) {
-    if (field.derivedFrom?.options == null) return null;
-    final slice = widget.controller
-        .valueOf(ZDerivationChannels.optionsKey(field.name));
-    if (slice is List<ZFieldChoice>) return slice;
-    if (slice is List && slice.every((e) => e is ZFieldChoice)) {
-      return slice.cast<ZFieldChoice>();
-    }
-    return null;
-  }
+  ) =>
+      zResolveSelectChoices(context, widget.controller, field, selCfg);
 
   /// Résout une borne de date (D4/D5) : le **littéral** [iso] (ISO-8601 parsé)
   /// prime ; à défaut, la valeur **cross-champ** du champ [key] lue via

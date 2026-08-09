@@ -79,6 +79,7 @@ class ZSubListConfig extends ZFieldConfig {
     this.defaultNewItem = const <String, Object?>{},
     this.createNewTextKey,
     this.aclCollectionId,
+    this.showSummaryHeaders = false,
   });
 
   /// Sous-schéma `const` d'un item (projeté 1:1 en sous-formulaire imbriqué).
@@ -139,6 +140,24 @@ class ZSubListConfig extends ZFieldConfig {
   /// AD-3/AD-14) ; sans effet en mode `inline` (qui n'a pas d'actions gatées).
   final String? aclCollectionId;
 
+  /// CR-DODLP-GAP3BIS — **en-têtes de colonnes** du résumé (mode compact).
+  ///
+  /// 🔴 **Opt-in**, et c'est délibéré : activer les en-têtes change la **hauteur**
+  /// de la table ET la **mise en page des cellules** chez tout hôte en mode
+  /// compact. `false` (**défaut**) ⇒ rendu DP-6 strictement inchangé.
+  ///
+  /// `true` ⇒ (1) une ligne d'en-tête reprenant le `label` (résolu l10n) de
+  /// chaque `ZFieldSpec` de [summaryFields] est rendue au-dessus des lignes ;
+  /// (2) les cellules passent d'un défilement horizontal **par ligne** à des
+  /// **colonnes de largeur égale** (`Expanded` + ellipse). Ce second point n'est
+  /// pas cosmétique : des cellules de largeur intrinsèque défilant chacune
+  /// indépendamment ne s'alignent JAMAIS sous un en-tête — l'en-tête mentirait.
+  /// Le texte tronqué reste atteignable par le dialog consulter/modifier.
+  ///
+  /// ⇒ à réserver à un petit nombre de colonnes. Une vraie grille (colonnes
+  /// dimensionnées, tri, défilement synchronisé) relève de `zcrud_list`.
+  final bool showSummaryHeaders;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -149,6 +168,7 @@ class ZSubListConfig extends ZFieldConfig {
           softDelete == other.softDelete &&
           createNewTextKey == other.createNewTextKey &&
           aclCollectionId == other.aclCollectionId &&
+          showSummaryHeaders == other.showSummaryHeaders &&
           _listEquals(itemFields, other.itemFields) &&
           _listEquals(summaryFields, other.summaryFields) &&
           _listEquals(creationTemplates, other.creationTemplates) &&
@@ -162,6 +182,7 @@ class ZSubListConfig extends ZFieldConfig {
         softDelete,
         createNewTextKey,
         aclCollectionId,
+        showSummaryHeaders,
         Object.hashAll(itemFields),
         Object.hashAll(summaryFields),
         Object.hashAll(creationTemplates),

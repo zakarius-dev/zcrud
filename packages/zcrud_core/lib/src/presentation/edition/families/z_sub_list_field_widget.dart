@@ -46,6 +46,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/edition/edition_field_type.dart';
+import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../../domain/edition/z_sub_list_config.dart';
 import '../../../domain/ports/z_acl.dart';
@@ -53,6 +55,9 @@ import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../z_form_controller.dart';
 import '../z_field_widget.dart';
+import '../z_read_only_value.dart';
+import '../z_select_choices_resolver.dart';
+import '../z_value_emptiness.dart';
 
 /// Seam (usage de test) : construit le widget d'édition d'un **sous-champ**
 /// d'item, avec le contexte de l'item (`itemId`) pour instrumenter les compteurs
@@ -183,6 +188,13 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   List<String> get _summaryFields {
     final config = widget.field.config;
     return config is ZSubListConfig ? config.summaryFields : const <String>[];
+  }
+
+  /// CR-DODLP-GAP3BIS — en-têtes de colonnes du résumé ? (**opt-in**, défaut
+  /// `false` ⇒ mise en page compacte strictement inchangée).
+  bool get _showSummaryHeaders {
+    final config = widget.field.config;
+    return config is ZSubListConfig && config.showSummaryHeaders;
   }
 
   /// DP-19 (M18) — soft-delete actif ? (défaut `false`, config absente/non conf.)
@@ -406,6 +418,85 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// Représentation textuelle stable d'une valeur (`null`/vide → `''`, AD-10).
   static String _stringOf(Object? value) => value == null ? '' : '$value';
 
+  /// Sous-spec de [name] dans le sous-schéma `const`, ou `null` si le `name`
+  /// déclaré en `summaryFields` ne correspond à aucun `itemField` (AD-10 :
+  /// une config incohérente ne fait pas échouer le rendu).
+  ZFieldSpec? _specOf(String name) {
+    for (final f in _itemFields) {
+      if (f.name == name) return f;
+    }
+    return null;
+  }
+
+  /// **Projection d'AFFICHAGE** d'une valeur de résumé (CR-DODLP-GAP3BIS).
+  ///
+  /// 🔴 Ce n'est **pas** une quatrième copie du motif `'$value'` : elle
+  /// **réutilise** `zReadOnlyValueOf`, la projection d'affichage déjà en place
+  /// pour le mode lecture — donc les MÊMES règles, dans le même canal :
+  /// - un `select`/`radio`/`checkbox`/`relation`/`rowChips` rend le **libellé**
+  ///   du choix, jamais sa clé technique ;
+  /// - une valeur **orpheline** (sélectionnée puis retirée des choix) rend le
+  ///   libellé l10n `choiceUnresolved` de `z_orphan_choice.dart` — **le même
+  ///   libellé et le même canal que les dix voies de v0.65.0**, ni disparition
+  ///   ni clé brute ;
+  /// - une date rend le port `ZDateDisplayFormatter` (chaîne brute sans port).
+  ///
+  /// Les **choix effectifs** sont résolus par `zResolveSelectChoices` sur le
+  /// contrôleur DE L'ITEM : une source `ZChoicesSource` (synchrone), un
+  /// `choicesFromKey` ou des options dérivées de l'item sont donc honorés — une
+  /// valeur légitime issue d'une source dynamique n'est PAS vue comme orpheline.
+  /// La famille `relation` (source = `Stream`) reste hors de portée synchrone :
+  /// elle retombe sur `choices` statiques, donc sur le libellé d'orphelin.
+  ///
+  /// **Valeur vide ⇒ `''` STRICTEMENT** (jamais le placeholder « — » de la fiche
+  /// de lecture) : le mettre déplacerait tout hôte passif.
+  ///
+  /// 🔴 **Périmètre volontairement BORNÉ aux familles nommées par la CR** :
+  /// choix et dates. Les autres familles gardent `_stringOf` **inchangé** —
+  /// router tout le résumé dans `zReadOnlyValueOf` aurait aussi transformé, sans
+  /// que personne l'ait demandé, `true` en « Oui », `42` en « 42 % », une valeur
+  /// `password` en « •••• ». Un hôte passif ne bouge donc QUE là où la CR
+  /// l'exige (libellés de choix) ou là où il a injecté un port (dates).
+  ///
+  /// AD-2/SM-1 : lecture de la seule tranche du sous-champ, aucun objet coûteux
+  /// alloué, aucune souscription — la cellule ne reconstruit rien au-delà d'elle.
+  String _displayText(BuildContext context, _SubItem item, String name) {
+    final raw = item.controller.valueOf(name);
+    if (zIsEmptyValue(raw)) return '';
+    final spec = _specOf(name);
+    if (spec == null || !_projectedTypes.contains(spec.type)) {
+      return _stringOf(raw);
+    }
+    final cfg = spec.config;
+    final rov = zReadOnlyValueOf(
+      context,
+      spec,
+      raw,
+      choices: zResolveSelectChoices(
+        context,
+        item.controller,
+        spec,
+        cfg is ZSelectConfig ? cfg : null,
+      ),
+    );
+    // `rov.widget` n'a pas de texte : repli brut (aucune famille projetée ici
+    // n'en produit — garde-fou AD-10).
+    return rov.text ?? _stringOf(raw);
+  }
+
+  /// Familles dont le résumé est **projeté** (CR-DODLP-GAP3BIS) : les familles à
+  /// choix (libellé au lieu de la clé) et les familles de date (port
+  /// d'affichage). Toute autre famille conserve son rendu brut d'origine.
+  static const Set<EditionFieldType> _projectedTypes = <EditionFieldType>{
+    EditionFieldType.select,
+    EditionFieldType.radio,
+    EditionFieldType.checkbox,
+    EditionFieldType.relation,
+    EditionFieldType.rowChips,
+    EditionFieldType.dateTime,
+    EditionFieldType.time,
+  };
+
   /// Snapshot `Map` des valeurs courantes d'un item (lecture des tranches).
   Map<String, dynamic> _itemData(_SubItem item) => <String, dynamic>{
         for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
@@ -424,17 +515,19 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   /// Titre de résumé d'une ligne quand aucun `summaryFields` (AC8/AC12) :
   /// `itemTitleBuilder` s'il est fourni, sinon **concaténation lisible** des
   /// valeurs non nulles des `itemFields` (jamais un déballage éditable).
-  String _defaultTitle(_SubItem item) {
+  String _defaultTitle(BuildContext context, _SubItem item) {
     final data = _itemData(item);
     final builder = widget.itemTitleBuilder;
     if (builder != null) {
       final t = _safeTitle(builder, data);
       if (t != null && t.isNotEmpty) return t;
     }
+    // Le `itemTitleBuilder` reçoit toujours la donnée BRUTE (contrat inchangé) ;
+    // seul le repli dérivé est projeté (mêmes règles que `_displayText`).
     return <String>[
       for (final f in _itemFields)
-        if (data[f.name] != null && _stringOf(data[f.name]).isNotEmpty)
-          _stringOf(data[f.name]),
+        if (data[f.name] != null && _displayText(context, item, f.name).isNotEmpty)
+          _displayText(context, item, f.name),
     ].join(' — ');
   }
 
@@ -455,9 +548,31 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
 
   /// Contenu résumé d'une ligne (mode compact) : les `summaryFields` en lecture
   /// (défilement horizontal encapsulé — AC6a) ou le titre dérivé (AC8).
-  Widget _summaryCells(_SubItem item) {
+  Widget _summaryCells(BuildContext context, _SubItem item) {
     final summaryFields = _summaryFields;
     if (summaryFields.isNotEmpty) {
+      // Mode EN-TÊTES (opt-in) : colonnes de largeur égale, ellipse, aucun
+      // défilement horizontal — sans quoi des cellules de largeur intrinsèque
+      // défilant chacune pour son compte ne s'aligneraient jamais sous
+      // l'en-tête. Le texte tronqué reste atteignable par consulter/modifier.
+      if (_showSummaryHeaders) {
+        return Row(
+          children: <Widget>[
+            for (final name in summaryFields)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
+                  child: Text(
+                    _displayText(context, item, name),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ),
+          ],
+        );
+      }
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -466,7 +581,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
                 child: Text(
-                  _stringOf(item.controller.valueOf(name)),
+                  _displayText(context, item, name),
                   textAlign: TextAlign.start,
                 ),
               ),
@@ -475,12 +590,69 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       );
     }
     return Text(
-      _defaultTitle(item),
+      _defaultTitle(context, item),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.start,
     );
   }
+
+  /// Ligne d'**en-têtes de colonnes** (CR-DODLP-GAP3BIS, opt-in). Reprend le
+  /// `label` l10n de chaque `ZFieldSpec` de `summaryFields` (repli : le `name`)
+  /// — aucun libellé codé en dur (FR-26). Même géométrie de colonnes que les
+  /// cellules (`Expanded` + même padding de fin) : l'alignement est réel.
+  ///
+  /// a11y (AD-13) : `header: true` sur chaque cellule — l'en-tête est annoncé
+  /// comme tel, et la distinction ne repose pas sur le seul style visuel.
+  ///
+  /// [actionCount] = nombre d'`IconButton` de fin de ligne (gated ACL) : la
+  /// réserve de fin reproduit leur emprise pour que les colonnes tombent
+  /// réellement en face. ⚠️ Une ligne **soft-deleted** n'expose qu'une action
+  /// (restaurer) + un badge : ses colonnes sont donc décalées de la différence.
+  Widget _summaryHeaderRow(BuildContext context, int actionCount) {
+    final summaryFields = _summaryFields;
+    return Padding(
+      // Reproduit la géométrie de `_CompactRow` : marge externe 16, marge
+      // interne de début 12, réserve de fin = actions + marge interne 4.
+      padding: const EdgeInsetsDirectional.fromSTEB(28, 8, 16, 0),
+      child: Row(
+        children: <Widget>[
+          for (final name in summaryFields)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
+                child: Semantics(
+                  // `container: true` est NÉCESSAIRE, pas décoratif : le mode
+                  // compact est enveloppé d'un `Semantics(container: true)` qui
+                  // FUSIONNE ses descendants — sans nœud propre, le drapeau
+                  // `header` remonterait sur le bloc entier, qui serait alors
+                  // annoncé comme un titre (mesuré).
+                  container: true,
+                  header: true,
+                  child: Text(
+                    label(
+                      context,
+                      _specOf(name)?.label ?? name,
+                      fallback: _specOf(name)?.label ?? name,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.start,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+              ),
+            ),
+          SizedBox(width: actionCount * _actionExtent + 4),
+        ],
+      ),
+    );
+  }
+
+  /// Emprise horizontale d'une action de fin de ligne (`IconButton` Material,
+  /// cible tactile ≥ 48 dp — AD-13). Sert à réserver, sous l'en-tête, la même
+  /// largeur que la zone d'actions.
+  static const double _actionExtent = 48;
 
   /// Ouvre le dialog d'édition d'un item. `initial` amorce le `ZFormController`
   /// propre du dialog ; retourne le `Map` agrégé à la validation, `null` à
@@ -646,6 +818,15 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
               ],
             ),
           ),
+          // CR-DODLP-GAP3BIS : en-têtes de colonnes, **opt-in** et rendus
+          // seulement s'il y a des colonnes ET des lignes à coiffer.
+          if (_showSummaryHeaders &&
+              _summaryFields.isNotEmpty &&
+              _items.isNotEmpty)
+            _summaryHeaderRow(
+              context,
+              (canView ? 1 : 0) + (canUpdate ? 1 : 0) + (canDelete ? 1 : 0),
+            ),
           if (_items.isEmpty)
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
@@ -667,7 +848,7 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
                   child: _CompactRow(
                     borderColor: theme.fieldBorderColor,
                     radius: theme.radiusM,
-                    summary: _summaryCells(item),
+                    summary: _summaryCells(context, item),
                     deleted: item.deleted,
                     canView: canView,
                     canUpdate: canUpdate,
@@ -775,12 +956,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     if (summaryFields.isNotEmpty) {
       final parts = <String>[
         for (final name in summaryFields)
-          if (_stringOf(item.controller.valueOf(name)).isNotEmpty)
-            _stringOf(item.controller.valueOf(name)),
+          if (_displayText(context, item, name).isNotEmpty)
+            _displayText(context, item, name),
       ];
       if (parts.isNotEmpty) return parts.join(' — ');
     }
-    final title = _defaultTitle(item);
+    final title = _defaultTitle(context, item);
     if (title.isNotEmpty) return title;
     return label(
       context,

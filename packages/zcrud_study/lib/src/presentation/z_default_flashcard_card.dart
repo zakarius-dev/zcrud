@@ -1083,6 +1083,8 @@ class _ZFlashcardRichText extends StatelessWidget {
         appFileResolver: scope.appFileResolver,
         // v0.66.0 : port de rendu riche, même motif que `appFileResolver`.
         richTextRenderer: scope.richTextRenderer,
+        // v0.69.0 : port de formatage des dates, même motif.
+        dateDisplayFormatter: scope.dateDisplayFormatter,
         listRenderer: scope.listRenderer,
         reorderRenderer: scope.reorderRenderer,
         dropRegionRenderer: scope.dropRegionRenderer,
