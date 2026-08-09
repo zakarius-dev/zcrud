@@ -69,6 +69,7 @@ import 'z_responsive_grid.dart';
 import 'z_step_index_store.dart';
 import 'z_stepper_config.dart';
 import 'z_validator_compiler.dart';
+import 'z_value_emptiness.dart';
 
 export 'z_step_index_store.dart';
 export 'z_stepper_config.dart';
@@ -836,12 +837,23 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         () => ZValidatorCompiler.compile(spec.validators),
       );
 
-  static String _stringOf(Object? value) => value == null ? '' : '$value';
-
+  /// CR-DODLP-GAP34 — **projection de validation partagée**, et non la copie
+  /// locale `_stringOf(o) => o == null ? '' : '$o'` que ce fichier portait.
+  ///
+  /// Mesuré : cette copie projetait une **collection/map vide** vers `"[]"` /
+  /// `"{}"` — non vides pour `FormBuilderValidators.required<String>`. Le gate
+  /// d'étape laissait donc passer « Suivant » sur un `subItems` requis **sans
+  /// aucune ligne** et sur un champ custom requis portant une **map vide**,
+  /// alors que `DynamicEdition` (`_wrapError`) et la soumission
+  /// (`_aggregateValidate`) mordaient déjà, tous deux via [zValidationText].
+  ///
+  /// C'était la **garde jumelle manquée** du LOT 2 : la règle unique du dépôt
+  /// avait été posée dans les deux autres voies de validation, jamais ici.
   bool _validatorPasses(ZFieldSpec spec) {
     final validator = _validatorFor(spec);
     if (validator == null) return true;
-    return validator(_stringOf(widget.controller.valueOf(spec.name))) == null;
+    return validator(zValidationText(widget.controller.valueOf(spec.name))) ==
+        null;
   }
 
   /// `true` ssi TOUS les champs **visibles** de l'étape [i] passent leurs

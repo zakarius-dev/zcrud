@@ -121,6 +121,12 @@ export 'src/presentation/edition/z_submit_button.dart';
 // projette la donnée déclarative en validateur EXÉCUTABLE champ-local via
 // `form_builder_validators` (jamais `flutter_form_builder`). Réutilisé par E3-5.
 export 'src/presentation/edition/z_validator_compiler.dart';
+// CR-DODLP-GAP4 — **règle UNIQUE de vacuité** du dépôt (`zIsEmptyValue`) et sa
+// projection vers le texte soumis aux validateurs (`zValidationText`). Exportée
+// pour qu'un champ CUSTOM à valeur structurée (map/liste) qualifie « vide »
+// exactement comme le cœur — au lieu de ré-inventer une seconde règle qui
+// divergerait de `required`.
+export 'src/presentation/edition/z_value_emptiness.dart';
 // Registre de widgets d'édition injecté (E3-3b-1, AD-4) : `ZWidgetRegistry`
 // (instanciable, jamais un singleton statique) + `ZFieldWidgetContext`/
 // `ZFieldWidgetBuilder`. Sert les types dont le widget vit AILLEURS (markdown→E6,

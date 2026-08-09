@@ -31,6 +31,50 @@ import '../../domain/registry/z_registry_error.dart';
 /// COURANTE de sa tranche et le callback d'écriture. Le builder **lit** [value]
 /// et **écrit** via [onChanged] — l'appel reste **dans** la frontière de rebuild
 /// du dispatcher (AD-2 : aucune souscription élargie).
+///
+/// ## CR-DODLP-GAP4 — champ custom à valeur **STRUCTURÉE** (recommandation)
+///
+/// Un champ composite (ex. `ressource → opérations autorisées`) n'a **rien de
+/// spécial** à obtenir : le socle le porte déjà de bout en bout. Les quatre
+/// points ont été mesurés, pas déduits.
+///
+/// 1. **Écrire une `Map`** — [onChanged] est un `ValueChanged<Object?>`, pas un
+///    `ValueChanged<String>`. `ctx.onChanged({'agent': ['read','update']})`
+///    dépose la map **telle quelle** dans la tranche ; `controller.valueOf` la
+///    rend inchangée. Aucune sérialisation intermédiaire, aucun encodage.
+/// 2. **Requis** — un `ZValidatorSpec.required` **mord sur une map vide**. Le
+///    dispatcher projette la valeur par `zValidationText` (règle unique
+///    `zIsEmptyValue` : `null`, chaîne, `Iterable` et **`Map`** vides comptent
+///    comme vides), puis affiche l'erreur sous le widget custom via la surface
+///    accessible `Semantics(liveRegion:)` — la famille registre n'est pas une
+///    famille clavier, elle passe donc par cette surface et non par
+///    `TextFormField.errorText`. La soumission applique la même règle.
+///    🔴 Le **gate d'étape** de `ZStepperEdition` portait une copie locale de la
+///    projection qui rendait `"{}"` (non vide) : « Suivant » passait sur une map
+///    requise vide. Corrigé — mêmes trois voies, même règle.
+/// 3. **Rebuild granulaire (AD-2/SM-1)** — le widget custom est monté DANS le
+///    `ZFieldListenableBuilder` de sa tranche : changer une entrée de la map ne
+///    reconstruit **que ce champ**. Corollaire à respecter côté hôte : écrire
+///    une **nouvelle** map (copie) plutôt que muter celle reçue — une mutation
+///    en place ne notifie rien.
+/// 4. **Validation métier au-delà du requis** — elle ne s'exprime pas dans
+///    `validators` (qui compile des `FormFieldValidator<String>` sur la
+///    projection texte). Deux voies : soit le widget custom refuse d'écrire un
+///    état invalide (la tranche ne contient alors que du valide), soit la règle
+///    se pose en **inter-champs** (`ZCrossFieldValidator`).
+///
+/// **Lecture seule** : la famille registre n'est PAS « fiche-able » — un champ
+/// custom rend lui-même son état `ctx.field.readOnly`. Le socle ne devinera pas
+/// la présentation lisible d'une structure qu'il ne connaît pas.
+///
+/// **Sérialisation** : la map vit dans la tranche puis dans le `Map` soumis ;
+/// sa (dé)sérialisation est celle du modèle (AD-3), sa **relecture défensive**
+/// celle d'AD-10 (une entrée absente/corrompue ne fait jamais échouer le
+/// parent). Le cœur ne s'interpose pas.
+///
+/// 🔴 Ce qui reste **hors du socle** : l'éditeur lui-même. Un tableau de
+/// permissions est une décision **métier** de l'application — le socle fournit
+/// le moyen (tranche typée `Object?`, requis, granularité), jamais l'écran.
 @immutable
 class ZFieldWidgetContext {
   /// Construit le contexte d'un champ servi par le registre.

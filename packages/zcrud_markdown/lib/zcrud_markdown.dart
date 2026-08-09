@@ -32,6 +32,11 @@ export 'src/presentation/z_markdown_reader.dart'
     show ZMarkdownReader, ZMarkdownReaderChrome;
 export 'src/presentation/z_markdown_registration.dart'
     show registerZMarkdownFields;
+// Moteur Markdown du port `ZRichTextRenderer` de `zcrud_core` (DP-RT). Surface
+// NEUTRE : la classe n'expose qu'un `ZCodec` et le `Widget?` du port — aucun
+// type Quill.
+export 'src/presentation/z_markdown_rich_text_renderer.dart'
+    show ZMarkdownRichTextRenderer;
 // DP-22 (M20) : seam NEUTRE de résolution de source média (image/vidéo). N'EXPOSE
 // QUE les symboles neutres (aucun type Quill) — les embeds `ZImageEmbed`/
 // `ZVideoEmbed`/`ZMediaEmbedBuilder` (qui étendent `Embeddable`/`EmbedBuilder`)

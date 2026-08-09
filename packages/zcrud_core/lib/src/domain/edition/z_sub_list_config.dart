@@ -78,6 +78,7 @@ class ZSubListConfig extends ZFieldConfig {
     this.creationTemplates = const <ZSubListItemTemplate>[],
     this.defaultNewItem = const <String, Object?>{},
     this.createNewTextKey,
+    this.aclCollectionId,
   });
 
   /// Sous-schéma `const` d'un item (projeté 1:1 en sous-formulaire imbriqué).
@@ -119,6 +120,25 @@ class ZSubListConfig extends ZFieldConfig {
   /// `createNewText` DODLP). `null` (défaut) ⇒ libellé générique `addItem`.
   final String? createNewTextKey;
 
+  /// CR-DODLP-GAP3 — **discriminant de collection ACL des lignes** de cette
+  /// sous-liste, transmis à `ZAcl.can(action, collectionId:)`.
+  ///
+  /// 🔴 C'est **aussi l'interrupteur** de la garde ACL, et c'est délibéré.
+  /// Mesuré avant ce champ : `ZSubListFieldWidget.acl` existait et était lu
+  /// (add/view/edit/delete du mode compact), mais **aucun site du cœur ne
+  /// l'alimentait** (`grep -rn "acl:" lib` → 0 occurrence) ; un hôte injectant
+  /// `ZcrudScope(acl: …)` voyait donc ses lignes de sous-liste **non filtrées**.
+  /// Câbler le scope inconditionnellement aurait **déplacé un hôte passif** :
+  /// une app qui pose déjà une ACL restrictive au scope aurait vu ses boutons
+  /// disparaître sans avoir rien demandé.
+  ///
+  /// Donc : `null` (**défaut**) ⇒ l'ACL du scope **n'est pas consultée**,
+  /// comportement DP-6 strictement inchangé. Non `null` ⇒ le dispatcher passe
+  /// `ZcrudScope.acl` **et** ce discriminant à la sous-liste, qui filtre alors
+  /// réellement ses actions de ligne. Pur-données `const` (aucune closure —
+  /// AD-3/AD-14) ; sans effet en mode `inline` (qui n'a pas d'actions gatées).
+  final String? aclCollectionId;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -128,6 +148,7 @@ class ZSubListConfig extends ZFieldConfig {
           displayMode == other.displayMode &&
           softDelete == other.softDelete &&
           createNewTextKey == other.createNewTextKey &&
+          aclCollectionId == other.aclCollectionId &&
           _listEquals(itemFields, other.itemFields) &&
           _listEquals(summaryFields, other.summaryFields) &&
           _listEquals(creationTemplates, other.creationTemplates) &&
@@ -140,6 +161,7 @@ class ZSubListConfig extends ZFieldConfig {
         displayMode,
         softDelete,
         createNewTextKey,
+        aclCollectionId,
         Object.hashAll(itemFields),
         Object.hashAll(summaryFields),
         Object.hashAll(creationTemplates),

@@ -73,7 +73,17 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
 /// AD-13 (documenté) : la parité DODLP (`QuillDefaultStylesHelper` + google_fonts
 /// + palette de couleurs figée) n'est PAS reproduite — pas de dépendance
 /// `google_fonts`, pas de couleur en dur. Seule la dérivation thème est portée.
-DefaultStyles zQuillThemedStyles(BuildContext context) {
+/// [baseStyle] (optionnel, DP-RT) : style **attendu par l'appelant** pour le
+/// CORPS de texte (contrat `ZRichTextRenderer.build`). Quand il est fourni, il
+/// devient la base des blocs de corps — paragraphe, listes, citation — par
+/// FUSION sur le style Quill ambiant. 🔴 Il ne peut PAS être obtenu en
+/// enveloppant l'éditeur d'un `DefaultTextStyle` : mesuré,
+/// `DefaultStyles.getInstance` repart bien de `DefaultTextStyle.of(context)`
+/// mais **écrase `fontSize` à 16** — un `bodySmall` passé par l'ambiant perdrait
+/// donc sa taille en silence. Les **rôles matérialisés** (titres H1..H6, code
+/// inline) en dévient délibérément et restent dérivés du thème (FR-26).
+/// `null` ⇒ comportement historique strictement inchangé.
+DefaultStyles zQuillThemedStyles(BuildContext context, {TextStyle? baseStyle}) {
   final DefaultStyles base = DefaultStyles.getInstance(context);
   final TextTheme tt = Theme.of(context).textTheme;
   DefaultTextBlockStyle? merge(DefaultTextBlockStyle? proto, TextStyle? role) {
@@ -81,7 +91,7 @@ DefaultStyles zQuillThemedStyles(BuildContext context) {
     return proto.copyWith(style: proto.style.merge(role));
   }
 
-  return base.merge(
+  final DefaultStyles themed = base.merge(
     DefaultStyles(
       h1: merge(base.h1, tt.headlineLarge),
       h2: merge(base.h2, tt.headlineMedium),
@@ -89,6 +99,24 @@ DefaultStyles zQuillThemedStyles(BuildContext context) {
       h4: merge(base.h4, tt.titleLarge),
       h5: merge(base.h5, tt.titleMedium),
       h6: merge(base.h6, tt.titleSmall),
+    ),
+  );
+  if (baseStyle == null) return themed;
+  final DefaultListBlockStyle? protoLists = themed.lists;
+  DefaultListBlockStyle? mergedLists;
+  if (protoLists != null) {
+    mergedLists = protoLists.copyWith(style: protoLists.style.merge(baseStyle));
+  }
+  return themed.merge(
+    DefaultStyles(
+      paragraph: merge(themed.paragraph, baseStyle),
+      lists: mergedLists,
+      quote: merge(themed.quote, baseStyle),
+      // 🔴 `leading` porte la PUCE et le NUMÉRO de liste. Mesuré : sans lui,
+      // un `bodySmall` rendait le texte à 11 et la puce restait au plancher
+      // Quill (16) — une liste dont les marqueurs sont plus gros que ses
+      // items. Le marqueur appartient au corps, pas aux rôles matérialisés.
+      leading: merge(themed.leading, baseStyle),
     ),
   );
 }

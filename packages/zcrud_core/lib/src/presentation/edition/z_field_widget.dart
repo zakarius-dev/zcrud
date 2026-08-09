@@ -38,6 +38,8 @@ import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_size.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/edition/z_sub_list_config.dart';
+import '../../domain/ports/z_acl.dart';
 import '../l10n/z_localizations.dart';
 import '../z_field_listenable_builder.dart';
 import '../z_form_controller.dart';
@@ -188,7 +190,12 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // canal que refKeys/filterKeys relation (jamais global, SM-1) : un changement
     // d'un champ source recompute UNIQUEMENT ce champ select. Config absente ⇒
     // aucun abonnement (repli statique E3-3a).
-    if (_family == EditionFamily.select &&
+    // CR-DODLP-GAP2 : `rowChips` reçoit désormais les MÊMES choix effectifs que
+    // `select` (il EST le « select en mode chips »). Sans l'ajouter ici, le
+    // canal dynamique aurait été résolu une fois puis jamais réévalué — une
+    // capacité câblée mais inerte.
+    if ((_family == EditionFamily.select ||
+            _family == EditionFamily.rowChips) &&
         widget.field.config is ZSelectConfig) {
       final selCfg = widget.field.config! as ZSelectConfig;
       final fromKey = selCfg.choicesFromKey;
@@ -288,18 +295,31 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     // incrément de `reseedRevision` (re-clé) — jamais pendant une frappe (le
     // canal ne change que sur reset/reseed).
     if (_family == EditionFamily.subList) {
-      return _reseedable((context) {
+      return _withCollectionError(_reseedable((context) {
         widget.onBuild?.call();
+        // CR-DODLP-GAP3 — ACL de ligne. `ZSubListFieldWidget.acl` était lu mais
+        // n'était alimenté par AUCUN site du cœur : un `ZcrudScope(acl:)` ne
+        // filtrait pas les lignes. Le câblage est **opt-in par la config**
+        // (`aclCollectionId`) et non inconditionnel, pour ne pas déplacer un
+        // hôte qui pose déjà une ACL restrictive au scope. `null` ⇒ défauts
+        // permissifs = comportement DP-6 strictement inchangé.
+        final subCfg = widget.field.config;
+        final aclCid =
+            subCfg is ZSubListConfig ? subCfg.aclCollectionId : null;
         return ZSubListFieldWidget(
           field: widget.field,
           initialValue: widget.controller.valueOf(widget.field.name),
+          acl: aclCid == null
+              ? const ZAllowAllAcl()
+              : (ZcrudScope.maybeOf(context)?.acl ?? const ZAllowAllAcl()),
+          collectionId: aclCid,
           onChanged: (list) =>
               widget.controller.setValue(widget.field.name, list),
         );
-      });
+      }));
     }
     if (_family == EditionFamily.dynamicItem) {
-      return _reseedable((context) {
+      return _withCollectionError(_reseedable((context) {
         widget.onBuild?.call();
         return ZDynamicItemFieldWidget(
           field: widget.field,
@@ -307,7 +327,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (item) =>
               widget.controller.setValue(widget.field.name, item),
         );
-      });
+      }));
     }
     // Frontière de rebuild (AD-2) : la tranche du champ (frappe) reconstruit le
     // closure INTERNE ; le canal [_revealAndRefs] (révélation + champs référencés)
@@ -392,6 +412,74 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       return control;
     }
     return _wrapError(control, value, revealed);
+  }
+
+  /// CR-DODLP-GAP3 — surface d'erreur des **mini-CRUD imbriqués**
+  /// (`subItems`/`dynamicItem`), qui n'en avaient AUCUNE.
+  ///
+  /// Mesuré : ces deux familles sont montées **avant** la souscription à la
+  /// tranche (canal structurel, SM-1 imbriqué) et ne passaient donc jamais par
+  /// [_wrapError]. Conséquence : une sous-liste **requise et vide** bloquait la
+  /// soumission et le gate d'étape **sans afficher le moindre message** — un
+  /// refus muet, pire qu'un refus.
+  ///
+  /// 🔴 SM-1 est préservé par **deux** propriétés :
+  /// 1. le conteneur est **construit hors** de la voie de valeur (il arrive
+  ///    déjà bâti en paramètre) et transite par `child:` — la souscription à la
+  ///    tranche n'élargit donc pas la frontière de rebuild. Mesuré par
+  ///    injection : construire le conteneur *dans* le builder de tranche
+  ///    reconstruit le mini-CRUD à chaque agrégation. (Le `child:` seul n'est
+  ///    qu'une optimisation : c'est le **lieu de construction** qui protège.)
+  /// 2. la **forme de l'arbre est STABLE**. Mesuré : réutiliser [_wrapError]
+  ///    ici faisait alterner `Column(conteneur, erreur)` et `conteneur` selon
+  ///    la présence du message — ce **reparentage** détruisait l'élément du
+  ///    mini-CRUD (compteur de création 1 → 2), donc l'état de ses items en
+  ///    cours d'édition. La place de l'erreur est ici **toujours occupée**
+  ///    (`SizedBox.shrink()` quand il n'y a rien à dire), exactement comme la
+  ///    « place stable » exigée des champs conditionnels (AD-2).
+  Widget _withCollectionError(Widget container) {
+    if (_validator == null) return container;
+    return ListenableBuilder(
+      listenable: _revealAndRefs,
+      builder: (context, _) {
+        final revealed = widget.autovalidateMode == AutovalidateMode.always ||
+            widget.controller.reveal.value > 0;
+        return ZFieldListenableBuilder(
+          controller: widget.controller,
+          name: widget.field.name,
+          child: container,
+          builder: (context, value, child) {
+            final error =
+                revealed ? _validator!(zValidationText(value)) : null;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                child!,
+                if (error == null)
+                  const SizedBox.shrink()
+                else
+                  Semantics(
+                    liveRegion: true,
+                    container: true,
+                    child: Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+                      child: Text(
+                        error,
+                        textAlign: TextAlign.start,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   /// Adjoint une surface d'erreur **accessible** (`Semantics(liveRegion)` + `Text`)
@@ -571,9 +659,18 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (tags) => widget.controller.setValue(field.name, tags),
         );
       case EditionFamily.rowChips:
+        // CR-DODLP-GAP2 — `rowChips` EST le « select en mode chips ». Il reçoit
+        // donc la MÊME résolution de choix effectifs que la famille `select`
+        // (sans `ZSelectConfig` ni `derivedFrom.options`,
+        // `_resolveSelectChoices` rend exactement `field.choices` : rendu
+        // E3-3b inchangé), et la multiplicité vient de `ZFieldSpec.multiple`.
+        final chipsCfg =
+            field.config is ZSelectConfig ? field.config! as ZSelectConfig : null;
         return ZRowChipsFieldWidget(
           field: field,
           value: value,
+          choices: _resolveSelectChoices(context, field, chipsCfg),
+          multiple: field.multiple,
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.rating:

@@ -65,6 +65,7 @@ class ZMarkdownReader extends StatefulWidget {
     this.placeholder = 'Aucun contenu',
     this.chrome = ZMarkdownReaderChrome.bordered,
     this.semanticsEnabled = true,
+    this.baseStyle,
     super.key,
   });
 
@@ -94,6 +95,16 @@ class ZMarkdownReader extends StatefulWidget {
   /// annoncé une fois par la tuile, une seconde par le lecteur. Le
   /// coupe-circuit n'invente rien : il laisse l'annonce là où elle était déjà.
   final bool semanticsEnabled;
+
+  /// Style **attendu par l'appelant** pour le corps de texte (DP-RT).
+  ///
+  /// Additif (AD-57) : `null` = défaut = rendu historique, dérivé du seul thème.
+  /// Fourni, il devient la base du paragraphe, des listes et de la citation ;
+  /// les rôles matérialisés (titres, code inline) en dévient délibérément.
+  /// C'est le canal par lequel [ZMarkdownRichTextRenderer] honore le `baseStyle`
+  /// du port `ZRichTextRenderer` — et il alimente AUSSI le placeholder, pour que
+  /// le vide ne change pas de taille en cours de route.
+  final TextStyle? baseStyle;
 
   @override
   State<ZMarkdownReader> createState() => _ZMarkdownReaderState();
@@ -183,7 +194,8 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
               child: Text(
                 widget.placeholder,
                 textAlign: TextAlign.start,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: widget.baseStyle ??
+                    Theme.of(context).textTheme.bodySmall,
               ),
             ),
           )
@@ -208,7 +220,8 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 // `RenderErrorBox`. Mesuré sur `divider`.
                 unknownEmbedBuilder: kZUnknownEmbedBuilder,
                 // MIN-1 : styles de titres dérivés du thème (FR-26).
-                customStyles: zQuillThemedStyles(context),
+                customStyles:
+                    zQuillThemedStyles(context, baseStyle: widget.baseStyle),
               ),
             ),
           );
