@@ -443,6 +443,20 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// sous-steppers. Absent = pas encore remontée ⇒ repli structurel.
   final Map<int, List<String>> _childContributions = <int, List<String>>{};
 
+  /// Mémo SM-1 des **zones d'étape** déjà construites, par index d'étape, valable
+  /// tant que [_contentInputs] est inchangé.
+  ///
+  /// 🔴 Raison d'être : `config` porte 13 canaux **purement visuels** (couleurs,
+  /// tailles, style, position d'indicateur…) que le contenu d'étape ne lit PAS.
+  /// Sans mémo, un hôte qui change une couleur reconstruit le widget
+  /// `ZStepperEdition`, donc `build`, donc un NOUVEAU `DynamicEdition` par
+  /// étape — et tous les champs sont reconstruits. En rendant le **MÊME**
+  /// instance de widget, `Element.updateChild` court-circuite le sous-arbre
+  /// entier (`identical(newWidget, child.widget)`) : zéro rebuild de champ.
+  /// C'est l'objectif produit n°1 (AD-2/SM-1) appliqué au canal `config`.
+  final Map<int, Widget> _contentMemo = <int, Widget>{};
+  List<Object?>? _contentMemoKey;
+
   /// Étapes **EFFECTIVES** : celles dont la [ZEditionStep.condition] est
   /// satisfaite, dans l'ordre déclaré. Recalculées UNIQUEMENT quand un champ de
   /// garde change (SM-1) — jamais à chaque frappe.
@@ -549,13 +563,41 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
   }
 
+  /// `true` si le passage de [a] à [b] change la **STRUCTURE** de ce qui est
+  /// monté — par opposition aux canaux purement **VISUELS**.
+  ///
+  /// ## La table, établie sur les seuls sites où `config` est lu HORS rendu
+  ///
+  /// | Canal | Nature | Invalidation nécessaire |
+  /// |---|---|---|
+  /// | `showAllSteps` | **STRUCTUREL** — pilote [_driving], donc le `manageVisibility` des zones d'étape, le jeu de gardes abonnées, et la fenêtre publiée (union de TOUTES les étapes vs fenêtre de l'étape courante) | fenêtre republiée + gardes réabonnées + contributions enfants purgées + mémo de contenu invalidé |
+  /// | `validateOnNext` | comportemental, lu **à l'appel** (`_next`/`_jumpTo`) | **aucune** |
+  /// | `allowStepTap` | comportemental, lu **au build** du chrome | **aucune** |
+  /// | `orientation`, `style`, `indicatorPosition`, `showLabels`, `showSubtitles`, `indicatorSize`, `stepSpacing`, `activeColor`, `completedColor`, `inactiveColor`, `errorColor`, `railColor`, `badgeForegroundColor` | **VISUEL** — lus uniquement par `_StepIndicator`/`_AllStepsRow` | **aucune** |
+  ///
+  /// 🔴 C'est la raison d'être de cette fonction : recalculer la fenêtre sur un
+  /// simple changement de couleur republierait `visibleFields` et, via le mémo,
+  /// reconstruirait tous les champs — exactement ce que SM-1 interdit.
+  static bool _isStructuralConfigChange(ZStepperConfig a, ZStepperConfig b) =>
+      a.showAllSteps != b.showAllSteps;
+
   @override
   void didUpdateWidget(ZStepperEdition oldWidget) {
     super.didUpdateWidget(oldWidget);
     final controllerChanged = oldWidget.controller != widget.controller;
+    // 🔴 Le défaut corrigé ici : `config` n'était PAS observé. Basculer
+    // `showAllSteps` sur un stepper DÉJÀ MONTÉ changeait la mise en page (le
+    // chrome se rebuild) sans jamais recalculer la fenêtre : les en-têtes des
+    // étapes suivantes s'affichaient, leur CONTENU restait vide. Rien ne levait.
+    final configStructural =
+        _isStructuralConfigChange(oldWidget.config, widget.config);
     if (controllerChanged || !identical(oldWidget.fields, widget.fields)) {
       _rebuildIndexes();
       _validatorCache.clear();
+      _bindStepperGuards();
+    } else if (configStructural) {
+      // `_driving` vient de basculer : les conditions de CHAMP ne sont abonnées
+      // qu'en mode pilotage (en LEGACY c'est `DynamicEdition` qui s'en charge).
       _bindStepperGuards();
     }
     if (!identical(oldWidget.steps, widget.steps)) {
@@ -565,12 +607,20 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     if (controllerChanged) {
       _structural = _mergeStructural();
       _initWindow(_currentStep.value);
+    } else if (configStructural) {
+      // Les contributions des sous-steppers sont indexées par étape : en paginé
+      // un seul nested est monté, en déplié ils le sont tous. Les garder ferait
+      // publier la contribution d'un sous-stepper démonté (fenêtre fantôme).
+      _childContributions.clear();
+      _applyWindowForMode(_boundedStep(_currentStep.value));
     }
     if (oldWidget.revealTrigger != widget.revealTrigger) {
       oldWidget.revealTrigger?.removeListener(_onRevealTrigger);
       widget.revealTrigger?.addListener(_onRevealTrigger);
     }
   }
+
+  int _boundedStep(int i) => i.clamp(0, _lastStep < 0 ? 0 : _lastStep);
 
   void _rebuildIndexes() {
     _specByName = <String, ZFieldSpec>{
@@ -714,6 +764,13 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
 
   void _initWindow(int start) {
     _warnDerivedVisibilityUnsupported();
+    _applyWindowForMode(start);
+  }
+
+  /// Pose la fenêtre correspondant au **mode courant** (déplié / pilotage /
+  /// LEGACY). Extrait de [_initWindow] pour être rejouable sur un changement
+  /// STRUCTUREL de `config` sans re-émettre l'avertissement de montage.
+  void _applyWindowForMode(int start) {
     if (widget.nested) {
       // Imbriqué : reporter la contribution APRÈS la première frame (éviter un
       // `notifyListeners` du controller pendant le build du parent).
@@ -991,7 +1048,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           config: _config,
           onStepTap: _config.allowStepTap ? _jumpTo : null,
         );
-        final content = _stepContent(index, reveal);
+        final content = _stepContentCached(index, reveal);
         final nav = _StepNavigationBar(
           isFirst: index == 0,
           isLast: index == _lastStep,
@@ -1116,7 +1173,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           step: _steps[i],
           config: _config,
           isLast: i == n - 1,
-          content: _stepContent(i, reveal, bounded: false),
+          content: _stepContentCached(i, reveal, bounded: false),
         );
       },
     );
@@ -1127,6 +1184,48 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// (`manageVisibility:false`) — le racine est seul écrivain de `visibleFields`.
   /// Si l'étape porte un sous-stepper (AC11), il est rendu **après** les champs
   /// directs sur le MÊME controller (imbriqué, mode « sans fenêtre »).
+  /// TOUTES les entrées dont [_stepContent] dépend, HORS index d'étape. Un
+  /// canal visuel de `config` n'y figure pas — c'est ce qui rend le mémo légitime.
+  ///
+  /// Volontairement exhaustive : chaque paramètre transmis à `DynamicEdition` ou
+  /// au sous-stepper imbriqué y est, plus les états dérivés ([_driving],
+  /// [_tooDeep]) et le tic structurel des étapes effectives. Un ajout de
+  /// paramètre au constructeur DOIT être répercuté ici (sinon contenu périmé).
+  List<Object?> _contentInputs(bool reveal, bool? bounded) => <Object?>[
+        reveal,
+        bounded,
+        widget.unbounded,
+        widget.controller,
+        widget.fields,
+        widget.steps,
+        _stepsTick.value,
+        widget.padding,
+        widget.physics,
+        widget.readOnly,
+        widget.layout,
+        widget.gridGutter,
+        widget.fieldBuilder,
+        widget.previousLabel,
+        widget.nextLabel,
+        widget.finishLabel,
+        widget.depth,
+        _driving,
+        _tooDeep,
+      ];
+
+  /// [_stepContent] mémoïsé (cf. [_contentMemo]).
+  Widget _stepContentCached(int index, bool reveal, {bool? bounded}) {
+    final List<Object?> inputs = _contentInputs(reveal, bounded);
+    if (!listEquals(_contentMemoKey, inputs)) {
+      _contentMemo.clear();
+      _contentMemoKey = inputs;
+    }
+    return _contentMemo.putIfAbsent(
+      index,
+      () => _stepContent(index, reveal, bounded: bounded),
+    );
+  }
+
   Widget _stepContent(int index, bool reveal, {bool? bounded}) {
     final bool isBounded = bounded ?? !widget.unbounded;
     final step = _steps[index];
