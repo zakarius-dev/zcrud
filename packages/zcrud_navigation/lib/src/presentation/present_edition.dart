@@ -16,6 +16,7 @@ import 'package:zcrud_responsive/zcrud_responsive.dart' show ZWindowSizeClass;
 import '../domain/z_edition_presentation.dart';
 import '../domain/z_form_weight.dart';
 import '../domain/z_presentation_policy.dart';
+import 'z_edition_body_fit.dart';
 import 'z_edition_chrome.dart';
 import 'z_edition_scaffold.dart';
 import 'z_form_presenter.dart';
@@ -117,6 +118,23 @@ import 'z_sheet_frame.dart';
 /// par `present` **tel quel** : il n'aura ni la marge ni le cadre (AD-10 :
 /// repli, jamais d'exception).
 ///
+/// ## [bodyFit] — corps qui DÉFILE (CR scaffold-scrollable-body, 2026-08-09)
+///
+/// Ne concerne que la voie [chrome] (sans chrome, le socle ne place rien).
+/// Défaut [ZEditionBodyFit.intrinsic] ⇒ **aucun changement** pour un hôte
+/// passif. Si votre corps défile (`DynamicEdition`/`ZStepperEdition` par
+/// défaut, une `ListView`…), déclarez
+/// `bodyFit: ZEditionBodyFit.scrollable` : le **contenant** le bornera, et le
+/// corps gardera son propre défilement.
+///
+/// 🔴 **Hôte qui CONTOURNAIT** : si vous passiez `shrinkWrap: true` +
+/// `NeverScrollableScrollPhysics()` à votre `DynamicEdition` pour survivre au
+/// mode `page`, **retirez ce contournement en même temps** que vous déclarez
+/// [ZEditionBodyFit.scrollable] — les deux ensemble donneraient un corps
+/// non-scrollable placé dans un contenant qui l'attend scrollable. Garder le
+/// contournement **et** le défaut [ZEditionBodyFit.intrinsic] reste, lui,
+/// parfaitement valide et inchangé.
+///
 /// ✅ **Ce n'est plus le cas de `ZGetFormPresenter`** (mesuré sur disque le
 /// 2026-08-09 : `class ZGetFormPresenter implements ZFormPresenter,
 /// ZImplicitDismissControl`, et il appelle `zSheetFrameMetricsOf`). Le
@@ -135,6 +153,7 @@ Future<T?> presentEdition<T>(
   ZEditionChrome? chrome,
   ZEditionPresentation? forcedMode,
   ZSheetFrameSpec? sheetFrame,
+  ZEditionBodyFit bodyFit = ZEditionBodyFit.intrinsic,
 }) {
   // Court-circuit TOTAL quand le mode est forcé : ni lecture de la classe de
   // fenêtre (donc aucune dépendance `MediaQuery` enregistrée), ni consultation
@@ -208,6 +227,7 @@ Future<T?> presentEdition<T>(
         mode: mode,
         chrome: chrome,
         body: builder(ctx),
+        bodyFit: bodyFit,
       );
 
   if (effective is ZImplicitDismissControl) {

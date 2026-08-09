@@ -60,6 +60,9 @@ class ZRelationFieldWidget extends StatefulWidget {
     this.multiple = false,
     this.searchable = false,
     this.crudHandler,
+    this.choiceBuilder,
+    this.choiceSecondaryBuilder,
+    this.optionsLoader,
     super.key,
   });
 
@@ -95,6 +98,29 @@ class ZRelationFieldWidget extends StatefulWidget {
   /// `ZRelationConfig.crudKey`). L'impl concrète (form + repository) vit hors du
   /// cœur (binding/app E7).
   final ZRelationCrudHandler? crudHandler;
+
+  /// CR-SELECT-SEAM — rendu **complet** d'une option, fourni par l'hôte
+  /// (parité `choiceBuilder` DODLP). Transmis **tel quel** au présentateur riche
+  /// injecté au scope ; **sans effet** sur le rendu natif. `null` (défaut) ⇒
+  /// comportement antérieur strict. Fermeture ⇒ paramètre de widget, jamais un
+  /// champ de `ZFieldSpec` (AD-3/AD-14).
+  final ZSelectChoiceBuilder? choiceBuilder;
+
+  /// CR-SELECT-SEAM — **affordance de fin de ligne** d'une option (parité
+  /// `choiceSecondaryBuilder` DODLP). Mêmes règles que [choiceBuilder] :
+  /// transmis au présentateur riche, sans effet sur le rendu natif, `null` par
+  /// défaut.
+  final ZSelectChoiceSecondaryBuilder? choiceSecondaryBuilder;
+
+  /// CR-SELECT-SEAM — chargeur **asynchrone paginé** d'options (parité
+  /// `choiceLoader` DODLP). Mêmes règles que [choiceBuilder].
+  ///
+  /// ⚠️ **Distinct de [source]** : [source] est un `Stream` **poussé** de la
+  /// liste ENTIÈRE (DP-5) ; [optionsLoader] est une requête **tirée**, paginée
+  /// et filtrée par le texte de recherche. Les deux peuvent coexister — le
+  /// présentateur riche préfère alors le chargeur pour la liste du modal, et
+  /// [source] continue d'alimenter la résolution du libellé sélectionné.
+  final ZSelectOptionsLoader? optionsLoader;
 
   @override
   State<ZRelationFieldWidget> createState() => _ZRelationFieldWidgetState();
@@ -177,6 +203,19 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
           searchable: widget.searchable,
           readOnly: widget.field.readOnly,
           label: _resolvedLabel,
+          // CR-SELECT-SEAM. 🔴 C'est ICI que le seam avait un vrai trou : cet
+          // état existait déjà (`_isLoading`, DP-5/AD-10) et le rendu natif s'en
+          // sert (`hintText: 'loading'`, déclencheur inerte), mais il n'était
+          // pas transmis — un présentateur riche ne pouvait donc pas distinguer
+          // « pas encore chargé » de « aucune option ».
+          isLoading: _isLoading,
+          choiceBuilder: widget.choiceBuilder,
+          choiceSecondaryBuilder: widget.choiceSecondaryBuilder,
+          // 🔴 Le rendu natif exposait déjà Créer/Modifier/Copier (DP-15) ; ne
+          // pas le transmettre aurait fait PERDRE une capacité en enrôlant le
+          // présentateur riche. Alimenté de bout en bout (registre + `crudKey`).
+          crudHandler: widget.crudHandler,
+          optionsLoader: widget.optionsLoader,
         ),
       );
     }

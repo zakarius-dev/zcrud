@@ -20,6 +20,11 @@ const List<String> _chromeSources = <String>[
   'lib/src/presentation/z_sheet_frame.dart',
   'lib/src/presentation/z_adaptive_presenter.dart',
   'lib/src/presentation/present_edition.dart',
+  // CR scaffold-scrollable-body (2026-08-09) — nouveau fichier du chrome
+  // d'édition. Il n'a aujourd'hui aucune couleur ni libellé, et c'est
+  // précisément ce que cette garde doit continuer d'établir demain : un
+  // fichier neuf non listé serait un TROU dans la garde FR-26.
+  'lib/src/presentation/z_edition_body_fit.dart',
 ];
 
 /// Motifs BANNIS pour le RTL (AD-13) — les variantes directionnelles existent.

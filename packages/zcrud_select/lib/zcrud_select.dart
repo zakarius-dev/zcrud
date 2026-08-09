@@ -20,5 +20,34 @@
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;
 
+/// **Apparence DODLP par défaut** (CR-SELECT-FID) : un hôte qui enrôle
+/// [ZSmartSelectPresenter] obtient sans rien configurer la structure et les
+/// métriques du `DynamicEdition` de DODLP legacy (carte à bordure douce,
+/// rayon 12, `ListTile` + chevron, puces 6/4 en multi). Les **couleurs** sont
+/// des **rôles** `ColorScheme` — chaque app garde donc son thème. Pour dévier :
+/// `ZSmartSelectPresenter(spec: ZSelectTileSpec(…))`, chaîne
+/// `paramètre > jeton > référence` ([ZSelectTileReference]).
+export 'src/presentation/z_select_tile_reference.dart'
+    show
+        ZSelectChoiceStyle,
+        ZSelectModalShape,
+        ZSelectTileReference,
+        ZSelectTileSpec;
+
+/// **Maillon « jeton » de la chaîne** (CR-SELECT-SEAM, 2026-08-09) : la chaîne
+/// est désormais complète, `paramètre ([ZSelectTileSpec]) > jeton
+/// (`ZcrudTheme.select*`, huit jetons posés dans `zcrud_core`) > référence
+/// ([ZSelectTileReference])`. [zSelectTileMetricsOf] est le seul endroit du
+/// paquet où les trois maillons se rencontrent ; il est exporté pour qu'un hôte
+/// puisse **vérifier** ce que sa configuration produit réellement.
+///
+/// Les deux convertisseurs de palier sont exportés pour la même raison : ils
+/// sont **totaux** (nom inconnu ⇒ `null` ⇒ la référence décide, sans lever).
+export 'src/presentation/z_select_tile_metrics.dart'
+    show
+        ZSelectTileMetrics,
+        zSelectChoiceStyleFromToken,
+        zSelectModalShapeFromToken,
+        zSelectTileMetricsOf;
 export 'src/presentation/z_smart_select_presenter.dart'
     show ZSmartSelectPresenter;

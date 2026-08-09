@@ -56,6 +56,9 @@ class ZSelectFieldWidget extends StatelessWidget {
     this.bare = false,
     this.radioAsModal = false,
     this.onCleared,
+    this.choiceBuilder,
+    this.choiceSecondaryBuilder,
+    this.optionsLoader,
     super.key,
   });
 
@@ -98,6 +101,27 @@ class ZSelectFieldWidget extends StatelessWidget {
   /// sélectionnée. `null` (défaut) ⇒ aucun bouton reset (rendu antérieur inchangé).
   final VoidCallback? onCleared;
 
+  /// CR-SELECT-SEAM — rendu **complet** d'une option, fourni par l'hôte
+  /// (parité `choiceBuilder` DODLP). Transmis **tel quel** au présentateur riche
+  /// injecté au scope ; **sans effet** sur le rendu natif ci-dessous, qui rend
+  /// ses propres tuiles. `null` (défaut) ⇒ comportement antérieur strict.
+  ///
+  /// 🔴 Paramètre de **widget** et non champ de `ZFieldSpec` : c'est une
+  /// fermeture, et AD-3/AD-14 interdisent d'en loger une dans la spec `const`
+  /// sérialisable. Le dispatcher déclaratif ne l'alimente donc pas.
+  final ZSelectChoiceBuilder? choiceBuilder;
+
+  /// CR-SELECT-SEAM — **affordance de fin de ligne** d'une option (parité
+  /// `choiceSecondaryBuilder` DODLP). Mêmes règles que [choiceBuilder] :
+  /// transmis au présentateur riche, sans effet sur le rendu natif, `null` par
+  /// défaut.
+  final ZSelectChoiceSecondaryBuilder? choiceSecondaryBuilder;
+
+  /// CR-SELECT-SEAM — chargeur **asynchrone paginé** d'options (parité
+  /// `choiceLoader` DODLP). Mêmes règles que [choiceBuilder] : transmis au
+  /// présentateur riche, sans effet sur le rendu natif, `null` par défaut.
+  final ZSelectOptionsLoader? optionsLoader;
+
   /// Choix effectifs (dynamique cross-champ) ou repli statique `field.choices`.
   List<ZFieldChoice> get _choices => choices ?? field.choices;
 
@@ -133,6 +157,13 @@ class ZSelectFieldWidget extends StatelessWidget {
           searchable: searchable,
           readOnly: field.readOnly,
           label: resolvedLabel,
+          // CR-SELECT-SEAM. `isLoading` n'est PAS transmis : cette famille n'a
+          // aucune notion de chargement — ses choix sont résolus SYNCHRONEMENT
+          // par le dispatcher (`_resolveSelectChoices`). Poser autre chose que
+          // le défaut `false` serait une donnée inventée.
+          choiceBuilder: choiceBuilder,
+          choiceSecondaryBuilder: choiceSecondaryBuilder,
+          optionsLoader: optionsLoader,
         ),
       );
     }

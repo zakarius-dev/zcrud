@@ -1,0 +1,234 @@
+/// **Résolution** des métriques du déclencheur de sélection — maillon central de
+/// la chaîne `paramètre > jeton > référence` (CR-SELECT-SEAM, 2026-08-09).
+///
+/// Le lot de fidélité précédent avait laissé cette chaîne **amputée** : les
+/// jetons `ZcrudTheme.select*` n'existaient pas et la résolution effective était
+/// `paramètre > référence`. Ils existent désormais (huit, posés dans
+/// `zcrud_core`), et ce fichier est le seul endroit du paquet où les trois
+/// maillons se rencontrent.
+///
+/// ## Ordre, dans les deux sens
+///
+/// 1. **paramètre** — [ZSelectTileSpec], décidé par le site d'appel ;
+/// 2. **jeton** — `ZcrudTheme.select*`, décidé pour toute l'application ;
+/// 3. **référence** — [ZSelectTileReference], relevé DODLP audité.
+///
+/// Un maillon `null` ne se prononce pas et laisse décider le suivant ; il ne
+/// **remplace jamais** le suivant par une valeur neutre. C'est la raison d'être
+/// des `lerp` de plancher côté `zcrud_core` : un jeton à `0` pendant une
+/// transition de thème serait un rendu que personne n'a choisi.
+///
+/// ## Invariants
+///
+/// * **AD-13** — [ZSelectTileMetrics.minHeight] ne descend **jamais** sous
+///   [ZSelectTileReference.minTileHeight], quelle que soit la valeur posée par
+///   le paramètre **ou** par le jeton. Les deux ne peuvent que *rehausser*.
+/// * **AD-10** — un jeton de palier **inconnu** (`selectModalShape: 'carousel'`)
+///   rend `null` et laisse la référence décider, **sans lever**. Vaut aussi pour
+///   un thème sérialisé depuis une version plus récente du socle.
+/// * **FR-26** — le dernier maillon d'une COULEUR est un **rôle** du
+///   `ColorScheme`, jamais un littéral. C'est pourquoi les teintes ne sont pas
+///   dans [ZSelectTileReference] (qui reste « métriques seules ») mais résolues
+///   ici, contre le thème ambiant.
+/// * **AD-40** — aucun type `awesome_select` / `S2*` ici : la traduction vers
+///   `S2ChoiceType`/`S2ModalType` reste confinée au présentateur.
+library;
+
+import 'package:flutter/material.dart';
+import 'package:zcrud_core/zcrud_core.dart';
+
+import 'z_select_tile_reference.dart';
+
+/// Traduit le **nom** d'un palier (`ZcrudTheme.selectMonoChoiceStyle` /
+/// `selectMultiChoiceStyle`) en [ZSelectChoiceStyle].
+///
+/// 🔴 **Conversion TOTALE** : `null` en entrée **et** tout nom inconnu rendent
+/// `null` — jamais une exception, jamais un palier deviné (AD-10). Patron
+/// `zSheetFrameModeFromToken` de `zcrud_navigation`.
+ZSelectChoiceStyle? zSelectChoiceStyleFromToken(String? token) {
+  if (token == null) {
+    return null;
+  }
+  for (final ZSelectChoiceStyle style in ZSelectChoiceStyle.values) {
+    if (style.name == token) {
+      return style;
+    }
+  }
+  return null;
+}
+
+/// Traduit le **nom** d'un palier (`ZcrudTheme.selectModalShape`) en
+/// [ZSelectModalShape]. Mêmes règles de totalité que
+/// [zSelectChoiceStyleFromToken].
+ZSelectModalShape? zSelectModalShapeFromToken(String? token) {
+  if (token == null) {
+    return null;
+  }
+  for (final ZSelectModalShape shape in ZSelectModalShape.values) {
+    if (shape.name == token) {
+      return shape;
+    }
+  }
+  return null;
+}
+
+/// Métriques **résolues** du déclencheur de sélection : plus aucune décision n'y
+/// reste à prendre (porte-valeurs immuable, patron `ZSheetFrameMetrics`).
+@immutable
+class ZSelectTileMetrics {
+  /// Construit un jeu de métriques déjà résolu.
+  const ZSelectTileMetrics({
+    required this.borderColor,
+    required this.borderWidth,
+    required this.radius,
+    required this.elevation,
+    required this.minHeight,
+    required this.dialogBreakpoint,
+    required this.monoChoiceStyle,
+    required this.multiChoiceStyle,
+    required this.modalShape,
+    required this.chipBackgroundColor,
+    required this.chipForegroundColor,
+    required this.chipFontSize,
+    required this.chipSpacing,
+    required this.chipRunSpacing,
+    required this.placeholderColor,
+    required this.valueColor,
+    required this.contentPadding,
+    required this.choicePageLimit,
+    this.cardColor,
+  });
+
+  /// Teinte de la bordure (jeton `selectTileBorderColor`, sinon rôle
+  /// `outlineVariant`).
+  final Color borderColor;
+
+  /// Épaisseur de la bordure (dp).
+  final double borderWidth;
+
+  /// Rayon des coins (dp).
+  final double radius;
+
+  /// Élévation du `Card` — **sans jeton** (cf. la note de critère dans
+  /// `z_theme.dart`) : paramètre > référence.
+  final double elevation;
+
+  /// Fond du `Card` ; `null` ⇒ fond de carte du thème ambiant (AD-4).
+  final Color? cardColor;
+
+  /// Plancher de hauteur (dp), **jamais inférieur à 48** (AD-13).
+  final double minHeight;
+
+  /// Largeur de bascule feuille → dialogue (dp).
+  final double dialogBreakpoint;
+
+  /// Forme des options en mono.
+  final ZSelectChoiceStyle monoChoiceStyle;
+
+  /// Forme des options en multi.
+  final ZSelectChoiceStyle multiChoiceStyle;
+
+  /// Forme du conteneur de modal.
+  final ZSelectModalShape modalShape;
+
+  /// Fond d'une puce — **sans jeton** (canal app-scale : `ThemeData.chipTheme`).
+  final Color chipBackgroundColor;
+
+  /// Texte d'une puce — **sans jeton** (idem).
+  final Color chipForegroundColor;
+
+  /// Taille du texte d'une puce (pt) — **sans jeton** (canal : `TextTheme`).
+  final double chipFontSize;
+
+  /// Écart horizontal entre puces — **sans jeton** (canal : `gapS`/`gapM`).
+  final double chipSpacing;
+
+  /// Écart vertical entre rangées de puces — **sans jeton** (idem).
+  final double chipRunSpacing;
+
+  /// Teinte de l'état vide — **sans jeton** (canal : `ThemeData.hintColor`).
+  final Color placeholderColor;
+
+  /// Teinte de la valeur renseignée (mono).
+  final Color valueColor;
+
+  /// Marge intérieure **directionnelle** du `ListTile` (AD-13).
+  final EdgeInsetsGeometry contentPadding;
+
+  /// Options chargées par page dans le modal.
+  final int choicePageLimit;
+}
+
+/// Résout les métriques du déclencheur — **paramètre ([ZSelectTileSpec]) > jeton
+/// (`ZcrudTheme.select*`) > référence ([ZSelectTileReference])**.
+///
+/// 🔴 **Hôte passif immobile** : sans `spec` ET sans jeton, chaque valeur rendue
+/// est **exactement** celle de la référence, donc le rendu d'avant cette CR.
+/// Les huit jetons sont absents de `ZcrudTheme.fallback()` — un hôte qui n'a
+/// rien déclaré ne peut donc pas bouger.
+ZSelectTileMetrics zSelectTileMetricsOf(
+  BuildContext context, {
+  ZSelectTileSpec? spec,
+}) {
+  final ZcrudTheme token = ZcrudTheme.of(context);
+  final ThemeData theme = Theme.of(context);
+  final ColorScheme scheme = theme.colorScheme;
+
+  // 🔴 AD-13 : le plancher de 48 dp ne peut être que REHAUSSÉ — ni par le
+  // paramètre, ni par le jeton. `math.max` appliqué APRÈS la résolution de la
+  // chaîne, donc un `selectTileMinHeight: 24` posé au thème pour toute l'app ne
+  // descend pas davantage la cible qu'un paramètre à 24.
+  final double requested = spec?.minTileHeight ??
+      token.selectTileMinHeight ??
+      ZSelectTileReference.minTileHeight;
+  final double minHeight = requested < ZSelectTileReference.minTileHeight
+      ? ZSelectTileReference.minTileHeight
+      : requested;
+
+  return ZSelectTileMetrics(
+    // FR-26 : dernier maillon = RÔLE, jamais un littéral.
+    borderColor: spec?.borderColor ??
+        token.selectTileBorderColor ??
+        scheme.outlineVariant,
+    borderWidth: spec?.borderWidth ??
+        token.selectTileBorderWidth ??
+        ZSelectTileReference.borderWidth,
+    radius: spec?.cardRadius ??
+        token.selectTileRadius ??
+        ZSelectTileReference.cardRadius,
+    // Sans jeton, délibérément : paramètre > référence.
+    elevation: spec?.cardElevation ?? ZSelectTileReference.cardElevation,
+    cardColor: spec?.cardColor,
+    minHeight: minHeight,
+    dialogBreakpoint: spec?.dialogBreakpoint ??
+        token.selectDialogBreakpoint ??
+        ZSelectTileReference.dialogBreakpoint,
+    // AD-10 : nom de palier inconnu ⇒ `null` ⇒ la référence décide, sans lever.
+    monoChoiceStyle: spec?.monoChoiceStyle ??
+        zSelectChoiceStyleFromToken(token.selectMonoChoiceStyle) ??
+        ZSelectTileReference.monoChoiceStyle,
+    multiChoiceStyle: spec?.multiChoiceStyle ??
+        zSelectChoiceStyleFromToken(token.selectMultiChoiceStyle) ??
+        ZSelectTileReference.multiChoiceStyle,
+    modalShape: spec?.modalShape ??
+        zSelectModalShapeFromToken(token.selectModalShape) ??
+        ZSelectTileReference.modalShape,
+    chipBackgroundColor:
+        spec?.chipBackgroundColor ?? scheme.surfaceContainerHighest,
+    chipForegroundColor: spec?.chipForegroundColor ?? scheme.onSurface,
+    chipFontSize: spec?.chipFontSize ?? ZSelectTileReference.chipFontSize,
+    chipSpacing: spec?.chipSpacing ?? ZSelectTileReference.chipSpacing,
+    chipRunSpacing:
+        spec?.chipRunSpacing ?? ZSelectTileReference.chipRunSpacing,
+    placeholderColor: spec?.placeholderColor ?? scheme.onSurfaceVariant,
+    valueColor: spec?.valueColor ?? scheme.onSurface,
+    // AD-13 : insets DIRECTIONNELS (jamais `left`/`right`).
+    contentPadding: spec?.contentPadding ??
+        const EdgeInsetsDirectional.symmetric(
+          horizontal: ZSelectTileReference.contentPaddingHorizontal,
+          vertical: ZSelectTileReference.contentPaddingVertical,
+        ),
+    choicePageLimit:
+        spec?.choicePageLimit ?? ZSelectTileReference.choicePageLimit,
+  );
+}

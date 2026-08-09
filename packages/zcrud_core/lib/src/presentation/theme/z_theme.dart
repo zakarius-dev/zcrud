@@ -497,6 +497,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.editionChromeHeaderPadding,
     this.editionChromeActionBarPadding,
     this.editionChromePageHeaderExpandedHeight,
+    this.selectTileBorderColor,
+    this.selectTileBorderWidth,
+    this.selectTileRadius,
+    this.selectTileMinHeight,
+    this.selectDialogBreakpoint,
+    this.selectMonoChoiceStyle,
+    this.selectMultiChoiceStyle,
+    this.selectModalShape,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -1706,6 +1714,126 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// deux thèmes ne décrit et que personne n'a choisi.
   final double? editionChromePageHeaderExpandedHeight;
 
+  // ── Déclencheur de sélection (CR-SELECT-SEAM, 2026-08-09) ─────────────────
+  //
+  // Maillon **jeton** de la chaîne `paramètre (ZSelectTileSpec) > jeton >
+  // référence (ZSelectTileReference)` réalisée par `zcrud_select`. Mêmes règles
+  // que les familles `editionSheet*`/`editionChrome*` : nullables, **absents de
+  // [ZcrudTheme.fallback]**, `lerp` motivé par famille.
+  //
+  // 🔴 **CRITÈRE appliqué** : un jeton se justifie s'il porte une décision à
+  // l'échelle de l'APPLICATION. Une métrique qu'aucun hôte ne réglera
+  // globalement reste atteignable **par paramètre** (`ZSelectTileSpec`) et n'a
+  // pas besoin d'un jeton — c'est le précédent `editionChromeGap` /
+  // `actionPadding`. Sur les quinze candidats relevés par le lot de fidélité,
+  // **huit** sont retenus ci-dessous et **sept** sont écartés :
+  //
+  // * `selectTileElevation` — le déclencheur est PLAT par conception (son relief
+  //   vient de la bordure). « Mes cartes sont surélevées » est une décision
+  //   d'app, mais elle a déjà son canal : `CardThemeData.elevation`. Un jeton
+  //   qui ne concernerait QUE les déclencheurs de sélection ne décrit aucune
+  //   décision qu'un designer prend ⇒ paramètre.
+  // * `selectChipBackgroundColor` / `selectChipForegroundColor` — le thème des
+  //   puces est déjà une décision d'app **portée par le SDK**
+  //   (`ThemeData.chipTheme`). Deux jetons ici seraient un SECOND CANAL pour la
+  //   même propriété — exactement ce que ce dépôt s'interdit.
+  // * `selectChipFontSize` — la typographie a son canal (`TextTheme`). Idem.
+  // * `selectChipSpacing` / `selectChipRunSpacing` — micro-métriques du `Wrap`
+  //   d'un seul widget ; les écarts génériques ont [gapS]/[gapM]. Idem
+  //   `editionChromeGap`.
+  // * `selectPlaceholderColor` — l'état vide a déjà son canal app-scale,
+  //   `ThemeData.hintColor`, que le cœur emploie lui-même pour les placeholders
+  //   de sélection natifs. Idem.
+  //
+  // Les sept écartés restent **intégralement atteignables** par
+  // `ZSelectTileSpec` : rien n'est perdu, seule la surface publique perpétuelle
+  // l'est.
+
+  /// Teinte de la bordure du déclencheur de sélection, pour toute l'app.
+  /// `null` ⇒ le consommateur applique **son rôle** (`ColorScheme.outlineVariant`,
+  /// celui de `Card.outlined`) — jamais un littéral (FR-26).
+  ///
+  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait une
+  /// bordure **par-dessus** le rôle de repli du consommateur pendant la
+  /// transition de thème (précédent exact : [editionSheetBorderColor]).
+  ///
+  /// ⚠️ Ce jeton existe parce que la référence DODLP **prime sur**
+  /// `CardThemeData` : le présentateur pose un `shape:` explicite pour tenir sa
+  /// fidélité, donc `cardTheme.shape` ne peut PAS servir de canal. Le jeton est
+  /// le seul chemin app-scale restant.
+  final Color? selectTileBorderColor;
+
+  /// Épaisseur (dp) de la bordure du déclencheur de sélection.
+  /// `null` ⇒ référence (`1` — le défaut de `BorderSide`, ce qu'écrit DODLP).
+  ///
+  /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est une bordure
+  /// **absente**, pas une absence de réglage (identique à
+  /// [editionSheetBorderWidth]).
+  final double? selectTileBorderWidth;
+
+  /// Rayon (dp) des coins du déclencheur de sélection. `null` ⇒ référence (`12`).
+  ///
+  /// Décision app-scale (la « rondeur » est un choix de marque), inatteignable
+  /// via `CardThemeData.shape` pour la raison dite en [selectTileBorderColor].
+  ///
+  /// `lerp` par [_lerpNullableFloor] : un rayon `0` est un coin **carré**, un
+  /// rendu qu'aucun des deux thèmes ne décrit.
+  final double? selectTileRadius;
+
+  /// Plancher (dp) de hauteur du déclencheur de sélection — AD-13.
+  /// `null` ⇒ référence (`48`).
+  ///
+  /// 🔴 `lerp` par [_lerpNullableFloor], **jamais** `_lerpNullableDouble` :
+  /// exactement la leçon de [editionChromeMinTouchTarget]. Pour une CONTRAINTE
+  /// de plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
+  /// fenêtre pendant laquelle la cible n'a plus de minimum accessible.
+  ///
+  /// ⚠️ Le consommateur ne descend **jamais** sous 48 dp quelle que soit la
+  /// valeur posée ici : ce jeton ne peut que **rehausser** (AD-13).
+  final double? selectTileMinHeight;
+
+  /// Largeur utile (dp) au-delà de laquelle un modal de sélection s'ouvre en
+  /// boîte de dialogue plutôt qu'en feuille. `null` ⇒ référence (`600`, le
+  /// palier `medium` de Material 3).
+  ///
+  /// Décision **responsive** à l'échelle de l'app (même famille que
+  /// `dailyTasksMonthBreakpoint`, `chatComposerMobileBreakpoint`).
+  ///
+  /// `lerp` par [_lerpNullableFloor] : un seuil `0` ferait basculer TOUTE la
+  /// sélection en dialogue le temps de la transition.
+  final double? selectDialogBreakpoint;
+
+  /// Forme des options d'une sélection **mono**, pour toute l'app.
+  ///
+  /// Valeurs reconnues : `'radios'` (référence), `'checkboxes'`, `'switches'`,
+  /// `'chips'`. `null` **ou valeur inconnue** ⇒ le consommateur applique sa
+  /// référence (AD-10 : **jamais** d'exception — un thème écrit à la main, ou
+  /// sérialisé depuis une version plus récente du socle, ne doit pas faire
+  /// planter le rendu).
+  ///
+  /// 🔴 **`String` et NON l'énumération.** `ZSelectChoiceStyle` vit dans
+  /// `zcrud_select` et AD-1 interdit à `zcrud_core` de l'importer. C'est le
+  /// patron déjà établi par [editionSheetFrameMode], indexé par le **nom** du
+  /// palier pour exactement la même raison.
+  ///
+  /// `lerp` **DISCRET** à `t = 0.5` : il n'existe pas de demi-radio. Interpoler
+  /// ferait clignoter la forme des options pendant une transition de thème.
+  final String? selectMonoChoiceStyle;
+
+  /// Forme des options d'une sélection **multi**, pour toute l'app.
+  /// Valeurs reconnues et règles identiques à [selectMonoChoiceStyle] ;
+  /// référence : `'switches'` (le défaut **mesuré** de DODLP).
+  final String? selectMultiChoiceStyle;
+
+  /// Forme du **conteneur** de modal de sélection, pour toute l'app.
+  ///
+  /// Valeurs reconnues : `'bottomSheet'`, `'popupDialog'`, `'fullPage'`,
+  /// `'adaptive'` (référence). `null` ou valeur inconnue ⇒ référence (AD-10).
+  ///
+  /// Même motivation `String` + `lerp` discret que [selectMonoChoiceStyle].
+  final String? selectModalShape;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -2000,6 +2128,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     EdgeInsetsDirectional? editionChromeHeaderPadding,
     EdgeInsetsDirectional? editionChromeActionBarPadding,
     double? editionChromePageHeaderExpandedHeight,
+    Color? selectTileBorderColor,
+    double? selectTileBorderWidth,
+    double? selectTileRadius,
+    double? selectTileMinHeight,
+    double? selectDialogBreakpoint,
+    String? selectMonoChoiceStyle,
+    String? selectMultiChoiceStyle,
+    String? selectModalShape,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -2233,6 +2369,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     editionChromePageHeaderExpandedHeight:
         editionChromePageHeaderExpandedHeight ??
         this.editionChromePageHeaderExpandedHeight,
+    selectTileBorderColor: selectTileBorderColor ?? this.selectTileBorderColor,
+    selectTileBorderWidth: selectTileBorderWidth ?? this.selectTileBorderWidth,
+    selectTileRadius: selectTileRadius ?? this.selectTileRadius,
+    selectTileMinHeight: selectTileMinHeight ?? this.selectTileMinHeight,
+    selectDialogBreakpoint:
+        selectDialogBreakpoint ?? this.selectDialogBreakpoint,
+    selectMonoChoiceStyle: selectMonoChoiceStyle ?? this.selectMonoChoiceStyle,
+    selectMultiChoiceStyle:
+        selectMultiChoiceStyle ?? this.selectMultiChoiceStyle,
+    selectModalShape: selectModalShape ?? this.selectModalShape,
   );
 
   @override
@@ -3049,6 +3195,44 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.editionChromePageHeaderExpandedHeight,
         t,
       ),
+      // ── Déclencheur de sélection (CR-SELECT-SEAM) ───────────────────────
+      // COULEUR NULLABLE absente du repli : `_lerpNullableColor`, jamais
+      // `Color.lerp` (qui peindrait une bordure fantôme par-dessus le rôle).
+      selectTileBorderColor: _lerpNullableColor(
+        selectTileBorderColor,
+        other.selectTileBorderColor,
+        t,
+      ),
+      // DIMENSIONS : `_lerpNullableFloor` — `0` serait « pas de bordure »,
+      // « coins carrés », « aucun plancher de cible » (AD-13) et « tout en
+      // dialogue », c'est-à-dire quatre rendus que personne n'a choisis.
+      selectTileBorderWidth: _lerpNullableFloor(
+        selectTileBorderWidth,
+        other.selectTileBorderWidth,
+        t,
+      ),
+      selectTileRadius: _lerpNullableFloor(
+        selectTileRadius,
+        other.selectTileRadius,
+        t,
+      ),
+      selectTileMinHeight: _lerpNullableFloor(
+        selectTileMinHeight,
+        other.selectTileMinHeight,
+        t,
+      ),
+      selectDialogBreakpoint: _lerpNullableFloor(
+        selectDialogBreakpoint,
+        other.selectDialogBreakpoint,
+        t,
+      ),
+      // PALIERS NOMMÉS : `lerp` DISCRET — il n'existe pas de demi-radio ni de
+      // demi-feuille (patron `editionSheetFrameMode`).
+      selectMonoChoiceStyle:
+          t < 0.5 ? selectMonoChoiceStyle : other.selectMonoChoiceStyle,
+      selectMultiChoiceStyle:
+          t < 0.5 ? selectMultiChoiceStyle : other.selectMultiChoiceStyle,
+      selectModalShape: t < 0.5 ? selectModalShape : other.selectModalShape,
     );
   }
 }

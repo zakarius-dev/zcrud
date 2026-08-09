@@ -49,6 +49,7 @@ export 'src/domain/z_form_weight.dart';
 export 'src/domain/z_presentation_policy.dart';
 export 'src/presentation/present_edition.dart';
 export 'src/presentation/z_adaptive_presenter.dart';
+export 'src/presentation/z_edition_body_fit.dart';
 export 'src/presentation/z_edition_chrome.dart';
 export 'src/presentation/z_edition_scaffold.dart';
 export 'src/presentation/z_form_presenter.dart';

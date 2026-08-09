@@ -33,6 +33,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show
         ZDiscardGuard,
@@ -41,6 +42,7 @@ import 'package:zcrud_core/zcrud_core.dart'
         label;
 
 import '../domain/z_edition_presentation.dart';
+import 'z_edition_body_fit.dart';
 import 'z_edition_chrome.dart';
 
 /// Rend le [chrome] autour de [body], sous la forme dictée par [mode].
@@ -55,10 +57,15 @@ class ZEditionScaffold extends StatelessWidget {
     required this.chrome,
     required this.mode,
     this.metrics,
+    this.bodyFit = ZEditionBodyFit.intrinsic,
     super.key,
   });
 
   /// Contenu du formulaire (opaque — jamais inspecté).
+  ///
+  /// 🔴 « Opaque » est une **contrainte**, pas une description : ce widget ne
+  /// teste **jamais** le type de [body] pour deviner comment le placer. C'est
+  /// [bodyFit] que l'appelant **déclare** — cf. `z_edition_body_fit.dart`.
   final Widget body;
 
   /// Descripteur du chrome (titre, libellés, callbacks, actions).
@@ -69,6 +76,14 @@ class ZEditionScaffold extends StatelessWidget {
 
   /// Surcharge **par paramètre** des métriques (priorité la plus haute).
   final ZEditionChromeMetrics? metrics;
+
+  /// **Déclaration** de l'appelant : comment [body] veut être placé.
+  ///
+  /// Défaut [ZEditionBodyFit.intrinsic] — le comportement de v0.60.0, à
+  /// l'identique. Passez [ZEditionBodyFit.scrollable] quand le corps défile
+  /// lui-même : c'est alors le **contenant** qui le borne, et le corps garde son
+  /// propre défilement (aucun `shrinkWrap` à poser côté appelant).
+  final ZEditionBodyFit bodyFit;
 
   @override
   Widget build(BuildContext context) {
@@ -94,36 +109,80 @@ class ZEditionScaffold extends StatelessWidget {
   // `SliverAppBar(floating: true, pinned: false)` : l'en-tête se REPLIE au
   // défilement et reparaît au défilement inverse — le comportement du
   // `listenToScrool` de `scaffoldDialog` (DODLP legacy), obtenu nativement.
+  //
+  // 🔴 Corps SCROLLABLE (`bodyFit: scrollable`) : `NestedScrollView`, et NON
+  // `SliverFillRemaining(hasScrollBody: true)`. Les deux ont été mesurés
+  // (probe du 2026-08-09, corps `ListView` de 60 lignes, glissement de 400 px) :
+  //
+  //   * `SliverFillRemaining(hasScrollBody: true)` — le corps défile bien
+  //     (`L0` sort de l'arbre, `L10` y entre), **mais l'en-tête ne se replie
+  //     plus JAMAIS** : le titre reste à `Rect.fromLTRB(16, 14, 126, 42)` après
+  //     le glissement. Le corps consomme tout le geste, le viewport externe
+  //     n'a plus rien à défiler. Les deux exigences se CONTREDISENT sur cette
+  //     forme.
+  //   * `NestedScrollView` — le corps défile **et** l'en-tête se replie (le
+  //     titre disparaît de l'arbre après le même glissement). C'est la seule
+  //     forme mesurée qui satisfait les deux ; c'est celle retenue.
   Widget _buildPage(BuildContext context, ZEditionChromeMetrics m) {
-    final List<Widget> actions = _actions(context, m);
-    final String? title = chrome.title;
+    final Widget bar = _pageAppBar(context, m);
+    if (bodyFit == ZEditionBodyFit.scrollable) {
+      return Scaffold(
+        body: NestedScrollView(
+          // 🔴 `floatHeaderSlivers: true` n'est PAS décoratif : sans lui,
+          // l'en-tête `floating` se replie bien, mais ne REPARAÎT qu'une fois
+          // le corps ramené tout en haut. Mesuré (glissement inverse de
+          // 200 px) : sans le drapeau, titre toujours absent ; avec, titre
+          // revenu. C'est le drapeau qui rend au corps scrollable le
+          // comportement EXACT du `SliverAppBar(floating: true)` livré en
+          // v0.60.0.
+          floatHeaderSlivers: true,
+          headerSliverBuilder: (BuildContext _, bool _) => <Widget>[bar],
+          body: body,
+        ),
+      );
+    }
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
-          SliverAppBar(
-            floating: true,
-            pinned: false,
-            // `title` ABSENT de l'arbre quand aucun titre n'est fourni (AD-4) —
-            // jamais un `SizedBox.shrink` de remplissage.
-            title: title == null
-                ? null
-                : Semantics(header: true, child: Text(title)),
-            leading: _ZChromeAction(
-              label: chrome.discardLabel ?? label(context, 'close'),
-              metrics: m,
-              onTap: () => _discard(context),
-              emphasis: _ZActionEmphasis.neutral,
-            ),
-            leadingWidth: m.minTouchTarget * 2,
-            actions: actions.isEmpty ? null : actions,
-          ),
-          SliverToBoxAdapter(child: body),
+          bar,
+          SliverToBoxAdapter(child: _ZUnboundedBodyGuard(child: body)),
         ],
       ),
     );
   }
 
+  /// L'en-tête de page — **une seule** définition, partagée par les deux
+  /// régimes de [bodyFit] : `floating: true, pinned: false` (repli au scroll)
+  /// n'est donc pas re-décidé deux fois.
+  Widget _pageAppBar(BuildContext context, ZEditionChromeMetrics m) {
+    final List<Widget> actions = _actions(context, m);
+    final String? title = chrome.title;
+    return SliverAppBar(
+      floating: true,
+      pinned: false,
+      // `title` ABSENT de l'arbre quand aucun titre n'est fourni (AD-4) —
+      // jamais un `SizedBox.shrink` de remplissage.
+      title:
+          title == null ? null : Semantics(header: true, child: Text(title)),
+      leading: _ZChromeAction(
+        label: chrome.discardLabel ?? label(context, 'close'),
+        metrics: m,
+        onTap: () => _discard(context),
+        emphasis: _ZActionEmphasis.neutral,
+      ),
+      leadingWidth: m.minTouchTarget * 2,
+      actions: actions.isEmpty ? null : actions,
+    );
+  }
+
   // ── dialog ──────────────────────────────────────────────────────────────
+  //
+  // 🔴 [bodyFit] n'a **aucun effet** ici, et ce n'est pas un oubli : `Flexible`
+  // donne déjà au corps une hauteur BORNÉE. Mesuré (probe du 2026-08-09) : un
+  // corps `ListView` en mode `dialog` monte avec **zéro** exception, là où
+  // `page` en lève 14 et `sheet` 23. Aucune symétrie n'a été supposée entre les
+  // trois modes — chacun a été mesuré séparément. Aucune garde de corps non
+  // borné n'est posée ici non plus : le cas ne peut pas se produire.
   Widget _buildDialog(BuildContext context, ZEditionChromeMetrics m) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -171,7 +230,19 @@ class ZEditionScaffold extends StatelessWidget {
             ),
           ),
         _header(context, m),
-        Flexible(child: SingleChildScrollView(child: body)),
+        // 🔴 Un corps qui défile DÉJÀ ne s'imbrique pas dans un
+        // `SingleChildScrollView` : celui-ci lui donne une hauteur INFINIE,
+        // c'est le même piège qu'en `page`. Mesuré : `ListView` en feuille
+        // `intrinsic` ⇒ 23 exceptions ; sous `Flexible` nu ⇒ 0, et le corps
+        // défile tandis que la barre d'actions reste ancrée.
+        if (bodyFit == ZEditionBodyFit.scrollable)
+          Flexible(child: body)
+        else
+          Flexible(
+            child: SingleChildScrollView(
+              child: _ZUnboundedBodyGuard(child: body),
+            ),
+          ),
         // Actions ancrées en bas, SAFE-AREA honorée (encoche/gesture bar).
         SafeArea(top: false, child: _actionBar(context, m)),
       ],
@@ -304,6 +375,101 @@ class ZDiscardGuardHost {
       onConfirmDiscard: chrome.onConfirmDiscard,
       child: child,
     );
+  }
+}
+
+/// Garde de **développement** (AD-10) : transforme l'écran blanc de la CR
+/// scaffold-scrollable-body en **un** message actionnable qui nomme le
+/// paramètre à passer.
+///
+/// ## Ce qui n'était PAS atteignable, et pourquoi
+///
+/// Intercepter l'exception du corps est **impossible** : `RenderObject.layout`
+/// enveloppe lui-même `performResize`/`performLayout` dans un `try/catch` qui
+/// **rapporte puis avale** (`_reportException`), et remet `_needsLayout` à
+/// `false`. Mesuré : un `try/catch` autour de `child.layout(...)` n'attrape
+/// **rien** (probe 3, 0 occurrence du message), et `child.debugNeedsLayout` est
+/// `false` après l'échec — deux signaux inutilisables.
+///
+/// Le signal **fiable** est `child.hasSize` : un `RenderBox` dont le
+/// `performResize` a levé n'a jamais reçu de taille. La condition est donc
+/// « contrainte de hauteur **infinie** ET l'enfant n'a pas de taille après
+/// `layout` ». Elle ne peut pas produire de faux positif : un `layout` réussi
+/// pose toujours une taille (mesuré : corps `Text` court ⇒ aucune détection).
+///
+/// ## FR-26 — ce message ne peut PAS s'afficher
+///
+/// Il n'est **jamais** un widget : aucun `Text`, aucun `ErrorWidget`, aucune
+/// couleur. C'est un `FlutterErrorDetails` **construit et rapporté à
+/// l'intérieur d'un `assert`** — donc élidé du binaire en profil et en release
+/// (la garde de source `z_edition_chrome_source_guard_test.dart` continue par
+/// ailleurs d'interdire tout littéral de couleur ou de libellé d'UI).
+class _ZUnboundedBodyGuard extends SingleChildRenderObjectWidget {
+  const _ZUnboundedBodyGuard({required Widget super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _ZRenderUnboundedBodyGuard();
+}
+
+class _ZRenderUnboundedBodyGuard extends RenderProxyBox {
+  bool _degraded = false;
+
+  @override
+  void performLayout() {
+    final RenderBox? c = child;
+    if (c == null) {
+      size = constraints.smallest;
+      return;
+    }
+    c.layout(constraints, parentUsesSize: true);
+    _degraded = false;
+    assert(() {
+      if (constraints.maxHeight != double.infinity || c.hasSize) return true;
+      _degraded = true;
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary(
+              'ZEditionScaffold : le corps DÉFILE lui-même, mais il a été '
+              'placé en `ZEditionBodyFit.intrinsic` (le défaut).',
+            ),
+            ErrorDescription(
+              'Dans ce régime le corps reçoit une hauteur INFINIE, ce qui fait '
+              'lever « Vertical viewport was given unbounded height » puis une '
+              'cascade de « RenderBox was not laid out » — écran blanc.',
+            ),
+            ErrorHint(
+              'Déclarez-le : ZEditionScaffold(bodyFit: '
+              'ZEditionBodyFit.scrollable) — ou presentEdition(bodyFit: '
+              'ZEditionBodyFit.scrollable). Ne modifiez PAS votre corps : ni '
+              '`shrinkWrap: true`, ni `NeverScrollableScrollPhysics()`.',
+            ),
+          ]),
+          library: 'zcrud_navigation',
+          context: ErrorDescription('pendant la mise en page du chrome '
+              'd\'édition'),
+        ),
+      );
+      return true;
+    }());
+    // En release `_degraded` reste `false` (l'`assert` est élidé) : la taille
+    // de l'enfant est lue comme avant — aucun changement de comportement.
+    size = _degraded ? constraints.constrain(Size.zero) : c.size;
+  }
+
+  // Un enfant sans taille ne peut être ni peint ni testé au toucher : le faire
+  // rejouerait la cascade qu'on vient de remplacer par UN message.
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (_degraded) return;
+    super.paint(context, offset);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    if (_degraded) return false;
+    return super.hitTestChildren(result, position: position);
   }
 }
 
