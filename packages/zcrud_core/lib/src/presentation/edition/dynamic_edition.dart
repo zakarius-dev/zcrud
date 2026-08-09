@@ -503,6 +503,41 @@ class _DynamicEditionState extends State<DynamicEdition> {
       }
       return;
     }
+    // ── CR-MANAGE-VISIBILITY-ROLE ──────────────────────────────────────────
+    // 🔴 Le défaut fermé ici : `manageVisibility` était LU (`widget.manage… &&`)
+    // mais jamais COMPARÉ. Sur un catalogue `const` (identité de `fields`
+    // stable) et un controller inchangé, une bascule de rôle ne réabonnait rien.
+    //
+    // Ce drapeau est **STRUCTUREL** au sens de la table de `ZStepperEdition` :
+    // il décide si CETTE zone est un **écrivain** de `visibleFields` et quel jeu
+    // de `Listenable` est abonné — ce n'est pas un canal visuel. Les deux
+    // moitiés du défaut :
+    // - `true → false` : les listeners de garde restaient abonnés et
+    //   `_onGuardChanged`/`_onReseed` republiaient la fenêtre ⇒ **deux
+    //   écrivains**, ce que DP-9/AD-2 interdisent ;
+    // - `false → true` : rien n'était abonné ni recalculé ⇒ zone qui se déclare
+    //   pilote sans jamais piloter.
+    //
+    // Le rebind est **DISCRIMINANT**, pas un recalcul à l'aveugle : seuls les
+    // deux canaux qui dépendent du rôle sont refaits.
+    // - PAS `_rebuildIndexes()` : les index ne dépendent que de `fields` ;
+    // - PAS `_bindDerivations()` : le `ZDerivationEngine` ne dépend que de
+    //   `fields` ; il publie une révision et `_onDerivedVisibility` consulte
+    //   `manageVisibility` **à l'appel** — le recréer détruirait/reconstruirait
+    //   un moteur pour rien (SM-1).
+    if (oldWidget.manageVisibility != widget.manageVisibility) {
+      _bindGuards();
+      _bindReseed();
+      if (widget.manageVisibility &&
+          (_hasConditions ||
+              _hasDerivedVisibility ||
+              _shouldSeedCanonicalOrder)) {
+        _recomputeVisibility();
+      }
+      // Le canal contexte ci-dessous est couvert : on vient soit de recalculer
+      // sous le contexte COURANT, soit de devenir passif (rien à publier).
+      return;
+    }
     // Changement de CONTEXTE d'édition (crud/mode/drapeaux) hors changement
     // structurel de controller/fields : recalcul UNIQUE de la visibilité si une
     // clé de contexte réellement surveillée a changé de valeur (DP-2, B3). Jamais

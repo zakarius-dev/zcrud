@@ -14,6 +14,11 @@
 /// reste atteignable par [ZDateFieldWidget.decorated] `= false` ou par le jeton
 /// `ZcrudTheme.dateFieldDecorated`.
 ///
+/// **CR-DODLP-DATE-DISPLAY** — la valeur SAISIE est désormais projetée par le
+/// port `ZDateDisplayFormatter` (le même que la fiche de lecture, le résumé de
+/// sous-liste et la liste), via la règle de repli partagée. Sans port injecté,
+/// l'affichage est **strictement** l'ISO brut d'avant (AD-10).
+///
 /// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
 /// bouton + libellé + valeur + `isRequired` (état = valeur courante ou
 /// placeholder l10n). Aucune couleur codée en dur (thème hérité — FR-26).
@@ -26,6 +31,7 @@ import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../z_decorated_field_trigger.dart';
+import '../z_read_only_value.dart';
 
 /// Champ d'édition **date/heure** (déclencheur de picker directionnel).
 ///
@@ -104,7 +110,24 @@ class ZDateFieldWidget extends StatelessWidget {
     // Repli défensif (AC10) : `selectDateTime` absent ⇒ retombe sur `selectDate`.
     final placeholder =
         label(context, placeholderKey, fallback: label(context, 'selectDate'));
-    final display = current.isEmpty ? placeholder : current;
+    // CR-DODLP-DATE-DISPLAY — projection d'AFFICHAGE de la valeur SAISIE par le
+    // même port `ZDateDisplayFormatter` que la fiche de lecture, le résumé de
+    // sous-liste et la liste (v0.69.0/v0.70.0). Le champ écrivait jusqu'ici
+    // l'ISO brut : le MÊME champ rendait `Dim. 9 août 2026` en liste et
+    // `2026-08-09T00:00:00.000` dans le formulaire.
+    //
+    // 🔴 Hôte passif STRICTEMENT immobile (AD-10) : la règle de repli est
+    // partagée (`zDateDisplayTextOf`, via `zDateDisplayText` qui lit le scope
+    // et la locale) et vaut **la chaîne brute** dans TOUS les chemins dégradés
+    // — port absent, mode `time` (jamais routé), valeur non parsable, port
+    // rendant `null`/vide, port qui lève. Le mode est lu par `zDateModeOf` :
+    // la MÊME source que `_mode` et que les voies de lecture (jamais recopiée).
+    //
+    // ⚠️ Seul l'AFFICHAGE passe par le port : `current` (ISO brut) reste la
+    // valeur pilotant `hasValue`, la croix d'effacement et `_pick`.
+    final valueDisplay =
+        current.isEmpty ? '' : zDateDisplayText(context, field, current);
+    final display = current.isEmpty ? placeholder : valueDisplay;
 
     // MIN-2 : croix d'effacement rendue seulement si un callback est fourni
     // (champ non requis + éditable) ET qu'une valeur existe (rien à effacer sinon).
@@ -122,7 +145,7 @@ class ZDateFieldWidget extends StatelessWidget {
             field: field,
             semanticsLabel: resolvedLabel,
             placeholder: placeholder,
-            valueText: current,
+            valueText: valueDisplay,
             hasValue: current.isNotEmpty,
             onTap: onTap,
             trailingIcon: Icon(

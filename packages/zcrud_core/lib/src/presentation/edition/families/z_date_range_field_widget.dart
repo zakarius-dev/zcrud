@@ -23,9 +23,11 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/z_date_range.dart';
+import '../../../domain/edition/z_field_config.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../z_decorated_field_trigger.dart';
+import '../z_read_only_value.dart';
 
 /// Champ d'édition **plage de dates** (déclencheur de picker directionnel).
 ///
@@ -88,7 +90,11 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     // (jamais un littéral codé en dur — FR-26).
     final placeholder = label(context, 'selectDateRange',
         fallback: label(context, 'selectDate'));
-    final display = range == null ? placeholder : _formatRange(range);
+    // Projection calculée UNE FOIS par build (AD-2 : le port de l'hôte n'est
+    // pas appelé deux fois pour la même plage — `display` et `valueText`
+    // partagent la même chaîne).
+    final rangeText = range == null ? '' : _formatRange(context, range);
+    final display = range == null ? placeholder : rangeText;
 
     // MIN-2 : croix rendue seulement si un callback est fourni (champ non requis
     // + éditable) ET qu'une plage existe (rien à effacer sinon).
@@ -105,7 +111,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
             field: field,
             semanticsLabel: resolvedLabel,
             placeholder: placeholder,
-            valueText: range == null ? '' : _formatRange(range),
+            valueText: rangeText,
             hasValue: range != null,
             onTap: onTap,
             trailingIcon: const Icon(Icons.date_range_outlined),
@@ -150,13 +156,32 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     );
   }
 
-  /// Affichage d'une plage : `start → end` en **dates ISO-8601** (`YYYY-MM-DD`).
-  /// Le format ISO est un **choix délibéré assumé**, cohérent avec la famille
-  /// date sœur (`z_date_field_widget.dart`) et l'ISO en persistance (AC-A2) —
-  /// ce n'est PAS un format localisé. Aucune **couleur** codée en dur (thème
-  /// hérité — FR-26).
-  static String _formatRange(ZDateRange r) =>
-      '${_isoDate(r.start)} → ${_isoDate(r.end)}';
+  /// Affichage d'une plage : `start → end`, chaque borne projetée par le port
+  /// `ZDateDisplayFormatter` en mode [ZDateMode.date] (CR-DODLP-DATE-DISPLAY).
+  ///
+  /// **Pourquoi `dateRange` est traité ici alors qu'il n'a pas de voie de
+  /// lecture séparée** : `dateRange` n'est ni tabulaire (absent de
+  /// `_tabularTypes`, il n'apparaît jamais dans une `DynamicList`) ni
+  /// fiche-able (`zReadModeCardable` → `false` : en lecture c'est CE widget,
+  /// `readOnly`, qui rend). Il ne porte donc PAS l'incohérence *inter-surfaces*
+  /// de la famille date. Il porte l'autre moitié du même défaut : sous un port
+  /// injecté, un formulaire afficherait `Dim. 9 août 2026` pour un `dateTime`
+  /// et `2026-08-09 → …` pour la plage juste à côté. Corriger une famille sur
+  /// deux recréerait l'incohérence qu'on ferme.
+  ///
+  /// 🔴 Hôte passif STRICTEMENT immobile (AD-10) : la borne entre dans la règle
+  /// partagée **déjà normalisée en `YYYY-MM-DD`** — le repli de
+  /// `zDateDisplayTextOf` étant `'$value'`, port absent / port rendant
+  /// `null`/vide / port qui lève redonnent **exactement** l'ISO d'avant. (Passer
+  /// le `DateTime` nu ferait replier sur `DateTime.toString()`, qui n'est pas
+  /// l'ISO — le piège déjà relevé côté `ZListColumn`.) Aucune **couleur** codée
+  /// en dur (thème hérité — FR-26).
+  static String _formatRange(BuildContext context, ZDateRange r) =>
+      '${_boundText(context, r.start)} → ${_boundText(context, r.end)}';
+
+  /// Projette UNE borne : ISO `YYYY-MM-DD` → port (mode `date`) → repli ISO.
+  static String _boundText(BuildContext context, DateTime d) =>
+      zDateDisplayTextForMode(context, _isoDate(d), mode: ZDateMode.date);
 
   /// Partie **date** (`YYYY-MM-DD`) d'un `DateTime` en ISO-8601.
   static String _isoDate(DateTime d) => d.toIso8601String().split('T').first;

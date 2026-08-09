@@ -165,13 +165,32 @@ String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
 /// plus que **lire les seams du scope** ; la voie sans `BuildContext`
 /// (`ZListColumn.format`) consomme la MÊME règle avec un port déjà capturé.
 String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) =>
-    zDateDisplayTextOf(
-      ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
+    zDateDisplayTextForMode(
+      context,
       value,
       mode: zDateModeOf(
         field.config,
         isTimeType: field.type == EditionFieldType.time,
       ),
+    );
+
+/// Variante de [zDateDisplayText] à **mode explicite**, pour un appelant dont le
+/// mode ne se dérive PAS d'un `ZFieldSpec` — cas de `dateRange`, dont la valeur
+/// est un couple de bornes rendues chacune comme une **date seule**
+/// ([ZDateMode.date]) alors que `field.type` vaut `dateRange`.
+///
+/// 🔴 Elle est la **seule** lecture des seams du scope (port + locale) : la
+/// règle de repli, elle, reste dans `zDateDisplayTextOf`. Aucune des deux n'est
+/// dupliquée ici.
+String zDateDisplayTextForMode(
+  BuildContext context,
+  Object? value, {
+  required ZDateMode mode,
+}) =>
+    zDateDisplayTextOf(
+      ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
+      value,
+      mode: mode,
       localeTag: _localeTag(context),
     );
 
