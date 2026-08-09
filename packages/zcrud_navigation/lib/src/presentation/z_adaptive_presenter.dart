@@ -86,12 +86,18 @@ class ZAdaptivePresenter implements ZFormPresenter, ZImplicitDismissControl {
     bool useSafeArea = true,
     bool barrierDismissible = true,
     bool allowImplicitDismiss = true,
+    bool isDismissible = true,
     ZSheetFrameSpec? sheetFrame,
   }) {
     // Switch EXHAUSTIF sur les 3 valeurs de l'enum ⇒ jamais de `throw` (AD-10).
     switch (mode) {
       case ZEditionPresentation.page:
-        // Route pleine page — tailles max IGNORÉES (la page occupe l'écran).
+        // Route pleine page — tailles max IGNORÉES (la page occupe l'écran),
+        // `useSafeArea` IGNORÉ (aucune `SafeArea` n'est insérée, ni avec `true`
+        // ni avec `false` — mesuré, CR-IFFD-78 ①), `barrierDismissible` et
+        // `isDismissible` sans objet (une route pleine n'a pas de barrière),
+        // `allowImplicitDismiss` et `sheetFrame` sans objet. Ces inerties sont
+        // DÉCLARÉES au port et MESURÉES par la matrice de paramètres.
         return Navigator.of(context).push<T>(
           MaterialPageRoute<T>(
             builder: builder,
@@ -131,6 +137,14 @@ class ZAdaptivePresenter implements ZFormPresenter, ZImplicitDismissControl {
           // désactivée ; sinon `null` ⇒ défaut SDK, arbre INCHANGÉ.
           // (`true` est le défaut du SDK ⇒ voie historique inchangée.)
           enableDrag: allowImplicitDismiss,
+          // 🔴 Voie ORTHOGONALE au glissement : `isDismissible` alimente
+          // `ModalBottomSheetRoute.barrierDismissible` (SDK,
+          // `bottom_sheet.dart` l. 1103). `false` ⇒ le tap sur la barrière ne
+          // déclenche même plus `maybePop`, donc le garde d'abandon n'est PAS
+          // consulté — c'est « interdire », là où `allowImplicitDismiss: false`
+          // dit « garder ». `true` (défaut SDK et défaut du port) ⇒ arbre et
+          // comportement INCHANGÉS pour tout hôte passif.
+          isDismissible: isDismissible,
           // `null` quand le cadre est désactivé ⇒ AUCUNE `shape` imposée, donc
           // la résolution native du SDK (`thème > défauts M3`) est retrouvée
           // telle quelle (AD-4 : `null` ⇒ absent de l'arbre).

@@ -118,6 +118,23 @@ import 'z_sheet_frame.dart';
 /// par `present` **tel quel** : il n'aura ni la marge ni le cadre (AD-10 :
 /// repli, jamais d'exception).
 ///
+/// ## [isDismissible] — barrière de la FEUILLE (CR-IFFD-78, ②)
+///
+/// Défaut `true` ⇒ **rien ne bouge** pour un hôte passif. `false` rend la
+/// barrière de la bottom-sheet **non fermante** — voie « interdire le
+/// renoncement », à ne pas confondre avec le « garder le renoncement » que pose
+/// un [chrome] armant `guardsDiscard`. Les deux réglages sont **orthogonaux** et
+/// se composent : la règle complète, avec ses conséquences mesurées, est au
+/// dartdoc de `ZImplicitDismissControl.presentWithDismissControl`.
+///
+/// ⚠️ **Inerte** en `page` et en `dialog` (mesuré, jamais supposé) — en
+/// `dialog`, c'est [barrierDismissible] qui règle la barrière.
+///
+/// ⚠️ Comme [sheetFrame], ce paramètre ne transite que par
+/// [ZImplicitDismissControl] : un presenter **tiers** qui ne l'implémente pas
+/// est appelé par `present` et ne le recevra pas (AD-10 : repli, jamais
+/// d'exception).
+///
 /// ## [bodyFit] — corps qui DÉFILE (CR scaffold-scrollable-body, 2026-08-09)
 ///
 /// Ne concerne que la voie [chrome] (sans chrome, le socle ne place rien).
@@ -150,6 +167,7 @@ Future<T?> presentEdition<T>(
   double? maxHeight,
   bool useSafeArea = true,
   bool barrierDismissible = true,
+  bool isDismissible = true,
   ZEditionChrome? chrome,
   ZEditionPresentation? forcedMode,
   ZSheetFrameSpec? sheetFrame,
@@ -208,6 +226,7 @@ Future<T?> presentEdition<T>(
         maxHeight: maxHeight,
         useSafeArea: useSafeArea,
         barrierDismissible: barrierDismissible,
+        isDismissible: isDismissible,
         sheetFrame: effectiveSheetFrame,
       );
     }
@@ -240,6 +259,7 @@ Future<T?> presentEdition<T>(
       useSafeArea: useSafeArea,
       barrierDismissible: barrierDismissible,
       allowImplicitDismiss: !chrome.guardsDiscard,
+      isDismissible: isDismissible,
       sheetFrame: effectiveSheetFrame,
     );
   }

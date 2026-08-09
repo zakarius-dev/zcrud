@@ -51,9 +51,42 @@ abstract interface class ZFormPresenter {
   /// - [maxWidth] / [maxHeight] : tailles max **explicites** (dp) pour `sheet`
   ///   et `dialog` ; `null` ⇒ défaut dérivé de `MediaQuery.sizeOf(context)`. En
   ///   mode `page` (route pleine) elles sont **ignorées**.
-  /// - [useSafeArea] : encapsule la surface dans une `SafeArea` (a11y).
+  /// - [useSafeArea] : encapsule la surface dans une `SafeArea` (a11y) pour
+  ///   `sheet` et `dialog`. 🔴 En mode `page` (route pleine) il est **ignoré**
+  ///   — cf. « inertie déclarée » ci-dessous.
   /// - [barrierDismissible] : autorise la fermeture au tap sur la barrière
-  ///   (mode `dialog`).
+  ///   (mode `dialog`). En `sheet`, la barrière se règle par `isDismissible`
+  ///   (port `ZImplicitDismissControl`) ; en `page` il n'y a pas de barrière.
+  ///
+  /// ## 🔴 Inertie DÉCLARÉE (CR-IFFD-78)
+  ///
+  /// **Règle du port : tout paramètre est soit honoré sur une surface, soit
+  /// déclaré inerte sur elle.** Jamais « passé, jamais lu, jamais dit ».
+  ///
+  /// La table complète — paramètre × mode — n'est pas recopiée ici : elle est
+  /// **mesurée**, implémentation par implémentation, par une garde qui présente
+  /// deux fois la même surface avec deux valeurs contraires et compare
+  /// l'empreinte rendue. Un paramètre n'y est « honoré » que si les deux
+  /// empreintes **diffèrent** ; il n'existe nulle part où écrire un statut.
+  ///
+  /// * `ZAdaptivePresenter` → `doc/parameter-matrix-z-adaptive-presenter.md`
+  ///   (garde : `test/z_presenter_parameter_matrix_test.dart`) ;
+  /// * `ZGetFormPresenter` (`zcrud_get`) →
+  ///   `packages/zcrud_get/doc/parameter-matrix-z-get-form-presenter.md`.
+  ///
+  /// Une implémentation **tierce** du port n'est tenue par aucune de ces deux
+  /// gardes : elle doit publier sa propre matrice si elle veut la même
+  /// garantie.
+  ///
+  /// ⚠️ `useSafeArea` en mode `page` : l'inertie est **mesurée**, pas supposée.
+  /// Une route pleine n'insère aujourd'hui **aucune** `SafeArea` — ni avec
+  /// `true` (le défaut) ni avec `false` : le contenu brut peint sous l'encoche
+  /// dans les deux cas. Honorer la promesse déplacerait donc l'arbre **par
+  /// défaut** de tout hôte passif ; la promesse est retirée à la place. Un hôte
+  /// qui veut l'encart en `page` place sa propre `SafeArea` (ou fournit un
+  /// `ZEditionChrome` : la voie chrome monte un `Scaffold` + `SliverAppBar`,
+  /// qui consomme l'encart haut, et une `SafeArea(top: false)` sous les
+  /// actions).
   Future<T?> present<T>(
     BuildContext context, {
     required WidgetBuilder builder,

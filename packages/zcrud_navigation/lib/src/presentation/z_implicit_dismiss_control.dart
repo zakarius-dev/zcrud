@@ -73,6 +73,43 @@ abstract interface class ZImplicitDismissControl {
   /// implémenteur hors `ZAdaptivePresenter` — grep négatif au rapport de CR).
   /// Paramètre **nommé et optionnel** : aucun appelant existant ne casse ; une
   /// implémentation externe devrait ajouter le paramètre.
+  ///
+  /// ## [isDismissible] — INTERDIRE le renoncement (CR-IFFD-78, ②)
+  ///
+  /// 🔴 Ne pas confondre avec [allowImplicitDismiss] : **ce sont deux
+  /// intentions opposées, et elles se composent sans se contredire.**
+  ///
+  /// | Réglage | Voie visée | Intention |
+  /// |---|---|---|
+  /// | `allowImplicitDismiss: false` | **glissement** de la feuille | *garder* le renoncement — la voie qui court-circuite `PopScope` est retirée, celle qui l'honore reste |
+  /// | `isDismissible: false` | **barrière** de la feuille | *interdire* le renoncement — la voie est retirée, `PopScope` n'est même plus consulté |
+  ///
+  /// Conséquences **mesurées** de la combinaison (mode `sheet`) :
+  ///
+  /// * `allowImplicitDismiss: false` seul (ce que pose un `ZEditionChrome` qui
+  ///   garde l'abandon) ⇒ glissement mort, **tap barrière vivant** et passant
+  ///   par `Navigator.maybePop`, donc par le garde d'abandon : l'utilisateur
+  ///   peut renoncer, on lui demande confirmation. C'est le choix délibéré du
+  ///   lot v0.60.0, et il est **inchangé**.
+  /// * `isDismissible: false` seul ⇒ glissement vivant (et **non gardé** :
+  ///   `BottomSheet.onClosing` appelle `Navigator.pop`), barrière morte. Un
+  ///   hôte qui coupe la barrière **sans** couper le glissement se retire la
+  ///   voie sûre en laissant la voie non gardée : combinaison déconseillée.
+  /// * les deux à `false` ⇒ **aucune** sortie implicite : ni glissement, ni
+  ///   barrière. La seule sortie est celle que le contenu offre (bouton
+  ///   « Annuler », `Navigator.pop`). C'est la voie « interdire le
+  ///   renoncement » demandée par la CR ; elle **n'annule pas** le garde
+  ///   d'abandon, elle le rend sans objet sur ces deux voies — mesuré :
+  ///   le seam de confirmation n'est appelé sur aucune des deux.
+  ///
+  /// Défaut `true` ⇒ **comportement d'aujourd'hui strictement conservé**
+  /// (barrière fermante), pour tout hôte passif.
+  ///
+  /// ⚠️ Portée : mode **`sheet`** uniquement. En `dialog`, la barrière se règle
+  /// par [barrierDismissible] (un second canal pour la même propriété serait le
+  /// motif de divergence que ce dépôt s'interdit) ; en `page`, il n'y a pas de
+  /// barrière. Ces deux inerties sont **mesurées** par la matrice de paramètres
+  /// (`doc/parameter-matrix-z-adaptive-presenter.md`), pas déclarées à la main.
   Future<T?> presentWithDismissControl<T>(
     BuildContext context, {
     required WidgetBuilder builder,
@@ -82,6 +119,7 @@ abstract interface class ZImplicitDismissControl {
     bool useSafeArea = true,
     bool barrierDismissible = true,
     bool allowImplicitDismiss = true,
+    bool isDismissible = true,
     ZSheetFrameSpec? sheetFrame,
   });
 }

@@ -185,13 +185,17 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
     bool useSafeArea = true,
     bool barrierDismissible = true,
     bool allowImplicitDismiss = true,
+    bool isDismissible = true,
     ZSheetFrameSpec? sheetFrame,
   }) {
     // Switch EXHAUSTIF sur les 3 valeurs de l'enum ⇒ jamais de `throw` (AD-10).
     switch (mode) {
       case ZEditionPresentation.page:
         // Route pleine page — tailles max IGNORÉES (la page occupe l'écran),
-        // comme `ZAdaptivePresenter`. `Get.to` renvoie `Future<T?>?` (nullable
+        // `useSafeArea` IGNORÉ (aucune `SafeArea` n'est insérée, ni avec `true`
+        // ni avec `false` — mesuré, CR-IFFD-78 ①), `barrierDismissible` /
+        // `isDismissible` / `allowImplicitDismiss` / `sheetFrame` sans objet.
+        // Mêmes inerties que `ZAdaptivePresenter`, et DÉCLARÉES au port. `Get.to` renvoie `Future<T?>?` (nullable
         // si la navigation est refusée) : on garantit le contrat `Future<T?>`
         // du port par un repli `Future<T?>.value()` (défaut sûr, jamais null).
         return Get.to<T>(
@@ -229,6 +233,15 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
           // barrière, elle, RESTE fermante (`isDismissible` non touché) : elle
           // passe par `maybePop`, donc par le garde.
           enableDrag: allowImplicitDismiss,
+          // 🔴 Voie ORTHOGONALE au glissement (CR-IFFD-78 ②) : GetX transmet
+          // `isDismissible` à `GetModalBottomSheetRoute`, dont
+          // `barrierDismissible` en dérive (get 4.7.x,
+          // `extension_navigation.dart` l. 52 ; `bottomsheet.dart`). `false` ⇒
+          // le tap sur la barrière ne déclenche même plus `maybePop`, donc le
+          // garde d'abandon n'est PAS consulté : « interdire » le renoncement,
+          // là où `allowImplicitDismiss: false` dit « garder ». `true` (défaut
+          // GetX et défaut du port) ⇒ comportement d'aujourd'hui INCHANGÉ.
+          isDismissible: isDismissible,
           // ── SURFACE : « surface avec le cadre » (cf. l'en-tête) ──
           //
           // `Get.bottomSheet` applique `?? Colors.transparent` à ce qu'on lui
@@ -262,6 +275,25 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
             ),
           ),
           barrierDismissible: barrierDismissible,
+          // 🔴 TROUVÉ PAR LA MATRICE (CR-IFFD-78 ③), pas par lecture — et
+          // invisible à toute garde qui LIT le code : `_constrained` reçoit
+          // bien `useSafeArea` et pose bien sa `SafeArea`, donc le paramètre
+          // « est lu ». Il était pourtant **inerte**.
+          //
+          // Cause, lue dans `get 4.7.x` (`extension_navigation.dart` l. 73-93) :
+          // `Get.dialog` porte SON PROPRE `useSafeArea`, à `true` par défaut, et
+          // enveloppe la page dans une `SafeArea` **en amont**. L'encart était
+          // donc déjà consommé quand notre `SafeArea` interne s'appliquait :
+          // `useSafeArea: false` rendait exactement le même arbre que `true`.
+          // (Divergence franche avec `ZAdaptivePresenter`, où `showDialog`
+          // reçoit le paramètre — la matrice les affichait « honoré » d'un côté,
+          // « inerte » de l'autre.)
+          //
+          // ⚠️ Défaut INCHANGÉ pour tout hôte passif : `true` ⇒ la `SafeArea` de
+          // GetX est posée comme hier, et la `SafeArea` interne reste au même
+          // endroit de l'arbre. Seul l'opt-out `false` change — il devient
+          // effectif au lieu d'être silencieusement ignoré.
+          useSafeArea: useSafeArea,
         );
     }
   }
