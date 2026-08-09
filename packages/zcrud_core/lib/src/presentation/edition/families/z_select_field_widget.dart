@@ -35,6 +35,7 @@ import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../../zcrud_scope.dart';
 import '../z_field_adornment_view.dart';
+import '../z_orphan_choice.dart';
 import '../z_select_presenter.dart';
 
 /// Champ d'édition à **choix** (liste déroulante / modal recherche / chips /
@@ -200,7 +201,12 @@ class ZSelectFieldWidget extends StatelessWidget {
   }
 
   Widget _buildDropdown(BuildContext context) {
-    final choices = _choices;
+    // CR-ORPHAN — voie 1. `DropdownButtonFormField` EXIGE que `value` figure dans
+    // `items` (assertion Flutter) : l'ancien `values.contains(value) ? value :
+    // null` effaçait donc la valeur de l'écran alors qu'elle restait dans la
+    // tranche et serait SOUMISE. On lève la contrainte au lieu de la subir, en
+    // ajoutant l'option synthétique d'affichage — la donnée n'est pas touchée.
+    final choices = zWithOrphanChoices(_choices, <Object?>[value]);
     final values = choices.map((c) => c.value).toList(growable: false);
     final current = values.contains(value) ? value : null;
     return _withReset(
@@ -273,7 +279,12 @@ class ZSelectFieldWidget extends StatelessWidget {
               child: Text(resolvedLabel,
                   style: Theme.of(context).textTheme.bodySmall),
             ),
-            for (final choice in _choices)
+            // CR-ORPHAN — voie 4. Sans option synthétique, `RadioGroup` ne
+            // trouvait AUCUNE tuile portant `groupValue` : le champ paraissait
+            // « rien de coché » alors qu'une valeur était portée et serait
+            // soumise. La tuile synthétique est `enabled: false` (non
+            // re-sélectionnable) mais bien cochée — l'état réel, enfin visible.
+            for (final choice in zWithOrphanChoices(_choices, <Object?>[value]))
               RadioListTile<Object?>(
                 value: choice.value,
                 // L-4 : `enabled: false` DÉSACTIVE réellement chaque radio (état
@@ -304,7 +315,11 @@ class ZSelectFieldWidget extends StatelessWidget {
             child: Text(resolvedLabel,
                 style: Theme.of(context).textTheme.bodySmall),
           ),
-          for (final choice in _choices)
+          // CR-ORPHAN — voie 5. Idem : une valeur cochée absente des options ne
+          // rendait AUCUNE tuile. La tuile synthétique la montre cochée et
+          // désactivée (`choice.disabled` ⇒ `onChanged: null`), donc non
+          // décochable : ce widget ne rend que ce que son propre geste écrit.
+          for (final choice in zWithOrphanChoices(_choices, selected))
             CheckboxListTile(
               value: selected.contains(choice.value),
               // DP-15 : `disabled` par option → `onChanged: null` (non cochable).
@@ -328,7 +343,12 @@ class ZSelectFieldWidget extends StatelessWidget {
   /// `select` mono en **modal de recherche** (DP-15/M8) : un déclencheur
   /// accessible ouvrant le modal (recherche client + sous-titre + disabled).
   Widget _buildModalMono(BuildContext context, String resolvedLabel) {
-    final choices = _choices;
+    // CR-ORPHAN — voie 2 (et voie `radioAsModal`). Sans l'option synthétique,
+    // `_labelForValue` rendait `null` et le déclencheur affichait le PLACEHOLDER
+    // « Sélectionner » : le champ paraissait vide alors qu'il portait une valeur
+    // (et le bouton reset, piloté par `hasValue`, disparaissait — l'utilisateur
+    // n'avait alors aucun moyen de retirer ce qu'il ne voyait pas).
+    final choices = zWithOrphanChoices(_choices, <Object?>[value]);
     final selectedLabel = _labelForValue(context, choices, value);
     return _withReset(
       context,
@@ -347,8 +367,12 @@ class ZSelectFieldWidget extends StatelessWidget {
   /// `select` **multi chips** (DP-15/M8, via `ZFieldSpec.multiple`) : chips
   /// supprimables + déclencheur d'ajout (modal multi).
   Widget _buildMultiChips(BuildContext context, String resolvedLabel) {
-    final choices = _choices;
     final selected = _selectedList;
+    // CR-ORPHAN — voie 3. C'est ici que l'IDENTIFIANT BRUT s'affichait
+    // (`_labelForValue(...) ?? '$v'`). Les options synthétiques donnent un
+    // libellé à chaque orphelin ; le `??` ci-dessous devient inatteignable et
+    // reste garni d'un libellé (jamais d'une clé) par défense en profondeur.
+    final choices = zWithOrphanChoices(_choices, selected);
     final theme = Theme.of(context);
     return Semantics(
       container: true,
@@ -379,9 +403,12 @@ class ZSelectFieldWidget extends StatelessWidget {
               children: <Widget>[
                 for (final v in selected)
                   Semantics(
-                    label: _labelForValue(context, choices, v) ?? '$v',
+                    label: _labelForValue(context, choices, v) ??
+                        zOrphanChoiceLabel(context),
                     child: InputChip(
-                      label: Text(_labelForValue(context, choices, v) ?? '$v',
+                      label: Text(
+                          _labelForValue(context, choices, v) ??
+                              zOrphanChoiceLabel(context),
                           textAlign: TextAlign.start),
                       onDeleted: field.readOnly ? null : () => _removeValue(v),
                       deleteButtonTooltipMessage: label(context, 'remove'),

@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/edition/z_field_choice.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
+import '../z_orphan_choice.dart';
 
 /// Champ d'édition à **puces mono-choix** (rangée depuis `field.choices`).
 class ZRowChipsFieldWidget extends StatelessWidget {
@@ -49,7 +50,10 @@ class ZRowChipsFieldWidget extends StatelessWidget {
         ? null
         : label(context, choice.subtitle!, fallback: choice.subtitle!);
     final selected = value == choice.value;
-    final onSelected = field.readOnly
+    // CR-ORPHAN : une option `disabled` (dont l'option synthétique d'une valeur
+    // orpheline) est visible et lue, mais non (re)sélectionnable — comme dans
+    // les familles `select` et `relation`.
+    final onSelected = (field.readOnly || choice.disabled)
         ? null
         : (bool s) => onChanged(s ? choice.value : null);
 
@@ -103,7 +107,13 @@ class ZRowChipsFieldWidget extends StatelessWidget {
               spacing: 8,
               runSpacing: 4,
               children: <Widget>[
-                for (final choice in field.choices)
+                // CR-ORPHAN — voie supplémentaire trouvée au balayage : une
+                // valeur absente de `field.choices` ne rendait AUCUNE puce
+                // sélectionnée, alors qu'elle serait soumise. Même règle que
+                // les huit voies : puce synthétique, libellé traduit, jamais
+                // la clé, non re-sélectionnable.
+                for (final choice
+                    in zWithOrphanChoices(field.choices, <Object?>[value]))
                   _chip(context, choice),
               ],
             ),

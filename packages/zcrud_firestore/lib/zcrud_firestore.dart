@@ -25,6 +25,7 @@ export 'src/data/z_firestore_api.dart';
 // (soft-delete hors-entité en lots ≤ 450, panne remontée en `Left`). Compose le
 // registre kernel (quoi) + `ZFirestorePathResolver` (où). Signatures publiques
 // NUES — aucun type `cloud_firestore` exporté (AD-5/AD-11).
+export 'src/data/z_firestore_app_file_resolver.dart';
 export 'src/data/z_firestore_cascade_batcher.dart';
 // ES-3.2 (FR-S13) : résolveur de chemins `ZFirestorePathResolver` bi-topologie
 // (flat IFFD / nested lex / global share-links). Entrée NEUTRE → chemin `String` ;

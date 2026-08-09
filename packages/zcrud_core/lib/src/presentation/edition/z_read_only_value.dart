@@ -14,6 +14,7 @@ import '../../domain/edition/z_field_config.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../l10n/z_localizations.dart';
 import 'edition_field_family.dart';
+import 'z_orphan_choice.dart';
 import 'z_value_emptiness.dart';
 
 /// Résultat de formatage d'une valeur en mode lecture : soit un **texte**
@@ -125,14 +126,22 @@ String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
   return '$value';
 }
 
-/// Libellé(s) résolus depuis `field.choices` ; valeur inconnue → représentation
-/// brute ; liste/`multiple` → libellés joints « , ».
+/// Libellé(s) résolus depuis `field.choices` ; valeur **orpheline** (absente des
+/// options) → libellé l10n d'indisponibilité, **jamais la clé technique**
+/// (CR-ORPHAN) ; liste/`multiple` → libellés joints « , ».
+///
+/// 🔴 Le mode lecture ne dispose que des choix **statiques** de la spec : une
+/// valeur alimentée par une source dynamique y est donc structurellement
+/// orpheline. Elle rendait auparavant son **identifiant brut** — c'est le défaut
+/// que ce paquet proscrit ailleurs (`fileRefUnresolved`). Elle rend désormais le
+/// même libellé que les huit voies d'édition. La valeur n'est pas altérée : le
+/// mode lecture n'écrit rien.
 String _choiceLabels(BuildContext context, ZFieldSpec field, Object? value) {
   String labelOf(Object? v) {
     for (final c in field.choices) {
       if (c.value == v) return label(context, c.label, fallback: c.label);
     }
-    return '$v';
+    return zOrphanChoiceLabel(context);
   }
 
   if (value is Iterable) {

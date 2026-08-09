@@ -117,6 +117,10 @@ const _enLabels = <String, String>{
   'copy': 'Copy',
   'copied': 'Value copied to clipboard',
   'emptyValue': '—',
+  // CR-ORPHAN : valeur SÉLECTIONNÉE mais absente des options du moment (cascade).
+  // Même règle que `fileRefUnresolved` : une identité non résolue se montre par
+  // un libellé, JAMAIS par sa clé technique. La valeur, elle, est conservée.
+  'choiceUnresolved': 'Option unavailable',
 };
 
 const _frLabels = <String, String>{
@@ -213,6 +217,8 @@ const _frLabels = <String, String>{
   'copy': 'Copier',
   'copied': 'Valeur copiée dans le presse-papier',
   'emptyValue': '—',
+  // CR-ORPHAN : cf. commentaire de la table `en`.
+  'choiceUnresolved': 'Option indisponible',
 };
 
 /// Tables de libellés génériques par `languageCode` (baseline `en`/`fr`).

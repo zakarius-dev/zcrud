@@ -40,6 +40,7 @@ import '../../l10n/z_localizations.dart';
 import '../../zcrud_scope.dart';
 import '../z_field_adornment_view.dart';
 import '../z_field_label.dart';
+import '../z_orphan_choice.dart';
 import '../z_select_presenter.dart';
 
 /// Champ d'édition **relation** (sélecteur d'entité liée, source dynamique
@@ -241,12 +242,22 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   /// et affiche l'indice de chargement (AD-10) sans jamais crasher.
   Widget _buildDropdown(
     BuildContext context,
-    List<ZFieldChoice> choices, {
+    List<ZFieldChoice> rawChoices, {
     required bool loading,
   }) {
+    // CR-ORPHAN — voie 6, même correction que la voie 1. 🔴 Garde propre à la
+    // relation : PENDANT le chargement la liste est vide, donc TOUTE valeur y
+    // paraîtrait orpheline. « Pas encore chargé » n'est pas « plus proposé » —
+    // on n'annote donc rien tant que `loading`, et l'indice `'loading'` existant
+    // reste seul à parler.
+    final choices = loading
+        ? rawChoices
+        : zWithOrphanChoices(rawChoices, <Object?>[widget.value]);
     final values = choices.map((c) => c.value).toList(growable: false);
     final current = values.contains(widget.value) ? widget.value : null;
-    final enabled = !loading && choices.isNotEmpty && !widget.field.readOnly;
+    // `enabled` reste calculé sur les options RÉELLES : une option synthétique
+    // n'est pas une option offerte, elle ne doit pas rendre un champ vide actif.
+    final enabled = !loading && rawChoices.isNotEmpty && !widget.field.readOnly;
     return DropdownButtonFormField<Object?>(
       // L-3 : clé sur la valeur COURANTE → reflète un changement EXTERNE
       // (un `FormField` ne relit `initialValue` qu'à l'`initState`).
@@ -272,6 +283,12 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         for (final option in choices)
           DropdownMenuItem<Object?>(
             value: option.value,
+            // CR-ORPHAN : l'option synthétique d'un orphelin est `disabled` —
+            // visible mais non re-sélectionnable, ce qui EST son statut. La
+            // famille `select` honorait déjà `ZFieldChoice.disabled` (DP-15) ;
+            // `relation` l'ignorait — l'écart est refermé ici, sans effet sur
+            // une option qui ne se déclare pas désactivée.
+            enabled: !option.disabled,
             child: _dropdownItemChild(context, option),
           ),
       ],
@@ -280,7 +297,12 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   }
 
   /// Sélecteur mono **searchable** : un déclencheur ouvrant le modal de recherche.
-  Widget _buildSearchableMono(BuildContext context, List<ZFieldChoice> choices) {
+  Widget _buildSearchableMono(BuildContext context, List<ZFieldChoice> rawChoices) {
+    // CR-ORPHAN — voie 7 (même défaut que la voie 2 : le placeholder
+    // « Sélectionner » masquait une valeur portée). Chargement exclu.
+    final choices = _isLoading
+        ? rawChoices
+        : zWithOrphanChoices(rawChoices, <Object?>[widget.value]);
     final selectedLabel = _labelForValue(choices, widget.value);
     return _SelectionTrigger(
       label: _resolvedLabel,
@@ -292,8 +314,20 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   }
 
   /// Multi-sélection : chips supprimables + déclencheur d'ajout (modal multi).
-  Widget _buildMulti(BuildContext context, List<ZFieldChoice> choices) {
+  Widget _buildMulti(BuildContext context, List<ZFieldChoice> rawChoices) {
     final selected = _selectedList;
+    // CR-ORPHAN — voie 8 : second site de l'IDENTIFIANT BRUT (`?? '$v'`).
+    // 🔴 Pendant le chargement, les chips affichaient DÉJÀ la clé brute (la
+    // liste live est vide, donc rien ne résout) : c'est le même défaut, une
+    // seconde fois. Les deux états sont désormais textuels et traduits —
+    // « Chargement… » tant que la source n'a pas émis, « Option indisponible »
+    // une fois qu'elle a émis sans la valeur.
+    final choices = _isLoading
+        ? rawChoices
+        : zWithOrphanChoices(rawChoices, selected);
+    String chipLabel(Object? v) =>
+        _labelForValue(choices, v) ??
+        label(context, _isLoading ? 'loading' : zOrphanChoiceLabelKey);
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -321,10 +355,9 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
             children: <Widget>[
               for (final v in selected)
                 Semantics(
-                  label: _labelForValue(choices, v) ?? '$v',
+                  label: chipLabel(v),
                   child: InputChip(
-                    label: Text(_labelForValue(choices, v) ?? '$v',
-                        textAlign: TextAlign.start),
+                    label: Text(chipLabel(v), textAlign: TextAlign.start),
                     onDeleted: widget.field.readOnly
                         ? null
                         : () => _removeValue(v),
@@ -720,7 +753,13 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                                     onCopy: () =>
                                         _runCrud(() => crud.copy(choice.value)),
                                   ),
-                            onChanged: (_) => _toggle(choice.value),
+                            // CR-ORPHAN : une option `disabled` (dont l'option
+                            // synthétique d'un orphelin) est visible et lue,
+                            // mais non cochable — parité avec la feuille du
+                            // `select`, qui le faisait déjà (DP-15).
+                            onChanged: choice.disabled
+                                ? null
+                                : (_) => _toggle(choice.value),
                           );
                         },
                       ),
