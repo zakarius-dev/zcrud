@@ -77,3 +77,38 @@ ZDateMode zDateModeOf(ZFieldConfig? config, {required bool isTimeType}) {
   if (isTimeType) return ZDateMode.time;
   return ZDateMode.dateTime;
 }
+
+/// Applique le port [formatter] à [value] et **replie sur la chaîne brute** dans
+/// tous les chemins dégradés (cf. dartdoc de bibliothèque, AD-10).
+///
+/// 🔴 **Source UNIQUE de la règle de repli** — pur-Dart, **sans `BuildContext`**.
+/// C'est ce qui permet de la partager entre la voie qui a un contexte (fiche de
+/// lecture / résumé de sous-liste : `zDateDisplayText` la consomme après avoir lu
+/// le port et la locale dans le `ZcrudScope`) et la voie qui n'en a **jamais**
+/// (`ZListColumn.format`, closure invoquée par un backend de liste ou par un
+/// exporteur headless, qui reçoit le port **déjà capturé**). Aucune des deux ne
+/// possède sa propre copie du repli.
+///
+/// [formatter] `null` ⇒ chaîne brute (hôte passif strictement immobile).
+String zDateDisplayTextOf(
+  ZDateDisplayFormatter? formatter,
+  Object? value, {
+  required ZDateMode mode,
+  String? localeTag,
+}) {
+  final raw = '$value';
+  if (formatter == null) return raw;
+  // `time` n'est PAS routé vers le port : sa valeur (`HH:mm`) n'est ni ISO ni
+  // portable dans un `DateTime` — et elle est déjà lisible telle quelle.
+  if (mode == ZDateMode.time) return raw;
+  final dt = value is DateTime ? value : DateTime.tryParse(raw);
+  if (dt == null) return raw;
+  try {
+    final formatted = formatter.format(dt, mode: mode, localeTag: localeTag);
+    if (formatted == null || formatted.isEmpty) return raw;
+    return formatted;
+  } catch (_) {
+    // AD-10 : un port hôte qui lève ne fait jamais échouer un `build`.
+    return raw;
+  }
+}

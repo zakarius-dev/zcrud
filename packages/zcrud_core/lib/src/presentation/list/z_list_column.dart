@@ -26,6 +26,7 @@ import 'package:flutter/foundation.dart';
 import '../../domain/edition/edition_field_type.dart';
 import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_spec.dart';
+import '../../domain/ports/z_date_display_formatter.dart';
 
 /// Types **scalaires/affichables** en tableau (whitelist de visibilité, AC3).
 ///
@@ -100,6 +101,84 @@ class ZColumnPolicy {
       'ZColumnPolicy(forceInclude: $forceInclude, forceExclude: $forceExclude)';
 }
 
+/// **Seams d'affichage** d'une colonne de liste (CR-LIST-LABELS) : le petit sac
+/// de valeurs que la closure [ZListColumn.format] ne peut PAS aller chercher
+/// elle-même, faute de `BuildContext`.
+///
+/// ## Pourquoi un sac de valeurs et pas un `BuildContext`
+///
+/// [ZListColumn.format] est une closure `String Function(Object? raw)` invoquée
+/// **hors de tout `build`** : le backend `SfDataGrid` l'appelle depuis
+/// `DataGridSource.update`, et `zcrud_export` l'appelle **headless** (aucun
+/// arbre de widgets n'existe). Lui passer un `BuildContext` casserait la
+/// signature publique du port de liste ET serait impossible à honorer côté
+/// export. La projection **capture** donc, au moment de la dérivation (qui, elle,
+/// a un contexte : `DynamicList._buildReady`), les seules valeurs dont elle a
+/// besoin. Cf. `ZListFormat.of` (fabrique contextuelle, dans `dynamic_list.dart`).
+///
+/// ## Hôte passif immobile (AD-10)
+///
+/// Chaque champ est **nullable**, et `null` ⇒ **exactement** le rendu d'avant :
+/// - [orphanChoiceLabel] `null` ⇒ une valeur orpheline retombe sur `raw.toString()` ;
+/// - [dateFormatter] `null` ⇒ la date reste rendue en ISO/brut.
+///
+/// ## Égalité de valeur — NON décorative
+///
+/// `ZListColumn`/`ZListRenderRequest` ont une égalité de **valeur** dont le
+/// backend se sert pour décider s'il doit reconstruire ses cellules
+/// (`widget.request != old.request` dans `zcrud_list`). Comme deux colonnes
+/// identiques rendues sous des seams différents produisent des **textes
+/// différents**, [ZListFormat] participe à `==`/`hashCode` de [ZListColumn] :
+/// sans cela, un changement de locale ou d'injection du port laisserait la
+/// grille afficher ses anciennes chaînes.
+///
+/// ⚠️ Corollaire (AD-2) : l'instance de [dateFormatter] doit être **stable**
+/// (`const` ou mémoïsée hors `build`) — une instance recréée à chaque build
+/// rendrait les requêtes perpétuellement inégales.
+@immutable
+class ZListFormat {
+  /// Construit les seams d'affichage. Tout champ omis ⇒ rendu d'origine.
+  const ZListFormat({
+    this.orphanChoiceLabel,
+    this.dateFormatter,
+    this.localeTag,
+  });
+
+  /// Libellé **déjà résolu** (jamais une clé) d'une valeur de choix
+  /// **orpheline** — présente dans la donnée mais absente des options.
+  ///
+  /// Règle v0.65.0, ici propagée à `DynamicList` : *une identité non résolue est
+  /// rendue sous un libellé localisé ; la clé technique n'apparaît jamais*. La
+  /// résolution l10n (`ZcrudScope.labels` > delegate > table `en`) est faite par
+  /// l'appelant qui a le contexte — le cœur ne code aucun texte en dur (FR-26).
+  final String? orphanChoiceLabel;
+
+  /// Port d'affichage des dates (`ZcrudScope.dateDisplayFormatter`), capturé.
+  /// `null` ⇒ ISO/brut, comme avant le port.
+  final ZDateDisplayFormatter? dateFormatter;
+
+  /// BCP-47 de la locale ambiante transmise au port (`null` ⇒ locale par défaut
+  /// de l'implémentation).
+  final String? localeTag;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZListFormat &&
+          runtimeType == other.runtimeType &&
+          orphanChoiceLabel == other.orphanChoiceLabel &&
+          dateFormatter == other.dateFormatter &&
+          localeTag == other.localeTag;
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, orphanChoiceLabel, dateFormatter, localeTag);
+
+  @override
+  String toString() => 'ZListFormat(orphanChoiceLabel: $orphanChoiceLabel, '
+      'dateFormatter: ${dateFormatter?.runtimeType}, localeTag: $localeTag)';
+}
+
 /// Colonne de liste **neutre, immuable, `const`-compatible, Material-free**,
 /// dérivée d'un `ZFieldSpec` par [deriveColumns] (E4-2).
 ///
@@ -127,6 +206,7 @@ class ZListColumn {
     required this.order,
     required this.format,
     this.width,
+    this.formatting = const ZListFormat(),
   });
 
   /// Clé de mapping (`field.name`) : indexe `ZListRow.cells[name]`.
@@ -144,8 +224,14 @@ class ZListColumn {
   /// Largeur indicative (px logiques), ou `null` (laissé au backend).
   final double? width;
 
-  /// Fonction de format **PURE** `raw → String` (locale-neutre, ne lève jamais).
+  /// Fonction de format `raw → String` (ne lève jamais, AD-10). **Déterministe
+  /// à [formatting] donné** : elle ne lit aucun état ambiant, elle a *capturé*
+  /// ses seams.
   final String Function(Object? raw) format;
+
+  /// Seams d'affichage capturés dont [format] dépend (cf. [ZListFormat]).
+  /// Par défaut vide ⇒ rendu locale-neutre d'origine.
+  final ZListFormat formatting;
 
   @override
   bool operator ==(Object other) =>
@@ -156,15 +242,20 @@ class ZListColumn {
           header == other.header &&
           type == other.type &&
           order == other.order &&
-          width == other.width;
+          width == other.width &&
+          // Deux colonnes de mêmes métadonnées mais de seams DIFFÉRENTS rendent
+          // des textes différents : les égaler ferait manquer au backend la
+          // reconstruction de ses cellules (cf. dartdoc de [ZListFormat]).
+          formatting == other.formatting;
 
   @override
-  int get hashCode => Object.hash(runtimeType, name, header, type, order, width);
+  int get hashCode =>
+      Object.hash(runtimeType, name, header, type, order, width, formatting);
 
   @override
   String toString() =>
       'ZListColumn(name: $name, header: $header, type: ${type.name}, '
-      'order: $order, width: $width)';
+      'order: $order, width: $width, formatting: $formatting)';
 }
 
 /// Projette un `ZFieldSpec[]` en une **liste ordonnée** de [ZListColumn]
@@ -182,6 +273,7 @@ class ZListColumn {
 List<ZListColumn> deriveColumns(
   List<ZFieldSpec> schema, {
   ZColumnPolicy? policy,
+  ZListFormat formatting = const ZListFormat(),
 }) {
   final columns = <ZListColumn>[];
   for (var index = 0; index < schema.length; index++) {
@@ -194,7 +286,8 @@ List<ZListColumn> deriveColumns(
         type: field.type,
         order: index,
         width: _widthFor(field.type),
-        format: _formatterFor(field),
+        format: _formatterFor(field, formatting),
+        formatting: formatting,
       ),
     );
   }
@@ -234,22 +327,33 @@ double? _widthFor(EditionFieldType type) {
   }
 }
 
-/// Fabrique une fonction de format **PURE** `raw → String` pour [field] (AC2).
+/// Fabrique la fonction de format `raw → String` pour [field] (AC2), sous les
+/// seams [formatting] **capturés** (cf. [ZListFormat]).
 ///
-/// Locale-neutre, **ne lève jamais** (désérialisation défensive, AD-10) :
+/// **Ne lève jamais** (désérialisation défensive, AD-10) :
 /// - `null` → `''` ;
 /// - `select`/`radio`/`checkbox` → libellé de choix résolu depuis
-///   `field.choices` (`raw == choice.value` → `choice.label`), repli
-///   `raw.toString()` ;
+///   `field.choices` (`raw == choice.value` → `choice.label`) ; valeur
+///   **orpheline** → `formatting.orphanChoiceLabel` (règle v0.65.0) s'il est
+///   fourni, sinon repli `raw.toString()` ;
 /// - champ `multiple` / `tags` / `rowChips` ou valeur `Iterable` → éléments
 ///   joints par `', '` (chacun formaté récursivement de façon neutre) ;
-/// - `dateTime`/`time` → ISO-8601 si `raw is DateTime`, sinon `raw.toString()` ;
+/// - `dateTime`/`time` → `formatting.dateFormatter` s'il est fourni (règle de
+///   repli partagée `zDateDisplayTextOf`), sinon ISO-8601 si `raw is DateTime`,
+///   sinon `raw.toString()` ;
 /// - `number`/`integer`/`float`/`boolean` → `raw.toString()` (formatage
-///   locale-aware **déféré E4-3**) ;
+///   locale-aware **déféré** — le rendre ici déplacerait tout hôte passif) ;
 /// - défaut → `raw?.toString() ?? ''`.
-String Function(Object? raw) _formatterFor(ZFieldSpec field) {
+String Function(Object? raw) _formatterFor(
+  ZFieldSpec field,
+  ZListFormat formatting,
+) {
   final type = field.type;
   final choices = field.choices;
+  final dateMode = zDateModeOf(
+    field.config,
+    isTimeType: type == EditionFieldType.time,
+  );
 
   // Format d'un élément SCALAIRE (résolution de choix / date), jamais d'Iterable.
   String scalar(Object? value) {
@@ -258,10 +362,21 @@ String Function(Object? raw) _formatterFor(ZFieldSpec field) {
       case EditionFieldType.select:
       case EditionFieldType.radio:
       case EditionFieldType.checkbox:
-        return _resolveChoice(choices, value);
+        return _resolveChoice(choices, value, formatting.orphanChoiceLabel);
       case EditionFieldType.dateTime:
       case EditionFieldType.time:
-        return value is DateTime ? value.toIso8601String() : value.toString();
+        // 🔴 Un `DateTime` est NORMALISÉ en ISO **avant** d'entrer dans la règle
+        // partagée : son repli est `'$value'`, et `DateTime.toString()` n'est
+        // PAS l'ISO. Sans cette normalisation, un port absent/en échec ferait
+        // basculer la cellule de `2026-07-10T08:30:00.000Z` à
+        // `2026-07-10 08:30:00.000Z` — un hôte passif déplacé. L'ISO se reparse
+        // à l'identique (`DateTime.tryParse`), le port reçoit donc la même date.
+        return zDateDisplayTextOf(
+          formatting.dateFormatter,
+          value is DateTime ? value.toIso8601String() : value,
+          mode: dateMode,
+          localeTag: formatting.localeTag,
+        );
       // ignore: no_default_cases
       default:
         return value.toString();
@@ -282,11 +397,23 @@ String Function(Object? raw) _formatterFor(ZFieldSpec field) {
   };
 }
 
-/// Résout le libellé d'un choix statique (`raw == choice.value` → `label`),
-/// repli `raw.toString()` si aucune option ne correspond.
-String _resolveChoice(List<ZFieldChoice> choices, Object? raw) {
+/// Résout le libellé d'un choix statique (`raw == choice.value` → `label`).
+///
+/// Valeur **orpheline** (aucune option ne correspond) : rend [orphanLabel] — le
+/// libellé localisé de la règle v0.65.0, *déjà résolu* par l'appelant qui a le
+/// contexte. **La clé technique n'est jamais montrée à l'utilisateur.**
+///
+/// [orphanLabel] `null` ⇒ repli historique `raw.toString()` : c'est le cas des
+/// appelants **headless** (`zcrud_export`) et de tout appel direct à
+/// `deriveColumns` sans seams, pour lesquels aucune l10n n'est atteignable — et
+/// où coder un texte en dur violerait FR-26.
+String _resolveChoice(
+  List<ZFieldChoice> choices,
+  Object? raw,
+  String? orphanLabel,
+) {
   for (final choice in choices) {
     if (choice.value == raw) return choice.label;
   }
-  return raw.toString();
+  return orphanLabel ?? raw.toString();
 }

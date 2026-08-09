@@ -160,28 +160,20 @@ String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
 ///
 /// AD-2 : aucune allocation coûteuse — un `DateTime.tryParse` et un appel de
 /// port ; l'instance du formateur appartient à l'hôte (jamais construite ici).
-String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) {
-  final raw = '$value';
-  final formatter = ZcrudScope.maybeOf(context)?.dateDisplayFormatter;
-  if (formatter == null) return raw;
-  final mode = zDateModeOf(
-    field.config,
-    isTimeType: field.type == EditionFieldType.time,
-  );
-  // `time` n'est PAS routé vers le port : sa valeur (`HH:mm`) n'est ni ISO ni
-  // portable dans un `DateTime` — et elle est déjà lisible telle quelle.
-  if (mode == ZDateMode.time) return raw;
-  final dt = value is DateTime ? value : DateTime.tryParse(raw);
-  if (dt == null) return raw;
-  try {
-    final formatted = formatter.format(dt, mode: mode, localeTag: _localeTag(context));
-    if (formatted == null || formatted.isEmpty) return raw;
-    return formatted;
-  } catch (_) {
-    // AD-10 : un port hôte qui lève ne fait jamais échouer un `build`.
-    return raw;
-  }
-}
+/// CR-LIST-LABELS : le corps de la règle (repli AD-10 compris) vit désormais
+/// dans `zDateDisplayTextOf` (pur-Dart, port de dates). Cette fonction ne fait
+/// plus que **lire les seams du scope** ; la voie sans `BuildContext`
+/// (`ZListColumn.format`) consomme la MÊME règle avec un port déjà capturé.
+String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) =>
+    zDateDisplayTextOf(
+      ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
+      value,
+      mode: zDateModeOf(
+        field.config,
+        isTimeType: field.type == EditionFieldType.time,
+      ),
+      localeTag: _localeTag(context),
+    );
 
 /// BCP-47 de la locale ambiante, ou `null` si l'arbre n'en porte pas
 /// (`maybeLocaleOf` — jamais `localeOf`, qui lève sans `Localizations`).

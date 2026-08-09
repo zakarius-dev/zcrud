@@ -52,7 +52,7 @@ void main() {
     expect(find.byKey(const ValueKey('rendered')), findsOneWidget);
     expect(fake.captured, isNotNull);
     // columns == colonnes DÉRIVÉES (plus des ZFieldSpec bruts) ; rows transmis.
-    expect(fake.captured!.columns, equals(deriveColumns(fields)));
+    expect(_meta(fake.captured!.columns), equals(_meta(deriveColumns(fields))));
     expect(fake.captured!.columns.map((c) => c.name), equals(['name', 'age']));
     expect(fake.captured!.rows, equals(rows));
   });
@@ -71,7 +71,7 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('rendered')), findsOneWidget);
-    expect(fake.captured!.columns, equals(deriveColumns(fields)));
+    expect(_meta(fake.captured!.columns), equals(_meta(deriveColumns(fields))));
     expect(fake.captured!.rows, equals(rows));
   });
 
@@ -167,7 +167,7 @@ void main() {
       ),
     );
     expect(find.byKey(const ValueKey('rendered')), findsOneWidget);
-    expect(fake.captured!.columns, equals(deriveColumns(fields)));
+    expect(_meta(fake.captured!.columns), equals(_meta(deriveColumns(fields))));
     expect(fake.captured!.rows, isEmpty);
   });
 
@@ -191,3 +191,17 @@ void main() {
     expect(fake.captured!.columns.every((c) => c.name == 'name'), isTrue);
   });
 }
+
+/// Projection **métadonnées** d'une colonne (nom/en-tête/type/ordre/largeur).
+///
+/// CR-LIST-LABELS : `ZListColumn.==` inclut désormais les **seams d'affichage**
+/// capturés (`ZListFormat`), que `DynamicList` renseigne depuis son contexte et
+/// qu'un `deriveColumns(fields)` nu n'a pas. Ces gardes-ci portent sur la
+/// DÉRIVATION (visibilité/en-tête/ordre/largeur) — elles la comparent donc sur
+/// sa projection de métadonnées, exactement ce qu'elles asseyaient avant que les
+/// seams n'existent. La présence des seams est gardée à part
+/// (`z_list_column_labels_test.dart`).
+List<String> _meta(List<ZListColumn> columns) => <String>[
+      for (final c in columns)
+        '${c.name}|${c.header}|${c.type.name}|${c.order}|${c.width}',
+    ];

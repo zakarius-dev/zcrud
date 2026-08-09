@@ -78,11 +78,15 @@ class ZListRenderRequest {
   ///
   /// Centralise la dérivation dans le cœur (format neutre partagé) : le backend
   /// n'a plus qu'à rendre les `ZListColumn` produites.
+  /// [formatting] porte les **seams d'affichage capturés** (libellé d'orphelin
+  /// localisé, port de dates, locale) — cf. `ZListFormat`. Omis ⇒ rendu
+  /// locale-neutre d'origine (appel headless : `zcrud_export`).
   ZListRenderRequest.fromSchema(
     List<ZFieldSpec> fields,
     this.rows, {
     ZColumnPolicy? policy,
-  }) : columns = deriveColumns(fields, policy: policy);
+    ZListFormat formatting = const ZListFormat(),
+  }) : columns = deriveColumns(fields, policy: policy, formatting: formatting);
 
   /// Colonnes **dérivées** du schéma (`ZListColumn` : en-tête non résolu, clé de
   /// mapping `name`, largeur indicative, format pur par type).

@@ -29,7 +29,36 @@ const _intlLibs = <String>[
 /// Libs lourdes intl/devise/formatage à NE PAS ajouter (E11b-2, AD-1/AD-12) :
 /// devise/états sont servis par des assets JSON bundlés, pas par une dép runtime.
 const _bannedHeavyLibs = <String>[
+  // ⚠️ CR-DODLP-GAP3BIS : `intl` reste interdit à `zcrud_core` (AD-1) et aux
+  // fichiers domaine pur-Dart, mais il est désormais AUTORISÉ comme dépendance
+  // déclarée de `zcrud_intl` — cf. `_bannedHeavyLibsInIntl` et la justification
+  // qui l'accompagne.
   'intl',
+  'money2',
+  'currency_picker',
+  'currency_text_input_formatter',
+  'flutter_money_formatter',
+  'world_countries',
+];
+
+/// Libs lourdes interdites **au pubspec de `zcrud_intl`** (CR-DODLP-GAP3BIS).
+///
+/// = [_bannedHeavyLibs] MOINS `intl`. La liste d'origine bannissait `intl` au
+/// titre de la devise et des subdivisions (E11b-2) : ces catalogues-là sont
+/// servis par des **assets JSON bundlés**, et cette règle est INCHANGÉE.
+///
+/// `intl` entre ici pour un besoin que ces assets ne couvrent pas : le
+/// FORMATAGE localisé des dates (`ZDateDisplayFormatter` de `zcrud_core`). Les
+/// noms de mois/jours sont des **données de locale CLDR** ; les écrire dans le
+/// paquet violerait FR-26. Trois garde-fous compensent l'ouverture :
+///  1. `zcrud_core` reste interdit d'`intl` — assertion ci-dessous inchangée,
+///     elle porte toujours [_bannedHeavyLibs] au complet ;
+///  2. `intl` est CONFINÉ à `z_intl_date_formatter.dart` (garde de confinement
+///     dans `z_intl_date_formatter_test.dart`, patron `phone_numbers_parser`) ;
+///  3. le barrel principal n'expose toujours AUCUN symbole `intl` — assertion
+///     ci-dessous inchangée (le formateur est servi par un point d'entrée
+///     séparé, `lib/date_formatter.dart`).
+const _bannedHeavyLibsInIntl = <String>[
   'money2',
   'currency_picker',
   'currency_text_input_formatter',
@@ -117,7 +146,7 @@ void main() {
     test('AUCUNE nouvelle lib intl/devise lourde ajoutée à zcrud_intl (E11b-2)',
         () {
       final intl = _read('packages/zcrud_intl/pubspec.yaml');
-      for (final lib in _bannedHeavyLibs) {
+      for (final lib in _bannedHeavyLibsInIntl) {
         expect(RegExp('^\\s+$lib:', multiLine: true).hasMatch(intl), isFalse,
             reason: 'zcrud_intl ne doit PAS ajouter $lib (assets JSON bundlés — '
                 'AD-1/AD-12)');

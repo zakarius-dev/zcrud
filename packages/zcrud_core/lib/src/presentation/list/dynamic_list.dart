@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 import '../../domain/contracts/z_entity.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/ports/z_acl.dart';
+import '../edition/z_orphan_choice.dart';
 import '../l10n/z_localizations.dart';
 import '../z_scope_error.dart';
 import '../zcrud_scope.dart';
@@ -151,8 +152,12 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   /// présence d'une sélection, écoute sa tranche `selectedIds` (rebuild ciblé,
   /// AD-2) et reconstruit l'interaction ; sinon rendu direct (chemin E4-1/E4-2).
   Widget _buildReady(BuildContext context, List<ZListRow> rows) {
-    final request =
-        ZListRenderRequest.fromSchema(fields, rows, policy: columnPolicy);
+    final request = ZListRenderRequest.fromSchema(
+      fields,
+      rows,
+      policy: columnPolicy,
+      formatting: _formattingOf(context),
+    );
     if (!_interactive) {
       return _dispatch(context, request, null, const <String>{});
     }
@@ -176,6 +181,25 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
       ),
     );
   }
+
+  /// **Capture** les seams d'affichage que `ZListColumn.format` ne peut pas
+  /// atteindre lui-même (CR-LIST-LABELS).
+  ///
+  /// C'est ICI — et nulle part ailleurs dans la chaîne de liste — qu'un
+  /// `BuildContext` existe encore : le backend appelle `col.format(...)` depuis
+  /// une `DataGridSource`, et `zcrud_export` l'appelle sans arbre de widgets. On
+  /// résout donc le libellé d'orphelin (`zOrphanChoiceLabel`, MÊME clé l10n
+  /// `choiceUnresolved` que les dix voies de v0.65.0 — aucune seconde clé) et on
+  /// lit le port de dates du scope, puis on les **transporte** dans la closure.
+  ///
+  /// AD-2 : aucune allocation coûteuse (une `String` déjà en table + deux
+  /// références) ; l'objet a une égalité de **valeur**, donc deux builds
+  /// successifs produisent des requêtes égales et ne font rien reconstruire.
+  ZListFormat _formattingOf(BuildContext context) => ZListFormat(
+        orphanChoiceLabel: zOrphanChoiceLabel(context),
+        dateFormatter: ZcrudScope.maybeOf(context)?.dateDisplayFormatter,
+        localeTag: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
+      );
 
   /// Construit le pont d'interaction **neutre** consommé par le renderer.
   ZListInteraction _buildInteraction(

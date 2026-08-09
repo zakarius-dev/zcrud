@@ -11,7 +11,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
 description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
-version: 0.69.0
+version: 0.70.0
 publish_to: none
 resolution: workspace
 
@@ -36,7 +36,17 @@ dependencies:
   # SANS clé API ni réseau (AD-12). SEULE arête téléphone du graphe (AD-1),
   # confinée à `src/presentation/z_phone_codec.dart`.
   phone_numbers_parser: ^9.0.23
-  zcrud_core: ^0.69.0
+  # CR-DODLP-GAP3BIS : SEULE arête `intl` du graphe (AD-1). Elle sert
+  # EXCLUSIVEMENT l'impl du port `ZDateDisplayFormatter` de `zcrud_core`
+  # (`src/presentation/z_intl_date_formatter.dart`) : les noms de mois/jours et
+  # l'ordre des composantes sont des DONNÉES DE LOCALE (CLDR), jamais des
+  # littéraux de ce paquet (FR-26). `zcrud_core` reste interdit d'`intl`
+  # (garde `isolation_gates_test.dart`, inchangée) ; la lib est CONFINÉE à
+  # l'unique pont ci-dessus et aucun type `intl` ne fuit dans le barrel.
+  # Version alignée sur celle que `flutter_localizations` épingle déjà (0.20.2) :
+  # aucune résolution nouvelle n'est introduite dans le workspace.
+  intl: ^0.20.2
+  zcrud_core: ^0.70.0
 
 dev_dependencies:
   flutter_test:

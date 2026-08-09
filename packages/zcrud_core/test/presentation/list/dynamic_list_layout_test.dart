@@ -45,7 +45,7 @@ void main() {
       DynamicList.rows(_fields, _rows, renderer: fake),
     );
     expect(find.byKey(const ValueKey('rendered')), findsOneWidget);
-    expect(fake.captured!.columns, equals(deriveColumns(_fields)));
+    expect(_meta(fake.captured!.columns), equals(_meta(deriveColumns(_fields))));
   });
 
   testWidgets('builder → ListView.builder DANS le cœur (sans renderer) (AC5)',
@@ -70,7 +70,7 @@ void main() {
     expect(find.text('Alice'), findsOneWidget);
     expect(find.text('Bob'), findsOneWidget);
     // itemBuilder reçoit bien les colonnes dérivées.
-    expect(seenColumns, equals(deriveColumns(_fields)));
+    expect(_meta(seenColumns!), equals(_meta(deriveColumns(_fields))));
     expect(tester.takeException(), isNull);
   });
 
@@ -109,3 +109,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
+
+/// Projection **métadonnées** d'une colonne (nom/en-tête/type/ordre/largeur).
+///
+/// CR-LIST-LABELS : `ZListColumn.==` inclut désormais les **seams d'affichage**
+/// capturés (`ZListFormat`), que `DynamicList` renseigne depuis son contexte et
+/// qu'un `deriveColumns(fields)` nu n'a pas. Ces gardes-ci portent sur la
+/// DÉRIVATION (visibilité/en-tête/ordre/largeur) — elles la comparent donc sur
+/// sa projection de métadonnées, exactement ce qu'elles asseyaient avant que les
+/// seams n'existent. La présence des seams est gardée à part
+/// (`z_list_column_labels_test.dart`).
+List<String> _meta(List<ZListColumn> columns) => <String>[
+      for (final c in columns)
+        '${c.name}|${c.header}|${c.type.name}|${c.order}|${c.width}',
+    ];
