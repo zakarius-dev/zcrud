@@ -318,6 +318,70 @@ class ZRatingConfig extends ZFieldConfig {
   int get hashCode => Object.hash(runtimeType, max);
 }
 
+/// CR-DODLP-BOOL (2026-08-10) — Config triviale pur-cœur du champ **booléen**
+/// (`boolean`). Pur-données `const` : elle active le **texte d'état** rendu à
+/// côté du `Switch` (parité legacy DODLP « ●— Non ») et permet d'en surcharger
+/// les libellés.
+///
+/// ## Activation EXPLICITE, défauts localisés ENSUITE
+///
+/// La demande initiale (« des défauts Oui/Non quand la locale est `fr` ») ferait
+/// apparaître un texte chez **tous** les hôtes — un déplacement visible pour qui
+/// n'a rien demandé. La condition est donc **inversée** : l'affichage s'active
+/// explicitement ([showStateLabel] ou la fourniture d'un libellé) ; **une fois
+/// activé**, les libellés retombent sur les clés l10n `yes`/`no` (déjà traduites
+/// en/fr — FR-26 : aucun littéral en dur) si l'hôte n'en fournit pas.
+///
+/// ⇒ **Hôte passif** (pas de config, ou `ZBooleanConfig()`) : [showsStateLabel]
+/// est `false` et `ZBooleanFieldWidget` emprunte **exactement** le chemin de
+/// rendu antérieur (`title: Text(label)`) — rendu et arbre sémantique inchangés.
+///
+/// ## Pourquoi [showStateLabel] ET les libellés activent tous deux
+///
+/// Sans cela, `ZBooleanConfig(trueLabel: 'Actif')` serait **silencieusement
+/// ignoré** faute d'avoir aussi posé le drapeau — un piège. [showsStateLabel]
+/// est le prédicat unique consommé par la présentation.
+class ZBooleanConfig extends ZFieldConfig {
+  /// Construit une config booléenne `const`. Défauts ⇒ **rétro-compat stricte**
+  /// (aucun texte d'état, rendu E3-3a inchangé).
+  const ZBooleanConfig({
+    this.showStateLabel = false,
+    this.trueLabel,
+    this.falseLabel,
+  });
+
+  /// Active le **texte d'état** à côté du switch avec les libellés localisés par
+  /// défaut (clés `yes`/`no`). `false` (défaut) ⇒ aucun texte, sauf si
+  /// [trueLabel]/[falseLabel] est fourni (cf. [showsStateLabel]).
+  final bool showStateLabel;
+
+  /// Libellé d'état affiché quand la valeur est `true`. `null` (défaut) ⇒ repli
+  /// sur la clé l10n `yes`. Fournir ce libellé **active** le texte d'état.
+  final String? trueLabel;
+
+  /// Libellé d'état affiché quand la valeur est `false`. `null` (défaut) ⇒ repli
+  /// sur la clé l10n `no`. Fournir ce libellé **active** le texte d'état.
+  final String? falseLabel;
+
+  /// Prédicat unique d'affichage du texte d'état : `true` si l'hôte l'a demandé
+  /// explicitement ([showStateLabel]) **ou** a fourni au moins un libellé.
+  bool get showsStateLabel =>
+      showStateLabel || trueLabel != null || falseLabel != null;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZBooleanConfig &&
+          runtimeType == other.runtimeType &&
+          showStateLabel == other.showStateLabel &&
+          trueLabel == other.trueLabel &&
+          falseLabel == other.falseLabel;
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, showStateLabel, trueLabel, falseLabel);
+}
+
 /// Source d'acquisition d'un fichier (E3-3c) — valeurs **camelCase** (canonique
 /// §5). L'impl concrète (scan/caméra/galerie/sélecteur) vit dans le picker
 /// injecté (`ZFilePicker`, E7) ; le cœur ne fait qu'énumérer les sources

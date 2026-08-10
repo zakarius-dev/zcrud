@@ -91,6 +91,18 @@ ReadOnlyValue zReadOnlyValueOf(
   switch (field.type) {
     case EditionFieldType.boolean:
       final b = value == true;
+      // CR-DODLP-BOOL : cohérence édition ↔ fiche de lecture. Un hôte qui a
+      // surchargé les libellés d'état (`ZBooleanConfig.trueLabel/falseLabel`)
+      // les retrouve ici — sans quoi le switch dirait « Actif » et la fiche
+      // « Oui ». Config absente / libellé `null` ou vide ⇒ exactement le rendu
+      // antérieur (clés `yes`/`no`), donc hôte passif immobile.
+      final boolConfig = field.config;
+      final customState = boolConfig is ZBooleanConfig
+          ? (b ? boolConfig.trueLabel : boolConfig.falseLabel)
+          : null;
+      if (customState != null && customState.isNotEmpty) {
+        return ReadOnlyValue.text(customState);
+      }
       return ReadOnlyValue.text(
         label(context, b ? 'yes' : 'no', fallback: b ? 'Oui' : 'Non'),
       );
