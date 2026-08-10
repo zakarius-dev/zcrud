@@ -83,11 +83,39 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
   int _seq = 0;
   String? _itemId;
 
+  /// LOT B — **clés de la GRAINE que le sous-schéma ne gère pas** (même défaut
+  /// et même correctif que `ZSubListFieldWidget` : l'item était RECOMPOSÉ à
+  /// partir des seuls `itemFields`, donc `id` et toute clé non déclarée étaient
+  /// **détruits dès la première frappe**).
+  ///
+  /// 🔴 Cardinalité ≤ 1 : il n'y a qu'un item vivant à la fois et ce champ est
+  /// écrit/effacé **exactement aux mêmes points** que `_controller` — l'appariement
+  /// graine ↔ item est donc trivialement par identité, jamais par index. Le
+  /// résidu est réémis AVANT les tranches (un champ effacé reste effacé) et
+  /// n'est peuplé **que** depuis la graine du parent : un item **ajouté** n'a
+  /// pas de graine, son comportement est inchangé.
+  Map<String, dynamic> _unmapped = const <String, dynamic>{};
+
   @override
   void initState() {
     super.initState();
     final data = _readMap(widget.initialValue);
-    if (data != null) _controller = _makeController(data);
+    if (data != null) {
+      _controller = _makeController(data);
+      // SEUL point d'entrée d'une graine venue du parent.
+      _unmapped = _unmappedOf(data);
+    }
+  }
+
+  /// Résidu de [data] : clés que le sous-schéma **ne déclare pas**. Une clé
+  /// déclarée n'y entre JAMAIS (garantit qu'un champ effacé ne ressuscite pas).
+  Map<String, dynamic> _unmappedOf(Map<String, dynamic> data) {
+    final known = <String>{for (final f in _itemFields) f.name};
+    final rest = <String, dynamic>{
+      for (final entry in data.entries)
+        if (!known.contains(entry.key)) entry.key: entry.value,
+    };
+    return rest.isEmpty ? const <String, dynamic>{} : rest;
   }
 
   @override
@@ -169,6 +197,10 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     controller.dispose();
     _controller = null;
     _itemId = null;
+    // LOT B : l'item disparaît → son résidu de graine aussi. Sans cela, un
+    // `clear` suivi d'un `add` réémettrait le résidu de l'item EFFACÉ sur un
+    // item neuf (résurrection d'une donnée volontairement supprimée).
+    _unmapped = const <String, dynamic>{};
   }
 
   /// Agrège l'item en `Map?` et écrit la tranche parente. Handler d'évènement,
@@ -178,6 +210,9 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     widget.onChanged(controller == null
         ? null
         : <String, dynamic>{
+            // LOT B : résidu hors schéma de la graine EN PREMIER — les tranches
+            // écrites ensuite priment toujours (un champ effacé reste effacé).
+            ..._unmapped,
             for (final f in _itemFields) f.name: controller.valueOf(f.name),
           });
   }
@@ -186,6 +221,9 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     setState(() {
       // DP-19 (M19) : amorce le nouvel item avec `defaultNewItem` (défensif).
       _controller = _makeController(Map<String, dynamic>.from(_defaultNewItem));
+      // LOT B : un item AJOUTÉ n'a pas de graine → aucun résidu (comportement
+      // strictement inchangé). Explicite, pour ne dépendre d'aucun état résiduel.
+      _unmapped = const <String, dynamic>{};
     });
     _syncToParent();
   }

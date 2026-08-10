@@ -131,10 +131,35 @@ class ZSubListFieldWidget extends StatefulWidget {
 
 /// Item imbriqué : identité **stable** ([id]) + sous-contrôleur imbriqué.
 class _SubItem {
-  _SubItem(this.id, this.controller);
+  _SubItem(this.id, this.controller, {this.unmapped = const <String, dynamic>{}});
 
   final String id;
   final ZFormController controller;
+
+  /// LOT B — **clés de la GRAINE que le sous-schéma ne gère pas.**
+  ///
+  /// Le sous-formulaire d'un item n'alloue une tranche que pour les `itemFields`
+  /// déclarés ; l'item réémis était donc RECOMPOSÉ à partir de ces seuls champs
+  /// et toute autre clé portée par la graine — `id` en premier — **disparaissait
+  /// dès la première frappe** dans n'importe quel sous-champ. Ce n'était pas un
+  /// affichage faux : la donnée était détruite (mesuré : IFFD perd l'`id` de
+  /// chaque choix de QCM, DODLP perd 6 clés par mobilité dont `id` et
+  /// `agentsIds`).
+  ///
+  /// 🔴 **Pourquoi ce point de conservation-CI, et pas un autre :**
+  /// - il est porté par l'**item lui-même**, donc l'appariement graine ↔ item est
+  ///   fait par **IDENTITÉ**, jamais par index. Un `_move`/`_removeAt`/
+  ///   soft-delete transporte le résidu avec son item : il est structurellement
+  ///   impossible de recoller la graine d'un item sur un autre — ce qui serait
+  ///   **pire** que la perte d'origine ;
+  /// - il ne contient **JAMAIS** une clé déclarée (filtrée à la construction),
+  ///   et il est fusionné **AVANT** les tranches dans `_syncToParent` : un champ
+  ///   que l'utilisateur **efface** reste effacé, il ne ressuscite pas depuis la
+  ///   graine ;
+  /// - il n'est peuplé que depuis la graine du parent (`initState`). Un item
+  ///   **ajouté** n'a pas de graine : son résidu reste vide et son comportement
+  ///   est inchangé.
+  final Map<String, dynamic> unmapped;
 
   /// DP-19 (M18) — soft-delete : `true` ⇒ item **marqué supprimé** (exclu de
   /// l'agrégation parent) mais conservé pour **restauration** en session.
@@ -152,7 +177,9 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
   void initState() {
     super.initState();
     for (final data in _readList(widget.initialValue)) {
-      _items.add(_makeItem(data));
+      // LOT B : SEUL point d'entrée d'une GRAINE (données du parent) → seul
+      // point où un résidu hors schéma est capturé (cf. `_SubItem.unmapped`).
+      _items.add(_makeItem(data, preserveUnmapped: true));
     }
   }
 
@@ -237,7 +264,11 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
     return const <Map<String, dynamic>>[];
   }
 
-  _SubItem _makeItem(Map<String, dynamic> data) {
+  /// Construit un item. [preserveUnmapped] n'est `true` que pour une **graine**
+  /// venue du parent (`initState`) : un item **ajouté** (bouton `+` ou dialog
+  /// d'ajout) n'a pas de graine, son résidu reste vide et son comportement est
+  /// strictement inchangé.
+  _SubItem _makeItem(Map<String, dynamic> data, {bool preserveUnmapped = false}) {
     final id = 'item_${_seq++}';
     final controller = ZFormController(
       initialValues: <String, Object?>{
@@ -245,9 +276,25 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       },
       visibleFields: <String>[for (final f in _itemFields) f.name],
     );
-    final item = _SubItem(id, controller);
+    final item = _SubItem(
+      id,
+      controller,
+      unmapped: preserveUnmapped ? _unmappedOf(data) : const <String, dynamic>{},
+    );
     _attach(item);
     return item;
+  }
+
+  /// Résidu de [data] : les clés que le sous-schéma **ne déclare pas**. Une clé
+  /// déclarée n'y entre JAMAIS — c'est ce qui garantit qu'un champ effacé par
+  /// l'utilisateur ne ressuscite pas depuis la graine.
+  Map<String, dynamic> _unmappedOf(Map<String, dynamic> data) {
+    final known = <String>{for (final f in _itemFields) f.name};
+    final rest = <String, dynamic>{
+      for (final entry in data.entries)
+        if (!known.contains(entry.key)) entry.key: entry.value,
+    };
+    return rest.isEmpty ? const <String, dynamic>{} : rest;
   }
 
   /// Attache le listener d'agrégation sur CHAQUE slice imbriqué. Un changement
@@ -275,6 +322,12 @@ class _ZSubListFieldWidgetState extends State<ZSubListFieldWidget> {
       for (final item in _items)
         if (!item.deleted)
           <String, dynamic>{
+            // LOT B : le résidu hors schéma de la GRAINE DE CET ITEM (apparié
+            // par identité — il voyage avec l'item à travers réordonnancement,
+            // retrait et soft-delete) est réémis EN PREMIER : les tranches
+            // écrites ensuite priment TOUJOURS, donc un champ déclaré effacé
+            // reste effacé (`null`) et ne ressuscite pas.
+            ...item.unmapped,
             for (final f in _itemFields) f.name: item.controller.valueOf(f.name),
           },
     ]);
