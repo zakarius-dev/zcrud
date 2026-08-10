@@ -349,6 +349,10 @@ class ZRatingConfig extends ZFieldConfig {
 /// texte d'état **à l'intérieur**, parité `flutter_switch` du legacy DODLP).
 /// L'activation passe donc par le **même canal** que le texte d'état : la config
 /// du champ. Un hôte qui ne pose pas `style` ne voit **aucun** déplacement.
+///
+/// [boxed] ajoute l'**encart de champ** (CR-DODLP-BOOL-BOXED) : le conteneur
+/// décoré du thème, celui des voisins `text`/`number`/`select`. Opt-in, valable
+/// pour les deux formes, défaut `false` ⇒ rendu v0.75 inchangé.
 class ZBooleanConfig extends ZFieldConfig {
   /// Construit une config booléenne `const`. Défauts ⇒ **rétro-compat stricte**
   /// (aucun texte d'état, aucune pilule, rendu E3-3a/v0.74 inchangé).
@@ -359,6 +363,7 @@ class ZBooleanConfig extends ZFieldConfig {
     this.style = ZBooleanStyle.switchTile,
     this.activeColorKey,
     this.inactiveColorKey,
+    this.boxed = false,
   });
 
   /// Active le **texte d'état** à côté du switch avec les libellés localisés par
@@ -393,6 +398,25 @@ class ZBooleanConfig extends ZFieldConfig {
   /// `ColorScheme.outline`.
   final String? inactiveColorKey;
 
+  /// **Encart de champ** (CR-DODLP-BOOL-BOXED, 2026-08-10) — enveloppe le champ
+  /// booléen dans le **conteneur décoré du thème**, celui-là même que rendent
+  /// `text`/`number`/`select` : `ZcrudTheme.inputDecoration` (fond
+  /// `fieldFillColor`, bordure `fieldBorderColor`, rayon `inputRadius`, marge
+  /// interne `inputContentPadding`). Aucun jeton nouveau, aucun cadre peint à la
+  /// main : c'est **la même fabrique** que les familles décor-portantes.
+  ///
+  /// `false` (défaut) ⇒ **rendu strictement inchangé** : le booléen reste la
+  /// ligne nue de v0.74/v0.75. Le drapeau est donc **opt-in**, et vaut pour les
+  /// **deux** formes ([ZBooleanStyle.switchTile] et [ZBooleanStyle.pill]).
+  ///
+  /// 🔴 Ce que ce drapeau ne fait PAS : il ne pose **aucun libellé** dans la
+  /// décoration. Le libellé du champ reste le `title` du `ListTile` — y ajouter
+  /// le label flottant de la décoration l'écrirait **deux fois** (visuellement
+  /// et dans l'arbre sémantique), le défaut mesuré et corrigé en v0.74 puis en
+  /// v0.75. La cible tactile, l'état `switch` et le tap sur toute la ligne sont
+  /// inchangés : l'encart est un pur décor.
+  final bool boxed;
+
   /// Prédicat unique d'affichage du texte d'état : `true` si l'hôte l'a demandé
   /// explicitement ([showStateLabel]) **ou** a fourni au moins un libellé.
   ///
@@ -414,7 +438,8 @@ class ZBooleanConfig extends ZFieldConfig {
           falseLabel == other.falseLabel &&
           style == other.style &&
           activeColorKey == other.activeColorKey &&
-          inactiveColorKey == other.inactiveColorKey;
+          inactiveColorKey == other.inactiveColorKey &&
+          boxed == other.boxed;
 
   @override
   int get hashCode => Object.hash(
@@ -425,6 +450,7 @@ class ZBooleanConfig extends ZFieldConfig {
         style,
         activeColorKey,
         inactiveColorKey,
+        boxed,
       );
 }
 

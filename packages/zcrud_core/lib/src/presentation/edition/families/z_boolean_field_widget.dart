@@ -86,11 +86,56 @@
 /// animé ne laisse dans l'arbre un texte invisible que `find.text` trouverait
 /// quand même (le legacy empile les deux textes à opacité 0/1 ; ici **seul**
 /// le texte de l'état courant est construit).
+///
+/// ## CR-DODLP-BOOL-BOXED — l'encart de champ (option A, 2026-08-10)
+///
+/// `ZBooleanConfig(boxed: true)` enveloppe le champ (les **deux** formes) dans
+/// le **conteneur décoré du thème**, celui de ses voisins `text`/`number`/
+/// `select` : fond `fieldFillColor`, bordure `fieldBorderColor`, rayon
+/// `inputRadius`, marge interne `inputContentPadding`. **Opt-in** : sans le
+/// drapeau, le rendu est strictement celui de v0.75 (ligne nue).
+///
+/// 🔴 **Aucun cadre peint à la main, aucun jeton nouveau** : la décoration vient
+/// de la **fabrique centrale** [ZcrudTheme.inputDecoration] — exactement celle
+/// que `zFieldDecoration` appelle pour text/number/select
+/// (`z_field_adornment_view.dart:178`). Une seconde façon de dessiner un cadre
+/// de champ serait précisément la divergence que ce paquet combat.
+///
+/// **Pourquoi `zFieldDecoration` lui-même n'est PAS appelé ici** — mesuré : ses
+/// deux réglages sont l'un et l'autre inutilisables pour un encart.
+/// * `bare: false` pose **toujours** `labelWidget: ZFieldLabel(field: …)`
+///   (`z_field_adornment_view.dart:180`) : le libellé du champ serait rendu une
+///   seconde fois, en flottant, alors que le `ListTile` le porte déjà dans son
+///   `title` — un doublon **visuel et sémantique**, exactement le défaut mesuré
+///   en v0.74 (état annoncé deux fois) puis en v0.75 (titre annoncé deux fois) ;
+/// * `bare: true` renvoie une décoration **sans boîte** (`InputBorder.none` sur
+///   les cinq bordures, `filled: false`, `contentPadding: zero`,
+///   `z_theme.dart:2050-2071`) : aucun encart.
+///
+/// Le point de réutilisation exact est donc la fabrique **sous**
+/// `zFieldDecoration` : `ZcrudTheme.of(context).inputDecoration(context)` sans
+/// libellé — mêmes jetons, mêmes bordures, même remplissage que le voisin.
+///
+/// **Ce que l'encart ne touche pas** : le `ListTile` (donc la cible ≥ 48 dp de
+/// Material), le `MergeSemantics`, le nœud `switch` porteur de l'état, le
+/// `onTap` de ligne. Seule la marge interne du `ListTile` passe à zéro en mode
+/// encart — sans quoi les 16 dp du `ListTile` s'ajouteraient aux 16 dp de
+/// `inputContentPadding` et le booléen serait **plus indenté** que ses voisins.
+///
+/// **`ZFieldSize.large`** : l'encart est **inhibé**, la `ZLargeFieldCard` du
+/// dispatcher portant déjà le cadre — même règle que le `bare` des familles
+/// décor-portantes (`ZDecoratedFieldTrigger`), pas de double cadre.
+///
+/// **Libellé en gras** : NON fait (cf. rapport). Aucun jeton ne décrit le poids
+/// d'un *titre de ligne* ; `labelTextStyle`/`floatingLabelWeight` sont
+/// contractuellement ceux du **label d'`InputDecoration`**, et un poids en dur
+/// est interdit (FR-26).
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../domain/edition/z_field_config.dart';
+import '../../../domain/edition/z_field_size.dart';
 import '../../../domain/edition/z_field_spec.dart';
 import '../../l10n/z_localizations.dart';
 import '../../theme/z_color_key_resolver.dart';
@@ -123,6 +168,11 @@ const Key zBooleanPillThumbKey = ValueKey<String>('zboolean:pill:thumb');
 /// lit `constraints.minHeight` sur cette boîte — la contrainte LIANTE, jamais
 /// une taille rendue.
 const Key zBooleanPillTargetKey = ValueKey<String>('zboolean:pill:target');
+
+/// Clé de l'**encart de champ** (CR-DODLP-BOOL-BOXED). Point d'ancrage stable
+/// des gardes : c'est l'`InputDecorator` qui porte la décoration thémée. Absent
+/// de l'arbre tant que `ZBooleanConfig.boxed` n'est pas posé.
+const Key zBooleanBoxKey = ValueKey<String>('zboolean:box');
 
 /// Champ d'édition **booléen** (interrupteur avec libellé et état sémantique).
 class ZBooleanFieldWidget extends StatelessWidget {
@@ -168,6 +218,45 @@ class ZBooleanFieldWidget extends StatelessWidget {
     if (key == null || key.isEmpty) return null;
     return zResolveColorKey(context, key);
   }
+
+  /// L'encart de champ est-il actif ? `boxed` demandé **et** champ non `large`
+  /// (la `ZLargeFieldCard` du dispatcher porte déjà le cadre — même règle que le
+  /// `bare` des familles décor-portantes : jamais deux cadres).
+  bool _boxedOf(ZBooleanConfig config) =>
+      config.boxed && field.fieldSize != ZFieldSize.large;
+
+  /// Marge interne du `ListTile`. Hors encart : la valeur historique
+  /// (16 dp, v0.74/v0.75). En encart : **zéro**, la marge étant portée par
+  /// `inputContentPadding` (elle vaut 16 dp par défaut ⇒ indentation identique
+  /// à celle des voisins ; les cumuler donnerait 32 dp).
+  EdgeInsetsDirectional _tilePadding(bool boxed) => boxed
+      ? EdgeInsetsDirectional.zero
+      : const EdgeInsetsDirectional.symmetric(horizontal: 16);
+
+  /// Enveloppe [child] dans le **conteneur décoré du thème** (CR-DODLP-BOOL-BOXED).
+  ///
+  /// 🔴 La décoration n'est pas fabriquée ici : elle vient de la **fabrique
+  /// centrale** [ZcrudTheme.inputDecoration] — la même que `zFieldDecoration`
+  /// appelle pour `text`/`number`/`select`. Aucun `BoxDecoration` maison, aucun
+  /// jeton nouveau : `fieldFillColor`, `fieldBorderColor`, `inputRadius` et
+  /// `inputContentPadding` sont lus par la fabrique, pas par ce fichier.
+  ///
+  /// **Aucun libellé n'est passé** : le `ListTile` porte déjà le sien dans son
+  /// `title` (cf. l'entête de bibliothèque). L'`InputDecorator` n'ajoute donc ni
+  /// label, ni hint, ni erreur — il n'a **rien** à annoncer, et l'arbre
+  /// sémantique du champ est inchangé (mesuré : le libellé y apparaît une seule
+  /// fois, l'état `toggled` une seule fois).
+  ///
+  /// `enabled` n'est **pas** rabattu sur `field.readOnly` : `disabledBorder`
+  /// n'appartient pas à la chaîne de jetons (`inputDecoration` ne le pose pas),
+  /// donc un champ en lecture seule perdrait la bordure `fieldBorderColor` de
+  /// l'hôte au profit d'un défaut Flutter. L'état désactivé reste porté par le
+  /// contrôle lui-même (switch grisé / pilule atténuée), pas par le cadre.
+  Widget _box(BuildContext context, Widget child) => InputDecorator(
+        key: zBooleanBoxKey,
+        decoration: ZcrudTheme.of(context).inputDecoration(context),
+        child: child,
+      );
 
   /// Construit le rendu **pilule** (parité legacy DODLP, peint nativement).
   Widget _buildPill(
@@ -306,7 +395,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
           child: target,
         ),
         onTap: disabled ? null : () => onChanged(!checked),
-        contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+        contentPadding: _tilePadding(_boxedOf(config)),
       ),
     );
   }
@@ -318,13 +407,19 @@ class ZBooleanFieldWidget extends StatelessWidget {
     final checked = value == true;
     final config = _config;
 
+    // CR-DODLP-BOOL-BOXED : l'encart est un pur DÉCOR posé autour du rendu — il
+    // n'altère ni la forme, ni la sémantique, ni le geste. Défaut `false` ⇒ les
+    // deux chemins ci-dessous sont littéralement ceux de v0.75.
+    final boxed = _boxedOf(config);
+
     // CR-DODLP-BOOL-PILL : la forme d'affichage s'active par la MÊME config que
     // le texte d'état (v0.74). Défaut `switchTile` ⇒ chemin ci-dessous, intact.
     if (config.style == ZBooleanStyle.pill) {
-      return _buildPill(context, config, resolvedLabel, checked);
+      final pill = _buildPill(context, config, resolvedLabel, checked);
+      return boxed ? _box(context, pill) : pill;
     }
 
-    return SwitchListTile(
+    final tile = SwitchListTile(
       value: checked,
       onChanged: field.readOnly ? null : onChanged,
       title: config.showsStateLabel
@@ -347,7 +442,8 @@ class ZBooleanFieldWidget extends StatelessWidget {
           : Text(resolvedLabel),
       // `ListTile` fournit une cible ≥ 48 dp et fusionne le libellé du titre
       // avec l'état `switch` du contrôle (Semantics natif).
-      contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+      contentPadding: _tilePadding(boxed),
     );
+    return boxed ? _box(context, tile) : tile;
   }
 }

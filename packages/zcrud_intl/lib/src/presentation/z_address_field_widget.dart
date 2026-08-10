@@ -6,6 +6,26 @@
 /// injecté. Ce champ est un **sous-formulaire structuré** (lignes, ville, région,
 /// code postal, pays) émettant un [ZPostalAddress] **neutre** via `ctx.onChanged`.
 ///
+/// **CR-DODLP-INTL-DECORATION (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
+///
+/// Toutes les `InputDecoration` nues du champ (lignes, ville, région, code
+/// postal, aperçu formaté, saisie du dialogue de recherche) passent désormais
+/// par la fabrique centrale du cœur `ZcrudTheme.inputDecoration` — jetons
+/// **existants** uniquement (`fieldFillColor`, `fieldBorderColor`,
+/// `inputRadius`, `inputContentPadding`), repli `ColorScheme` inchangé.
+///
+/// 🔴 **Cas particulier assumé : l'adresse est un GROUPE.** Il n'existe aucune
+/// saisie unique à qui accrocher un libellé flottant de groupe ; le libellé du
+/// champ reste donc un **en-tête**, mais rendu par le `ZFieldLabel` du cœur
+/// (style thémé + astérisque requis) et **décoratif** (`ExcludeSemantics`) — le
+/// nœud conteneur l'annonce déjà. En `fieldSize == large` (`bare`), l'en-tête
+/// **et** le libellé du nœud conteneur disparaissent : `ZLargeFieldCard` les
+/// porte. Les **sous-champs** ne sont JAMAIS `bare` : leur libellé (« Ville »,
+/// « Code postal »…) n'est porté par personne d'autre.
+///
+/// Le `Padding(ZcrudTheme.fieldPadding)` propre au champ est retiré (mesuré :
+/// 24 dp de largeur en moins par rapport aux champs voisins du cœur).
+///
 /// **AD-2** : un `TextEditingController`/`FocusNode` **stable par sous-champ**
 /// (créés 1× en `initState`, disposés) ; sync guardée hors focus ; jamais de
 /// reconstruction globale. Le sélecteur pays est le même composant inline que
@@ -333,85 +353,136 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
 
   static String? _nullable(String v) => v.trim().isEmpty ? null : v;
 
+  /// Rendu `bare` — dérivé de la spec **exactement comme le dispatcher du cœur**
+  /// (`fieldSize == large`) : la Card porte alors le libellé du GROUPE.
+  bool get _bare => widget.ctx.field.fieldSize == ZFieldSize.large;
+
   @override
   Widget build(BuildContext context) {
     widget.onBuild?.call();
     final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
-    final resolvedLabel = field.label ?? field.name;
+    final resolvedLabel = label(
+      context,
+      field.label ?? field.name,
+      fallback: field.label ?? field.name,
+    );
     final readOnly = field.readOnly;
+    final bare = _bare;
+    // 🔴 L'adresse est un SOUS-FORMULAIRE : il n'existe aucune saisie unique à
+    // qui accrocher un libellé flottant de groupe. Le libellé du groupe reste
+    // donc porté par l'en-tête (hors `bare`) et par le nœud sémantique
+    // conteneur — mais **une seule fois** : l'en-tête est décoratif
+    // (`ExcludeSemantics`), sans quoi il se fondait dans le nœud conteneur et
+    // le libellé était annoncé deux fois (mesuré). En `bare`, l'en-tête ET le
+    // libellé sémantique disparaissent : `ZLargeFieldCard` les porte déjà.
     return Semantics(
       container: true,
-      label: resolvedLabel,
-      child: Padding(
-        padding: theme.fieldPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _header(resolvedLabel, readOnly, theme),
+      label: bare ? null : resolvedLabel,
+      // Le `Padding(fieldPadding)` propre au champ est retiré (cf. dartdoc) :
+      // mesuré, il rendait le bloc 24 dp plus étroit que ses voisins du cœur.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (!bare || widget.placeSearch != null) ...<Widget>[
+            _header(field, resolvedLabel, readOnly, bare),
             SizedBox(height: theme.gapS),
-            if (_notBlank(_formatted)) ...<Widget>[
-              _formattedPreview(theme),
-              SizedBox(height: theme.gapS),
-            ],
-            _line(
-              const Key('z-address-line1'),
-              _line1,
-              _focusNodes[0],
-              label(context, 'intl.address.line1', fallback: 'Adresse'),
-              readOnly,
-            ),
-            SizedBox(height: theme.gapS),
-            _line(
-              const Key('z-address-line2'),
-              _line2,
-              _focusNodes[1],
-              label(context, 'intl.address.line2', fallback: 'Complément'),
-              readOnly,
-            ),
-            SizedBox(height: theme.gapS),
-            _line(
-              const Key('z-address-city'),
-              _city,
-              _focusNodes[2],
-              label(context, 'intl.address.city', fallback: 'Ville'),
-              readOnly,
-            ),
-            SizedBox(height: theme.gapS),
-            _regionSlot(theme, readOnly),
-            SizedBox(height: theme.gapS),
-            _line(
-              const Key('z-address-postal'),
-              _postal,
-              _focusNodes[4],
-              label(context, 'intl.address.postalCode', fallback: 'Code postal'),
-              readOnly,
-            ),
-            SizedBox(height: theme.gapS),
-            ZCountryPickerField(
-              catalog: widget.catalog,
-              selectedIso: _countryIso,
-              readOnly: readOnly,
-              preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
-              searchable: _config?.searchable ?? true,
-              semanticLabel:
-                  label(context, 'intl.address.country', fallback: 'Pays'),
-              onSelected: _onCountrySelected,
-            ),
           ],
-        ),
+          if (_notBlank(_formatted)) ...<Widget>[
+            _formattedPreview(theme),
+            SizedBox(height: theme.gapS),
+          ],
+          _line(
+            const Key('z-address-line1'),
+            _line1,
+            _focusNodes[0],
+            label(context, 'intl.address.line1', fallback: 'Adresse'),
+            readOnly,
+          ),
+          SizedBox(height: theme.gapS),
+          _line(
+            const Key('z-address-line2'),
+            _line2,
+            _focusNodes[1],
+            label(context, 'intl.address.line2', fallback: 'Complément'),
+            readOnly,
+          ),
+          SizedBox(height: theme.gapS),
+          _line(
+            const Key('z-address-city'),
+            _city,
+            _focusNodes[2],
+            label(context, 'intl.address.city', fallback: 'Ville'),
+            readOnly,
+          ),
+          SizedBox(height: theme.gapS),
+          _regionSlot(theme, readOnly),
+          SizedBox(height: theme.gapS),
+          _line(
+            const Key('z-address-postal'),
+            _postal,
+            _focusNodes[4],
+            label(context, 'intl.address.postalCode', fallback: 'Code postal'),
+            readOnly,
+          ),
+          SizedBox(height: theme.gapS),
+          ZCountryPickerField(
+            catalog: widget.catalog,
+            selectedIso: _countryIso,
+            readOnly: readOnly,
+            preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
+            searchable: _config?.searchable ?? true,
+            semanticLabel:
+                label(context, 'intl.address.country', fallback: 'Pays'),
+            // Sous-champ pays du GROUPE : sa décoration porte son PROPRE
+            // libellé (« Pays »), jamais celui du champ adresse — donc jamais
+            // le mode `bare`, même quand le groupe est en Card.
+            decoration: _subDecoration(
+              theme,
+              label(context, 'intl.address.country', fallback: 'Pays'),
+            ),
+            onSelected: _onCountrySelected,
+          ),
+        ],
       ),
     );
   }
 
+  /// Décoration THÉMÉE d'un **sous-champ** du groupe adresse
+  /// (CR-DODLP-INTL-DECORATION) : la fabrique centrale du cœur
+  /// (`ZcrudTheme.inputDecoration`), pilotée par les jetons **existants**
+  /// (`fieldFillColor`/`fieldBorderColor`/`inputRadius`/`inputContentPadding`),
+  /// avec le libellé PROPRE au sous-champ.
+  ///
+  /// 🔴 Jamais `bare` : le mode `bare` signifie « le libellé est porté par la
+  /// Card », or la Card ne porte que le libellé du GROUPE. Rendre les
+  /// sous-champs nus les priverait de leur seul libellé (« Ville », « Code
+  /// postal »…) — l'erreur exacte que ce lot corrige.
+  InputDecoration _subDecoration(ZcrudTheme theme, String labelText) =>
+      theme.inputDecoration(context, label: labelText);
+
   /// En-tête : libellé + (DP-8) affordance de recherche géo si un
   /// [ZPlaceSearchProvider] est injecté. Sans provider ⇒ **aucun** bouton
   /// (rétro-compat stricte).
-  Widget _header(String resolvedLabel, bool readOnly, ZcrudTheme theme) {
+  /// [bare] ⇒ le libellé est porté par `ZLargeFieldCard` : l'en-tête ne rend
+  /// alors QUE l'affordance de recherche (il n'est monté que s'il y en a une).
+  Widget _header(
+    ZFieldSpec field,
+    String resolvedLabel,
+    bool readOnly,
+    bool bare,
+  ) {
     final hasSearch = widget.placeSearch != null;
+    // Libellé enrichi du CŒUR (`ZFieldLabel` : style thémé + astérisque requis
+    // décoratif) — plus de `TextStyle(color:)` monté à la main. `ExcludeSemantics`
+    // : le libellé est déjà annoncé par le nœud conteneur du groupe (sans quoi
+    // il l'était DEUX fois — mesuré sur l'arbre sémantique).
+    final labelWidget = bare
+        ? const SizedBox.shrink()
+        : ExcludeSemantics(child: ZFieldLabel(field: field));
     if (!hasSearch) {
-      return Text(resolvedLabel, style: TextStyle(color: theme.labelColor));
+      return labelWidget;
     }
     final searchLabel = label(
       context,
@@ -420,9 +491,7 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
     );
     return Row(
       children: <Widget>[
-        Expanded(
-          child: Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
-        ),
+        Expanded(child: labelWidget),
         Semantics(
           button: true,
           label: searchLabel,
@@ -446,9 +515,9 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
         child: InputDecorator(
           // Aperçu lecture seule SANS `TextEditingController` (aucune fuite, non
           // recréé au build) : rendu textuel neutre, hors voie de (ré)émission.
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: label(
+          decoration: _subDecoration(
+            theme,
+            label(
               context,
               'intl.address.formatted',
               fallback: 'Adresse (rendu)',
@@ -490,6 +559,10 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
       readOnly: readOnly,
       searchable: _config?.searchable ?? true,
       semanticLabel: regionLabel,
+      // Sous-champ du groupe : décoration thémée portant SON libellé — sans
+      // quoi la région passerait d'encartée (TextField) à nue (sélecteur) selon
+      // que le catalogue de subdivisions est injecté ou non.
+      decoration: _subDecoration(theme, regionLabel),
       selectedTitle: selected?.name ?? (currentCode.isEmpty ? null : currentCode),
       search: (q) {
         final query = q.trim().toLowerCase();
@@ -523,7 +596,7 @@ class _ZAddressFieldWidgetState extends State<ZAddressFieldWidget> {
           focusNode: focusNode,
           readOnly: readOnly,
           textAlign: TextAlign.start,
-          decoration: InputDecoration(isDense: true, labelText: labelText),
+          decoration: _subDecoration(ZcrudTheme.of(context), labelText),
           onChanged: readOnly ? null : (_) => _onManualEdit(),
         ),
       );
@@ -586,9 +659,10 @@ class _PlaceSearchDialogState extends State<_PlaceSearchDialog> {
               key: const Key('z-address-search-input'),
               autofocus: true,
               textAlign: TextAlign.start,
-              decoration: InputDecoration(
-                isDense: true,
-                labelText: title,
+              // Même fabrique THÉMÉE du cœur que les sous-champs du groupe.
+              decoration: theme.inputDecoration(
+                context,
+                label: title,
                 prefixIcon: const Icon(Icons.search),
               ),
               onChanged: _runSearch,

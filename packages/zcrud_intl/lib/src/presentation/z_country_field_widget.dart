@@ -6,6 +6,20 @@
 /// rebuild de la tranche. Ce champ émet la **valeur de tranche neutre = code ISO
 /// alpha-2 `String` opaque** (jamais un modèle enrichi, jamais un type de lib).
 ///
+/// **CR-DODLP-INTL-DECORATION (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
+///
+/// Le déclencheur du sélecteur est désormais rendu **dans** la décoration du
+/// cœur (`zFieldDecoration` → `ZcrudTheme.inputDecoration`), comme le `select`
+/// et comme `ZDecoratedFieldTrigger` : cadre/fond/rayon/padding pilotés par les
+/// jetons **existants**, libellé flottant enrichi unique. Sont retirés :
+///  * le `Text(resolvedLabel)` externe (le nœud sémantique annonçait
+///    « Téléphone / Téléphone » puis, sur le déclencheur, « Téléphone ») ;
+///  * le `Padding(ZcrudTheme.fieldPadding)` (mesuré : 24 dp de largeur en moins
+///    par rapport aux champs voisins du cœur).
+/// En `fieldSize == large` (mode `bare`), le libellé est porté par
+/// `ZLargeFieldCard` et n'est **ni rendu ni annoncé** par le champ — parité
+/// mesurée avec le `select` du cœur.
+///
 /// **AD-2** : le sélecteur inline ([ZCountryPickerField]) possède un contrôleur/
 /// focus de recherche stables (créés 1× en `initState`, disposés) ; aucune
 /// reconstruction globale. Le catalogue immuable est **capturé par closure** dans
@@ -111,38 +125,34 @@ class _ZCountryFieldWidgetState extends State<ZCountryFieldWidget> {
     return (def != null && def.isNotEmpty) ? def : null;
   }
 
+  /// Rendu `bare` — dérivé de la spec **exactement comme le dispatcher du cœur**
+  /// et `ZDecoratedFieldTrigger` (`fieldSize == large`).
+  bool get _bare => widget.ctx.field.fieldSize == ZFieldSize.large;
+
   @override
   Widget build(BuildContext context) {
     widget.onBuild?.call();
-    final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
-    final resolvedLabel = field.label ?? field.name;
-    return Semantics(
-      container: true,
-      label: resolvedLabel,
-      child: Padding(
-        padding: theme.fieldPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
-            SizedBox(height: theme.gapS),
-            ZCountryPickerField(
-              catalog: widget.catalog,
-              selectedIso: _selectedIso,
-              readOnly: field.readOnly,
-              preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
-              searchable: _config?.searchable ?? true,
-              semanticLabel: resolvedLabel,
-              openController: widget.openController,
-              onSelected: (ZCountryInfo c) =>
-                  // Voie unique (AD-2) : émet le CODE ISO string neutre.
-                  widget.ctx.onChanged(c.isoCode),
-            ),
-          ],
-        ),
-      ),
+    final resolvedLabel = label(
+      context,
+      field.label ?? field.name,
+      fallback: field.label ?? field.name,
+    );
+    // CR-DODLP-INTL-DECORATION : décoration THÉMÉE du cœur (même chaîne que
+    // `select`). Le libellé externe `Text` et le `Padding(fieldPadding)` sont
+    // retirés — cf. dartdoc de bibliothèque.
+    return ZCountryPickerField(
+      catalog: widget.catalog,
+      selectedIso: _selectedIso,
+      readOnly: field.readOnly,
+      preferredIsos: _config?.preferredCountryIsos ?? const <String>[],
+      searchable: _config?.searchable ?? true,
+      semanticLabel: resolvedLabel,
+      openController: widget.openController,
+      decoration: zFieldDecoration(context, field, bare: _bare),
+      onSelected: (ZCountryInfo c) =>
+          // Voie unique (AD-2) : émet le CODE ISO string neutre.
+          widget.ctx.onChanged(c.isoCode),
     );
   }
 }

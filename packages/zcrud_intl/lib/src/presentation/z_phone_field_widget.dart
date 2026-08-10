@@ -19,6 +19,26 @@
 /// [ZPhoneNumber] (ou sa map sérialisée) est encore **ingérée** à l'amorçage
 /// (AD-10, migration sans réécriture), simplement ré-émise en `String`.
 ///
+/// **CR-DODLP-INTL-DECORATION (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
+///
+/// Le champ ne construit plus d'`InputDecoration` nue : il passe par
+/// `zFieldDecoration(context, field, bare:)`, **le helper du cœur** — donc par
+/// `ZcrudTheme.inputDecoration`. Conséquences visibles pour TOUT hôte :
+///  * cadre/fond/rayon/padding interne pilotés par les jetons **existants**
+///    (`fieldFillColor`, `fieldBorderColor`, `fieldFocusedBorderColor`,
+///    `inputRadius`, `inputContentPadding`) — repli `ColorScheme` inchangé ;
+///  * **un seul libellé** : le libellé flottant enrichi (`ZFieldLabel`, avec
+///    l'astérisque « requis ») remplace le doublon « `Text` externe +
+///    `labelText: 'Numéro'` interne » (mesuré : le nœud sémantique annonçait
+///    « Téléphone / Téléphone / Numéro ») ;
+///  * le `Padding(ZcrudTheme.fieldPadding)` propre au champ **disparaît** :
+///    mesuré, il rendait le champ 24 dp plus étroit que ses voisins du cœur
+///    (12→788 pour un `text`, 24→776 pour le téléphone) ; l'aération entre
+///    champs reste celle de `DynamicEdition` (`interFieldGap`/`fieldGap`) ;
+///  * mode **`bare`** (`fieldSize == large`) : bordures `none`, aucun libellé
+///    propre (porté par `ZLargeFieldCard`) — **parité exacte** avec le champ
+///    `text` du cœur, mesurée sur l'arbre sémantique.
+///
 /// **AD-2** : `TextEditingController`/`FocusNode` créés **1×** (`initState`),
 /// disposés, jamais recréés ; la **graine** d'amorçage du paquet est elle aussi
 /// créée 1× (sans quoi le paquet réinitialiserait le texte à chaque frappe —
@@ -305,59 +325,66 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
   @override
   Widget build(BuildContext context) {
     widget.onBuild?.call();
-    final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
-    final resolvedLabel = field.label ?? field.name;
     // DP-20 (AC5) : erreur nationale **dérivée** (opt-in). `nationalPhone == null`
     // → `null` → chemin antérieur identique. Recalcul en `build` seulement.
     final validator = _config?.nationalPhone;
     final String? nationalErrorText = validator == null
         ? null
         : nationalPhoneErrorText(context, validator.validate(_numberController.text));
-    return Semantics(
-      container: true,
-      label: resolvedLabel,
-      child: Padding(
-        padding: theme.fieldPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
-            SizedBox(height: theme.gapS),
-            // AD-13 : la cible tactile est portée par la CONTRAINTE LIANTE
-            // (`minHeight`), pas par une taille rendue constatée après coup.
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: ZIntlPhoneInputBridge.build(
-                fieldKey: const Key('z-phone-number'),
-                seed: _seed,
-                controller: _numberController,
-                focusNode: _numberFocus,
-                enabled: !field.readOnly,
-                searchable: _config?.searchable ?? true,
-                // FR-26 : jamais de code pays en dur ; la restriction vient de la
-                // config du champ, et elle est assainie contre le catalogue réel
-                // du paquet (AD-10).
-                countries: ZIntlPhoneInputBridge.sanitizeCountries(
-                  _config?.allowedCountryIsos ?? const <String>[],
-                ),
-                // FR-26 : la langue des noms de pays est une DONNÉE DE LOCALE
-                // lue sur l'ambiance, jamais un littéral de ce paquet.
-                locale: Localizations.maybeLocaleOf(context)?.languageCode,
-                decoration: InputDecoration(
-                  isDense: true,
-                  labelText:
-                      label(context, 'intl.phone.number', fallback: 'Numéro'),
-                  // AD-13 : message annoncé par la sémantique native du champ.
-                  errorText: nationalErrorText,
-                ),
-                onChanged: _onInputChanged,
-              ),
-            ),
-          ],
+    // CR-DODLP-INTL-DECORATION : décoration THÉMÉE du cœur — la MÊME chaîne que
+    // `text`/`number`/`select`/`date` (`zFieldDecoration` → `ZcrudTheme
+    // .inputDecoration`) : `fieldFillColor`, `fieldBorderColor`, `inputRadius`,
+    // `inputContentPadding`, libellé flottant enrichi (astérisque requis), hint/
+    // helper l10n et ornements déclaratifs. Aucun jeton nouveau.
+    //
+    // 🔴 Le préfixe « drapeau + indicatif » du paquet natif reste posé : le
+    // paquet le pose lui-même en `prefixIcon` (`getInputDecoration` ⇒
+    // `copyWith(prefixIcon: SelectorButton(...))`), donc **dans** ce cadre thémé.
+    // ⚠️ Corollaire mesuré : un ornement `ZFieldSpec.prefix` de kind `icon` est
+    // ÉCRASÉ par ce `copyWith` du tiers — c'est le seul slot de la décoration
+    // que le champ téléphone ne peut pas honorer.
+    final decoration = zFieldDecoration(
+      context,
+      field,
+      bare: _bare,
+      errorText: nationalErrorText,
+    );
+    // AD-13 : la cible tactile est portée par la CONTRAINTE LIANTE
+    // (`minHeight`), pas par une taille rendue constatée après coup.
+    return ConstrainedBox(
+      // Clé NOMMÉE : sans elle, une garde de cible tactile mesurait le maximum
+      // des `ConstrainedBox` descendants et se satisfaisait du 48×48 posé par
+      // le BOUTON SÉLECTEUR du paquet tiers — elle mesurait le plancher du
+      // tiers, pas le nôtre (injection R3 « minHeight: 24 » restée VERTE).
+      key: const Key('z-phone-tap-target'),
+      constraints: const BoxConstraints(minHeight: 48),
+      child: ZIntlPhoneInputBridge.build(
+        fieldKey: const Key('z-phone-number'),
+        seed: _seed,
+        controller: _numberController,
+        focusNode: _numberFocus,
+        enabled: !field.readOnly,
+        searchable: _config?.searchable ?? true,
+        // FR-26 : jamais de code pays en dur ; la restriction vient de la
+        // config du champ, et elle est assainie contre le catalogue réel
+        // du paquet (AD-10).
+        countries: ZIntlPhoneInputBridge.sanitizeCountries(
+          _config?.allowedCountryIsos ?? const <String>[],
         ),
+        // FR-26 : la langue des noms de pays est une DONNÉE DE LOCALE
+        // lue sur l'ambiance, jamais un littéral de ce paquet.
+        locale: Localizations.maybeLocaleOf(context)?.languageCode,
+        // AD-13 : le message d'erreur est annoncé par la sémantique native du
+        // champ (il transite par `InputDecoration.errorText`).
+        decoration: decoration,
+        onChanged: _onInputChanged,
       ),
     );
   }
+
+  /// Rendu `bare` (le décor est porté par `ZLargeFieldCard`) — dérivé de la
+  /// spec **exactement comme le dispatcher du cœur** et comme
+  /// `ZDecoratedFieldTrigger` (`fieldSize == large`). Aucune convention nouvelle.
+  bool get _bare => widget.ctx.field.fieldSize == ZFieldSize.large;
 }

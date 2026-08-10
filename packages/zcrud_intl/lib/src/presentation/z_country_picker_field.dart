@@ -45,6 +45,7 @@ class ZCountryPickerField extends StatefulWidget {
     this.preferredIsos = const <String>[],
     this.searchable = true,
     this.openController,
+    this.decoration,
     super.key,
   });
 
@@ -90,6 +91,25 @@ class ZCountryPickerField extends StatefulWidget {
   ///
   /// Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`).
   final ZToggleController? openController;
+
+  /// Décoration **thémée** du déclencheur (CR-DODLP-INTL-DECORATION).
+  ///
+  /// `null` ⇒ rendu **strictement inchangé** (ligne drapeau + texte + chevron
+  /// dans un simple `Padding`) — c'est le chemin des appels internes qui n'ont
+  /// pas de `ZFieldSpec` sous la main.
+  ///
+  /// Fournie ⇒ le déclencheur est rendu par un `InputDecorator`, **exactement**
+  /// comme `ZDecoratedFieldTrigger` du cœur : deux états de libellé (au repos
+  /// quand vide / flottant quand rempli), chevron posé en `suffixIcon` **sauf**
+  /// si la décoration porte déjà un ornement de fin (un ornement déclaratif de
+  /// l'hôte n'est jamais écrasé).
+  ///
+  /// 🔴 **Le libellé sémantique se DÉRIVE de la décoration** : une décoration
+  /// sans libellé (`label`/`labelText` nuls) est la signature du mode `bare`,
+  /// où le libellé est porté par `ZLargeFieldCard` — le nœud n'en pose alors
+  /// aucun, ce qui reproduit **au nœud près** ce que fait le `select` du cœur
+  /// en `large` (mesuré). Aucun drapeau supplémentaire n'est donc nécessaire.
+  final InputDecoration? decoration;
 
   @override
   State<ZCountryPickerField> createState() => _ZCountryPickerFieldState();
@@ -206,9 +226,17 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
   }
 
   Widget _trigger(ZcrudTheme theme, ZCountryInfo? selected) {
-    final semLabel = widget.semanticLabel ??
-        label(context, 'intl.country', fallback: 'Pays');
+    final deco = widget.decoration;
+    // Une décoration SANS libellé = mode `bare` : `ZLargeFieldCard` le porte
+    // déjà. Poser le libellé ici le ferait annoncer deux fois (mesuré sur
+    // l'arbre sémantique avant correction : « Téléphone / Téléphone »).
+    final bare = deco != null && deco.label == null && deco.labelText == null;
+    final semLabel = bare
+        ? null
+        : (widget.semanticLabel ??
+            label(context, 'intl.country', fallback: 'Pays'));
     final display = _triggerText(selected);
+    final hasValue = selected != null;
     return Semantics(
       container: true,
       button: !widget.readOnly,
@@ -222,36 +250,91 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
         child: InkWell(
           key: const Key('z-country-picker-trigger'),
           onTap: widget.readOnly ? null : _toggle,
+          // 🔴 AD-13 : cible tactile portée par la CONTRAINTE LIANTE, jamais
+          // par la hauteur intrinsèque de l'`InputDecorator` (qu'un
+          // `inputContentPadding` réduit par l'hôte peut faire passer sous
+          // 48 dp) — même raison qu'à `ZDecoratedFieldTrigger`.
           child: ConstrainedBox(
+            // Clé NOMMÉE : une garde de cible tactile doit pouvoir viser CETTE
+            // contrainte, et non le maximum des `ConstrainedBox` descendants
+            // (qui peut venir d'un tiers ou du SDK).
+            key: const Key('z-country-tap-target'),
             constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: EdgeInsetsDirectional.symmetric(
-                horizontal: theme.gapM,
-                vertical: theme.gapS,
-              ),
-              child: Row(
-                children: <Widget>[
-                  if (selected?.flagEmoji != null) ...<Widget>[
-                    Text(selected!.flagEmoji!),
-                    SizedBox(width: theme.gapS),
-                  ],
-                  Expanded(
-                    child: Text(
-                      display,
-                      textAlign: TextAlign.start,
-                      style: TextStyle(color: theme.labelColor),
+            child: deco == null
+                ? Padding(
+                    padding: EdgeInsetsDirectional.symmetric(
+                      horizontal: theme.gapM,
+                      vertical: theme.gapS,
+                    ),
+                    child: _triggerRow(theme, selected, display, withChevron: true),
+                  )
+                : InputDecorator(
+                    decoration: _decorate(deco),
+                    isEmpty: !hasValue,
+                    // Hors `bare`, le libellé AU REPOS occupe la boîte quand
+                    // rien n'est choisi : le corps reste vide (parité Material,
+                    // règle reprise telle quelle de `ZDecoratedFieldTrigger`).
+                    // En `bare`, la Card n'affiche rien d'autre : le texte de
+                    // substitution doit rester VISIBLE.
+                    child: _triggerRow(
+                      theme,
+                      selected,
+                      hasValue || bare ? display : '',
+                      withChevron: false,
+                      hint: !hasValue,
                     ),
                   ),
-                  Icon(
-                    _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: theme.labelColor,
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Applique au déclencheur décoré les seuls ajustements qui lui sont propres :
+  /// chevron d'affordance en fin de ligne (jamais à la place d'un ornement
+  /// déclaratif de l'hôte) et état `enabled` du champ.
+  InputDecoration _decorate(InputDecoration deco) {
+    var d = deco;
+    if (d.suffixIcon == null && d.suffix == null && d.suffixText == null) {
+      d = d.copyWith(
+        suffixIcon: Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down),
+      );
+    }
+    return d.copyWith(enabled: !widget.readOnly);
+  }
+
+  /// Corps du déclencheur : drapeau + texte (+ chevron hors décoration).
+  Widget _triggerRow(
+    ZcrudTheme theme,
+    ZCountryInfo? selected,
+    String text, {
+    required bool withChevron,
+    bool hint = false,
+  }) {
+    final materialTheme = Theme.of(context);
+    // FR-26 : aucune couleur en dur — jeton du thème hors décoration (rendu
+    // historique), rôles Material dans le cadre décoré (parité cœur).
+    final style = withChevron
+        ? TextStyle(color: theme.labelColor)
+        : hint
+            ? materialTheme.textTheme.bodyLarge
+                ?.copyWith(color: materialTheme.hintColor)
+            : materialTheme.textTheme.bodyLarge;
+    return Row(
+      children: <Widget>[
+        if (selected?.flagEmoji != null) ...<Widget>[
+          Text(selected!.flagEmoji!),
+          SizedBox(width: theme.gapS),
+        ],
+        Expanded(
+          child: Text(text, textAlign: TextAlign.start, style: style),
+        ),
+        if (withChevron)
+          Icon(
+            _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            color: theme.labelColor,
+          ),
+      ],
     );
   }
 
@@ -271,10 +354,12 @@ class _ZCountryPickerFieldState extends State<ZCountryPickerField> {
         controller: _searchController,
         focusNode: _searchFocus,
         textAlign: TextAlign.start,
-        decoration: InputDecoration(
-          isDense: true,
+        // Fabrique THÉMÉE du cœur : le panneau déplié ne peut pas rester en
+        // trait souligné sous un déclencheur encarté.
+        decoration: theme.inputDecoration(
+          context,
+          label: label(context, 'intl.country.search', fallback: 'Rechercher'),
           prefixIcon: const Icon(Icons.search),
-          labelText: label(context, 'intl.country.search', fallback: 'Rechercher'),
         ),
         onChanged: (_) => setState(() {}),
       );

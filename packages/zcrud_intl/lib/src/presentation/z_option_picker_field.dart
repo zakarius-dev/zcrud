@@ -60,8 +60,21 @@ class ZOptionPickerField<T> extends StatefulWidget {
     this.placeholder,
     this.listMaxHeight = 240,
     this.openController,
+    this.decoration,
     super.key,
   });
+
+  /// Décoration **thémée** du déclencheur (CR-DODLP-INTL-DECORATION).
+  ///
+  /// `null` ⇒ rendu **strictement inchangé** (chemin des champs devise/état, qui
+  /// ne sont pas dans le périmètre de la CR). Fournie ⇒ le déclencheur est rendu
+  /// par un `InputDecorator`, comme `ZDecoratedFieldTrigger` du cœur : libellé
+  /// au repos quand vide / flottant quand rempli, chevron en `suffixIcon` sauf
+  /// si un ornement de fin est déjà déclaré.
+  ///
+  /// Une décoration **sans libellé** signale le mode `bare` : le nœud sémantique
+  /// n'en pose alors aucun (l'ancêtre `ZLargeFieldCard` le porte).
+  final InputDecoration? decoration;
 
   /// Préfixe des clés de test (`<prefix>-trigger`, `<prefix>-item-<key>`…).
   final String keyPrefix;
@@ -221,8 +234,13 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
   }
 
   Widget _trigger(ZcrudTheme theme) {
-    final semLabel = widget.semanticLabel ??
-        label(context, 'intl.option', fallback: 'Sélection');
+    final deco = widget.decoration;
+    final bare = deco != null && deco.label == null && deco.labelText == null;
+    final semLabel = bare
+        ? null
+        : (widget.semanticLabel ??
+            label(context, 'intl.option', fallback: 'Sélection'));
+    final hasValue = widget.selectedTitle != null;
     final display = widget.selectedTitle ??
         widget.placeholder ??
         label(context, 'intl.option.select', fallback: 'Sélectionner…');
@@ -238,36 +256,75 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
         child: InkWell(
           key: Key('${widget.keyPrefix}-trigger'),
           onTap: widget.readOnly ? null : _toggle,
+          // AD-13 : cible tactile portée par la CONTRAINTE LIANTE, jamais par
+          // la hauteur intrinsèque de l'`InputDecorator`.
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: EdgeInsetsDirectional.symmetric(
-                horizontal: theme.gapM,
-                vertical: theme.gapS,
-              ),
-              child: Row(
-                children: <Widget>[
-                  if (widget.selectedLeading != null) ...<Widget>[
-                    Text(widget.selectedLeading!),
-                    SizedBox(width: theme.gapS),
-                  ],
-                  Expanded(
-                    child: Text(
-                      display,
-                      textAlign: TextAlign.start,
-                      style: TextStyle(color: theme.labelColor),
+            child: deco == null
+                ? Padding(
+                    padding: EdgeInsetsDirectional.symmetric(
+                      horizontal: theme.gapM,
+                      vertical: theme.gapS,
+                    ),
+                    child: _triggerRow(theme, display, withChevron: true),
+                  )
+                : InputDecorator(
+                    decoration: _decorate(deco),
+                    isEmpty: !hasValue,
+                    child: _triggerRow(
+                      theme,
+                      hasValue || bare ? display : '',
+                      withChevron: false,
+                      hint: !hasValue,
                     ),
                   ),
-                  Icon(
-                    _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: theme.labelColor,
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Chevron d'affordance + état `enabled` — un ornement de fin déclaré par
+  /// l'appelant n'est jamais écrasé (parité `ZDecoratedFieldTrigger`).
+  InputDecoration _decorate(InputDecoration deco) {
+    var d = deco;
+    if (d.suffixIcon == null && d.suffix == null && d.suffixText == null) {
+      d = d.copyWith(
+        suffixIcon: Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down),
+      );
+    }
+    return d.copyWith(enabled: !widget.readOnly);
+  }
+
+  Widget _triggerRow(
+    ZcrudTheme theme,
+    String text, {
+    required bool withChevron,
+    bool hint = false,
+  }) {
+    final materialTheme = Theme.of(context);
+    // FR-26 : aucune couleur en dur.
+    final style = withChevron
+        ? TextStyle(color: theme.labelColor)
+        : hint
+            ? materialTheme.textTheme.bodyLarge
+                ?.copyWith(color: materialTheme.hintColor)
+            : materialTheme.textTheme.bodyLarge;
+    return Row(
+      children: <Widget>[
+        if (widget.selectedLeading != null) ...<Widget>[
+          Text(widget.selectedLeading!),
+          SizedBox(width: theme.gapS),
+        ],
+        Expanded(
+          child: Text(text, textAlign: TextAlign.start, style: style),
+        ),
+        if (withChevron)
+          Icon(
+            _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            color: theme.labelColor,
+          ),
+      ],
     );
   }
 
@@ -276,10 +333,12 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
         controller: _searchController,
         focusNode: _searchFocus,
         textAlign: TextAlign.start,
-        decoration: InputDecoration(
-          isDense: true,
+        // Fabrique THÉMÉE du cœur : le panneau déplié ne peut pas rester en
+        // trait souligné sous un déclencheur encarté.
+        decoration: theme.inputDecoration(
+          context,
+          label: label(context, 'intl.option.search', fallback: 'Rechercher'),
           prefixIcon: const Icon(Icons.search),
-          labelText: label(context, 'intl.option.search', fallback: 'Rechercher'),
         ),
         onChanged: (_) => setState(() {}),
       );
