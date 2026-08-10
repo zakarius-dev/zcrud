@@ -59,6 +59,70 @@ enum ZStepIndicatorPosition {
   bottom,
 }
 
+/// **Forme d'affichage des étapes** (CR-DODLP « Material vertical », 2026-08-10).
+///
+/// Le besoin est à **TROIS** états, alors que [ZStepperConfig.showAllSteps] est
+/// un booléen — il ne peut en porter que deux. Cette énumération les nomme :
+///
+/// | Valeur | En-têtes des autres étapes | Contenu monté |
+/// |---|---|---|
+/// | [paged] | **absents** (compteur « k/N ») | l'étape courante seule |
+/// | [allExpanded] | tous, en rail | **toutes** les étapes |
+/// | [accordion] | **tous**, en rail, **tapables** | l'étape active seule |
+///
+/// [accordion] est le rendu `Stepper(type: vertical)` de Material — celui sur
+/// lequel s'appuie le legacy DODLP (`_buildInteractiveVerticalStepper`).
+///
+/// 🔴 **Une énumération, et NON le patron `String` de
+/// `ZcrudTheme.editionSheetFrameMode`.** Ce patron-là existe pour une raison
+/// précise et mesurable : `ZSheetFrameMode` vit dans `zcrud_navigation`, et
+/// **AD-1 interdit à `zcrud_core` d'importer un satellite** — le jeton ne peut
+/// donc PAS être typé. Ici, rien de tel : les trois enums voisines
+/// ([ZStepOrientation], [ZStepStyle], [ZStepIndicatorPosition]) vivent déjà dans
+/// CE fichier, dans CE paquet. Reprendre le `String` reviendrait à payer la
+/// perte d'exhaustivité du `switch` (le compilateur cesse de signaler un mode
+/// non traité) pour contourner une contrainte qui ne s'applique pas.
+enum ZStepsDisplay {
+  /// Assistant **paginé** : une étape à la fois, en-têtes des autres absents.
+  /// C'est le comportement E3-5/DP-9, et le défaut de [ZStepperConfig].
+  paged,
+
+  /// **Tout affiché** : toutes les étapes dépliées simultanément, rail numéroté.
+  /// Équivalent de `showAllSteps: true` (v0.66.0).
+  ///
+  /// ## Canaux INERTES dans cette forme (déclaration v0.66.0, inchangée)
+  ///
+  /// [ZStepperConfig.indicatorPosition], [ZStepperConfig.orientation],
+  /// [ZStepperConfig.style], [ZStepperConfig.allowStepTap],
+  /// [ZStepperConfig.validateOnNext] et [ZStepperConfig.stepSpacing] : le rail
+  /// est toujours vertical, du côté début de lecture, à badges numérotés ; il
+  /// n'y a ni étape courante, ni en-tête tapable, ni gate de navigation.
+  allExpanded,
+
+  /// **Accordéon Material** : tous les en-têtes visibles dans le rail numéroté,
+  /// **une seule étape dépliée** (l'active), en-têtes **tapables**.
+  ///
+  /// ## 🔴 Matrice d'inertie — mise à jour pour CETTE forme (règle CR-IFFD-78 :
+  /// un paramètre est honoré, ou son inertie est ÉCRITE)
+  ///
+  /// | Canal | [allExpanded] | [accordion] |
+  /// |---|---|---|
+  /// | [ZStepperConfig.allowStepTap] | inerte | **HONORÉ** — `false` ⇒ en-têtes non tapables (aucun `InkWell`, aucun rôle `button`) |
+  /// | [ZStepperConfig.validateOnNext] | inerte (pas d'étape courante) | **HONORÉ** — même voie que le paginé (cf. `_accordionLayout`) |
+  /// | [ZStepperConfig.indicatorPosition] | inerte | **inerte** — le rail est toujours du côté début de lecture (le badge est le rail ; il n'y a pas de bande séparée à placer) |
+  /// | [ZStepperConfig.orientation] | inerte | **inerte** — un accordéon est vertical par construction |
+  /// | [ZStepperConfig.style] | inerte | **inerte** — le rail est à badges numérotés ; `dots`/`progressBar`/`icons` ne décrivent pas ce rendu |
+  /// | [ZStepperConfig.stepSpacing] | inerte | **inerte** — l'écart entre étapes vient du jeton `ZcrudTheme.stepperAllStepsGap` |
+  /// | [ZStepperConfig.showLabels] / [ZStepperConfig.showSubtitles] | honorés | **honorés** |
+  /// | [ZStepperConfig.indicatorSize] | honoré (diamètre du badge) | **honoré** |
+  /// | couleurs `active`/`completed`/`inactive`/`rail`/`badgeForeground` | honorées | **honorées** (`completed`/`inactive` n'y prennent leur sens qu'ici) |
+  ///
+  /// ⚠️ [ZStepperConfig.errorColor] reste inerte dans les DEUX formes : aucune
+  /// étape n'est peinte « en erreur » par le rail (l'erreur est révélée dans le
+  /// champ, par `AutovalidateMode`).
+  accordion,
+}
+
 /// Configuration `const` & immuable de [ZStepperEdition] (DP-9).
 ///
 /// Tous les défauts reproduisent **exactement** le comportement E3-5 (indicateur
@@ -78,6 +142,7 @@ class ZStepperConfig {
     this.allowStepTap = true,
     this.validateOnNext = true,
     this.showAllSteps = false,
+    this.stepsDisplay,
     this.indicatorSize = 40,
     this.stepSpacing = 8,
     this.activeColor,
@@ -129,6 +194,43 @@ class ZStepperConfig {
   /// l'**UNION de toutes les étapes effectives** (+ contributions des nested), et
   /// c'est toujours le stepper RACINE, et lui seul, qui l'écrit.
   final bool showAllSteps;
+
+  /// **Forme d'affichage à trois états** (CR-DODLP « Material vertical »).
+  /// Défaut **`null`** ⇒ la forme est **DÉRIVÉE** de [showAllSteps], donc un
+  /// hôte qui n'y touche pas rend **exactement** comme avant (cf.
+  /// [effectiveDisplay]).
+  ///
+  /// ## 🔴 La règle de préséance, écrite (deux canaux pour une même idée)
+  ///
+  /// [showAllSteps] et [stepsDisplay] peuvent se **contredire** (`showAllSteps:
+  /// true` + `stepsDisplay: ZStepsDisplay.paged`, par exemple). La règle est :
+  ///
+  /// > **`stepsDisplay` non `null` GAGNE, toujours. `showAllSteps` n'est plus
+  /// > consulté du tout.**
+  ///
+  /// Elle n'est pas arbitraire : `stepsDisplay` est le canal **explicite et
+  /// complet** (il sait dire les trois états), `showAllSteps` est l'**alias
+  /// hérité** qui n'en sait dire que deux. Faire gagner l'alias rendrait le
+  /// troisième état inatteignable pour tout hôte qui passe aussi le booléen. Et
+  /// la préséance ne peut PAS être « le dernier écrit » : le constructeur est
+  /// `const`, il n'y a pas d'ordre.
+  ///
+  /// ⚠️ Corollaire assumé : `stepsDisplay: ZStepsDisplay.paged` **annule** un
+  /// `showAllSteps: true`. C'est un choix délibéré, gardé par un test.
+  ///
+  /// ⚠️ [copyWith] ne permet pas de **remettre** ce champ à `null` (même limite
+  /// que les overrides couleur de cette classe) : repasser explicitement
+  /// `stepsDisplay: ZStepsDisplay.paged` ou `.allExpanded`.
+  final ZStepsDisplay? stepsDisplay;
+
+  /// Forme d'affichage **effective** — la seule que le rendu consulte.
+  ///
+  /// `stepsDisplay ?? (showAllSteps ? allExpanded : paged)`. Un hôte passif
+  /// (`stepsDisplay` omis, `showAllSteps` à `false`) obtient donc [ZStepsDisplay.paged],
+  /// c'est-à-dire le comportement historique, au widget près.
+  ZStepsDisplay get effectiveDisplay =>
+      stepsDisplay ??
+      (showAllSteps ? ZStepsDisplay.allExpanded : ZStepsDisplay.paged);
 
   /// Taille (dp) d'un marqueur d'indicateur (`dots`/cercles) — token de config.
   final double indicatorSize;
@@ -183,6 +285,7 @@ class ZStepperConfig {
     bool? allowStepTap,
     bool? validateOnNext,
     bool? showAllSteps,
+    ZStepsDisplay? stepsDisplay,
     double? indicatorSize,
     double? stepSpacing,
     Color? activeColor,
@@ -201,6 +304,7 @@ class ZStepperConfig {
         allowStepTap: allowStepTap ?? this.allowStepTap,
         validateOnNext: validateOnNext ?? this.validateOnNext,
         showAllSteps: showAllSteps ?? this.showAllSteps,
+        stepsDisplay: stepsDisplay ?? this.stepsDisplay,
         indicatorSize: indicatorSize ?? this.indicatorSize,
         stepSpacing: stepSpacing ?? this.stepSpacing,
         activeColor: activeColor ?? this.activeColor,
@@ -224,6 +328,7 @@ class ZStepperConfig {
           allowStepTap == other.allowStepTap &&
           validateOnNext == other.validateOnNext &&
           showAllSteps == other.showAllSteps &&
+          stepsDisplay == other.stepsDisplay &&
           indicatorSize == other.indicatorSize &&
           stepSpacing == other.stepSpacing &&
           activeColor == other.activeColor &&
@@ -243,6 +348,7 @@ class ZStepperConfig {
         allowStepTap,
         validateOnNext,
         showAllSteps,
+        stepsDisplay,
         indicatorSize,
         stepSpacing,
         activeColor,
@@ -269,6 +375,21 @@ class ZStepperConfig {
     orientation: ZStepOrientation.vertical,
     indicatorPosition: ZStepIndicatorPosition.start,
     showAllSteps: true,
+    showSubtitles: true,
+  );
+
+  /// Preset de parité **legacy DODLP `_buildInteractiveVerticalStepper`**
+  /// (CR « Material vertical ») : accordéon — tous les en-têtes dans le rail
+  /// numéroté, une seule étape dépliée, en-têtes tapables.
+  ///
+  /// ⚠️ `validateOnNext` reste à son défaut **`true`** (gate strict) : le
+  /// legacy, lui, navigue librement. Un hôte qui veut la parité EXACTE de la
+  /// navigation legacy pose `validateOnNext: false` — cf. la règle écrite sur
+  /// `ZStepperEdition._accordionLayout`.
+  static const ZStepperConfig accordionVertical = ZStepperConfig(
+    orientation: ZStepOrientation.vertical,
+    indicatorPosition: ZStepIndicatorPosition.start,
+    stepsDisplay: ZStepsDisplay.accordion,
     showSubtitles: true,
   );
 

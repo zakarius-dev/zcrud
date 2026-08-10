@@ -504,7 +504,20 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// (`manageVisibility: true`), elles se battraient pour l'écrire — la dernière
   /// montée gagnerait et masquerait les champs de toutes les autres. Le stepper
   /// reste donc le **single writer** (DP-9/AC13) et publie l'union.
-  bool get _driving => widget.nested || _hasNesting || _config.showAllSteps;
+  bool get _driving => widget.nested || _hasNesting || _allExpanded;
+
+  /// Forme d'affichage EFFECTIVE (règle de préséance : cf.
+  /// [ZStepperConfig.effectiveDisplay]). Seul point de lecture du mode dans
+  /// tout l'état — `config.showAllSteps` n'est plus consulté nulle part ici.
+  ZStepsDisplay get _display => _config.effectiveDisplay;
+
+  /// `true` en mode « TOUT AFFICHÉ » (toutes les étapes dépliées).
+  ///
+  /// 🔴 L'accordéon n'en fait **PAS** partie, et c'est le point dur de ce mode :
+  /// il ne monte qu'**UNE** zone d'étape (l'active), exactement comme le paginé.
+  /// Le rattacher ici forcerait [_driving], publierait l'UNION de toutes les
+  /// étapes et casserait le single-writer par le compte demandé par la CR.
+  bool get _allExpanded => _display == ZStepsDisplay.allExpanded;
 
   /// `true` si CE niveau est au-delà du plafond d'imbrication (AD-10).
   bool get _tooDeep => widget.depth >= kZStepperMaxNestingDepth;
@@ -570,7 +583,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   ///
   /// | Canal | Nature | Invalidation nécessaire |
   /// |---|---|---|
-  /// | `showAllSteps` | **STRUCTUREL** — pilote [_driving], donc le `manageVisibility` des zones d'étape, le jeu de gardes abonnées, et la fenêtre publiée (union de TOUTES les étapes vs fenêtre de l'étape courante) | fenêtre republiée + gardes réabonnées + contributions enfants purgées + mémo de contenu invalidé |
+  /// | `showAllSteps` **et** `stepsDisplay` (via `effectiveDisplay`) | **STRUCTUREL** — pilote [_driving], donc le `manageVisibility` des zones d'étape, le jeu de gardes abonnées, et la fenêtre publiée (union de TOUTES les étapes vs fenêtre de l'étape active) | fenêtre republiée + gardes réabonnées + contributions enfants purgées + mémo de contenu invalidé |
   /// | `validateOnNext` | comportemental, lu **à l'appel** (`_next`/`_jumpTo`) | **aucune** |
   /// | `allowStepTap` | comportemental, lu **au build** du chrome | **aucune** |
   /// | `orientation`, `style`, `indicatorPosition`, `showLabels`, `showSubtitles`, `indicatorSize`, `stepSpacing`, `activeColor`, `completedColor`, `inactiveColor`, `errorColor`, `railColor`, `badgeForegroundColor` | **VISUEL** — lus uniquement par `_StepIndicator`/`_AllStepsRow` | **aucune** |
@@ -579,7 +592,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// simple changement de couleur republierait `visibleFields` et, via le mémo,
   /// reconstruirait tous les champs — exactement ce que SM-1 interdit.
   static bool _isStructuralConfigChange(ZStepperConfig a, ZStepperConfig b) =>
-      a.showAllSteps != b.showAllSteps;
+      a.effectiveDisplay != b.effectiveDisplay;
 
   @override
   void didUpdateWidget(ZStepperEdition oldWidget) {
@@ -721,7 +734,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     // n'était couvert par aucune garde (recherche négative montrée au rapport),
     // et il est le seul des trois chemins d'indexation à lever.
     if (_steps.isEmpty) return const <String>[];
-    if (_config.showAllSteps) return _allStepsUnion();
+    if (_allExpanded) return _allStepsUnion();
     final i = _currentStep.value.clamp(0, _lastStep < 0 ? 0 : _lastStep);
     final base = _windowFor(i);
     final nested = _steps[i].nestedSteps;
@@ -793,7 +806,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       });
       return;
     }
-    if (_config.showAllSteps) {
+    if (_allExpanded) {
       // Racine « tout affiché » : seul écrivain — union de TOUTES les étapes.
       widget.controller.setVisibleFields(_allStepsUnion());
       return;
@@ -1065,7 +1078,14 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         // ouvert — d'où les deux sens gardés.
         if (_steps.isEmpty) return const SizedBox.shrink();
         final reveal = _reveal.value;
-        if (_config.showAllSteps) return _allStepsLayout(reveal);
+        switch (_display) {
+          case ZStepsDisplay.allExpanded:
+            return _allStepsLayout(reveal);
+          case ZStepsDisplay.accordion:
+            return _accordionLayout(reveal);
+          case ZStepsDisplay.paged:
+            break;
+        }
         final index = _currentStep.value.clamp(0, _lastStep);
         final indicator = _StepIndicator(
           index: index,
@@ -1202,6 +1222,108 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           content: _stepContentCached(i, reveal, bounded: false),
         );
       },
+    );
+  }
+
+  /// **Mode « ACCORDÉON MATERIAL »** (CR-DODLP `cr-nested-stepper-material-
+  /// vertical-2026-08-10`, parité legacy `_buildInteractiveVerticalStepper`) :
+  /// **tous les en-têtes** des étapes effectives sont rendus dans le rail
+  /// numéroté, **une seule est dépliée** (l'active), et un en-tête est
+  /// **tapable** pour y aller.
+  ///
+  /// ## 🔴 Le rail est RÉUTILISÉ, pas réécrit
+  ///
+  /// Ce mode rend exactement les mêmes [_AllStepsRow] / [_RailPainter] que le
+  /// mode « tout affiché » (badge, gouttière, segment de rail directionnel,
+  /// titre + sous-titre). Les deux modes ne diffèrent QUE par trois arguments :
+  /// `content` (`null` ⇒ repliée), `onHeaderTap`, et les marques d'état. Une
+  /// seconde implémentation de rail aurait dupliqué le painter, le calcul de
+  /// gouttière, la chaîne FR-26 des couleurs et la dérivation de contraste du
+  /// badge — quatre occasions de diverger.
+  ///
+  /// ## 🔴 Le verrou de validation : la règle, et ce qui la fonde
+  ///
+  /// **`validateOnNext` est HONORÉ en accordéon**, par la voie EXACTE du mode
+  /// paginé : un tap d'en-tête appelle [_jumpTo] (retour arrière libre ; saut
+  /// avant soumis au gate), « Suivant » appelle [_next].
+  ///
+  /// Le legacy DODLP, lui, ne valide **rien** dans ce rendu : mesuré dans
+  /// `dynamic_stepper.dart` (`_buildInteractiveVerticalStepper`), le tap est
+  /// `widget.config.allowStepTap ? () => setState(() => _currentStep = index)
+  /// : null` et `onStepContinue` est un `_currentStep++` nu — `validateOnNext`
+  /// n'y est **jamais lu**. Reproduire cette inertie ferait qu'un hôte qui
+  /// change de FORME D'AFFICHAGE perdrait silencieusement son gate de données :
+  /// une capacité déclarée que personne n'applique, précisément le défaut que
+  /// ce dépôt refuse. Et l'inverse est atteignable en un mot : l'hôte qui veut
+  /// la navigation libre du legacy pose `validateOnNext: false` — canal
+  /// existant, explicite, déjà documenté.
+  ///
+  /// ## 🔴 Single writer, garanti par le COMPTE
+  ///
+  /// Une seule zone d'étape est montée : il n'existe donc **qu'un**
+  /// `DynamicEdition` à ce niveau, et la fenêtre publiée est celle de l'étape
+  /// **active** (via [_contribution]), jamais l'union — [_allExpanded] est
+  /// `false` ici, et c'est ce qui le garantit.
+  ///
+  /// 🔴 **VIRTUALISÉ** — `ListView.builder` : le cas réel de la CR est
+  /// **18 sous-étapes**, dont 17 en-têtes repliés.
+  Widget _accordionLayout(bool reveal) {
+    final int n = _steps.length;
+    final int index = _currentStep.value.clamp(0, _lastStep);
+    return ListView.builder(
+      padding: widget.padding,
+      physics: widget.physics,
+      shrinkWrap: widget.unbounded,
+      itemCount: n,
+      itemBuilder: (BuildContext context, int i) {
+        final bool isActive = i == index;
+        return _AllStepsRow(
+          index: i,
+          total: n,
+          step: _steps[i],
+          config: _config,
+          isLast: i == n - 1,
+          // Repliée ⇒ AUCUN contenu monté (ni champs, ni sous-stepper).
+          content: isActive ? _accordionActiveBody(i, reveal) : null,
+          // 🔴 Tapable pour TOUTES les lignes, active comprise (comme le
+          // legacy) : sans cela, l'en-tête actif perdrait son rôle `button` et
+          // l'annonce « déplié » du lecteur d'écran serait portée par un nœud
+          // de nature différente des autres. `_jumpTo` sort sans effet quand la
+          // cible est déjà l'étape courante.
+          onHeaderTap: _config.allowStepTap ? () => _jumpTo(i) : null,
+          accordionState: isActive
+              ? _RowAccordionState.active
+              : (i < index
+                  ? _RowAccordionState.completed
+                  : _RowAccordionState.pending),
+        );
+      },
+    );
+  }
+
+  /// Corps de l'étape ACTIVE en accordéon : contenu mémoïsé + barre de
+  /// navigation (parité legacy `_buildStepContentWithControls`, qui pose
+  /// « Précédent »/« Suivant » **sous** le contenu de l'étape dépliée).
+  Widget _accordionActiveBody(int index, bool reveal) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _stepContentCached(index, reveal, bounded: false),
+        _StepNavigationBar(
+          isFirst: index == 0,
+          isLast: index == _lastStep,
+          previousLabel: widget.previousLabel ??
+              label(context, 'z.stepper.previous', fallback: 'Précédent'),
+          nextLabel: widget.nextLabel ??
+              label(context, 'z.stepper.next', fallback: 'Suivant'),
+          finishLabel: widget.finishLabel ??
+              label(context, 'z.stepper.finish', fallback: 'Terminer'),
+          onPrevious: index == 0 ? null : _previous,
+          onNext: _next,
+          finishEnabled: widget.onComplete != null,
+        ),
+      ],
     );
   }
 
@@ -1578,6 +1700,19 @@ class _StepNavigationBar extends StatelessWidget {
   }
 }
 
+/// État d'une ligne de rail **en accordéon** ([ZStepsDisplay.accordion]).
+/// `null` (absence de valeur) = mode « tout affiché », où la notion n'existe pas.
+enum _RowAccordionState {
+  /// L'étape **active** : la seule dépliée.
+  active,
+
+  /// Une étape **déjà franchie** (index < index actif).
+  completed,
+
+  /// Une étape **à venir** (index > index actif).
+  pending,
+}
+
 /// Une **étape dépliée** du mode « tout affiché » : badge circulaire numéroté,
 /// segment de rail, titre + sous-titre, puis le contenu de l'étape.
 ///
@@ -1604,6 +1739,8 @@ class _AllStepsRow extends StatelessWidget {
     required this.config,
     required this.isLast,
     required this.content,
+    this.onHeaderTap,
+    this.accordionState,
   });
 
   final int index;
@@ -1611,7 +1748,23 @@ class _AllStepsRow extends StatelessWidget {
   final ZEditionStep step;
   final ZStepperConfig config;
   final bool isLast;
-  final Widget content;
+
+  /// Contenu de l'étape, ou **`null`** si elle est **repliée** (accordéon) :
+  /// rien n'est alors monté sous l'en-tête.
+  final Widget? content;
+
+  /// Rend l'en-tête **tapable** (accordéon). `null` (défaut) ⇒ en-tête inerte,
+  /// c'est-à-dire le mode « tout affiché » **inchangé**.
+  final VoidCallback? onHeaderTap;
+
+  /// État d'accordéon de la ligne, ou **`null`** en mode « tout affiché ».
+  ///
+  /// 🔴 UN seul canal nullable, et non deux booléens : `null` est alors la
+  /// preuve syntaxique que le mode « tout affiché » emprunte exactement les
+  /// branches d'avant (badge `activeOf`, titre gras, numéro dans le badge,
+  /// aucun drapeau sémantique `expanded`). Deux booléens auraient autorisé la
+  /// combinaison « replié ET complété », qui n'existe pas ici.
+  final _RowAccordionState? accordionState;
 
   @override
   Widget build(BuildContext context) {
@@ -1621,7 +1774,14 @@ class _AllStepsRow extends StatelessWidget {
 
     // Chaîne FR-26 stricte : paramètre (`ZStepperConfig`) > jeton (`ZcrudTheme`)
     // > rôle (`ColorScheme`) / mesure de référence. AUCUN littéral de couleur.
-    final Color badgeColor = config.activeOf(scheme);
+    // Mode « tout affiché » : `expanded`/`completed` valent leur défaut, donc
+    // `badgeColor == config.activeOf(scheme)` — l'expression d'avant, au
+    // caractère près. En accordéon, l'état pilote la couleur.
+    final Color badgeColor = switch (accordionState) {
+      null || _RowAccordionState.active => config.activeOf(scheme),
+      _RowAccordionState.completed => config.completedOf(scheme),
+      _RowAccordionState.pending => config.inactiveOf(scheme),
+    };
     final Color railColor =
         config.railColor ?? tokens.stepperRailColor ?? scheme.outlineVariant;
     // Le legacy écrit un BLANC LITTÉRAL — illisible dès qu'un hôte choisit
@@ -1642,28 +1802,57 @@ class _AllStepsRow extends StatelessWidget {
     final String? subtitle = step.subtitle;
     final Widget? subtitleWidget = step.subtitleWidget;
 
+    // 🔴 AD-13 — l'étape active ne peut PAS être signalée par la seule couleur.
+    // Deux marques NON chromatiques s'y ajoutent en accordéon : le titre en
+    // **gras** (l'étape en attente est en graisse normale) et le **contenu
+    // déplié**, qui n'existe que là. En mode « tout affiché », `accordionState`
+    // est `null` ⇒ gras partout, exactement comme avant.
+    final bool isPending = accordionState == _RowAccordionState.pending;
+    final Widget titleText = Text(
+      title,
+      textAlign: TextAlign.start,
+      style: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: isPending ? FontWeight.normal : FontWeight.bold,
+      ),
+    );
+
+    final Widget headerColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (config.showLabels) titleText,
+        if (config.showSubtitles && (subtitleWidget != null || subtitle != null))
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(0, 4, 0, 0),
+            child: _StepSubtitle(source: subtitle, provided: subtitleWidget),
+          ),
+      ],
+    );
+
+    // Patron `_CollapsibleSectionHeader` (`dynamic_edition.dart`), à la lettre :
+    // `Semantics(button/expanded/label) > InkWell > ConstrainedBox(minHeight:48)`.
+    // La `ConstrainedBox` est DANS l'`InkWell` : la zone tapable elle-même fait
+    // donc ≥ 48 dp, et la contrainte est LIANTE sur l'enfant clé.
     final Widget header = Semantics(
       header: true,
+      button: onHeaderTap != null,
+      expanded: accordionState == null
+          ? null
+          : accordionState == _RowAccordionState.active,
       label: 'Étape ${index + 1} sur $total : $title',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (config.showLabels)
-            Text(
-              title,
-              textAlign: TextAlign.start,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+      child: onHeaderTap == null
+          ? headerColumn
+          : InkWell(
+              onTap: onHeaderTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Align(
+                  key: ValueKey<String>('zstep:header:$index'),
+                  alignment: AlignmentDirectional.centerStart,
+                  child: headerColumn,
+                ),
+              ),
             ),
-          if (config.showSubtitles &&
-              (subtitleWidget != null || subtitle != null))
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0, 4, 0, 0),
-              child: _StepSubtitle(source: subtitle, provided: subtitleWidget),
-            ),
-        ],
-      ),
     );
 
     final Widget badge = Container(
@@ -1671,16 +1860,21 @@ class _AllStepsRow extends StatelessWidget {
       height: badgeSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
-      child: Text(
-        '${index + 1}',
-        textAlign: TextAlign.center,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: badgeForeground,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      // Marque NON chromatique d'une étape franchie (parité legacy : le badge
+      // d'une étape complétée porte une coche, pas son numéro).
+      child: accordionState == _RowAccordionState.completed
+          ? Icon(Icons.check, size: badgeSize * 0.6, color: badgeForeground)
+          : Text(
+              '${index + 1}',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: badgeForeground,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
     );
 
+    final Widget? content = this.content;
     final Widget body = Padding(
       padding: EdgeInsetsDirectional.fromSTEB(gutter, 0, 0, isLast ? 0 : gap),
       child: Column(
@@ -1688,8 +1882,11 @@ class _AllStepsRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Align(alignment: AlignmentDirectional.centerStart, child: header),
-          const SizedBox(height: 8),
-          content,
+          // Étape REPLIÉE : ni contenu, ni l'espace qui l'accompagne.
+          if (content != null) ...<Widget>[
+            const SizedBox(height: 8),
+            content,
+          ],
         ],
       ),
     );
