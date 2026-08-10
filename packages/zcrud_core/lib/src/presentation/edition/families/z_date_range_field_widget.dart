@@ -12,6 +12,13 @@
 /// atteignable par [ZDateRangeFieldWidget.decorated] ou le jeton
 /// `ZcrudTheme.dateFieldDecorated`.
 ///
+/// **CR-IFFD-79** — miroir exact du défaut de la famille date sœur : ce champ
+/// n'acceptait que [ZDateRange], le type que SON sélecteur écrit, alors que la
+/// forme **persistée** d'un champ `ZDateRange` est une Map `{start, end}`
+/// (`toMap()` généré ⇒ `ZDateRange.toJson()`). Les deux conventions d'amorçage
+/// d'un formulaire — depuis les champs du modèle, ou depuis son `toMap()` —
+/// cassaient donc chacune UNE des deux familles. Les deux sont désormais lues.
+///
 /// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
 /// bouton + libellé + valeur + `isRequired` (`excludeSemantics` sur le wrapper →
 /// un seul nœud, pas de double annonce). Aucune couleur en dur (FR-26).
@@ -52,7 +59,12 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   /// Spécification `const` du champ rendu.
   final ZFieldSpec field;
 
-  /// Valeur courante de la tranche ([ZDateRange] ou `null`).
+  /// Valeur courante de la tranche.
+  ///
+  /// CR-IFFD-79 — l'ÉCRITURE reste un [ZDateRange], mais la LECTURE accepte
+  /// aussi la **Map `{start, end}` réellement persistée** (ce que le `toMap()`
+  /// généré émet), décodée par le décodeur défensif du paquet. Toute autre
+  /// valeur non nulle est rendue par son `toString()` — jamais effacée.
   final Object? value;
 
   /// Notifié avec la [ZDateRange] choisie.
@@ -78,8 +90,26 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   /// `ZcrudTheme.dateFieldDecorated`, lui-même à défaut `true`.
   final bool? decorated;
 
-  /// Plage courante typée, ou `null` si la tranche ne porte pas de [ZDateRange].
-  ZDateRange? get _range => value is ZDateRange ? value! as ZDateRange : null;
+  /// Plage courante typée, ou `null` si la graine n'est pas décodable.
+  ///
+  /// CR-IFFD-79 — le champ n'acceptait que le type que SON sélecteur écrit
+  /// ([ZDateRange]). Or la forme **réellement persistée** d'un champ
+  /// `ZDateRange` est une **Map** `{start, end}` : le `toMap()` généré émet
+  /// `ZDateRange.toJson()` (`_toMapExpr`, catégorie `dateRangeType`). Un hôte
+  /// qui sème son formulaire depuis `toMap()` — la convention symétrique de
+  /// celle qui casse la famille date sœur — portait donc une Map, et le champ
+  /// rendait **vide** une plage qui serait resoumise intacte.
+  ///
+  /// Le décodage passe par [ZDateRange.fromJsonSafe], le décodeur **défensif**
+  /// déjà utilisé par la voie de persistance (`_$asDateRange`) : `null` sur
+  /// TOUTE anomalie, jamais de throw (AD-10). Aucune seconde convention de
+  /// décodage n'entre ici.
+  ZDateRange? get _range {
+    final v = value;
+    if (v is ZDateRange) return v;
+    if (v is Map) return ZDateRange.fromJsonSafe(v);
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,12 +123,26 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     // Projection calculée UNE FOIS par build (AD-2 : le port de l'hôte n'est
     // pas appelé deux fois pour la même plage — `display` et `valueText`
     // partagent la même chaîne).
-    final rangeText = range == null ? '' : _formatRange(context, range);
-    final display = range == null ? placeholder : rangeText;
+    //
+    // CR-IFFD-79 — hors contrat : une graine non nulle que le décodeur défensif
+    // n'a pas su lire retombe sur `'$value'`, le **repli déjà défini par le
+    // paquet** (`zDateDisplayTextOf`) — aucune invention de format. La taire
+    // produirait le « contrôle qui paraît vide alors que la donnée sera
+    // soumise » proscrit par CR-IFFD-77 : la valeur est bien là et sera
+    // resoumise. Présence et identité restent dissociées (`v0.65.0`).
+    final rangeText = range != null
+        ? _formatRange(context, range)
+        : value == null
+            ? ''
+            : '$value';
+    final hasValue = rangeText.isNotEmpty;
+    final display = hasValue ? rangeText : placeholder;
 
     // MIN-2 : croix rendue seulement si un callback est fourni (champ non requis
-    // + éditable) ET qu'une plage existe (rien à effacer sinon).
-    final showClear = onCleared != null && !field.readOnly && range != null;
+    // + éditable) ET qu'une valeur existe (rien à effacer sinon). CR-IFFD-79 :
+    // c'est bien la PRÉSENCE qui pilote la croix — une graine hors contrat est
+    // effaçable, sinon elle serait resoumise sans recours.
+    final showClear = onCleared != null && !field.readOnly && hasValue;
 
     final onTap = field.readOnly ? null : () => _pick(context, range);
 
@@ -112,7 +156,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
             semanticsLabel: resolvedLabel,
             placeholder: placeholder,
             valueText: rangeText,
-            hasValue: range != null,
+            hasValue: hasValue,
             onTap: onTap,
             trailingIcon: const Icon(Icons.date_range_outlined),
           )

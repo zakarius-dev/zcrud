@@ -19,6 +19,13 @@
 /// sous-liste et la liste), via la règle de repli partagée. Sans port injecté,
 /// l'affichage est **strictement** l'ISO brut d'avant (AD-10).
 ///
+/// **CR-IFFD-79** — le champ n'affichait sa valeur que si elle avait le type que
+/// son propre sélecteur ÉCRIT (`String`). Une valeur SEMÉE depuis la
+/// persistance (`DateTime`, ou `TimeOfDay` en mode `time`) rendait un champ
+/// **vide** alors qu'elle serait resoumise intacte. La graine est désormais
+/// normalisée par `_seedText` vers la convention d'écriture de son mode, et une
+/// graine hors contrat rend sa **présence** au lieu du vide silencieux.
+///
 /// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
 /// bouton + libellé + valeur + `isRequired` (état = valeur courante ou
 /// placeholder l10n). Aucune couleur codée en dur (thème hérité — FR-26).
@@ -60,7 +67,12 @@ class ZDateFieldWidget extends StatelessWidget {
   /// Spécification `const` du champ rendu.
   final ZFieldSpec field;
 
-  /// Valeur courante de la tranche (chaîne ISO-8601 ou `null`).
+  /// Valeur courante de la tranche.
+  ///
+  /// CR-IFFD-79 — l'ÉCRITURE reste la chaîne ISO-8601 (`HH:mm` en mode `time`),
+  /// mais la LECTURE accepte aussi les types qu'une persistance rend
+  /// naturellement : `DateTime` (tous modes) et `TimeOfDay` (mode `time`). Tout
+  /// autre type non nul est rendu par son `toString()` — jamais effacé.
   final Object? value;
 
   /// Notifié avec la valeur **ISO-8601** choisie (`String`).
@@ -101,7 +113,9 @@ class ZDateFieldWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final resolvedLabel =
         label(context, field.label ?? field.name, fallback: field.label ?? field.name);
-    final current = value is String ? value! as String : '';
+    // CR-IFFD-79 — la graine est LUE quel que soit le type que l'hôte porte,
+    // pas seulement celui que le sélecteur de ce champ ÉCRIT (cf. `_seedText`).
+    final current = _seedText(value, _mode);
     final placeholderKey = switch (_mode) {
       ZDateMode.time => 'selectTime',
       ZDateMode.dateTime => 'selectDateTime',
@@ -202,11 +216,10 @@ class ZDateFieldWidget extends StatelessWidget {
       final initial = _parseTime(current) ?? TimeOfDay.now();
       final picked =
           await showTimePicker(context: context, initialTime: initial);
-      if (picked != null) {
-        final h = picked.hour.toString().padLeft(2, '0');
-        final m = picked.minute.toString().padLeft(2, '0');
-        onChanged('$h:$m');
-      }
+      // CR-IFFD-79 : `_hhmm` est la source UNIQUE de la convention `HH:mm` —
+      // la lecture d'une graine (`_seedText`) et l'écriture du sélecteur ne
+      // peuvent plus diverger.
+      if (picked != null) onChanged(_hhmm(picked.hour, picked.minute));
       return;
     }
 
@@ -259,6 +272,63 @@ class ZDateFieldWidget extends StatelessWidget {
     );
     onChanged(combined.toIso8601String());
   }
+
+  /// CR-IFFD-79 — normalise la **graine** en la chaîne que le sélecteur de ce
+  /// [mode] écrit lui-même. C'est le seul point d'entrée de `value` : tout le
+  /// reste du widget (affichage, `hasValue`, croix d'effacement, `_pick`)
+  /// consomme cette chaîne.
+  ///
+  /// ## Le défaut fermé ici
+  ///
+  /// Le champ ne lisait `value` que si elle était une `String` — le type que
+  /// SON sélecteur produit. Une valeur venue de la persistance (`DateTime`,
+  /// `TimeOfDay`) rendait donc un champ **VIDE** alors qu'elle serait
+  /// **resoumise intacte** : un mensonge d'affichage. La règle appliquée était
+  /// « j'accepte ce que j'écris » ; la règle utile est « j'accepte ce qu'on
+  /// peut me donner ».
+  ///
+  /// ## Pourquoi la normalisation, et pas un passage direct au port
+  ///
+  /// Chaque type reconnu est projeté vers **exactement la convention d'écriture
+  /// de son mode** (`toIso8601String()` pour date/dateTime, `HH:mm` pour
+  /// `time` — cf. `_pick`). Rien n'est inventé : aucun format nouveau n'entre
+  /// dans le paquet. C'est ce qui permet à la valeur d'ATTEINDRE le port
+  /// `ZDateDisplayFormatter` par le chemin déjà en place (v0.69.0/v0.71.0), et
+  /// de garder un **repli AD-10 identique à l'ISO d'avant** : passer le
+  /// `DateTime` nu ferait replier sur `DateTime.toString()`, qui n'est PAS
+  /// l'ISO (le piège déjà relevé sur `ZListColumn` et `dateRange`).
+  ///
+  /// ## Hors contrat : la présence, jamais le vide
+  ///
+  /// Une valeur non nulle d'un type non reconnu retombe sur `'$value'` — le
+  /// **repli déjà défini par le paquet** (`zDateDisplayTextOf`), donc aucune
+  /// invention de format. Elle sera resoumise : la taire produirait le
+  /// « contrôle qui paraît vide alors que la donnée sera soumise » proscrit par
+  /// CR-IFFD-77, et rejouerait le choix déjà tranché en `v0.65.0` (dissocier
+  /// **présence** et **identité** plutôt qu'effacer). L'affichage peut être
+  /// laid ; il ne ment pas.
+  ///
+  /// `null` ⇒ chaîne vide ⇒ placeholder (hôte passif strictement immobile).
+  static String _seedText(Object? value, ZDateMode mode) {
+    if (value == null) return '';
+    // Convention d'écriture du champ — inchangée, aucun hôte ne bouge.
+    if (value is String) return value;
+    if (mode == ZDateMode.time) {
+      // `time` écrit `HH:mm` (cf. `_pick`) : c'est la seule forme que
+      // `_parseTime` relit et que le port n'a jamais à projeter.
+      if (value is TimeOfDay) return _hhmm(value.hour, value.minute);
+      if (value is DateTime) return _hhmm(value.hour, value.minute);
+    } else if (value is DateTime) {
+      // `date`/`dateTime` écrivent l'ISO-8601 (cf. `_pick`).
+      return value.toIso8601String();
+    }
+    return '$value';
+  }
+
+  /// Heure au format `HH:mm` — la MÊME composition que celle écrite par `_pick`
+  /// en mode `time` (jamais une seconde convention).
+  static String _hhmm(int hour, int minute) =>
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
   /// Parse une heure `HH:mm` en `TimeOfDay`, ou `null`.
   static TimeOfDay? _parseTime(String hhmm) {
