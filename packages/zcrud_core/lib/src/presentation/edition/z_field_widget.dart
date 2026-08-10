@@ -585,6 +585,14 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
               : () => widget.controller.setValue(field.name, null),
         );
       case EditionFamily.boolean:
+        // CR-DODLP-BOOL-PILL, voie B : `boolean` consulte désormais le MÊME
+        // seam de registre que les familles routées (`registryOrFallback`,
+        // `freeWidget`) — `kind == field.type.name`, contexte
+        // `ZFieldWidgetContext`, écriture `onChanged → setValue`. Aucune
+        // seconde convention. PRIORITÉ : un builder enregistré GAGNE ; aucun
+        // builder ⇒ rendu NATIF ci-dessous, strictement inchangé.
+        final custom = _tryRegistryWidget(context, field, value);
+        if (custom != null) return custom;
         return ZBooleanFieldWidget(
           field: field,
           value: value,
@@ -785,12 +793,23 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     BuildContext context,
     ZFieldSpec field,
     Object? value,
+  ) =>
+      _tryRegistryWidget(context, field, value) ??
+      ZUnsupportedFieldWidget(field: field);
+
+  /// Lookup **défensif** du seam de registre (AD-10) : le widget hôte de
+  /// `field.type.name` s'il est enregistré, sinon `null` — **le** point unique
+  /// où la convention de `kind` et la construction du `ZFieldWidgetContext`
+  /// sont écrites. Deux appelants : [_dispatchRegistry] (repli
+  /// `ZUnsupportedFieldWidget`) et la famille `boolean` (repli **natif**).
+  Widget? _tryRegistryWidget(
+    BuildContext context,
+    ZFieldSpec field,
+    Object? value,
   ) {
     final registry = ZcrudScope.maybeOf(context)?.widgetRegistry;
     final builder = registry?.tryBuilderFor(field.type.name);
-    if (builder == null) {
-      return ZUnsupportedFieldWidget(field: field);
-    }
+    if (builder == null) return null;
     return builder(
       context,
       ZFieldWidgetContext(

@@ -11,7 +11,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
 description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
-version: 0.74.0
+version: 0.75.0
 publish_to: none
 resolution: workspace
 
@@ -36,6 +36,20 @@ dependencies:
   # SANS clé API ni réseau (AD-12). SEULE arête téléphone du graphe (AD-1),
   # confinée à `src/presentation/z_phone_codec.dart`.
   phone_numbers_parser: ^9.0.23
+  # CR-DODLP-PHONE-NATIF (2026-08-10) : RENDU du champ `phoneNumber` servi par le
+  # paquet de référence du legacy DODLP (sélecteur pays drapeau/indicatif +
+  # recherche, format-as-you-type libphonenumber). Ajoutée ICI et NULLE PART
+  # AILLEURS (AD-1) : l'hôte tire le rendu en important `zcrud_intl` seul, sans
+  # jamais déclarer ce paquet — exactement le patron `flutter_quill` ⊂
+  # `zcrud_markdown`. CONFINÉE à l'unique pont
+  # `src/presentation/z_intl_phone_input_bridge.dart` (garde de confinement dans
+  # `isolation_gates_test.dart`, symétrique de celle de `phone_numbers_parser`) :
+  # aucun type du paquet (`PhoneNumber`, `SelectorConfig`,
+  # `PhoneInputSelectorType`, `Country`) ne franchit cette frontière, ni au
+  # barrel, ni dans une signature publique, ni dans la valeur de tranche
+  # (désormais une `String` internationale neutre).
+  # AD-12 : métadonnées + drapeaux BUNDLÉS dans le paquet, ZÉRO réseau, ZÉRO clé.
+  intl_phone_number_input: ^0.7.5
   # CR-DODLP-GAP3BIS : SEULE arête `intl` du graphe (AD-1). Elle sert
   # EXCLUSIVEMENT l'impl du port `ZDateDisplayFormatter` de `zcrud_core`
   # (`src/presentation/z_intl_date_formatter.dart`) : les noms de mois/jours et
@@ -46,7 +60,7 @@ dependencies:
   # Version alignée sur celle que `flutter_localizations` épingle déjà (0.20.2) :
   # aucune résolution nouvelle n'est introduite dans le workspace.
   intl: ^0.20.2
-  zcrud_core: ^0.74.0
+  zcrud_core: ^0.75.0
 
 dev_dependencies:
   flutter_test:

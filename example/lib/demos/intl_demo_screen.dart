@@ -8,10 +8,10 @@ import '../binding/binding_selector.dart';
 /// `address`. Ces champs sont résolus par le `demoWidgetRegistry` injecté au
 /// scope RACINE (`ZPhoneFieldWidget.builder` / `ZCountryFieldWidget.builder` /
 /// `ZAddressFieldWidget.builder`, `ZCountryCatalog` partagé). Valeurs de tranche
-/// neutres (`ZPhoneNumber` E.164 / code ISO alpha-2 / `ZPostalAddress`).
+/// neutres (chaîne E.164 / code ISO alpha-2 / `ZPostalAddress`).
 ///
 /// Le champ téléphone **valide + normalise** en E.164 : un numéro valide produit
-/// une valeur `ZPhoneNumber` neutre, un numéro invalide est signalé par le champ.
+/// une chaîne E.164 neutre, un numéro invalide est signalé par le champ.
 ///
 /// Parité multi-binding (AC10) comme `GeoDemoScreen`.
 class IntlDemoScreen extends StatefulWidget {

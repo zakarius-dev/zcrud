@@ -17,7 +17,7 @@ import 'package:zcrud_intl/zcrud_intl.dart';
 ///  - `phoneNumber`/`country`/`address` → `ZPhoneFieldWidget.builder` /
 ///    `ZCountryFieldWidget.builder` / `ZAddressFieldWidget.builder`, partageant
 ///    UN SEUL [ZCountryCatalog] (l'asset JSON n'est lu qu'une fois) ; valeurs
-///    neutres (`ZPhoneNumber` E.164 / code ISO / `ZPostalAddress`).
+///    neutres (chaîne E.164 / code ISO / `ZPostalAddress`).
 ///
 /// Markdown n'est PAS enregistré ici : `ZMarkdownField` exige un `ZFormController`
 /// (contrôleur isolé E6/AD-7), absent de `ZFieldWidgetContext` — la démo Markdown

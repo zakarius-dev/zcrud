@@ -341,13 +341,24 @@ class ZRatingConfig extends ZFieldConfig {
 /// Sans cela, `ZBooleanConfig(trueLabel: 'Actif')` serait **silencieusement
 /// ignoré** faute d'avoir aussi posé le drapeau — un piège. [showsStateLabel]
 /// est le prédicat unique consommé par la présentation.
+///
+/// ## CR-DODLP-BOOL-PILL (2026-08-10) — le rendu « pilule »
+///
+/// [style] ajoute la **forme d'affichage** : [ZBooleanStyle.switchTile] (défaut,
+/// rendu v0.74 strictement inchangé) ou [ZBooleanStyle.pill] (piste arrondie,
+/// texte d'état **à l'intérieur**, parité `flutter_switch` du legacy DODLP).
+/// L'activation passe donc par le **même canal** que le texte d'état : la config
+/// du champ. Un hôte qui ne pose pas `style` ne voit **aucun** déplacement.
 class ZBooleanConfig extends ZFieldConfig {
   /// Construit une config booléenne `const`. Défauts ⇒ **rétro-compat stricte**
-  /// (aucun texte d'état, rendu E3-3a inchangé).
+  /// (aucun texte d'état, aucune pilule, rendu E3-3a/v0.74 inchangé).
   const ZBooleanConfig({
     this.showStateLabel = false,
     this.trueLabel,
     this.falseLabel,
+    this.style = ZBooleanStyle.switchTile,
+    this.activeColorKey,
+    this.inactiveColorKey,
   });
 
   /// Active le **texte d'état** à côté du switch avec les libellés localisés par
@@ -363,8 +374,33 @@ class ZBooleanConfig extends ZFieldConfig {
   /// sur la clé l10n `no`. Fournir ce libellé **active** le texte d'état.
   final String? falseLabel;
 
+  /// **Forme d'affichage** du booléen (CR-DODLP-BOOL-PILL). Défaut
+  /// [ZBooleanStyle.switchTile] ⇒ rendu v0.74 **strictement inchangé**.
+  final ZBooleanStyle style;
+
+  /// Clé sémantique de couleur de la pilule à l'état `true` — résolue par le
+  /// **seam** `ZcrudScope.colorKeyResolver` (`zResolveColorKey`), jamais par une
+  /// couleur littérale (FR-26 : le cœur ne possède ni « vert succès » ni
+  /// « ambre » ; Material 3 n'a pas ces rôles). `null` (défaut) ⇒ jeton
+  /// `ZcrudTheme.booleanPillActiveColor`, puis rôle `ColorScheme.primary`.
+  ///
+  /// C'est par cette clé que le legacy DODLP (`kSuccessColorLight`) entre :
+  /// l'app enregistre son resolver, le cœur ne connaît que le nom.
+  final String? activeColorKey;
+
+  /// Clé sémantique de couleur de la pilule à l'état `false` (même seam).
+  /// `null` (défaut) ⇒ jeton `ZcrudTheme.booleanPillInactiveColor`, puis rôle
+  /// `ColorScheme.outline`.
+  final String? inactiveColorKey;
+
   /// Prédicat unique d'affichage du texte d'état : `true` si l'hôte l'a demandé
   /// explicitement ([showStateLabel]) **ou** a fourni au moins un libellé.
+  ///
+  /// 🔴 En [ZBooleanStyle.pill], le texte d'état vit **DANS** la pilule
+  /// (`showOnOff` du legacy) : le rendu n'ajoute alors **pas** de second texte
+  /// en fin de titre, même quand ce prédicat est vrai — sinon « Oui » serait
+  /// écrit deux fois sur la même ligne. La lecture de ce prédicat est donc
+  /// bornée au style `switchTile` (cf. `ZBooleanFieldWidget`).
   bool get showsStateLabel =>
       showStateLabel || trueLabel != null || falseLabel != null;
 
@@ -375,11 +411,37 @@ class ZBooleanConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           showStateLabel == other.showStateLabel &&
           trueLabel == other.trueLabel &&
-          falseLabel == other.falseLabel;
+          falseLabel == other.falseLabel &&
+          style == other.style &&
+          activeColorKey == other.activeColorKey &&
+          inactiveColorKey == other.inactiveColorKey;
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, showStateLabel, trueLabel, falseLabel);
+  int get hashCode => Object.hash(
+        runtimeType,
+        showStateLabel,
+        trueLabel,
+        falseLabel,
+        style,
+        activeColorKey,
+        inactiveColorKey,
+      );
+}
+
+/// Forme d'affichage de la famille `boolean` (CR-DODLP-BOOL-PILL, 2026-08-10).
+///
+/// Valeurs **camelCase** (canonique §5) — l'enum est `const`-émissible par le
+/// générateur (`ConstantReader`, AD-3) au même titre que le reste de
+/// [ZBooleanConfig].
+enum ZBooleanStyle {
+  /// `SwitchListTile` Material — **le défaut**, et le rendu v0.74 au widget
+  /// près (texte d'état optionnel en fin de titre).
+  switchTile,
+
+  /// **Pilule** : piste arrondie peinte, texte d'état à l'INTÉRIEUR, libellé du
+  /// champ à gauche. Parité `flutter_switch` du legacy DODLP — peinte
+  /// nativement, **sans aucune dépendance** (AD-1, CORE OUT = 0).
+  pill,
 }
 
 /// Source d'acquisition d'un fichier (E3-3c) — valeurs **camelCase** (canonique

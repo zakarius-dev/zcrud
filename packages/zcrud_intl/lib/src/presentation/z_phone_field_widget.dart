@@ -1,35 +1,79 @@
 /// `ZPhoneFieldWidget` — **champ d'édition téléphone international**
 /// (`phoneNumber`), servi via `ZWidgetRegistry` (E11a-2, AD-2/AD-4/AD-13/AD-10).
 ///
+/// **CR-DODLP-PHONE-NATIF (2026-08-10) — RENDU NATIF + VALEUR `String`.**
+///
 /// origine: le dispatcher du cœur route `phoneNumber` vers le `ZWidgetRegistry`
 /// injecté et appelle le builder **dans** la frontière de rebuild de la tranche.
-/// Ce champ combine un **sélecteur d'indicatif/pays** (compact) et un **champ
-/// numéro** ; il émet un [ZPhoneNumber] **neutre** (E.164 canonique) via
-/// `ctx.onChanged`. La (dé)normalisation E.164 est confinée à [ZPhoneCodec]
-/// (seul point d'entrée de `phone_numbers_parser`, AD-1).
+/// Le rendu (sélecteur pays drapeau/indicatif recherchable + formatage
+/// « as-you-type » libphonenumber) provient désormais du paquet de référence du
+/// legacy DODLP, `intl_phone_number_input`, **absorbé par `zcrud_intl`** : l'hôte
+/// n'a rien à importer ni à ré-implémenter. Le paquet est CONFINÉ à
+/// `z_intl_phone_input_bridge.dart` (AD-1) — aucun de ses types n'apparaît ici.
 ///
-/// **AD-2** : `TextEditingController`/`FocusNode` du numéro créés **1×**
-/// (`initState`), disposés, jamais recréés ni ré-injectés pendant la frappe
-/// (sync guardée hors focus). Changer le pays met à jour l'indicatif et
-/// re-normalise l'E.164 (AC4).
+/// 🔴 **RUPTURE DE CONTRAT ASSUMÉE** : la valeur de tranche était un
+/// [ZPhoneNumber] ; c'est désormais une **`String`**. Contenu exact et invariant :
+/// cf. `ZPhoneCodec.toInternationalString` — **forme internationale complète**
+/// (`^\+[0-9]+$`), E.164 canonique dès que le numéro est valide. `null` quand
+/// aucun chiffre n'est saisi. La lecture reste **défensive** : une valeur legacy
+/// [ZPhoneNumber] (ou sa map sérialisée) est encore **ingérée** à l'amorçage
+/// (AD-10, migration sans réécriture), simplement ré-émise en `String`.
+///
+/// **AD-2** : `TextEditingController`/`FocusNode` créés **1×** (`initState`),
+/// disposés, jamais recréés ; la **graine** d'amorçage du paquet est elle aussi
+/// créée 1× (sans quoi le paquet réinitialiserait le texte à chaque frappe —
+/// cf. `ZPhoneInputSeed`). Sync guardée hors focus.
+///
+/// ## Pays d'amorçage — chaîne de priorité (CR-DODLP-PHONE-DEFAUT, 2026-08-10)
+///
+/// 🔴 **Aucune donnée fabriquée.** Le pays présélectionné n'est JAMAIS inventé
+/// par `zcrud_intl` : il est **dérivé** d'une source réelle, dans cet ordre —
+/// **configuration de l'hôte > information réelle du contexte > repli défini** :
+///
+/// | # | Source | Nature |
+/// |---|---|---|
+/// | 1 | pays **de la valeur déjà saisie** (`ZPhoneCodec.isoOfInternational`) | donnée de l'utilisateur |
+/// | 2 | `ZIntlFieldConfig.defaultCountryIso` | configuration de l'hôte |
+/// | 3 | [ZPhoneFieldWidget.defaultIsoCode] | configuration de l'hôte |
+/// | 4 | pays de la **locale ambiante** (`Localizations.maybeLocaleOf(context)?.countryCode`) | information réelle du contexte |
+/// | 5 | pays de la ou des **locales de l'appareil** (`PlatformDispatcher.locales`, puis `.locale`) | information réelle du contexte |
+/// | 6 | **repli défini : AUCUN pays transmis** | cf. ci-dessous |
+///
+/// Chaque candidat est **assaini** (`ZIntlPhoneInputBridge.sanitizeIso`) contre
+/// le catalogue RÉEL du paquet de rendu : un code pays inconnu (`'ZZ'`), un code
+/// malformé, un code de macro-région (`es_419` → `'419'`) ou une locale sans
+/// pays (`fr` seul, cas courant) **ne lève jamais** (AD-10) — il est simplement
+/// ignoré et l'on passe au candidat suivant. La chaîne est parcourue **une seule
+/// fois**, au premier `didChangeDependencies` : un changement de locale ULTÉRIEUR
+/// ne redéplace donc **jamais** le pays d'un champ déjà monté, et ne peut donc
+/// jamais réécrire une valeur déjà saisie.
+///
+/// 🔴 **Étape 6 — la règle, écrite et assumée.** Quand aucune de ces sources ne
+/// porte de pays, il ne reste **aucune source honnête** : tout indicatif affiché
+/// serait une invention. `zcrud_intl` **n'en choisit donc aucun** — il transmet
+/// `null` au paquet de rendu, qui applique alors *son* défaut : le **premier
+/// pays de son catalogue par ordre alphabétique** (Afghanistan, `+93`). C'est un
+/// **artefact de tri du tiers**, jamais un choix de `zcrud_intl` : le paquet ne
+/// contient aucun code pays en dur (FR-26, prouvé par garde de source). Un hôte
+/// qui veut un défaut le **pose** (étape 2 ou 3) ; c'est la seule façon d'obtenir
+/// un pays qui soit un choix.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import '../data/z_country_catalog.dart';
-import '../domain/z_country_info.dart';
 import '../domain/z_intl_field_config.dart';
 import '../domain/z_phone_number.dart';
-import 'z_country_picker_field.dart';
+import 'z_intl_phone_input_bridge.dart';
 import 'z_national_phone_message.dart';
 import 'z_phone_codec.dart';
 
 /// Champ d'édition téléphone (patron AD-2 : contrôleur stable, rebuild ciblé).
 class ZPhoneFieldWidget extends StatefulWidget {
-  /// Construit le champ pour [ctx]. [catalog] alimente le sélecteur d'indicatif ;
-  /// [defaultIsoCode] (surchargeable, jamais codé en dur non surchargeable —
-  /// AD-12) amorce le pays quand la valeur initiale n'en fournit pas.
+  /// Construit le champ pour [ctx]. [defaultIsoCode] (surchargeable, jamais codé
+  /// en dur non surchargeable — AD-12) amorce le pays quand la valeur initiale
+  /// n'en fournit pas.
   const ZPhoneFieldWidget({
     required this.ctx,
     required this.catalog,
@@ -39,15 +83,25 @@ class ZPhoneFieldWidget extends StatefulWidget {
     super.key,
   });
 
-  /// Contexte du champ (`ctx.value` = [ZPhoneNumber] courant, `ctx.onChanged` =
-  /// écriture de la tranche).
+  /// Contexte du champ (`ctx.value` = `String` internationale courante,
+  /// `ctx.onChanged` = écriture de la tranche).
   final ZFieldWidgetContext ctx;
 
-  /// Catalogue pays (paresseux + caché) capturé par closure (AD-4).
+  /// Catalogue pays de `zcrud_intl`.
+  ///
+  /// ⚠️ CR-DODLP-PHONE-NATIF : **plus lu pour le rendu** du téléphone — le
+  /// sélecteur pays vient désormais du paquet natif, qui embarque son propre
+  /// catalogue et ses drapeaux. Le paramètre est CONSERVÉ pour ne pas casser les
+  /// sites d'appel `ZPhoneFieldWidget.builder(catalog: …)` (les champs `country`
+  /// et `address`, eux, continuent de s'en servir).
   final ZCountryCatalog catalog;
 
   /// Pays d'amorçage optionnel (code ISO alpha-2), **surchargeable** ; `null` par
   /// défaut (aucun défaut national imposé, AD-12).
+  ///
+  /// Étape **3** de la chaîne de priorité (cf. doc de bibliothèque) : il cède le
+  /// pas à la valeur déjà saisie et à `ZIntlFieldConfig.defaultCountryIso`, et
+  /// prime sur la locale ambiante et sur les locales de l'appareil.
   final String? defaultIsoCode;
 
   /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
@@ -59,18 +113,14 @@ class ZPhoneFieldWidget extends StatefulWidget {
   final VoidCallback? onBuild;
 
   /// Fabrique un [ZFieldWidgetBuilder] enregistrable sous le `kind`
-  /// `"phoneNumber"`. Le [catalog] est capturé par closure (immuable,
-  /// partageable) ; chaque montage crée SON contrôleur de numéro (par-montage,
-  /// MAJEUR-1). Exemple :
-  /// `registry.register('phoneNumber', ZPhoneFieldWidget.builder(catalog: cat))`.
+  /// `"phoneNumber"`. Exemple :
+  /// `registry.register('phoneNumber', ZPhoneFieldWidget.builder())`.
   static ZFieldWidgetBuilder builder({
     ZCountryCatalog? catalog,
     String? defaultIsoCode,
     VoidCallback? onInit,
     VoidCallback? onBuild,
   }) {
-    // LOW-1 : sans `catalog` injecté, partage l'instance par défaut lazy pour
-    // que les 3 kinds intl ne lisent l'asset qu'une seule fois (au lieu de 3).
     final cat = catalog ?? sharedDefaultCountryCatalog();
     return (BuildContext context, ZFieldWidgetContext ctx) => ZPhoneFieldWidget(
           ctx: ctx,
@@ -92,9 +142,21 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
   /// Focus du numéro — oracle de la sync guardée.
   late final FocusNode _numberFocus;
 
-  /// Code ISO du pays sélectionné (état local possédé) — amorce l'indicatif et
-  /// la normalisation E.164. Mis à jour par le sélecteur (setState local).
+  /// Graine d'amorçage du paquet — créée 1×, JAMAIS reconstruite (AD-2 : la
+  /// reconstruire relancerait `initialiseWidget()` du paquet à chaque frappe).
+  late final ZPhoneInputSeed _seed;
+
+  /// `true` dès que l'amorçage (pays + graine + pré-remplissage) a eu lieu.
+  /// Garantit qu'il n'a lieu **qu'une fois**, malgré les rappels répétés de
+  /// `didChangeDependencies` (changement de locale, de thème, de média).
+  bool _bootstrapped = false;
+
+  /// Pays courant (code ISO alpha-2), tenu par le sélecteur du paquet.
   String? _iso;
+
+  /// Dernière valeur ÉMISE — évite les écritures redondantes de la tranche et
+  /// sert d'oracle à la sync guardée.
+  String? _lastEmitted;
 
   bool get _hasNumberFocus => _numberFocus.hasFocus;
 
@@ -109,34 +171,94 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
     super.initState();
     _numberController = TextEditingController();
     _numberFocus = FocusNode();
-    final phone = _phoneOf(widget.ctx.value);
-    // AC1 (E11b-2) : le pays initial suit
-    // `slice?.isoCode ?? cfg?.defaultCountryIso ?? widget.defaultIsoCode`.
-    // Rétro-compat E11a-2 STRICTE : `config == null` → chemin identique.
-    _iso = phone?.isoCode ?? _config?.defaultCountryIso ?? widget.defaultIsoCode;
-    // Nit E11a-2 : l'affichage du champ numéro est amorcé depuis `nationalNumber`.
-    // [ZPhoneCodec.parse] renseigne toujours `nationalNumber` pour tout numéro
-    // parsé, donc une valeur persistée par ce champ l'expose. Un `ZPhoneNumber`
-    // interop « e164 seul » (sans `nationalNumber`) resterait affiché vide — cas
-    // marginal assumé : on ne dé-normalise pas l'E.164 au montage (éviterait un
-    // aller-retour codec qui ré-émettrait l'indicatif dans le national).
-    if (phone?.nationalNumber != null && phone!.nationalNumber!.isNotEmpty) {
-      _numberController.text = phone.nationalNumber!;
-    }
     widget.onInit?.call();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // AMORÇAGE UNIQUE (AD-2). Il vit ici et non dans `initState` parce que
+    // l'étape 4 de la chaîne lit la locale ambiante, ce qu'`initState` n'a pas
+    // le droit de faire (`dependOnInheritedWidgetOfExactType`).
+    //
+    // 🔴 Ce drapeau porte AUSSI l'invariant de valeur : la chaîne n'est
+    // parcourue QU'UNE fois, donc un changement de locale postérieur au montage
+    // ne redéplace pas le pays et ne peut PAS réécrire une valeur déjà saisie.
+    if (_bootstrapped) return;
+    _bootstrapped = true;
+
+    final stored = _storedOf(widget.ctx.value);
+    _iso = _resolveInitialIso(stored);
+    _lastEmitted = stored;
+
+    // Deux chemins d'amorçage, tous deux SÛRS (cf. cas 1 de AD-10 documenté au
+    // pont) : le numéro n'est confié au paquet QUE s'il est valide ET que le
+    // pays est résolu ; sinon on pré-remplit nous-mêmes la partie nationale,
+    // que le paquet laisse alors intacte.
+    final valid = _iso != null && ZPhoneCodec.isValidInternational(stored, iso: _iso);
+    _seed = ZPhoneInputSeed.of(isoCode: _iso, e164: valid ? stored : null);
+    if (!valid) {
+      final national = ZPhoneCodec.nationalDigitsOf(stored, iso: _iso);
+      if (national.isNotEmpty) _numberController.text = national;
+    }
+  }
+
+  /// Résout le pays d'amorçage — **chaîne de priorité documentée en tête de
+  /// bibliothèque** : configuration de l'hôte > information réelle du contexte >
+  /// repli défini.
+  ///
+  /// Retourne `null` quand **aucune source honnête** ne porte de pays : c'est
+  /// l'étape 6, et elle signifie « `zcrud_intl` n'en choisit aucun », pas
+  /// « Afghanistan ». Ne lève jamais (AD-10).
+  String? _resolveInitialIso(String? stored) {
+    for (final candidate in _isoCandidates(stored)) {
+      // Assainissement PAR CANDIDAT (et non sur le seul premier non nul) :
+      // un code inconnu/malformé n'annule pas la chaîne, il passe la main.
+      final iso = ZIntlPhoneInputBridge.sanitizeIso(candidate);
+      if (iso != null) return iso;
+    }
+    return null;
+  }
+
+  /// Candidats bruts, dans l'ordre de priorité. Aucun n'est un littéral de ce
+  /// paquet (FR-26) : tous sont lus sur la valeur, la config ou le contexte.
+  Iterable<String?> _isoCandidates(String? stored) sync* {
+    yield ZPhoneCodec.isoOfInternational(stored); // 1 — donnée de l'utilisateur
+    yield _config?.defaultCountryIso; // 2 — config de l'hôte
+    yield widget.defaultIsoCode; // 3 — config de l'hôte
+    yield Localizations.maybeLocaleOf(context)?.countryCode; // 4 — contexte réel
+    yield* _platformCountryCodes(); // 5 — locales de l'appareil
+  }
+
+  /// Codes pays portés par les locales de l'APPAREIL (information réelle, pas
+  /// une invention). Sert quand la locale ambiante n'a pas de pays — le cas
+  /// courant d'une app qui force `Locale('fr')`.
+  ///
+  /// AD-10 : tout échec de lecture de la plateforme rend une liste vide (on
+  /// rattrape `Object`, donc AUSSI les `Error`), jamais une exception.
+  static Iterable<String> _platformCountryCodes() {
+    try {
+      final dispatcher = WidgetsBinding.instance.platformDispatcher;
+      return <String>[
+        for (final locale in <Locale>[...dispatcher.locales, dispatcher.locale])
+          if (locale.countryCode case final String c when c.isNotEmpty) c,
+      ];
+    } on Object {
+      return const <String>[];
+    }
   }
 
   @override
   void didUpdateWidget(covariant ZPhoneFieldWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // SYNC GUARDÉE (AD-2) : refléter une valeur EXTERNE dans le champ numéro
-    // UNIQUEMENT hors focus. Pendant la frappe, priorité absolue au curseur.
+    // SYNC GUARDÉE (AD-2) : refléter une valeur EXTERNE UNIQUEMENT hors focus.
+    // Pendant la frappe, priorité absolue au curseur.
     if (_hasNumberFocus) return;
-    final phone = _phoneOf(widget.ctx.value);
-    final external = phone?.nationalNumber ?? '';
-    if (_numberController.text != external) _numberController.text = external;
-    final iso = phone?.isoCode;
-    if (iso != null && iso != _iso) _iso = iso;
+    final stored = _storedOf(widget.ctx.value);
+    if (stored == _lastEmitted) return;
+    _lastEmitted = stored;
+    final national = ZPhoneCodec.nationalDigitsOf(stored, iso: _iso);
+    if (_numberController.text != national) _numberController.text = national;
   }
 
   @override
@@ -147,28 +269,37 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
     super.dispose();
   }
 
-  /// Lecture défensive (AD-10) : accepte un [ZPhoneNumber] déjà neutre OU une map
-  /// sérialisée ; tout autre type → `null`.
-  ZPhoneNumber? _phoneOf(Object? value) => value is ZPhoneNumber
-      ? value
-      : ZPhoneNumber.fromMapSafe(value);
-
-  /// Voie unique (AD-2) : (re)compose le [ZPhoneNumber] neutre depuis le numéro
-  /// saisi et le pays courant via [ZPhoneCodec] (E.164 si valide) et l'émet.
-  void _emit() {
-    final raw = _numberController.text;
-    if (raw.trim().isEmpty && _iso == null) {
-      widget.ctx.onChanged(null);
-      return;
-    }
-    final phone = ZPhoneCodec.parse(raw, iso: _iso);
-    widget.ctx.onChanged(phone.isEmpty && _iso == null ? null : phone);
+  /// Lecture défensive (AD-10) de la valeur de tranche. Accepte :
+  ///  - la `String` internationale (contrat courant) ;
+  ///  - un [ZPhoneNumber] legacy ou sa map sérialisée (ingestion sans
+  ///    réécriture — la valeur sera ré-émise en `String` à la première frappe) ;
+  ///  - tout autre type ⇒ `null` (jamais d'exception).
+  static String? _storedOf(Object? value) {
+    if (value is String) return value.trim().isEmpty ? null : value.trim();
+    final legacy = value is ZPhoneNumber ? value : ZPhoneNumber.fromMapSafe(value);
+    if (legacy == null) return null;
+    final e164 = legacy.e164;
+    if (e164 != null && e164.isNotEmpty) return e164;
+    return ZPhoneCodec.toInternationalString(
+      legacy.nationalNumber,
+      dialCode: legacy.dialCode,
+      iso: legacy.isoCode,
+    );
   }
 
-  void _onCountrySelected(ZCountryInfo country) {
-    setState(() => _iso = country.isoCode);
-    // Re-normalise l'E.164/indicatif avec le nouveau pays (AC4).
-    _emit();
+  /// Voie UNIQUE d'écriture (AD-2) : canonise ce que le paquet produit et
+  /// n'écrit la tranche que si la valeur a **réellement** changé (SM-1).
+  void _onInputChanged(ZPhoneInputChange change) {
+    if (!mounted) return;
+    _iso = change.isoCode ?? _iso;
+    final next = ZPhoneCodec.toInternationalString(
+      change.number,
+      dialCode: change.dialCode,
+      iso: change.isoCode ?? _iso,
+    );
+    if (next == _lastEmitted) return;
+    _lastEmitted = next;
+    widget.ctx.onChanged(next);
   }
 
   @override
@@ -178,10 +309,7 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
     final field = widget.ctx.field;
     final resolvedLabel = field.label ?? field.name;
     // DP-20 (AC5) : erreur nationale **dérivée** (opt-in). `nationalPhone == null`
-    // → `null` → chemin E11a-2/E11b-2 identique. Recalcul en `build` seulement
-    // (aucun état, aucun contrôleur recréé — AD-2). La partie nationale validée
-    // est le texte courant du champ numéro (le validateur normalise selon sa
-    // politique `digitsOnly`).
+    // → `null` → chemin antérieur identique. Recalcul en `build` seulement.
     final validator = _config?.nationalPhone;
     final String? nationalErrorText = validator == null
         ? null
@@ -197,62 +325,39 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
           children: <Widget>[
             Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
             SizedBox(height: theme.gapS),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                // Sélecteur d'indicatif compact (drapeau + dialCode).
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 96, maxWidth: 160),
-                  child: ZCountryPickerField(
-                    catalog: widget.catalog,
-                    selectedIso: _iso,
-                    readOnly: field.readOnly,
-                    compact: true,
-                    preferredIsos:
-                        _config?.preferredCountryIsos ?? const <String>[],
-                    searchable: _config?.searchable ?? true,
-                    semanticLabel: label(
-                      context,
-                      'intl.phone.country',
-                      fallback: 'Indicatif',
-                    ),
-                    onSelected: _onCountrySelected,
-                  ),
+            // AD-13 : la cible tactile est portée par la CONTRAINTE LIANTE
+            // (`minHeight`), pas par une taille rendue constatée après coup.
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: ZIntlPhoneInputBridge.build(
+                fieldKey: const Key('z-phone-number'),
+                seed: _seed,
+                controller: _numberController,
+                focusNode: _numberFocus,
+                enabled: !field.readOnly,
+                searchable: _config?.searchable ?? true,
+                // FR-26 : jamais de code pays en dur ; la restriction vient de la
+                // config du champ, et elle est assainie contre le catalogue réel
+                // du paquet (AD-10).
+                countries: ZIntlPhoneInputBridge.sanitizeCountries(
+                  _config?.allowedCountryIsos ?? const <String>[],
                 ),
-                SizedBox(width: theme.gapM),
-                Expanded(child: _numberField(field.readOnly, nationalErrorText)),
-              ],
+                // FR-26 : la langue des noms de pays est une DONNÉE DE LOCALE
+                // lue sur l'ambiance, jamais un littéral de ce paquet.
+                locale: Localizations.maybeLocaleOf(context)?.languageCode,
+                decoration: InputDecoration(
+                  isDense: true,
+                  labelText:
+                      label(context, 'intl.phone.number', fallback: 'Numéro'),
+                  // AD-13 : message annoncé par la sémantique native du champ.
+                  errorText: nationalErrorText,
+                ),
+                onChanged: _onInputChanged,
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  // MEDIUM-2 (AD-13 opérabilité) : PAS de `Semantics(textField:true)` +
-  // `ExcludeSemantics` englobant — cela masquait les sémantiques éditables
-  // natives du `TextField` (valeur/curseur/édition inopérables au lecteur
-  // d'écran). Le `TextField` porte sa propre sémantique de champ éditable ; son
-  // libellé accessible provient de `InputDecoration.labelText`.
-  Widget _numberField(bool readOnly, [String? errorText]) => ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: TextField(
-          key: const Key('z-phone-number'),
-          controller: _numberController,
-          focusNode: _numberFocus,
-          readOnly: readOnly,
-          textAlign: TextAlign.start,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: label(context, 'intl.phone.number', fallback: 'Numéro'),
-            // DP-20 (AC4/AD-13) : message annoncé par le lecteur d'écran via la
-            // sémantique native du TextField. `null` = aucun message (opt-in).
-            errorText: errorText,
-          ),
-          // Voie SENS UNIQUE (AD-2) : la frappe écrit la tranche, jamais de
-          // ré-injection pendant le focus.
-          onChanged: readOnly ? null : (_) => _emit(),
-        ),
-      );
 }

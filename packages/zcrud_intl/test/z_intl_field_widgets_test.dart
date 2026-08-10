@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
+// CR-DODLP-PHONE-NATIF : import INTERNE du pont — les gardes pilotent le
+// sélecteur du paquet par des `Key` NEUTRES, sans jamais importer le paquet
+// (le confinement AD-1 vaut aussi pour les tests).
+import 'package:zcrud_intl/src/presentation/z_intl_phone_input_bridge.dart';
 import 'package:zcrud_intl/zcrud_intl.dart';
 
 ZCountryCatalog _fakeCatalog() => ZCountryCatalog.fromList(const <ZCountryInfo>[
@@ -50,6 +54,31 @@ Future<void> _openPicker(WidgetTester tester, {int at = 0}) async {
   await tester.tap(find.byKey(const Key('z-country-picker-trigger')).at(at));
   await tester.pump();
 }
+
+/// CR-DODLP-PHONE-NATIF — pilote le **sélecteur pays du champ téléphone**, qui
+/// provient désormais du paquet natif (dialogue recherchable), et non plus du
+/// `ZCountryPickerField` maison. La recherche est OBLIGATOIRE : la liste porte
+/// 245 pays et l'entrée visée n'est pas montée sans filtrage.
+Future<void> _pickPhoneCountry(
+  WidgetTester tester,
+  String iso,
+  String query,
+) async {
+  await tester.tap(find.byKey(ZIntlPhoneInputBridge.countrySelectorKey).first);
+  await tester.pumpAndSettle();
+  await tester.enterText(
+      find.byKey(ZIntlPhoneInputBridge.countrySearchKey), query);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ZIntlPhoneInputBridge.countryItemKey(iso)).first);
+  await tester.pumpAndSettle();
+}
+
+/// Oracle de focus/contrôleur : le champ de saisie réel est l'[EditableText]
+/// descendant de la clé `z-phone-number` (qui porte désormais un
+/// `TextFormField`, pas un `TextField`).
+EditableText _editable(WidgetTester tester, Finder host) => tester.widget<EditableText>(
+      find.descendant(of: host, matching: find.byType(EditableText)),
+    );
 
 /// DP-8 — seam mocké (aucun réseau) : renvoie des prédictions figées puis un
 /// [ZPostalAddress] figé. Compte les appels pour prouver la voie unique.
@@ -119,20 +148,26 @@ void main() {
       expect(c.valueOf('f'), 'NE');
     });
 
-    testWidgets('téléphone → tranche = ZPhoneNumber E.164', (t) async {
+    // 🔴 GARDE DÉPLACÉE — CR-DODLP-PHONE-NATIF (2026-08-10). Motif : la valeur
+    // de tranche du champ téléphone passe d'un objet `ZPhoneNumber` à une
+    // `String` internationale (rupture assumée par le propriétaire). L'ancienne
+    // garde rougissait pour la BONNE raison — `isA<ZPhoneNumber>()` sur une
+    // `String` — c'est-à-dire exactement le changement de contrat, et non un
+    // effet de bord. Elle est REFORMULÉE, pas supprimée : elle continue de
+    // prouver que la saisie écrit la tranche, et affirme désormais l'invariant
+    // de la chaîne (forme internationale, E.164 quand le numéro est valide).
+    testWidgets('téléphone → tranche = String internationale E.164', (t) async {
       final c = _controller('f');
       await t.pumpWidget(
         _app(c, _field('f', EditionFieldType.phoneNumber), registry: _registry(_fakeCatalog())),
       );
-      await _openPicker(t);
-      await t.tap(find.byKey(const Key('z-country-item-FR')));
-      await t.pump();
+      await _pickPhoneCountry(t, 'FR', 'France');
       await t.enterText(find.byKey(const Key('z-phone-number')), '612345678');
-      await t.pump();
+      await t.pumpAndSettle();
       final v = c.valueOf('f');
-      expect(v, isA<ZPhoneNumber>());
-      expect((v! as ZPhoneNumber).e164, '+33612345678');
-      expect((v as ZPhoneNumber).isoCode, 'FR');
+      expect(v, isA<String>());
+      expect(v, '+33612345678');
+      expect(v! as String, matches(RegExp(r'^\+[0-9]+$')));
     });
 
     testWidgets('adresse → tranche = ZPostalAddress structurée', (t) async {
@@ -162,25 +197,28 @@ void main() {
       expect(find.byKey(const Key('z-country-item-FR')), findsOneWidget);
     });
 
-    testWidgets('changer le pays du téléphone → dialCode mis à jour', (t) async {
+    // 🔴 GARDE DÉPLACÉE — CR-DODLP-PHONE-NATIF (2026-08-10). Double motif :
+    // (1) le sélecteur pays du téléphone vient du paquet natif (dialogue
+    // recherchable), plus du `ZCountryPickerField` maison — les clés
+    // `z-country-picker-trigger`/`z-country-item-*` n'existent plus SUR CE
+    // CHAMP (elles restent en service pour `country`/`address`, cf. gardes
+    // voisines, toujours vertes) ; (2) la valeur est une `String`. Elle
+    // rougissait donc d'ABORD sur la clé absente, ce qui est le changement de
+    // rendu demandé. Elle est REFORMULÉE et prouve la MÊME propriété : changer
+    // de pays re-calcule l'indicatif porté par la valeur.
+    testWidgets('changer le pays du téléphone → indicatif re-calculé', (t) async {
       final c = _controller('f');
       await t.pumpWidget(
         _app(c, _field('f', EditionFieldType.phoneNumber), registry: _registry(_fakeCatalog())),
       );
-      // Sélection FR + numéro → E.164 FR.
-      await _openPicker(t);
-      await t.tap(find.byKey(const Key('z-country-item-FR')));
-      await t.pump();
+      await _pickPhoneCountry(t, 'FR', 'France');
       await t.enterText(find.byKey(const Key('z-phone-number')), '612345678');
-      await t.pump();
-      expect((c.valueOf('f')! as ZPhoneNumber).dialCode, '+33');
-      // Change le pays → NE : l'indicatif est re-calculé (AC4).
-      await _openPicker(t);
-      await t.tap(find.byKey(const Key('z-country-item-NE')));
-      await t.pump();
-      final v = c.valueOf('f')! as ZPhoneNumber;
-      expect(v.dialCode, '+227');
-      expect(v.isoCode, 'NE');
+      await t.pumpAndSettle();
+      expect(c.valueOf('f'), '+33612345678');
+      // Change le pays → NE : l'indicatif de la valeur suit (AC4).
+      await _pickPhoneCountry(t, 'NE', 'Niger');
+      expect(c.valueOf('f'), startsWith('+227'));
+      expect(c.valueOf('f'), isNot(startsWith('+33')));
     });
   });
 
@@ -279,7 +317,12 @@ void main() {
 
       expect(initA, 1);
       expect(buildB, buildBBefore);
-      expect(t.widget<TextField>(numA).focusNode!.hasFocus, isTrue);
+      // 🔴 ORACLE DÉPLACÉ (2026-08-10) : le champ porte désormais un
+      // `TextFormField` (paquet natif), plus un `TextField` — l'ancien
+      // `t.widget<TextField>` échouait par ERREUR DE TYPE, pas par assertion.
+      // L'oracle descend donc sur l'`EditableText`, qui EST le widget d'édition
+      // réel et porte le vrai `FocusNode` : la propriété mesurée est inchangée.
+      expect(_editable(t, numA).focusNode.hasFocus, isTrue);
     });
 
     testWidgets('SM-1 bout-en-bout via DynamicEdition : focus préservé', (t) async {
@@ -294,7 +337,8 @@ void main() {
       await t.pump();
       await t.enterText(num, '61');
       await t.pump();
-      expect(t.widget<TextField>(num).focusNode!.hasFocus, isTrue);
+      // 🔴 ORACLE DÉPLACÉ (2026-08-10), même motif que ci-dessus.
+      expect(_editable(t, num).focusNode.hasFocus, isTrue);
       expect(t.takeException(), isNull);
     });
   });
@@ -324,8 +368,11 @@ void main() {
       ));
       final nums = find.byKey(const Key('z-phone-number'));
       expect(nums, findsNWidgets(2));
-      final c0 = t.widget<TextField>(nums.at(0)).controller;
-      final c1 = t.widget<TextField>(nums.at(1)).controller;
+      // 🔴 ORACLE DÉPLACÉ (2026-08-10), même motif : `TextFormField` au lieu de
+      // `TextField`. On lit le contrôleur sur l'`EditableText`, qui est celui
+      // que le champ utilise réellement.
+      final c0 = _editable(t, nums.at(0)).controller;
+      final c1 = _editable(t, nums.at(1)).controller;
       expect(identical(c0, c1), isFalse);
     });
 

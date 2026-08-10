@@ -15,7 +15,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_export_pdf
 description: "PDF export for zcrud (flashcard templates and tabular documents) behind a neutral, byte-based API — no spreadsheet dependency."
-version: 0.74.0
+version: 0.75.0
 publish_to: none
 resolution: workspace
 
@@ -41,7 +41,7 @@ dependencies:
   # `dart:js_interop` (AD-12 : `dart:html` déprécié BANNI). Usage
   # web-CONDITIONNEL : ne remonte jamais dans une signature neutre.
   web: ^1.1.0
-  zcrud_core: ^0.74.0
+  zcrud_core: ^0.75.0
 
 dev_dependencies:
   flutter_test:

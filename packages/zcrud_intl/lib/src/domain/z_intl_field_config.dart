@@ -46,9 +46,16 @@ class ZIntlFieldConfig extends ZFieldConfig {
   ///   message (rétro-compat E11a-2/E11b-2 STRICTE). Non-`null` → le message
   ///   d'erreur du validateur est affiché sous le champ numéro (opt-in, AD-12 :
   ///   la politique nationale est fournie par l'app, jamais codée en dur ici).
+  /// - [allowedCountryIsos] : **restreint** la liste des pays offerts au
+  ///   sélecteur du champ `phoneNumber` (parité legacy DODLP `countries: ["TG"]`
+  ///   pour un champ `tgPhoneNumber`) ; `const []` (défaut) → **tous** les pays,
+  ///   rétro-compat stricte. Aucun code pays n'est codé en dur ici (AD-12) : la
+  ///   liste vient de l'app. Les codes inconnus sont ignorés et une liste
+  ///   entièrement inconnue retombe sur « tous les pays » (AD-10).
   const ZIntlFieldConfig({
     this.defaultCountryIso,
     this.preferredCountryIsos = const <String>[],
+    this.allowedCountryIsos = const <String>[],
     this.showDialCode = true,
     this.searchable = true,
     this.defaultCurrencyCode,
@@ -61,6 +68,10 @@ class ZIntlFieldConfig extends ZFieldConfig {
   /// Pays remontés en tête du picker (codes ISO alpha-2) ; `const []` = ordre
   /// catalogue inchangé (rétro-compat).
   final List<String> preferredCountryIsos;
+
+  /// Pays OFFERTS au sélecteur du champ téléphone (codes ISO alpha-2) ;
+  /// `const []` = tous les pays (rétro-compat).
+  final List<String> allowedCountryIsos;
 
   /// Afficher l'indicatif dans le sélecteur compact (option neutre).
   final bool showDialCode;
@@ -82,6 +93,7 @@ class ZIntlFieldConfig extends ZFieldConfig {
           runtimeType == other.runtimeType &&
           defaultCountryIso == other.defaultCountryIso &&
           _listEq(preferredCountryIsos, other.preferredCountryIsos) &&
+          _listEq(allowedCountryIsos, other.allowedCountryIsos) &&
           showDialCode == other.showDialCode &&
           searchable == other.searchable &&
           defaultCurrencyCode == other.defaultCurrencyCode &&
@@ -92,6 +104,7 @@ class ZIntlFieldConfig extends ZFieldConfig {
         runtimeType,
         defaultCountryIso,
         Object.hashAll(preferredCountryIsos),
+        Object.hashAll(allowedCountryIsos),
         showDialCode,
         searchable,
         defaultCurrencyCode,

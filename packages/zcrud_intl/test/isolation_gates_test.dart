@@ -143,6 +143,21 @@ void main() {
       expect(intl.contains('phone_numbers_parser:'), isTrue);
     });
 
+    // CR-DODLP-PHONE-NATIF (2026-08-10) : le paquet de RENDU est absorbé par
+    // `zcrud_intl` (comme `flutter_quill` par `zcrud_markdown`). Il doit être
+    // déclaré ICI — et le rester interdit à `zcrud_core` (assertion ci-dessus,
+    // inchangée : `intl_phone_number_input` est dans `_intlLibs`).
+    test('le paquet de RENDU téléphone est déclaré au pubspec de zcrud_intl',
+        () {
+      final intl = _read('packages/zcrud_intl/pubspec.yaml');
+      expect(
+        RegExp(r'^\s+intl_phone_number_input:', multiLine: true).hasMatch(intl),
+        isTrue,
+        reason: 'le rendu natif doit être fourni par zcrud_intl, pas réimporté '
+            'par chaque app hôte (AD-1/AD-7)',
+      );
+    });
+
     test('AUCUNE nouvelle lib intl/devise lourde ajoutée à zcrud_intl (E11b-2)',
         () {
       final intl = _read('packages/zcrud_intl/pubspec.yaml');
@@ -198,6 +213,50 @@ void main() {
           reason: 'phone_numbers_parser doit être confiné à z_phone_codec.dart '
               '(trouvé: $importers)');
       expect(importers.single.endsWith('z_phone_codec.dart'), isTrue);
+    });
+
+    // CR-DODLP-PHONE-NATIF : garde SYMÉTRIQUE de la précédente pour le paquet
+    // de rendu. Elle mord dans les DEUX sens : elle rougit si un second fichier
+    // importe le paquet (fuite) ET si le pont cesse de l'importer (le rendu ne
+    // viendrait plus du paquet). Elle couvre aussi les imports d'implémentation
+    // (`package:intl_phone_number_input/src/…`).
+    test('un seul fichier importe intl_phone_number_input (confinement AD-1)',
+        () {
+      final importers = <String>[];
+      for (final e in _dartFiles()) {
+        final src = e.readAsStringSync();
+        if (RegExp(r'''import\s+['"]package:intl_phone_number_input''')
+            .hasMatch(src)) {
+          importers.add(e.path);
+        }
+      }
+      expect(importers, hasLength(1),
+          reason: 'intl_phone_number_input doit être confiné à '
+              'z_intl_phone_input_bridge.dart (trouvé: $importers)');
+      expect(importers.single.endsWith('z_intl_phone_input_bridge.dart'), isTrue);
+    });
+
+    // Le pont n'est PAS exporté, et AUCUN type du paquet n'apparaît dans une
+    // signature publique — la preuve est faite sur le SOURCE dé-commenté de tout
+    // `lib/` hors du pont : les noms de types du paquet n'y figurent nulle part.
+    test('aucun type du paquet de rendu hors du pont (valeur/API neutres)', () {
+      const leakingTypes = <String>[
+        'InternationalPhoneNumberInput',
+        'SelectorConfig',
+        'PhoneInputSelectorType',
+      ];
+      for (final e in _dartFiles()) {
+        if (e.path.endsWith('z_intl_phone_input_bridge.dart')) continue;
+        final src = _stripComments(e.readAsStringSync());
+        for (final t in leakingTypes) {
+          expect(src.contains(t), isFalse,
+              reason: 'type du paquet de rendu ($t) fuit hors du pont dans '
+                  '${e.path} (AD-1)');
+        }
+      }
+      final barrel = _read('packages/zcrud_intl/lib/zcrud_intl.dart');
+      expect(barrel.contains('z_intl_phone_input_bridge'), isFalse,
+          reason: 'le pont ne doit JAMAIS être exporté par le barrel (AD-1)');
     });
   });
 

@@ -101,15 +101,53 @@ void main() {
       expect(find.text('France'), findsNothing);
     });
 
-    testWidgets('phone sans config → aucun indicatif présélectionné', (t) async {
+    // 🔴 GARDE REFORMULÉE — CR-DODLP-PHONE-NATIF (2026-08-10).
+    //
+    // Elle s'intitulait « aucun indicatif présélectionné » et restait VERTE
+    // après la bascule — mais pour une raison devenue fausse : le paquet de
+    // rendu sélectionne TOUJOURS un pays, et retombe sur le PREMIER de son
+    // catalogue (`AF`, `+93`) quand aucun défaut n'est fourni. La garde
+    // n'aurait donc plus prouvé « aucun défaut national », seulement « pas
+    // CES deux indicatifs-là » : un vert qui défend le défaut.
+    //
+    // Ce qu'elle prouve désormais, et qui reste la propriété utile (AD-12) :
+    // `zcrud_intl` n'IMPOSE aucun défaut national — sans config, l'indicatif
+    // rendu n'est aucun de ceux que le paquet zcrud pourrait vouloir privilégier,
+    // et l'ajout d'une config le déplace effectivement.
+    //
+    // 🔴 COMMENTAIRE CORRIGÉ — CR-DODLP-PHONE-DEFAUT (2026-08-10). Aucune
+    // assertion n'a bougé ; c'est la DESCRIPTION ci-dessus qui était devenue
+    // fausse. Le paquet ne retombe plus sur `AF`/`+93` ici : le pays est
+    // désormais DÉRIVÉ de la locale ambiante, qui vaut `en_US` dans ce harnais
+    // (`MaterialApp` sans `supportedLocales` explicite) — l'indicatif rendu est
+    // donc `+1`. La propriété mesurée, elle, est inchangée et reste vraie :
+    // `zcrud_intl` n'IMPOSE aucun défaut national, et poser une config déplace
+    // réellement l'indicatif. La chaîne de priorité complète et son repli sont
+    // gardés par `z_phone_default_country_test.dart`.
+    testWidgets('phone sans config → pays dérivé du contexte, non imposé par zcrud',
+        (t) async {
       final reg = ZWidgetRegistry()
         ..register('phoneNumber',
             ZPhoneFieldWidget.builder(catalog: _countries()));
       await t.pumpWidget(
           _app(_ctrl(), _field(EditionFieldType.phoneNumber), reg));
-      await t.pump();
+      await t.pumpAndSettle();
       expect(find.text('+33'), findsNothing);
       expect(find.text('+227'), findsNothing);
+      expect(find.text('+228'), findsNothing);
+      // …et la config, elle, déplace RÉELLEMENT l'indicatif (sens inverse).
+      // Démontage explicite : sans lui, l'État du champ (et donc son pays,
+      // résolu en `initState`) serait CONSERVÉ et la seconde moitié de la
+      // garde serait vacante — elle mesurerait le premier montage.
+      await t.pumpWidget(const SizedBox());
+      await t.pumpWidget(_app(
+        _ctrl(),
+        _field(EditionFieldType.phoneNumber,
+            config: const ZIntlFieldConfig(defaultCountryIso: 'TG')),
+        reg,
+      ));
+      await t.pumpAndSettle();
+      expect(find.text('+228'), findsWidgets);
     });
 
     testWidgets('config d\'un AUTRE type (non-intl) ignorée → chemin E11a-2',

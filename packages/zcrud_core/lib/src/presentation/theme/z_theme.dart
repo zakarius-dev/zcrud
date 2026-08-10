@@ -511,6 +511,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     this.stepperBadgeForegroundColor,
     this.stepperAllStepsGap,
     this.stepperSideBandMaxWidth,
+    this.booleanPillActiveColor,
+    this.booleanPillInactiveColor,
+    this.booleanPillActiveForegroundColor,
+    this.booleanPillInactiveForegroundColor,
+    this.booleanPillWidth,
+    this.booleanPillHeight,
+    this.booleanPillThumbSize,
+    this.booleanPillRadius,
+    this.booleanPillTextStyle,
   });
 
   /// Repli **dérivé** de [theme] (FR-26 : « hérite du `Theme.of` »). Chaque
@@ -1914,6 +1923,79 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// pas une absence de réglage.
   final double? stepperSideBandMaxWidth;
 
+  // ── Famille `booleanPill*` (CR-DODLP-BOOL-PILL — pilule « Oui/Non ») ───────
+  // Ces neuf jetons sont NULLABLES et **absents de [ZcrudTheme.fallback]** :
+  // l'absence de réglage doit rester distinguable d'un réglage neutre, sinon le
+  // consommateur ne peut plus appliquer son rôle / sa référence (FR-26). Ils ne
+  // sont lus QUE par `ZBooleanStyle.pill` : un hôte qui reste sur le style
+  // `switchTile` (défaut) ne les traverse jamais.
+
+  /// Teinte de la piste à l'état `true`. `null` ⇒ `ColorScheme.primary`.
+  ///
+  /// 🔴 Le legacy DODLP peint un **vert** (`kSuccessColorLight`, `#2E7D32`) :
+  /// Material 3 n'a **pas** de rôle « succès », et l'inventer exigerait un
+  /// littéral (interdit — FR-26). La voie exacte pour ce vert est donc la clé
+  /// sémantique `ZBooleanConfig.activeColorKey` résolue par
+  /// `ZcrudScope.colorKeyResolver` — ce jeton n'en est que le repli d'échelle
+  /// thème.
+  ///
+  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait la piste
+  /// **par-dessus** le rôle de repli du consommateur pendant la transition
+  /// (précédent exact : [stepperRailColor]).
+  final Color? booleanPillActiveColor;
+
+  /// Teinte de la piste à l'état `false`. `null` ⇒ `ColorScheme.outline` (le
+  /// legacy pose un gris `grey.shade400`). `lerp` par [_lerpNullableColor],
+  /// même raison que [booleanPillActiveColor].
+  final Color? booleanPillInactiveColor;
+
+  /// Teinte du **texte interne et du pouce** à l'état `true`. `null` ⇒ contraste
+  /// **DÉRIVÉ** de la piste (`ThemeData.estimateBrightnessForColor` →
+  /// `ColorScheme.surface` / `onSurface`), ou `onColor` de la paire quand la
+  /// couleur vient d'une clé sémantique.
+  ///
+  /// 🔴 Le legacy écrit un **blanc littéral** : illisible dès qu'un hôte choisit
+  /// une piste claire. Dériver est le précédent [stepperBadgeForegroundColor],
+  /// posé pour exactement ce défaut. `lerp` par [_lerpNullableColor] :
+  /// matérialiser une teinte pendant la transition écraserait le contraste
+  /// dérivé et rendrait le texte illisible sur une fraction de l'animation.
+  final Color? booleanPillActiveForegroundColor;
+
+  /// Idem à l'état `false`. `null` ⇒ même dérivation de contraste.
+  final Color? booleanPillInactiveForegroundColor;
+
+  /// Largeur (dp) de la piste. `null` ⇒ référence (`65`, mesure du legacy
+  /// `edition_screen.dart:1629`).
+  ///
+  /// `lerp` par [_lerpNullableFloor] : une largeur `0` escamoterait la pilule —
+  /// pas une absence de réglage.
+  final double? booleanPillWidth;
+
+  /// Hauteur (dp) de la piste. `null` ⇒ référence (`30`). `lerp` par
+  /// [_lerpNullableFloor], même raison que [booleanPillWidth].
+  ///
+  /// ⚠️ Ce n'est **pas** la cible tactile : la pilule est centrée dans une
+  /// contrainte plancher de 48 dp (AD-13), que ce jeton ne peut pas abaisser.
+  final double? booleanPillHeight;
+
+  /// Diamètre (dp) du pouce. `null` ⇒ référence (`20`). `lerp` par
+  /// [_lerpNullableFloor] : un pouce `0` est un pouce **absent**.
+  final double? booleanPillThumbSize;
+
+  /// Rayon des coins de la piste. `null` ⇒ référence (`20`, legacy). `lerp` par
+  /// [_lerpNullableRadius] (patron [countPillRadius]).
+  final Radius? booleanPillRadius;
+
+  /// Style du texte interne. `null` ⇒ `TextTheme.labelMedium` (12 sp — la
+  /// mesure `valueFontSize: 12` du legacy, obtenue **sans** littéral de taille).
+  /// La **couleur** de ce style est toujours écrasée par le premier plan résolu
+  /// (jeton/dérivation) : un hôte ne peut pas casser le contraste par ce jeton.
+  ///
+  /// `lerp` par `TextStyle.lerp`, qui rend déjà `null` quand les deux côtés le
+  /// sont (patron [studySectionTitleStyle]).
+  final TextStyle? booleanPillTextStyle;
+
   /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
@@ -2222,6 +2304,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     Color? stepperBadgeForegroundColor,
     double? stepperAllStepsGap,
     double? stepperSideBandMaxWidth,
+    Color? booleanPillActiveColor,
+    Color? booleanPillInactiveColor,
+    Color? booleanPillActiveForegroundColor,
+    Color? booleanPillInactiveForegroundColor,
+    double? booleanPillWidth,
+    double? booleanPillHeight,
+    double? booleanPillThumbSize,
+    Radius? booleanPillRadius,
+    TextStyle? booleanPillTextStyle,
   }) => ZcrudTheme(
     fieldBorderColor: fieldBorderColor ?? this.fieldBorderColor,
     fieldFillColor: fieldFillColor ?? this.fieldFillColor,
@@ -2473,6 +2564,19 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     stepperAllStepsGap: stepperAllStepsGap ?? this.stepperAllStepsGap,
     stepperSideBandMaxWidth:
         stepperSideBandMaxWidth ?? this.stepperSideBandMaxWidth,
+    booleanPillActiveColor:
+        booleanPillActiveColor ?? this.booleanPillActiveColor,
+    booleanPillInactiveColor:
+        booleanPillInactiveColor ?? this.booleanPillInactiveColor,
+    booleanPillActiveForegroundColor: booleanPillActiveForegroundColor ??
+        this.booleanPillActiveForegroundColor,
+    booleanPillInactiveForegroundColor: booleanPillInactiveForegroundColor ??
+        this.booleanPillInactiveForegroundColor,
+    booleanPillWidth: booleanPillWidth ?? this.booleanPillWidth,
+    booleanPillHeight: booleanPillHeight ?? this.booleanPillHeight,
+    booleanPillThumbSize: booleanPillThumbSize ?? this.booleanPillThumbSize,
+    booleanPillRadius: booleanPillRadius ?? this.booleanPillRadius,
+    booleanPillTextStyle: booleanPillTextStyle ?? this.booleanPillTextStyle,
   );
 
   @override
@@ -3360,6 +3464,59 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       stepperSideBandMaxWidth: _lerpNullableFloor(
         stepperSideBandMaxWidth,
         other.stepperSideBandMaxWidth,
+        t,
+      ),
+      // COULEURS NULLABLES absentes du repli : `_lerpNullableColor`, jamais
+      // `Color.lerp` — matérialiser une teinte dès `t > 0` écraserait le rôle
+      // (piste) ou le CONTRASTE DÉRIVÉ (texte interne, pouce) du consommateur
+      // pendant la transition de thème.
+      booleanPillActiveColor: _lerpNullableColor(
+        booleanPillActiveColor,
+        other.booleanPillActiveColor,
+        t,
+      ),
+      booleanPillInactiveColor: _lerpNullableColor(
+        booleanPillInactiveColor,
+        other.booleanPillInactiveColor,
+        t,
+      ),
+      booleanPillActiveForegroundColor: _lerpNullableColor(
+        booleanPillActiveForegroundColor,
+        other.booleanPillActiveForegroundColor,
+        t,
+      ),
+      booleanPillInactiveForegroundColor: _lerpNullableColor(
+        booleanPillInactiveForegroundColor,
+        other.booleanPillInactiveForegroundColor,
+        t,
+      ),
+      // DIMENSIONS : `_lerpNullableFloor` — un côté `null` ne doit pas tirer la
+      // mesure vers `0` (pilule escamotée, pouce absent).
+      booleanPillWidth: _lerpNullableFloor(
+        booleanPillWidth,
+        other.booleanPillWidth,
+        t,
+      ),
+      booleanPillHeight: _lerpNullableFloor(
+        booleanPillHeight,
+        other.booleanPillHeight,
+        t,
+      ),
+      booleanPillThumbSize: _lerpNullableFloor(
+        booleanPillThumbSize,
+        other.booleanPillThumbSize,
+        t,
+      ),
+      booleanPillRadius: _lerpNullableRadius(
+        booleanPillRadius,
+        other.booleanPillRadius,
+        t,
+      ),
+      // STYLE CONTINU : `TextStyle.lerp` rend déjà `null` quand les deux côtés
+      // le sont (patron `studySectionTitleStyle`).
+      booleanPillTextStyle: TextStyle.lerp(
+        booleanPillTextStyle,
+        other.booleanPillTextStyle,
         t,
       ),
     );
