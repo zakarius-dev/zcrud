@@ -15,6 +15,7 @@
 // garde de `zcrud_intl` ne doit jamais importer `intl_phone_number_input`.
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -35,6 +36,34 @@ ZFormController _ctrl({Object? value}) => ZFormController(
       visibleFields: <String>['f'],
     );
 
+/// Délégués PERMISSIFS (`isSupported => true`) : ils acceptent n'importe quelle
+/// locale sans ajouter `flutter_localizations` en `dev_dependency` (le paquet
+/// n'en dépend pas et ne doit pas se mettre à en dépendre). Patron repris tel
+/// quel de `z_phone_default_country_test.dart`, où il est déjà éprouvé.
+class _AnyLocaleMaterialDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
+  const _AnyLocaleMaterialDelegate();
+  @override
+  bool isSupported(Locale locale) => true;
+  @override
+  Future<MaterialLocalizations> load(Locale locale) =>
+      DefaultMaterialLocalizations.load(locale);
+  @override
+  bool shouldReload(_AnyLocaleMaterialDelegate old) => false;
+}
+
+class _AnyLocaleCupertinoDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
+  const _AnyLocaleCupertinoDelegate();
+  @override
+  bool isSupported(Locale locale) => true;
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) =>
+      DefaultCupertinoLocalizations.load(locale);
+  @override
+  bool shouldReload(_AnyLocaleCupertinoDelegate old) => false;
+}
+
 Widget _app(
   ZFormController controller,
   ZFieldSpec field, {
@@ -43,6 +72,22 @@ Widget _app(
 }) =>
     MaterialApp(
       locale: locale,
+      // 🔴 CORRECTION DE GARDE VACANTE (2026-08-10). Sans `supportedLocales`,
+      // `MaterialApp` n'en déclare qu'une (`en_US`) et RÉSOUT toute locale
+      // demandée vers elle : `Locale('qq')` — et même `Locale('fr','FR')` —
+      // n'atteignait JAMAIS le champ. Mesuré, sonde supprimée :
+      //   déclarées=[en_US] · demandée=qq    ⇒ résolue **en_US**
+      //   déclarées=[en_US] · demandée=fr_FR ⇒ résolue **en_US**
+      //   déclarées=[locale] · demandée=qq    ⇒ résolue **qq**
+      //   déclarées=[locale] · demandée=fr_FR ⇒ résolue **fr_FR**
+      // `locale == null` (tous les autres tests de ce fichier) ⇒ chemin
+      // strictement INCHANGÉ.
+      supportedLocales:
+          locale == null ? const <Locale>[Locale('en', 'US')] : <Locale>[locale],
+      localizationsDelegates: const <LocalizationsDelegate<Object>>[
+        _AnyLocaleMaterialDelegate(),
+        _AnyLocaleCupertinoDelegate(),
+      ],
       home: ZcrudScope(
         widgetRegistry: ZWidgetRegistry()
           ..register('phoneNumber', ZPhoneFieldWidget.builder(onInit: onInit)),
@@ -246,13 +291,46 @@ void main() {
       expect(t.takeException(), isNull);
     });
 
-    testWidgets('locale inconnue → noms de pays en repli, aucune exception',
+    // 🔴 Garde RÉPARÉE (2026-08-10). Elle était VACANTE : le harnais ne
+    // déclarait aucune `supportedLocales`, donc `Locale('qq')` se résolvait en
+    // `en_US` et n'atteignait jamais le champ — elle re-testait le cas par
+    // défaut, déjà couvert juste au-dessus, et n'assertait RIEN sur les noms
+    // que son titre annonce. Elle mesure désormais les deux choses :
+    //   (a) la locale demandée atteint bien le champ ;
+    //   (b) le paquet natif retombe sur `country.name` (repli) faute de
+    //       traduction — et c'est la garde JUMELLE `fr_FR` ci-dessous qui rend
+    //       ce constat discriminant (sans elle, « Albania » serait vert même
+    //       si la locale était ignorée).
+    testWidgets('locale inconnue (qq) → noms de pays en REPLI, aucune exception',
         (t) async {
-      await t.pumpWidget(_app(_ctrl(), _field(),
-          locale: const Locale('qq')));
+      await t.pumpWidget(_app(_ctrl(), _field(), locale: const Locale('qq')));
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
       expect(find.byType(ZPhoneFieldWidget), findsOneWidget);
+      // La locale demandée atteint réellement le champ (c'était le trou).
+      expect(
+        Localizations.maybeLocaleOf(t.element(find.byType(ZPhoneFieldWidget))),
+        const Locale('qq'),
+        reason: 'sans supportedLocales déclarées, la locale se résolvait en '
+            'en_US et la garde ne testait rien',
+      );
+      await _openCountryDialog(t);
+      expect(find.text('Albania'), findsOneWidget,
+          reason: 'repli mesuré = `country.name` du catalogue natif');
+      expect(find.text('Albanie'), findsNothing);
+    });
+
+    testWidgets('locale connue (fr_FR) → noms de pays TRADUITS '
+        '(jumelle discriminante de la garde ci-dessus)', (t) async {
+      await t.pumpWidget(
+          _app(_ctrl(), _field(), locale: const Locale('fr', 'FR')));
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+      await _openCountryDialog(t);
+      expect(find.text('Albanie'), findsOneWidget,
+          reason: 'le champ transmet la LANGUE de la locale ambiante au '
+              'paquet natif (FR-26 : donnée de locale, jamais un littéral)');
+      expect(find.text('Albania'), findsNothing);
     });
 
     testWidgets('saisie absurde → tranche NON écrite avec une valeur ambiguë',
@@ -424,4 +502,13 @@ String _stripComments(String src) {
     buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
   }
   return buffer.toString();
+}
+
+/// Ouvre le dialogue de sélection de pays du paquet natif (le bouton sélecteur
+/// est posé en `prefixIcon` du champ). Les noms de pays n'apparaissent QUE là :
+/// le déclencheur ne montre que drapeau + indicatif.
+Future<void> _openCountryDialog(WidgetTester t) async {
+  await t.tap(find.descendant(of: _number, matching: find.byType(InkWell)).first,
+      warnIfMissed: false);
+  await t.pumpAndSettle();
 }

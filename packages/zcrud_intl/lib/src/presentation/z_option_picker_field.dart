@@ -257,8 +257,12 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
           key: Key('${widget.keyPrefix}-trigger'),
           onTap: widget.readOnly ? null : _toggle,
           // AD-13 : cible tactile portée par la CONTRAINTE LIANTE, jamais par
-          // la hauteur intrinsèque de l'`InputDecorator`.
+          // la hauteur intrinsèque de l'`InputDecorator`. 🔴 La contrainte est
+          // NOMMÉE (`<prefix>-tap-target`) pour qu'une garde vise la NÔTRE et
+          // non le maximum des `ConstrainedBox` descendants (motif daté
+          // 2026-08-10 : une garde du paquet mesurait le plancher d'un tiers).
           child: ConstrainedBox(
+            key: Key('${widget.keyPrefix}-tap-target'),
             constraints: const BoxConstraints(minHeight: 48),
             child: deco == null
                 ? Padding(

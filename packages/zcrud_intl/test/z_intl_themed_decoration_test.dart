@@ -331,6 +331,11 @@ void main() {
         'lib/src/presentation/z_address_field_widget.dart',
         'lib/src/presentation/z_country_picker_field.dart',
         'lib/src/presentation/z_option_picker_field.dart',
+        // CR-DODLP-INTL-DECORATION-2 (2026-08-10) : les deux champs restés en
+        // dette après v0.76.0 rejoignent la garde — d'UNE LIGNE chacun, comme
+        // le lot précédent l'avait prévu en l'écrivant fichier par fichier.
+        'lib/src/presentation/z_currency_field_widget.dart',
+        'lib/src/presentation/z_state_field_widget.dart',
       ];
       for (final path in files) {
         final source = File('${_packageRoot()}/$path').readAsStringSync();

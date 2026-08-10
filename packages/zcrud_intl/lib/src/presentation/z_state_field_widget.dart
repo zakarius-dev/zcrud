@@ -15,6 +15,29 @@
 /// **AD-4** : catalogue capturé par closure ; pays résolu **par champ** via le
 /// paramètre [countryIso] **ou** `ctx.field.config`
 /// ([ZIntlFieldConfig.defaultCountryIso]).
+///
+/// **CR-DODLP-INTL-DECORATION-2 (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
+///
+/// Ce champ portait encore, après le lot v0.76.0, le défaut corrigé sur
+/// `phoneNumber`/`country`/`address` : décoration nue, libellé en double, et un
+/// `Padding` qu'aucun champ du cœur ne pose. Traitement **identique** à
+/// `country` (le champ ne rend qu'**une seule** commande, jamais un groupe) :
+///  * la commande rendue (sélecteur **ou** repli texte) passe par
+///    [zFieldDecoration] → `ZcrudTheme.inputDecoration` ; le libellé du champ
+///    y est **flottant**, une seule fois ;
+///  * le `Text(resolvedLabel)` externe et le `Semantics(container:)` sont
+///    retirés (mesuré : le nœud annonçait « Libellé | Libellé », et
+///    « Libellé | Libellé | État/Province » sur le repli texte) ;
+///  * le `Padding(ZcrudTheme.fieldPadding)` est retiré (mesuré : 752 dp de
+///    large contre 776 dp pour le champ `text` voisin du cœur) ;
+///  * `fieldSize == large` ⇒ mode `bare` : le libellé est porté par
+///    `ZLargeFieldCard` et n'est **ni rendu ni annoncé** par le champ.
+///
+/// Le libellé interne « État/Province » du repli texte **disparaît** : ce
+/// n'était ni le libellé du champ ni un placeholder déclaré par l'hôte (FR-26).
+/// Il reste le **libellé sémantique** du sélecteur quand ce champ sert de
+/// sous-champ `region` du groupe adresse — ce chemin-là passe par
+/// `ZAddressFieldWidget`, pas par ce widget.
 library;
 
 import 'package:flutter/material.dart';
@@ -167,35 +190,30 @@ class _ZStateFieldState extends State<ZStateField> {
     widget.ctx.onChanged(v.isEmpty ? null : _freeController.text);
   }
 
+  /// Rendu `bare` — dérivé de la spec **exactement comme le dispatcher du cœur**
+  /// et `ZDecoratedFieldTrigger` (`fieldSize == large`).
+  bool get _bare => widget.ctx.field.fieldSize == ZFieldSize.large;
+
   @override
   Widget build(BuildContext context) {
     widget.onBuild?.call();
-    final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
-    final resolvedLabel = field.label ?? field.name;
+    final resolvedLabel = label(
+      context,
+      field.label ?? field.name,
+      fallback: field.label ?? field.name,
+    );
     final iso = _countryIso;
     final subs = iso == null
         ? const <ZSubdivision>[]
         : widget.catalog.forCountry(iso);
-    return Semantics(
-      container: true,
-      label: resolvedLabel,
-      child: Padding(
-        padding: theme.fieldPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
-            SizedBox(height: theme.gapS),
-            if (subs.isNotEmpty)
-              _picker(iso!, subs, resolvedLabel, field.readOnly)
-            else
-              _freeText(resolvedLabel, field.readOnly),
-          ],
-        ),
-      ),
-    );
+    // CR-DODLP-INTL-DECORATION-2 : décoration THÉMÉE du cœur (même chaîne que
+    // `country`). Ce champ ne rend **qu'une** commande : elle porte donc
+    // directement le libellé du champ, sans en-tête ni conteneur sémantique.
+    final decoration = zFieldDecoration(context, field, bare: _bare);
+    return subs.isNotEmpty
+        ? _picker(iso!, subs, resolvedLabel, field.readOnly, decoration)
+        : _freeText(field.readOnly, decoration);
   }
 
   Widget _picker(
@@ -203,6 +221,7 @@ class _ZStateFieldState extends State<ZStateField> {
     List<ZSubdivision> subs,
     String resolvedLabel,
     bool readOnly,
+    InputDecoration decoration,
   ) {
     final selected = _selectedCode == null
         ? null
@@ -212,7 +231,10 @@ class _ZStateFieldState extends State<ZStateField> {
       keyPrefix: 'z-state',
       readOnly: readOnly,
       searchable: cfg?.searchable ?? true,
-      semanticLabel: label(context, 'intl.state', fallback: 'État/Province'),
+      // UN SEUL libellé : celui du champ (le sélecteur ne re-nomme plus la
+      // catégorie « État/Province » par-dessus).
+      semanticLabel: resolvedLabel,
+      decoration: decoration,
       selectedTitle: selected?.name ?? _selectedCode,
       search: (q) {
         final query = q.trim().toLowerCase();
@@ -232,7 +254,11 @@ class _ZStateFieldState extends State<ZStateField> {
     );
   }
 
-  Widget _freeText(String resolvedLabel, bool readOnly) => ConstrainedBox(
+  Widget _freeText(bool readOnly, InputDecoration decoration) => ConstrainedBox(
+        // 🔴 AD-13 : la cible tactile est portée par NOTRE contrainte, nommée —
+        // une garde qui prendrait le max des `ConstrainedBox` descendants
+        // mesurerait le plancher d'un widget tiers (motif daté 2026-08-10).
+        key: const Key('z-state-tap-target'),
         constraints: const BoxConstraints(minHeight: 48),
         child: TextField(
           key: const Key('z-state-free'),
@@ -240,10 +266,7 @@ class _ZStateFieldState extends State<ZStateField> {
           focusNode: _freeFocus,
           readOnly: readOnly,
           textAlign: TextAlign.start,
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: label(context, 'intl.state', fallback: 'État/Province'),
-          ),
+          decoration: decoration,
           onChanged: readOnly ? null : (_) => _emitFree(),
         ),
       );

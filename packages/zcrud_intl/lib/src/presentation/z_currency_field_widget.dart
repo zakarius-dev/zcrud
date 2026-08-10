@@ -17,6 +17,27 @@
 ///
 /// **AD-4** : catalogue capturé par closure ; défaut de devise lu **par champ**
 /// via `ctx.field.config` ([ZIntlFieldConfig.defaultCurrencyCode]).
+///
+/// **CR-DODLP-INTL-DECORATION-2 (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
+///
+/// Ce champ portait encore, après le lot v0.76.0, le défaut corrigé sur
+/// `phoneNumber`/`country`/`address` : décoration nue, libellé en double, et un
+/// `Padding` qu'aucun champ du cœur ne pose. Il reçoit **le même** traitement,
+/// choisi selon sa forme réelle — les deux conventions du lot précédent, pas
+/// une troisième :
+///  * **[showAmount] == false** (défaut) : le champ ne rend qu'**une** commande
+///    ⇒ convention `country`. Le sélecteur est décoré par [zFieldDecoration] et
+///    porte le libellé du champ, **flottant**, une seule fois. Le
+///    `Text(resolvedLabel)` externe, le `Semantics(container:)` et le
+///    `Padding(ZcrudTheme.fieldPadding)` sont retirés ;
+///  * **[showAmount] == true** : le champ est un **groupe** (code + montant)
+///    ⇒ convention `address`. Le libellé du champ reste un **en-tête**, rendu
+///    par le `ZFieldLabel` du cœur et **décoratif** (`ExcludeSemantics`, le
+///    nœud conteneur l'annonce déjà) ; les deux sous-champs gardent leur
+///    libellé propre (« Devise », « Montant ») et ne sont **jamais** `bare`.
+///
+/// `fieldSize == large` ⇒ mode `bare` : le libellé du champ est porté par
+/// `ZLargeFieldCard` et n'est **ni rendu ni annoncé** ici.
 library;
 
 import 'package:flutter/material.dart';
@@ -188,48 +209,78 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
     _emit();
   }
 
+  /// Rendu `bare` — dérivé de la spec **exactement comme le dispatcher du cœur**
+  /// et `ZDecoratedFieldTrigger` (`fieldSize == large`).
+  bool get _bare => widget.ctx.field.fieldSize == ZFieldSize.large;
+
   @override
   Widget build(BuildContext context) {
     widget.onBuild?.call();
     final theme = ZcrudTheme.of(context);
     final field = widget.ctx.field;
-    final resolvedLabel = field.label ?? field.name;
-    final cfg = _config;
-    final selected = _code == null ? null : widget.catalog.byCode(_code!);
+    final resolvedLabel = label(
+      context,
+      field.label ?? field.name,
+      fallback: field.label ?? field.name,
+    );
+    final bare = _bare;
+    // CR-DODLP-INTL-DECORATION-2, champ SIMPLE : parité `country`. La seule
+    // commande rendue porte le libellé du champ, flottant, une seule fois.
+    if (!widget.showAmount) {
+      return _picker(
+        resolvedLabel,
+        zFieldDecoration(context, field, bare: bare),
+      );
+    }
+    // CR-DODLP-INTL-DECORATION-2, GROUPE (code + montant) : parité `address`.
+    // Aucune saisie unique à qui accrocher le libellé du groupe ⇒ en-tête
+    // `ZFieldLabel` du cœur, DÉCORATIF (le nœud conteneur l'annonce déjà : sans
+    // `ExcludeSemantics` il se fondrait dedans et serait annoncé deux fois).
+    final currencyLabel = label(context, 'intl.currency', fallback: 'Devise');
     return Semantics(
       container: true,
-      label: resolvedLabel,
-      child: Padding(
-        padding: theme.fieldPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
+      label: bare ? null : resolvedLabel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (!bare) ...<Widget>[
+            ExcludeSemantics(child: ZFieldLabel(field: field)),
             SizedBox(height: theme.gapS),
-            ZOptionPickerField<ZCurrencyInfo>(
-              keyPrefix: 'z-currency',
-              readOnly: field.readOnly,
-              searchable: cfg?.searchable ?? true,
-              semanticLabel:
-                  label(context, 'intl.currency', fallback: 'Devise'),
-              selectedTitle: _triggerText(selected),
-              selectedLeading: selected?.symbol,
-              search: (q) => widget.catalog.search(q),
-              itemKey: (c) => c.code,
-              itemTitle: (c) => c.name ?? c.code,
-              itemLeading: (c) => c.symbol,
-              itemTrailing: (c) => c.code,
-              openController: widget.openController,
-              onSelected: _onCurrencySelected,
-            ),
-            if (widget.showAmount) ...<Widget>[
-              SizedBox(height: theme.gapS),
-              _amountField(field.readOnly),
-            ],
           ],
-        ),
+          // 🔴 Les sous-champs ne sont JAMAIS `bare` : « Devise »/« Montant »
+          // ne sont portés par personne d'autre.
+          _picker(currencyLabel, _subDecoration(theme, currencyLabel)),
+          SizedBox(height: theme.gapS),
+          _amountField(field.readOnly, theme),
+        ],
       ),
+    );
+  }
+
+  /// Décoration THÉMÉE d'un **sous-champ** du groupe (fabrique centrale du
+  /// cœur), avec le libellé PROPRE au sous-champ — jamais `bare`.
+  InputDecoration _subDecoration(ZcrudTheme theme, String labelText) =>
+      theme.inputDecoration(context, label: labelText);
+
+  Widget _picker(String semanticLabel, InputDecoration decoration) {
+    final cfg = _config;
+    final selected = _code == null ? null : widget.catalog.byCode(_code!);
+    return ZOptionPickerField<ZCurrencyInfo>(
+      keyPrefix: 'z-currency',
+      readOnly: widget.ctx.field.readOnly,
+      searchable: cfg?.searchable ?? true,
+      semanticLabel: semanticLabel,
+      decoration: decoration,
+      selectedTitle: _triggerText(selected),
+      selectedLeading: selected?.symbol,
+      search: (q) => widget.catalog.search(q),
+      itemKey: (c) => c.code,
+      itemTitle: (c) => c.name ?? c.code,
+      itemLeading: (c) => c.symbol,
+      itemTrailing: (c) => c.code,
+      openController: widget.openController,
+      onSelected: _onCurrencySelected,
     );
   }
 
@@ -238,7 +289,10 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
     return _code; // code brut si hors catalogue (ex. défaut non résolu).
   }
 
-  Widget _amountField(bool readOnly) => ConstrainedBox(
+  Widget _amountField(bool readOnly, ZcrudTheme theme) => ConstrainedBox(
+        // 🔴 AD-13 : contrainte liante NOMMÉE (jamais `getSize()`, jamais le max
+        // des `ConstrainedBox` descendants — motif daté 2026-08-10).
+        key: const Key('z-currency-amount-tap-target'),
         constraints: const BoxConstraints(minHeight: 48),
         child: TextField(
           key: const Key('z-currency-amount'),
@@ -247,9 +301,9 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
           readOnly: readOnly,
           textAlign: TextAlign.start,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: label(context, 'intl.currency.amount', fallback: 'Montant'),
+          decoration: _subDecoration(
+            theme,
+            label(context, 'intl.currency.amount', fallback: 'Montant'),
           ),
           onChanged: readOnly ? null : (_) => _emit(),
         ),
