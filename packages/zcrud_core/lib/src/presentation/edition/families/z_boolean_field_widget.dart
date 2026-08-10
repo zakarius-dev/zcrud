@@ -118,18 +118,35 @@
 ///
 /// **Ce que l'encart ne touche pas** : le `ListTile` (donc la cible ≥ 48 dp de
 /// Material), le `MergeSemantics`, le nœud `switch` porteur de l'état, le
-/// `onTap` de ligne. Seule la marge interne du `ListTile` passe à zéro en mode
-/// encart — sans quoi les 16 dp du `ListTile` s'ajouteraient aux 16 dp de
+/// `onTap` de ligne. La marge interne du `ListTile` passe à zéro en mode encart
+/// — sans quoi les 16 dp du `ListTile` s'ajouteraient aux 16 dp de
 /// `inputContentPadding` et le booléen serait **plus indenté** que ses voisins.
 ///
 /// **`ZFieldSize.large`** : l'encart est **inhibé**, la `ZLargeFieldCard` du
 /// dispatcher portant déjà le cadre — même règle que le `bare` des familles
 /// décor-portantes (`ZDecoratedFieldTrigger`), pas de double cadre.
 ///
-/// **Libellé en gras** : NON fait (cf. rapport). Aucun jeton ne décrit le poids
-/// d'un *titre de ligne* ; `labelTextStyle`/`floatingLabelWeight` sont
-/// contractuellement ceux du **label d'`InputDecoration`**, et un poids en dur
-/// est interdit (FR-26).
+/// ## CR-BOOL-BOXED-HEIGHT — la hauteur de l'encart (2026-08-10)
+///
+/// Le raisonnement ci-dessus sur l'indentation valait **aussi** pour la
+/// verticale, et v0.76 ne l'y avait pas appliqué : la marge du `ListTile` ne
+/// passait à zéro qu'à l'HORIZONTALE, l'`InputDecorator` d'enveloppe ajoutant
+/// en plus les 16 dp haut **et** bas de `inputContentPadding`. **Mesuré**
+/// (thème par défaut, libellé mono-ligne) : encart **88 dp** contre **56 dp**
+/// pour le champ `text` voisin — 32 dp de double comptage exactement. Le
+/// retrait de la seule composante verticale ramène l'encart à **56 dp**, la
+/// hauteur du voisin, sans toucher la ligne ni sa cible tactile. Détail des
+/// mesures et de la piste écartée : [_box].
+///
+/// ## CR-BOOL-LABEL-WEIGHT — le poids du libellé (voie A, 2026-08-10)
+///
+/// Le titre reprend le **`fontWeight`** du jeton EXISTANT
+/// [ZcrudTheme.labelTextStyle] — celui-là même que les libellés des autres
+/// familles lisent via `ZFieldLabel`. Aucun jeton nouveau (la contrainte de
+/// v0.76 tient), aucun poids en dur (FR-26), et **hôte passif strictement
+/// inchangé** : sans jeton, ou avec un jeton sans `fontWeight`, le `Text` est
+/// construit sans `style`. Ce que la voie retenue ne fait PAS, et pourquoi :
+/// cf. [_titleStyle].
 library;
 
 import 'package:flutter/material.dart';
@@ -233,6 +250,37 @@ class ZBooleanFieldWidget extends StatelessWidget {
       ? EdgeInsetsDirectional.zero
       : const EdgeInsetsDirectional.symmetric(horizontal: 16);
 
+  /// Style appliqué au **titre** du `ListTile` — CR-BOOL-LABEL-WEIGHT, voie A.
+  ///
+  /// Seul le **poids** du jeton EXISTANT [ZcrudTheme.labelTextStyle] est repris,
+  /// et rien d'autre. Deux mesures fondent cette restriction :
+  /// * jeton absent (le cas de l'hôte passif, [ZcrudTheme.fallback] ne le pose
+  ///   pas, `z_theme.dart:527-536`) ⇒ `null` retourné, donc `Text(label)` **sans
+  ///   `style`** : littéralement l'expression de v0.79, pas une reconstruction ;
+  /// * jeton posé **sans** `fontWeight` (le cas du pilote aujourd'hui : il n'y
+  ///   met qu'une couleur) ⇒ `fontWeight` `null` ⇒ `null` également.
+  ///
+  /// 🔴 **Le style entier n'est PAS fusionné** — écarté après mesure : les
+  /// libellés des autres familles passent par `ZFieldLabel`, dont le repli est
+  /// `textTheme.bodyMedium` (`z_field_label.dart:52`), alors que le titre d'un
+  /// `ListTile` retombe sur `bodyLarge`. Fusionner le jeton entier ferait donc
+  /// changer **couleur et taille** du seul titre booléen chez tout hôte qui pose
+  /// déjà `labelTextStyle` pour ses labels flottants — un changement qu'aucune CR
+  /// n'a demandé. La convergence de TOUS les libellés sur un même canal est un
+  /// travail à part (elle touche toutes les familles et déplace le repli du
+  /// booléen de `bodyLarge` à `bodyMedium`, donc un changement de pixel pour
+  /// l'hôte passif) : elle n'appartient pas à cette CR.
+  ///
+  /// Le style est passé au `Text`, pas à `ListTile.titleTextStyle` : `Text`
+  /// **fusionne** avec le `DefaultTextStyle` que `ListTile` installe, donc tout
+  /// ce qui n'est pas le poids (couleur, taille, densité, état désactivé) reste
+  /// celui de Material. Poser `titleTextStyle` remplacerait cette résolution.
+  TextStyle? _titleStyle(BuildContext context) {
+    final weight = ZcrudTheme.of(context).labelTextStyle?.fontWeight;
+    if (weight == null) return null;
+    return TextStyle(fontWeight: weight);
+  }
+
   /// Enveloppe [child] dans le **conteneur décoré du thème** (CR-DODLP-BOOL-BOXED).
   ///
   /// 🔴 La décoration n'est pas fabriquée ici : elle vient de la **fabrique
@@ -252,11 +300,41 @@ class ZBooleanFieldWidget extends StatelessWidget {
   /// donc un champ en lecture seule perdrait la bordure `fieldBorderColor` de
   /// l'hôte au profit d'un défaut Flutter. L'état désactivé reste porté par le
   /// contrôle lui-même (switch grisé / pilule atténuée), pas par le cadre.
-  Widget _box(BuildContext context, Widget child) => InputDecorator(
-        key: zBooleanBoxKey,
-        decoration: ZcrudTheme.of(context).inputDecoration(context),
-        child: child,
-      );
+  /// **CR-BOOL-BOXED-HEIGHT (2026-08-10)** — la composante **VERTICALE** de
+  /// `inputContentPadding` est retirée ici, et **seulement ici** : le `ListTile`
+  /// enveloppé porte déjà sa propre hauteur de ligne. Sans ce retrait les deux
+  /// marges verticales **s'empilent** (mesuré : ligne 56 dp + 2 × 16 dp
+  /// = **88 dp**, contre **56 dp** pour le champ `text` voisin dans le même
+  /// thème). La marge **horizontale** du jeton, elle, est conservée intacte :
+  /// c'est elle qui aligne le contenu sur celui des voisins (et le `ListTile`
+  /// met la sienne à zéro en encart — cf. [_tilePadding]).
+  ///
+  /// 🔴 **Dérivé du jeton, jamais reconstruit** : `start`/`end` sont relus sur
+  /// [ZcrudTheme.inputContentPadding], donc un hôte qui pose 7/11 obtient 7/11
+  /// (FR-26). Aucune constante de marge n'entre ici.
+  ///
+  /// **L'autre piste de la CR (`dense` / `visualDensity` compact sur le
+  /// `ListTile`) est ÉCARTÉE — mesurée inopérante et nuisible** : elle agit sur
+  /// la ligne, pas sur le double comptage. Mesure : `VisualDensity.compact` fait
+  /// passer la ligne de 56 à **48 dp**, donc l'encart de 88 à 80 dp — toujours
+  /// pas les 56 dp du voisin — tout en posant la ligne **au plancher exact** de
+  /// la cible tactile AD-13 (aucune marge) et, dans sa variante `dense`, en
+  /// changeant la **taille du libellé**, ce que la CR ne demande pas et que le
+  /// point 1 de la même CR contredirait.
+  Widget _box(BuildContext context, Widget child) {
+    final tokens = ZcrudTheme.of(context);
+    final EdgeInsetsDirectional pad = tokens.inputContentPadding;
+    return InputDecorator(
+      key: zBooleanBoxKey,
+      decoration: tokens.inputDecoration(context).copyWith(
+            contentPadding: EdgeInsetsDirectional.only(
+              start: pad.start,
+              end: pad.end,
+            ),
+          ),
+      child: child,
+    );
+  }
 
   /// Construit le rendu **pilule** (parité legacy DODLP, peint nativement).
   Widget _buildPill(
@@ -387,7 +465,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
     // rendu `switchTile`.
     return MergeSemantics(
       child: ListTile(
-        title: Text(resolvedLabel),
+        title: Text(resolvedLabel, style: _titleStyle(context)),
         trailing: Semantics(
           toggled: checked,
           enabled: !disabled,
@@ -419,6 +497,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
       return boxed ? _box(context, pill) : pill;
     }
 
+    final titleStyle = _titleStyle(context);
     final tile = SwitchListTile(
       value: checked,
       onChanged: field.readOnly ? null : onChanged,
@@ -428,7 +507,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
           // `Directionality` : en RTL le texte reste du côté du switch (AD-13).
           ? Row(
               children: <Widget>[
-                Expanded(child: Text(resolvedLabel)),
+                Expanded(child: Text(resolvedLabel, style: titleStyle)),
                 // DÉCORATIF : l'état est déjà annoncé par le `Switch` fusionné.
                 // Sans cette exclusion, le lecteur d'écran l'entendrait 2 fois.
                 ExcludeSemantics(
@@ -439,7 +518,7 @@ class ZBooleanFieldWidget extends StatelessWidget {
                 ),
               ],
             )
-          : Text(resolvedLabel),
+          : Text(resolvedLabel, style: titleStyle),
       // `ListTile` fournit une cible ≥ 48 dp et fusionne le libellé du titre
       // avec l'état `switch` du contrôle (Semantics natif).
       contentPadding: _tilePadding(boxed),

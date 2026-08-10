@@ -98,6 +98,7 @@ class ZPhoneFieldWidget extends StatefulWidget {
     required this.ctx,
     required this.catalog,
     this.defaultIsoCode,
+    this.selectorLeadingPadding,
     this.onInit,
     this.onBuild,
     super.key,
@@ -124,6 +125,13 @@ class ZPhoneFieldWidget extends StatefulWidget {
   /// prime sur la locale ambiante et sur les locales de l'appareil.
   final String? defaultIsoCode;
 
+  /// Retrait de **TÊTE** (dp) du contenu « drapeau + indicatif », par registre.
+  ///
+  /// Maillon « paramètre » de la chaîne FR-26, **sous** la config par champ
+  /// ([ZIntlFieldConfig.selectorLeadingPadding]) et **au-dessus** du jeton.
+  /// `null` (défaut) ⇒ retrait dérivé du thème (cf. `_selectorLeadingIndent`).
+  final double? selectorLeadingPadding;
+
   /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
   @visibleForTesting
   final VoidCallback? onInit;
@@ -138,6 +146,7 @@ class ZPhoneFieldWidget extends StatefulWidget {
   static ZFieldWidgetBuilder builder({
     ZCountryCatalog? catalog,
     String? defaultIsoCode,
+    double? selectorLeadingPadding,
     VoidCallback? onInit,
     VoidCallback? onBuild,
   }) {
@@ -146,6 +155,7 @@ class ZPhoneFieldWidget extends StatefulWidget {
           ctx: ctx,
           catalog: cat,
           defaultIsoCode: defaultIsoCode,
+          selectorLeadingPadding: selectorLeadingPadding,
           onInit: onInit,
           onBuild: onBuild,
         );
@@ -378,9 +388,66 @@ class _ZPhoneFieldWidgetState extends State<ZPhoneFieldWidget> {
         // AD-13 : le message d'erreur est annoncé par la sémantique native du
         // champ (il transite par `InputDecoration.errorText`).
         decoration: decoration,
+        // CR-DODLP-PHONE-INDENT : rétablit le retrait de TÊTE perdu par le slot
+        // `prefixIcon` (cf. `_selectorLeadingIndent`).
+        selectorLeadingPadding: _selectorLeadingIndent(context, decoration),
         onChanged: _onInputChanged,
       ),
     );
+  }
+
+  /// Retrait de **TÊTE** du contenu « drapeau + indicatif » du sélecteur.
+  ///
+  /// **CR-DODLP-PHONE-INDENT (2026-08-10) — défaut MESURÉ, cause vérifiée.**
+  ///
+  /// Le bouton sélecteur du paquet tiers occupe le slot `prefixIcon` de la
+  /// décoration (`getInputDecoration` ⇒ `copyWith(prefixIcon: SelectorButton(…))`).
+  /// Or `InputDecorator` **substitue** la largeur du `prefixIcon` au retrait de
+  /// tête du contenu — cf. `input_decorator.dart` :
+  /// `start: … + (prefixIcon == null ? contentPadding.start + inputGap : …)`.
+  /// L'`inputContentPadding.start` du thème est donc **perdu côté tête**, et le
+  /// `prefixIcon` est posé au ras du cadre.
+  ///
+  /// Mesuré (formulaire de 2 champs, `inputContentPadding` = 16, bordure
+  /// `OutlineInputBorder` par défaut) : contenu du champ `text` voisin à
+  /// **x = 32** depuis le bord de page, drapeau à **x = 12**, c'est-à-dire
+  /// **exactement le bord de la carte** — 20 dp d'écart, pas 16 : le retrait
+  /// réel des voisins vaut `contentPadding.start` (16) **+** `inputGap` (le
+  /// `gapPadding` de la bordure, 4).
+  ///
+  /// Chaîne FR-26 **paramètre > jeton** : config par champ, puis paramètre de
+  /// registre, puis valeur **dérivée du thème**. Aucune constante de style n'est
+  /// écrite ici : la valeur dérivée est recalculée à partir de la décoration
+  /// déjà construite par le helper du cœur, avec la **formule du SDK**.
+  double _selectorLeadingIndent(
+    BuildContext context,
+    InputDecoration decoration,
+  ) {
+    final explicit =
+        _config?.selectorLeadingPadding ?? widget.selectorLeadingPadding;
+    if (explicit != null) return explicit;
+    // Retrait qu'`InputDecorator` applique au contenu d'un champ SANS
+    // `prefixIcon` — donc celui des champs voisins, dans le MÊME thème.
+    final padding = decoration.contentPadding;
+    // AD-13 : composante de **TÊTE**. `resolve(ltr).left` la lit sans supposer
+    // le sens du texte (pour un `EdgeInsetsDirectional`, `left` en LTR **est**
+    // `start`) ; c'est ensuite le `Row` du sélecteur qui la place du bon côté
+    // selon la `Directionality` ambiante — jamais un `left` rendu.
+    final start = padding == null ? 0.0 : padding.resolve(TextDirection.ltr).left;
+    return start + _inputGap(context, decoration);
+  }
+
+  /// `inputGap` réellement appliqué par `InputDecorator` (Material 3 : le
+  /// `gapPadding` de la bordure). Défensif (AD-10) et **jamais inventé** : toute
+  /// bordure qui n'est pas une `OutlineInputBorder` rend `0` — sous-estimer le
+  /// retrait est le repli sûr, plutôt que de recopier une constante privée du
+  /// SDK. En mode `bare` la bordure est `InputBorder.none` et le
+  /// `contentPadding` nul : le retrait dérivé vaut alors **0**, ce qui est
+  /// exactement le retrait des voisins `bare` (décor porté par la Card).
+  static double _inputGap(BuildContext context, InputDecoration decoration) {
+    if (!Theme.of(context).useMaterial3) return 0;
+    final border = decoration.enabledBorder ?? decoration.border;
+    return border is OutlineInputBorder ? border.gapPadding : 0;
   }
 
   /// Rendu `bare` (le décor est porté par `ZLargeFieldCard`) — dérivé de la

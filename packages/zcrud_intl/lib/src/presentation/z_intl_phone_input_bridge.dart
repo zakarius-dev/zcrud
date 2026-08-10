@@ -197,6 +197,7 @@ abstract final class ZIntlPhoneInputBridge {
     bool searchable = true,
     TextStyle? textStyle,
     TextStyle? selectorTextStyle,
+    double? selectorLeadingPadding,
   }) =>
       ipni.InternationalPhoneNumberInput(
         fieldKey: fieldKey,
@@ -223,6 +224,16 @@ abstract final class ZIntlPhoneInputBridge {
           setSelectorButtonAsPrefixIcon: true,
           useEmoji: true,
           showFlags: true,
+          // CR-DODLP-PHONE-INDENT (2026-08-10) — retrait de TÊTE du contenu du
+          // bouton sélecteur. Mesuré : `Item` reçoit `leadingPadding:
+          // selectorConfig.leadingPadding`, `null` par défaut au niveau de
+          // `SelectorConfig` ⇒ `SizedBox(width: null)` ⇒ **0 dp**, alors que le
+          // défaut de `Item` lui-même est 12. Le drapeau se collait donc au bord
+          // du cadre (x = bord de la carte, mesuré). C'est le SEUL levier du
+          // tiers sur ce retrait : son `copyWith(prefixIcon: SelectorButton(…))`
+          // écrase tout `prefixIcon` injecté, donc l'envelopper est impossible.
+          // La valeur vient de l'appelant (jeton de thème), jamais d'ici (FR-26).
+          leadingPadding: selectorLeadingPadding,
           // Le paquet complète sinon l'indicatif par `padRight(5, ' ')` : le
           // texte rendu deviendrait `'+33  '`, une chaîne d'affichage AMBIGUË
           // pour toute garde (et pour la copie utilisateur).

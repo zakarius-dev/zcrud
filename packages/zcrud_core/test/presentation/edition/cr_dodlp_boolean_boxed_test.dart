@@ -351,7 +351,20 @@ void main() {
       expect(box.border, neighbour.border);
       expect(box.filled, neighbour.filled);
       expect(box.fillColor, neighbour.fillColor);
-      expect(box.contentPadding, neighbour.contentPadding);
+      // CR-BOOL-BOXED-HEIGHT (2026-08-10) : la marge HORIZONTALE reste celle du
+      // voisin — c'est elle qui aligne les contenus. La VERTICALE, elle, est
+      // délibérément nulle côté encart : le `ListTile` porte déjà sa hauteur de
+      // ligne, et les cumuler rendait la carte 32 dp plus haute que le voisin.
+      // La PARITÉ DE HAUTEUR qui en résulte est mesurée, sur les deux rendus
+      // réels, dans `cr_boolean_label_weight_and_height_test.dart`.
+      final boxPad = box.contentPadding! as EdgeInsetsDirectional;
+      final neighbourPad = neighbour.contentPadding! as EdgeInsetsDirectional;
+      expect(boxPad.start, neighbourPad.start);
+      expect(boxPad.end, neighbourPad.end);
+      expect(boxPad.top, 0);
+      expect(boxPad.bottom, 0);
+      // La garde n'est pas vacante : le voisin, lui, a bien une marge verticale.
+      expect(neighbourPad.top, greaterThan(0));
     });
 
     testWidgets('les QUATRE jetons de la CR pilotent l\'encart', (t) async {
@@ -371,9 +384,11 @@ void main() {
       expect(border.borderSide.color, const Color(0xFF010203));
       expect(border.borderRadius, const BorderRadius.all(Radius.circular(21)));
       expect(d.fillColor, const Color(0xFF0A0B0C));
+      // CR-BOOL-BOXED-HEIGHT : start/end DÉRIVÉS du jeton (7 et 11 traversent),
+      // top/bottom nuls (la ligne porte déjà sa hauteur).
       expect(
         d.contentPadding,
-        const EdgeInsetsDirectional.fromSTEB(7, 9, 11, 13),
+        const EdgeInsetsDirectional.fromSTEB(7, 0, 11, 0),
       );
       // AD-13 : marge DIRECTIONNELLE (jamais `EdgeInsets.only(left:)`).
       expect(d.contentPadding, isA<EdgeInsetsDirectional>());

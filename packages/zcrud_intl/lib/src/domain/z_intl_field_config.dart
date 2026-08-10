@@ -60,6 +60,7 @@ class ZIntlFieldConfig extends ZFieldConfig {
     this.searchable = true,
     this.defaultCurrencyCode,
     this.nationalPhone,
+    this.selectorLeadingPadding,
   });
 
   /// Pays initial (code ISO alpha-2), **surchargeable** ; `null` = aucun défaut.
@@ -86,6 +87,20 @@ class ZIntlFieldConfig extends ZFieldConfig {
   /// aucune validation nationale (rétro-compat stricte).
   final ZNationalPhoneValidator? nationalPhone;
 
+  /// Retrait de **TÊTE** (dp) du contenu « drapeau + indicatif » du sélecteur du
+  /// champ `phoneNumber` — CR-DODLP-PHONE-INDENT.
+  ///
+  /// `null` (défaut) ⇒ le retrait est **dérivé du thème** : exactement celui que
+  /// `InputDecorator` applique au contenu des champs voisins sans `prefixIcon`
+  /// (`ZcrudTheme.inputContentPadding.start` + `gapPadding` de la bordure). Ce
+  /// champ est le **maillon « paramètre »** de la chaîne FR-26 (paramètre >
+  /// jeton) : il n'existe que pour permettre à un hôte de s'en écarter, jamais
+  /// pour porter une valeur par défaut codée en dur.
+  ///
+  /// AD-13 : c'est un retrait de **tête**, pas de gauche — le `Row` du sélecteur
+  /// le place du côté dicté par la `Directionality` ambiante.
+  final double? selectorLeadingPadding;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -97,7 +112,8 @@ class ZIntlFieldConfig extends ZFieldConfig {
           showDialCode == other.showDialCode &&
           searchable == other.searchable &&
           defaultCurrencyCode == other.defaultCurrencyCode &&
-          nationalPhone == other.nationalPhone;
+          nationalPhone == other.nationalPhone &&
+          selectorLeadingPadding == other.selectorLeadingPadding;
 
   @override
   int get hashCode => Object.hash(
@@ -109,6 +125,7 @@ class ZIntlFieldConfig extends ZFieldConfig {
         searchable,
         defaultCurrencyCode,
         nationalPhone,
+        selectorLeadingPadding,
       );
 
   static bool _listEq(List<String> a, List<String> b) {
