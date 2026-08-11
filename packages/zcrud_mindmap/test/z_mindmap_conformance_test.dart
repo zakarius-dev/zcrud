@@ -11,6 +11,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Résout le dossier `lib/src/presentation` que le test soit lancé depuis la
 /// racine du workspace (`flutter test packages/zcrud_mindmap`) ou depuis le
 /// package lui-même (`flutter test`).
@@ -39,21 +41,13 @@ List<File> _presentationSources() {
 /// Retire les commentaires (doc `///`, ligne `//`, bloc `/* */`) pour que la
 /// garde n'analyse que le **code réel** — les docstrings citent volontairement
 /// les API interdites pour documenter leur bannissement.
-String _stripComments(String source) {
-  final noBlock = source.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final trimmed = line.trimLeft();
-    if (trimmed.startsWith('///') ||
-        trimmed.startsWith('//') ||
-        trimmed.startsWith('*')) {
-      continue;
-    }
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+///
+/// Déléguée à `test/support/z_sources.dart` (P0D1) : cette fonction dupliquait
+/// une passe bloc-avant-ligne par `RegExp` global, ordre documenté comme
+/// dangereux (une dartdoc citant `/*` littéralement pouvait avaler du CODE
+/// réel jusqu'au `*/` suivant). `stripSource` fait le même travail dans le
+/// bon ordre, caractère par caractère.
+String _stripComments(String source) => stripSource(source);
 
 void main() {
   final sources = _presentationSources();

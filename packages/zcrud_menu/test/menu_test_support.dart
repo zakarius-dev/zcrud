@@ -43,22 +43,59 @@ List<File> dartFiles(Directory dir) => dir
 /// interdits (`Alignment.centerLeft`, `PopupMenuButton`, `flutter_riverpod`…)
 /// pour expliquer pourquoi ils le sont. Une garde qui grepperait le fichier brut
 /// se dénoncerait elle-même — et, pire, resterait rouge quoi qu'on fasse au CODE.
+///
+/// 🔴 P0D2 : réécrite en scanner caractère par caractère (`//` reconnu AVANT
+/// `/*`). L'ancienne implémentation retirait les blocs `/* … */` par une regex
+/// `dotAll` appliquée en un seul passage sur le fichier ENTIER, avant même le
+/// retrait des `//` : un dartdoc citant littéralement `packages/*/lib`
+/// (présent tel quel dans CLAUDE.md, donc probable dans la documentation à
+/// venir) y ouvre un faux commentaire de bloc que la regex referme sur le
+/// PROCHAIN `*/` du fichier — avalant potentiellement des dizaines de lignes
+/// de CODE réel, rendant la garde silencieusement vacuelle sans jamais rougir
+/// pour le signaler.
 String stripComments(String source) {
-  final sansBlocs = source.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  return sansBlocs
-      .split('\n')
-      .map((l) {
-        final i = l.indexOf('//');
-        if (i < 0) return l;
-        // Un `//` dans une chaîne littérale (ex. une URL) n'est pas un
-        // commentaire : on ne coupe que si les guillemets sont équilibrés avant.
-        final avant = l.substring(0, i);
-        final quotes = "'".allMatches(avant).length;
-        final dquotes = '"'.allMatches(avant).length;
-        if (quotes.isOdd || dquotes.isOdd) return l;
-        return avant;
-      })
-      .join('\n');
+  final StringBuffer out = StringBuffer();
+  int i = 0;
+  while (i < source.length) {
+    final String c = source[i];
+    final String next = i + 1 < source.length ? source[i + 1] : '';
+    if (c == '/' && next == '/') {
+      while (i < source.length && source[i] != '\n') {
+        i++;
+      }
+      continue;
+    }
+    if (c == '/' && next == '*') {
+      i += 2;
+      while (i + 1 < source.length && !(source[i] == '*' && source[i + 1] == '/')) {
+        i++;
+      }
+      i = i + 2 <= source.length ? i + 2 : source.length;
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      final String quote = c;
+      out.write(c);
+      i++;
+      while (i < source.length) {
+        if (source[i] == r'\') {
+          out.write(source.substring(i, i + 2 <= source.length ? i + 2 : i + 1));
+          i += 2;
+          continue;
+        }
+        out.write(source[i]);
+        if (source[i] == quote || source[i] == '\n') {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    out.write(c);
+    i++;
+  }
+  return out.toString();
 }
 
 /// Source de `lib/` d'un package, commentaires RETIRÉS, indexée par chemin.

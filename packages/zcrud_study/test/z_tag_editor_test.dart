@@ -7,12 +7,12 @@
 // (re-tester `orphanTagIds([b],[a])=={b}` serait POWERLESS), NI sur un libellé qui
 // survivrait à une purge incomplète.
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study/zcrud_study.dart';
+
+import 'support/z_sources.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 Widget _host(
@@ -281,8 +281,7 @@ void main() {
     });
 
     test('verrou-source : aucune Color/hex/EdgeInsets.only(left) codé en dur', () {
-      final src =
-          File('lib/src/presentation/z_tag_editor.dart').readAsStringSync();
+      final src = strippedOf('lib/src/presentation/z_tag_editor.dart');
       expect(src.contains('Colors.'), isFalse);
       expect(RegExp(r'0x[0-9a-fA-F]{6,8}').hasMatch(src), isFalse);
       expect(src.contains('EdgeInsets.only(left'), isFalse);

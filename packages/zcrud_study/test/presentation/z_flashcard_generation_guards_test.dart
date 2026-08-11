@@ -8,6 +8,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 const _genFiles = <String>[
   'lib/src/presentation/z_flashcard_generation_sheet.dart',
   'lib/src/presentation/z_flashcard_generation_controller.dart',
@@ -15,19 +17,15 @@ const _genFiles = <String>[
   'lib/src/presentation/z_flashcard_tag_confirm_sheet.dart',
 ];
 
-/// Lignes de CODE (commentaires `//`/`///` sautés).
+/// Lignes de CODE — commentaires `//`/`///`/`/* */` DÉPOUILLÉS (campagne
+/// dartdoc P0A : un `startsWith('//')` ligne-à-ligne laissait passer un
+/// commentaire de fin de ligne ou un bloc `/* … */`).
 List<String> _codeLines(String path) {
   final f = File(path);
   expect(f.existsSync(), isTrue,
       reason: 'introuvable: $path (cwd=${Directory.current.path}) — lancer '
           '`flutter test` DEPUIS le package');
-  return f
-      .readAsLinesSync()
-      .where((l) {
-        final t = l.trimLeft();
-        return !t.startsWith('//');
-      })
-      .toList();
+  return stripped(f);
 }
 
 /// Applique [pattern] aux lignes de CODE de chaque fichier ; retourne les hits.

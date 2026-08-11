@@ -33,6 +33,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import '../support/z_sources.dart' show strippedLines;
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -134,7 +136,11 @@ bool zParamIsRequired(String ctor, String name) =>
 String _sourceOf(String relative) {
   final File f = File('${_repoRoot().path}/packages/zcrud_study/$relative');
   expect(f.existsSync(), isTrue, reason: 'sonde cassée : ${f.path} introuvable');
-  return f.readAsStringSync();
+  // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `zPrimaryCtorOf`/`zParamIsRequired`
+  // font une extraction POSITIONNELLE (recherche de `required this.<name>,`)
+  // — une dartdoc PAR PARAMÈTRE insérée dans la liste des paramètres nommés
+  // pourrait sinon faire croire à un `required` absent/présent à tort.
+  return strippedLines(f.readAsLinesSync()).join('\n');
 }
 
 void main() {

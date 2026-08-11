@@ -13,6 +13,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 const _editor = 'lib/src/presentation/z_multi_flashcard_editor.dart';
 const _controller =
     'lib/src/presentation/z_multi_flashcard_editor_controller.dart';
@@ -24,13 +26,7 @@ List<String> _codeLines(String path) {
   expect(file.existsSync(), isTrue,
       reason: 'sonde : $path introuvable (cwd=${Directory.current.path}) — '
           '`flutter test` doit être lancé DEPUIS le package');
-  return file
-      .readAsLinesSync()
-      .where((l) {
-        final t = l.trimLeft();
-        return !t.startsWith('///') && !t.startsWith('//');
-      })
-      .toList();
+  return stripped(file);
 }
 
 bool _codeContains(String path, String needle) =>

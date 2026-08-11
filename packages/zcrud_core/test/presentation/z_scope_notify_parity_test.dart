@@ -20,21 +20,13 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' as sources;
+
 /// Remonte jusqu'au dossier portant `melos.yaml` (racine du workspace).
 ///
 /// Ancrage ROBUSTE : `flutter test` se lance depuis le dossier du paquet, et
 /// un `../` relatif casserait si l'arborescence bougeait.
-Directory _repoRoot() {
-  Directory dir = Directory.current;
-  while (true) {
-    if (File('${dir.path}/melos.yaml').existsSync()) return dir;
-    final parent = dir.parent;
-    if (parent.path == dir.path) {
-      fail('racine du workspace introuvable (aucun `melos.yaml` en remontant)');
-    }
-    dir = parent;
-  }
-}
+Directory _repoRoot() => sources.repoRoot();
 
 void main() {
   test('🔴 STRUCTURE : chaque paramètre de `ZcrudScope` est comparé par '
@@ -53,14 +45,13 @@ void main() {
     // d'un incident inverse du même jour (une garde qui rougissait sur sa
     // propre prose parce qu'elle scannait ses commentaires). Une garde qui lit
     // du code ne doit jamais pouvoir être déviée par ce qu'on écrit autour.
-    final String src = source
-        .readAsStringSync()
-        .split('\n')
-        .map((line) {
-          final trimmed = line.trimLeft();
-          return trimmed.startsWith('//') ? '' : line;
-        })
-        .join('\n');
+    //
+    // 🔴 Dépouillement PARTAGÉ (`support/z_sources.dart`) : la première passe
+    // ne retirait que les commentaires PLEINE LIGNE — un commentaire de FIN de
+    // ligne portant un `;` (ou un `oldWidget.…`) dans `updateShouldNotify`
+    // aurait reproduit exactement le défaut ci-dessus. Le chantier
+    // documentation rend ce cas probable.
+    final String src = sources.strippedSource(source);
 
     // ── 1. Les paramètres DÉCLARÉS, lus dans le constructeur ────────────────
     final int ctorStart = src.indexOf('const ZcrudScope({');

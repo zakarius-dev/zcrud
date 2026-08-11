@@ -23,6 +23,8 @@ import 'package:zcrud_intl/src/presentation/z_intl_phone_input_bridge.dart';
 import 'package:zcrud_intl/src/presentation/z_phone_codec.dart';
 import 'package:zcrud_intl/zcrud_intl.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 ZFieldSpec _field({ZFieldConfig? config, bool readOnly = false}) => ZFieldSpec(
       name: 'f',
       type: EditionFieldType.phoneNumber,
@@ -494,15 +496,10 @@ String _readPackageFile(String packageRelative) {
   fail('Fichier introuvable pour la garde : $packageRelative');
 }
 
-String _stripComments(String src) {
-  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+/// 🔴 P0D2 : déléguée à `support/z_sources.dart` (l'ancienne regex bloc
+/// locale pouvait avaler tout le fichier sur une citation de chemin du type
+/// `packages/*/lib`, laissant la garde silencieusement vacuelle).
+String _stripComments(String src) => stripComments(src);
 
 /// Ouvre le dialogue de sélection de pays du paquet natif (le bouton sélecteur
 /// est posé en `prefixIcon` du champ). Les noms de pays n'apparaissent QUE là :

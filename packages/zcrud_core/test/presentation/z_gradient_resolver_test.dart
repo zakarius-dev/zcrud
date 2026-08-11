@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import '../support/z_sources.dart' as sources;
+
 void main() {
   final light = ColorScheme.fromSeed(
     seedColor: Colors.deepPurple,
@@ -181,7 +183,10 @@ void main() {
       '$root/lib/src/presentation/zcrud_scope.dart',
     ];
     for (final file in files) {
-      final source = File(file).readAsStringSync();
+      // STRIPPÉ (support/z_sources.dart) : la dartdoc de ces fichiers peut
+      // citer `Colors.red` ou `Color(0x…)` pour documenter l'interdit — seule
+      // une occurrence dans le CODE doit rougir.
+      final source = sources.strippedSource(File(file));
       expect(source, isNot(contains('Color(0x')));
       expect(source, isNot(contains('Colors.')));
       expect(

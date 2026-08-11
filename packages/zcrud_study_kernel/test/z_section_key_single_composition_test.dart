@@ -35,6 +35,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 /// Fichier AUTORISÉ à composer une clé : l'unique foyer canonique (AD-38).
 const String _canonicalHome = 'z_section_key.dart';
 
@@ -120,7 +122,7 @@ void main() {
           // Le foyer canonique est le SEUL endroit où composer est légitime.
           if (source.path.endsWith(_canonicalHome)) continue;
           violations.addAll(
-            scanForManualComposition(source.readAsLinesSync(), source.path),
+            scanForManualComposition(stripped(source), source.path),
           );
         }
       }

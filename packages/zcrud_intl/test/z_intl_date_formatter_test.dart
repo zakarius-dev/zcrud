@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_intl/date_formatter.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 /// Dimanche 9 août 2026, 14:30 — la date de l'exemple DODLP.
 final _sunday = DateTime(2026, 8, 9, 14, 30);
 
@@ -39,15 +41,11 @@ Iterable<File> _dartFiles() => _libDir()
 
 /// Supprime les commentaires Dart : un exemple cité en dartdoc ne doit PAS
 /// déclencher la garde FR-26 (le dartdoc de l'impl contient « dim. 9 août »).
-String _stripComments(String src) {
-  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+///
+/// 🔴 P0D2 : déléguée à `support/z_sources.dart` (scanner caractère par
+/// caractère) — l'ancienne regex bloc locale pouvait avaler tout le fichier
+/// sur une citation de chemin du type `packages/*/lib`.
+String _stripComments(String src) => stripComments(src);
 
 void main() {
   setUp(zDebugResetIntlDateFormatterCache);

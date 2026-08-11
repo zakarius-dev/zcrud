@@ -31,6 +31,8 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import 'support/z_sources.dart' show strippedLines;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Doubles de test — l'implémentation « côté satellite » que le kernel n'a pas.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,13 +138,11 @@ String _sourceOf(String relative) {
   return file.readAsStringSync();
 }
 
-/// Code seul (lignes de commentaire `//`/`///` retirées) — la dartdoc DOIT
-/// pouvoir NOMMER les membres écartés pour motiver leur absence sans faire
-/// rougir la garde de sur-spécification.
-String _codeOnly(String source) => source
-    .split('\n')
-    .where((line) => !line.trimLeft().startsWith('//'))
-    .join('\n');
+/// Code seul (commentaires `//`/`///` ET blocs `/* … */` retirés, via le
+/// patron PARTAGÉ `support/z_sources.dart` — campagne dartdoc P0A) — la
+/// dartdoc DOIT pouvoir NOMMER les membres écartés pour motiver leur absence
+/// sans faire rougir la garde de sur-spécification.
+String _codeOnly(String source) => strippedLines(source.split('\n')).join('\n');
 
 void main() {
   group('ZStudyDocumentRef — le port CONTRAINT et se LIT', () {

@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_html/zcrud_html.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 Widget _host(Widget child) => MaterialApp(
       home: Scaffold(body: SingleChildScrollView(child: child)),
     );
@@ -56,7 +58,10 @@ void main() {
           ? File('lib/zcrud_html.dart')
           : File('packages/zcrud_html/lib/zcrud_html.dart');
       expect(barrel.existsSync(), isTrue, reason: 'barrel introuvable');
-      final String src = barrel.readAsStringSync();
+      // P0D2 : source dé-commentée — sans ce retrait, une prose dartdoc citant
+      // littéralement l'import interdit pour EXPLIQUER le confinement (le
+      // motif n'est pas ancré en tête de ligne) faisait rougir la garde.
+      final String src = stripComments(barrel.readAsStringSync());
       // On grep les DIRECTIVES `import`/`export 'package:<tiers>'` (pas les
       // mentions de prose en doc-commentaire) : c'est la fuite de TYPE réelle.
       final RegExp thirdPartyDirective = RegExp(

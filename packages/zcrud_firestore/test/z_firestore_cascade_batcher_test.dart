@@ -17,6 +17,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 // ───────────────────────── Fixtures de topologie ────────────────────────────
 
 /// Résolveur **flat** (IFFD) : chaque `kind` est une collection top-level ; les
@@ -168,12 +170,14 @@ Directory _repoRoot() {
   throw StateError('racine du repo introuvable depuis ${Directory.current.path}');
 }
 
-/// Lignes de **code** (commentaires `//`/`///` retirés — la dartdoc peut nommer
-/// les tokens bannis pour documenter la règle sans faux positif).
-String _codeOnly(File file) => file
-    .readAsLinesSync()
-    .where((line) => !line.trimLeft().startsWith('//'))
-    .join('\n');
+/// Lignes de **code** (commentaires `//`/`///`/`/* … */` retirés — la dartdoc
+/// peut nommer les tokens bannis pour documenter la règle sans faux positif).
+///
+/// P0b : délègue au dé-commentateur PARTAGÉ `stripped()` — l'ancien filtre
+/// local ne retirait que les lignes commençant par `//`, aveugle à un bloc
+/// `/* … */` (ouvert par du CODE sur sa ligne, ou multi-lignes sans `*` de
+/// continuation) et aux commentaires de FIN de ligne.
+String _codeOnly(File file) => stripped(file).join('\n');
 
 void main() {
   group('AC6 — construction + rapport typé (aucun type backend en retour)', () {

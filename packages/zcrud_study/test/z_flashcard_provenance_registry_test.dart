@@ -14,6 +14,8 @@ import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import 'support/z_sources.dart';
+
 /// Fake port app-side : ESTAMPILLE `request.provenance` dans `ZFlashcard.source`
 /// (comportement contractuel AC5 que l'impl app-side réalise).
 class _StampingGenerationPort implements ZFlashcardGenerationPort {
@@ -120,7 +122,7 @@ void main() {
 
     final violations = <String>[];
     for (final f in files) {
-      final content = f.readAsStringSync();
+      final content = strippedText(f);
       for (final re in forbidden) {
         if (re.hasMatch(content)) {
           violations.add('${f.path} : ${re.pattern}');
@@ -129,5 +131,25 @@ void main() {
     }
     expect(violations, isEmpty,
         reason: 'kind lex/douane codé en dur détecté : ${violations.join(', ')}');
+  });
+
+  test('🔴 CONTRE-PREUVE — dépouillé attrape le CODE, pas la prose', () {
+    final List<RegExp> forbidden = <RegExp>[
+      RegExp(r'''kind\s*==\s*['"]'''),
+      RegExp(r'switch\s*\(\s*\w*[kK]ind'),
+      RegExp(r'''case\s+['"](article|subject|hsSection|chatConversation)'''),
+      RegExp(r'''['"](hs_section|hsSection|chat_conversation_id)['"]'''),
+    ];
+    final codeHit = strippedLines(
+      <String>["    if (kind == 'article') {"],
+    ).join('\n');
+    expect(forbidden.any((re) => re.hasMatch(codeHit)), isTrue,
+        reason: 'un VRAI switch sur kind en CODE doit rester détecté');
+
+    final proseOnly = strippedLines(<String>[
+      "/// Jamais `kind == 'article'` ni `case 'hsSection':` — utiliser le registre.",
+    ]).join('\n');
+    expect(forbidden.any((re) => re.hasMatch(proseOnly)), isFalse,
+        reason: '🔴 la MÊME forme en dartdoc ne doit PAS faire rougir la garde.');
   });
 }

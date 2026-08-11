@@ -16,6 +16,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 const String _kNote = 'note';
 
 class _Note extends ZEntity {
@@ -183,12 +185,10 @@ void main() {
       expect(debut, greaterThan(-1));
       expect(fin, greaterThan(debut));
       // Corps de l'interface, commentaires retirés (un exemple de dartdoc peut
-      // légitimement citer `save`).
-      final String corps = texte
-          .substring(debut, fin)
-          .split('\n')
-          .where((l) => !l.trimLeft().startsWith('///'))
-          .join('\n');
+      // légitimement citer `save`). P0b : dé-commentateur PARTAGÉ ROBUSTE —
+      // l'ancien filtre local ne retirait que les lignes `///`, aveugle à un
+      // `/* … */` ou à un commentaire de fin de ligne.
+      final String corps = stripSource(texte.substring(debut, fin));
 
       for (final String ecriture in <String>[
         'save(',

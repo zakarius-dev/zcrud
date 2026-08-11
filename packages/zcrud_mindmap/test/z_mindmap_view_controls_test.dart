@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Forêt mono-racine (1 racine) : Root → {Child(content) }.
 List<ZMindmapNode> _monoRoot() =>
     ZMindmapTreeOps.normalizeLevels(<ZMindmapNode>[
@@ -406,19 +408,6 @@ File _presentationFile(String name) {
   return File('${roots.first}/$name');
 }
 
-/// Retire les commentaires pour ne scanner que le code réel.
-String _stripComments(String source) {
-  final noBlock = source.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final trimmed = line.trimLeft();
-    if (trimmed.startsWith('///') ||
-        trimmed.startsWith('//') ||
-        trimmed.startsWith('*')) {
-      continue;
-    }
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+/// Déléguée à `test/support/z_sources.dart` (P0D1) — cf. sa doc pour le motif
+/// (ordre bloc-avant-ligne dangereux dans l'ancienne implémentation locale).
+String _stripComments(String source) => stripSource(source);

@@ -1,41 +1,64 @@
 # zcrud
 
-**Monorepo Flutter unifié pour les fonctionnalités CRUD riches** — affichage et édition de données, extrait et consolidé à partir des applications existantes (DODLP, IFFD, DLCFTI) pour éliminer le code dupliqué copié-collé d'un projet à l'autre.
+**Écosystème Flutter de CRUD riche, déclaratif et modulaire.** Un même schéma de champs
+(`ZFieldSpec`) génère les formulaires d'édition (`DynamicEdition`) et les tableaux de liste
+(`DynamicList`) — avec des rebuilds **granulaires** (taper 100 caractères ne reconstruit que
+le champ courant), une couche data **offline-first** et des familles de champs riches :
+Markdown (Quill + LaTeX/tables), géo, téléphone/pays/devise, sous-listes, stepper…
 
-> ⚠️ Projet en cours de conception (phase de planification BMAD). L'architecture et le découpage des packages sont en cours de définition.
+Le monorepo compte **39 paquets** consommés en dépendance git par plusieurs applications de
+production. La documentation complète vit dans [`docs/site/`](docs/site/index.md).
 
-## Objectif
+## Les piliers
 
-Fournir un ensemble de packages Dart/Flutter réutilisables, importables directement dans les projets existants en remplacement du code redondant, avec :
+- **Un schéma, deux surfaces** — le modèle annoté (`@ZcrudModel`) génère sérialisation,
+  `ZFieldSpec[]` et enregistrement au registre ; formulaires et listes en découlent.
+- **Réactivité Flutter-native** — aucun gestionnaire d'état dans le cœur (`ChangeNotifier` /
+  `ValueListenable`) ; l'intégration Riverpod/GetX/provider vit dans des paquets de binding.
+- **Architecture hexagonale** — domaine pur, ports neutres (`ZRepository`, `Either<ZFailure,T>`),
+  adaptateurs isolés (Firestore/Hive, Syncfusion, Quill, cartes). Le graphe de dépendances
+  est **acyclique et vérifié par gate**.
+- **Défensif par contrat** — un champ absent ou corrompu ne fait jamais échouer le parent ;
+  évolution de schéma additive seulement.
+- **RTL, a11y, thème** — variantes directionnelles, cibles ≥ 48 dp, zéro couleur codée en dur.
 
-- **Listes dynamiques** (`DynamicList`) : affichage tableau/liste, recherche, filtres, tri, pagination, export.
-- **Édition dynamique** (`DynamicEdition`) : formulaires générés à partir d'un schéma, prenant en charge **tous les types de champs** (texte, nombre, date, booléen, énumération, relation, listes imbriquées, fichier/image, géo/carte, téléphone, pays/devise, richtext, formule, table…).
-- **Éditeur & lecteur Markdown** riche, pleinement pris en charge (base Quill, conversion Delta ↔ Markdown, embeds tables et formules LaTeX).
-- **Cartes mentales** (mindmaps) : affichage et édition.
-- **Flashcards** : édition, apprentissage, répétition espacée.
+## Carte des paquets
 
-## Principes de conception
-
-- **Riverpod** pour la gestion d'état, avec **rebuilds réactifs granulaires** (résolution du bug historique de « rafraîchissement complet du formulaire » à chaque frappe).
-- **Génération de code maximale** pour la sérialisation : `freezed` + `json_serializable` (abandon de `reflectable`).
-- **Monorepo modulaire** (melos) : chaque projet consommateur importe uniquement les sous-packages dont il a besoin.
-
-## Découpage prévu des packages (provisoire)
-
-| Package | Responsabilité |
+| Capacité | Paquets |
 |---|---|
-| `zcrud_core` | Schéma de champs, moteur liste + édition, data layer, l10n |
-| `zcrud_markdown` | Éditeur/lecteur Markdown riche + embeds (tables, LaTeX) |
-| `zcrud_mindmap` | Cartes mentales (affichage + édition) |
-| `zcrud_flashcard` | Flashcards (édition, apprentissage, répétition espacée) |
+| **Cœur** | `zcrud_core` (schéma, moteur d'édition, ports, thème, l10n) · `zcrud_annotations` · `zcrud_generator` |
+| **Bindings d'état** | `zcrud_riverpod` · `zcrud_get` · `zcrud_provider` |
+| **Liste & données** | `zcrud_list` (Syncfusion) · `zcrud_firestore` (offline-first) · `zcrud_select` |
+| **Rich-text** | `zcrud_markdown` (Quill, LaTeX, tables) · `zcrud_html` |
+| **Étude** | `zcrud_study` · `zcrud_study_kernel` · `zcrud_session` · `zcrud_flashcard` · `zcrud_exam` · `zcrud_mindmap` · `zcrud_note` · `zcrud_document` |
+| **Chat** | `zcrud_chat` · `zcrud_chat_kernel` · `zcrud_chat_markdown` · `zcrud_chat_material` · `zcrud_chat_study` · `zcrud_chat_syncfusion` |
+| **Champs spécialisés** | `zcrud_geo` · `zcrud_geo_location` · `zcrud_intl` (téléphone/pays/devise) · `zcrud_media` · `zcrud_field_extras` |
+| **Export** | `zcrud_export` · `zcrud_export_pdf` · `zcrud_export_ui` |
+| **UI & navigation** | `zcrud_ui_kit` · `zcrud_responsive` · `zcrud_menu` · `zcrud_navigation` · `zcrud_dnd` · `zcrud_reorder` |
 
-> Le découpage définitif sera arrêté en phase d'architecture.
+Chaque paquet expose son API par un barrel unique (`lib/<pkg>.dart`) et porte son README.
 
-## Consommateurs cibles
+## Démarrer
 
-1. **DODLP** (prioritaire) — source et premier consommateur.
-2. **lex_douane** — projet le plus récent, à équiper d'édition de formulaires riches, flashcards et mindmaps.
+- [Démarrage rapide](docs/site/demarrage-rapide.md) — de zéro à un écran CRUD.
+- [Consommer en dépendance git](docs/private-git-consumption.md) — la recette exacte
+  (`dependency_overrides` sur la fermeture des paquets internes).
+- [Concepts](docs/site/concepts/) — `ZFieldSpec`, architecture hexagonale, réactivité
+  granulaire, offline-first, invariants d'architecture.
+- Application de démonstration : [`example/`](example/README.md).
 
-## Méthodologie
+## Développer dans le monorepo
 
-Ce dépôt est piloté avec [BMAD-METHOD](https://github.com/bmad-code-org). Les artefacts de planification vivent dans `_bmad-output/planning-artifacts/`.
+```bash
+dart pub get                 # bootstrap (pub workspaces)
+dart run melos run generate  # codegen (build_runner)
+dart run melos run analyze   # analyse complète (packages + scripts + example)
+cd packages/<pkg> && flutter test   # tests — toujours depuis le dossier du paquet
+dart run melos run verify    # gates de merge (graphe acyclique, secrets, codegen…)
+```
+
+La [charte documentaire](docs/site/charte.md) régit README, dartdoc et pages du site.
+
+## Licence
+
+MIT.

@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 // ───────────────────────── Modèle de test ─────────────────────────────────
 
 /// Entité de test minimale. `fromMap` **strict** : lève sur `title`/`count`
@@ -663,9 +665,10 @@ void main() {
     // `FirebaseFirestore` : couture DI VOULUE (hors des 6 types), donc TOLÉRÉE.
     test('AC13 — aucun type cloud_firestore dans une signature publique', () {
       final pkg = _pkgDir();
-      // Le barrel ne ré-exporte AUCUN paquet Firebase.
+      // Le barrel ne ré-exporte AUCUN paquet Firebase. P0b : source
+      // dé-commentée.
       final barrel =
-          File('${pkg.path}/lib/zcrud_firestore.dart').readAsStringSync();
+          strippedSource(File('${pkg.path}/lib/zcrud_firestore.dart'));
       for (final bad in <String>['cloud_firestore', 'firebase_core']) {
         expect(RegExp("export\\s+'package:$bad").hasMatch(barrel), isFalse,
             reason: 'Le barrel ne doit PAS ré-exporter package:$bad (AD-5).');
@@ -700,23 +703,11 @@ void main() {
       ];
       var publicSignatureLinesScanned = 0;
       final offenders = <String>[];
+      // P0b : dé-commentateur PARTAGÉ ROBUSTE — l'ancien `inBlockComment`
+      // local ne détectait un bloc QUE s'il s'ouvrait en DÉBUT de ligne, et
+      // ne retirait pas un `//` de fin de ligne avant `forbiddenRe.hasMatch`.
       for (final rel in exported) {
-        final lines = File('${pkg.path}/$rel').readAsLinesSync();
-        var inBlockComment = false;
-        for (final raw in lines) {
-          final trimmed = raw.trimLeft();
-          if (inBlockComment) {
-            if (trimmed.contains('*/')) inBlockComment = false;
-            continue;
-          }
-          if (trimmed.startsWith('/*')) {
-            if (!trimmed.contains('*/')) inBlockComment = true;
-            continue;
-          }
-          if (trimmed.startsWith('//') || trimmed.startsWith('/// ') ||
-              trimmed.startsWith('///')) {
-            continue;
-          }
+        for (final raw in stripped(File('${pkg.path}/$rel'))) {
           final m = publicMember.firstMatch(raw);
           if (m == null) continue;
           final name = m.group(1)!;

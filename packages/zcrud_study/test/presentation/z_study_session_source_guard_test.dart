@@ -24,6 +24,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 /// Fichiers RÉELLEMENT écrits par ce lot (chemins relatifs au package).
 const List<String> _lotFiles = <String>[
   'lib/src/presentation/z_study_session_host.dart',
@@ -85,7 +87,9 @@ List<String> _codeOf(String path) {
   expect(file.existsSync(), isTrue,
       reason: 'introuvable: $path (cwd=${Directory.current.path}) — '
           '⚠️ `flutter test` doit être lancé DEPUIS le package');
-  return file.readAsLinesSync();
+  // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `declarations()` filtre déjà `//`/`*`
+  // en tête de ligne, mais pas un bloc `/* … */` — `stripped` le couvre aussi.
+  return stripped(file);
 }
 
 void main() {

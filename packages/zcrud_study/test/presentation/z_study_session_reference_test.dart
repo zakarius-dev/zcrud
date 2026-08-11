@@ -18,6 +18,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 void main() {
   /// Résout le chrome dans un contexte RÉEL (le résolveur lit `Theme.of`).
   Future<ZStudySessionChrome> resolve(
@@ -165,10 +167,10 @@ void main() {
           reason: 'introuvable: $path (cwd=${Directory.current.path}) — '
               'lancer `flutter test` DEPUIS le package');
       final List<String> offenders = <String>[];
-      final List<String> lines = file.readAsLinesSync();
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `stripped` retire aussi les
+      // commentaires de fin de ligne et les blocs `/* … */`.
+      final List<String> lines = stripped(file);
       for (var i = 0; i < lines.length; i++) {
-        final String trimmed = lines[i].trimLeft();
-        if (trimmed.startsWith('///') || trimmed.startsWith('//')) continue;
         for (final String motif in <String>['Colors.', 'Color(0x']) {
           if (lines[i].contains(motif)) {
             offenders.add('$path:${i + 1} → $motif');
@@ -198,7 +200,10 @@ void main() {
       expect(theme.existsSync(), isTrue,
           reason: 'sonde cassée : le fichier de thème est introuvable depuis '
               '${Directory.current.path}');
-      final String src = theme.readAsStringSync();
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : ce test vérifie le CÂBLAGE réel
+      // — une dartdoc DOIT pouvoir citer `studySession<Token>` en exemple sans
+      // masquer la disparition RÉELLE du jeton.
+      final String src = stripped(theme).join('\n');
       for (final String token in _kStudySessionTokens) {
         expect(src, contains('studySession$token'),
             reason: '🔴 le jeton `studySession$token` a disparu de '
@@ -214,7 +219,9 @@ void main() {
         'lib/src/presentation/z_study_session_reference.dart',
       );
       expect(src.existsSync(), isTrue, reason: 'sonde cassée');
-      final String body = src.readAsStringSync();
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : idem — le câblage RÉEL, pas sa
+      // mention en dartdoc.
+      final String body = stripped(src).join('\n');
       for (final String token in _kStudySessionTokens) {
         expect(body, contains('theme.studySession$token'),
             reason: '🔴 le maillon JETON de `studySession$token` a sauté : la '

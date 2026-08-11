@@ -36,6 +36,7 @@ import 'package:zcrud_core/zcrud_core.dart'
 import 'package:zcrud_navigation/zcrud_navigation.dart';
 
 import 'support/z_edition_tree_serializer.dart';
+import 'support/z_sources.dart' show stripSource;
 
 Widget _host(Widget child) => MaterialApp(
       localizationsDelegates: const <LocalizationsDelegate<Object?>>[
@@ -397,6 +398,11 @@ void main() {
         'lib/src/presentation/z_edition_scaffold.dart',
       ];
       for (final String path in source) {
+        // Le fichier BRUT (non stripé) sert à BORNER la tranche : la borne de
+        // fin est elle-même un marqueur dartdoc (`/// Emphase visuelle …`),
+        // donc chercher cette borne dans une source déjà strippée la ferait
+        // disparaître. Seul le CONTENU de la tranche (les `.contains`/regex
+        // ci-dessous) doit être insensible aux commentaires.
         final String code = File(path).readAsStringSync();
         final int start = code.indexOf('_ZRenderUnboundedBodyGuard');
         expect(start, greaterThan(0),
@@ -409,7 +415,10 @@ void main() {
         expect(stop, greaterThan(start),
             reason: '🔴 borne de fin de la garde introuvable : le volet FR-26 '
                 'lirait tout le reste du fichier.');
-        final String body = code.substring(start, stop);
+        // Stripped à l'intérieur de la tranche : un dartdoc peut légitimement
+        // CITER `ErrorWidget`/`Text(` pour documenter qu'ils sont interdits
+        // ici (P0D1) — le grep vise le CODE, jamais la prose.
+        final String body = stripSource(code.substring(start, stop));
         expect(body.contains('assert(() {'), isTrue,
             reason: '🔴 le diagnostic n\'est plus sous `assert` : il serait '
                 'compilé en release.');

@@ -21,6 +21,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 const ZFlashcard _card = ZFlashcard(question: 'Q', answer: 'A');
 const ZFlashcard _other = ZFlashcard(question: 'Q2', answer: 'A2');
 
@@ -461,11 +463,11 @@ void main() {
         expect(lines, isNotEmpty, reason: 'fichier vide — rien scanné (R12)');
 
         final offenders = <String>[];
-        for (var i = 0; i < lines.length; i++) {
-          final trimmed = lines[i].trimLeft();
-          if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-            continue; // la prose DOIT pouvoir nommer setState pour l'interdire
-          }
+        // 🔴 STRIPPÉ (support/z_sources.dart) : la prose — pleine ligne OU fin
+        // de ligne — DOIT pouvoir nommer setState pour l'interdire.
+        final code = zsrc.stripLines(lines);
+        for (var i = 0; i < code.length; i++) {
+          final trimmed = code[i].trim();
           if (trimmed.contains('setState')) {
             offenders.add('${source.path}:${i + 1} → « $trimmed »');
           }

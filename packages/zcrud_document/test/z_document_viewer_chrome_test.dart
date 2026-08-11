@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_document/zcrud_document.dart';
 
+import 'support/z_sources.dart';
+
 const _contentKey = ValueKey<String>('document-content');
 const _topKey = ValueKey<String>('document-top');
 const _bottomKey = ValueKey<String>('document-bottom');
@@ -152,9 +154,14 @@ void main() {
   test(
     'CR-68 — aucun libellé ni moteur tiers n’est introduit dans la coque',
     () {
-      final source = File(
-        'lib/src/presentation/z_document_viewer_chrome.dart',
-      ).readAsStringSync();
+      // 🔴 P0D3 : le CODE seul est scanné (commentaires dépouillés) — la
+      // dartdoc de ce fichier (et celle du chantier de documentation en
+      // cours) peut légitimement CITER `syncfusion`/`Colors.`/`Text('` pour
+      // expliquer pourquoi la coque les BANNIT. Un grep sur la source BRUTE
+      // mordrait sur sa propre documentation.
+      final source = stripCommentsOf(
+        File('lib/src/presentation/z_document_viewer_chrome.dart'),
+      );
       expect(source, isNot(contains('syncfusion')));
       expect(source, isNot(contains('PdfViewer')));
       expect(source, isNot(contains('Colors.')));

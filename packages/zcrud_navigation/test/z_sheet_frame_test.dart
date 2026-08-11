@@ -28,6 +28,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 import 'package:zcrud_navigation/zcrud_navigation.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 /// Largeur d'écran « compacte » du montage — la policy y choisit `sheet`.
 const double kCompactWidth = 400;
 
@@ -549,8 +551,10 @@ void main() {
     // n'émet aucun libellé. C'est le volet MORDANT (ajouter un `Semantics`
     // dans `z_sheet_frame.dart` le fait rougir) ; le volet 2 ci-dessous est
     // son corollaire observable.
-    final String src =
-        File('lib/src/presentation/z_sheet_frame.dart').readAsStringSync();
+    // Stripped : le dartdoc du fichier peut légitimement CITER `Semantics(`
+    // ou `label(` en documentant qu'ils en sont absents — le grep vise le
+    // CODE, jamais la prose (même précaution que SG-1/SG-2, P0D1).
+    final String src = stripped(File('lib/src/presentation/z_sheet_frame.dart'));
     expect(src.contains('Semantics('), isFalse,
         reason: '🔴 le fichier du cadre construit un nœud sémantique : le '
             'contour porterait alors une information (AD-13).');

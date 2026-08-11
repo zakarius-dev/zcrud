@@ -22,6 +22,8 @@ import 'package:hive/hive.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 // ───────────────────────── Modèle de test ─────────────────────────────────
 
 class _Note extends ZEntity {
@@ -532,9 +534,11 @@ void main() {
     test('z_offline_first_repository.dart : aucun symbole hive/cloud_firestore',
         () {
       final pkg = _pkgDir();
-      final src = File(
-              '${pkg.path}/lib/src/data/z_offline_first_repository.dart')
-          .readAsStringSync();
+      // P0b : source DÉ-COMMENTÉE (le dartdoc peut citer ces symboles pour
+      // documenter leur ABSENCE, cf. dartdoc de librairie AD-5).
+      final src = strippedSource(
+        File('${pkg.path}/lib/src/data/z_offline_first_repository.dart'),
+      );
       // Le fichier n'importe AUCUN backend.
       expect(src.contains('package:cloud_firestore'), isFalse);
       expect(src.contains('package:hive'), isFalse);
@@ -558,18 +562,12 @@ void main() {
       );
       var scanned = 0;
       final offenders = <String>[];
-      var inBlockComment = false;
-      for (final raw in src.split('\n')) {
-        final trimmed = raw.trimLeft();
-        if (inBlockComment) {
-          if (trimmed.contains('*/')) inBlockComment = false;
-          continue;
-        }
-        if (trimmed.startsWith('/*')) {
-          if (!trimmed.contains('*/')) inBlockComment = true;
-          continue;
-        }
-        if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+      // P0b : dé-commentateur PARTAGÉ ROBUSTE (le local d'origine ratait un
+      // bloc `/* … */` ouvert par du CODE sur sa ligne, et n'ôtait pas un
+      // commentaire de FIN de ligne avant `forbiddenRe.hasMatch(raw)`).
+      for (final raw in stripped(
+        File('${pkg.path}/lib/src/data/z_offline_first_repository.dart'),
+      )) {
         final m = publicMember.firstMatch(raw);
         if (m == null || m.group(1)!.startsWith('_')) continue;
         scanned++;

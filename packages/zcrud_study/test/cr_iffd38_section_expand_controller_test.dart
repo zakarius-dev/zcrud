@@ -19,6 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 ZStudyToolsSectionSpec _spec({
   required String id,
   bool initiallyExpanded = true,
@@ -109,10 +111,11 @@ IconData _chevronIcon(WidgetTester tester, String id) =>
 /// Source d'un fichier **débarrassée de ses commentaires** : une garde qui
 /// compterait les occurrences de texte, dartdoc compris, serait verte (ou
 /// rouge) sans rien mesurer du code réellement compilé.
-String _codeOf(String path) => File(path)
-    .readAsLinesSync()
-    .where((String l) => !l.trimLeft().startsWith('//'))
-    .join('\n');
+///
+/// 🔴 DÉPOUILLÉ via le patron PARTAGÉ (campagne dartdoc P0A) : l'ancien
+/// `startsWith('//')` ligne-à-ligne laissait passer un commentaire de fin de
+/// ligne et un bloc `/* … */`.
+String _codeOf(String path) => stripped(File(path)).join('\n');
 
 /// Racine du dépôt (dossier portant `melos.yaml`) — ancrage ROBUSTE.
 Directory _repoRoot() {

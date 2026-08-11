@@ -27,6 +27,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'support/z_sources.dart' as z_sources;
+
 void main() {
   // ═══════════════════════════════════════════════════════════════════════════
   // AC13(a) — DOMAINE PUR-DART : aucun import Flutter/dart:ui.
@@ -163,20 +165,7 @@ Map<String, String> _sourcesUnder(String root) {
       .listSync(recursive: true)
       .whereType<File>()
       .where((f) => f.path.endsWith('.dart'))) {
-    out[f.path] = _stripComments(f.readAsStringSync());
+    out[f.path] = z_sources.stripCommentsOf(f);
   }
   return out;
-}
-
-/// Retire commentaires de bloc et de ligne (évite les faux positifs sur les
-/// exemples/dartdoc — ex. « Colors.white » cité dans un commentaire).
-String _stripComments(String src) {
-  final sansBlocs = src.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  return sansBlocs
-      .split('\n')
-      .map((l) {
-        final i = l.indexOf('//');
-        return i == -1 ? l : l.substring(0, i);
-      })
-      .join('\n');
 }

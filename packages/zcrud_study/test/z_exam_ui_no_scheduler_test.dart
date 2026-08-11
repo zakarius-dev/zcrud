@@ -12,6 +12,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart';
+
 /// Fichiers de PRODUCTION livrés par ES-9.2 (scan LOCAL au package).
 const List<String> _es92Files = <String>[
   'lib/src/presentation/z_exam_editor.dart',
@@ -98,13 +100,11 @@ void main() {
 }
 
 /// Dépouille les commentaires (`//` et `/* */`) avant le scan tokenisé.
-String _stripComments(String src) {
-  final sansBlocs = src.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  return sansBlocs
-      .split('\n')
-      .map((l) {
-        final i = l.indexOf('//');
-        return i == -1 ? l : l.substring(0, i);
-      })
-      .join('\n');
-}
+///
+/// 🔴 Délègue au dépouilleur PARTAGÉ (`support/z_sources.dart`) : l'ancienne
+/// implémentation locale traitait le BLOC `/* */` en premier, sur le fichier
+/// ENTIER — une dartdoc écrivant littéralement `packages/*/lib` (motif
+/// contenant `/*` jamais refermé par un `*/` proche) aurait AVALÉ la fin du
+/// fichier, rendant le scan silencieusement vacant en aval de cette ligne.
+/// Le dépouilleur partagé traite la LIGNE avant le BLOC (ordre correct).
+String _stripComments(String src) => strippedLines(src.split('\n')).join('\n');

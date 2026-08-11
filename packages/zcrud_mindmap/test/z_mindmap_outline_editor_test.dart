@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Forêt mono-racine : Root → { Child1 → Grand1 ; Child2 }.
 List<ZMindmapNode> _forest() => ZMindmapTreeOps.normalizeLevels(<ZMindmapNode>[
       ZMindmapNode(
@@ -506,16 +508,11 @@ void main() {
       'lib/src/presentation/z_mindmap_outline_labels.dart',
     ].map(resolve).toList();
 
-    // Retire les commentaires (`//`, `///`) : le grep de garde vise le CODE, pas
-    // la documentation (qui peut légitimement nommer les API interdites).
-    String codeOnly(String src) {
-      final b = StringBuffer();
-      for (final line in src.split('\n')) {
-        final i = line.indexOf('//');
-        b.writeln(i >= 0 ? line.substring(0, i) : line);
-      }
-      return b.toString();
-    }
+    // Retire les commentaires (ligne `//`/`///` ET bloc `/* */`) : le grep de
+    // garde vise le CODE, pas la documentation (qui peut légitimement nommer
+    // les API interdites). Déléguée à `test/support/z_sources.dart` (P0D1) :
+    // l'ancienne version locale ne retirait que les commentaires de LIGNE.
+    String codeOnly(String src) => stripSource(src);
 
     test('aucun gestionnaire d\'état ni API manager (AD-2/AD-15)', () {
       for (final path in files) {

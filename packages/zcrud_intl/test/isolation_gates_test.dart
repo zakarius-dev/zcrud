@@ -16,6 +16,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 const _intlLibs = <String>[
   'phone_numbers_parser',
   'libphonenumber_plugin',
@@ -112,15 +114,13 @@ Directory _libDir() => Directory('packages/zcrud_intl/lib').existsSync()
 
 /// Supprime les commentaires Dart (`// …` et `/* … */`) pour que les gardes de
 /// motifs ne matchent PAS un exemple cité en commentaire (AI-E10-2).
-String _stripComments(String src) {
-  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+///
+/// 🔴 P0D2 : déléguée à `support/z_sources.dart` — l'ancienne implémentation
+/// locale (regex bloc appliquée AVANT le retrait des `//`, sans égard aux
+/// littéraux de chaîne) était piégée par un dartdoc citant littéralement
+/// `packages/*/lib` : le `/*` accidentel avalait tout le code jusqu'au
+/// prochain `*/` du fichier, rendant la garde silencieusement vacuelle.
+String _stripComments(String src) => stripComments(src);
 
 Iterable<File> _dartFiles() =>
     _libDir().listSync(recursive: true).whereType<File>().where(
@@ -203,7 +203,7 @@ void main() {
     test('un seul fichier importe phone_numbers_parser (confinement AD-1)', () {
       final importers = <String>[];
       for (final e in _dartFiles()) {
-        final src = e.readAsStringSync();
+        final src = _stripComments(e.readAsStringSync());
         if (RegExp(r'''import\s+['"]package:phone_numbers_parser''')
             .hasMatch(src)) {
           importers.add(e.path);
@@ -224,7 +224,7 @@ void main() {
         () {
       final importers = <String>[];
       for (final e in _dartFiles()) {
-        final src = e.readAsStringSync();
+        final src = _stripComments(e.readAsStringSync());
         if (RegExp(r'''import\s+['"]package:intl_phone_number_input''')
             .hasMatch(src)) {
           importers.add(e.path);

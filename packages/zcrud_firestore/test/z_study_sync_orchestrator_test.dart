@@ -21,6 +21,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show strippedSource;
+
 // ───────────────────────── Fabrique de timer contrôlable ────────────────────
 
 /// Poignée de timer **fausse** : capture `(durée, callback)` sans horloge réelle.
@@ -166,16 +168,14 @@ void main() {
 
     test('garde statique (disque) : le fichier fabrique n\'importe/construit '
         'AUCUN repo concret (anti-doublon study_sync_manager)', () {
-      final rawSource = File(
-        'lib/src/data/z_study_sync_orchestrator.dart',
-      ).readAsStringSync();
       // On inspecte le CODE, pas la prose : le dartdoc nomme légitimement les
-      // symboles interdits pour expliquer leur ABSENCE. Retirer les lignes de
-      // commentaire évite tout faux-positif (garde load-bearing sur le vrai code).
-      final code = rawSource
-          .split('\n')
-          .where((l) => !l.trimLeft().startsWith('//'))
-          .join('\n');
+      // symboles interdits pour expliquer leur ABSENCE. P0b : dé-commentateur
+      // PARTAGÉ ROBUSTE — l'ancien filtre local ne retirait que les lignes
+      // commençant par `//`, aveugle à un `/* … */` et aux commentaires de
+      // fin de ligne.
+      final code = strippedSource(
+        File('lib/src/data/z_study_sync_orchestrator.dart'),
+      );
 
       // Aucun repo concret importé/instancié : la seule source de dépôts est le
       // paramètre `repositories`. (Miroir de l'éradication de
@@ -190,9 +190,11 @@ void main() {
       expect(code.contains('firebase_auth'), isFalse);
       expect(code.contains('connectivity_plus'), isFalse);
       expect(code.toLowerCase().contains('riverpod'), isFalse);
-      // Le seul import est le barrel neutre du cœur.
-      final imports = rawSource
-          .split('\n')
+      // Le seul import est le barrel neutre du cœur. Sûr par construction
+      // sur la source BRUTE : une ligne de commentaire ne commence jamais
+      // par le mot-clé `import ` après trim.
+      final imports = File('lib/src/data/z_study_sync_orchestrator.dart')
+          .readAsLinesSync()
           .where((l) => l.trimLeft().startsWith('import '))
           .toList();
       expect(imports, ["import 'package:zcrud_core/zcrud_core.dart';"],

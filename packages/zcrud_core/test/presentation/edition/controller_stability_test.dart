@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/z_sources.dart' as sources;
 import '_reference_form.dart';
 
 void main() {
@@ -84,7 +85,11 @@ void main() {
       fail('z_edition_field.dart introuvable depuis ${Directory.current.path}');
     }
 
-    final src = srcFile().readAsStringSync();
+    // 🔴 Source STRIPPÉE (support/z_sources.dart) : la dartdoc du fichier peut
+    // citer `_text.text =` pour documenter l'interdit (faux rouge), et une
+    // prose citant `setValue(widget.field.name, v)` ne doit pas pouvoir
+    // satisfaire le contrôle de présence si le CODE le perdait (aveuglement).
+    final src = sources.strippedSource(srcFile());
 
     // Voie de frappe = sens unique : onChanged délègue à setValue.
     expect(src.contains('setValue(widget.field.name, v)'), isTrue,

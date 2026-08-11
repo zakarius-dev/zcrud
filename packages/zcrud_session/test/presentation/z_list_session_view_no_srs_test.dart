@@ -56,6 +56,7 @@ import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 
+import '../support/z_sources.dart';
 import 'z_exam_harness.dart';
 
 /// Espion d'écriture SRS — 🔒 `ZSessionReviewer` est un **typedef de FONCTION** :
@@ -107,7 +108,9 @@ void main() {
             '— cette garde ne scannerait plus rien et serait verte pour de '
             'mauvaises raisons',
       );
-      final src = file.readAsStringSync();
+      // P0b : source DÉ-COMMENTÉE — un dartdoc de paramètre peut citer
+      // `reviewer`/`scheduler`/`store` en prose sans que ce soit un ajout réel.
+      final src = strippedSource(file);
       expect(src, isNotEmpty, reason: 'source vide — rien scanné');
 
       final start = src.indexOf('const ZListSessionView({');
@@ -140,14 +143,13 @@ void main() {
     test('🔴 le CORPS de la vue ne contient AUCUN symbole d\'écriture SRS', () {
       final file = File(_viewPath);
       expect(file.existsSync(), isTrue, reason: 'source introuvable: $_viewPath');
-      final lines = file.readAsLinesSync();
+      // P0b : dé-commentateur ROBUSTE — la doc doit pouvoir NOMMER les
+      // concepts SRS (contraste AD-23) sans faire rougir la garde.
+      final lines = stripped(file);
       expect(lines, isNotEmpty, reason: 'source vide — rien scanné');
 
       final violations = <String>[];
       for (var i = 0; i < lines.length; i++) {
-        final trimmed = lines[i].trimLeft();
-        // La doc doit pouvoir NOMMER les concepts SRS (contraste AD-23).
-        if (trimmed.startsWith('///') || trimmed.startsWith('//')) continue;
         for (final symbol in _bannedSrsSymbols) {
           if (lines[i].contains(symbol)) {
             violations.add('$_viewPath:${i + 1} → $symbol :: ${lines[i].trim()}');

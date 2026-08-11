@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 
+import '../support/z_sources.dart';
 import 'z_exam_harness.dart';
 
 void main() {
@@ -75,14 +76,14 @@ void main() {
       isTrue,
       reason: 'source introuvable: $path (cwd=${Directory.current.path})',
     );
-    final lines = file.readAsLinesSync();
+    // P0b : dé-commentateur ROBUSTE — la doc doit pouvoir NOMMER le motif
+    // interdit (ce dartdoc-ci le fait) sans faire rougir la garde ; l'ancien
+    // filtre `startsWith('//')` était aveugle aux blocs `/* … */`.
+    final lines = stripped(file);
     expect(lines, isNotEmpty, reason: 'source vide — rien scanné');
 
     final violations = <String>[];
     for (var i = 0; i < lines.length; i++) {
-      final trimmed = lines[i].trimLeft();
-      // La doc doit pouvoir NOMMER le motif interdit (ce dartdoc-ci le fait).
-      if (trimmed.startsWith('///') || trimmed.startsWith('//')) continue;
       // `ListView(` = constructeur par défaut (children:) ; `ListView.builder(`
       // ne matche pas (le `.` s'interpose).
       if (lines[i].contains('ListView(')) {

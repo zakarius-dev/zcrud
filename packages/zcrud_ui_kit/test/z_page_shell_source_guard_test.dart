@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show packageRoot, stripComments;
+
 /// Fichiers source de la story SUF-1 (page-shell).
 const _storyFiles = <String>[
   'lib/src/domain/z_app_bar_action.dart',
@@ -13,18 +15,17 @@ const _storyFiles = <String>[
   'lib/src/presentation/z_page_scaffold.dart',
 ];
 
-/// Retire les commentaires de ligne (`//` et `///`) pour éviter les
-/// faux-positifs sur la dartdoc.
-String _stripComments(String source) {
-  final buffer = StringBuffer();
-  for (final line in source.split('\n')) {
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+/// Retire les commentaires de ligne (`//`/`///`) ET de bloc (`/* … */`) pour
+/// éviter les faux-positifs sur la dartdoc.
+///
+/// 🔴 P0D2 : déléguée à `support/z_sources.dart` (scanner caractère par
+/// caractère) — l'ancienne implémentation locale ne retirait QUE les
+/// commentaires de ligne, laissant passer tout motif interdit cité dans un
+/// commentaire de bloc `/* … */`.
+String _stripComments(String source) => stripComments(source);
 
-String _readCode(String path) => _stripComments(File(path).readAsStringSync());
+String _readCode(String path) =>
+    _stripComments(File('${packageRoot().path}/$path').readAsStringSync());
 
 void main() {
   // AC12 — zéro couleur codée en dur (hors Colors.transparent).

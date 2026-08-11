@@ -31,6 +31,7 @@ import 'package:zcrud_core/zcrud_core.dart'
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import '../support/z_sources.dart' show strippedLines;
 import 'cr_iffd48_parity_guard_test.dart' show zNamedCtorParams;
 
 ZFlashcard _card(int i) => ZFlashcard(
@@ -635,10 +636,13 @@ void main() {
         if (File('${dir.path}/melos.yaml').existsSync()) break;
         dir = dir.parent;
       }
-      final String src = File(
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `zNamedCtorParams` fait une
+      // extraction POSITIONNELLE — une dartdoc par paramètre insérée dans la
+      // liste des paramètres nommés doit rester sans effet sur le comptage.
+      final String src = strippedLines(File(
               '${dir.path}/packages/zcrud_study/lib/src/presentation/'
               'z_study_tools_section_spec.dart')
-          .readAsStringSync();
+          .readAsLinesSync()).join('\n');
       for (final String header in <String>[
         'ZStudyToolsSectionSpec.flashcards({',
         'ZStudyToolsSectionSpec.mindmaps({',

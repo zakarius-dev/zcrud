@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 /// Fichiers RÉELLEMENT écrits par SUF-3 (chemins RELATIFs au package).
 const List<String> _suf3Files = <String>[
   'lib/src/presentation/z_study_folder_detail.dart',
@@ -19,19 +21,16 @@ const List<String> _suf3Files = <String>[
   'lib/src/presentation/z_subfolder_item_chrome.dart',
 ];
 
-/// Lignes de CODE (hors commentaires `//` / `///`).
+/// Lignes de CODE (commentaires `//`/`///`/`/* */` DÉPOUILLÉS — campagne
+/// dartdoc P0A : un simple `startsWith('//')` ligne-à-ligne laissait passer un
+/// commentaire de FIN DE LIGNE ou un bloc `/* … */`, faisant potentiellement
+/// rougir la garde sur de la PROSE plutôt que du code).
 List<String> _codeLines(String path) {
   final file = File(path);
   expect(file.existsSync(), isTrue,
       reason: 'introuvable: $path (cwd=${Directory.current.path}) — lancer '
           '`flutter test` DEPUIS le package');
-  return file
-      .readAsLinesSync()
-      .where((l) {
-        final t = l.trimLeft();
-        return !t.startsWith('//') && !t.startsWith('///');
-      })
-      .toList();
+  return stripped(file);
 }
 
 void main() {

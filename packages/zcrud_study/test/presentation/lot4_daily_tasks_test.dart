@@ -27,6 +27,8 @@ import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 import 'package:zcrud_study/zcrud_study.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 // Libellés INJECTÉS de test.
 const String kDuePrefix = 'DUE_';
 const String kExamPrefix = 'EXAM_';
@@ -740,7 +742,9 @@ void main() {
       for (final String path in lotFiles) {
         final File f = File(path);
         expect(f.existsSync(), isTrue, reason: 'sonde cassée : $path');
-        hits.addAll(scanClock(f.readAsLinesSync(), path));
+        // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `stripped` retire aussi les
+        // commentaires de fin de ligne et les blocs `/* … */`.
+        hits.addAll(scanClock(stripped(f), path));
       }
       expect(hits, isEmpty, reason: '🔴 horloge interne :\n${hits.join('\n')}');
     });
@@ -957,7 +961,9 @@ void main() {
       expect(theme.existsSync(), isTrue,
           reason: 'sonde cassée : thème introuvable depuis '
               '${Directory.current.path}');
-      final String src = theme.readAsStringSync();
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : le câblage RÉEL, pas sa mention
+      // en dartdoc.
+      final String src = stripped(theme).join('\n');
       for (final String token in kDailyTasksTokens) {
         expect(src, contains('dailyTasks$token'),
             reason: '🔴 le jeton `dailyTasks$token` a disparu de `ZcrudTheme` : '
@@ -971,7 +977,8 @@ void main() {
         'lib/src/presentation/z_daily_tasks_reference.dart',
       );
       expect(src.existsSync(), isTrue, reason: 'sonde cassée');
-      final String body = src.readAsStringSync();
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : idem.
+      final String body = stripped(src).join('\n');
       for (final String token in kDailyTasksTokens) {
         expect(body, contains('theme.dailyTasks$token'),
             reason: '🔴 le maillon JETON de `dailyTasks$token` a sauté : la '
@@ -982,9 +989,11 @@ void main() {
 
     test('🚫 AUCUN jeton générique n\'est ridé par le résolveur (CR-IFFD-61)',
         () {
-      final String body = File(
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : une dartdoc pourrait citer un
+      // jeton générique en contre-exemple sans que ce soit du CODE réel.
+      final String body = stripped(File(
         'lib/src/presentation/z_daily_tasks_reference.dart',
-      ).readAsStringSync();
+      )).join('\n');
       for (final String generic in <String>[
         'theme.gapS',
         'theme.gapM',

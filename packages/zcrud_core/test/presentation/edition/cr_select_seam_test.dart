@@ -23,6 +23,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import '../../support/z_sources.dart' as sources;
+
 /// Présentateur **espion** : n'affiche rien d'utile, mais retient la DERNIÈRE
 /// `ZSelectPresentation` reçue et compte les appels. C'est la seule façon de
 /// mesurer ce que les deux sites d'alimentation transmettent réellement.
@@ -289,12 +291,10 @@ void main() {
           expect(line.contains('awesome_select'), isFalse);
         }
         // 🔴 Et aucune mention d'un type du fork dans le CODE (le dartdoc peut
-        // en parler, le code non).
-        final List<String> code = f
-            .readAsLinesSync()
-            .where((l) => !l.trimLeft().startsWith('///'))
-            .where((l) => !l.trimLeft().startsWith('//'))
-            .toList(growable: false);
+        // en parler, le code non). Dépouillement PARTAGÉ (support/z_sources) :
+        // il retire AUSSI les commentaires de FIN de ligne — un `// cf. S2Choice`
+        // accroché à une ligne de code ne doit pas faire rougir la garde.
+        final List<String> code = sources.strippedLines(f);
         for (final String line in code) {
           expect(
             RegExp(r'\bS2[A-Z]').hasMatch(line),

@@ -47,6 +47,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 
+import '../support/z_sources.dart';
+
 /// QCM à **2** corrects (multi-sélection : cocher n'en décoche pas un autre —
 /// on isole ainsi le geste, sans effet de bord d'exclusivité).
 ZFlashcard _qcm() => const ZFlashcard(
@@ -486,13 +488,11 @@ void main() {
       final src = File(swiperPath);
       expect(src.existsSync(), isTrue,
           reason: 'introuvable: $swiperPath (cwd=${Directory.current.path})');
-      final decls = <String>[
-        for (final raw in src.readAsLinesSync())
-          if (!raw.trimLeft().startsWith('///') &&
-              !raw.trimLeft().startsWith('//') &&
-              !raw.trimLeft().startsWith('*'))
-            raw,
-      ].join('\n');
+      // P0b : dé-commentateur ROBUSTE — l'ancien filtre ne retirait que les
+      // lignes commençant par `//`/`///`/`*`, aveugle à un bloc `/* … */`
+      // ouvert par du CODE sur la même ligne (`final x = 1; /* cite
+      // ZFlashcardAnswerInput */`).
+      final decls = strippedSource(src);
 
       for (final banned in <String>[
         'ZFlashcardAnswerInput',
@@ -519,21 +519,18 @@ void main() {
 
     /// Recolle les déclarations (mêmes raisons que `z_widgets_purity_test.dart` :
     /// un scan ligne-à-ligne est aveugle aux coupures de `dart format`).
+    ///
+    /// P0b : le dé-commentage délègue au primitif PARTAGÉ `stripped()` — un
+    /// bloc `/* … */` ouvert par du CODE sur sa ligne, ou multi-lignes sans
+    /// `*` de continuation, traversait l'ancien filtre local intact.
     List<String> declarations(String path) {
       final file = File(path);
       expect(file.existsSync(), isTrue,
           reason: 'introuvable: $path (cwd=${Directory.current.path})');
       final out = <String>[];
       final buffer = StringBuffer();
-      for (final raw in file.readAsLinesSync()) {
-        var trimmed = raw.trim();
-        if (trimmed.startsWith('//') ||
-            trimmed.startsWith('*') ||
-            trimmed.startsWith('/*')) {
-          continue;
-        }
-        final slash = trimmed.indexOf('//');
-        if (slash >= 0) trimmed = trimmed.substring(0, slash).trim();
+      for (final raw in stripped(file)) {
+        final trimmed = raw.trim();
         if (trimmed.isEmpty) continue;
         buffer.write(trimmed);
         if (trimmed.endsWith(';') ||

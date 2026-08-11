@@ -16,6 +16,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_markdown/zcrud_markdown.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 const String _slot = 'rich_delta';
 
 /// Ops Delta neutres de test (le payload rich stocké dans le slot AD-4).
@@ -238,18 +240,6 @@ List<File> _allLibSources() {
   return const <File>[];
 }
 
-String _stripComments(String source) {
-  final noBlock = source.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final trimmed = line.trimLeft();
-    if (trimmed.startsWith('///') ||
-        trimmed.startsWith('//') ||
-        trimmed.startsWith('*')) {
-      continue;
-    }
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+/// Déléguée à `test/support/z_sources.dart` (P0D1) — cf. sa doc pour le motif
+/// (ordre bloc-avant-ligne dangereux dans l'ancienne implémentation locale).
+String _stripComments(String source) => stripSource(source);

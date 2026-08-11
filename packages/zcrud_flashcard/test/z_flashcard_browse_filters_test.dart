@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 ZFlashcard _card(
   String id, {
   String question = 'Question',
@@ -50,8 +52,11 @@ void main() {
       // Une garde de SOURCE, car le défaut serait invisible au comportement s'il
       // était introduit avec un défaut permissif (`count = 1000` passerait tous
       // les tests jusqu'au jour où un dossier dépasse 1000).
-      final src = File('lib/src/domain/z_flashcard_filters.dart')
-          .readAsLinesSync();
+      // 🔴 Lignes STRIPPÉES (support/z_sources.dart, numérotation préservée) :
+      // l'ancrage `indexWhere` reste STRUCTUREL (la ligne de déclaration), et
+      // la prose — pleine ligne OU fin de ligne — ne peut plus dévier le scan.
+      final src = zsrc.strippedLines(
+          File('lib/src/domain/z_flashcard_filters.dart'));
 
       // Isole le CODE de `zApplyBrowseFilters`, **commentaires exclus** : la
       // prose DOIT pouvoir expliquer pourquoi la fonction n'appelle PAS
@@ -66,13 +71,7 @@ void main() {
               'ne mesurerait RIEN');
       final end = src.indexWhere((l) => l == '}', start);
       expect(end, greaterThan(start));
-      final body = src
-          .sublist(start, end + 1)
-          .where((l) {
-            final t = l.trimLeft();
-            return !t.startsWith('//') && !t.startsWith('///');
-          })
-          .join('\n');
+      final body = src.sublist(start, end + 1).join('\n');
 
       // Sonde : le corps réellement scanné n'est pas vide (sinon la garde
       // serait verte en ne regardant rien).
@@ -299,19 +298,14 @@ void main() {
     test('GARDE : zApplyTestFilters CONSOMME réellement zMatchesSourceKind', () {
       // « Factorisé et partagé » doit être VRAI sur disque, pas seulement dans
       // la dartdoc (5 récidives de prose menteuse dans cet epic).
-      final src = File('lib/src/domain/z_flashcard_filters.dart').readAsLinesSync();
+      // Lignes STRIPPÉES — même raison que la garde de signature ci-dessus.
+      final src = zsrc.strippedLines(
+          File('lib/src/domain/z_flashcard_filters.dart'));
       final start = src
           .indexWhere((l) => l.startsWith('List<ZFlashcard> zApplyTestFilters('));
       expect(start, greaterThanOrEqualTo(0), reason: 'sonde cassée');
       final end = src.indexWhere((l) => l == '}', start);
-      // Commentaires exclus — même raison que la garde de signature ci-dessus.
-      final body = src
-          .sublist(start, end + 1)
-          .where((l) {
-            final t = l.trimLeft();
-            return !t.startsWith('//') && !t.startsWith('///');
-          })
-          .join('\n');
+      final body = src.sublist(start, end + 1).join('\n');
 
       expect(body.contains('zMatchesSourceKind'), isTrue,
           reason: '🔴 le tirage a re-inline son propre filtre de source ⇒ DEUX '

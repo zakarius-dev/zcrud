@@ -7,12 +7,12 @@
 //
 // Pouvoir discriminant (R12) : chaque AC rougit sous l'injection R3 correspondante.
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_study/zcrud_study.dart';
+
+import 'support/z_sources.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
 /// Enveloppe déterministe : `MaterialApp` (thème), direction fixe, `ZcrudScope`
@@ -224,8 +224,7 @@ void main() {
     });
 
     test('verrou-source : aucune Color/hex/EdgeInsets.only(left) codé en dur', () {
-      final src =
-          File('lib/src/presentation/z_tag_chips.dart').readAsStringSync();
+      final src = strippedOf('lib/src/presentation/z_tag_chips.dart');
       expect(src.contains('Colors.'), isFalse);
       expect(RegExp(r'0x[0-9a-fA-F]{6,8}').hasMatch(src), isFalse);
       expect(src.contains('EdgeInsets.only(left'), isFalse);

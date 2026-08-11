@@ -14,6 +14,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 Widget _harness(Widget child) => MaterialApp(
       home: Scaffold(body: SizedBox(width: 800, height: 600, child: child)),
     );
@@ -37,12 +39,8 @@ void main() {
       // Le test widget ci-dessus resterait VERT si l'aperçu montait la carte de
       // su-2 **et** doublait son propre affichage à côté. On vérifie donc sur
       // disque que le fichier est bien MINCE PAR CONCEPTION.
-      final src = File('lib/src/presentation/z_flashcard_preview.dart')
-          .readAsLinesSync()
-          .where((l) {
-        final t = l.trimLeft();
-        return !t.startsWith('///') && !t.startsWith('//');
-      }).join('\n');
+      final src = stripped(File('lib/src/presentation/z_flashcard_preview.dart'))
+          .join('\n');
 
       expect(src.contains('ZFlashcardReviewCard('), isTrue,
           reason: 'sonde : la délégation doit être RÉELLE');

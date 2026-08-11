@@ -22,6 +22,8 @@ import 'package:zcrud_study/src/presentation/z_study_document_card.dart';
 import 'package:zcrud_study/src/presentation/z_study_note_card.dart';
 import 'package:zcrud_study/src/presentation/z_study_tools_item_card.dart';
 
+import 'support/z_sources.dart' show strippedLines;
+
 const String _basePath = 'lib/src/presentation/z_study_tools_item_card.dart';
 const String _notePath = 'lib/src/presentation/z_study_note_card.dart';
 const String _docPath = 'lib/src/presentation/z_study_document_card.dart';
@@ -45,7 +47,11 @@ String _read(String path) {
         'introuvable: $path (cwd=${Directory.current.path}) — lancer '
         '`flutter test` DEPUIS le package `zcrud_study`',
   );
-  return file.readAsStringSync();
+  // 🔴 STRIPPÉ (campagne dartdoc P0A) : `ctorSurface`/`forwardedArgs` font une
+  // extraction POSITIONNELLE (profondeur de délimiteurs) sur la liste des
+  // paramètres — une dartdoc PAR PARAMÈTRE insérée dans le constructeur
+  // pourrait porter des délimiteurs de prose qui fausseraient le comptage.
+  return strippedLines(file.readAsStringSync().split('\n')).join('\n');
 }
 
 /// Découpe une liste d'arguments/paramètres sur les virgules de **niveau 0**

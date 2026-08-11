@@ -9,9 +9,18 @@
 //
 // NB : ce test scanne le FICHIER DOMAINE, jamais lui-même (ses propres regex
 // contiennent volontairement les motifs). Runner R14 : `flutter test`.
+//
+// 🔴 STRIPPÉ (campagne dartdoc P0A) : AUCUN de ces motifs (`sha256`, `Digest`,
+// `import package:crypto`…) n'est un VRAI secret — ce sont des identifiants de
+// CODE dont la garde interdit l'usage réel, pas la mention en prose. Une
+// dartdoc légitime doit pouvoir NOMMER ces symboles (« ne jamais faire
+// `sha256.convert(...)` ici ») sans faire rougir la garde : tout le scan passe
+// donc au source DÉPOUILLÉ des commentaires (`z_sources.strippedText`).
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/z_sources.dart';
 
 /// Motifs LITTÉRAUX de hashing interdits dans le seam (D4 : le domaine ne hashe
 /// rien — l'empreinte est OPAQUE FOURNIE).
@@ -32,7 +41,7 @@ void main() {
     expect(file.existsSync(), isTrue,
         reason: 'le fichier domaine ES-9.3 doit exister');
 
-    final content = file.readAsStringSync();
+    final content = strippedText(file);
     final violations = <String>[];
     _forbidden.forEach((label, re) {
       if (re.hasMatch(content)) {
@@ -43,5 +52,25 @@ void main() {
     expect(violations, isEmpty,
         reason: 'crypto/hashing détecté dans le seam (D4 violé) : '
             '${violations.join(', ')}');
+  });
+
+  group('🔴 CONTRE-PREUVE — dépouillé ne rend pas la garde aveugle', () {
+    test('un VRAI `sha256.convert(` en CODE reste détecté', () {
+      final stripped = strippedLines(
+        <String>['    final h = sha256.convert(bytes);'],
+      ).join('\n');
+      expect(_forbidden['sha256']!.hasMatch(stripped), isTrue);
+    });
+
+    test('la MÊME mention en COMMENTAIRE ne rougit PAS', () {
+      final stripped = strippedLines(
+        <String>['// jamais `sha256.convert(...)` ici (D4).'],
+      ).join('\n');
+      _forbidden.forEach((label, re) {
+        expect(re.hasMatch(stripped), isFalse,
+            reason: '🔴 $label : une mention en dartdoc ne doit PAS faire '
+                'rougir la garde.');
+      });
+    });
   });
 }

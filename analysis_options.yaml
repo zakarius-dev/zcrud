@@ -29,6 +29,9 @@ analyzer:
 
 linter:
   rules:
+    # Chantier documentation : un doc-comment « flottant » en tête de fichier
+    # doit être rattaché à `library;` (sinon dartdoc l'ignore silencieusement).
+    - dangling_library_doc_comments
     # Cohérence RTL / directionnel (AD-13) et hygiène d'imports.
     - directives_ordering
     - prefer_relative_imports

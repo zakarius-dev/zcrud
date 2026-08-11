@@ -28,6 +28,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_intl/zcrud_intl.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 class _AnyLocaleMaterialDelegate
     extends LocalizationsDelegate<MaterialLocalizations> {
   const _AnyLocaleMaterialDelegate();
@@ -400,13 +402,10 @@ void main() {
     test('le champ ne contient aucun indicatif littéral', () {
       final src = _readPackageFile(
           'lib/src/presentation/z_phone_field_widget.dart');
-      final code = src
-          .split('\n')
-          .where((l) {
-            final s = l.trimLeft();
-            return !s.startsWith('//') && !s.startsWith('///');
-          })
-          .join('\n');
+      // 🔴 P0D2 : stripComments (scanner caractère par caractère, // avant /*)
+      // remplace l'ancien filtre par préfixe de ligne — celui-ci ne retirait ni
+      // les commentaires de bloc ni un `//` en fin de ligne de code.
+      final code = stripComments(src);
       expect(RegExp(r"""'\+[0-9]{1,4}'""").hasMatch(code), isFalse,
           reason: 'indicatif codé en dur dans la résolution du pays');
       expect(RegExp(r"""'[A-Z]{2}'""").hasMatch(code), isFalse,

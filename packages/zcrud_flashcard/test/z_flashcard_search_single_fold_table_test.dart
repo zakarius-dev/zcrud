@@ -27,6 +27,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 /// Motifs révélant une **table de repli** recopiée (mapping diacritique → ASCII).
 ///
 /// Volontairement étroits : on cible le **mapping** (`'é': 'e'`), jamais la
@@ -51,12 +53,14 @@ const List<String> _bannedFoldTablePatterns = <String>[
 /// aveugle — elle prouverait le pouvoir des MOTIFS, jamais celui du SCANNER.
 List<String> scanForFoldTable(List<String> lines, String path) {
   final violations = <String>[];
-  for (var i = 0; i < lines.length; i++) {
-    final raw = lines[i];
-    final trimmed = raw.trimLeft();
-    if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-      continue; // dartdoc/commentaire — la prose peut montrer la forme
-    }
+  // 🔴 Dépouillement PARTAGÉ (`support/z_sources.dart`) : il retire AUSSI les
+  // commentaires de FIN de ligne et les blocs `/* … */` — l'ancienne passe ne
+  // sautait que les lignes-commentaire entières, et un `// 'é': 'e'` accroché à
+  // du code aurait fait rougir la garde. Les littéraux de chaîne sont
+  // PRÉSERVÉS : c'est bien dans eux que vit une table recopiée.
+  final code = zsrc.stripLines(lines);
+  for (var i = 0; i < code.length; i++) {
+    final raw = code[i];
     for (final pattern in _bannedFoldTablePatterns) {
       if (raw.contains(pattern)) {
         violations.add('$path:${i + 1} → « $pattern » dans « ${raw.trim()} »');
@@ -134,8 +138,10 @@ void main() {
     test('zFlashcardSearchText DÉLÈGUE réellement (import du cœur présent)', () {
       // La prose affirme « délègue à zFoldDiacritics » : vérifions-le sur disque
       // plutôt que de la croire (5 récidives de prose menteuse dans cet epic).
-      final src =
-          File('lib/src/domain/z_flashcard_search_text.dart').readAsStringSync();
+      // STRIPPÉ : une dartdoc citant `zFoldDiacritics` ne doit pas pouvoir
+      // satisfaire le contrôle de présence si le CODE perdait la délégation.
+      final src = zsrc.strippedSource(
+          File('lib/src/domain/z_flashcard_search_text.dart'));
       expect(src.contains('zFoldDiacritics'), isTrue,
           reason: '🔴 la délégation a disparu ⇒ soit une 2e table est née, soit '
               'la limite L-2 est revenue');

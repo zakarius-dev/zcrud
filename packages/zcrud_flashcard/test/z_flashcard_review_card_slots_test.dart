@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 const _badgePadding = EdgeInsetsDirectional.symmetric(
   horizontal: 9,
   vertical: 4,
@@ -54,9 +56,12 @@ void main() {
   test(
     'aucune table de libellés de type ne vit dans les sources du package',
     () {
-      final source = File(
+      // 🔴 STRIPPÉ (support/z_sources.dart) : la dartdoc peut citer « 'QCM' »
+      // pour documenter que l'hôte fournit le libellé — seul un littéral dans
+      // le CODE doit rougir.
+      final source = zsrc.strippedSource(File(
         'lib/src/presentation/z_flashcard_review_card.dart',
-      ).readAsStringSync();
+      ));
       const forbiddenLabels = <String>[
         'QCM',
         'Vrai/Faux',

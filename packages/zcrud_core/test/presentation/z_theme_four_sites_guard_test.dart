@@ -13,12 +13,22 @@
 ///
 /// Accès `dart:io` ⇒ `@TestOn('vm')`. Chemin RELATIF au package : lancer
 /// `flutter test` DEPUIS `packages/zcrud_core`.
+///
+/// 🔴 **Toute l'analyse porte sur la source STRIPPÉE de ses commentaires**
+/// (`test/support/z_sources.dart`, numérotation préservée) : une dartdoc
+/// insérée entre deux membres — ou citant littéralement une ancre comme
+/// `ZcrudTheme copyWith({` — ne peut ni décaler les blocs extraits, ni faire
+/// démarrer un bloc dans la prose. Le chantier documentation insère
+/// massivement de la dartdoc dans `lib/` : la garde doit y être insensible
+/// sans devenir aveugle aux vraies dérives du CODE.
 @TestOn('vm')
 library;
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/z_sources.dart';
 
 const String _kPath = 'lib/src/presentation/theme/z_theme.dart';
 
@@ -36,7 +46,9 @@ String _bloc(String source, String debut, String fin) {
 
 void main() {
   final File file = File(_kPath);
-  final String source = file.existsSync() ? file.readAsStringSync() : '';
+  // Source STRIPPÉE (commentaires remplacés par du vide, lignes conservées) :
+  // les ancres et le scan de champs ne voient JAMAIS la prose.
+  final String source = file.existsSync() ? strippedSource(file) : '';
 
   test('le fichier de thème est lisible', () {
     expect(

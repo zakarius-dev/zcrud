@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 
+import '../support/z_sources.dart';
+
 void main() {
   testWidgets('le tic du minuteur ne reconstruit que son widget', (
     tester,
@@ -191,9 +193,14 @@ void main() {
   });
 
   test('le widget ne contient ni texte visible ni couleur littérale', () {
-    final source = File(
-      'lib/src/presentation/z_white_exam_session_view.dart',
-    ).readAsStringSync();
+    // P0b : scan sur la source DÉ-COMMENTÉE — cette garde n'appliquait
+    // AUCUN strip, alors que les motifs bannis ici (`EdgeInsets.only(left:`,
+    // `Colors.`…) sont EXACTEMENT ceux qu'une dartdoc légitime cite pour
+    // expliquer la règle RTL (cf. CLAUDE.md lui-même). Sans strip, un simple
+    // paragraphe de doc suffisait à faire rougir la garde à tort.
+    final source = strippedSource(
+      File('lib/src/presentation/z_white_exam_session_view.dart'),
+    );
     expect(RegExp(r'''Text\s*\(\s*['"]''').hasMatch(source), isFalse);
     expect(source.contains('Colors.'), isFalse);
     expect(source.contains('Color(0x'), isFalse);

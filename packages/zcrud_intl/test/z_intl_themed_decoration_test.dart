@@ -20,6 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_intl/zcrud_intl.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 const Color _fill = Color(0xFF102030);
 const Color _border = Color(0xFF405060);
 const Color _focus = Color(0xFF708090);
@@ -340,11 +342,13 @@ void main() {
       for (final path in files) {
         final source = File('${_packageRoot()}/$path').readAsStringSync();
         // Seules les lignes de CODE comptent (les commentaires citent le motif).
+        // 🔴 P0D2 : stripComments (bloc + ligne, littéraux préservés) remplace
+        // le filtre par préfixe — celui-ci laissait passer un commentaire de
+        // bloc multi-lignes ou un `//` en fin de ligne de code.
+        final stripped = stripComments(source).split('\n');
         final offending = <String>[
-          for (final line in source.split('\n'))
-            if (!line.trimLeft().startsWith('//') &&
-                RegExp(r'InputDecoration\s*\(').hasMatch(line))
-              line.trim(),
+          for (final line in stripped)
+            if (RegExp(r'InputDecoration\s*\(').hasMatch(line)) line.trim(),
         ];
         expect(offending, isEmpty,
             reason: '$path construit encore une InputDecoration nue : '

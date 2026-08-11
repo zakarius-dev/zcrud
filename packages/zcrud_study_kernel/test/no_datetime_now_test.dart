@@ -40,6 +40,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'support/z_sources.dart' show kernelLibDir, strippedLines;
+
 /// Invocation `DateTime.now(` (tolère les espaces).
 final RegExp _dateTimeNow = RegExp(r'\bDateTime\s*\.\s*now\s*\(');
 
@@ -98,30 +100,18 @@ void main() {
   });
 }
 
-/// Racine `lib/` de `zcrud_study_kernel`, quel que soit le CWD du run
-/// (`dart test` depuis le package OU depuis la racine du repo).
-Directory _kernelLibDir() {
-  var dir = Directory.current;
-  for (var i = 0; i < 6; i++) {
-    final nested =
-        Directory('${dir.path}/packages/zcrud_study_kernel/lib');
-    if (nested.existsSync()) return nested;
-    final direct = Directory('${dir.path}/lib');
-    if (direct.existsSync() &&
-        File('${dir.path}/lib/zcrud_study_kernel.dart').existsSync()) {
-      return direct;
-    }
-    final parent = dir.parent;
-    if (parent.path == dir.path) break;
-    dir = parent;
-  }
-  fail('lib/ de zcrud_study_kernel introuvable depuis ${Directory.current.path}');
-}
-
 /// Sources de `lib/`, **commentaires DÉPOUILLÉS** (`path → code`).
+///
+/// 🔴 Délègue à `support/z_sources.dart` (`kernelLibDir`/`strippedLines`) —
+/// source UNIQUE, patron `zcrud_chat_kernel/test/support/z_repo_sources.dart`.
+/// L'ancienne implémentation locale de `_stripComments` traitait le BLOC
+/// `/* */` en premier sur le fichier ENTIER — une dartdoc écrivant
+/// littéralement `packages/*/lib` (un `/*` jamais refermé par un `*/` proche)
+/// aurait AVALÉ la fin du fichier, rendant le scan silencieusement vacant en
+/// aval. Le dépouilleur partagé traite la LIGNE avant le BLOC (ordre correct).
 Map<String, String> _libSources() {
   final out = <String, String>{};
-  for (final f in _kernelLibDir()
+  for (final f in kernelLibDir()
       .listSync(recursive: true)
       .whereType<File>()
       .where((f) => f.path.endsWith('.dart'))) {
@@ -130,13 +120,4 @@ Map<String, String> _libSources() {
   return out;
 }
 
-String _stripComments(String src) {
-  final sansBlocs = src.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  return sansBlocs
-      .split('\n')
-      .map((l) {
-        final i = l.indexOf('//');
-        return i == -1 ? l : l.substring(0, i);
-      })
-      .join('\n');
-}
+String _stripComments(String src) => strippedLines(src.split('\n')).join('\n');

@@ -22,12 +22,12 @@
 @TestOn('vm')
 library;
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
+
+import 'support/z_sources.dart' show strippedCrossPackage, strippedOf;
 import 'package:zcrud_study/zcrud_study.dart';
 
 import 'support/suf3_harness.dart';
@@ -928,12 +928,12 @@ void main() {
       // oublié dans la re-pose serait perdu SILENCIEUSEMENT dans la feuille.
       // On lit donc la liste RÉELLE des paramètres dans la source de
       // `zcrud_core` — jamais une liste recopiée ici, qui dériverait avec elle.
-      final Directory root = _repoRoot();
-      final File scope = File(
-        '${root.path}/packages/zcrud_core/lib/src/presentation/zcrud_scope.dart',
-      );
-      expect(scope.existsSync(), isTrue, reason: 'source introuvable');
-      final String src = scope.readAsStringSync();
+      // Source DÉPOUILLÉE des commentaires : une dartdoc peut légitimement
+      // documenter CHAQUE paramètre re-posé (patron per-param `///`) sans que
+      // sa prose (parenthèses/points d'un exemple, `this.x` cité en contre-
+      // exemple) ne fausse l'extraction positionnelle ci-dessous.
+      final String src =
+          strippedCrossPackage('packages/zcrud_core/lib/src/presentation/zcrud_scope.dart');
       final int start = src.indexOf('const ZcrudScope({');
       expect(start, greaterThan(-1));
       final int end = src.indexOf('});', start);
@@ -945,10 +945,8 @@ void main() {
       // vert sur tout défaut.
       expect(params.length, greaterThan(5));
 
-      final String bar = File(
-        '${root.path}/packages/zcrud_study/lib/src/presentation/'
-        'z_subfolder_selector_bar.dart',
-      ).readAsStringSync();
+      final String bar =
+          strippedOf('lib/src/presentation/z_subfolder_selector_bar.dart');
       final int from = bar.indexOf('Widget _rePoseScope(');
       expect(from, greaterThan(-1));
       final String body = bar.substring(from, bar.indexOf('\n  }', from));
@@ -964,19 +962,6 @@ void main() {
   });
 }
 
-/// Remonte jusqu'au dossier portant `melos.yaml` — ancrage ROBUSTE, jamais un
-/// `../` relatif (la convention `melos exec` fixe le cwd au package).
-Directory _repoRoot() {
-  Directory d = Directory.current;
-  while (!File('${d.path}/melos.yaml').existsSync()) {
-    final Directory parent = d.parent;
-    if (parent.path == d.path) {
-      fail('melos.yaml introuvable au-dessus de ${Directory.current.path}');
-    }
-    d = parent;
-  }
-  return d;
-}
 
 /// `WidgetsLocalizations` RTL — c'est `WidgetsApp` qui en dérive la
 /// `Directionality`, AU-DESSUS du `Navigator` (donc de l'`Overlay`).

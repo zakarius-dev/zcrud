@@ -3,13 +3,13 @@
 // ROUGIR le test (mordancy vérifiée manuellement, cf. Completion Notes de la
 // story). Aucune garde tautologique.
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_responsive/zcrud_responsive.dart';
 import 'package:zcrud_study/zcrud_study.dart';
+
+import '../support/z_sources.dart';
 
 /// Monte [card] dans un arbre déterministe. [height] borne la hauteur (régime
 /// grille, branche `Expanded`) ; `height == null` ⇒ hauteur NON BORNÉE
@@ -291,8 +291,7 @@ void main() {
     });
 
     test('G11b — source sans alignement/inset NON directionnel', () {
-      final String src =
-          File('lib/src/presentation/z_folder_card.dart').readAsStringSync();
+      final String src = strippedOf('lib/src/presentation/z_folder_card.dart');
       expect(src.contains('Alignment.centerLeft'), isFalse);
       expect(src.contains('Alignment.centerRight'), isFalse);
       expect(src.contains('EdgeInsets.only(left'), isFalse);

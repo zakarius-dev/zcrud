@@ -35,6 +35,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'support/z_sources.dart' show stripped;
+
 /// Racine du package `zcrud_study_kernel`, quel que soit le CWD du run
 /// (`dart test` depuis le package, `melos exec` depuis la racine du repo…).
 Directory _kernelLibDir() {
@@ -54,15 +56,13 @@ Directory _kernelLibDir() {
   fail('lib/ de zcrud_study_kernel introuvable depuis ${Directory.current.path}');
 }
 
-/// Code du fichier, **lignes de commentaire retirées** (`//` et `///`) : la
-/// dartdoc DOIT pouvoir nommer les tokens interdits pour documenter la règle
-/// SM-S5 sans faire échouer le garde. Un vrai `Color(` en **code** ne commence
-/// jamais par `//` → aucun faux négatif possible (cf. L3, réponse « le filtre
-/// n'affaiblit pas le garde »).
-String _codeOnly(File file) => file
-    .readAsLinesSync()
-    .where((line) => !line.trimLeft().startsWith('//'))
-    .join('\n');
+/// Code du fichier, **commentaires DÉPOUILLÉS** (`//`/`///` ET blocs
+/// `/* … */`, via le patron PARTAGÉ `support/z_sources.dart` — campagne
+/// dartdoc P0A) : la dartdoc DOIT pouvoir nommer les tokens interdits pour
+/// documenter la règle SM-S5 sans faire échouer le garde. Un vrai `Color(` en
+/// **code** ne survit jamais au dépouillement → aucun faux négatif possible
+/// (cf. L3, réponse « le filtre n'affaiblit pas le garde »).
+String _codeOnly(File file) => stripped(file).join('\n');
 
 void main() {
   group('SM-S5 / AD-17 — pureté du kernel (zéro Flutter, zéro Color/IconData)',

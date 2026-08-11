@@ -33,6 +33,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 /// **UNIQUE** foyer autorisé à écrire l'ordre des flashcards (AD-38).
 const String _canonicalHome = 'z_flashcard_reorder.dart';
 
@@ -110,7 +112,7 @@ void main() {
         final name = file.uri.pathSegments.last;
         if (name == _canonicalHome) continue; // le foyer a le droit
         violations.addAll(scanForOrderWrite(
-          file.readAsLinesSync(),
+          stripped(file),
           file.path,
           _bannedOrderWritePatterns,
         ));
@@ -136,7 +138,7 @@ void main() {
       expect(home.existsSync(), isTrue);
 
       final writes = scanForOrderWrite(
-        home.readAsLinesSync(),
+        stripped(home),
         home.path,
         _bannedOrderWritePatterns,
       );
@@ -182,7 +184,7 @@ void main() {
         if (name == 'z_reorder_ids.dart') continue; // la définition elle-même
 
         final hits = scanForOrderWrite(
-          file.readAsLinesSync(),
+          stripped(file),
           file.path,
           const <String>['zReorderIds('],
         );

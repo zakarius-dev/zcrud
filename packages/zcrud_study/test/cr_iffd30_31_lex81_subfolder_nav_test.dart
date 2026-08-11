@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
 import 'support/suf3_harness.dart';
+import 'support/z_sources.dart' show stripped;
 
 const String _kHeaderKey = 'cr30:header';
 const String _kTileKey = 'cr31:tile';
@@ -298,13 +299,10 @@ void main() {
           reason: 'introuvable: $path (cwd=${Directory.current.path}) — lancer '
               '`flutter test` DEPUIS le package',
         );
-        return file
-            .readAsLinesSync()
-            .where((l) {
-              final t = l.trimLeft();
-              return !t.startsWith('//') && !t.startsWith('///');
-            })
-            .toList();
+        // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `stripped` retire aussi les
+        // commentaires de FIN DE LIGNE et les blocs `/* … */`, qu'un simple
+        // `startsWith('//')` laissait passer.
+        return stripped(file);
       }
 
       /// Corps de `_buildExpanded` (lignes de code, hors commentaires).

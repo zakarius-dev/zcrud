@@ -17,6 +17,7 @@ import 'package:zcrud_geo/adapters/osm.dart';
 import 'package:zcrud_geo/zcrud_geo.dart';
 
 import 'support/fake_map_adapter.dart';
+import 'support/z_sources.dart' show stripComments;
 
 /// Monte `adapter.buildMap` seul (hors champ) et rend la surface.
 Future<void> _pumpOsm(
@@ -227,7 +228,10 @@ void main() {
       for (final e in libDir.listSync(recursive: true).whereType<File>()) {
         if (!e.path.endsWith('.dart')) continue;
         if (e.path.endsWith('z_geo_tile_reference.dart')) continue;
-        final src = e.readAsStringSync();
+        // P0D2 : source dé-commentée — l'endpoint public reste légitimement
+        // cité en dartdoc par les fichiers qui EXPLIQUENT l'exemption (pas un
+        // secret : URL de tuiles publique, cf. scission RTL/confinement).
+        final src = stripComments(e.readAsStringSync());
         if (src.contains('arcgisonline.com') ||
             src.contains('opentopomap.org')) {
           offenders.add(e.path);
@@ -539,7 +543,11 @@ void main() {
       for (final e in libDir.listSync(recursive: true).whereType<File>()) {
         if (!e.path.endsWith('.dart')) continue;
         if (e.path.endsWith('z_geo_style_reference.dart')) continue;
-        if (e.readAsStringSync().contains('4285F4')) offenders.add(e.path);
+        // P0D2 : idem — la valeur ARGB legacy est citée en dartdoc par les
+        // fichiers qui expliquent l'exemption FR-26 (pas un secret).
+        if (stripComments(e.readAsStringSync()).contains('4285F4')) {
+          offenders.add(e.path);
+        }
       }
       expect(offenders, isEmpty,
           reason: 'couleur legacy hors du fichier de référence audité : '

@@ -25,26 +25,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'support/z_field_type_catalog.dart';
+import 'support/z_sources.dart' as zsrc;
 
 /// Racine du dépôt, quel que soit le CWD (racine du workspace ou package).
-Directory _repoRoot() {
-  Directory dir = Directory.current.absolute;
-  for (int i = 0; i < 8; i++) {
-    if (File('${dir.path}/melos.yaml').existsSync()) return dir;
-    final Directory parent = dir.parent;
-    if (parent.path == dir.path) break;
-    dir = parent;
-  }
-  fail('Racine du dépôt (melos.yaml) introuvable depuis ${Directory.current}');
-}
+Directory _repoRoot() => zsrc.repoRoot();
 
-/// Concaténation des sources `lib/` d'un paquet du monorepo (lecture seule).
+/// Concaténation des sources `lib/` d'un paquet du monorepo (lecture seule),
+/// **STRIPPÉES de leurs commentaires** (`support/z_sources.dart`).
+///
+/// 🔴 Les vérifications de ce fichier sont des contrôles de PRÉSENCE
+/// (`contains('class $c ')`, `contains('.register(')`…) : sans dépouillement,
+/// une dartdoc citant le motif suffirait à les satisfaire alors même que le
+/// CODE l'aurait perdu — la garde serait AVEUGLÉE par la prose, pas déviée.
 String _libSources(String package) {
   final Directory lib = Directory('${_repoRoot().path}/packages/$package/lib');
   if (!lib.existsSync()) return '';
   final StringBuffer b = StringBuffer();
   for (final FileSystemEntity e in lib.listSync(recursive: true)) {
-    if (e is File && e.path.endsWith('.dart')) b.writeln(e.readAsStringSync());
+    if (e is File && e.path.endsWith('.dart')) {
+      b.writeln(zsrc.strippedSource(e));
+    }
   }
   return b.toString();
 }
@@ -167,19 +167,33 @@ void _testSatellites() {
           reason: '`${e.type.name}` cite le paquet `$sat`, absent du dépôt.');
 
       final String sources = _libSources(sat);
-      // Condition NÉCESSAIRE : le satellite mentionne le `kind`, soit en
-      // littéral (`register('markdown', …)`), soit via la constante dérivée
-      // (`EditionFieldType.pin.name`).
+      // Condition NÉCESSAIRE, mesurée sur le CODE STRIPPÉ. Deux câblages réels
+      // existent dans le monorepo :
+      // (a) le satellite se câble LUI-MÊME : il mentionne le `kind` (littéral
+      //     `register('markdown', …)` ou constante `EditionFieldType.pin.name`)
+      //     ET appelle `.register(` ;
+      // (b) le satellite fournit une fabrique compatible registre et c'est
+      //     L'HÔTE qui enregistre : son fichier `source` cité expose
+      //     `static ZFieldWidgetBuilder builder(` — cas MESURÉ de `zcrud_geo`,
+      //     dont le kind `'location'` et `.register(` ne vivent QUE dans la
+      //     dartdoc (l'ancienne version de cette garde, non strippée, était
+      //     satisfaite par cette prose seule).
+      final bool selfWired = (sources.contains("'${e.type.name}'") ||
+              sources.contains('EditionFieldType.${e.type.name}')) &&
+          sources.contains('.register(');
+      final bool hostWired = e.source != null &&
+          zsrc
+              .strippedSource(File('$root/${e.source}'))
+              .contains('static ZFieldWidgetBuilder builder(');
       expect(
-        sources.contains("'${e.type.name}'") ||
-            sources.contains('EditionFieldType.${e.type.name}'),
+        selfWired || hostWired,
         isTrue,
-        reason: '`$sat` ne mentionne nulle part le kind '
-            '`${e.type.name}` : le catalogue enverrait l\'hôte ajouter une '
+        reason: '`$sat` ne mentionne le kind `${e.type.name}` dans AUCUN code '
+            '(ni auto-enregistrement au `ZWidgetRegistry`, ni fabrique '
+            '`static ZFieldWidgetBuilder builder(` que l\'hôte pourrait '
+            'enregistrer) : le catalogue enverrait l\'hôte ajouter une '
             'dépendance qui ne sert pas ce type.',
       );
-      expect(sources.contains('.register('), isTrue,
-          reason: '`$sat` n\'enregistre aucun widget au `ZWidgetRegistry`.');
 
       if (e.registrar != null) {
         expect(sources.contains('${e.registrar}('), isTrue,
@@ -227,9 +241,12 @@ void _testConfigs() {
 void _testSeams() {
   test('chaque seam cité est un vrai point d\'injection de ZcrudScope', () {
     final String sources = _libSources('zcrud_core');
-    final String scope = File('${_repoRoot().path}/packages/zcrud_core/lib/src/'
-            'presentation/zcrud_scope.dart')
-        .readAsStringSync();
+    // STRIPPÉ : une dartdoc citant `final ZDateDisplayFormatter? …` ne doit
+    // pas pouvoir satisfaire (ni un jour dévier) le contrôle de présence.
+    final String scope = zsrc.strippedSource(
+      File('${_repoRoot().path}/packages/zcrud_core/lib/src/'
+          'presentation/zcrud_scope.dart'),
+    );
     for (final ZFieldTypeEntry e in kZFieldTypeCatalog) {
       for (final String s in e.seams) {
         expect(

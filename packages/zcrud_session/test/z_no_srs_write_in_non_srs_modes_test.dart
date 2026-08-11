@@ -69,6 +69,8 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZRepetitionInfo;
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
 
+import 'support/z_sources.dart';
+
 /// Espion d'écriture SRS — il **ENREGISTRE**.
 ///
 /// 🚫 Ce n'est **PAS** un `ZSessionReviewer` no-op offert à la prod : ce serait
@@ -122,7 +124,10 @@ void main() {
           reason: 'introuvable: $path (cwd=${Directory.current.path}) — cette '
               'garde ne scanne plus rien et serait verte pour de mauvaises '
               'raisons');
-      final src = file.readAsStringSync();
+      // P0b : lecture sur la source DÉ-COMMENTÉE — un paramètre du ctor peut
+      // porter un dartdoc citant légitimement `reviewer` pour expliquer son
+      // absence structurelle ; seul le CODE doit pouvoir faire rougir.
+      final src = strippedSource(file);
       final start = src.indexOf(from);
       final end = src.indexOf(to);
       expect(start, greaterThanOrEqualTo(0), reason: 'ctor introuvable: $from');

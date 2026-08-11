@@ -41,6 +41,8 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZSrsConfig;
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import '../support/z_sources.dart';
+
 const ZStudySessionResult _result = ZStudySessionResult(
   total: 4,
   correct: 3,
@@ -358,16 +360,12 @@ void main() {
       () {
     test('🔴 le widget lit le signal via `zReduceMotionOf`, jamais un '
         '`MediaQuery.of(context).disableAnimations` réécrit', () {
-      final src = File(
-        'lib/src/presentation/z_session_summary_view.dart',
-      ).readAsStringSync();
-      final code = src
-          .split('\n')
-          .where((l) {
-            final t = l.trim();
-            return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/');
-          })
-          .join('\n');
+      // P0b : dé-commentateur ROBUSTE — l'ancien filtre local ne retirait que
+      // les lignes commençant par `//`/`*`/`/`, aveugle à un `/* … */` ouvert
+      // par du CODE sur sa ligne.
+      final code = strippedSource(
+        File('lib/src/presentation/z_session_summary_view.dart'),
+      );
       expect(
         code.contains('zReduceMotionOf(context)'),
         isTrue,

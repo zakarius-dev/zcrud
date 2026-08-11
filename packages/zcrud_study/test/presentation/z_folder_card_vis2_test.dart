@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
@@ -7,6 +5,8 @@ import 'package:zcrud_study/src/presentation/z_folder_card.dart';
 import 'package:zcrud_study/src/presentation/z_folder_card_chrome.dart';
 import 'package:zcrud_study/src/presentation/z_subfolder_item_chrome.dart'
     show ZCountBadge, ZCountBadgeRow, ZCountBadgeSpec, ZSubfolderCountPill;
+
+import '../support/z_sources.dart';
 
 /// Clés RÉELLEMENT reçues par le résolveur, dans l'ordre des appels.
 ///
@@ -366,12 +366,10 @@ void main() {
     test(
       'G9/G10 — sources sans anti-modèle physique, métier ou dépendance',
       () {
-        final String source = File(
-          'lib/src/presentation/z_folder_card_chrome.dart',
-        ).readAsStringSync();
-        final String badges = File(
-          'lib/src/presentation/z_subfolder_item_chrome.dart',
-        ).readAsStringSync();
+        final String source =
+            strippedOf('lib/src/presentation/z_folder_card_chrome.dart');
+        final String badges =
+            strippedOf('lib/src/presentation/z_subfolder_item_chrome.dart');
         for (final String forbidden in <String>[
           'Alignment.centerLeft',
           'Alignment.centerRight',

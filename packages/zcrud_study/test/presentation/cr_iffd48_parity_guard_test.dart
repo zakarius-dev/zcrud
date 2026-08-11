@@ -41,6 +41,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show strippedLines;
+
 // ---------------------------------------------------------------------------
 // Sondes de source
 // ---------------------------------------------------------------------------
@@ -60,7 +62,16 @@ Directory _repoRoot() {
 String _sourceOf(String relative) {
   final File f = File('${_repoRoot().path}/packages/zcrud_study/$relative');
   expect(f.existsSync(), isTrue, reason: 'sonde cassée : ${f.path} introuvable');
-  return f.readAsStringSync();
+  final String raw = f.readAsStringSync();
+  // 🔴 STRIPPÉ pour les sources `.dart` UNIQUEMENT (campagne dartdoc P0A) :
+  // `zNamedCtorParams` fait une extraction POSITIONNELLE dépendante des
+  // accolades/parenthèses/génériques — une dartdoc PAR PARAMÈTRE (patron
+  // idiomatique) insérée DANS la liste des paramètres nommés pourrait
+  // introduire des `<`/`>`/`(`/`)` de prose qui fausseraient le comptage de
+  // profondeur. `pubspec.yaml` n'est PAS du Dart (les `//` n'y sont pas des
+  // commentaires — une URL `https://…` y serait tronquée à tort) : il reste
+  // RAW, la campagne de dartdoc ne le touche pas.
+  return relative.endsWith('.dart') ? strippedLines(raw.split('\n')).join('\n') : raw;
 }
 
 /// Extrait les **noms** des paramètres nommés du constructeur dont l'en-tête

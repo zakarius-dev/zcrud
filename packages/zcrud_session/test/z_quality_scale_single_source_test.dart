@@ -71,6 +71,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart';
+
 /// Motifs de **redéclaration d'échelle** interdits dans le code (AC2).
 ///
 /// Chacun correspond à la forme AVANT SU-1 (`const ZQualityScale({this.min = 0,
@@ -170,14 +172,16 @@ const List<String> _scannedSources = <String>[
 /// recopierait la boucle et resterait verte alors même que le scan réel
 /// deviendrait aveugle — elle prouverait le pouvoir des MOTIFS, jamais celui du
 /// SCANNER.
-List<String> scanForScaleLiterals(List<String> lines, String path) {
+List<String> scanForScaleLiterals(List<String> rawLines, String path) {
+  // P0b : dé-commentateur ROBUSTE (`stripLines()` — bloc multi-lignes,
+  // littéraux de chaîne) au lieu d'un `startsWith('//')` aveugle aux
+  // commentaires de BLOC (`/* … */`) et de FIN de ligne. Les appelants passent
+  // des lignes BRUTES (fichier réel ou source artificielle des contre-preuves
+  // R12 ci-dessous) : le dé-commentage se fait ICI, une seule fois.
+  final lines = stripLines(rawLines);
   final violations = <String>[];
   for (var i = 0; i < lines.length; i++) {
     final raw = lines[i];
-    final trimmed = raw.trimLeft();
-    if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-      continue; // dartdoc/commentaire — la prose peut nommer l'échelle
-    }
     for (final banned in _bannedScaleLiterals) {
       if (banned.matches(raw)) {
         violations.add('$path:${i + 1} → « ${banned.pattern} » '

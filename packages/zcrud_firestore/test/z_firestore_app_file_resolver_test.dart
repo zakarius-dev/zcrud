@@ -18,6 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 const String _kFiles = 'AppFile';
 
 /// Sème `count` documents `f0..f{count-1}` à la forme DODLP MESURÉE (camelCase).
@@ -667,9 +669,16 @@ void main() {
         'z_firestore_app_file_resolver.dart : aucune signature PUBLIQUE ne '
         'porte un type backend (seule couture tolérée : le paramètre '
         '`FirebaseFirestore firestore` du constructeur)', () {
-      final src = File(
-        '${_pkgDir().path}/lib/src/data/z_firestore_app_file_resolver.dart',
-      ).readAsStringSync();
+      // P0b : dé-commentateur PARTAGÉ ROBUSTE — l'ancien `inBlockComment`
+      // local (a) ne détectait un bloc QUE s'il s'ouvrait en DÉBUT de ligne,
+      // et (b) la boucle de RECOLLAGE de signature (ci-dessous) ne l'utilisait
+      // même PAS : elle ne retirait qu'un `//` de fin de ligne
+      // (`l.split('//').first`), laissant un `/* … */` embarqué dans une
+      // signature multi-lignes intact — un type banni CITÉ dans ce bloc aurait
+      // fait rougir la garde à tort.
+      final lines = stripped(
+        File('${_pkgDir().path}/lib/src/data/z_firestore_app_file_resolver.dart'),
+      );
 
       final forbidden = RegExp(
         r'\bTimestamp\b|\bFilter\b|\bFirebaseException\b|\bDocumentSnapshot\b'
@@ -678,23 +687,12 @@ void main() {
         r'|\bFirebaseFirestore\b|\bBox\b|\bHiveError\b',
       );
 
-      final lines = src.split('\n');
       final offenders = <String>[];
       var scanned = 0;
-      var inBlockComment = false;
 
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
-        if (inBlockComment) {
-          if (line.contains('*/')) inBlockComment = false;
-          continue;
-        }
-        if (line.trimLeft().startsWith('/*')) {
-          inBlockComment = !line.contains('*/');
-          continue;
-        }
         final trimmed = line.trimLeft();
-        if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
         // Déclaration PUBLIQUE : membre de classe (indentation 2) ou top-level
         // (indentation 0), dont le nom ne commence pas par `_`.
         final indent = line.length - trimmed.length;
@@ -713,8 +711,7 @@ void main() {
         var depth = 0;
         var started = false;
         for (var j = i; j < lines.length; j++) {
-          final l = lines[j];
-          final code = l.split('//').first;
+          final code = lines[j];
           buffer.writeln(code);
           for (final ch in code.split('')) {
             if (ch == '(') {
@@ -743,8 +740,9 @@ void main() {
     });
 
     test('le barrel n\'exporte pas cloud_firestore', () {
+      // P0b : source dé-commentée.
       final barrel =
-          File('${_pkgDir().path}/lib/zcrud_firestore.dart').readAsStringSync();
+          strippedSource(File('${_pkgDir().path}/lib/zcrud_firestore.dart'));
       expect(barrel.contains("export 'package:cloud_firestore"), isFalse);
       expect(
         barrel.contains("export 'src/data/z_firestore_app_file_resolver.dart'"),

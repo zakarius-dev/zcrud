@@ -308,3 +308,6 @@ melos:
         dart run scripts/ci/gate_web_determinism.dart && \
         dart run scripts/ci/gate_reserved_keys.dart && \
         ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1 dart run scripts/ci/verify_serialization.dart
+    doc:diff-gate:
+      description: "Gate DOC-1 (chantier documentation) : le diff courant vs HEAD (ou <ref>/ZCRUD_DOC_BASE) se réduit à des commentaires et des fichiers documentaires — tout .dart de lib comparé APRÈS strip, .dart hors lib interdit, non-Dart sur liste blanche."
+      run: dart run scripts/ci/doc_only_diff.dart

@@ -11,17 +11,23 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Retire commentaires de ligne (`//`, `///`) et de bloc (`/* */`) d'une source
 /// Dart — pour ne scanner QUE le code exécutable (les dartdocs mentionnent
 /// légitimement `cloud_firestore`/`WriteBatch` au titre du confinement AD-5).
-String _stripComments(String source) {
-  final withoutBlock = source.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '');
-  final lines = withoutBlock.split('\n').map((line) {
-    final idx = line.indexOf('//');
-    return idx >= 0 ? line.substring(0, idx) : line;
-  });
-  return lines.join('\n');
-}
+///
+/// 🔴 P0b — délègue désormais au dé-commentateur PARTAGÉ [stripSource]
+/// (`support/z_sources.dart`). L'implémentation locale d'origine retirait
+/// d'ABORD tout `/\*[\s\S]*?\*/` sur la source ENTIÈRE, PUIS les lignes `//` —
+/// dans le MAUVAIS ordre : un `/*` CITÉ EN PROSE dans un commentaire `//`
+/// (exactement ce que CE fichier fait lui-même, deux paragraphes plus haut,
+/// en écrivant « bloc (\`/* */\`) ») aurait été vu comme l'ouverture d'un VRAI
+/// bloc de commentaire et aurait AVALÉ tout le code jusqu'au PROCHAIN `*/`
+/// réel du fichier — potentiellement en silence, rendant la garde VACUELLE
+/// sans qu'aucun test ne le signale. `stripSource` traite `//` AVANT `/*`,
+/// dans l'ordre où Dart les reconnaît réellement.
+String _stripComments(String source) => stripSource(source);
 
 void main() {
   const migratorPath = 'lib/src/data/z_study_migrator.dart';

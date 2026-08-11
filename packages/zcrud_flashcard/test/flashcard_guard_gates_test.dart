@@ -7,6 +7,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 /// Libs backend/lourdes à NE JAMAIS tirer dans `zcrud_flashcard` (AD-1) :
 const _bannedBackendLibs = <String>[
   'cloud_firestore',
@@ -48,15 +50,15 @@ Directory _libDir() => Directory('packages/zcrud_flashcard/lib').existsSync()
 
 /// Supprime les commentaires Dart (`// …` et `/* … */`) pour qu'un motif cité en
 /// commentaire ne déclenche PAS de faux positif (AI-E10-2).
-String _stripComments(String src) {
-  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
-  final buffer = StringBuffer();
-  for (final line in noBlock.split('\n')) {
-    final idx = line.indexOf('//');
-    buffer.writeln(idx >= 0 ? line.substring(0, idx) : line);
-  }
-  return buffer.toString();
-}
+///
+/// 🔴 Délègue au dépouilleur PARTAGÉ (`support/z_sources.dart`) : l'ancienne
+/// passe retirait les blocs `/* … */` AVANT les commentaires de ligne — une
+/// dartdoc écrivant littéralement `packages/*/lib` ouvrait alors un « bloc »
+/// dont la fermeture (`*/` suivant, potentiellement des dizaines de lignes plus
+/// bas) AVALAIT du CODE : la garde devenait silencieusement AVEUGLE aux
+/// violations situées entre les deux. Le dépouilleur partagé reconnaît `//`
+/// avant `/*` et saute les littéraux de chaîne.
+String _stripComments(String src) => zsrc.stripLines(src.split('\n')).join('\n');
 
 Iterable<File> _dartFiles() => _libDir()
     .listSync(recursive: true)

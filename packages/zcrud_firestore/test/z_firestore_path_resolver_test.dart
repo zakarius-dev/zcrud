@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 void main() {
   // Table de topologie de référence : les 3 formes + une variante flat user-scopée.
   ZFirestorePathResolver resolver() => ZFirestorePathResolver(
@@ -119,22 +121,13 @@ void main() {
 
   group('AC11 — anti-réflexion : segment LITTÉRAL, jamais T.toString()', () {
     test('la dérivation de chemin n\'utilise NI runtimeType NI .toString()', () {
-      final src = File(_resolverPath()).readAsStringSync();
       // Le CRUD quasi-réflexif IFFD (`collection = T.toString()`) est BANNI.
-      // Scan hors commentaires/dartdoc (qui MENTIONNENT ces termes comme bannis).
+      // Scan hors commentaires/dartdoc (qui MENTIONNENT ces termes comme
+      // bannis). P0b : délègue au dé-commentateur PARTAGÉ `stripped()` — le
+      // filtre local ne strippait pas un bloc `/* … */` ouvert par du CODE sur
+      // sa ligne, ni un commentaire de FIN de ligne avant le test `contains`.
       final offenders = <String>[];
-      var inBlock = false;
-      for (final raw in src.split('\n')) {
-        final t = raw.trimLeft();
-        if (inBlock) {
-          if (t.contains('*/')) inBlock = false;
-          continue;
-        }
-        if (t.startsWith('/*')) {
-          if (!t.contains('*/')) inBlock = true;
-          continue;
-        }
-        if (t.startsWith('///') || t.startsWith('//')) continue;
+      for (final raw in stripped(File(_resolverPath()))) {
         if (raw.contains('runtimeType') || raw.contains('.toString()')) {
           offenders.add(raw.trim());
         }
@@ -145,7 +138,9 @@ void main() {
     });
 
     test('aucun type cloud_firestore importé ni en signature (AD-5)', () {
-      final src = File(_resolverPath()).readAsStringSync();
+      // P0b : source dé-commentée — cette assertion lisait le fichier BRUT,
+      // sans le strip déjà appliqué par le test voisin ci-dessus.
+      final src = strippedSource(File(_resolverPath()));
       expect(src.contains('package:cloud_firestore'), isFalse);
       expect(src.contains('package:hive'), isFalse);
       // Aucun générique Type ni paramètre `Type` : le résolveur ne connaît que

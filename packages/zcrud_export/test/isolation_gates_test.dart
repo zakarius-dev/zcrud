@@ -16,6 +16,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' as z_sources;
+
 /// Libs Syncfusion d'export confinées à `zcrud_export` (E11a-3).
 const _exportLibs = <String>[
   'syncfusion_flutter_xlsio',
@@ -61,17 +63,11 @@ Iterable<File> _dartFiles(Directory dir) => dir
 /// Retire les commentaires Dart (`/* */`, `//`, `///`) : les gates ciblent le
 /// CODE, jamais la prose des doc-comments — qui cite légitimement `Workbook`,
 /// `registerLicense`, `badCertificateCallback`, `dart:html` comme contre-exemples
-/// documentés. Aucun `//` ne vit dans un littéral de chaîne du `lib/` de ce package.
-String _code(String src) {
-  final noBlocks = src.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
-  return noBlocks
-      .split('\n')
-      .map((l) {
-        final idx = l.indexOf('//');
-        return idx >= 0 ? l.substring(0, idx) : l;
-      })
-      .join('\n');
-}
+/// documentés. Délègue à `test/support/z_sources.dart` (P0D3) : l'ancien
+/// dé-commentateur regex « bloc PUIS ligne » sur le fichier ENTIER pouvait
+/// avaler du CODE réel si un `/*` apparaissait dans un commentaire `//`/`///`
+/// avant un vrai bloc.
+String _code(String src) => z_sources.stripComments(src);
 
 /// Lignes `import ...` du CODE (commentaires retirés).
 List<String> _imports(String code) => code

@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Résout un chemin sous `packages/zcrud_markdown/` que les tests soient lancés
 /// depuis le package (`../zcrud_markdown/…`) ou depuis la racine melos.
 File _markdownFile(String rel) {
@@ -58,7 +60,11 @@ void main() {
       var scanned = 0;
       for (final f in dartFiles) {
         scanned++;
-        final s = f.readAsStringSync();
+        // Stripped : un dartdoc de zcrud_markdown peut légitimement NOMMER
+        // « zcrud_mindmap »/« z_mindmap » pour documenter cette même règle
+        // d'acyclicité (AD-1) — le grep vise l'arête de CODE (import/export/
+        // référence de symbole), jamais la prose qui l'explique (P0D1).
+        final s = stripSource(f.readAsStringSync());
         expect(s.contains('zcrud_mindmap'), isFalse,
             reason: 'import inverse interdit dans ${f.path}');
         expect(s.contains('z_mindmap'), isFalse,

@@ -16,6 +16,8 @@ import 'package:hive/hive.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 // ───────────────────────── Modèle de test ─────────────────────────────────
 
 /// Entité de test minimale. `fromMap` **strict** : lève sur `title`/`count`
@@ -474,9 +476,11 @@ void main() {
   group('AC10 — isolation : aucun type Hive dans une signature publique', () {
     test('aucun symbole hive dans une déclaration de membre public exporté', () {
       final pkg = _pkgDir();
-      // Le barrel ne ré-exporte AUCUN paquet hive/firebase.
-      final barrel =
-          File('${pkg.path}/lib/zcrud_firestore.dart').readAsStringSync();
+      // Le barrel ne ré-exporte AUCUN paquet hive/firebase. P0b : source
+      // DÉ-COMMENTÉE — sans quoi une dartdoc citant un `export` interdit à
+      // titre d'exemple (« ne JAMAIS écrire `export 'package:hive/hive.dart'`
+      // ici ») ferait rougir la garde à tort.
+      final barrel = strippedSource(File('${pkg.path}/lib/zcrud_firestore.dart'));
       for (final bad in <String>['hive', 'hive_flutter', 'cloud_firestore']) {
         expect(RegExp("export\\s+'package:$bad").hasMatch(barrel), isFalse,
             reason: 'Le barrel ne doit PAS ré-exporter package:$bad (AD-5).');
@@ -507,19 +511,13 @@ void main() {
       var publicSignatureLinesScanned = 0;
       final offenders = <String>[];
       for (final rel in exported) {
-        final lines = File('${pkg.path}/$rel').readAsLinesSync();
-        var inBlockComment = false;
-        for (final raw in lines) {
-          final trimmed = raw.trimLeft();
-          if (inBlockComment) {
-            if (trimmed.contains('*/')) inBlockComment = false;
-            continue;
-          }
-          if (trimmed.startsWith('/*')) {
-            if (!trimmed.contains('*/')) inBlockComment = true;
-            continue;
-          }
-          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+        // P0b : dé-commentateur PARTAGÉ ROBUSTE. L'ancien `inBlockComment`
+        // local ne détectait un bloc QUE s'il s'ouvrait en DÉBUT de ligne
+        // (`trimmed.startsWith('/*')`) : un bloc ouvert après du CODE sur la
+        // même ligne (`void put(...) { /* mentionne Box ici */ }`) restait
+        // NON strippé — et `forbiddenRe.hasMatch(raw)` s'appliquait alors à la
+        // ligne BRUTE, trailing comment compris (faux positif).
+        for (final raw in stripped(File('${pkg.path}/$rel'))) {
           final m = publicMember.firstMatch(raw);
           if (m == null) continue;
           if (m.group(1)!.startsWith('_')) continue;
@@ -537,9 +535,11 @@ void main() {
 
     test('firestore_z_remote_store n\'importe PAS cloud_firestore ni hive', () {
       final pkg = _pkgDir();
-      final src = File(
-              '${pkg.path}/lib/src/data/firestore_z_remote_store.dart')
-          .readAsStringSync();
+      // P0b : source dé-commentée (le dartdoc peut légitimement citer ces
+      // paquets pour documenter leur ABSENCE).
+      final src = strippedSource(
+        File('${pkg.path}/lib/src/data/firestore_z_remote_store.dart'),
+      );
       expect(src.contains("package:cloud_firestore"), isFalse);
       expect(src.contains("package:hive"), isFalse);
     });

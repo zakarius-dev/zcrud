@@ -28,6 +28,7 @@ import 'package:zcrud_study/zcrud_study.dart';
 import 'package:zcrud_ui_kit/zcrud_ui_kit.dart' show ZAppBarAction;
 
 import '../support/suf3_harness.dart';
+import '../support/z_sources.dart' show stripped;
 
 // Libellés INJECTÉS de test (jamais des défauts du socle).
 const String kHubEntryLabel = 'HUB_ENTRY';
@@ -464,11 +465,11 @@ void main() {
       final List<String> hits = <String>[];
       for (final FileSystemEntity f in dir.listSync(recursive: true)) {
         if (f is! File || !f.path.endsWith('.dart')) continue;
-        final List<String> lines = f.readAsLinesSync();
+        // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `stripped` retire aussi les
+        // commentaires de fin de ligne et les blocs `/* … */`.
+        final List<String> lines = stripped(f);
         for (int i = 0; i < lines.length; i++) {
           final String raw = lines[i];
-          final String t = raw.trimLeft();
-          if (t.startsWith('//')) continue;
           for (final String key in ZContentHubReference.colorKeys) {
             if (RegExp("(Text\\(|label:)\\s*'$key'").hasMatch(raw)) {
               hits.add('${f.path}:${i + 1}');
@@ -553,9 +554,9 @@ void main() {
       );
       expect(f.existsSync(), isTrue, reason: 'sonde cassée');
       final List<String> offenders = <String>[];
-      for (final String raw in f.readAsLinesSync()) {
-        final String t = raw.trimLeft();
-        if (t.startsWith('//')) continue;
+      // 🔴 DÉPOUILLÉ (campagne dartdoc P0A) : `stripped` retire aussi les
+      // commentaires de fin de ligne et les blocs `/* … */`.
+      for (final String raw in stripped(f)) {
         if (RegExp(r'^\s*final\s+String\??\s+\w+;').hasMatch(raw)) {
           offenders.add(raw.trim());
         }

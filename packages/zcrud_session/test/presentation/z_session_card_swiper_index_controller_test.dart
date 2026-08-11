@@ -23,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 
+import '../support/z_sources.dart';
 import 'z_swiper_harness.dart';
 
 List<ZSessionItem> _queue(int n) => <ZSessionItem>[
@@ -140,13 +141,15 @@ void main() {
       // l'hôte (contrôleur créé dans `build`, écrasé au rebuild suivant).
       // Source débarrassée de ses commentaires : une garde qui compterait des
       // occurrences de TEXTE (dartdoc comprise) ne mesurerait pas le code.
-      final src = File(
-        '${_repoRoot().path}/packages/zcrud_session/lib/src/presentation/'
-        'z_session_card_swiper.dart',
-      )
-          .readAsLinesSync()
-          .where((String l) => !l.trimLeft().startsWith('//'))
-          .join('\n');
+      // P0b : dé-commentateur ROBUSTE — l'ancien filtre ne retirait que les
+      // lignes commençant par `//`, aveugle à `/* … */` et aux commentaires de
+      // fin de ligne.
+      final src = strippedSource(
+        File(
+          '${_repoRoot().path}/packages/zcrud_session/lib/src/presentation/'
+          'z_session_card_swiper.dart',
+        ),
+      );
       expect(
         RegExp(r'ZIndexController\s*\(').allMatches(src),
         isEmpty,

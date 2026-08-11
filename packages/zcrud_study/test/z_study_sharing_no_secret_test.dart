@@ -4,20 +4,32 @@
 // 🔴 R3-SECRET : insérer `const _ep = 'https://…'` ou une clé `AIzaSy…` /
 // `sk-…` dans un fichier domaine fait ROUGIR ce test (et `gate:secrets`).
 // NB : ce fichier scanne les FICHIERS DOMAINE, jamais lui-même. Runner R14.
+//
+// 🔴 SCISSION SECRETS/URL (campagne dartdoc P0A) : les VRAIS secrets (clé/
+// token/PEM/Bearer littéral) restent scannés sur le SOURCE COMPLET — une clé
+// qui fuite en dartdoc reste une fuite. Les motifs GÉNÉRIQUES (`https?://`,
+// `import package:crypto` — une dartdoc peut légitimement CITER cet import en
+// backticks comme contre-exemple, cf. `z_podcast_no_crypto_test.dart`) passent
+// au source DÉPOUILLÉ (`z_sources.strippedText`).
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-final _forbidden = <String, RegExp>{
-  'URL/endpoint (http(s)://)': RegExp(r'https?://'),
+import 'support/z_sources.dart';
+
+final _forbiddenRaw = <String, RegExp>{
   'clé Google (AIza…)': RegExp('AIza' r'[0-9A-Za-z_\-]{35}'),
   'clé OpenAI (sk-…)': RegExp(r'\bsk-[A-Za-z0-9]{16,}'),
   'clé AWS (AKIA…)': RegExp('AKIA' r'[0-9A-Z]{16}'),
   'clé privée PEM': RegExp(r'-----BEGIN [A-Z ]*PRIVATE KEY-----'),
   'en-tête Bearer': RegExp(r'Bearer\s+[A-Za-z0-9._\-]{8,}'),
-  // Import RÉEL de crypto (SHA côté domaine INTERDIT) — on ne scanne PAS les
-  // mentions de prose en dartdoc (contre-exemples légitimes), seulement un
-  // `import '…package:crypto…'`.
+};
+
+final _forbiddenStripped = <String, RegExp>{
+  'URL/endpoint (http(s)://)': RegExp(r'https?://'),
+  // Import RÉEL de crypto (SHA côté domaine INTERDIT) — sur source dépouillé :
+  // une dartdoc DOIT pouvoir citer `import '…package:crypto…'` en backticks
+  // sans faire rougir la garde (seul un VRAI import de code compte).
   'import crypto (SHA côté domaine INTERDIT)':
       RegExp('''import\\s+['"][^'"]*package:crypto'''),
 };
@@ -55,8 +67,14 @@ void main() {
     final violations = <String>[];
     for (final file in dartFiles) {
       final content = file.readAsStringSync();
-      _forbidden.forEach((label, re) {
+      _forbiddenRaw.forEach((label, re) {
         if (re.hasMatch(content)) {
+          violations.add('${file.path} : $label');
+        }
+      });
+      final strippedContent = strippedText(file);
+      _forbiddenStripped.forEach((label, re) {
+        if (re.hasMatch(strippedContent)) {
           violations.add('${file.path} : $label');
         }
       });
@@ -64,5 +82,28 @@ void main() {
 
     expect(violations, isEmpty,
         reason: 'fuite transport/secret détectée : ${violations.join(', ')}');
+  });
+
+  group('🔴 CONTRE-PREUVE — la scission secret/URL n\'affaiblit pas la garde',
+      () {
+    test('une clé AWS en COMMENTAIRE reste détectée (raw)', () {
+      const line = '// ne jamais coder AKIAABCDEFGHIJKLMNOP en dur';
+      final hit = _forbiddenRaw['clé AWS (AKIA…)']!.hasMatch(line);
+      expect(hit, isTrue,
+          reason: 'une clé AWS en commentaire DOIT rester une fuite détectée');
+    });
+
+    test('URL et `import package:crypto` en COMMENTAIRE ne rougissent PAS '
+        '(stripped)', () {
+      final stripped = strippedLines(<String>[
+        "// voir https://pub.dev/packages/crypto",
+        "// jamais `import 'package:crypto/crypto.dart';` côté domaine",
+      ]).join('\n');
+      _forbiddenStripped.forEach((label, re) {
+        expect(re.hasMatch(stripped), isFalse,
+            reason: '🔴 $label : une mention en dartdoc ne doit PAS faire '
+                'rougir la garde générique.');
+      });
+    });
   });
 }

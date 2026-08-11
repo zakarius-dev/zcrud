@@ -28,6 +28,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart'
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
 
+import '../support/z_sources.dart';
 import 'z_answer_input_harness.dart';
 import 'z_swiper_harness.dart';
 
@@ -90,11 +91,10 @@ void main() {
       expect(file.existsSync(), isTrue,
           reason: 'introuvable: $path (cwd=${Directory.current.path})');
 
-      // On isole la SIGNATURE réelle du handler (hors commentaires).
-      final code = file
-          .readAsLinesSync()
-          .where((l) => !l.trimLeft().startsWith('///'))
-          .join('\n');
+      // On isole la SIGNATURE réelle du handler (hors commentaires). P0b :
+      // dé-commentateur ROBUSTE — l'ancien filtre ne retirait que les lignes
+      // `///`, aveugle à `/* … */` et aux commentaires de fin de ligne.
+      final code = strippedSource(file);
       final match =
           RegExp(r'\n\s*(\w[\w<>?\s]*?)\s+_handleSwipe\s*\([^)]*\)\s*(async)?\s*\{')
               .firstMatch(code);

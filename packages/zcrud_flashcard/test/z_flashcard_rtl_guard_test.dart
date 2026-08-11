@@ -26,6 +26,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 /// Variantes **non directionnelles** interdites (AD-13), et leur remplaçante.
 ///
 /// Bornées par `[^;{]*?` : le motif ne traverse pas la fin d'instruction, mais
@@ -70,10 +72,16 @@ List<String> scanForNonDirectional(List<String> lines, String path) {
     }
   }
 
+  // 🔴 Dépouillement PARTAGÉ (`support/z_sources.dart`, numérotation
+  // préservée) : il retire AUSSI les commentaires de FIN de ligne et les blocs
+  // `/* … */` — un `// jamais TextAlign.left` accroché à une ligne de code
+  // faisait rougir l'ancienne passe, qui ne sautait que les lignes-commentaire.
+  final stripped = zsrc.stripLines(lines);
   for (var i = 0; i < lines.length; i++) {
-    final trimmed = lines[i].trimLeft();
-    if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-      continue; // la prose doit pouvoir NOMMER les variantes interdites
+    final rawTrimmed = lines[i].trim();
+    final trimmed = stripped[i].trim();
+    if (trimmed.isEmpty && rawTrimmed.isNotEmpty) {
+      continue; // ligne de PUR commentaire — la prose peut NOMMER l'interdit
     }
     if (trimmed.isEmpty) {
       flush();

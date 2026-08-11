@@ -4,11 +4,19 @@
 /// Elle lit les fichiers **réellement sur disque** : c'est la seule façon de
 /// prouver une ABSENCE. Chemins RELATIFS au dossier du paquet (convention du
 /// dépôt : `flutter test` se lance depuis `packages/zcrud_navigation`).
+///
+/// 🔴 Le grep porte sur le CODE, jamais sur la prose : chaque motif banni ici
+/// (`TextAlign.left`, `Colors.`…) est un nom que le dartdoc du chantier
+/// documentation peut légitimement CITER pour expliquer pourquoi il est
+/// interdit. `_read` retourne donc la source STRIPPÉE de ses commentaires
+/// (`test/support/z_sources.dart`) — jamais le fichier brut.
 library;
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/z_sources.dart' show stripSource;
 
 const List<String> _chromeSources = <String>[
   'lib/src/presentation/z_edition_chrome.dart',
@@ -54,7 +62,9 @@ const List<String> _allowedLabelKeys = <String>['save', 'cancel', 'close'];
 String _read(String path) {
   final File f = File(path);
   expect(f.existsSync(), isTrue, reason: '🔴 source absente : $path');
-  return f.readAsStringSync();
+  // Stripped : le grep vise le CODE, jamais le dartdoc qui documente
+  // légitimement les motifs interdits (cf. l'en-tête de ce fichier).
+  return stripSource(f.readAsStringSync());
 }
 
 void main() {

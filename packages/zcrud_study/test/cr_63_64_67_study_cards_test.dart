@@ -9,6 +9,8 @@ import 'package:zcrud_study/src/presentation/z_study_document_card.dart';
 import 'package:zcrud_study/src/presentation/z_study_note_card.dart';
 import 'package:zcrud_study/src/presentation/z_study_tools_item_card.dart';
 
+import 'support/z_sources.dart';
+
 const _topAccentKey = ValueKey<String>('top-accent');
 const _footerKey = ValueKey<String>('folder-footer');
 const _itemAccentKey = ValueKey<String>('item-accent');
@@ -215,7 +217,8 @@ void main() {
       ]) {
         final source = File(path).readAsStringSync();
         expect(source.contains('ZStudyToolsItemCard('), isTrue);
-        expect(RegExp(r'\bCard\s*\(').hasMatch(source), isFalse);
+        final stripped = strippedOf(path);
+        expect(RegExp(r'\bCard\s*\(').hasMatch(stripped), isFalse);
       }
     });
   });

@@ -21,6 +21,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart';
+
 /// Symboles SRS **interdits** dans la source du runtime linéaire (AC2a). Leur
 /// seule présence prouverait l'existence d'un point d'écriture SRS ⇒ violation
 /// de « zéro écriture SM-2 PAR CONSTRUCTION » (AD-23).
@@ -45,20 +47,18 @@ void main() {
     expect(source.existsSync(), isTrue,
         reason: 'source introuvable (cwd = ${Directory.current.path})');
 
-    final lines = source.readAsLinesSync();
+    final lines = stripped(source);
     // Contre-preuve R12 : le scan DOIT réellement voir du contenu.
     expect(lines, isNotEmpty, reason: 'source vide — rien scanné');
 
-    // On scanne le CODE hors dartdoc/commentaires : la doc doit pouvoir nommer
-    // les concepts SRS (contraste AD-23) sans faux-positiver ; seul un symbole
-    // SRS dans le CODE prouverait un point d'écriture atteignable.
+    // On scanne le CODE hors dartdoc/commentaires (P0b : dé-commentateur
+    // ROBUSTE `stripped()` — ligne, bloc multi-lignes, littéraux de chaîne) :
+    // la doc doit pouvoir nommer les concepts SRS (contraste AD-23) sans
+    // faux-positiver ; seul un symbole SRS dans le CODE prouverait un point
+    // d'écriture atteignable.
     final violations = <String>[];
     for (var i = 0; i < lines.length; i++) {
       final raw = lines[i];
-      final trimmed = raw.trimLeft();
-      if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-        continue; // ligne de commentaire/dartdoc — ignorée
-      }
       for (final symbol in _bannedSrsSymbols) {
         if (raw.contains(symbol)) {
           violations.add('${source.path}:${i + 1} → $symbol dans « ${raw.trim()} »');

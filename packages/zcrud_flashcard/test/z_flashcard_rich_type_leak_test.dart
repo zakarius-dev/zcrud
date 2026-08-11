@@ -25,6 +25,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' as zsrc;
+
 /// Types/paquets de rendu riche interdits dans une signature publique (AC4).
 const List<String> _bannedRichTypes = <String>[
   'flutter_quill',
@@ -105,11 +107,17 @@ List<String> scanForRichTypeLeaks(List<String> lines, String path) {
     }
   }
 
+  // 🔴 Dépouillement PARTAGÉ (`support/z_sources.dart`, numérotation
+  // préservée) : il retire AUSSI les commentaires de FIN de ligne et les blocs
+  // `/* … */` — un `// cf. QuillController` accroché à une ligne de signature
+  // aurait fait rougir l'ancienne passe, qui ne sautait que les
+  // lignes-commentaire entières.
+  final stripped = zsrc.stripLines(lines);
   for (var i = 0; i < lines.length; i++) {
-    final raw = lines[i];
-    final trimmed = raw.trimLeft();
-    if (trimmed.startsWith('///') || trimmed.startsWith('//')) {
-      continue; // la prose doit pouvoir NOMMER Quill
+    final rawTrimmed = lines[i].trim();
+    final trimmed = stripped[i].trim();
+    if (trimmed.isEmpty && rawTrimmed.isNotEmpty) {
+      continue; // ligne de PUR commentaire — la prose doit pouvoir NOMMER Quill
     }
     if (trimmed.isEmpty) {
       // Ligne vide : elle ne peut pas couper une signature, mais elle borne
@@ -235,9 +243,11 @@ void main() {
       expect(lines, isNotEmpty, reason: 'fichier vide — rien scanné (R12)');
 
       final resolutions = <String>[];
-      for (var i = 0; i < lines.length; i++) {
-        final trimmed = lines[i].trimLeft();
-        if (trimmed.startsWith('///') || trimmed.startsWith('//')) continue;
+      // STRIPPÉ : une dartdoc (ou un commentaire de fin de ligne) citant
+      // `contentBuilder ??` ne doit pas fabriquer une fausse « résolution ».
+      final code = zsrc.stripLines(lines);
+      for (var i = 0; i < code.length; i++) {
+        final trimmed = code[i].trim();
         if (trimmed.contains('contentBuilder ??')) {
           resolutions.add('${card.path}:${i + 1} → « $trimmed »');
         }

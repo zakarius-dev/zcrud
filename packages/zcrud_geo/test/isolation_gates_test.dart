@@ -7,6 +7,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripComments;
+
 const _mapLibs = <String>[
   'google_maps_flutter',
   'flutter_map',
@@ -55,7 +57,11 @@ void main() {
       final offenders = <String>[];
       for (final e in libDir.listSync(recursive: true).whereType<File>()) {
         if (!e.path.endsWith('.dart')) continue;
-        if (importRe.hasMatch(e.readAsStringSync())) offenders.add(e.path);
+        // P0D2 : source dé-commentée — un dartdoc qui cite l'import interdit
+        // pour EXPLIQUER le confinement ne doit pas accuser le fichier hôte.
+        if (importRe.hasMatch(stripComments(e.readAsStringSync()))) {
+          offenders.add(e.path);
+        }
       }
       expect(offenders, hasLength(1),
           reason: 'google_maps_flutter ne doit être importé QUE dans '
@@ -73,10 +79,15 @@ void main() {
       final badCert = RegExp(r'badCertificateCallback\s*(=>|=)');
       for (final e in dir.listSync(recursive: true).whereType<File>()) {
         if (!e.path.endsWith('.dart')) continue;
-        final src = e.readAsStringSync();
-        expect(googleKey.hasMatch(src), isFalse,
+        final raw = e.readAsStringSync();
+        // P0D2/scission : un VRAI secret (motif de clé plausible) reste
+        // scanné COMMENTAIRES INCLUS — une clé collée dans un commentaire est
+        // encore une clé fuitée dans l'historique git. `badCertificateCallback`
+        // est en revanche un motif de CODE interdit (comme les motifs RTL) :
+        // un dartdoc qui l'explique ne doit pas s'auto-accuser.
+        expect(googleKey.hasMatch(raw), isFalse,
             reason: 'clé Google en dur interdite dans ${e.path}');
-        expect(badCert.hasMatch(src), isFalse,
+        expect(badCert.hasMatch(stripComments(raw)), isFalse,
             reason: 'badCertificateCallback interdit dans ${e.path}');
       }
     });
@@ -118,7 +129,11 @@ void main() {
       ];
       for (final e in dir.listSync(recursive: true).whereType<File>()) {
         if (!e.path.endsWith('.dart')) continue;
-        final src = e.readAsStringSync();
+        // P0D2 : cas d'école — cette garde scannait le texte BRUT. Un dartdoc
+        // qui cite `TextAlign.left` pour expliquer pourquoi il est banni (le
+        // style même du chantier de documentation à venir) la faisait rougir
+        // sur sa propre prose.
+        final src = stripComments(e.readAsStringSync());
         for (final re in banned) {
           expect(re.hasMatch(src), isFalse,
               reason: 'motif non directionnel (AD-13) dans ${e.path} : '

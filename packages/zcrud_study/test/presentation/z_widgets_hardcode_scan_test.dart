@@ -32,6 +32,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 /// Énumère RÉCURSIVEMENT tous les `.dart` de `lib/src/presentation/**`.
 List<String> _presentationFiles() {
   const root = 'lib/src/presentation';
@@ -238,7 +240,7 @@ void main() {
           continue;
         }
         violations.addAll(scanForPatterns(
-            File(path).readAsLinesSync(), path, _bannedColorPatterns));
+            stripped(File(path)), path, _bannedColorPatterns));
       }
 
       expect(violations, isEmpty,
@@ -254,7 +256,7 @@ void main() {
       final violations = <String>[];
       for (final path in _presentationFiles()) {
         violations.addAll(scanForPatterns(
-            File(path).readAsLinesSync(), path, _bannedDirectionalPatterns));
+            stripped(File(path)), path, _bannedDirectionalPatterns));
       }
 
       expect(violations, isEmpty,
@@ -269,7 +271,7 @@ void main() {
     test('aucun Text(\'…\')/hintText:/tooltip:/label: littéral', () {
       final violations = <String>[];
       for (final path in _presentationFiles()) {
-        violations.addAll(scanForUserStrings(File(path).readAsLinesSync(), path));
+        violations.addAll(scanForUserStrings(stripped(File(path)), path));
       }
 
       expect(violations, isEmpty,
@@ -285,7 +287,7 @@ void main() {
       final violations = <String>[];
       for (final path in _presentationFiles()) {
         violations.addAll(
-            scanForHardcodedStyle(File(path).readAsLinesSync(), path));
+            scanForHardcodedStyle(stripped(File(path)), path));
       }
 
       expect(violations, isEmpty,
@@ -319,7 +321,7 @@ void main() {
         // ne protège rien et doit être retirée — une exception encadrée ne
         // se garde pas « au cas où »).
         expect(
-          scanForPatterns(File(exempt).readAsLinesSync(), exempt,
+          scanForPatterns(stripped(File(exempt)), exempt,
               _bannedColorPatterns),
           isNotEmpty,
           reason: '🔴 exemption INUTILE : `$exempt` ne contient plus aucune '

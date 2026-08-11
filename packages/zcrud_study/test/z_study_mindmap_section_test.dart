@@ -19,6 +19,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_mindmap/zcrud_mindmap.dart';
 import 'package:zcrud_study/zcrud_study.dart';
 
+import 'support/z_sources.dart';
+
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
 /// Forêt mono-racine à 2 niveaux (ids STABLES pour comparer par id, DW-ES22-5 :
@@ -120,8 +122,7 @@ void main() {
   group('AC2 — verrou-source flowchart legacy / graphite', () {
     test('la section n\'importe NI flutter_flow_chart NI graphview NI graphite',
         () {
-      final src = File('lib/src/presentation/z_study_mindmap_section.dart')
-          .readAsStringSync();
+      final src = strippedOf('lib/src/presentation/z_study_mindmap_section.dart');
       // Discriminant R3-I3 : un `import '...graphview...'` rougirait ici.
       expect(src.contains("package:flutter_flow_chart"), isFalse);
       expect(src.contains("package:graphview"), isFalse);
@@ -353,8 +354,7 @@ void main() {
     });
 
     test('verrou-source : la section n\'importe PAS zcrud_markdown', () {
-      final src = File('lib/src/presentation/z_study_mindmap_section.dart')
-          .readAsStringSync();
+      final src = strippedOf('lib/src/presentation/z_study_mindmap_section.dart');
       // Ancré sur un IMPORT réel (`package:zcrud_markdown`) — la mention en
       // commentaire de doc (« n'importe PAS zcrud_markdown ») ne compte pas.
       expect(src.contains('package:zcrud_markdown'), isFalse);

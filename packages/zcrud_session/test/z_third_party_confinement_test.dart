@@ -44,6 +44,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/z_sources.dart' show stripSource;
+
 /// Un paquet tiers **confiné** : sa contrainte, son fichier unique, ses types.
 typedef _ConfinedPackage = ({
   /// Nom du paquet sur pub.dev (= préfixe `package:<name>/`).
@@ -138,22 +140,21 @@ Iterable<File> _dartFiles(Directory dir) => dir
     .whereType<File>()
     .where((f) => f.path.endsWith('.dart'));
 
-/// Retire les commentaires **DART** (`//`, dartdoc) : ils **citent**
+/// Retire les commentaires **DART** (`//`, `/* … */`, dartdoc) : ils **citent**
 /// légitimement le nom du paquet et ses types (le dartdoc du swiper explique
 /// tout le confinement).
 ///
-/// 🔴 **NE JAMAIS l'appliquer à un `pubspec.yaml`** — cf. [_stripYamlComments].
-String _stripComments(String src) => src
-    .split('\n')
-    .where((l) {
-      final t = l.trim();
-      return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
-    })
-    .map((l) {
-      final i = l.indexOf('//');
-      return i >= 0 ? l.substring(0, i) : l;
-    })
-    .join('\n');
+/// 🔴 P0b — délègue au dé-commentateur PARTAGÉ [strippedSource]
+/// (`support/z_sources.dart`) : l'implémentation locale d'origine ne retirait
+/// que les LIGNES commençant par `//`/`*`/`/*` — un commentaire de BLOC
+/// (`/* … */`) ouvert par du CODE sur la même ligne (`final x = 1; /* cite
+/// $pkg ici */`), ou un commentaire de bloc multi-lignes SANS `*` de
+/// continuation, traversait le filtre intact. `strippedSource` gère les deux
+/// (scan caractère par caractère, état `inBlock`, littéraux de chaîne sautés).
+///
+/// 🔴 **NE JAMAIS l'appliquer à un `pubspec.yaml`** — cf. [_stripYamlComments]
+/// (YAML n'a pas la même grammaire de commentaire : `#`, pas `//`/`/* */`).
+String _stripComments(String src) => stripSource(src);
 
 /// Retire les commentaires **YAML** (`#`) — dé-commentateur du bon LANGAGE.
 ///

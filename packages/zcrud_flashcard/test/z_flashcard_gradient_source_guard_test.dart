@@ -1,21 +1,23 @@
 /// G2 VIS-3 : garde de structure contre palettes et mappings locaux.
+///
+/// 🔴 Scan sur source STRIPPÉE (`support/z_sources.dart`) : une dartdoc citant
+/// `Colors.red`, un mapping `<ZFlashcardType, …>` ou `zResolveGradient(` ne
+/// doit ni faire rougir la garde, ni fausser le comptage « une seule voie vers
+/// le resolver ».
 @TestOn('vm')
 library;
 
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/z_sources.dart' as zsrc;
 
 void main() {
   test(
     'G2 — aucune palette/mapping de type local ne contourne le resolver',
     () {
-      final root = Directory('lib');
-      final source = root
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.dart'))
-          .map((file) => file.readAsStringSync())
+      final source = zsrc
+          .libDartFiles()
+          .map(zsrc.strippedSource)
           .join('\n');
 
       expect(

@@ -10,6 +10,7 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import '../support/z_sources.dart';
 import 'z_exam_harness.dart';
 
 void main() {
@@ -96,7 +97,10 @@ void main() {
       isTrue,
       reason: 'source introuvable: $path (cwd=${Directory.current.path})',
     );
-    final lines = file.readAsLinesSync();
+    // P0b : dé-commentateur ROBUSTE — l'ancien filtre ne retirait que les
+    // lignes commençant par `///`/`//`, aveugle à un `/* … */` ou à un
+    // commentaire de FIN de ligne.
+    final lines = stripped(file);
     expect(lines, isNotEmpty, reason: 'source vide — rien scanné');
 
     // ⚠️ **Portée déclarée honnêtement — pourquoi PAS un grep de
@@ -121,8 +125,6 @@ void main() {
 
     final violations = <String>[];
     for (var i = 0; i < lines.length; i++) {
-      final trimmed = lines[i].trimLeft();
-      if (trimmed.startsWith('///') || trimmed.startsWith('//')) continue;
       for (final rule in banned) {
         if (lines[i].contains(rule.pattern)) {
           violations.add(

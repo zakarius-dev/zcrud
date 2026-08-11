@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 
+import 'support/z_sources.dart' show strippedSource;
+
 // ───────────────────────── Modèle de test ─────────────────────────────────
 
 /// Entité minimale avec un champ date sérialisé en **String ISO-8601** (comme le
@@ -403,7 +405,10 @@ void main() {
             '${Platform.pathSeparator}data${Platform.pathSeparator}')) {
           continue;
         }
-        if (ent.readAsStringSync().contains('Timestamp')) {
+        // P0b : source DÉ-COMMENTÉE — sans strip, un simple paragraphe de
+        // dartdoc expliquant le confinement AD-5 (comme celui de CE test)
+        // suffirait à faire rougir n'importe quel autre fichier de `lib/`.
+        if (strippedSource(ent).contains('Timestamp')) {
           offenders.add(ent.path);
         }
       }

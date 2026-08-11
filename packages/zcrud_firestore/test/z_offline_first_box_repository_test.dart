@@ -20,6 +20,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_firestore/zcrud_firestore.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart';
 
+import 'support/z_sources.dart' show stripped, strippedSource;
+
 // ───────────────────────── Modèle de test SANS `updatedAt` (miroir ZMindmap) ──
 //
 // _Note n'a AUCUN champ `updatedAt` : la merge-key LWW est donc OBLIGATOIREMENT
@@ -395,7 +397,9 @@ void main() {
       // comparaison vers `entity.updatedAt` (R3-d) ne COMPILE pas — ZEntity
       // n'expose aucun `updatedAt`. On documente l'invariant : le code source du
       // dépôt ne lit `updated_at` que via la méta (ZSyncMeta.kUpdatedAt).
-      final src = File(_repoPath()).readAsStringSync();
+      // P0b : source dé-commentée (le dartdoc de la garde elle-même cite
+      // `.updatedAt` en prose).
+      final src = strippedSource(File(_repoPath()));
       expect(src.contains('.updatedAt'), isTrue,
           reason: 'la clé LWW est lue de ZSyncMeta/ZSyncEntry (méta)');
       // Aucune lecture d'un champ `updatedAt` sur l'ENTITÉ générique.
@@ -640,7 +644,6 @@ void main() {
 
   group('AC11 — aucun type backend dans une signature publique', () {
     test('z_offline_first_box_repository.dart : signatures NUES', () {
-      final src = File(_repoPath()).readAsStringSync();
       const forbidden = <String>[
         r'\bBox\b',
         r'\bHiveObject\b',
@@ -662,20 +665,13 @@ void main() {
       );
       var scanned = 0;
       final offenders = <String>[];
-      var inBlock = false;
-      final lines = src.split('\n');
+      // P0b : dé-commentateur PARTAGÉ ROBUSTE — l'ancien `inBlock` local ne
+      // détectait un bloc QUE s'il s'ouvrait en DÉBUT de ligne, et ne
+      // retirait pas un `//` de fin de ligne avant `forbiddenRe.hasMatch`.
+      final lines = stripped(File(_repoPath()));
       for (var i = 0; i < lines.length; i++) {
         final raw = lines[i];
         final t = raw.trimLeft();
-        if (inBlock) {
-          if (t.contains('*/')) inBlock = false;
-          continue;
-        }
-        if (t.startsWith('/*')) {
-          if (!t.contains('*/')) inBlock = true;
-          continue;
-        }
-        if (t.startsWith('//') || t.startsWith('///')) continue;
         // Constructeur (nom de classe) — ignoré (la couture DI y est permise).
         if (t.startsWith('ZOfflineFirstBoxRepository(') ||
             raw.contains('required this.') ||

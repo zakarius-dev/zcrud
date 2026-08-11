@@ -32,6 +32,8 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZRepetitionInfo;
 import 'package:zcrud_session/zcrud_session.dart';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZReviewMode;
 
+import 'support/z_sources.dart';
+
 /// File minimale — 2 cartes (assez pour tout ctor).
 List<ZSessionItem> _queue() => const <ZSessionItem>[
       ZSessionItem(flashcardId: 'f1', folderId: 'd1'),
@@ -152,7 +154,11 @@ void main() {
       final file = File(path);
       expect(file.existsSync(), isTrue,
           reason: 'introuvable: $path (cwd=${Directory.current.path})');
-      final src = file.readAsStringSync();
+      // P0b : la SIGNATURE du ctor est lue sur du CODE dé-commenté
+      // (`strippedSource`) — un dartdoc de paramètre citant `reviewer`/`mode`
+      // (pour expliquer que ce ctor ne les a PAS) ne doit pas faire rougir la
+      // garde à tort.
+      final src = strippedSource(file);
       final ctor = src.substring(
         src.indexOf('ZWhiteExamSessionEngine({'),
         src.indexOf('_state = ZWhiteExamState('),
@@ -183,9 +189,13 @@ void main() {
           .toList();
       // Contre-preuve R12 : un scan qui ne voit rien serait vert à tort.
       expect(files, isNotEmpty, reason: 'aucun fichier de domaine scanné');
+      // P0b : scan sur la source DÉ-COMMENTÉE — un exemple de dartdoc au
+      // format ```dart\nclass ZFakeSessionEngine extends ChangeNotifier {…}
+      // ``` (parfaitement plausible dans une doc pédagogique du chantier
+      // documentation) déclarerait sinon un « 4ᵉ runtime » fantôme.
       return <String>{
         for (final f in files)
-          for (final m in re.allMatches(f.readAsStringSync())) m.group(1)!,
+          for (final m in re.allMatches(strippedSource(f))) m.group(1)!,
       };
     }
 

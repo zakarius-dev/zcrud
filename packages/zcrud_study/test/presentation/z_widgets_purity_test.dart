@@ -37,6 +37,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/z_sources.dart' show stripped;
+
 /// Énumère RÉCURSIVEMENT tous les `.dart` de `lib/src/presentation/**`.
 List<String> _presentationFiles() {
   const root = 'lib/src/presentation';
@@ -126,7 +128,7 @@ void main() {
       final violations = <String>[];
       for (final path in files) {
         violations.addAll(
-            scanForBanned(File(path).readAsLinesSync(), path, _bannedImports));
+            scanForBanned(stripped(File(path)), path, _bannedImports));
       }
 
       expect(violations, isEmpty,
@@ -143,7 +145,7 @@ void main() {
       final violations = <String>[];
       for (final path in _presentationFiles()) {
         violations.addAll(scanForBanned(
-            File(path).readAsLinesSync(), path, _bannedWriteSymbols));
+            stripped(File(path)), path, _bannedWriteSymbols));
       }
 
       expect(violations, isEmpty,
@@ -171,7 +173,7 @@ void main() {
       final violations = <String>[];
       for (final path in files) {
         violations.addAll(
-            scanForBanned(File(path).readAsLinesSync(), path, _bannedStoreSymbols));
+            scanForBanned(stripped(File(path)), path, _bannedStoreSymbols));
       }
 
       expect(violations, isEmpty,
