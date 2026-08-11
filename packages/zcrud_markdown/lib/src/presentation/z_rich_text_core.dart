@@ -320,18 +320,24 @@ Widget zWrapRichTextContent(
 /// vers les `showXxx` de Quill + la liste `customButtons`. La config DOIT être
 /// construite UNE FOIS par l'appelant (en `initState`) et HISSÉE en champ —
 /// jamais ré-allouée dans le chemin chaud de frappe.
+/// [autoMultiRow] (CR toolbar multi-rangées par surface, 2026-08-11) : valeur
+/// AUTO du multi-rangées quand `config.multiRow == null` — chaque SURFACE
+/// appelante déclare sa géométrie (`false` = barre dans le FLUX d'un
+/// formulaire, `true` = plein-écran où la place existe). Un `multiRow`
+/// `true`/`false` posé par l'hôte reste un FORÇAGE et l'emporte (AD-4).
 QuillSimpleToolbarConfig buildZToolbarConfig({
   required VoidCallback onInsertLatex,
   required VoidCallback onInsertTable,
   VoidCallback? onInsertImage,
   VoidCallback? onInsertVideo,
   ZRichTextToolbarConfig config = ZRichTextToolbarConfig.full,
+  bool autoMultiRow = false,
 }) =>
     QuillSimpleToolbarConfig(
       toolbarSize: kZMinTapTarget,
-      // GAP-9 : multi-rangées OPT-IN (parité legacy `qmew:229`) ; défaut
-      // `false` = mono-rangée historique.
-      multiRowsDisplay: config.multiRow,
+      // CR 2026-08-11 : tri-état — `null` = AUTO par surface ([autoMultiRow]),
+      // `true`/`false` = forçage hôte respecté sur les deux surfaces.
+      multiRowsDisplay: config.multiRow ?? autoMultiRow,
       // GAP-9 : icônes rounded OPT-IN — SEUL `iconData` est posé, jamais de
       // `tooltip` : les tooltips restent ceux de Quill, DÉJÀ localisés.
       buttonOptions: config.roundedIcons

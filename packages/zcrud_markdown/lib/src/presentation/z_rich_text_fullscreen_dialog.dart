@@ -152,6 +152,10 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
       // GAP-9 : config transmise par le champ appelant ; `null` ⇒ full
       // (défaut historique du dialog, inchangé).
       config: widget.toolbarConfig ?? ZRichTextToolbarConfig.full,
+      // CR 2026-08-11 : SURFACE plein-écran ⇒ AUTO = multi-rangées (c'est là
+      // que la place existe, la découvrabilité des boutons y prime). Un
+      // `multiRow: true/false` posé par l'hôte reste un forçage respecté.
+      autoMultiRow: true,
     );
   }
 

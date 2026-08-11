@@ -85,7 +85,11 @@ void main() {
       expect(cfg.buttonOptions.bold.iconData, isNull,
           reason: 'sans opt-in, AUCUNE icône custom ne doit être posée');
       expect(ZRichTextToolbarConfig.full.roundedIcons, isFalse);
-      expect(ZRichTextToolbarConfig.full.multiRow, isFalse);
+      // CR 2026-08-11 : `multiRow` est devenu TRI-ÉTAT — défaut `null` = AUTO
+      // par surface (une rangée en flux, multi-rangées en plein écran). La
+      // traduction SANS surface déclarée (`autoMultiRow` par défaut) reste
+      // mono-rangée (assertion `multiRowsDisplay` ci-dessus, inchangée).
+      expect(ZRichTextToolbarConfig.full.multiRow, isNull);
       expect(ZRichTextToolbarConfig.full.themedBarBackground, isFalse);
     });
 

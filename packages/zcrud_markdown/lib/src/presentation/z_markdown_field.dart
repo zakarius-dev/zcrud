@@ -485,6 +485,13 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       onInsertVideo: () => insertZMedia(context, quill,
           kind: ZMediaKind.video, isMounted: () => mounted),
       config: _effectiveToolbarConfig,
+      // CR 2026-08-11 : les DEUX modes éditeur de ce State (`fullEditor` ET
+      // `inlineEditor`) rendent leur barre DANS LE FLUX d'un formulaire ⇒
+      // AUTO = une rangée défilante (un champ inséré dans un formulaire ne
+      // doit jamais consommer la hauteur de l'écran — mesuré : 262 dp vs
+      // 67 dp à 400 dp de large, cf. ZRichTextToolbarConfig.multiRow). Le
+      // multi-rangées AUTO vit dans ZRichTextFullscreenDialog.
+      autoMultiRow: false,
     );
   }
 

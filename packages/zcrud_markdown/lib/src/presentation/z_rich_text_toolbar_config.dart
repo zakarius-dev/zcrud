@@ -29,9 +29,10 @@ import 'package:flutter/foundation.dart';
 class ZRichTextToolbarConfig {
   /// Construit une config granulaire. Tous les groupes sont activés par DÉFAUT
   /// (équivaut au préset [full]) — SAUF [showStrikethrough] (GAP-8, cf. son
-  /// doc) et les options d'HABILLAGE de barre ([roundedIcons], [multiRow],
+  /// doc) et les options d'HABILLAGE de barre ([roundedIcons],
   /// [themedBarBackground], GAP-9) qui sont opt-in ; passez `false` pour
-  /// masquer un groupe.
+  /// masquer un groupe. [multiRow] est TRI-ÉTAT : `null` (défaut) = AUTO par
+  /// surface (cf. son doc).
   const ZRichTextToolbarConfig({
     this.showUndoRedo = true,
     this.showFontFamily = true,
@@ -61,7 +62,7 @@ class ZRichTextToolbarConfig {
     this.showImageButton = true,
     this.showVideoButton = true,
     this.roundedIcons = false,
-    this.multiRow = false,
+    this.multiRow,
     this.themedBarBackground = false,
   });
 
@@ -167,9 +168,33 @@ class ZRichTextToolbarConfig {
   /// `false` ⇒ icônes Quill historiques inchangées (AD-4).
   final bool roundedIcons;
 
-  /// GAP-9 (opt-in) : barre **multi-rangées** (`multiRowsDisplay` Quill,
-  /// parité `qmew:229`). Défaut `false` ⇒ mono-rangée défilante historique.
-  final bool multiRow;
+  /// Barre **multi-rangées** (`multiRowsDisplay` Quill, parité `qmew:229`) —
+  /// TRI-ÉTAT (CR toolbar multi-rangées par surface, 2026-08-11).
+  ///
+  /// La MÊME config sert le champ en flux ET le dialog plein-écran : un booléen
+  /// unique ne peut pas être juste pour les deux surfaces. Constat device
+  /// (pilote DODLP) : `true` en flux ⇒ la barre s'empile sur ~10 rangées et
+  /// noie le formulaire ; `false` en plein écran ⇒ boutons rejetés hors écran
+  /// alors que la place abonde.
+  ///
+  /// - `null` (DÉFAUT) ⇒ **AUTO** : la bonne valeur dérive de la SURFACE —
+  ///   **une rangée défilante** pour toute barre rendue DANS LE FLUX d'un
+  ///   formulaire (mode `inline` ET voie `controller`), **multi-rangées** dans
+  ///   `ZRichTextFullscreenDialog`. Aucune configuration hôte requise.
+  /// - `true`/`false` ⇒ **forçage hôte**, respecté SUR LES DEUX surfaces
+  ///   (AD-4). Un hôte qui posait `false` (contournement v0.82/v0.83) garde
+  ///   exactement son comportement — mais il doit RETIRER ce forçage pour
+  ///   profiter de l'AUTO.
+  ///
+  /// Mode `block` (tranché, MESURÉ) : son rendu en flux ne monte AUCUNE
+  /// toolbar (aperçu lecteur + bouton) — sa seule barre vit dans le dialog
+  /// plein-écran, donc multi-rangées via l'AUTO. Mesure de la géométrie en
+  /// flux (test widget, 400 dp de large, préset [markdown] + undo/redo) :
+  /// barre forcée multi-rangées = **262 dp (~5,5 rangées)**, AUTO = **67 dp
+  /// (1 rangée)** — le critère CR « un champ inséré dans un formulaire ne doit
+  /// jamais consommer la hauteur de l'écran » impose la rangée unique pour
+  /// TOUTE barre en flux, quel que soit inline/block.
+  final bool? multiRow;
 
   /// GAP-9 (opt-in) : **fond de barre thémé** — surface + liseré bas dérivés
   /// des RÔLES du thème (`surfaceContainerLow` / `outlineVariant`, FR-26 :
@@ -247,6 +272,11 @@ class ZRichTextToolbarConfig {
 
   /// Retourne une copie avec les drapeaux fournis remplacés (personnalisation
   /// par field à partir d'un préset).
+  ///
+  /// [multiRow] est TRI-ÉTAT : **omis** ⇒ valeur conservée ; `true`/`false` ⇒
+  /// forçage ; **`null` explicite** ⇒ retour à l'AUTO. La distinction
+  /// « omis »/« null » passe par une sentinelle (même patron que `_$undefined`
+  /// du `copyWith` généré de zcrud_generator) — un `??` naïf les confondrait.
   ZRichTextToolbarConfig copyWith({
     bool? showUndoRedo,
     bool? showFontFamily,
@@ -276,7 +306,7 @@ class ZRichTextToolbarConfig {
     bool? showImageButton,
     bool? showVideoButton,
     bool? roundedIcons,
-    bool? multiRow,
+    Object? multiRow = _zMultiRowUnset,
     bool? themedBarBackground,
   }) {
     return ZRichTextToolbarConfig(
@@ -308,7 +338,9 @@ class ZRichTextToolbarConfig {
       showImageButton: showImageButton ?? this.showImageButton,
       showVideoButton: showVideoButton ?? this.showVideoButton,
       roundedIcons: roundedIcons ?? this.roundedIcons,
-      multiRow: multiRow ?? this.multiRow,
+      multiRow: identical(multiRow, _zMultiRowUnset)
+          ? this.multiRow
+          : multiRow as bool?,
       themedBarBackground: themedBarBackground ?? this.themedBarBackground,
     );
   }
@@ -382,4 +414,14 @@ class ZRichTextToolbarConfig {
         multiRow,
         themedBarBackground,
       ]);
+}
+
+/// Sentinelle « argument non fourni » du tri-état [ZRichTextToolbarConfig.multiRow]
+/// dans [ZRichTextToolbarConfig.copyWith] (piège classique du copyWith : sans
+/// elle, `copyWith(multiRow: null)` — retour AUTO demandé — serait indistinct
+/// de « multiRow non fourni » — valeur à conserver).
+const Object _zMultiRowUnset = _ZMultiRowUnset();
+
+class _ZMultiRowUnset {
+  const _ZMultiRowUnset();
 }
