@@ -1,13 +1,13 @@
 /// `ZAppFileResolver` — **port neutre** de résolution de **références opaques**
-/// de fichiers (`String`) vers des [AppFile] (BLOQUANT DE MIGRATION DODLP).
+/// de fichiers (`String`) vers des [AppFile].
 ///
-/// origine: DODLP ne stocke PAS des objets fichier dans ses documents, mais des
-/// **identifiants** (`shipDocumentsIds`, mesuré : `ship_handlings_screen.dart`).
-/// Or la famille fichier du cœur ne retenait que `value.whereType<AppFile>()` —
-/// toute valeur qui n'est pas DÉJÀ un objet fichier était **silencieusement
-/// ignorée**, donc un champ fichier migré s'affichait **VIDE** sur une donnée
-/// existante, **sans erreur**. Ce port ouvre la voie de résolution ; il ne la
-/// remplit pas.
+/// Une application peut ne pas stocker d'objet fichier dans ses documents,
+/// mais seulement des **identifiants** opaques (par exemple des `id` de
+/// document distant). Sans ce port, la famille fichier du cœur ne retiendrait
+/// que les valeurs déjà typées `AppFile` — toute valeur qui n'en est pas
+/// **déjà** un serait **silencieusement ignorée**, donc un champ fichier migré
+/// s'afficherait **VIDE** sur une donnée existante, **sans erreur**. Ce port
+/// ouvre la voie de résolution ; il ne la remplit pas.
 ///
 /// **NEUTRALITÉ (NON-NÉGOCIABLE, AD-1)** : ce fichier est **pur-Dart** (AUCUN
 /// import Flutter / `cloud_firestore` / Hive / gestionnaire d'état). Les
@@ -20,8 +20,7 @@
 /// **CONTRAT D'APPARIEMENT (explicite, sans ambiguïté)** : l'implémentation
 /// retourne des [AppFile] dont l'[AppFile.id] est **exactement** la référence
 /// demandée. Une référence sans [AppFile] correspondant dans le retour est
-/// considérée **INTROUVABLE** — et c'est un état **VISIBLE**, jamais un silence
-/// (le silence était précisément le défaut d'origine).
+/// considérée **INTROUVABLE** — et c'est un état **VISIBLE**, jamais un silence.
 ///
 /// **AD-10 (dégradation définie)** : le consommateur (`ZAppFileField`) traite
 /// TOUS les cas d'échec sans jamais lever ni bloquer le champ :

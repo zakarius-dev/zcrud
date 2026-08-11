@@ -1,8 +1,8 @@
 /// Container **générique interne** partagé des registres d'extensibilité (AD-4).
 ///
-/// origine: lex_core (module « Étude ») — patron « registre ouvert »
-/// (canonique §4 pt.3, §8.6). Factorise register/lookup/erreurs pour ne pas
-/// tripler le code entre `ZcrudRegistry`, `ZTypeRegistry`, `ZSourceRegistry`.
+/// Factorise register/lookup/erreurs pour ne pas tripler le code entre
+/// `ZcrudRegistry`, `ZTypeRegistry` et `ZSourceRegistry` — trois registres qui
+/// suivent le même patron « registre ouvert ».
 ///
 /// **`ZCodecRegistry<T>` est un générique de CONTENEUR** (comme `ZRepository<T>`
 /// ou `Map<K,V>`), **PAS** un generic de **sérialisation** : `T` est le type de
@@ -19,7 +19,7 @@ import 'z_registry_error.dart';
 
 /// Registre générique `String kind → T` (entrée = un codec ou couple de
 /// fonctions). Instanciable et **isolé** : deux instances ne partagent aucun
-/// état (isolation inter-app / inter-test, OQ-6).
+/// état, ce qui isole une app d'une autre et un test du suivant.
 class ZCodecRegistry<T extends Object> {
   /// Construit un registre vide identifié par [registryName] (utilisé dans les
   /// messages d'erreur actionnables).

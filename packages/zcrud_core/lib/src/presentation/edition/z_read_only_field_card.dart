@@ -1,20 +1,20 @@
-/// `ZReadOnlyFieldCard` — décorateur **fiche de lecture** (DP-13, parité DODLP
-/// `readOnlyWidget` `edition_screen.dart:974-1040`) : une `Card` `label`
+/// `ZReadOnlyFieldCard` — décorateur **fiche de lecture** : une `Card` `label`
 /// au-dessus / `valeur` en dessous, avec **copie presse-papier** (appui long +
 /// action explicite accessible).
 ///
-/// AD-2/SM-1 : widget **statique** (n'écoute AUCUNE tranche) — l'hôte
+/// Invariant AD-2 : widget **statique** (n'écoute AUCUNE tranche) — l'hôte
 /// (`ZFieldWidget`) le monte SOUS `ZFieldListenableBuilder` et lui passe le
-/// [label] (déjà résolu l10n), le Widget [value] et le [copyText] (texte copiable,
-/// `null` si non copiable — placeholder / valeur-Widget, parité DODLP `value is
-/// Widget → onLongPress no-op`).
+/// [label] (déjà résolu l10n), le Widget [value] et le [copyText] (texte
+/// copiable, `null` si non copiable — placeholder / valeur-Widget,
+/// `onLongPress` no-op).
 ///
-/// FR-26 : fond/bordure **dérivés du `ColorScheme`** (aucune couleur en dur) ;
-/// mesures depuis les tokens `read*`/`input*` de `ZcrudTheme`. AD-13 : insets
-/// **directionnels**, `Semantics` conteneur (« label : valeur »), cible copie
-/// ≥ 48 dp. AD-1 : `package:flutter/services.dart` (`Clipboard`) +
-/// `package:flutter/semantics.dart` (`SemanticsService`) sont des **services
-/// Flutter natifs** admis (aucun gestionnaire d'état, aucune dépendance lourde).
+/// Invariant FR-26 : fond/bordure **dérivés du `ColorScheme`** (aucune couleur
+/// en dur) ; mesures depuis les tokens `read*`/`input*` de `ZcrudTheme`.
+/// Invariant AD-13 : insets **directionnels**, `Semantics` conteneur
+/// (« label : valeur »), cible copie ≥ 48 dp. Invariant AD-1 :
+/// `package:flutter/services.dart` (`Clipboard`) + `package:flutter/semantics.dart`
+/// (`SemanticsService`) sont des **services Flutter natifs** admis (aucun
+/// gestionnaire d'état, aucune dépendance lourde).
 library;
 
 import 'package:flutter/material.dart';
@@ -64,7 +64,7 @@ class ZReadOnlyFieldCard extends StatelessWidget {
           Expanded(
             // Label + valeur visibles exclus de la sémantique : le conteneur
             // `Semantics` ci-dessous porte « label : valeur » (pas de double
-            // annonce — AD-13). Le bouton copie reste HORS de l'exclusion.
+            // annonce — invariant AD-13). Le bouton copie reste HORS de l'exclusion.
             child: ExcludeSemantics(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +103,7 @@ class ZReadOnlyFieldCard extends StatelessWidget {
             ),
           ),
           child: InkWell(
-            // Parité DODLP `onLongPress` : copie la valeur textuelle. No-op si
+            // `onLongPress` : copie la valeur textuelle. No-op si
             // non copiable (placeholder / valeur-Widget).
             onLongPress: _copyable ? () => _copy(context) : null,
             borderRadius: BorderRadius.all(tokens.inputRadius),
@@ -114,8 +114,9 @@ class ZReadOnlyFieldCard extends StatelessWidget {
     );
   }
 
-  /// Action de copie **explicite** et accessible (≥ 48 dp — AD-13) : ce que
-  /// DODLP n'offrait pas (seul l'appui long). Tooltip/`Semantics` localisés.
+  /// Action de copie **explicite** et accessible (≥ 48 dp — invariant AD-13) :
+  /// une affordance visible, distincte du seul appui long. Tooltip/`Semantics`
+  /// localisés.
   Widget _copyButton(BuildContext context) {
     final tooltip = l10n.label(context, 'copy', fallback: 'Copier');
     return IconButton(
@@ -127,7 +128,7 @@ class ZReadOnlyFieldCard extends StatelessWidget {
   }
 
   /// Copie [copyText] dans le presse-papier + retour utilisateur **best-effort
-  /// sans dépendance** (AD-10) : annonce sémantique + SnackBar si un
+  /// sans dépendance** (invariant AD-10) : annonce sémantique + SnackBar si un
   /// `ScaffoldMessenger` est disponible (sinon aucun throw).
   void _copy(BuildContext context) {
     final text = copyText;
@@ -138,8 +139,8 @@ class ZReadOnlyFieldCard extends StatelessWidget {
       'copied',
       fallback: 'Valeur copiée dans le presse-papier',
     );
-    // Annonce lecteur d'écran (a11y AD-13) via le service natif — variante
-    // multi-fenêtres de `announce` (évite l'API dépréciée).
+    // Annonce lecteur d'écran (a11y invariant AD-13) via le service natif —
+    // variante multi-fenêtres de `announce` (évite l'API dépréciée).
     SemanticsService.sendAnnouncement(
       View.of(context),
       message,

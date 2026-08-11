@@ -1,23 +1,23 @@
 /// Extension **opaque** — préserve un slot `extension` que personne n'a su
-/// typer, au lieu de le DÉTRUIRE (CR-LEX-33).
+/// typer, au lieu de le DÉTRUIRE.
 ///
 /// ## Le défaut que ce type ferme
 ///
 /// Une entité déclare `extension` parmi ses clés CONNUES — donc exclue du canal
 /// opaque `extra` — alors que son décodage dépend d'un paramètre **optionnel**
-/// du lecteur (`extensionParser`). Les deux propriétés sont incompatibles : un
-/// hôte qui n'a aucune raison de connaître le schéma d'un autre lit `null`, la
-/// clé brute n'est recueillie **nulle part**, et la première réécriture
-/// l'efface — du store local, puis du cloud à la synchronisation suivante.
+/// du lecteur (`extensionParser`). Sans ce type, les deux propriétés seraient
+/// incompatibles : un hôte qui n'a aucune raison de connaître le schéma d'un
+/// autre lirait `null`, la clé brute ne serait recueillie **nulle part**, et
+/// la première réécriture l'effacerait — du store local, puis du cloud à la
+/// synchronisation suivante.
 ///
-/// **Un hôte détruisait donc les données d'un autre, silencieusement, au
+/// **Un hôte détruirait donc les données d'un autre, silencieusement, au
 /// DÉCODAGE — avant qu'une seule ligne de code applicatif ne s'exécute.** C'est
 /// exactement ce que le slot d'extension AD-4 existe pour éviter, et `extension`
-/// — le slot **versionné**, donc le plus structurant — en était le seul exclu.
+/// — le slot **versionné**, donc le plus structurant — en a le plus besoin.
 ///
-/// Le remède existait déjà dans le dépôt (`ZOpaqueNoteExtension`, `zcrud_note`),
-/// écrit pour ce problème précis mais confiné à UNE entité sur quatorze. Il est
-/// ici **promu** au cœur, pour que toutes en bénéficient.
+/// Ce type est promu au **cœur** pour que toute entité extensible en bénéficie,
+/// plutôt que de rester confiné à une seule entité concrète d'un satellite.
 library;
 
 import 'z_extension.dart';
@@ -27,7 +27,7 @@ import 'z_json_equality.dart';
 ///
 /// Produite quand — et seulement quand — la clé `extension` porte une **`Map`**
 /// que rien n'a su typer :
-/// - aucun `extensionParser` n'a été injecté (le cas de CR-LEX-33) ;
+/// - aucun `extensionParser` n'a été injecté ;
 /// - **ou** le parser injecté a rendu `null` (version future, sous-schéma
 ///   inconnu).
 ///
@@ -71,8 +71,8 @@ class ZOpaqueExtension implements ZExtension {
     return 0;
   }
 
-  /// 🔴 **IDENTITÉ** — réémet le payload VERBATIM. C'est tout le correctif : ce
-  /// que le domaine n'a pas su lire, il le rend tel quel au lieu de l'effacer.
+  /// **IDENTITÉ** — réémet le payload VERBATIM : ce que le domaine n'a pas su
+  /// lire, il le rend tel quel au lieu de l'effacer.
   @override
   Map<String, dynamic> toJson() => payload;
 
@@ -92,10 +92,10 @@ class ZOpaqueExtension implements ZExtension {
   String toString() => 'ZOpaqueExtension(payload: $payload)';
 }
 
-/// Décode le slot `extension`, **sans jamais le détruire** (CR-LEX-33).
+/// Décode le slot `extension`, **sans jamais le détruire**.
 ///
-/// Remplace le motif `if (parser == null) return null;` que treize entités du
-/// dépôt portaient à l'identique. Ordre de résolution :
+/// Remplace le motif naïf `if (parser == null) return null;`, qui perdrait le
+/// payload brut faute de parser. Ordre de résolution :
 ///
 /// 1. le [parser] de l'hôte, s'il est fourni ET s'il sait typer le payload ;
 /// 2. à défaut, un [ZOpaqueExtension] qui porte le payload verbatim ;

@@ -2,7 +2,7 @@
 /// d'AFFICHAGE, et l'hôte a un **second chemin** pour le déclencher.
 ///
 /// ═══════════════════════════════════════════════════════════════════════════
-/// LE MOTIF, ET POURQUOI IL EST GÉNÉRAL (CR-IFFD-38)
+/// LE MOTIF, ET POURQUOI IL EST GÉNÉRAL
 ///
 /// Un socle qui internalise un état d'affichage sans l'exposer **ferme la porte
 /// au deuxième chemin de déclenchement**. L'hôte n'a alors que de mauvaises
@@ -10,7 +10,7 @@
 /// il livre un **bouton mort**, *« plus coûteux qu'une commande absente, parce
 /// qu'il promet »*.
 ///
-/// Mesuré chez un hôte : **7 sites vifs, 5 familles d'état** — révélation d'une
+/// Plusieurs familles d'état reviennent d'un hôte à l'autre : révélation d'une
 /// carte (DEUX boutons : « Voir la réponse » en face avant, « Masquer la
 /// réponse » posé par le PARENT sur la face arrière), carte courante d'un
 /// carrousel piloté par des flèches externes, onglet actif (sommaire en tiroir,
@@ -41,9 +41,9 @@
 ///    suivant, donc silencieusement inertes.
 /// 5. **Un contrôleur JAMAIS CONSOMMÉ est détectable** — cf.
 ///    [ZDisplayStateController.wasEverConsumed]. Sans cela on ne distingue plus
-///    « bouton inerte » de « bouton non branché ». Mesuré chez l'hôte : un de
-///    ses widgets **déclare** `flipCardController` et ne l'utilise jamais dans
-///    son corps (2 occurrences, toutes deux déclaratives).
+///    « bouton inerte » de « bouton non branché » : un widget peut
+///    **déclarer** un contrôleur de retournement de carte sans jamais
+///    l'utiliser dans son corps.
 ///
 /// ═══════════════════════════════════════════════════════════════════════════
 /// AD-2 / AD-15 : Flutter-native pur. `ChangeNotifier` + `ValueListenable`,
@@ -83,7 +83,7 @@ abstract class ZDisplayStateOwner {
 /// second ticker pour la même raison : une seconde création par le même `State`
 /// est presque toujours une création dans `build`.
 ///
-/// ⚠️ La borne est **temporelle**, pas syntaxique : une création tardive
+/// La borne est **temporelle**, pas syntaxique : une création tardive
 /// légitime (paresseuse, sur action utilisateur, hors `build`) serait donc
 /// refusée elle aussi. C'est assumé, et rattrapable **explicitement** en
 /// surchargeant [zAllowsLateDisplayState] — jamais par accident.
@@ -325,7 +325,7 @@ class ZIndexController extends ZDisplayStateController<int> {
 /// }
 /// ```
 ///
-/// ⚠️ [listenable] est **STABLE** au travers d'un changement de contrôleur :
+/// [listenable] est **STABLE** au travers d'un changement de contrôleur :
 /// c'est un relais d'ÉCOUTE, jamais un relais de VALEUR — il ne stocke aucune
 /// valeur, il lit celle de la source courante. Sans cette stabilité, un
 /// `ValueListenableBuilder` du composant devrait être reconstruit par un

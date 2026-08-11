@@ -113,11 +113,11 @@ class ZGeoMapView extends StatefulWidget {
 }
 
 class _ZGeoMapViewState extends State<ZGeoMapView> {
-  /// Instance d'adaptateur possédée (MAJEUR-1) — créée 1×, disposée en fin de
-  /// vie, jamais partagée.
+  /// Instance d'adaptateur possédée — créée 1×, disposée en fin de vie,
+  /// jamais partagée.
   ZMapAdapter? _adapter;
 
-  /// Type de carte courant (bascule `normal ↔ hybrid`, parité `gfv:141-147`).
+  /// Type de carte courant (bascule `normal ↔ hybrid`).
   late ZGeoMapType _mapType = widget.initialMapType;
 
   /// Index des overlays par id (sélection).
@@ -139,9 +139,8 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
     super.dispose();
   }
 
-  /// Centre initial : moyenne arithmétique de TOUS les points (parité stricte
-  /// `gfv:52-76`). Aucun point exploitable → `null` (l'adaptateur choisit son
-  /// centre neutre).
+  /// Centre initial : moyenne arithmétique de TOUS les points. Aucun point
+  /// exploitable → `null` (l'adaptateur choisit son centre neutre).
   ZGeoPoint? get _initialCenter {
     double lat = 0, lng = 0;
     int count = 0;
@@ -163,14 +162,14 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
         _ => const <ZGeoPoint>[],
       };
 
-  /// G7 — cadrage auto sur la boîte englobante globale (honoré-si-supporté :
+  /// Cadrage auto sur la boîte englobante globale (honoré-si-supporté :
   /// no-op silencieux si l'adaptateur n'a pas la capacité caméra — AD-10).
   Future<void> _fitAllBounds() async {
     final Object? adapter = _adapter;
     if (adapter is! ZMapCameraCapable) return;
     double? minLat, maxLat, minLng, maxLng;
     for (final ZGeoMapViewEntry entry in widget.entries) {
-      // La boîte d'un cercle inclut son rayon (extension métrique G12).
+      // La boîte d'un cercle inclut son rayon.
       final ZGeoBounds? b = switch (entry.value) {
         final ZGeoCircle c => c.bounds,
         final ZGeoShape s => s.bounds,
@@ -206,9 +205,9 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
   }
 
   /// Overlays neutres : libellé du [ZGeoMapView.labelBuilder] repris en
-  /// `style.infoWindowTitle` quand la valeur n'en porte pas déjà un (même
-  /// politique que le legacy `gfv:111-114`, qui écrase — ici la valeur PRIME :
-  /// une donnée existante n'est pas fabriquée par-dessus).
+  /// `style.infoWindowTitle` quand la valeur n'en porte pas déjà un — la
+  /// valeur PRIME : une donnée existante n'est jamais écrasée par le
+  /// libellé calculé.
   List<ZGeoMapOverlay> _overlays() {
     _entryById.clear();
     final List<ZGeoMapOverlay> overlays = <ZGeoMapOverlay>[];
@@ -252,7 +251,7 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
     if (entry != null) widget.onShapeSelected?.call(entry);
   }
 
-  /// Bascule `normal ↔ hybrid` (parité `gfv:141-147`) — action discrète.
+  /// Bascule `normal ↔ hybrid` — action discrète.
   void _toggleMapType() => setState(() {
         _mapType = _mapType == ZGeoMapType.normal
             ? ZGeoMapType.hybrid
@@ -298,8 +297,7 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
               button: true,
               label: toggleText,
               child: ExcludeSemantics(
-                // Couleurs par rôles de thème (le bouton flottant historique codait
-                // blanc/noir en dur, `gfv:175-180`).
+                // Couleurs par rôles de thème — jamais de blanc/noir en dur.
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,
                   elevation: 2,

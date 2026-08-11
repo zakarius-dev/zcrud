@@ -1,8 +1,7 @@
-/// Marqueur d'API publique du cœur `zcrud_core` (placeholder E1-2).
+/// Marqueur d'API publique du cœur `zcrud_core`.
 ///
-/// Substance réelle (moteur d'édition, ports, `ZFieldSpec`, `ZcrudScope`)
-/// posée en E2. Sert de point d'ancrage importable par les 13 satellites
-/// pour rendre tangible l'arête AD-1 `satellite -> zcrud_core`.
+/// Point d'ancrage importable par les paquets satellites, qui rend
+/// tangible l'invariant AD-1 (`satellite -> zcrud_core`, jamais l'inverse).
 abstract final class ZCoreApi {
   const ZCoreApi._();
 

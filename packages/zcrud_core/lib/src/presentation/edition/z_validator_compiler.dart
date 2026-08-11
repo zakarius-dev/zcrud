@@ -1,13 +1,12 @@
 /// Compilateur **mémoïsable** `List<ZValidatorSpec> → FormFieldValidator<String>?`
-/// (E3-2, AD-2). Projette la donnée déclarative `ZValidatorSpec` (E2-4, pur-
+/// (invariant AD-2). Projette la donnée déclarative `ZValidatorSpec` (pur-
 /// données) en un validateur EXÉCUTABLE de champ (`String? Function(String?)`),
 /// composé une seule fois via `FormBuilderValidators.compose`.
 ///
-/// origine: la doc de `ZValidatorSpec` renvoie explicitement la composition en
-/// `FormBuilderValidators` à E3 (« attachée au `ZFormController`, jamais au
-/// schéma statique »). E3-2 est ce lieu.
+/// La composition en `FormBuilderValidators` est attachée au
+/// `ZFormController`, jamais au schéma statique — ce fichier est ce lieu.
 ///
-/// INVARIANTS (AD-2, NON-NÉGOCIABLES) :
+/// INVARIANTS (invariant AD-2, NON-NÉGOCIABLES) :
 /// - On tire **UNIQUEMENT** `package:form_builder_validators` (validateurs PURS,
 ///   `String? Function(String?)`). **JAMAIS** `flutter_form_builder` : son
 ///   `FormBuilder`/`FormBuilderState` serait un ÉTAT de formulaire global,
@@ -19,11 +18,11 @@
 ///
 /// FRONTIÈRE — validateurs **inter-champs** (`min`/`max` référençant un autre
 /// champ via `refKey`, et `match` = égalité à un autre champ) : ils dépendent de
-/// l'ÉTAT RUNTIME d'un AUTRE champ, hors du contrat champ-local d'E3-2. Ils sont
-/// **DÉFÉRÉS** à E3-5/E3-6 (closures mémoïsées capturant le `ZFormController`,
-/// lisant `valueOf(refKey)` à l'invocation). Ici ils sont **ignorés** (le
-/// compilateur ne produit aucun validateur pour eux). Le must-have E3-2 = les
-/// validateurs **locaux au champ**.
+/// l'ÉTAT RUNTIME d'un AUTRE champ, hors du contrat champ-local de ce
+/// compilateur. Ils sont **DÉFÉRÉS** au niveau formulaire (closures mémoïsées
+/// capturant le `ZFormController`, lisant `valueOf(refKey)` à l'invocation).
+/// Ici ils sont **ignorés** (le compilateur ne produit aucun validateur pour
+/// eux). Ce fichier ne couvre que les validateurs **locaux au champ**.
 library;
 
 import 'package:flutter/widgets.dart' show FormFieldValidator;
@@ -76,7 +75,8 @@ abstract final class ZValidatorCompiler {
             ? null
             : FormBuilderValidators.maxLength<String>(n, errorText: e);
       case ZValidatorKind.min:
-        // Littérale seulement ; `refKey` (inter-champs) ⇒ déféré E3-5/E3-6.
+        // Littérale seulement ; `refKey` (inter-champs) ⇒ déféré au niveau
+        // formulaire.
         final b = spec.bound;
         return b == null
             ? null
@@ -98,7 +98,8 @@ abstract final class ZValidatorCompiler {
             : FormBuilderValidators.notEqual<String>(v, errorText: e);
       case ZValidatorKind.match:
         // `match` = égalité à la valeur d'un AUTRE champ (`refKey`) ⇒ inter-
-        // champs, déféré E3-5/E3-6. (Le `pattern` regex, lui, est `pattern`.)
+        // champs, déféré au niveau formulaire. (Le `pattern` regex, lui, est
+        // `pattern`.)
         return null;
       case ZValidatorKind.email:
         return FormBuilderValidators.email(errorText: e);
@@ -117,16 +118,16 @@ abstract final class ZValidatorCompiler {
       case ZValidatorKind.dateString:
         return FormBuilderValidators.date(errorText: e);
       case ZValidatorKind.address:
-        // M11 (parité DODLP) : **no-op par défaut** (rôle indice de clavier ;
-        // aucune surcharge de format). Format vérifié UNIQUEMENT en opt-in
-        // (`enforceFormat: true` ⇒ `street`, comportement historique).
+        // **no-op par défaut** (rôle indice de clavier ; aucune surcharge de
+        // format). Format vérifié UNIQUEMENT en opt-in (`enforceFormat: true`
+        // ⇒ `street`, comportement historique).
         return (spec.enforceFormat ?? false)
             ? FormBuilderValidators.street(errorText: e)
             : null;
       case ZValidatorKind.percentage:
-        // M11 (parité DODLP) : **no-op par défaut** (saisie numérique libre).
-        // Plage vérifiée UNIQUEMENT en opt-in (`enforceRange: true` ⇒ `between`,
-        // défaut 0–100 surchargeable). Non numérique ⇒ invalide (contrat between).
+        // **no-op par défaut** (saisie numérique libre). Plage vérifiée
+        // UNIQUEMENT en opt-in (`enforceRange: true` ⇒ `between`, défaut
+        // 0–100 surchargeable). Non numérique ⇒ invalide (contrat between).
         if (!(spec.enforceRange ?? false)) return null;
         return FormBuilderValidators.between<String>(
           spec.rangeMin ?? 0,
@@ -134,12 +135,13 @@ abstract final class ZValidatorCompiler {
           errorText: e,
         );
       case ZValidatorKind.password:
-        // M10 : politique paramétrable, défaut aligné DODLP (permissif). Un compte
-        // à 0 désactive l'exigence correspondante (`PasswordValidator` fbv-11.3).
-        // `checkNullOrEmpty: false` (DP-16-M1) : la VACUITÉ ne rend PAS le champ
-        // invalide — un password NON requis laissé vide reste valide (parité DODLP
-        // « vide + non requis ⇒ null »). La contrainte de présence est portée
-        // séparément par `ZValidatorKind.required`, jamais implicitement ici.
+        // Politique paramétrable, défaut permissif. Un compte à 0 désactive
+        // l'exigence correspondante (`PasswordValidator` fbv-11.3).
+        // `checkNullOrEmpty: false` : la VACUITÉ ne rend PAS le champ
+        // invalide — un password NON requis laissé vide reste valide
+        // (« vide + non requis ⇒ null »). La contrainte de présence est
+        // portée séparément par `ZValidatorKind.required`, jamais
+        // implicitement ici.
         return FormBuilderValidators.password(
           minLength: spec.passwordMinLength ?? 8,
           maxLength: spec.passwordMaxLength ?? 20,

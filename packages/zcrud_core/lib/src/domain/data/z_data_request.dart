@@ -1,12 +1,9 @@
 /// Value objects neutres de **requête** du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — `DataRequest` (filtres/tri/recherche +
-/// pagination) des repositories. Canonique §7 ; AD-5 (backend-agnostique) ;
-/// AD-16 (pagination curseur dans le contrat neutre).
-///
-/// **Décision de nommage (finding readiness #15)** : `DataRequest` et `ZQuery`
-/// sont **fusionnés** en un seul type préfixé `Z` — `ZDataRequest`. `ZQuery`
-/// n'est **pas** créé (aucune prolifération `DataRequest`+`ZQuery`).
+/// Porte le domaine backend-agnostique de l'invariant AD-5 et la pagination
+/// par curseur dans le contrat neutre de l'invariant AD-16. Un seul type
+/// préfixé `Z` — `ZDataRequest` — couvre filtres, tri, recherche et
+/// pagination : aucun type distinct n'est créé pour ces responsabilités.
 library;
 
 import 'z_cursor.dart';
@@ -41,16 +38,15 @@ enum ZFilterOp {
   isNull,
 }
 
-/// Sélection de **suppression logique** d'une requête de lecture (CR-DODLP
-/// 2026-08-11, Lot 2a « listing corbeille »). Valeurs en **camelCase**
-/// (canonique §5).
+/// Sélection de **suppression logique** d'une requête de lecture (listing
+/// corbeille). Valeurs en **camelCase** (canonique §5).
 ///
 /// Étend `ZDataRequest` de façon **additive** : le défaut [aliveOnly] reproduit
-/// le comportement historique (exclusion des soft-deleted, AD-9) — aucun
-/// appelant existant n'est affecté. La sémantique exacte de « supprimé »
-/// (drapeau `is_deleted` hors-entité `ZSyncMeta`, éventuelle clé legacy) est
-/// tranchée par l'**adaptateur** (E5) : ce membre reste backend-agnostique
-/// (AD-5).
+/// le comportement historique (exclusion des soft-deleted, invariant AD-9) —
+/// aucun appelant existant n'est affecté. La sémantique exacte de « supprimé »
+/// (drapeau `is_deleted` hors-entité `ZSyncMeta`, éventuelle clé préexistante
+/// côté hôte) est tranchée par l'**adaptateur** backend : ce membre reste
+/// backend-agnostique (invariant AD-5).
 enum ZDeletedScope {
   /// Seuls les documents **vivants** (non soft-deleted) — défaut, comportement
   /// historique inchangé.
@@ -171,7 +167,7 @@ class ZDataRequest {
 
   /// Sélection de suppression logique (corbeille). Par défaut :
   /// [ZDeletedScope.aliveOnly] — comportement historique **inchangé**
-  /// (exclusion des soft-deleted). Additif (CR-DODLP 2026-08-11, Lot 2a).
+  /// (exclusion des soft-deleted). Champ additif.
   final ZDeletedScope deletedScope;
 
   /// Sentinelle interne : distingue « argument omis » de « mis explicitement à

@@ -1,5 +1,5 @@
-/// Port de **zone de dépôt native** du cœur `zcrud_core` (abstraction pure —
-/// AD-57, patron strict de `ZListRenderer`/AD-8).
+/// Port de **zone de dépôt native** du cœur `zcrud_core` (abstraction pure,
+/// même patron que `ZListRenderer`/AD-8).
 ///
 /// `zcrud_core` n'expose QUE cette abstraction. L'implémentation native vit
 /// dans le satellite opt-in `zcrud_dnd` (adossé à `super_drag_and_drop`), et
@@ -12,7 +12,7 @@
 /// **Défaut zéro-dépendance** ([ZNoDropRegionRenderer]) : sans satellite, la
 /// zone rend son contenu inchangé et ne reçoit aucun dépôt. La capacité est
 /// **dégradée, jamais absente** — l'hôte conserve ses autres voies d'import
-/// (sélecteur de fichiers, presse-papier). C'est l'exigence d'AD-57.
+/// (sélecteur de fichiers, presse-papier).
 ///
 /// Imports limités à `package:flutter/widgets.dart` + types `zcrud_core`.
 library;
@@ -51,7 +51,7 @@ abstract class ZDropRegionRenderer {
 /// donc de rendre le contenu tel quel plutôt que de simuler une zone active qui
 /// n'accepterait jamais rien.
 ///
-/// AD-45 — l'absence de capacité est **structurelle** : aucune affordance
+/// L'absence de capacité est **structurelle** : aucune affordance
 /// visuelle n'est rendue (pas de bordure « déposez ici » qui mentirait), et
 /// `onHoverChanged` n'est jamais notifié.
 class ZNoDropRegionRenderer extends ZDropRegionRenderer {

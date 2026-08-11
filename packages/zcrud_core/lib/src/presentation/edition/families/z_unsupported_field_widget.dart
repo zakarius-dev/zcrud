@@ -1,18 +1,19 @@
-/// **Repli contrôlé** (E3-3a) : rendu accessible pour tout `EditionFieldType`
-/// servi **ailleurs** (E3-3b/E3-3c/registre de widgets/hors-parité MVP).
+/// **Repli contrôlé** : rendu accessible pour tout `EditionFieldType`
+/// servi **ailleurs** (registre de widgets, ou type hors-parité).
 ///
-/// origine: AC3 — tout type non-base doit **dégrader proprement**, JAMAIS lever
+/// Tout type non-base doit **dégrader proprement**, JAMAIS lever
 /// d'exception ni casser le formulaire. Ce widget rend un placeholder
 /// **accessible** (libellé du champ + indication l10n « type non pris en charge
 /// ici ») ; ce n'est PAS un `ErrorWidget` et il ne `throw` jamais.
 ///
-/// POINT D'EXTENSION E3-3b : un **registre de widgets** (aligné sur
-/// `ZTypeRegistry`, AD-4) remplacera ce repli par le vrai widget hôte quand le
-/// type est enregistré. E3-3a ne fait que **nommer** ce point d'extension et
-/// fournir le repli par défaut.
+/// POINT D'EXTENSION : un **registre de widgets** (aligné sur
+/// `ZTypeRegistry`, invariant AD-4) remplace ce repli par le vrai widget hôte
+/// quand le type est enregistré. Ce widget ne fait que **nommer** ce point
+/// d'extension et fournir le repli par défaut.
 ///
-/// a11y/RTL (AD-13) : `Semantics` explicite (libellé + indication), insets
-/// **directionnels**, aucune couleur codée en dur (thème hérité — FR-26).
+/// a11y/RTL (invariant AD-13) : `Semantics` explicite (libellé + indication),
+/// insets **directionnels**, aucune couleur codée en dur (thème hérité —
+/// invariant FR-26).
 library;
 
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ import '../../theme/z_theme.dart';
 
 /// Placeholder **accessible** pour un type de champ non pris en charge ici.
 class ZUnsupportedFieldWidget extends StatelessWidget {
-  /// Construit le repli pour [field] (type hors familles de base E3-3a).
+  /// Construit le repli pour [field] (type hors familles de base).
   const ZUnsupportedFieldWidget({required this.field, super.key});
 
   /// Spécification `const` du champ non rendu par une famille de base.

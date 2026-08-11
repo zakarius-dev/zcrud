@@ -1,15 +1,14 @@
 /// `ZChoicesSource` — **port neutre** d'une source d'options **calculées** pour un
-/// champ `select` (DP-15/M22, parité `choiceItemsRepository`/`choicesBuilder`
-/// DODLP) + son registre instanciable `ZChoicesSourceRegistry` (AD-4).
+/// champ `select` + son registre instanciable `ZChoicesSourceRegistry` (AD-4).
 ///
-/// origine: le besoin DODLP de choix **recalculés arbitrairement** (au-delà de la
-/// simple lecture cross-champ `stateChoiceItems`, couverte par
-/// `ZSelectConfig.choicesFromKey`). Ici le mécanisme est **généralisé en port
-/// pur** : le cœur ne connaît NI le calcul métier, NI un repository, NI
-/// SmartSelect — seulement une **abstraction synchrone** retournant des
+/// Un `select` peut avoir besoin de choix **recalculés arbitrairement**, au-delà
+/// de la simple lecture cross-champ `stateChoiceItems` couverte par
+/// `ZSelectConfig.choicesFromKey`. Ce port généralise ce besoin : le cœur ne
+/// connaît NI le calcul métier, NI un repository, NI un composant de sélection
+/// riche — seulement une **abstraction synchrone** retournant des
 /// `ZFieldChoice{value,label}` déjà mappés.
 ///
-/// **Différence clé avec `ZRelationSource` (DP-5)** : `options(...)` est
+/// **Différence clé avec `ZRelationSource`** : `options(...)` est
 /// **SYNCHRONE** (`List<ZFieldChoice>`), pas un `Stream`. Un `select` recalcule
 /// ses choix **à la lecture** depuis un snapshot de contexte cross-champ ; il n'a
 /// pas de flux repository live (contrairement à `relation`).

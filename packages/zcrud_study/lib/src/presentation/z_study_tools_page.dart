@@ -27,7 +27,7 @@ import 'package:zcrud_core/zcrud_core.dart' show ZFormController;
 import 'z_sectioned_study_layout.dart';
 import 'z_study_tools_section_spec.dart';
 
-/// Page « study tools » à scoping réactif ISOLÉ (AD-25, SM-1).
+/// Page « study tools » à scoping réactif ISOLÉ (invariant AD-2).
 ///
 /// `StatefulWidget` **uniquement** pour le cycle de vie du [ZFormController]
 /// stable (create/dispose) — JAMAIS pour l'état des champs (qui vit dans les
@@ -37,9 +37,9 @@ class ZStudyToolsPage extends StatefulWidget {
   ///
   /// [formController] : si fourni, la page l'UTILISE tel quel et NE le dispose
   /// PAS (propriété de l'appelant). Sinon la page en crée un et le possède
-  /// (disposé au `dispose`). [globalEmptyState] : état vide GLOBAL injecté
-  /// (AD-25) rendu quand TOUTES les sections sont vides ; `null` = rendre les
-  /// sections telles quelles (comportement ES-5.1 préservé).
+  /// (disposé au `dispose`). [globalEmptyState] : état vide GLOBAL injecté,
+  /// rendu quand TOUTES les sections sont vides ; `null` = rendre les
+  /// sections telles quelles.
   const ZStudyToolsPage({
     required this.sections,
     this.globalEmptyState,
@@ -50,8 +50,8 @@ class ZStudyToolsPage extends StatefulWidget {
   /// Descripteurs de section, dans l'ordre visuel voulu (aucun tri implicite).
   final List<ZStudyToolsSectionSpec> sections;
 
-  /// État vide GLOBAL injecté (AD-25). Rendu SSI toutes les sections sont vides
-  /// ET non-`null`. Jamais un label codé en dur : l'appelant l'injecte (i18n).
+  /// État vide GLOBAL injecté. Rendu SSI toutes les sections sont vides ET
+  /// non-`null`. Jamais un label codé en dur : l'appelant l'injecte (i18n).
   final Widget? globalEmptyState;
 
   /// Controller injecté (optionnel). `null` ⇒ la page en crée/possède un.
@@ -121,13 +121,13 @@ class _ZStudyToolsPageState extends State<ZStudyToolsPage> {
     final sections = widget.sections;
     final globalEmptyState = widget.globalEmptyState;
 
-    // État vide GLOBAL (AD-25) : rendu SSI toutes les sections sont vides ET un
+    // État vide GLOBAL : rendu SSI toutes les sections sont vides ET un
     // globalEmptyState est injecté. Sinon → composition du layout sectionné.
     final allEmpty = sections.every((s) => s.itemCount == 0);
     final Widget body = (globalEmptyState != null && allEmpty)
         ? globalEmptyState
-        // COMPOSITION (AD-4) : le layout d'ES-5.1 est RÉUTILISÉ, jamais
-        // réimplémenté inline. AUCUN ListenableBuilder global ici (SM-1).
+        // COMPOSITION (AD-4) : le layout sectionné est RÉUTILISÉ, jamais
+        // réimplémenté inline. AUCUN `ListenableBuilder` global ici.
         : ZSectionedStudyLayout(sections: sections);
 
     // Le controller stable est exposé aux itemBuilder scopés via un
@@ -143,7 +143,7 @@ class _ZStudyToolsPageState extends State<ZStudyToolsPage> {
 /// `InheritedWidget` interne exposant le [ZFormController] stable de la page aux
 /// `itemBuilder` scopés. `updateShouldNotify` ne se déclenche QUE si l'identité
 /// du controller change (jamais sur un `setValue`) — la stabilité du controller
-/// garantit zéro rebuild propagé (invariant SM-1).
+/// garantit zéro rebuild propagé (invariant AD-2).
 class _ZStudyFormScope extends InheritedWidget {
   const _ZStudyFormScope({required this.controller, required super.child});
 

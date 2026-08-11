@@ -141,17 +141,17 @@ class ZOsmMapAdapter
     Map<ZGeoMapType, String>? tileUrlTemplates,
     String? mapStyleJson, // ignoré (spécifique Google) — OSM n'a pas de style JSON
     double? defaultZoom,
-    // G3/DP-7 : `mapOptions.mapType` est désormais HONORÉ en commutant le jeu
-    // de tuiles (parité legacy `oma:53-110` : ESRI World Imagery pour
-    // satellite/hybride, OpenTopoMap pour terrain). Les autres options
-    // (trafic/bâtiments/indoor/boussole…) restent sans équivalent raster →
-    // ignorées (contrat « honoré-si-supporté, ignore le reste »).
+    // `mapOptions.mapType` est HONORÉ en commutant le jeu de tuiles (ESRI
+    // World Imagery pour satellite/hybride, OpenTopoMap pour terrain). Les
+    // autres options (trafic/bâtiments/indoor/boussole…) restent sans
+    // équivalent raster → ignorées (contrat « honoré-si-supporté, ignore le
+    // reste »).
     ZGeoMapOptions? mapOptions,
     bool renderShapeAsPolyline = false,
-    // G23 : bornes de zoom honorées via `MapOptions.minZoom/maxZoom`.
+    // Bornes de zoom honorées via `MapOptions.minZoom/maxZoom`.
     double? minZoom,
     double? maxZoom,
-    // G6 : couches de lecture multi-formes + sélection par tap marqueur.
+    // Couches de lecture multi-formes + sélection par tap marqueur.
     List<ZGeoMapOverlay>? overlays,
     ValueChanged<String>? onOverlayMarkerTap,
   }) {
@@ -203,11 +203,11 @@ class ZOsmMapAdapter
                 ],
           ];
 
-    // E11b-1 : cercle rendu via `CircleLayer`/`CircleMarker` (rayon en mètres)
+    // Cercle rendu via `CircleLayer`/`CircleMarker` (rayon en mètres)
     // uniquement si le cercle est valide (AD-10 : jamais un rayon ≤0/non fini).
     final bool hasCircle = circle != null && circle.isValid;
 
-    // G6 : couches de lecture multi-formes (styles portés par les valeurs,
+    // Couches de lecture multi-formes (styles portés par les valeurs,
     // marqueur d'ancrage tappable par overlay). Valeur d'un type inconnu ou
     // invalide → ignorée sans erreur (AD-10).
     final List<Polygon> overlayPolygons = <Polygon>[];
@@ -251,8 +251,8 @@ class ZOsmMapAdapter
               ),
             );
           }
-          // Marqueur d'ancrage au CENTROÏDE (sélection par tap — parité
-          // mesurée gfv:132-139 : la sélection legacy passe par le marqueur).
+          // Marqueur d'ancrage au CENTROÏDE : la sélection par tap passe
+          // par ce marqueur.
           double latSum = 0, lngSum = 0;
           for (final LatLng p in pts) {
             latSum += p.latitude;
@@ -303,7 +303,7 @@ class ZOsmMapAdapter
       options: MapOptions(
         initialCenter: initialCenter,
         initialZoom: effectiveZoom,
-        // G23 : bornes de zoom surchargeables par-champ (`null` → défaut SDK).
+        // Bornes de zoom surchargeables par-champ (`null` → défaut SDK).
         minZoom: minZoom,
         maxZoom: maxZoom,
         interactionOptions: InteractionOptions(
@@ -344,9 +344,9 @@ class ZOsmMapAdapter
               ),
             ],
           ),
-        // G9 : le cercle honore `circle.style` (fill/stroke/épaisseur/
-        // visibilité) — chaîne style > thème injecté (le `colorScheme.primary`
-        // n'est plus qu'un REPLI, jamais un écrasement du style porté).
+        // Le cercle honore `circle.style` (fill/stroke/épaisseur/visibilité)
+        // — chaîne style > thème injecté (le `colorScheme.primary` n'est
+        // qu'un REPLI, jamais un écrasement du style porté).
         if (hasCircle && (circle.style?.visible ?? true))
           CircleLayer(
             circles: <CircleMarker>[
@@ -363,7 +363,7 @@ class ZOsmMapAdapter
               ),
             ],
           ),
-        // G6 : couches de lecture multi-formes (rendues APRÈS la forme éditée).
+        // Couches de lecture multi-formes (rendues APRÈS la forme éditée).
         if (overlayPolygons.isNotEmpty)
           PolygonLayer(polygons: overlayPolygons),
         if (overlayPolylines.isNotEmpty)
@@ -372,8 +372,8 @@ class ZOsmMapAdapter
         MarkerLayer(
           markers: <Marker>[
             ...overlayMarkers,
-            // G9/G14/G17 : le marqueur central honore le style porté par la
-            // valeur (point → `center.style` ; cercle → `circle.style`).
+            // Le marqueur central honore le style porté par la valeur
+            // (point → `center.style` ; cercle → `circle.style`).
             if (center != null)
               _styledMarker(context, initialCenter, center.style),
             if (hasCircle && center == null)
@@ -382,7 +382,7 @@ class ZOsmMapAdapter
                 LatLng(circle.center.lat, circle.center.lng),
                 circle.style,
               ),
-            // G13 : sommets draggables UNIQUEMENT quand un handler est posé
+            // Sommets draggables UNIQUEMENT quand un handler est posé
             // (`null` ⇒ rendu antérieur strictement inchangé — AD-4).
             for (int i = 0; i < vertices.length; i++)
               onVertexDragEnd == null
@@ -403,9 +403,9 @@ class ZOsmMapAdapter
                         child: const Icon(Icons.circle, size: 12),
                       ),
                     ),
-            // G13 : marqueur de déplacement au CENTROÏDE (parité legacy
-            // `gff:647-664`, `move_handle`) — rendu seulement quand le mode
-            // « Déplacer » est actif (handler posé) et qu'il y a des sommets.
+            // Marqueur de déplacement au CENTROÏDE — rendu seulement quand
+            // le mode « Déplacer » est actif (handler posé) et qu'il y a
+            // des sommets.
             if (onShapeDragEnd != null && vertices.isNotEmpty)
               Marker(
                 point: _centroid(vertices),
@@ -418,7 +418,7 @@ class ZOsmMapAdapter
                   child: const Icon(Icons.open_with),
                 ),
               ),
-            // G11 : poignée de rayon draggable sur le périmètre EST du cercle
+            // Poignée de rayon draggable sur le périmètre EST du cercle
             // (fin de drag → nouveau rayon = distance haversine centre→poignée).
             if (onCircleRadiusDragEnd != null && hasCircle)
               if (_circleEastEdge(circle) case final LatLng edge)
@@ -439,7 +439,7 @@ class ZOsmMapAdapter
     );
   }
 
-  /// Centroïde (moyenne arithmétique) des sommets — parité legacy `gff:648-655`.
+  /// Centroïde (moyenne arithmétique) des sommets.
   static LatLng _centroid(List<LatLng> vertices) {
     double lat = 0, lng = 0;
     for (final LatLng v in vertices) {
@@ -449,7 +449,7 @@ class ZOsmMapAdapter
     return LatLng(lat / vertices.length, lng / vertices.length);
   }
 
-  /// Point du périmètre du cercle plein EST du centre (poignée de rayon G11).
+  /// Point du périmètre du cercle plein EST du centre (poignée de rayon).
   /// `null` si la conversion dégénère (proximité des pôles — AD-10).
   static LatLng? _circleEastEdge(ZGeoCircle circle) {
     final double latRad = circle.center.lat * math.pi / 180;
@@ -471,7 +471,7 @@ class ZOsmMapAdapter
         if (p.isValid) onVertexDragEnd?.call(index, p);
       };
 
-  /// Fin de drag du marqueur centroïde → delta (parité `gff:1615-1620`).
+  /// Fin de drag du marqueur centroïde → delta.
   ValueChanged<LatLng> _shapeDragEndFrom(LatLng centroid) => (LatLng ll) {
         onShapeDragEnd?.call(
           ll.latitude - centroid.latitude,
@@ -488,22 +488,21 @@ class ZOsmMapAdapter
         }
       };
 
-  /// Marqueur central **stylé** (G9/G14/G17). `style == null` → marqueur
-  /// d'origine strictement inchangé (`Icon(Icons.place)` 40dp — AD-4).
+  /// Marqueur central **stylé**. `style == null` → marqueur d'origine
+  /// strictement inchangé (`Icon(Icons.place)` 40dp — AD-4).
   ///
-  /// Parité legacy `gma:185-233` : quand `infoWindowTitle` est renseigné, le
-  /// legacy REMPLACE le marqueur par une pastille de texte (fond blanc bordé
-  /// noir, rayon 16). Ici la pastille reprend cette géométrie mais ses couleurs
+  /// Quand `infoWindowTitle` est renseigné, le marqueur est REMPLACÉ par une
+  /// pastille de texte (fond blanc bordé noir, rayon 16) dont les couleurs
   /// viennent du **thème injecté** (`surface`/`onSurface`), jamais de
   /// littéraux. `iconAsset` → image d'asset de l'app hôte (repli défensif sur
   /// l'icône par défaut si l'asset manque — AD-10) ; `iconColorArgb` → teinte ;
-  /// `iconSize` → taille ; `iconRotation` → rotation en degrés (G17).
-  /// `iconAnchor` n'a pas d'équivalent direct `flutter_map` ici → ignoré
-  /// (contrat honoré-si-supporté, écart documenté).
+  /// `iconSize` → taille ; `iconRotation` → rotation en degrés. `iconAnchor`
+  /// n'a pas d'équivalent direct `flutter_map` ici → ignoré (contrat
+  /// honoré-si-supporté, écart documenté).
   ///
-  /// **G6** : [overlayId] + [onTapId] non-`null` → le contenu du marqueur est
+  /// [overlayId] + [onTapId] non-`null` → le contenu du marqueur est
   /// enveloppé d'un `GestureDetector` remontant l'[overlayId] au tap
-  /// (sélection de `ZGeoMapView`, parité mesurée `gfv:132-139`).
+  /// (sélection de `ZGeoMapView`).
   Marker _styledMarker(
     BuildContext context,
     LatLng point,
@@ -521,8 +520,8 @@ class ZOsmMapAdapter
                 child: child,
               );
     if (style == null || (style.visible == false)) {
-      // Rendu d'origine (style absent) ; `visible: false` → marqueur transparent
-      // (une forme invisible ne peint rien — G9).
+      // Rendu d'origine (style absent) ; `visible: false` → marqueur
+      // transparent (une forme invisible ne peint rien).
       return Marker(
         point: point,
         width: 40,
@@ -534,8 +533,7 @@ class ZOsmMapAdapter
     }
     final String? title = style.infoWindowTitle;
     if (title != null && title.isNotEmpty) {
-      // G14 : pastille de libellé (parité géométrique gma:208-218, couleurs
-      // par rôles de thème).
+      // Pastille de libellé, couleurs par rôles de thème.
       final ColorScheme scheme = Theme.of(context).colorScheme;
       return Marker(
         point: point,

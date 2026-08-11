@@ -150,21 +150,21 @@ class ZGoogleMapAdapter
     ValueChanged<ZGeoPoint>? onTap,
     bool interactive = true,
     String? tileUrlTemplate, // ignoré (spécifique OSM) — Google n'a pas de tuiles URL
-    // G3 : ignoré aussi — Google rend satellite/hybride/terrain NATIVEMENT via
+    // Ignoré aussi — Google rend satellite/hybride/terrain NATIVEMENT via
     // `mapOptions.mapType` (contrat honoré-si-supporté).
     Map<ZGeoMapType, String>? tileUrlTemplates,
     String? mapStyleJson,
     double? defaultZoom,
     ZGeoMapOptions? mapOptions,
     bool renderShapeAsPolyline = false,
-    // G23 : bornes de zoom honorées via `minMaxZoomPreference`.
+    // Bornes de zoom honorées via `minMaxZoomPreference`.
     double? minZoom,
     double? maxZoom,
-    // G6 : couches de lecture multi-formes + sélection par tap marqueur.
+    // Couches de lecture multi-formes + sélection par tap marqueur.
     List<ZGeoMapOverlay>? overlays,
     ValueChanged<String>? onOverlayMarkerTap,
   }) {
-    // Surcharges par-champ : priment sur les défauts du constructeur (E11b-1).
+    // Surcharges par-champ : priment sur les défauts du constructeur.
     final String? effectiveStyle = mapStyleJson ?? this.mapStyleJson;
     final double effectiveZoom = defaultZoom ?? initialZoom;
     // Centre effectif : centre explicite, sinon centre du cercle (si valide),
@@ -172,9 +172,9 @@ class ZGoogleMapAdapter
     final ZGeoPoint c = center ??
         (circle != null && circle.isValid ? circle.center : fallbackCenter);
 
-    // G9/G14/G17 : le marqueur central honore le style porté par la valeur
-    // (point → `center.style` ; cercle → `circle.style`). `style == null` →
-    // marqueur d'origine strictement inchangé (AD-4).
+    // Le marqueur central honore le style porté par la valeur (point →
+    // `center.style` ; cercle → `circle.style`). `style == null` → marqueur
+    // d'origine strictement inchangé (AD-4).
     final Set<Marker> markers = <Marker>{
       if (center != null)
         _styledMarker(LatLng(center.lat, center.lng), center.style)
@@ -185,9 +185,9 @@ class ZGoogleMapAdapter
         ),
     };
 
-    // DP-21/M13 : style de forme neutre honoré (couleurs ARGB → `Color` confiné
-    // à ce fichier, AD-1). Repli sur les défauts SDK d'origine quand `style` est
-    // `null` → rétro-compat E11b-1 stricte (mêmes valeurs qu'auparavant).
+    // Style de forme neutre honoré (couleurs ARGB → `Color` confiné à ce
+    // fichier, AD-1). Repli sur les défauts SDK d'origine quand `style` est
+    // `null` — mêmes valeurs qu'un champ non stylé.
     const Color sdkDefault = Color(0xFF000000); // = Colors.black (défaut SDK)
     final ZGeoShapeStyle? shapeStyle = shape?.style;
     final Color fillColor = _argb(shapeStyle?.fillColorArgb) ?? sdkDefault;
@@ -203,7 +203,7 @@ class ZGoogleMapAdapter
         for (final ZGeoPoint v in shape.vertices) LatLng(v.lat, v.lng),
     ];
 
-    // DP-21/M13 : trous intérieurs du polygone (≥3 sommets par trou honoré).
+    // Trous intérieurs du polygone (≥3 sommets par trou honoré).
     final List<List<LatLng>> holes = <List<LatLng>>[
       if (shape?.holes != null)
         for (final List<ZGeoPoint> hole in shape!.holes!)
@@ -211,8 +211,8 @@ class ZGoogleMapAdapter
             <LatLng>[for (final ZGeoPoint v in hole) LatLng(v.lat, v.lng)],
     ];
 
-    // G13 : sommets DRAGGABLES natifs quand un handler est posé (`null` ⇒
-    // aucun marqueur de sommet — comportement antérieur strict, AD-4).
+    // Sommets DRAGGABLES natifs quand un handler est posé (`null` ⇒ aucun
+    // marqueur de sommet — comportement antérieur strict, AD-4).
     if (onVertexDragEnd != null) {
       for (int i = 0; i < shapePoints.length; i++) {
         final int index = i;
@@ -230,8 +230,8 @@ class ZGoogleMapAdapter
         );
       }
     }
-    // G13 : marqueur de déplacement au CENTROÏDE (parité legacy `gff:647-664`,
-    // `move_handle`) — fin de drag → delta appliqué par le champ.
+    // Marqueur de déplacement au CENTROÏDE — fin de drag → delta appliqué
+    // par le champ.
     if (onShapeDragEnd != null && shapePoints.isNotEmpty) {
       final LatLng centroid = _centroid(shapePoints);
       markers.add(
@@ -247,7 +247,7 @@ class ZGoogleMapAdapter
         ),
       );
     }
-    // G11 : poignée de rayon draggable sur le périmètre EST du cercle — fin de
+    // Poignée de rayon draggable sur le périmètre EST du cercle — fin de
     // drag → nouveau rayon = distance haversine centre→poignée.
     if (onCircleRadiusDragEnd != null && circle != null && circle.isValid) {
       final LatLng? edge = _circleEastEdge(circle);
@@ -288,7 +288,7 @@ class ZGoogleMapAdapter
         ),
     };
 
-    // DP-21/M13 : polyligne (tracé OUVERT, ≥2 sommets) quand demandé — pas de
+    // Polyligne (tracé OUVERT, ≥2 sommets) quand demandé — pas de
     // remplissage, pas de segment de fermeture (honoré-si-supporté).
     final Set<Polyline> polylines = <Polyline>{
       if (shape != null && renderShapeAsPolyline && shapePoints.length >= 2)
@@ -304,10 +304,11 @@ class ZGoogleMapAdapter
         ),
     };
 
-    // G9 : le cercle honore `circle.style` — chaque propriété absente retombe
-    // EXACTEMENT sur le défaut SDK antérieur (style `null` ⇒ `Circle` identique
-    // à E11b-1, AD-4). NB : les défauts SDK (noir/transparent) restent ceux du
-    // SDK ; la voie thémée passe par un `style` posé sur la valeur.
+    // Le cercle honore `circle.style` — chaque propriété absente retombe
+    // EXACTEMENT sur le défaut SDK antérieur (style `null` ⇒ `Circle`
+    // identique à un champ non stylé, AD-4). NB : les défauts SDK
+    // (noir/transparent) restent ceux du SDK ; la voie thémée passe par un
+    // `style` posé sur la valeur.
     final Set<Circle> circles = <Circle>{
       if (circle != null && circle.isValid)
         Circle(
@@ -325,7 +326,7 @@ class ZGoogleMapAdapter
         ),
     };
 
-    // G6 : couches de lecture multi-formes (styles portés par les valeurs,
+    // Couches de lecture multi-formes (styles portés par les valeurs,
     // marqueur d'ancrage tappable). Valeur inconnue/invalide → ignorée (AD-10).
     if (overlays != null) {
       for (int i = 0; i < overlays.length; i++) {
@@ -413,11 +414,11 @@ class ZGoogleMapAdapter
       compassEnabled: mapOptions?.compassEnabled ?? true,
       zoomControlsEnabled: mapOptions?.zoomControlsEnabled ?? true,
       mapToolbarEnabled: mapOptions?.mapToolbarEnabled ?? true,
-      // G21 : point bleu natif + bouton — opt-in (`false` par défaut : la
+      // Point bleu natif + bouton — opt-in (`false` par défaut : la
       // permission de localisation appartient à l'app hôte, cf. ZGeoMapOptions).
       myLocationEnabled: mapOptions?.myLocationEnabled ?? false,
       myLocationButtonEnabled: mapOptions?.myLocationButtonEnabled ?? true,
-      // G23 : bornes de zoom surchargeables (`null`/`null` → non bornées,
+      // Bornes de zoom surchargeables (`null`/`null` → non bornées,
       // comportement antérieur strict).
       minMaxZoomPreference: (minZoom == null && maxZoom == null)
           ? MinMaxZoomPreference.unbounded
@@ -446,7 +447,7 @@ class ZGoogleMapAdapter
       polylines: polylines,
       circles: circles,
       // `interactive: false` → aperçu non manipulable (lecture seule). Rotation/
-      // tilt sont en outre pilotables par la barre d'outils (DP-7) : gardés à
+      // tilt sont en outre pilotables par la barre d'outils : gardés à
       // `interactive` quand aucune option n'est fournie (comportement inchangé),
       // sinon `interactive && <toggle>`.
       zoomGesturesEnabled: interactive,
@@ -458,17 +459,17 @@ class ZGoogleMapAdapter
     );
   }
 
-  /// Marqueur central **stylé** (G9/G14/G17). `style == null` → `Marker`
-  /// d'origine strictement inchangé (AD-4).
+  /// Marqueur central **stylé**. `style == null` → `Marker` d'origine
+  /// strictement inchangé (AD-4).
   ///
-  /// **Écart documenté vs legacy (`gma:185-233`)** : le legacy peint un bitmap
-  /// texte (pastille) de façon **asynchrone** (`PictureRecorder` → `await
-  /// toImage`) — impossible dans ce `buildMap` synchrone et sans état. Ici,
-  /// `infoWindowTitle`/`infoWindowSnippet` passent par l'**`InfoWindow` natif**
-  /// (libellé affiché au tap, pas en continu) ; `iconColorArgb` est traduit en
+  /// **Écart documenté** : peindre un bitmap texte (pastille) exigerait un
+  /// rendu **asynchrone** (`PictureRecorder` → `await toImage`) — impossible
+  /// dans ce `buildMap` synchrone et sans état. `infoWindowTitle`/
+  /// `infoWindowSnippet` passent donc par l'**`InfoWindow` natif** (libellé
+  /// affiché au tap, pas en continu) ; `iconColorArgb` est traduit en
   /// **teinte de marqueur** (`defaultMarkerWithHue`, la teinte HSV la plus
   /// proche — pas un tint exact) ; `iconRotation`/`iconAnchor` sont honorés
-  /// nativement (G17). `iconAsset` exigerait un chargement d'asset asynchrone →
+  /// nativement. `iconAsset` exigerait un chargement d'asset asynchrone →
   /// **ignoré** par cet adaptateur (contrat honoré-si-supporté ; l'adaptateur
   /// OSM, lui, le rend).
   Marker _styledMarker(LatLng position, ZGeoShapeStyle? style) {
@@ -494,7 +495,7 @@ class ZGoogleMapAdapter
       anchor: style.iconAnchor == null
           // Défaut SDK : bas-centre du pictogramme.
           ? const Offset(0.5, 1.0)
-          // Parité de lecture legacy : `GeoPoint(lat→dy, lng→dx)` normalisé.
+          // Ancre en coordonnées normalisées : `GeoPoint(lat→dy, lng→dx)`.
           : Offset(
               style.iconAnchor!.lng.clamp(0.0, 1.0),
               style.iconAnchor!.lat.clamp(0.0, 1.0),
@@ -503,9 +504,9 @@ class ZGoogleMapAdapter
     );
   }
 
-  /// G6 — marqueur d'ancrage d'un overlay : même chaîne de style que
+  /// Marqueur d'ancrage d'un overlay : même chaîne de style que
   /// [_styledMarker] (teinte/InfoWindow), MarkerId stable dérivé de l'[id],
-  /// tap → [onTapId] (sélection `ZGeoMapView`, parité mesurée `gfv:132-139`).
+  /// tap → [onTapId] (sélection `ZGeoMapView`).
   Marker _overlayMarker(
     String id,
     LatLng position,
@@ -531,7 +532,7 @@ class ZGoogleMapAdapter
     );
   }
 
-  /// Centroïde (moyenne arithmétique) des sommets — parité legacy `gff:648-655`.
+  /// Centroïde (moyenne arithmétique) des sommets.
   static LatLng _centroid(List<LatLng> vertices) {
     double lat = 0, lng = 0;
     for (final LatLng v in vertices) {
@@ -541,7 +542,7 @@ class ZGoogleMapAdapter
     return LatLng(lat / vertices.length, lng / vertices.length);
   }
 
-  /// Point du périmètre du cercle plein EST du centre (poignée de rayon G11).
+  /// Point du périmètre du cercle plein EST du centre (poignée de rayon).
   /// `null` si la conversion dégénère (proximité des pôles — AD-10).
   static LatLng? _circleEastEdge(ZGeoCircle circle) {
     final double latRad = circle.center.lat * math.pi / 180;

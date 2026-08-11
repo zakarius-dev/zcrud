@@ -1,5 +1,4 @@
-/// **UNIQUE** voie de réordonnancement des flashcards d'un dossier (SU-8,
-/// AC9/AC10/AC11/AC12 — AD-38).
+/// **UNIQUE** voie de réordonnancement des flashcards d'un dossier.
 ///
 /// ## Pourquoi « une seule voie » n'est pas un slogan
 ///
@@ -8,20 +7,18 @@
 /// ne peut pas glisser-déposer). S'ils empruntaient deux chemins d'écriture, ils
 /// divergeraient : le drag persisterait `'flashcards'`, les boutons
 /// `'flashcards/'`, et — `applyOrder` étant **TOTAL** — **rien ne rougirait**.
-/// L'ordre serait simplement « oublié » pour l'un des deux, en silence. C'est le
-/// `Prevents` exact d'AD-38.
+/// L'ordre serait simplement « oublié » pour l'un des deux, en silence.
 ///
 /// ⇒ [zReorderFlashcards] est la **seule** fonction qui produit un
-/// `ZFolderContentsOrder` réordonné. Drag **et** boutons l'appellent — prouvé par
-/// `test/presentation/z_flashcard_reorder_single_path_test.dart` (garde de
-/// source) **et** par « drag et boutons ⇒ ordre persisté IDENTIQUE » (garde de
-/// comportement). Les deux canaux, jamais un seul.
+/// `ZFolderContentsOrder` réordonné. Drag **et** boutons l'appellent — prouvé
+/// par une garde de source (une seule fonction écrit `sectionOrders`) **et**
+/// par une garde de comportement (« drag et boutons ⇒ ordre persisté
+/// IDENTIQUE »). Les deux canaux, jamais un seul.
 ///
 /// ## Ce que ce fichier NE fait PAS
 ///
 /// - Il ne compose **aucune** clé à la main : [zSectionKey] est la seule voie
-///   (AD-38 ; la garde `z_section_key_single_composition_test.dart` du kernel
-///   scanne **déjà** `../zcrud_study/lib` et rougirait) ;
+///   (une garde du kernel interdit toute composition manuelle) ;
 /// - Il ne **réimplémente pas** le déplacement : [zReorderIds] (pur, **total**,
 ///   indices **clampés**) le fait déjà ;
 /// - Il ne **trie pas** : `applyOrder`/`applyTo` (kernel) applique l'ordre.
@@ -35,21 +32,21 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_reorder_ids.dart';
 
-/// `contentType` **canonique** des flashcards (AD-38 — **RISQUE DE DONNÉES**).
+/// `contentType` **canonique** des flashcards — **RISQUE DE DONNÉES**.
 ///
 /// **VERBATIM `'flashcards'`, à ne JAMAIS modifier.** C'est la clé **déjà en
-/// base** chez les consommateurs (IFFD, lex_douane) : la forme nue produite par
+/// base** chez les applications consommatrices : la forme nue produite par
 /// `zSectionKey(contentType: 'flashcards')` — **jamais** `'flashcards/'`, jamais
 /// `'section:flashcards'`, jamais `'flashcard'` au singulier.
 ///
 /// Tout préfixe, suffixe ou renommage **orphelinerait l'ordre persisté en
 /// silence** : `applyOrder` est **TOTAL**, une clé qui ne correspond à rien est
 /// ignorée **sans erreur et sans test rouge**. L'utilisateur verrait simplement
-/// son classement « oublié ». Verrouillé par la preuve de rétro-compatibilité
-/// **bout en bout** de `z_flashcard_reorder_test.dart`.
+/// son classement « oublié ». Verrouillé par une preuve de rétro-compatibilité
+/// **bout en bout**.
 const String kFlashcardsContentType = 'flashcards';
 
-/// Clé de section canonique des flashcards de [subfolderId] (AD-38).
+/// Clé de section canonique des flashcards de [subfolderId].
 ///
 /// **Unique** point de lecture COMME d'écriture — jamais composée à la main.
 /// `subfolderId` `null` **ou vide** ⇒ clé **nue** [kFlashcardsContentType]
@@ -57,8 +54,8 @@ const String kFlashcardsContentType = 'flashcards';
 String zFlashcardsSectionKey({String? subfolderId}) =>
     zSectionKey(contentType: kFlashcardsContentType, subfolderId: subfolderId);
 
-/// Déplace la carte de [oldIndex] vers [newIndex] et rend l'ordre **persistable**
-/// (AC11) — **UNIQUE** voie de réordonnancement.
+/// Déplace la carte de [oldIndex] vers [newIndex] et rend l'ordre
+/// **persistable** — **UNIQUE** voie de réordonnancement.
 ///
 /// - [order] : ordre personnel actuel du dossier (**jamais muté**) ;
 /// - [visibleIds] : ids des cartes **telles qu'affichées** (ordre courant à
@@ -77,7 +74,7 @@ String zFlashcardsSectionKey({String? subfolderId}) =>
 /// carte à un index qui ne correspond à **rien** de ce que l'utilisateur voit.
 /// On réordonne donc ce qui est **à l'écran**, puis on persiste ce résultat : le
 /// geste et son effet coïncident toujours, et l'ordre se **répare** de lui-même
-/// (les orphelins disparaissent, les nouvelles cartes prennent leur place — AC12).
+/// (les orphelins disparaissent, les nouvelles cartes prennent leur place).
 ///
 /// **Total** (AD-10) : indices hors bornes **clampés** par [zReorderIds], liste
 /// vide ⇒ ordre inchangé, jamais de throw.
@@ -91,7 +88,7 @@ ZFolderContentsOrder zReorderFlashcards(
   // Déplacement DÉLÉGUÉ (pur, total, indices clampés) — jamais réimplémenté.
   final reordered = zReorderIds(visibleIds, oldIndex, newIndex);
 
-  // Clé composée par l'UNIQUE constructeur canonique (AD-38).
+  // Clé composée par l'UNIQUE constructeur canonique.
   final key = zFlashcardsSectionKey(subfolderId: subfolderId);
 
   // Écriture via `copyWith` : l'ordre d'entrée n'est jamais muté, et la map
@@ -108,9 +105,9 @@ ZFolderContentsOrder zReorderFlashcards(
 /// (bouton a11y « Monter ») — ou `null` si le déplacement est **impossible**
 /// (carte absente, ou **déjà en tête**).
 ///
-/// `null` ⇒ le bouton doit être **ABSENT** (`onSelected: null`), jamais grisé ni
-/// no-op (AD-4/AD-44). C'est ce qui empêche « le 1er remonte » — le défaut su-4
-/// (« un bouton précédent qui avançait », vert car jamais tapé).
+/// `null` ⇒ le bouton doit être **ABSENT** (`onSelected: null`), jamais grisé
+/// ni no-op (invariant AD-4). C'est ce qui empêche un bouton « Monter » qui
+/// ferait silencieusement avancer la première carte au lieu de ne rien faire.
 ({int oldIndex, int newIndex})? zMoveUpIndices(
   List<String> visibleIds,
   String id,

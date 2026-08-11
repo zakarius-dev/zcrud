@@ -1,25 +1,26 @@
-/// `DynamicList` — hôte de rendu de liste du cœur `zcrud_core` (E4-1 → E4-4).
+/// `DynamicList` — hôte de rendu de liste du cœur `zcrud_core`.
 ///
-/// origine: E4-1 (hôte mince délégant au `ZListRenderer` injecté). E4-2 recâble
-/// l'hôte autour de trois briques neutres (dérivation de colonnes, variantes de
-/// vue `ZListLayout`, quatre états UI). **E4-4** rend la liste **ACTIONNABLE** —
-/// toujours dans le cœur, toujours neutre :
+/// Hôte mince délégant au `ZListRenderer` injecté, câblé autour de trois
+/// briques neutres (dérivation de colonnes, variantes de vue `ZListLayout`,
+/// quatre états UI). La liste est **ACTIONNABLE** — toujours dans le cœur,
+/// toujours neutre :
 /// 1. **actions de ligne** filtrées par `ZAcl` (AD-16) — résolues par ligne en
 ///    `ZResolvedRowAction` (sans `T`) ;
 /// 2. **sélection multiple** stable via `ZListSelectionController` (état keyé par
-///    `id` hors renderer — bug historique corrigé, AC4) ;
+///    `id` hors renderer, immunisé contre un rebuild/scroll/pagination) ;
 /// 3. **corbeille** soft-delete/restore via les fabriques `ZRowAction`.
 ///
-/// `DynamicList` devient **générique `<T extends ZEntity>`** (défaut `ZEntity`,
-/// seams `null` ⇒ non-régression stricte des sites E4-1/E4-2) : l'entité `T` est
-/// nécessaire au filtrage ACL row-level (`acl.can(action, target: entity)`) et
-/// au handler `onInvoke(context, entity)`. Le renderer, lui, ne voit **jamais**
-/// `T` ni `ZAcl` : il reçoit un `ZListInteraction` neutre (actions déjà résolues,
-/// sélection déjà keyée par `id`). SM-5 : `DynamicList` n'importe JAMAIS
-/// `zcrud_list` ni Syncfusion — la statefulness de grille vit dans `zcrud_list`.
+/// `DynamicList` est **générique `<T extends ZEntity>`** (défaut `ZEntity`,
+/// seams `null` ⇒ non-régression stricte pour un consommateur qui ne les
+/// fournit pas) : l'entité `T` est nécessaire au filtrage ACL row-level
+/// (`acl.can(action, target: entity)`) et au handler `onInvoke(context,
+/// entity)`. Le renderer, lui, ne voit **jamais** `T` ni `ZAcl` : il reçoit un
+/// `ZListInteraction` neutre (actions déjà résolues, sélection déjà keyée par
+/// `id`). `DynamicList` n'importe JAMAIS `zcrud_list` ni Syncfusion — la
+/// statefulness de grille vit dans `zcrud_list`.
 ///
-/// Sous-listes/onglets (E4-5) et **listing** de la corbeille (déféré E5) restent
-/// hors périmètre.
+/// Sous-listes/onglets et **listing** de la corbeille restent hors périmètre
+/// de ce fichier (voir `ZSubListScreen`/`ZTabbedList`).
 library;
 
 import 'package:flutter/material.dart';
@@ -51,7 +52,7 @@ import 'z_row_action.dart';
 ///     `ZcrudScope.listRenderer` ; si AUCUN → [ZScopeError] actionnable orientée
 ///     `zcrud_list` (chemin `dataGrid` **uniquement**) ;
 ///   - `builder`/`custom` → rendu **dans le cœur**, aucun renderer requis.
-/// - En présence d'une [selection] et/ou de [rowActions] (E4-4), un
+/// - En présence d'une [selection] et/ou de [rowActions], un
 ///   [ZListInteraction] neutre est construit (sélection keyée par `id`, actions
 ///   filtrées par `ZcrudScope.acl`) et passé au renderer / rendu dans le cœur.
 class DynamicList<T extends ZEntity> extends StatelessWidget {
@@ -72,7 +73,8 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   });
 
   /// Fabrique de commodité : enveloppe des [rows] prêtes dans un
-  /// [ZListReady] (migration douce des sites E4-1 `DynamicList(fields, rows)`).
+  /// [ZListReady] (migration douce depuis un simple `DynamicList(fields,
+  /// rows)`).
   DynamicList.rows(
     this.fields,
     List<ZListRow> rows, {
@@ -104,12 +106,12 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   /// Politique de colonnes optionnelle (force include/exclude, AD-4).
   final ZColumnPolicy? columnPolicy;
 
-  /// Contrôleur de **sélection multiple** neutre (E4-4). `null` = pas de
-  /// sélection (non-régression E4-1/E4-2). L'état vit dans le contrôleur (keyé
-  /// par `id`), jamais dans le renderer (bug de sélection corrigé, AC4).
+  /// Contrôleur de **sélection multiple** neutre. `null` = pas de
+  /// sélection. L'état vit dans le contrôleur (keyé
+  /// par `id`), jamais dans le renderer — immunisé contre un rebuild/scroll.
   final ZListSelectionController? selection;
 
-  /// Actions de ligne **génériques** (E4-4), filtrées par `ZAcl`. `null` = aucune
+  /// Actions de ligne **génériques**, filtrées par `ZAcl`. `null` = aucune
   /// action. **Requiert** [entityFor] (le handler et l'ACL row-level ont besoin
   /// de l'entité `T`).
   final List<ZRowAction<T>>? rowActions;
@@ -150,7 +152,7 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
 
   /// Rend l'état `ready` : dérive les colonnes puis dispatch sur [layout]. En
   /// présence d'une sélection, écoute sa tranche `selectedIds` (rebuild ciblé,
-  /// AD-2) et reconstruit l'interaction ; sinon rendu direct (chemin E4-1/E4-2).
+  /// AD-2) et reconstruit l'interaction ; sinon rendu direct.
   Widget _buildReady(BuildContext context, List<ZListRow> rows) {
     final request = ZListRenderRequest.fromSchema(
       fields,
@@ -183,14 +185,15 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
   }
 
   /// **Capture** les seams d'affichage que `ZListColumn.format` ne peut pas
-  /// atteindre lui-même (CR-LIST-LABELS).
+  /// atteindre lui-même.
   ///
   /// C'est ICI — et nulle part ailleurs dans la chaîne de liste — qu'un
   /// `BuildContext` existe encore : le backend appelle `col.format(...)` depuis
   /// une `DataGridSource`, et `zcrud_export` l'appelle sans arbre de widgets. On
   /// résout donc le libellé d'orphelin (`zOrphanChoiceLabel`, MÊME clé l10n
-  /// `choiceUnresolved` que les dix voies de v0.65.0 — aucune seconde clé) et on
-  /// lit le port de dates du scope, puis on les **transporte** dans la closure.
+  /// `choiceUnresolved` que toute autre voie de résolution — aucune seconde clé)
+  /// et on lit le port de dates du scope, puis on les **transporte** dans la
+  /// closure.
   ///
   /// AD-2 : aucune allocation coûteuse (une `String` déjà en table + deux
   /// références) ; l'objet a une égalité de **valeur**, donc deux builds
@@ -281,7 +284,7 @@ class DynamicList<T extends ZEntity> extends StatelessWidget {
     ZListRenderRequest request,
     ZListInteraction? interaction,
   ) {
-    // L1 (code-review E4-1) : `maybeOf` (et non `of`) pour que le message reste
+    // `maybeOf` (et non `of`) pour que le message reste
     // LIST-SPÉCIFIQUE même en l'ABSENCE d'un ancêtre `ZcrudScope`.
     final resolved = renderer ?? ZcrudScope.maybeOf(context)?.listRenderer;
     if (resolved == null) {
@@ -415,9 +418,9 @@ class _ZListBuilderView extends StatelessWidget {
   }
 }
 
-/// Vue **liste ACTIONNABLE** (layout `builder` + interaction E4-4) : rend, DANS
-/// le cœur (aucun Syncfusion, SM-5), une case de sélection keyée par `id` +
-/// l'entrée [itemBuilder] + les actions résolues, chacune accessible (AC9).
+/// Vue **liste ACTIONNABLE** (layout `builder` + interaction) : rend, DANS
+/// le cœur (aucun Syncfusion), une case de sélection keyée par `id` +
+/// l'entrée [itemBuilder] + les actions résolues, chacune accessible.
 class _ZListInteractiveBuilderView extends StatelessWidget {
   const _ZListInteractiveBuilderView({
     required this.request,
@@ -463,7 +466,7 @@ class _ZListInteractiveBuilderView extends StatelessWidget {
   }
 }
 
-/// Case de sélection accessible (AC9) : `Semantics(selected:)`, cible ≥ 48 dp.
+/// Case de sélection accessible : `Semantics(selected:)`, cible ≥ 48 dp.
 class _SelectionCheckbox extends StatelessWidget {
   const _SelectionCheckbox({required this.selected, required this.onToggle});
 
@@ -488,7 +491,7 @@ class _SelectionCheckbox extends StatelessWidget {
   }
 }
 
-/// Bouton d'action de ligne accessible (AC9) : `Semantics(button:true,
+/// Bouton d'action de ligne accessible : `Semantics(button:true,
 /// enabled:, label:)`, cible ≥ 48 dp, libellé l10n. Rend une icône si fournie,
 /// sinon le libellé textuel.
 class _RowActionButton extends StatelessWidget {

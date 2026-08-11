@@ -1,33 +1,30 @@
-/// **G1 — stepper *data-driven inline*** : l'adaptateur qui transforme une
+/// **Stepper *data-driven inline*** : l'adaptateur qui transforme une
 /// **liste plate** de `ZFieldSpec` annotés en `List<ZEditionStep>`, sans rien
 /// changer à [ZStepperEdition] qui les consomme.
 ///
-/// ## Le besoin, mesuré
+/// ## Le besoin
 ///
-/// (CR d'exploration DODLP du 2026-08-06, §3 G1.) DODLP déclare le stepper
-/// comme un **type de champ** dans une liste plate ; ses enfants portent
-/// `stepIndex`/`stepTitle`/`stepSubtitle` et le moteur **regroupe tout seul**
-/// (`dynamic_stepper.dart`, sniffing de `stepIndex`). zcrud, lui, exige un
-/// `List<ZEditionStep>` où **chaque étape énumère nommément ses champs**.
-/// Porter un formulaire stepper DODLP imposait donc de **restructurer à la
-/// main** la liste plate — non-1:1, source d'erreurs. C'est le point qui a
-/// stoppé le pilote de l'écran agent.
+/// Un formulaire stepper peut être décrit par une **liste plate** de champs,
+/// chacun portant l'appartenance à une étape ([ZStepFieldConfig]). zcrud, lui,
+/// exige un `List<ZEditionStep>` où **chaque étape énumère nommément ses
+/// champs**. Sans adaptateur, porter un tel formulaire imposerait de
+/// **restructurer à la main** la liste plate — non-1:1, source d'erreurs.
 ///
 /// Cet adaptateur rétablit le 1:1 : la déclaration reste **plate et locale au
 /// champ**, le regroupement est **dérivé**.
 ///
 /// ## Ce que ce fichier N'EST PAS
 ///
-/// 🔴 **`EditionFieldType.stepper` reste `EditionFamily.unsupported`.** Ce
-/// n'est pas un oubli, c'est l'invariant DP-9/AC13 : le dispatcher mappe un
-/// `kind` → **widget-feuille** porteur d'UNE tranche de valeur, alors qu'un
-/// stepper est un **regroupement** qui doit rester le **single writer** de
-/// `controller.visibleFields`. Le router par le registre casserait ce
-/// single-writer (dartdoc de [ZStepperEdition]). L'adaptateur est donc un
-/// **helper de construction**, jamais un type servi — et il ne déplace aucune
-/// frontière existante.
+/// **`EditionFieldType.stepper` reste `EditionFamily.unsupported`.** Ce
+/// n'est pas un oubli : le dispatcher mappe un `kind` → **widget-feuille**
+/// porteur d'UNE tranche de valeur, alors qu'un stepper est un
+/// **regroupement** qui doit rester le **single writer** de
+/// `controller.visibleFields` (invariant AD-2). Le router par le registre
+/// casserait ce single-writer (dartdoc de [ZStepperEdition]). L'adaptateur
+/// est donc un **helper de construction**, jamais un type servi — et il ne
+/// déplace aucune frontière existante.
 ///
-/// ## Pureté et totalité (AD-10)
+/// ## Pureté et totalité (invariant AD-10)
 ///
 /// [zPartitionFieldsIntoSteps] est **PURE** (aucun `BuildContext`, aucun état,
 /// aucun effet de bord — testable en test unitaire nu) et **TOTALE** : aucune
@@ -44,34 +41,34 @@ import '../../domain/edition/z_field_spec.dart';
 import 'z_stepper_edition.dart';
 
 /// Appartenance d'un champ à une **étape**, portée par le champ lui-même
-/// (`ZFieldSpec.config`) — la traduction zcrud des `stepIndex`/`stepTitle`/
-/// `stepSubtitle`/`stepIcon` de DODLP.
+/// (`ZFieldSpec.config`).
 ///
 /// ### Pourquoi en PRÉSENTATION et non dans le domaine
 ///
-/// Même arbitrage que [ZStepperConfig] : [icon] est un `IconData`, donc un type
-/// **Flutter** — AD-1 interdit de le faire entrer dans `domain/`. C'est
-/// exactement pourquoi `ZTextConfig.keyboardType` y est une `String` opaque.
-/// Le précédent est établi (`ZFlashcardFieldConfig`, `zcrud_flashcard`).
+/// Même arbitrage que [ZStepperConfig] : [icon] est un `IconData`, donc un
+/// type **Flutter** — l'invariant AD-1 interdit de le faire entrer dans
+/// `domain/`. C'est exactement pourquoi `ZTextConfig.keyboardType` y est une
+/// `String` opaque. Le précédent est établi (`ZFlashcardFieldConfig`,
+/// `zcrud_flashcard`).
 ///
-/// ### ⚠️ Le slot `config` est EXCLUSIF — limite MESURÉE
+/// ### Le slot `config` est EXCLUSIF — limite à connaître
 ///
-/// `ZFieldSpec.config` est un **slot unique**, lu par ~19 sites de la forme
-/// `field.config is ZTextConfig` / `is ZSelectConfig` / … Annoter un champ
-/// texte avec une appartenance d'étape lui **retire donc** sa `ZTextConfig`
-/// (`minLines`, `maxLines`, `capitalization`, `textTransform`) — silencieusement.
+/// `ZFieldSpec.config` est un **slot unique**, lu par de nombreux sites de la
+/// forme `field.config is ZTextConfig` / `is ZSelectConfig` / … Annoter un
+/// champ texte avec une appartenance d'étape lui **retire donc** sa
+/// `ZTextConfig` (`minLines`, `maxLines`, `capitalization`, `textTransform`) —
+/// silencieusement.
 ///
 /// Deux réponses, aucune ne cassant l'existant :
 /// * pour un champ **sans** config de type (le cas courant : les champs
-///   annotés d'étape chez DODLP sont des conteneurs sans config propre),
+///   annotés d'étape sont typiquement des conteneurs sans config propre),
 ///   l'annotation par `config` suffit ;
 /// * pour un champ qui a **déjà** une config de type, l'hôte passe un résolveur
 ///   [ZStepOf] à [zPartitionFieldsIntoSteps] (par nom, par convention, par
 ///   table…). Le canal reste **pur** et n'occupe pas le slot.
 ///
-/// 🔴 Un slot `step:` **additif** sur `ZFieldSpec` lèverait la limite pour de
-/// bon ; c'est une décision de **schéma canonique** qui n'appartient pas à ce
-/// lot — elle est remontée dans le rapport, pas prise ici.
+/// Un slot `step:` **additif** sur `ZFieldSpec` lèverait cette limite ; c'est
+/// une décision de **schéma canonique** distincte de ce fichier.
 @immutable
 class ZStepFieldConfig extends ZFieldConfig {
   /// Déclare l'appartenance d'un champ à l'étape [index].
@@ -100,18 +97,15 @@ class ZStepFieldConfig extends ZFieldConfig {
   /// Sous-titre de l'étape (affiché ssi `ZStepperConfig.showSubtitles`).
   final String? subtitle;
 
-  /// Icône de l'étape (consommée en `ZStepStyle.icons`).
-  ///
-  /// 🟢 MESURÉ côté DODLP : leur `stepIcon` est **déclaré et jamais lu**
-  /// (`grep -rn "stepIcon" lib` → 2 occurrences, toutes deux dans la
-  /// déclaration du modèle). Ici il est réellement honoré par
-  /// [ZStepperEdition] via [ZEditionStep.icon].
+  /// Icône de l'étape (consommée en `ZStepStyle.icons`). Réellement honorée
+  /// par [ZStepperEdition] via [ZEditionStep.icon] — jamais une métadonnée
+  /// déclarée sans effet.
   final IconData? icon;
 
   /// Condition d'**existence de l'étape** ([ZEditionStep.condition]) — même
   /// arbre `ZCondition` que les champs, aucun second langage.
   ///
-  /// ⚠️ Elle porte sur l'ÉTAPE, pas sur le champ qui la déclare : c'est donc,
+  /// Elle porte sur l'ÉTAPE, pas sur le champ qui la déclare : c'est donc,
   /// comme [title], une métadonnée d'étape, et le **premier non-`null`** de
   /// l'étape gagne.
   final ZCondition? condition;
@@ -165,12 +159,10 @@ typedef ZStepTitleFallback = String Function(int index, int position);
 /// Résultat de [zPartitionFieldsIntoSteps] : les étapes **et** ce qui n'y est
 /// pas entré.
 ///
-/// 🔴 [unassigned] existe pour ne PAS reproduire le défaut mesuré côté DODLP :
-/// quand au moins une étape existe, leur `DynamicStepper` **laisse tomber
-/// silencieusement** les champs frères non annotés (`dynamic_stepper.dart` ne
-/// collecte que `field.stepIndex != null`). Ici la perte est **rendue
-/// visible** : l'hôte choisit — les rendre hors stepper, les rattacher, ou
-/// asserter que la liste est vide.
+/// [unassigned] existe pour éviter qu'un stepper **laisse tomber
+/// silencieusement** les champs frères non annotés dès qu'au moins une étape
+/// existe. La perte potentielle est **rendue visible** : l'hôte choisit —
+/// les rendre hors stepper, les rattacher, ou asserter que la liste est vide.
 @immutable
 class ZStepPartition {
   /// Construit une partition (usage interne à [zPartitionFieldsIntoSteps]).
@@ -206,7 +198,7 @@ class ZStepPartition {
 /// 1. **Une étape par clé distincte**, ordonnée par clé **croissante**. Les
 ///    clés sont des clés d'ordre : `0, 2, 5` donne trois étapes ; un index
 ///    **négatif** se place naturellement avant `0` (aucune entrée n'est
-///    rejetée — AD-10).
+///    rejetée — invariant AD-10).
 /// 2. **À l'intérieur d'une étape, l'ordre de DÉCLARATION est préservé**, et
 ///    lui seul. Il ne suit ni les clés, ni l'ordre alphabétique. C'est ce qui
 ///    rend le portage 1:1 : l'auteur lit son formulaire dans l'ordre où il
@@ -219,17 +211,17 @@ class ZStepPartition {
 /// 4. **Aucun champ annoté ⇒ [ZStepPartition.empty]** (pas d'étape fabriquée).
 ///    L'hôte rend son formulaire tel quel.
 /// 5. **Aucun titre nulle part ⇒ [titleFallback], à défaut la chaîne vide.**
-///    🔴 Le repli DODLP (`'Étape ${i + 1}'`) n'est **PAS** reproduit : ce
+///    Un repli littéral (« Étape N ») codé en dur n'est **PAS** produit : ce
 ///    serait un littéral français codé en dur dans le cœur (l10n). Une étape
 ///    sans titre reste lisible — l'indicateur `numbered` affiche « k/N » quoi
 ///    qu'il arrive.
 /// 6. **Totalité** : si [stepOf] ou [titleFallback] — code de l'hôte — lève,
 ///    l'exception est absorbée et l'on retombe respectivement sur « champ non
 ///    annoté » et sur la chaîne vide. Un libellé ne fait pas échouer un rendu
-///    (AD-10).
+///    (invariant AD-10).
 ///
 /// ```dart
-/// // Déclaration PLATE, façon DODLP — le regroupement est dérivé :
+/// // Déclaration PLATE — le regroupement est dérivé :
 /// const fields = <ZFieldSpec>[
 ///   ZFieldSpec(name: 'nom', type: EditionFieldType.text,
 ///       config: ZStepFieldConfig(index: 0, title: 'identity')),
@@ -281,7 +273,8 @@ ZStepPartition zPartitionFieldsIntoSteps(
 }
 
 /// Lit l'appartenance d'un champ — canal de l'hôte ([stepOf]) s'il est fourni,
-/// sinon le slot `config`. Absorbe toute exception du code hôte (AD-10).
+/// sinon le slot `config`. Absorbe toute exception du code hôte (invariant
+/// AD-10).
 ZStepFieldConfig? _membershipOf(ZFieldSpec field, ZStepOf? stepOf) {
   if (stepOf == null) {
     final ZFieldConfig? config = field.config;
@@ -337,7 +330,8 @@ class _StepDraft {
     try {
       return fallback(index, position);
     } catch (_) {
-      // Un repli de LIBELLÉ qui lève ne fait pas échouer un rendu (AD-10).
+      // Un repli de LIBELLÉ qui lève ne fait pas échouer un rendu (invariant
+      // AD-10).
       return '';
     }
   }

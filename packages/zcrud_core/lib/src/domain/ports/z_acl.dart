@@ -1,19 +1,18 @@
 /// Port d'**autorisation** neutre du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — contrôle d'accès fourni par l'app
-/// (aucune règle métier dans le cœur). Canonique §7 ; AD-16 (`ZAcl` app-supplied).
+/// Aucune règle métier ne vit dans le cœur : l'ACL est fournie par l'app
+/// hôte (AD-16, `ZAcl` app-supplied).
 library;
 
 import '../contracts/z_entity.dart';
 
 /// Action CRUD soumise à autorisation. Valeurs en **camelCase** (canonique §5).
 ///
-/// **Ordre ADDITIF, jamais réordonné/renommé** (DP-14) : les 6 actions étendues
-/// (`copy`…`history`) sont ajoutées **après** les 5 historiques
-/// (`view`/`create`/`update`/`delete`/`restore`) pour couvrir les 11 flags du
-/// `RessourceACL` DODLP (`copy/archive/publish/clear/validate/history`) tout en
-/// gardant une rétro-compatibilité stricte. Le mapping DODLP est **documentaire**
-/// (aucune dépendance de code au cœur — AD-1).
+/// **Ordre ADDITIF, jamais réordonné/renommé** : les actions étendues
+/// (`copy`…`history`) sont ajoutées **après** les cinq actions historiques
+/// (`view`/`create`/`update`/`delete`/`restore`) pour couvrir des besoins
+/// applicatifs plus riches (dupliquer, archiver, publier, vider, valider,
+/// consulter l'historique) tout en gardant une rétro-compatibilité stricte.
 ///
 /// **Sérialisation (posture additive/défensive — AD-3/AD-10)** : cet enum n'est
 /// sérialisé **nulle part** aujourd'hui (aucun `@JsonKey`, aucun `toJson/fromJson`)
@@ -39,36 +38,34 @@ enum ZCrudAction {
   /// Supprimer (soft-delete) une entité.
   delete,
 
-  /// Restaurer une entité soft-deleted (corbeille, E4-4).
+  /// Restaurer une entité soft-deleted (corbeille).
   restore,
 
-  /// Dupliquer une entité (miroir de `RessourceACL.copy` DODLP).
+  /// Dupliquer une entité.
   copy,
 
-  /// Archiver une entité (miroir de `RessourceACL.archive` DODLP).
+  /// Archiver une entité.
   archive,
 
-  /// Publier une entité (miroir de `RessourceACL.publish` DODLP).
+  /// Publier une entité.
   publish,
 
-  /// Vider / réinitialiser une entité (miroir de `RessourceACL.clear` DODLP).
+  /// Vider / réinitialiser une entité.
   clear,
 
-  /// Valider une entité (miroir de `RessourceACL.validate` DODLP).
+  /// Valider une entité.
   validate,
 
-  /// Consulter l'historique d'une entité (miroir de `RessourceACL.history`
-  /// DODLP).
+  /// Consulter l'historique d'une entité.
   history,
 }
 
-/// Classification **lecture / écriture** d'une action CRUD (LOT 3).
+/// Classification **lecture / écriture** d'une action CRUD.
 ///
-/// origine: le mode **lecture seule** d'un formulaire filtrait ses actions sur
-/// l'ACL SEULE (`DynamicEdition._permittedFormActions`) — les actions
-/// d'**écriture** restaient donc offertes sur un formulaire en lecture. Il faut
-/// une règle explicite pour couper les unes SANS couper les autres : une
-/// consultation reste légitime en lecture seule.
+/// Un formulaire en mode **lecture seule** doit couper toutes les actions
+/// d'**écriture** sans couper les actions de lecture (une consultation reste
+/// légitime) : filtrer uniquement sur l'ACL ne suffit pas, il faut aussi une
+/// classification explicite de la nature de chaque action.
 ///
 /// Pur-Dart (couche `domain`) : aucune dépendance Flutter.
 extension ZCrudActionMutation on ZCrudAction {
@@ -96,8 +93,8 @@ extension ZCrudActionMutation on ZCrudAction {
 /// Port d'autorisation **synchrone** fourni par l'application hôte.
 ///
 /// **Aucune règle métier** ne vit dans le cœur (AD-16) : l'implémentation
-/// concrète (rôles, ACL par collection…) est fournie par l'app. Consommé par
-/// E4-4 pour filtrer les actions de ligne d'une liste.
+/// concrète (rôles, ACL par collection…) est fournie par l'app. Consommé
+/// notamment pour filtrer les actions de ligne d'une liste.
 ///
 /// Une ACL **asynchrone** (décision distante) est **différée** : le contrat
 /// synchrone couvre le besoin immédiat (filtrage d'actions ligne).

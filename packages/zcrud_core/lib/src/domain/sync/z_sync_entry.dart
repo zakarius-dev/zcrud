@@ -1,14 +1,13 @@
 /// Entrée de **synchronisation** du domaine `zcrud_core` : une entité **plus** ses
 /// métadonnées de sync hors-entité ([ZSyncMeta]), transportées **ensemble** pour
-/// le merge Last-Write-Wins (E5-3).
+/// le merge Last-Write-Wins.
 ///
-/// origine: canonique §7 — le merge LWW a besoin, de **chaque côté**, de voir
-/// l'`updated_at` ET l'`is_deleted` de **toutes** les entrées, **y compris** les
+/// Le merge LWW a besoin, de **chaque côté**, de voir l'`updated_at` ET
+/// l'`is_deleted` de **toutes** les entrées, **y compris** les
 /// soft-deletées (tombstones). Les lectures ordinaires (`getAll`/`pull`) excluent
 /// les tombstones : `ZSyncEntry` est le véhicule de la **voie de lecture de sync**
 /// (`syncEntries()`) qui, elle, les inclut.
-/// AD-5 (backend-agnostique) ; AD-9 (offline-first LWW) ; AD-16 (soft-delete
-/// hors-entité).
+/// Invariants portés : AD-5 (backend-agnostique) ; AD-9 (offline-first LWW).
 library;
 
 import '../contracts/z_entity.dart';
@@ -19,7 +18,7 @@ import 'z_sync_meta.dart';
 ///
 /// **Transporte les tombstones** : une entrée soft-deletée reste un `ZSyncEntry`
 /// valide ([isDeleted] `== true`, [entity] décodée). C'est précisément ce qui
-/// permet au merge LWW (E5-3) de **propager une suppression** d'un côté à l'autre
+/// permet au merge LWW de **propager une suppression** d'un côté à l'autre
 /// — impossible via `getAll`/`pull` qui excluent les soft-deletés.
 ///
 /// **Dart pur** (AD-5) : aucun type backend (`Box`/`Timestamp`/…) — uniquement

@@ -1,24 +1,25 @@
 /// Colonne de liste **dérivée du schéma** + helper de dérivation PUR, neutres du
 /// cœur `zcrud_core`.
 ///
-/// origine: E4-2 (moteur `DynamicList`, FR-6..FR-8 · AD-8/SM-5). E4-1 avait posé
-/// le port neutre `ZListRenderer` + un contrat `columns: List<ZFieldSpec>` en
-/// projection **brute** 1:1 ; E4-2 introduit la **dérivation FINE** : à partir du
-/// `ZFieldSpec[]`, décider **quels champs** sont affichés en liste (visibilité),
-/// **comment formater** chaque cellule par `EditionFieldType`, le **libellé**,
-/// l'**ordre** et une **largeur** indicative.
+/// Le port neutre `ZListRenderer` pourrait recevoir une projection **brute**
+/// `columns: List<ZFieldSpec>` 1:1, mais ce fichier introduit la **dérivation
+/// FINE** : à partir du `ZFieldSpec[]`, décider **quels champs** sont affichés
+/// en liste (visibilité), **comment formater** chaque cellule par
+/// `EditionFieldType`, le **libellé**, l'**ordre** et une **largeur**
+/// indicative.
 ///
 /// **Neutre, Material-free, `const`-compatible** : ce fichier n'importe QUE
 /// `package:flutter/foundation.dart` (`@immutable`) + types `zcrud_core`. AUCUN
 /// widget, AUCUN `BuildContext`, AUCUN `package:syncfusion`, aucune dépendance
-/// lourde (gardes `presentation_purity_test`/`no_heavy_file_dep_test` — SM-5). Le
+/// lourde (gardes `presentation_purity_test`/`no_heavy_file_dep_test`). Le
 /// **formatage vit ici une seule fois** (pur, locale-neutre) ; le backend
 /// (`SfDataGrid` dans `zcrud_list`, ou tout autre) consomme les `ZListColumn`
 /// sans re-dériver ni dupliquer de logique de format.
 ///
-/// **Frontière E4-2** : le formatage **locale-aware** des nombres/dates/booléens
-/// est **déféré E4-3** (hook injecté / labels) ; recherche/tri/pagination E4-3 ;
-/// actions/`ZAcl` E4-4. On ne porte ici QUE la dérivation pure.
+/// **Frontière** : le formatage **locale-aware** des nombres/dates/booléens
+/// est **déféré** au contrôleur de liste (hook injecté / labels) ; recherche/
+/// tri/pagination et actions/`ZAcl` de même. On ne porte ici QUE la dérivation
+/// pure.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -28,7 +29,7 @@ import '../../domain/edition/z_field_choice.dart';
 import '../../domain/edition/z_field_spec.dart';
 import '../../domain/ports/z_date_display_formatter.dart';
 
-/// Types **scalaires/affichables** en tableau (whitelist de visibilité, AC3).
+/// Types **scalaires/affichables** en tableau (whitelist de visibilité).
 ///
 /// Tout `EditionFieldType` ABSENT de cet ensemble est **exclu par défaut** de la
 /// liste : soit lourd/non-tabulaire (`subItems`, `dynamicItem`, `file`, `image`,
@@ -37,7 +38,7 @@ import '../../domain/ports/z_date_display_formatter.dart';
 /// résolution runtime (`relation`, `widget`, `custom`, `stepper`, `password`,
 /// `icon`). L'appelant peut forcer l'inclusion d'un tel champ via
 /// [ZColumnPolicy.forceInclude] (point d'extension additif, AD-4), sans toucher
-/// aux annotations E2-4.
+/// aux annotations `@ZcrudField` (gelées).
 const Set<EditionFieldType> _tabularTypes = <EditionFieldType>{
   EditionFieldType.text,
   EditionFieldType.multiline,
@@ -61,7 +62,7 @@ const Set<EditionFieldType> _tabularTypes = <EditionFieldType>{
 
 /// **Politique de colonnes** additive (AD-4) : permet à l'appelant de forcer
 /// l'inclusion/exclusion d'un champ par `name`, SANS modifier `ZFieldSpec` ni les
-/// annotations E2-4 (gelées). Point d'extension `const`-compatible.
+/// annotations `@ZcrudField` (gelées). Point d'extension `const`-compatible.
 ///
 /// Précédence (cf. [deriveColumns]) : [forceExclude] l'emporte sur [forceInclude]
 /// (l'exclusion explicite gagne en cas de conflit), qui l'emporte sur la
@@ -101,7 +102,7 @@ class ZColumnPolicy {
       'ZColumnPolicy(forceInclude: $forceInclude, forceExclude: $forceExclude)';
 }
 
-/// **Seams d'affichage** d'une colonne de liste (CR-LIST-LABELS) : le petit sac
+/// **Seams d'affichage** d'une colonne de liste : le petit sac
 /// de valeurs que la closure [ZListColumn.format] ne peut PAS aller chercher
 /// elle-même, faute de `BuildContext`.
 ///
@@ -132,7 +133,7 @@ class ZColumnPolicy {
 /// sans cela, un changement de locale ou d'injection du port laisserait la
 /// grille afficher ses anciennes chaînes.
 ///
-/// ⚠️ Corollaire (AD-2) : l'instance de [dateFormatter] doit être **stable**
+/// Corollaire (AD-2) : l'instance de [dateFormatter] doit être **stable**
 /// (`const` ou mémoïsée hors `build`) — une instance recréée à chaque build
 /// rendrait les requêtes perpétuellement inégales.
 @immutable
@@ -147,10 +148,10 @@ class ZListFormat {
   /// Libellé **déjà résolu** (jamais une clé) d'une valeur de choix
   /// **orpheline** — présente dans la donnée mais absente des options.
   ///
-  /// Règle v0.65.0, ici propagée à `DynamicList` : *une identité non résolue est
+  /// Règle propagée à `DynamicList` : *une identité non résolue est
   /// rendue sous un libellé localisé ; la clé technique n'apparaît jamais*. La
   /// résolution l10n (`ZcrudScope.labels` > delegate > table `en`) est faite par
-  /// l'appelant qui a le contexte — le cœur ne code aucun texte en dur (FR-26).
+  /// l'appelant qui a le contexte — le cœur ne code aucun texte en dur.
   final String? orphanChoiceLabel;
 
   /// Port d'affichage des dates (`ZcrudScope.dateDisplayFormatter`), capturé.
@@ -180,7 +181,7 @@ class ZListFormat {
 }
 
 /// Colonne de liste **neutre, immuable, `const`-compatible, Material-free**,
-/// dérivée d'un `ZFieldSpec` par [deriveColumns] (E4-2).
+/// dérivée d'un `ZFieldSpec` par [deriveColumns].
 ///
 /// Porte le minimum pour qu'un backend rende une colonne SANS re-dériver :
 /// - [name] : clé de mapping = `field.name` (indexe `ZListRow.cells`) ;
@@ -230,7 +231,7 @@ class ZListColumn {
   final String Function(Object? raw) format;
 
   /// Seams d'affichage capturés dont [format] dépend (cf. [ZListFormat]).
-  /// Par défaut vide ⇒ rendu locale-neutre d'origine.
+  /// Par défaut vide ⇒ rendu locale-neutre non enrichi.
   final ZListFormat formatting;
 
   @override
@@ -258,18 +259,18 @@ class ZListColumn {
       'order: $order, width: $width, formatting: $formatting)';
 }
 
-/// Projette un `ZFieldSpec[]` en une **liste ordonnée** de [ZListColumn]
-/// (E4-2, AC1/AC2/AC3). **PUR** : aucun `BuildContext`, aucun widget, aucun I/O,
+/// Projette un `ZFieldSpec[]` en une **liste ordonnée** de [ZListColumn].
+/// **PUR** : aucun `BuildContext`, aucun widget, aucun I/O,
 /// **déterministe** (même entrée → même sortie).
 ///
-/// Règles de visibilité (AC3) — un champ est INCLUS ssi :
+/// Règles de visibilité — un champ est INCLUS ssi :
 /// 1. il n'est PAS dans `policy.forceExclude` ; ET
 /// 2. il est dans `policy.forceInclude` **OU** (`!field.isId` ET son `type` est
 ///    dans [_tabularTypes]).
 ///
 /// L'**ordre** suit l'ordre du schéma (l'`order` = index d'origine dans `schema`,
 /// stable, indépendant du filtrage). Le [header] = `field.label ?? field.name`
-/// (clé non résolue). Le [ZListColumn.format] est dérivé PUR du `type` (AC2).
+/// (clé non résolue). Le [ZListColumn.format] est dérivé PUR du `type`.
 List<ZListColumn> deriveColumns(
   List<ZFieldSpec> schema, {
   ZColumnPolicy? policy,
@@ -294,7 +295,7 @@ List<ZListColumn> deriveColumns(
   return columns;
 }
 
-/// Décide de la visibilité d'un champ selon la [policy] et sa nature (AC3).
+/// Décide de la visibilité d'un champ selon la [policy] et sa nature.
 bool _isVisible(ZFieldSpec field, ZColumnPolicy? policy) {
   if (policy != null && policy.forceExclude.contains(field.name)) return false;
   if (policy != null && policy.forceInclude.contains(field.name)) return true;
@@ -327,14 +328,14 @@ double? _widthFor(EditionFieldType type) {
   }
 }
 
-/// Fabrique la fonction de format `raw → String` pour [field] (AC2), sous les
+/// Fabrique la fonction de format `raw → String` pour [field], sous les
 /// seams [formatting] **capturés** (cf. [ZListFormat]).
 ///
 /// **Ne lève jamais** (désérialisation défensive, AD-10) :
 /// - `null` → `''` ;
 /// - `select`/`radio`/`checkbox` → libellé de choix résolu depuis
 ///   `field.choices` (`raw == choice.value` → `choice.label`) ; valeur
-///   **orpheline** → `formatting.orphanChoiceLabel` (règle v0.65.0) s'il est
+///   **orpheline** → `formatting.orphanChoiceLabel` s'il est
 ///   fourni, sinon repli `raw.toString()` ;
 /// - champ `multiple` / `tags` / `rowChips` ou valeur `Iterable` → éléments
 ///   joints par `', '` (chacun formaté récursivement de façon neutre) ;
@@ -365,7 +366,7 @@ String Function(Object? raw) _formatterFor(
         return _resolveChoice(choices, value, formatting.orphanChoiceLabel);
       case EditionFieldType.dateTime:
       case EditionFieldType.time:
-        // 🔴 Un `DateTime` est NORMALISÉ en ISO **avant** d'entrer dans la règle
+        // Un `DateTime` est NORMALISÉ en ISO **avant** d'entrer dans la règle
         // partagée : son repli est `'$value'`, et `DateTime.toString()` n'est
         // PAS l'ISO. Sans cette normalisation, un port absent/en échec ferait
         // basculer la cellule de `2026-07-10T08:30:00.000Z` à
@@ -400,13 +401,13 @@ String Function(Object? raw) _formatterFor(
 /// Résout le libellé d'un choix statique (`raw == choice.value` → `label`).
 ///
 /// Valeur **orpheline** (aucune option ne correspond) : rend [orphanLabel] — le
-/// libellé localisé de la règle v0.65.0, *déjà résolu* par l'appelant qui a le
+/// libellé localisé, *déjà résolu* par l'appelant qui a le
 /// contexte. **La clé technique n'est jamais montrée à l'utilisateur.**
 ///
-/// [orphanLabel] `null` ⇒ repli historique `raw.toString()` : c'est le cas des
+/// [orphanLabel] `null` ⇒ repli `raw.toString()` : c'est le cas des
 /// appelants **headless** (`zcrud_export`) et de tout appel direct à
 /// `deriveColumns` sans seams, pour lesquels aucune l10n n'est atteignable — et
-/// où coder un texte en dur violerait FR-26.
+/// où coder un texte en dur serait interdit.
 String _resolveChoice(
   List<ZFieldChoice> choices,
   Object? raw,

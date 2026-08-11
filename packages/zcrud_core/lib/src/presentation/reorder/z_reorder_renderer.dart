@@ -1,5 +1,5 @@
-/// Port de **rendu réordonnable** du cœur `zcrud_core` (abstraction pure —
-/// AD-57, patron strict de `ZListRenderer`/AD-8).
+/// Port de **rendu réordonnable** du cœur `zcrud_core` (abstraction pure,
+/// même patron que `ZListRenderer`/AD-8).
 ///
 /// `zcrud_core` n'expose QUE cette abstraction. Les implémentations vivent
 /// ailleurs :
@@ -10,12 +10,10 @@
 /// | paquet de l'écosystème | satellite dédié, opt-in | le paquet tiers |
 /// | propre à l'hôte | l'application | ce qu'elle veut |
 ///
-/// **Pourquoi ce port existe** — une grille réordonnable avait d'abord été
-/// écrite **à la main** au motif qu'un paquet tiers serait « refusé par AD-1 ».
-/// C'était une sur-lecture : AD-1 ne contraint que `zcrud_core`, et quinze
-/// satellites dépendaient déjà de paquets pub.dev. AD-57 fixe la règle — tiers
-/// admis dans un satellite, **derrière une abstraction** et avec un **défaut
-/// zéro-dépendance** — et ce port en est l'application.
+/// **Pourquoi ce port existe** : AD-1 ne contraint que `zcrud_core` — un
+/// satellite peut dépendre d'un paquet tiers, à condition de le placer
+/// **derrière une abstraction** et de garder un **défaut zéro-dépendance**.
+/// Ce port en est l'application pour la réorganisation de collections.
 ///
 /// Le défaut zéro-dépendance n'est pas une politesse : un consommateur qui ne
 /// prend pas le satellite doit garder une capacité **fonctionnelle**, dégradée

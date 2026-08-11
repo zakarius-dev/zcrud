@@ -1,12 +1,11 @@
 /// Erreurs de **configuration/bootstrap** des registres d'extensibilité (AD-3).
 ///
-/// origine: lex_core (module « Étude ») — patron « registre ouvert » (canonique
-/// §4 pt.3, §8.6). Ces erreurs matérialisent la **frontière de décodage de
-/// MODÈLE** d'AD-3 : un `kind` non enregistré (ou doublonné) est un **défaut
-/// programmatique** (l'app a oublié `register`, ou l'ordre d'init est faux),
-/// PAS une donnée corrompue.
+/// Ces erreurs matérialisent la **frontière de décodage de MODÈLE** d'AD-3 :
+/// un `kind` non enregistré (ou doublonné) est un **défaut programmatique**
+/// (l'app a oublié `register`, ou l'ordre d'init est faux), PAS une donnée
+/// corrompue.
 ///
-/// **Deux régimes d'erreur — ne pas confondre (Dev Notes E2-3) :**
+/// **Deux régimes d'erreur — ne pas confondre :**
 /// - Config/bootstrap (ici) → sous-types de [Error] Dart, **non récupérables**,
 ///   **jamais** enveloppés dans un `Either`/`ZFailure`.
 /// - Parsing de donnée (AD-10) → `fromJsonSafe → null`, **jamais** de throw.
@@ -43,8 +42,8 @@ class ZUnregisteredTypeError extends Error {
 /// Levée quand un `kind` **déjà enregistré** est ré-enregistré sur le même
 /// registre (collision).
 ///
-/// Sous-type de [Error]. **Décision (E2-3, Dev Notes #4)** : on `throw` plutôt
-/// qu'un remplacement silencieux « last-wins ». Un last-wins masquerait une
+/// Sous-type de [Error] : on `throw` plutôt qu'un remplacement silencieux
+/// « last-wins ». Un last-wins masquerait une
 /// **double génération** (deux `part` codegen enregistrant le même modèle) ou
 /// un **ordre de bootstrap** fautif — exactement le genre de bug qu'AD-3 veut
 /// rendre explicite. Un besoin d'override légitime (hot-reload/tests) sera

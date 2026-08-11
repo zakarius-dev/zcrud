@@ -1,30 +1,31 @@
-/// Widget de la **famille dateRange** (AD-47) : `dateRange`.
+/// Widget de la **famille dateRange** : `dateRange`.
 ///
 /// Déclencheur de picker de **plage** (`showDateRangePicker`) — picker Material
 /// **directionnel** par construction (respecte la `Directionality` ambiante,
-/// AD-13). Cette famille ne s'édite PAS au clavier : elle lit `value` depuis la
-/// tranche (une [ZDateRange] ou `null`) et écrit la plage choisie via
-/// `onChanged` (aucun `TextEditingController` — AD-2). La valeur stockée est un
-/// [ZDateRange] pur-Dart (sérialisé `{start, end}` ISO-8601 côté persistance).
+/// invariant AD-13). Cette famille ne s'édite PAS au clavier : elle lit
+/// `value` depuis la tranche (une [ZDateRange] ou `null`) et écrit la plage
+/// choisie via `onChanged` (aucun `TextEditingController` — invariant AD-2).
+/// La valeur stockée est un [ZDateRange] pur-Dart (sérialisé `{start, end}`
+/// ISO-8601 côté persistance).
 ///
-/// **CR-DODLP-DATE-FIELD** — comme la famille date sœur, le déclencheur est un
-/// **champ décoré** (`ZDecoratedFieldTrigger`) ; l'ancien `OutlinedButton` reste
+/// Comme la famille date sœur, le déclencheur est un **champ décoré**
+/// (`ZDecoratedFieldTrigger`) ; un rendu `OutlinedButton` plus simple reste
 /// atteignable par [ZDateRangeFieldWidget.decorated] ou le jeton
 /// `ZcrudTheme.dateFieldDecorated`.
 ///
-/// **CR-IFFD-79** — miroir exact du défaut de la famille date sœur : ce champ
-/// n'acceptait que [ZDateRange], le type que SON sélecteur écrit, alors que la
-/// forme **persistée** d'un champ `ZDateRange` est une Map `{start, end}`
-/// (`toMap()` généré ⇒ `ZDateRange.toJson()`). Les deux conventions d'amorçage
-/// d'un formulaire — depuis les champs du modèle, ou depuis son `toMap()` —
-/// cassaient donc chacune UNE des deux familles. Les deux sont désormais lues.
+/// Miroir exact de la famille date sœur : ce champ accepte [ZDateRange], le
+/// type que SON sélecteur écrit, **et** la forme **persistée** d'un champ
+/// `ZDateRange`, une Map `{start, end}` (`toMap()` généré ⇒
+/// `ZDateRange.toJson()`). Les deux conventions d'amorçage d'un formulaire —
+/// depuis les champs du modèle, ou depuis son `toMap()` — sont donc lues.
 ///
-/// a11y (AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante), `Semantics`
-/// bouton + libellé + valeur + `isRequired` (`excludeSemantics` sur le wrapper →
-/// un seul nœud, pas de double annonce). Aucune couleur en dur (FR-26).
+/// a11y (invariant AD-13/FR-23) : déclencheur ≥ 48 dp (contrainte liante),
+/// `Semantics` bouton + libellé + valeur + `isRequired` (`excludeSemantics`
+/// sur le wrapper → un seul nœud, pas de double annonce). Aucune couleur en
+/// dur (invariant FR-26).
 ///
-/// Patron **strict** de `z_date_field_widget.dart` (MIN-2 croix d'effacement,
-/// bornes paresseuses `firstDate`/`lastDate` évaluées au tap — AD-2).
+/// Patron **strict** de `z_date_field_widget.dart` (croix d'effacement,
+/// bornes paresseuses `firstDate`/`lastDate` évaluées au tap — invariant AD-2).
 library;
 
 import 'package:flutter/material.dart';
@@ -61,7 +62,7 @@ class ZDateRangeFieldWidget extends StatelessWidget {
 
   /// Valeur courante de la tranche.
   ///
-  /// CR-IFFD-79 — l'ÉCRITURE reste un [ZDateRange], mais la LECTURE accepte
+  /// L'ÉCRITURE reste un [ZDateRange], mais la LECTURE accepte
   /// aussi la **Map `{start, end}` réellement persistée** (ce que le `toMap()`
   /// généré émet), décodée par le décodeur défensif du paquet. Toute autre
   /// valeur non nulle est rendue par son `toString()` — jamais effacée.
@@ -78,31 +79,30 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   /// `null` ⇒ repli `DateTime(2100)`.
   final ValueGetter<DateTime?>? lastDate;
 
-  /// MIN-2 (croix d'effacement) — callback d'**effacement** (retour à `null`). Le
+  /// Callback d'**effacement** (retour à `null`). Le
   /// dispatcher ne le fournit que pour un champ **non requis** et éditable ; une
   /// croix accessible n'est rendue que si [onCleared] est non `null` ET qu'une
   /// plage est présente. `null` (défaut) ⇒ aucune croix.
   final VoidCallback? onCleared;
 
-  /// CR-DODLP-DATE-FIELD — **échappatoire d'apparence**, identique à
+  /// **Échappatoire d'apparence**, identique à
   /// `ZDateFieldWidget.decorated` : `true` ⇒ champ décoré ; `false` ⇒ rendu
-  /// historique `OutlinedButton` ; `null` (défaut) ⇒ jeton de thème
+  /// plus simple `OutlinedButton` ; `null` (défaut) ⇒ jeton de thème
   /// `ZcrudTheme.dateFieldDecorated`, lui-même à défaut `true`.
   final bool? decorated;
 
   /// Plage courante typée, ou `null` si la graine n'est pas décodable.
   ///
-  /// CR-IFFD-79 — le champ n'acceptait que le type que SON sélecteur écrit
-  /// ([ZDateRange]). Or la forme **réellement persistée** d'un champ
-  /// `ZDateRange` est une **Map** `{start, end}` : le `toMap()` généré émet
-  /// `ZDateRange.toJson()` (`_toMapExpr`, catégorie `dateRangeType`). Un hôte
-  /// qui sème son formulaire depuis `toMap()` — la convention symétrique de
-  /// celle qui casse la famille date sœur — portait donc une Map, et le champ
-  /// rendait **vide** une plage qui serait resoumise intacte.
+  /// Ce champ accepte le type que SON sélecteur écrit ([ZDateRange]), mais
+  /// aussi la forme **réellement persistée** d'un champ `ZDateRange` : une
+  /// **Map** `{start, end}` (le `toMap()` généré émet `ZDateRange.toJson()`).
+  /// Un hôte qui sème son formulaire depuis `toMap()` porte donc une Map, et
+  /// le champ doit rendre sa **présence** au lieu d'un vide alors que la
+  /// valeur serait resoumise intacte.
   ///
   /// Le décodage passe par [ZDateRange.fromJsonSafe], le décodeur **défensif**
-  /// déjà utilisé par la voie de persistance (`_$asDateRange`) : `null` sur
-  /// TOUTE anomalie, jamais de throw (AD-10). Aucune seconde convention de
+  /// déjà utilisé par la voie de persistance : `null` sur TOUTE anomalie,
+  /// jamais de throw (invariant AD-10). Aucune seconde convention de
   /// décodage n'entre ici.
   ZDateRange? get _range {
     final v = value;
@@ -117,19 +117,19 @@ class ZDateRangeFieldWidget extends StatelessWidget {
         fallback: field.label ?? field.name);
     final range = _range;
     // Placeholder l10n : `selectDateRange` si fourni, sinon repli sur `selectDate`
-    // (jamais un littéral codé en dur — FR-26).
+    // (jamais un littéral codé en dur — invariant FR-26).
     final placeholder = label(context, 'selectDateRange',
         fallback: label(context, 'selectDate'));
-    // Projection calculée UNE FOIS par build (AD-2 : le port de l'hôte n'est
-    // pas appelé deux fois pour la même plage — `display` et `valueText`
-    // partagent la même chaîne).
+    // Projection calculée UNE FOIS par build (invariant AD-2 : le port de
+    // l'hôte n'est pas appelé deux fois pour la même plage — `display` et
+    // `valueText` partagent la même chaîne).
     //
-    // CR-IFFD-79 — hors contrat : une graine non nulle que le décodeur défensif
-    // n'a pas su lire retombe sur `'$value'`, le **repli déjà défini par le
-    // paquet** (`zDateDisplayTextOf`) — aucune invention de format. La taire
-    // produirait le « contrôle qui paraît vide alors que la donnée sera
-    // soumise » proscrit par CR-IFFD-77 : la valeur est bien là et sera
-    // resoumise. Présence et identité restent dissociées (`v0.65.0`).
+    // Hors contrat : une graine non nulle que le décodeur défensif n'a pas su
+    // lire retombe sur `'$value'`, le **repli déjà défini par le paquet**
+    // (`zDateDisplayTextOf`) — aucune invention de format. La taire
+    // produirait un « contrôle qui paraît vide alors que la donnée sera
+    // soumise » : la valeur est bien là et sera resoumise. Présence et
+    // identité restent dissociées.
     final rangeText = range != null
         ? _formatRange(context, range)
         : value == null
@@ -138,18 +138,17 @@ class ZDateRangeFieldWidget extends StatelessWidget {
     final hasValue = rangeText.isNotEmpty;
     final display = hasValue ? rangeText : placeholder;
 
-    // MIN-2 : croix rendue seulement si un callback est fourni (champ non requis
-    // + éditable) ET qu'une valeur existe (rien à effacer sinon). CR-IFFD-79 :
-    // c'est bien la PRÉSENCE qui pilote la croix — une graine hors contrat est
+    // Croix rendue seulement si un callback est fourni (champ non requis
+    // + éditable) ET qu'une valeur existe (rien à effacer sinon). C'est bien
+    // la PRÉSENCE qui pilote la croix — une graine hors contrat est
     // effaçable, sinon elle serait resoumise sans recours.
     final showClear = onCleared != null && !field.readOnly && hasValue;
 
     final onTap = field.readOnly ? null : () => _pick(context, range);
 
-    // CR-DODLP-DATE-FIELD — champ DÉCORÉ par défaut (même traitement que la
-    // famille date sœur : la CR ne nomme que `dateTime`, mais `dateRange`
-    // portait le MÊME `OutlinedButton` — le corriger d'un seul côté recréerait
-    // l'incohérence que la CR ferme).
+    // Champ DÉCORÉ par défaut (même traitement que la famille date sœur :
+    // les deux familles partagent le même déclencheur — le corriger d'un
+    // seul côté recréerait une incohérence entre elles).
     final Widget trigger = zResolveDateFieldDecorated(context, decorated)
         ? ZDecoratedFieldTrigger(
             field: field,
@@ -201,25 +200,22 @@ class ZDateRangeFieldWidget extends StatelessWidget {
   }
 
   /// Affichage d'une plage : `start → end`, chaque borne projetée par le port
-  /// `ZDateDisplayFormatter` en mode [ZDateMode.date] (CR-DODLP-DATE-DISPLAY).
+  /// `ZDateDisplayFormatter` en mode [ZDateMode.date].
   ///
   /// **Pourquoi `dateRange` est traité ici alors qu'il n'a pas de voie de
-  /// lecture séparée** : `dateRange` n'est ni tabulaire (absent de
-  /// `_tabularTypes`, il n'apparaît jamais dans une `DynamicList`) ni
-  /// fiche-able (`zReadModeCardable` → `false` : en lecture c'est CE widget,
-  /// `readOnly`, qui rend). Il ne porte donc PAS l'incohérence *inter-surfaces*
-  /// de la famille date. Il porte l'autre moitié du même défaut : sous un port
-  /// injecté, un formulaire afficherait `Dim. 9 août 2026` pour un `dateTime`
-  /// et `2026-08-09 → …` pour la plage juste à côté. Corriger une famille sur
-  /// deux recréerait l'incohérence qu'on ferme.
+  /// lecture séparée** : `dateRange` n'est ni tabulaire (il n'apparaît jamais
+  /// dans une `DynamicList`) ni fiche-able (`zReadModeCardable` → `false` :
+  /// en lecture c'est CE widget, `readOnly`, qui rend). Sans cette projection,
+  /// un formulaire afficherait `Dim. 9 août 2026` pour un `dateTime` et
+  /// `2026-08-09 → …` pour la plage juste à côté sous un port injecté — une
+  /// incohérence entre deux familles voisines.
   ///
-  /// 🔴 Hôte passif STRICTEMENT immobile (AD-10) : la borne entre dans la règle
-  /// partagée **déjà normalisée en `YYYY-MM-DD`** — le repli de
+  /// Hôte passif STRICTEMENT immobile (invariant AD-10) : la borne entre dans
+  /// la règle partagée **déjà normalisée en `YYYY-MM-DD`** — le repli de
   /// `zDateDisplayTextOf` étant `'$value'`, port absent / port rendant
   /// `null`/vide / port qui lève redonnent **exactement** l'ISO d'avant. (Passer
   /// le `DateTime` nu ferait replier sur `DateTime.toString()`, qui n'est pas
-  /// l'ISO — le piège déjà relevé côté `ZListColumn`.) Aucune **couleur** codée
-  /// en dur (thème hérité — FR-26).
+  /// l'ISO.) Aucune **couleur** codée en dur (thème hérité — invariant FR-26).
   static String _formatRange(BuildContext context, ZDateRange r) =>
       '${_boundText(context, r.start)} → ${_boundText(context, r.end)}';
 

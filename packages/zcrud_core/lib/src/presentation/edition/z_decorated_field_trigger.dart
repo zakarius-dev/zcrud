@@ -1,11 +1,11 @@
 /// `ZDecoratedFieldTrigger` — **déclencheur décoré** partagé par les familles
 /// qui ne s'éditent pas au clavier mais ouvrent un sélecteur modal
-/// (`date`/`time`/`dateTime` et `dateRange`), CR-DODLP-DATE-FIELD.
+/// (`date`/`time`/`dateTime` et `dateRange`).
 ///
-/// Motif : ces familles rendaient un `OutlinedButton` (« Libellé : valeur »),
-/// donc **aspect bouton**, sans libellé flottant, sans astérisque « requis » et
-/// hors de la chaîne de décoration du paquet — alors que `text`/`number`/
-/// `select` passent tous par [zFieldDecoration]. Ce widget referme l'écart en
+/// Motif : un `OutlinedButton` (« Libellé : valeur ») aurait un **aspect
+/// bouton**, sans libellé flottant, sans astérisque « requis » et hors de la
+/// chaîne de décoration du paquet — alors que `text`/`number`/`select`
+/// passent tous par [zFieldDecoration]. Ce widget referme l'écart en
 /// réutilisant **exactement la même chaîne** : `InputDecorator` +
 /// [zFieldDecoration] ⇒ libellé enrichi ([ZFieldLabel], astérisque requis),
 /// bordure, remplissage, ornements déclaratifs, et les jetons
@@ -16,17 +16,20 @@
 /// **au repos** dans la boîte ; champ **rempli** ⇒ libellé **flottant** et
 /// valeur rendue dans le corps.
 ///
-/// a11y (AD-13) : un **seul** nœud sémantique (bouton + libellé + valeur +
-/// `isRequired`), la sémantique descendante étant exclue — l'arbre annoncé est
-/// donc strictement celui de l'ancien déclencheur, augmenté du seul canal
-/// « requis ». L'astérisque reste **décoratif** (`ExcludeSemantics` dans
-/// [ZFieldLabel], puis exclu une seconde fois par le wrapper).
+/// a11y (invariant AD-13) : un **seul** nœud sémantique (bouton + libellé +
+/// valeur + `isRequired`), la sémantique descendante étant exclue — l'arbre
+/// annoncé est donc strictement celui d'un déclencheur simple, augmenté du
+/// seul canal « requis ». L'astérisque reste **décoratif**
+/// (`ExcludeSemantics` dans [ZFieldLabel], puis exclu une seconde fois par le
+/// wrapper).
 ///
-/// AD-2/SM-1 : `StatelessWidget` pur — aucun `TextEditingController`, aucun
-/// `FocusNode`, aucun `Listenable`. Il est monté **dans** la tranche réactive du
-/// champ : ouvrir/choisir/effacer ne reconstruit que cette tranche.
+/// Invariant AD-2 : `StatelessWidget` pur — aucun `TextEditingController`,
+/// aucun `FocusNode`, aucun `Listenable`. Il est monté **dans** la tranche
+/// réactive du champ : ouvrir/choisir/effacer ne reconstruit que cette
+/// tranche.
 ///
-/// FR-26 : aucune couleur ni libellé en dur (tout vient du thème / de la l10n).
+/// Invariant FR-26 : aucune couleur ni libellé en dur (tout vient du thème /
+/// de la l10n).
 library;
 
 import 'package:flutter/material.dart';
@@ -116,19 +119,19 @@ class ZDecoratedFieldTrigger extends StatelessWidget {
       // La valeur annoncée reste le texte de substitution quand le champ est
       // vide : l'annonce ne perd rien de ce que rendait l'ancien bouton.
       value: hasValue ? valueText : placeholder,
-      // Canal sémantique « requis » (AD-13) : l'information passe par là, JAMAIS
-      // par l'astérisque (qui reste décoratif). Aligné sur la règle de
-      // `ZFieldLabel` : requis ET éditable.
+      // Canal sémantique « requis » (invariant AD-13) : l'information passe
+      // par là, JAMAIS par l'astérisque (qui reste décoratif). Aligné sur la
+      // règle de `ZFieldLabel` : requis ET éditable.
       // `null` (et non `false`) hors du cas requis : le nœud reste alors
       // EXACTEMENT celui d'avant (`Tristate.none`) — l'unique delta de l'arbre
       // sémantique est le signal POSITIF ajouté sur un champ requis.
       isRequired: (field.isRequired && !field.readOnly) ? true : null,
       excludeSemantics: true,
       onTap: onTap,
-      // 🔴 Cible tactile (AD-13) : contrainte LIANTE de 48 dp posée ici — elle
-      // ne dépend pas de la hauteur intrinsèque de l'`InputDecorator` (qui la
-      // dépasse avec le padding par défaut, mais pas nécessairement avec un
-      // `inputContentPadding` réduit par l'hôte).
+      // Cible tactile (invariant AD-13) : contrainte LIANTE de 48 dp posée
+      // ici — elle ne dépend pas de la hauteur intrinsèque de
+      // l'`InputDecorator` (qui la dépasse avec le padding par défaut, mais
+      // pas nécessairement avec un `inputContentPadding` réduit par l'hôte).
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 48),
         child: InkWell(
@@ -145,7 +148,7 @@ class ZDecoratedFieldTrigger extends StatelessWidget {
   }
 }
 
-/// Résout la bascule d'apparence (CR-DODLP-DATE-FIELD) pour les familles date :
+/// Résout la bascule d'apparence pour les familles date :
 /// **paramètre > jeton `ZcrudTheme.dateFieldDecorated` > référence (`true`)**.
 ///
 /// La référence du paquet est le **champ décoré** ; l'échappatoire vers le rendu

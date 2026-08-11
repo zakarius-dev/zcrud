@@ -1,20 +1,19 @@
 /// Modèles de **requête de rendu de liste** neutres du cœur `zcrud_core`.
 ///
-/// origine: E4-1 (moteur `DynamicList`, FR-6..FR-8 · AD-8/AD-11/AD-16). Ces
-/// value objects sont **Material-free**, purs-données-présentation : ils ne
+/// Ces value objects sont **Material-free**, purs-données-présentation : ils ne
 /// portent AUCUN widget, AUCUNE dépendance lourde, AUCUN `package:syncfusion`.
 /// Ils constituent le **contrat neutre** que le port [ZListRenderer] consomme,
 /// de sorte qu'un backend `SfDataGrid` (dans `zcrud_list`) ou un backend
 /// Material `DataTable` s'implémente sur le MÊME contrat sans que Syncfusion ne
-/// contamine le cœur (SM-5).
+/// contamine le cœur.
 ///
-/// **Frontière E4-2** : le contrat porte désormais des `ZListColumn` **dérivées**
+/// **Frontière** : le contrat porte des `ZListColumn` **dérivées**
 /// (`deriveColumns`, visibilité/formatage/largeur/ordre) via la fabrique
 /// [ZListRenderRequest.fromSchema] — le backend consomme le format neutre partagé
-/// sans re-dériver (décision « enrichir le contrat », AC4). Les **états UI**
+/// sans re-dériver. Les **états UI**
 /// (`loading`/`empty`/`noResults`/`error`) NE sont PAS portés ici : ils vivent
-/// dans le wrapper `DynamicList` (`ZListViewState`, AC7). Vues alternatives E4-2 ;
-/// recherche/tri/pagination E4-3 ; actions/`ZAcl` E4-4.
+/// dans le wrapper `DynamicList` (`ZListViewState`). Vues alternatives, recherche/
+/// tri/pagination et actions/`ZAcl` restent hors de ce contrat.
 ///
 /// Égalité de **valeur profonde** (`==`/`hashCode`), cohérente avec
 /// `ZFieldSpec`/`ZDataRequest` (helpers pur-Dart, aucun `package:collection` —
@@ -28,7 +27,7 @@ import 'z_list_column.dart';
 ///
 /// [cells] mappe `field.name → valeur brute` (`Object?`, **opaque** : aucune
 /// contrainte de type, aucun formatage). La projection `T → ZListRow` (via
-/// `toMap`/`ZFieldSpec`) est l'affaire de l'appelant et sera outillée par E4-2 ;
+/// `toMap`/`ZFieldSpec`) est l'affaire de l'appelant ;
 /// le port n'impose AUCUNE générécité `T`.
 class ZListRow {
   /// Construit une ligne. [id] est l'identité opaque (clé stable) ; [cells]
@@ -61,9 +60,9 @@ class ZListRow {
 /// Porte les [columns] **dérivées** (`ZListColumn` : en-tête non résolu,
 /// largeur, format pur — cf. [ZListRenderRequest.fromSchema]) et les [rows]. Le
 /// backend consomme le format neutre partagé (`col.format(row.cells[col.name])`)
-/// sans re-dériver ni dupliquer de logique de format (AC4, SM-5). Aucun état
-/// `loading`/`empty`/`noResults`/`error` (dans `DynamicList`/`ZListViewState`,
-/// AC7), aucun tri/filtre (E4-3).
+/// sans re-dériver ni dupliquer de logique de format. Aucun état
+/// `loading`/`empty`/`noResults`/`error` (dans `DynamicList`/`ZListViewState`),
+/// aucun tri/filtre.
 ///
 /// Immuable (`const` + champs `final`) ; égalité de **valeur profonde** (listes
 /// et cellules comparées élément par élément).

@@ -1,27 +1,24 @@
-/// Contexte de (dé)codage injecté au [ZcrudRegistry] (**DW-ES14-2**, AD-4/AD-10).
+/// Contexte de (dé)codage injecté au [ZcrudRegistry] (AD-4/AD-10).
 ///
-/// origine: ES-3.0 (TÊTE BLOQUANTE d'ES-3) — solde **DW-ES14-2** : sur la voie
-/// registre — la SEULE qu'un store offline-first (ES-3.1/3.2/3.5) emprunte — les
-/// entités extensibles décodaient leur slot `extension`/`source` via des
-/// collaborateurs **injectables** (`extensionParser`, `sourceRegistry`) que le
-/// registre **n'avait aucun moyen de fournir**. Résultat MESURÉ : `note.extension`
-/// n'était **jamais** un `ZNoteAudio` typé (toujours un `ZOpaqueNoteExtension`),
-/// et le `ZSourceRegistry` de l'app était **court-circuité** — deux pertes
-/// fonctionnelles irréversibles dès le premier `put`.
+/// Une entité extensible décode son slot `extension`/`source` via des
+/// collaborateurs **injectables** (`extensionParser`, `sourceRegistry`).
+/// Sans ce contexte câblé au registre, la voie de décodage empruntée par un
+/// store offline-first ne peut fournir ces collaborateurs : une extension
+/// reste alors sur son canal de survie non typé (`fromJsonSafe` jamais
+/// invoqué), et un `ZSourceRegistry` d'app enregistré ne serait jamais
+/// consulté — deux pertes fonctionnelles silencieuses dès la première
+/// écriture.
 ///
-/// ## Forme du seam (spike R4, AC10) — pourquoi un CHAMP de constructeur
+/// ## Forme du seam — pourquoi un CHAMP de constructeur
 ///
-/// Deux formes ont été prototypées :
-///  - **(a)** contexte **champ du constructeur** de [ZcrudRegistry] + décodeur
-///    conscient du contexte porté par `ZModelCodec` (`fromMapWithContext`) ;
-///  - **(b)** paramètre additif `decode(kind, map, {context})`.
-///
-/// **(a) est RETENUE** : elle **préserve la signature `decode(kind, map)` et
-/// `encode(kind, value)`** (AD-10 additif) — donc le call-site
-/// `FirebaseZRepositoryImpl.fromRegistry` (`registry.decode(kind, map)`) reste
-/// **INCHANGÉ**. Le contexte est câblé **une fois** au bootstrap du registre.
-/// (b) aurait forcé chaque call-site à threader le contexte et **cassé** la
-/// signature publique de `decode` — rejetée.
+/// Le contexte est un **champ du constructeur** de [ZcrudRegistry], consommé
+/// par un décodeur conscient du contexte (`ZModelCodec.fromMapWithContext`),
+/// plutôt qu'un paramètre additif `decode(kind, map, {context})`. Ce choix
+/// **préserve la signature `decode(kind, map)` et `encode(kind, value)`**
+/// (AD-10 additif) : tout appelant existant reste **INCHANGÉ**. Le contexte
+/// est câblé **une fois** au bootstrap du registre — un paramètre additif
+/// aurait forcé chaque site d'appel à le threader et cassé la signature
+/// publique de `decode`.
 ///
 /// ## AD-1 — CORE OUT=0 préservé
 ///

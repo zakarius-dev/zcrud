@@ -1,19 +1,18 @@
-/// Actions de **lot** DÉCLARÉES en données + barre d'actions neutre (me-1, AD-44).
+/// Actions de **lot** DÉCLARÉES en données + barre d'actions neutre.
 ///
-/// origine: pendant GÉNÉRIQUE de `ZItemActionsMenu` (`zcrud_study`, actions PAR
-/// item) porté dans le cœur pour le **lot**. Duplication VOULUE : une arête
-/// core→study serait un cycle AD-1 — la variance est assumée (les deux modèles
-/// partagent le patron « action déclarée en donnée, `onSelected == null ⇒
-/// ABSENTE » sans partager de type).
+/// Suit le même patron qu'un menu d'action **par item** (« action déclarée en
+/// donnée, `onSelected == null ⇒ ABSENTE » ») étendu au **lot**, sans
+/// partager de type avec un tel menu applicatif : une arête core→satellite
+/// serait un cycle AD-1, la variance de type entre les deux est donc assumée.
 ///
 /// Invariants (AD-2/AD-4/AD-13/AD-15) : AUCUN gestionnaire d'état ; labels/icônes
 /// INJECTÉS (i18n, jamais codés en dur) ; nature = **enum** extensible additif
 /// (jamais un booléen) ; `onSelected == null` ⇒ action ABSENTE (jamais un bouton
 /// grisé/no-op) ; cibles ≥ 48 dp ; `Semantics` explicites ; directionnel ; thème
 /// injecté (`ZcrudTheme.of`, repli `Theme.of`). La barre lit la SEULE tranche
-/// `selectedIds`/`selectedCount` du contrôleur **détenu par la liste** (propriétaire
-/// UNIQUE AD-44) via `ValueListenableBuilder` (rebuild ciblé) — elle ne détient
-/// AUCUN état de sélection.
+/// `selectedIds`/`selectedCount` du contrôleur **détenu par la liste**
+/// (propriétaire UNIQUE, AD-2) via `ValueListenableBuilder` (rebuild ciblé) —
+/// elle ne détient AUCUN état de sélection.
 library;
 
 import 'package:flutter/material.dart';
@@ -56,8 +55,8 @@ enum ZBatchActionKind {
 /// Une action de lot — data-class de présentation immuable (`const`).
 ///
 /// [label]/[icon] sont INJECTÉS (i18n, jamais codés en dur). [onSelected] `null`
-/// ⇒ action ABSENTE de la barre (AD-4/AD-44). L'action s'exécute sur la sélection
-/// COURANTE : l'appelant (qui détient le contrôleur, AD-44) lit la sélection dans
+/// ⇒ action ABSENTE de la barre (AD-4). L'action s'exécute sur la sélection
+/// COURANTE : l'appelant (qui détient le contrôleur) lit la sélection dans
 /// son callback (ex. via `batchDelete`/`batchMove`/`applyCommonField`).
 @immutable
 class ZBatchAction {
@@ -78,11 +77,11 @@ class ZBatchAction {
   /// Glyphe INJECTÉ de l'action (jamais codé en dur).
   final IconData icon;
 
-  /// Callback d'exécution. `null` ⇒ action ABSENTE de la barre (AD-4/AD-44).
+  /// Callback d'exécution. `null` ⇒ action ABSENTE de la barre (AD-4).
   final VoidCallback? onSelected;
 }
 
-/// Barre d'actions de **lot** neutre (me-1, AD-44).
+/// Barre d'actions de **lot** neutre.
 ///
 /// **Propriétaire UNIQUE** : reçoit le [controller] détenu par la surface de
 /// liste — elle ne le crée jamais, ne le `dispose` jamais. Lit la SEULE tranche
@@ -91,9 +90,10 @@ class ZBatchAction {
 /// (présent SEULEMENT si [onSelectAll] non `null`), puis les [actions] déclarées
 /// dont `onSelected != null`.
 ///
-/// **Résilience à la contrainte de largeur (CR-IFFD-36)** : la rangée ne peut
-/// plus COUPER son contenu sur une largeur réduite (mesuré : `RenderFlex
-/// overflowed by 50 pixels` à 800 dp). Deux mécanismes, tous deux INACTIFS tant
+/// **Résilience à la contrainte de largeur** : la rangée ne coupe jamais
+/// son contenu sur une largeur réduite (une rangée non résiliente lève un
+/// `RenderFlex overflowed` dès que trop d'actions sont déclarées pour la
+/// largeur disponible). Deux mécanismes, tous deux INACTIFS tant
 /// que la largeur suffit (rendu identique) :
 ///
 /// 1. le **badge compteur est `Flexible`** — un libellé localisé long se rétrécit
@@ -150,8 +150,9 @@ class ZBatchActionBar extends StatelessWidget {
   /// Label LOCALISÉ INJECTÉ de « tout sélectionner » (a11y + tooltip).
   ///
   /// **OBLIGATOIRE dès que [onSelectAll] est fourni** (assert en constructeur) :
-  /// un bouton « tout sélectionner » actionnable SANS nom accessible est proscrit
-  /// (récidive su-9). Ignoré si [onSelectAll] est `null` (bouton absent).
+  /// un bouton « tout sélectionner » actionnable SANS nom accessible est
+  /// proscrit — muet pour un lecteur d'écran. Ignoré si [onSelectAll] est
+  /// `null` (bouton absent).
   final String? selectAllLabel;
 
   /// Callback « tout sélectionner ». `null` ⇒ bouton ABSENT (AD-4). Non-`null`
@@ -160,17 +161,17 @@ class ZBatchActionBar extends StatelessWidget {
 
   /// Label LOCALISÉ INJECTÉ du bouton de **dépassement** (a11y + tooltip).
   ///
-  /// N'a d'effet que sur une largeur trop étroite pour toutes les actions
-  /// (CR-IFFD-36). `null` ⇒ le libellé localisé STANDARD
+  /// N'a d'effet que sur une largeur trop étroite pour toutes les actions.
+  /// `null` ⇒ le libellé localisé STANDARD
   /// `MaterialLocalizations.showMenuTooltip` appliqué par `PopupMenuButton`
   /// lui-même (jamais une chaîne codée en dur ; jamais un bouton MUET pour un
-  /// lecteur d'écran — récidive su-9).
+  /// lecteur d'écran).
   final String? overflowLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // AD-4/AD-44 — action sans callback ⇒ ABSENTE (jamais rendue grisée/no-op).
+    // AD-4 — action sans callback ⇒ ABSENTE (jamais rendue grisée/no-op).
     final visible =
         actions.where((a) => a.onSelected != null).toList(growable: false);
     return ValueListenableBuilder<Set<String>>(
@@ -178,7 +179,7 @@ class ZBatchActionBar extends StatelessWidget {
       builder: (context, selected, _) {
         final count = selected.length;
         final countLabel = countLabelBuilder?.call(count) ?? '$count';
-        // a11y (AD-13, leçon su-8/AC20) : le badge compteur est annoncé UNE
+        // a11y (AD-13) : le badge compteur est annoncé UNE
         // seule fois — par le `Text(countLabel)` visible ci-dessous. On ne
         // porte PAS `label: countLabel` sur ce `Semantics` conteneur : il
         // FUSIONNERAIT avec le libellé du `Text` enfant et le compteur serait
@@ -205,7 +206,7 @@ class ZBatchActionBar extends StatelessWidget {
           container: true,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // CR-IFFD-36 — combien de boutons tiennent réellement ? Sur une
+              // Combien de boutons tiennent réellement ? Sur une
               // largeur INFINIE (Row/ListView horizontal hôte) aucune contrainte
               // ne s'applique : tout reste en ligne (rendu inchangé).
               var inlineCount = entries.length;
@@ -220,7 +221,7 @@ class ZBatchActionBar extends StatelessWidget {
               return Row(
                 children: [
                   // Badge compteur (tranche réactive `selectedCount`).
-                  // `Flexible` (CR-IFFD-36) : un libellé localisé long se
+                  // `Flexible` : un libellé localisé long se
                   // rétrécit au lieu de pousser les boutons hors du cadre. Sur
                   // une largeur suffisante il reçoit sa largeur intrinsèque —
                   // rendu INCHANGÉ.
@@ -254,7 +255,7 @@ class ZBatchActionBar extends StatelessWidget {
 }
 
 /// Entrée de barre RÉSOLUE (callback non-`null` : les actions ABSENTES ont déjà
-/// été filtrées). Purement interne — sert au repli de dépassement (CR-IFFD-36).
+/// été filtrées). Purement interne — sert au repli de dépassement.
 @immutable
 class _BarEntry {
   const _BarEntry({
@@ -268,15 +269,15 @@ class _BarEntry {
   final VoidCallback onPressed;
 }
 
-/// Menu de **dépassement** de la barre (CR-IFFD-36) — présentation calquée sur
-/// `ZAppBarAction.isOverflow` (`zcrud_ui_kit`) SANS l'importer (AD-1).
+/// Menu de **dépassement** de la barre — présentation calquée sur un patron
+/// de menu de dépassement satellite (`zcrud_ui_kit`) SANS l'importer (AD-1).
 ///
 /// a11y (AD-13) : le bouton porte un `tooltip` (nom accessible + `button:
 /// true` fournis par `PopupMenuButton`), jamais un `Semantics(label:)`
-/// supplémentaire qui DOUBLERAIT l'annonce (su-8/AC20). Chaque entrée du menu
+/// supplémentaire qui DOUBLERAIT l'annonce. Chaque entrée du menu
 /// porte son libellé VISIBLE — une action repliée reste annoncée, jamais
 /// invisible au lecteur d'écran. Cible ≥ 48 dp. Aucune couleur littérale
-/// (FR-26) : le menu hérite du thème.
+/// codée en dur : le menu hérite du thème.
 class _OverflowMenu extends StatelessWidget {
   const _OverflowMenu({required this.entries, this.label});
 
@@ -289,16 +290,15 @@ class _OverflowMenu extends StatelessWidget {
     // `tooltip: null` n'est PAS un bouton muet : `PopupMenuButton` applique
     // lui-même `?? MaterialLocalizations.of(context).showMenuTooltip`
     // (popup_menu.dart) — le nom accessible de repli est donc LOCALISÉ par le
-    // framework, jamais une chaîne codée en dur ici (FR-23/su-9). On se garde
+    // framework, jamais une chaîne codée en dur ici. On se garde
     // bien de dupliquer ce repli : un `?? showMenuTooltip` local serait du code
-    // MORT, indistinguable de son absence (mesuré : l'injection R3 qui le
-    // supprimait laissait la garde VERTE).
+    // MORT, indistinguable de son absence.
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: _kMinTapTarget,
         minHeight: _kMinTapTarget,
       ),
-      // 🔴 Résolution par IDENTITÉ, JAMAIS par position (CR-MENU). La valeur
+      // Résolution par IDENTITÉ, JAMAIS par position. La valeur
       // portée par chaque entrée est l'ENTRÉE ELLE-MÊME, pas son index : le
       // callback invoqué est donc TOUJOURS celui de l'action que l'utilisateur
       // a vue et touchée. Un `PopupMenuButton<int>` + `entries[i].onPressed()`
@@ -339,8 +339,8 @@ class _OverflowMenu extends StatelessWidget {
 /// Bouton d'action de barre — cible ≥ 48 dp, label a11y via le `tooltip` de
 /// `IconButton` (qui porte DÉJÀ `button: true` + le label sémantique). On
 /// n'ajoute PAS un `Semantics(label:)` supplémentaire : il FUSIONNERAIT avec
-/// celui du tooltip et l'action serait annoncée DEUX FOIS (même défaut que
-/// `ZItemActionsMenu`, SU-8/AC20). Directionnel (IconButton neutre).
+/// celui du tooltip et l'action serait annoncée DEUX FOIS. Directionnel
+/// (IconButton neutre).
 class _BarButton extends StatelessWidget {
   const _BarButton({required this.icon, this.label, this.onPressed});
 

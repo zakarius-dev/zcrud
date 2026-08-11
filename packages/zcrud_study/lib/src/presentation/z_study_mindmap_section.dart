@@ -1,31 +1,30 @@
-/// `ZStudyMindmapSection` — section « carte mentale » de la page study-tools
-/// (Story ES-7.1, AD-25/AD-4/AD-28). ADAPTATEUR MINCE de COMPOSITION : elle
-/// assemble, dans le layout sectionné (`ZStudyToolsSectionSpec`), la surface
-/// publique DÉJÀ LIVRÉE de `zcrud_mindmap` — [ZMindmapView] (lecture, graphe
-/// graphite E10-2) et [ZMindmapOutlineEditor]/[ZMindmapOutlineController]
-/// (édition outline E10-3) — SANS jamais réimplémenter le moteur graphite ni
-/// porter le flowchart legacy IFFD.
+/// `ZStudyMindmapSection` — section « carte mentale » de la page study-tools.
+/// ADAPTATEUR MINCE de COMPOSITION : elle assemble, dans le layout sectionné
+/// (`ZStudyToolsSectionSpec`), la surface publique de `zcrud_mindmap` —
+/// [ZMindmapView] (lecture, graphe graphite) et
+/// [ZMindmapOutlineEditor]/[ZMindmapOutlineController] (édition outline) —
+/// SANS jamais réimplémenter le moteur graphite.
 ///
 /// Invariants (NON-NÉGOCIABLES) :
 /// - **AD-1** : la seule arête introduite est `zcrud_study → zcrud_mindmap`
-///   (graphe acyclique, CORE OUT=0). `graphite` reste **transitif** via
-///   `zcrud_mindmap` — JAMAIS en dépendance directe. AUCUN import
-///   `flutter_flow_chart`/`graphview`/`graphite` ici (verrou-source AC2).
+///   (graphe acyclique). `graphite` reste **transitif** via `zcrud_mindmap` —
+///   JAMAIS en dépendance directe. AUCUN import
+///   `flutter_flow_chart`/`graphview`/`graphite` ici.
 /// - **AD-2/AD-15** : réactivité Flutter-native pure. Aucun gestionnaire d'état,
 ///   aucun `WidgetRef`/`Get.`/`Provider.of`. Le [ZMindmapOutlineController]
 ///   POSSÉDÉ est créé en `initState` (jamais dans `build`) et disposé au
 ///   `dispose` — un controller INJECTÉ est utilisé tel quel et JAMAIS disposé
-///   (patron owned/injected de `ZStudyToolsPage`/`ZFormController`, ES-5.2). La
+///   (même patron owned/injected que `ZStudyToolsPage`/`ZFormController`). La
 ///   bascule lecture ⇄ édition vit dans un `ValueNotifier` **LOCAL** ⇒ seul le
-///   sous-arbre de la section se reconstruit (frontière SM-1 préservée).
+///   sous-arbre de la section se reconstruit (frontière de rebuild préservée).
 /// - **AD-4** : `folderId` = `String` opaque ; clé de sous-arbre NEUTRE
 ///   `ValueKey('mindmap:<folderId>')` (jamais l'entité `ZStudyFolder`) ;
 ///   `addAction` `null` = action ABSENTE (jamais un no-op) ; réutilise
 ///   `ZStudyToolsSectionSpec`.
-/// - **AD-28** : le `content` de nœud reste **texte brut** — la section n'ajoute
-///   AUCUN champ rich-text, n'importe PAS `zcrud_markdown` : le rendu riche
-///   éventuel est un slot opt-in câblé CÔTÉ APP via [nodeContentBuilder].
-/// - **AD-13/FR-26** : chrome directionnel (`EdgeInsetsDirectional`,
+/// - Le `content` de nœud reste **texte brut** — la section n'ajoute AUCUN
+///   champ rich-text, n'importe PAS `zcrud_markdown` : le rendu riche éventuel
+///   est un slot opt-in câblé CÔTÉ APP via [nodeContentBuilder].
+/// - **AD-13** : chrome directionnel (`EdgeInsetsDirectional`,
 ///   `TextAlign.start`), `Semantics` explicites, cible de bascule ≥ 48 dp,
 ///   couleurs/labels INJECTÉS via `ZcrudTheme.of` (repli `Theme.of`).
 library;
@@ -122,8 +121,8 @@ class ZStudyMindmapSection extends StatefulWidget {
   /// Sous-mode de la surface LECTURE ([ZMindmapView]) : graphe (défaut) ⇄ liste.
   final ZMindmapViewMode viewMode;
 
-  /// Constructeur de contenu de nœud INJECTÉ, FORWARDÉ à [ZMindmapView] (AD-28 —
-  /// slot opt-in du rich-text CÔTÉ APP ; défaut sûr texte brut si `null`).
+  /// Constructeur de contenu de nœud INJECTÉ, FORWARDÉ à [ZMindmapView] —
+  /// slot opt-in du rich-text CÔTÉ APP ; défaut sûr texte brut si `null`.
   final ZMindmapNodeContentBuilder? nodeContentBuilder;
 
   /// Controller d'édition INJECTÉ (optionnel). `null` ⇒ la section en crée/possède
@@ -166,8 +165,9 @@ class ZStudyMindmapSection extends StatefulWidget {
   final IconData? enterReadIcon;
 
   /// Fabrique un [ZStudyToolsSectionSpec] rendant CETTE section comme UNE section
-  /// (singleton) de `ZStudyToolsPage` (AD-4/AD-25) — RÉUTILISE le vocabulaire de
-  /// sections d'ES-5, jamais une réimplémentation inline du layout.
+  /// (singleton) de `ZStudyToolsPage` (invariant AD-4) — RÉUTILISE le
+  /// vocabulaire de sections existant, jamais une réimplémentation inline du
+  /// layout.
   ///
   /// `itemCount` vaut TOUJOURS `1` (la mindmap = section singleton, non triée, non
   /// réordonnable) ; l'état vide d'une carte SANS nœud est porté par
@@ -245,7 +245,7 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
 
   /// Mode COURANT de la section (lecture ⇄ édition), piloté LOCALEMENT (AD-2/AD-15).
   /// La mutation ne reconstruit QUE le [ValueListenableBuilder] du sous-arbre de
-  /// la section — aucune propagation à la page ni aux autres sections (SM-1/AC4).
+  /// la section — aucune propagation à la page ni aux autres sections.
   late final ValueNotifier<ZStudyMindmapMode> _mode;
 
   /// Racines effectives (priorité à `mindmap`) — seed du controller possédé.
@@ -299,8 +299,9 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
     // section, jamais par l'entité kernel. Deux `folderId` distincts ⇒ deux clés.
     return KeyedSubtree(
       key: ValueKey<String>('mindmap:${widget.folderId}'),
-      // Bascule pilotée par le notifier LOCAL (AD-2/SM-1) : SEUL ce sous-arbre se
-      // reconstruit — aucun `setState` page/section, aucun gestionnaire d'état.
+      // Bascule pilotée par le notifier LOCAL (invariant AD-2) : SEUL ce
+      // sous-arbre se reconstruit — aucun `setState` page/section, aucun
+      // gestionnaire d'état.
       child: ValueListenableBuilder<ZStudyMindmapMode>(
         valueListenable: _mode,
         builder: (context, mode, _) {
@@ -324,8 +325,8 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
     );
   }
 
-  /// Surface LECTURE : composition de [ZMindmapView] (E10-2), zéro réimplémentation
-  /// graphite. `nodeContentBuilder` FORWARDÉ tel quel (AD-28/AC6).
+  /// Surface LECTURE : composition de [ZMindmapView], zéro réimplémentation
+  /// graphite. `nodeContentBuilder` FORWARDÉ tel quel.
   Widget _buildView() {
     return ZMindmapView(
       mindmap: widget.mindmap,
@@ -337,9 +338,9 @@ class _ZStudyMindmapSectionState extends State<ZStudyMindmapSection> {
     );
   }
 
-  /// Surface ÉDITION : composition de [ZMindmapOutlineEditor] (E10-3) sur le
+  /// Surface ÉDITION : composition de [ZMindmapOutlineEditor] sur le
   /// controller DÉTENU par la section (possédé OU injecté). AUCUN
-  /// `ListenableBuilder(listenable: controller)` enveloppant global (SM-1).
+  /// `ListenableBuilder(listenable: controller)` enveloppant global.
   Widget _buildEditor(ZcrudTheme theme) {
     return ZMindmapOutlineEditor(
       controller: _controller,

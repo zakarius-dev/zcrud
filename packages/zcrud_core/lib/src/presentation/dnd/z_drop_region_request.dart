@@ -1,4 +1,4 @@
-/// Requête **neutre** de zone de dépôt NATIVE (AD-57).
+/// Requête **neutre** de zone de dépôt NATIVE.
 ///
 /// « Natif » signifie ici : recevoir des données venues du **système** ou d'une
 /// **autre application** — un fichier glissé depuis l'explorateur, une image
@@ -79,7 +79,7 @@ class ZDropRegionRequest {
   });
 
   /// Contenu de la zone — rendu **inchangé** lorsqu'aucun backend natif n'est
-  /// installé (cf. le défaut zéro-dépendance d'AD-57).
+  /// installé (défaut zéro-dépendance).
   final Widget child;
 
   /// Notifié avec les éléments déposés. Le socle ne les interprète jamais.

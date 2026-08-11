@@ -1,17 +1,17 @@
-/// `ZExamRemindersSection` — section « rappels approchants » (Story ES-9.2, AC4/
-/// AC5/AC7, **FR-S10**). ADAPTATEUR MINCE de PRÉSENTATION : elle DÉRIVE les
-/// examens approchants via [approachingReminders] (filtre `isApproaching` + tri par
-/// date DÉLÉGUÉS au kernel `aggregateDailyStudyTasks`, R21/R26) et les rend en
-/// `ListView.builder` accessible (AD-13). L'horloge `now` est **INJECTÉE** (jamais
-/// `DateTime.now()`, AC5).
+/// `ZExamRemindersSection` — section « rappels approchants ». ADAPTATEUR
+/// MINCE de PRÉSENTATION : elle DÉRIVE les examens approchants via
+/// [approachingReminders] (filtre `isApproaching` + tri par date DÉLÉGUÉS au
+/// kernel `aggregateDailyStudyTasks`) et les rend en `ListView.builder`
+/// accessible (AD-13). L'horloge `now` est **INJECTÉE** (jamais
+/// `DateTime.now()`).
 ///
-/// ## AC5 — la planification OS est un SEAM APP ; ici, exposition SEULE
+/// ## La planification OS est un SEAM APP ; ici, exposition SEULE
 ///
 /// La section **ne planifie JAMAIS** de notification : elle ne calcule que
 /// `isApproaching(now)` (déterministe) et EXPOSE les approchants à l'app via
 /// [ZExamRemindersSection.onRemindersComputed], à charge pour l'app de programmer le
 /// canal OS (plugin, horaire système). **AUCUN** plugin de notification, **AUCUN**
-/// `Timer`/`Future.delayed` de planification ici (AD-26).
+/// `Timer`/`Future.delayed` de planification ici.
 library;
 
 import 'package:flutter/material.dart';
@@ -61,13 +61,13 @@ class ZExamRemindersSection extends StatefulWidget {
   });
 
   /// Les examens candidats (mix approchants/passés/off/`date==null`). La section
-  /// n'en garde que les approchants (via le port, AC4).
+  /// n'en garde que les approchants (via le port).
   final List<ZExam> exams;
 
-  /// Horloge INJECTÉE (jamais `DateTime.now()`, AC5). Seul référentiel temporel.
+  /// Horloge INJECTÉE (jamais `DateTime.now()`). Seul référentiel temporel.
   final DateTime now;
 
-  /// Exposition des approchants à l'app (AC5). `null` = aucune exposition (la
+  /// Exposition des approchants à l'app. `null` = aucune exposition (la
   /// section reste un affichage passif ; jamais un no-op de planification).
   final ZRemindersComputed? onRemindersComputed;
 
@@ -97,7 +97,7 @@ class ZExamRemindersSection extends StatefulWidget {
 }
 
 class _ZExamRemindersSectionState extends State<ZExamRemindersSection> {
-  /// Approchants DÉRIVÉS (filtre + tri délégués au kernel — R21/R26).
+  /// Approchants DÉRIVÉS (filtre + tri délégués au kernel).
   late List<ZApproachingReminder> _reminders;
 
   @override
@@ -117,14 +117,14 @@ class _ZExamRemindersSectionState extends State<ZExamRemindersSection> {
     }
   }
 
-  /// Recalcule les approchants (horloge INJECTÉE `widget.now`, jamais interne, AC5).
+  /// Recalcule les approchants (horloge INJECTÉE `widget.now`, jamais interne).
   void _recompute() {
     _reminders = approachingReminders(exams: widget.exams, now: widget.now);
   }
 
   /// Notifie l'app APRÈS la frame (jamais de setState d'ancêtre en plein build).
   /// Ce n'est PAS une planification de notification OS (aucun `Timer`, aucun plugin,
-  /// aucun horaire système) : juste l'exposition des approchants calculés (AC5).
+  /// aucun horaire système) : juste l'exposition des approchants calculés.
   void _scheduleNotify() {
     final callback = widget.onRemindersComputed;
     if (callback == null) return;

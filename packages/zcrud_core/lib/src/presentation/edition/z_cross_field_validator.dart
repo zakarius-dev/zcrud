@@ -1,29 +1,27 @@
-/// Validateurs **inter-champs** (E3-6, report b) : `match(refKey)`,
-/// `minKey(refKey)`, `maxKey(refKey)` — déférés par [ZValidatorCompiler] (E3-2)
-/// car ils dépendent de l'ÉTAT RUNTIME d'un AUTRE champ.
+/// Validateurs **inter-champs** : `match(refKey)`, `minKey(refKey)`,
+/// `maxKey(refKey)` — déférés par [ZValidatorCompiler] car ils dépendent de
+/// l'ÉTAT RUNTIME d'un AUTRE champ.
 ///
-/// origine: `ZValidatorCompiler` (E3-2) ne compile que les validateurs
-/// **champ-locaux** et renvoie `null` pour les variantes `refKey` (frontière
-/// documentée l.20-26, 78-102). E3-6 les complète ICI par des **closures
-/// mémoïsées capturant le `ZFormController`**, lues à l'invocation via
-/// `c.valueOf(refKey)` — jamais recompilées dans `build()`.
+/// `ZValidatorCompiler` ne compile que les validateurs **champ-locaux** et
+/// renvoie `null` pour les variantes `refKey`. Ce fichier les complète par
+/// des **closures mémoïsées capturant le `ZFormController`**, lues à
+/// l'invocation via `c.valueOf(refKey)` — jamais recompilées dans `build()`.
 ///
-/// INVARIANTS (AD-2, NON-NÉGOCIABLES) :
+/// INVARIANTS (invariant AD-2, NON-NÉGOCIABLES) :
 /// - Les closures capturent le controller UNE FOIS (identité stable, mémoïsées
 ///   `late final` dans le `State` du champ) ; elles ne recompilent rien.
 /// - La ré-évaluation **en direct** (quand le champ RÉFÉRENCÉ change) passe par
 ///   un abonnement **CIBLÉ** à `fieldListenable(refKey)` (une tranche précise) —
-///   JAMAIS au `notifyListeners()` global (SM-1 préservé). Voir
+///   JAMAIS au `notifyListeners()` global (invariant AD-2 préservé). Voir
 ///   [refKeysOf]/[ZFieldWidget].
 /// - Référence **absente / non comparable** ⇒ contrat **non bloquant** : le
-///   validateur `min/max` ne rejette PAS sur une référence indéterminée (AC11).
-///   La comparaison `min/max` est **typée et robuste** (E3-6 MEDIUM-1) : si les
+///   validateur `min/max` ne rejette PAS sur une référence indéterminée.
+///   La comparaison `min/max` est **typée et robuste** : si les
 ///   deux valeurs sont numériques ⇒ comparaison **numérique** ; sinon si les
 ///   deux se parsent en `DateTime` (ISO-8601, ou déjà `DateTime`) ⇒ comparaison
-///   de **dates** (honore l'exemple normatif AC11 `dateFin.minKey('dateDebut')`,
+///   de **dates** (couvre l'exemple normatif `dateFin.minKey('dateDebut')`,
 ///   qui rejette une plage inversée) ; sinon (types non comparables) ⇒ **non
-///   bloquant** (référence indéterminée, cohérent avec l'ambiguïté #5), SANS
-///   `throw`.
+///   bloquant** (référence indéterminée), SANS `throw`.
 library;
 
 import 'package:flutter/widgets.dart' show FormFieldValidator;
@@ -61,7 +59,7 @@ abstract final class ZCrossFieldValidator {
     };
   }
 
-  /// Validateur **combiné** champ-local (E3-2) **+** inter-champs (E3-6) pour
+  /// Validateur **combiné** champ-local **+** inter-champs pour
   /// [field], ou `null` si aucun des deux ne produit de validateur. Utilisé
   /// par le widget de champ ET par la soumission agrégée (source unique).
   static FormFieldValidator<String>? compileField(
@@ -76,8 +74,8 @@ abstract final class ZCrossFieldValidator {
   }
 
   /// Ensemble des `refKey` référencés par les specs inter-champs de [specs] —
-  /// alimente l'abonnement CIBLÉ du champ dépendant (`fieldListenable(refKey)`,
-  /// AC12), jamais un abonnement global.
+  /// alimente l'abonnement CIBLÉ du champ dépendant (`fieldListenable(refKey)`),
+  /// jamais un abonnement global.
   static Set<String> refKeysOf(List<ZValidatorSpec> specs) => <String>{
         for (final s in specs)
           if (_isCrossField(s) && s.refKey != null) s.refKey!,
@@ -108,9 +106,9 @@ abstract final class ZCrossFieldValidator {
     }
     if (spec.kind == ZValidatorKind.min) {
       return (value) {
-        // Comparaison typée & robuste (MEDIUM-1) : num OU DateTime ISO.
+        // Comparaison typée & robuste : num OU DateTime ISO.
         final cmp = _compare(value, c.valueOf(refKey));
-        // Référence indéterminée / types non comparables ⇒ non bloquant (AC11).
+        // Référence indéterminée / types non comparables ⇒ non bloquant.
         if (cmp == null) return null;
         return cmp >= 0 ? null : (message ?? 'Valeur trop petite');
       };
@@ -127,14 +125,14 @@ abstract final class ZCrossFieldValidator {
   }
 
   /// Compare la valeur courante [selfRaw] (texte du champ) à la valeur du champ
-  /// référencé [refRaw] de façon **typée et robuste** (E3-6 MEDIUM-1) :
+  /// référencé [refRaw] de façon **typée et robuste** :
   /// 1. si les DEUX sont numériques (`num`/`num.tryParse`) ⇒ comparaison
   ///    numérique ;
   /// 2. sinon si les DEUX se parsent en `DateTime` (déjà `DateTime`, ou chaîne
-  ///    ISO-8601 via `DateTime.tryParse`) ⇒ comparaison de dates (honore
-  ///    `dateFin.minKey('dateDebut')`, AC11) ;
+  ///    ISO-8601 via `DateTime.tryParse`) ⇒ comparaison de dates (couvre
+  ///    `dateFin.minKey('dateDebut')`) ;
   /// 3. sinon (types non comparables / référence indéterminée) ⇒ `null`
-  ///    (**non bloquant**, cohérent avec l'ambiguïté #5) — jamais de `throw`.
+  ///    (**non bloquant**) — jamais de `throw`.
   ///
   /// Retourne le signe de `self - ref` (`<0`, `0`, `>0`) ou `null` si non
   /// comparable. La priorité numérique évite qu'un entier ISO-ambigu bascule en

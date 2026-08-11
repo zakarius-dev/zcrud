@@ -1,13 +1,13 @@
 /// `ZDateDisplayFormatter` — **port neutre** de FORMATAGE D'AFFICHAGE d'une
-/// date/heure (CR-DODLP-GAP3BIS).
+/// date/heure.
 ///
 /// ## Le défaut fermé ici
 ///
 /// Une valeur de date est stockée en **ISO-8601** (`ZDateFieldWidget` écrit
-/// `DateTime.toIso8601String()`). Toutes les voies de LECTURE du paquet la
-/// rendaient telle quelle — `2026-08-09T00:00:00.000` là où le legacy DODLP
-/// affiche `Dim. 9 août 2026`. La donnée est bonne ; c'est sa **projection**
-/// qui manquait.
+/// `DateTime.toIso8601String()`). Sans ce port, toutes les voies de LECTURE du
+/// paquet la rendraient telle quelle — `2026-08-09T00:00:00.000` plutôt qu'un
+/// format localisé lisible (« Dim. 9 août 2026 »). La donnée est bonne ;
+/// seule sa **projection** manque.
 ///
 /// ## Pourquoi un port et pas un formatage en dur
 ///
@@ -81,7 +81,7 @@ ZDateMode zDateModeOf(ZFieldConfig? config, {required bool isTimeType}) {
 /// Applique le port [formatter] à [value] et **replie sur la chaîne brute** dans
 /// tous les chemins dégradés (cf. dartdoc de bibliothèque, AD-10).
 ///
-/// 🔴 **Source UNIQUE de la règle de repli** — pur-Dart, **sans `BuildContext`**.
+/// **Source UNIQUE de la règle de repli** — pur-Dart, **sans `BuildContext`**.
 /// C'est ce qui permet de la partager entre la voie qui a un contexte (fiche de
 /// lecture / résumé de sous-liste : `zDateDisplayText` la consomme après avoir lu
 /// le port et la locale dans le `ZcrudScope`) et la voie qui n'en a **jamais**

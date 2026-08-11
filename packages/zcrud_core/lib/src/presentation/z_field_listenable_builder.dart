@@ -1,5 +1,6 @@
 /// Helper de **slice réactif** : un widget de champ qui n'écoute QUE sa tranche
-/// (AD-2). Fige le pattern que E3 (`DynamicEdition`) industrialisera.
+/// (AD-2). Fige le patron que `DynamicEdition` industrialise pour chacun de
+/// ses champs.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -10,14 +11,13 @@ import 'z_form_controller.dart';
 /// `controller.fieldListenable(name)`.
 ///
 /// Garantit que **seul** ce sous-arbre reconstruit lorsque la tranche [name]
-/// change (rebuild ciblé, cœur de SM-1). Usage E3 :
+/// change (rebuild ciblé, objectif produit n°1 — AD-2). Usage :
 /// - poser un `key: ValueKey(name)` sur le widget de champ pour une place stable
-///   (les champs conditionnels d'E3-4 ne doivent pas voler l'état d'un voisin) ;
+///   (un champ conditionnel ne doit pas voler l'état d'un voisin) ;
 /// - NE PAS construire les champs dans une closure locale du `build()` parent —
 ///   ce widget est la frontière de rebuild ;
 /// - le [ZFormController] DÉTIENT la valeur ; ne jamais ré-injecter dans un
-///   `TextEditingController` (`.text=`) — la stabilité du controller de texte
-///   relève d'E3-2.
+///   `TextEditingController` (`.text=`) — cela écraserait la sélection en cours.
 class ZFieldListenableBuilder extends StatelessWidget {
   /// Construit le slice réactif pour le champ [name] du [controller].
   const ZFieldListenableBuilder({

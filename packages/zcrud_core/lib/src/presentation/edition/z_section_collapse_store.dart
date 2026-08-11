@@ -1,14 +1,12 @@
-/// `ZSectionCollapseStore` — **seam de persistance NEUTRE** de l'état de repli des
-/// sections de `DynamicEdition` (MIN-2, parité DODLP « repli persistant par titre
-/// via GetStorage »).
+/// `ZSectionCollapseStore` — **seam de persistance NEUTRE** de l'état de repli
+/// des sections de `DynamicEdition`.
 ///
-/// origine: DODLP persiste l'état plié/déplié de chaque section (par titre) dans
-/// `GetStorage`, de sorte qu'il **survive au redémarrage**. Côté zcrud, l'état de
-/// repli vit par défaut **en mémoire** (`_collapsed`, `ValueNotifier`), donc
-/// éphémère. Ce port fournit une **frontière d'injection** (AD-1 : cœur OUT=0)
-/// permettant à l'app/binding (DODLP → GetStorage, autres → shared_preferences…)
-/// de brancher une persistance réelle — SANS tirer aucune dépendance de stockage
-/// dans `zcrud_core`.
+/// L'état plié/déplié de chaque section (par titre) peut être persisté pour
+/// **survivre au redémarrage**. Par défaut, l'état de repli vit **en mémoire**
+/// (`_collapsed`, `ValueNotifier`), donc éphémère. Ce port fournit une
+/// **frontière d'injection** (invariant AD-1 : cœur OUT=0) permettant à
+/// l'app/binding de brancher une persistance réelle (stockage clé-valeur
+/// local, etc.) — SANS tirer aucune dépendance de stockage dans `zcrud_core`.
 ///
 /// **Contrat** :
 /// - synchrone et **pur** (jamais de throw — l'appelant `DynamicEdition` est
@@ -22,19 +20,19 @@ library;
 
 /// Port de (dé)chargement de l'ensemble des **titres de sections repliées**.
 ///
-/// Implémentation concrète **déférée au binding/app** (GetStorage pour DODLP,
-/// etc.) — le cœur n'en fournit qu'une variante mémoire ([ZInMemorySectionCollapseStore]).
+/// Implémentation concrète **déférée au binding/app** — le cœur n'en fournit
+/// qu'une variante mémoire ([ZInMemorySectionCollapseStore]).
 abstract class ZSectionCollapseStore {
   /// Contrat `const` (impls immuables).
   const ZSectionCollapseStore();
 
   /// Charge les titres de sections **repliées** persistés pour [formId]
   /// (`null` ⇒ portée globale). Retourne un ensemble vide si rien n'est persisté.
-  /// Ne lève **jamais** (AD-10).
+  /// Ne lève **jamais** (invariant AD-10).
   Set<String> loadCollapsed(String? formId);
 
   /// Persiste l'ensemble des titres de sections **repliées** [collapsed] pour
-  /// [formId]. Ne lève **jamais** (AD-10).
+  /// [formId]. Ne lève **jamais** (invariant AD-10).
   void saveCollapsed(String? formId, Set<String> collapsed);
 }
 

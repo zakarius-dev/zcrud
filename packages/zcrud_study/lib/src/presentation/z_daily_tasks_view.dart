@@ -1,34 +1,17 @@
-/// **Lot 4 « étude »** — [ZDailyTasksView] : le CORPS COMPOSABLE de la vue des
-/// tâches du jour (bandeau de semaine + liste).
+/// [ZDailyTasksView] : le CORPS COMPOSABLE de la vue des tâches du jour
+/// (bandeau de semaine + liste).
 ///
-/// 🚫 **Aucun `Scaffold`, aucune `AppBar`, aucune route** — cohérence stricte
-/// avec `ZStudySessionView` (lot 1). C'est ce qu'un hôte pose en page, en onglet
-/// ou en feuille.
-///
-/// ## Le manque, MESURÉ avant écriture
-///
-/// Le kernel est ENTIER depuis ES-2.7 : `aggregateDailyStudyTasks`,
-/// `ZDailyStudyTask`, `ZDueCardsTask`, `ZExamTask`, port neutre
-/// `ZApproachingExam`. Grep exécuté sur disque :
-///
-/// ```
-/// $ grep -rln "ZDailyStudyTask\|ZDueCardsTask\|aggregateDailyStudyTasks" packages/*/lib
-/// packages/zcrud_study_kernel/lib/src/domain/aggregate_daily_study_tasks.dart
-/// packages/zcrud_study_kernel/lib/src/domain/z_daily_study_task.dart
-/// packages/zcrud_study/lib/src/presentation/z_exam_reminders.dart
-/// packages/zcrud_study/lib/src/presentation/z_exam_reminders_section.dart
-/// ```
-///
-/// Les deux seuls consommateurs de présentation appellent l'agrégation avec
-/// **`dueCount: 0`** (`z_exam_reminders.dart:131`) et ne rendent **que** les
-/// examens : la ligne « cartes dues », elle, n'était rendue **nulle part**.
+/// **Aucun `Scaffold`, aucune `AppBar`, aucune route** — cohérence stricte
+/// avec `ZStudySessionView`. C'est ce qu'un hôte pose en page, en onglet ou
+/// en feuille.
 ///
 /// ## Le `default` est OBLIGATOIRE — c'est le kernel qui l'exige
 ///
 /// `ZDailyStudyTask` est une **famille OUVERTE** (`abstract interface class` +
-/// discriminant `String kind`), délibérément **jamais `sealed`** : « un satellite
-/// futur peut AJOUTER une variante sans modifier le kernel » (AD-4). Le dispatch
-/// de cette vue se fait donc sur `task.kind` **avec un `default`** :
+/// discriminant `String kind`), délibérément **jamais `sealed`** : un
+/// satellite futur peut ajouter une variante sans modifier le kernel
+/// (invariant AD-4). Le dispatch de cette vue se fait donc sur `task.kind`
+/// **avec un `default`** :
 ///
 /// | Variante | Rendu |
 /// |---|---|
@@ -41,7 +24,7 @@
 /// inerte : elle n'occupe **aucune** ligne. Une garde monte une variante forgée
 /// (`kind: 'podcast'`) et vérifie les deux branches.
 ///
-/// 🔒 **Le `kind` ne suffit pas** : rien n'empêche une variante hostile
+/// **Le `kind` ne suffit pas** : rien n'empêche une variante hostile
 /// d'annoncer `kind == 'exam'` sans être un `ZExamTask`. Chaque branche
 /// **re-vérifie le type** et retombe sur `unknownTaskBuilder` sinon (AD-10 —
 /// aucun cast qui puisse lever).
@@ -55,8 +38,7 @@
 /// de source l'**étend à ces widgets**.
 ///
 /// L'arithmétique de semaine est faite en **UTC normalisé à la date**
-/// ([zStudyWeekDays]) : aucune dérive DST, exactement la discipline D4 du
-/// kernel.
+/// ([zStudyWeekDays]) : aucune dérive DST, même discipline que le kernel.
 ///
 /// **Comment cette propriété est RÉELLEMENT gardée, et pourquoi.** Le test
 /// comportemental ne peut **pas** distinguer une arithmétique locale d'une
@@ -79,21 +61,21 @@
 /// `dueCount`/`exams` pour le jour choisi. La vue ne filtre aucune donnée
 /// (même contrat que `ZStudyFolderDetail.materialSectionsBuilder(id)`).
 ///
-/// ## Ce que le legacy porte et que ce lot NE PORTE PAS
+/// ## Ce que cette vue ne porte volontairement pas
 ///
-/// Les quatre « actions rapides » (`daily_tasks_page.dart:900-1050`) : **trois
-/// sur quatre** y sont `enabled: false` (l.917 / l.925 / l.933). Porter une
-/// commande morte serait porter un défaut — AD-4 : une capacité absente est
-/// absente de l'arbre, pas grisée.
+/// Aucune action désactivée n'est rendue : porter une commande morte serait
+/// porter un défaut — invariant AD-4, une capacité absente est absente de
+/// l'arbre, jamais simplement grisée.
 ///
-/// ## FR-26 / AD-13
+/// ## Invariants AD-13 (l10n / thème)
 ///
 /// Aucun libellé en dur : chaque texte du bandeau vient d'un **builder injecté**
 /// (le socle ne connaît ni `DateFormat`, ni locale). Aucune couleur littérale :
 /// tout est rôle du `ColorScheme`, résolu par `zDailyTasksChromeOf`. Insets
 /// **directionnels**, `Semantics(button:, selected:)` explicites, cible ≥ 48 dp
 /// **en géométrie rendue** — et le bandeau **défile horizontalement** quand la
-/// largeur ne permet pas 7 cibles au plancher (le legacy, lui, les comprime).
+/// largeur ne permet pas 7 cibles au plancher (jamais de compression sous le
+/// minimum tactile).
 library;
 
 import 'package:flutter/material.dart';
@@ -138,7 +120,7 @@ typedef ZUnknownTaskBuilder =
 /// L'UTC n'est pas un détail : c'est le seul calendrier où « ajouter un jour »
 /// ajoute exactement 24 h. En heure locale, une semaine qui traverse un
 /// changement d'heure produit deux jours identiques ou un jour manquant.
-/// Discipline héritée du kernel (D4).
+/// Même discipline que le kernel.
 DateTime zStudyDayOf(DateTime moment) =>
     DateTime.utc(moment.year, moment.month, moment.day);
 
@@ -454,10 +436,9 @@ class _ZResolvedTask {
 /// Le bandeau de 7 jours.
 ///
 /// **Cible ≥ 48 dp en GÉOMÉTRIE RENDUE.** Sept cellules au plancher ne
-/// tiennent pas côte à côte sous ~380 dp de large ; le legacy les comprime
-/// silencieusement (`Expanded` sans contrainte de hauteur ni de largeur,
-/// `daily_tasks_page.dart:158`). Ici, dès que la largeur disponible ne permet
-/// plus 7 × [ZDailyTasksChrome.minTapTarget], le bandeau **défile
+/// tiennent pas côte à côte sous ~380 dp de large ; les comprimer sous ce
+/// plancher romprait l'accessibilité. Dès que la largeur disponible ne
+/// permet plus 7 × [ZDailyTasksChrome.minTapTarget], le bandeau **défile
 /// horizontalement** et chaque cellule garde sa cible. La sélection reste
 /// atteignable ; c'est la largeur qui cède, jamais l'accessibilité.
 class _ZDayBand extends StatelessWidget {
@@ -509,8 +490,8 @@ class _ZDayBand extends StatelessWidget {
             children: cells,
           );
           // Défilement SEULEMENT quand la largeur ne permet plus le plancher :
-          // à largeur suffisante, le rendu est celui du legacy (7 colonnes
-          // égales), sans aucun `Scrollable` interposé.
+          // à largeur suffisante, le rendu reste 7 colonnes égales, sans
+          // aucun `Scrollable` interposé.
           return fits
               ? row
               : SingleChildScrollView(

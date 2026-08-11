@@ -1,16 +1,16 @@
 /// Base partagée des registres **ouverts** `register(kind, fromJson, toJson)`
 /// (AD-4 pt.3).
 ///
-/// origine: lex_core (module « Étude ») — `flashcard_source.dart:13`
-/// (`FlashcardSource` : union `sealed` interne + variant `custom` + registre
-/// pour lever la frontière inter-package qu'une `sealed` interdit). Canonique §4.
+/// Une union `sealed` interne à un paquet reste fermée pour son exhaustivité
+/// locale ; un registre ouvert est ce qui permet de lever cette frontière
+/// **entre paquets**, sans forker le type fermé.
 ///
 /// [ZTypeRegistry] (types de champ/valeur ouverts) et [ZSourceRegistry]
 /// (provenance ouverte) partagent la **même mécanique** register/lookup/erreurs
 /// et n'en diffèrent que par leur **espace de noms** (un `kind` côté source
-/// n'entre pas en collision avec un `kind` côté type — Dev Notes #3, OQ-6 « par
-/// axe »). La factorisation passe par le container `ZCodecRegistry<T>`
-/// (composition, générique de **conteneur**), exposée ici via une base fine.
+/// n'entre pas en collision avec un `kind` côté type). La factorisation passe
+/// par le container `ZCodecRegistry<T>` (composition, générique de
+/// **conteneur**), exposée ici via une base fine.
 library;
 
 import 'z_codec_registry.dart';

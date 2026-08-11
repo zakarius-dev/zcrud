@@ -1,12 +1,12 @@
-/// État de **vue** de `DynamicList` (E4-2, AD-11/AD-13).
+/// État de **vue** de `DynamicList` (AD-11/AD-13).
 ///
-/// origine: E4-2. Pendant **présentation** de `ZDataState` (domaine, AD-11) :
+/// Pendant **présentation** de `ZDataState` (domaine, AD-11) :
 /// `ZListViewState` porte des `ZListRow` déjà **projetées** (pas de générécité
 /// `T`) et ajoute l'état `noResults` (« aucun résultat **après filtre** ») que
 /// `ZDataState` n'a pas — c'est une distinction **UI**, pas domaine (on ne
 /// pollue donc pas `ZDataState`). Le mapping `ZDataState → ZListViewState` (dont
 /// le choix `empty` vs `noResults` selon qu'un filtre est actif) est câblé par le
-/// controller d'**E4-3** ; E4-2 fournit seulement les états distincts + leur
+/// contrôleur de liste ; ce fichier fournit seulement les états distincts + leur
 /// rendu accessible.
 ///
 /// **Neutre, pur-données** : imports limités à `ZFailure` + `ZListRow` (contrat
@@ -16,7 +16,7 @@ library;
 import '../../domain/failures/z_failure.dart';
 import 'z_list_render_request.dart';
 
-/// État **fermé** de la vue de liste (E4-2). `sealed` : le `switch` de rendu de
+/// État **fermé** de la vue de liste. `sealed` : le `switch` de rendu de
 /// `DynamicList` est exhaustif sans branche `default`.
 sealed class ZListViewState {
   /// Constructeur `const` de base.
@@ -60,8 +60,8 @@ final class ZListEmpty extends ZListViewState {
 }
 
 /// **Aucun résultat après filtre/recherche** — **distinct** d'[ZListEmpty]
-/// (message différent). E4-2 rend cet état ; E4-3 le **décide** (mapping selon
-/// qu'un filtre est actif).
+/// (message différent). Ce fichier rend cet état ; le contrôleur de liste le
+/// **décide** (mapping selon qu'un filtre est actif).
 final class ZListNoResults extends ZListViewState {
   /// Construit l'état « aucun résultat après filtre ».
   const ZListNoResults();

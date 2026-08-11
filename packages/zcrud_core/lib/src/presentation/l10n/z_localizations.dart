@@ -1,7 +1,7 @@
 /// `ZcrudLocalizations` + `ZcrudLocalizationsDelegate` — l10n GÉNÉRIQUE du chrome
-/// CRUD (FR-23, AD-13).
+/// CRUD (AD-13).
 ///
-/// origine : delegate custom **sans aucune ressource métier** — il ne connaît
+/// Delegate custom **sans aucune ressource métier** — il ne connaît
 /// que des libellés d'UI CRUD (verbes/états : enregistrer/annuler/supprimer,
 /// requis/valeur invalide, chargement/vide/réessayer…). Les libellés **métier**
 /// (noms d'entités applicatives) sont du ressort de `ZcrudLabels`, injecté par
@@ -27,7 +27,7 @@ const _enLabels = <String, String>{
   'delete': 'Delete',
   'restore': 'Restore',
   'edit': 'Edit',
-  // DP-15 : CRUD inline sur relation (créer une entité liée). `copy`/`edit`
+  // CRUD inline sur relation (créer une entité liée). `copy`/`edit`
   // réutilisés (déjà présents).
   'create': 'Create',
   'add': 'Add',
@@ -35,12 +35,12 @@ const _enLabels = <String, String>{
   'search': 'Search',
   'required': 'This field is required',
   'invalidValue': 'Invalid value',
-  // DP-16 : message générique de politique mot de passe (repli défensif).
+  // Message générique de politique mot de passe (repli défensif).
   'invalidPassword': 'Invalid password',
   'loading': 'Loading…',
   'empty': 'Nothing to display',
   'retry': 'Retry',
-  // Liste (E4-2) — états UI accessibles et DISTINCTS (`empty` ≠ `noResults`).
+  // Liste — états UI accessibles et DISTINCTS (`empty` ≠ `noResults`).
   'list.loading': 'Loading the list…',
   'list.empty': 'No data yet',
   'list.noResults': 'No results match your filters',
@@ -53,7 +53,7 @@ const _enLabels = <String, String>{
   'selectDateTime': 'Select a date and time',
   'close': 'Close',
   'reset': 'Reset',
-  // MIN-2 : croix d'effacement (date non requise).
+  // Croix d'effacement (date non requise).
   'clear': 'Clear',
   'remove': 'Remove',
   'next': 'Next',
@@ -62,7 +62,7 @@ const _enLabels = <String, String>{
   'addTag': 'Add tag',
   'removeTag': 'Remove tag',
   'selectColor': 'Select a color',
-  // DP-17 (M14) : picker couleur enrichi (built-in neutre).
+  // Picker couleur enrichi (built-in neutre).
   'customColor': 'Custom color…',
   'colorHue': 'Hue',
   'colorSaturation': 'Saturation',
@@ -70,11 +70,11 @@ const _enLabels = <String, String>{
   'colorOpacity': 'Opacity',
   'colorHex': 'Hex code',
   'colorRecent': 'Recent',
-  // FP-4.4 : mode couleur multiple (List<int> ARGB).
+  // Mode couleur multiple (List<int> ARGB).
   'colorAddColor': 'Add a color',
   'removeColor': 'Remove color',
   'apply': 'Apply',
-  // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
+  // Suffixes numériques NEUTRES (données, jamais un style codé en dur).
   'percentSuffix': '%',
   'currencySuffix': r'$',
   'rate': 'Rating',
@@ -83,13 +83,13 @@ const _enLabels = <String, String>{
   'moveItemUp': 'Move item up',
   'moveItemDown': 'Move item down',
   'clearItem': 'Clear item',
-  // DP-6 : sous-liste compacte + dialog d'édition par item.
+  // Sous-liste compacte + dialog d'édition par item.
   'viewItem': 'View item',
   'editItem': 'Edit item',
   'deleteItem': 'Delete item',
   'confirmDeleteItem': 'Delete this item?',
   'noItems': 'No items',
-  // DP-19 (M18) : soft-delete/restore d'un item de sous-liste.
+  // Soft-delete/restore d'un item de sous-liste.
   'restoreItem': 'Restore item',
   'deletedItemBadge': '(deleted)',
   'signatureArea': 'Signature area',
@@ -113,11 +113,11 @@ const _enLabels = <String, String>{
   'fileRefUnresolved': 'File unavailable',
   'fileResolveFailed': 'Could not load file',
   'fileResolveRetry': 'Retry loading',
-  // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
+  // Fiche de lecture (copie presse-papier + placeholder valeur vide).
   'copy': 'Copy',
   'copied': 'Value copied to clipboard',
   'emptyValue': '—',
-  // CR-ORPHAN : valeur SÉLECTIONNÉE mais absente des options du moment (cascade).
+  // Valeur SÉLECTIONNÉE mais absente des options du moment (cascade).
   // Même règle que `fileRefUnresolved` : une identité non résolue se montre par
   // un libellé, JAMAIS par sa clé technique. La valeur, elle, est conservée.
   'choiceUnresolved': 'Option unavailable',
@@ -129,19 +129,19 @@ const _frLabels = <String, String>{
   'delete': 'Supprimer',
   'restore': 'Restaurer',
   'edit': 'Modifier',
-  // DP-15 : CRUD inline sur relation (créer une entité liée).
+  // CRUD inline sur relation (créer une entité liée).
   'create': 'Créer',
   'add': 'Ajouter',
   'confirm': 'Confirmer',
   'search': 'Rechercher',
   'required': 'Ce champ est requis',
   'invalidValue': 'Valeur invalide',
-  // DP-16 : message générique de politique mot de passe (repli défensif).
+  // Message générique de politique mot de passe (repli défensif).
   'invalidPassword': 'Mot de passe invalide',
   'loading': 'Chargement…',
   'empty': 'Aucun élément à afficher',
   'retry': 'Réessayer',
-  // Liste (E4-2) — états UI accessibles et DISTINCTS (`empty` ≠ `noResults`).
+  // Liste — états UI accessibles et DISTINCTS (`empty` ≠ `noResults`).
   'list.loading': 'Chargement de la liste…',
   'list.empty': 'Aucune donnée pour le moment',
   'list.noResults': 'Aucun résultat ne correspond à vos filtres',
@@ -154,7 +154,7 @@ const _frLabels = <String, String>{
   'selectDateTime': 'Sélectionner une date et une heure',
   'close': 'Fermer',
   'reset': 'Réinitialiser',
-  // MIN-2 : croix d'effacement (date non requise).
+  // Croix d'effacement (date non requise).
   'clear': 'Effacer',
   'remove': 'Retirer',
   'next': 'Suivant',
@@ -163,7 +163,7 @@ const _frLabels = <String, String>{
   'addTag': 'Ajouter une étiquette',
   'removeTag': 'Retirer l\'étiquette',
   'selectColor': 'Sélectionner une couleur',
-  // DP-17 (M14) : picker couleur enrichi (built-in neutre).
+  // Picker couleur enrichi (built-in neutre).
   'customColor': 'Couleur personnalisée…',
   'colorHue': 'Teinte',
   'colorSaturation': 'Saturation',
@@ -171,11 +171,11 @@ const _frLabels = <String, String>{
   'colorOpacity': 'Opacité',
   'colorHex': 'Code hexadécimal',
   'colorRecent': 'Récentes',
-  // FP-4.4 : mode couleur multiple (List<int> ARGB).
+  // Mode couleur multiple (List<int> ARGB).
   'colorAddColor': 'Ajouter une couleur',
   'removeColor': 'Retirer la couleur',
   'apply': 'Appliquer',
-  // DP-17 (M17) : suffixes numériques NEUTRES (données, jamais un style FR-26).
+  // Suffixes numériques NEUTRES (données, jamais un style codé en dur).
   'percentSuffix': '%',
   'currencySuffix': r'$',
   'rate': 'Note',
@@ -184,13 +184,13 @@ const _frLabels = <String, String>{
   'moveItemUp': 'Monter l\'élément',
   'moveItemDown': 'Descendre l\'élément',
   'clearItem': 'Effacer l\'élément',
-  // DP-6 : sous-liste compacte + dialog d'édition par item.
+  // Sous-liste compacte + dialog d'édition par item.
   'viewItem': 'Consulter l\'élément',
   'editItem': 'Modifier l\'élément',
   'deleteItem': 'Supprimer l\'élément',
   'confirmDeleteItem': 'Supprimer cet élément ?',
   'noItems': 'Aucun élément',
-  // DP-19 (M18) : soft-delete/restore d'un item de sous-liste.
+  // Soft-delete/restore d'un item de sous-liste.
   'restoreItem': 'Restaurer l\'élément',
   'deletedItemBadge': '(supprimé)',
   'signatureArea': 'Zone de signature',
@@ -213,11 +213,11 @@ const _frLabels = <String, String>{
   'fileRefUnresolved': 'Fichier indisponible',
   'fileResolveFailed': 'Échec du chargement du fichier',
   'fileResolveRetry': 'Réessayer le chargement',
-  // DP-13 : fiche de lecture (copie presse-papier + placeholder valeur vide).
+  // Fiche de lecture (copie presse-papier + placeholder valeur vide).
   'copy': 'Copier',
   'copied': 'Valeur copiée dans le presse-papier',
   'emptyValue': '—',
-  // CR-ORPHAN : cf. commentaire de la table `en`.
+  // Cf. commentaire de la table `en`.
   'choiceUnresolved': 'Option indisponible',
 };
 
@@ -246,7 +246,7 @@ class ZcrudLocalizations {
   /// Clés effectivement livrées pour cette locale (table réelle du delegate).
   ///
   /// Exposé pour permettre aux gardes/sentinelles d'itérer les entrées réelles
-  /// livrées (valeurs en/fr) plutôt qu'une liste de clés dupliquée (L-4).
+  /// livrées (valeurs en/fr) plutôt qu'une liste de clés dupliquée.
   Iterable<String> get keys => _labels.keys;
 
   /// Retourne le libellé générique de [key] ; à défaut la clé elle-même (jamais
@@ -259,7 +259,7 @@ class ZcrudLocalizations {
       Localizations.of<ZcrudLocalizations>(context, ZcrudLocalizations);
 
   /// Les localisations les plus proches. Retombe sur la table `en` intégrée si
-  /// le delegate n'est pas monté — garantit un rendu sans crash (FR-23).
+  /// le delegate n'est pas monté — garantit un rendu sans crash.
   static ZcrudLocalizations of(BuildContext context) =>
       maybeOf(context) ?? const ZcrudLocalizations(Locale('en'), _enLabels);
 }
@@ -288,7 +288,7 @@ class ZcrudLocalizationsDelegate
   bool shouldReload(ZcrudLocalizationsDelegate old) => false;
 }
 
-/// Résout le libellé de [key] par **composition** (FR-23, AD-13) :
+/// Résout le libellé de [key] par **composition** (AD-13) :
 ///   `ZcrudScope.labels?.maybeResolve` → `ZcrudLocalizations` (delegate) →
 ///   **table `en` de repli** → [fallback] ?? [key].
 ///
@@ -297,14 +297,14 @@ class ZcrudLocalizationsDelegate
 /// l'emporte sur la clé brute. **Jamais de throw** sur clé absente. [fallback]
 /// remplace la clé brute en dernier recours.
 ///
-/// Corrige L-1 : `label()` honore désormais le **même repli `en`** que
+/// `label()` honore le **même repli `en`** que
 /// `ZcrudLocalizations.of` — sans delegate monté, une clé générique connue rend
 /// son libellé `en` (`'save' → 'Save'`) au lieu de la clé brute. On passe par
 /// `ZcrudLocalizations.of` (qui retombe sur la table `en` si le delegate n'est
 /// pas monté) puis, si le delegate est monté mais la clé absente de sa locale,
 /// on retente explicitement la table `en` de repli avant [fallback]/[key].
 ///
-/// Décision de forme (ambiguïté story #3) : **fonction top-level** `label(...)`
+/// Décision de forme : **fonction top-level** `label(...)`
 /// (plutôt qu'une extension sur `BuildContext` — évite de polluer l'espace des
 /// méthodes de `BuildContext` et reste explicitement importable via le barrel).
 String label(BuildContext context, String key, {String? fallback}) {

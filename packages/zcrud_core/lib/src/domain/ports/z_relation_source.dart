@@ -1,35 +1,33 @@
 /// `ZRelationSource` — **port neutre** d'une source d'options dynamique pour le
-/// champ **relation** (DODLP `crudDataSelect`, gap B7) + son registre
-/// instanciable `ZRelationSourceRegistry` (AD-4).
+/// champ **relation** + son registre instanciable `ZRelationSourceRegistry`
+/// (AD-4).
 ///
-/// origine: `loadRessourcesStream(editionState)` DODLP (`models.dart:1045-1055`)
-/// — un flux live d'entités liées issu d'un repository, filtré par
-/// `ressourceFilter(editionState, item)` (`models.dart:596`). Ici le mécanisme
-/// est **généralisé en port pur** : le cœur ne connaît NI le repository, NI
-/// Firestore/Hive, NI SmartSelect — seulement une **abstraction** émettant des
-/// `ZFieldChoice{value,label}` déjà mappés.
+/// Un champ `relation` a besoin d'un flux live d'entités liées issu d'un
+/// repository, filtré selon le contexte du formulaire. Ce mécanisme est
+/// **généralisé en port pur** : le cœur ne connaît NI le repository, NI aucun
+/// backend, NI aucun composant de sélection riche — seulement une
+/// **abstraction** émettant des `ZFieldChoice{value,label}` déjà mappés.
 ///
 /// **NEUTRALITÉ (NON-NÉGOCIABLE, AD-1/AD-5)** : ce fichier est **pur-Dart**
 /// (`dart:async` autorisé, AUCUN import Flutter/`cloud_firestore`/Hive/gestionnaire
-/// d'état). **Aucune implémentation concrète ne vit dans le cœur** : l'app/le
-/// binding (`zcrud_firestore`, app DODLP E7) implémente `ZRelationSource` sur son
-/// backend (mapping entité→`ZFieldChoice` + filtre métier inclus) et l'enregistre
-/// au runtime via `ZcrudScope(relationSourceRegistry: registry)`. Le cœur ne
-/// fournit AUCUNE impl (comme `CloudStorageRepository`/`ZListRenderer`).
+/// d'état). **Aucune implémentation concrète ne vit dans le cœur** : l'app ou
+/// le binding (par exemple `zcrud_firestore`) implémente `ZRelationSource` sur
+/// son backend (mapping entité→`ZFieldChoice` + filtre métier inclus) et
+/// l'enregistre au runtime via `ZcrudScope(relationSourceRegistry: registry)`.
+/// Le cœur ne fournit AUCUNE impl (comme `CloudStorageRepository`/`ZListRenderer`).
 ///
 /// **Filtre cross-champ** : `options(filterContext)` reçoit un `Map<String,
 /// Object?>` = **snapshot des valeurs** des champs déclarés par
-/// `ZRelationConfig.filterKeys` (les « autres champs » de l'`editionState` DODLP).
-/// La source filtre en interne (équivalent `ressourceFilter`). `filterKeys` vide
+/// `ZRelationConfig.filterKeys`. La source filtre en interne. `filterKeys` vide
 /// ⇒ `filterContext` vide ⇒ aucun filtre cross-champ. Le cœur ne présume AUCUNE
 /// sémantique de filtre (neutralité totale).
 ///
 /// **Hors périmètre (déféré au binding)** :
-/// - **CRUD inline** (`showCrudButton`/`crudRepository` DODLP) : voie d'écriture
-///   repository → binding + story de suivi (DP-12+), jamais ici.
-/// - **`s2ChoiceDisabled`** (prédicat de désactivation par option, closure
-///   runtime) : contournement = la source **n'émet pas** les options non
-///   sélectionnables (elle filtre en amont).
+/// - **CRUD inline** (créer/modifier/copier l'entité liée depuis le sélecteur) :
+///   voie d'écriture repository → binding, jamais ici (voir `ZRelationCrudHandler`).
+/// - **Désactivation d'une option par prédicat runtime** : contournement = la
+///   source **n'émet pas** les options non sélectionnables (elle filtre en
+///   amont).
 library;
 
 import 'dart:async';
@@ -51,9 +49,9 @@ abstract class ZRelationSource {
   /// Flux **live** des options `{value,label}` filtrées par [filterContext].
   ///
   /// [filterContext] = snapshot des valeurs des champs `ZRelationConfig.filterKeys`
-  /// (clé de champ → valeur courante). La source filtre en interne (équivalent
-  /// `ressourceFilter(editionState, item)`). Repli attendu : un flux vide/`[]`
-  /// plutôt qu'une erreur quand il n'y a rien (jamais de crash — AD-10).
+  /// (clé de champ → valeur courante). La source filtre en interne. Repli
+  /// attendu : un flux vide/`[]` plutôt qu'une erreur quand il n'y a rien
+  /// (jamais de crash — AD-10).
   Stream<List<ZFieldChoice>> options(Map<String, Object?> filterContext);
 }
 

@@ -1,10 +1,9 @@
 /// Registre de **modèles** `kind → (fromMap, toMap)` (AD-3, AD-4 pt.3).
 ///
-/// origine: lex_core (module « Étude ») — patron « registre ouvert »
-/// (canonique §4 pt.3). Consommé par **E2-5** : chaque `@ZcrudModel` génère un
-/// appel `register<T>(kind, fromMap: …, toMap: …)` prenant une **instance** de
-/// [ZcrudRegistry] (injection au bootstrap, cf. E7-2) — le codegen n'a pas à
-/// lister les modèles à la main, et « type non enregistré → throw explicite ».
+/// Chaque `@ZcrudModel` fait générer un appel `register<T>(kind, fromMap: …,
+/// toMap: …)` prenant une **instance** de [ZcrudRegistry] (injection au
+/// bootstrap de l'application) — le codegen n'a pas à lister les modèles à la
+/// main, et « type non enregistré → throw explicite ».
 library;
 
 import '../edition/z_field_spec.dart';
@@ -18,7 +17,7 @@ typedef ZFromMap = Object Function(Map<String, dynamic> map);
 /// Sérialise un modèle vers sa map persistée.
 typedef ZToMap = Map<String, dynamic> Function(Object value);
 
-/// Reconstruit un modèle en fournissant le [ZDecodeContext] injecté (DW-ES14-2)
+/// Reconstruit un modèle en fournissant le [ZDecodeContext] injecté
 /// aux `fromMap` d'entité extensible (`extensionParser`/`sourceRegistry`, AD-4).
 typedef ZFromMapWithContext = Object Function(
   Map<String, dynamic> map,
@@ -26,7 +25,7 @@ typedef ZFromMapWithContext = Object Function(
 );
 
 /// Sérialise un modèle en fournissant le [ZDecodeContext] injecté (provenance
-/// `source`) au `toMap` d'entité (DW-ES14-2).
+/// `source`) au `toMap` d'entité.
 typedef ZToMapWithContext = Map<String, dynamic> Function(
   Object value,
   ZDecodeContext? context,
@@ -37,11 +36,12 @@ typedef ZToMapWithContext = Map<String, dynamic> Function(
 class ZModelCodec {
   /// Construit le codec pour [kind] à partir de [fromMap]/[toMap].
   ///
-  /// [fromMapWithContext]/[toMapWithContext] (DW-ES14-2, **additifs**, `null` par
-  /// defaut) portent les variantes **conscientes du contexte** : emises par le
-  /// generateur pour toute entite dont la factory de domaine accepte un
+  /// [fromMapWithContext]/[toMapWithContext] (**additifs**, `null` par
+  /// défaut) portent les variantes **conscientes du contexte** : émises par le
+  /// générateur pour toute entité dont la factory de domaine accepte un
   /// `extensionParser` et/ou un `sourceRegistry` (AD-4). Quand ils sont `null`, le
-  /// registre retombe sur [fromMap]/[toMap] : comportement **identique** a avant.
+  /// registre retombe sur [fromMap]/[toMap] : comportement **identique** sans
+  /// contexte.
   const ZModelCodec({
     required this.kind,
     required this.fromMap,
@@ -59,53 +59,50 @@ class ZModelCodec {
   /// Sérialise une instance vers une map persistée (**sans** contexte).
   final ZToMap toMap;
 
-  /// Variante **consciente du contexte** de [fromMap] (DW-ES14-2), ou `null` si
-  /// l'entite ne consomme aucun collaborateur injectable.
+  /// Variante **consciente du contexte** de [fromMap], ou `null` si
+  /// l'entité ne consomme aucun collaborateur injectable.
   final ZFromMapWithContext? fromMapWithContext;
 
-  /// Variante **consciente du contexte** de [toMap] (DW-ES14-2), ou `null`.
+  /// Variante **consciente du contexte** de [toMap], ou `null`.
   final ZToMapWithContext? toMapWithContext;
 }
 
-/// Registre **instanciable** de modèles (PAS un singleton statique mutable —
-/// Dev Notes #2 : instances injectées via `ZcrudScope`/binding, pour
-/// l'isolation inter-app OQ-6 et la testabilité).
+/// Registre **instanciable** de modèles (PAS un singleton statique mutable :
+/// instances injectées via `ZcrudScope`/binding, pour l'isolation inter-app
+/// et la testabilité).
 ///
-/// **Slot `ZFieldSpec` différé (dépendance E2-4/E2-5)** : `ZFieldSpec` n'existe
-/// pas avant E2-4/E2-5. Cette version porte `fromMap`/`toMap` **seulement** ;
-/// l'association `kind → List<ZFieldSpec>` sera ajoutée **additivement** en
-/// E2-4/E2-5 (paramètre optionnel `fieldSpecs` sur [register], ou seconde map
-/// interne), **sans casser** la signature actuelle (AD-10 additif). On
-/// n'introduit **pas** de slot `Object?` non typé « en attendant » (fuite d'API).
+/// Porte `fromMap`/`toMap`, et — additivement — l'association `kind →
+/// List<ZFieldSpec>` (paramètre optionnel `fieldSpecs` sur [register]) sans
+/// casser la signature de base (AD-10 additif). Aucun slot `Object?` non typé
+/// « en attendant » (fuite d'API évitée par construction).
 class ZcrudRegistry {
   /// Construit un registre de modèles vide.
   ///
-  /// [decodeContext] (DW-ES14-2, **additif** — AD-10) est cable **une fois** au
+  /// [decodeContext] (**additif** — AD-10) est câblé **une fois** au
   /// bootstrap : le registre le thread aux `fromMap`/`toMap` conscients du
-  /// contexte des entites extensibles, sans changer la signature de [decode]/
+  /// contexte des entités extensibles, sans changer la signature de [decode]/
   /// [encode]. `ZcrudRegistry()` **sans** contexte se comporte **exactement**
-  /// comme avant (retro-compat prouvee par test).
-  // Le slot est PRIVE (`_decodeContext`) mais expose en parametre NOMME public
-  // (`decodeContext`) : Dart interdit un formal d'initialisation nomme prive
+  /// comme sans ce câblage (rétro-compat prouvée par test).
+  // Le slot est PRIVÉ (`_decodeContext`) mais exposé en paramètre NOMMÉ public
+  // (`decodeContext`) : Dart interdit un formal d'initialisation nommé privé
   // (`this._decodeContext`), l'assignation en liste est donc la SEULE forme.
   ZcrudRegistry({ZDecodeContext? decodeContext})
       // ignore: prefer_initializing_formals
       : _decodeContext = decodeContext;
 
-  /// Contexte de (de)codage injecte (DW-ES14-2), ou `null` (voie historique).
+  /// Contexte de (dé)codage injecté, ou `null` (voie sans contexte).
   final ZDecodeContext? _decodeContext;
 
   final ZCodecRegistry<ZModelCodec> _codecs =
       ZCodecRegistry<ZModelCodec>('ZcrudRegistry');
 
-  /// Seconde map interne `kind → List<ZFieldSpec>` (slot réservé additivement
-  /// par E2-3, câblé en E2-5). Alimentée par le paramètre optionnel
-  /// [register]`.fieldSpecs`. Indépendante des codecs : un modèle peut être
-  /// enregistré sans schéma (défaut `const []`).
+  /// Seconde map interne `kind → List<ZFieldSpec>`. Alimentée par le
+  /// paramètre optionnel [register]`.fieldSpecs`. Indépendante des codecs :
+  /// un modèle peut être enregistré sans schéma (défaut `const []`).
   final Map<String, List<ZFieldSpec>> _fieldSpecs = <String, List<ZFieldSpec>>{};
 
   /// Enregistre le couple (dé)sérialisation typé de [kind] et, additivement,
-  /// son schéma déclaratif [fieldSpecs] (projeté depuis `@ZcrudField` par E2-5).
+  /// son schéma déclaratif [fieldSpecs] (projeté depuis `@ZcrudField`).
   ///
   /// Les callbacks sont **typés `T`** côté appelant (émis par le codegen) et
   /// adaptés vers `Object` en interne (cast sûr côté [toMap], le décodage
@@ -113,14 +110,15 @@ class ZcrudRegistry {
   /// [ZDuplicateRegistrationError].
   ///
   /// [fieldSpecs] (défaut `const []`, **rétro-compatible** — AD-10 additif) est
-  /// la projection `List<ZFieldSpec>` émise par E2-5 ; consommée par E3
-  /// (formulaire) et E4 (liste). Le codec est enregistré **avant** le schéma :
-  /// une collision de [kind] laisse `_fieldSpecs` inchangé.
+  /// la projection `List<ZFieldSpec>` émise depuis `@ZcrudField` ; consommée
+  /// par le moteur d'édition et le moteur de liste. Le codec est enregistré
+  /// **avant** le schéma : une collision de [kind] laisse `_fieldSpecs`
+  /// inchangé.
   ///
-  /// [fromMapWithContext]/[toMapWithContext] (DW-ES14-2, **additifs**, `null` par
-  /// defaut — AD-10) portent les variantes conscientes du contexte. Emis par le
-  /// generateur pour toute entite dont la factory de domaine accepte un
-  /// `extensionParser` et/ou un `sourceRegistry` ; ignores (retombee sur
+  /// [fromMapWithContext]/[toMapWithContext] (**additifs**, `null` par
+  /// défaut — AD-10) portent les variantes conscientes du contexte. Émis par le
+  /// générateur pour toute entité dont la factory de domaine accepte un
+  /// `extensionParser` et/ou un `sourceRegistry` ; ignorés (retombée sur
   /// [fromMap]/[toMap]) pour les autres.
   void register<T extends Object>(
     String kind, {
@@ -181,11 +179,11 @@ class ZcrudRegistry {
   /// Décode [map] en un modèle via le codec de [kind] (**throw** si [kind]
   /// non enregistré, AD-3).
   ///
-  /// DW-ES14-2 : si le codec porte une variante consciente du contexte
-  /// (`fromMapWithContext`), le [ZDecodeContext] injecte au bootstrap y est
-  /// **threade** (resolution typee de `extension`/`source`, AD-4). Sinon —
-  /// entite non extensible, ou contexte non cable — comportement **identique** a
-  /// la voie historique (`fromMap` nu). La signature reste **INCHANGEE**.
+  /// Si le codec porte une variante consciente du contexte
+  /// (`fromMapWithContext`), le [ZDecodeContext] injecté au bootstrap y est
+  /// **threadé** (résolution typée de `extension`/`source`, AD-4). Sinon —
+  /// entité non extensible, ou contexte non câblé — comportement **identique** à
+  /// la voie sans contexte (`fromMap` nu). La signature reste **INCHANGÉE**.
   Object decode(String kind, Map<String, dynamic> map) {
     final codec = codecFor(kind);
     final withContext = codec.fromMapWithContext;
@@ -197,8 +195,8 @@ class ZcrudRegistry {
   /// Encode [value] en map via le codec de [kind] (**throw** si [kind] non
   /// enregistré, AD-3).
   ///
-  /// DW-ES14-2 : symetrique de [decode] — le contexte (provenance `source`) est
-  /// threade si le codec porte une variante `toMapWithContext`.
+  /// Symétrique de [decode] — le contexte (provenance `source`) est
+  /// threadé si le codec porte une variante `toMapWithContext`.
   Map<String, dynamic> encode(String kind, Object value) {
     final codec = codecFor(kind);
     final withContext = codec.toMapWithContext;

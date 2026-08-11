@@ -1,17 +1,15 @@
-/// `ZFieldLabel` — libellé de champ **enrichi partagé** (DP-12, parité DODLP M5
-/// `_buildLabelWidget`) : `Text.rich` du libellé thémé + un astérisque « requis »
-/// coloré **erreur** rendu uniquement si le champ est requis et éditable.
+/// `ZFieldLabel` — libellé de champ **enrichi partagé** : `Text.rich` du
+/// libellé thémé + un astérisque « requis » coloré **erreur** rendu
+/// uniquement si le champ est requis et éditable.
 ///
-/// origine: DODLP `_buildLabelWidget` (`edition_screen.dart.bak2:554`) rend
-/// `Text.rich(text: label.capitalize, children: [ if (isFieldRequired &&
-/// !readOnly && !field.readOnly) WidgetSpan(" *", color: kErrorColorDark) ])`.
-/// zcrud traduit `kErrorColorDark` en **couleur d'erreur thémée** (aucune couleur
-/// en dur — FR-26) et rend l'astérisque **décoratif** (`ExcludeSemantics`) : le
-/// rôle « requis » reste porté par le validateur natif (AD-13), l'astérisque
-/// n'introduit pas de faux label a11y.
+/// La couleur d'erreur est **thémée** (aucune couleur en dur — invariant
+/// FR-26) et l'astérisque est **décoratif** (`ExcludeSemantics`) : le
+/// rôle « requis » reste porté par le validateur natif (invariant AD-13),
+/// l'astérisque n'introduit pas de faux label a11y.
 ///
-/// AD-2/SM-1 : widget **statique** (aucune tranche écoutée) — construit dans la
-/// décoration statique, hors de la voie de frappe. Directionnel (AD-13).
+/// Invariant AD-2 : widget **statique** (aucune tranche écoutée) — construit
+/// dans la décoration statique, hors de la voie de frappe. Directionnel
+/// (invariant AD-13).
 library;
 
 import 'package:flutter/material.dart';
@@ -50,11 +48,11 @@ class ZFieldLabel extends StatelessWidget {
     final baseStyle = large
         ? (tokens.largeLabelTextStyle ?? theme.textTheme.bodyLarge)
         : (tokens.labelTextStyle ?? theme.textTheme.bodyMedium);
-    // Couleur d'erreur thémée (FR-26) — jamais un littéral (contraste DODLP
-    // `kErrorColorDark`). Repli sur `ColorScheme.error`.
+    // Couleur d'erreur thémée (invariant FR-26) — jamais un littéral. Repli
+    // sur `ColorScheme.error`.
     final errorColor = tokens.errorColor ?? theme.colorScheme.error;
-    // Astérisque uniquement si requis ET éditable (parité `isFieldRequired &&
-    // !readOnly && !field.readOnly` — le `readOnly` global force `field.readOnly`).
+    // Astérisque uniquement si requis ET éditable (le `readOnly` global
+    // force `field.readOnly`).
     final showStar = field.isRequired && !field.readOnly;
 
     return Text.rich(
@@ -65,8 +63,9 @@ class ZFieldLabel extends StatelessWidget {
             ? <InlineSpan>[
                 WidgetSpan(
                   alignment: PlaceholderAlignment.middle,
-                  // Décoratif (AD-13) : le rôle « requis » est porté par le
-                  // validateur natif — l'astérisque n'est pas un label a11y.
+                  // Décoratif (invariant AD-13) : le rôle « requis » est
+                  // porté par le validateur natif — l'astérisque n'est pas
+                  // un label a11y.
                   child: ExcludeSemantics(
                     child: Text(
                       ' *',

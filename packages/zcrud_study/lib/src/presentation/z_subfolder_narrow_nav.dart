@@ -1,13 +1,12 @@
 /// `ZSubfolderNarrowNav` — aiguillage de la navigation de sous-dossiers SOUS le
-/// seuil de bascule (< 600 dp) — CR-IFFD-40.
+/// seuil de bascule (< 600 dp).
 ///
 /// Trois chemins, dans cet ordre :
 ///
 /// 1. **coquille de l'hôte** injectée via `ZSubfolderNavRendererScope` (seam de
 ///    SURFACE, chaîne totale — voir `z_subfolder_nav_renderer.dart`) ;
 /// 2. [ZSubfolderNarrowMode.selector] — barre de sélection (**DÉFAUT**) ;
-/// 3. [ZSubfolderNarrowMode.compact] — rangée de puces défilante
-///    (**historique**, rendu strictement inchangé).
+/// 3. [ZSubfolderNarrowMode.compact] — rangée de puces défilante.
 ///
 /// Sans coquille injectée, le rendu est celui du mode demandé — l'existence de
 /// ce seam ne change RIEN à un consommateur qui ne l'utilise pas.
@@ -50,15 +49,14 @@ class ZSubfolderNarrowNav extends StatelessWidget {
         spec: spec,
         selected: selected,
         onSelect: onSelect,
-        // 🔵 CR-IFFD-46, point 1 — la coquille d'hôte garde
-        // `allSubfoldersLabel` pour la racine, et **ne reçoit AUCUNE
-        // `ZSubfolderSurface`** (`maybeOf` y rend `null`). Ce n'est pas un
-        // oubli : le socle ne sait pas quelle FORME la coquille rend — un
-        // déclencheur ? une liste ? les deux ? Lui imposer `rootItemLabel`
-        // reviendrait à décider à sa place laquelle des deux questions elle
-        // pose, soit exactement le défaut que ce point corrige. La coquille
-        // détient sa forme : elle lit `spec.rootItemLabel` elle-même si elle
-        // rend une liste.
+        // La coquille d'hôte garde `allSubfoldersLabel` pour la racine, et
+        // **ne reçoit AUCUNE `ZSubfolderSurface`** (`maybeOf` y rend
+        // `null`). Ce n'est pas un oubli : le socle ne sait pas quelle
+        // FORME la coquille rend — un déclencheur ? une liste ? les deux ?
+        // Lui imposer `rootItemLabel` reviendrait à décider à sa place
+        // laquelle des deux questions elle pose. La coquille détient sa
+        // forme : elle lit `spec.rootItemLabel` elle-même si elle rend une
+        // liste.
         itemContentBuilder: (context, refOrNull, isSelected) =>
             zBuildSubfolderItemContent(
               context,

@@ -1,15 +1,14 @@
 /// Normalisation de texte **pur-Dart** pour la **recherche sans accents** du
 /// domaine `zcrud_core`.
 ///
-/// origine: E4-3 (recherche/filtre/tri/pagination de la liste, FR-6..FR-8 ·
-/// AD-8/AD-10/AD-16). Ce helper **neutre** est réutilisable par l'adaptateur
-/// Firestore (E5) et par le moteur in-memory (`zApplyListRequest`, E4-3).
+/// Ce helper **neutre** est réutilisable par l'adaptateur Firestore et par
+/// le moteur de recherche/tri/pagination in-memory (`zApplyListRequest`).
 ///
 /// **Pur-Dart, aucune dépendance** (AD-1, out-degree 0) : aucun `BuildContext`,
 /// aucun widget, aucun `dart:ui`, PAS de `package:intl`. Déterministe (même
 /// entrée → même sortie) et **ne lève jamais** (chaîne vide → chaîne vide).
 ///
-/// **Limite connue (L-2, consignée — extension future).** La table couvre les
+/// **Limite connue.** La table couvre les
 /// formes **précomposées** (NFC : `é` = U+00E9). Une entrée en forme
 /// **décomposée** (NFD : `e` + U+0301 combinant) n'est PAS repliée — le rune
 /// combinant subsiste. Sans `package:intl`/`dart:convert` Unicode, aucune

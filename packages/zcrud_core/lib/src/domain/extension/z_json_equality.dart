@@ -1,33 +1,28 @@
 /// Égalité et hachage **PROFONDS** de valeurs JSON — **l'unique implémentation du
-/// repo pour le slot `extra`** (ES-2.2b / **DW-ES22-4**).
+/// dépôt pour le slot `extra`**.
 ///
-/// ⚠️ **Portée EXACTE** (LOW-1, code-review ES-2.2b — une dartdoc qui promet plus
-/// que la machine ne tient est un finding) : « unique » vaut **pour le slot
-/// `extra`** des entités `ZExtensible` (les 7 copies superficielles y sont
-/// supprimées, et le harnais `reserved_keys_gate` l'EXIGE — assertion (i.2)).
-/// Il subsiste dans `zcrud_core` **3** `_mapEquals`/`_mapHash` superficiels
-/// locaux — `z_list_render_request.dart`, `z_sub_list_config.dart`,
-/// `z_relation_field_widget.dart` — qui comparent des maps de **configuration**
-/// (scalaires), **PAS** un slot `extra` : hors périmètre DW-ES22-4, aucun risque
-/// de sync. Les rallier serait un nettoyage, pas une correction.
+/// ⚠️ **Portée EXACTE** : « unique » vaut **pour le slot `extra`** des entités
+/// `ZExtensible`. `zcrud_core` conserve par ailleurs quelques `_mapEquals`/
+/// `_mapHash` superficiels **locaux**, qui comparent des maps de
+/// **configuration** (scalaires), **PAS** un slot `extra` extensible : ceux-ci
+/// sont hors périmètre de cette primitive, sans risque de désynchronisation.
 ///
 /// ## Pourquoi dans `zcrud_core` (AD-1)
 ///
-/// Six entités `ZExtensible` — réparties dans **trois** satellites
-/// (`zcrud_study_kernel`, `zcrud_document`, `zcrud_flashcard`) — comparaient leur
-/// slot [ZExtensible.extra] avec un `_mapEquals`/`_mapHash` **SUPERFICIEL**,
-/// **copié à l'identique** dans chaque fichier. Or l'`==` d'une `Map`/`List` est
-/// une égalité d'**IDENTITÉ** en Dart : dès que `extra` porte du JSON
-/// **IMBRIQUÉ** — ce qui est **sa raison d'être** (AD-4 pt.2 : maps/listes legacy
-/// IFFD, documents Firestore) — deux décodages du **même** payload donnaient
-/// `a == b ⇒ false`, `Set{a, b}.length ⇒ 2` : toute déduplication, tout cache
-/// mémoïsé, tout `expect(relu, original)` était **cassé**.
+/// Une entité `ZExtensible` compare son slot [ZExtensible.extra] avec une
+/// égalité et un hash **profonds** : l'`==` natif d'une `Map`/`List` est une
+/// égalité d'**IDENTITÉ** en Dart, qui échoue dès que `extra` porte du JSON
+/// **IMBRIQUÉ** — ce qui est **sa raison d'être** (AD-4 pt.2 : maps/listes
+/// legacy, documents Firestore). Sans cette primitive, deux décodages du
+/// **même** payload donneraient `a == b ⇒ false`, `Set{a, b}.length ⇒ 2` :
+/// toute déduplication, tout cache mémoïsé, tout `expect(relu, original)`
+/// serait cassé.
 ///
-/// Réutiliser `noteJsonEquals` (`zcrud_note`) depuis les trois autres satellites
-/// aurait créé une **arête entre satellites** ⇒ **violation AD-1**. La primitive
-/// est donc **hissée ici**, dans le puits du graphe ; `zcrud_note` conserve
-/// `noteJsonEquals`/`noteJsonHash` en **alias délégants** (surface publique
-/// **inchangée** — leçon `ZExportApi`, E11a-3).
+/// Une primitive équivalente dupliquée dans plusieurs paquets satellites
+/// créerait une **arête entre satellites** ⇒ **violation AD-1**. Elle est donc
+/// hissée ici, dans le puits du graphe de dépendances ; un satellite qui
+/// possédait sa propre variante peut la conserver comme **alias délégant**
+/// vers celle-ci, en gardant sa surface publique **inchangée**.
 ///
 /// ## Contrat
 ///

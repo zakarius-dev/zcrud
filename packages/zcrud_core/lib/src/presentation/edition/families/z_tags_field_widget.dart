@@ -1,20 +1,21 @@
-/// Widget de la **famille tags** (E3-3b-1) : `tags`.
+/// Widget de la **famille tags** : `tags`.
 ///
 /// Saisie multi-valeur à puces : la valeur est une `List<String>` **en tranche**
 /// (lecture `value`, écriture via `onChanged`). L'ajout se fait par un champ de
 /// saisie interne **éphémère** ; le retrait par une action par puce.
 ///
-/// **Stabilité (contrat E3-2, AD-2)** : le `TextEditingController` de la saisie
+/// **Stabilité (invariant AD-2)** : le `TextEditingController` de la saisie
 /// d'ajout est un état **local éphémère** (ce n'est PAS la valeur du champ, qui
 /// vit en tranche) — créé 1× en [State.initState], `dispose`, **jamais recréé**
 /// pendant la frappe. Taper dans la saisie d'ajout n'écrit PAS la tranche (aucun
 /// rebuild de tranche tant qu'aucune étiquette n'est validée) ; valider une
 /// étiquette écrit la `List` via `onChanged` (rebuild de la seule tranche).
 ///
-/// a11y/RTL (AD-13) : chaque puce supprimable expose une action sémantique via
-/// un `IconButton` (cible ≥ 48 dp garantie) ; la saisie et le bouton d'ajout
-/// sont ≥ 48 dp ; `Wrap` respecte la `Directionality`. Aucune couleur/inset non
-/// directionnel en dur (FR-26 : bordure dérivée du `ZcrudTheme`).
+/// a11y/RTL (invariant AD-13) : chaque puce supprimable expose une action
+/// sémantique via un `IconButton` (cible ≥ 48 dp garantie) ; la saisie et le
+/// bouton d'ajout sont ≥ 48 dp ; `Wrap` respecte la `Directionality`. Aucune
+/// couleur/inset non directionnel en dur (invariant FR-26 : bordure dérivée
+/// du `ZcrudTheme`).
 library;
 
 import 'package:flutter/material.dart';
@@ -104,7 +105,7 @@ class _ZTagsFieldWidgetState extends State<ZTagsFieldWidget> {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1).
+      // provoquerait une DOUBLE annonce.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

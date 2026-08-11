@@ -1,12 +1,11 @@
-/// Variantes de **vue** sélectionnables de `DynamicList` (E4-2, AD-8/SM-5).
+/// Variantes de **vue** sélectionnables de `DynamicList` (AD-8).
 ///
-/// origine: E4-2. E4-1 ne rendait qu'un chemin unique (délégation au
-/// `ZListRenderer` injecté). E4-2 introduit un sélecteur `ZListLayout` `sealed`
-/// à **trois** variantes : `dataGrid` (délègue au backend E4-1 = Syncfusion),
-/// `builder` (rendu `ListView.builder` **dans le cœur**, Material-free) et
-/// `custom` (widget arbitraire fourni par l'app). Les vues `builder`/`custom` se
-/// rendent **entièrement dans `zcrud_core`** et n'exigent AUCUN `ZListRenderer`
-/// injecté — preuve exécutable qu'une liste se rend **sans Syncfusion** (SM-5).
+/// `ZListLayout` est un sélecteur `sealed` à **trois** variantes : `dataGrid`
+/// (délègue au backend `SfDataGrid` de `zcrud_list`), `builder` (rendu
+/// `ListView.builder` **dans le cœur**, Material-free) et `custom` (widget
+/// arbitraire fourni par l'app). Les vues `builder`/`custom` se rendent
+/// **entièrement dans `zcrud_core`** et n'exigent AUCUN `ZListRenderer`
+/// injecté — preuve exécutable qu'une liste se rend **sans Syncfusion**.
 ///
 /// **Neutre** : imports limités à `package:flutter/widgets.dart` + contrat neutre
 /// `ZListRenderRequest`/`ZListRow`/`ZListColumn`. AUCUN `package:syncfusion`.
@@ -17,7 +16,7 @@ import 'package:flutter/widgets.dart';
 import 'z_list_column.dart';
 import 'z_list_render_request.dart';
 
-/// Sélecteur **fermé** de la variante de rendu de `DynamicList` (E4-2).
+/// Sélecteur **fermé** de la variante de rendu de `DynamicList`.
 ///
 /// `sealed` (fermé, intra-package) : le `switch` de dispatch dans `DynamicList`
 /// est exhaustif **sans branche `default`**. Un satellite n'ajoute jamais une 4ᵉ
@@ -27,8 +26,8 @@ sealed class ZListLayout {
   const ZListLayout();
 }
 
-/// Vue **DataGrid** (défaut) : délègue au `ZListRenderer` injecté (chemin E4-1,
-/// backend `SfDataGrid` de `zcrud_list`) en lui passant le `ZListRenderRequest`
+/// Vue **DataGrid** (défaut) : délègue au `ZListRenderer` injecté (backend
+/// `SfDataGrid` de `zcrud_list`) en lui passant le `ZListRenderRequest`
 /// **à colonnes dérivées**.
 final class ZListDataGridLayout extends ZListLayout {
   /// Construit la vue DataGrid (`const`, sans état).

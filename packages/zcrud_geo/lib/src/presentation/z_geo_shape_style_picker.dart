@@ -199,7 +199,7 @@ class ZGeoShapeStylePicker extends StatelessWidget {
 
 /// Aperçu de style piloté **données** : remplissage + trait + épaisseur.
 ///
-/// **AC5** — délimitation garantie de la vignette : un **cadre EXTÉRIEUR neutre**
+/// **Délimitation garantie de la vignette** : un **cadre EXTÉRIEUR neutre**
 /// issu du thème ([borderColor], toujours visible) sépare la vignette du fond,
 /// tandis que le **liseré INTÉRIEUR** rend le trait choisi ([stroke], la donnée).
 /// Ainsi, même si l'utilisateur choisit `strokeColor ≈ couleur de fond`, la
@@ -223,7 +223,7 @@ class _StylePreview extends StatelessWidget {
   final int strokeWidth;
 
   /// Couleur du **cadre extérieur neutre** (thème) — délimite la vignette
-  /// du fond indépendamment de la couleur de [stroke] (AC5).
+  /// du fond indépendamment de la couleur de [stroke].
   final Color borderColor;
 
   @override
@@ -235,7 +235,7 @@ class _StylePreview extends StatelessWidget {
       // Aperçu non interactif : décrit l'état, ne double-annonce aucune cible.
       label: label(context, 'geo.style.preview', fallback: 'Aperçu du style'),
       readOnly: true,
-      // Cadre EXTÉRIEUR neutre issu du thème (AC5) : toujours visible, il
+      // Cadre EXTÉRIEUR neutre issu du thème : toujours visible, il
       // délimite la vignette du fond quel que soit le trait choisi.
       child: Container(
         key: outerFrameKey,
@@ -288,7 +288,7 @@ class _ColorButton extends StatelessWidget {
       enabled: onTap != null,
       label: label,
       // Un seul nœud porteur : on masque les sémantiques descendantes (le
-      // libellé visuel + le swatch) pour éviter la double annonce (AC6).
+      // libellé visuel + le swatch) pour éviter la double annonce.
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,

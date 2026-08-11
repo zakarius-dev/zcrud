@@ -1,12 +1,9 @@
-/// `CloudStorageRepository` — **port neutre** de stockage cloud de fichiers
-/// (E3-3c). Contrat abstrait **backend-agnostique** (AD-5) : aucune signature
+/// `CloudStorageRepository` — **port neutre** de stockage cloud de fichiers.
+/// Contrat abstrait **backend-agnostique** (AD-5) : aucune signature
 /// n'expose de type Firebase/`cloud_firestore` (`Timestamp`/`Filter`/
 /// `FirebaseException`…). La traduction concrète (Firebase Storage) vit dans
-/// l'adaptateur **E5** (`zcrud_firestore` → `FirebaseCloudStorageRepositoryImpl`),
+/// l'adaptateur `zcrud_firestore` (`FirebaseCloudStorageRepositoryImpl`),
 /// **jamais ici** (AD-1 : `zcrud_core` OUT=0, aucune dépendance lourde).
-///
-/// origine: unique point de couplage Firebase Storage DODLP/IFFD
-/// (`firebase_cloud_storage_repository_impl.dart`), généralisé en port neutre.
 ///
 /// **Contrat de résultat** (AD-11) : les opérations retournent `ZResult<...>`
 /// (`Either<ZFailure, T>`) et `ZResult<Unit>` pour les « void ». La
@@ -20,7 +17,7 @@ import '../edition/app_file.dart';
 import '../failures/z_failure.dart';
 
 /// Contrat **abstrait** (port) de transport d'un [AppFile] vers/depuis un
-/// stockage cloud. Aucune impl concrète dans `zcrud_core` (E5).
+/// stockage cloud. Aucune implémentation concrète dans `zcrud_core`.
 abstract class CloudStorageRepository {
   /// Téléverse les octets référencés par [file] (via son `localPath`) et
   /// retourne l'[AppFile] **mis à jour** — `remoteUrl` renseignée,

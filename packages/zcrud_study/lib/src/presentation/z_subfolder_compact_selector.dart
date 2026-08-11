@@ -1,13 +1,12 @@
-/// `ZSubfolderCompactSelector` — sélecteur de sous-dossiers pour PETIT écran
-/// (SUF-3, T3).
+/// `ZSubfolderCompactSelector` — sélecteur de sous-dossiers pour PETIT écran.
 ///
 /// Rangée de puces (chips) défilant horizontalement : item racine « Tous les
 /// sous-dossiers » en tête, puis les [ZSubfolderRef], puis un bouton « Ajouter »
 /// optionnel. **Aucune sidebar** — la bascule sidebar ↔ sélecteur compact est
 /// arbitrée par `ZResponsiveLayout` au seuil `ZWindowSizeThresholds.mediumMinWidth`
-/// (600 dp) côté `ZStudyFolderDetail` (AC7).
+/// (600 dp) côté `ZStudyFolderDetail`.
 ///
-/// **PARITÉ avec la sidebar (R-SUF2)** : le contenu d'une puce vient du MÊME
+/// **PARITÉ avec la sidebar** : le contenu d'une puce vient du MÊME
 /// [ZSubfolderNavSpec.itemBuilder] injecté que celui de la sidebar (à défaut :
 /// pastille d'accent + libellé + compteur, MÊMES informations). Une même
 /// `ZSubfolderNavSpec` a donc les mêmes capacités des deux côtés du seuil — le
@@ -64,14 +63,14 @@ class ZSubfolderCompactSelector extends StatelessWidget {
     // `Column`). `ListView(children:)` interdit (AD-13) — d'où `Row`.
     // Scope de mode posé AU-DESSUS du `ChoiceChip` (donc au-dessus du dry layout
     // qu'il calcule) : l'`itemBuilder` injecté lit
-    // `ZSubfolderLayoutMode.of(context) == compact` et sait que sa largeur n'est
-    // PAS bornée (CR-IFFD-31) — sans 4ᵉ paramètre, sans `LayoutBuilder`.
+    // `ZSubfolderLayoutMode.of(context) == compact` et sait que sa largeur
+    // n'est PAS bornée — sans 4ᵉ paramètre, sans `LayoutBuilder`.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.compact,
-      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE. C'est ici que
-      // les deux axes se séparent visiblement : cette surface partage le
-      // `mode` de la feuille de la barre de sélection, mais **pas** sa
-      // contrainte de largeur (`ZSubfolderSurface.boundsWidth`).
+      // Second axe : la surface CONCRÈTE. C'est ici que les deux axes se
+      // séparent visiblement : cette surface partage le `mode` de la
+      // feuille de la barre de sélection, mais **pas** sa contrainte de
+      // largeur (`ZSubfolderSurface.boundsWidth`).
       surface: ZSubfolderSurface.chips,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: _kMinTapTarget),
@@ -85,9 +84,9 @@ class ZSubfolderCompactSelector extends StatelessWidget {
                 context,
                 theme,
                 refOrNull: null,
-                // CR-IFFD-46, point 1 — la puce racine désigne le CONTENEUR
-                // (source UNIQUE du repli, partagée avec la sidebar et la
-                // feuille) ; seul le DÉCLENCHEUR de la barre de sélection garde
+                // La puce racine désigne le CONTENEUR (source UNIQUE du
+                // repli, partagée avec la sidebar et la feuille) ; seul le
+                // DÉCLENCHEUR de la barre de sélection garde
                 // `allSubfoldersLabel`, car il annonce le filtre ACTIF.
                 label: zSubfolderRootItemLabel(spec),
               ),
@@ -103,12 +102,13 @@ class ZSubfolderCompactSelector extends StatelessWidget {
 
   /// Une puce sélectionnable. [refOrNull] `null` ⇒ item racine.
   ///
-  /// **PARITÉ avec la sidebar (R-SUF2)** : le contenu vient du MÊME
+  /// **PARITÉ avec la sidebar** : le contenu vient du MÊME
   /// [ZSubfolderNavSpec.itemBuilder] injecté — et, à défaut, du même chrome
   /// neutre (pastille d'accent + compteur). Une `ZSubfolderNavSpec` a donc les
   /// MÊMES capacités des deux côtés du seuil de bascule (600 dp) : le seam
-  /// d'extension n'est pas « sidebar-only ». La mise en évidence de la sélection
-  /// reste posée par SUF-3 (`ChoiceChip.selected`), jamais déléguée à l'hôte.
+  /// d'extension n'est pas « sidebar-only ». La mise en évidence de la
+  /// sélection reste posée par `ChoiceChip.selected`, jamais déléguée à
+  /// l'hôte.
   Widget _chip(
     BuildContext context,
     ZcrudTheme theme, {
@@ -122,7 +122,7 @@ class ZSubfolderCompactSelector extends StatelessWidget {
         valueListenable: selected,
         builder: (context, current, _) {
           final isSelected = current == id;
-          // Fabrique PARTAGÉE avec la barre de sélection (CR-IFFD-40) : mêmes
+          // Fabrique PARTAGÉE avec la barre de sélection : mêmes
           // `itemBuilder` injecté et même chrome neutre de repli — aucune
           // seconde source. Le rendu est inchangé (fonction, pas widget : aucun
           // élément intermédiaire n'est ajouté à cet arbre).

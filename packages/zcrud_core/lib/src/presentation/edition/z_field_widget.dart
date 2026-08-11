@@ -1,34 +1,32 @@
 /// `ZFieldWidget` — **dispatcher de champ par type** + hôte scellé sur sa
-/// tranche (E3-3a, AD-2 / OBJECTIF PRODUIT N°1). Remplace le rendu **uniforme**
-/// d'E3-1/E3-2 par un rendu **spécifique par famille** (texte/nombre/date/
-/// booléen/select/relation), sans jamais élargir la frontière de rebuild.
+/// tranche (invariant AD-2). Rend un contrôle **spécifique par famille**
+/// (texte/nombre/date/booléen/select/relation), sans jamais élargir la
+/// frontière de rebuild.
 ///
-/// origine: E3-1 (`ZEditionField`) a livré l'hôte générique scellé sur sa
-/// tranche (`ZFieldListenableBuilder`) + place stable ; E3-2 a durci la
-/// stabilité (contrôleur/focus/validateur `late final`, sync guardée hors focus).
-/// E3-3a **réutilise INTÉGRALEMENT** cette machinerie (helper de slice,
-/// `ZValidatorCompiler`, garde de sync) et n'échange que le **sous-arbre interne**
-/// choisi par [familyOf].
+/// L'hôte générique scellé sur sa tranche (`ZFieldListenableBuilder`) porte la
+/// place stable, le contrôleur/focus/validateur `late final` et la sync
+/// guardée hors focus. Cette machinerie est **réutilisée INTÉGRALEMENT** (helper
+/// de slice, `ZValidatorCompiler`, garde de sync) ; seul le **sous-arbre
+/// interne** choisi par [familyOf] varie selon le type de champ.
 ///
 /// INVARIANTS (NON-NÉGOCIABLES) :
-/// - **Frontière de rebuild = la tranche** (AD-2) : le rendu vit sous
+/// - **Frontière de rebuild = la tranche** (invariant AD-2) : le rendu vit sous
 ///   [ZFieldListenableBuilder] ; seul le changement de la tranche `name`
 ///   reconstruit ce sous-arbre. Le dispatch choisit UNIQUEMENT le contrôle
 ///   interne rendu, jamais la frontière.
 /// - **Contrôleur de texte alloué UNIQUEMENT pour les familles clavier** (texte
 ///   & nombre — [familyUsesTextController]) : créé 1× en [State.initState],
 ///   `dispose`, jamais recréé ni ré-injecté dans la voie de frappe. Sync guardée
-///   hors focus (FR-1). Les familles non-clavier (date/booléen/select/relation)
+///   hors focus. Les familles non-clavier (date/booléen/select/relation)
 ///   lisent `value` et écrivent via `controller.setValue` (aucun contrôleur).
 /// - **Dispatch exhaustif** : la classification `EditionFieldType → EditionFamily`
-///   est un `switch` **exhaustif SANS `default:`** ([familyOf], AC2). `hidden` →
+///   est un `switch` **exhaustif SANS `default:`** ([familyOf]). `hidden` →
 ///   `SizedBox.shrink()` ; tout type « ailleurs » → [ZUnsupportedFieldWidget]
-///   (repli contrôlé, jamais une exception — AC3).
+///   (repli contrôlé, jamais une exception).
 /// - **Place stable** : l'assembleur ([DynamicEdition]) enveloppe la sortie dans
-///   `KeyedSubtree(key: ValueKey(field.name))` (garde L3/AC7) — invariant UJ-2
-///   non contournable.
+///   `KeyedSubtree(key: ValueKey(field.name))` — non contournable.
 ///
-/// Aucun gestionnaire d'état (AD-15) : primitives Flutter uniquement.
+/// Aucun gestionnaire d'état (invariant AD-15) : primitives Flutter uniquement.
 library;
 
 import 'package:flutter/material.dart';
@@ -46,7 +44,7 @@ import '../z_form_controller.dart';
 import '../zcrud_scope.dart';
 import 'edition_field_family.dart';
 import 'families/z_app_file_field_widget.dart';
-// DP-12/DP-13 : ornements déclaratifs, label enrichi, fiche de lecture.
+// Ornements déclaratifs, label enrichi, fiche de lecture.
 import 'families/z_boolean_field_widget.dart';
 import 'families/z_color_field_widget.dart';
 import 'families/z_color_multi_field_widget.dart';
@@ -99,13 +97,13 @@ class ZFieldWidget extends StatefulWidget {
   final ZFieldSpec field;
 
   /// Mode d'autovalidation transmis aux familles clavier (texte/nombre) —
-  /// **additif** (E3-5). `null` (défaut) ⇒ `onUserInteraction` (comportement
-  /// E3-2/E3-3a inchangé). Le stepper le force à `always` pour **révéler** les
+  /// **additif**. `null` (défaut) ⇒ `onUserInteraction` (comportement
+  /// inchangé). Le stepper le force à `always` pour **révéler** les
   /// erreurs des champs invalides d'une étape à une transition bloquée, SANS
-  /// jamais introduire un `Form`/`FormBuilder` global (AD-2).
+  /// jamais introduire un `Form`/`FormBuilder` global (invariant AD-2).
   final AutovalidateMode? autovalidateMode;
 
-  /// **Mode lecture GLOBAL** (DP-13, M4) — drapeau de PRÉSENTATION **additif**
+  /// **Mode lecture GLOBAL** — drapeau de PRÉSENTATION **additif**
   /// (défaut `false`), signal DISTINCT de `ZFieldSpec.readOnly`. Quand `true` et
   /// que la famille est « fiche-able » ([zReadModeCardable]), le champ est rendu
   /// en **fiche de consultation** ([ZReadOnlyFieldCard]) au lieu du widget
@@ -114,12 +112,12 @@ class ZFieldWidget extends StatefulWidget {
   final bool readMode;
 
   /// Hook d'instrumentation : appelé UNE FOIS en [State.initState] (preuve
-  /// UJ-2/SM-1 « State/contrôleur non recréés » via compteur == 1).
+  /// « State/contrôleur non recréés » via compteur == 1, invariant AD-2).
   @visibleForTesting
   final VoidCallback? onInit;
 
   /// Hook d'instrumentation : appelé à chaque (re)build de la tranche (compteur
-  /// de build par champ pour SM-1).
+  /// de build par champ, invariant AD-2).
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -131,14 +129,15 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// Famille de rendu résolue UNE FOIS (le `type` d'un champ ne change pas).
   late final EditionFamily _family;
 
-  /// `true` si ce champ est rendu en **fiche de lecture** (DP-13) : `readMode`
-  /// global ET famille fiche-able. Aucun contrôleur de texte n'est alloué dans ce
-  /// cas (pas de clavier — SM-1/AD-2). Résolu UNE FOIS.
+  /// `true` si ce champ est rendu en **fiche de lecture** : `readMode`
+  /// global ET famille fiche-able. Aucun contrôleur de texte n'est alloué dans
+  /// ce cas (pas de clavier — invariant AD-2). Résolu UNE FOIS.
   late final bool _readModeCard;
 
   /// `TextEditingController` interne — alloué UNIQUEMENT pour les familles
-  /// clavier (texte/nombre). Créé 1×, jamais recréé (AD-2) ; sa valeur n'est
-  /// écrite que par la sync guardée hors focus (jamais dans la voie de frappe).
+  /// clavier (texte/nombre). Créé 1×, jamais recréé (invariant AD-2) ; sa
+  /// valeur n'est écrite que par la sync guardée hors focus (jamais dans la
+  /// voie de frappe).
   TextEditingController? _text;
 
   /// `FocusNode` **stable** — alloué pour les familles clavier (oracle de la
@@ -146,20 +145,22 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   FocusNode? _focus;
 
   /// Validateur **mémoïsé** — compilé 1× depuis `field.validators` : champ-local
-  /// (E3-2) **+** inter-champs (E3-6, closures capturant le controller). Identité
-  /// stable ; `null` si aucun. Compilé pour **TOUTES** les familles (E3-6) afin
-  /// que les non-texte puissent révéler leur message (report a / MEDIUM-1 E3-5).
+  /// **+** inter-champs (closures capturant le controller). Identité
+  /// stable ; `null` si aucun. Compilé pour **TOUTES** les familles afin que
+  /// les non-texte puissent révéler leur message.
   FormFieldValidator<String>? _validator;
 
   /// Tranches des champs **référencés** par un validateur inter-champs (`refKey`)
-  /// — abonnement CIBLÉ (AC12) : un changement de la valeur référencée re-évalue
-  /// CE champ, sans jamais passer par le `notifyListeners()` global (SM-1).
+  /// — abonnement CIBLÉ : un changement de la valeur référencée re-évalue
+  /// CE champ, sans jamais passer par le `notifyListeners()` global (invariant
+  /// AD-2).
   final List<Listenable> _refListenables = <Listenable>[];
 
   /// Listenable fusionné observé PAR-DESSUS la tranche du champ : canal de
   /// révélation ([controller.reveal]) + tranches référencées ([_refListenables]).
   /// Ne change QUE sur une soumission (révélation) ou un changement de champ
-  /// référencé — jamais sur une frappe dans CE champ ou un champ tiers (SM-1).
+  /// référencé — jamais sur une frappe dans CE champ ou un champ tiers
+  /// (invariant AD-2).
   late final Listenable _revealAndRefs;
 
   @override
@@ -174,10 +175,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     for (final refKey in ZCrossFieldValidator.refKeysOf(widget.field.validators)) {
       _refListenables.add(widget.controller.fieldListenable(refKey));
     }
-    // DP-5 : abonnement CIBLÉ aux `filterKeys` d'une relation dynamique — même
-    // canal que refKeys (jamais global, SM-1) : une frappe dans un filterKey
-    // recompute le `filterContext` de CE champ relation (ré-abonnement du flux),
-    // sans reconstruire le formulaire. `filterKeys` vide ⇒ aucun abonnement.
+    // Abonnement CIBLÉ aux `filterKeys` d'une relation dynamique — même canal
+    // que refKeys (jamais global) : une frappe dans un filterKey recompute le
+    // `filterContext` de CE champ relation (ré-abonnement du flux), sans
+    // reconstruire le formulaire. `filterKeys` vide ⇒ aucun abonnement.
     if (_family == EditionFamily.relation &&
         widget.field.config is ZRelationConfig) {
       final relCfg = widget.field.config! as ZRelationConfig;
@@ -185,16 +186,15 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         _refListenables.add(widget.controller.fieldListenable(k));
       }
     }
-    // DP-15 (M22) : abonnement CIBLÉ aux choix dynamiques cross-champ d'un
-    // `select` — `choicesFromKey` (tranche portant les options, parité
-    // `stateChoiceItems`) + `filterKeys` d'une `ZChoicesSource` calculée. Même
-    // canal que refKeys/filterKeys relation (jamais global, SM-1) : un changement
-    // d'un champ source recompute UNIQUEMENT ce champ select. Config absente ⇒
-    // aucun abonnement (repli statique E3-3a).
-    // CR-DODLP-GAP2 : `rowChips` reçoit désormais les MÊMES choix effectifs que
-    // `select` (il EST le « select en mode chips »). Sans l'ajouter ici, le
-    // canal dynamique aurait été résolu une fois puis jamais réévalué — une
-    // capacité câblée mais inerte.
+    // Abonnement CIBLÉ aux choix dynamiques cross-champ d'un `select` —
+    // `choicesFromKey` (tranche portant les options) + `filterKeys` d'une
+    // `ZChoicesSource` calculée. Même canal que refKeys/filterKeys relation
+    // (jamais global) : un changement d'un champ source recompute UNIQUEMENT
+    // ce champ select. Config absente ⇒ aucun abonnement (repli statique).
+    // `rowChips` reçoit les MÊMES choix effectifs que `select` (il EST le
+    // « select en mode chips ») : sans l'ajouter ici, le canal dynamique
+    // serait résolu une fois puis jamais réévalué — une capacité câblée mais
+    // inerte.
     if ((_family == EditionFamily.select ||
             _family == EditionFamily.rowChips) &&
         widget.field.config is ZSelectConfig) {
@@ -207,12 +207,11 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         _refListenables.add(widget.controller.fieldListenable(k));
       }
     }
-    // CR-IFFD-22 — options DÉRIVÉES : le moteur publie dans une tranche dédiée
+    // Options DÉRIVÉES : le moteur publie dans une tranche dédiée
     // `ZDerivationChannels.optionsKey(name)`. SANS cet abonnement, la tranche
-    // changerait sans que ce champ le voie — une capacité déclarée mais que
-    // personne ne lit, exactement le silence que ces CR reprochent. Abonnement
-    // CIBLÉ (SM-1) : seul ce champ recompute. Indépendant de `ZSelectConfig`,
-    // car un champ peut dériver ses options sans porter de config de select.
+    // changerait sans que ce champ le voie. Abonnement CIBLÉ : seul ce champ
+    // recompute. Indépendant de `ZSelectConfig`, car un champ peut dériver ses
+    // options sans porter de config de select.
     if (widget.field.derivedFrom?.options != null) {
       _refListenables.add(
         widget.controller
@@ -223,14 +222,14 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       widget.controller.reveal,
       ..._refListenables,
     ]);
-    // AD-2/SM-1 (DP-13) : aucun `TextEditingController`/`FocusNode` alloué pour un
+    // Invariant AD-2 : aucun `TextEditingController`/`FocusNode` alloué pour un
     // champ rendu en fiche de lecture (pas de saisie, pas de clavier).
     if (familyUsesTextController(_family) && !_readModeCard) {
       final initial = widget.controller.valueOf(widget.field.name);
       _text = TextEditingController(text: _stringOf(initial));
       _focus = FocusNode();
-      // Re-seed DIFFÉRÉ (AC13, FR-1) : une valeur externe survenue PENDANT le
-      // focus (jamais écrasée alors) est reflétée à la PERTE de focus.
+      // Re-seed DIFFÉRÉ : une valeur externe survenue PENDANT le focus
+      // (jamais écrasée alors) est reflétée à la PERTE de focus.
       _focus!.addListener(_onFocusChange);
     }
     widget.onInit?.call();
@@ -245,7 +244,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   }
 
   /// À la perte de focus d'un champ clavier : reflète une éventuelle valeur
-  /// EXTERNE (write-back différé, AC13) sans jamais toucher une saisie en cours
+  /// EXTERNE (write-back différé) sans jamais toucher une saisie en cours
   /// (ce handler n'agit qu'une fois `hasFocus == false`).
   void _onFocusChange() {
     if (_focus == null || _text == null || _focus!.hasFocus) return;
@@ -263,19 +262,20 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // `hidden` : widget zéro-taille, aucune souscription de tranche (AC4).
+    // `hidden` : widget zéro-taille, aucune souscription de tranche.
     if (_family == EditionFamily.hidden) {
       widget.onBuild?.call();
       return const SizedBox.shrink();
     }
-    // Repli contrôlé : type « ailleurs », aucune souscription requise (AC3).
+    // Repli contrôlé : type « ailleurs », aucune souscription requise.
     if (_family == EditionFamily.unsupported) {
       widget.onBuild?.call();
       return ZUnsupportedFieldWidget(field: widget.field);
     }
-    // DP-13 : mode lecture global + famille fiche-able → fiche de consultation
+    // Mode lecture global + famille fiche-able → fiche de consultation
     // (label/valeur + copie) SOUS la tranche (reflète une écriture externe). Aucun
-    // controller/focus (garde en `initState`) ; frontière = la tranche (AD-2).
+    // controller/focus (garde en `initState`) ; frontière = la tranche
+    // (invariant AD-2).
     if (_readModeCard) {
       return ZFieldListenableBuilder(
         controller: widget.controller,
@@ -286,24 +286,23 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         },
       );
     }
-    // Mini-CRUD imbriqué (E3-3b-2, AD-2 — POINT DE VIGILANCE N°1) : monté AVANT
+    // Mini-CRUD imbriqué (invariant AD-2 — POINT DE VIGILANCE) : monté AVANT
     // la souscription à la tranche parente. Le conteneur écoute un canal
     // STRUCTUREL (add/remove/reorder) et agrège la tranche parente hors de la
-    // voie de rebuild → taper dans un sous-champ ne reconstruit PAS cet hôte
-    // (SM-1 imbriqué). Valeur initiale lue une fois via `valueOf`.
+    // voie de rebuild → taper dans un sous-champ ne reconstruit PAS cet hôte.
+    // Valeur initiale lue une fois via `valueOf`.
     // Mini-CRUD imbriqués : hors de la tranche de valeur (canal structurel). Le
-    // write-back externe (AC13) les re-amorce en re-lisant `valueOf` sur
-    // incrément de `reseedRevision` (re-clé) — jamais pendant une frappe (le
-    // canal ne change que sur reset/reseed).
+    // write-back externe les re-amorce en re-lisant `valueOf` sur incrément de
+    // `reseedRevision` (re-clé) — jamais pendant une frappe (le canal ne
+    // change que sur reset/reseed).
     if (_family == EditionFamily.subList) {
       return _withCollectionError(_reseedable((context) {
         widget.onBuild?.call();
-        // CR-DODLP-GAP3 — ACL de ligne. `ZSubListFieldWidget.acl` était lu mais
-        // n'était alimenté par AUCUN site du cœur : un `ZcrudScope(acl:)` ne
-        // filtrait pas les lignes. Le câblage est **opt-in par la config**
-        // (`aclCollectionId`) et non inconditionnel, pour ne pas déplacer un
-        // hôte qui pose déjà une ACL restrictive au scope. `null` ⇒ défauts
-        // permissifs = comportement DP-6 strictement inchangé.
+        // ACL de ligne : `ZSubListFieldWidget.acl` doit être alimenté par un
+        // site du cœur, sinon un `ZcrudScope(acl:)` ne filtrerait pas les
+        // lignes. Le câblage est **opt-in par la config** (`aclCollectionId`)
+        // et non inconditionnel, pour ne pas déplacer un hôte qui pose déjà
+        // une ACL restrictive au scope. `null` ⇒ défauts permissifs.
         final subCfg = widget.field.config;
         final aclCid =
             subCfg is ZSubListConfig ? subCfg.aclCollectionId : null;
@@ -330,9 +329,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         );
       }));
     }
-    // Frontière de rebuild (AD-2) : la tranche du champ (frappe) reconstruit le
-    // closure INTERNE ; le canal [_revealAndRefs] (révélation + champs référencés)
-    // enveloppe SANS élargir la frontière à une frappe tierce (SM-1).
+    // Frontière de rebuild (invariant AD-2) : la tranche du champ (frappe)
+    // reconstruit le closure INTERNE ; le canal [_revealAndRefs] (révélation +
+    // champs référencés) enveloppe SANS élargir la frontière à une frappe
+    // tierce.
     final reactive = ListenableBuilder(
       listenable: _revealAndRefs,
       builder: (context, _) {
@@ -348,17 +348,17 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         );
       },
     );
-    // B1 (AC3/AC5) : la variante `large` enveloppe le RÉSULTAT du builder
-    // réactif dans une Card (label au-dessus) — le wrapper est STATIQUE (monté
-    // hors de la voie de frappe), il ne déplace JAMAIS la frontière de rebuild
-    // (AD-2/SM-1). `normal` (défaut) : aucun wrapper, rendu inline inchangé.
+    // La variante `large` enveloppe le RÉSULTAT du builder réactif dans une
+    // Card (label au-dessus) — le wrapper est STATIQUE (monté hors de la voie
+    // de frappe), il ne déplace JAMAIS la frontière de rebuild (invariant
+    // AD-2). `normal` (défaut) : aucun wrapper, rendu inline inchangé.
     if (widget.field.fieldSize == ZFieldSize.large) {
       final resolvedLabel = label(
         context,
         widget.field.label ?? widget.field.name,
         fallback: widget.field.label ?? widget.field.name,
       );
-      // DP-12 : label enrichi (astérisque requis) + slots leading/suffix résolus
+      // Label enrichi (astérisque requis) + slots leading/suffix résolus
       // (statiquement, hors frontière de rebuild). Le `label` String reste porté
       // pour la sémantique conteneur de la Card (a11y).
       return ZLargeFieldCard(
@@ -374,8 +374,9 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     return reactive;
   }
 
-  /// Rend la **fiche de lecture** (DP-13) : formate la [value] de la tranche
-  /// (défensif, AD-10) et compose [ZReadOnlyFieldCard] (label + valeur + copie).
+  /// Rend la **fiche de lecture** : formate la [value] de la tranche
+  /// (défensif, invariant AD-10) et compose [ZReadOnlyFieldCard] (label +
+  /// valeur + copie).
   Widget _buildReadCard(BuildContext context, Object? value) {
     final resolvedLabel = label(
       context,
@@ -394,8 +395,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
 
   /// Enveloppe un sous-arbre à **buffer interne** (mini-CRUD/signature) dans un
   /// re-amorçage clé-de-révision : sur incrément de [ZFormController.reseedRevision]
-  /// (reset/reseed), le sous-arbre est re-clé ⇒ re-lit `valueOf` (AC13). Le canal
-  /// ne change JAMAIS sur une frappe (SM-1 imbriqué préservé).
+  /// (reset/reseed), le sous-arbre est re-clé ⇒ re-lit `valueOf`. Le canal
+  /// ne change JAMAIS sur une frappe (invariant AD-2 préservé).
   Widget _reseedable(WidgetBuilder builder) => ValueListenableBuilder<int>(
         valueListenable: widget.controller.reseedRevision,
         builder: (context, rev, _) => KeyedSubtree(
@@ -405,8 +406,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       );
 
   /// Rend le contrôle de la famille puis, pour les familles **non-texte**,
-  /// ajoute la surface d'erreur révélée (report a / MEDIUM-1 E3-5) : les familles
-  /// clavier portent NATIVEMENT l'erreur via `TextFormField.errorText`.
+  /// ajoute la surface d'erreur révélée : les familles clavier portent
+  /// NATIVEMENT l'erreur via `TextFormField.errorText`.
   Widget _dispatch(BuildContext context, Object? value, bool revealed) {
     final control = _buildControl(context, value, revealed);
     if (_family == EditionFamily.text || _family == EditionFamily.number) {
@@ -415,29 +416,28 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     return _wrapError(control, value, revealed);
   }
 
-  /// CR-DODLP-GAP3 — surface d'erreur des **mini-CRUD imbriqués**
-  /// (`subItems`/`dynamicItem`), qui n'en avaient AUCUNE.
+  /// Surface d'erreur des **mini-CRUD imbriqués** (`subItems`/`dynamicItem`).
   ///
-  /// Mesuré : ces deux familles sont montées **avant** la souscription à la
-  /// tranche (canal structurel, SM-1 imbriqué) et ne passaient donc jamais par
-  /// [_wrapError]. Conséquence : une sous-liste **requise et vide** bloquait la
+  /// Ces deux familles sont montées **avant** la souscription à la tranche
+  /// (canal structurel) et ne passent donc pas par [_wrapError]. Sans cette
+  /// surface dédiée, une sous-liste **requise et vide** bloquerait la
   /// soumission et le gate d'étape **sans afficher le moindre message** — un
   /// refus muet, pire qu'un refus.
   ///
-  /// 🔴 SM-1 est préservé par **deux** propriétés :
+  /// L'invariant AD-2 est préservé par **deux** propriétés :
   /// 1. le conteneur est **construit hors** de la voie de valeur (il arrive
   ///    déjà bâti en paramètre) et transite par `child:` — la souscription à la
-  ///    tranche n'élargit donc pas la frontière de rebuild. Mesuré par
-  ///    injection : construire le conteneur *dans* le builder de tranche
-  ///    reconstruit le mini-CRUD à chaque agrégation. (Le `child:` seul n'est
-  ///    qu'une optimisation : c'est le **lieu de construction** qui protège.)
-  /// 2. la **forme de l'arbre est STABLE**. Mesuré : réutiliser [_wrapError]
-  ///    ici faisait alterner `Column(conteneur, erreur)` et `conteneur` selon
-  ///    la présence du message — ce **reparentage** détruisait l'élément du
-  ///    mini-CRUD (compteur de création 1 → 2), donc l'état de ses items en
-  ///    cours d'édition. La place de l'erreur est ici **toujours occupée**
+  ///    tranche n'élargit donc pas la frontière de rebuild. Construire le
+  ///    conteneur *dans* le builder de tranche reconstruirait le mini-CRUD à
+  ///    chaque agrégation. (Le `child:` seul n'est qu'une optimisation : c'est
+  ///    le **lieu de construction** qui protège.)
+  /// 2. la **forme de l'arbre est STABLE**. Réutiliser [_wrapError] ici ferait
+  ///    alterner `Column(conteneur, erreur)` et `conteneur` selon la présence
+  ///    du message — ce **reparentage** détruirait l'élément du mini-CRUD
+  ///    (compteur de création 1 → 2), donc l'état de ses items en cours
+  ///    d'édition. La place de l'erreur est ici **toujours occupée**
   ///    (`SizedBox.shrink()` quand il n'y a rien à dire), exactement comme la
-  ///    « place stable » exigée des champs conditionnels (AD-2).
+  ///    « place stable » exigée des champs conditionnels.
   Widget _withCollectionError(Widget container) {
     if (_validator == null) return container;
     return ListenableBuilder(
@@ -489,8 +489,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   /// (AD-2). Message uniforme issu du validateur mémoïsé.
   Widget _wrapError(Widget child, Object? value, bool revealed) {
     if (!revealed || _validator == null) return child;
-    // LOT 2 : projection de VALIDATION (une collection/map VIDE ⇒ `''`), et
-    // non `_stringOf` (qui rendait `"[]"`, non vide ⇒ `required` acceptait un
+    // Projection de VALIDATION (une collection/map VIDE ⇒ `''`), et non
+    // `_stringOf` (qui rendrait `"[]"`, non vide ⇒ `required` accepterait un
     // champ obligatoire NON rempli).
     final error = _validator!(zValidationText(value));
     if (error == null) return child;
@@ -519,8 +519,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
 
   Widget _buildControl(BuildContext context, Object? value, bool revealed) {
     final field = widget.field;
-    // B1 (AC4) : en `large`, les familles décor-portantes rendent leur
-    // `InputDecoration` en mode « bare » (le décor est porté par la Card).
+    // En `large`, les familles décor-portantes rendent leur `InputDecoration`
+    // en mode « bare » (le décor est porté par la Card).
     final bare = field.fieldSize == ZFieldSize.large;
     final autovalidate = revealed
         ? AutovalidateMode.always
@@ -551,9 +551,9 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       case EditionFamily.date:
         // Seul point du cœur détenant le `ZFormController` : il résout les
         // bornes (littéral > cross-champ) via des fermetures pur-Dart injectées
-        // au widget, évaluées AU TAP (D3/D5) — aucun abonnement réactif cross-
-        // champ, aucun rebuild global (AD-2). Le widget reste `StatelessWidget`
-        // pur, sans `ZFormController`.
+        // au widget, évaluées AU TAP — aucun abonnement réactif cross-champ,
+        // aucun rebuild global (invariant AD-2). Le widget reste
+        // `StatelessWidget` pur, sans `ZFormController`.
         final dateCfg =
             field.config is ZDateConfig ? field.config! as ZDateConfig : null;
         return ZDateFieldWidget(
@@ -564,7 +564,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
               _resolveDateBound(dateCfg?.minDateIso, dateCfg?.firstDateKey),
           lastDate: () =>
               _resolveDateBound(dateCfg?.maxDateIso, dateCfg?.lastDateKey),
-          // MIN-2 : croix d'effacement UNIQUEMENT pour un champ non requis et
+          // Croix d'effacement UNIQUEMENT pour un champ non requis et
           // éditable (retour à `null`). Un champ requis ne l'affiche pas.
           onCleared: (field.isRequired || field.readOnly)
               ? null
@@ -578,19 +578,18 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           field: field,
           value: value,
           onChanged: (range) => widget.controller.setValue(field.name, range),
-          // MIN-2 : croix d'effacement UNIQUEMENT pour un champ non requis et
+          // Croix d'effacement UNIQUEMENT pour un champ non requis et
           // éditable (retour à `null`).
           onCleared: (field.isRequired || field.readOnly)
               ? null
               : () => widget.controller.setValue(field.name, null),
         );
       case EditionFamily.boolean:
-        // CR-DODLP-BOOL-PILL, voie B : `boolean` consulte désormais le MÊME
-        // seam de registre que les familles routées (`registryOrFallback`,
-        // `freeWidget`) — `kind == field.type.name`, contexte
-        // `ZFieldWidgetContext`, écriture `onChanged → setValue`. Aucune
-        // seconde convention. PRIORITÉ : un builder enregistré GAGNE ; aucun
-        // builder ⇒ rendu NATIF ci-dessous, strictement inchangé.
+        // `boolean` consulte le MÊME seam de registre que les familles
+        // routées (`registryOrFallback`, `freeWidget`) — `kind ==
+        // field.type.name`, contexte `ZFieldWidgetContext`, écriture
+        // `onChanged → setValue`. Aucune seconde convention. PRIORITÉ : un
+        // builder enregistré GAGNE ; aucun builder ⇒ rendu NATIF ci-dessous.
         final custom = _tryRegistryWidget(context, field, value);
         if (custom != null) return custom;
         return ZBooleanFieldWidget(
@@ -599,10 +598,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (b) => widget.controller.setValue(field.name, b),
         );
       case EditionFamily.select:
-        // DP-15 : résout la config select + les **choix effectifs** (dynamiques
-        // cross-champ M22) selon la priorité `choicesSourceKey` → `choicesFromKey`
-        // → `field.choices` (défensif AD-10). Sans `ZSelectConfig` ⇒ comportement
-        // E3-3a strict sur `field.choices`.
+        // Résout la config select + les **choix effectifs** (dynamiques
+        // cross-champ) selon la priorité `choicesSourceKey` → `choicesFromKey`
+        // → `field.choices` (défensif invariant AD-10). Sans `ZSelectConfig`
+        // ⇒ comportement strict sur `field.choices`.
         final selCfg =
             field.config is ZSelectConfig ? field.config! as ZSelectConfig : null;
         return ZSelectFieldWidget(
@@ -613,7 +612,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           modalThreshold: selCfg?.modalThreshold,
           multiple: field.multiple,
           bare: bare,
-          // MIN-2 : `radio` en modal (option config) + bouton reset (→ null) pour
+          // `radio` en modal (option config) + bouton reset (→ null) pour
           // un select/radio MONO non requis et éditable (jamais en multi).
           radioAsModal: selCfg?.radioAsModal ?? false,
           onCleared: (field.multiple || field.isRequired || field.readOnly)
@@ -622,11 +621,11 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (sel) => widget.controller.setValue(field.name, sel),
         );
       case EditionFamily.relation:
-        // DP-5 : résout la source dynamique NEUTRE (via le registre injecté au
+        // Résout la source dynamique NEUTRE (via le registre injecté au
         // scope + `sourceKey`) et bâtit le `filterContext` (snapshot des
         // `filterKeys`). Aucun `ZRelationConfig`/registre/source → `source: null`
-        // ⇒ repli statique STRICT sur `choices` (AC7). Aucun backend dans le
-        // cœur : seule l'abstraction est résolue ici (AD-1/AD-5).
+        // ⇒ repli statique STRICT sur `choices`. Aucun backend dans le cœur :
+        // seule l'abstraction est résolue ici (invariants AD-1/AD-5).
         final relCfg =
             field.config is ZRelationConfig ? field.config! as ZRelationConfig : null;
         final sourceKey = relCfg?.sourceKey;
@@ -641,9 +640,9 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
             filterContext[k] = widget.controller.valueOf(k);
           }
         }
-        // DP-15 : résout le handler **CRUD inline** neutre (via le registre
-        // injecté au scope + `crudKey`). Aucun `crudKey`/registre/handler →
-        // `crudHandler: null` (comportement DP-5 strict, aucun bouton).
+        // Résout le handler **CRUD inline** neutre (via le registre injecté
+        // au scope + `crudKey`). Aucun `crudKey`/registre/handler →
+        // `crudHandler: null` (repli strict, aucun bouton).
         final crudKey = relCfg?.crudKey;
         final crudHandler = crudKey == null
             ? null
@@ -668,11 +667,11 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (tags) => widget.controller.setValue(field.name, tags),
         );
       case EditionFamily.rowChips:
-        // CR-DODLP-GAP2 — `rowChips` EST le « select en mode chips ». Il reçoit
-        // donc la MÊME résolution de choix effectifs que la famille `select`
-        // (sans `ZSelectConfig` ni `derivedFrom.options`,
-        // `_resolveSelectChoices` rend exactement `field.choices` : rendu
-        // E3-3b inchangé), et la multiplicité vient de `ZFieldSpec.multiple`.
+        // `rowChips` EST le « select en mode chips ». Il reçoit donc la MÊME
+        // résolution de choix effectifs que la famille `select` (sans
+        // `ZSelectConfig` ni `derivedFrom.options`, `_resolveSelectChoices`
+        // rend exactement `field.choices`), et la multiplicité vient de
+        // `ZFieldSpec.multiple`.
         final chipsCfg =
             field.config is ZSelectConfig ? field.config! as ZSelectConfig : null;
         return ZRowChipsFieldWidget(
@@ -695,10 +694,10 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (n) => widget.controller.setValue(field.name, n),
         );
       case EditionFamily.color:
-        // FP-4.4 (AD-52) : dispatch conditionnel simple/multiple. Un
-        // `ZColorConfig.multiple` (⇒ `multiple == true`) monte le widget
-        // multi-sélection (valeur `List<int>` ARGB) ; sinon le champ mono reste
-        // strictement intact (valeur `int` ARGB — rétro-compat DP-17).
+        // Dispatch conditionnel simple/multiple. Un `ZColorConfig.multiple`
+        // (⇒ `multiple == true`) monte le widget multi-sélection (valeur
+        // `List<int>` ARGB) ; sinon le champ mono reste strictement intact
+        // (valeur `int` ARGB — rétro-compat).
         final colorCfg = field.config;
         if (colorCfg is ZColorConfig && colorCfg.multiple) {
           return ZColorMultiFieldWidget(
@@ -714,8 +713,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
         );
       case EditionFamily.signature:
         // Value-in-slice à propriété locale : `value` amorce le tracé une fois
-        // (State persistant à travers les rebuilds du slice — AD-2). Re-clé sur
-        // `reseedRevision` pour re-amorcer le tracé sur reset/reseed (AC13).
+        // (State persistant à travers les rebuilds du slice — invariant AD-2).
+        // Re-clé sur `reseedRevision` pour re-amorcer le tracé sur reset/reseed.
         return ZSignatureFieldWidget(
           key: ValueKey<String>(
               'sig:${field.name}:${widget.controller.reseedRevision.value}'),
@@ -733,8 +732,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
           onChanged: (v) => widget.controller.setValue(field.name, v),
         );
       case EditionFamily.file:
-        // Famille fichier (E3-3c) : value-in-slice, seams picker/storage
-        // injectés via `ZcrudScope` (défaut `null` → dégradation propre).
+        // Famille fichier : value-in-slice, seams picker/storage injectés
+        // via `ZcrudScope` (défaut `null` → dégradation propre).
         return ZAppFileField(
           field: field,
           value: value,
@@ -749,7 +748,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       case EditionFamily.unsupported:
         // Traités AVANT la souscription au slice (jamais atteints ici) : les
         // mini-CRUD imbriqués (subList/dynamicItem) écoutent un canal
-        // STRUCTUREL, pas la tranche de valeur (SM-1 imbriqué, AD-2).
+        // STRUCTUREL, pas la tranche de valeur (invariant AD-2).
         return const SizedBox.shrink();
     }
   }
@@ -765,11 +764,11 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
   ) =>
       zResolveSelectChoices(context, widget.controller, field, selCfg);
 
-  /// Résout une borne de date (D4/D5) : le **littéral** [iso] (ISO-8601 parsé)
+  /// Résout une borne de date : le **littéral** [iso] (ISO-8601 parsé)
   /// prime ; à défaut, la valeur **cross-champ** du champ [key] lue via
   /// `ZFormController.valueOf` (String ISO parsée ou `DateTime` accepté tel
   /// quel). Toute valeur absente/non parsable ⇒ `null` (le widget repliera sur
-  /// 1900/2100). **Jamais de throw** (AD-10).
+  /// 1900/2100). **Jamais de throw** (invariant AD-10).
   DateTime? _resolveDateBound(String? iso, String? key) {
     final literal = iso != null ? DateTime.tryParse(iso) : null;
     if (literal != null) return literal;
@@ -797,7 +796,7 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
       _tryRegistryWidget(context, field, value) ??
       ZUnsupportedFieldWidget(field: field);
 
-  /// Lookup **défensif** du seam de registre (AD-10) : le widget hôte de
+  /// Lookup **défensif** du seam de registre (invariant AD-10) : le widget hôte de
   /// `field.type.name` s'il est enregistré, sinon `null` — **le** point unique
   /// où la convention de `kind` et la construction du `ZFieldWidgetContext`
   /// sont écrites. Deux appelants : [_dispatchRegistry] (repli
@@ -820,8 +819,8 @@ class _ZFieldWidgetState extends State<ZFieldWidget> {
     );
   }
 
-  /// SYNC GUARDÉE (E3-2, FR-1) : refléter une valeur EXTERNE dans le champ
-  /// clavier UNIQUEMENT hors focus. Pendant l'édition (`hasFocus`), priorité
+  /// SYNC GUARDÉE : refléter une valeur EXTERNE dans le champ clavier
+  /// UNIQUEMENT hors focus. Pendant l'édition (`hasFocus`), priorité
   /// ABSOLUE à la saisie/au curseur — aucun write-back (sinon caret sauté).
   void _syncText(Object? value) {
     final s = _stringOf(value);

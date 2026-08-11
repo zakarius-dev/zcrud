@@ -1,13 +1,13 @@
-/// Widget de la **famille slider** (E3-3b-1) : `slider`.
+/// Widget de la **famille slider** : `slider`.
 ///
 /// `Slider` borné : la valeur (`num`) vit **en tranche** (lecture `value`,
-/// écriture via `onChanged` — aucun `TextEditingController`, AD-2). Bornes/pas
-/// depuis `ZSliderConfig` (`min`/`max`/`divisions` ; défauts sûrs `0..1`
-/// continu).
+/// écriture via `onChanged` — aucun `TextEditingController`, invariant AD-2).
+/// Bornes/pas depuis `ZSliderConfig` (`min`/`max`/`divisions` ; défauts sûrs
+/// `0..1` continu).
 ///
-/// a11y/RTL (AD-13) : le `Slider` porte nativement une sémantique de curseur
-/// (valeur annoncée via `label`) et est directionnel par construction. Aucune
-/// couleur en dur (thème injecté — FR-26).
+/// a11y/RTL (invariant AD-13) : le `Slider` porte nativement une sémantique
+/// de curseur (valeur annoncée via `label`) et est directionnel par
+/// construction. Aucune couleur en dur (thème injecté — invariant FR-26).
 library;
 
 import 'package:flutter/material.dart';

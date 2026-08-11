@@ -1,12 +1,11 @@
 /// Moteur de requête de liste **neutre et in-memory** du cœur `zcrud_core`.
 ///
-/// origine: E4-3 (recherche/filtre/tri/pagination, FR-6..FR-8 · AD-8/AD-10/
-/// AD-16). **Productionise** le repli in-memory déjà PROUVÉ en E2-2 (fake
-/// `_InMemoryZRepository._applyRequest`/`_compareToAnchor`, remédiation M2/M3) en
-/// un moteur **public, réutilisable et testé**, opérant sur des `ZListRow.cells`
-/// (surface neutre) plutôt que sur des entités `T`.
+/// Recherche/filtre/tri/pagination (AD-8/AD-10/AD-16), en un moteur
+/// **public, réutilisable et testé**, opérant sur des `ZListRow.cells`
+/// (surface neutre) plutôt que sur des entités `T`. Sert de repli in-memory
+/// (fake de test, backend sans moteur de requête natif).
 ///
-/// **Neutre (SM-5)** : aucun `package:syncfusion`, aucun type backend, aucun
+/// **Neutre** : aucun `package:syncfusion`, aucun type backend, aucun
 /// gestionnaire d'état. Seuls `package:flutter/foundation.dart` (`@immutable`) et
 /// des types `zcrud_core` sont importés — cohérent avec la garde de pureté
 /// `presentation/`.
@@ -89,13 +88,13 @@ bool zMatchesSearch(
 /// [ZListPage] (filtre → recherche → tri → saut curseur → `take(limit)` →
 /// dérivation `nextCursor`/`hasMore`).
 ///
-/// C'est la **productionisation** du repli in-memory E2-2 : la sémantique du
-/// curseur (comparaison positionnelle par `ZCursor.values` alignées sur
-/// `request.sorts`, `id` en départage, `id: null` légitime, ancre introuvable
-/// gérée **gracieusement** — page vide au-delà de la fin, sans exception) est
-/// STRICTEMENT alignée sur le fake déjà validé (M2/M3). Aucune comparaison ne
-/// lève (AD-10) : un type non comparable retombe sur « ne matche pas » (filtre)
-/// ou « égal » (tri, stable).
+/// La sémantique du curseur (comparaison positionnelle par
+/// `ZCursor.values` alignées sur `request.sorts`, `id` en départage,
+/// `id: null` légitime, ancre introuvable gérée **gracieusement** — page vide
+/// au-delà de la fin, sans exception) est celle qu'un backend réel doit
+/// reproduire pour rester interchangeable avec ce repli. Aucune comparaison
+/// ne lève (AD-10) : un type non comparable retombe sur « ne matche pas »
+/// (filtre) ou « égal » (tri, stable).
 ZListPage zApplyListRequest(
   List<ZListRow> rows,
   ZDataRequest request, {
@@ -121,7 +120,7 @@ ZListPage zApplyListRequest(
   // dans le sens ascendant).
   result = _sortRows(result, request.sorts);
   // (4) Saut curseur : ignore les lignes situées AVANT l'ancre dans l'ordre
-  // courant (repli E2-2). Ancre introuvable → simple position d'ordre, jamais
+  // courant. Ancre introuvable → simple position d'ordre, jamais
   // d'exception.
   final cursor = request.startAfter;
   if (cursor != null) {
@@ -144,7 +143,7 @@ ZListPage zApplyListRequest(
 /// Dérive le **curseur d'ancrage** d'une [row] pour les clés de tri [sorts] :
 /// `values` = valeurs des clés de tri de la ligne (alignées positionnellement
 /// sur [sorts]), `id` = identité opaque de la ligne. Boucle fermée avec
-/// `ZDataRequest.startAfter` (E2-2), sans jamais construire de type backend.
+/// `ZDataRequest.startAfter`, sans jamais construire de type backend.
 ZCursor zDeriveCursor(ZListRow row, List<ZSort> sorts) => ZCursor(
       values: <Object?>[for (final sort in sorts) row.cells[sort.field]],
       id: row.id,
@@ -183,7 +182,7 @@ bool _matchesFilter(ZListRow row, ZFilter filter) {
     case ZFilterOp.contains:
       if (value is Iterable) return value.contains(filter.value);
       final needle = zFoldDiacritics(_coerceText(filter.value));
-      // L-4 : opérande de sous-chaîne `null`/vide → filtre INDÉFINI, ne matche
+      // Opérande de sous-chaîne `null`/vide → filtre INDÉFINI, ne matche
       // RIEN (défensif AD-10). Sans cette garde, `_coerceText(null) == ''` et
       // `text.contains('')` serait toujours vrai → un `contains` à opérande nul
       // (erreur d'appel probable) matcherait TOUTES les lignes par accident.
@@ -262,13 +261,13 @@ List<ZListRow> _skipCursor(
 
 /// Compare [row] à l'ancre du [cursor] selon l'ordre [sorts] (départage `id`).
 /// `> 0` si [row] est **strictement après** l'ancre (conservé), `< 0` si avant,
-/// `0` si [row] EST l'ancre. Aligné sur `_compareToAnchor` du fake E2-2.
+/// `0` si [row] EST l'ancre.
 ///
-/// L-3 (consigné) : le départage par `id` sur clés de tri égales n'est cohérent
-/// au **raccord** `backendCursor → repli in-memory` que si un backend réel
+/// Le départage par `id` sur clés de tri égales n'est cohérent au
+/// **raccord** `backendCursor → repli in-memory` que si un backend réel
 /// ordonne AUSSI les ex æquo par `id`. Le contrat `ZCursor` l'impose (dernier
-/// `orderBy(id)`) : **à garantir côté adaptateur Firestore (E5)**. Ici (moteur
-/// neutre + fake E2-2) le tie-break `id` est déjà déterministe.
+/// `orderBy(id)`) : **à garantir côté adaptateur backend**. Ici (moteur
+/// neutre) le tie-break `id` est déjà déterministe.
 int _compareToAnchor(ZListRow row, ZCursor cursor, List<ZSort> sorts) {
   final n =
       sorts.length < cursor.values.length ? sorts.length : cursor.values.length;

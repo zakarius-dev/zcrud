@@ -1,10 +1,8 @@
 /// Modèle d'état de chargement de liste du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — `DataState` (loading/data/empty/error)
-/// dérivé côté présentation. Canonique §7 ; AD-4 (`sealed` intra-package) ;
-/// AD-11 (flux nu → l'état est **dérivé**, jamais retourné par le repository).
-///
-/// **Décision de nommage (finding readiness #15)** : `DataState` → `ZDataState`.
+/// Dérivé côté présentation à partir du flux nu et de l'`Either` des
+/// opérations. Invariants portés : AD-4 (`sealed` intra-package) ; AD-11
+/// (flux nu → l'état est **dérivé**, jamais retourné par le repository).
 library;
 
 import '../failures/z_failure.dart';
@@ -107,7 +105,7 @@ final class ZDataError<T> extends ZDataState<T> {
   /// Construit l'état d'erreur avec sa [failure].
   const ZDataError(this.failure);
 
-  /// Cause de l'échec (hiérarchie `ZFailure`, E2-1).
+  /// Cause de l'échec (hiérarchie `ZFailure`).
   final ZFailure failure;
 
   @override

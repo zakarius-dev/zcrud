@@ -1,13 +1,13 @@
-/// LOT 2 — **règle UNIQUE de vacuité d'une valeur de tranche** + projection de
+/// **Règle UNIQUE de vacuité d'une valeur de tranche** + projection de
 /// cette valeur vers le texte soumis aux validateurs `FormFieldValidator<String>`.
 ///
-/// ## Le défaut corrigé (mesuré)
+/// ## Le piège à éviter
 ///
-/// `_stringOf(o) => o == null ? '' : '$o'` (ancien `z_field_widget.dart:253` et
-/// `z_submission.dart:272`) projetait une **collection vide** `[]` vers la
-/// chaîne `"[]"` — qui n'est PAS vide. `FormBuilderValidators.required<String>`
-/// l'acceptait donc : **un champ obligatoire non rempli passait la validation**
-/// (multi-sélection, tags, sous-liste, fichiers multiples…).
+/// Une projection naïve `_stringOf(o) => o == null ? '' : '$o'` projetterait
+/// une **collection vide** `[]` vers la chaîne `"[]"` — qui n'est PAS vide.
+/// `FormBuilderValidators.required<String>` l'accepterait donc : **un champ
+/// obligatoire non rempli passerait la validation** (multi-sélection, tags,
+/// sous-liste, fichiers multiples…).
 ///
 /// ## La règle, alignée sur l'existant (pas une seconde règle)
 ///
@@ -17,17 +17,17 @@
 /// reste est **présent** — en particulier `false`, `0` et `'0'`, qui sont des
 /// valeurs légitimement renseignées (le mode lecture les affiche déjà).
 ///
-/// ## Portée du correctif
+/// ## Portée de la règle
 ///
-/// La correction porte sur la **projection de valeur**, pas sur un `kind` de
+/// Elle porte sur la **projection de valeur**, pas sur un `kind` de
 /// champ : elle vaut donc **uniformément** pour toutes les familles dont la
 /// tranche porte une collection (multi-`select`, `relation` multiple, `tags`,
 /// `rowChips`, `checkbox` groupé, `subList`, `dynamicItem`, `file`/`image`/
 /// `document` multiples, `colorMulti`) — aucune incohérence par famille.
 ///
-/// ⚠️ **Changement de comportement ASSUMÉ** : un formulaire dont un champ requis
-/// portait une collection vide était soumissible ; il devient bloquant. C'est
-/// l'objet du lot.
+/// **Changement de comportement ASSUMÉ** : un formulaire dont un champ requis
+/// porte une collection vide n'est plus soumissible — c'est l'objet de cette
+/// règle.
 library;
 
 /// `true` si [value] compte comme **vide**.

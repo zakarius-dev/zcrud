@@ -1,4 +1,4 @@
-/// `ZSubfolderSidebar` — sidebar de sous-dossiers pour GRAND écran (SUF-3, T2).
+/// `ZSubfolderSidebar` — sidebar de sous-dossiers pour GRAND écran.
 ///
 /// Présente l'item racine « Tous les sous-dossiers » puis les [ZSubfolderRef],
 /// avec surbrillance de la sélection (`Semantics(selected:)`), repli/déploiement
@@ -23,7 +23,7 @@
 /// Le contenu d'un item vient de [ZSubfolderNavSpec.itemBuilder] injecté (ou
 /// d'une rangée neutre par défaut) ; gouttières et **surbrillance de sélection**
 /// sont posées AUTOUR par ce widget — le même contrat que le sélecteur compact
-/// applique de l'autre côté du seuil de bascule (parité R-SUF2).
+/// applique de l'autre côté du seuil de bascule.
 ///
 /// **AD-10** : aucune I/O — le redimensionnement clampé est REMONTÉ par callback.
 library;
@@ -153,10 +153,10 @@ class ZSubfolderSidebar extends StatelessWidget {
     final theme = ZcrudTheme.of(context);
     // Scope de mode posé AU-DESSUS de tout le sous-arbre d'items : un
     // `itemBuilder` injecté lit `ZSubfolderLayoutMode.of(context) == sidebar` et
-    // sait donc que sa largeur est BORNÉE (CR-IFFD-31) — sans 4ᵉ paramètre.
+    // sait donc que sa largeur est BORNÉE — sans 4ᵉ paramètre.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.sidebar,
-      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE.
+      // Second axe : la surface CONCRÈTE.
       surface: ZSubfolderSurface.sidebar,
       child: collapsed
           ? _buildCollapsed(context, theme)
@@ -194,7 +194,7 @@ class ZSubfolderSidebar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _collapseToggle(context, theme),
-              // En-tête INJECTÉ (CR-IFFD-30) : `null` ⇒ slot absent, rendu
+              // En-tête INJECTÉ : `null` ⇒ slot absent, rendu
               // inchangé. Rendu ICI, donc UNIQUEMENT à l'état déployé — il
               // disparaît au repli sans que l'hôte ait à s'abonner à
               // `collapsed` (`_buildCollapsed` ne le rend pas).
@@ -241,9 +241,9 @@ class ZSubfolderSidebar extends StatelessWidget {
         theme: theme,
         // Item racine : id de sélection `null`, aucune couleur/compteur.
         refOrNull: null,
-        // CR-IFFD-46, point 1 — la ligne racine désigne le CONTENEUR ; elle
-        // suit donc `rootItemLabel` (repli : `allSubfoldersLabel`), via la
-        // source UNIQUE de ce repli.
+        // La ligne racine désigne le CONTENEUR ; elle suit donc
+        // `rootItemLabel` (repli : `allSubfoldersLabel`), via la source
+        // UNIQUE de ce repli.
         label: zSubfolderRootItemLabel(spec),
         rootIcon: spec.rootItemIcon,
         index: -1,
@@ -481,8 +481,8 @@ class _ResizeHandleState extends State<_ResizeHandle> {
 /// Scope la surbrillance sur la SEULE tranche `selected` (AD-2) : un
 /// `ValueListenableBuilder` par item. Le contenu visuel vient de
 /// [ZSubfolderNavSpec.itemBuilder] (injecté) ou d'une rangée neutre thémée par
-/// défaut (D3/R-SUF2) ; la surbrillance de sélection est TOUJOURS appliquée par
-/// SUF-3 (fond dérivé du thème — AC8).
+/// défaut ; la surbrillance de sélection est TOUJOURS appliquée par ce
+/// widget (fond dérivé du thème), jamais déléguée à l'`itemBuilder`.
 class _SubfolderRow extends StatelessWidget {
   const _SubfolderRow({
     required this.spec,
@@ -503,9 +503,9 @@ class _SubfolderRow extends StatelessWidget {
   final ZSubfolderRef? refOrNull;
   final String label;
 
-  /// CR-IFFD-46, point 1 — glyphe de tête de la ligne RACINE (`null` ⇒ absent
-  /// de l'arbre, AD-4). Passé explicitement par le site racine : `refOrNull`
-  /// seul ne suffirait pas à distinguer les surfaces.
+  /// Glyphe de tête de la ligne RACINE (`null` ⇒ absent de l'arbre, AD-4).
+  /// Passé explicitement par le site racine : `refOrNull` seul ne
+  /// suffirait pas à distinguer les surfaces.
   final IconData? rootIcon;
 
   /// Index LINÉAIRE dans `subfolders` (−1 pour la racine, non réordonnable).
@@ -558,10 +558,10 @@ class _SubfolderRow extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: _kMinTapTarget),
               // Surbrillance + gouttières posées AUTOUR de `content` — donc
-              // aussi quand l'item vient de `spec.itemBuilder` (AC8 : la mise en
-              // évidence VISUELLE est TOUJOURS appliquée par SUF-3, jamais
-              // déléguée à l'hôte ; sinon l'écran contredirait le
-              // `Semantics(selected:)` ci-dessus).
+              // aussi quand l'item vient de `spec.itemBuilder` : la mise en
+              // évidence VISUELLE est TOUJOURS appliquée ici, jamais déléguée
+              // à l'hôte ; sinon l'écran contredirait le
+              // `Semantics(selected:)` ci-dessus.
               child: Container(
                 margin: EdgeInsetsDirectional.symmetric(
                   vertical: theme.gapS / 2,
@@ -595,9 +595,9 @@ class _SubfolderRow extends StatelessWidget {
         isSelected ? scheme.onSecondaryContainer : scheme.onSurface;
 
     final children = <Widget>[
-      // CR-IFFD-46, point 1 — glyphe de tête de la RACINE, à la place que la
-      // pastille d'accent tient sur un sous-dossier. `null` ⇒ absent (AD-4).
-      // Couleur DÉRIVÉE du premier plan de l'item (jamais littérale, FR-26).
+      // Glyphe de tête de la RACINE, à la place que la pastille d'accent
+      // tient sur un sous-dossier. `null` ⇒ absent (AD-4). Couleur DÉRIVÉE
+      // du premier plan de l'item (jamais littérale).
       if (ref == null && rootIcon != null) ...<Widget>[
         Icon(rootIcon, color: fg),
         SizedBox(width: theme.gapS),
@@ -609,7 +609,7 @@ class _SubfolderRow extends StatelessWidget {
       Expanded(
         child: Text(
           label,
-          // CR-IFFD-46, point 3 — borne ADRESSABLE. `null` ⇒ 1 ligne, rendu
+          // Borne ADRESSABLE. `null` ⇒ 1 ligne, rendu
           // strictement inchangé. La largeur est BORNÉE ici (`Expanded` dans
           // une colonne de largeur finie) : le retour à la ligne y est
           // réellement possible, contrairement à la rangée de puces.

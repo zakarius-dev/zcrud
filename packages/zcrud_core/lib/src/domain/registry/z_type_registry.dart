@@ -1,13 +1,11 @@
 /// Registre **ouvert** des types de champ/valeur (AD-4 pt.3).
 ///
-/// origine: lex_core (module « Étude ») — patron « registre ouvert »
-/// (canonique §4 pt.3). **Consommé par E3-3b** : les familles de champ dont le
-/// widget/codec vit **hors du cœur** (markdown → E6, géo/tél → E11a) sont
-/// servies via [ZTypeRegistry.register] par l'app hôte, sans forker `zcrud_core`.
+/// Les familles de champ dont le widget/codec vit **hors du cœur** (markdown,
+/// géo/téléphone…) sont servies via [ZTypeRegistry.register] par l'app hôte,
+/// sans forker `zcrud_core`.
 ///
-/// Espace de noms **distinct** de [ZSourceRegistry] (Dev Notes #3, OQ-6 « par
-/// axe ») : un `kind` de type de champ n'entre pas en collision avec un `kind`
-/// de provenance.
+/// Espace de noms **distinct** de [ZSourceRegistry] : un `kind` de type de
+/// champ n'entre jamais en collision avec un `kind` de provenance.
 library;
 
 import 'z_open_registry.dart';

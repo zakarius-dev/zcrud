@@ -1,13 +1,10 @@
 /// Slot type additif **versionné** `ZExtension` (AD-4 pt.1, AD-10).
 ///
-/// origine: lex_core (module « Étude ») — `node_context.dart:68`
-/// (`HierarchyNode.ragContext → NodeContext{formatVersion, fromJsonSafe}`,
-/// canonique §4 pt.1) : extension **riche, rétro-compatible**, versionnée
-/// **indépendamment** du parent, parsée **défensivement** (repli `null`,
-/// **jamais** de throw).
+/// Extension **riche, rétro-compatible**, versionnée **indépendamment** du
+/// parent, parsée **défensivement** (repli `null`, **jamais** de throw).
 ///
 /// **Base `abstract` — jamais `sealed`** (AD-4 : extension **inter-package**) :
-/// les satellites (E9/E10) et apps hôtes déclarent leurs sous-classes
+/// les paquets satellites et les apps hôtes déclarent leurs sous-classes
 /// concrètes sans forker le cœur. `ZExtension` n'impose **ni** `freezed` **ni**
 /// `@JsonSerializable` (contrat pur-Dart).
 library;

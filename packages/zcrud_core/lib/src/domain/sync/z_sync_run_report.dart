@@ -1,9 +1,9 @@
-/// Rapport agrégé **neutre** d'un cycle de synchronisation orchestré (E5-4).
+/// Rapport agrégé **neutre** d'un cycle de synchronisation orchestré.
 ///
-/// origine: canonique §7 — `ZSyncOrchestrator` best-effort (« un échec n'arrête
-/// pas les autres »). Ce value object rend l'**échec partiel** d'un cycle
-/// **visible et testable** : plutôt qu'un `Left` global (best-effort intégral,
-/// AD-9), un cycle renvoie `Right(ZSyncRunReport)` où les échecs sont **comptés**
+/// `ZSyncOrchestrator` est best-effort (« un échec n'arrête pas les autres »).
+/// Ce value object rend l'**échec partiel** d'un cycle **visible et testable** :
+/// plutôt qu'un `Left` global (best-effort intégral, AD-9), un cycle renvoie
+/// `Right(ZSyncRunReport)` où les échecs sont **comptés**
 /// (`failed`) et **collectés** (`failures`) — jamais noyés silencieusement (AD-11).
 ///
 /// **Backend-agnostique (AD-5)** : aucun champ n'expose de type `hive`/

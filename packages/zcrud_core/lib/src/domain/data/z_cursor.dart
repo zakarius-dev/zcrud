@@ -1,8 +1,7 @@
 /// Curseur de pagination **opaque et neutre** du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — pagination `startAfter` des repositories
-/// (`data_request` / `streamByContainer`). Canonique §7 ; AD-16 (curseur neutre,
-/// résout OQ-9) ; AD-5 (backend-agnostique).
+/// Réalise la pagination par curseur de l'invariant AD-16 (curseur neutre)
+/// et le domaine backend-agnostique de l'invariant AD-5.
 library;
 
 /// Curseur de pagination **opaque** : ancre de reprise d'une page.
@@ -16,13 +15,13 @@ library;
 ///   **départage** (deux éléments de mêmes clés d'ordre) et comme ancre du
 ///   repli in-memory.
 ///
-/// **Double mapping** (implémenté en E5, jamais ici) :
-/// - **Firestore** → `query.orderBy(...).startAfter(cursor.values).limit(n)` :
-///   l'adaptateur reconstitue `startAfter` depuis [values] ; aucun
-///   `DocumentSnapshot` ne traverse le port.
-/// - **Repli in-memory** (AD-16, « repli in-memory documenté ») → filtrer, trier
-///   selon `sorts`, **sauter** toutes les lignes situées avant l'ancre dans
-///   l'ordre courant — comparaison positionnelle par [values] (valeurs des clés
+/// Ce curseur admet un **double mapping**, laissé à l'adaptateur backend :
+/// - vers un backend à curseur natif → `query.orderBy(...)
+///   .startAfter(cursor.values).limit(n)` : l'adaptateur reconstitue
+///   `startAfter` depuis [values] ; aucun type backend ne traverse le port ;
+/// - vers un **repli in-memory** (invariant AD-16) → filtrer, trier selon
+///   `sorts`, **sauter** toutes les lignes situées avant l'ancre dans l'ordre
+///   courant — comparaison positionnelle par [values] (valeurs des clés
 ///   d'ordre), [id] servant **uniquement** de départage à valeurs d'ordre
 ///   égales — puis prendre `limit`. Le saut ne dépend **pas** de la présence de
 ///   [id] (`id: null` légitime : pagination pilotée par [values] seules) ; un
@@ -30,7 +29,7 @@ library;
 ///   la fin, départ complet avant le début). Un backend sans curseur natif reste
 ///   paginable sans crash.
 ///
-/// Le consommateur (liste E4-3) obtient le prochain curseur via
+/// Le consommateur (le moteur de liste) obtient le prochain curseur via
 /// `ZDataLoaded.nextCursor` et le repasse dans `ZDataRequest.startAfter` — boucle
 /// fermée **sans** jamais construire ni relire un type backend.
 class ZCursor {
@@ -62,7 +61,7 @@ class ZCursor {
 
 /// Égalité **profonde** de deux listes (élément par élément), en pur-Dart.
 ///
-/// Interne : évite de tirer `package:collection` dans le cœur (AD-1, out-degree 0).
+/// Interne : évite de tirer `package:collection` dans le cœur (invariant AD-1).
 bool _listEquals(List<Object?> a, List<Object?> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;

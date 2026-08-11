@@ -1,30 +1,14 @@
-/// **Lot 1 « étude »** — le RENDU DE RÉFÉRENCE de l'écran de session de
-/// révision assemblé, centralisé en UN SEUL endroit (patron
-/// `ZStudyCardReference`, directive owner : « les valeurs de référence entrent
-/// comme DÉFAUTS de jetons/rôles documentés, jamais comme constantes
-/// éparpillées dans les widgets »).
-///
-/// ## Origine legacy — `fichier:ligne`
-///
-/// L'assemblage de référence est l'écran de démonstration
-/// `example/lib/demos/study_session_demo_screen.dart` (575 l.), seul hôte
-/// correct existant avant ce lot. Chaque constante ci-dessous cite la ligne
-/// exacte dont elle est extraite : la référence n'est pas inventée, elle est
-/// **relevée**.
+/// Le RENDU DE RÉFÉRENCE de l'écran de session de révision assemblé,
+/// centralisé en UN SEUL endroit (même patron que `ZStudyCardReference`) :
+/// les valeurs de référence entrent comme DÉFAUTS de jetons/rôles documentés,
+/// jamais comme constantes éparpillées dans les widgets.
 ///
 /// ## Priorité de résolution, partout
 ///
-/// **paramètre > jeton `ZcrudTheme.studySession*` > défaut-référence**
+/// **paramètre > jeton `ZcrudTheme.studySession*` > défaut-référence** :
+/// [zStudySessionChromeOf] applique cette chaîne pour chaque champ.
 ///
-/// **Les jetons `studySession*` n'existent PAS ENCORE** dans `ZcrudTheme`
-/// (mesuré : `grep -n "studySession"` sur `z_theme.dart` → vide ; `zcrud_core`
-/// appartient à un autre lot). La chaîne effective d'aujourd'hui est donc
-/// **paramètre > référence**, et [zStudySessionChromeOf] est écrit de sorte que
-/// l'insertion du maillon jeton soit **une ligne par champ** — jamais une
-/// réécriture. La liste des jetons à poser (nom, type, valeur de référence) est
-/// remontée dans le rapport de lot.
-///
-/// ## FR-26 — matière en rôles, TOUJOURS
+/// ## Matière en rôles, TOUJOURS
 ///
 /// **AUCUNE couleur ici.** Les seules valeurs figées sont des DIMENSIONS,
 /// des proportions et des scalaires. Chaque couleur du rendu de référence est
@@ -46,12 +30,10 @@ import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 /// (`ZStudySessionView` et son enveloppe). `abstract final class` +
 /// `static const` seuls : rien à instancier, rien à muter.
 abstract final class ZStudySessionReference {
-  /// Part verticale de la **pile de cartes** (`Expanded(flex: 3)` —
-  /// `study_session_demo_screen.dart:487`).
+  /// Part verticale de la **pile de cartes** (`Expanded(flex: 3)`).
   static const int stackFlex = 3;
 
-  /// Part verticale de la **zone de saisie/notation** (`Expanded(flex: 2)` —
-  /// `study_session_demo_screen.dart:506`).
+  /// Part verticale de la **zone de saisie/notation** (`Expanded(flex: 2)`).
   ///
   /// La saisie et la notation sont des **FRÈRES** de la pile, jamais des
   /// descendants : un `TextField` sous le `PanGestureRecognizer` du swiper fait
@@ -60,17 +42,16 @@ abstract final class ZStudySessionReference {
   /// la matérialisation d'un invariant, pas un simple réglage esthétique.
   static const int inputFlex = 2;
 
-  /// Padding interne des zones défilantes (12, directionnel — AD-13 ;
-  /// `study_session_demo_screen.dart:439` et `:508`).
+  /// Padding interne des zones défilantes (12, directionnel — AD-13).
   static const EdgeInsetsGeometry contentPadding =
       EdgeInsetsDirectional.all(12);
 
   /// Épaisseur (et hauteur totale) du séparateur pile ↔ saisie
-  /// (`Divider(height: 1)` — `study_session_demo_screen.dart:504`).
+  /// (`Divider(height: 1)`).
   static const double dividerThickness = 1;
 
   /// Écart vertical entre deux blocs du repli « session vide »
-  /// (`SizedBox(height: 12)` — `study_session_demo_screen.dart:474`).
+  /// (`SizedBox(height: 12)`).
   static const double sectionGap = 12;
 
   /// Cible tap minimale Material/AD-13 (dp).
@@ -138,21 +119,16 @@ class ZStudySessionChrome {
 
 /// Résout le chrome de l'écran de session depuis le contexte (rôles du
 /// `ColorScheme`, styles du `TextTheme`) avec surcharge ponctuelle par
-/// paramètre. Toute couleur est un RÔLE dérivé (FR-26) — aucune n'est figée.
+/// paramètre. Toute couleur est un RÔLE dérivé — aucune n'est figée.
 ///
-/// 🔒 **Chaîne complète : `paramètre ?? jeton ?? référence`.** Le maillon
-/// jeton (`ZcrudTheme.studySession*`) est branché depuis que les jetons
-/// existent dans `zcrud_core` — il s'est intercalé **entre les deux**, sans
-/// déplacer une seule autre ligne, exactement comme annoncé.
+/// **Chaîne complète : `paramètre ?? jeton ?? référence`**, appliquée champ
+/// par champ via `ZcrudTheme.studySession*`.
 ///
-/// 🚫 **Aucun jeton GÉNÉRIQUE n'est monté en maillon intermédiaire** — pas de
-/// `gapM` pour l'écart de section, pas de `radiusM` pour un rayon. C'est
-/// exactement le défaut que CR-IFFD-61 a corrigé sur les cartes d'étude :
-/// l'écart tuile→titre et le padding de carte ridaient le **même** `gapM`,
-/// donc aucune valeur ne pouvait satisfaire les deux. Faire rider `gapM` par
-/// l'écart de session rouvrirait la même impasse — et donnerait au lecteur
-/// l'illusion d'une chaîne à trois maillons là où le maillon du milieu ne
-/// désigne pas la bonne propriété. Le jeton dédié viendra, ou rien.
+/// **Aucun jeton GÉNÉRIQUE n'est monté en maillon intermédiaire** — pas de
+/// `gapM` pour l'écart de section, pas de `radiusM` pour un rayon. Un jeton
+/// générique partagé par deux usages distincts (par exemple l'écart
+/// tuile→titre ET le padding de carte) ne peut satisfaire les deux à la
+/// fois : chaque propriété a besoin de son propre jeton dédié.
 ZStudySessionChrome zStudySessionChromeOf(
   BuildContext context, {
   int? stackFlex,

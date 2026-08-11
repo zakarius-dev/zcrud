@@ -1,22 +1,23 @@
 /// Résolveur de présentation d'un [ZFieldAdornment] **pur-données** en `Widget?`
-/// (DP-12, M1) — traduit le slot déclaratif `leading`/`prefix`/`suffix` en un
-/// widget thémé, **défensivement** (AD-10).
+/// — traduit le slot déclaratif `leading`/`prefix`/`suffix` en un widget
+/// thémé, **défensivement** (invariant AD-10).
 ///
 /// Frontière domaine/présentation : le domaine ne porte qu'une **donnée** neutre
 /// (`ZFieldAdornment`, discriminée `text`/`icon`/`widget` avec un payload
 /// `String`). La **résolution** vit ici :
 /// - `.text` → `Text` thémé (résolution l10n via `label`, style dérivé du thème
-///   — aucune couleur en dur, FR-26) ;
+///   — aucune couleur en dur, invariant FR-26) ;
 /// - `.icon` → `Icon` résolue via un **seam neutre** (`ZcrudScope.iconResolver`
 ///   host-fourni) puis une **table Material bornée** du cœur ; clé inconnue ⇒
 ///   `null` (jamais de throw) — aucun `IconData` ne fuit dans le domaine ;
 /// - `.widget` → builder host-fourni via `ZcrudScope.widgetRegistry`
 ///   (`tryBuilderFor(kind)`) ; `kind` non enregistré ⇒ `null` (dégradation
-///   propre). Porte le cas état-dépendant DODLP (`suffix(editionState)`) : le
-///   widget host **lit l'état lui-même** via son `context`/scope — jamais une
-///   closure sérialisée dans le domaine (AD-3/AD-14).
+///   propre). Couvre le cas état-dépendant d'un ornement qui doit lire un
+///   état applicatif : le widget host **lit l'état lui-même** via son
+///   `context`/scope — jamais une closure sérialisée dans le domaine
+///   (invariants AD-3/AD-14).
 ///
-/// SM-1/AD-2 : ces résolutions sont des **fonctions pures cheap** (aucune
+/// Invariant AD-2 : ces résolutions sont des **fonctions pures cheap** (aucune
 /// allocation de `TextEditingController`/`FocusNode`, aucun `Listenable`) — elles
 /// se font dans la construction **statique** de la décoration.
 library;
@@ -33,14 +34,15 @@ import 'z_widget_registry.dart';
 
 /// Résolveur d'icône **host-fourni** : traduit une **clé neutre** (`String`) en
 /// `IconData`, ou `null` si la clé est inconnue de l'hôte (le cœur retombe alors
-/// sur sa table Material par défaut, puis `null` — AD-10). Injecté via
-/// `ZcrudScope.iconResolver`. Le domaine ne porte JAMAIS d'`IconData` (AD-3).
+/// sur sa table Material par défaut, puis `null` — invariant AD-10). Injecté
+/// via `ZcrudScope.iconResolver`. Le domaine ne porte JAMAIS d'`IconData`
+/// (invariant AD-3).
 typedef ZAdornmentIconResolver = IconData? Function(String key);
 
 /// Table Material **bornée** par défaut du cœur (repli si aucun
 /// [ZcrudScope.iconResolver] n'est injecté ou ne connaît pas la clé). Clés
-/// neutres alignées sur les usages de formulaire courants (DODLP). Clé absente
-/// ⇒ `null` (slot omis, jamais de throw — AD-10).
+/// neutres alignées sur les usages de formulaire courants. Clé absente
+/// ⇒ `null` (slot omis, jamais de throw — invariant AD-10).
 const Map<String, IconData> _defaultIconTable = <String, IconData>{
   'search': Icons.search,
   'email': Icons.email_outlined,
@@ -69,16 +71,19 @@ const Map<String, IconData> _defaultIconTable = <String, IconData>{
 };
 
 /// Résout un [IconData] pour une clé neutre : seam host ([ZcrudScope.iconResolver])
-/// **prioritaire**, puis la table [_defaultIconTable], sinon `null` (AD-10).
+/// **prioritaire**, puis la table [_defaultIconTable], sinon `null` (invariant
+/// AD-10).
 IconData? zResolveAdornmentIcon(BuildContext context, String key) =>
     ZcrudScope.maybeOf(context)?.iconResolver?.call(key) ??
     _defaultIconTable[key];
 
-/// Traduit [adornment] en `Widget?` **défensivement** (AD-10) pour le [field]
-/// décoré. `null` (adornment absent OU clé non résolue) ⇒ aucun slot rendu.
+/// Traduit [adornment] en `Widget?` **défensivement** (invariant AD-10) pour
+/// le [field] décoré. `null` (adornment absent OU clé non résolue) ⇒ aucun
+/// slot rendu.
 ///
-/// Aucune couleur en dur (FR-26) : le texte hérite du `TextTheme`, l'icône du
-/// `IconTheme` ambiant. Les insets éventuels sont directionnels (AD-13).
+/// Aucune couleur en dur (invariant FR-26) : le texte hérite du `TextTheme`,
+/// l'icône du `IconTheme` ambiant. Les insets éventuels sont directionnels
+/// (invariant AD-13).
 Widget? resolveAdornment(
   BuildContext context,
   ZFieldAdornment? adornment, {
@@ -95,12 +100,12 @@ Widget? resolveAdornment(
       );
     case ZAdornmentKind.icon:
       final data = zResolveAdornmentIcon(context, adornment.value);
-      // Clé inconnue ⇒ slot omis (jamais de throw — AD-10).
+      // Clé inconnue ⇒ slot omis (jamais de throw — invariant AD-10).
       return data == null ? null : Icon(data);
     case ZAdornmentKind.widget:
-      // Cas état-dépendant DODLP (`suffix(editionState)`) : le widget host lit
-      // l'état via son propre context/scope. `value`/`onChanged` ne portent pas
-      // de sémantique d'édition pour un ornement décoratif (display-only).
+      // Cas état-dépendant : le widget host lit l'état via son propre
+      // context/scope. `value`/`onChanged` ne portent pas de sémantique
+      // d'édition pour un ornement décoratif (display-only).
       final builder =
           ZcrudScope.maybeOf(context)?.widgetRegistry?.tryBuilderFor(adornment.value);
       if (builder == null) return null;
@@ -116,21 +121,22 @@ Widget? resolveAdornment(
 }
 
 /// `onChanged` inerte pour un ornement `.widget` (display-only) : un ornement
-/// n'écrit jamais la tranche (parité DODLP `suffix` décoratif).
+/// n'écrit jamais la tranche.
 void _noop(Object? _) {}
 
-/// Construit la décoration **enrichie** d'une famille décor-portante (DP-12,
-/// M1/M5/M6) : label enrichi ([ZFieldLabel]), `hintText`/`helperText` résolus
+/// Construit la décoration **enrichie** d'une famille décor-portante :
+/// label enrichi ([ZFieldLabel]), `hintText`/`helperText` résolus
 /// l10n, et ornements `leading`/`prefix`/`suffix` répartis dans les slots
 /// `InputDecoration` selon leur `ZAdornmentKind` (`.icon` → `prefixIcon`/
 /// `suffixIcon` ; `.text`/`.widget` → `prefix`/`suffix` ; `leading` → `icon`).
 ///
-/// En mode [bare] (Card large, AC4) : **aucun label** (porté par la Card) et
+/// En mode [bare] (Card large) : **aucun label** (porté par la Card) et
 /// `leading`/`suffix` sont **omis** (le dispatcher les branche sur les slots
 /// `ZLargeFieldCard.leading`/`.suffix`) ; seul le `prefix` **interne** subsiste.
 ///
-/// Résolution **statique** et **défensive** (AD-2/AD-10) : fonctions pures cheap,
-/// aucune allocation de contrôleur/`Listenable`, aucune couleur en dur (FR-26).
+/// Résolution **statique** et **défensive** (invariants AD-2/AD-10) :
+/// fonctions pures cheap, aucune allocation de contrôleur/`Listenable`,
+/// aucune couleur en dur (invariant FR-26).
 InputDecoration zFieldDecoration(
   BuildContext context,
   ZFieldSpec field, {
@@ -187,11 +193,12 @@ InputDecoration zFieldDecoration(
     prefixIcon: prefixIcon,
     suffix: suffix,
     suffixIcon: suffixIcon,
-    // DP-17 (M17) : suffixe monétaire/pourcentage NEUTRE (donnée, jamais un
-    // style FR-26). `InputDecoration` interdit `suffix` (widget) ET `suffixText`
-    // simultanément (assertion Flutter) : un ornement `suffix` déclaratif (DP-12)
-    // l'emporte donc sur le `suffixText` (garde DP-12-L1, cas rarissime d'un champ
-    // portant les deux). `suffixIcon` + `suffixText` restent compatibles.
+    // Suffixe monétaire/pourcentage NEUTRE (donnée, jamais un style —
+    // invariant FR-26). `InputDecoration` interdit `suffix` (widget) ET
+    // `suffixText` simultanément (assertion Flutter) : un ornement `suffix`
+    // déclaratif l'emporte donc sur le `suffixText` (cas rarissime d'un
+    // champ portant les deux). `suffixIcon` + `suffixText` restent
+    // compatibles.
     suffixText: suffix != null ? null : suffixText,
   );
 }

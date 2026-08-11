@@ -1,9 +1,9 @@
-/// Widget de la **famille item dynamique** (`dynamicItem`) — E3-3b-2.
+/// Widget de la **famille item dynamique** (`dynamicItem`).
 ///
 /// Édite un **item unique** dynamique (`Map<String, dynamic>?` en tranche
 /// parente) : **ajouter** (créer l'item), **éditer** (sous-formulaire imbriqué),
 /// **effacer** (`clear` → `null`). Variante de cardinalité ≤ 1 de la sous-liste
-/// (`ZSubListFieldWidget`) — même invariant **SM-1 IMBRIQUÉ** (AD-2) :
+/// (`ZSubListFieldWidget`) — même invariant AD-2 (réactivité imbriquée) :
 /// - monté par `ZFieldWidget` **AVANT** la souscription à la tranche parente →
 ///   éditer un sous-champ ne reconstruit PAS ce conteneur ni le formulaire
 ///   racine (le conteneur écoute un canal **structurel** : présence/absence de
@@ -12,9 +12,9 @@
 ///   sur chaque slice imbriqué → `onChanged` (→ `setValue` parent) ;
 /// - le `ZFormController` de l'item effacé est **`dispose`** (aucune fuite).
 ///
-/// a11y/RTL (AD-13) : boutons add/clear = `IconButton`/`TextButton` (≥ 48 dp) +
-/// `Semantics`/tooltips ; insets **directionnels** ; bordure dérivée du
-/// `ZcrudTheme` (FR-26).
+/// a11y/RTL (invariant AD-13) : boutons add/clear = `IconButton`/`TextButton`
+/// (≥ 48 dp) + `Semantics`/tooltips ; insets **directionnels** ; bordure
+/// dérivée du `ZcrudTheme` (invariant FR-26).
 library;
 
 import 'package:flutter/material.dart';
@@ -27,12 +27,12 @@ import '../../z_form_controller.dart';
 import '../z_field_widget.dart';
 import 'z_sub_list_field_widget.dart' show ZSubItemFieldBuilder;
 
-/// DP-19 (M19) — **Seam de champs dynamiques** (parité `subItemsFormFieldsBuilder
-/// (state)` DODLP) : calcule la **liste des sous-champs à RENDRE** à partir de
-/// l'état COURANT de l'item (`Map`). Vit en couche présentation (jamais une
-/// closure dans le domaine — AD-3/AD-14, garde `domain_purity_test`). Défensif
-/// (AD-10) : le résultat est **intersecté** avec `itemFields` de la config (par
-/// `name`) — un champ hors config est ignoré (aucune tranche orpheline, SM-1).
+/// **Seam de champs dynamiques** : calcule la **liste des sous-champs à
+/// RENDRE** à partir de l'état COURANT de l'item (`Map`). Vit en couche
+/// présentation (jamais une closure dans le domaine — invariants AD-3/AD-14,
+/// garde `domain_purity_test`). Défensif (invariant AD-10) : le résultat est
+/// **intersecté** avec `itemFields` de la config (par `name`) — un champ hors
+/// config est ignoré (aucune tranche orpheline, invariant AD-2).
 typedef ZDynamicItemFieldsResolver = List<ZFieldSpec> Function(
   Map<String, dynamic> state,
 );
@@ -65,7 +65,7 @@ class ZDynamicItemFieldWidget extends StatefulWidget {
   @visibleForTesting
   final ZSubItemFieldBuilder? itemFieldBuilder;
 
-  /// DP-19 (M19) — seam de champs dynamiques (voir [ZDynamicItemFieldsResolver]).
+  /// Seam de champs dynamiques (voir [ZDynamicItemFieldsResolver]).
   /// `null` (défaut) ⇒ rendu de tous les `itemFields` de la config (rétro-compat).
   final ZDynamicItemFieldsResolver? fieldsResolver;
 
@@ -83,12 +83,12 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
   int _seq = 0;
   String? _itemId;
 
-  /// LOT B — **clés de la GRAINE que le sous-schéma ne gère pas** (même défaut
-  /// et même correctif que `ZSubListFieldWidget` : l'item était RECOMPOSÉ à
-  /// partir des seuls `itemFields`, donc `id` et toute clé non déclarée étaient
-  /// **détruits dès la première frappe**).
+  /// **Clés de la GRAINE que le sous-schéma ne gère pas** (même mécanisme
+  /// que `ZSubListFieldWidget` : sans ce résidu, l'item serait RECOMPOSÉ à
+  /// partir des seuls `itemFields`, donc `id` et toute clé non déclarée
+  /// seraient **détruits dès la première frappe**).
   ///
-  /// 🔴 Cardinalité ≤ 1 : il n'y a qu'un item vivant à la fois et ce champ est
+  /// Cardinalité ≤ 1 : il n'y a qu'un item vivant à la fois et ce champ est
   /// écrit/effacé **exactement aux mêmes points** que `_controller` — l'appariement
   /// graine ↔ item est donc trivialement par identité, jamais par index. Le
   /// résidu est réémis AVANT les tranches (un champ effacé reste effacé) et
@@ -129,7 +129,7 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     return config is ZSubListConfig ? config.itemFields : const <ZFieldSpec>[];
   }
 
-  /// DP-19 (M19) — valeurs par défaut d'un nouvel item (vide si config absente).
+  /// Valeurs par défaut d'un nouvel item (vide si config absente).
   Map<String, Object?> get _defaultNewItem {
     final config = widget.field.config;
     return config is ZSubListConfig
@@ -137,7 +137,7 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
         : const <String, Object?>{};
   }
 
-  /// DP-19 (M19) — libellé du bouton de création (repli `addItem`).
+  /// Libellé du bouton de création (repli `addItem`).
   String _addLabel(BuildContext context) {
     final config = widget.field.config;
     final key = config is ZSubListConfig ? config.createNewTextKey : null;
@@ -150,9 +150,10 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
         for (final f in _itemFields) f.name: controller.valueOf(f.name),
       };
 
-  /// DP-19 (M19) — sous-champs à **RENDRE** : le seam [ZDynamicItemFieldsResolver]
+  /// Sous-champs à **RENDRE** : le seam [ZDynamicItemFieldsResolver]
   /// s'il est fourni (intersecté défensivement avec `itemFields` par `name` —
-  /// aucune tranche orpheline, AD-10/SM-1), sinon tous les `itemFields`.
+  /// aucune tranche orpheline, invariants AD-10/AD-2), sinon tous les
+  /// `itemFields`.
   List<ZFieldSpec> _renderFields(ZFormController controller) {
     final resolver = widget.fieldsResolver;
     if (resolver == null) return _itemFields;
@@ -161,7 +162,7 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     try {
       resolved = resolver(_currentData(controller));
     } catch (_) {
-      return _itemFields; // AD-10 : resolver défaillant ⇒ repli config.
+      return _itemFields; // Invariant AD-10 : resolver défaillant ⇒ repli config.
     }
     final rendered = <ZFieldSpec>[
       for (final f in resolved)
@@ -197,7 +198,7 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     controller.dispose();
     _controller = null;
     _itemId = null;
-    // LOT B : l'item disparaît → son résidu de graine aussi. Sans cela, un
+    // L'item disparaît → son résidu de graine aussi. Sans cela, un
     // `clear` suivi d'un `add` réémettrait le résidu de l'item EFFACÉ sur un
     // item neuf (résurrection d'une donnée volontairement supprimée).
     _unmapped = const <String, dynamic>{};
@@ -210,7 +211,7 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     widget.onChanged(controller == null
         ? null
         : <String, dynamic>{
-            // LOT B : résidu hors schéma de la graine EN PREMIER — les tranches
+            // Résidu hors schéma de la graine EN PREMIER — les tranches
             // écrites ensuite priment toujours (un champ effacé reste effacé).
             ..._unmapped,
             for (final f in _itemFields) f.name: controller.valueOf(f.name),
@@ -219,9 +220,9 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
 
   void _addItem() {
     setState(() {
-      // DP-19 (M19) : amorce le nouvel item avec `defaultNewItem` (défensif).
+      // Amorce le nouvel item avec `defaultNewItem` (défensif).
       _controller = _makeController(Map<String, dynamic>.from(_defaultNewItem));
-      // LOT B : un item AJOUTÉ n'a pas de graine → aucun résidu (comportement
+      // Un item AJOUTÉ n'a pas de graine → aucun résidu (comportement
       // strictement inchangé). Explicite, pour ne dépendre d'aucun état résiduel.
       _unmapped = const <String, dynamic>{};
     });
@@ -233,13 +234,13 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
     _syncToParent();
   }
 
-  /// LOT 3 — **la lecture seule DESCEND dans les sous-champs.**
+  /// **La lecture seule DESCEND dans les sous-champs.**
   ///
   /// `DynamicEdition._effective` ne force `readOnly: true` que sur les specs de
   /// PREMIER NIVEAU : les `itemFields` portés par la config ne sont pas
-  /// parcourus. Sans ce report, un item ouvert en mode lecture globale restait
-  /// **entièrement éditable et focalisable** (fuite mesurée). Même correctif que
-  /// celui déjà appliqué au dialogue de la sous-liste compacte.
+  /// parcourus. Sans ce report, un item ouvert en mode lecture globale
+  /// resterait **entièrement éditable et focalisable**. Même mécanisme que
+  /// celui appliqué au dialogue de la sous-liste compacte.
   Widget _buildItemField(ZFormController controller, ZFieldSpec field) {
     final spec = widget.field.readOnly && !field.readOnly
         ? field.copyWith(readOnly: true)
@@ -293,8 +294,8 @@ class _ZDynamicItemFieldWidgetState extends State<ZDynamicItemFieldWidget> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            // DP-19 (M19) : sous-champs dynamiques (seam) évalués
-                            // au build STRUCTUREL du conteneur (SM-1 préservé).
+                            // Sous-champs dynamiques (seam) évalués au build
+                            // STRUCTUREL du conteneur (invariant AD-2 préservé).
                             for (final f in _renderFields(controller))
                               KeyedSubtree(
                                 key: ValueKey<String>('$_itemId/${f.name}'),

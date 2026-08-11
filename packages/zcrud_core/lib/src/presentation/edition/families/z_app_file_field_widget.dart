@@ -1,11 +1,12 @@
-/// Widget de la **famille fichier** (`file`/`image`/`document`) — E3-3c.
+/// Widget de la **famille fichier** (`file`/`image`/`document`).
 ///
-/// Champ **value-in-slice** (AD-2) : lit `value` (`AppFile?` en mode single,
-/// `List<AppFile>` en mode multiple) et écrit via `onChanged` (branché sur
-/// `setValue` par le dispatcher) — **aucun `TextEditingController`**, rebuild
-/// borné à ce champ (frontière `ZFieldListenableBuilder` du dispatcher).
+/// Champ **value-in-slice** (invariant AD-2) : lit `value` (`AppFile?` en
+/// mode single, `List<AppFile>` en mode multiple) et écrit via `onChanged`
+/// (branché sur `setValue` par le dispatcher) — **aucun
+/// `TextEditingController`**, rebuild borné à ce champ (frontière
+/// `ZFieldListenableBuilder` du dispatcher).
 ///
-/// ## Seams injectés (AD-1 : cœur OUT=0, aucune dépendance lourde)
+/// ## Seams injectés (invariant AD-1 : cœur OUT=0, aucune dépendance lourde)
 ///
 /// - **Acquisition** via `ZcrudScope.filePicker` (`ZFilePicker`) : boutons
 ///   scan/caméra/galerie/picker. `null` ⇒ actions désactivées proprement.
@@ -13,11 +14,11 @@
 ///   sur acquisition, si injecté, déclenche `upload` et **reflète**
 ///   `AppFile.uploadState` (`pending → uploading → uploaded`/`failed`) dans la
 ///   tranche. `null` ⇒ le fichier reste `pending` (orchestration déférée à
-///   l'app/`onSubmit`, parité DODLP draft→cloud). AUCUNE impl concrète ici.
+///   l'app/`onSubmit`). AUCUNE impl concrète ici.
 ///
 /// Le cœur n'importe **jamais** `image_picker`/`file_picker`/`firebase_storage` :
-/// les impls concrètes vivent dans l'app/binding (picker, E7) et
-/// `zcrud_firestore` (storage, E5).
+/// les impls concrètes vivent dans l'app/binding (picker) et
+/// `zcrud_firestore` (storage).
 ///
 /// ## Prévisualisation (web-safe)
 ///
@@ -26,12 +27,13 @@
 ///   (dérivée du mime) + nom (rendu binaire local **déféré** ; `dart:io` hors
 ///   whitelist de pureté).
 ///
-/// ## a11y / RTL (AD-13)
+/// ## a11y / RTL (invariant AD-13)
 ///
 /// `Semantics` explicites + cibles ≥ 48 dp (`IconButton`) sur chaque action /
 /// suppression / retry ; état d'upload annoncé sémantiquement ; miniatures avec
 /// label alternatif (nom de fichier) ; insets/alignements **directionnels**
-/// exclusifs ; couleurs **dérivées du thème** (aucun littéral — FR-26).
+/// exclusifs ; couleurs **dérivées du thème** (aucun littéral — invariant
+/// FR-26).
 library;
 
 import 'dart:async';
@@ -80,7 +82,8 @@ class ZAppFileField extends StatefulWidget {
 }
 
 /// État de résolution d'une **référence opaque** (`String`) de fichier —
-/// visible dans le rendu (le silence était le défaut d'origine, AD-10).
+/// visible dans le rendu (un silence sur une résolution en échec serait un
+/// défaut, invariant AD-10).
 enum _RefState {
   /// Résolution en cours (le port a été appelé, la réponse n'est pas arrivée).
   resolving,
@@ -95,18 +98,18 @@ enum _RefState {
 
 class _ZAppFileFieldState extends State<ZAppFileField> {
   /// Références **résolues** (référence opaque → `AppFile`). État UI local :
-  /// la résolution n'écrit JAMAIS dans la tranche (AD-2/SM-1 — écrire la
+  /// la résolution n'écrit JAMAIS dans la tranche (invariant AD-2 — écrire la
   /// tranche élargirait la voie de rebuild ET salirait le formulaire).
   final Map<String, AppFile> _resolved = <String, AppFile>{};
 
   /// État visible des références NON résolues (jamais un silence).
   final Map<String, _RefState> _refState = <String, _RefState>{};
 
-  /// Refus accessible (AC8/AD-13) : `true` quand la dernière acquisition a
-  /// dépassé `maxFiles` et que les fichiers en trop ont été écartés. Affiché via
-  /// un message `Semantics(liveRegion: true)` (annoncé au lecteur d'écran).
-  /// État UI **local** (rebuild borné à ce champ — n'affecte pas la tranche ni
-  /// SM-1/AD-2).
+  /// Refus accessible (invariant AD-13) : `true` quand la dernière
+  /// acquisition a dépassé `maxFiles` et que les fichiers en trop ont été
+  /// écartés. Affiché via un message `Semantics(liveRegion: true)` (annoncé
+  /// au lecteur d'écran). État UI **local** (rebuild borné à ce champ —
+  /// n'affecte pas la tranche ni l'invariant AD-2).
   bool _maxFilesReached = false;
 
   /// Config typée du champ (défaut sûr : toutes sources, aucune borne).
@@ -127,7 +130,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
 
   /// Entrées **brutes** de la tranche vivante, dans l'ordre : `AppFile` (objets
   /// fichier) et `String` non vides (**références opaques**, seulement si le
-  /// port est injecté). Toute autre valeur est ignorée (AD-10).
+  /// port est injecté). Toute autre valeur est ignorée (invariant AD-10).
   List<Object> get _entries {
     final v = widget.liveValue != null ? widget.liveValue!() : widget.value;
     final refs = _refsEnabled;
@@ -162,7 +165,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   /// Appelé hors `build` (`didChangeDependencies`/`didUpdateWidget`/retry) : la
   /// mutation d'état est directe (un `build` suit immédiatement) — c'est la
   /// COMPLÉTION asynchrone qui passe par `setState`, sous la frontière de
-  /// rebuild du champ (AD-2/SM-1 : aucun autre champ, aucun rebuild du
+  /// rebuild du champ (invariant AD-2 : aucun autre champ, aucun rebuild du
   /// formulaire, aucune écriture de tranche).
   void _syncResolution() {
     final resolver = _resolver;
@@ -181,9 +184,10 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   }
 
   /// Exécute la résolution et projette TOUS les issues possibles en état
-  /// VISIBLE (AD-10) : succès, référence introuvable, échec (`Error` **comme**
-  /// `Exception` — l'échec normal d'une E/S), `Future` qui ne se termine jamais
-  /// (délai de garde [ZAppFileResolver.timeout]). Ne lève JAMAIS.
+  /// VISIBLE (invariant AD-10) : succès, référence introuvable, échec
+  /// (`Error` **comme** `Exception` — l'échec normal d'une E/S), `Future` qui
+  /// ne se termine jamais (délai de garde [ZAppFileResolver.timeout]). Ne
+  /// lève JAMAIS.
   Future<void> _runResolve(ZAppFileResolver resolver, List<String> refs) async {
     List<AppFile>? files;
     var failed = false;
@@ -193,7 +197,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
           .timeout(resolver.timeout);
     } on Object {
       // `on Object` DÉLIBÉRÉ : un `on Error` laisserait remonter les
-      // `Exception`, c'est-à-dire l'échec NORMAL d'une E/S (incident mesuré).
+      // `Exception`, c'est-à-dire l'échec NORMAL d'une E/S.
       failed = true;
     }
     if (!mounted) return;
@@ -275,7 +279,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
     final picked = await picker.pick(source: source, config: _config);
     if (!mounted || picked.isEmpty) return;
     final List<Object> next;
-    // Refus accessible AC8/AD-13 : au-delà de `maxFiles`, on écarte SEULEMENT
+    // Refus accessible (invariant AD-13) : au-delà de `maxFiles`, on écarte SEULEMENT
     // les fichiers en trop (les valides déjà présents et le début de la
     // sélection sont conservés) et on ANNONCE le refus (message liveRegion).
     // Les références opaques comptent comme des entrées occupées (elles
@@ -336,8 +340,8 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
   }
 
   IconData _iconFor(AppFile file) {
-    // MIN-2 (parité DODLP « fallback image ») : sur un champ `image` avec
-    // `imageFallback`, un fichier non-image affiche malgré tout l'icône image.
+    // Sur un champ `image` avec `imageFallback`, un fichier non-image
+    // affiche malgré tout l'icône image.
     final imageFallback = _config.imageFallback &&
         widget.field.type == EditionFieldType.image;
     return (file.isImage || imageFallback)
@@ -368,7 +372,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
       fallback: widget.field.label ?? widget.field.name,
     );
     final picker = ZcrudScope.maybeOf(context)?.filePicker;
-    // LECTURE SEULE (AD-16) : les actions d'ACQUISITION sont des actions
+    // LECTURE SEULE (invariant AD-16) : les actions d'ACQUISITION sont des actions
     // d'ÉCRITURE — elles ne sont PLUS émises du tout (elles n'auraient jamais dû
     // être montées, seulement grisées). Les actions de LECTURE (aperçu, retry de
     // RÉSOLUTION) restent disponibles.
@@ -382,7 +386,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1). Le 2ᵉ
+      // provoquerait une DOUBLE annonce. Le 2ᵉ
       // Semantics (état upload, `altLabel`+`value`+`liveRegion`) reste intact.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,7 +417,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
                 ],
               ),
             ),
-          // Refus accessible du dépassement de `maxFiles` (AC8/AD-13) : message
+          // Refus accessible du dépassement de `maxFiles` (invariant AD-13) : message
           // annoncé au lecteur d'écran (`liveRegion`) + visible, couleur du thème.
           if (_maxFilesReached)
             Padding(
@@ -456,7 +460,7 @@ class _ZAppFileFieldState extends State<ZAppFileField> {
                       )
                     // Référence opaque : rendue avec un état VISIBLE quel que
                     // soit son sort (résolue / en cours / introuvable / échec) —
-                    // jamais un vide silencieux (AD-10).
+                    // jamais un vide silencieux (invariant AD-10).
                     else if (entry is String)
                       if (_resolved[entry] case final resolvedFile?)
                         _FilePreviewTile(
@@ -512,7 +516,7 @@ class _ActionButton extends StatelessWidget {
       icon: Icon(action.icon),
       // `IconButton` porte nativement le rôle sémantique `button` et le
       // `tooltip` alimente le label sémantique (l10n) — pas de wrapper
-      // `Semantics` additionnel requis. Cible ≥ 48 dp par défaut (AD-13).
+      // `Semantics` additionnel requis. Cible ≥ 48 dp par défaut (invariant AD-13).
       tooltip: text,
       onPressed: enabled ? onPressed : null,
     );
@@ -528,7 +532,8 @@ class _ActionButton extends StatelessWidget {
 ///   disponible même en lecture seule).
 ///
 /// Chaque état terminal est annoncé (`Semantics(liveRegion: true)`), aucun
-/// littéral de couleur ni de texte (FR-26), insets directionnels (AD-13),
+/// littéral de couleur ni de texte (invariant FR-26), insets directionnels
+/// (invariant AD-13),
 /// cibles ≥ 48 dp (`IconButton`).
 class _RefStateTile extends StatelessWidget {
   const _RefStateTile({
@@ -628,7 +633,7 @@ class _RefStateTile extends StatelessWidget {
 }
 
 /// Miniature d'un fichier : préviz (image réseau / icône+nom) + suppression +
-/// retry + reflet de l'état d'upload — tout accessible (AD-13).
+/// retry + reflet de l'état d'upload — tout accessible (invariant AD-13).
 class _FilePreviewTile extends StatelessWidget {
   const _FilePreviewTile({
     required this.file,

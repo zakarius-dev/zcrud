@@ -1,15 +1,13 @@
 /// Registre **ouvert** de provenance (AD-4 pt.3).
 ///
-/// origine: lex_core (module « Étude ») — `flashcard_source.dart:13`
-/// (`FlashcardSource` : union `sealed` interne + variant `custom` + registre).
-/// **Consommé par E9-1** : le variant « article » (douane) est branché par
-/// l'app hôte via [ZSourceRegistry.register], sans forker le package flashcard
-/// ni le cœur. La `sealed` interne du package flashcard reste `sealed` **en
-/// interne** (exhaustivité) ; l'ouverture inter-package passe par ce registre —
-/// deux usages distincts (E9).
+/// Permet à une app hôte de brancher une provenance additionnelle (par
+/// exemple un variant de source de flashcard) via [ZSourceRegistry.register],
+/// sans forker le paquet consommateur ni le cœur. Une union `sealed` interne
+/// à un paquet peut rester `sealed` pour son exhaustivité locale : c'est ce
+/// registre qui porte l'ouverture inter-paquet.
 ///
-/// Espace de noms **distinct** de [ZTypeRegistry] (Dev Notes #3, OQ-6 « par
-/// axe »).
+/// Espace de noms **distinct** de [ZTypeRegistry] : les deux registres ne
+/// partagent pas leurs `kind`.
 library;
 
 import 'z_open_registry.dart';

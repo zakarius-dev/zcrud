@@ -1,8 +1,8 @@
-/// Confirmation d'**abandon** d'un formulaire *dirty* (E3-6, AC9).
+/// Confirmation d'**abandon** d'un formulaire *dirty*.
 ///
-/// origine: fermer un formulaire modifié sans confirmation perd des données.
+/// Fermer un formulaire modifié sans confirmation perd des données.
 /// [ZDiscardGuard] est une enveloppe **de type `PopScope`** (primitive Flutter
-/// native — AUCUNE dépendance au routing de l'app / `go_router`, AD-13) : tant
+/// native — AUCUNE dépendance au routing de l'app, invariant AD-13) : tant
 /// que le formulaire est *dirty* (`controller.isDirty`), le pop est intercepté
 /// et délégué à un **seam** app `onConfirmDiscard` (dialogue fourni par l'app).
 ///
@@ -11,8 +11,8 @@
 ///   effectif (`Navigator.pop`), `false` ⇒ pas de pop.
 /// - Seam absent ⇒ pop autorisé (on ne peut pas demander confirmation).
 ///
-/// N'observe QUE `controller.isDirty` (canal dédié — SM-1) : une frappe ne le
-/// reconstruit pas (le booléen ne bascule qu'au flip, AC8).
+/// N'observe QUE `controller.isDirty` (canal dédié, invariant AD-2) : une
+/// frappe ne le reconstruit pas (le booléen ne bascule qu'au flip).
 library;
 
 import 'package:flutter/widgets.dart';
@@ -45,7 +45,8 @@ class ZDiscardGuard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // N'écoute QUE le canal dirty dédié (SM-1) : rebuild seulement au flip.
+    // N'écoute QUE le canal dirty dédié (invariant AD-2) : rebuild seulement
+    // au flip.
     return ValueListenableBuilder<bool>(
       valueListenable: controller.isDirty,
       builder: (context, dirty, _) {

@@ -1,28 +1,27 @@
 /// `ZRelationCrudHandler` — **port neutre** du **CRUD inline** d'une entité liée
-/// pour le champ `relation` (DP-15/M8, parité `showCrudButton`/`onCrud`
-/// create/update/copy DODLP `edition_screen.dart:3223-3311`) + son registre
-/// instanciable `ZRelationCrudRegistry` (AD-4).
+/// pour le champ `relation` + son registre instanciable `ZRelationCrudRegistry`
+/// (AD-4).
 ///
-/// origine: depuis le sélecteur DODLP, l'utilisateur peut **créer / modifier /
-/// copier** l'entité liée ; à la résolution, l'option créée/éditée est
-/// **auto-sélectionnée**. Ici le mécanisme est **généralisé en port pur** : le
-/// cœur ne connaît NI le form d'édition, NI un repository, NI Firestore/Hive — il
-/// **n'affiche que les boutons** (Créer dans le modal ; Modifier/Copier par
-/// option) et **appelle le handler**, puis auto-sélectionne l'option résultante.
+/// Depuis un sélecteur de relation, un utilisateur peut vouloir **créer /
+/// modifier / copier** l'entité liée sans quitter le formulaire ; à la
+/// résolution, l'option créée/éditée est **auto-sélectionnée**. Ce mécanisme
+/// est **généralisé en port pur** : le cœur ne connaît NI le formulaire
+/// d'édition, NI un repository, NI aucun backend — il **n'affiche que les
+/// boutons** (Créer dans le modal ; Modifier/Copier par option) et **appelle
+/// le handler**, puis auto-sélectionne l'option résultante.
 ///
 /// **NEUTRALITÉ (NON-NÉGOCIABLE, AD-1/AD-5)** : ce fichier est **pur-Dart**
 /// (`dart:async` autorisé, AUCUN import Flutter/`cloud_firestore`/Hive/gestionnaire
-/// d'état). **Aucune implémentation concrète ne vit dans le cœur** : l'app/le
-/// binding (app DODLP E7, `zcrud_firestore`) implémente `ZRelationCrudHandler` —
-/// le **form d'édition** (dialog) **+ le repository** create/update/copy vivent
+/// d'état). **Aucune implémentation concrète ne vit dans le cœur** : l'app ou
+/// le binding hôte implémente `ZRelationCrudHandler` — le **formulaire
+/// d'édition** (dialog) **+ le repository** create/update/copy vivent
 /// entièrement là-bas — et l'enregistre au runtime via
 /// `ZcrudScope(relationCrudRegistry: registry)`.
 ///
 /// **Contrat de retour (AD-5/AD-10)** : chaque opération retourne un
 /// `Future<ZFieldChoice?>` = l'**option résultante** à auto-sélectionner, ou
 /// `null` si annulé/échec. Le `Future` peut aussi être **en erreur** : le widget
-/// le capture défensivement (aucune écriture, aucun crash — équivalent du
-/// `try/catch (_) {}` DODLP).
+/// le capture défensivement (aucune écriture, aucun crash).
 library;
 
 import 'dart:async';

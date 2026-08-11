@@ -1,32 +1,30 @@
-/// `ZSyncOrchestrator` (E5-4) — **le *quand*** de l'offline-first, séparé du
-/// **comment** (`ZSyncableRepository.sync()`, livré E5-3).
+/// `ZSyncOrchestrator` — **le *quand*** de l'offline-first, séparé du
+/// **comment** (`ZSyncableRepository.sync()`).
 ///
-/// origine: canonique §7 / AD-9 — *« `ZSyncOrchestrator` (porte `StudySyncManager`,
-/// keepAlive) : déclenche `sync()` d'un ensemble de repos enregistrés sur login +
-/// reconnexion **débouncée**, best-effort (un échec n'arrête pas les autres) ;
-/// sépare quand/comment ; gate par un flag d'activation. »*
+/// Déclenche `sync()` d'un ensemble de dépôts enregistrés sur login et
+/// reconnexion **débouncée**, en best-effort (un échec n'arrête pas les
+/// autres) ; sépare quand/comment ; gate par un flag d'activation.
 ///
-/// **Frontière E5-3 (comment) vs E5-4 (quand)** — NON négociable :
-/// - **E5-3** (immuable, jamais re-implémenté ici) : composition local+distant,
-///   merge Last-Write-Wins, propagation soft-delete, lot borné ≤ 450,
-///   `Right(unit)` si offline. C'est le **comment**, entièrement dans `sync()`.
-/// - **E5-4** (ce fichier) : **registre** de dépôts, déclenchement **débouncé**
+/// **Frontière comment vs quand** — NON négociable :
+/// - **le comment** (porté par `sync()`, jamais re-implémenté ici) :
+///   composition local+distant, merge Last-Write-Wins, propagation
+///   soft-delete, lot borné, `Right(unit)` si offline.
+/// - **le quand** (ce fichier) : **registre** de dépôts, déclenchement **débouncé**
 ///   (login/reconnexion), **coalescence** des rafales, best-effort **tolérant à
-///   l'échec partiel**, **gate** d'activation, couture connectivité. C'est le
-///   **quand**. L'orchestrateur **n'appelle QUE** `repo.sync()` — jamais un store,
-///   un `WriteBatch`, un `Box`, un `Timestamp`, ni la borne `450` (qui reste
+///   l'échec partiel**, **gate** d'activation, couture connectivité.
+///   L'orchestrateur **n'appelle QUE** `repo.sync()` — jamais un store,
+///   un `WriteBatch`, un `Box`, un `Timestamp`, ni la borne de lot (qui reste
 ///   **exclusivement** dans `zcrud_firestore`).
 ///
-/// **Dette E5-3 (MEDIUM-2) réseau vs serveur — traitée au bon niveau.** La couture
+/// **Réseau vs serveur — traitée au bon niveau.** La couture
 /// [ZSyncOrchestrator.new.isConnected] est le **point d'injection de la vraie
-/// source réseau de l'app** (le « login/reconnexion » du canonique) : un cycle ne
+/// source réseau de l'app** (le « login/reconnexion ») : un cycle ne
 /// part que lorsque le réseau est réellement présent. Une **erreur serveur**
 /// applicative (permission/quota) remontée par un dépôt en `Left(ZServerFailure)`
 /// est **comptée `failed` + loggée** dans [ZSyncRunReport] — **jamais** noyée
 /// silencieusement en « offline ». La distinction fine par-dépôt réseau/serveur
 /// (retourner `Left` sélectif sur permission/quota) nécessiterait un **changement
-/// de contrat** de `sync()` et reste une **évolution future** — **hors** du
-/// périmètre additif E5-4.
+/// de contrat** de `sync()` et reste une **évolution future**.
 ///
 /// **AD-5/AD-15 (isolation) — pur-Dart strict** : ce fichier n'importe **aucun**
 /// type backend (`hive`/`cloud_firestore`) ni gestionnaire d'état (`get`/
@@ -46,7 +44,7 @@
 library;
 
 // `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en paramètre
-// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier comme E5-1/2/3.
+// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier.
 // ignore_for_file: prefer_initializing_formals
 
 import 'dart:async';
@@ -58,8 +56,8 @@ import '../ports/z_syncable_repository.dart';
 import 'z_sync_run_report.dart';
 
 /// Journal minimal **neutre** de l'orchestrateur (aucune dépendance backend).
-/// Miroir **exact** de `ZOfflineFirstLog` (E5-3) : chaque échec de dépôt et
-/// chaque cycle sauté est **loggé** (jamais `catch(_){}` muet — AD-11).
+/// Chaque échec de dépôt et chaque cycle sauté est **loggé** (jamais
+/// `catch(_){}` muet — AD-11).
 typedef ZSyncOrchestratorLog = void Function(
   String message, {
   Object? error,
@@ -74,7 +72,7 @@ void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 /// La **couture de fabrique** ([ZSyncTimerFactory]) permet aux tests d'injecter
 /// une poignée **contrôlable** (capture `(durée, callback)`, `fire()` manuel)
 /// afin de piloter le débounce **sans horloge murale** (aucun `Timer` réel ni
-/// `Future.delayed` dans la suite de tests — objectif de testabilité E5-4).
+/// `Future.delayed` dans la suite de tests — objectif de testabilité).
 abstract class ZCancelableTimer {
   /// Annule le déclenchement planifié : le callback ne sera **jamais** exécuté.
   void cancel();
@@ -105,12 +103,12 @@ ZCancelableTimer _realTimerFactory(
 ) =>
     _RealCancelableTimer(duration, callback);
 
-/// Débounce par défaut du cadencement de synchronisation : **400 ms** (canonique
-/// §7 « reconnexion débouncée 400 ms »). Surchargeable par le constructeur.
+/// Débounce par défaut du cadencement de synchronisation : **400 ms**.
+/// Surchargeable par le constructeur.
 const Duration kZSyncDefaultDebounce = Duration(milliseconds: 400);
 
 /// Orchestrateur de synchronisation offline-first : décide **quand** et **sur
-/// quels dépôts** appeler `sync()`, sans jamais toucher au **comment** (E5-3).
+/// quels dépôts** appeler `sync()`, sans jamais toucher au **comment**.
 ///
 /// **Cycle de vie** : instancier une fois (côté binding/app), [register] les
 /// dépôts synchronisables, câbler [onLogin]/[onReconnected] sur les vraies
@@ -126,7 +124,7 @@ class ZSyncOrchestrator {
   ///   `dart:async`). En test, injecter une fabrique **contrôlable** pour piloter
   ///   le débounce sans horloge murale.
   /// - [isConnected] : couture de connectivité **optionnelle** (défaut `null` →
-  ///   jamais court-circuité, comme E5-3). Point d'injection de la **vraie** source
+  ///   jamais court-circuité). Point d'injection de la **vraie** source
   ///   réseau de l'app. Quand présente et `false`, un cycle est **sauté** proprement.
   /// - [enabled] : gate d'activation (défaut `true`). `false` → aucun déclencheur
   ///   ne planifie, aucun cycle ne s'exécute.
@@ -149,7 +147,7 @@ class ZSyncOrchestrator {
   final ZSyncOrchestratorLog _log;
 
   /// Journalisation **best-effort** : un logger injecté qui `throw` ne doit
-  /// JAMAIS casser le cycle (l'orchestrateur est best-effort intégral, MEDIUM-1).
+  /// JAMAIS casser le cycle (l'orchestrateur est best-effort intégral).
   /// Le catch est volontairement silencieux — le canal de log étant lui-même la
   /// défaillance, il n'existe aucune voie sûre pour le signaler.
   void _safeLog(String message, {Object? error, StackTrace? stackTrace}) {
@@ -185,16 +183,16 @@ class ZSyncOrchestrator {
     _repos.remove(repo);
   }
 
-  /// **ES-3.4 (FR-S15 / AD-20)** — injection en **LOT** de la **liste injectée**
-  /// de dépôts synchronisables : enregistre **CHAQUE** dépôt de [repos].
+  /// Injection en **LOT** de la **liste injectée** de dépôts synchronisables :
+  /// enregistre **CHAQUE** dépôt de [repos].
   ///
-  /// Miroir *first-class* de [register] pour une **liste** (le AC ES-3.4 exige
-  /// que l'orchestrateur *« prend une liste injectée »*) : c'est le foyer nommé
-  /// et testable de la **garde d'itération** — « aucun repo oublié ». Strictement
-  /// **additif** : il **compose** [register] (n'introduit **aucune** seconde voie
-  /// d'injection ni état), hérite donc de l'**idempotence par identité** (un même
-  /// instance présent deux fois dans [repos] n'est enregistré qu'une fois) et du
-  /// **no-op après [dispose]**. Pur-Dart (aucun import Flutter/backend).
+  /// Miroir *first-class* de [register] pour une **liste** : c'est le foyer
+  /// nommé et testable de la **garde d'itération** — « aucun repo oublié ».
+  /// Strictement **additif** : il **compose** [register] (n'introduit
+  /// **aucune** seconde voie d'injection ni état), hérite donc de
+  /// l'**idempotence par identité** (une même instance présente deux fois
+  /// dans [repos] n'est enregistrée qu'une fois) et du **no-op après
+  /// [dispose]**. Pur-Dart (aucun import Flutter/backend).
   void registerAll(Iterable<ZSyncableRepository<dynamic>> repos) {
     if (_disposed) return;
     for (final repo in repos) {
@@ -255,8 +253,8 @@ class ZSyncOrchestrator {
   ///
   /// Best-effort **intégral** : renvoie **`Right(report)`** même si des dépôts ont
   /// échoué (l'échec partiel est **dans** le rapport — `failed`/`failures` —, pas
-  /// un `Left` global). Utile pour un login-forcé, un test, ou la donnée d'étude
-  /// (E9). No-op inerte (report vide) après [dispose].
+  /// un `Left` global). Utile pour un login-forcé, un test, ou une synchronisation
+  /// explicite déclenchée par l'app. No-op inerte (report vide) après [dispose].
   Future<ZResult<ZSyncRunReport>> syncNow() async {
     final report = await _runCycle();
     return Right<ZFailure, ZSyncRunReport>(report);
@@ -292,7 +290,8 @@ class ZSyncOrchestrator {
   /// Exécute un cycle best-effort **tolérant à l'échec partiel** :
   /// - gate `false` / disposé → cycle **sauté**, [ZSyncRunReport.empty].
   /// - `isConnected != null && !await isConnected()` → cycle **sauté** (loggé
-  ///   « hors-ligne »), [ZSyncRunReport.empty] (miroir `Right(unit)` d'E5-3).
+  ///   « hors-ligne »), [ZSyncRunReport.empty] (miroir `Right(unit)` du chemin
+  ///   « offline » de `sync()`).
   /// - sinon itère une **copie** du registre (safe vs `unregister` concurrent) ;
   ///   **chaque** `repo.sync()` est isolé (`try/catch` + garde du `Left`) : un
   ///   `Left` **ou** une exception est **loggé + compté `failed`** et
@@ -306,7 +305,7 @@ class ZSyncOrchestrator {
       try {
         connected = await isConnected();
       } on Object catch (error, stackTrace) {
-        // MEDIUM-1 : la couture réseau de l'app peut throw. Best-effort
+        // La couture réseau de l'app peut throw. Best-effort
         // intégral → on assimile à « hors-ligne » (cycle sauté), jamais
         // d'erreur async échappée (la voie débouncée est `unawaited`).
         _safeLog('sync: couture isConnected en exception — cycle sauté',

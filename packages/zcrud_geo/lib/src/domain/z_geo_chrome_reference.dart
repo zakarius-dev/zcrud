@@ -24,7 +24,7 @@ library;
 /// Valeurs de chrome de référence legacy (auditées, opt-in).
 /// Espace de noms statique : non instanciable.
 abstract final class ZGeoChromeReference {
-  /// 1re couleur du dégradé d'en-tête legacy (`gff:168`).
+  /// 1re couleur du dégradé d'en-tête de référence.
   static const int headerGradientStartArgb = 0xFF667EEA;
 
   /// 2e couleur du dégradé d'en-tête de référence.

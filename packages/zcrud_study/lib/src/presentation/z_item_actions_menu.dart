@@ -1,12 +1,11 @@
-/// `ZItemActionsMenu` — menu d'actions par item PARAMÉTRIQUE (ES-5.3, AD-25).
+/// `ZItemActionsMenu` — menu d'actions par item PARAMÉTRIQUE.
 ///
-/// **CHAT-4b — ce widget est désormais un CONSOMMATEUR de `zcrud_menu`.**
+/// **Ce widget est un CONSOMMATEUR de `zcrud_menu`.**
 ///
 /// Il ne construit plus AUCUN `PopupMenuButton`/`PopupMenuItem`/`PopupMenuEntry` :
 /// il traduit sa `List<ZItemAction>` en `List<ZMenuEntry>` et délègue à
-/// [ZActionMenu]. Le doublon que CR-LEX-78 interdit (deux menus vivant côte à
-/// côte dans le socle) est donc SUPPRIMÉ, pas différé — la garde
-/// `packages/zcrud_menu/test/z_menu_supersedes_test.dart` le mesure sur disque.
+/// [ZActionMenu]. Deux implémentations de menu ne vivent jamais côte à côte
+/// dans le socle — une garde dédiée le mesure sur disque.
 ///
 /// Ce qui NE change pas pour un appelant qui n'utilise aucune capacité neuve :
 /// la surface publique ([ZItemAction], [ZItemActionKind], [ZItemActionsMenu],
@@ -15,10 +14,9 @@
 /// même colonne de `PopupMenuItem`, même info-bulle, mêmes `Semantics`).
 ///
 /// Ce que la délégation REND ACCESSIBLE, en ADDITIF :
-/// * [ZItemAction.permitted] — le **droit** séparé de l'**effet** (IFFD a dû
-///   écrire `IffdMenuAction`/`iffdMenuActions()` faute de cette distinction) ;
-/// * [ZItemAction.disabledReason] — entrée **présente, inerte, MOTIVÉE** (lex
-///   réécrit 297 lignes de `PopupMenuButton` pour l'obtenir) ;
+/// * [ZItemAction.permitted] — le **droit** séparé de l'**effet**, deux
+///   notions distinctes qui n'existaient pas comme telles auparavant ;
+/// * [ZItemAction.disabledReason] — entrée **présente, inerte, MOTIVÉE** ;
 /// * [ZItemAction.id] / [ZMenuEntryIds] — le vocabulaire d'identités PARTAGÉ ;
 /// * [ZMenuEntryTile] — la cellule ≥ 48 dp à `Semantics` NON dupliquées, offerte
 ///   au [menuBuilder] (le renoncement a11y du slot est levé) ;
@@ -26,8 +24,7 @@
 ///
 /// **Seule divergence de rendu assumée** : un menu dont AUCUNE action n'est
 /// visible et qui n'a pas de [menuBuilder] rend un déclencheur **inerte**
-/// (AD-10 : jamais une surface flottante vide). Avant CHAT-4b il s'ouvrait sur
-/// une surface vide. Aucun appelant du dépôt n'est dans ce cas.
+/// (AD-10 : jamais une surface flottante vide).
 ///
 /// Invariants (AD-2/AD-13/AD-15) : AUCUN gestionnaire d'état ; labels/icônes
 /// INJECTÉS (jamais codés en dur) ; cibles ≥ 48 dp ; `Semantics` explicites ;
@@ -66,9 +63,9 @@ const IconData _kMenuFallbackIcon = Icons.more_vert;
 /// Nature d'une action d'item — enum EXTENSIBLE (AD-4). [custom] couvre toute
 /// action hors nomenclature (l'appelant porte le [ZItemAction.label]/[icon]).
 ///
-/// Depuis CHAT-4b, chaque membre a un pendant dans le vocabulaire d'identités
-/// PARTAGÉ [ZMenuEntryIds] ([ZItemAction.entryId]) — adoptable par un package
-/// qui ne peut pas dépendre de `zcrud_study` (`zcrud_core`, CORE OUT = 0).
+/// Chaque membre a un pendant dans le vocabulaire d'identités PARTAGÉ
+/// [ZMenuEntryIds] ([ZItemAction.entryId]) — adoptable par un package qui ne
+/// peut pas dépendre de `zcrud_study` (invariant AD-1 : cœur léger).
 enum ZItemActionKind {
   /// Ouvrir/consulter l'item.
   open,
@@ -82,13 +79,13 @@ enum ZItemActionKind {
   /// Partager l'item.
   share,
 
-  /// **Dupliquer** l'item (SU-8/AC15, FR-SU21).
+  /// **Dupliquer** l'item.
   ///
   /// Ajout **ADDITIF, non-breaking** : aucun `switch` sur [ZItemActionKind]
-  /// n'existe dans le repo (grep négatif vérifié — `grep -rn 'ZItemActionKind'`
-  /// ne rend que des constructions `kind: ZItemActionKind.x`, jamais une
-  /// analyse de cas exhaustive qui deviendrait non-exhaustive). Un membre neuf
-  /// ne casse donc aucun appelant.
+  /// n'existe dans le repo (vérifié par grep négatif — seules des
+  /// constructions `kind: ZItemActionKind.x` existent, jamais une analyse de
+  /// cas exhaustive qui deviendrait non-exhaustive). Un membre neuf ne casse
+  /// donc aucun appelant.
   duplicate,
 
   /// Supprimer l'item.
@@ -116,7 +113,7 @@ String zMenuEntryIdForKind(ZItemActionKind kind) => switch (kind) {
 ///
 /// [label]/[icon] sont INJECTÉS (i18n, jamais codés en dur).
 ///
-/// ## Les TROIS états (CHAT-4b — le troisième était inexprimable)
+/// ## Les TROIS états
 ///
 /// | [onSelected] | [disabledReason] | État rendu |
 /// |---|---|---|
@@ -206,7 +203,7 @@ class ZItemAction {
       );
 }
 
-/// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
+/// Présentation INJECTÉE du contenu du menu.
 ///
 /// Reçoit :
 /// * [context] — le contexte de la **surface flottante** (celui du menu ouvert,
@@ -262,10 +259,10 @@ class ZItemActionsMenu extends StatelessWidget {
   /// exactement la chaîne que `PopupMenuButton` utilisait déjà de lui-même.
   /// Elle est désormais résolue ICI parce que `ZMenuTrigger.semanticLabel` est
   /// REQUIS : un déclencheur muet sous un renderer injecté (hors Material) est
-  /// proscrit (AD-13, récidive `su-9`).
+  /// proscrit (invariant AD-13).
   final String? tooltip;
 
-  /// Présentation INJECTÉE du contenu du menu (CR-IFFD-32).
+  /// Présentation INJECTÉE du contenu du menu.
   ///
   /// `null` (défaut) ⇒ **colonne unique** de `PopupMenuItem` — rendu
   /// **strictement inchangé** pour tout hôte qui ne renseigne pas ce slot.
@@ -276,15 +273,15 @@ class ZItemActionsMenu extends StatelessWidget {
   /// la règle d'absence (AD-4), et la sélection passe par le même chemin que le
   /// rendu par défaut.
   ///
-  /// **Pourquoi un SLOT et pas une option de grille** (arbitrage CR-IFFD-32) :
-  /// au-delà de six ou sept entrées, une colonne unique impose un balayage
+  /// **Pourquoi un SLOT et pas une option de grille** : au-delà de six ou
+  /// sept entrées, une colonne unique impose un balayage
   /// vertical long sur une surface flottante — le plafond de lisibilité est
   /// réel. Mais y répondre par un `crossAxisMaxColumns` figerait dans le socle
   /// *une* ergonomie de menu flottant (largeur de panneau, ordre de lecture,
   /// parcours clavier, position du séparateur destructif) alors que ces
   /// décisions dépendent de l'hôte.
   ///
-  /// **A11y (AD-13) — le renoncement est LEVÉ depuis CHAT-4b.** La cellule
+  /// **A11y (AD-13) — le renoncement est LEVÉ.** La cellule
   /// [ZMenuEntryTile] est offerte à l'hôte : `ZMenuEntryTile(entry:
   /// action.toMenuEntry(), onSelected: () => select(action))` lui donne la cible
   /// ≥ 48 dp, les `Semantics` NON dupliquées et la directionnalité sans les

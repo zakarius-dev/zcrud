@@ -146,12 +146,12 @@ class ZCountBadge extends StatelessWidget {
               SizedBox(
                 width: iconSize,
                 height: iconSize,
-                // 🔵 CR-IFFD-43 — `icon` est un slot d'HÔTE. Un
-                // `IconTheme.merge` n'atteint que l'icône qui HÉRITE : une
-                // `Icon` dont l'hôte tire la couleur de
-                // `Theme.of(context).iconTheme.color` gardait la couleur
-                // ambiante, donc un contraste faux sur le fond du badge.
-                // `ZForegroundOverride` réécrit aussi `ThemeData.iconTheme`.
+                // `icon` est un slot d'HÔTE. Un `IconTheme.merge` n'atteint
+                // que l'icône qui HÉRITE : une `Icon` dont l'hôte tire la
+                // couleur de `Theme.of(context).iconTheme.color` garderait
+                // la couleur ambiante, donc un contraste faux sur le fond
+                // du badge. `ZForegroundOverride` réécrit aussi
+                // `ThemeData.iconTheme` pour couvrir ce cas.
                 child: ZForegroundOverride(
                   color: iconColor,
                   iconSize: iconSize,

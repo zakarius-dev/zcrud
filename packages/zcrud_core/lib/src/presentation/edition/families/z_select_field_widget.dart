@@ -1,29 +1,29 @@
-/// Widget de la **famille select** (E3-3a + DP-15) : `select` / `radio` /
-/// `checkbox`.
+/// Widget de la **famille select** : `select` / `radio` / `checkbox`.
 ///
 /// Alimenté par des `ZFieldChoice{value,label,subtitle,disabled}` — soit
 /// `field.choices` (statique), soit les **choix effectifs** résolus par le
-/// dispatcher ([choices], choix dynamiques cross-champ M22) :
+/// dispatcher ([choices], choix dynamiques cross-champ) :
 /// - `select` mono → `DropdownButtonFormField` (défaut) **OU** modal de recherche
-///   ([searchable] ou seuil [modalThreshold] atteint, DP-15) ;
+///   ([searchable] ou seuil [modalThreshold] atteint) ;
 /// - `select` multi ([multiple], via `ZFieldSpec.multiple`) → **chips**
-///   supprimables + modal multi (DP-15) ;
+///   supprimables + modal multi ;
 /// - `radio` → `RadioGroup` + `RadioListTile` (choix unique, cibles ≥ 48 dp) ;
 /// - `checkbox` → `CheckboxListTile` **multi-sélection** (valeur = `List`).
 ///
-/// **Sous-titre + disabled par option (DP-15/M8)** : `ZFieldChoice.subtitle` rend
+/// **Sous-titre + disabled par option** : `ZFieldChoice.subtitle` rend
 /// une ligne secondaire (radio/checkbox/tuile modal) ; `ZFieldChoice.disabled`
 /// désactive l'option (dropdown `enabled: false`, radio/checkbox non cochables,
-/// tuile modal grisée). `subtitle == null` + `disabled == false` ⇒ rendu E3-3a
+/// tuile modal grisée). `subtitle == null` + `disabled == false` ⇒ rendu
 /// identique (rétro-compat stricte).
 ///
-/// **Rétro-compat (AC3)** : sans mode modal ([searchable]/[modalThreshold]) ni
+/// **Rétro-compat** : sans mode modal ([searchable]/[modalThreshold]) ni
 /// [multiple], le `select` reste un `DropdownButtonFormField` natif inchangé.
 ///
-/// Aucun `TextEditingController` (AD-2) : lecture de `value`, écriture via
-/// `onChanged`. a11y/RTL (AD-13) : `RadioListTile`/`CheckboxListTile`/chips/modal
-/// portent rôle + état + cible ≥ 48 dp, directionnels. Aucune couleur/inset non
-/// directionnel en dur (FR-26). `Column`/`ListView.builder` (jamais
+/// Aucun `TextEditingController` (invariant AD-2) : lecture de `value`,
+/// écriture via `onChanged`. a11y/RTL (invariant AD-13) :
+/// `RadioListTile`/`CheckboxListTile`/chips/modal portent rôle + état + cible
+/// ≥ 48 dp, directionnels. Aucune couleur/inset non directionnel en dur
+/// (invariant FR-26). `Column`/`ListView.builder` (jamais
 /// `ListView(children:)`).
 library;
 
@@ -73,54 +73,54 @@ class ZSelectFieldWidget extends StatelessWidget {
   final ValueChanged<Object?> onChanged;
 
   /// Choix **effectifs** à rendre (résolus par le dispatcher : dynamique
-  /// cross-champ M22). `null` (défaut) ⇒ `field.choices` (statique, rétro-compat).
+  /// cross-champ). `null` (défaut) ⇒ `field.choices` (statique, rétro-compat).
   final List<ZFieldChoice>? choices;
 
-  /// Active le **modal de recherche** du `select` (DP-15). Défaut `false`.
+  /// Active le **modal de recherche** du `select`. Défaut `false`.
   final bool searchable;
 
-  /// Seuil de bascule automatique en modal du `select` (DP-15). `null` ⇒ aucun.
+  /// Seuil de bascule automatique en modal du `select`. `null` ⇒ aucun.
   final int? modalThreshold;
 
   /// Variante **multi chips** du `select` (via `ZFieldSpec.multiple`). Défaut
-  /// `false`. **Distinct** de `checkbox` (multi-liste inline E3-3a).
+  /// `false`. **Distinct** de `checkbox` (multi-liste inline).
   final bool multiple;
 
-  /// Rendu **bare** (borderless, sans label) du dropdown pour le mode `large`
-  /// (AC4) : le décor est porté par la Card. Défaut `false`.
+  /// Rendu **bare** (borderless, sans label) du dropdown pour le mode `large` :
+  /// le décor est porté par la Card. Défaut `false`.
   final bool bare;
 
-  /// MIN-2 (parité DODLP « radio = modal S2 ») — rend un champ `radio` comme un
-  /// **déclencheur modal** de choix unique au lieu des `RadioListTile` inline.
-  /// Sans effet hors `radio`. Défaut `false` (rendu inline inchangé).
+  /// Rend un champ `radio` comme un **déclencheur modal** de choix unique au
+  /// lieu des `RadioListTile` inline. Sans effet hors `radio`. Défaut `false`
+  /// (rendu inline inchangé).
   final bool radioAsModal;
 
-  /// MIN-2 (parité DODLP « réinitialisation sélection ») — callback de **remise à
-  /// `null`** de la sélection (mono seulement). Le dispatcher ne le fournit que
-  /// pour un `select`/`radio` **mono non requis** et éditable ; un bouton reset
-  /// accessible n'est rendu que si [onCleared] est non `null` ET qu'une valeur est
-  /// sélectionnée. `null` (défaut) ⇒ aucun bouton reset (rendu antérieur inchangé).
+  /// Callback de **remise à `null`** de la sélection (mono seulement). Le
+  /// dispatcher ne le fournit que pour un `select`/`radio` **mono non requis**
+  /// et éditable ; un bouton reset accessible n'est rendu que si [onCleared]
+  /// est non `null` ET qu'une valeur est sélectionnée. `null` (défaut) ⇒ aucun
+  /// bouton reset (rendu antérieur inchangé).
   final VoidCallback? onCleared;
 
-  /// CR-SELECT-SEAM — rendu **complet** d'une option, fourni par l'hôte
-  /// (parité `choiceBuilder` DODLP). Transmis **tel quel** au présentateur riche
-  /// injecté au scope ; **sans effet** sur le rendu natif ci-dessous, qui rend
-  /// ses propres tuiles. `null` (défaut) ⇒ comportement antérieur strict.
+  /// Rendu **complet** d'une option, fourni par l'hôte. Transmis **tel quel**
+  /// au présentateur riche injecté au scope ; **sans effet** sur le rendu
+  /// natif ci-dessous, qui rend ses propres tuiles. `null` (défaut) ⇒
+  /// comportement antérieur strict.
   ///
-  /// 🔴 Paramètre de **widget** et non champ de `ZFieldSpec` : c'est une
-  /// fermeture, et AD-3/AD-14 interdisent d'en loger une dans la spec `const`
-  /// sérialisable. Le dispatcher déclaratif ne l'alimente donc pas.
+  /// Paramètre de **widget** et non champ de `ZFieldSpec` : c'est une
+  /// fermeture, et les invariants AD-3/AD-14 interdisent d'en loger une dans
+  /// la spec `const` sérialisable. Le dispatcher déclaratif ne l'alimente
+  /// donc pas.
   final ZSelectChoiceBuilder? choiceBuilder;
 
-  /// CR-SELECT-SEAM — **affordance de fin de ligne** d'une option (parité
-  /// `choiceSecondaryBuilder` DODLP). Mêmes règles que [choiceBuilder] :
-  /// transmis au présentateur riche, sans effet sur le rendu natif, `null` par
-  /// défaut.
+  /// **Affordance de fin de ligne** d'une option. Mêmes règles que
+  /// [choiceBuilder] : transmis au présentateur riche, sans effet sur le
+  /// rendu natif, `null` par défaut.
   final ZSelectChoiceSecondaryBuilder? choiceSecondaryBuilder;
 
-  /// CR-SELECT-SEAM — chargeur **asynchrone paginé** d'options (parité
-  /// `choiceLoader` DODLP). Mêmes règles que [choiceBuilder] : transmis au
-  /// présentateur riche, sans effet sur le rendu natif, `null` par défaut.
+  /// Chargeur **asynchrone paginé** d'options. Mêmes règles que
+  /// [choiceBuilder] : transmis au présentateur riche, sans effet sur le
+  /// rendu natif, `null` par défaut.
   final ZSelectOptionsLoader? optionsLoader;
 
   /// Choix effectifs (dynamique cross-champ) ou repli statique `field.choices`.
@@ -142,9 +142,9 @@ class ZSelectFieldWidget extends StatelessWidget {
     final resolvedLabel = label(context, field.label ?? field.name,
         fallback: field.label ?? field.name);
 
-    // AD-48 : si un présentateur riche est injecté au scope, on lui DÉLÈGUE la
-    // présentation via un DTO NEUTRE (jamais le controller — AD-2). Défaut `null`
-    // ⇒ rendu natif ci-dessous strictement conservé (aucune régression).
+    // Si un présentateur riche est injecté au scope, on lui DÉLÈGUE la
+    // présentation via un DTO NEUTRE (jamais le controller — invariant AD-2).
+    // Défaut `null` ⇒ rendu natif ci-dessous strictement conservé.
     final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
     if (presenter != null) {
       return presenter.present(
@@ -158,10 +158,10 @@ class ZSelectFieldWidget extends StatelessWidget {
           searchable: searchable,
           readOnly: field.readOnly,
           label: resolvedLabel,
-          // CR-SELECT-SEAM. `isLoading` n'est PAS transmis : cette famille n'a
-          // aucune notion de chargement — ses choix sont résolus SYNCHRONEMENT
-          // par le dispatcher (`_resolveSelectChoices`). Poser autre chose que
-          // le défaut `false` serait une donnée inventée.
+          // `isLoading` n'est PAS transmis : cette famille n'a aucune notion
+          // de chargement — ses choix sont résolus SYNCHRONEMENT par le
+          // dispatcher (`_resolveSelectChoices`). Poser autre chose que le
+          // défaut `false` serait une donnée inventée.
           choiceBuilder: choiceBuilder,
           choiceSecondaryBuilder: choiceSecondaryBuilder,
           optionsLoader: optionsLoader,
@@ -173,7 +173,7 @@ class ZSelectFieldWidget extends StatelessWidget {
       return _buildCheckboxes(context, resolvedLabel);
     }
     if (field.type == EditionFieldType.radio) {
-      // MIN-2 : `radio` en modal (option) — sinon `RadioListTile` inline.
+      // `radio` en modal (option) — sinon `RadioListTile` inline.
       if (radioAsModal) return _buildModalMono(context, resolvedLabel);
       return _buildRadios(context, resolvedLabel);
     }
@@ -183,7 +183,7 @@ class ZSelectFieldWidget extends StatelessWidget {
     return _buildDropdown(context);
   }
 
-  /// MIN-2 — enveloppe un contrôle **mono** dans une `Row` ajoutant un bouton
+  /// Enveloppe un contrôle **mono** dans une `Row` ajoutant un bouton
   /// **reset** (→ `null`) accessible quand [onCleared] est fourni et qu'une valeur
   /// est présente. Sinon retourne [child] tel quel (rétro-compat pixel stricte).
   Widget _withReset(BuildContext context, Widget child, {required bool hasValue}) {
@@ -201,11 +201,12 @@ class ZSelectFieldWidget extends StatelessWidget {
   }
 
   Widget _buildDropdown(BuildContext context) {
-    // CR-ORPHAN — voie 1. `DropdownButtonFormField` EXIGE que `value` figure dans
-    // `items` (assertion Flutter) : l'ancien `values.contains(value) ? value :
-    // null` effaçait donc la valeur de l'écran alors qu'elle restait dans la
-    // tranche et serait SOUMISE. On lève la contrainte au lieu de la subir, en
-    // ajoutant l'option synthétique d'affichage — la donnée n'est pas touchée.
+    // `DropdownButtonFormField` EXIGE que `value` figure dans `items`
+    // (assertion Flutter) : un `values.contains(value) ? value : null` naïf
+    // effacerait donc la valeur de l'écran alors qu'elle reste dans la
+    // tranche et serait SOUMISE. On lève la contrainte au lieu de la subir,
+    // en ajoutant l'option synthétique d'affichage — la donnée n'est pas
+    // touchée.
     final choices = zWithOrphanChoices(_choices, <Object?>[value]);
     final values = choices.map((c) => c.value).toList(growable: false);
     final current = values.contains(value) ? value : null;
@@ -219,26 +220,27 @@ class ZSelectFieldWidget extends StatelessWidget {
   Widget _buildDropdownField(
       BuildContext context, List<ZFieldChoice> choices, Object? current) {
     return DropdownButtonFormField<Object?>(
-      // L-3 : un `FormField` ne relit `initialValue` qu'à l'`initState`. Clé sur
+      // Un `FormField` ne relit `initialValue` qu'à l'`initState`. Clé sur
       // la valeur COURANTE de la tranche pour que le contrôle recrée son état et
       // reflète un changement EXTERNE/programmatique. Reste DANS la tranche du
-      // champ (AD-2 : le rebuild est borné par `ZFieldListenableBuilder`).
+      // champ (invariant AD-2 : le rebuild est borné par
+      // `ZFieldListenableBuilder`).
       key: ValueKey<Object?>(current),
-      // CR-DODLP-SELECT-OVERFLOW : sans `isExpanded`, `DropdownButton` se
-      // dimensionne sur l'option la PLUS LARGE et déborde (`RenderFlex
-      // overflowed`) dès qu'un libellé long + les ornements de
-      // l'`InputDecoration` dépassent la largeur disponible. `true` contraint
-      // le bouton à la largeur du champ ; le libellé s'ellipse au lieu de
-      // déborder — c'est déjà le comportement attendu d'un champ de formulaire.
+      // Sans `isExpanded`, `DropdownButton` se dimensionne sur l'option la
+      // PLUS LARGE et déborde (`RenderFlex overflowed`) dès qu'un libellé
+      // long + les ornements de l'`InputDecoration` dépassent la largeur
+      // disponible. `true` contraint le bouton à la largeur du champ ; le
+      // libellé s'ellipse au lieu de déborder — c'est déjà le comportement
+      // attendu d'un champ de formulaire.
       isExpanded: true,
       initialValue: current,
-      // DP-12 : label enrichi + hint/helper + ornements leading/prefix/suffix.
+      // Label enrichi + hint/helper + ornements leading/prefix/suffix.
       decoration: zFieldDecoration(context, field, bare: bare),
       items: <DropdownMenuItem<Object?>>[
         for (final choice in choices)
           DropdownMenuItem<Object?>(
             value: choice.value,
-            // DP-15 : `disabled` désactive l'option (visible mais non
+            // `disabled` désactive l'option (visible mais non
             // sélectionnable) ; `subtitle` ajoute une ligne secondaire.
             enabled: !choice.disabled,
             child: _dropdownItemChild(context, choice),
@@ -279,16 +281,16 @@ class ZSelectFieldWidget extends StatelessWidget {
               child: Text(resolvedLabel,
                   style: Theme.of(context).textTheme.bodySmall),
             ),
-            // CR-ORPHAN — voie 4. Sans option synthétique, `RadioGroup` ne
-            // trouvait AUCUNE tuile portant `groupValue` : le champ paraissait
-            // « rien de coché » alors qu'une valeur était portée et serait
-            // soumise. La tuile synthétique est `enabled: false` (non
-            // re-sélectionnable) mais bien cochée — l'état réel, enfin visible.
+            // Sans option synthétique, `RadioGroup` ne trouverait AUCUNE
+            // tuile portant `groupValue` : le champ paraîtrait « rien de
+            // coché » alors qu'une valeur est portée et serait soumise. La
+            // tuile synthétique est `enabled: false` (non re-sélectionnable)
+            // mais bien cochée — l'état réel, visible.
             for (final choice in zWithOrphanChoices(_choices, <Object?>[value]))
               RadioListTile<Object?>(
                 value: choice.value,
-                // L-4 : `enabled: false` DÉSACTIVE réellement chaque radio (état
-                // `disabled` correct a11y/UX). DP-15 : combine `readOnly` global
+                // `enabled: false` DÉSACTIVE réellement chaque radio (état
+                // `disabled` correct a11y/UX) — combine `readOnly` global
                 // ET `choice.disabled` (désactivation par option).
                 enabled: !field.readOnly && !choice.disabled,
                 title: Text(_label(context, choice.label)),
@@ -315,14 +317,14 @@ class ZSelectFieldWidget extends StatelessWidget {
             child: Text(resolvedLabel,
                 style: Theme.of(context).textTheme.bodySmall),
           ),
-          // CR-ORPHAN — voie 5. Idem : une valeur cochée absente des options ne
-          // rendait AUCUNE tuile. La tuile synthétique la montre cochée et
-          // désactivée (`choice.disabled` ⇒ `onChanged: null`), donc non
-          // décochable : ce widget ne rend que ce que son propre geste écrit.
+          // Une valeur cochée absente des options ne rendrait AUCUNE tuile
+          // sans l'option synthétique. Elle la montre cochée et désactivée
+          // (`choice.disabled` ⇒ `onChanged: null`), donc non décochable :
+          // ce widget ne rend que ce que son propre geste écrit.
           for (final choice in zWithOrphanChoices(_choices, selected))
             CheckboxListTile(
               value: selected.contains(choice.value),
-              // DP-15 : `disabled` par option → `onChanged: null` (non cochable).
+              // `disabled` par option → `onChanged: null` (non cochable).
               onChanged: (field.readOnly || choice.disabled)
                   ? null
                   : (checked) => _toggle(selected, choice, checked),
@@ -340,14 +342,14 @@ class ZSelectFieldWidget extends StatelessWidget {
     return Text(sub, textAlign: TextAlign.start);
   }
 
-  /// `select` mono en **modal de recherche** (DP-15/M8) : un déclencheur
+  /// `select` mono en **modal de recherche** : un déclencheur
   /// accessible ouvrant le modal (recherche client + sous-titre + disabled).
   Widget _buildModalMono(BuildContext context, String resolvedLabel) {
-    // CR-ORPHAN — voie 2 (et voie `radioAsModal`). Sans l'option synthétique,
-    // `_labelForValue` rendait `null` et le déclencheur affichait le PLACEHOLDER
-    // « Sélectionner » : le champ paraissait vide alors qu'il portait une valeur
-    // (et le bouton reset, piloté par `hasValue`, disparaissait — l'utilisateur
-    // n'avait alors aucun moyen de retirer ce qu'il ne voyait pas).
+    // Sans l'option synthétique, `_labelForValue` rendrait `null` et le
+    // déclencheur afficherait le PLACEHOLDER « Sélectionner » : le champ
+    // paraîtrait vide alors qu'il porte une valeur (et le bouton reset,
+    // piloté par `hasValue`, disparaîtrait — l'utilisateur n'aurait alors
+    // aucun moyen de retirer ce qu'il ne voit pas).
     final choices = zWithOrphanChoices(_choices, <Object?>[value]);
     final selectedLabel = _labelForValue(context, choices, value);
     return _withReset(
@@ -364,14 +366,14 @@ class ZSelectFieldWidget extends StatelessWidget {
     );
   }
 
-  /// `select` **multi chips** (DP-15/M8, via `ZFieldSpec.multiple`) : chips
+  /// `select` **multi chips** (via `ZFieldSpec.multiple`) : chips
   /// supprimables + déclencheur d'ajout (modal multi).
   Widget _buildMultiChips(BuildContext context, String resolvedLabel) {
     final selected = _selectedList;
-    // CR-ORPHAN — voie 3. C'est ici que l'IDENTIFIANT BRUT s'affichait
-    // (`_labelForValue(...) ?? '$v'`). Les options synthétiques donnent un
-    // libellé à chaque orphelin ; le `??` ci-dessous devient inatteignable et
-    // reste garni d'un libellé (jamais d'une clé) par défense en profondeur.
+    // Sans les options synthétiques, l'IDENTIFIANT BRUT s'afficherait
+    // (`_labelForValue(...) ?? '$v'`). Elles donnent un libellé à chaque
+    // orphelin ; le `??` ci-dessous devient donc inatteignable et reste
+    // garni d'un libellé (jamais d'une clé) par défense en profondeur.
     final choices = zWithOrphanChoices(_choices, selected);
     final theme = Theme.of(context);
     return Semantics(
@@ -547,13 +549,13 @@ class _ChoiceSelectionTrigger extends StatelessWidget {
   }
 }
 
-/// Feuille de sélection (modal) du `select` (DP-15) : recherche client sur les
+/// Feuille de sélection (modal) du `select` : recherche client sur les
 /// libellés + sélection mono/multi, **sous-titre + option désactivée** par tuile,
 /// boutons Confirmer/Fermer l10n. Pop avec `List<Object?>` (vide si « aucune
-/// sélection ») ; `null` si fermé sans confirmer. a11y/RTL (AD-13).
+/// sélection ») ; `null` si fermé sans confirmer. a11y/RTL (invariant AD-13).
 ///
-/// Gabarit **dupliqué** de `_RelationSelectSheet` (DP-5, AC5 autorise la
-/// duplication dans ce fichier) enrichi de `subtitleOf`/`disabled`.
+/// Gabarit **dupliqué** de `_RelationSelectSheet` (duplication assumée dans
+/// ce fichier) enrichi de `subtitleOf`/`disabled`.
 class _ZChoiceSelectSheet extends StatefulWidget {
   const _ZChoiceSelectSheet({
     required this.title,
@@ -667,7 +669,7 @@ class _ZChoiceSelectSheetState extends State<_ZChoiceSelectSheet> {
                             subtitle: sub == null
                                 ? null
                                 : Text(sub, textAlign: TextAlign.start),
-                            // DP-15 : option désactivée non cochable (a11y).
+                            // Option désactivée non cochable (a11y).
                             onChanged: choice.disabled
                                 ? null
                                 : (_) => _toggle(choice.value),

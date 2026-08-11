@@ -41,18 +41,17 @@ typedef ZGradientResolver =
 /// ZcrudScope(gradientResolver: zDerivedGradientResolver, child: …)
 /// ```
 ///
-/// 🔴 **Pourquoi opt-in et non un repli automatique de [zResolveGradient]**
-/// (arbitrage VIS-1, AC4 contre AC9). Ce repli rend un dégradé pour **toute**
-/// clé non vide. Placé dans la chaîne, il rendait deux garanties fausses,
-/// MESURÉ par sonde avant correction :
-/// * sans aucun `ZcrudScope`, `zResolveGradient(c, 'dossier-42')` rendait un
+/// **Pourquoi opt-in et non un repli automatique de [zResolveGradient]** : ce
+/// repli rend un dégradé pour **toute** clé non vide. Placé dans la chaîne,
+/// il romprait deux garanties :
+/// * sans aucun `ZcrudScope`, `zResolveGradient(c, 'dossier-42')` rendrait un
 ///   dégradé au lieu de `null` — l'invariant « pas d'injection ⇒ accent uni
-///   inchangé » de l'epic VIS était donc violé dès le premier consommateur ;
+///   inchangé » serait violé dès le premier consommateur ;
 /// * un hôte dont le résolveur rend `null` pour signifier « accent uni pour
-///   cette clé » voyait sa décision **écrasée** par le repli — son `null`
-///   devenait inexprimable.
-/// AC9 (rendu par défaut identique au pixel près) est l'invariant non
-/// négociable de l'epic : il l'emporte, et le repli devient explicite.
+///   cette clé » verrait sa décision **écrasée** par le repli — son `null`
+///   deviendrait inexprimable.
+/// Le rendu par défaut identique au pixel près est l'invariant non
+/// négociable : il l'emporte, et le repli reste explicite (jamais implicite).
 ///
 /// Une clé vide rend `null` (aucune identité ⇒ aucun dégradé).
 ZGradientSpec? zDerivedGradientResolver(
@@ -60,14 +59,10 @@ ZGradientSpec? zDerivedGradientResolver(
   String gradientKey,
 ) {
   if (gradientKey.isEmpty) return null;
-  // 🔴 Le choix des RÔLES est ce qui décide qu'un dégradé se voie. Le premier
-  // jet prenait `primaryContainer` → `secondaryContainer` : dans un
-  // `ColorScheme.fromSeed`, ces deux rôles sont trop voisins et le « dégradé »
-  // était un aplat. MESURÉ (écart RGB cumulé entre les deux extrémités, thème
-  // clair) : primary/secondary = 0,039 — contre primary/tertiary = 0,212.
-  // La moyenne de clarté/saturation qu'appliquait ce jet ne faisait qu'aggraver
-  // (0,039 → 0,020) ; elle n'était pas la cause première. Les rôles sont donc
-  // pris TELS QUELS, et `tertiaryContainer` est retenu pour son écart réel.
+  // Le choix des RÔLES est ce qui décide qu'un dégradé se voie. Dans un
+  // `ColorScheme.fromSeed`, `primaryContainer` et `secondaryContainer` sont
+  // trop voisins et le « dégradé » se lit comme un aplat ; `primaryContainer`
+  // → `tertiaryContainer` porte un écart réel de teinte, retenu ici.
   final HSLColor start = HSLColor.fromColor(scheme.primaryContainer);
   final HSLColor end = HSLColor.fromColor(scheme.tertiaryContainer);
   return ZGradientSpec(
@@ -87,9 +82,10 @@ ZGradientSpec? zDerivedGradientResolver(
 /// ou inconnue rendent tous `null` sans lever.
 ///
 /// `null` est une valeur FONCTIONNELLE : « aucun dégradé, garde l'accent uni ».
-/// C'est ce qui garantit qu'un consommateur non configuré rend exactement comme
-/// avant l'epic VIS. Le repli dérivé n'est PAS dans cette chaîne : voir
-/// [zDerivedGradientResolver] pour l'arbitrage mesuré qui l'en a exclu.
+/// C'est ce qui garantit qu'un consommateur non configuré rend exactement
+/// comme un consommateur qui n'a jamais injecté de dégradé. Le repli dérivé
+/// n'est PAS dans cette chaîne : voir [zDerivedGradientResolver] pour
+/// l'arbitrage qui l'en exclut.
 ///
 /// ⚠️ **Limite explicite : une exception levée PAR LE RESOLVER DE L'HÔTE se
 /// propage** — elle n'est pas avalée. C'est délibéré, et c'est le comportement

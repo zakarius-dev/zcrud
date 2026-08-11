@@ -1,8 +1,8 @@
 /// Métadonnées de synchronisation **hors-entité** du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — divergence `Mindmap` (sync hors-entité)
-/// vs `StudyFolder` (in-entité), tranchée par AD-16 en faveur du **standard
-/// hors-entité** `updated_at`/`is_deleted`. Canonique §2.2 (invariant Story 5.4).
+/// Standard **hors-entité** pour `updated_at`/`is_deleted` (AD-9) : ces clés
+/// appartiennent à la couche de synchronisation, jamais au corps métier
+/// d'une entité, quel que soit le paquet qui la déclare.
 library;
 
 /// Sentinelle interne pour distinguer « argument omis » de « argument `null` »
@@ -10,7 +10,7 @@ library;
 const Object _unset = Object();
 
 /// Value object immuable portant les **métadonnées de synchronisation**
-/// standardisées **hors-entité** (AD-16) : la clé Last-Write-Wins [updatedAt]
+/// standardisées **hors-entité** (AD-9) : la clé Last-Write-Wins [updatedAt]
 /// et le drapeau de soft-delete [isDeleted].
 ///
 /// Séparation stricte (canonique §2.2) : **aucun** champ métier de l'entité ne
@@ -22,15 +22,15 @@ class ZSyncMeta {
   const ZSyncMeta({this.updatedAt, this.isDeleted = false});
 
   /// Clé persistée (snake_case) de l'horodatage Last-Write-Wins (AD-9) —
-  /// **hors-entité**. Définition **machine** d'AD-19 : aucun site ne doit
-  /// redéclarer ce littéral.
+  /// **hors-entité**. Définition **machine** de la convention : aucun site ne
+  /// doit redéclarer ce littéral.
   static const String kUpdatedAt = 'updated_at';
 
-  /// Clé persistée (snake_case) du drapeau de soft-delete (AD-9/AD-16) —
-  /// **hors-entité**. Définition **machine** d'AD-19.
+  /// Clé persistée (snake_case) du drapeau de soft-delete (AD-9) —
+  /// **hors-entité**.
   static const String kIsDeleted = 'is_deleted';
 
-  /// Clés **RÉSERVÉES** à la couche de synchronisation (AD-19).
+  /// Clés **RÉSERVÉES** à la couche de synchronisation (AD-9).
   ///
   /// Une entité de domaine ne les capture **JAMAIS** dans son échappatoire
   /// `extra` (AD-4) et ne les réémet **JAMAIS** depuis son `toMap`/`toJson` :
@@ -38,12 +38,12 @@ class ZSyncMeta {
   /// fait **toujours** sur `ZSyncMeta.updatedAt` (hors-entité), **jamais** sur
   /// un `T.updatedAt` interne (qui n'est, au mieux, qu'un miroir de compat).
   ///
-  /// C'est la **définition machine unique** de la convention AD-19 : toute
-  /// entité annotée dérive ses clés réservées de cet ensemble plutôt que de
+  /// C'est la **définition machine unique** de la convention : toute entité
+  /// annotée dérive ses clés réservées de cet ensemble plutôt que de
   /// redéclarer les littéraux.
   static const Set<String> reservedKeys = <String>{kUpdatedAt, kIsDeleted};
 
-  /// Retire les [reservedKeys] de [map] (helper de garde AD-19).
+  /// Retire les [reservedKeys] de [map] (helper de garde AD-9).
   ///
   /// **Pur et défensif** : ne mute **jamais** [map], retourne toujours une
   /// **nouvelle** map (map vide → map vide ; map sans clé réservée → copie
@@ -69,7 +69,7 @@ class ZSyncMeta {
     };
   }
 
-  /// Clés RÉSERVÉES qu'un corps métier porterait à tort (CR-IFFD-14).
+  /// Clés RÉSERVÉES qu'un corps métier porterait à tort.
   ///
   /// La collision est **probable** : `updatedAt` est l'un des noms les plus
   /// répandus des modèles applicatifs, et un hôte peut légitimement porter un

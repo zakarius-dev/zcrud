@@ -1,17 +1,17 @@
 /// Pont d'**interaction** neutre entre `DynamicList` et un `ZListRenderer`
-/// (E4-4, AD-8/SM-5).
+/// (AD-8).
 ///
-/// origine: E4-4. Porte la **sélection** (mode + `id` sélectionnés + callback de
+/// Porte la **sélection** (mode + `id` sélectionnés + callback de
 /// changement) et le **résolveur d'actions par ligne** (`actionsFor`) — déjà
 /// filtrées/résolues par l'ACL dans `DynamicList` (le renderer ne voit ni `T` ni
 /// `ZAcl`). Passé en **paramètre nommé optionnel** de `ZListRenderer.build`.
 ///
 /// **Pourquoi SÉPARÉ de `ZListRenderRequest`** : ce dernier a une **égalité de
-/// valeur profonde** (E4-1/E4-2) exploitée par les tests et la mémoïsation ; y
+/// valeur profonde** exploitée par les tests et la mémoïsation ; y
 /// injecter des **callbacks** (`onSelectionChanged`, `actionsFor`) la casserait
 /// (les fonctions ne sont pas comparables). Ce pont vit donc à côté, hors du
-/// value object — additif et **rétro-compatible** (les renderers E4-1 ignorent
-/// le paramètre).
+/// value object — additif et **rétro-compatible** (un renderer qui ne le lit
+/// pas ignore simplement le paramètre).
 ///
 /// **Neutre** : imports limités à `package:flutter/foundation.dart` (`@immutable`)
 /// + types `zcrud_core`. AUCUN `package:syncfusion`, AUCUN gestionnaire d'état.
@@ -23,7 +23,7 @@ import 'z_list_render_request.dart';
 import 'z_list_selection.dart';
 import 'z_row_action.dart';
 
-/// Bundle d'interaction **neutre** consommé par un `ZListRenderer` (E4-4).
+/// Bundle d'interaction **neutre** consommé par un `ZListRenderer`.
 ///
 /// - [mode] : mode de sélection (`none`/`single`/`multiple`) → pilote le
 ///   `selectionMode` du backend ;

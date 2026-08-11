@@ -1,22 +1,20 @@
-/// Moteur d'exécution des dérivations déclarées (`ZFieldSpec.derivedFrom`) —
-/// CR-IFFD-22.
+/// Moteur d'exécution des dérivations déclarées (`ZFieldSpec.derivedFrom`).
 ///
-/// origine: la CR ne demande pas la *capacité* (elle existait :
-/// `fieldListenable(a).addListener → setValue(b)`) mais le fait qu'elle soit
-/// **déclarative** et que les deux pièges soient portés par le socle. Toute la
-/// valeur est ici, pas dans la syntaxe :
+/// La capacité de base (`fieldListenable(a).addListener → setValue(b)`)
+/// existe déjà côté controller ; ce moteur la rend **déclarative** et porte
+/// deux garanties structurelles au niveau du socle :
 ///
 /// 1. **Sérialisation des résolutions asynchrones** — un **jeton de génération
 ///    PAR CHAMP CIBLE** ([_generation]) : deux sélections rapprochées dont les
 ///    `Future` se résolvent DANS LE DÉSORDRE ne peuvent plus s'écraser ; la
 ///    résolution périmée est **jetée**, la dernière sélection gagne toujours.
-/// 2. **AD-10** — toute fonction hôte est appelée sous `try/catch` : une
-///    dérivation qui lève **n'écrit rien** (la cible garde sa valeur
+/// 2. **Invariant AD-10** — toute fonction hôte est appelée sous `try/catch` :
+///    une dérivation qui lève **n'écrit rien** (la cible garde sa valeur
 ///    précédente) et ne remonte jamais dans la saisie.
-/// 3. **AD-2 / SM-1** — abonnement CIBLÉ aux seules tranches sources, écriture
-///    CIBLÉE des seules tranches cibles. Aucun `notifyListeners()` global,
-///    aucun `setState` d'échelle formulaire : le moteur ne fait que réutiliser
-///    les canaux EXISTANTS du `ZFormController`.
+/// 3. **Invariant AD-2** — abonnement CIBLÉ aux seules tranches sources,
+///    écriture CIBLÉE des seules tranches cibles. Aucun `notifyListeners()`
+///    global, aucun `setState` d'échelle formulaire : le moteur ne fait que
+///    réutiliser les canaux EXISTANTS du `ZFormController`.
 /// 4. **Cycles** — signalés (debug) et **coupés** (toujours) par une garde de
 ///    réentrance ; jamais une exception : un cycle reste exprimable.
 library;
@@ -272,14 +270,15 @@ class ZDerivationEngine {
       _reportFailure(target, 'value', e);
       return; // AD-10 : repli = valeur PRÉCÉDENTE conservée, saisie intacte.
     }
-    // Jeton de génération PAR CHAMP CIBLE (piège n°2 de CR-IFFD-22).
+    // Jeton de génération PAR CHAMP CIBLE (sérialisation des résolutions
+    // asynchrones, cf. l'en-tête de fichier).
     if (_disposed || _generation[target] != gen) return;
     if (overwrite == ZDerivationOverwrite.ifPristine &&
         _controller.isTouched(target)) {
       return; // saisie manuelle PRÉSERVÉE.
     }
-    // CR-IFFD-26 §2 : la fonction peut S'ABSTENIR. Comparé par IDENTITÉ, donc
-    // aucune valeur métier ne peut être confondue avec le marqueur.
+    // La fonction peut S'ABSTENIR. Comparé par IDENTITÉ, donc aucune valeur
+    // métier ne peut être confondue avec le marqueur.
     if (identical(value, zUnchanged)) return;
     _write(target, value, chain);
   }

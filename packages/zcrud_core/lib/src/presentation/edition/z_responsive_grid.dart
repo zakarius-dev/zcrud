@@ -1,4 +1,4 @@
-/// Grille responsive **12 colonnes** du moteur d'édition (E3-4, FR-3, AD-13).
+/// Grille responsive **12 colonnes** du moteur d'édition (invariant AD-13).
 ///
 /// Descripteur de layout **pur-présentation** ([ZResponsiveSpan]) + widget de
 /// disposition ([ZResponsiveGrid]). Additif : n'altère NI le générateur NI les
@@ -9,8 +9,9 @@
 /// - **12 colonnes** ; un champ occupe `span/12` de la largeur disponible ; la
 ///   ligne **reflow** (wrap) quand la somme des `span` d'une rangée dépasse 12.
 /// - **Breakpoints** résolus par la largeur du **conteneur** (`LayoutBuilder`,
-///   composable dans un scroll/split-view) — jamais `MediaQuery` écran (AD-2/E7).
-/// - **Directionnel exclusif** (AD-13) : gouttières `EdgeInsetsDirectional`, flux
+///   composable dans un scroll/split-view) — jamais `MediaQuery` écran
+///   (invariant AD-2).
+/// - **Directionnel exclusif** (invariant AD-13) : gouttières `EdgeInsetsDirectional`, flux
 ///   `Wrap` (suit `Directionality` : LTR→start=gauche, RTL→start=droite). Aucun
 ///   `EdgeInsets.only(left/right)`/`Alignment.centerLeft` (garde style_purity).
 /// - **Place stable** : la `ValueKey(name)` de chaque champ (posée par
@@ -22,7 +23,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-/// MIN-2 (colocalisation span — **test de cohérence des clés `layout`**) : le
+/// **Test de cohérence des clés `layout`** : le
 /// `layout` de `DynamicEdition` est une `Map<String, ZResponsiveSpan>` dont les
 /// clés sont des **noms de champ** (non typés). Cette fonction pure retourne les
 /// clés du [layout] qui ne correspondent à **aucun** champ de [fieldNames] — une
@@ -58,8 +59,8 @@ enum ZBreakpoint {
   xl,
 }
 
-/// Seuils de largeur (dp) des [ZBreakpoint] — hypothèse **Bootstrap** (FR-3 ne
-/// fixe pas les seuils ; documentés et testés, ajustables).
+/// Seuils de largeur (dp) des [ZBreakpoint] — hypothèse **Bootstrap**
+/// (documentés et testés, ajustables).
 ///
 /// `xs < 576 ≤ sm < 768 ≤ md < 992 ≤ lg < 1200 ≤ xl`.
 abstract final class ZResponsiveBreakpoints {
@@ -88,7 +89,7 @@ abstract final class ZResponsiveBreakpoints {
 /// Nombre de colonnes qu'occupe un champ **par breakpoint** (1..12).
 ///
 /// Défaut = **12** (pleine largeur) à tous les breakpoints — compatibilité
-/// ascendante : un champ sans `span` déclaré remplit la ligne (AC13). Chaque
+/// ascendante : un champ sans `span` déclaré remplit la ligne. Chaque
 /// breakpoint non fourni **hérite** du plus petit breakpoint renseigné en
 /// dessous (cascade « mobile-first ») ; à défaut, 12.
 @immutable
@@ -208,11 +209,11 @@ class ZResponsiveGrid extends StatelessWidget {
   /// par défaut, en `runSpacing` (inter-rangées) si [runGutter] est `null`.
   final double gutter;
 
-  /// Gouttière **inter-rangées** (dp) posée en `Wrap.runSpacing` (AD-54, FR-38).
+  /// Gouttière **inter-rangées** (dp) posée en `Wrap.runSpacing`.
   /// **Additif non-cassant** : `null` (défaut) ⇒ repli sur [gutter] (comportement
-  /// symétrique EXACT d'avant). Non `null` ⇒ gouttière verticale distincte (parité
-  /// DODLP `verticalSpacing`, ex. `gutter: 16, runGutter: 8`). Directionnellement
-  /// neutre (mesure dp ; `Wrap` suit `Directionality`).
+  /// symétrique EXACT d'avant). Non `null` ⇒ gouttière verticale distincte (ex.
+  /// `gutter: 16, runGutter: 8`). Directionnellement neutre (mesure dp ;
+  /// `Wrap` suit `Directionality`).
   final double? runGutter;
 
   @override
@@ -233,7 +234,7 @@ class ZResponsiveGrid extends StatelessWidget {
         final cells = <Widget>[
           for (var i = 0; i < children.length; i++)
             SizedBox(
-              // PLACE STABLE (AD-2/FR-1) : la `ValueKey(name)` du champ est
+              // PLACE STABLE (invariant AD-2) : la `ValueKey(name)` du champ est
               // portée sur l'ENFANT DIRECT du `Wrap` (cette cellule), pas
               // seulement sur un descendant. `Wrap` est un multi-enfant NON
               // paresseux qui réconcilie ses enfants directs PAR CLÉ quand elle

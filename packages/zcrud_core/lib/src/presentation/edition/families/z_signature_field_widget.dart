@@ -1,4 +1,4 @@
-/// Widget de la **famille signature** (`signature`) — E3-3b-3.
+/// Widget de la **famille signature** (`signature`).
 ///
 /// Capture de signature **gestuelle** rendue avec un `GestureDetector` +
 /// `CustomPaint` **Flutter natif** — AUCUNE dépendance lourde (pas de package
@@ -53,7 +53,7 @@ import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import 'z_signature_codec.dart';
 
-/// Codec `const` partagé (DP-18) — source unique de vérité (dé)sérialisation
+/// Codec `const` partagé — source unique de vérité (dé)sérialisation
 /// strokes ↔ valeur de tranche. Le widget délègue `decode`/`encode` ici.
 const ZSignatureCodec _kSignatureCodec = ZSignatureCodec();
 
@@ -94,7 +94,7 @@ class ZSignatureFieldWidget extends StatefulWidget {
       _kSignatureCodec.strokesFromValue(value);
 
   /// Encode des strokes NORMALISÉS en `Map` versionnée sérialisable, ou `null`
-  /// si vide. Exposé pour les tests. Format documenté ci-dessus (DP-18 : délègue
+  /// si vide. Exposé pour les tests. Format documenté ci-dessus (délègue
   /// au `ZSignatureCodec` — source unique de vérité).
   @visibleForTesting
   static Map<String, dynamic>? encode(List<List<Offset>> strokes) =>

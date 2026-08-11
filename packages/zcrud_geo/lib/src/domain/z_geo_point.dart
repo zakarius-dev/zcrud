@@ -141,12 +141,12 @@ class ZGeoPoint {
       lng: lng,
       label: label is String ? label : null,
       address: address is String ? address : null,
-      // G9 : style optionnel (zcrud comme legacy) ; corrompu → null (AD-10).
+      // Style optionnel ; corrompu → null (AD-10).
       style: ZGeoShapeStyle.fromMapSafe(decoded['style']),
     );
   }
 
-  /// Lecture legacy (G1) d'une **forme** DODLP de type `point` :
+  /// Lecture compatible d'une **forme** legacy de type `point` :
   /// `{type:'point', points:[{lat,lng}], label}` → `points[0]` (+ `label` de la
   /// forme). Tout autre `type` (ou `points` inexploitable) → `null` (AD-10) —
   /// le routage inter-géométries appartient à `ZGeoValue.fromMapSafe`.
@@ -160,7 +160,7 @@ class ZGeoPoint {
     if (first.label == null && label is String) {
       first = first.copyWith(label: label);
     }
-    // G9 : le style legacy est porté par la FORME (`{type:'point', style:…}`),
+    // Le style legacy est porté par la FORME (`{type:'point', style:…}`),
     // pas par l'entrée de `points` — le reprendre s'il manque au point.
     final style = ZGeoShapeStyle.fromMapSafe(map['style']);
     if (first.style == null && style != null) {

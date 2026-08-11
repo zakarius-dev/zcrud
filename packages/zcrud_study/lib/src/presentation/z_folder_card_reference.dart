@@ -1,6 +1,6 @@
-/// **CR-IFFD-64** — le RENDU DE RÉFÉRENCE de la carte de dossier d'étude par
-/// défaut, centralisé en UN SEUL endroit (patron `ZStudyCardReference`
-/// CR-IFFD-56, `ZFlashcardCardReference` CR-IFFD-57).
+/// Le RENDU DE RÉFÉRENCE de la carte de dossier d'étude par défaut,
+/// centralisé en UN SEUL endroit (même patron que `ZStudyCardReference` et
+/// `ZFlashcardCardReference`).
 ///
 /// La carte de dossier était **la seule des six** de la famille à n'avoir
 /// aucun rendu par défaut : `ZFolderCard` est une primitive à slots, et chaque
@@ -18,9 +18,9 @@
 /// dérivables d'un `ColorScheme`), **la carte de dossier n'a AUCUNE couleur
 /// de référence** : sa matière est la couleur du **dossier**, choisie par
 /// l'utilisateur et fournie au rendu, et ses couleurs de chrome sont des
-/// **rôles** (`shadowColor` pour l'ombre — le legacy y écrivait `Colors.black`
-/// en dur —, `surfaceContainerLow` pour la surface). Les valeurs figées ici
-/// sont donc **exclusivement** des dimensions et des scalaires.
+/// **rôles** (`shadowColor` pour l'ombre, `surfaceContainerLow` pour la
+/// surface — jamais un littéral). Les valeurs figées ici sont donc
+/// **exclusivement** des dimensions et des scalaires.
 ///
 /// ⇒ Ce fichier n'est **PAS** inscrit dans l'exemption nominative de la garde
 /// de source anti-couleurs (`z_widgets_hardcode_scan_test.dart`), et l'y
@@ -45,10 +45,9 @@ import 'package:zcrud_core/zcrud_core.dart' show ZFolderCardFooterPlacement;
 
 import 'z_folder_card.dart' show kZFolderCardFooterBesideMinWidth;
 
-/// Les valeurs de RÉFÉRENCE de la carte de dossier d'étude (mesurées chez
-/// IFFD, `folder_card_zcrud.dart:84-140` — portage annoté de
-/// `folders_page.dart`), le point d'audit unique. Modifier une valeur ici
-/// change le défaut de `ZDefaultFolderCard` partout.
+/// Les valeurs de RÉFÉRENCE de la carte de dossier d'étude, le point
+/// d'audit unique. Modifier une valeur ici change le défaut de
+/// `ZDefaultFolderCard` partout.
 abstract final class ZFolderCardReference {
   // ── Chrome de carte ───────────────────────────────────────────────────────
 
@@ -61,17 +60,17 @@ abstract final class ZFolderCardReference {
   /// **Distinct de `gapM`** : la primitive `ZFolderCard` pose
   /// `EdgeInsetsDirectional.all(theme.gapM)`, et `gapM` vaut **8** en thème nu.
   /// Sans ce défaut-référence, la carte par défaut rendrait 8 là où la
-  /// référence pose 12 (leçon CR-IFFD-61 ①, rejouée ici).
+  /// référence pose 12.
   static const EdgeInsetsGeometry contentPadding =
       EdgeInsetsDirectional.all(12);
 
   /// Opacité de la teinte de FOND de la carte de référence (**0** — carte
-  /// NEUTRE : le legacy repose sur la surface du `CardTheme`, la couleur du
+  /// NEUTRE : elle repose sur la surface du `CardTheme`, la couleur du
   /// dossier vivant dans la bande, le liseré et la tuile).
   ///
-  /// Diffère du défaut de la primitive `ZFolderCard` (`0.12`, parité lex) :
-  /// c'est un **défaut de carte par défaut**, pas un changement de la
-  /// primitive — un hôte passif de `ZFolderCard` rend le même pixel qu'avant.
+  /// Diffère du défaut de la primitive `ZFolderCard` (`0.12`) : c'est un
+  /// **défaut de carte par défaut**, pas un changement de la primitive — un
+  /// hôte passif de `ZFolderCard` rend le même pixel qu'avant.
   static const double tintAlpha = 0;
 
   /// Épaisseur du liseré teinté (**1**).
@@ -80,14 +79,13 @@ abstract final class ZFolderCardReference {
   /// Hauteur de la bande d'accent de tête (**4** — `kFolderCardAccentHeight`).
   static const double accentBandHeight = 4;
 
-  // ── Bas de carte : compteurs / pied (CR-IFFD-68) ──────────────────────────
+  // ── Bas de carte : compteurs / pied ─────────────────────────────────────
 
   /// DISPOSITION de référence du bas de carte
-  /// (**[ZFolderCardFooterPlacement.below]** — CR-IFFD-68).
+  /// (**[ZFolderCardFooterPlacement.below]**).
   ///
-  /// **C'est un CHANGEMENT DE DÉFAUT** de `ZDefaultFolderCard` (livrée la
-  /// veille en v0.49.0, adoptée par un seul hôte — l'émetteur de la CR). La
-  /// primitive `ZFolderCard`, elle, garde `beside` : **aucun hôte de la
+  /// **C'est un CHANGEMENT DE DÉFAUT** de `ZDefaultFolderCard` uniquement.
+  /// La primitive `ZFolderCard`, elle, garde `beside` : **aucun hôte de la
   /// primitive ne bouge d'un pixel** (garde dédiée).
   ///
   /// **Ce qui change à l'écran pour un hôte PASSIF de la carte par défaut**,
@@ -97,26 +95,25 @@ abstract final class ZFolderCardReference {
   /// compteurs récupèrent la largeur ENTIÈRE (mesuré à 320 dp : la fenêtre
   /// passe de **146 à 296 dp**, les badges visibles de **2 à 4**). Une carte
   /// SANS pied, ou SANS compteurs, ne bouge pas d'un pixel : il n'y a rien à
-  /// empiler, et la ligne historique (badge « Archivé » compris) est rendue
+  /// empiler, et la ligne antérieure (badge « Archivé » compris) est rendue
   /// telle quelle.
   ///
-  /// 📐 **Pourquoi `below` et NON un défaut adaptatif** — la piste que la CR
-  /// suggérait sans l'avoir éprouvée. Le côte-à-côte cesse d'amputer à
-  /// `2 × largeurDeLaRangée + gapS`, soit ~**740 dp de bas de carte** pour le
-  /// corpus réel de l'émetteur (mesures : rangée de 569 dp en police de test,
-  /// 4 badges visibles sur 4 seulement à partir d'une carte de 1200 dp). Aucune
-  /// cellule de grille de dossiers n'approche cette largeur. Et surtout : le
-  /// point d'équilibre dépend des LIBELLÉS (≈350 dp pour des libellés courts,
-  /// >900 dp pour cinq badges verbeux), donc **aucun seuil fixe ne peut être
-  /// juste pour tous les hôtes** — placé trop bas, il réintroduit le défaut
-  /// exactement à la largeur où il bascule (mesuré : à 600 dp, côte à côte ne
-  /// montre plus que 2 badges sur 4). Le régime adaptatif reste **offert**
-  /// (paramètre `footerPlacement` + jeton `folderCardFooterPlacement`), avec un
-  /// seuil réglable : seul l'hôte connaît ses libellés.
+  /// **Pourquoi `below` et NON un défaut adaptatif.** Le côte-à-côte cesse
+  /// d'amputer à `2 × largeurDeLaRangée + gapS`, soit ~**740 dp de bas de
+  /// carte** dans les cas mesurés (rangée de 569 dp en police de test, 4
+  /// badges visibles sur 4 seulement à partir d'une carte de 1200 dp).
+  /// Aucune cellule de grille de dossiers n'approche cette largeur. Et
+  /// surtout : le point d'équilibre dépend des LIBELLÉS (≈350 dp pour des
+  /// libellés courts, >900 dp pour cinq badges verbeux), donc **aucun seuil
+  /// fixe ne peut être juste pour tous les hôtes** — placé trop bas, il
+  /// réintroduit le défaut exactement à la largeur où il bascule (mesuré : à
+  /// 600 dp, côte à côte ne montre plus que 2 badges sur 4). Le régime
+  /// adaptatif reste **offert** (paramètre `footerPlacement` + jeton
+  /// `folderCardFooterPlacement`), avec un seuil réglable : seul l'hôte
+  /// connaît ses libellés.
   ///
-  /// CR-56 est donc respectée dans les deux sens : le côte-à-côte reste
-  /// « raisonnable pour un pied court et UN compteur » — et le reste, puisqu'un
-  /// seul créneau ne s'empile pas.
+  /// Le côte-à-côte reste donc « raisonnable pour un pied court et UN
+  /// compteur » — et le reste, puisqu'un seul créneau ne s'empile pas.
   static const ZFolderCardFooterPlacement footerPlacement =
       ZFolderCardFooterPlacement.below;
 
@@ -158,7 +155,7 @@ abstract final class ZFolderCardReference {
   /// Taille du glyphe dans la tuile (**20** — `kFolderCardIconSize`).
   static const double glyphSize = 20;
 
-  /// Glyphe de référence de la carte (`folder_rounded` — legacy).
+  /// Glyphe de référence de la carte (`folder_rounded`).
   static const IconData glyph = Icons.folder_rounded;
 
   /// Taille du glyphe du slot menu (**18** — `kFolderCardMenuIconSize`).
@@ -181,44 +178,43 @@ abstract final class ZFolderCardReference {
   /// Écart ENTRE deux badges (**8** — `kFolderCardBadgeSpacing`).
   static const double badgeSpacing = 8;
 
-  /// Écart glyphe → libellé DANS un badge (**3** — legacy
-  /// `folder_card_zcrud.dart:511-532`).
+  /// Écart glyphe → libellé DANS un badge (**3**, valeur de référence).
   static const double badgeGlyphGap = 3;
 
-  /// Padding d'un badge (**6 / 3**, directionnel — legacy).
+  /// Padding d'un badge (**6 / 3**, directionnel).
   static const EdgeInsetsGeometry badgePadding =
       EdgeInsetsDirectional.symmetric(horizontal: 6, vertical: 3);
 
-  /// Taille de fonte du libellé de badge (**10** — legacy). Appliquée sur
+  /// Taille de fonte du libellé de badge (**10**). Appliquée sur
   /// `labelSmall` pour hériter de la famille de l'hôte.
   static const double badgeFontSize = 10;
 
-  /// Graisse du libellé de badge (`w600` — legacy).
+  /// Graisse du libellé de badge (`w600`).
   static const FontWeight badgeFontWeight = FontWeight.w600;
 
   // ── Sous-titre (matière / classement) ─────────────────────────────────────
 
-  /// Taille de fonte du sous-titre (**11** — legacy `_subjectLabel`).
+  /// Taille de fonte du sous-titre (**11**).
   static const double subtitleFontSize = 11;
 
   /// Opacité du sous-titre teinté (**0.8** — `kFolderCardSubjectAlpha`).
   static const double subtitleAlpha = 0.8;
 
   /// Écart titre → sous-titre (**2** — `kFolderCardSubtitleGap`,
-  /// `Padding(top: 2)` du legacy).
+  /// `Padding(top: 2)`).
   static const double subtitleGap = 2;
 
-  // ── Contraste (les seuls scalaires qui ne viennent PAS du legacy) ──────────
+  // ── Contraste (les seuls scalaires MESURÉS, non issus d'un rendu figé) ─────
 
   /// Plancher de contraste des SURFACES et COMPOSANTS graphiques de la carte —
   /// bande d'accent, liseré, glyphe de tuile (**3.0:1**, WCAG 2.2 §1.4.11).
   ///
-  /// **Ce n'est PAS une valeur du legacy** : le legacy peignait la couleur
-  /// de dossier BRUTE (bande, tuile, glyphe, texte de badge), sans aucune
-  /// mesure. C'est une valeur de socle, et c'est le cœur de CR-IFFD-64 : une
-  /// couleur de dossier est choisie par l'utilisateur, donc arbitraire, et
-  /// aucune fenêtre de clarté HSL ne borne son contraste (mesuré : `#FFFF00`
-  /// rendait 2.13:1, `#FFFFFE` 1.28:1).
+  /// **Ce n'est PAS une valeur reprise d'un rendu antérieur** : peindre la
+  /// couleur de dossier BRUTE (bande, tuile, glyphe, texte de badge) sans
+  /// aucune mesure de contraste laisserait passer des combinaisons illisibles
+  /// — une couleur de dossier est choisie par l'utilisateur, donc arbitraire,
+  /// et aucune fenêtre de clarté HSL ne borne son contraste (mesuré :
+  /// `#FFFF00` rendait 2.13:1, `#FFFFFE` 1.28:1).
   static const double minContrast = 3.0;
 
   /// Plancher de contraste des premiers plans TEXTE de la carte — libellé de

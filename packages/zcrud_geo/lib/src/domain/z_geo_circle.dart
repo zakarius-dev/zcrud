@@ -93,7 +93,7 @@ class ZGeoCircle {
       center: center,
       radiusMeters: radius,
       label: label is String ? label : null,
-      // G9 : style optionnel (zcrud comme legacy) ; corrompu → null (AD-10).
+      // Style optionnel ; corrompu → null (AD-10).
       style: ZGeoShapeStyle.fromMapSafe(decoded['style']),
     );
   }

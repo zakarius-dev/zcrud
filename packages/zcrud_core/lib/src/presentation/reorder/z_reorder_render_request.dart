@@ -1,4 +1,4 @@
-/// Requête **neutre** de rendu d'une collection réordonnable (AD-57).
+/// Requête **neutre** de rendu d'une collection réordonnable.
 ///
 /// Décrit *quoi* réordonner, jamais *comment* : aucun type de paquet tiers,
 /// aucun geste, aucune stratégie de dépôt. C'est le renderer injecté qui

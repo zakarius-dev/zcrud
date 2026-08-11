@@ -1,7 +1,7 @@
-/// `zReorderIds` — helper PUR de présentation (ES-5.3) : calcule le nouvel ordre
+/// `zReorderIds` — helper PUR de présentation : calcule le nouvel ordre
 /// d'une liste d'ids après un déplacement `oldIndex → newIndex`.
 ///
-/// Opération **DISTINCTE** d'`applyOrder<T>` (ES-1.2) : c'est un **déplacement**
+/// Opération **DISTINCTE** d'`applyOrder<T>` : c'est un **déplacement**
 /// (`removeAt`/`insert`), jamais un tri stable partiel. `applyOrder` réordonne
 /// une collection selon un ordre personnel ; `zReorderIds` PRODUIT ce nouvel
 /// ordre personnel à partir d'un drag. Les deux sont complémentaires (jamais un

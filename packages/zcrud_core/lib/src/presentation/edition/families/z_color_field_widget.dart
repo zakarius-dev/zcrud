@@ -1,13 +1,13 @@
-/// Widget de la **famille color** (`color`) — E3-3b-1 + DP-17 (M14).
+/// Widget de la **famille color** (`color`).
 ///
 /// Sélecteur de couleur : la couleur vit **en tranche** encodée en **`int` ARGB
 /// 32 bits** (canal alpha en poids fort — `0xAARRGGBB`) — format **stable,
-/// sérialisable, additif** (décision story #7 / ambiguïté #5). Lecture `value`
-/// (attendu `int` ; défensif sur tout autre type → aucune sélection), écriture
-/// via `onChanged` (aucun `TextEditingController` pour la palette, AD-2).
+/// sérialisable, additif**. Lecture `value` (attendu `int` ; défensif sur
+/// tout autre type → aucune sélection), écriture via `onChanged` (aucun
+/// `TextEditingController` pour la palette, invariant AD-2).
 ///
-/// **DP-17 (M14, parité `flex_color_picker` DODLP)** — le cœur reste **NEUTRE**
-/// (couleur = donnée ARGB, aucune dép picker tierce lourde imposée — AD-1) :
+/// Le cœur reste **NEUTRE** (couleur = donnée ARGB, aucune dép picker tierce
+/// lourde imposée — invariant AD-1) :
 /// - la **palette** historique (15 swatches dérivés) est **strictement préservée**
 ///   (rétro-compat) et pilotée par `ZColorConfig.showPalette` (défaut `true`) ;
 /// - un bouton **« couleur personnalisée »** ouvre soit le **seam injecté**
@@ -15,14 +15,15 @@
 ///   **picker built-in NEUTRE** (`_ZColorPickerDialog` : sliders teinte/saturation/
 ///   luminosité + opacité optionnelle + saisie hex + couleurs récentes) — 100 %
 ///   Flutter, zéro dépendance lourde ;
-/// - `ZColorConfig.enableAlpha`/`recentColors`/`showRecent` (défensif AD-10)
-///   pilotent l'opacité et la ligne des récentes. Sans `ZColorConfig` ⇒
-///   comportement E3-3b-1 exact + bouton personnalisé sur picker built-in.
+/// - `ZColorConfig.enableAlpha`/`recentColors`/`showRecent` (défensif invariant
+///   AD-10) pilotent l'opacité et la ligne des récentes. Sans `ZColorConfig` ⇒
+///   comportement de base exact + bouton personnalisé sur picker built-in.
 ///
-/// **FR-26 (aucun style codé en dur)** : les swatches sont des **données**
-/// DÉRIVÉES (teintes `HSV` échelonnées) ; la bordure de sélection provient du
-/// `ZcrudTheme`. a11y/RTL (AD-13) : chaque swatch/cible ≥ 48 dp avec
-/// `Semantics(label + selected)` ; `Wrap` respecte la `Directionality`.
+/// **Invariant FR-26 (aucun style codé en dur)** : les swatches sont des
+/// **données** DÉRIVÉES (teintes `HSV` échelonnées) ; la bordure de sélection
+/// provient du `ZcrudTheme`. a11y/RTL (invariant AD-13) : chaque swatch/cible
+/// ≥ 48 dp avec `Semantics(label + selected)` ; `Wrap` respecte la
+/// `Directionality`.
 library;
 
 import 'package:flutter/material.dart';
@@ -33,10 +34,10 @@ import '../../l10n/z_localizations.dart';
 import '../../theme/z_theme.dart';
 import '../../zcrud_scope.dart';
 
-/// DP-17 (M14) — **Seam injectable NEUTRE** d'un picker de couleur host-fourni
+/// **Seam injectable NEUTRE** d'un picker de couleur host-fourni
 /// (roue HSV/hex/opacité tierce). Injecté via `ZcrudScope.colorPicker`. Retourne
 /// l'ARGB choisi (`int`), ou `null` si annulé. Le cœur ne dépend d'AUCUN package
-/// de picker (AD-1) : l'impl concrète (`flex_color_picker`…) vit dans l'app/le
+/// de picker (invariant AD-1) : l'impl concrète vit dans l'app/le
 /// binding. Absent (défaut) ⇒ repli sur le **picker built-in neutre**.
 typedef ZColorPicker = Future<int?> Function(
   BuildContext context, {
@@ -143,7 +144,7 @@ class ZColorFieldWidget extends StatelessWidget {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1). Le
+      // provoquerait une DOUBLE annonce. Le
       // `value:` (hex courant) n'est PAS dupliqué par le Text → conservé.
       value: current == null ? null : _hex(current),
       child: Column(
@@ -274,12 +275,13 @@ class _Swatch extends StatelessWidget {
   }
 }
 
-/// DP-17 (M14) — Picker **built-in NEUTRE** (repli si aucun `ZColorPicker`
+/// Picker **built-in NEUTRE** (repli si aucun `ZColorPicker`
 /// injecté) : sliders teinte/saturation/luminosité + opacité optionnelle + saisie
-/// hex + couleurs récentes. 100 % Flutter (aucune dépendance lourde — AD-1). La
-/// couleur reste une **donnée ARGB** (jamais un style codé en dur — FR-26). Un
-/// hex invalide est **ignoré défensivement** (AD-10, jamais de throw). Exposé
-/// `@visibleForTesting` pour l'exercer sans passer par un `showDialog`.
+/// hex + couleurs récentes. 100 % Flutter (aucune dépendance lourde — invariant
+/// AD-1). La couleur reste une **donnée ARGB** (jamais un style codé en dur —
+/// invariant FR-26). Un hex invalide est **ignoré défensivement** (invariant
+/// AD-10, jamais de throw). Exposé `@visibleForTesting` pour l'exercer sans
+/// passer par un `showDialog`.
 @visibleForTesting
 class ZColorPickerDialog extends StatefulWidget {
   /// Construit le picker built-in. [initialArgb] amorce les sliders ;

@@ -36,7 +36,7 @@ export 'src/data/adapters/z_model_adapter.dart';
 // lecture défensive `src/domain/json/z_json_read.dart` et la hiérarchie
 // `ZFailure` (dont `ZQuotaExceededFailure`).
 // Contrats de domaine + hiérarchie d'erreurs/`ZResult` (invariant AD-11) + méta
-// de sync hors-entité (invariant AD-16) + marqueur d'API. Ports & value objects.
+// de sync hors-entité (invariant AD-9) + marqueur d'API. Ports & value objects.
 export 'src/domain/collection/z_immutable_view.dart';
 export 'src/domain/contracts/z_entity.dart';
 export 'src/domain/contracts/z_node.dart';

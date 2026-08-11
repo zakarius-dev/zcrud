@@ -216,10 +216,11 @@ class ZStudySessionHost extends StatefulWidget {
   final void Function(ZStudySessionResult result, Duration duration)?
       onSessionEnd;
 
-  /// Issue de sortie des replis. `null` ⇒ bouton absent (patron AD-45).
+  /// Issue de sortie des replis. `null` ⇒ bouton absent : jamais d'action
+  /// fabriquée que le widget ne saurait pas exécuter.
   final VoidCallback? onExit;
 
-  /// Pilote optionnel de l'index de la pile (CR-IFFD-38), passé tel quel.
+  /// Pilote optionnel de l'index de la pile, passé tel quel.
   final ZIndexController? indexController;
 
   /// Style de l'indicateur de progression de la pile.

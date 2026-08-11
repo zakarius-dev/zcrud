@@ -1,22 +1,22 @@
 /// `ZTabbedList` — **onglets de catégorisation** de listes du cœur `zcrud_core`
-/// (E4-5, étend FR-6 · AD-8/AD-13/AD-2/AD-15/SM-5).
+/// (AD-8/AD-13/AD-2/AD-15).
 ///
-/// origine: capacité « **onglets** » du §4.2 du PRD (rattachée à FR-6). Un chrome
-/// `TabBar`/`TabBarView` **pur-Flutter Material** où **chaque onglet est une
-/// [DynamicList]/`ZListController` indépendante** (typiquement catégorisée par un
-/// filtre via `baseFilters`). L'**état de chaque onglet est PRÉSERVÉ** au
-/// changement d'onglet (recherche / tri / pagination / **sélection** / scroll) :
-/// chaque page est enveloppée dans un `_KeepAliveTabPage`
-/// (`AutomaticKeepAliveClientMixin`, `wantKeepAlive => true`) → son sous-arbre
-/// (et le `State` portant ses contrôleurs) est monté **une fois** et **conservé**
-/// — les contrôleurs ne sont ni recréés ni disposés au switch (équivalent
-/// « liste » du principe AD-2 : état stable, pas recréé au rebuild).
+/// Un chrome `TabBar`/`TabBarView` **pur-Flutter Material** où **chaque
+/// onglet est une [DynamicList]/`ZListController` indépendante** (typiquement
+/// catégorisée par un filtre via `baseFilters`). L'**état de chaque onglet
+/// est PRÉSERVÉ** au changement d'onglet (recherche / tri / pagination /
+/// **sélection** / scroll) : chaque page est enveloppée dans un
+/// `_KeepAliveTabPage` (`AutomaticKeepAliveClientMixin`, `wantKeepAlive =>
+/// true`) → son sous-arbre (et le `State` portant ses contrôleurs) est monté
+/// **une fois** et **conservé** — les contrôleurs ne sont ni recréés ni
+/// disposés au switch (équivalent « liste » du principe AD-2 : état stable,
+/// pas recréé au rebuild).
 ///
 /// **Sélection INDÉPENDANTE par onglet** : chaque onglet possède sa **propre**
 /// `ZListSelectionController` (créée dans son `builder`) — sélectionner dans un
-/// onglet n'affecte jamais les autres (AC6/AC8).
+/// onglet n'affecte jamais les autres.
 ///
-/// **SM-5** : le chrome des onglets est **pur-Flutter Material** (`TabBar`/
+/// Le chrome des onglets est **pur-Flutter Material** (`TabBar`/
 /// `TabBarView`, déjà dans `flutter/material.dart`) ; les listes ne rendent
 /// Syncfusion QUE si l'app a injecté `ZSfDataGridRenderer` via `ZcrudScope`
 /// (sinon layout `builder`/`custom` neutre). Ce fichier n'importe JAMAIS
@@ -68,7 +68,7 @@ class _ZTabbedListState extends State<ZTabbedList>
   @override
   void initState() {
     super.initState();
-    // LOW-2 (code-review E4-5) : les `labelKey` servent de clés de page
+    // Les `labelKey` servent de clés de page
     // (`ValueKey('zTab_<labelKey>')`) — un doublon provoquerait une collision de
     // clés dans le `TabBarView`. On l'attrape tôt avec un message actionnable.
     assert(
@@ -165,7 +165,7 @@ class _ZTabbedListState extends State<ZTabbedList>
 /// sous-arbre (donc les `ZListController`/`ZListSelectionController` créés dans
 /// le `builder`) au changement d'onglet (`AutomaticKeepAliveClientMixin`,
 /// `wantKeepAlive => true`). Sans quoi `TabBarView` détruirait les pages hors
-/// écran (perte de la recherche/tri/pagination/sélection/scroll) — AC5/AC6.
+/// écran (perte de la recherche/tri/pagination/sélection/scroll).
 class _KeepAliveTabPage extends StatefulWidget {
   const _KeepAliveTabPage({required this.builder, super.key});
 

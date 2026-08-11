@@ -1,6 +1,6 @@
-/// `ZcrudLabels` — registre de libellés IMMUABLE et injectable (FR-23, AD-13).
+/// `ZcrudLabels` — registre de libellés IMMUABLE et injectable (AD-13).
 ///
-/// origine : instance immuable passée à `ZcrudScope(labels:)`. **Aucun singleton
+/// Instance immuable passée à `ZcrudScope(labels:)`. **Aucun singleton
 /// statique mutable, aucun setter global** : le registre est une valeur portée
 /// par le scope, pas un état global. Il sert (a) à **surcharger** un libellé
 /// générique fourni par `ZcrudLocalizations`, (b) à fournir des **libellés

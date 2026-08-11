@@ -1,6 +1,6 @@
-/// `ZInvertedSurface` — enveloppe RÉUTILISABLE d'inversion de surface (CR-IFFD-42).
+/// `ZInvertedSurface` — enveloppe RÉUTILISABLE d'inversion de surface.
 ///
-/// 🔴 **Pourquoi une enveloppe partagée, et pas un `IconTheme` + un
+/// **Pourquoi une enveloppe partagée, et pas un `IconTheme` + un
 /// `DefaultTextStyle` recopiés sur chaque surface.**
 ///
 /// Poser un fond opaque (`ColorScheme.inverseSurface`) sans retourner le premier
@@ -11,26 +11,27 @@
 /// `TextTheme` **porte sa propre couleur** (celle du thème ambiant) qui écrase
 /// le `DefaultTextStyle` posé au-dessus.
 ///
-/// Conséquence mesurée chez un hôte : `Text(x, style:
+/// Conséquence : `Text(x, style:
 /// Theme.of(context).textTheme.titleSmall)` — c'est-à-dire **la façon
-/// recommandée** de respecter la typographie d'une application — reste peint en
+/// recommandée** de respecter la typographie d'une application — resterait peint en
 /// couleur ambiante sur le fond inversé, donc illisible ; tandis qu'un
-/// `TextStyle(fontSize: 14)` codé en dur, lui, s'en tire. **Le défaut punit la
-/// bonne pratique** : le pire profil possible pour un socle partagé.
+/// `TextStyle(fontSize: 14)` codé en dur, lui, s'en tirerait. **Le défaut
+/// punirait la bonne pratique** : le pire profil possible pour un socle
+/// partagé.
 ///
 /// [ZInvertedSurface] ferme les trois chemins d'un coup — `TextTheme`,
 /// `DefaultTextStyle`, `IconTheme` — et existe dans `zcrud_core` pour que toute
 /// surface d'inversion à venir (sélection, mise en avant, état actif) l'obtienne
 /// **gratuitement**, au lieu de rejouer le même défaut une troisième fois.
 ///
-/// 🔵 **Depuis v0.38.0, l'imposition du premier plan n'est plus écrite ici.**
-/// Elle est déléguée à [ZForegroundOverride], la primitive générale
+/// L'imposition du premier plan n'est pas écrite ici : elle est déléguée à
+/// [ZForegroundOverride], la primitive générale
 /// « couleur de premier plan imposée, aucun fond peint ». [ZInvertedSurface] en
 /// est le **cas particulier** : le fond `ColorScheme.inverseSurface` plus le
 /// premier plan `ColorScheme.onInverseSurface`. Deux mécanismes concurrents
 /// auraient divergé — celui-ci n'en est qu'un usage.
 ///
-/// **FR-26** : aucune couleur littérale — l'inversion se modélise par le couple
+/// Aucune couleur littérale : l'inversion se modélise par le couple
 /// de rôles `ColorScheme.inverseSurface` / `ColorScheme.onInverseSurface`, qui
 /// est par définition le contraste maximal disponible dans n'importe quel
 /// schéma (clair, sombre, seedé).
@@ -65,7 +66,7 @@ import 'z_foreground_override.dart';
 /// `IconButton`, `Chip`, `InputDecorator`… Leurs couleurs restent celles du
 /// thème ambiant.
 ///
-/// 🔴 **C'est un choix, pas un oubli.** Substituer un `ColorScheme` entier
+/// **C'est un choix, pas un oubli.** Substituer un `ColorScheme` entier
 /// (`inverseSurface` comme `surface`, `onInverseSurface` comme `onSurface`)
 /// recolorerait aussi les boutons, les cartes, les séparateurs et les états
 /// d'erreur d'un hôte — un effet de bord bien plus large que le problème résolu,
@@ -106,7 +107,7 @@ class ZInvertedSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // 🔵 Le retournement du premier plan est la primitive générale ; l'inversion
+    // Le retournement du premier plan est la primitive générale ; l'inversion
     // n'en fixe que la COULEUR (`onInverseSurface`) et y ajoute le fond.
     final Widget content = ZForegroundOverride(
       color: scheme.onInverseSurface,

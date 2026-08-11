@@ -1,45 +1,48 @@
-/// `ZSignatureCodec` — codec **pluggable NEUTRE** strokes ↔ PNG (DP-18, M15).
+/// `ZSignatureCodec` — codec **pluggable NEUTRE** strokes ↔ PNG.
 ///
-/// origine: DODLP persiste une signature en **`Uint8List` PNG bitmap** ; zcrud
-/// stocke des **strokes vectoriels NORMALISÉS** `[0,1]` (cf.
-/// `ZSignatureFieldWidget`, format versionné résolution-indépendant). Pour la
-/// **compat données DODLP** (et la consommation PDF/tiers), ce codec pont :
+/// zcrud stocke des **strokes vectoriels NORMALISÉS** `[0,1]` (cf.
+/// `ZSignatureFieldWidget`, format versionné résolution-indépendant). Pour
+/// interopérer avec une persistance en **`Uint8List` PNG bitmap** (et la
+/// consommation PDF/tiers), ce codec pont :
 ///
 /// - **strokes → PNG** (`toPng`) : rasterisation. La rasterisation réelle repose
 ///   sur `dart:ui` (`PictureRecorder`/`Canvas`/`Image.toByteData(png)`) qui est
-///   **BANNIE du cœur** (AD-1, garde `presentation_purity_test` : `dart:ui`
-///   interdit ; graphe `zcrud_core` OUT=0). Elle est donc **DÉFÉRÉE** à un
-///   **seam host-fourni** [ZSignatureRasterizer] (impl dans un binding/satellite
-///   `zcrud_export`/app). Le cœur ne porte QUE l'abstraction + l'orchestration
-///   défensive. Aucun rasterizer injecté ⇒ `toPng` retourne `null` (dégradation
-///   propre, jamais de throw — AD-10).
+///   **BANNIE du cœur** (invariant AD-1, garde `presentation_purity_test` :
+///   `dart:ui` interdit ; graphe `zcrud_core` OUT=0). Elle est donc
+///   **DÉFÉRÉE** à un **seam host-fourni** [ZSignatureRasterizer] (impl dans
+///   un binding/satellite `zcrud_export`/app). Le cœur ne porte QUE
+///   l'abstraction + l'orchestration défensive. Aucun rasterizer injecté ⇒
+///   `toPng` retourne `null` (dégradation propre, jamais de throw —
+///   invariant AD-10).
 /// - **valeur-de-tranche ↔ strokes** (`strokesFromValue`/`valueFromStrokes`) :
 ///   (dé)sérialisation **pur-Dart** du format versionné (partagée avec le widget
-///   — source unique de vérité). Défensive (AD-10 : donnée corrompue ⇒ liste
-///   vide / `null`, jamais de throw).
+///   — source unique de vérité). Défensive (invariant AD-10 : donnée corrompue
+///   ⇒ liste vide / `null`, jamais de throw).
 /// - **inspection PNG** (`isPng`/`pngSize`) : lecture pur-Dart du magic-number +
 ///   du chunk IHDR (dimensions) — défensive (octets invalides ⇒ `false`/`null`).
 ///
-/// **Neutralité (AD-1)** : aucune dépendance lourde ; seuls `Offset`/`Size`
-/// (`package:flutter/widgets.dart`) et `Uint8List` (`dart:typed_data`, safe) sont
-/// utilisés. **const** (AD-3/AD-14) : instanciable `const`, le rasterizer est un
-/// seam optionnel injecté à la construction.
+/// **Neutralité (invariant AD-1)** : aucune dépendance lourde ; seuls
+/// `Offset`/`Size` (`package:flutter/widgets.dart`) et `Uint8List`
+/// (`dart:typed_data`, safe) sont utilisés. **const** (invariants AD-3/AD-14) :
+/// instanciable `const`, le rasterizer est un seam optionnel injecté à la
+/// construction.
 library;
 
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart' show Offset, Size;
 
-/// Spécification **pur-données** de rasterisation (DP-18, M15) : dimensions cible
+/// Spécification **pur-données** de rasterisation : dimensions cible
 /// + style de tracé/fond, tous **neutres** (couleur = donnée ARGB, jamais un
-/// style codé en dur — FR-26). `const`.
+/// style codé en dur — invariant FR-26). `const`.
 class ZSignatureRasterSpec {
   /// Construit une spec `const`.
   const ZSignatureRasterSpec({
     this.width = 600,
     this.height = 200,
     // Encre noire opaque par défaut (donnée NEUTRE) — exprimée par décalage pour
-    // éviter un littéral de couleur `0xFF…` (garde `style_purity`, FR-26).
+    // éviter un littéral de couleur `0xFF…` (garde `style_purity`, invariant
+    // FR-26).
     this.strokeColorArgb = 0xFF << 24,
     this.strokeWidth = 3,
     this.backgroundArgb,
@@ -61,22 +64,25 @@ class ZSignatureRasterSpec {
   final int? backgroundArgb;
 }
 
-/// Seam **host-fourni** de rasterisation (DP-18, M15) : traduit des strokes
+/// Seam **host-fourni** de rasterisation : traduit des strokes
 /// NORMALISÉS `[0,1]` en octets **PNG**, selon la [ZSignatureRasterSpec]. L'impl
-/// concrète (`dart:ui`) vit **hors du cœur** (binding/`zcrud_export`/app) — AD-1.
-/// Doit être **défensive** (jamais de throw ; `null` si non rasterisable).
+/// concrète (`dart:ui`) vit **hors du cœur** (binding/`zcrud_export`/app) —
+/// invariant AD-1. Doit être **défensive** (jamais de throw ; `null` si non
+/// rasterisable).
 typedef ZSignatureRasterizer = Future<Uint8List?> Function(
   List<List<Offset>> strokes,
   ZSignatureRasterSpec spec,
 );
 
-/// Codec **pluggable NEUTRE** strokes ↔ PNG (DP-18, M15). Voir doc de fichier.
+/// Codec **pluggable NEUTRE** strokes ↔ PNG. Voir doc de fichier.
 class ZSignatureCodec {
   /// Construit le codec `const`. [rasterizer] (optionnel) est le **seam** de
-  /// rasterisation host-fourni ; absent ⇒ [toPng] retourne `null` (AD-10).
+  /// rasterisation host-fourni ; absent ⇒ [toPng] retourne `null` (invariant
+  /// AD-10).
   const ZSignatureCodec({this.rasterizer});
 
-  /// Seam de rasterisation strokes→PNG (dart:ui) DÉFÉRÉ hors du cœur (AD-1).
+  /// Seam de rasterisation strokes→PNG (dart:ui) DÉFÉRÉ hors du cœur
+  /// (invariant AD-1).
   final ZSignatureRasterizer? rasterizer;
 
   /// Version du format d'encodage des strokes (miroir du widget — additif).
@@ -88,8 +94,8 @@ class ZSignatureCodec {
   ];
 
   /// Décode des strokes NORMALISÉS depuis une **valeur de tranche** (`Map`
-  /// versionnée). Défensif (AD-10) : type inattendu / point mal typé ⇒ ignoré,
-  /// jamais de throw. Coordonnées attendues normalisées `[0,1]`.
+  /// versionnée). Défensif (invariant AD-10) : type inattendu / point mal
+  /// typé ⇒ ignoré, jamais de throw. Coordonnées attendues normalisées `[0,1]`.
   List<List<Offset>> strokesFromValue(Object? value) {
     if (value is! Map) return <List<Offset>>[];
     final raw = value['strokes'];
@@ -126,10 +132,11 @@ class ZSignatureCodec {
     };
   }
 
-  /// **strokes → PNG** (DP-18, M15) : orchestration défensive du seam
-  /// [rasterizer]. `null` si (a) aucun rasterizer injecté (AD-1), (b) aucun
-  /// tracé, ou (c) le seam retourne `null`/throw (AD-10). [sliceValue] accepte la
-  /// **valeur de tranche** (`Map`) OU une `List<List<Offset>>` déjà décodée.
+  /// **strokes → PNG** : orchestration défensive du seam
+  /// [rasterizer]. `null` si (a) aucun rasterizer injecté (invariant AD-1),
+  /// (b) aucun tracé, ou (c) le seam retourne `null`/throw (invariant AD-10).
+  /// [sliceValue] accepte la **valeur de tranche** (`Map`) OU une
+  /// `List<List<Offset>>` déjà décodée.
   Future<Uint8List?> toPng(
     Object? sliceValue, {
     ZSignatureRasterSpec spec = const ZSignatureRasterSpec(),

@@ -1,12 +1,11 @@
-/// `ZFadedOverflow` — **borne de hauteur qui SIGNALE la coupure**
-/// (**CR-IFFD-62 ③**).
+/// `ZFadedOverflow` — **borne de hauteur qui SIGNALE la coupure**.
 ///
-/// ## Le grief, et pourquoi une ellipse ne suffisait pas
+/// ## Le problème, et pourquoi une ellipse ne suffit pas
 ///
-/// L'énoncé d'une carte de flashcard est borné en hauteur (legacy
-/// `kToolbarHeight × 0.65`) et **absorbé** par un défileur inerte : le texte
-/// est donc coupé **en plein milieu d'une ligne**, sans qu'aucun signe ne dise
-/// qu'il continue. Le grief est fondé — *absorber n'est pas signaler*.
+/// Borner la hauteur de l'énoncé d'une flashcard (`kToolbarHeight × 0.65`) et
+/// l'**absorber** dans un défileur inerte coupe le texte **en plein milieu
+/// d'une ligne**, sans qu'aucun signe ne dise qu'il continue — *absorber
+/// n'est pas signaler*.
 ///
 /// **`TextOverflow.ellipsis` n'est PAS atteignable sur ce contenu**, et
 /// c'est structurel, pas un manque de volonté : le rendu par défaut de
@@ -49,7 +48,7 @@ import 'package:flutter/widgets.dart';
 const double kZFadedOverflowExtent = 12;
 
 /// Borne en hauteur son [child] et **signale** la coupure par un fondu bas
-/// quand le contenu déborde réellement (**CR-IFFD-62 ③**).
+/// quand le contenu déborde réellement.
 class ZFadedOverflow extends SingleChildRenderObjectWidget {
   /// Construit la borne. [opaque] et [clear] sont les deux bornes du masque
   /// (seul leur **alpha** compte : opaque = contenu intact, clear = effacé).

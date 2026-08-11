@@ -1,25 +1,25 @@
-/// Rapport **au grain de la racine** d'une opération de lot (me-1, AD-39/AD-10).
+/// Rapport **au grain de la racine** d'une opération de lot (AD-10).
 ///
-/// origine: leçon E-STUDY-UI « lot silencieusement partiel = perte de données
-/// non anticipée » (su-3/su-7). AD-39 exige que toute suppression persistée soit
-/// **`await`ée** et que l'appelant reçoive **toujours** la liste des racines
-/// échouées — jamais un succès global masquant un échec par racine.
+/// Une suppression persistée en lot doit toujours être **`await`ée**, et
+/// l'appelant doit **toujours** recevoir la liste des racines échouées —
+/// jamais un succès global masquant un échec par racine ; sans cela, un lot
+/// silencieusement partiel se lit comme une perte de données non anticipée.
 ///
 /// **Value object immuable** (couche présentation ; imports limités à
 /// `package:flutter/foundation.dart` — `setEquals`/`mapEquals` — + types
 /// `zcrud_core`). Égalité de **valeur** par contenu (utile aux tests porteurs qui
 /// assèrent QUELLES racines ont réussi/échoué, pas seulement « rien n'a levé »).
 ///
-/// **Générique par contrat** (T3/T4/T5) : ce même contour (racines réussies +
+/// **Générique par contrat** : ce même contour (racines réussies +
 /// `Map<rootId, ZFailure>` échouées) est réutilisé par la suppression
 /// (`batchDelete`), le déplacement (`batchMove`) et l'édition de champ commun
 /// (`applyCommonField`) — une seule forme de rapport. Le type est nommé
-/// [ZBatchReport] ; l'alias historique [ZBatchDeletionReport] (nom demandé par la
-/// story me-1) le désigne à l'identique.
+/// [ZBatchReport] ; l'alias [ZBatchDeletionReport] le désigne à l'identique,
+/// pour les sites qui ne connaissent que la suppression.
 ///
-/// **CORE OUT=0 (AD-1)** : aucune dépendance zcrud/tierce. La **cascade** (AD-21,
-/// borne ≤ 450) et le chemin d'écriture physique sont des propriétés de
-/// l'**implémentation injectée** (`zcrud_study_kernel`/`zcrud_firestore`), jamais
+/// **CORE OUT=0 (AD-1)** : aucune dépendance zcrud/tierce. La **cascade**
+/// (borne bornée) et le chemin d'écriture physique sont des propriétés de
+/// l'**implémentation injectée** (satellite/`zcrud_firestore`), jamais
 /// de ce rapport ni du cœur.
 library;
 
@@ -27,7 +27,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../domain/failures/z_failure.dart';
 
-/// Rapport au grain de la racine d'une opération de lot (AD-39).
+/// Rapport au grain de la racine d'une opération de lot.
 ///
 /// - [succeededRootIds] : `id` racines dont l'opération a réussi (`Right`) ;
 /// - [failures] : `id` racine → [ZFailure] pour chaque racine échouée (`Left` ou
@@ -56,8 +56,8 @@ class ZBatchReport {
   /// `id` racine → cause d'échec [ZFailure] (non modifiable).
   final Map<String, ZFailure> failures;
 
-  /// `true` s'il existe **au moins une** racine échouée (AD-39 : l'appelant ne
-  /// doit jamais présumer un succès global).
+  /// `true` s'il existe **au moins une** racine échouée : l'appelant ne
+  /// doit jamais présumer un succès global.
   bool get hasFailures => failures.isNotEmpty;
 
   /// Nombre de racines réussies.
@@ -91,8 +91,8 @@ class ZBatchReport {
       'ZBatchReport(succeeded: $succeededRootIds, failures: $failures)';
 }
 
-/// Alias historique du rapport de lot pour la **suppression** (nom demandé par
-/// la story me-1, T3). Désigne [ZBatchReport] à l'identique — le contour du
-/// rapport (racines réussies + `Map<rootId, ZFailure>`) est **générique** et
-/// réutilisé aussi par `batchMove`/`applyCommonField` (T4/T5).
+/// Alias du rapport de lot spécifique à la **suppression**. Désigne
+/// [ZBatchReport] à l'identique — le contour du rapport (racines réussies +
+/// `Map<rootId, ZFailure>`) est **générique** et réutilisé aussi par
+/// `batchMove`/`applyCommonField`.
 typedef ZBatchDeletionReport = ZBatchReport;

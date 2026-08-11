@@ -1,12 +1,11 @@
-/// **CR-IFFD-64** — rendre LISIBLE une teinte **arbitraire** sur la surface
-/// courante, avec un **plancher de contraste MESURÉ**, en clair comme en
-/// sombre.
+/// Rendre LISIBLE une teinte **arbitraire** sur la surface courante, avec un
+/// **plancher de contraste MESURÉ**, en clair comme en sombre.
 ///
 /// ## Pourquoi ce fichier existe (le défaut MESURÉ qu'il ferme)
 ///
 /// Le socle disposait déjà d'une dérivation de teinte lisible —
-/// `zReadableTypeTint` (port du `adjustTagColor` legacy IFFD). Elle borne la
-/// **clarté HSL** (`0.25-0.45` en clair, `0.55-0.75` en sombre) et plancherise
+/// `zReadableTypeTint`. Elle borne la **clarté HSL** (`0.25-0.45` en clair,
+/// `0.55-0.75` en sombre) et plancherise
 /// la saturation à `0.4`. Cela **ne borne PAS le contraste** : à clarté HSL
 /// égale, un jaune pèse `0.2126 + 0.7152 = 0.928` de luminance relative WCAG
 /// (canaux R+G) contre `0.2126` pour un rouge. Mesuré sur pièces (thème clair

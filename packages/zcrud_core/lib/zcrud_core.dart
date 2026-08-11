@@ -150,7 +150,7 @@ export 'src/presentation/l10n/z_localizations.dart';
 // dans le cœur sans Syncfusion), états `ZListViewState` (loading/empty/
 // noResults/error/ready, accessibles), modèles neutres
 // `ZListRenderRequest`/`ZListRow`.
-// Actions de LOT génériques (invariants AD-10/AD-39/AD-44) : modèle déclaré en
+// Actions de LOT génériques (invariant AD-10) : modèle déclaré en
 // données `ZBatchAction`/`ZBatchActionKind` (delete/move/custom ; `onSelected
 // == null` ⇒ action absente), barre neutre `ZBatchActionBar` (tranche
 // `selectedIds`, badge compteur, cible ≥ 48 dp, thème injecté) ; rapport au

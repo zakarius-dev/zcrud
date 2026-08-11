@@ -1,34 +1,29 @@
 /// `ZSubListScreen<T>` — sous-liste d'entités **reliées à un parent** du cœur
-/// `zcrud_core` (E4-5, étend FR-6 · AD-8/AD-16/AD-2/AD-15/SM-5).
+/// `zcrud_core` (AD-8/AD-16/AD-2/AD-15).
 ///
-/// origine: capacité « **sous-listes / relations** » du §4.2 du PRD (rattachée à
-/// FR-6), dernière brique d'E4. Un **assembleur MINCE** : à partir d'un parent
-/// (`parentField` + `parentId`) et d'un `ZRepository<T>` d'enfants, il construit
-/// **UN** [ZListController] seedé d'un **filtre de relation PERSISTANT**
+/// Un **assembleur MINCE** : à partir d'un parent (`parentField` +
+/// `parentId`) et d'un `ZRepository<T>` d'enfants, il construit **UN**
+/// [ZListController] seedé d'un **filtre de relation PERSISTANT**
 /// (`ZFilter(parentField, ZFilterOp.eq, parentId)` en `baseFilters`) et rend une
-/// [DynamicList] **complète** — recherche / tri / pagination (E4-3) + actions de
-/// ligne filtrées `ZAcl` / sélection / corbeille soft-delete-restore (E4-4). La
+/// [DynamicList] **complète** — recherche / tri / pagination + actions de
+/// ligne filtrées `ZAcl` / sélection / corbeille soft-delete-restore. La
 /// relation est **toujours ANDée** à toute recherche/tri/filtre utilisateur :
-/// elle ne fuit JAMAIS vers d'autres parents (garantie `baseFilters`, E4-5).
+/// elle ne fuit JAMAIS vers d'autres parents (garantie `baseFilters`).
 ///
 /// **RÉUTILISE, ne réinvente pas** : toute la mécanique de liste vit déjà dans
-/// `ZListController` (E4-3) + `DynamicList` (E4-2) + actions/`ZAcl`/sélection/
-/// corbeille (E4-4) + renderer injecté (E4-1). Ce widget ne réimplémente NI
+/// `ZListController` + `DynamicList` + actions/`ZAcl`/sélection/
+/// corbeille + renderer injecté. Ce widget ne réimplémente NI
 /// pagination, NI recherche, NI mapping, NI actions.
 ///
-/// **Distinction E3-3b-2 (NE PAS confondre)** : E3-3b-2 est un **CHAMP d'édition
-/// inline** (`ZSubListField`/`z_sub_list_field_widget.dart`, `ZSubListConfig`) qui
+/// **NE PAS CONFONDRE** avec le **CHAMP d'édition inline**
+/// (`ZSubListField`/`z_sub_list_field_widget.dart`, `ZSubListConfig`) qui
 /// édite des **value-objects EMBARQUÉS** dans le document parent (add/remove/
-/// reorder), vivant sous `presentation/edition/families/`. E4-5 est un
-/// **ÉCRAN-LISTE** d'**entités DISTINCTES reliées** (`ZRepository` propre) filtrées
-/// par une relation neutre — il ne l'importe ni ne le duplique.
+/// reorder), et vit sous `presentation/edition/families/`. `ZSubListScreen`
+/// est un **ÉCRAN-LISTE** d'**entités DISTINCTES reliées** (`ZRepository`
+/// propre) filtrées par une relation neutre — il ne l'importe ni ne le
+/// duplique.
 ///
-/// **Frontière (STOP)** : l'implémentation Firestore réelle de la relation/
-/// pagination/soft-delete = **E5** ; l'intégration dans un écran applicatif
-/// (DODLP/lex_douane, navigation) = **E7/E8**. Ici : composition NEUTRE prouvée
-/// via fakes.
-///
-/// **Neutre (SM-5/AD-2/AD-15)** : imports limités à `package:flutter/material.dart`
+/// **Neutre (AD-2/AD-15)** : imports limités à `package:flutter/material.dart`
 /// + types `zcrud_core`. AUCUN `package:syncfusion`, AUCUN `cloud_firestore`/
 /// `firebase`/`hive`, AUCUN gestionnaire d'état. Le contrôleur est possédé dans le
 /// `State` (create/dispose propre, AD-2).
@@ -51,15 +46,15 @@ import 'z_list_view_state.dart';
 import 'z_row_action.dart';
 
 /// Écran-liste d'entités `T` **reliées à un parent**, filtré en permanence par la
-/// relation `parentField == parentId` (E4-5).
+/// relation `parentField == parentId`.
 ///
 /// Construit et possède **un** [ZListController] (dans son `State`, cycle
 /// create/dispose — AD-2) seedé de `baseFilters: [ZFilter(parentField, eq,
 /// parentId)]`, écoute sa **seule** tranche `state` via `ValueListenableBuilder`
 /// (rebuild ciblé) et rend une [DynamicList] complète. Un changement de
 /// `parentField`/`parentId` (`didUpdateWidget`) recrée le contrôleur (nouvelle
-/// relation = nouvelles données) **et vide la sélection** (collection différente,
-/// AC8).
+/// relation = nouvelles données) **et vide la sélection** (collection
+/// différente).
 class ZSubListScreen<T extends ZEntity> extends StatefulWidget {
   /// Construit la sous-liste reliée.
   ///
@@ -68,11 +63,12 @@ class ZSubListScreen<T extends ZEntity> extends StatefulWidget {
   /// **opaque** — id composite possible) ; [toRow] projette `T → ZListRow` ;
   /// [schema] porte les champs (`searchable` + colonnes). [columns] restreint les
   /// colonnes affichées (défaut : [schema]). [layout] choisit la variante de vue
-  /// (défaut `dataGrid` = renderer injecté ; `builder`/`custom` = rendu cœur, SM-5).
+  /// (défaut `dataGrid` = renderer injecté ; `builder`/`custom` = rendu cœur,
+  /// sans Syncfusion).
   /// [renderer] force un renderer explicite (sinon `ZcrudScope.listRenderer`).
   /// [pageSize] active la pagination curseur (défaut `null` = non paginé).
   /// [rowActions]/[entityFor]/[actionAclMode]/[collectionId] pilotent les actions
-  /// de ligne filtrées `ZAcl` (E4-4) ; [selection] active la sélection multiple.
+  /// de ligne filtrées `ZAcl` ; [selection] active la sélection multiple.
   /// [showSearch] (défaut `true`) affiche une barre de recherche câblée à
   /// `controller.setSearch`. [watchMutations] relance la requête à chaque mutation
   /// du repository.
@@ -123,7 +119,7 @@ class ZSubListScreen<T extends ZEntity> extends StatefulWidget {
   /// Taille de page (curseur), ou `null` (non paginé).
   final int? pageSize;
 
-  /// Actions de ligne génériques filtrées `ZAcl` (E4-4). Requiert [entityFor].
+  /// Actions de ligne génériques filtrées `ZAcl`. Requiert [entityFor].
   final List<ZRowAction<T>>? rowActions;
 
   /// Résolveur `ZListRow → T?` (source du filtrage ACL row-level + `onInvoke`).
@@ -135,7 +131,7 @@ class ZSubListScreen<T extends ZEntity> extends StatefulWidget {
   /// Identifiant de collection optionnel passé à `ZAcl.can`.
   final String? collectionId;
 
-  /// Contrôleur de sélection multiple neutre (E4-4). `null` = pas de sélection.
+  /// Contrôleur de sélection multiple neutre. `null` = pas de sélection.
   final ZListSelectionController? selection;
 
   /// Affiche une barre de recherche câblée à `controller.setSearch` (défaut `true`).
@@ -171,11 +167,11 @@ class _ZSubListScreenState<T extends ZEntity> extends State<ZSubListScreen<T>> {
   @override
   void didUpdateWidget(covariant ZSubListScreen<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Changement de relation (nouveau parent) = collection DIFFÉRENTE (AC8) :
+    // Changement de relation (nouveau parent) = collection DIFFÉRENTE :
     // recréer le contrôleur (nouvelles données) ET vider la sélection persistante
     // par `id` (qui n'a plus de sens sur une autre collection). Un simple filtre/
     // recherche utilisateur (même relation) NE réinitialise PAS la sélection —
-    // elle persiste par `id` (cohérent E4-4 ; résolution du report LOW-3).
+    // elle persiste par `id`.
     final relationChanged = oldWidget.parentField != widget.parentField ||
         oldWidget.parentId != widget.parentId;
     final repositoryChanged = !identical(oldWidget.repository, widget.repository);

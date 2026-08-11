@@ -1,9 +1,8 @@
-/// Sélection multiple **neutre** de liste du cœur `zcrud_core` (E4-4).
+/// Sélection multiple **neutre** de liste du cœur `zcrud_core`.
 ///
-/// origine: bug historique de sélection des 3 apps (IFFD `_dataGridController`
-/// **commenté** — `dynamic_list_screen.dart:1094,1100`, statut « buggy » — la
-/// sélection Syncfusion n'était pas branchée à un état applicatif ; DODLP/DLCFTI
-/// idem). **Correctif E4-4** : l'état de sélection vit ICI, dans un contrôleur
+/// Une grille dont la sélection n'est pas branchée à un état applicatif se
+/// désynchronise au premier rebuild/scroll/pagination : c'est le défaut que
+/// ce contrôleur ferme. L'état de sélection vit ICI, dans un contrôleur
 /// **Flutter-natif** (`ChangeNotifier` + `ValueNotifier` mémoïsé), **hors** du
 /// renderer, keyé par l'**`id` STABLE** de `ZListRow` (jamais par index/position)
 /// — immunisé contre rebuild/scroll/pagination (la grille devient stateful et se
@@ -22,7 +21,7 @@ import '../../domain/ports/z_repository.dart';
 import '../edition/z_validator_compiler.dart';
 import 'z_batch_deletion_report.dart';
 
-/// Mode de sélection d'une liste (AC3).
+/// Mode de sélection d'une liste.
 enum ZListSelectionMode {
   /// Sélection désactivée : toute mutation est un **no-op**.
   none,
@@ -35,7 +34,7 @@ enum ZListSelectionMode {
 }
 
 /// Contrôleur de **sélection multiple** neutre, exposant une tranche
-/// `ValueListenable<Set<String>>` d'`id` de ligne stables (AC3/AC4).
+/// `ValueListenable<Set<String>>` d'`id` de ligne stables.
 ///
 /// Réactivité **Flutter-native** (AD-2/AD-15) : un widget écoute la SEULE tranche
 /// [selectedIds] via `ValueListenableBuilder` (rebuild ciblé). Les `Set` émis
@@ -129,22 +128,22 @@ class ZListSelectionController extends ChangeNotifier {
 
   /// Applique une opération de lot GÉNÉRIQUE à chaque `id` sélectionné, via le
   /// **seam INJECTÉ** [applyToRoot] (`Future<ZResult<Unit>> Function(String)`),
-  /// **`await`é par racine** (jamais fire-and-forget — AD-39). Agrège un
+  /// **`await`é par racine** (jamais fire-and-forget). Agrège un
   /// [ZBatchReport] au grain de la racine : chaque racine est **soit** réussie
   /// (`Right`) **soit** échouée (`Left` **ou** `throw` capté en [ZFailure] —
   /// AD-10 : **aucune exception ne franchit la surface**). Les racines réussies
   /// sont **retirées** de la sélection quand [clearSucceededFromSelection] est
   /// `true` ; les échouées y restent.
   ///
-  /// **CORE OUT=0 (AD-1)** : la **cascade** (AD-21, borne ≤ 450) et le chemin
+  /// **CORE OUT=0 (AD-1)** : la **cascade** (borne bornée) et le chemin
   /// d'écriture physique sont des propriétés de [applyToRoot] (injecté par
-  /// `zcrud_study_kernel`/`zcrud_firestore`), jamais du cœur. Post-`dispose` ⇒
+  /// le satellite/le binding), jamais du cœur. Post-`dispose` ⇒
   /// rapport vide (no-op).
   ///
   /// L'itération se fait sur un **instantané** des `id` sélectionnés capturé à
   /// l'entrée : une mutation concurrente de la sélection ne change pas le lot en
-  /// cours. Le seam est appelé par `id` STABLE — jamais par index/position
-  /// (leçon E-STUDY-UI, RISQUE N°1).
+  /// cours. Le seam est appelé par `id` STABLE — jamais par index/position, pour
+  /// rester immunisé contre un rebuild/tri/pagination concurrent.
   Future<ZBatchReport> batchApply({
     required Future<ZResult<Unit>> Function(String rootId) applyToRoot,
     bool clearSucceededFromSelection = true,
@@ -177,9 +176,10 @@ class ZListSelectionController extends ChangeNotifier {
     return ZBatchReport(succeededRootIds: succeeded, failures: failures);
   }
 
-  /// Suppression par **lot** conforme AD-39 : le supprimeur [deleteRoot] est un
-  /// **seam INJECTÉ** (la cascade AD-21 et la borne ≤ 450 sont sa propriété, pas
-  /// celle du cœur), **`await`é par racine**. Retourne un [ZBatchDeletionReport]
+  /// Suppression par **lot**, toujours rapportée au grain de la racine : le
+  /// supprimeur [deleteRoot] est un **seam INJECTÉ** (la cascade et sa borne
+  /// sont sa propriété, pas celle du cœur), **`await`é par racine**. Retourne un
+  /// [ZBatchDeletionReport]
   /// (= [ZBatchReport]) : l'appelant reçoit TOUJOURS les racines échouées avec
   /// leur cause — jamais un lot silencieusement partiel. Les racines supprimées
   /// avec succès sont retirées de la sélection ; les échouées y restent. Tout
@@ -228,7 +228,7 @@ class ZListSelectionController extends ChangeNotifier {
 
   /// Édite un **champ commun** [field] sur tous les éléments sélectionnés, en
   /// dérivant les validateurs du `ZFieldSpec` via [ZValidatorCompiler.compile]
-  /// — **exactement les mêmes** que le formulaire unitaire (AD-44 : une seule
+  /// — **exactement les mêmes** que le formulaire unitaire (une seule
   /// source de validation, jamais une 2e implémentation). La valeur candidate
   /// [value] est validée **AVANT toute écriture** : si elle est invalide,
   /// **aucune racine n'est touchée** (le seam [writeRoot] n'est PAS appelé) et
@@ -239,7 +239,7 @@ class ZListSelectionController extends ChangeNotifier {
   /// [clearSucceededFromSelection] : défaut **`false`** — l'édition d'un champ
   /// commun est une écriture **in-place**, les éléments RESTENT visibles ⇒ la
   /// sélection est **conservée** (l'utilisateur peut enchaîner un 2ᵉ champ sur
-  /// le même lot, ex. multi-éditeur me-2, sans tout re-sélectionner). Contraste
+  /// le même lot, sans tout re-sélectionner). Contraste
   /// avec [batchDelete]/[batchMove] où les éléments quittent la vue (défaut
   /// `true`). L'appelant peut forcer le vidage en passant `true`.
   Future<ZBatchReport> applyCommonField({
@@ -280,7 +280,7 @@ class ZListSelectionController extends ChangeNotifier {
   /// les soft-delete ont réussi.
   ///
   /// **Atomicité** : best-effort — une transaction atomique multi-document est
-  /// backend-spécifique (E5), non garantie ici (ambiguïté story #4).
+  /// backend-spécifique, non garantie ici.
   @Deprecated(
     'Voie best-effort SANS rapport au grain de la racine (AD-39). Utiliser '
     'batchDelete({deleteRoot}) qui await par racine et retourne un '

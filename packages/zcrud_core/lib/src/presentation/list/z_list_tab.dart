@@ -1,11 +1,10 @@
 /// `ZListTab` — descripteur d'un **onglet de catégorisation** de [ZTabbedList]
-/// (E4-5, étend FR-6 · AD-8/AD-13/SM-5).
+/// (AD-8/AD-13).
 ///
-/// origine: capacité « **onglets** » du §4.2 du PRD (rattachée à FR-6). Un onglet
-/// porte une **clé de libellé l10n** (`labelKey`, résolue au rendu via `label`),
-/// une **icône** optionnelle et un [WidgetBuilder] `builder` qui construit la vue
-/// de l'onglet (typiquement une [DynamicList]/`ZListController` ou un
-/// `ZSubListScreen`, catégorisé via `baseFilters`).
+/// Un onglet porte une **clé de libellé l10n** (`labelKey`, résolue au rendu
+/// via `label`), une **icône** optionnelle et un [WidgetBuilder] `builder` qui
+/// construit la vue de l'onglet (typiquement une [DynamicList]/`ZListController`
+/// ou un `ZSubListScreen`, catégorisé via `baseFilters`).
 ///
 /// **Pourquoi un `WidgetBuilder`, pas un `ZListController`** : un contrôleur est
 /// un `ChangeNotifier` à cycle de vie (create/dispose) — le figer dans un modèle
@@ -35,7 +34,7 @@ class ZListTab {
   /// Fabrique **catégorie** (cas courant) : les [filters] de catégorie sont
   /// passés à [buildList], qui les branche typiquement en `baseFilters` sur le
   /// `ZListController`/`ZSubListScreen` de l'onglet — la catégorie ne peut alors
-  /// JAMAIS être écrasée par une recherche/un filtre utilisateur (E4-5).
+  /// JAMAIS être écrasée par une recherche/un filtre utilisateur.
   factory ZListTab.category({
     required String labelKey,
     required List<ZFilter> filters,

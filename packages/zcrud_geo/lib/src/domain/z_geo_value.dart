@@ -40,7 +40,7 @@ import 'z_geo_legacy_codec.dart';
 import 'z_geo_point.dart';
 import 'z_geo_shape.dart';
 
-/// Routeur de lecture discriminé d'une valeur géo (legacy DODLP ou zcrud).
+/// Routeur de lecture discriminé d'une valeur géo (format legacy ou zcrud).
 /// Espace de noms statique : non instanciable.
 abstract final class ZGeoValue {
   /// Parse **défensif** (AD-10) et **discriminé** : retourne un [ZGeoPoint],
@@ -87,7 +87,7 @@ abstract final class ZGeoValue {
     // Sans discriminant (valeur zcrud) ou discriminant inconnu (schéma futur,
     // AD-10 additif) : détection structurelle. Le cercle est testé AVANT la
     // forme : un rayon présent désigne un cercle, même accompagné de `points`
-    // (le lire comme forme perdrait silencieusement le rayon — piège G1).
+    // — le lire comme forme perdrait silencieusement le rayon.
     if (decoded['center'] != null ||
         decoded['radius_m'] != null ||
         decoded['radius'] != null) {

@@ -1,17 +1,15 @@
-/// `ZLargeFieldCard` — décorateur **Card** de la variante `ZFieldSize.large`
-/// (parité DODLP B1, `_buildLargeCard`).
+/// `ZLargeFieldCard` — décorateur **Card** de la variante `ZFieldSize.large`.
 ///
-/// Reproduit STRUCTURELLEMENT `edition_screen.dart:893-971` (HORS couleurs,
-/// dérivées du `ColorScheme`) : `Card` `elevation 0` + bordure arrondie (rayon
-/// = token), `ConstrainedBox(minHeight)`, `Padding` directionnel, `Row` avec
+/// `Card` `elevation 0` + bordure arrondie (rayon = token),
+/// `ConstrainedBox(minHeight)`, `Padding` directionnel, `Row` avec
 /// slots **leading/suffix optionnels** et une `Column` portant le **label
 /// AU-DESSUS** du champ. Toutes les mesures proviennent des tokens `ZcrudTheme`
 /// (`large*`/`input*`) — AUCUNE valeur de layout ni couleur codée en dur
-/// (FR-26, AD-13 : insets directionnels).
+/// (invariant FR-26, invariant AD-13 : insets directionnels).
 ///
-/// AD-2/SM-1 : ce widget est **statique** (il ne s'abonne à aucune tranche) —
-/// l'hôte l'enveloppe autour du sous-arbre réactif, sans élargir la frontière de
-/// rebuild.
+/// Invariant AD-2 : ce widget est **statique** (il ne s'abonne à aucune
+/// tranche) — l'hôte l'enveloppe autour du sous-arbre réactif, sans élargir
+/// la frontière de rebuild.
 library;
 
 import 'package:flutter/material.dart';
@@ -37,17 +35,17 @@ class ZLargeFieldCard extends StatelessWidget {
   final String label;
 
   /// Libellé **enrichi** optionnel (`ZFieldLabel` : style thémé + astérisque
-  /// requis — DP-12, M5). S'il est fourni, il **remplace** le `Text(label)`
+  /// requis). S'il est fourni, il **remplace** le `Text(label)`
   /// visible (l'a11y reste portée par [label] via le `Semantics` conteneur).
   final Widget? labelWidget;
 
   /// Champ interne (rendu « bare » : sans bordure ni label propre).
   final Widget child;
 
-  /// Slot leading optionnel (icône/action de tête) — `null` par défaut (M1).
+  /// Slot leading optionnel (icône/action de tête) — `null` par défaut.
   final Widget? leading;
 
-  /// Slot suffix optionnel (icône/action de queue) — `null` par défaut (M1).
+  /// Slot suffix optionnel (icône/action de queue) — `null` par défaut.
   final Widget? suffix;
 
   @override
@@ -61,10 +59,10 @@ class ZLargeFieldCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // MEDIUM-2 (DP-1) : le label a11y est porté par le `Semantics` conteneur
-        // ci-dessous — le Text/label visible est exclu de la sémantique pour
-        // éviter une DOUBLE annonce au lecteur d'écran (AD-13). DP-12 : si un
-        // label enrichi est fourni, il remplace le `Text(label)` simple.
+        // Le label a11y est porté par le `Semantics` conteneur ci-dessous —
+        // le Text/label visible est exclu de la sémantique pour éviter une
+        // DOUBLE annonce au lecteur d'écran (invariant AD-13). Si un label
+        // enrichi est fourni, il remplace le `Text(label)` simple.
         ExcludeSemantics(
           child: labelWidget ??
               Text(label, style: labelStyle, textAlign: TextAlign.start),

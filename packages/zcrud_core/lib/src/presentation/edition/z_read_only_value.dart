@@ -1,13 +1,14 @@
-/// Formatage **défensif** de valeur + politique de familles « fiche-ables » pour
-/// le **mode lecture** (DP-13, M4). Helpers `src`-privés à l'API (non exportés) :
+/// Formatage **défensif** de valeur + politique de familles « fiche-ables »
+/// pour le **mode lecture**. Helpers `src`-privés à l'API (non exportés) :
 /// consommés par `ZFieldWidget` (dispatch `readMode`) et `ZReadOnlyFieldCard`.
 ///
-/// AD-10 : [zReadOnlyValueOf] ne lit **aucune tranche de formulaire**, ne porte
-/// **aucun état** et **ne lève jamais** — toute valeur inconnue/corrompue
-/// retombe sur une représentation textuelle sûre ou un placeholder. AD-2 :
-/// aucune allocation de contrôleur, aucun objet coûteux construit par appel.
+/// Invariant AD-10 : [zReadOnlyValueOf] ne lit **aucune tranche de
+/// formulaire**, ne porte **aucun état** et **ne lève jamais** — toute valeur
+/// inconnue/corrompue retombe sur une représentation textuelle sûre ou un
+/// placeholder. Invariant AD-2 : aucune allocation de contrôleur, aucun
+/// objet coûteux construit par appel.
 ///
-/// ⚠️ La fonction n'est PAS *pure* au sens Flutter : elle lit deux seams du
+/// La fonction n'est PAS *pure* au sens Flutter : elle lit deux seams du
 /// `ZcrudScope` (l10n via `label`, et le port de dates
 /// `ZcrudScope.dateDisplayFormatter`). Sans port injecté, la voie date rend la
 /// **chaîne brute** — l'affichage d'un hôte passif est strictement inchangé.
@@ -28,7 +29,7 @@ import 'z_value_emptiness.dart';
 
 /// Résultat de formatage d'une valeur en mode lecture : soit un **texte**
 /// (copiable), soit un **placeholder** non copiable (« — »), soit un **Widget**
-/// non copiable (parité DODLP `value is Widget → onLongPress no-op`).
+/// non copiable (`onLongPress` désactivé pour une valeur graphique).
 @immutable
 class ReadOnlyValue {
   const ReadOnlyValue._({this.text, this.widget, required this.copyable});
@@ -41,7 +42,7 @@ class ReadOnlyValue {
   const ReadOnlyValue.placeholder(String text)
       : this._(text: text, widget: null, copyable: false);
 
-  /// **Widget** de valeur non copiable (ex. pastille couleur — DODLP passe-plat).
+  /// **Widget** de valeur non copiable (ex. pastille couleur).
   const ReadOnlyValue.widget(Widget widget)
       : this._(text: null, widget: widget, copyable: false);
 
@@ -61,11 +62,12 @@ class ReadOnlyValue {
 /// `false`/`0` NE sont PAS vides.
 bool _isEmpty(Object? v) => zIsEmptyValue(v);
 
-/// Longueur maximale d'une représentation `Map`/objet complexe (borne AD-10 :
-/// jamais un dump illisible non borné).
+/// Longueur maximale d'une représentation `Map`/objet complexe (borne
+/// invariant AD-10 : jamais un dump illisible non borné).
 const int _maxComplexLen = 200;
 
-/// Formate [value] pour le [field] en mode lecture (AD-10, jamais de throw).
+/// Formate [value] pour le [field] en mode lecture (invariant AD-10, jamais
+/// de throw).
 ///
 /// [choices] **surcharge** `field.choices` pour la résolution des libellés des
 /// familles à choix. C'est le canal par lequel un appelant qui a déjà résolu les
@@ -91,10 +93,10 @@ ReadOnlyValue zReadOnlyValueOf(
   switch (field.type) {
     case EditionFieldType.boolean:
       final b = value == true;
-      // CR-DODLP-BOOL : cohérence édition ↔ fiche de lecture. Un hôte qui a
-      // surchargé les libellés d'état (`ZBooleanConfig.trueLabel/falseLabel`)
-      // les retrouve ici — sans quoi le switch dirait « Actif » et la fiche
-      // « Oui ». Config absente / libellé `null` ou vide ⇒ exactement le rendu
+      // Cohérence édition ↔ fiche de lecture. Un hôte qui a surchargé les
+      // libellés d'état (`ZBooleanConfig.trueLabel/falseLabel`) les retrouve
+      // ici — sans quoi le switch dirait « Actif » et la fiche « Oui ».
+      // Config absente / libellé `null` ou vide ⇒ exactement le rendu
       // antérieur (clés `yes`/`no`), donc hôte passif immobile.
       final boolConfig = field.config;
       final customState = boolConfig is ZBooleanConfig
@@ -118,20 +120,21 @@ ReadOnlyValue zReadOnlyValueOf(
 
     case EditionFieldType.dateTime:
     case EditionFieldType.time:
-      // CR-DODLP-GAP3BIS : projection d'AFFICHAGE d'une date via le port neutre
+      // Projection d'AFFICHAGE d'une date via le port neutre
       // `ZDateDisplayFormatter`. Port absent / valeur non parsable / port en
-      // erreur ⇒ chaîne BRUTE, soit exactement le rendu d'avant (AD-10).
+      // erreur ⇒ chaîne BRUTE, soit exactement le rendu d'avant (invariant
+      // AD-10).
       return ReadOnlyValue.text(zDateDisplayText(context, field, value));
 
     case EditionFieldType.number:
     case EditionFieldType.integer:
     case EditionFieldType.float:
-      // DP-17 (M17) : formatage LECTURE devise/pourcentage NEUTRE (donnée, jamais
-      // un style FR-26). Sans config ⇒ représentation brute (rétro-compat).
+      // Formatage LECTURE devise/pourcentage NEUTRE (donnée, jamais un style
+      // — invariant FR-26). Sans config ⇒ représentation brute (rétro-compat).
       return ReadOnlyValue.text(_numberText(context, field, value));
 
     case EditionFieldType.color:
-      // Pastille + code (parité DODLP `value is Widget` → copie désactivée).
+      // Pastille + code (copie désactivée pour une valeur graphique).
       return _colorValue(value);
 
     case EditionFieldType.tags:
@@ -145,10 +148,10 @@ ReadOnlyValue zReadOnlyValueOf(
   }
 }
 
-/// DP-17 (M17) : rend un nombre en lecture avec suffixe/préfixe NEUTRE selon
-/// `ZNumberConfig` (défensif AD-10 : config absente ⇒ `'$value'`). Pourcentage →
-/// `« 42 % »` ; devise → `« 42 $ »` (symbole config/`currencySuffix`, jamais
-/// codé en dur — FR-26/AD-1).
+/// Rend un nombre en lecture avec suffixe/préfixe NEUTRE selon
+/// `ZNumberConfig` (défensif invariant AD-10 : config absente ⇒ `'$value'`).
+/// Pourcentage → `« 42 % »` ; devise → `« 42 $ »` (symbole
+/// config/`currencySuffix`, jamais codé en dur — invariants FR-26/AD-1).
 String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
   final cfg = field.config;
   if (cfg is! ZNumberConfig) return '$value';
@@ -163,18 +166,19 @@ String _numberText(BuildContext context, ZFieldSpec field, Object? value) {
   return '$value';
 }
 
-/// Texte d'affichage d'une valeur de date (CR-DODLP-GAP3BIS).
+/// Texte d'affichage d'une valeur de date.
 ///
-/// **Repli DÉFINI (AD-10) = la chaîne brute**, dans TOUS les chemins dégradés :
-/// port absent, valeur non parsable en `DateTime` (dont le mode `time`, stocké
-/// `HH:mm`), port retournant `null`/vide, port qui lève. ⇒ un hôte qui n'injecte
-/// rien voit **exactement** l'affichage d'avant ce port.
+/// **Repli DÉFINI (invariant AD-10) = la chaîne brute**, dans TOUS les
+/// chemins dégradés : port absent, valeur non parsable en `DateTime` (dont
+/// le mode `time`, stocké `HH:mm`), port retournant `null`/vide, port qui
+/// lève. ⇒ un hôte qui n'injecte rien voit **exactement** l'affichage
+/// d'avant ce port.
 ///
-/// AD-2 : aucune allocation coûteuse — un `DateTime.tryParse` et un appel de
-/// port ; l'instance du formateur appartient à l'hôte (jamais construite ici).
-/// CR-LIST-LABELS : le corps de la règle (repli AD-10 compris) vit désormais
-/// dans `zDateDisplayTextOf` (pur-Dart, port de dates). Cette fonction ne fait
-/// plus que **lire les seams du scope** ; la voie sans `BuildContext`
+/// Invariant AD-2 : aucune allocation coûteuse — un `DateTime.tryParse` et un
+/// appel de port ; l'instance du formateur appartient à l'hôte (jamais
+/// construite ici). Le corps de la règle (repli invariant AD-10 compris) vit
+/// dans `zDateDisplayTextOf` (pur-Dart, port de dates). Cette fonction ne
+/// fait plus que **lire les seams du scope** ; la voie sans `BuildContext`
 /// (`ZListColumn.format`) consomme la MÊME règle avec un port déjà capturé.
 String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) =>
     zDateDisplayTextForMode(
@@ -191,7 +195,7 @@ String zDateDisplayText(BuildContext context, ZFieldSpec field, Object? value) =
 /// est un couple de bornes rendues chacune comme une **date seule**
 /// ([ZDateMode.date]) alors que `field.type` vaut `dateRange`.
 ///
-/// 🔴 Elle est la **seule** lecture des seams du scope (port + locale) : la
+/// Elle est la **seule** lecture des seams du scope (port + locale) : la
 /// règle de repli, elle, reste dans `zDateDisplayTextOf`. Aucune des deux n'est
 /// dupliquée ici.
 String zDateDisplayTextForMode(
@@ -212,17 +216,17 @@ String? _localeTag(BuildContext context) =>
     Localizations.maybeLocaleOf(context)?.toLanguageTag();
 
 /// Libellé(s) résolus depuis [choices] ; valeur **orpheline** (absente des
-/// options) → libellé l10n d'indisponibilité, **jamais la clé technique**
-/// (CR-ORPHAN) ; liste/`multiple` → libellés joints « , ».
+/// options) → libellé l10n d'indisponibilité, **jamais la clé technique** ;
+/// liste/`multiple` → libellés joints « , ».
 ///
-/// 🔴 La fiche de lecture (`ZReadOnlyFieldCard`) ne passe que les choix
+/// La fiche de lecture (`ZReadOnlyFieldCard`) ne passe que les choix
 /// **statiques** de la spec : une valeur alimentée par une source dynamique y
 /// est donc structurellement orpheline. (Le résumé de sous-liste compact, lui,
 /// passe les choix **effectifs** résolus par `zResolveSelectChoices` — voir le
 /// paramètre `choices` de [zReadOnlyValueOf].)
-/// Elle rendait auparavant son **identifiant brut** — c'est le défaut
-/// que ce paquet proscrit ailleurs (`fileRefUnresolved`). Elle rend désormais le
-/// même libellé que les huit voies d'édition. La valeur n'est pas altérée : le
+///
+/// Une valeur orpheline rend le même libellé d'indisponibilité que les voies
+/// d'édition — jamais son identifiant brut. La valeur n'est pas altérée : le
 /// mode lecture n'écrit rien.
 String _choiceLabels(
   BuildContext context,
@@ -248,7 +252,8 @@ String _joinList(Object? value) {
   return '$value';
 }
 
-/// Représentation textuelle **bornée** d'une `Map`/objet complexe (AD-10).
+/// Représentation textuelle **bornée** d'une `Map`/objet complexe (invariant
+/// AD-10).
 String _safeMap(Map<dynamic, dynamic> value) {
   final s = value.entries.map((e) => '${e.key}: ${e.value}').join(', ');
   if (s.length <= _maxComplexLen) return s;
@@ -256,11 +261,11 @@ String _safeMap(Map<dynamic, dynamic> value) {
 }
 
 /// Fiche couleur : pastille (couleur = **donnée** ARGB, pas un style codé en dur)
-/// + code hexadécimal. Copie désactivée (Widget passe-plat — parité DODLP).
+/// + code hexadécimal. Copie désactivée (valeur graphique, non textuelle).
 ///
-/// FP-4.4 : une valeur `List` (mode `ZColorConfig.multiple`) rend **N pastilles**
-/// (parse défensif AD-10 : seules les entrées `int` sont pastillées) ; le rendu
-/// simple `int` reste inchangé (rétro-compat).
+/// Une valeur `List` (mode `ZColorConfig.multiple`) rend **N pastilles**
+/// (parse défensif invariant AD-10 : seules les entrées `int` sont
+/// pastillées) ; le rendu simple `int` reste inchangé (rétro-compat).
 ReadOnlyValue _colorValue(Object? value) {
   if (value is List) {
     final argbs = <int>[for (final e in value) if (e is int) e];
@@ -277,7 +282,8 @@ ReadOnlyValue _colorValue(Object? value) {
   return ReadOnlyValue.widget(_colorChip(value, withHex: true));
 }
 
-/// Pastille couleur (donnée ARGB — FR-26) + code hex optionnel. Directionnel.
+/// Pastille couleur (donnée ARGB — invariant FR-26) + code hex optionnel.
+/// Directionnel.
 Widget _colorChip(int argb, {bool withHex = false}) {
   final hex = '#${argb.toRadixString(16).toUpperCase().padLeft(8, '0')}';
   return Row(
@@ -287,7 +293,8 @@ Widget _colorChip(int argb, {bool withHex = false}) {
         width: 20,
         height: 20,
         decoration: BoxDecoration(
-          // Couleur issue de la DONNÉE (ARGB), non un style codé en dur (FR-26).
+          // Couleur issue de la DONNÉE (ARGB), non un style codé en dur
+          // (invariant FR-26).
           color: Color(argb),
           borderRadius: const BorderRadius.all(Radius.circular(4)),
         ),
@@ -300,14 +307,14 @@ Widget _colorChip(int argb, {bool withHex = false}) {
   );
 }
 
-/// **Politique** de familles fiche-ables en mode lecture (DP-13, AC6).
+/// **Politique** de familles fiche-ables en mode lecture.
 ///
 /// Fiche-ables (rendues via `ZReadOnlyFieldCard`) : `text`, `number`, `date`,
 /// `boolean`, `select`, `relation`, `tags`, `rowChips`, `rating`, `slider`,
 /// `color`. NON fiche-ables (conservent leur rendu `readOnly` existant, jamais
 /// régressé) : `subList`, `dynamicItem`, `signature`, `file`, `freeWidget`,
-/// `registryOrFallback`, `hidden`, `unsupported` (un reader dédié relève de leurs
-/// stories). Référence DODLP `readOnlyWidget` (`edition_screen.dart:974-1040`).
+/// `registryOrFallback`, `hidden`, `unsupported` (un reader dédié pourrait
+/// leur être ajouté ultérieurement).
 bool zReadModeCardable(EditionFamily family) {
   switch (family) {
     case EditionFamily.text:
@@ -323,9 +330,9 @@ bool zReadModeCardable(EditionFamily family) {
     case EditionFamily.color:
       return true;
     case EditionFamily.dateRange:
-    // `dateRange` (AD-47) : NON fiche-able ici — en mode lecture, le widget natif
+    // `dateRange` : NON fiche-able ici — en mode lecture, le widget natif
     // rend son déclencheur `readOnly` (plage affichée, désactivée). Un reader
-    // dédié relèvera d'une story ultérieure (patron des familles récentes).
+    // dédié pourrait être ajouté ultérieurement.
     case EditionFamily.subList:
     case EditionFamily.dynamicItem:
     case EditionFamily.signature:

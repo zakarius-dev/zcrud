@@ -1,10 +1,9 @@
-/// `ZFeatureAvailability` — disponibilité de fonctionnalités INJECTABLE (ES-5.4,
-/// AD-25/FR-S24).
+/// `ZFeatureAvailability` — disponibilité de fonctionnalités INJECTABLE.
 ///
 /// Interface DÉCLARATIVE permettant à l'app hôte de décider *quelles*
 /// fonctionnalités « study tools » sont disponibles, SANS modifier `zcrud_study`
 /// et sans que deux apps aux roadmaps différentes ne se marchent dessus. Elle se
-/// COMPOSE avec le vocabulaire AD-4 déjà livré en ES-5.1/5.2/5.3 :
+/// COMPOSE avec le vocabulaire de l'invariant AD-4 :
 ///
 /// * [ZContentHubEntry.enabled] / [ZContentHubEntry.onTap] (`onTap == null` ⇒
 ///   entrée non actionnable) ;
@@ -12,8 +11,8 @@
 ///   `ZItemActionsMenu`) ;
 /// * [ZStudyToolsSectionSpec.addAction] (`null` ⇒ action d'ajout ABSENTE).
 ///
-/// ES-5.4 n'introduit **AUCUN nouveau chemin de rendu** : [gate]/[enabledFor]
-/// fabriquent le `null`/`bool` que ces slots consomment DÉJÀ (D3, anti-inertie).
+/// Ce fichier n'introduit **AUCUN nouveau chemin de rendu** : [gate]/[enabledFor]
+/// fabriquent le `null`/`bool` que ces slots consomment DÉJÀ.
 ///
 /// Invariants (AD-1/AD-2/AD-4/AD-15) : le fichier ne rend AUCUNE UI (pure
 /// logique) ; aucun gestionnaire d'état ; injection Flutter-native via
@@ -24,13 +23,13 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-/// Interface INJECTABLE de disponibilité de fonctionnalités (D2, AD-25).
+/// Interface INJECTABLE de disponibilité de fonctionnalités.
 ///
 /// `abstract interface class` : les décisions de disponibilité vivent dans
 /// l'IMPLÉMENTATION injectée par l'app, JAMAIS dans une constante compilée du
 /// package partagé. La seule primitive à définir est [isAvailable] ; les points
 /// de COMPOSITION [enabledFor] et [gate] sont fournis par défaut et relaient la
-/// décision vers les slots AD-4 d'ES-5.3.
+/// décision vers les slots régis par l'invariant AD-4.
 ///
 /// [featureKey] est une `String` OPAQUE extensible (AD-4) : l'app définit ses
 /// propres clés (constantes app-side) — aucun enum fermé couplé aux satellites
@@ -54,7 +53,7 @@ abstract interface class ZFeatureAvailability {
   /// est rendue DÉSACTIVÉE (tuile non actionnable, AD-4), sans nouveau rendu.
   bool enabledFor(String featureKey) => isAvailable(featureKey);
 
-  /// Point de composition ⇒ `onTap`/`addAction`/`onSelected` (ES-5.1/5.3).
+  /// Point de composition ⇒ `onTap`/`addAction`/`onSelected`.
   ///
   /// Retourne [action] SSI la feature est disponible, sinon `null`. Le `null`
   /// rend la surface NON actionnable / ABSENTE **par le mécanisme EXISTANT**
@@ -67,12 +66,12 @@ abstract interface class ZFeatureAvailability {
 
 /// Implémentation de référence FAIL-OPEN : toute fonctionnalité est disponible.
 ///
-/// **DÉFAUT du package** (D1) : en l'absence de toute disponibilité injectée, le
+/// **DÉFAUT du package** : en l'absence de toute disponibilité injectée, le
 /// package partagé ne masque JAMAIS une fonctionnalité qu'une app a réellement
 /// câblée — la restriction est un OPT-IN de l'app, jamais une décision du
 /// package par ignorance. Préserve la baseline « tout rendu, tout actionnable »
-/// d'ES-5.1/5.2/5.3 (SM-SC2, golden inchangé) et la friction d'adoption inverse
-/// de FR-S24. Une politique fail-safe locale reste possible via
+/// (golden inchangé) et évite toute friction d'adoption. Une politique
+/// fail-safe locale reste possible via
 /// [ZMapFeatureAvailability.availableWhenUnspecified] `= false`.
 @immutable
 class ZAllFeaturesAvailable extends ZFeatureAvailability {
@@ -89,7 +88,7 @@ class ZAllFeaturesAvailable extends ZFeatureAvailability {
 /// une app déclare `const ZMapFeatureAvailability({'note': true, 'exam': false})`.
 ///
 /// [availableWhenUnspecified] = politique LOCALE opt-in pour une clé absente de
-/// [flags] : défaut `true` (fail-open, cohérent D1) ; `false` ⇒ politique
+/// [flags] : défaut `true` (fail-open, même défaut que le package) ; `false` ⇒ politique
 /// fail-safe locale (clé inconnue ⇒ masquée), choix explicite de l'app.
 @immutable
 class ZMapFeatureAvailability extends ZFeatureAvailability {
@@ -109,10 +108,10 @@ class ZMapFeatureAvailability extends ZFeatureAvailability {
   bool isAvailable(String featureKey) =>
       flags[featureKey] ?? availableWhenUnspecified;
 
-  /// Égalité PROFONDE (SM-SC2) : deux maps de contenu identique sont égales,
-  /// afin que [ZFeatureAvailabilityScope.updateShouldNotify] distingue deux
-  /// configs par leur CONTENU, pas leur identité. Comparaison inline (aucun
-  /// import au-delà de `package:flutter/widgets.dart`, AD-1/AC4).
+  /// Égalité PROFONDE : deux maps de contenu identique sont égales, afin que
+  /// [ZFeatureAvailabilityScope.updateShouldNotify] distingue deux configs
+  /// par leur CONTENU, pas leur identité. Comparaison inline (aucun import
+  /// au-delà de `package:flutter/widgets.dart` — invariant AD-1).
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -144,7 +143,7 @@ class ZMapFeatureAvailability extends ZFeatureAvailability {
 /// Injection Flutter-native de [ZFeatureAvailability] (AD-2/AD-15).
 ///
 /// `InheritedWidget` PUR — AUCUN gestionnaire d'état, aucun état mutable. Un
-/// sous-arbre lit la disponibilité injectée via [of] (repli fail-open D1) ou
+/// sous-arbre lit la disponibilité injectée via [of] (repli fail-open) ou
 /// [maybeOf]. L'injection peut aussi se faire par simple paramètre (l'app passe
 /// directement une [ZFeatureAvailability] au code qui construit entrées/actions).
 class ZFeatureAvailabilityScope extends InheritedWidget {
@@ -159,7 +158,7 @@ class ZFeatureAvailabilityScope extends InheritedWidget {
   final ZFeatureAvailability availability;
 
   /// Disponibilité injectée par le plus proche ancêtre, ou le DÉFAUT fail-open
-  /// [ZAllFeaturesAvailable] si aucun ancêtre n'en fournit (D1). Ne lève JAMAIS.
+  /// [ZAllFeaturesAvailable] si aucun ancêtre n'en fournit. Ne lève JAMAIS.
   static ZFeatureAvailability of(BuildContext context) =>
       maybeOf(context) ?? const ZAllFeaturesAvailable();
 

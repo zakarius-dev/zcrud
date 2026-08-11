@@ -1,32 +1,28 @@
-/// **CR-IFFD-65** — le RENDU DE RÉFÉRENCE du hub d'ajout de contenu,
-/// centralisé en UN SEUL endroit (patron [ZStudyCardReference] CR-IFFD-56,
-/// `ZFlashcardCardReference` CR-IFFD-57, `ZFolderCardReference` CR-IFFD-64).
+/// Le RENDU DE RÉFÉRENCE du hub d'ajout de contenu, centralisé en UN SEUL
+/// endroit (même patron que [ZStudyCardReference], `ZFlashcardCardReference`,
+/// `ZFolderCardReference`).
 ///
 /// ## Ce que ce fichier fige, et sur DÉCISION DU PROPRIÉTAIRE
 ///
-/// `ZContentHubSheet` rendait une liste plate de `ListTile` nus : aucun
+/// `ZContentHubSheet` pouvait rendre une liste plate de `ListTile` nus : aucun
 /// groupement, aucune identité par entrée, aucune mise en avant, aucune forme
-/// réglable (les quatre griefs MESURÉS de CR-IFFD-65). Le propriétaire du socle
-/// a arbitré le **2026-08-05** que le rendu de référence (legacy IFFD
-/// `folder_content_add_dialog_widget.dart`, 550 l.) devienne le **DÉFAUT**,
-/// hauteur d'item de référence **assumée** et **défilement attendu**.
+/// réglable. Le propriétaire du socle a arbitré que le rendu de référence
+/// (portage annoté d'un design éprouvé) devienne le **DÉFAUT**, hauteur
+/// d'item de référence **assumée** et **défilement attendu**.
 ///
-/// **Cette décision CONTREDIT délibérément la CR**, qui écrivait « la densité
-/// du socle est meilleure […] nous ne demandons pas de le défaire ». L'argument
-/// d'ÉCHELLE de la CR (douze types ⇒ trois ou quatre écrans) **n'est pas
-/// réfuté** : il est répondu par le RÉGLAGE — [ZContentHubDensity.compact],
-/// atteignable par paramètre ET par jeton, restitue la densité d'avant
-/// CR-IFFD-65.
+/// L'argument d'ÉCHELLE (douze types ⇒ trois ou quatre écrans) est répondu par
+/// le RÉGLAGE — [ZContentHubDensity.compact], atteignable par paramètre ET
+/// par jeton, restitue une densité plus compacte.
 ///
-/// ## Exception FR-26 ENCADRÉE (arbitrage owner 2026-08-04, étendu ici)
+/// ## Exception FR-26 ENCADRÉE
 ///
-/// L'exception vaut **par famille**. Ce fichier est le **SECOND et dernier**
-/// du package autorisé à porter des couleurs littérales — les **six teintes
-/// d'identité** de la référence legacy (`folder_content_add_dialog_widget.dart`
-/// l.150-359, hex vérifiés dans `colors.dart` du SDK) et le vert du badge de
-/// mise en avant. Aucune n'est dérivable d'un rôle `ColorScheme` : ce sont des
-/// teintes **arbitraires par type de contenu**, exactement comme les quatre
-/// dégradés de `ZFlashcardCardReference`. Les trois conditions :
+/// L'exception vaut **par famille**. Ce fichier est l'un des rares du package
+/// autorisés à porter des couleurs littérales — les **six teintes
+/// d'identité** de la référence (hex vérifiés dans `colors.dart` du SDK) et
+/// le vert du badge de mise en avant. Aucune n'est dérivable d'un rôle
+/// `ColorScheme` : ce sont des teintes **arbitraires par type de contenu**,
+/// exactement comme les quatre dégradés de `ZFlashcardCardReference`. Les
+/// trois conditions :
 ///
 /// 1. **Centralisation** : elles vivent ICI et nulle part ailleurs — aucun
 ///    widget du package n'écrit d'hex ;
@@ -45,35 +41,32 @@
 ///
 /// ## Le contraste — mesuré, jamais reproduit à l'aveugle
 ///
-/// **MESURÉ (« non mesuré » n°3 de la CR — le thème sombre)** : le legacy
-/// n'adapte **RIEN** en sombre. Preuve négative exécutée sur le fichier
-/// legacy : `grep -n 'brightness\|Brightness'` ⇒ **sortie vide**. Les six
-/// teintes et l'alpha `0.1` de la pastille y sont des constantes appliquées à
-/// l'identique dans les deux luminosités — donc le contraste réel du glyphe
-/// dépend d'un fond que personne n'a mesuré. Le socle **ne reproduit pas ce
-/// défaut** : toute teinte peinte passe par `zReadableTintOn` (CR-IFFD-64) avec
-/// le plancher [ZContentHubReference.minContrast], mesuré contre la surface
-/// **réellement peinte**.
+/// **MESURÉ, le thème sombre en particulier** : une adaptation naïve
+/// n'adapterait **RIEN** en sombre — les six teintes et l'alpha `0.1` de la
+/// pastille resteraient des constantes appliquées à l'identique dans les
+/// deux luminosités, donc le contraste réel du glyphe dépendrait d'un fond
+/// que personne n'aurait mesuré. Le socle **évite ce défaut** : toute teinte
+/// peinte passe par `zReadableTintOn` avec le plancher
+/// [ZContentHubReference.minContrast], mesuré contre la surface **réellement
+/// peinte**.
 ///
 /// ## Ce que ce fichier ne contient PAS, et pourquoi
 ///
 /// * **La hauteur de feuille (480 lp)** : elle est posée par l'HÔTE
-///   (`showPushedDialog(maxHeight: 480)`), pas par le hub — la CR le dit
-///   elle-même (« ce sont des enveloppes, pas des capacités du hub »).
+///   (`showPushedDialog(maxHeight: 480)`), pas par le hub — ce sont des
+///   enveloppes, pas des capacités du hub.
 /// * **Les libellés** (« Flashcards », « Recommandé », les six titres) : ils
-///   sont **INJECTÉS** (FR-26/NFR-S7). Un défaut de constructeur
-///   `badgeLabel = 'Recommandé'` déclencherait la règle « défaut de
-///   constructeur en dur » de la garde — ici tout libellé est requis ou
-///   nullable **sans** défaut littéral.
+///   sont **INJECTÉS**. Un défaut de constructeur `badgeLabel = 'Recommandé'`
+///   déclencherait la règle « défaut de constructeur en dur » de la garde —
+///   ici tout libellé est requis ou nullable **sans** défaut littéral.
 library;
 
 import 'package:flutter/material.dart';
 
-/// Les valeurs de RÉFÉRENCE du hub d'ajout de contenu (mesurées chez IFFD,
-/// `folder_content_add_dialog_widget.dart:109-550` — CR-IFFD-65), le point
-/// d'audit unique. Modifier une valeur ici change le défaut du hub partout.
+/// Les valeurs de RÉFÉRENCE du hub d'ajout de contenu, le point d'audit
+/// unique. Modifier une valeur ici change le défaut du hub partout.
 abstract final class ZContentHubReference {
-  // ── Clés de couleur STABLES (Lot 2) — le SEUL vocabulaire ajouté ──────────
+  // ── Clés de couleur STABLES — le SEUL vocabulaire ajouté ──────────────────
 
   /// Les clés d'identité **stables** des familles de contenu courantes, à passer
   /// à `ZContentHubEntry.colorKey`.
@@ -81,9 +74,9 @@ abstract final class ZContentHubReference {
   /// **Ce ne sont PAS des libellés** — ni rendus, ni traduits, ni affichés.
   /// Ce sont des **identités opaques** dont la seule fonction est de fixer le
   /// créneau de teinte d'une entrée (`zAccentSlot`). C'est ce qui rend la teinte
-  /// STABLE quand une application **insère un type au milieu** de sa liste
-  /// (« non mesuré » n°4 de CR-IFFD-65) et **d'une langue à l'autre** — le repli
-  /// par libellé, lui, change de créneau dès que le libellé change.
+  /// STABLE quand une application **insère un type au milieu** de sa liste,
+  /// et **d'une langue à l'autre** — le repli par libellé, lui, change de
+  /// créneau dès que le libellé change.
   ///
   /// **Aucune table type → teinte n'est introduite ici** : le socle ne
   /// connaît toujours aucun « type de contenu » (cf. [accents], « c'est une
@@ -176,8 +169,8 @@ abstract final class ZContentHubReference {
   /// il n'est plus la hauteur CIBLE — il redevient ce qu'il est : un plancher.
   static const double itemExtent = kToolbarHeight * 2;
 
-  /// Cible de taille interactive minimale (AD-13/NFR-S6) — **plancher**, jamais
-  /// une hauteur cible.
+  /// Cible de taille interactive minimale (invariant AD-13) — **plancher**,
+  /// jamais une hauteur cible.
   static const double minTapTarget = 48;
 
   /// Rayon de la carte d'entrée (**16** — legacy l.418).

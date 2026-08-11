@@ -1,17 +1,16 @@
-/// Contrôleur de liste **Flutter-natif** du cœur `zcrud_core` (E4-3).
+/// Contrôleur de liste **Flutter-natif** du cœur `zcrud_core`.
 ///
-/// origine: E4-3 (recherche/filtre/tri/pagination, FR-6..FR-8 · AD-2/AD-11/
-/// AD-15/AD-16). Pendant `DynamicList` de `ZFormController` (E2-7) : réactivité
-/// **Flutter-native** exposant une **unique tranche** `ValueListenable<
-/// ZListViewState>` — AUCUN gestionnaire d'état (ni `zcrud_list`/Syncfusion). Le
-/// code manager-spécifique vit dans les bindings (`zcrud_riverpod`/`zcrud_get`),
-/// jamais ici.
+/// Recherche/filtre/tri/pagination (AD-2/AD-11/AD-15/AD-16). Pendant
+/// `DynamicList` de `ZFormController` : réactivité **Flutter-native** exposant
+/// une **unique tranche** `ValueListenable<ZListViewState>` — AUCUN
+/// gestionnaire d'état (ni `zcrud_list`/Syncfusion). Le code manager-spécifique
+/// vit dans les bindings (`zcrud_riverpod`/`zcrud_get`), jamais ici.
 ///
 /// Le contrôleur détient le `ZDataRequest` courant (filtres/tri/recherche),
 /// pousse la requête au [ZRepository] (chemin backend curseur) OU pagine
 /// **entièrement en mémoire** (repli AD-16), projette `T → ZListRow` via le seam
 /// [toRow], et mappe le résultat en `ZListViewState` (dont la décision `empty`
-/// vs `noResults`, tranchée ici — déférée d'E4-2).
+/// vs `noResults` est tranchée ici).
 library;
 
 import 'dart:async';
@@ -50,7 +49,7 @@ enum ZListPaginationMode {
 /// Réactivité **Flutter-native** (AD-2/AD-15) : `ChangeNotifier` + `ValueNotifier`
 /// interne, aucune dépendance à un gestionnaire d'état. Un widget d'app écoute la
 /// SEULE tranche [state] via `ValueListenableBuilder` et rend `DynamicList(state:
-/// value)` (réutilise les vues d'états d'E4-2).
+/// value)` (réutilise les vues d'états `ZListViewState`).
 class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// Construit le contrôleur et **lance immédiatement** la première requête
   /// (état initial `ZListLoading`).
@@ -63,13 +62,13 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// relancer la requête courante à chaque mutation.
   ///
   /// [baseFilters] est un **socle de filtres PERSISTANT** (défaut `const []`,
-  /// **additif et rétro-compatible** — E4-5) : ces filtres sont **toujours ANDés
+  /// **additif et rétro-compatible**) : ces filtres sont **toujours ANDés
   /// EN TÊTE** des filtres utilisateur dans CHAQUE requête émise (première page,
   /// `loadMore`, chemin backend ET repli in-memory). Ils expriment une **relation
   /// parent→enfants** (`ZSubListScreen`, `ZFilter(parentField, eq, parentId)`) ou
   /// un **filtre de catégorie d'onglet** (`ZTabbedList`) : `setFilters`/`setSearch`
   /// /`setSort` **ne peuvent JAMAIS** les écraser (là où `setFilters` remplace les
-  /// SEULS filtres utilisateur). `baseFilters` vide ⇒ comportement E4-3 strictement
+  /// SEULS filtres utilisateur). `baseFilters` vide ⇒ comportement strictement
   /// inchangé (mêmes `ZDataRequest`, mêmes tests).
   ZListController({
     required this.repository,
@@ -105,9 +104,9 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// Stratégie de pagination.
   final ZListPaginationMode mode;
 
-  /// Socle de filtres **persistant** (relation parent / catégorie d'onglet, E4-5),
+  /// Socle de filtres **persistant** (relation parent / catégorie d'onglet),
   /// **toujours ANDé en tête** des filtres utilisateur dans chaque requête ; jamais
-  /// écrasé par `setFilters`. Défaut `const []` ⇒ rétro-compatible E4-3.
+  /// écrasé par `setFilters`. Défaut `const []` ⇒ rétro-compatible.
   final List<ZFilter> baseFilters;
 
   final ValueNotifier<ZListViewState> _state =
@@ -127,7 +126,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   bool _disposed = false;
   StreamSubscription<List<T>>? _subscription;
 
-  /// Compteur de génération de requête (garde anti-réponse-obsolète, M-1).
+  /// Compteur de génération de requête (garde anti-réponse-obsolète).
   ///
   /// Incrémenté à CHAQUE (re)lancement d'une requête (`setSearch`/`setFilters`/
   /// `setSort`/`refresh`/`loadMore`/mutation observée). Une requête capture la
@@ -135,11 +134,11 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// **rejeté** si la génération a changé entre-temps — une réponse en retard
   /// (search-as-you-type, réponses hors-ordre) n'écrase JAMAIS un état plus
   /// récent, et un `setX` survenu pendant un `loadMore` en vol ne laisse ni
-  /// doublon ni trou dans l'accumulé (AC5, AD-16).
+  /// doublon ni trou dans l'accumulé (AD-16).
   int _generation = 0;
 
   /// `true` si une recherche OU un filtre est actif (discriminant `empty` vs
-  /// `noResults`, AC8) — signal **local et déterministe** (pas de comptage du
+  /// `noResults`) — signal **local et déterministe** (pas de comptage du
   /// jeu total).
   bool get _hasActiveQuery =>
       (_search != null && _search!.trim().isNotEmpty) || _filters.isNotEmpty;
@@ -186,7 +185,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   }
 
   ZDataRequest _buildRequest({ZCursor? startAfter}) => ZDataRequest(
-        // Socle PERSISTANT en tête, filtres utilisateur ensuite (E4-5) : la
+        // Socle PERSISTANT en tête, filtres utilisateur ensuite : la
         // relation parent / catégorie d'onglet ne peut JAMAIS être écrasée par un
         // `setFilters` utilisateur. Point d'émission UNIQUE de toutes les requêtes
         // (première page + `loadMore`, chemin backend ET repli in-memory, qui
@@ -202,7 +201,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
 
   Future<void> _runQuery({ZCursor? startAfter, bool append = false}) async {
     // Estampille cette requête : toute réponse en retard sera rejetée si une
-    // requête plus récente a été lancée entre-temps (garde M-1).
+    // requête plus récente a été lancée entre-temps (garde anti-réponse-obsolète).
     final gen = ++_generation;
     _isLoading = true;
     if (!append) _emit(const ZListLoading());
@@ -215,7 +214,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
 
     final result = await repository.getAll(request: request);
     // Réponse obsolète (nouvelle requête lancée pendant l'await) OU disposé →
-    // ne rien committer/émettre (n'écrase pas un état plus récent, M-1).
+    // ne rien committer/émettre (n'écrase pas un état plus récent).
     if (_disposed || gen != _generation) return;
     if (result.isLeft()) {
       final failure =
@@ -246,7 +245,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   }) async {
     final unpaged = request.copyWith(limit: null, startAfter: null);
     final result = await repository.getAll(request: unpaged);
-    // Réponse obsolète OU disposé → aucun commit/émission (garde M-1).
+    // Réponse obsolète OU disposé → aucun commit/émission.
     if (_disposed || gen != _generation) return;
     if (result.isLeft()) {
       final failure =
@@ -272,14 +271,14 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
   /// reçue (heuristique : `rows.length >= pageSize` ⇒ page pleine ⇒ suivante
   /// probable).
   ///
-  /// L-1 (bénin, documenté) : quand la taille totale du jeu est un **multiple
+  /// Limite bénigne, documentée : quand la taille totale du jeu est un **multiple
   /// exact** de `pageSize`, la dernière page pleine laisse `hasMore == true`, si
   /// bien qu'un `loadMore` supplémentaire ramène une page **vide** qui remet
   /// `hasMore` à `false` sans doublon ni trou (accumulé inchangé). Ce coût — une
   /// seule requête backend « à blanc » — est **inhérent** à la pagination
   /// curseur sans `count()` : trancher `hasMore` avec certitude exigerait un
-  /// surcoût backend (sonde `limit + 1` ou `count()`), déféré à l'adaptateur
-  /// Firestore (E5). Ici : correction gracieuse, jamais de dé-synchronisation.
+  /// surcoût backend (sonde `limit + 1` ou `count()`), laissé à l'adaptateur
+  /// backend. Ici : correction gracieuse, jamais de dé-synchronisation.
   void _commitBackendPage(
     List<ZListRow> rows,
     ZDataRequest request, {
@@ -310,7 +309,7 @@ class ZListController<T extends ZEntity> extends ChangeNotifier {
     _emit(_mapState());
   }
 
-  /// Mappe l'état accumulé → `ZListViewState` (AC8) : non vide → `ZListReady` ;
+  /// Mappe l'état accumulé → `ZListViewState` : non vide → `ZListReady` ;
   /// vide + requête active → `ZListNoResults` ; vide sans requête → `ZListEmpty`.
   ZListViewState _mapState() {
     if (_accumulated.isNotEmpty) {

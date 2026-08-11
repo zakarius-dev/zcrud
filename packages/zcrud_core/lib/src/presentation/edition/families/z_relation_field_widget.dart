@@ -1,31 +1,32 @@
-/// Widget de la **famille relation** (E3-3a + DP-5) : `relation`.
+/// Widget de la **famille relation** : `relation`.
 ///
-/// **Abstraction** du sélecteur d'entité liée (DODLP `crudDataSelect`) : un
-/// contrôle de sélection lisant/écrivant la tranche. DP-5 (gap B7) câble la
-/// **source dynamique** : le champ peut désormais s'alimenter d'un flux live
-/// d'options fourni par un [ZRelationSource] **neutre injecté** (résolu au
-/// runtime via `ZcrudScope.relationSourceRegistry` + `ZRelationConfig.sourceKey`
-/// dans le dispatcher), appliquer un **filtre cross-champ** ([filterContext]
+/// **Abstraction** du sélecteur d'entité liée : un contrôle de sélection
+/// lisant/écrivant la tranche, qui câble la **source dynamique** : le champ
+/// peut s'alimenter d'un flux live d'options fourni par un [ZRelationSource]
+/// **neutre injecté** (résolu au runtime via
+/// `ZcrudScope.relationSourceRegistry` + `ZRelationConfig.sourceKey` dans le
+/// dispatcher), appliquer un **filtre cross-champ** ([filterContext]
 /// snapshot des `filterKeys`), proposer la **multi-sélection** (chips) et un
 /// **modal de recherche** ([searchable]).
 ///
-/// **Repli statique strict (AC7, rétro-compat)** : si [source] `== null`
+/// **Repli statique strict (rétro-compat)** : si [source] `== null`
 /// (registre non injecté, clé absente/non enregistrée, ou pas de
-/// `ZRelationConfig`), le rendu est **identique** à E3-3a — un
+/// `ZRelationConfig`), le rendu est **identique** au chemin sans source — un
 /// `DropdownButtonFormField` sur [options] (défaut vide → désactivé mais
 /// accessible), jamais un crash.
 ///
-/// **Défensif (AD-10)** : avant la 1ʳᵉ émission → état chargement (désactivé,
-/// libellé `'loading'`) ; émission vide → contrôle sans option ; **flux en
-/// erreur** → capturée, aucune exception propagée, conservation de la dernière
-/// liste connue. Un seul `StreamSubscription`, possédé par le `State` (create
-/// `initState`, `cancel` `dispose`, ré-abonnement contrôlé `didUpdateWidget` si
-/// [source]/[filterContext] changent — AD-2/SM-1, jamais recréé dans `build`).
+/// **Défensif (invariant AD-10)** : avant la 1ʳᵉ émission → état chargement
+/// (désactivé, libellé `'loading'`) ; émission vide → contrôle sans option ;
+/// **flux en erreur** → capturée, aucune exception propagée, conservation de
+/// la dernière liste connue. Un seul `StreamSubscription`, possédé par le
+/// `State` (create `initState`, `cancel` `dispose`, ré-abonnement contrôlé
+/// `didUpdateWidget` si [source]/[filterContext] changent — invariant AD-2,
+/// jamais recréé dans `build`).
 ///
-/// a11y/RTL (AD-13) : `DropdownButtonFormField`/chips/modal directionnels
-/// (`EdgeInsetsDirectional`, `TextAlign.start`), cibles ≥ 48 dp, `ListView.
-/// builder`, `Semantics`, recherche `liveRegion`. Aucune couleur/inset non
-/// directionnel en dur (FR-26 → `Theme.of`).
+/// a11y/RTL (invariant AD-13) : `DropdownButtonFormField`/chips/modal
+/// directionnels (`EdgeInsetsDirectional`, `TextAlign.start`), cibles ≥ 48 dp,
+/// `ListView.builder`, `Semantics`, recherche `liveRegion`. Aucune
+/// couleur/inset non directionnel en dur (invariant FR-26 → `Theme.of`).
 library;
 
 import 'dart:async';
@@ -93,31 +94,28 @@ class ZRelationFieldWidget extends StatefulWidget {
   /// Active le modal de recherche (filtrage client sur les libellés).
   final bool searchable;
 
-  /// **CRUD inline** neutre injecté (DP-15/M8, parité `showCrudButton` DODLP ;
-  /// défaut `null` → aucun bouton créer/modifier/copier, modal DP-5 identique).
-  /// Résolu au runtime par le dispatcher (`ZRelationCrudRegistry` +
-  /// `ZRelationConfig.crudKey`). L'impl concrète (form + repository) vit hors du
-  /// cœur (binding/app E7).
+  /// **CRUD inline** neutre injecté (défaut `null` → aucun bouton
+  /// créer/modifier/copier, modal identique). Résolu au runtime par le
+  /// dispatcher (`ZRelationCrudRegistry` + `ZRelationConfig.crudKey`). L'impl
+  /// concrète (form + repository) vit hors du cœur (binding/app).
   final ZRelationCrudHandler? crudHandler;
 
-  /// CR-SELECT-SEAM — rendu **complet** d'une option, fourni par l'hôte
-  /// (parité `choiceBuilder` DODLP). Transmis **tel quel** au présentateur riche
-  /// injecté au scope ; **sans effet** sur le rendu natif. `null` (défaut) ⇒
-  /// comportement antérieur strict. Fermeture ⇒ paramètre de widget, jamais un
-  /// champ de `ZFieldSpec` (AD-3/AD-14).
+  /// Rendu **complet** d'une option, fourni par l'hôte. Transmis **tel quel**
+  /// au présentateur riche injecté au scope ; **sans effet** sur le rendu
+  /// natif. `null` (défaut) ⇒ comportement antérieur strict. Fermeture ⇒
+  /// paramètre de widget, jamais un champ de `ZFieldSpec` (invariants
+  /// AD-3/AD-14).
   final ZSelectChoiceBuilder? choiceBuilder;
 
-  /// CR-SELECT-SEAM — **affordance de fin de ligne** d'une option (parité
-  /// `choiceSecondaryBuilder` DODLP). Mêmes règles que [choiceBuilder] :
-  /// transmis au présentateur riche, sans effet sur le rendu natif, `null` par
-  /// défaut.
+  /// **Affordance de fin de ligne** d'une option. Mêmes règles que
+  /// [choiceBuilder] : transmis au présentateur riche, sans effet sur le
+  /// rendu natif, `null` par défaut.
   final ZSelectChoiceSecondaryBuilder? choiceSecondaryBuilder;
 
-  /// CR-SELECT-SEAM — chargeur **asynchrone paginé** d'options (parité
-  /// `choiceLoader` DODLP). Mêmes règles que [choiceBuilder].
+  /// Chargeur **asynchrone paginé** d'options. Mêmes règles que [choiceBuilder].
   ///
-  /// ⚠️ **Distinct de [source]** : [source] est un `Stream` **poussé** de la
-  /// liste ENTIÈRE (DP-5) ; [optionsLoader] est une requête **tirée**, paginée
+  /// **Distinct de [source]** : [source] est un `Stream` **poussé** de la
+  /// liste ENTIÈRE ; [optionsLoader] est une requête **tirée**, paginée
   /// et filtrée par le texte de recherche. Les deux peuvent coexister — le
   /// présentateur riche préfère alors le chargeur pour la liste du modal, et
   /// [source] continue d'alimenter la résolution du libellé sélectionné.
@@ -128,11 +126,12 @@ class ZRelationFieldWidget extends StatefulWidget {
 }
 
 class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
-  /// **Unique** abonnement au flux dynamique, possédé par le `State` (AD-2).
+  /// **Unique** abonnement au flux dynamique, possédé par le `State`
+  /// (invariant AD-2).
   StreamSubscription<List<ZFieldChoice>>? _sub;
 
   /// Dernière liste connue émise par la source ; `null` avant la 1ʳᵉ émission
-  /// (état chargement). Conservée telle quelle sur erreur (AD-10).
+  /// (état chargement). Conservée telle quelle sur erreur (invariant AD-10).
   List<ZFieldChoice>? _liveChoices;
 
   @override
@@ -170,8 +169,9 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         if (!mounted) return;
         setState(() => _liveChoices = List<ZFieldChoice>.from(choices));
       },
-      // AD-10 : erreur capturée, aucune exception propagée au build ;
-      // conservation de la dernière liste connue (ou reste `null` = chargement).
+      // Invariant AD-10 : erreur capturée, aucune exception propagée au
+      // build ; conservation de la dernière liste connue (ou reste `null` =
+      // chargement).
       onError: (Object error, StackTrace stack) {},
       cancelOnError: false,
     );
@@ -182,15 +182,17 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   List<ZFieldChoice> get _choices =>
       widget.source != null ? (_liveChoices ?? const <ZFieldChoice>[]) : widget.options;
 
-  /// `true` tant que la source dynamique n'a pas émis (état chargement, AD-10).
+  /// `true` tant que la source dynamique n'a pas émis (état chargement,
+  /// invariant AD-10).
   bool get _isLoading => widget.source != null && _liveChoices == null;
 
   @override
   Widget build(BuildContext context) {
-    // AD-48 : présentateur riche injecté au scope → DÉLÉGATION via DTO NEUTRE
-    // (jamais le controller — AD-2). Les options présentées sont les choix
-    // effectifs (`_choices` : flux dynamique si branché, sinon repli statique).
-    // Défaut `null` ⇒ rendu natif ci-dessous strictement conservé.
+    // Présentateur riche injecté au scope → DÉLÉGATION via DTO NEUTRE
+    // (jamais le controller — invariant AD-2). Les options présentées sont
+    // les choix effectifs (`_choices` : flux dynamique si branché, sinon
+    // repli statique). Défaut `null` ⇒ rendu natif ci-dessous strictement
+    // conservé.
     final presenter = ZcrudScope.maybeOf(context)?.selectPresenter;
     if (presenter != null) {
       return presenter.present(
@@ -204,31 +206,31 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
           searchable: widget.searchable,
           readOnly: widget.field.readOnly,
           label: _resolvedLabel,
-          // CR-SELECT-SEAM. 🔴 C'est ICI que le seam avait un vrai trou : cet
-          // état existait déjà (`_isLoading`, DP-5/AD-10) et le rendu natif s'en
-          // sert (`hintText: 'loading'`, déclencheur inerte), mais il n'était
-          // pas transmis — un présentateur riche ne pouvait donc pas distinguer
-          // « pas encore chargé » de « aucune option ».
+          // Cet état (`_isLoading`) existe et le rendu natif s'en sert déjà
+          // (`hintText: 'loading'`, déclencheur inerte) : le transmettre est
+          // nécessaire pour qu'un présentateur riche distingue « pas encore
+          // chargé » de « aucune option ».
           isLoading: _isLoading,
           choiceBuilder: widget.choiceBuilder,
           choiceSecondaryBuilder: widget.choiceSecondaryBuilder,
-          // 🔴 Le rendu natif exposait déjà Créer/Modifier/Copier (DP-15) ; ne
-          // pas le transmettre aurait fait PERDRE une capacité en enrôlant le
-          // présentateur riche. Alimenté de bout en bout (registre + `crudKey`).
+          // Le rendu natif expose Créer/Modifier/Copier : ne pas le
+          // transmettre ferait PERDRE une capacité en enrôlant le
+          // présentateur riche. Alimenté de bout en bout (registre +
+          // `crudKey`).
           crudHandler: widget.crudHandler,
           optionsLoader: widget.optionsLoader,
         ),
       );
     }
-    // Repli statique STRICT (AC7) : aucune source → dropdown sur `options`.
+    // Repli statique STRICT : aucune source → dropdown sur `options`.
     if (widget.source == null) {
       return _buildDropdown(context, widget.options, loading: false);
     }
     final choices = _choices;
     if (widget.multiple) return _buildMulti(context, choices);
-    // DP-15 : un handler CRUD inline impose le chemin MODAL (mono searchable),
-    // seul endroit exposant les boutons Créer/Modifier/Copier (AC11). Sans
-    // handler ni `searchable`, le dropdown DP-5 reste inchangé.
+    // Un handler CRUD inline impose le chemin MODAL (mono searchable), seul
+    // endroit exposant les boutons Créer/Modifier/Copier. Sans handler ni
+    // `searchable`, le dropdown reste inchangé.
     if (widget.searchable || widget.crudHandler != null) {
       return _buildSearchableMono(context, choices);
     }
@@ -239,17 +241,16 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
       fallback: widget.field.label ?? widget.field.name);
 
   /// Dropdown mono (repli statique OU source non-searchable). [loading] désactive
-  /// et affiche l'indice de chargement (AD-10) sans jamais crasher.
+  /// et affiche l'indice de chargement (invariant AD-10) sans jamais crasher.
   Widget _buildDropdown(
     BuildContext context,
     List<ZFieldChoice> rawChoices, {
     required bool loading,
   }) {
-    // CR-ORPHAN — voie 6, même correction que la voie 1. 🔴 Garde propre à la
-    // relation : PENDANT le chargement la liste est vide, donc TOUTE valeur y
-    // paraîtrait orpheline. « Pas encore chargé » n'est pas « plus proposé » —
-    // on n'annote donc rien tant que `loading`, et l'indice `'loading'` existant
-    // reste seul à parler.
+    // Garde propre à la relation : PENDANT le chargement la liste est vide,
+    // donc TOUTE valeur y paraîtrait orpheline. « Pas encore chargé » n'est
+    // pas « plus proposé » — on n'annote donc rien tant que `loading`, et
+    // l'indice `'loading'` existant reste seul à parler.
     final choices = loading
         ? rawChoices
         : zWithOrphanChoices(rawChoices, <Object?>[widget.value]);
@@ -259,17 +260,17 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
     // n'est pas une option offerte, elle ne doit pas rendre un champ vide actif.
     final enabled = !loading && rawChoices.isNotEmpty && !widget.field.readOnly;
     return DropdownButtonFormField<Object?>(
-      // L-3 : clé sur la valeur COURANTE → reflète un changement EXTERNE
+      // Clé sur la valeur COURANTE → reflète un changement EXTERNE
       // (un `FormField` ne relit `initialValue` qu'à l'`initState`).
       key: ValueKey<Object?>(current),
-      // CR-DODLP-SELECT-OVERFLOW (même piège que `z_select_field_widget`) :
-      // sans `isExpanded`, le bouton se dimensionne sur l'option la plus large
-      // et déborde. Les libellés de RELATION (raisons sociales, intitulés
-      // d'entités) sont typiquement longs — le champ est donc au moins aussi
-      // exposé que le `select`.
+      // Sans `isExpanded`, le bouton se dimensionne sur l'option la plus
+      // large et déborde (même piège que `z_select_field_widget`). Les
+      // libellés de RELATION (raisons sociales, intitulés d'entités) sont
+      // typiquement longs — le champ est donc au moins aussi exposé que le
+      // `select`.
       isExpanded: true,
       initialValue: current,
-      // DP-12 (M5/M6/M1) : label enrichi (astérisque requis) + helper + leading.
+      // Label enrichi (astérisque requis) + helper + leading.
       decoration: InputDecoration(
         label: ZFieldLabel(field: widget.field),
         icon: resolveAdornment(context, widget.field.leading, field: widget.field),
@@ -283,11 +284,11 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         for (final option in choices)
           DropdownMenuItem<Object?>(
             value: option.value,
-            // CR-ORPHAN : l'option synthétique d'un orphelin est `disabled` —
-            // visible mais non re-sélectionnable, ce qui EST son statut. La
-            // famille `select` honorait déjà `ZFieldChoice.disabled` (DP-15) ;
-            // `relation` l'ignorait — l'écart est refermé ici, sans effet sur
-            // une option qui ne se déclare pas désactivée.
+            // L'option synthétique d'un orphelin est `disabled` — visible
+            // mais non re-sélectionnable, ce qui EST son statut. La famille
+            // `select` honore le même `ZFieldChoice.disabled` ; `relation`
+            // suit la même règle, sans effet sur une option qui ne se
+            // déclare pas désactivée.
             enabled: !option.disabled,
             child: _dropdownItemChild(context, option),
           ),
@@ -298,8 +299,8 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
 
   /// Sélecteur mono **searchable** : un déclencheur ouvrant le modal de recherche.
   Widget _buildSearchableMono(BuildContext context, List<ZFieldChoice> rawChoices) {
-    // CR-ORPHAN — voie 7 (même défaut que la voie 2 : le placeholder
-    // « Sélectionner » masquait une valeur portée). Chargement exclu.
+    // Sans cette annotation, le placeholder « Sélectionner » masquerait une
+    // valeur portée mais orpheline. Chargement exclu.
     final choices = _isLoading
         ? rawChoices
         : zWithOrphanChoices(rawChoices, <Object?>[widget.value]);
@@ -316,12 +317,11 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   /// Multi-sélection : chips supprimables + déclencheur d'ajout (modal multi).
   Widget _buildMulti(BuildContext context, List<ZFieldChoice> rawChoices) {
     final selected = _selectedList;
-    // CR-ORPHAN — voie 8 : second site de l'IDENTIFIANT BRUT (`?? '$v'`).
-    // 🔴 Pendant le chargement, les chips affichaient DÉJÀ la clé brute (la
-    // liste live est vide, donc rien ne résout) : c'est le même défaut, une
-    // seconde fois. Les deux états sont désormais textuels et traduits —
-    // « Chargement… » tant que la source n'a pas émis, « Option indisponible »
-    // une fois qu'elle a émis sans la valeur.
+    // Sans cette résolution, une chip afficherait la clé brute pendant le
+    // chargement (la liste live est vide, donc rien ne résout). Les deux
+    // états sont donc textuels et traduits — « Chargement… » tant que la
+    // source n'a pas émis, « Option indisponible » une fois qu'elle a émis
+    // sans la valeur.
     final choices = _isLoading
         ? rawChoices
         : zWithOrphanChoices(rawChoices, selected);
@@ -401,7 +401,7 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
   /// Libellé d'affichage d'une [value] (résolu depuis [choices] ; `null` si
   /// absente des options live — valeur non représentée).
   /// Item de menu déroulant — titre, plus une ligne secondaire quand l'option
-  /// porte un `subtitle` (CR-IFFD-26 §1, parité avec `select`).
+  /// porte un `subtitle` (parité avec `select`).
   Widget _dropdownItemChild(BuildContext context, ZFieldChoice option) {
     final String title = label(context, option.label, fallback: option.label);
     final String? sub = option.subtitle == null
@@ -446,7 +446,7 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         title: _resolvedLabel,
         choices: choices,
         multiple: multiple,
-        // DP-15 : un handler CRUD force la recherche (modal riche), même si la
+        // Un handler CRUD force la recherche (modal riche), même si la
         // config `searchable` est absente.
         searchable: widget.searchable || widget.crudHandler != null,
         initialSelection: initial,
@@ -454,7 +454,7 @@ class _ZRelationFieldWidgetState extends State<ZRelationFieldWidget> {
         subtitleOf: (c) => c.subtitle == null
             ? null
             : label(sheetContext, c.subtitle!, fallback: c.subtitle!),
-        // DP-15 : CRUD inline neutre (create/edit/copy) + snapshot du filtre
+        // CRUD inline neutre (create/edit/copy) + snapshot du filtre
         // cross-champ pour pré-remplir la création. `null` ⇒ aucun bouton.
         crudHandler: widget.crudHandler,
         crudContext: widget.filterContext,
@@ -551,15 +551,15 @@ class _RelationSelectSheet extends StatefulWidget {
   final Set<Object?> initialSelection;
   final String Function(ZFieldChoice) labelOf;
 
-  /// CR-IFFD-26 §1 : sous-titre d'une option, ou `null`.
+  /// Sous-titre d'une option, ou `null`.
   ///
-  /// `relation` était la SEULE des trois familles à ne pas rendre
-  /// `ZFieldChoice.subtitle` (`select` et `row_chips` le font) — alors que
-  /// c'est celle qui en a le plus besoin : elle liste des ENTITÉS, dont le seul
-  /// libellé est souvent ambigu (deux homonymes deviennent indistinguables).
+  /// `relation` rend `ZFieldChoice.subtitle` comme `select` et `row_chips` —
+  /// c'est la famille qui en a le plus besoin : elle liste des ENTITÉS, dont
+  /// le seul libellé est souvent ambigu (deux homonymes deviennent
+  /// indistinguables).
   final String? Function(ZFieldChoice)? subtitleOf;
 
-  /// CRUD inline neutre (DP-15) : `null` ⇒ aucun bouton créer/modifier/copier.
+  /// CRUD inline neutre : `null` ⇒ aucun bouton créer/modifier/copier.
   final ZRelationCrudHandler? crudHandler;
 
   /// Snapshot du filtre cross-champ transmis à `crudHandler.create(...)`.
@@ -657,7 +657,7 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
     _selectResult(result, replaced: replaced);
   }
 
-  /// Sous-titre d'une option, ou `null` s'il n'y en a pas (CR-IFFD-26 §1).
+  /// Sous-titre d'une option, ou `null` s'il n'y en a pas.
   Widget? _subtitleWidget(BuildContext context, ZFieldChoice choice) {
     final String? sub = widget.subtitleOf?.call(choice);
     if (sub == null || sub.isEmpty) return null;
@@ -690,7 +690,7 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                         textAlign: TextAlign.start,
                         style: Theme.of(context).textTheme.titleMedium),
                   ),
-                  // DP-15 : action **Créer** (parité `showCrudButton` create).
+                  // Action **Créer**.
                   if (crud != null)
                     ConstrainedBox(
                       constraints:
@@ -742,7 +742,7 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                             title: Text(widget.labelOf(choice),
                                 textAlign: TextAlign.start),
                             subtitle: _subtitleWidget(context, choice),
-                            // DP-15 : affordances Modifier/Copier par option.
+                            // Affordances Modifier/Copier par option.
                             secondary: crud == null
                                 ? null
                                 : _CrudRowActions(
@@ -753,10 +753,10 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
                                     onCopy: () =>
                                         _runCrud(() => crud.copy(choice.value)),
                                   ),
-                            // CR-ORPHAN : une option `disabled` (dont l'option
+                            // Une option `disabled` (dont l'option
                             // synthétique d'un orphelin) est visible et lue,
                             // mais non cochable — parité avec la feuille du
-                            // `select`, qui le faisait déjà (DP-15).
+                            // `select`, qui applique la même règle.
                             onChanged: choice.disabled
                                 ? null
                                 : (_) => _toggle(choice.value),
@@ -790,8 +790,9 @@ class _RelationSelectSheetState extends State<_RelationSelectSheet> {
   }
 }
 
-/// Affordances **Modifier/Copier** par option (DP-15/M8) : icônes accessibles,
-/// cibles ≥ 48 dp, `Tooltip`/`Semantics`, l10n. Directionnel (AD-13).
+/// Affordances **Modifier/Copier** par option : icônes accessibles,
+/// cibles ≥ 48 dp, `Tooltip`/`Semantics`, l10n. Directionnel (invariant
+/// AD-13).
 class _CrudRowActions extends StatelessWidget {
   const _CrudRowActions({required this.onEdit, required this.onCopy});
 

@@ -1,21 +1,22 @@
-/// Widget de la **famille freeWidget** (`widget` libre) — E3-3b-3.
+/// Widget de la **famille freeWidget** (`widget` libre).
 ///
 /// Le type `widget` rend un **widget d'édition host-fourni** résolu via le
 /// [ZWidgetRegistry] injecté (`ZcrudScope.widgetRegistry`) — **exactement le même
 /// seam** que les types [EditionFamily.registryOrFallback] (markdown/géo/tél/
-/// `custom`, E3-3b-1). Le `kind` résolu est le **nom de l'enum** (`'widget'`,
+/// `custom`). Le `kind` résolu est le **nom de l'enum** (`'widget'`,
 /// aligné sur `ZTypeRegistry`). Si aucun builder n'est enregistré pour ce `kind`,
 /// on **retombe** sur le repli contrôlé [ZUnsupportedFieldWidget] (jamais une
-/// exception, AD-10).
+/// exception, invariant AD-10).
 ///
-/// **CONSOMME** le registre d'E3-3b-1 (ne le réimplémente pas, AD-4) : le cœur
+/// **CONSOMME** ce registre (ne le réimplémente pas, invariant AD-4) : le cœur
 /// reste agnostique du widget métier (aucun import satellite ; graphe OUT=0
 /// inchangé). Le builder hôte lit `value` et écrit via `onChanged` **dans** la
-/// frontière de rebuild du dispatcher (value-in-slice, AD-2) — s'il a besoin d'un
-/// contrôleur isolé, c'est **sa** responsabilité (AD-7).
+/// frontière de rebuild du dispatcher (value-in-slice, invariant AD-2) — s'il
+/// a besoin d'un contrôleur isolé, c'est **sa** responsabilité (invariant
+/// AD-7).
 ///
-/// a11y/RTL (AD-13) : délégués au widget hôte (démo/satellite) ou au repli
-/// accessible `ZUnsupportedFieldWidget`.
+/// a11y/RTL (invariant AD-13) : délégués au widget hôte (démo/satellite) ou
+/// au repli accessible `ZUnsupportedFieldWidget`.
 library;
 
 import 'package:flutter/widgets.dart';

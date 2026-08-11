@@ -1,8 +1,8 @@
 /// `ZcrudScope` — point d'injection des **seams** du cœur (AD-6, AD-15).
 ///
-/// origine: `InheritedWidget` zéro-dépendance qui porte le bundle immuable de
+/// `InheritedWidget` zéro-dépendance qui porte le bundle immuable de
 /// seams résolus et les expose aux widgets du moteur d'édition, SANS imposer un
-/// gestionnaire d'état. Un binding (E2-9) peut fournir un scope enrichi ; le
+/// gestionnaire d'état. Un binding peut fournir un scope enrichi ; le
 /// chemin par défaut reste utilisable sans aucun manager (preuve du chemin
 /// « zéro-dépendance » d'AD-15).
 library;
@@ -39,13 +39,13 @@ import 'z_scope_error.dart';
 ///   [ZDependencyResolver.throwing]) — inclut, côté binding, le **seam de cycle
 ///   de vie** du `ZFormController` (défaut zéro-config : cycle local possédé par
 ///   l'hôte) ;
-/// - [acl] : port d'autorisation (E2-2 ; défaut sûr [ZAllowAllAcl]) ;
-/// - [labels] : registre de libellés surchargeables (E2-8 ; défaut `null` →
+/// - [acl] : port d'autorisation (défaut sûr [ZAllowAllAcl]) ;
+/// - [labels] : registre de libellés surchargeables (défaut `null` →
 ///   résolution retombe sur `ZcrudLocalizations`) ;
-/// - [theme] : design-tokens injectés (E2-8 ; défaut `null` → `ZcrudTheme.of`
+/// - [theme] : design-tokens injectés (défaut `null` → `ZcrudTheme.of`
 ///   retombe sur `Theme.of(context)`) ;
-/// - [widgetRegistry] : registre de widgets d'édition servis **ailleurs** (E3-3b,
-///   AD-4 ; défaut `null` → tout type `registryOrFallback` retombe sur le repli
+/// - [widgetRegistry] : registre de widgets d'édition servis **ailleurs**
+///   (AD-4 ; défaut `null` → tout type `registryOrFallback` retombe sur le repli
 ///   `ZUnsupportedFieldWidget`). Instanciable, jamais un singleton statique.
 ///
 /// Résolution via [of] / [maybeOf]. Le constructeur par défaut (zéro-config) est
@@ -88,68 +88,69 @@ class ZcrudScope extends InheritedWidget {
   /// Port d'autorisation (défaut : permissif [ZAllowAllAcl]).
   final ZAcl acl;
 
-  /// Registre de libellés surchargeables (E2-8, FR-23 ; défaut `null`).
+  /// Registre de libellés surchargeables (défaut `null`).
   final ZcrudLabels? labels;
 
-  /// Design-tokens injectés (E2-8, FR-26 ; défaut `null` → repli `Theme.of`).
+  /// Design-tokens injectés (défaut `null` → repli `Theme.of`).
   final ZcrudTheme? theme;
 
-  /// Registre de widgets d'édition servis **ailleurs** (E3-3b, AD-4 ; défaut
+  /// Registre de widgets d'édition servis **ailleurs** (AD-4 ; défaut
   /// `null` → repli `ZUnsupportedFieldWidget`). Instanciable, injecté (jamais
   /// un singleton statique mutable).
   final ZWidgetRegistry? widgetRegistry;
 
-  /// Registre de sources dynamiques du champ `relation` (DP-5, gap B7, AD-4 ;
+  /// Registre de sources dynamiques du champ `relation` (AD-4 ;
   /// défaut `null` → tout champ `relation` retombe sur le **dropdown statique**
   /// sur `choices` — repli universel rétro-compatible). Instanciable, injecté
   /// (jamais un singleton statique mutable). L'impl concrète de `ZRelationSource`
-  /// (flux repository Firestore/Hive + mapping entité→`ZFieldChoice` + filtre
-  /// métier) vit hors du cœur (`zcrud_firestore`/app E7), jamais ici (AD-1).
+  /// (flux repository + mapping entité→`ZFieldChoice` + filtre
+  /// métier) vit hors du cœur (`zcrud_firestore`/app), jamais ici (AD-1).
   final ZRelationSourceRegistry? relationSourceRegistry;
 
-  /// Registre de sources d'options **calculées** du champ `select` (DP-15/M22,
-  /// AD-4 ; défaut `null` → tout `select` retombe sur `choicesFromKey` puis sur
+  /// Registre de sources d'options **calculées** du champ `select` (AD-4 ;
+  /// défaut `null` → tout `select` retombe sur `choicesFromKey` puis sur
   /// le **dropdown statique** sur `choices` — repli universel rétro-compatible).
   /// Instanciable, injecté (jamais un singleton statique mutable). L'impl concrète
   /// de `ZChoicesSource` (calcul métier des options depuis l'état) vit hors du
-  /// cœur (binding/app E7), jamais ici (AD-1).
+  /// cœur (binding/app), jamais ici (AD-1).
   final ZChoicesSourceRegistry? choicesSourceRegistry;
 
-  /// Registre de handlers **CRUD inline** du champ `relation` (DP-15/M8, AD-4 ;
-  /// défaut `null` → aucun bouton créer/modifier/copier — modal DP-5 identique).
-  /// Instanciable, injecté (jamais un singleton statique mutable). L'impl concrète
-  /// de `ZRelationCrudHandler` (form d'édition + repository create/update/copy)
-  /// vit hors du cœur (app DODLP E7/`zcrud_firestore`), jamais ici (AD-1).
+  /// Registre de handlers **CRUD inline** du champ `relation` (AD-4 ;
+  /// défaut `null` → aucun bouton créer/modifier/copier — comportement du
+  /// dropdown statique identique). Instanciable, injecté (jamais un singleton
+  /// statique mutable). L'impl concrète
+  /// de `ZRelationCrudHandler` (formulaire d'édition + repository create/update/copy)
+  /// vit hors du cœur (app/`zcrud_firestore`), jamais ici (AD-1).
   final ZRelationCrudRegistry? relationCrudRegistry;
 
-  /// Seam d'acquisition de fichiers (E3-3c, AD-1/AD-6 ; défaut `null` → actions
+  /// Seam d'acquisition de fichiers (AD-1/AD-6 ; défaut `null` → actions
   /// scan/caméra/galerie/picker désactivées proprement). Impl concrète
-  /// (image_picker/file_picker) fournie par l'app/binding (E7), jamais le cœur.
+  /// (image_picker/file_picker) fournie par l'app/binding, jamais le cœur.
   final ZFilePicker? filePicker;
 
-  /// Port de stockage cloud (E3-3c, AD-1/AD-5/AD-6 ; défaut `null` → fichier
+  /// Port de stockage cloud (AD-1/AD-5/AD-6 ; défaut `null` → fichier
   /// reste `pending`, orchestration draft→cloud déférée à l'app/`onSubmit`).
-  /// Impl concrète (Firebase Storage) fournie par `zcrud_firestore` (E5),
+  /// Impl concrète (Firebase Storage) fournie par `zcrud_firestore`,
   /// jamais le cœur.
   final CloudStorageRepository? cloudStorage;
 
   /// Port de résolution des **références opaques** de fichiers (`String` →
-  /// `AppFile`) — BLOQUANT DE MIGRATION DODLP (`shipDocumentsIds` : la donnée
-  /// existante porte des **ids**, pas des objets fichier).
+  /// `AppFile`), pour un hôte qui stocke des identifiants et non des objets
+  /// fichier.
   ///
   /// Défaut `null` ⇒ comportement historique **strictement conservé** : les
   /// valeurs non-`AppFile` restent ignorées et AUCUN état n'est ajouté au rendu
   /// (hôte passif immobile). Injecter un résolveur active la voie de résolution
-  /// **asynchrone**, tenue SOUS la frontière de rebuild du champ (AD-2/SM-1 :
+  /// **asynchrone**, tenue SOUS la frontière de rebuild du champ (AD-2 :
   /// jamais un rebuild du formulaire, jamais un élargissement de tranche) et
   /// intégralement dégradée (AD-10 : erreur, délai de garde, référence
   /// introuvable ⇒ états VISIBLES, jamais une exception ni un champ bloqué).
   ///
-  /// Impl concrète (Firestore/Storage) hors du cœur (`zcrud_firestore`/app E7),
+  /// Impl concrète (Firestore/Storage) hors du cœur (`zcrud_firestore`/app),
   /// jamais ici (AD-1). Jamais un singleton statique mutable.
   final ZAppFileResolver? appFileResolver;
 
-  /// Seam de rendu de liste (E4-1, AD-8/SM-5 ; défaut `null` → `DynamicList`
+  /// Seam de rendu de liste (AD-8 ; défaut `null` → `DynamicList`
   /// lève une [ZScopeError] actionnable tant qu'aucun backend n'est injecté).
   /// `zcrud_core` ne fournit AUCUNE implémentation concrète : le rendu Syncfusion
   /// (`ZSfDataGridRenderer`) vit dans `zcrud_list` et est injecté par l'app/le
@@ -158,56 +159,56 @@ class ZcrudScope extends InheritedWidget {
   /// un singleton statique mutable.
   final ZListRenderer? listRenderer;
 
-  /// Seam de **rendu réordonnable** (AD-57 ; défaut `null` → le repli
-  /// zéro-dépendance de `zcrud_responsive` s'applique, donc AUCUNE régression
+  /// Seam de **rendu réordonnable** (défaut `null` → le repli
+  /// zéro-dépendance s'applique, donc AUCUNE régression
   /// pour un hôte qui n'injecte rien).
   ///
   /// Contrairement à [listRenderer], l'absence d'injection ne lève PAS : la
   /// capacité reste **fonctionnelle**, seulement non spécialisée — c'est
-  /// l'exigence de défaut zéro-dépendance d'AD-57. Injecter permet de brancher
+  /// l'exigence de défaut zéro-dépendance du port. Injecter permet de brancher
   /// un satellite adossé à un paquet de l'écosystème, ou une implémentation
   /// propre à l'application. Jamais un singleton statique mutable.
   final ZReorderRenderer? reorderRenderer;
 
-  /// Seam de **zone de depot NATIVE** (AD-57 ; defaut `null` ->
-  /// [ZNoDropRegionRenderer], qui rend le contenu SANS capacite de depot).
+  /// Seam de **zone de dépôt NATIVE** (défaut `null` →
+  /// [ZNoDropRegionRenderer], qui rend le contenu SANS capacité de dépôt).
   ///
-  /// Capacite DISTINCTE du reordonnancement : recevoir un fichier du systeme ou
-  /// d'une autre application. Elle est isolee dans le satellite opt-in
-  /// `zcrud_dnd` parce que son backend impose une CHAINE DE BUILD NATIVE a
-  /// toute application consommatrice — cout qu'un hote sans besoin de depot ne
+  /// Capacité DISTINCTE du réordonnancement : recevoir un fichier du système ou
+  /// d'une autre application. Elle est isolée dans le satellite opt-in
+  /// `zcrud_dnd` parce que son backend impose une CHAÎNE DE BUILD NATIVE à
+  /// toute application consommatrice — coût qu'un hôte sans besoin de dépôt ne
   /// doit pas payer. Jamais un singleton statique mutable.
   final ZDropRegionRenderer? dropRegionRenderer;
 
-  /// Seam de **présentation riche des familles de sélection** (AD-48 ; défaut
+  /// Seam de **présentation riche des familles de sélection** (défaut
   /// `null` → rendu **natif** zcrud strictement conservé). Injecté par l'app/le
-  /// binding pour brancher un présentateur riche (parité DODLP `awesome_select`)
+  /// binding pour brancher un présentateur riche
   /// sur `select`/`radio`/`checkbox`/`relation`. `zcrud_core` ne fournit AUCUNE
-  /// implémentation concrète : l'impl (adossée à `awesome_select`) vit dans
-  /// `zcrud_select` (fp-4-1), jamais dans le cœur (AD-1). Le présentateur ne
+  /// implémentation concrète : l'impl vit dans le paquet de sélection riche,
+  /// jamais dans le cœur (AD-1). Le présentateur ne
   /// reçoit qu'un `ZSelectPresentation` neutre (jamais le `ZFormController` —
   /// AD-2). Jamais un singleton statique mutable.
   final ZSelectPresenter? selectPresenter;
 
-  /// Résolveur d'**icône d'ornement** host-fourni (DP-12, M1 ; défaut `null` →
+  /// Résolveur d'**icône d'ornement** host-fourni (défaut `null` →
   /// le cœur retombe sur sa **table Material bornée** par défaut, puis `null` si
   /// la clé reste inconnue — AD-10). Traduit une **clé neutre** (`String`) de
   /// `ZFieldAdornment.icon(key)` en `IconData` **sans** que le domaine ne porte
   /// jamais d'`IconData` (AD-3/AD-14). Instanciable, injecté (jamais un singleton).
   final ZAdornmentIconResolver? iconResolver;
 
-  /// DP-17 (M14) — **Seam de picker de couleur** host-fourni (roue HSV/hex/
+  /// **Seam de picker de couleur** host-fourni (roue HSV/hex/
   /// opacité tierce, ex. `flex_color_picker` ; défaut `null` → repli sur le
   /// **picker built-in NEUTRE** du cœur). Le cœur ne dépend d'AUCUN package de
   /// picker (AD-1) : l'impl concrète vit dans l'app/le binding. Instanciable,
   /// injecté (jamais un singleton statique mutable).
   final ZColorPicker? colorPicker;
 
-  /// Résolveur de **couleur de clé de palette** host-fourni (ES-1.2, D1, AC3).
+  /// Résolveur de **couleur de clé de palette** host-fourni.
   ///
-  /// Traduit une **clé neutre** (`String`, ex. `ZColorPalette.resolveKey`) en
+  /// Traduit une **clé neutre** (`String`, résolue par la palette applicative) en
   /// [ZColorPair] (fond + `on-` contrasté, AD-13) **sans** que le domaine
-  /// (`zcrud_study_kernel`) ne porte jamais de `Color` (AD-1/AD-3/SM-S5).
+  /// applicatif ne porte jamais de `Color` (AD-1/AD-3).
   ///
   /// Ce champ est le **premier maillon** de la chaîne implémentée par
   /// [zResolveColorKey] / [zResolveColorKeyOrSlot] : seam hôte (ici) → repli du
@@ -215,28 +216,28 @@ class ZcrudScope extends InheritedWidget {
   /// rôles Material 3 uniquement) → slot déterministe ([zColorSlotPair]) ou
   /// `null` — jamais de throw (AD-10). C'est **ici** qu'une app injecte sa
   /// sémantique réelle (`success` en vert, `warning` en ambre… : Material 3 n'a
-  /// pas ces rôles, le cœur ne les invente pas — FR-26/NFR-S7).
+  /// pas ces rôles, le cœur ne les invente pas).
   ///
-  /// Jumeau réel d'[iconResolver] (même nullabilité, même priorité, même ligne
+  /// Jumeau d'[iconResolver] (même nullabilité, même priorité, même ligne
   /// dans `updateShouldNotify`). Instanciable, injecté (jamais un singleton
   /// statique mutable).
   final ZColorKeyResolver? colorKeyResolver;
 
-  /// Couture de dégradé hôte (VIS-1). `null` conserve le repli neutre ou
-  /// l'accent uni; fournir une instance `const` ou mémoïsée hors de `build`.
+  /// Couture de dégradé hôte. `null` conserve le repli neutre ou
+  /// l'accent uni ; fournir une instance `const` ou mémoïsée hors de `build`.
   final ZGradientResolver? gradientResolver;
 
-  /// Seam de **rendu de texte riche** (CR-DODLP « Gap 0 »). `null` (défaut) ⇒
+  /// Seam de **rendu de texte riche**. `null` (défaut) ⇒
   /// tout balisage est rendu en **texte simple**, comportement d'aujourd'hui
   /// **strictement inchangé** pour un hôte passif.
   ///
-  /// C'est par ce port qu'un hôte branche un moteur (p. ex. celui de
+  /// C'est par ce port qu'un hôte branche un moteur (par exemple celui de
   /// `zcrud_markdown`) pour rendre les **sous-titres d'étape** en Markdown, sans
   /// qu'aucune arête de rendu riche n'entre dans `zcrud_core` (AD-1). Fournir
   /// une instance `const` ou mémoïsée hors de `build`.
   final ZRichTextRenderer? richTextRenderer;
 
-  /// Seam de **formatage d'affichage des dates** (CR-DODLP « Gap 3bis »).
+  /// Seam de **formatage d'affichage des dates**.
   /// `null` (défaut) ⇒ toute voie de lecture rend la **chaîne stockée brute**
   /// (l'ISO-8601) — comportement d'aujourd'hui **strictement inchangé** pour un
   /// hôte passif. C'est un changement visible UNIQUEMENT pour qui injecte.
@@ -287,12 +288,11 @@ class ZcrudScope extends InheritedWidget {
       !identical(colorPicker, oldWidget.colorPicker) ||
       !identical(colorKeyResolver, oldWidget.colorKeyResolver) ||
       !identical(gradientResolver, oldWidget.gradientResolver) ||
-      // v0.69.0 — `richTextRenderer` MANQUAIT ici depuis son introduction en
-      // v0.66.0 : le port était déclaré, propagé et consommé, mais un hôte qui
-      // en changeait à chaud ne voyait AUCUN dépendant se reconstruire. Défaut
-      // silencieux — rien ne lève, le rendu reste simplement périmé.
-      // Trouvé en traitant un autre sujet ; la garde qui l'aurait vu n'existait
-      // pas et est posée avec ce correctif (`z_scope_notify_parity_test.dart`).
+      // Chaque seam DOIT participer à cette comparaison : un seam déclaré,
+      // propagé et consommé mais absent d'ici laisserait un hôte qui le change
+      // à chaud sans AUCUN dépendant qui se reconstruit — défaut silencieux,
+      // rien ne lève, le rendu reste simplement périmé (couvert par
+      // `z_scope_notify_parity_test.dart`).
       !identical(richTextRenderer, oldWidget.richTextRenderer) ||
       !identical(dateDisplayFormatter, oldWidget.dateDisplayFormatter);
 }

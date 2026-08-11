@@ -1,7 +1,7 @@
 /// `ZForegroundOverride` — primitive d'**imposition d'une couleur de premier
 /// plan** (texte **et** icônes) sur un sous-arbre, **sans peindre aucun fond**.
 ///
-/// 🔴 **La classe de défaut que cette primitive ferme.**
+/// **La classe de défaut que cette primitive ferme.**
 ///
 /// Un socle qui veut colorer un contenu injecté (un *slot* d'hôte) écrit
 /// naturellement le duo :
@@ -30,7 +30,7 @@
 /// source (`test/presentation/z_foreground_merge_source_guard_test.dart`)
 /// interdit de le recopier ailleurs.
 ///
-/// **FR-26** : aucune couleur littérale — [color] est un **paramètre**, résolu
+/// Aucune couleur littérale : [color] est un **paramètre**, résolu
 /// par l'appelant depuis `ColorScheme` / `ZcrudTheme`.
 /// **AD-1** : `zcrud_core` reste sans dépendance sortante (CORE OUT = 0).
 /// **AD-2** : `StatelessWidget` pur-Flutter, aucun gestionnaire d'état.
@@ -60,7 +60,7 @@ import 'package:flutter/material.dart';
 /// `IconButton`, `Chip`, `InputDecorator`… Leurs couleurs restent celles du
 /// thème ambiant.
 ///
-/// 🔴 **C'est un choix, pas un oubli.** Substituer un `ColorScheme` entier
+/// **C'est un choix, pas un oubli.** Substituer un `ColorScheme` entier
 /// recolorerait aussi boutons, cartes, séparateurs et états d'erreur de l'hôte —
 /// un effet de bord bien plus large que le problème résolu, et impossible à
 /// annuler localement. La primitive se borne aux **rôles de texte et d'icône**.
@@ -82,8 +82,8 @@ class ZForegroundOverride extends StatelessWidget {
     this.iconSize,
   });
 
-  /// Couleur de premier plan imposée — **paramètre**, jamais un littéral
-  /// (FR-26). L'appelant la résout depuis `ColorScheme` / `ZcrudTheme`.
+  /// Couleur de premier plan imposée — **paramètre**, jamais un littéral.
+  /// L'appelant la résout depuis `ColorScheme` / `ZcrudTheme`.
   final Color color;
 
   /// Taille d'icône imposée conjointement. `null` ⇒ la taille ambiante est
@@ -104,7 +104,7 @@ class ZForegroundOverride extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData ambient = Theme.of(context);
 
-    // 🔴 LE point de la CR-IFFD-42 : `textTheme.apply(bodyColor:, displayColor:)`
+    // LE point clé : `textTheme.apply(bodyColor:, displayColor:)`
     // repeint la couleur de CHAQUE rôle typographique (`titleSmall` compris).
     // Sans lui, un slot stylé depuis `Theme.of(context).textTheme.*` récupère la
     // couleur AMBIANTE, qui écrase le `DefaultTextStyle` posé ci-dessous.

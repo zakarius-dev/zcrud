@@ -1,8 +1,8 @@
-/// `ZDefaultExamCard` — **carte d'examen PAR DÉFAUT** du socle (CR-IFFD-48).
+/// `ZDefaultExamCard` — **carte d'examen PAR DÉFAUT** du socle.
 ///
 /// La voie typée est POSSIBLE ici : le modèle [ZExam] vit dans `zcrud_exam`,
-/// dépendance **déjà déclarée** de `zcrud_study` (arête ES-9.2) — aucune arête
-/// nouvelle (AD-1). Le pendant qui porte les données est
+/// dépendance **déjà déclarée** de `zcrud_study` — aucune arête nouvelle
+/// (invariant AD-1). Le pendant qui porte les données est
 /// `ZStudyToolsSectionSpec.exams(exams:)`.
 ///
 /// Structure : barre d'accent de tête, intitulé, date (déjà **formatée et
@@ -16,7 +16,7 @@
 /// - **AD-13** : l'état « rappels activés » est dit **EN TEXTE** (puce), pas
 ///   seulement par une couleur ; directionnel partout ; `Semantics` par la
 ///   primitive de base.
-/// - **AD-2/SM-1** : `StatelessWidget` pur.
+/// - **AD-2** : `StatelessWidget` pur.
 library;
 
 import 'package:flutter/material.dart';
@@ -31,7 +31,7 @@ import 'z_study_tools_item_card.dart';
 /// Épaisseur de la barre d'accent de tête (dimension de LAYOUT).
 const double kZDefaultExamAccentHeight = 4;
 
-/// Carte d'examen **par défaut** du socle (CR-IFFD-48).
+/// Carte d'examen **par défaut** du socle.
 ///
 /// ```dart
 /// ZDefaultExamCard(
@@ -96,7 +96,7 @@ class ZDefaultExamCard extends StatelessWidget {
   final Widget? trailing;
 
   /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ non
-  /// interactive (AD-45).
+  /// interactive.
   final VoidCallback? onTap;
 
   /// Appui long. `null` ⇒ capacité **ABSENTE** (AD-4).
@@ -162,8 +162,8 @@ class ZDefaultExamCard extends StatelessWidget {
   ) =>
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
-        // facteur REMPLIT la hauteur disponible (carte gonflée à 854 dp).
+        // `heightFactor: 1` : un `Align` sans facteur REMPLIT la hauteur
+        // disponible (carte gonflée), donc ce facteur est requis.
         heightFactor: 1,
         child: DecoratedBox(
           key: reminderChipKey,

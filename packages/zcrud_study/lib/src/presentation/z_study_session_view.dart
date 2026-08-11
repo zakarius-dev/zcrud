@@ -250,7 +250,7 @@ class ZStudySessionView extends StatelessWidget {
   /// une action qu'elle ne saurait pas exécuter.
   final VoidCallback? onExit;
 
-  /// Pilote optionnel de l'index de la pile (CR-IFFD-38).
+  /// Pilote optionnel de l'index de la pile.
   final ZIndexController? indexController;
 
   /// Style de l'indicateur de progression de la pile.

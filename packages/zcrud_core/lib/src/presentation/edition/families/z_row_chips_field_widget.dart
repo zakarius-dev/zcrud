@@ -1,40 +1,36 @@
-/// Widget de la **famille rowChips** (E3-3b-1) : `rowChips`.
+/// Widget de la **famille rowChips** : `rowChips`.
 ///
-/// ## CR-DODLP-GAP2 — c'est CE type qui rend « le select en mode chips »
+/// ## `rowChips` est « le select en mode chips »
 ///
-/// Le legacy DODLP demande `S2ChoiceType.chips` sur deux champs
-/// (`gradeMillitaire`, `gradeOTR`) : **mono-choix**, options **statiques**,
-/// `required`. C'est exactement [ZRowChipsFieldWidget] — la parité s'obtient en
-/// déclarant `type: EditionFieldType.rowChips` au lieu de
-/// `EditionFieldType.select`, **sans aucun mode d'affichage** à ajouter sur
-/// `ZSelectConfig`. Un canal de plus aurait dupliqué ce widget.
+/// Une rangée de puces **mono-choix** avec options **statiques**, éventuellement
+/// `required`, s'obtient en déclarant `type: EditionFieldType.rowChips` au
+/// lieu de `EditionFieldType.select`, **sans aucun mode d'affichage** à
+/// ajouter sur `ZSelectConfig`. Un canal de plus aurait dupliqué ce widget.
 ///
-/// Deux écarts mesurés ont été comblés pour que la substitution soit réellement
-/// équivalente à un `select` :
-/// * **choix dynamiques** — `rowChips` ne recevait que `field.choices` ; il
-///   reçoit désormais les **choix effectifs** résolus par le dispatcher
-///   ([choices] : `choicesSourceKey` → `choicesFromKey` → `derivedFrom.options`
-///   → `field.choices`), comme `select` ;
+/// Deux capacités le rendent réellement équivalent à un `select` :
+/// * **choix dynamiques** — `rowChips` reçoit les **choix effectifs** résolus
+///   par le dispatcher ([choices] : `choicesSourceKey` → `choicesFromKey` →
+///   `derivedFrom.options` → `field.choices`), comme `select` ;
 /// * **multi-sélection** — [multiple] (alimenté par `ZFieldSpec.multiple`, la
 ///   **source unique** de multiplicité du dépôt) rend une rangée de
 ///   `FilterChip` dont la valeur de tranche est une `List`. C'est la forme
-///   « toutes les options visibles, chacune bascule » (parité
+///   « toutes les options visibles, chacune bascule » (comme
 ///   `FormBuilderFilterChips`), **distincte** du `select` multi qui n'affiche
 ///   que les puces **déjà choisies** + un modal d'ajout.
 ///
-/// Défaut `multiple: false` + `choices: null` ⇒ rendu E3-3b strictement
+/// Défaut `multiple: false` + `choices: null` ⇒ rendu de base strictement
 /// inchangé.
 ///
 /// Rangée de puces **mono-choix** alimentée par `ZFieldSpec.choices`
 /// (`ZFieldChoice{value,label}`) : la valeur sélectionnée (unique) vit **dans la
 /// tranche** (lecture `value`, écriture via `onChanged` — aucun
-/// `TextEditingController`, AD-2). Toucher une puce déjà sélectionnée la
-/// désélectionne (`null`).
+/// `TextEditingController`, invariant AD-2). Toucher une puce déjà sélectionnée
+/// la désélectionne (`null`).
 ///
-/// a11y/RTL (AD-13) : `ChoiceChip` porte l'état sélectionné sémantique et une
-/// cible ≥ 48 dp (`materialTapTargetSize: padded` par défaut) ; `Wrap` respecte
-/// la `Directionality` ambiante. Aucune couleur/inset non directionnel en dur
-/// (FR-26).
+/// a11y/RTL (invariant AD-13) : `ChoiceChip` porte l'état sélectionné
+/// sémantique et une cible ≥ 48 dp (`materialTapTargetSize: padded` par
+/// défaut) ; `Wrap` respecte la `Directionality` ambiante. Aucune
+/// couleur/inset non directionnel en dur (invariant FR-26).
 library;
 
 import 'package:flutter/material.dart';
@@ -68,20 +64,21 @@ class ZRowChipsFieldWidget extends StatelessWidget {
   /// des valeurs cochées si [multiple].
   final ValueChanged<Object?> onChanged;
 
-  /// CR-DODLP-GAP2 — choix **effectifs** résolus par le dispatcher (dynamique
-  /// cross-champ / dérivée), comme la famille `select`. `null` (défaut) ⇒
-  /// `field.choices` (statique, rétro-compat stricte).
+  /// Choix **effectifs** résolus par le dispatcher (dynamique cross-champ /
+  /// dérivée), comme la famille `select`. `null` (défaut) ⇒ `field.choices`
+  /// (statique, rétro-compat stricte).
   final List<ZFieldChoice>? choices;
 
-  /// CR-DODLP-GAP2 — **multi-sélection** (alimentée par `ZFieldSpec.multiple`,
-  /// source unique de multiplicité). `false` (défaut) ⇒ `ChoiceChip` mono
-  /// inchangé ; `true` ⇒ `FilterChip` par option, valeur de tranche = `List`.
+  /// **Multi-sélection** (alimentée par `ZFieldSpec.multiple`, source unique
+  /// de multiplicité). `false` (défaut) ⇒ `ChoiceChip` mono inchangé ; `true`
+  /// ⇒ `FilterChip` par option, valeur de tranche = `List`.
   final bool multiple;
 
   /// Options effectives (dynamiques) ou repli statique `field.choices`.
   List<ZFieldChoice> get _choices => choices ?? field.choices;
 
-  /// Valeurs cochées en multi (défensif AD-10 : scalaire/`null` normalisés).
+  /// Valeurs cochées en multi (défensif invariant AD-10 : scalaire/`null`
+  /// normalisés).
   List<Object?> get _selected {
     final v = value;
     if (v is List) return List<Object?>.from(v);
@@ -89,10 +86,10 @@ class ZRowChipsFieldWidget extends StatelessWidget {
     return <Object?>[v];
   }
 
-  /// MIN-2 (parité DODLP « sous-titre rowChips ») — puce avec **sous-titre**
-  /// optionnel (`ZFieldChoice.subtitle`). Sans sous-titre ⇒ `ChoiceChip` simple
-  /// (rendu E3-3b inchangé) ; avec sous-titre ⇒ label sur deux lignes (titre +
-  /// ligne secondaire `bodySmall`) et `Tooltip` a11y portant le sous-titre.
+  /// Puce avec **sous-titre** optionnel (`ZFieldChoice.subtitle`). Sans
+  /// sous-titre ⇒ `ChoiceChip` simple (rendu de base inchangé) ; avec
+  /// sous-titre ⇒ label sur deux lignes (titre + ligne secondaire
+  /// `bodySmall`) et `Tooltip` a11y portant le sous-titre.
   Widget _chip(BuildContext context, ZFieldChoice choice) {
     final title = label(context, choice.label, fallback: choice.label);
     final sub = choice.subtitle == null
@@ -100,7 +97,7 @@ class ZRowChipsFieldWidget extends StatelessWidget {
         : label(context, choice.subtitle!, fallback: choice.subtitle!);
     final selected =
         multiple ? _selected.contains(choice.value) : value == choice.value;
-    // CR-ORPHAN : une option `disabled` (dont l'option synthétique d'une valeur
+    // Une option `disabled` (dont l'option synthétique d'une valeur
     // orpheline) est visible et lue, mais non (re)sélectionnable — comme dans
     // les familles `select` et `relation`.
     final onSelected = (field.readOnly || choice.disabled)
@@ -122,7 +119,7 @@ class ZRowChipsFieldWidget extends StatelessWidget {
             ],
           );
 
-    // AD-13 — l'état sélectionné n'est JAMAIS porté par la seule couleur :
+    // Invariant AD-13 — l'état sélectionné n'est JAMAIS porté par la seule couleur :
     // `ChoiceChip`/`FilterChip` exposent `SemanticsFlag.isSelected` et peignent
     // leur coche (`showCheckmark`, laissé au thème). Cible ≥ 48 dp par le
     // `materialTapTargetSize: padded` par défaut des chips Material.
@@ -163,7 +160,7 @@ class ZRowChipsFieldWidget extends StatelessWidget {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1).
+      // provoquerait une DOUBLE annonce.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -178,11 +175,11 @@ class ZRowChipsFieldWidget extends StatelessWidget {
               spacing: 8,
               runSpacing: 4,
               children: <Widget>[
-                // CR-ORPHAN — voie supplémentaire trouvée au balayage : une
-                // valeur absente de `field.choices` ne rendait AUCUNE puce
-                // sélectionnée, alors qu'elle serait soumise. Même règle que
-                // les huit voies : puce synthétique, libellé traduit, jamais
-                // la clé, non re-sélectionnable.
+                // Sans l'option synthétique, une valeur absente de
+                // `field.choices` ne rendrait AUCUNE puce sélectionnée, alors
+                // qu'elle serait soumise. Même règle que les autres familles
+                // à choix : puce synthétique, libellé traduit, jamais la clé,
+                // non re-sélectionnable.
                 for (final choice in zWithOrphanChoices(
                     _choices, multiple ? _selected : <Object?>[value]))
                   _chip(context, choice),

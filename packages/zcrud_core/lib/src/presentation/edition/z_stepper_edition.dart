@@ -1,17 +1,16 @@
 /// `ZStepperEdition` — présentation d'un formulaire long en **assistant (wizard)
-/// multi-étapes** partitionnant le **MÊME** `ZFormController` (E3-5, AD-2 /
-/// OBJECTIF PRODUIT N°1 / SM-1). Enrichi DP-9 (parité DODLP `StepperConfig`) :
-/// style/orientation/position d'indicateur configurables, icône + sous-titre par
+/// multi-étapes** partitionnant le **MÊME** `ZFormController` (invariant AD-2).
+/// Style/orientation/position d'indicateur configurables, icône + sous-titre par
 /// étape, gate `validateOnNext` configurable, navigation par tap, et **steppers
 /// IMBRIQUÉS** sur le même controller unique.
 ///
-/// origine: `EditionFieldType.stepper` n'est PAS un champ-feuille — le dispatcher
-/// (E3-3a) le classe volontairement `unsupported` car c'est un **REGROUPEMENT /
-/// structure de navigation** renvoyé ici. E3-5 le sert donc au niveau
-/// **orchestration**, posé AUTOUR du dispatcher existant, jamais comme un
-/// `ZFieldWidget`. Le nesting (DP-9) est donc **structurel** (porté par
-/// [ZEditionStep.nestedSteps]), PAS routé via `ZWidgetRegistry` (qui mappe un
-/// `kind` → widget-feuille et casserait le single-writer de `visibleFields`).
+/// `EditionFieldType.stepper` n'est PAS un champ-feuille — le dispatcher le
+/// classe volontairement `unsupported` car c'est un **REGROUPEMENT / structure
+/// de navigation** renvoyé ici. Ce widget sert donc au niveau **orchestration**,
+/// posé AUTOUR du dispatcher existant, jamais comme un `ZFieldWidget`. Le
+/// nesting est donc **structurel** (porté par [ZEditionStep.nestedSteps]), PAS
+/// routé via `ZWidgetRegistry` (qui mappe un `kind` → widget-feuille et
+/// casserait le single-writer de `visibleFields`).
 ///
 /// INVARIANTS (AD-2, NON-NÉGOCIABLES) :
 /// - **UN seul `ZFormController` partagé** à **tous** les niveaux de nesting :
@@ -20,9 +19,9 @@
 ///   recréation → l'**état est préservé** en va-et-vient (les tranches survivent
 ///   au démontage des sous-arbres d'étape ; libérées seulement au `dispose` du
 ///   controller, possédé par l'hôte).
-/// - **SINGLE WRITER de `controller.visibleFields`** (DP-9, AC13) : le stepper
-///   **RACINE** est le SEUL écrivain ; il publie l'**union des champs visibles le
-///   long du chemin d'étapes actif** (étape parente active → sous-étape active du
+/// - **SINGLE WRITER de `controller.visibleFields`** : le stepper **RACINE**
+///   est le SEUL écrivain ; il publie l'**union des champs visibles le long du
+///   chemin d'étapes actif** (étape parente active → sous-étape active du
 ///   nested → récursivement). Un stepper **imbriqué** tourne en mode « sans
 ///   fenêtre » : il ne fait PAS `setVisibleFields` ; il **remonte** sa
 ///   contribution au parent (via [onNestedWindowChanged]) que le racine agrège.
@@ -34,22 +33,23 @@
 ///   reste `findsNothing`. La validation reste **par champ**.
 /// - **Validation PAR ÉTAPE configurable** : la transition « suivant » valide les
 ///   champs **visibles** de l'étape courante **ssi `config.validateOnNext`**
-///   (défaut `true` = gate strict E3-5 ; `false` = navigation LIBRE, parité DODLP
-///   §2.6). Le gate d'un parent honore la **sous-étape active du nested**
-///   (l'union). Étape invalide ⇒ navigation bloquée + erreurs **révélées** (bascule
-///   locale `AutovalidateMode.always` via un seam additif — jamais un `Form`
-///   global). « Précédent » est inconditionnel.
-/// - **Chrome = canaux STRUCTURELS only** (SM-1) : la barre d'étapes + la
-///   navigation + la zone d'étape n'observent QUE l'index courant ([_currentStep]),
-///   le canal de révélation ([_reveal]) et `controller.visibleFields` — JAMAIS une
-///   tranche de valeur (sauf les champs de **garde** conditionnels, canal
-///   structurel). Une frappe (champ non-garde) ne reconstruit donc QUE le champ
-///   courant, jamais le chrome (zéro perte de focus), à tout niveau de nesting.
+///   (défaut `true` = gate strict ; `false` = navigation LIBRE). Le gate d'un
+///   parent honore la **sous-étape active du nested** (l'union). Étape invalide
+///   ⇒ navigation bloquée + erreurs **révélées** (bascule locale
+///   `AutovalidateMode.always` via un seam additif — jamais un `Form` global).
+///   « Précédent » est inconditionnel.
+/// - **Chrome = canaux STRUCTURELS only** (invariant AD-2) : la barre d'étapes +
+///   la navigation + la zone d'étape n'observent QUE l'index courant
+///   ([_currentStep]), le canal de révélation ([_reveal]) et
+///   `controller.visibleFields` — JAMAIS une tranche de valeur (sauf les champs
+///   de **garde** conditionnels, canal structurel). Une frappe (champ non-garde)
+///   ne reconstruit donc QUE le champ courant, jamais le chrome (zéro perte de
+///   focus), à tout niveau de nesting.
 ///
-/// **Frontière E3-6** : la dernière étape délègue la **soumission** à E3-6 (slot
-/// [onComplete]) ; E3-5 ne fait PAS de `onSubmit`, de détection *dirty*, ni de
-/// validateurs **inter-champs**. Composition orthogonale E3-4 : une étape peut
-/// contenir sections repliables + champs conditionnels (hérités de [DynamicEdition]).
+/// La dernière étape délègue la **soumission** à l'hôte (slot [onComplete]) ;
+/// ce widget ne fait PAS de `onSubmit`, de détection *dirty*, ni de validateurs
+/// **inter-champs**. Composition orthogonale : une étape peut contenir sections
+/// repliables + champs conditionnels (hérités de [DynamicEdition]).
 library;
 
 import 'package:flutter/foundation.dart';
@@ -74,9 +74,10 @@ import 'z_value_emptiness.dart';
 export 'z_step_index_store.dart';
 export 'z_stepper_config.dart';
 
-/// Profondeur maximale de steppers imbriqués (AD-10).
+/// Profondeur maximale de steppers imbriqués (invariant AD-10 : repli défini
+/// plutôt qu'une exception).
 ///
-/// 🔴 [ZEditionStep.nestedSteps] est une `List<ZEditionStep>?` **mutable** : un
+/// [ZEditionStep.nestedSteps] est une `List<ZEditionStep>?` **mutable** : un
 /// hôte PEUT construire un cycle (`l = []; s = ZEditionStep(nestedSteps: l);
 /// l.add(s);`). Sans plafond, le calcul de fenêtre comme le montage de widgets
 /// récursent sans fin (StackOverflow, écran blanc). Au-delà de ce plafond, le
@@ -84,25 +85,24 @@ export 'z_stepper_config.dart';
 /// repli DÉFINI, jamais d'exception.
 const int kZStepperMaxNestingDepth = 8;
 
-/// Largeur maximale (dp) de référence de la bande latérale `start` — bornage du
-/// Bug 1. Surchargée par `ZcrudTheme.stepperSideBandMaxWidth`.
+/// Largeur maximale (dp) de référence de la bande latérale `start`. Surchargée
+/// par `ZcrudTheme.stepperSideBandMaxWidth`.
 const double _kStepperSideBandMaxWidth = 220;
 
-/// Épaisseur (dp) de référence du rail — mesure du legacy DODLP.
+/// Épaisseur (dp) de référence du rail.
 const double _kStepperRailThickness = 1;
 
-/// Écart vertical (dp) de référence entre deux étapes dépliées — mesure legacy.
+/// Écart vertical (dp) de référence entre deux étapes dépliées.
 const double _kStepperAllStepsGap = 24;
 
 /// Descripteur **présentation** d'une étape : un titre + le sous-ensemble de
 /// **noms de champs** du catalogue qu'elle regroupe (aligné sur [ZEditionSection]
 /// — titre + noms, PAS une nouvelle donnée de formulaire). Additif, `const`.
 ///
-/// DP-9 (parité DODLP `stepIcon`/`stepSubtitle` + stepper récursif) ajoute, de
-/// façon strictement additive : [icon] et [subtitle] (métadonnées d'affichage
-/// par étape), et [nestedSteps]/[nestedConfig] (sous-stepper imbriqué rendu sur
-/// le MÊME controller). Le constructeur reste `const` et source-compatible (les
-/// sites existants sans ces paramètres compilent inchangés).
+/// [icon] et [subtitle] portent les métadonnées d'affichage par étape ;
+/// [nestedSteps]/[nestedConfig] portent un sous-stepper imbriqué rendu sur le
+/// MÊME controller. Tous ces paramètres sont additifs : les sites existants
+/// sans eux compilent inchangés.
 @immutable
 class ZEditionStep {
   /// Construit une étape de titre [title] regroupant les champs [fields] (par
@@ -127,16 +127,16 @@ class ZEditionStep {
   /// Noms de champs appartenant à l'étape (sous-ensemble du catalogue).
   final List<String> fields;
 
-  /// Sections **visuelles** internes à l'étape (E3-4), restreintes à ses champs.
+  /// Sections **visuelles** internes à l'étape, restreintes à ses champs.
   /// Vide = liste plate. Orthogonal au partitionnement en étapes.
   final List<ZEditionSection> sections;
 
-  /// Icône d'étape (DP-9, parité `stepIcon`) — consommée en style
-  /// [ZStepStyle.icons] (repli sur le numéro si `null`). Défaut `null`.
+  /// Icône d'étape — consommée en style [ZStepStyle.icons] (repli sur le
+  /// numéro si `null`). Défaut `null`.
   final IconData? icon;
 
-  /// Sous-titre d'étape (DP-9, parité `stepSubtitle`) — clé l10n ou littéral,
-  /// affiché ssi `config.showSubtitles` (via `label(context, …)`). Défaut `null`.
+  /// Sous-titre d'étape — clé l10n ou littéral, affiché ssi
+  /// `config.showSubtitles` (via `label(context, …)`). Défaut `null`.
   ///
   /// C'est une **`String`**, jamais un widget : la chaîne traverse le seam de
   /// rendu riche (`ZcrudScope.richTextRenderer`) telle quelle. Pour fournir un
@@ -145,7 +145,7 @@ class ZEditionStep {
 
   /// Sous-titre d'étape **déjà construit** par l'hôte. Défaut `null`.
   ///
-  /// 🔴 **[subtitleWidget] PRIME sur [subtitle]**, et le seam de rendu riche
+  /// **[subtitleWidget] PRIME sur [subtitle]**, et le seam de rendu riche
   /// n'est alors **pas consulté** : le widget est rendu **tel que reçu**. C'est
   /// exactement la règle — et le nommage — de `ZcrudTheme.inputDecoration`
   /// (`label` widget prioritaire, `labelText` chaîne sinon) ; une troisième
@@ -153,11 +153,11 @@ class ZEditionStep {
   ///
   /// ## Pourquoi DEUX entrées, et non un seul champ `Object?`
   ///
-  /// Le legacy DODLP stocke un `Widget` puis **redéballe la chaîne** par
-  /// `if (step.subtitle is Text) … (step.subtitle as Text).data ?? ""`
-  /// (`dynamic_stepper.dart` l. 397-407 et 789-793) : une donnée qui voyage
-  /// dans un widget et qu'on récupère au cast. Avec deux entrées typées, ce cast
-  /// n'a plus de raison d'être — le défaut devient **inexprimable**, ce qui vaut
+  /// Un `Widget` unique obligerait à redéballer la chaîne par un cast
+  /// (`if (subtitle is Text) … (subtitle as Text).data`) pour toute
+  /// consommation qui a besoin du texte brut — une donnée qui voyage dans un
+  /// widget et qu'on récupère au cast. Avec deux entrées typées, ce cast n'a
+  /// plus de raison d'être : le défaut devient **inexprimable**, ce qui vaut
   /// mieux que de le corriger.
   ///
   /// [ZStepperConfig.showSubtitles] gouverne les **deux** entrées : le drapeau
@@ -166,28 +166,28 @@ class ZEditionStep {
   /// toujours visible ne le met pas en sous-titre.
   final Widget? subtitleWidget;
 
-  /// Sous-étapes d'un **stepper imbriqué** (DP-9, AC11). Quand non `null`,
-  /// l'étape rend, dans son contenu, un [ZStepperEdition] imbriqué partageant le
-  /// **MÊME** controller (jamais un controller par niveau). Défaut `null`.
+  /// Sous-étapes d'un **stepper imbriqué**. Quand non `null`, l'étape rend,
+  /// dans son contenu, un [ZStepperEdition] imbriqué partageant le **MÊME**
+  /// controller (jamais un controller par niveau). Défaut `null`.
   final List<ZEditionStep>? nestedSteps;
 
   /// Configuration du sous-stepper imbriqué (défaut `null` ⇒ `ZStepperConfig()`).
   /// Son `validateOnNext` est **indépendant** de celui du parent.
   final ZStepperConfig? nestedConfig;
 
-  /// Condition d'**EXISTENCE** de l'étape (lot G1+). `null` (défaut) ⇒ l'étape
-  /// est toujours là — comportement historique **strictement inchangé**.
+  /// Condition d'**EXISTENCE** de l'étape. `null` (défaut) ⇒ l'étape est
+  /// toujours là — comportement historique **strictement inchangé**.
   ///
   /// ## Le besoin, nommé
   ///
-  /// Un formulaire multi-étapes avancé **branche** : le mode de cargaison
-  /// choisi à l'étape 1 décide si l'étape « conteneurs » existe (cas réel
-  /// DODLP `cargaison_stepper_form`). Jusqu'ici, seuls les **CHAMPS** étaient
-  /// conditionnels (`ZFieldSpec.condition`) : une étape dont tous les champs
-  /// disparaissaient restait **présente et vide**, comptée dans le « k/N » et
-  /// traversée par la navigation. L'hôte n'avait qu'un recours — recomposer
-  /// lui-même sa `List<ZEditionStep>` à chaque frappe, donc reconstruire le
-  /// stepper entier (exactement ce que SM-1 interdit).
+  /// Un formulaire multi-étapes avancé **branche** : un choix fait à une
+  /// étape précoce peut décider si une étape ultérieure existe. Jusqu'ici,
+  /// seuls les **CHAMPS** étaient conditionnels (`ZFieldSpec.condition`) : une
+  /// étape dont tous les champs disparaissaient restait **présente et vide**,
+  /// comptée dans le « k/N » et traversée par la navigation. L'hôte n'avait
+  /// qu'un recours — recomposer lui-même sa `List<ZEditionStep>` à chaque
+  /// frappe, donc reconstruire le stepper entier (exactement ce que
+  /// l'invariant AD-2 interdit).
   ///
   /// ## Ce que la condition gouverne
   ///
@@ -195,14 +195,14 @@ class ZEditionStep {
   /// pas comptée dans le total, non atteignable par « suivant »/tap, non
   /// validée par le gate, et ses champs ne sont pas dans la fenêtre.
   ///
-  /// 🔴 Le mécanisme **réutilise `ZCondition`** — l'arbre déjà utilisé par les
+  /// Le mécanisme **réutilise `ZCondition`** — l'arbre déjà utilisé par les
   /// champs — et son évaluateur : aucun second langage de condition n'est
   /// introduit. Les champs de garde référencés sont abonnés **nommément**
-  /// (SM-1 : une frappe sur un champ non-garde ne recalcule rien).
+  /// (une frappe sur un champ non-garde ne recalcule rien — invariant AD-2).
   final ZCondition? condition;
 
-  /// Étape **OPTIONNELLE** (lot G1+) : le gate `validateOnNext` ne s'y applique
-  /// pas. Défaut `false` ⇒ comportement historique inchangé.
+  /// Étape **OPTIONNELLE** : le gate `validateOnNext` ne s'y applique pas.
+  /// Défaut `false` ⇒ comportement historique inchangé.
   ///
   /// Besoin nommé : les formulaires longs ont des étapes « pièces jointes » /
   /// « commentaires » qu'un utilisateur doit pouvoir **traverser sans rien
@@ -210,7 +210,7 @@ class ZEditionStep {
   /// que `ZStepperConfig.validateOnNext: false` ferait globalement, tout ou
   /// rien.
   ///
-  /// ⚠️ Ne dispense PAS de la validation à la **soumission** (E3-6) : c'est un
+  /// Ne dispense PAS de la validation à la **soumission** : c'est un
   /// assouplissement de la NAVIGATION, pas de la validité des données.
   final bool optional;
 
@@ -254,7 +254,8 @@ class ZEditionStep {
 
 /// Constructeur d'un widget de champ d'étape. Reçoit le [autovalidateMode]
 /// **piloté par le stepper** (révélation d'erreurs à une transition bloquée) —
-/// un builder custom DOIT le propager pour honorer AC4 sans `Form` global.
+/// un builder custom DOIT le propager pour révéler les erreurs sans `Form`
+/// global.
 typedef ZStepFieldBuilder = Widget Function(
   BuildContext context,
   ZFormController controller,
@@ -295,7 +296,7 @@ class ZStepperEdition extends StatefulWidget {
     super.key,
   });
 
-  /// Seam de **reprise** : persiste/restaure l'étape courante (lot G1+).
+  /// Seam de **reprise** : persiste/restaure l'étape courante.
   /// `null` (défaut) ⇒ aucune persistance, comportement inchangé.
   ///
   /// Même patron que `DynamicEdition.collapseStore` — un hôte branche le même
@@ -317,9 +318,8 @@ class ZStepperEdition extends StatefulWidget {
   /// Étapes ordonnées partitionnant le catalogue.
   final List<ZEditionStep> steps;
 
-  /// Configuration visuelle & comportementale (DP-9). Défaut `const
-  /// ZStepperConfig()` = comportement E3-5 **inchangé** (top/horizontal/numbered
-  /// « k/N » + titre, gate strict).
+  /// Configuration visuelle & comportementale. Défaut `const ZStepperConfig()`
+  /// = top/horizontal/numbered « k/N » + titre, gate strict.
   final ZStepperConfig config;
 
   /// Index d'étape initial (borné à `[0, steps.length-1]`).
@@ -341,8 +341,7 @@ class ZStepperEdition extends StatefulWidget {
   final double gridGutter;
 
   /// Seam de rendu de champ (reçoit le mode d'autovalidation piloté). À défaut :
-  /// le dispatcher [ZFieldWidget] (E3-3a), place stable garantie par
-  /// [DynamicEdition].
+  /// le dispatcher [ZFieldWidget], place stable garantie par [DynamicEdition].
   final ZStepFieldBuilder? fieldBuilder;
 
   /// Libellé du bouton « précédent » (défaut l10n `z.stepper.previous`).
@@ -352,28 +351,28 @@ class ZStepperEdition extends StatefulWidget {
   final String? nextLabel;
 
   /// Libellé du bouton final de la **dernière** étape (défaut `z.stepper.finish`).
-  /// Son action délègue à [onComplete] (soumission = E3-6).
+  /// Son action délègue à [onComplete] (soumission déléguée à l'hôte).
   final String? finishLabel;
 
-  /// Slot de **fin d'assistant** (dernière étape) : E3-5 ne soumet PAS ; il
-  /// délègue à E3-6. `null` ⇒ le bouton final est présent mais désactivé.
+  /// Slot de **fin d'assistant** (dernière étape) : ce widget ne soumet PAS ;
+  /// il délègue à l'hôte. `null` ⇒ le bouton final est présent mais désactivé.
   final VoidCallback? onComplete;
 
   /// Notifié après un changement d'étape effectif (index cible).
   final ValueChanged<int>? onStepChanged;
 
   /// Hook d'instrumentation : appelé à chaque (re)build **structurel** du chrome
-  /// (compteur SM-1 — reste inchangé pendant la saisie).
+  /// (compteur de test — reste inchangé pendant la saisie, invariant AD-2).
   @visibleForTesting
   final VoidCallback? onStructuralBuild;
 
-  /// **Interne (DP-9)** : `true` quand ce stepper est **imbriqué** dans une étape
+  /// **Interne** : `true` quand ce stepper est **imbriqué** dans une étape
   /// parente. Un stepper imbriqué tourne en mode « sans fenêtre » (n'écrit JAMAIS
   /// `visibleFields` ; remonte sa contribution via [onNestedWindowChanged]).
   @visibleForTesting
   final bool nested;
 
-  /// **Interne (DP-9)** : callback par lequel un stepper imbriqué **remonte** sa
+  /// **Interne** : callback par lequel un stepper imbriqué **remonte** sa
   /// contribution de fenêtre (union de son chemin actif) au parent, qui agrège
   /// jusqu'au racine (seul écrivain de `visibleFields`).
   @visibleForTesting
@@ -384,20 +383,21 @@ class ZStepperEdition extends StatefulWidget {
   /// dimensionne alors **au contenu** (`MainAxisSize.min`, aucun `Expanded`
   /// vertical) au lieu de remplir l'espace disponible.
   ///
-  /// 🔴 Sans ce mode, un sous-stepper **paginé** posé dans une étape dépliée
+  /// Sans ce mode, un sous-stepper **paginé** posé dans une étape dépliée
   /// lèverait « RenderFlex children have non-zero flex but incoming height
-  /// constraints are unbounded » — le pendant exact du Bug 1 sur l'autre axe.
+  /// constraints are unbounded » : un enfant flexible sous une contrainte de
+  /// hauteur non bornée.
   @visibleForTesting
   final bool unbounded;
 
   /// **Interne** : profondeur d'imbrication de CE stepper (0 = racine). Plafonné
-  /// par [kZStepperMaxNestingDepth] — cf. AD-10 (`nestedSteps` circulaires).
+  /// par [kZStepperMaxNestingDepth] (invariant AD-10 — `nestedSteps` circulaires).
   @visibleForTesting
   final int depth;
 
-  /// **Interne (DP-9)** : signal de **révélation** poussé par le parent (gate
-  /// bloqué) pour forcer ce stepper imbriqué à révéler les erreurs de sa
-  /// sous-étape active. Chaque incrément déclenche `AutovalidateMode.always`.
+  /// **Interne** : signal de **révélation** poussé par le parent (gate bloqué)
+  /// pour forcer ce stepper imbriqué à révéler les erreurs de sa sous-étape
+  /// active. Chaque incrément déclenche `AutovalidateMode.always`.
   @visibleForTesting
   final ValueListenable<int>? revealTrigger;
 
@@ -414,18 +414,18 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// un [revealTrigger] parent ; remis à `false` à toute navigation effective.
   late final ValueNotifier<bool> _reveal;
 
-  /// Signal de révélation poussé aux sous-steppers imbriqués (DP-9) quand un gate
+  /// Signal de révélation poussé aux sous-steppers imbriqués quand un gate
   /// bloque : incrémenté pour révéler les champs de la sous-étape active.
   late final ValueNotifier<int> _childRevealTick;
 
   /// Listenable fusionné observé par le chrome : index + révélation +
-  /// `visibleFields` (structurel). AUCUNE tranche de valeur (SM-1/AC11).
+  /// `visibleFields` (structurel). AUCUNE tranche de valeur (invariant AD-2).
   late Listenable _structural;
 
   /// Index `name → spec` (identité de valeur ; recalculé si [widget.fields] change).
   late Map<String, ZFieldSpec> _specByName;
 
-  /// Cache de validateurs compilés **mémoïsés** par nom de champ (E3-2 réutilisé).
+  /// Cache de validateurs compilés **mémoïsés** par nom de champ.
   final Map<String, FormFieldValidator<String>?> _validatorCache =
       <String, FormFieldValidator<String>?>{};
 
@@ -436,32 +436,32 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// Dernières contributions de fenêtre remontées par les sous-steppers
   /// imbriqués montés, **indexées par index d'étape**.
   ///
-  /// 🔴 Une `Map` et non plus un champ unique : en mode `showAllSteps`, PLUSIEURS
+  /// Une `Map` et non un champ unique : en mode `showAllSteps`, PLUSIEURS
   /// sous-steppers sont montés **simultanément** (une étape dépliée peut en
   /// porter un chacune). Un champ unique ferait que la dernière remontée écrase
   /// toutes les autres — la fenêtre publiée perdrait les champs des autres
   /// sous-steppers. Absent = pas encore remontée ⇒ repli structurel.
   final Map<int, List<String>> _childContributions = <int, List<String>>{};
 
-  /// Mémo SM-1 des **zones d'étape** déjà construites, par index d'étape, valable
+  /// Mémo des **zones d'étape** déjà construites, par index d'étape, valable
   /// tant que [_contentInputs] est inchangé.
   ///
-  /// 🔴 Raison d'être : `config` porte 13 canaux **purement visuels** (couleurs,
+  /// Raison d'être : `config` porte 13 canaux **purement visuels** (couleurs,
   /// tailles, style, position d'indicateur…) que le contenu d'étape ne lit PAS.
   /// Sans mémo, un hôte qui change une couleur reconstruit le widget
   /// `ZStepperEdition`, donc `build`, donc un NOUVEAU `DynamicEdition` par
   /// étape — et tous les champs sont reconstruits. En rendant le **MÊME**
   /// instance de widget, `Element.updateChild` court-circuite le sous-arbre
-  /// entier (`identical(newWidget, child.widget)`) : zéro rebuild de champ.
-  /// C'est l'objectif produit n°1 (AD-2/SM-1) appliqué au canal `config`.
+  /// entier (`identical(newWidget, child.widget)`) : zéro rebuild de champ,
+  /// exactement ce que demande l'invariant AD-2 appliqué au canal `config`.
   final Map<int, Widget> _contentMemo = <int, Widget>{};
   List<Object?>? _contentMemoKey;
 
   /// Étapes **EFFECTIVES** : celles dont la [ZEditionStep.condition] est
   /// satisfaite, dans l'ordre déclaré. Recalculées UNIQUEMENT quand un champ de
-  /// garde change (SM-1) — jamais à chaque frappe.
+  /// garde change (invariant AD-2) — jamais à chaque frappe.
   ///
-  /// 🔴 Tout le reste de l'état raisonne sur CETTE liste, jamais sur
+  /// Tout le reste de l'état raisonne sur CETTE liste, jamais sur
   /// `widget.steps` : un index d'étape est donc toujours un index EFFECTIF.
   /// C'est ce qui rend l'absence d'une étape indistinguable, pour la
   /// navigation, le « k/N » et le gate, d'une étape jamais déclarée.
@@ -497,13 +497,13 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// **Mode « pilotage racine/nesting »** : ce stepper (racine avec nesting, ou
   /// lui-même imbriqué) gère la fenêtre = union du chemin actif, et rend ses
   /// zones d'étape en `DynamicEdition` **passif** (`manageVisibility:false`). En
-  /// mode LEGACY (ni imbriqué, ni de nesting), le comportement E3-5 est **exact**
-  /// (DynamicEdition gère `visibleFields`, `_syncWindow` sur navigation).
-  /// 🔴 `showAllSteps` FORCE le mode pilotage : toutes les étapes montent leur
+  /// mode simple (ni imbriqué, ni de nesting), `DynamicEdition` gère
+  /// `visibleFields` directement (`_syncWindow` sur navigation).
+  /// `showAllSteps` FORCE le mode pilotage : toutes les étapes montent leur
   /// `DynamicEdition` **en même temps**. Si chacune gérait `visibleFields`
   /// (`manageVisibility: true`), elles se battraient pour l'écrire — la dernière
   /// montée gagnerait et masquerait les champs de toutes les autres. Le stepper
-  /// reste donc le **single writer** (DP-9/AC13) et publie l'union.
+  /// reste donc le **single writer** et publie l'union.
   bool get _driving => widget.nested || _hasNesting || _allExpanded;
 
   /// Forme d'affichage EFFECTIVE (règle de préséance : cf.
@@ -513,10 +513,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
 
   /// `true` en mode « TOUT AFFICHÉ » (toutes les étapes dépliées).
   ///
-  /// 🔴 L'accordéon n'en fait **PAS** partie, et c'est le point dur de ce mode :
+  /// L'accordéon n'en fait **PAS** partie, et c'est le point dur de ce mode :
   /// il ne monte qu'**UNE** zone d'étape (l'active), exactement comme le paginé.
   /// Le rattacher ici forcerait [_driving], publierait l'UNION de toutes les
-  /// étapes et casserait le single-writer par le compte demandé par la CR.
+  /// étapes et casserait le single-writer.
   bool get _allExpanded => _display == ZStepsDisplay.allExpanded;
 
   /// `true` si CE niveau est au-delà du plafond d'imbrication (AD-10).
@@ -588,9 +588,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// | `allowStepTap` | comportemental, lu **au build** du chrome | **aucune** |
   /// | `orientation`, `style`, `indicatorPosition`, `showLabels`, `showSubtitles`, `indicatorSize`, `stepSpacing`, `activeColor`, `completedColor`, `inactiveColor`, `errorColor`, `railColor`, `badgeForegroundColor` | **VISUEL** — lus uniquement par `_StepIndicator`/`_AllStepsRow` | **aucune** |
   ///
-  /// 🔴 C'est la raison d'être de cette fonction : recalculer la fenêtre sur un
-  /// simple changement de couleur republierait `visibleFields` et, via le mémo,
-  /// reconstruirait tous les champs — exactement ce que SM-1 interdit.
+  /// C'est la raison d'être de cette fonction : recalculer la fenêtre sur un
+  /// simple changement de couleur republierait `visibleFields` et, via le
+  /// mémo, reconstruirait tous les champs (invariant AD-2 : jamais de rebuild
+  /// global du formulaire pour une frappe ou un changement purement visuel).
   static bool _isStructuralConfigChange(ZStepperConfig a, ZStepperConfig b) =>
       a.effectiveDisplay != b.effectiveDisplay;
 
@@ -598,10 +599,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   void didUpdateWidget(ZStepperEdition oldWidget) {
     super.didUpdateWidget(oldWidget);
     final controllerChanged = oldWidget.controller != widget.controller;
-    // 🔴 Le défaut corrigé ici : `config` n'était PAS observé. Basculer
-    // `showAllSteps` sur un stepper DÉJÀ MONTÉ changeait la mise en page (le
-    // chrome se rebuild) sans jamais recalculer la fenêtre : les en-têtes des
-    // étapes suivantes s'affichaient, leur CONTENU restait vide. Rien ne levait.
+    // `config` doit être observé : basculer `showAllSteps` sur un stepper déjà
+    // monté change la mise en page (le chrome se rebuild) et doit recalculer
+    // la fenêtre — sinon les en-têtes des étapes suivantes s'affichent avec un
+    // contenu resté vide.
     final configStructural =
         _isStructuralConfigChange(oldWidget.config, widget.config);
     if (controllerChanged || !identical(oldWidget.fields, widget.fields)) {
@@ -610,7 +611,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       _bindStepperGuards();
     } else if (configStructural) {
       // `_driving` vient de basculer : les conditions de CHAMP ne sont abonnées
-      // qu'en mode pilotage (en LEGACY c'est `DynamicEdition` qui s'en charge).
+      // qu'en mode pilotage (en mode simple c'est `DynamicEdition` qui s'en
+      // charge).
       _bindStepperGuards();
     }
     if (!identical(oldWidget.steps, widget.steps)) {
@@ -677,7 +679,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     ];
   }
 
-  /// Fenêtre directe (compat E3-5) des champs visibles de l'étape [i].
+  /// Fenêtre directe des champs visibles de l'étape [i].
   List<String> _windowFor(int i) => _visibleDirectOf(_steps[i]);
 
   /// Calcul **structurel** récursif de la fenêtre = union du chemin actif à
@@ -720,19 +722,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// directs visibles + (si l'étape courante porte un nested) la contribution
   /// remontée par le sous-stepper (ou son calcul structurel initial en repli).
   List<String> _contribution() {
-    // 🔴 v0.72.0 — garde de VACUITÉ, absente ici alors qu'elle existait aux deux
-    // autres sites qui indexent `_steps` (`_initialUnion`, `build`).
+    // Garde de VACUITÉ : indispensable ici comme aux deux autres sites qui
+    // indexent `_steps` (`_initialUnion`, `build`).
     //
     // Un sous-stepper dont TOUTES les étapes sont filtrées par leur `condition`
-    // levait un `RangeError` — au montage comme en vol. L'écrêtage d'index
+    // lèverait un `RangeError` — au montage comme en vol. L'écrêtage d'index
     // ci-dessous ne suffit pas : sur une liste vide `_lastStep` vaut -1, donc
     // `i` retombe à 0 et `_steps[0]` lève. Deux accès sont concernés (la fenêtre
     // directe ET la lecture de `nestedSteps`), d'où la garde ici plutôt que
     // dans `_windowFor`.
-    //
-    // Trouvé en écrivant le gabarit de la CR « prise en charge navire » : le cas
-    // n'était couvert par aucune garde (recherche négative montrée au rapport),
-    // et il est le seul des trois chemins d'indexation à lever.
     if (_steps.isEmpty) return const <String>[];
     if (_allExpanded) return _allStepsUnion();
     final i = _currentStep.value.clamp(0, _lastStep < 0 ? 0 : _lastStep);
@@ -740,11 +738,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     final nested = _steps[i].nestedSteps;
     if (nested == null) return base;
     final childPart = _childContributions[i] ?? _initialUnion(nested, 0);
-    // 🔴 UNION, pas concaténation. Un même nom peut apparaître à deux niveaux
+    // UNION, pas concaténation. Un même nom peut apparaître à deux niveaux
     // (étape parente ET sous-étape) : le publier deux fois ferait monter le
     // champ deux fois dans `DynamicEdition` — deux widgets sur la même tranche.
-    // Mesuré sur le cas limite AD-10 (`nestedSteps` circulaires) : la fenêtre
-    // sortait à `['a'] × 10`.
+    // Cas limite couvert par l'invariant AD-10 (`nestedSteps` circulaires) :
+    // sans dédoublonnage la fenêtre sortirait dupliquée (`['a'] × 10`).
     return _dedup(<String>[...base, ...childPart]);
   }
 
@@ -757,18 +755,18 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// Amorçage de la fenêtre selon le mode.
-  /// CR-IFFD-22 — le stepper est le **seul écrivain** de `visibleFields` et
-  /// calcule sa fenêtre depuis `ZCondition` uniquement. Une cible `visible` de
+  /// Le stepper est le **seul écrivain** de `visibleFields` et calcule sa
+  /// fenêtre depuis `ZCondition` uniquement. Une cible `visible` de
   /// `ZDerivation` n'y est donc **PAS appliquée** : le champ resterait visible
   /// alors que la dérivation le masque.
   ///
   /// Cette limite est **signalée**, jamais silencieuse (même idiome que
   /// `ZSyncMeta.collidingReservedKeys`) : une capacité déclarée que personne
-  /// n'applique est précisément le défaut que ces demandes reprochent. Le
-  /// correctif — faire porter la composition au stepper — touche son invariant
-  /// de single-writer et relève d'un chantier à part, pas d'un ajout de passage.
+  /// n'applique est précisément le défaut qu'il faut éviter. Le correctif —
+  /// faire porter la composition au stepper — touche son invariant de
+  /// single-writer et relève d'un chantier à part, pas d'un ajout ponctuel.
   ///
-  /// ⚠️ Les cibles `value`, `options` et `bounds`, elles, fonctionnent
+  /// Les cibles `value`, `options` et `bounds`, elles, fonctionnent
   /// normalement sous stepper : seule `visible` est concernée.
   void _warnDerivedVisibilityUnsupported() {
     assert(() {
@@ -795,7 +793,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// Pose la fenêtre correspondant au **mode courant** (déplié / pilotage /
-  /// LEGACY). Extrait de [_initWindow] pour être rejouable sur un changement
+  /// simple). Extrait de [_initWindow] pour être rejouable sur un changement
   /// STRUCTUREL de `config` sans re-émettre l'avertissement de montage.
   void _applyWindowForMode(int start) {
     if (widget.nested) {
@@ -816,7 +814,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
       widget.controller.setVisibleFields(_initialUnion(_steps, start));
       return;
     }
-    // LEGACY (aucun nesting) : comportement E3-5 exact.
+    // Mode simple (aucun nesting) : `DynamicEdition` gère `visibleFields`.
     _syncWindow(start);
   }
 
@@ -837,8 +835,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     _publishWindow();
   }
 
-  /// LEGACY only : aligne `controller.visibleFields` sur la fenêtre directe de
-  /// l'étape [i] (no-op si inchangé). Ne DÉTRUIT jamais de tranche.
+  /// Mode simple uniquement : aligne `controller.visibleFields` sur la fenêtre
+  /// directe de l'étape [i] (no-op si inchangé). Ne DÉTRUIT jamais de tranche.
   void _syncWindow(int i) {
     if (i < 0 || i > _lastStep) return;
     widget.controller.setVisibleFields(_windowFor(i));
@@ -849,17 +847,17 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// (Ré)abonne [_onGuardChanged] aux champs de garde de CE niveau (union des
   /// `field` référencés par les conditions des champs de ses étapes) — UNIQUEMENT
   /// en mode `_driving` (le racine/nested pilote alors la fenêtre lui-même, les
-  /// `DynamicEdition` étant passifs). En mode LEGACY, c'est [DynamicEdition] qui
+  /// `DynamicEdition` étant passifs). En mode simple, c'est [DynamicEdition] qui
   /// gère les gardes (aucun abonnement ici). Une frappe sur un champ **non-garde**
-  /// ne déclenche donc AUCUN recalcul (SM-1).
+  /// ne déclenche donc AUCUN recalcul (invariant AD-2).
   void _bindStepperGuards() {
     for (final l in _guardListenables) {
       l.removeListener(_onGuardChanged);
     }
     _guardListenables.clear();
     final conditions = <ZCondition?>[
-      // Conditions de CHAMP : uniquement en mode pilotage (en LEGACY, c'est
-      // `DynamicEdition` qui gère la fenêtre — inchangé).
+      // Conditions de CHAMP : uniquement en mode pilotage (en mode simple,
+      // c'est `DynamicEdition` qui gère la fenêtre — inchangé).
       if (_driving)
         for (final step in widget.steps)
           for (final name in step.fields)
@@ -892,7 +890,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// courante, republier la fenêtre, et réveiller le chrome par le canal
   /// STRUCTUREL.
   ///
-  /// 🔴 Bornage, pas remise à zéro : si l'étape qui disparaît est APRÈS la
+  /// Bornage, pas remise à zéro : si l'étape qui disparaît est APRÈS la
   /// courante, l'utilisateur ne doit rien sentir ; si c'est la dernière et
   /// qu'on y était, on recule d'un cran plutôt que de rejeter à l'étape 0 (ce
   /// qui ferait perdre le contexte de saisie).
@@ -921,18 +919,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         () => ZValidatorCompiler.compile(spec.validators),
       );
 
-  /// CR-DODLP-GAP34 — **projection de validation partagée**, et non la copie
-  /// locale `_stringOf(o) => o == null ? '' : '$o'` que ce fichier portait.
-  ///
-  /// Mesuré : cette copie projetait une **collection/map vide** vers `"[]"` /
-  /// `"{}"` — non vides pour `FormBuilderValidators.required<String>`. Le gate
-  /// d'étape laissait donc passer « Suivant » sur un `subItems` requis **sans
-  /// aucune ligne** et sur un champ custom requis portant une **map vide**,
-  /// alors que `DynamicEdition` (`_wrapError`) et la soumission
-  /// (`_aggregateValidate`) mordaient déjà, tous deux via [zValidationText].
-  ///
-  /// C'était la **garde jumelle manquée** du LOT 2 : la règle unique du dépôt
-  /// avait été posée dans les deux autres voies de validation, jamais ici.
+  /// **Projection de validation partagée** [zValidationText] : une copie
+  /// locale ad hoc projetterait à tort une **collection/map vide** vers
+  /// `"[]"` / `"{}"` — non vides pour `FormBuilderValidators.required<String>`.
+  /// Le gate d'étape laisserait alors passer « Suivant » sur un `subItems`
+  /// requis **sans aucune ligne** ou sur un champ custom requis portant une
+  /// **map vide**, alors que `DynamicEdition` (`_wrapError`) et la soumission
+  /// (`_aggregateValidate`) mordent déjà, tous deux via [zValidationText]. La
+  /// règle de projection reste donc **unique** à travers les trois voies de
+  /// validation.
   bool _validatorPasses(ZFieldSpec spec) {
     final validator = _validatorFor(spec);
     if (validator == null) return true;
@@ -941,8 +936,8 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 
   /// `true` ssi TOUS les champs **visibles** de l'étape [i] passent leurs
-  /// validateurs champ-locaux (E3-2). Un champ masqué par condition n'est PAS
-  /// validé (AC13) ; une étape sans champ visible passe trivialement.
+  /// validateurs champ-locaux. Un champ masqué par condition n'est PAS validé ;
+  /// une étape sans champ visible passe trivialement.
   bool _validateStep(int i) {
     if (i < 0 || i > _lastStep) return true;
     final visible = _windowFor(i).toSet();
@@ -963,9 +958,9 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     return true;
   }
 
-  /// Gate de l'étape courante : en mode `_driving`, valide l'**union** du chemin
-  /// actif (parent direct + sous-étape active du nested — AC12) ; en LEGACY,
-  /// valide la fenêtre directe (E3-5 exact).
+  /// Gate de l'étape courante : en mode `_driving`, valide l'**union** du
+  /// chemin actif (parent direct + sous-étape active du nested) ; en mode
+  /// simple, valide la fenêtre directe.
   bool _validateGate(int i) {
     // Une étape OPTIONNELLE ne bloque jamais la navigation (le gate global
     // reste strict pour les autres — c'est tout l'intérêt face à
@@ -999,13 +994,13 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   void _revealBlock() {
     _reveal.value = true; // canal structurel → révèle sans `Form` global.
     if (_driving) {
-      // Révèle aussi les champs de la sous-étape active d'un nested (AC12).
+      // Révèle aussi les champs de la sous-étape active d'un nested.
       _childRevealTick.value = _childRevealTick.value + 1;
     }
   }
 
-  /// « Suivant » : gate configurable (AC12). Bloqué ⇒ erreurs révélées. Sur la
-  /// dernière étape ⇒ délègue à [onComplete] (E3-6).
+  /// « Suivant » : gate configurable. Bloqué ⇒ erreurs révélées. Sur la
+  /// dernière étape ⇒ délègue à [onComplete] (soumission de l'hôte).
   void _next() {
     final current = _currentStep.value;
     final passes = !_config.validateOnNext || _validateGate(current);
@@ -1024,13 +1019,13 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
   }
 
-  /// « Précédent » : INCONDITIONNEL (jamais de gate en arrière — AC6).
+  /// « Précédent » : INCONDITIONNEL (jamais de gate en arrière).
   void _previous() {
     final current = _currentStep.value;
     if (current > 0) _goTo(current - 1);
   }
 
-  /// Navigation par **tap** sur l'indicateur (AC10) : retour arrière libre ; saut
+  /// Navigation par **tap** sur l'indicateur : retour arrière libre ; saut
   /// avant soumis au même gate que « Suivant » (`validateOnNext`).
   void _jumpTo(int target) {
     final current = _currentStep.value;
@@ -1060,17 +1055,16 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   @override
   Widget build(BuildContext context) {
     if (_steps.isEmpty) return const SizedBox.shrink();
-    // Chrome scellé sur les canaux STRUCTURELS uniquement (SM-1/AC11).
+    // Chrome scellé sur les canaux STRUCTURELS uniquement (invariant AD-2).
     return ListenableBuilder(
       listenable: _structural,
       builder: (context, _) {
         widget.onStructuralBuild?.call();
-        // 🔴 v0.72.0 — la garde de vacuité en tête de `build` ne protège PAS
-        // cette fermeture : elle est capturée une fois et rejouée à chaque
+        // La garde de vacuité en tête de `build` ne protège PAS cette
+        // fermeture : elle est capturée une fois et rejouée à chaque
         // notification structurelle, donc `_steps` peut devenir vide APRÈS le
-        // dernier passage dans `build`. Mesuré : filtrer toutes les étapes EN
-        // VOL faisait lever `clamp(0, -1)` — `ArgumentError`, avec la borne
-        // BASSE en argument, ce qui rendait le message trompeur.
+        // dernier passage dans `build`. Sans cette seconde garde, filtrer
+        // toutes les étapes EN VOL ferait lever `clamp(0, -1)`.
         //
         // Second défaut du même scénario que celui de `_contribution` ci-dessus,
         // mais sur un chemin distinct : l'un se produit au montage, l'autre au
@@ -1123,15 +1117,15 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
         unbounded ? MainAxisSize.min : MainAxisSize.max;
     switch (_config.indicatorPosition) {
       case ZStepIndicatorPosition.start:
-        // 🔴 CR-DODLP « Bug 1 ». Dans une `Row`, un enfant NON flexible est
-        // mesuré avec `maxWidth: infinity`. Le `_StepIndicator` étant posé nu
-        // ici, il recevait une largeur **non bornée** — et le `Expanded` de son
-        // rendu compact (`numbered`/`icons` + `showLabels`) levait alors
+        // Dans une `Row`, un enfant NON flexible est mesuré avec
+        // `maxWidth: infinity`. Le `_StepIndicator` posé nu ici recevrait
+        // donc une largeur **non bornée** — et le `Expanded` de son rendu
+        // compact (`numbered`/`icons` + `showLabels`) lèverait alors
         // « RenderFlex children have non-zero flex but incoming width
-        // constraints are unbounded ». Le défaut ne venait PAS de l'hôte : il
-        // se produisait même sous une largeur d'hôte parfaitement bornée.
+        // constraints are unbounded », même sous une largeur d'hôte
+        // parfaitement bornée.
         //
-        // Le correctif BORNE la bande (`maxWidth`), ce qui rend le `Expanded`
+        // La bande est donc BORNÉE (`maxWidth`), ce qui rend le `Expanded`
         // interne légal. La borne est thémable (`stepperSideBandMaxWidth`).
         final Widget band = Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1169,15 +1163,14 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     }
   }
 
-  /// **Mode « TOUT AFFICHÉ »** (parité legacy DODLP `showAllSteps: true`) :
-  /// toutes les étapes effectives sont dépliées, reliées par un rail vertical à
-  /// badges numérotés.
+  /// **Mode « TOUT AFFICHÉ »** (`showAllSteps: true`) : toutes les étapes
+  /// effectives sont dépliées, reliées par un rail vertical à badges numérotés.
   ///
-  /// 🔴 **VIRTUALISÉ** — `ListView.builder`, jamais `ListView(children:)` : une
+  /// **VIRTUALISÉ** — `ListView.builder`, jamais `ListView(children:)` : une
   /// racine « tout affiché » monte l'intégralité des champs du formulaire ; un
   /// `children:` les construirait tous à chaque build du chrome.
   ///
-  /// 🔴 **Pas de barre de navigation ni de gate** à ce niveau (il n'existe pas
+  /// **Pas de barre de navigation ni de gate** à ce niveau (il n'existe pas
   /// d'étape courante). Un bouton final n'apparaît QUE si [onComplete] est
   /// fourni — sinon ce canal serait mort. Les sous-steppers imbriqués, eux,
   /// paginent normalement avec LEUR propre gate.
@@ -1225,48 +1218,40 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
     );
   }
 
-  /// **Mode « ACCORDÉON MATERIAL »** (CR-DODLP `cr-nested-stepper-material-
-  /// vertical-2026-08-10`, parité legacy `_buildInteractiveVerticalStepper`) :
-  /// **tous les en-têtes** des étapes effectives sont rendus dans le rail
-  /// numéroté, **une seule est dépliée** (l'active), et un en-tête est
-  /// **tapable** pour y aller.
+  /// **Mode « ACCORDÉON MATERIAL »** : **tous les en-têtes** des étapes
+  /// effectives sont rendus dans le rail numéroté, **une seule est dépliée**
+  /// (l'active), et un en-tête est **tapable** pour y aller.
   ///
-  /// ## 🔴 Le rail est RÉUTILISÉ, pas réécrit
+  /// ## Le rail est RÉUTILISÉ, pas réécrit
   ///
   /// Ce mode rend exactement les mêmes [_AllStepsRow] / [_RailPainter] que le
   /// mode « tout affiché » (badge, gouttière, segment de rail directionnel,
   /// titre + sous-titre). Les deux modes ne diffèrent QUE par trois arguments :
   /// `content` (`null` ⇒ repliée), `onHeaderTap`, et les marques d'état. Une
   /// seconde implémentation de rail aurait dupliqué le painter, le calcul de
-  /// gouttière, la chaîne FR-26 des couleurs et la dérivation de contraste du
-  /// badge — quatre occasions de diverger.
+  /// gouttière, la chaîne de couleurs (invariant FR-26) et la dérivation de
+  /// contraste du badge — quatre occasions de diverger.
   ///
-  /// ## 🔴 Le verrou de validation : la règle, et ce qui la fonde
+  /// ## Le verrou de validation : la règle, et ce qui la fonde
   ///
   /// **`validateOnNext` est HONORÉ en accordéon**, par la voie EXACTE du mode
   /// paginé : un tap d'en-tête appelle [_jumpTo] (retour arrière libre ; saut
-  /// avant soumis au gate), « Suivant » appelle [_next].
+  /// avant soumis au gate), « Suivant » appelle [_next]. Un hôte qui change de
+  /// FORME D'AFFICHAGE ne perd donc jamais silencieusement son gate de
+  /// données : une capacité déclarée que personne n'applique serait
+  /// précisément le défaut à éviter. L'hôte qui veut une navigation libre
+  /// pose `validateOnNext: false` — canal existant, explicite, déjà documenté.
   ///
-  /// Le legacy DODLP, lui, ne valide **rien** dans ce rendu : mesuré dans
-  /// `dynamic_stepper.dart` (`_buildInteractiveVerticalStepper`), le tap est
-  /// `widget.config.allowStepTap ? () => setState(() => _currentStep = index)
-  /// : null` et `onStepContinue` est un `_currentStep++` nu — `validateOnNext`
-  /// n'y est **jamais lu**. Reproduire cette inertie ferait qu'un hôte qui
-  /// change de FORME D'AFFICHAGE perdrait silencieusement son gate de données :
-  /// une capacité déclarée que personne n'applique, précisément le défaut que
-  /// ce dépôt refuse. Et l'inverse est atteignable en un mot : l'hôte qui veut
-  /// la navigation libre du legacy pose `validateOnNext: false` — canal
-  /// existant, explicite, déjà documenté.
-  ///
-  /// ## 🔴 Single writer, garanti par le COMPTE
+  /// ## Single writer, garanti par le COMPTE
   ///
   /// Une seule zone d'étape est montée : il n'existe donc **qu'un**
   /// `DynamicEdition` à ce niveau, et la fenêtre publiée est celle de l'étape
   /// **active** (via [_contribution]), jamais l'union — [_allExpanded] est
   /// `false` ici, et c'est ce qui le garantit.
   ///
-  /// 🔴 **VIRTUALISÉ** — `ListView.builder` : le cas réel de la CR est
-  /// **18 sous-étapes**, dont 17 en-têtes repliés.
+  /// **VIRTUALISÉ** — `ListView.builder` : un formulaire à nombreuses
+  /// sous-étapes ne monte que le contenu de l'étape active, tous les autres
+  /// en-têtes restant repliés.
   Widget _accordionLayout(bool reveal) {
     final int n = _steps.length;
     final int index = _currentStep.value.clamp(0, _lastStep);
@@ -1285,11 +1270,11 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
           isLast: i == n - 1,
           // Repliée ⇒ AUCUN contenu monté (ni champs, ni sous-stepper).
           content: isActive ? _accordionActiveBody(i, reveal) : null,
-          // 🔴 Tapable pour TOUTES les lignes, active comprise (comme le
-          // legacy) : sans cela, l'en-tête actif perdrait son rôle `button` et
-          // l'annonce « déplié » du lecteur d'écran serait portée par un nœud
-          // de nature différente des autres. `_jumpTo` sort sans effet quand la
-          // cible est déjà l'étape courante.
+          // Tapable pour TOUTES les lignes, active comprise : sans cela,
+          // l'en-tête actif perdrait son rôle `button` et l'annonce
+          // « déplié » du lecteur d'écran serait portée par un nœud de nature
+          // différente des autres. `_jumpTo` sort sans effet quand la cible
+          // est déjà l'étape courante.
           onHeaderTap: _config.allowStepTap ? () => _jumpTo(i) : null,
           accordionState: isActive
               ? _RowAccordionState.active
@@ -1330,7 +1315,7 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   /// Zone d'étape : réutilise [DynamicEdition] (place stable/conditionnels/
   /// sections/grille). En mode `_driving`, le formulaire est **passif**
   /// (`manageVisibility:false`) — le racine est seul écrivain de `visibleFields`.
-  /// Si l'étape porte un sous-stepper (AC11), il est rendu **après** les champs
+  /// Si l'étape porte un sous-stepper, il est rendu **après** les champs
   /// directs sur le MÊME controller (imbriqué, mode « sans fenêtre »).
   /// TOUTES les entrées dont [_stepContent] dépend, HORS index d'étape. Un
   /// canal visuel de `config` n'y figure pas — c'est ce qui rend le mémo légitime.
@@ -1451,10 +1436,10 @@ class _ZStepperEditionState extends State<ZStepperEdition> {
   }
 }
 
-/// Indicateur d'étape accessible & configurable (DP-9). `Semantics(header:true)`
-/// avec libellé « Étape k sur N : titre » (rétro-compat E3-5), insets et
-/// alignements **directionnels**, couleurs dérivées du `ColorScheme` ou des
-/// overrides nullables de [ZStepperConfig] (aucun littéral — AD-13/FR-26/AD-6).
+/// Indicateur d'étape accessible & configurable. `Semantics(header:true)`
+/// avec libellé « Étape k sur N : titre », insets et alignements
+/// **directionnels**, couleurs dérivées du `ColorScheme` ou des overrides
+/// nullables de [ZStepperConfig] (aucun littéral — invariants AD-13/FR-26/AD-6).
 class _StepIndicator extends StatelessWidget {
   const _StepIndicator({
     required this.index,
@@ -1531,8 +1516,8 @@ class _StepIndicator extends StatelessWidget {
     }
   }
 
-  /// Rendu compact « leading + titre » (numbered/icons) — reproduit l'indicateur
-  /// historique E3-5 en style `numbered` par défaut.
+  /// Rendu compact « leading + titre » (numbered/icons) — style `numbered`
+  /// par défaut.
   Widget _compact(BuildContext context,
       {required Widget leading, required String title}) {
     return Padding(
@@ -1716,21 +1701,21 @@ enum _RowAccordionState {
 /// Une **étape dépliée** du mode « tout affiché » : badge circulaire numéroté,
 /// segment de rail, titre + sous-titre, puis le contenu de l'étape.
 ///
-/// ## Forme (mesurée sur le legacy DODLP `_buildVerticalExpandedSteps`)
+/// ## Rendu du rail : directionnel, pas positionné en dur
 ///
-/// Le legacy peint le rail avec deux `Positioned` **`left:`** (physique) dans un
-/// `Stack`, ce qui le place du mauvais côté en RTL (AD-13). Ici le rail est peint
-/// par un [_RailPainter] qui reçoit la [TextDirection] : côté **début de
-/// lecture** dans les deux sens.
+/// Un rail peint avec des `Positioned` **`left:`** (physique) dans un `Stack`
+/// se placerait du mauvais côté en RTL (invariant AD-13). Ici le rail est
+/// peint par un [_RailPainter] qui reçoit la [TextDirection] : côté **début
+/// de lecture** dans les deux sens.
 ///
 /// ## Pourquoi un `CustomPaint` et pas un `IntrinsicHeight`
 ///
-/// Le legacy compose `IntrinsicHeight` + `Row(stretch)` pour qu'une colonne de
-/// rail atteigne la hauteur de l'étape. `IntrinsicHeight` mesure DEUX fois son
-/// sous-arbre — sur une étape qui contient un formulaire entier, et répété pour
-/// chaque étape d'une liste virtualisée, c'est le contraire de ce que SM-1
-/// demande. Le `CustomPaint` se dimensionne sur son enfant et peint le rail dans
-/// la gouttière : **une** passe de layout.
+/// Composer `IntrinsicHeight` + `Row(stretch)` pour qu'une colonne de rail
+/// atteigne la hauteur de l'étape mesurerait DEUX fois le sous-arbre — sur
+/// une étape qui contient un formulaire entier, et répété pour chaque étape
+/// d'une liste virtualisée, le coût serait significatif. Le `CustomPaint` se
+/// dimensionne sur son enfant et peint le rail dans la gouttière : **une**
+/// passe de layout.
 class _AllStepsRow extends StatelessWidget {
   const _AllStepsRow({
     required this.index,
@@ -1759,9 +1744,9 @@ class _AllStepsRow extends StatelessWidget {
 
   /// État d'accordéon de la ligne, ou **`null`** en mode « tout affiché ».
   ///
-  /// 🔴 UN seul canal nullable, et non deux booléens : `null` est alors la
+  /// UN seul canal nullable, et non deux booléens : `null` est alors la
   /// preuve syntaxique que le mode « tout affiché » emprunte exactement les
-  /// branches d'avant (badge `activeOf`, titre gras, numéro dans le badge,
+  /// mêmes branches (badge `activeOf`, titre gras, numéro dans le badge,
   /// aucun drapeau sémantique `expanded`). Deux booléens auraient autorisé la
   /// combinaison « replié ET complété », qui n'existe pas ici.
   final _RowAccordionState? accordionState;
@@ -1775,8 +1760,8 @@ class _AllStepsRow extends StatelessWidget {
     // Chaîne FR-26 stricte : paramètre (`ZStepperConfig`) > jeton (`ZcrudTheme`)
     // > rôle (`ColorScheme`) / mesure de référence. AUCUN littéral de couleur.
     // Mode « tout affiché » : `expanded`/`completed` valent leur défaut, donc
-    // `badgeColor == config.activeOf(scheme)` — l'expression d'avant, au
-    // caractère près. En accordéon, l'état pilote la couleur.
+    // `badgeColor == config.activeOf(scheme)`. En accordéon, l'état pilote la
+    // couleur.
     final Color badgeColor = switch (accordionState) {
       null || _RowAccordionState.active => config.activeOf(scheme),
       _RowAccordionState.completed => config.completedOf(scheme),
@@ -1784,8 +1769,8 @@ class _AllStepsRow extends StatelessWidget {
     };
     final Color railColor =
         config.railColor ?? tokens.stepperRailColor ?? scheme.outlineVariant;
-    // Le legacy écrit un BLANC LITTÉRAL — illisible dès qu'un hôte choisit
-    // un `activeColor` clair. À défaut de réglage, on DÉRIVE le contraste.
+    // Un blanc littéral serait illisible dès qu'un hôte choisit un
+    // `activeColor` clair. À défaut de réglage, on DÉRIVE le contraste.
     final Color badgeForeground = config.badgeForegroundColor ??
         tokens.stepperBadgeForegroundColor ??
         (ThemeData.estimateBrightnessForColor(badgeColor) == Brightness.dark
@@ -1802,11 +1787,11 @@ class _AllStepsRow extends StatelessWidget {
     final String? subtitle = step.subtitle;
     final Widget? subtitleWidget = step.subtitleWidget;
 
-    // 🔴 AD-13 — l'étape active ne peut PAS être signalée par la seule couleur.
-    // Deux marques NON chromatiques s'y ajoutent en accordéon : le titre en
-    // **gras** (l'étape en attente est en graisse normale) et le **contenu
-    // déplié**, qui n'existe que là. En mode « tout affiché », `accordionState`
-    // est `null` ⇒ gras partout, exactement comme avant.
+    // Invariant AD-13 — l'étape active ne peut PAS être signalée par la seule
+    // couleur. Deux marques NON chromatiques s'y ajoutent en accordéon : le
+    // titre en **gras** (l'étape en attente est en graisse normale) et le
+    // **contenu déplié**, qui n'existe que là. En mode « tout affiché »,
+    // `accordionState` est `null` ⇒ gras partout.
     final bool isPending = accordionState == _RowAccordionState.pending;
     final Widget titleText = Text(
       title,
@@ -1964,23 +1949,24 @@ class _RailPainter extends CustomPainter {
 ///
 /// ## Le seam
 ///
-/// Le legacy DODLP rend ce sous-titre en Markdown (`GptMarkdown`, deux sites).
-/// Ici, le moteur de rendu n'entre PAS dans `zcrud_core` (AD-1) : il est injecté
-/// par l'hôte via le port [ZRichTextRenderer] (`ZcrudScope.richTextRenderer`).
+/// Un sous-titre peut se rendre en texte riche (Markdown, par exemple). Le
+/// moteur de rendu n'entre PAS dans `zcrud_core` (invariant AD-1) : il est
+/// injecté par l'hôte via le port [ZRichTextRenderer]
+/// (`ZcrudScope.richTextRenderer`).
 ///
-/// * **Aucun renderer** (défaut) ⇒ `Text` simple — comportement d'aujourd'hui,
-///   strictement inchangé pour un hôte passif.
+/// * **Aucun renderer** (défaut) ⇒ `Text` simple, comportement inchangé pour
+///   un hôte passif.
 /// * **Renderer qui décline** (`null`) ⇒ même repli texte simple.
-/// * **Renderer qui LÈVE** ⇒ même repli texte simple (AD-10 : un seam d'hôte
-///   fautif ne fait jamais tomber le formulaire).
+/// * **Renderer qui LÈVE** ⇒ même repli texte simple (invariant AD-10 : un
+///   seam d'hôte fautif ne fait jamais tomber le formulaire).
 ///
-/// ## L'annonce au lecteur d'écran (AD-13)
+/// ## L'annonce au lecteur d'écran (invariant AD-13)
 ///
-/// 🔴 Les deux voies doivent annoncer **exactement une fois**. Le rendu riche
+/// Les deux voies doivent annoncer **exactement une fois**. Le rendu riche
 /// porte DÉJÀ ses propres nœuds de texte : y superposer un `Semantics(label:)`
-/// **doublerait** l'annonce (précédent mesuré dans ce dépôt). Mais un renderer
-/// libre peut aussi ne produire AUCUNE sémantique (un `CustomPaint`, par
-/// exemple), et l'annonce serait alors **perdue**.
+/// **doublerait** l'annonce. Mais un renderer libre peut aussi ne produire
+/// AUCUNE sémantique (un `CustomPaint`, par exemple), et l'annonce serait
+/// alors **perdue**.
 ///
 /// La seule composition qui garantit « ni perdue, ni doublée » quel que soit le
 /// renderer est donc `Semantics(label:) + ExcludeSemantics(child:)` : le socle

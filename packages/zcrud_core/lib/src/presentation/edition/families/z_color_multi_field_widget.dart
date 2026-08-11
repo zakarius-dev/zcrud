@@ -1,31 +1,31 @@
-/// Widget de la **famille color** en mode **multiple** — FP-4.4 (Epic 4 / AD-52).
+/// Widget de la **famille color** en mode **multiple**.
 ///
 /// Variante **multi-sélection** native du champ `color` : la valeur vit **en
 /// tranche** sous forme de **`List<int>` ARGB 32 bits** (canal alpha en poids
-/// fort — `0xAARRGGBB`) — format stable, sérialisable, additif. Couvre la variante
-/// `color` **multiple** de DODLP (`color_picker_field`) **sans forker** un package
-/// tiers peu maintenu ni introduire de dépendance lourde au cœur (AD-1, CORE OUT=0)
-/// : 100 % Flutter/Material.
+/// fort — `0xAARRGGBB`) — format stable, sérialisable, additif. Aucune
+/// dépendance lourde au cœur (invariant AD-1, CORE OUT=0) : 100 %
+/// Flutter/Material.
 ///
 /// Activé par `ZColorConfig.multiple(...)` (dispatch dans `z_field_widget.dart`) ;
 /// le mode mono (`int` ARGB, [ZColorFieldWidget]) reste **strictement intact** par
 /// défaut (rétro-compat). Réutilise **tel quel** le picker built-in NEUTRE public
 /// [ZColorPickerDialog] et le seam injecté [ZColorPicker] (`ZcrudScope.colorPicker`)
 /// du champ simple — **zéro duplication** du picker (la roue HSV riche reste côté
-/// binding, AD-52).
+/// binding).
 ///
-/// **AD-10 (parse défensif)** : la lecture de la tranche passe par
+/// **Invariant AD-10 (parse défensif)** : la lecture de la tranche passe par
 /// [_parseArgbList] — toute entrée non-liste retombe sur `const <int>[]`, et dans
 /// une liste **seules** les entrées `int` valides sont conservées (les `String`/
 /// `double`/`null`… sont ignorées silencieusement). Le formulaire **ne throw
 /// jamais** ; le parent survit à une valeur corrompue.
 ///
-/// **FR-26 (aucun style codé en dur)** : les swatches sont des **données**
-/// DÉRIVÉES (teintes `HSV` échelonnées) ; la bordure de sélection provient du
-/// `ZcrudTheme`. **AD-13 (a11y/RTL)** : chaque cible interactive ≥ 48 dp avec
-/// `Semantics(button + selected + label hex)` ; `Wrap`/`EdgeInsetsDirectional`/
-/// `AlignmentDirectional` respectent la `Directionality` (aucun `EdgeInsets.only`
-/// gauche/droite, aucun `Alignment.centerLeft/Right`, aucun `TextAlign.left/right`).
+/// **Invariant FR-26 (aucun style codé en dur)** : les swatches sont des
+/// **données** DÉRIVÉES (teintes `HSV` échelonnées) ; la bordure de sélection
+/// provient du `ZcrudTheme`. **Invariant AD-13 (a11y/RTL)** : chaque cible
+/// interactive ≥ 48 dp avec `Semantics(button + selected + label hex)` ;
+/// `Wrap`/`EdgeInsetsDirectional`/`AlignmentDirectional` respectent la
+/// `Directionality` (aucun `EdgeInsets.only` gauche/droite, aucun
+/// `Alignment.centerLeft/Right`, aucun `TextAlign.left/right`).
 library;
 
 import 'package:flutter/material.dart';
@@ -65,11 +65,12 @@ class ZColorMultiFieldWidget extends StatelessWidget {
     return c is ZColorConfig ? c : null;
   }
 
-  /// AD-10 — Parse **défensif** de la tranche en `List<int>` ARGB : une `List`
-  /// est filtrée pour ne conserver **que** ses entrées `int` (les autres —
-  /// `String`/`double`/`null`… — sont ignorées) ; toute entrée non-liste (`null`,
-  /// scalaire, `Map`…) retombe sur `const <int>[]`. **Jamais** de throw : un cast
-  /// direct `value as List<int>` cracherait sur une entrée mêlée (test R3).
+  /// Parse **défensif** de la tranche en `List<int>` ARGB (invariant AD-10) :
+  /// une `List` est filtrée pour ne conserver **que** ses entrées `int` (les
+  /// autres — `String`/`double`/`null`… — sont ignorées) ; toute entrée
+  /// non-liste (`null`, scalaire, `Map`…) retombe sur `const <int>[]`.
+  /// **Jamais** de throw : un cast direct `value as List<int>` cracherait sur
+  /// une entrée mêlée.
   static List<int> _parseArgbList(Object? value) {
     if (value is! List) return const <int>[];
     final out = <int>[];
@@ -80,8 +81,9 @@ class ZColorMultiFieldWidget extends StatelessWidget {
   }
 
   /// Palette **dérivée** (12 teintes HSV échelonnées + 3 neutres) — pur-données,
-  /// aucun littéral de couleur (FR-26). Alpha plein. Miroir de la palette du champ
-  /// mono ([ZColorFieldWidget]) — données dérivées, dupliquées proprement.
+  /// aucun littéral de couleur (invariant FR-26). Alpha plein. Miroir de la
+  /// palette du champ mono ([ZColorFieldWidget]) — données dérivées,
+  /// dupliquées proprement.
   static List<int> _palette() {
     final argbs = <int>[];
     for (var i = 0; i < 12; i++) {
@@ -118,8 +120,9 @@ class ZColorMultiFieldWidget extends StatelessWidget {
   }
 
   /// Ouvre le picker enrichi (seam injecté prioritaire, sinon built-in neutre) et
-  /// **ajoute** la couleur retournée à la liste (dédup). Défensif (AD-10) : un seam
-  /// qui throw ⇒ aucune écriture (jamais de crash du formulaire).
+  /// **ajoute** la couleur retournée à la liste (dédup). Défensif (invariant
+  /// AD-10) : un seam qui throw ⇒ aucune écriture (jamais de crash du
+  /// formulaire).
   Future<void> _addColor(BuildContext context, List<int> current) async {
     final config = _config;
     final enableAlpha = config?.enableAlpha ?? false;
@@ -136,7 +139,7 @@ class ZColorMultiFieldWidget extends StatelessWidget {
           recentColors: recent,
         );
       } catch (_) {
-        picked = null; // AD-10 : seam défaillant ⇒ pas d'écriture.
+        picked = null; // Invariant AD-10 : seam défaillant ⇒ pas d'écriture.
       }
     } else {
       picked = await showDialog<int>(
@@ -170,7 +173,7 @@ class ZColorMultiFieldWidget extends StatelessWidget {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-5-1).
+      // provoquerait une DOUBLE annonce.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -180,7 +183,7 @@ class ZColorMultiFieldWidget extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.start),
           ),
-          // Couleurs sélectionnées : chips retirables (donnée ARGB — FR-26).
+          // Couleurs sélectionnées : chips retirables (donnée ARGB — invariant FR-26).
           if (selected.isNotEmpty)
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
@@ -237,20 +240,20 @@ class ZColorMultiFieldWidget extends StatelessWidget {
   }
 }
 
-/// MED-1 — Couleur du glyphe (coche/croix) peint SUR la pastille [argb] :
+/// Couleur du glyphe (coche/croix) peint SUR la pastille [argb] :
 /// contraste piloté par la luminosité de la **PASTILLE** (la donnée), PAS par le
 /// thème de l'app (axe indépendant — en `ThemeData.dark()`, `onSurface`/`onPrimary`
 /// s'inversent ⇒ glyphe sombre-sur-pastille-sombre, quasi invisible). Retourne un
 /// **blanc/noir DÉRIVÉS par HSV** (pur-données, miroir de la palette neutre —
-/// aucun littéral de couleur, FR-26) garantissant le contraste quel que soit le
-/// thème.
+/// aucun littéral de couleur, invariant FR-26) garantissant le contraste quel
+/// que soit le thème.
 Color _glyphOn(int argb) =>
     ThemeData.estimateBrightnessForColor(Color(argb)) == Brightness.dark
         ? HSVColor.fromAHSV(1, 0, 0, 1).toColor() // blanc dérivé
         : HSVColor.fromAHSV(1, 0, 0, 0).toColor(); // noir dérivé
 
 /// Swatch de palette **à case** ≥ 48 dp (multi-sélection) : coche visible quand
-/// [selected]. Couleur = donnée ARGB (FR-26) ; bordure = thème.
+/// [selected]. Couleur = donnée ARGB (invariant FR-26) ; bordure = thème.
 class _CheckSwatch extends StatelessWidget {
   const _CheckSwatch({
     required this.argb,

@@ -1,12 +1,12 @@
-/// Résolveur **Last-Write-Wins** PUR du domaine `zcrud_core` (E5-3).
+/// Résolveur **Last-Write-Wins** PUR du domaine `zcrud_core`.
 ///
-/// origine: canonique §7 / AD-9 — « merge Last-Write-Wins sur `updatedAt` ». Le
-/// *comment* du merge (décision par `id`) vit ici, en **Dart pur** ; le *quand*
-/// (débounce/multi-dépôts, E5-4) et l'application concrète (stores, E5-3) vivent
-/// ailleurs. Ce résolveur ne fait **aucune** I/O, ne lit **aucune** horloge et ne
-/// connaît **aucun** type backend : il compare deux [ZSyncEntry] et retourne une
-/// [ZLwwDecision] **déterministe**.
-/// AD-5 (backend-agnostique) ; AD-9 (LWW) ; AD-16 (soft-delete hors-entité).
+/// Merge Last-Write-Wins sur `updatedAt` (AD-9). Le *comment* du merge
+/// (décision par `id`) vit ici, en **Dart pur** ; le *quand* (débounce/
+/// multi-dépôts, `ZSyncOrchestrator`) et l'application concrète (stores)
+/// vivent ailleurs. Ce résolveur ne fait **aucune** I/O, ne lit **aucune**
+/// horloge et ne connaît **aucun** type backend : il compare deux
+/// [ZSyncEntry] et retourne une [ZLwwDecision] **déterministe**.
+/// Invariants portés : AD-5 (backend-agnostique) ; AD-9 (LWW).
 library;
 
 import '../contracts/z_entity.dart';
@@ -78,11 +78,12 @@ class ZLwwDecision<T extends ZEntity> {
 ///   **identiques** (même corps + même `is_deleted`), sinon
 ///   [ZLwwAction.pushLocalToRemote] (le local, autoritaire, réaligne le distant).
 ///
-/// > Alternative consignée (Ambiguïté #2) : « précédence-tombstone » à égalité
-/// > (le soft-delete gagne pour éviter toute résurrection). **Tranché** en faveur
-/// > de « local fait foi » (AD-9) : à égalité stricte de milliseconde le local
-/// > est autoritaire ; la résurrection n'est possible que si le local est
-/// > **réellement** plus récent, ce qui est la sémantique LWW attendue.
+/// > Une alternative existe : « précédence-tombstone » à égalité (le
+/// > soft-delete gagnerait systématiquement, pour éviter toute résurrection).
+/// > Elle est **écartée** en faveur de « local fait foi » (AD-9) : à égalité
+/// > stricte de milliseconde le local est autoritaire ; la résurrection n'est
+/// > possible que si le local est **réellement** plus récent, ce qui est la
+/// > sémantique LWW attendue.
 class ZLwwResolver {
   /// Construit le résolveur (sans état).
   const ZLwwResolver();

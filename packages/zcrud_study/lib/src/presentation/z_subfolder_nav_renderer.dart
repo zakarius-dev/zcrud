@@ -1,13 +1,13 @@
 /// Port de rendu de **SURFACE** de navigation de sous-dossiers —
-/// `ZSubfolderNavRenderer` (CR-IFFD-40, AD-4/AD-10).
+/// `ZSubfolderNavRenderer` (invariants AD-4/AD-10).
 ///
 /// ## Pourquoi ce port existe
 ///
 /// `ZSubfolderNavSpec.itemBuilder` construit un **ÉLÉMENT**, jamais le
-/// **CONTENEUR**. Tant que ce fut le seul seam, chaque nouveau besoin de surface
-/// (barre de sélection, onglets, menu…) exigeait **une nouvelle valeur
-/// d'énumération de notre part** — c'est la cause racine que CR-IFFD-40 a
-/// nommée, et le mode `selector` n'en corrige que l'occurrence du jour.
+/// **CONTENEUR**. Sans ce port, chaque nouveau besoin de surface (barre de
+/// sélection, onglets, menu…) exigerait **une nouvelle valeur d'énumération**
+/// côté paquet à chaque fois — le mode `selector` n'aurait corrigé que
+/// l'occurrence du jour, pas la cause racine.
 ///
 /// Le motif est **générique** : chapitres d'un manuel, étapes d'un parcours,
 /// onglets de document, filtres de catégorie. Un hôte qui veut sa propre surface

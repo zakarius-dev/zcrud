@@ -1,18 +1,19 @@
-/// Chrome de **soumission accessible** (E3-6, AC5/AC6/AC14) : un bouton scellé
+/// Chrome de **soumission accessible** : un bouton scellé
 /// sur l'état de soumission + une surface d'erreur accessible.
 ///
-/// origine: la voie de soumission (E3-6) expose un `ValueListenable<ZSubmissionState>`
-/// (AD-11, cœur agnostique manager — AD-15). Le bouton n'écoute QUE cet état
-/// (SM-1 — AD-2) : une frappe ne le reconstruit jamais.
+/// La voie de soumission expose un `ValueListenable<ZSubmissionState>`
+/// (invariant AD-11, cœur agnostique manager — invariant AD-15). Le bouton
+/// n'écoute QUE cet état (invariant AD-2) : une frappe ne le reconstruit
+/// jamais.
 ///
 /// - `inProgress` ⇒ bouton **désactivé** (`onPressed: null`) + indicateur de
 ///   progression + `Semantics(enabled: false)` ; ré-entrance gardée par le
-///   contrôleur (AC5).
+///   contrôleur.
 /// - `failure` ⇒ `failure.message` rendu dans une surface d'erreur **accessible**
-///   (`Semantics(liveRegion: true)`) ; bouton **réactivé** (nouvel essai — AC6).
+///   (`Semantics(liveRegion: true)`) ; bouton **réactivé** (nouvel essai).
 ///
-/// a11y (AD-13) : cible ≥ 48 dp, insets **directionnels**, style dérivé du thème
-/// (aucun littéral de couleur — FR-26).
+/// a11y (invariant AD-13) : cible ≥ 48 dp, insets **directionnels**, style
+/// dérivé du thème (aucun littéral de couleur — invariant FR-26).
 library;
 
 import 'package:flutter/material.dart';

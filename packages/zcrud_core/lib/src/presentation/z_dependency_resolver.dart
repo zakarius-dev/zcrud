@@ -1,9 +1,9 @@
 /// Seam de **résolution de dépendances** (AD-6) — défaut « throw ».
 ///
-/// origine: point d'extension unique par lequel un binding (E2-9 :
-/// `zcrud_riverpod`/`zcrud_get`/`zcrud_provider`) ou un `ZcrudScope` configuré
-/// fournit au cœur les dépendances applicatives, SANS que le cœur ne référence
-/// jamais un gestionnaire d'état (AD-15).
+/// Point d'extension unique par lequel un binding (`zcrud_riverpod`,
+/// `zcrud_get`, `zcrud_provider`) ou un `ZcrudScope` configuré fournit au
+/// cœur les dépendances applicatives, sans que le cœur ne référence jamais un
+/// gestionnaire d'état (AD-15).
 library;
 
 import 'z_scope_error.dart';
@@ -14,8 +14,8 @@ import 'z_scope_error.dart';
 /// [resolve] : rien n'est résolu magiquement tant qu'un binding/scope n'a pas
 /// explicitement fourni la dépendance. Le **seam de cycle de vie** du
 /// `ZFormController` (création/scoping/dispose) est, lui aussi, résolu par ce
-/// canal côté binding (E2-9) ; le défaut zéro-config est le « cycle local
-/// possédé par l'hôte » (l'hôte crée et `dispose()` son contrôleur).
+/// canal côté binding ; le défaut zéro-config est le « cycle local possédé
+/// par l'hôte » (l'hôte crée et `dispose()` son contrôleur).
 abstract class ZDependencyResolver {
   /// Constructeur `const` pour les implémentations immuables.
   const ZDependencyResolver();

@@ -1,14 +1,17 @@
-/// Vues **non modifiables** des canaux `Map`/`List` (DW-ES24-1, ES-3.0, AD-10).
+/// Vues **non modifiables** des canaux `Map`/`List` (invariant AD-10).
 ///
-/// origine: ES-3.0 (Phase B) — **patron `extra` d'ES-2.2b** (`zNormalizeExtra`)
-/// appliqué à l'IMMUABILITÉ : *« le champ STOCKÉ reste BRUT (le ctor `const`
-/// l'exige) ; c'est la LECTURE — l'ACCESSEUR — qui est normalisée »*. C'est le
-/// **seul point que TOUTES les voies traversent** (fromMap/copyWith **ET** le
-/// constructeur `const` invoqué non-`const` avec une réf mutable retenue), **sans
-/// perdre `const`** et **sans `assert`** (AD-10 : le décodeur généré appelle le
-/// ctor avec des valeurs BRUTES).
+/// Le champ STOCKÉ d'une entité reste BRUT (un constructeur `const` l'exige) ;
+/// c'est la LECTURE — l'ACCESSEUR — qui est normalisée en vue non
+/// modifiable. C'est le **seul point que TOUTES les voies traversent**
+/// (`fromMap`/`copyWith` **ET** le constructeur `const` invoqué non-`const`
+/// avec une référence mutable retenue), **sans perdre `const`** et **sans
+/// `assert`** (le décodeur généré appelle le constructeur avec des valeurs
+/// BRUTES).
 ///
-/// ## Le trou fermé (MESURÉ, DW-ES24-1)
+/// ## Le trou fermé
+///
+/// Un constructeur `const` invoqué **non-`const`** avec une collection
+/// mutable retient la référence d'origine :
 ///
 /// ```dart
 /// final mut = <int, int>{1: 2};
@@ -19,7 +22,7 @@
 /// Posées sur l'ACCESSEUR, ces vues rendent la mutation en place **impossible
 /// INCONDITIONNELLEMENT** (`UnsupportedError`), y compris sur la voie `const`.
 ///
-/// ## Zéro-copie sur le chemin chaud (AC14)
+/// ## Zéro-copie sur le chemin chaud
 ///
 /// Chaque fonction est **IDEMPOTENTE** : si la collection est **déjà** une vue
 /// profondément non modifiable (cas des voies `fromMap`/`copyWith`, qui
@@ -27,7 +30,7 @@
 /// rendue **TELLE QUELLE** (`identical`) — aucune re-copie. Seule la voie `const`
 /// polluée paie une enveloppe (lazy, O(n) une fois par lecture).
 ///
-/// AD-1 : pur `dart:collection`, aucun type hors `zcrud_core` — CORE OUT=0.
+/// Invariant AD-1 : pur `dart:collection`, aucun type hors `zcrud_core`.
 library;
 
 import 'dart:collection';

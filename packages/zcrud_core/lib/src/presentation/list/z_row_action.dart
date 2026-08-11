@@ -1,15 +1,14 @@
-/// Actions de **ligne** de liste, neutres, du cœur `zcrud_core` (E4-4).
+/// Actions de **ligne** de liste, neutres, du cœur `zcrud_core`.
 ///
-/// origine: IFFD `CrudActionsButons` + `RessourceACL`
-/// (`dynamic_list_screen.dart:73-342`, `:1272`) — les 3 apps (DODLP/IFFD/DLCFTI)
-/// dupliquaient des boutons d'action de ligne (éditer/supprimer/restaurer/custom)
-/// filtrés par une ACL applicative. E4-4 généralise ce patron en un **modèle
-/// d'action NEUTRE** `ZRowAction<T>` (porte l'entité `T` + la permission requise
-/// + le handler), **résolu par ligne** en `ZResolvedRowAction` (sans `T`, avec
+/// Une app affiche typiquement des boutons d'action de ligne (éditer,
+/// supprimer, restaurer, actions custom) filtrés par une ACL applicative.
+/// Ce fichier généralise ce patron en un **modèle d'action NEUTRE**
+/// `ZRowAction<T>` (porte l'entité `T` + la permission requise + le
+/// handler), **résolu par ligne** en `ZResolvedRowAction` (sans `T`, avec
 /// `enabled` déjà tranché par l'ACL et `onInvoke` déjà lié à l'entité) — le
-/// renderer (grille) ne voit donc **jamais** `T` ni `ZAcl` (SM-5, AD-16).
+/// renderer (grille) ne voit donc **jamais** `T` ni `ZAcl`.
 ///
-/// **Corbeille (AD-9/AD-16)** : les fabriques [ZRowAction.softDelete] /
+/// **Corbeille (AD-9)** : les fabriques [ZRowAction.softDelete] /
 /// [ZRowAction.restore] appellent les ports `ZRepository.softDelete`/`restore`
 /// (bascule `is_deleted` **hors-entité** `ZSyncMeta`, jamais de suppression
 /// dure) ; le `ZResult<Unit>` est **déplié** (AD-11) : `Right` → succès (hook
@@ -18,14 +17,14 @@
 /// **Neutre** : imports limités à `dart:async` (`FutureOr`) +
 /// `package:flutter/widgets.dart` (`IconData`/`BuildContext`/`VoidCallback`) +
 /// types `zcrud_core`. AUCUN `package:syncfusion`, AUCUN backend, AUCUN
-/// gestionnaire d'état (gardes de pureté SM-5).
+/// gestionnaire d'état (gardes de pureté).
 ///
-/// **Frontière** : E4-4 livre les **actions** soft-delete/restore ; le **listing**
-/// de la corbeille (voir les supprimés) est servi depuis la CR-DODLP 2026-08-11
-/// (Lot 2a) par l'extension additive `ZDataRequest.deletedScope`
-/// (`ZDeletedScope.deletedOnly`/`includeDeleted`), honorée par l'adaptateur E5
-/// (`FirebaseZRepositoryImpl`) dans ses deux sémantiques de suppression. Les
-/// sous-listes/onglets sont E4-5.
+/// **Frontière** : ce fichier livre les **actions** soft-delete/restore ; le
+/// **listing** de la corbeille (voir les supprimés) est servi par l'extension
+/// additive `ZDataRequest.deletedScope` (`ZDeletedScope.deletedOnly`/
+/// `includeDeleted`), honorée par l'adaptateur backend dans ses deux
+/// sémantiques de suppression. Les sous-listes/onglets sont un souci distinct
+/// (`ZSubListScreen`/`ZTabbedList`).
 library;
 
 import 'dart:async';
@@ -37,10 +36,10 @@ import '../../domain/failures/z_failure.dart';
 import '../../domain/ports/z_acl.dart';
 import '../../domain/ports/z_repository.dart';
 
-/// Mode de filtrage ACL des actions de ligne (AC2).
+/// Mode de filtrage ACL des actions de ligne.
 ///
 /// - [hide] (défaut) : une action non autorisée n'est **pas rendue** — l'usager
-///   ne voit pas ce qu'il ne peut pas faire (comportement le plus courant IFFD).
+///   ne voit pas ce qu'il ne peut pas faire (le comportement le plus courant).
 /// - [disable] : l'action est **rendue grisée** (`enabled == false`), non
 ///   cliquable — préférable pour la découvrabilité.
 enum ZActionAclMode {
@@ -56,7 +55,7 @@ enum ZActionAclMode {
 /// Débarrassée de la générécité `T` : l'entité et l'ACL ont déjà été liées lors
 /// de la résolution ([ZRowAction.resolve]). Le renderer (grille Syncfusion ou
 /// vue `builder` du cœur) consomme UNIQUEMENT ce type — il ne connaît ni `T` ni
-/// `ZAcl` (SM-5).
+/// `ZAcl`.
 @immutable
 class ZResolvedRowAction {
   /// Construit une action résolue neutre.
@@ -90,7 +89,7 @@ class ZResolvedRowAction {
   final VoidCallback onInvoke;
 }
 
-/// Modèle d'action de ligne **neutre et générique** `<T>` (AC1).
+/// Modèle d'action de ligne **neutre et générique** `<T>`.
 ///
 /// Porte le handler typé `onInvoke(context, entity)` + la permission requise
 /// (`requiredPermission`, filtrée par `ZAcl`, AD-16) + les métadonnées d'UI. Se

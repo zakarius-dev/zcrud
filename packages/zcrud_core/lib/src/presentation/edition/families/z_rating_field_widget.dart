@@ -1,14 +1,15 @@
-/// Widget de la **famille rating** (E3-3b-1) : `rating`.
+/// Widget de la **famille rating** : `rating`.
 ///
 /// Contrôle de notation (étoiles) : la note (`num`) vit **en tranche** (lecture
-/// `value`, écriture via `onChanged` — aucun `TextEditingController`, AD-2). La
-/// borne max vient de `ZRatingConfig.max` (défaut 5). Toucher l'étoile déjà
-/// active la désactive (retour à 0).
+/// `value`, écriture via `onChanged` — aucun `TextEditingController`,
+/// invariant AD-2). La borne max vient de `ZRatingConfig.max` (défaut 5).
+/// Toucher l'étoile déjà active la désactive (retour à 0).
 ///
-/// a11y/RTL (AD-13) : chaque étoile est un `IconButton` (cible ≥ 48 dp garantie)
-/// avec libellé ; un nœud `Semantics` conteneur annonce la note courante
-/// (`value`). Le `Row` suit la `Directionality` (progression début→fin). Aucune
-/// couleur en dur (icône teintée par le thème — FR-26).
+/// a11y/RTL (invariant AD-13) : chaque étoile est un `IconButton` (cible ≥
+/// 48 dp garantie) avec libellé ; un nœud `Semantics` conteneur annonce la
+/// note courante (`value`). Le `Row` suit la `Directionality` (progression
+/// début→fin). Aucune couleur en dur (icône teintée par le thème — invariant
+/// FR-26).
 library;
 
 import 'package:flutter/material.dart';
@@ -63,8 +64,8 @@ class ZRatingFieldWidget extends StatelessWidget {
       container: true,
       // Pas de `label:` ici : le `Text(resolvedLabel)` visible ci-dessous fournit
       // déjà le nom accessible du conteneur — le dupliquer sur le Semantics
-      // provoquerait une DOUBLE annonce (cf. correctif fp-4-4/fp-5-1). Le
-      // `value:` (note courante) n'est PAS dupliqué par le Text → conservé.
+      // provoquerait une DOUBLE annonce. Le `value:` (note courante) n'est
+      // PAS dupliqué par le Text → conservé.
       value: '$current / $max',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

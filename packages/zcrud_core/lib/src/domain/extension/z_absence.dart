@@ -1,19 +1,16 @@
-/// Préservation de l'**absence** sur le chemin ENTITÉ (CR-IFFD-18).
+/// Préservation de l'**absence** sur le chemin ENTITÉ.
 ///
-/// ## Pourquoi ce fichier existe — et l'erreur qui l'a rendu nécessaire
+/// ## Pourquoi ce fichier existe
 ///
-/// CR-IFFD-12 avait livré `ZStudyLegacyCodec.preserveAbsenceUnder` : un moyen de
-/// préserver, à la migration, la distinction que le domaine strict ne porte pas
-/// (un champ **absent** vs un champ valant `''`). Le handoff `v0.4.6` en avait
-/// conclu que les hôtes pouvaient retirer leurs contournements app-side.
-///
-/// **C'était faux, et la recommandation aurait détruit de la donnée.** Cette
-/// option n'existe **qu'au codec**, or les hôtes qui consomment les entités
-/// *directement* ne construisent aucun codec : leur chemin est
-/// `entité hôte → constructeur → toMap() → store`, et il ne traverse jamais
-/// `toCanonical`. La sémantique est de surcroît **inverse** — le codec marque
-/// l'absence dans la map *legacy* (`null`/clé manquante), alors que sur la map
-/// *runtime* le champ vaut déjà `''` : le marqueur ne se poserait jamais.
+/// Un codec de migration peut préserver, à la conversion, une distinction que
+/// le domaine strict ne porte pas nativement : un champ **absent** vs un champ
+/// valant `''`. Mais cette capacité, portée **seulement au codec**, ne sert à
+/// rien pour les hôtes qui consomment les entités *directement* : leur chemin
+/// est `entité hôte → constructeur → toMap() → store`, et il ne traverse
+/// jamais le codec de migration. La sémantique est de surcroît **inverse** —
+/// le codec marque l'absence dans la map *legacy* (`null`/clé manquante),
+/// alors que sur la map *runtime* le champ vaut déjà `''` : le marqueur ne se
+/// poserait jamais sur ce chemin.
 ///
 /// Ces helpers portent donc la **même capacité sur le chemin entité**, avec la
 /// **même clé de survie** que le codec — pour qu'un document migré par le codec
@@ -46,8 +43,8 @@ library;
 
 /// Clé de survie listant les champs **absents** à l'origine.
 ///
-/// ⚠️ **Valeur volontairement identique** à `ZStudyLegacyCodec.kAbsentFieldsKey`
-/// (`_legacy_absent_fields`). Le préfixe `_legacy_` est un héritage du chemin
+/// **Valeur volontairement identique** à celle utilisée par le codec de
+/// migration correspondant. Le préfixe `_legacy_` est un héritage du chemin
 /// migration ; le renommer pour l'esthétique romprait l'accord entre les deux
 /// chemins sur les corpus **déjà migrés** — un coût réel pour un gain nul.
 const String kZAbsentFieldsKey = '_legacy_absent_fields';
@@ -66,7 +63,7 @@ Set<String> zNullFieldsOf(Map<String, Object?> sourceFields) => <String>{
 /// Enregistre [absentFields] dans [extra] et rend la map résultante.
 ///
 /// **CUMULATIF** : fusionne avec un marqueur déjà présent au lieu de l'écraser.
-/// C'est la même leçon que CR-IFFD-7 et que l'idempotence du codec — au second
+/// Nécessaire pour la même raison que l'idempotence du codec — au second
 /// passage le champ vaut `''` et non plus `null`, donc un recalcul seul
 /// effacerait l'absence au moment précis où on la relit.
 ///

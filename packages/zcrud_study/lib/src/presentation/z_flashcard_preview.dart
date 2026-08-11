@@ -1,5 +1,4 @@
-/// `ZFlashcardPreview` — aperçu **en lecture seule** d'une flashcard (SU-8,
-/// AC14 — AD-45).
+/// `ZFlashcardPreview` — aperçu **en lecture seule** d'une flashcard.
 ///
 /// ## Il ne rend RIEN lui-même : il COMPOSE `ZFlashcardReviewCard`
 ///

@@ -1,23 +1,23 @@
-/// Source de temps injectable pour la clé LWW `updated_at` (CR-LEX-36).
+/// Source de temps injectable pour la clé LWW `updated_at`.
 ///
-/// ## Le défaut que cette couture ouvre un levier pour atténuer
+/// ## Le défaut que cette couture atténue
 ///
-/// La clé d'arbitrage du merge Last-Write-Wins (`updated_at`) était estampillée
-/// **en dur** à `DateTime.now()` — l'horloge de l'appareil qui écrit. Deux
-/// appareils aux horloges désynchronisées (dérive batterie, NTP absent, appareil
-/// longtemps hors-ligne) produisent alors un ordre d'arbitrage qui **ne reflète
-/// pas** l'ordre réel des écritures : la version réellement la plus récente peut
-/// être **silencieusement perdue**.
+/// Si la clé d'arbitrage du merge Last-Write-Wins (`updated_at`) est
+/// estampillée **en dur** à `DateTime.now()`, elle dépend de l'horloge de
+/// l'appareil qui écrit. Deux appareils aux horloges désynchronisées (dérive
+/// batterie, NTP absent, appareil longtemps hors-ligne) produisent alors un
+/// ordre d'arbitrage qui **ne reflète pas** l'ordre réel des écritures : la
+/// version réellement la plus récente peut être **silencieusement perdue**.
 ///
-/// L'hôte ne pouvait **rien** faire : `updated_at` est une clé réservée
-/// (`ZSyncMeta.reservedKeys`) que zcrud strippe du corps métier — sa valeur
-/// venait exclusivement de `DateTime.now()`, jamais d'un champ que l'hôte
-/// écrirait. Toute « garde » app-side aurait été décorative.
+/// `updated_at` est une clé réservée (`ZSyncMeta.reservedKeys`) que zcrud
+/// strippe du corps métier : sa valeur vient exclusivement de l'horloge
+/// injectée, jamais d'un champ que l'hôte écrirait — une « garde » côté
+/// application ne peut donc rien corriger sans ce seam.
 ///
-/// [ZClock] est le **levier** qui manquait : un hôte capable de mesurer le
-/// décalage entre son horloge et une autorité (offset serveur relevé à la
-/// connexion, NTP) peut injecter une horloge **corrigée** — sans changer la
-/// sémantique offline-first (la clé reste lisible localement, contrairement à un
+/// [ZClock] est le **levier** : un hôte capable de mesurer le décalage entre
+/// son horloge et une autorité (offset serveur relevé à la connexion, NTP)
+/// peut injecter une horloge **corrigée** — sans changer la sémantique
+/// offline-first (la clé reste lisible localement, contrairement à un
 /// `FieldValue.serverTimestamp()` qui exigerait un aller-retour serveur).
 ///
 /// ⚠️ **Ce n'est PAS une autorité temporelle commune.** Sans horloge corrigée
@@ -43,8 +43,8 @@ abstract final class ZSystemClock {
   }
 
   /// Horloge **décalée** d'[offset] par rapport au système — modèle d'un
-  /// appareil dont l'horloge avance ou retarde (le vecteur de skew de CR-LEX-36),
-  /// et aussi la forme d'une correction app-side (offset serveur mesuré).
+  /// appareil dont l'horloge avance ou retarde, et aussi la forme d'une
+  /// correction côté application (offset serveur mesuré).
   static ZClock offset(Duration offset) =>
       () => DateTime.now().toUtc().add(offset);
 }

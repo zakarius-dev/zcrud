@@ -1,21 +1,22 @@
-/// `ZWidgetRegistry` — **registre de widgets d'édition** injecté (E3-3b-1, AD-4).
+/// `ZWidgetRegistry` — **registre de widgets d'édition** injecté (invariant
+/// AD-4).
 ///
-/// origine: le repli `ZUnsupportedFieldWidget` (E3-3a) désignait explicitement
-/// E3-3b comme responsable de le remplacer par un **registre de widgets**. Ce
-/// registre associe un `kind` (`String`) à un **builder de widget** que le
-/// dispatcher `ZFieldWidget` rend **dans** la frontière de rebuild existante
-/// (`ZFieldListenableBuilder`, value-in-slice) pour les types dont le widget
-/// vit **hors du cœur** (markdown → E6 ; géo/tél → E11a ; `custom` → app hôte).
+/// Le repli `ZUnsupportedFieldWidget` est remplacé, pour les types couverts,
+/// par un **registre de widgets**. Ce registre associe un `kind` (`String`) à
+/// un **builder de widget** que le dispatcher `ZFieldWidget` rend **dans** la
+/// frontière de rebuild existante (`ZFieldListenableBuilder`, value-in-slice)
+/// pour les types dont le widget vit **hors du cœur** (markdown, géo/tél,
+/// `custom` → app hôte).
 ///
-/// **RECLASSEMENT (Contexte E3-3b)** : ce registre est **DISTINCT** de
-/// `ZTypeRegistry` (domaine, pur-Dart) qui enregistre des **codecs**
-/// `fromJson`/`toJson` — PAS des `Widget`. Un registre de widgets a besoin de
-/// Flutter → il vit en couche `presentation/`. La convention de `kind` est
-/// **alignée** sur `ZTypeRegistry` (nom d'`EditionFieldType` pour les types
-/// enum ; discriminant `custom` pour `EditionFieldType.custom`) : une app hôte
+/// Ce registre est **DISTINCT** de `ZTypeRegistry` (domaine, pur-Dart) qui
+/// enregistre des **codecs** `fromJson`/`toJson` — PAS des `Widget`. Un
+/// registre de widgets a besoin de Flutter → il vit en couche
+/// `presentation/`. La convention de `kind` est **alignée** sur
+/// `ZTypeRegistry` (nom d'`EditionFieldType` pour les types enum ;
+/// discriminant `custom` pour `EditionFieldType.custom`) : une app hôte
 /// enregistre **codec + widget sous le même `kind`**.
 ///
-/// **AD-4** : le registre est **INSTANCIABLE** et injecté via
+/// **Invariant AD-4** : le registre est **INSTANCIABLE** et injecté via
 /// `ZcrudScope.widgetRegistry` — **jamais** un singleton statique mutable. Le
 /// cœur reste **agnostique** des widgets externes (aucun import markdown/géo/
 /// tél ; graphe OUT=0 inchangé) : le widget réel est fourni par le package
@@ -30,13 +31,12 @@ import '../../domain/registry/z_registry_error.dart';
 /// Contexte passé à un [ZFieldWidgetBuilder] : la spec du champ, la valeur
 /// COURANTE de sa tranche et le callback d'écriture. Le builder **lit** [value]
 /// et **écrit** via [onChanged] — l'appel reste **dans** la frontière de rebuild
-/// du dispatcher (AD-2 : aucune souscription élargie).
+/// du dispatcher (invariant AD-2 : aucune souscription élargie).
 ///
-/// ## CR-DODLP-GAP4 — champ custom à valeur **STRUCTURÉE** (recommandation)
+/// ## Champ custom à valeur **STRUCTURÉE**
 ///
 /// Un champ composite (ex. `ressource → opérations autorisées`) n'a **rien de
-/// spécial** à obtenir : le socle le porte déjà de bout en bout. Les quatre
-/// points ont été mesurés, pas déduits.
+/// spécial** à obtenir : le socle le porte déjà de bout en bout.
 ///
 /// 1. **Écrire une `Map`** — [onChanged] est un `ValueChanged<Object?>`, pas un
 ///    `ValueChanged<String>`. `ctx.onChanged({'agent': ['read','update']})`
@@ -48,15 +48,14 @@ import '../../domain/registry/z_registry_error.dart';
 ///    comme vides), puis affiche l'erreur sous le widget custom via la surface
 ///    accessible `Semantics(liveRegion:)` — la famille registre n'est pas une
 ///    famille clavier, elle passe donc par cette surface et non par
-///    `TextFormField.errorText`. La soumission applique la même règle.
-///    🔴 Le **gate d'étape** de `ZStepperEdition` portait une copie locale de la
-///    projection qui rendait `"{}"` (non vide) : « Suivant » passait sur une map
-///    requise vide. Corrigé — mêmes trois voies, même règle.
-/// 3. **Rebuild granulaire (AD-2/SM-1)** — le widget custom est monté DANS le
-///    `ZFieldListenableBuilder` de sa tranche : changer une entrée de la map ne
-///    reconstruit **que ce champ**. Corollaire à respecter côté hôte : écrire
-///    une **nouvelle** map (copie) plutôt que muter celle reçue — une mutation
-///    en place ne notifie rien.
+///    `TextFormField.errorText`. La soumission et le gate d'étape appliquent
+///    la MÊME règle, via la MÊME projection : trois voies, une seule source
+///    de vérité.
+/// 3. **Rebuild granulaire (invariant AD-2)** — le widget custom est monté DANS
+///    le `ZFieldListenableBuilder` de sa tranche : changer une entrée de la map
+///    ne reconstruit **que ce champ**. Corollaire à respecter côté hôte :
+///    écrire une **nouvelle** map (copie) plutôt que muter celle reçue — une
+///    mutation en place ne notifie rien.
 /// 4. **Validation métier au-delà du requis** — elle ne s'exprime pas dans
 ///    `validators` (qui compile des `FormFieldValidator<String>` sur la
 ///    projection texte). Deux voies : soit le widget custom refuse d'écrire un
@@ -68,11 +67,11 @@ import '../../domain/registry/z_registry_error.dart';
 /// la présentation lisible d'une structure qu'il ne connaît pas.
 ///
 /// **Sérialisation** : la map vit dans la tranche puis dans le `Map` soumis ;
-/// sa (dé)sérialisation est celle du modèle (AD-3), sa **relecture défensive**
-/// celle d'AD-10 (une entrée absente/corrompue ne fait jamais échouer le
-/// parent). Le cœur ne s'interpose pas.
+/// sa (dé)sérialisation est celle du modèle (invariant AD-3), sa **relecture
+/// défensive** celle de l'invariant AD-10 (une entrée absente/corrompue ne
+/// fait jamais échouer le parent). Le cœur ne s'interpose pas.
 ///
-/// 🔴 Ce qui reste **hors du socle** : l'éditeur lui-même. Un tableau de
+/// Ce qui reste **hors du socle** : l'éditeur lui-même. Un tableau de
 /// permissions est une décision **métier** de l'application — le socle fournit
 /// le moyen (tranche typée `Object?`, requis, granularité), jamais l'écran.
 @immutable
@@ -97,21 +96,22 @@ class ZFieldWidgetContext {
 /// Construit le widget d'édition d'un champ à partir de son [ZFieldWidgetContext].
 ///
 /// Fourni par un package satellite / l'app hôte (jamais par le cœur). Si le
-/// widget nécessite un contrôleur isolé (cas rich-text E6, AD-7), c'est **sa**
-/// responsabilité — le cœur ne gère pas sa stabilité.
+/// widget nécessite un contrôleur isolé (cas rich-text, invariant AD-7),
+/// c'est **sa** responsabilité — le cœur ne gère pas sa stabilité.
 typedef ZFieldWidgetBuilder = Widget Function(
   BuildContext context,
   ZFieldWidgetContext ctx,
 );
 
 /// Registre **instanciable** de builders de widgets d'édition, discriminés par
-/// `kind` (`String`). Injecté via `ZcrudScope.widgetRegistry` (AD-4 — jamais un
-/// singleton statique mutable).
+/// `kind` (`String`). Injecté via `ZcrudScope.widgetRegistry` (invariant
+/// AD-4 — jamais un singleton statique mutable).
 ///
 /// API alignée sur `ZTypeRegistry`/`ZOpenRegistry` (register/isRegistered/kinds
 /// + lookup strict/défensif) : `builderFor` **throw** [ZUnregisteredTypeError]
-/// si absent (bug de configuration, AD-3) ; `tryBuilderFor` retourne `null`
-/// (chemin défensif utilisé par le dispatcher pour retomber sur le repli).
+/// si absent (bug de configuration, invariant AD-3) ; `tryBuilderFor` retourne
+/// `null` (chemin défensif utilisé par le dispatcher pour retomber sur le
+/// repli).
 class ZWidgetRegistry {
   /// Construit un registre de widgets vide.
   ZWidgetRegistry();
@@ -122,7 +122,8 @@ class ZWidgetRegistry {
   final Map<String, ZFieldWidgetBuilder> _builders = <String, ZFieldWidgetBuilder>{};
 
   /// Enregistre le [builder] de [kind]. Collision → **`throw`**
-  /// [ZDuplicateRegistrationError] (jamais un « last-wins » silencieux, AD-3).
+  /// [ZDuplicateRegistrationError] (jamais un « last-wins » silencieux,
+  /// invariant AD-3).
   void register(String kind, ZFieldWidgetBuilder builder) {
     if (_builders.containsKey(kind)) {
       throw ZDuplicateRegistrationError(kind: kind, registryName: _name);
@@ -137,7 +138,7 @@ class ZWidgetRegistry {
   Iterable<String> get kinds => _builders.keys;
 
   /// Lookup **strict** : le builder de [kind], ou **`throw`**
-  /// [ZUnregisteredTypeError] si absent (AD-3).
+  /// [ZUnregisteredTypeError] si absent (invariant AD-3).
   ZFieldWidgetBuilder builderFor(String kind) {
     final builder = _builders[kind];
     if (builder == null) {
@@ -146,7 +147,8 @@ class ZWidgetRegistry {
     return builder;
   }
 
-  /// Lookup **défensif** : le builder de [kind], ou `null` si absent (AD-10) —
-  /// utilisé par le dispatcher pour retomber sur `ZUnsupportedFieldWidget`.
+  /// Lookup **défensif** : le builder de [kind], ou `null` si absent
+  /// (invariant AD-10) — utilisé par le dispatcher pour retomber sur
+  /// `ZUnsupportedFieldWidget`.
   ZFieldWidgetBuilder? tryBuilderFor(String kind) => _builders[kind];
 }

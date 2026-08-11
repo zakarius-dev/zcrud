@@ -8,19 +8,18 @@
 /// Une valeur **orpheline** est une valeur **présente dans la tranche** mais
 /// **absente des options du moment** (cascade : les options dépendent d'un autre
 /// champ ; un agent muté sort de la population « du jour » sans que la donnée
-/// historique soit fausse). Le socle **conserve** cette valeur — décision
-/// mesurée, parité DODLP : ni l'hôte ni le socle ne purgent, et une purge
-/// écrirait, ce qui refermerait la boucle d'une dépendance circulaire
-/// aujourd'hui inoffensive. **Ces helpers ne touchent donc JAMAIS à la donnée :
-/// ils ne décident que du RENDU.**
+/// historique soit fausse). Le socle **conserve** cette valeur : ni l'hôte ni
+/// le socle ne purgent, et une purge écrirait, ce qui refermerait la boucle
+/// d'une dépendance circulaire aujourd'hui inoffensive. **Ces helpers ne
+/// touchent donc JAMAIS à la donnée : ils ne décident que du RENDU.**
 ///
-/// Le rendu, lui, divergeait d'une famille à l'autre :
+/// Le rendu, sans cette règle unique, divergerait d'une famille à l'autre :
 /// - voies `dropdown` (select et relation) : `values.contains(value) ? value :
-///   null` ⇒ la valeur était **effacée de l'écran** alors qu'elle allait être
-///   **soumise** — un *mensonge d'affichage* (famille CR-IFFD-77 : un widget ne
-///   rend que la donnée que son propre geste écrit) ;
+///   null` effacerait la valeur de l'écran alors qu'elle va être **soumise**
+///   — un *mensonge d'affichage* (un widget ne doit rendre que la donnée que
+///   son propre geste écrit) ;
 /// - voies `chips` (select multi et relation multi) : `_labelForValue(...) ??
-///   '$v'` ⇒ l'**identifiant technique brut** s'affichait, défaut déjà proscrit
+///   '$v'` afficherait l'**identifiant technique brut**, défaut déjà proscrit
 ///   ailleurs dans ce paquet (cf. `fileRefUnresolved` : « une identité non
 ///   résolue doit être ABSENTE, jamais la clé montrée à l'utilisateur »).
 ///
@@ -37,13 +36,13 @@
 /// - **ni clé à l'écran** : le texte rendu est un libellé traduit (la voie
 ///   « `'$v'` » l'aurait exposée).
 ///
-/// ## Canal d'accessibilité (AD-13)
+/// ## Canal d'accessibilité (invariant AD-13)
 ///
 /// L'état inhabituel est porté par du **texte** — donc par un canal disponible
 /// au lecteur d'écran **et** à l'œil — jamais par une couleur ou une icône
 /// seules. Il est doublé par l'état `disabled` natif du contrôle Material, que
 /// Flutter projette dans l'arbre sémantique (`SemanticsFlag.hasEnabledState`).
-/// Aucune couleur n'est posée ici (FR-26).
+/// Aucune couleur n'est posée ici (invariant FR-26).
 ///
 /// ## Surcharge par l'hôte
 ///
@@ -54,7 +53,7 @@
 /// public, aucun jeton `ZcrudTheme`** : ce qui est surchargé est un *libellé*,
 /// et `ZcrudTheme` ne porte aucun libellé (ses seules `String` sont des noms de
 /// **modes de style**). Y loger un texte ouvrirait un second canal de surcharge
-/// concurrent de la l10n — exactement ce que FR-26 proscrit.
+/// concurrent de la l10n — exactement ce que l'invariant FR-26 proscrit.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -68,7 +67,7 @@ const String zOrphanChoiceLabelKey = 'choiceUnresolved';
 
 /// `true` si [value] est **orpheline** : non `null` et absente des [choices].
 ///
-/// `null` n'est jamais orphelin (AD-4 : `null` ⇒ absent de l'arbre, c'est la
+/// `null` n'est jamais orphelin (invariant AD-4 : `null` ⇒ absent de l'arbre, c'est la
 /// place vide légitime du champ).
 bool zIsOrphanValue(List<ZFieldChoice> choices, Object? value) {
   if (value == null) return false;

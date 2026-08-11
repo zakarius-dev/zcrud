@@ -1,26 +1,21 @@
 /// `ZSubfolderSelectionController` — pilotage EXTERNE et optionnel de la
-/// sélection de fratrie de `ZStudyFolderDetail` (CR-IFFD-45, partie 2).
+/// sélection de fratrie de `ZStudyFolderDetail`.
 ///
-/// ## Le manque mesuré
+/// ## Le manque comblé
 ///
-/// Avant cette CR, la sélection de sous-dossier vivait dans un `ValueNotifier`
-/// **privé** du `State` de `ZStudyFolderDetail`, amorcé par
-/// `initialSelectedSubfolderId`, et le descripteur `ZSubfolderNavSpec`
-/// n'exposait **aucun** canal de sélection — vérifié par grep négatif sur
-/// `z_subfolder_nav_spec.dart` (`onSelect|Selected|selection` ⇒ 0 ligne au
-/// moment de la CR). Un hôte qui voulait *connaître* la sélection (pour titrer
+/// Sans ce contrôleur, un hôte qui veut *connaître* la sélection (pour titrer
 /// une barre, filtrer un compteur, journaliser) ou la *commander* (depuis un
-/// fil d'Ariane, une recherche, un lien profond) n'avait qu'une option : tenir
-/// une **seconde source de vérité** et la resynchroniser à la main — donc
-/// accepter une divergence silencieuse entre ce que la barre montre et ce que
-/// l'hôte croit sélectionné.
+/// fil d'Ariane, une recherche, un lien profond) n'aurait qu'une option :
+/// tenir une **seconde source de vérité** et la resynchroniser à la main —
+/// donc accepter une divergence silencieuse entre ce que la barre montre et
+/// ce que l'hôte croit sélectionné.
 ///
 /// ## La forme retenue : le patron `ZDisplayState` de `zcrud_core`
 ///
 /// Ce contrôleur n'invente rien : c'est le patron **déjà en production dans ce
-/// package même** (`ZStudyToolsSectionSpec.expandController`, CR-IFFD-38),
-/// décliné sur `String?` au lieu de `bool`. Ses cinq clauses s'appliquent
-/// telles quelles — en particulier :
+/// package même** (`ZStudyToolsSectionSpec.expandController`), décliné sur
+/// `String?` au lieu de `bool`. Ses cinq clauses s'appliquent telles
+/// quelles — en particulier :
 ///
 /// * **état interne par défaut** : `null` ⇒ `ZStudyFolderDetail` détient la
 ///   sélection exactement comme avant, rendu et cycle de vie **strictement

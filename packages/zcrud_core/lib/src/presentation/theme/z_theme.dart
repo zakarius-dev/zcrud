@@ -1,15 +1,15 @@
-/// `ZcrudTheme` — design-tokens sémantiques injectables (FR-26, AD-6).
+/// `ZcrudTheme` — design-tokens sémantiques injectables (AD-6).
 ///
-/// origine : `ThemeExtension<ZcrudTheme>` résolu via `ZcrudScope` avec repli sur
+/// `ThemeExtension<ZcrudTheme>` résolu via `ZcrudScope` avec repli sur
 /// `Theme.of(context)`. **AUCUN style codé en dur** dans le cœur (pas de
-/// `kNavyColor`/`kFormInputDecorationTheme`) : les couleurs sémantiques sont
+/// couleur/décoration figée en constante) : les couleurs sémantiques sont
 /// `nullable` et **dérivées** du `ColorScheme`/`TextTheme` courant par
 /// [ZcrudTheme.fallback]. Les tokens d'espacement/rayon sont la **source
 /// injectable** — ils sont exemptés de la garde couleur (ce ne sont pas des
 /// couleurs).
 ///
-/// INFLEXION E2-8 : ce fichier introduit `package:flutter/material.dart` sous
-/// `presentation/` (requis par `ThemeExtension`/`Theme.of`/`ThemeData` — FR-26).
+/// Ce fichier introduit `package:flutter/material.dart` sous
+/// `presentation/` (requis par `ThemeExtension`/`Theme.of`/`ThemeData`).
 /// `cupertino`/`services`/`dart:ui`-direct restent interdits.
 library;
 
@@ -21,10 +21,10 @@ import 'z_gradient_resolver.dart';
 /// Habillage du **déclencheur** d'une surface de navigation (barre repliée
 /// montrant l'élément courant) — token de LOOK, jamais de structure.
 ///
-/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un RÔLE de conteneur Material,
+/// **Aucune couleur ici.** Chaque valeur nomme un RÔLE de conteneur Material,
 /// que le consommateur traduit en `ColorScheme` : c'est ce qui permet à un hôte
 /// de demander « contour » ou « rempli » sans qu'un seul hex n'entre dans un
-/// paquet (FR-26/NFR-S7).
+/// paquet.
 enum ZSubfolderTriggerVariant {
   /// Aucun conteneur : le déclencheur est une simple ligne cliquable.
   /// **Rendu historique** — c'est ce que rend un thème qui ne déclare rien.
@@ -537,14 +537,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Couleur de bordure de champ (repli : `ColorScheme.outline`).
   ///
-  /// **CR-DODLP-THEME-TOKENS** — consommée par [inputDecoration] pour `border`
+  /// Consommée par [inputDecoration] pour `border`
   /// et `enabledBorder` (`fieldBorderColor ?? ColorScheme.outline`). C'est déjà
   /// le jeton de bordure de champ du paquet (consommé par `z_color_field`,
   /// `z_tags_field`, `z_signature_field`, `z_sub_list_field`, `z_app_file_field`,
   /// `z_dynamic_item_field`, et hors-paquet par `zcrud_markdown`/`zcrud_geo`) :
   /// le lire ici **aligne** `inputDecoration` sur le reste du paquet.
   ///
-  /// 🔴 Hôte **passif inchangé au pixel** : [ZcrudTheme.fallback] pose ce jeton
+  /// Hôte **passif inchangé au pixel** : [ZcrudTheme.fallback] pose ce jeton
   /// à `ColorScheme.outline`, exactement la valeur codée en dur auparavant.
   ///
   /// N'est **pas** appliquée à `focusedBorder` ni à `errorBorder` : ces deux

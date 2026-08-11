@@ -77,8 +77,8 @@ class ZGeoBounds {
   String toString() => 'ZGeoBounds(sw: $southWest, ne: $northEast)';
 }
 
-/// Degrés par mètre approximatifs (expansion des bounds d'un cercle — parité
-/// legacy `gs:486`, `degPerMeter = 1 / 111320.0`, « Rough approximation »).
+/// Degrés par mètre approximatifs (expansion des bounds d'un cercle) —
+/// approximation grossière, suffisante pour un rectangle englobant.
 const double _kDegreesPerMeter = 1 / 111320.0;
 
 /// Tolérance du test « point sur segment » (frontière inclusive documentée).
@@ -86,8 +86,7 @@ const double _kOnSegmentEpsilon = 1e-12;
 
 double _deg2rad(double deg) => deg * math.pi / 180;
 
-/// Aire sphérique d'un anneau (parité stricte `gs:504-522`) : `< 3` sommets →
-/// `0` (comme le legacy).
+/// Aire sphérique d'un anneau : `< 3` sommets → `0`.
 double _ringAreaSquareMeters(List<ZGeoPoint> ring) {
   if (ring.length < 3) return 0;
   double total = 0;

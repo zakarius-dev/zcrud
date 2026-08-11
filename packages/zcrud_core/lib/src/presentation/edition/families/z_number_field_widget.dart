@@ -1,25 +1,24 @@
-/// Widget de la **famille nombre** (E3-3a) : `number` / `integer` / `float`.
+/// Widget de la **famille nombre** : `number` / `integer` / `float`.
 ///
-/// `TextFormField` numérique autonome (aucun `Form` global — AD-2) sur un
-/// `TextEditingController`/`FocusNode` **stables** détenus par l'hôte
-/// (`ZFieldWidget`) — STATELESS, comme la famille texte (stabilité E3-2 non
+/// `TextFormField` numérique autonome (aucun `Form` global — invariant AD-2)
+/// sur un `TextEditingController`/`FocusNode` **stables** détenus par l'hôte
+/// (`ZFieldWidget`) — STATELESS, comme la famille texte (stabilité non
 /// dupliquée). Le clavier numérique (`keyboardType`) oriente la saisie ;
 /// l'`onChanged` remonte une **valeur TYPÉE** (`int`/`num`, `null` si vide/
-/// incomplet/non numérique) — décision story #5 (« valeur typée en tranche ») :
-/// une saisie non numérique n'atteint donc jamais la tranche (elle y écrit
-/// `null`), et le validateur numérique mémoïsé la signale.
+/// incomplet/non numérique) : une saisie non numérique n'atteint donc jamais
+/// la tranche (elle y écrit `null`), et le validateur numérique mémoïsé la
+/// signale.
 ///
-/// RELÂCHEMENT L-2 (E3-3b-1, code-review E3-3a §3) : `inputFormatters`/
-/// `FilteringTextInputFormatter` (transformateurs **purs, sans état** — vivant
-/// dans `package:flutter/services.dart`) sont désormais autorisés sous
-/// `presentation/` via une clause `show` **restreinte** (garde de pureté
-/// relâchée par symbole ; `services.dart` nu/hors-allowlist reste banni). Ils
-/// **filtrent la saisie non numérique** au clavier (plus de caractère non
-/// numérique transitoire), EN PLUS du parsing typé défensif (`tryParse → null`)
-/// et du validateur mémoïsé — jamais en remplacement.
+/// `inputFormatters`/`FilteringTextInputFormatter` (transformateurs **purs,
+/// sans état** — vivant dans `package:flutter/services.dart`) sont autorisés
+/// sous `presentation/` via une clause `show` **restreinte** (garde de
+/// pureté relâchée par symbole ; `services.dart` nu/hors-allowlist reste
+/// banni). Ils **filtrent la saisie non numérique** au clavier (plus de
+/// caractère non numérique transitoire), EN PLUS du parsing typé défensif
+/// (`tryParse → null`) et du validateur mémoïsé — jamais en remplacement.
 ///
-/// a11y/RTL (AD-13) : `labelText` sémantique ; aucune couleur/inset non
-/// directionnel en dur (FR-26). Validateur mémoïsé réutilisé (E3-2, AC11).
+/// a11y/RTL (invariant AD-13) : `labelText` sémantique ; aucune couleur/inset
+/// non directionnel en dur (invariant FR-26). Validateur mémoïsé réutilisé.
 library;
 
 import 'package:flutter/material.dart';
@@ -62,12 +61,12 @@ class ZNumberFieldWidget extends StatelessWidget {
   /// Notifié avec la valeur **typée** parsée (`int`/`num`/`null`).
   final ValueChanged<Object?> onChanged;
 
-  /// Mode d'autovalidation (E3-5, additif ; défaut `onUserInteraction`). Le
-  /// stepper le bascule en `always` pour révéler les erreurs d'étape (AD-2, sans
-  /// `Form` global).
+  /// Mode d'autovalidation (additif ; défaut `onUserInteraction`). Le
+  /// stepper le bascule en `always` pour révéler les erreurs d'étape
+  /// (invariant AD-2, sans `Form` global).
   final AutovalidateMode autovalidateMode;
 
-  /// Rendu **bare** (borderless, sans label) pour le mode `large` (AC4) : le
+  /// Rendu **bare** (borderless, sans label) pour le mode `large` : le
   /// décor est porté par la Card. Défaut `false`.
   final bool bare;
 
@@ -79,7 +78,7 @@ class ZNumberFieldWidget extends StatelessWidget {
     return c is ZNumberConfig ? c : null;
   }
 
-  /// DP-17 (M17) — suffixe **lecture** NEUTRE (donnée, jamais un style FR-26) :
+  /// Suffixe **lecture** NEUTRE (donnée, jamais un style — invariant FR-26) :
   /// `%` pour un pourcentage ; le symbole monétaire (config `currencySymbol` ou
   /// repli l10n `currencySuffix`) pour une devise. `null` si aucun formatage
   /// spécial (rétro-compat : décor inchangé pour un `number` sans config).
@@ -94,7 +93,7 @@ class ZNumberFieldWidget extends StatelessWidget {
     return null;
   }
 
-  /// Formatters PURS filtrant la saisie non numérique (L-2) : entiers →
+  /// Formatters PURS filtrant la saisie non numérique : entiers →
   /// chiffres seuls ; décimaux → chiffres + `.` + signe `-`.
   List<TextInputFormatter> get _formatters => _isInteger
       ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
@@ -115,8 +114,8 @@ class ZNumberFieldWidget extends StatelessWidget {
       style: ZcrudTheme.of(context).inputTextStyle,
       autovalidateMode: autovalidateMode,
       validator: validator,
-      // DP-12 : label enrichi + hint/helper + ornements leading/prefix/suffix.
-      // DP-17 (M17) : suffixe devise/pourcentage NEUTRE lu depuis ZNumberConfig.
+      // Label enrichi + hint/helper + ornements leading/prefix/suffix.
+      // Suffixe devise/pourcentage NEUTRE lu depuis ZNumberConfig.
       decoration: zFieldDecoration(context, field,
           bare: bare, suffixText: _suffixText(context)),
       onChanged: (raw) => onChanged(_parse(raw)),

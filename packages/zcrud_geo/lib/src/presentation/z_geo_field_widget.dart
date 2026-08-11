@@ -164,69 +164,64 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   late final FocusNode _radiusFocus;
 
   /// Géométrie **courante** du champ. Résolue en `initState` (valeur initiale →
-  /// config → défaut builder → inférence type-name — G2 : la géométrie portée
-  /// par la valeur initiale PRIME, parité legacy `gff:272`). Mutable UNIQUEMENT
-  /// via le sélecteur de mode (G2) — action **discrète** (`setState`), jamais
-  /// sur la voie de frappe (AD-2) ; la frontière de rebuild reste la tranche.
+  /// config → défaut builder → inférence type-name : la géométrie portée par
+  /// la valeur initiale PRIME sur les autres sources). Mutable UNIQUEMENT via
+  /// le sélecteur de mode — action **discrète** (`setState`), jamais sur la
+  /// voie de frappe (AD-2) ; la frontière de rebuild reste la tranche.
   ZGeoGeometry _geometry = ZGeoGeometry.point;
 
   /// Config géo lue depuis `ctx.field.config` (si présente) — défauts
   /// surchargeables (centre/zoom/hauteur/tuiles/style).
   late final ZGeoFieldConfig? _config;
 
-  /// Instance d'adaptateur carte **possédée** par ce montage (MAJEUR-1). Créée
-  /// 1× en [initState] via `widget.adapterFactory`, disposée en [dispose].
-  /// Jamais partagée avec un autre champ, jamais réutilisée après dispose.
+  /// Instance d'adaptateur carte **possédée** par ce montage. Créée 1× en
+  /// [initState] via `widget.adapterFactory`, disposée en [dispose]. Jamais
+  /// partagée avec un autre champ, jamais réutilisée après dispose.
   ZMapAdapter? _mapAdapter;
 
-  /// Valeur d'aire courante « au fil de l'eau » (MEDIUM-3). Source atomique des
+  /// Valeur d'aire courante « au fil de l'eau ». Source atomique des
   /// ajouts/retraits de sommet : évite la perte de mise à jour quand deux
   /// événements surviennent dans la même frame avant tout rebuild. `null` hors
   /// mode `polygon`.
   ZGeoShape? _workingShape;
 
-  /// G11 — machine « cercle 2 taps » (parité legacy `gff:710-726`) : `true`
-  /// entre le 1er tap (centre posé) et le 2e (rayon = distance haversine).
-  /// Tant que le rayon n'est pas fixé, la carte affiche un **aperçu 10 m**
-  /// (parité `gff:589-600`, `geofence_circle_preview`, `radius: 10`).
+  /// Machine « cercle 2 taps » : `true` entre le 1er tap (centre posé) et le
+  /// 2e (rayon = distance haversine). Tant que le rayon n'est pas fixé, la
+  /// carte affiche un **aperçu 10 m**.
   bool _awaitingRadiusTap = false;
 
-  /// G13 — mode « Déplacer » (parité legacy `_isMoveMode`, `gff:175`) : la
-  /// carte devient non interactive (parité `gff:1673`), le tap est désarmé et
-  /// l'adaptateur (s'il est [ZMapGesturesCapable]) rend le marqueur de
+  /// Mode « Déplacer » : la carte devient non interactive, le tap est désarmé
+  /// et l'adaptateur (s'il est [ZMapGesturesCapable]) rend le marqueur de
   /// déplacement au centroïde.
   bool _isMoveMode = false;
 
-  /// G8 — style **brouillon** du picker (parité legacy `_currentShapeStyle`,
-  /// `gff:299-307` : le style est PERSISTÉ dans la valeur à chaque émission).
-  /// Amorcé depuis la valeur initiale quand `showStylePicker` est actif ;
-  /// `null` (picker absent ou aucun style choisi) ⇒ émissions strictement
-  /// inchangées (AD-4).
+  /// Style **brouillon** du picker : le style est PERSISTÉ dans la valeur à
+  /// chaque émission. Amorcé depuis la valeur initiale quand `showStylePicker`
+  /// est actif ; `null` (picker absent ou aucun style choisi) ⇒ émissions
+  /// strictement inchangées (AD-4).
   ZGeoShapeStyle? _draftStyle;
 
-  /// Options de carte **neutres** pilotées par la barre d'outils (DP-7).
-  /// `null` quand il n'y a **aucune** barre d'outils (rétro-compat stricte :
-  /// `buildMap` reçoit `mapOptions: null` → comportement E11a-1/E11b-1
-  /// inchangé). Mutable via des actions **discrètes** de la barre (type de
-  /// carte / toggles features) — JAMAIS sur la voie de frappe (AD-2).
+  /// Options de carte **neutres** pilotées par la barre d'outils. `null`
+  /// quand il n'y a **aucune** barre d'outils (`buildMap` reçoit alors
+  /// `mapOptions: null`). Mutable via des actions **discrètes** de la barre
+  /// (type de carte / toggles features) — JAMAIS sur la voie de frappe (AD-2).
   ZGeoMapOptions? _mapOptions;
 
-  /// Config de barre d'outils (DP-7). **G15 (changement de défaut, décision
-  /// pilote — parité legacy `es:2337`)** : `toolbarConfig` absent (`null`,
-  /// config présente ou non) → barre **`standard`**. L'opt-out explicite est
-  /// `ZGeoEditorToolbarConfig.none` (`disabled: true`).
+  /// Config de barre d'outils : `toolbarConfig` absent (`null`, config
+  /// présente ou non) → barre **`standard`** par défaut. L'opt-out explicite
+  /// est `ZGeoEditorToolbarConfig.none` (`disabled: true`).
   ZGeoEditorToolbarConfig get _toolbarConfig =>
       _config?.toolbarConfig ?? ZGeoEditorToolbarConfig.standard;
 
-  /// Géométries proposées par le sélecteur de mode (G2). `null` → champ
+  /// Géométries proposées par le sélecteur de mode. `null` → champ
   /// mono-géométrie (aucun sélecteur).
   List<ZGeoGeometry>? get _allowedGeometries => _config?.allowedGeometries;
 
   bool get _isArea => _geometry == ZGeoGeometry.polygon;
   bool get _isCircle => _geometry == ZGeoGeometry.circle;
 
-  /// Polyligne (tracé ouvert, DP-21/M13). Même collecte de sommets que le
-  /// polygone : seule la géométrie de rendu (ouverte) diffère côté adaptateur.
+  /// Polyligne (tracé ouvert). Même collecte de sommets que le polygone :
+  /// seule la géométrie de rendu (ouverte) diffère côté adaptateur.
   bool get _isPolyline => _geometry == ZGeoGeometry.polyline;
 
   /// `true` pour les géométries qui **collectent une liste de sommets**
@@ -243,9 +238,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     final Object? cfg = widget.ctx.field.config;
     _config = cfg is ZGeoFieldConfig ? cfg : null;
     _geometry = _resolveGeometry();
-    // DP-7/G15 : une barre d'outils existe désormais par défaut (`standard`) →
-    // l'état d'options de carte est toujours amorcé (défauts DODLP
-    // `defaultState` : type `hybrid`, etc. — parité legacy).
+    // Une barre d'outils existe par défaut (`standard`) → l'état d'options de
+    // carte est toujours amorcé (type `hybrid`, etc.).
     _mapOptions = const ZGeoMapOptions();
     _latController = TextEditingController();
     _lngController = TextEditingController();
@@ -253,16 +247,16 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _latFocus = FocusNode();
     _lngFocus = FocusNode();
     _radiusFocus = FocusNode();
-    // MAJEUR-1 : créer l'instance d'adaptateur possédée UNE FOIS par montage.
-    // G4 : la clé par-champ (`ZGeoFieldConfig.adapterKey`) sélectionne une
-    // fabrique NOMMÉE du registre du builder ; clé absente/inconnue → repli
-    // sur la fabrique unique (hôte mono-factory strictement inchangé, AD-10).
+    // Créer l'instance d'adaptateur possédée UNE FOIS par montage. La clé
+    // par-champ (`ZGeoFieldConfig.adapterKey`) sélectionne une fabrique
+    // NOMMÉE du registre du builder ; clé absente/inconnue → repli sur la
+    // fabrique unique (hôte mono-factory, AD-10).
     final String? adapterKey = _config?.adapterKey;
     final ZMapAdapterFactory? factory =
         (adapterKey == null ? null : widget.adapterFactories?[adapterKey]) ??
             widget.adapterFactory;
     _mapAdapter = factory?.call();
-    // G8 : amorcer le style brouillon depuis la valeur initiale (une fois),
+    // Amorcer le style brouillon depuis la valeur initiale (une fois),
     // uniquement quand le picker est câblé (sinon aucune incidence — AD-4).
     if (_config?.showStylePicker ?? false) {
       _draftStyle = switch (ZGeoValue.fromMapSafe(widget.ctx.value)) {
@@ -276,7 +270,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       case ZGeoGeometry.polygon:
       case ZGeoGeometry.polyline:
         // Champs texte = sommet CANDIDAT transitoire → pas d'amorçage depuis la
-        // tranche ; on amorce l'état de forme « au fil de l'eau » (MEDIUM-3).
+        // tranche ; on amorce l'état de forme « au fil de l'eau ».
         _workingShape = _shapeOf(widget.ctx.value);
       case ZGeoGeometry.circle:
         // Amorcer centre + rayon depuis la valeur initiale (une seule fois).
@@ -297,18 +291,17 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     widget.onInit?.call();
   }
 
-  /// Résout la géométrie initiale du champ (E11b-1 + G2). Sur un champ
-  /// **multi-géométries** (`allowedGeometries` non-`null`) :
-  /// 1. **la géométrie portée par la valeur initiale PRIME** (G2, parité
-  ///    legacy `gff:272` : `_currentMode = shape.type`) — même si elle est
-  ///    absente d'`allowedGeometries` (la donnée gagne, comme le legacy).
+  /// Résout la géométrie initiale du champ. Sur un champ **multi-géométries**
+  /// (`allowedGeometries` non-`null`) :
+  /// 1. **la géométrie portée par la valeur initiale PRIME** — même si elle
+  ///    est absente d'`allowedGeometries` (la donnée gagne toujours).
   /// Puis, pour tous les champs : 2. `config.geometry` ;
-  /// 3. `config.allowedGeometries.first` (parité `gff:196-198`) ;
+  /// 3. `config.allowedGeometries.first` ;
   /// 4. `widget.geometry` (défaut builder) ; 5. inférence par nom de type
   /// (`geoArea`→polygon, sinon point). Un champ **mono-géométrie** (sans
-  /// `allowedGeometries`) garde la résolution antérieure STRICTE (la valeur ne
-  /// prime pas : rétro-compat E11a-1/E11b-1 — aucune bascule surprise sur une
-  /// valeur structurellement ambiguë).
+  /// `allowedGeometries`) garde la résolution STRICTE par cette chaîne (la
+  /// valeur ne prime pas : aucune bascule surprise sur une valeur
+  /// structurellement ambiguë).
   ZGeoGeometry _resolveGeometry() {
     if (_config?.allowedGeometries != null) {
       final ZGeoGeometry? fromValue = _geometryOfValue(widget.ctx.value);
@@ -325,16 +318,16 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         : ZGeoGeometry.point;
   }
 
-  /// Géométrie portée par la valeur initiale (G2), via le routeur discriminé
-  /// G1 (`ZGeoValue.fromMapSafe`). `null` si la valeur est absente/vide/
+  /// Géométrie portée par la valeur initiale, via le routeur discriminé
+  /// [ZGeoValue.fromMapSafe]. `null` si la valeur est absente/vide/
   /// inexploitable (AD-10 — on retombe alors sur la chaîne config/builder).
   /// Une `ZGeoShape` non discriminée compte pour `polygon`, SAUF si la chaîne
   /// config/builder aurait résolu `polyline` (une forme nue ne distingue pas
-  /// tracé ouvert/fermé — seule la config le sait) ; un `type: 'polyline'`
-  /// legacy explicite, lui, tranche pour `polyline`.
+  /// tracé ouvert/fermé — seule la config le sait) ; une valeur qui porte un
+  /// discriminant `type: 'polyline'` explicite, elle, tranche pour `polyline`.
   ZGeoGeometry? _geometryOfValue(Object? raw) {
     if (raw == null) return null;
-    // Discriminant legacy explicite (auto-descriptif — G1).
+    // Discriminant explicite auto-descriptif (enveloppe compatible legacy).
     final Object? decoded = zGeoDecodeLegacyEnvelope(raw);
     if (decoded is Map && decoded['type'] == 'polyline') {
       return ZGeoGeometry.polyline;
@@ -366,8 +359,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     switch (_geometry) {
       case ZGeoGeometry.polygon:
       case ZGeoGeometry.polyline:
-        // MEDIUM-3 : adopter une valeur de forme EXTERNE (≠ celle qu'on a
-        // émise) ; notre propre écho (`ctx.value == _workingShape`) n'écrase rien.
+        // Adopter une valeur de forme EXTERNE (≠ celle qu'on a émise) ;
+        // notre propre écho (`ctx.value == _workingShape`) n'écrase rien.
         final external = _shapeOf(widget.ctx.value);
         if (external != _workingShape) _workingShape = external;
       case ZGeoGeometry.circle:
@@ -395,8 +388,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
 
   @override
   void dispose() {
-    // Anti-fuite (learning E5) : libérer contrôleurs/focus ET le contrôleur
-    // natif de l'adaptateur carte possédé par ce champ.
+    // Anti-fuite : libérer contrôleurs/focus ET le contrôleur natif de
+    // l'adaptateur carte possédé par ce champ.
     _latController.dispose();
     _lngController.dispose();
     _radiusController.dispose();
@@ -418,7 +411,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       widget.ctx.onChanged(null);
       return;
     }
-    // G8 : le style brouillon voyage avec la valeur (parité gff:299-307).
+    // Le style brouillon voyage avec la valeur.
     final point = ZGeoPoint(lat: lat, lng: lng, style: _draftStyle);
     widget.ctx.onChanged(point.isValid ? point : null);
   }
@@ -427,7 +420,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   void _setPointFromTap(ZGeoPoint point) {
     _latController.text = _fmt(point.lat);
     _lngController.text = _fmt(point.lng);
-    // G8 : style brouillon persisté dans la valeur (aucun effet si `null`).
+    // Style brouillon persisté dans la valeur (aucun effet si `null`).
     widget.ctx.onChanged(
       _draftStyle == null ? point : point.copyWith(style: _draftStyle),
     );
@@ -446,7 +439,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     final circle = ZGeoCircle(
       center: ZGeoPoint(lat: lat, lng: lng),
       radiusMeters: radius,
-      // G8 : le style brouillon voyage avec la valeur (parité gff:299-307).
+      // Le style brouillon voyage avec la valeur.
       style: _draftStyle,
     );
     widget.ctx.onChanged(circle.isValid ? circle : null);
@@ -472,14 +465,14 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _lngController.clear();
   }
 
-  /// Aire courante « au fil de l'eau » (MEDIUM-3) : l'état local possédé prime
-  /// sur `widget.ctx.value` (rafraîchi seulement au rebuild) pour sérialiser les
+  /// Aire courante « au fil de l'eau » : l'état local possédé prime sur
+  /// `widget.ctx.value` (rafraîchi seulement au rebuild) pour sérialiser les
   /// mutations survenant dans la même frame. Repli défensif sur la tranche.
   ZGeoShape get _currentShape => _workingShape ?? _shapeOf(widget.ctx.value);
 
   /// Mode `polygon` : ajoute [point] (tap carte ou candidat) à l'aire courante,
-  /// de façon **atomique** (MEDIUM-3) : on part de l'aire « au fil de l'eau »,
-  /// on la met à jour AVANT d'émettre → deux ajouts rapprochés ne se perdent pas.
+  /// de façon **atomique** : on part de l'aire « au fil de l'eau », on la met
+  /// à jour AVANT d'émettre → deux ajouts rapprochés ne se perdent pas.
   void _appendVertex(ZGeoPoint point) {
     final next = _currentShape.addVertex(point);
     _workingShape = next;
@@ -498,20 +491,18 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     widget.ctx.onChanged(next);
   }
 
-  // --- Actions de la barre d'outils (DP-7, voie unique `ctx.onChanged`) -------
+  // --- Actions de la barre d'outils (voie unique `ctx.onChanged`) ------------
 
-  /// **sélecteur de mode** (G2) : bascule la géométrie courante.
+  /// **sélecteur de mode** : bascule la géométrie courante.
   ///
   /// ## Politique d'effacement au changement de mode (EXPLICITE, gardée)
   ///
-  /// Parité legacy mesurée (`gff:205-216`, `_setDrawingMode`) : le legacy
-  /// **efface les sommets** (`_points.clear()`, rayon compris) au changement de
-  /// mode, sans confirmation. zcrud reprend cette politique MAIS la rend
-  /// **visible dans la tranche** : le changement de mode vide l'état de travail
-  /// (contrôleurs texte, forme « au fil de l'eau ») **et émet `null`** — la
-  /// tranche ne porte jamais une valeur d'une géométrie incompatible avec le
-  /// mode affiché. Ce n'est PAS une destruction silencieuse de données
-  /// persistées : comme dans le legacy, l'enregistrement n'a lieu qu'à la
+  /// Le changement de mode **efface les sommets** (rayon compris), sans
+  /// confirmation, et le rend **visible dans la tranche** : il vide l'état de
+  /// travail (contrôleurs texte, forme « au fil de l'eau ») **et émet
+  /// `null`** — la tranche ne porte jamais une valeur d'une géométrie
+  /// incompatible avec le mode affiché. Ce n'est PAS une destruction
+  /// silencieuse de données persistées : l'enregistrement n'a lieu qu'à la
   /// sauvegarde du formulaire par l'utilisateur ; tant qu'il ne sauve pas, la
   /// donnée stockée est intacte. Aucune émission ni effacement si [mode] est
   /// déjà la géométrie courante (no-op strict). Action **discrète**
@@ -525,13 +516,13 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       _lngController.clear();
       _radiusController.clear();
       _workingShape = _collectsVertices ? ZGeoShape() : null;
-      _awaitingRadiusTap = false; // G11 : machine 2-taps réarmée
-      _isMoveMode = false; // G13 : le mode Déplacer ne survit pas au mode
+      _awaitingRadiusTap = false; // machine 2-taps réarmée
+      _isMoveMode = false; // le mode Déplacer ne survit pas au changement
     });
     widget.ctx.onChanged(null);
   }
 
-  /// **clear** (B9) : remet la valeur de tranche à `null`, vide les contrôleurs
+  /// **clear** : remet la valeur de tranche à `null`, vide les contrôleurs
   /// texte et réinitialise l'aire « au fil de l'eau ». Ne recrée ni contrôleurs
   /// ni focus (AD-2) ; l'émission `null` déclenche le rebuild ciblé de la tranche.
   void _clearAll() {
@@ -540,13 +531,13 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _radiusController.clear();
     if (_collectsVertices) _workingShape = ZGeoShape();
     if (_awaitingRadiusTap) {
-      // G11 : réarmer la machine 2-taps (retire aussi l'aperçu 10 m).
+      // Réarmer la machine 2-taps (retire aussi l'aperçu 10 m).
       setState(() => _awaitingRadiusTap = false);
     }
     widget.ctx.onChanged(null);
   }
 
-  /// **undo** (B9) : polygone → retire le dernier sommet (réutilise l'écriture
+  /// **undo** : polygone → retire le dernier sommet (réutilise l'écriture
   /// atomique [_removeVertex]) ; point/cercle → efface la dernière saisie (un
   /// seul état → équivaut à [_clearAll]). Aucune exception si rien à annuler
   /// (AD-10).
@@ -563,22 +554,19 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     }
   }
 
-  /// Zoom du recentrage « ma position » (G10 — parité legacy `gff:255`,
-  /// `controller.moveCamera(newCenter, zoom: 16)`).
+  /// Zoom du recentrage « ma position ».
   static const double _myLocationZoom = 16;
 
-  /// **ma-position** (B9 + G10) : appelle le [ZGeoLocationResolver] injecté.
+  /// **ma-position** : appelle le [ZGeoLocationResolver] injecté.
   /// `null`/erreur → no-op silencieux (AD-10, jamais de crash) ; garde
   /// `mounted` après l'`await`.
   ///
-  /// **G10 (parité legacy `gff:219-265`)** : en polygone/polyligne, la position
-  /// résolue **RECENTRE la caméra (zoom 16)** — elle n'ajoute **JAMAIS** un
-  /// sommet (l'ancien comportement zcrud, mesuré `zgfw` : `_appendVertex`,
-  /// était un contresens : « ma position » est une commande de NAVIGATION).
-  /// En point/cercle, la valeur est fixée (acquis zcrud conservé — le legacy,
-  /// lui, ne fait QUE recentrer) **et** la caméra est recentrée. Le recentrage
-  /// n'est effectif que si l'adaptateur est [ZMapCameraCapable]
-  /// (honoré-si-supporté, G7) — sinon no-op sans crash.
+  /// En polygone/polyligne, la position résolue **RECENTRE la caméra
+  /// (zoom 16)** — elle n'ajoute **JAMAIS** un sommet : « ma position » est
+  /// une commande de NAVIGATION, pas un point de tracé. En point/cercle, la
+  /// valeur est fixée **et** la caméra est recentrée. Le recentrage n'est
+  /// effectif que si l'adaptateur est [ZMapCameraCapable] (honoré-si-supporté)
+  /// — sinon no-op sans crash.
   Future<void> _useMyLocation() async {
     final ZGeoLocationResolver? resolver = widget.locationResolver;
     if (resolver == null) return;
@@ -593,7 +581,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     switch (_geometry) {
       case ZGeoGeometry.polygon:
       case ZGeoGeometry.polyline:
-        break; // G10 : recentrage SEULEMENT — aucun sommet ajouté
+        break; // Recentrage SEULEMENT — aucun sommet ajouté
       case ZGeoGeometry.circle:
         _setCircleCenterFromTap(point);
       case ZGeoGeometry.point:
@@ -602,7 +590,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     await _moveCameraTo(point, zoom: _myLocationZoom);
   }
 
-  /// Recentrage caméra **honoré-si-supporté** (G7) : no-op silencieux si
+  /// Recentrage caméra **honoré-si-supporté** : no-op silencieux si
   /// l'adaptateur n'est pas [ZMapCameraCapable] ou si l'appel échoue (AD-10).
   Future<void> _moveCameraTo(ZGeoPoint point, {double? zoom}) async {
     // `Object?` : permet la promotion vers la capacité (interface disjointe du
@@ -616,13 +604,12 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     }
   }
 
-  /// G11 — tap carte en mode cercle, machine « 2 taps » (parité legacy
-  /// `gff:710-726`) : 1er tap = **centre** (aperçu 10 m tant que le rayon
-  /// n'est pas fixé), 2e tap = **rayon** (distance haversine centre→tap,
-  /// arrondie au décimètre pour le champ texte — qui RESTE éditable : acquis
-  /// zcrud conservé). Un tap suivant repart sur un nouveau centre (parité du
-  /// `else { reset }` legacy). Distance nulle (double tap au même point) →
-  /// le tap est traité comme un nouveau centre (un rayon 0 est invalide).
+  /// Tap carte en mode cercle, machine « 2 taps » : 1er tap = **centre**
+  /// (aperçu 10 m tant que le rayon n'est pas fixé), 2e tap = **rayon**
+  /// (distance haversine centre→tap, arrondie au décimètre pour le champ
+  /// texte — qui RESTE éditable). Un tap suivant repart sur un nouveau
+  /// centre. Distance nulle (double tap au même point) → le tap est traité
+  /// comme un nouveau centre (un rayon 0 est invalide).
   void _handleCircleTap(ZGeoPoint point) {
     if (_awaitingRadiusTap) {
       final double? lat = _parse(_latController.text);
@@ -645,9 +632,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _emitCircleFromFields();
   }
 
-  // --- Gestes d'édition carte (G11/G13, honorés-si-supportés) ----------------
+  // --- Gestes d'édition carte (honorés-si-supportés) --------------------------
 
-  /// G13 — fin de drag d'un sommet : remplace le sommet [index] (écriture
+  /// Fin de drag d'un sommet : remplace le sommet [index] (écriture
   /// atomique sur l'aire « au fil de l'eau », cf. [_appendVertex]). Index
   /// hors-bornes ou point invalide → no-op (AD-10).
   void _handleVertexDragEnd(int index, ZGeoPoint position) {
@@ -661,11 +648,10 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     widget.ctx.onChanged(next);
   }
 
-  /// G13 — fin de déplacement de forme (marqueur au centroïde) : translate
-  /// TOUS les sommets du delta (parité legacy `_moveShape`, `gff:486-499`) —
-  /// trous compris (zcrud les rend, DP-21). Si un sommet translaté sort des
-  /// bornes géographiques, le déplacement est abandonné en bloc (AD-10 :
-  /// jamais une forme partiellement déplacée ni hors-bornes).
+  /// Fin de déplacement de forme (marqueur au centroïde) : translate TOUS les
+  /// sommets du delta, trous compris. Si un sommet translaté sort des bornes
+  /// géographiques, le déplacement est abandonné en bloc (AD-10 : jamais une
+  /// forme partiellement déplacée ni hors-bornes).
   void _handleShapeDragEnd(double deltaLat, double deltaLng) {
     if (!deltaLat.isFinite || !deltaLng.isFinite) return;
     final ZGeoShape shape = _currentShape;
@@ -698,9 +684,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     widget.ctx.onChanged(next);
   }
 
-  /// G11 — fin de drag de la poignée de rayon : nouveau rayon en mètres
-  /// (arrondi au décimètre, reflété dans le champ texte). Rayon non fini/≤0 →
-  /// no-op (AD-10).
+  /// Fin de drag de la poignée de rayon : nouveau rayon en mètres (arrondi au
+  /// décimètre, reflété dans le champ texte). Rayon non fini/≤0 → no-op
+  /// (AD-10).
   void _handleRadiusDragEnd(double radiusMeters) {
     if (!radiusMeters.isFinite || radiusMeters <= 0) return;
     _radiusController.text = _fmt((radiusMeters * 10).roundToDouble() / 10);
@@ -708,14 +694,14 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     _emitCircleFromFields();
   }
 
-  /// G13 — bascule du mode « Déplacer » (action discrète, AD-2).
+  /// Bascule du mode « Déplacer » (action discrète, AD-2).
   void _toggleMoveMode() => setState(() => _isMoveMode = !_isMoveMode);
 
-  /// G8 — applique un style choisi au picker : mémorise le brouillon ET le
-  /// **persiste dans la valeur courante** si elle existe (parité legacy
-  /// `gff:299-307` : `GeoShape.style` porté par la valeur). Sans valeur, le
-  /// brouillon sera attaché à la prochaine émission. Action discrète
-  /// (`setState` pour rafraîchir l'aperçu), jamais la voie de frappe (AD-2).
+  /// Applique un style choisi au picker : mémorise le brouillon ET le
+  /// **persiste dans la valeur courante** si elle existe (le style de la
+  /// forme est porté par la valeur). Sans valeur, le brouillon sera attaché
+  /// à la prochaine émission. Action discrète (`setState` pour rafraîchir
+  /// l'aperçu), jamais la voie de frappe (AD-2).
   void _applyStyle(ZGeoShapeStyle style) {
     setState(() => _draftStyle = style);
     switch (_geometry) {
@@ -738,12 +724,11 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     }
   }
 
-  /// G16 — **optimisation de polygone** (flag `showOptimizeButton` désormais
-  /// RÉEL) : réordonne les sommets par angle autour du centroïde contre
-  /// l'auto-intersection (parité stricte `gff:922-959`, tri `atan2` — la
-  /// géométrie pure vit dans `ZGeoShapeMetrics.sortedByAngleAroundCentroid`).
-  /// `< 3` sommets → no-op (parité du garde legacy). SnackBar **localisée**
-  /// (parité `gff:952-958`, texte via l10n injectée).
+  /// **Optimisation de polygone** (flag `showOptimizeButton`) : réordonne les
+  /// sommets par angle autour du centroïde contre l'auto-intersection (tri
+  /// `atan2` — la géométrie pure vit dans
+  /// `ZGeoShapeMetrics.sortedByAngleAroundCentroid`). `< 3` sommets → no-op.
+  /// SnackBar **localisée** (texte via l10n injectée).
   void _optimizePolygon() {
     final ZGeoShape shape = _currentShape;
     if (shape.vertices.length < 3) return;
@@ -777,7 +762,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
             ]
           : const <ZGeoMapType>[ZGeoMapType.normal, ZGeoMapType.hybrid];
 
-  /// **type-de-carte** (B9) : cycle vers le type suivant (action **discrète** —
+  /// **type-de-carte** : cycle vers le type suivant (action **discrète** —
   /// `setState` sur `_mapOptions`, JAMAIS la voie de frappe, AD-2 préservé).
   void _cycleMapType() {
     final List<ZGeoMapType> types = _availableMapTypes;
@@ -801,7 +786,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
 
   // --- Lecture défensive de la tranche ---------------------------------------
 
-  // LOW-5 : ne faire confiance à un `ZGeoPoint` déjà en tranche que s'il est
+  // Ne pas faire confiance à un `ZGeoPoint` déjà en tranche que s'il est
   // dans les bornes (le constructeur n'a pas d'`assert`) ; sinon le re-parser
   // défensivement (AD-10) → jamais de coordonnée hors-bornes envoyée à la carte.
   ZGeoPoint? _pointOf(Object? value) => value is ZGeoPoint
@@ -812,7 +797,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       ? value
       : (ZGeoShape.fromMapSafe(value) ?? ZGeoShape());
 
-  // Idem LOW-5 pour le cercle : ne faire confiance qu'à un `ZGeoCircle` valide.
+  // Même défiance pour le cercle : ne faire confiance qu'à un `ZGeoCircle` valide.
   ZGeoCircle? _circleOf(Object? value) => value is ZGeoCircle
       ? (value.isValid ? value : null)
       : ZGeoCircle.fromMapSafe(value);
@@ -824,13 +809,12 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
 
   static String _fmt(double v) => v.toString();
 
-  /// Hauteur de carte résolue. **G5** : une hauteur de builder **infinie**
-  /// (mode immersif du plein écran) PRIME sur `config.mapHeight` — sinon un
-  /// champ configuré à hauteur fixe ne serait jamais immersif en plein écran.
-  /// **G19 (décision documentée `ZGeoChromeReference.chromeMapHeight`)** : en
+  /// Hauteur de carte résolue. Une hauteur de builder **infinie** (mode
+  /// immersif du plein écran) PRIME sur `config.mapHeight` — sinon un champ
+  /// configuré à hauteur fixe ne serait jamais immersif en plein écran. En
   /// mode chrome, si NI la config NI le builder ne surchargent la hauteur, le
-  /// défaut est la hauteur legacy **300** (le chrome EST le look legacy) ; le
-  /// défaut hors chrome reste 200 (aucun hôte existant ne bouge).
+  /// défaut est `ZGeoChromeReference.chromeMapHeight` (**300**, le look du
+  /// chrome) ; le défaut hors chrome reste 200.
   double get _resolvedMapHeight {
     if (widget.mapHeight.isInfinite) return widget.mapHeight;
     final double? fromConfig = _config?.mapHeight;
@@ -842,31 +826,27 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     return widget.mapHeight;
   }
 
-  /// G5 — mode immersif (rendu DANS la route plein écran) : la carte remplit
+  /// Mode immersif (rendu DANS la route plein écran) : la carte remplit
   /// l'espace et le bouton plein écran n'est pas re-rendu.
   bool get _isImmersive => _resolvedMapHeight.isInfinite;
 
-  /// CR `geo-inline-preview` A — `true` quand le champ est rendu en **aperçu
-  /// de flux** (`presentation: previewWithFullscreen`) : carte lecture seule
-  /// (pan/zoom conservés, tap/drags désarmés), aucune saisie, aucune barre.
-  /// **Jamais `true` en mode immersif** (`!_isImmersive`) : la route plein
-  /// écran rend le MÊME champ avec la MÊME config (`gff` parité :
-  /// `onMapTap: isFullscreen … ? _onMapTapped : (_) {}`, `gff:1668,1683` ;
-  /// toolbar `if (isFullscreen)`, `gff:1525`) — la restriction porte sur la
+  /// `true` quand le champ est rendu en **aperçu de flux**
+  /// (`presentation: previewWithFullscreen`) : carte lecture seule (pan/zoom
+  /// conservés, tap/drags désarmés), aucune saisie, aucune barre. **Jamais
+  /// `true` en mode immersif** (`!_isImmersive`) : la route plein écran rend
+  /// le MÊME champ avec la MÊME config — la restriction porte sur la
   /// présentation en flux, PAS sur la config.
   bool get _isPreview =>
       (_config?.presentation ?? ZGeoPresentation.inlineEditor) ==
           ZGeoPresentation.previewWithFullscreen &&
       !_isImmersive;
 
-  /// G5 — le bouton plein écran est rendu si la config l'autorise (défaut
-  /// `true`, parité legacy : le plein écran est le SEUL mode d'édition carte
-  /// du legacy) ET qu'une carte existe (adaptateur injecté) ET qu'on n'est pas
-  /// déjà en plein écran. Visible aussi en lecture seule (consultation
-  /// immersive — parité : le legacy ne masque que « Enregistrer »).
-  /// **Exception CR-A (aperçu)** : en `previewWithFullscreen`, l'icône n'est
-  /// rendue que si le champ est **éditable** (parité legacy : un champ en
-  /// lecture seule montre l'aperçu, sans porte d'entrée).
+  /// Le bouton plein écran est rendu si la config l'autorise (défaut `true`)
+  /// ET qu'une carte existe (adaptateur injecté) ET qu'on n'est pas déjà en
+  /// plein écran. Visible aussi en lecture seule (consultation immersive).
+  /// **Exception aperçu** : en `previewWithFullscreen`, l'icône n'est rendue
+  /// que si le champ est **éditable** — un champ en lecture seule montre
+  /// l'aperçu, sans porte d'entrée.
   bool get _showFullscreenButton =>
       (_config?.allowFullscreen ?? true) &&
       _mapAdapter != null &&
@@ -892,23 +872,23 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     final field = widget.ctx.field;
     final resolvedLabel = field.label ?? field.name;
 
-    // G19 : chrome legacy opt-in (jamais en mode immersif — la route plein
-    // écran a son propre chrome AppBar).
+    // Chrome opt-in (jamais en mode immersif — la route plein écran a son
+    // propre chrome AppBar).
     final bool chrome = (_config?.showChrome ?? false) && !_isImmersive;
 
-    // CR-A : aperçu de flux — quand `false` (défaut `inlineEditor`), les
-    // conditions ci-dessous sont STRICTEMENT celles d'avant (arbre identique).
+    // Aperçu de flux — quand `false` (défaut `inlineEditor`), les conditions
+    // ci-dessous sont STRICTEMENT celles du rendu par défaut (arbre identique).
     final bool preview = _isPreview;
 
     final Widget column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      // G5 : en mode immersif, la colonne occupe la hauteur disponible et
-      // la carte s'étend (`Expanded`) — hors immersif, rien ne change.
+      // En mode immersif, la colonne occupe la hauteur disponible et la
+      // carte s'étend (`Expanded`) — hors immersif, rien ne change.
       mainAxisSize: _isImmersive ? MainAxisSize.max : MainAxisSize.min,
       children: <Widget>[
-        // G5 : en-tête = libellé + bouton plein écran (parité legacy :
-        // bouton d'en-tête ouvrant la route immersive). G19 : en mode chrome,
-        // l'en-tête devient le bandeau dégradé + icône (parité gff:1428-1523).
+        // En-tête = libellé + bouton plein écran (bouton d'en-tête ouvrant
+        // la route immersive). En mode chrome, l'en-tête devient le bandeau
+        // dégradé + icône.
         if (chrome)
           _chromeHeader(context, theme, resolvedLabel)
         else
@@ -924,9 +904,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
             ],
           ),
         SizedBox(height: theme.gapS),
-        // CR-A : en aperçu (`previewWithFullscreen`), AUCUN bloc d'édition en
-        // flux — ni saisie lat/lng, ni liste de sommets, ni barre d'outils,
-        // ni picker (parité legacy `gff:1525` : toolbar `if (isFullscreen)`).
+        // En aperçu (`previewWithFullscreen`), AUCUN bloc d'édition en flux
+        // — ni saisie lat/lng, ni liste de sommets, ni barre d'outils, ni
+        // picker.
         if (!preview) _coordinateRow(theme),
         if (!preview && _isCircle) ...<Widget>[
           SizedBox(height: theme.gapS),
@@ -938,16 +918,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           SizedBox(height: theme.gapS),
           _vertexList(context, theme),
         ],
-        // DP-7/G15 : barre d'outils d'éditeur, rendue par défaut (config
-        // `standard` — décision pilote, parité legacy es:2337) sauf opt-out
-        // explicite (`ZGeoEditorToolbarConfig.none` / `disabled: true`).
-        // Placée AU-DESSUS de la carte.
+        // Barre d'outils d'éditeur, rendue par défaut (config `standard`)
+        // sauf opt-out explicite (`ZGeoEditorToolbarConfig.none` /
+        // `disabled: true`). Placée AU-DESSUS de la carte.
         if (!preview && !_toolbarConfig.disabled) ...<Widget>[
           SizedBox(height: theme.gapM),
           _toolbar(context, theme),
         ],
-        // G8 : picker de style câblé (opt-in `showStylePicker`), style
-        // persisté dans la valeur via [_applyStyle].
+        // Picker de style câblé (opt-in `showStylePicker`), style persisté
+        // dans la valeur via [_applyStyle].
         if (!preview && (_config?.showStylePicker ?? false)) ...<Widget>[
           SizedBox(height: theme.gapS),
           ZGeoShapeStylePicker(
@@ -962,16 +941,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           Expanded(child: _mapSurface(context))
         else
           _mapSurface(context),
-        // G12 : chip de métriques opt-in (aire | périmètre + compteur —
-        // parité legacy gff:1363-1391, unités via l10n injectée). Hors
-        // aperçu : le flux d'aperçu ne rend que en-tête + carte + pied (CR-A).
+        // Chip de métriques opt-in (aire | périmètre + compteur, unités via
+        // l10n injectée). Hors aperçu : le flux d'aperçu ne rend que
+        // en-tête + carte + pied.
         if (!preview && (_config?.showMetrics ?? false))
           _metricsBar(context, theme),
-        // G19 : pied de carte LOCALISÉ (`geo.pointsDefined` — jamais le texte
-        // anglais legacy en dur ; parité de placement gff:1583-1597 :
-        // édition seulement, hors plein écran). CR-A : en aperçu, le pied
-        // « N points » est TOUJOURS rendu (chrome ou non, readOnly compris —
-        // l'aperçu se décrit) ; hors aperçu, condition antérieure STRICTE.
+        // Pied de carte LOCALISÉ (`geo.pointsDefined`), rendu seulement en
+        // édition, hors plein écran. En aperçu, le pied « N points » est
+        // TOUJOURS rendu (chrome ou non, readOnly compris — l'aperçu se
+        // décrit) ; hors aperçu, condition STRICTE (édition + chrome).
         if (preview || (chrome && !widget.ctx.field.readOnly))
           _chromeFooter(context, theme),
       ],
@@ -987,18 +965,17 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// G19 — couleur d'accent du chrome : **paramètre > référence** (exception
-  /// le dégradé violet de référence n'est pas dérivable du
-  /// `ColorScheme` ; ses ARGB vivent UNIQUEMENT dans `ZGeoChromeReference`).
+  /// Couleur d'accent du chrome : **paramètre > référence** — le dégradé
+  /// violet de référence n'est pas dérivable du `ColorScheme` ; ses ARGB
+  /// vivent UNIQUEMENT dans `ZGeoChromeReference`.
   List<Color> get _chromeGradient => const <Color>[
         Color(ZGeoChromeReference.headerGradientStartArgb),
         Color(ZGeoChromeReference.headerGradientEndArgb),
       ];
 
-  /// G19 — encart carte (parité mesurée `gff:1404-1424` : rayon 14, bordure
-  /// teintée 1.5/1 selon contenu, ombre blur 8 offset (0,2)). Fond par rôle de
-  /// thème (`surface`) ; seules les valeurs non dérivables viennent de la
-  /// référence auditée.
+  /// Encart carte : rayon 14, bordure teintée 1.5/1 selon contenu, ombre
+  /// blur 8 offset (0,2). Fond par rôle de thème (`surface`) ; seules les
+  /// valeurs non dérivables viennent de la référence auditée.
   Widget _chromeCard(BuildContext context, {required Widget child}) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool hasContent = _hasAnyContent;
@@ -1026,9 +1003,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// G19 — bandeau d'en-tête dégradé + icône carte + libellé + bouton plein
-  /// écran (parité mesurée `gff:1428-1523` ; libellé du champ, thème pour le
-  /// texte, dégradé de référence pour l'accent).
+  /// Bandeau d'en-tête dégradé + icône carte + libellé + bouton plein écran
+  /// (libellé du champ, thème pour le texte, dégradé de référence pour
+  /// l'accent).
   Widget _chromeHeader(
     BuildContext context,
     ZcrudTheme theme,
@@ -1090,7 +1067,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   }
 
   /// `true` si le champ porte une valeur exploitable (pilote la bordure du
-  /// chrome — parité `hasContent`, `gff:1399`).
+  /// chrome).
   bool get _hasAnyContent => switch (_geometry) {
         ZGeoGeometry.polygon ||
         ZGeoGeometry.polyline =>
@@ -1099,7 +1076,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         ZGeoGeometry.point => _pointOf(widget.ctx.value) != null,
       };
 
-  /// Nombre de points « définis » (pied de carte G19 + compteur G12).
+  /// Nombre de points « définis » (pied de carte + compteur de métriques).
   int get _definedPointCount => switch (_geometry) {
         ZGeoGeometry.polygon ||
         ZGeoGeometry.polyline =>
@@ -1108,10 +1085,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         ZGeoGeometry.point => _pointOf(widget.ctx.value) == null ? 0 : 1,
       };
 
-  /// G19 — pied de carte **localisé** (clé `geo.pointsDefined` ; le texte
-  /// legacy « 0 points defined - Tap on map to add points » était anglais et
-  /// codé en dur, `gff:1592-1596` — la CR exige un libellé localisé, pas une
-  /// copie). Couleurs par rôles de thème.
+  /// Pied de carte **localisé** (clé `geo.pointsDefined`) : jamais de texte
+  /// figé, toujours routé par la l10n injectée. Couleurs par rôles de thème.
   Widget _chromeFooter(BuildContext context, ZcrudTheme theme) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final String suffix = label(
@@ -1142,9 +1117,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// G12 — formats « legacy » des métriques : seuils mesurés `gff:147-159`
-  /// (≥ 1 000 000 m² → km² à 2 décimales ; ≥ 1 000 m → km à 2 décimales),
-  /// **unités via la l10n injectée** (`geo.unit.*` — le canal existe, aucun
+  /// Formats des métriques (≥ 1 000 000 m² → km² à 2 décimales ; ≥ 1 000 m →
+  /// km à 2 décimales), **unités via la l10n injectée** (`geo.unit.*` — aucun
   /// « m² » figé hors repli de dernier recours).
   String _formatArea(BuildContext context, double m2) => m2 >= 1000000
       ? '${(m2 / 1000000).toStringAsFixed(2)} '
@@ -1158,12 +1132,11 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       : '${m.toStringAsFixed(0)} ${label(context, 'geo.unit.m', fallback: 'm')}'
   ;
 
-  /// G12 — barre de métriques opt-in (parité legacy `gff:1363-1391` :
-  /// compteur de points en gras + chip « aire | périmètre » quand l'aire est
-  /// > 0). Couleurs par rôles de thème (le legacy codait un bleu en dur —
-  /// jamais ici). Calculs = extensions pures de `z_geo_metrics.dart`
-  /// (aire sphérique legacy pour le polygone, π·r² planaire pour le cercle —
-  /// nature documentée dans la bibliothèque de métriques).
+  /// Barre de métriques opt-in : compteur de points en gras + chip « aire |
+  /// périmètre » quand l'aire est > 0. Couleurs par rôles de thème (aucune
+  /// couleur en dur). Calculs = extensions pures de `z_geo_metrics.dart`
+  /// (aire sphérique pour le polygone, π·r² planaire pour le cercle — nature
+  /// documentée dans la bibliothèque de métriques).
   Widget _metricsBar(BuildContext context, ZcrudTheme theme) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     double? area;
@@ -1181,7 +1154,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         area = circle?.areaSquareMeters;
         perimeter = circle?.perimeterMeters;
       case ZGeoGeometry.point:
-        break; // aucun chiffre à porter (parité : le legacy n'affiche rien)
+        break; // aucun chiffre à porter en mode point
     }
     final bool hasChip = (area ?? 0) > 0 || (perimeter ?? 0) > 0;
     final String chipText = <String>[
@@ -1231,7 +1204,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// G5 — bouton d'en-tête « plein écran » (≥48dp, `Semantics`, l10n injectée —
+  /// Bouton d'en-tête « plein écran » (≥48dp, `Semantics`, l10n injectée —
   /// invariant AD-13 : aucune couleur ni libellé en dur).
   Widget _fullscreenButton(BuildContext context) {
     final String text =
@@ -1254,12 +1227,11 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// G5 — ouvre la route d'édition **immersive** (parité legacy
-  /// `_openFullscreen`, `gff:971-1177`) : le MÊME champ y est rendu
+  /// Ouvre la route d'édition **immersive** : le MÊME champ y est rendu
   /// (`mapHeight` infini) sur un **brouillon** — la tranche n'est écrite qu'au
   /// retour « Enregistrer » (fermeture sans enregistrer → tranche intacte ;
-  /// contrairement au legacy, l'abandon d'un brouillon modifié demande
-  /// confirmation — jamais de perte silencieuse).
+  /// l'abandon d'un brouillon modifié demande confirmation — jamais de perte
+  /// silencieuse).
   Future<void> _openFullscreen() async {
     final _ZGeoFullscreenResult? result =
         await Navigator.of(context).push<_ZGeoFullscreenResult>(
@@ -1276,9 +1248,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       ),
     );
     if (result == null || !mounted) return;
-    // Adoption du résultat (parité legacy `gff:1146-1172` : mode + points +
-    // rayon repris de la forme retournée) — action discrète, hors voie de
-    // frappe (AD-2) ; contrôleurs/focus jamais recréés.
+    // Adoption du résultat (mode + points + rayon repris de la forme
+    // retournée) — action discrète, hors voie de frappe (AD-2) ;
+    // contrôleurs/focus jamais recréés.
     setState(() {
       _geometry = result.geometry;
       _awaitingRadiusTap = false;
@@ -1387,8 +1359,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
                 onPressed:
                     widget.ctx.field.readOnly ? null : _addCandidateVertex,
                 icon: const Icon(Icons.add_location_alt_outlined),
-                // LOW-4 : libellé routé via l10n injectée (`ZcrudScope.labels`
-                // → delegate → repli `en`), repli littéral français en dernier
+                // Libellé routé via l10n injectée (`ZcrudScope.labels` →
+                // delegate → repli `en`), repli littéral français en dernier
                 // recours — jamais une chaîne UI figée hors injection.
                 label: Text(label(context, 'geo.addVertex', fallback: 'Ajouter')),
               ),
@@ -1439,8 +1411,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// Surface carte via l'adaptateur **possédé** (MAJEUR-1) ; repli propre si
-  /// aucune fabrique n'a été fournie.
+  /// Surface carte via l'adaptateur **possédé** ; repli propre si aucune
+  /// fabrique n'a été fournie.
   Widget _mapSurface(BuildContext context) {
     final adapter = _mapAdapter;
     if (adapter == null) {
@@ -1448,18 +1420,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       return const SizedBox.shrink();
     }
     final bool readOnly = widget.ctx.field.readOnly;
-    // CR-A : en aperçu, les GESTES D'ÉDITION sont désarmés (tap d'ajout,
-    // drags) mais la carte reste manipulable (pan/zoom) — désarmer LE TAP,
-    // jamais la carte (parité legacy `gff:1668,1683` : `onMapTap:
-    // isFullscreen … ? _onMapTapped : (_) {}` avec `isInteractive` inchangé).
+    // En aperçu, les GESTES D'ÉDITION sont désarmés (tap d'ajout, drags)
+    // mais la carte reste manipulable (pan/zoom) — désarmer LE TAP, jamais
+    // la carte.
     final bool preview = _isPreview;
     final bool editable = !preview && !readOnly && (_config?.interactive ?? true);
     final ZGeoShape? areaShape = _collectsVertices ? _currentShape : null;
     ZGeoCircle? circle = _isCircle ? _circleOf(widget.ctx.value) : null;
-    // G11 : aperçu 10 m entre le 1er tap (centre) et le 2e (rayon), parité
-    // legacy `gff:589-600` (`geofence_circle_preview`, `radius: 10`). Rendu
-    // avec les couleurs de repli du thème injecté (le rendu historique éteint
-    // ses alphas en dur ; zcrud ne code aucune couleur).
+    // Aperçu 10 m entre le 1er tap (centre) et le 2e (rayon). Rendu avec
+    // les couleurs de repli du thème injecté — zcrud ne code aucune couleur.
     if (_isCircle && _awaitingRadiusTap && circle == null) {
       final double? lat = _parse(_latController.text);
       final double? lng = _parse(_lngController.text);
@@ -1470,7 +1439,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         }
       }
     }
-    // G11/G13 : (dé)poser les handlers de gestes si l'adaptateur les supporte
+    // (Dé)poser les handlers de gestes si l'adaptateur les supporte
     // (honoré-si-supporté ; `null` ⇒ poignées non rendues — AD-4).
     final Object gestures = adapter; // promotion vers la capacité disjointe
     if (gestures is ZMapGesturesCapable) {
@@ -1498,51 +1467,51 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       center: center,
       shape: areaShape,
       circle: circle,
-      // G13 : en mode « Déplacer », la carte n'est plus interactive (parité
-      // legacy `gff:1673`) — seul le marqueur au centroïde se manipule.
-      // CR-A : l'aperçu garde le pan/zoom (`interactive: true`) — c'est le
-      // TAP qui est désarmé (`onTap: null`), pas la carte.
+      // En mode « Déplacer », la carte n'est plus interactive — seul le
+      // marqueur au centroïde se manipule. L'aperçu garde le pan/zoom
+      // (`interactive: true`) — c'est le TAP qui est désarmé (`onTap: null`),
+      // pas la carte.
       interactive: preview || (editable && !_isMoveMode),
-      // MEDIUM-1 (E11b-1) : surcharges par-champ RÉELLEMENT plombées à
-      // l'adaptateur (chaque adaptateur honore celles qui le concernent).
+      // Surcharges par-champ plombées à l'adaptateur (chaque adaptateur
+      // honore celles qui le concernent).
       tileUrlTemplate: _config?.tileUrlTemplate,
-      // G3 : gabarits de tuiles par type de carte (honorés par OSM ; Google a
+      // Gabarits de tuiles par type de carte (honorés par OSM ; Google a
       // ses types natifs). `null` → défauts audités ZGeoTileReference.
       tileUrlTemplates: _config?.tileUrlTemplates,
       mapStyleJson: _config?.mapStyleJson,
       defaultZoom: _config?.defaultZoom,
-      // G23 : bornes de zoom par-champ (honorées-si-supportées ; `zoomStep`
-      // reste une donnée de config sans consommateur SDK — documenté).
+      // Bornes de zoom par-champ (honorées-si-supportées ; `zoomStep` reste
+      // une donnée de config sans consommateur SDK — documenté).
       minZoom: _config?.minZoom,
       maxZoom: _config?.maxZoom,
-      // DP-7 : options de carte neutres pilotées par la barre (`null` si aucune
+      // Options de carte neutres pilotées par la barre (`null` si aucune
       // barre → comportement inchangé). Honoré-si-supporté par l'adaptateur.
       mapOptions: _mapOptions,
-      // DP-21/M13 : signal neutre « rendre la forme en tracé ouvert » ; `true`
-      // seulement en géométrie polyligne (honoré-si-supporté par l'adaptateur).
+      // Signal neutre « rendre la forme en tracé ouvert » ; `true` seulement
+      // en géométrie polyligne (honoré-si-supporté par l'adaptateur).
       renderShapeAsPolyline: _isPolyline,
       onTap: (preview || readOnly || _isMoveMode)
-          ? null // G13/CR-A : tap désarmé en mode Déplacer ET en aperçu
+          ? null // Tap désarmé en mode Déplacer ET en aperçu
           : (ZGeoPoint point) {
               switch (_geometry) {
                 case ZGeoGeometry.polygon:
                 case ZGeoGeometry.polyline:
                   _appendVertex(point);
                 case ZGeoGeometry.circle:
-                  _handleCircleTap(point); // G11 : machine 2-taps
+                  _handleCircleTap(point); // Machine 2-taps
                 case ZGeoGeometry.point:
                   _setPointFromTap(point);
               }
             },
     );
-    // G5 : hauteur infinie = mode immersif (plein écran) → la surface remplit
+    // Hauteur infinie = mode immersif (plein écran) → la surface remplit
     // l'espace donné par le parent (`Expanded` dans [build]) au lieu d'une
     // hauteur fixe.
     if (_resolvedMapHeight.isInfinite) return map;
     return SizedBox(height: _resolvedMapHeight, child: map);
   }
 
-  // --- Barre d'outils (DP-7, gap B9) -----------------------------------------
+  // --- Barre d'outils ----------------------------------------------------
 
   /// Barre d'outils d'éditeur (clé `z-geo-toolbar`). Boutons **gated par leurs
   /// toggles** (undo/clear/ma-position/type-de-carte + toggles d'options carte).
@@ -1551,9 +1520,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   Widget _toolbar(BuildContext context, ZcrudTheme theme) {
     final ZGeoEditorToolbarConfig cfg = _toolbarConfig;
     final bool readOnly = widget.ctx.field.readOnly;
-    // G20 — compaction RESPONSIVE (parité legacy `gff:776,880` : largeur
-    // d'écran < seuil ⇒ compact). Seuil : config > référence auditée (600) ;
-    // `0` ⇒ opt-out de la compaction automatique.
+    // Compaction RESPONSIVE : largeur d'écran < seuil ⇒ compact. Seuil :
+    // config > référence auditée (600) ; `0` ⇒ opt-out de la compaction
+    // automatique.
     final double breakpoint =
         cfg.compactBreakpointDp ?? ZGeoChromeReference.compactBreakpointDp;
     final bool compact = cfg.compactMode ||
@@ -1561,8 +1530,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     // Libellés textuels seulement hors mode compact (icônes seules).
     final bool showLabels = cfg.showButtonLabels && !compact;
     final bool hasResolver = widget.locationResolver != null;
-    // G2 : sélecteur de mode fonctionnel — rendu seulement si le champ est
-    // multi-géométries ET que la config l'affiche (parité gff:1204-1213).
+    // Sélecteur de mode fonctionnel — rendu seulement si le champ est
+    // multi-géométries ET que la config l'affiche.
     final List<ZGeoGeometry> modes = _allowedGeometries ?? const <ZGeoGeometry>[];
 
     final List<Widget> buttons = <Widget>[
@@ -1598,8 +1567,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           showLabels: showLabels,
           onPressed: readOnly ? null : _clearAll,
         ),
-      // G16 : bouton d'optimisation RÉEL (tri anti-auto-intersection, parité
-      // gff:922-959) — rendu pour les géométries à sommets uniquement.
+      // Bouton d'optimisation (tri anti-auto-intersection) — rendu pour les
+      // géométries à sommets uniquement.
       if (cfg.showOptimizeButton && _collectsVertices)
         _toolbarButton(
           context: context,
@@ -1610,7 +1579,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           showLabels: showLabels,
           onPressed: readOnly ? null : _optimizePolygon,
         ),
-      // « ma position » : présent seulement si le seam est injecté (AC7).
+      // « ma position » : présent seulement si le seam est injecté.
       if (cfg.showMyLocationButton && hasResolver)
         _toolbarButton(
           context: context,
@@ -1621,12 +1590,10 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           showLabels: showLabels,
           onPressed: readOnly ? null : _useMyLocation,
         ),
-      // G13 : mode « Déplacer » — rendu seulement si l'adaptateur supporte
-      // les gestes ([ZMapGesturesCapable], honoré-si-supporté ; le legacy le
-      // masquait pareillement quand l'adaptateur ne savait pas draguer :
-      // `gff:1439` `if (!isOsm)`) et que la géométrie collecte des sommets.
-      // Pas de flag de config : le legacy n'en a aucun (bouton toujours rendu
-      // quand supporté — parité mesurée).
+      // Mode « Déplacer » — rendu seulement si l'adaptateur supporte les
+      // gestes ([ZMapGesturesCapable], honoré-si-supporté) et que la
+      // géométrie collecte des sommets. Pas de flag de config : le bouton
+      // est toujours rendu quand supporté.
       if (_collectsVertices && _mapAdapter is ZMapGesturesCapable)
         _mapOptionToggle(
           context: context,
@@ -1652,9 +1619,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         ),
       // Toggles d'options carte (features/gestes/advanced) — pilotent
       // `_mapOptions` (honoré-si-supporté par l'adaptateur). Action discrète.
-      // G16 : `useMapOptionsDropdown` est désormais RÉEL — `true` regroupe ces
-      // toggles dans un menu déroulant (libellé `cfg.mapOptionsLabel`,
-      // surchargeable) au lieu du `Wrap` plat.
+      // `useMapOptionsDropdown` regroupe ces toggles dans un menu déroulant
+      // (libellé `cfg.mapOptionsLabel`, surchargeable) au lieu du `Wrap` plat.
       if (cfg.useMapOptionsDropdown && _optionToggleSpecs(cfg).isNotEmpty)
         _mapOptionsDropdown(context, cfg, readOnly)
       else
@@ -1683,7 +1649,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   }
 
   /// Specs des toggles d'options carte activés par [cfg] (source UNIQUE du
-  /// `Wrap` plat ET du menu déroulant G16 — même liste, deux rendus).
+  /// `Wrap` plat ET du menu déroulant — même liste, deux rendus).
   List<_ZGeoOptionToggleSpec> _optionToggleSpecs(
     ZGeoEditorToolbarConfig cfg,
   ) =>
@@ -1770,10 +1736,10 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
           ),
       ];
 
-  /// G16 — menu déroulant des options de carte (`useMapOptionsDropdown` réel).
-  /// Chaque entrée cochée reflète l'état du toggle ; libellé du bouton =
-  /// `cfg.mapOptionsLabel` (donnée surchargeable — parité DODLP). ≥48dp,
-  /// `Semantics` porteur (AD-13).
+  /// Menu déroulant des options de carte (`useMapOptionsDropdown`). Chaque
+  /// entrée cochée reflète l'état du toggle ; libellé du bouton =
+  /// `cfg.mapOptionsLabel` (donnée surchargeable). ≥48dp, `Semantics`
+  /// porteur (AD-13).
   Widget _mapOptionsDropdown(
     BuildContext context,
     ZGeoEditorToolbarConfig cfg,
@@ -1832,7 +1798,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     );
   }
 
-  /// Icône du sélecteur de mode (G2 — parité legacy `gff:832-843`).
+  /// Icône du sélecteur de mode.
   IconData _modeIcon(ZGeoGeometry mode) => switch (mode) {
         ZGeoGeometry.point => Icons.place_rounded,
         ZGeoGeometry.circle => Icons.radio_button_unchecked_rounded,
@@ -1840,8 +1806,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         ZGeoGeometry.polyline => Icons.timeline_rounded,
       };
 
-  /// Libellé de repli du sélecteur de mode (G2 — parité legacy `gff:846-857` ;
-  /// le libellé effectif passe par la l10n injectée `geo.mode.*`).
+  /// Libellé de repli du sélecteur de mode (le libellé effectif passe par
+  /// la l10n injectée `geo.mode.*`).
   String _modeFallbackLabel(ZGeoGeometry mode) => switch (mode) {
         ZGeoGeometry.point => 'Point',
         ZGeoGeometry.circle => 'Cercle',
@@ -1945,7 +1911,7 @@ extension _FirstOrNull<E> on List<E> {
   E? get firstOrNull => isEmpty ? null : first;
 }
 
-/// Spec d'un toggle d'option de carte (G16) : une seule source pour le rendu
+/// Spec d'un toggle d'option de carte : une seule source pour le rendu
 /// `Wrap` plat ET le menu déroulant.
 class _ZGeoOptionToggleSpec {
   const _ZGeoOptionToggleSpec({
@@ -1965,10 +1931,9 @@ class _ZGeoOptionToggleSpec {
   final VoidCallback toggle;
 }
 
-/// Résultat d'un « Enregistrer » de la route plein écran (G5) : valeur validée
-/// + géométrie courante de l'éditeur immersif (le sélecteur de mode G2 peut y
-/// avoir changé la géométrie — parité legacy `gff:1146-1172` qui adopte
-/// `result.type`).
+/// Résultat d'un « Enregistrer » de la route plein écran : valeur validée +
+/// géométrie courante de l'éditeur immersif (le sélecteur de mode peut y
+/// avoir changé la géométrie).
 class _ZGeoFullscreenResult {
   const _ZGeoFullscreenResult({required this.value, required this.geometry});
 
@@ -1979,20 +1944,19 @@ class _ZGeoFullscreenResult {
   final ZGeoGeometry geometry;
 }
 
-/// Route d'édition **immersive** du champ géo (G5, parité legacy
-/// `_openFullscreen` `gff:971-1177`) : rend LE MÊME champ ([ZGeoFieldWidget],
-/// `mapHeight` infini) sur un **brouillon local** — la tranche du formulaire
-/// n'est JAMAIS écrite par cette page ; seul le retour « Enregistrer »
-/// (validé par géométrie, parité `gff:1037-1059`) remonte une valeur au champ
+/// Route d'édition **immersive** du champ géo : rend LE MÊME champ
+/// ([ZGeoFieldWidget], `mapHeight` infini) sur un **brouillon local** — la
+/// tranche du formulaire n'est JAMAIS écrite par cette page ; seul le retour
+/// « Enregistrer » (validé par géométrie) remonte une valeur au champ
 /// parent, qui écrit alors la tranche (voie unique `ctx.onChanged`).
 ///
-/// Fermeture sans enregistrer : la tranche reste intacte (parité) MAIS un
-/// brouillon **modifié** demande confirmation avant d'être abandonné — le
-/// legacy, lui, jette silencieusement (perte silencieuse refusée, AD-10-esprit).
+/// Fermeture sans enregistrer : la tranche reste intacte MAIS un brouillon
+/// **modifié** demande confirmation avant d'être abandonné — jamais de perte
+/// silencieuse (esprit de l'invariant AD-10).
 ///
-/// L'éditeur immersif possède SA PROPRE instance d'adaptateur (la fabrique est
-/// rappelée à son montage — MAJEUR-1 : jamais d'instance partagée avec le champ
-/// encarté).
+/// L'éditeur immersif possède SA PROPRE instance d'adaptateur (la fabrique
+/// est rappelée à son montage) : jamais d'instance partagée avec le champ
+/// encarté.
 class _ZGeoFullscreenPage extends StatefulWidget {
   const _ZGeoFullscreenPage({
     required this.field,
@@ -2012,7 +1976,7 @@ class _ZGeoFullscreenPage extends StatefulWidget {
   /// Fabrique d'adaptateur carte (rappelée par l'éditeur immersif).
   final ZMapAdapterFactory? adapterFactory;
 
-  /// Registre de fabriques nommées (G4), transmis tel quel.
+  /// Registre de fabriques nommées, transmis tel quel.
   final Map<String, ZMapAdapterFactory>? adapterFactories;
 
   /// Géométrie par défaut du builder, transmise telle quelle.
@@ -2034,8 +1998,7 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
   bool _dirty = false;
 
   /// Accès à l'état de l'éditeur immersif (géométrie courante + saisie
-  /// partielle) — même parti que le legacy (`GlobalKey<GeofenceFieldState>`,
-  /// `gff:972,1032`), possible car même bibliothèque.
+  /// partielle), possible car même bibliothèque.
   final GlobalKey _fieldKey = GlobalKey();
 
   _ZGeoFieldWidgetState? get _fieldState {
@@ -2057,11 +2020,11 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
             : ZGeoGeometry.point);
   }
 
-  /// Validation par géométrie (parité mesurée `gff:1037-1059`) : point → 1
-  /// point ; cercle → centre + rayon (un `ZGeoCircle` zcrud valide) ; polygone
-  /// → ≥3 sommets ; polyligne → ≥2 sommets. Valide → pop(résultat) ; invalide
-  /// → SnackBar localisée (parité `gff:1061-1085`, y compris le message
-  /// « aucune donnée » quand le brouillon est vide hors mode point).
+  /// Validation par géométrie : point → 1 point ; cercle → centre + rayon
+  /// (un `ZGeoCircle` valide) ; polygone → ≥3 sommets ; polyligne → ≥2
+  /// sommets. Valide → pop(résultat) ; invalide → SnackBar localisée (y
+  /// compris le message « aucune donnée » quand le brouillon est vide hors
+  /// mode point).
   void _save() {
     final ZGeoGeometry g = _geometry;
     final Object? v = _draft;
@@ -2101,8 +2064,8 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
           .pop(_ZGeoFullscreenResult(value: v, geometry: g));
       return;
     }
-    // Parité `gff:1065-1084` : contenu partiel (ou mode point) → message
-    // d'erreur de la géométrie ; brouillon vide hors point → « aucune donnée ».
+    // Contenu partiel (ou mode point) → message d'erreur de la géométrie ;
+    // brouillon vide hors point → « aucune donnée ».
     final String msg = (_hasPartialContent(v) || g == ZGeoGeometry.point)
         ? label(context, invalidKey, fallback: invalidFallback)
         : label(
@@ -2117,7 +2080,7 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
 
   /// Contenu partiel : brouillon non vide, OU saisie en cours dans l'éditeur
   /// immersif (ex. cercle au centre posé sans rayon — la tranche vaut `null`
-  /// car zcrud n'émet que du valide ; le legacy testait `_points.isNotEmpty`).
+  /// car zcrud n'émet que du valide).
   bool _hasPartialContent(Object? v) {
     if (v != null && !(v is ZGeoShape && v.isEmpty)) return true;
     final _ZGeoFieldWidgetState? s = _fieldState;
@@ -2174,7 +2137,7 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
     final bool readOnly = widget.field.readOnly;
     final String saveText = label(context, 'geo.save', fallback: 'Enregistrer');
     return PopScope(
-      // Brouillon intact → fermeture directe (parité) ; modifié → garde.
+      // Brouillon intact → fermeture directe ; modifié → garde.
       canPop: !_dirty,
       onPopInvokedWithResult: (bool didPop, Object? _) {
         if (didPop) return;
@@ -2232,7 +2195,7 @@ class _ZGeoFullscreenPageState extends State<_ZGeoFullscreenPage> {
           adapterFactory: widget.adapterFactory,
           adapterFactories: widget.adapterFactories,
           geometry: widget.geometry,
-          // G5 : mode immersif — la carte remplit la page.
+          // Mode immersif — la carte remplit la page.
           mapHeight: double.infinity,
           locationResolver: widget.locationResolver,
         ),

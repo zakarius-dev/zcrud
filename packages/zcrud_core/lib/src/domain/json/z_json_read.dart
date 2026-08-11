@@ -1,14 +1,13 @@
-/// 🔴 **LECTURE JSON DÉFENSIVE PARTAGÉE** du domaine `zcrud_core` (AD-10).
+/// **LECTURE JSON DÉFENSIVE PARTAGÉE** du domaine `zcrud_core` (AD-10).
 ///
-/// ## Pourquoi cette surface existe (décision owner, CHAT-0)
+/// ## Pourquoi cette surface existe
 ///
-/// Chaque entité **écrite à la main** (hors codegen) du dépôt reconstruit les
-/// **mêmes** micro-helpers de lecture tolérante — `_coerceStringMap`,
-/// `_asString`, `_asIntOrNull`, `_guard` — copiés d'un fichier à l'autre
-/// (`ZFlashcardSource`, `AppFile`, `ZMindmap`, le modèle de chat…). C'est
-/// exactement la classe de duplication qui a produit **DW-ES22-4** : six
-/// `_mapEquals` jumeaux dans trois packages, dont **aucun** n'était profond, et
-/// que rien n'obligeait à rester cohérents.
+/// Chaque entité **écrite à la main** (hors codegen) du dépôt aurait sinon
+/// besoin de reconstruire les **mêmes** micro-helpers de lecture tolérante —
+/// coercition de map, de chaîne, garde de décodage — dupliqués d'un fichier à
+/// l'autre. C'est exactement la classe de duplication qu'une primitive
+/// partagée évite : plusieurs copies jumelles, dont rien n'oblige à rester
+/// cohérentes entre elles.
 ///
 /// ⇒ Ces primitives sont ici **UNE SEULE FOIS**, publiques, et destinées à
 /// **tous** les modules — présents et futurs. Le pendant existe déjà pour
@@ -71,7 +70,7 @@ int zJsonInt(Object? value, int fallback) => zJsonIntOrNull(value) ?? fallback;
 
 /// Lecture défensive d'un `double?` (tolère `num` et `String`), repli `null`.
 ///
-/// ⚠️ Un score **absent** ne doit **jamais** être coercé en `0.0` par l'appelant :
+/// Un score **absent** ne doit **jamais** être coercé en `0.0` par l'appelant :
 /// « non évalué » et « évalué à zéro » sont deux faits distincts, et les
 /// confondre fait mentir toute règle métier qui s'appuie dessus.
 double? zJsonDoubleOrNull(Object? value) {
@@ -106,7 +105,7 @@ bool zJsonBool(Object? value, bool fallback) =>
 
 /// Lecture défensive d'une date **ISO-8601** — repli `null`.
 ///
-/// 🔴 `DateTime.**tryParse**`, jamais `DateTime.parse` : une entité qui fait
+/// `DateTime.**tryParse**`, jamais `DateTime.parse` : une entité qui fait
 /// `DateTime.parse(json['created_at'] as String)` **lève** sur une date absente
 /// ou corrompue et **détruit tout le parent** — violation frontale d'AD-10.
 DateTime? zJsonDate(Object? value) {
@@ -137,7 +136,7 @@ T? zJsonGuard<T>(T Function() parse) {
   }
 }
 
-/// 🔴 Décode une **liste** en ignorant les éléments illisibles — **la liste
+/// Décode une **liste** en ignorant les éléments illisibles — **la liste
 /// n'est jamais perdue** (AD-10).
 ///
 /// - [raw] n'est pas une `List` ⇒ `null` (« champ absent », distinct de « liste
@@ -146,7 +145,7 @@ T? zJsonGuard<T>(T Function() parse) {
 ///   autres ;
 /// - un [decode] qui **lève** est absorbé (l'élément est sauté).
 ///
-/// ⚠️ C'est exactement ce que `raw.map((e) => T.fromJson(e as Map…)).toList()`
+/// C'est exactement ce que `raw.map((e) => T.fromJson(e as Map…)).toList()`
 /// **ne fait pas** : un seul élément au mauvais type y lève un `TypeError` qui
 /// emporte le parent entier.
 List<T>? zJsonDecodeList<T extends Object>(
