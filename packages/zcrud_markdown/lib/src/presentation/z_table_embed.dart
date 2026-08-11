@@ -32,6 +32,10 @@ import 'package:zcrud_core/zcrud_core.dart';
 // et les clés de structure `rows`/`columns`/`cells` sont DÉFINIS dans la couture
 // NEUTRE `../data/z_table_ops.dart` (pur-Dart, réutilisée par le migrateur
 // `zcrud_note`). Ce fichier de RENDU les IMPORTE — il ne les re-déclare plus.
+// GAP-2 (CR parité 2026-08-11) : la relecture de la charge tableau LEGACY
+// (`x-embed-table`, string Markdown) réutilise le parseur legacy-fidèle de la
+// couture data — jamais un second parseur dans le rendu.
+import '../data/z_table_markdown.dart';
 import '../data/z_table_ops.dart';
 import 'z_table_cell.dart';
 
@@ -125,13 +129,56 @@ class ZTableEmbedBuilder extends EmbedBuilder {
     return matrix;
   }
 
-  /// Rendu du widget `Table` NATIF (bordures/couleurs du thème injecté, padding
-  /// directionnel). [IntrinsicColumnWidth] : dimensionnement au contenu (robuste).
-  Widget _buildTable(
-    BuildContext context,
-    List<List<String>> matrix,
-    TextStyle textStyle,
-  ) {
+  /// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
+  /// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
+  /// enveloppée d'un [Semantics] lisible ([kTableInvalidLabel]). Insets
+  /// DIRECTIONNELS. Zéro couleur codée en dur.
+  Widget _errorPlaceholder(BuildContext context) =>
+      _tableErrorPlaceholder(context);
+}
+
+/// `EmbedBuilder` de LECTURE de l'embed tableau **LEGACY DODLP**
+/// (`x-embed-table`, charge **string Markdown** — GAP-2, CR parité 2026-08-11).
+///
+/// DÉFENSIF (AD-10) : charge non-`String` / vide / illisible → placeholder
+/// annoté ([kTableInvalidLabel]), jamais de throw. La relecture passe par
+/// [zParseLegacyMarkdownTable] (port fidèle du parseur legacy, conscient du
+/// LaTeX) puis le rendu par le MÊME chemin que [ZTableEmbedBuilder]. LECTURE
+/// SEULE : rien dans zcrud n'ÉCRIT jamais cette clé — la ré-édition d'un tel
+/// embed (voie toolbar) le REMPLACE par un embed `table` structuré (migration à
+/// sens unique, documentée sur [kLegacyTableEmbedType]).
+class ZLegacyTableEmbedBuilder extends EmbedBuilder {
+  /// Builder `const` (sans état, aucune ressource à disposer).
+  const ZLegacyTableEmbedBuilder();
+
+  @override
+  String get key => kLegacyTableEmbedType;
+
+  /// Rendu BLOC (cohérent avec [ZTableEmbedBuilder]).
+  @override
+  bool get expanded => true;
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) {
+    final Object? data = embedContext.node.value.data;
+    final List<List<String>>? matrix =
+        data is String ? zParseLegacyMarkdownTable(data) : null;
+    if (matrix == null) {
+      return _tableErrorPlaceholder(context);
+    }
+    return _buildTable(context, matrix, embedContext.textStyle);
+  }
+}
+
+/// Rendu du widget `Table` NATIF (bordures/couleurs du thème injecté, padding
+/// directionnel). [IntrinsicColumnWidth] : dimensionnement au contenu (robuste).
+/// PARTAGÉ par [ZTableEmbedBuilder] (structure `{cells}`) et
+/// [ZLegacyTableEmbedBuilder] (string Markdown legacy) — un seul chemin de rendu.
+Widget _buildTable(
+  BuildContext context,
+  List<List<String>> matrix,
+  TextStyle textStyle,
+) {
     final ZcrudTheme zTheme = ZcrudTheme.of(context);
     final Color borderColor =
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
@@ -161,21 +208,20 @@ class ZTableEmbedBuilder extends EmbedBuilder {
     );
   }
 
-  /// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
-  /// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
-  /// enveloppée d'un [Semantics] lisible ([kTableInvalidLabel]). Insets
-  /// DIRECTIONNELS. Zéro couleur codée en dur.
-  Widget _errorPlaceholder(BuildContext context) {
-    final Color color =
-        ZcrudTheme.of(context).errorColor ?? Theme.of(context).colorScheme.error;
-    return Semantics(
-      label: kTableInvalidLabel,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: 2),
-        child: Icon(Icons.error_outline, size: 18, color: color),
-      ),
-    );
-  }
+/// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
+/// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
+/// enveloppée d'un [Semantics] lisible ([kTableInvalidLabel]). Insets
+/// DIRECTIONNELS. Zéro couleur codée en dur. PARTAGÉ par les deux builders.
+Widget _tableErrorPlaceholder(BuildContext context) {
+  final Color color =
+      ZcrudTheme.of(context).errorColor ?? Theme.of(context).colorScheme.error;
+  return Semantics(
+    label: kTableInvalidLabel,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 2),
+      child: Icon(Icons.error_outline, size: 18, color: color),
+    ),
+  );
 }
 
 /// Ouvre le dialogue de saisie/édition d'un tableau (AC3, AD-13).

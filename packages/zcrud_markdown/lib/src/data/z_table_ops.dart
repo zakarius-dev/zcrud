@@ -34,6 +34,17 @@ import 'package:zcrud_core/domain.dart';
 /// migrateur d'ES-6.2 (`zcrud_note`) l'importent **d'ici**, jamais en dur.
 const String kTableEmbedType = 'table';
 
+/// Type Delta de l'embed tableau **LEGACY DODLP** (CR parité 2026-08-11,
+/// GAP-2) — op `{"insert": {"x-embed-table": "<markdown>"}}`.
+///
+/// MESURÉ sur le legacy (`markdown_quill/embeddable_table_syntax.dart:101` +
+/// `table_view_embed.dart:23,30`) : la clé est `x-embed-table` et la charge un
+/// **string Markdown** (tableau GFM). zcrud le RECONNAÎT EN LECTURE (rendu +
+/// pré-remplissage d'édition) ; toute ÉCRITURE reste sur [kTableEmbedType]
+/// (`{rows,columns,cells}`) — migration à SENS UNIQUE (le legacy ne relit pas
+/// le contenu réécrit par zcrud).
+const String kLegacyTableEmbedType = 'x-embed-table';
+
 /// Clé du nombre de lignes dans la structure JSON-safe de l'embed tableau.
 const String kTableRowsKey = 'rows';
 

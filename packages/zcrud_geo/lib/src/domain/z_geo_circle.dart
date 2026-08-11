@@ -10,8 +10,16 @@
 /// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. Centre
 /// absent/invalide, rayon absent/non numérique/non fini (NaN/Inf)/≤0 → `null`
 /// (état neutre). L'évolution de schéma reste additive.
+///
+/// **Lecture legacy DODLP (G1)** : [fromMapSafe] accepte aussi (a) une
+/// **chaîne JSON** (enveloppe legacy, décodée défensivement), (b) le cercle
+/// legacy `{type:'circle', points:[centre], radius}` — alias de LECTURE
+/// `radius` → `radius_m` (quand `radius_m` est absente) et centre repris de
+/// `points[0]` (quand `center` est absente). LECTURE seulement : [toMap] est
+/// strictement inchangé (`center`/`radius_m`).
 library;
 
+import 'z_geo_legacy_codec.dart';
 import 'z_geo_point.dart';
 
 /// Cercle géographique neutre : centre ([ZGeoPoint]) + rayon en mètres.
@@ -51,12 +59,25 @@ class ZGeoCircle {
   /// n'est pas une `Map`, si le centre est absent/invalide, ou si le rayon est
   /// absent/non numérique/non fini/≤0. `label` non-`String` → `null`.
   static ZGeoCircle? fromMapSafe(Object? raw) {
-    if (raw is! Map) return null;
-    final center = ZGeoPoint.fromMapSafe(raw['center']);
+    final decoded = zGeoDecodeLegacyEnvelope(raw);
+    if (decoded is! Map) return null;
+    // Centre : clé zcrud `center` d'abord ; repli legacy `points[0]` UNIQUEMENT
+    // quand `center` est absente (un `center` présent-mais-corrompu reste
+    // `null` comme avant — la lecture élargie ne secourt pas la stricte).
+    var center = ZGeoPoint.fromMapSafe(decoded['center']);
+    if (center == null && decoded['center'] == null) {
+      final points = decoded['points'];
+      if (points is List && points.isNotEmpty) {
+        center = ZGeoPoint.fromMapSafe(points.first);
+      }
+    }
     if (center == null) return null;
-    final radius = _asPositiveFiniteDouble(raw['radius_m']);
+    // Rayon : clé zcrud `radius_m` d'abord ; alias de LECTURE legacy `radius`
+    // uniquement quand `radius_m` est absente (même règle de non-secours).
+    final rawRadius = decoded['radius_m'] ?? decoded['radius'];
+    final radius = _asPositiveFiniteDouble(rawRadius);
     if (radius == null) return null;
-    final label = raw['label'];
+    final label = decoded['label'];
     return ZGeoCircle(
       center: center,
       radiusMeters: radius,

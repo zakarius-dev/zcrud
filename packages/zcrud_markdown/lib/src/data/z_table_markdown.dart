@@ -167,6 +167,112 @@ List<List<String>>? zCellsOfTablePayload(Object? data) {
   return cells;
 }
 
+/// Relit un tableau Markdown **LEGACY DODLP** en matrice, ou `null` si [raw]
+/// n'en tire aucune ligne (GAP-2, CR parité 2026-08-11).
+///
+/// PORT FIDÈLE de l'algorithme de lecture du legacy
+/// (`table_view_embed.dart:78-177`, `_parseMarkdown`) — c'est LUI qui définit ce
+/// qu'un embed `x-embed-table` réel contient, pas notre grammaire GFM stricte :
+/// - lignes vides ignorées ; ligne séparatrice `|---|---|` (sans alphanumérique)
+///   ignorée ;
+/// - découpe de ligne **consciente du LaTeX** ([zSplitLegacyTableRow]) : un `|`
+///   à l'intérieur de `$...$`, `$$...$$`, d'accolades `{...}` ou précédé de `\`
+///   N'EST PAS un séparateur de colonne — exigence mesurée du legacy (cellules
+///   `$P(A|B)$`) que [zParseMarkdownTable] (strict, symétrique de NOTRE rendu)
+///   rejette à bon droit ;
+/// - cellules de bord vides retirées (`| a |` → `a`), cellules `trim()`ées ;
+/// - lignes NORMALISÉES à la largeur max (padding `''`) — jamais de matrice
+///   jagged (le rendu la refuserait).
+///
+/// DIVERGENCE ASSUMÉE (AD-10, « ne pas fabriquer une donnée que la source n'a
+/// pas ») : là où le legacy fabriquait un tableau factice `Header/Cell` quand
+/// rien n'était lisible, on retourne `null` → placeholder d'erreur annoté.
+List<List<String>>? zParseLegacyMarkdownTable(String raw) {
+  final List<List<String>> rows = <List<String>>[];
+  for (final String line in const LineSplitter().convert(raw)) {
+    if (line.trim().isEmpty) continue;
+    // Séparateur Markdown `|---|---|` (aucun alphanumérique) — ignoré (legacy).
+    if (line.contains('---') &&
+        line.trim().startsWith('|') &&
+        !line.contains(RegExp('[a-zA-Z0-9]'))) {
+      continue;
+    }
+    rows.add(zSplitLegacyTableRow(line));
+  }
+  if (rows.isEmpty) return null;
+  var width = 0;
+  for (final List<String> r in rows) {
+    if (r.length > width) width = r.length;
+  }
+  if (width == 0) return null;
+  return <List<String>>[
+    for (final List<String> r in rows)
+      <String>[for (var i = 0; i < width; i++) i < r.length ? r[i] : ''],
+  ];
+}
+
+/// Découpe une ligne de tableau **legacy** en cellules, en respectant les
+/// délimiteurs LaTeX — PORT FIDÈLE de la boucle de `table_view_embed.dart:91-155`
+/// (états `insideInlineMath`/`insideBlockMath`/`insideEscape`/`braceDepth`).
+///
+/// Un `|` n'est séparateur que HORS `$...$` / `$$...$$` / accolades, et non
+/// échappé par `\`. Bords vides retirés, cellules `trim()`ées (comme le legacy).
+List<String> zSplitLegacyTableRow(String line) {
+  final List<String> row = <String>[];
+  final StringBuffer currentCell = StringBuffer();
+  var insideInlineMath = false; // $...$
+  var insideBlockMath = false; // $$...$$
+  var insideEscape = false; // \ char
+  var braceDepth = 0;
+  for (var i = 0; i < line.length; i++) {
+    final String char = line[i];
+    final String nextChar = (i + 1 < line.length) ? line[i + 1] : '';
+    if (insideEscape) {
+      currentCell.write(char);
+      insideEscape = false;
+      continue;
+    }
+    if (char == r'\') {
+      currentCell.write(char);
+      insideEscape = true;
+      continue;
+    }
+    if (char == r'$' && nextChar == r'$') {
+      insideBlockMath = !insideBlockMath;
+      currentCell
+        ..write(char)
+        ..write(nextChar);
+      i++; // saute le second `$`
+      continue;
+    }
+    if (char == r'$' && !insideBlockMath) {
+      insideInlineMath = !insideInlineMath;
+      currentCell.write(char);
+      continue;
+    }
+    if (!insideBlockMath && !insideInlineMath) {
+      if (char == '{') braceDepth++;
+      if (char == '}') braceDepth = braceDepth > 0 ? braceDepth - 1 : 0;
+    }
+    if (char == '|') {
+      if (!insideInlineMath && !insideBlockMath && braceDepth == 0) {
+        row.add(currentCell.toString());
+        currentCell.clear();
+      } else {
+        currentCell.write(char);
+      }
+    } else {
+      currentCell.write(char);
+    }
+  }
+  row.add(currentCell.toString());
+  if (row.length >= 2) {
+    if (row.first.trim().isEmpty) row.removeAt(0);
+    if (row.isNotEmpty && row.last.trim().isEmpty) row.removeLast();
+  }
+  return <String>[for (final String c in row) c.trim()];
+}
+
 /// Deux matrices portent-elles exactement le même contenu ?
 ///
 /// C'est le juge de l'auto-vérification : si le GFM produit ne se relit pas à

@@ -18,6 +18,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../data/delta_neutral_ops.dart';
+// GAP-2 : conversion de la charge tableau LEGACY (string Markdown) pour le
+// pré-remplissage d'édition — parseur legacy-fidèle de la couture data.
+import '../data/z_table_markdown.dart';
 // SOURCE UNIQUE du type d'embed tableau (SM-S4 / ES-6.2) : re-câblage D3 sur la
 // couture NEUTRE, `z_table_embed.dart` ne re-déclare plus `kTableEmbedType`.
 import '../data/z_table_ops.dart';
@@ -57,6 +60,14 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZMediaEmbedBuilder(ZMediaKind.image),
   ZMediaEmbedBuilder(ZMediaKind.video),
   ZDividerEmbedBuilder(),
+  // GAP-1/GAP-2 (CR parité 2026-08-11) : LECTURE des embeds LEGACY DODLP —
+  // `formula`/`formula_inline` (string LaTeX nu) et `x-embed-table` (string
+  // Markdown). Sans eux, tout contenu DODLP existant tombait sur le repli
+  // d'embed inconnu (invisible). L'ÉCRITURE reste sur nos clés
+  // `latex`/`latexBlock`/`table` — migration à sens unique.
+  ZLegacyFormulaEmbedBuilder(),
+  ZLegacyFormulaInlineEmbedBuilder(),
+  ZLegacyTableEmbedBuilder(),
 ];
 
 /// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant (MIN-1,
@@ -164,6 +175,15 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       showSearchButton: config.showSearch,
       showSubscript: config.showSubscript,
       showSuperscript: config.showSuperscript,
+      // GAP-4 (CR parité 2026-08-11) : boutons presse-papier NATIFS de Quill
+      // (désactivés par défaut côté Quill — le drapeau zcrud les pilote).
+      // `@experimental` chez Quill 11.x, MESURÉ fonctionnels ; le legacy DODLP
+      // s'appuie sur ces mêmes drapeaux (`qmew:227-228`). L'ignore est LOCAL :
+      // si Quill retire l'API, la compile rougit ici et nulle part ailleurs.
+      // ignore: experimental_member_use
+      showClipboardCopy: config.showClipboardCopy,
+      // ignore: experimental_member_use
+      showClipboardPaste: config.showClipboardPaste,
       customButtons: <QuillToolbarCustomButtonOptions>[
         if (config.showLatexButton)
           QuillToolbarCustomButtonOptions(
@@ -248,12 +268,18 @@ _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   for (final Map<String, dynamic> op in ops) {
     final Object? insert = op['insert'];
     if (insert is Map) {
-      final bool isBlock = insert[kLatexBlockEmbedType] is String;
-      final bool isInline = insert[kLatexEmbedType] is String;
+      // GAP-1 : les clés LEGACY DODLP (`formula` display / `formula_inline`)
+      // sont détectées pour l'ÉDITION — le REMPLACEMENT ré-écrit sur NOS clés
+      // (`latex`/`latexBlock`), migration à sens unique par embed édité.
+      final bool isBlock = insert[kLatexBlockEmbedType] is String ||
+          insert[kLegacyFormulaEmbedType] is String;
+      final bool isInline = insert[kLatexEmbedType] is String ||
+          insert[kLegacyFormulaInlineEmbedType] is String;
       if ((isInline || isBlock) && (caret == index || caret == index + 1)) {
-        final String source =
-            (isBlock ? insert[kLatexBlockEmbedType] : insert[kLatexEmbedType])
-                as String;
+        final String source = (isBlock
+            ? (insert[kLatexBlockEmbedType] ?? insert[kLegacyFormulaEmbedType])
+            : (insert[kLatexEmbedType] ??
+                insert[kLegacyFormulaInlineEmbedType])) as String;
         return _LatexEmbedHit(index, source, block: isBlock);
       }
       // Un embed (latex ou autre) occupe une position Delta.
@@ -310,16 +336,41 @@ _TableEmbedHit? _tableEmbedAtSelection(QuillController quill) {
   var index = 0;
   for (final Map<String, dynamic> op in ops) {
     final Object? insert = op['insert'];
-    if (insert is Map && insert[kTableEmbedType] is Map) {
+    if (insert is Map &&
+        (insert[kTableEmbedType] is Map ||
+            insert[kLegacyTableEmbedType] is String)) {
       if (caret == index || caret == index + 1) {
-        return _TableEmbedHit(
-          index,
-          Map<String, dynamic>.from(insert[kTableEmbedType] as Map),
-        );
+        final Map<String, dynamic>? structure =
+            _tableStructureOfInsert(insert);
+        if (structure != null) return _TableEmbedHit(index, structure);
       }
       index += 1;
     } else {
       index += insert is String ? insert.length : 1;
+    }
+  }
+  return null;
+}
+
+/// Extrait la structure `{rows,columns,cells}` d'un insert tableau — natif
+/// (`table`, Map) OU LEGACY (`x-embed-table`, string Markdown converti via
+/// [zParseLegacyMarkdownTable]). GAP-2 : l'édition d'un embed legacy pré-remplit
+/// le dialogue puis le REMPLACEMENT ré-écrit un embed `table` structuré
+/// (migration à sens unique par embed édité). `null` si la charge legacy est
+/// illisible (AD-10 : on n'invente pas une grille — l'insertion reste possible,
+/// le remplacement non).
+Map<String, dynamic>? _tableStructureOfInsert(Map<dynamic, dynamic> insert) {
+  final Object? native = insert[kTableEmbedType];
+  if (native is Map) return Map<String, dynamic>.from(native);
+  final Object? legacy = insert[kLegacyTableEmbedType];
+  if (legacy is String) {
+    final List<List<String>>? cells = zParseLegacyMarkdownTable(legacy);
+    if (cells != null) {
+      return <String, dynamic>{
+        kTableRowsKey: cells.length,
+        kTableColumnsKey: cells.first.length,
+        kTableCellsKey: cells,
+      };
     }
   }
   return null;

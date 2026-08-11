@@ -115,6 +115,7 @@ class ZMarkdownField extends StatefulWidget {
     this.showToolbar = true,
     this.showLabel = true,
     this.toolbarConfig,
+    this.placeholder,
     this.codec,
     this.minLines,
     this.maxLines,
@@ -138,6 +139,7 @@ class ZMarkdownField extends StatefulWidget {
     required this.mode,
     this.showLabel = true,
     this.toolbarConfig,
+    this.placeholder,
     this.codec,
     this.minLines,
     this.maxLines,
@@ -180,6 +182,16 @@ class ZMarkdownField extends StatefulWidget {
   /// chaque bouton (natif + custom LaTeX/table/image/vidéo). `showToolbar`
   /// (voie `controller`) reste prioritaire pour AFFICHER/MASQUER toute la barre.
   final ZRichTextToolbarConfig? toolbarConfig;
+
+  /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE — GAP-3, CR
+  /// parité 2026-08-11 (legacy `mef:438`).
+  ///
+  /// Chaîne FR-26 : **paramètre > `field.hintText` (résolu l10n) > rien** — le
+  /// TEXTE vient toujours de l'hôte ou du système l10n injecté
+  /// (`label(context, key, fallback: key)`), JAMAIS d'un libellé codé en dur
+  /// dans le paquet. `null` (défaut) ⇒ repli sur `ZFieldSpec.hintText` ; si le
+  /// champ n'en a pas non plus, aucun placeholder (comportement historique).
+  final String? placeholder;
 
   /// `ZCodec` de (dé)sérialisation du **format persisté** (E6-2, AD-7).
   ///
@@ -584,10 +596,23 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       initialValue: _currentValueForDialog(),
       title: _field.label ?? _field.name,
       codec: _codec,
+      // GAP-3 : le plein-écran porte le MÊME placeholder que le champ.
+      placeholder: _effectivePlaceholder(context),
     );
     if (result == null || !mounted) return;
     _write(result);
     _forceApplyNeutral(result);
+  }
+
+  /// Placeholder EFFECTIF (GAP-3) — chaîne FR-26 : paramètre >
+  /// `field.hintText` résolu par `label(context, key, fallback: key)` (même
+  /// voie que `zFieldDecoration` pour les autres familles) > `null` (rien).
+  String? _effectivePlaceholder(BuildContext context) {
+    final String? fromParam = widget.placeholder;
+    if (fromParam != null) return fromParam;
+    final String? hint = _field.hintText;
+    if (hint == null) return null;
+    return label(context, hint, fallback: hint);
   }
 
   Widget _buildReader(Object? value) => ZMarkdownReader(
@@ -643,6 +668,8 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         unknownEmbedBuilder: kZUnknownEmbedBuilder,
         // MIN-1 : styles de titres dérivés du thème (FR-26, zéro couleur en dur).
         customStyles: _themedStyles,
+        // GAP-3 : placeholder par champ (paramètre > hintText l10n > rien).
+        placeholder: _effectivePlaceholder(context),
       ),
     );
     if (minLines != null || maxLines != null) {

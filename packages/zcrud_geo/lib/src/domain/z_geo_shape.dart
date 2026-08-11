@@ -20,8 +20,19 @@
 /// throw) ; un `style`/`metadata` corrompu retombe à `null`. Une aire dont tous
 /// les sommets sont invalides devient une aire **vide** (état neutre), pas
 /// `null`.
+///
+/// **Lecture legacy DODLP (G1)** : [fromMapSafe] accepte aussi (a) une
+/// **chaîne JSON** (enveloppe legacy `toJson()`, décodée défensivement), (b)
+/// l'alias de LECTURE `points` → `vertices` (uniquement quand `vertices` est
+/// absente — une Map legacy ne rend plus une forme vide non-null), (c) une
+/// **liste nue** de points (variante acceptée par le lecteur legacy
+/// `fromDynamic`). Piège routé : une Map legacy **typée `circle`** (sans
+/// `vertices`) rend `null` — la parser comme forme perdrait silencieusement le
+/// rayon ; le routage inter-géométries appartient à `ZGeoValue.fromMapSafe`.
+/// LECTURE seulement : [toMap] est strictement inchangé.
 library;
 
+import 'z_geo_legacy_codec.dart';
 import 'z_geo_point.dart';
 import 'z_geo_shape_style.dart';
 
@@ -102,24 +113,33 @@ class ZGeoShape {
   /// corrompu → `null` ; `metadata` non-`Map` → `null` ; `label`/`id`
   /// non-`String` → `null`.
   static ZGeoShape? fromMapSafe(Object? raw) {
-    if (raw is! Map) return null;
-    final rawVertices = raw['vertices'];
-    final parsed = <ZGeoPoint>[];
-    if (rawVertices is List) {
-      for (final Object? entry in rawVertices) {
-        final point = ZGeoPoint.fromMapSafe(entry);
-        if (point != null) parsed.add(point); // sommet invalide ignoré (AD-10)
-      }
+    final decoded = zGeoDecodeLegacyEnvelope(raw);
+    // Variante legacy « liste nue de points » (lecteur legacy `fromDynamic`).
+    if (decoded is List) {
+      return ZGeoShape(vertices: _parseVertexList(decoded));
     }
-    final label = raw['label'];
-    final id = raw['id'];
-    final metadata = raw['metadata'];
+    if (decoded is! Map) return null;
+    var rawVertices = decoded['vertices'];
+    if (rawVertices is! List) {
+      // Alias de LECTURE legacy (G1) : `points` → `vertices`, uniquement quand
+      // `vertices` est absente/inexploitable (la lecture stricte prime).
+      // Piège routé : un cercle legacy (`type: 'circle'`) N'EST PAS une forme —
+      // le lire comme telle perdrait silencieusement `radius` → `null`, le
+      // routage appartient à `ZGeoValue.fromMapSafe`.
+      if (decoded['type'] == 'circle') return null;
+      final legacyPoints = decoded['points'];
+      if (legacyPoints is List) rawVertices = legacyPoints;
+    }
+    final parsed = _parseVertexList(rawVertices);
+    final label = decoded['label'];
+    final id = decoded['id'];
+    final metadata = decoded['metadata'];
     return ZGeoShape(
       vertices: parsed,
       label: label is String ? label : null,
       id: id is String ? id : null,
-      style: ZGeoShapeStyle.fromMapSafe(raw['style']),
-      holes: _parseHoles(raw['holes']),
+      style: ZGeoShapeStyle.fromMapSafe(decoded['style']),
+      holes: _parseHoles(decoded['holes']),
       metadata: metadata is Map
           ? Map<String, Object?>.from(
               metadata.map((Object? k, Object? v) =>
@@ -127,6 +147,19 @@ class ZGeoShape {
             )
           : null,
     );
+  }
+
+  /// Parse défensif d'une liste de sommets : chaque entrée invalide est
+  /// **ignorée** (AD-10) ; une entrée non-`List` rend une liste vide.
+  static List<ZGeoPoint> _parseVertexList(Object? raw) {
+    final parsed = <ZGeoPoint>[];
+    if (raw is List) {
+      for (final Object? entry in raw) {
+        final point = ZGeoPoint.fromMapSafe(entry);
+        if (point != null) parsed.add(point); // sommet invalide ignoré (AD-10)
+      }
+    }
+    return parsed;
   }
 
   /// Parse défensif des trous : `null` si absent/non-`List`. Chaque trou

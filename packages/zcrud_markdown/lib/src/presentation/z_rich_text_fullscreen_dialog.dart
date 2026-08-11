@@ -44,6 +44,7 @@ Future<Object?> showZRichTextFullscreenDialog(
   required Object? initialValue,
   String? title,
   ZCodec? codec,
+  String? placeholder,
 }) {
   final size = MediaQuery.sizeOf(context);
   final bool fullscreen = size.width < _kFullscreenBreakpoint;
@@ -56,6 +57,7 @@ Future<Object?> showZRichTextFullscreenDialog(
       initialValue: initialValue,
       title: title,
       codec: codec,
+      placeholder: placeholder,
       fullscreen: fullscreen,
     ),
   );
@@ -69,6 +71,7 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
     required this.initialValue,
     this.title,
     this.codec,
+    this.placeholder,
     this.fullscreen = false,
     super.key,
   });
@@ -81,6 +84,11 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
 
   /// Codec de normalisation de l'entrée / défaut `ZDeltaCodec`.
   final ZCodec? codec;
+
+  /// Placeholder (texte indicatif) de l'éditeur VIDE — GAP-3. Le texte vient de
+  /// l'appelant (déjà résolu l10n par `ZMarkdownField`) ; `null` ⇒ aucun
+  /// placeholder. JAMAIS de libellé codé en dur ici (FR-26).
+  final String? placeholder;
 
   /// Présentation plein-écran (`Scaffold`) vs dialog dimensionné.
   final bool fullscreen;
@@ -174,6 +182,8 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
                   unknownEmbedBuilder: kZUnknownEmbedBuilder,
                   // MIN-1 : styles de titres dérivés du thème (FR-26).
                   customStyles: zQuillThemedStyles(context),
+                  // GAP-3 : même placeholder que le champ appelant.
+                  placeholder: widget.placeholder,
                 ),
               ),
             ),

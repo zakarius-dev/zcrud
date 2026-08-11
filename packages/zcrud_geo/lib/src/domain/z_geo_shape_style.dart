@@ -114,11 +114,18 @@ class ZGeoShapeStyle {
   /// Parse **défensif** (AD-10) : `null` si [raw] n'est pas une `Map`. Chaque
   /// clé absente/corrompue retombe sur son défaut neutre ; l'opacité est bornée
   /// à `[0,1]` (non finie → défaut). Ne throw **jamais**.
+  ///
+  /// **Alias de LECTURE legacy DODLP (G1)** : `fillColor`/`strokeColor`/
+  /// `iconColor` (int ARGB `Color.value`, mesuré dans le JSON legacy) sont lues
+  /// quand la clé zcrud `*Argb` est absente — la lecture stricte prime
+  /// toujours. Les clés legacy inconnues (`iconSize`/`iconAnchor`/
+  /// `iconRotation`) sont ignorées sans throw (G17 hors périmètre). LECTURE
+  /// seulement : [toMap] est strictement inchangé.
   static ZGeoShapeStyle? fromMapSafe(Object? raw) {
     if (raw is! Map) return null;
     return ZGeoShapeStyle(
-      fillColorArgb: _asArgb(raw['fillColorArgb']),
-      strokeColorArgb: _asArgb(raw['strokeColorArgb']),
+      fillColorArgb: _asArgb(raw['fillColorArgb'] ?? raw['fillColor']),
+      strokeColorArgb: _asArgb(raw['strokeColorArgb'] ?? raw['strokeColor']),
       strokeWidth: _asInt(raw['strokeWidth'], 3),
       visible: _asBool(raw['visible'], true),
       zIndex: _asInt(raw['zIndex'], 0),
@@ -127,7 +134,7 @@ class ZGeoShapeStyle {
       draggable: _asBool(raw['draggable'], false),
       consumeTapEvents: _asBool(raw['consumeTapEvents'], true),
       iconAsset: raw['iconAsset'] is String ? raw['iconAsset'] as String : null,
-      iconColorArgb: _asArgb(raw['iconColorArgb']),
+      iconColorArgb: _asArgb(raw['iconColorArgb'] ?? raw['iconColor']),
       showInfoWindow: _asBool(raw['showInfoWindow'], false),
       infoWindowTitle: raw['infoWindowTitle'] is String
           ? raw['infoWindowTitle'] as String

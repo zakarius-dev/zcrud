@@ -41,6 +41,23 @@ const String kLatexEmbedType = 'latex';
 /// `{"insert": {"latexBlock": "<src>"}}`. ADDITIF : ne remplace jamais `latex`.
 const String kLatexBlockEmbedType = 'latexBlock';
 
+/// Clé Delta de l'embed formule **LEGACY DODLP bloc/display** (GAP-1, CR parité
+/// 2026-08-11) — op `{"insert": {"formula": "<latex nu>"}}`.
+///
+/// MESURÉ sur le legacy (`formula_embed.dart:250` + `:323`) : la clé est
+/// `formula`, la charge une **`String` LaTeX nue** (même forme que la nôtre —
+/// seul le NOM de clé diverge), rendue `MathStyle.display`, `expanded == false`.
+/// zcrud la RECONNAÎT EN LECTURE (rendu + pré-remplissage d'édition) ; toute
+/// ÉCRITURE reste sur [kLatexEmbedType]/[kLatexBlockEmbedType] — migration à
+/// SENS UNIQUE (le legacy ne relit pas le contenu réécrit par zcrud).
+const String kLegacyFormulaEmbedType = 'formula';
+
+/// Clé Delta de l'embed formule **LEGACY DODLP inline** (GAP-1) — op
+/// `{"insert": {"formula_inline": "<latex nu>"}}` (`formula_embed.dart:266` +
+/// `:377`, `MathStyle.text`). Même contrat de lecture seule que
+/// [kLegacyFormulaEmbedType].
+const String kLegacyFormulaInlineEmbedType = 'formula_inline';
+
 /// Libellé a11y (AD-13) du placeholder d'erreur — lisible par lecteur d'écran.
 @visibleForTesting
 const String kLatexInvalidLabel = 'formule invalide';
@@ -159,6 +176,46 @@ class ZLatexBlockEmbedBuilder extends EmbedBuilder {
       ),
     );
   }
+}
+
+/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula`** (GAP-1) : rendu
+/// DÉFENSIF (AD-10) `MathStyle.display` via le MÊME [_buildMath] que nos
+/// builders. `expanded == false` : parité EXACTE avec le legacy
+/// (`FormulaEmbedBuilder.expanded => false`, la formule vit dans le flux du
+/// paragraphe). LECTURE SEULE : rien dans zcrud n'ÉCRIT jamais cette clé.
+class ZLegacyFormulaEmbedBuilder extends EmbedBuilder {
+  /// Builder `const` (sans état).
+  const ZLegacyFormulaEmbedBuilder();
+
+  @override
+  String get key => kLegacyFormulaEmbedType;
+
+  /// Parité legacy : inline dans le flux (jamais bloc), style display.
+  @override
+  bool get expanded => false;
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) =>
+      _buildMath(context, embedContext, MathStyle.display);
+}
+
+/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula_inline`** (GAP-1) :
+/// rendu DÉFENSIF (AD-10) `MathStyle.text`, `expanded == false` (parité
+/// `FormulaInlineEmbedBuilder`). LECTURE SEULE (cf. [kLegacyFormulaEmbedType]).
+class ZLegacyFormulaInlineEmbedBuilder extends EmbedBuilder {
+  /// Builder `const` (sans état).
+  const ZLegacyFormulaInlineEmbedBuilder();
+
+  @override
+  String get key => kLegacyFormulaInlineEmbedType;
+
+  /// Rendu INLINE (parité legacy).
+  @override
+  bool get expanded => false;
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) =>
+      _buildMath(context, embedContext, MathStyle.text);
 }
 
 /// Saisie validée du dialogue LaTeX (MIN-1) : la [source] et le mode [block]

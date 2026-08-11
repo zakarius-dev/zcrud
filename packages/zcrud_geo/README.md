@@ -21,6 +21,10 @@ import 'package:zcrud_geo/zcrud_geo.dart';
 const point = ZGeoPoint(lat: 13.5, lng: 2.1);
 ```
 
+## Legacy DODLP data
+
+Values persisted by the legacy DODLP `GeoShape` (JSON string with `type`/`points`/`radius`/`fillColor`) are read natively: use `ZGeoValue.fromMapSafe` (discriminated on `type`) or the per-type `fromMapSafe`. Writing is unchanged (zcrud format). Field-by-field mapping: [doc/migration-legacy-dodlp-geo.md](doc/migration-legacy-dodlp-geo.md).
+
 ## Monorepo
 
 This package is developed in the [zcrud](https://github.com/zakarius-dev/zcrud) monorepo. See the repository for the architecture, the other packages and contribution guidelines.

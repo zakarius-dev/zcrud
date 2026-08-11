@@ -51,6 +51,8 @@ class ZRichTextToolbarConfig {
     this.showSearch = true,
     this.showSubscript = true,
     this.showSuperscript = true,
+    this.showClipboardCopy = true,
+    this.showClipboardPaste = true,
     this.showLatexButton = true,
     this.showTableButton = true,
     this.showImageButton = true,
@@ -120,6 +122,17 @@ class ZRichTextToolbarConfig {
   /// Bouton exposant (superscript).
   final bool showSuperscript;
 
+  /// Bouton **Copier** (presse-papier) — GAP-4, CR parité 2026-08-11.
+  ///
+  /// Défaut `true` : cohérent avec le contrat du préset [full] (« tous les
+  /// groupes activés par défaut ») ET avec le legacy DODLP
+  /// (`showClipboardCopy: true`, `qmew:227`).
+  final bool showClipboardCopy;
+
+  /// Bouton **Coller** (presse-papier) — GAP-4. Défaut `true` (cf.
+  /// [showClipboardCopy] ; legacy `showClipboardPaste: true`, `qmew:228`).
+  final bool showClipboardPaste;
+
   /// Bouton custom « Insérer une formule » (embed LaTeX, E6-3).
   final bool showLatexButton;
 
@@ -158,6 +171,8 @@ class ZRichTextToolbarConfig {
     showSearch: false,
     showSubscript: false,
     showSuperscript: false,
+    showClipboardCopy: false,
+    showClipboardPaste: false,
     showLatexButton: false,
     showTableButton: false,
     showImageButton: false,
@@ -186,6 +201,8 @@ class ZRichTextToolbarConfig {
     showSearch: false,
     showSubscript: false,
     showSuperscript: false,
+    showClipboardCopy: true,
+    showClipboardPaste: true,
     showLatexButton: true,
     showTableButton: true,
     showImageButton: true,
@@ -216,6 +233,8 @@ class ZRichTextToolbarConfig {
     bool? showSearch,
     bool? showSubscript,
     bool? showSuperscript,
+    bool? showClipboardCopy,
+    bool? showClipboardPaste,
     bool? showLatexButton,
     bool? showTableButton,
     bool? showImageButton,
@@ -243,6 +262,8 @@ class ZRichTextToolbarConfig {
       showSearch: showSearch ?? this.showSearch,
       showSubscript: showSubscript ?? this.showSubscript,
       showSuperscript: showSuperscript ?? this.showSuperscript,
+      showClipboardCopy: showClipboardCopy ?? this.showClipboardCopy,
+      showClipboardPaste: showClipboardPaste ?? this.showClipboardPaste,
       showLatexButton: showLatexButton ?? this.showLatexButton,
       showTableButton: showTableButton ?? this.showTableButton,
       showImageButton: showImageButton ?? this.showImageButton,
@@ -276,6 +297,8 @@ class ZRichTextToolbarConfig {
           showSearch == other.showSearch &&
           showSubscript == other.showSubscript &&
           showSuperscript == other.showSuperscript &&
+          showClipboardCopy == other.showClipboardCopy &&
+          showClipboardPaste == other.showClipboardPaste &&
           showLatexButton == other.showLatexButton &&
           showTableButton == other.showTableButton &&
           showImageButton == other.showImageButton &&
@@ -304,6 +327,8 @@ class ZRichTextToolbarConfig {
         showSearch,
         showSubscript,
         showSuperscript,
+        showClipboardCopy,
+        showClipboardPaste,
         showLatexButton,
         showTableButton,
         showImageButton,
