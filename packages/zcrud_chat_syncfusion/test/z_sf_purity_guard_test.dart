@@ -26,7 +26,62 @@ Directory repoRoot() {
   fail('Racine du dépôt introuvable depuis ${Directory.current.path}');
 }
 
-/// Sources de `lib/` de CE paquet, indexées par chemin relatif.
+/// Retire commentaires de ligne (`//`, `///`) et de bloc (`/* … */`) d'une
+/// source Dart, littéraux de chaîne préservés (`//` reconnu AVANT `/*`).
+///
+/// 🔴 P0D2 : sans ce filtre, toutes les règles de ce fichier (imports bannis,
+/// motifs RTL, couleurs, `Text('…')` littéral) rougiraient sur leur propre
+/// prose dartdoc — et pire, une clé RÉELLEMENT morte pourrait rester GREEN si
+/// son nom n'apparaissait plus qu'en commentaire (garde rendue AVEUGLE à la
+/// régression qu'elle est censée détecter). Jumeau de `stripDartComments` dans
+/// `z_sf_ad57_isolation_guard_test.dart` (même paquet, même patron).
+String stripDartComments(String src) {
+  final StringBuffer out = StringBuffer();
+  int i = 0;
+  while (i < src.length) {
+    final String c = src[i];
+    final String next = i + 1 < src.length ? src[i + 1] : '';
+    if (c == '/' && next == '/') {
+      while (i < src.length && src[i] != '\n') {
+        i++;
+      }
+      continue;
+    }
+    if (c == '/' && next == '*') {
+      i += 2;
+      while (i + 1 < src.length && !(src[i] == '*' && src[i + 1] == '/')) {
+        i++;
+      }
+      i = i + 2 <= src.length ? i + 2 : src.length;
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      final String quote = c;
+      out.write(c);
+      i++;
+      while (i < src.length) {
+        if (src[i] == r'\') {
+          out.write(src.substring(i, i + 2 <= src.length ? i + 2 : i + 1));
+          i += 2;
+          continue;
+        }
+        out.write(src[i]);
+        if (src[i] == quote || src[i] == '\n') {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    out.write(c);
+    i++;
+  }
+  return out.toString();
+}
+
+/// Sources de `lib/` de CE paquet, indexées par chemin relatif, commentaires
+/// RETIRÉS (P0D2 — cf. [stripDartComments]).
 Map<String, String> libSources() {
   final Directory lib = Directory(
     '${repoRoot().path}/packages/zcrud_chat_syncfusion/lib',
@@ -34,7 +89,8 @@ Map<String, String> libSources() {
   final Map<String, String> out = <String, String>{};
   for (final FileSystemEntity f in lib.listSync(recursive: true)) {
     if (f is! File || !f.path.endsWith('.dart')) continue;
-    out[f.path.substring(lib.path.length + 1)] = f.readAsStringSync();
+    out[f.path.substring(lib.path.length + 1)] =
+        stripDartComments(f.readAsStringSync());
   }
   return out;
 }
