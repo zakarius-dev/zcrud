@@ -18,6 +18,7 @@ import '../domain/z_codec.dart';
 import 'z_markdown_chrome.dart';
 import 'z_markdown_field.dart';
 import 'z_rich_text_style_set.dart';
+import 'z_rich_text_toolbar_config.dart';
 
 /// Enregistre les builders rich-text `zcrud_markdown` dans [registry].
 ///
@@ -38,7 +39,14 @@ import 'z_rich_text_style_set.dart';
 /// souple. [styleSet]/[chrome]/[textScaleFactor]/[formulaSpec] (GAP-5/6/7, CR
 /// parité 2026-08-11) : défauts de REGISTRE partagés par tous les champs
 /// rich-text du sous-arbre (styles « signature » de l'hôte, habillage carte,
-/// échelle, formules). Tous OPTIONNELS : omis ⇒ comportement DP-3 INCHANGÉ.
+/// échelle, formules). [toolbarConfig] (GAP-9/DP-22, CR B2 2026-08-11) :
+/// config granulaire de la barre d'outils (boutons + `themedBarBackground`)
+/// partagée par tous les champs rich-text — le registre est la SEULE voie de
+/// construction pour un hôte, donc tout paramètre par-champ de [ZMarkdownField]
+/// DOIT être posable ici (garde de parité
+/// `z_markdown_registration_parity_test.dart`). [showLabel] : `false` masque
+/// le libellé rendu par le champ (hôte posant le sien — CR-IFFD-25).
+/// Tous OPTIONNELS : omis ⇒ comportement DP-3 INCHANGÉ.
 void registerZMarkdownFields(
   ZWidgetRegistry registry, {
   ZCodec? codec,
@@ -49,6 +57,8 @@ void registerZMarkdownFields(
   ZMarkdownFieldChrome? chrome,
   double? textScaleFactor,
   ZRichTextFormulaSpec? formulaSpec,
+  ZRichTextToolbarConfig? toolbarConfig,
+  bool showLabel = true,
 }) {
   Widget build(ZFieldWidgetContext ctx, ZMarkdownFieldMode mode) =>
       ZMarkdownField.fromContext(
@@ -64,6 +74,8 @@ void registerZMarkdownFields(
         chrome: chrome,
         textScaleFactor: textScaleFactor,
         formulaSpec: formulaSpec,
+        toolbarConfig: toolbarConfig,
+        showLabel: showLabel,
       );
 
   registry.register(

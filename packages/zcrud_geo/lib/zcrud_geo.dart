@@ -18,7 +18,8 @@ export 'src/domain/z_geo_chrome_reference.dart';
 export 'src/domain/z_geo_circle.dart';
 export 'src/domain/z_geo_editor_toolbar_config.dart'
     show ZGeoEditorToolbarConfig;
-export 'src/domain/z_geo_field_config.dart' show ZGeoFieldConfig, ZGeoGeometry;
+export 'src/domain/z_geo_field_config.dart'
+    show ZGeoFieldConfig, ZGeoGeometry, ZGeoPresentation;
 export 'src/domain/z_geo_geojson.dart';
 export 'src/domain/z_geo_map_options.dart' show ZGeoMapOptions, ZGeoMapType;
 export 'src/domain/z_geo_metrics.dart';

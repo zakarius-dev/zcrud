@@ -849,13 +849,32 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   /// l'espace et le bouton plein écran n'est pas re-rendu.
   bool get _isImmersive => _resolvedMapHeight.isInfinite;
 
+  /// CR `geo-inline-preview` A — `true` quand le champ est rendu en **aperçu
+  /// de flux** (`presentation: previewWithFullscreen`) : carte lecture seule
+  /// (pan/zoom conservés, tap/drags désarmés), aucune saisie, aucune barre.
+  /// **Jamais `true` en mode immersif** (`!_isImmersive`) : la route plein
+  /// écran rend le MÊME champ avec la MÊME config (`gff` parité :
+  /// `onMapTap: isFullscreen … ? _onMapTapped : (_) {}`, `gff:1668,1683` ;
+  /// toolbar `if (isFullscreen)`, `gff:1525`) — la restriction porte sur la
+  /// présentation en flux, PAS sur la config.
+  bool get _isPreview =>
+      (_config?.presentation ?? ZGeoPresentation.inlineEditor) ==
+          ZGeoPresentation.previewWithFullscreen &&
+      !_isImmersive;
+
   /// G5 — le bouton plein écran est rendu si la config l'autorise (défaut
   /// `true`, parité legacy : le plein écran est le SEUL mode d'édition carte
   /// du legacy) ET qu'une carte existe (adaptateur injecté) ET qu'on n'est pas
   /// déjà en plein écran. Visible aussi en lecture seule (consultation
   /// immersive — parité : le legacy ne masque que « Enregistrer »).
+  /// **Exception CR-A (aperçu)** : en `previewWithFullscreen`, l'icône n'est
+  /// rendue que si le champ est **éditable** (parité legacy : un champ en
+  /// lecture seule montre l'aperçu, sans porte d'entrée).
   bool get _showFullscreenButton =>
-      (_config?.allowFullscreen ?? true) && _mapAdapter != null && !_isImmersive;
+      (_config?.allowFullscreen ?? true) &&
+      _mapAdapter != null &&
+      !_isImmersive &&
+      (!_isPreview || !widget.ctx.field.readOnly);
 
   /// Callback de frappe des champs centre selon la géométrie (voie SENS UNIQUE
   /// AD-2 : la frappe écrit la tranche, jamais de ré-injection pendant le focus).
@@ -879,6 +898,10 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     // G19 : chrome legacy opt-in (jamais en mode immersif — la route plein
     // écran a son propre chrome AppBar).
     final bool chrome = (_config?.showChrome ?? false) && !_isImmersive;
+
+    // CR-A : aperçu de flux — quand `false` (défaut `inlineEditor`), les
+    // conditions ci-dessous sont STRICTEMENT celles d'avant (arbre identique).
+    final bool preview = _isPreview;
 
     final Widget column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,12 +927,15 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
             ],
           ),
         SizedBox(height: theme.gapS),
-        _coordinateRow(theme),
-        if (_isCircle) ...<Widget>[
+        // CR-A : en aperçu (`previewWithFullscreen`), AUCUN bloc d'édition en
+        // flux — ni saisie lat/lng, ni liste de sommets, ni barre d'outils,
+        // ni picker (parité legacy `gff:1525` : toolbar `if (isFullscreen)`).
+        if (!preview) _coordinateRow(theme),
+        if (!preview && _isCircle) ...<Widget>[
           SizedBox(height: theme.gapS),
           _radiusField(context),
         ],
-        if (_collectsVertices) ...<Widget>[
+        if (!preview && _collectsVertices) ...<Widget>[
           SizedBox(height: theme.gapS),
           _addVertexButton(context),
           SizedBox(height: theme.gapS),
@@ -919,13 +945,13 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         // `standard` — décision pilote, parité legacy es:2337) sauf opt-out
         // explicite (`ZGeoEditorToolbarConfig.none` / `disabled: true`).
         // Placée AU-DESSUS de la carte.
-        if (!_toolbarConfig.disabled) ...<Widget>[
+        if (!preview && !_toolbarConfig.disabled) ...<Widget>[
           SizedBox(height: theme.gapM),
           _toolbar(context, theme),
         ],
         // G8 : picker de style câblé (opt-in `showStylePicker`), style
         // persisté dans la valeur via [_applyStyle].
-        if (_config?.showStylePicker ?? false) ...<Widget>[
+        if (!preview && (_config?.showStylePicker ?? false)) ...<Widget>[
           SizedBox(height: theme.gapS),
           ZGeoShapeStylePicker(
             key: const Key('z-geo-style-picker'),
@@ -940,12 +966,17 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
         else
           _mapSurface(context),
         // G12 : chip de métriques opt-in (aire | périmètre + compteur —
-        // parité legacy gff:1363-1391, unités via l10n injectée).
-        if (_config?.showMetrics ?? false) _metricsBar(context, theme),
+        // parité legacy gff:1363-1391, unités via l10n injectée). Hors
+        // aperçu : le flux d'aperçu ne rend que en-tête + carte + pied (CR-A).
+        if (!preview && (_config?.showMetrics ?? false))
+          _metricsBar(context, theme),
         // G19 : pied de carte LOCALISÉ (`geo.pointsDefined` — jamais le texte
         // anglais legacy en dur ; parité de placement gff:1583-1597 :
-        // édition seulement, hors plein écran).
-        if (chrome && !widget.ctx.field.readOnly) _chromeFooter(context, theme),
+        // édition seulement, hors plein écran). CR-A : en aperçu, le pied
+        // « N points » est TOUJOURS rendu (chrome ou non, readOnly compris —
+        // l'aperçu se décrit) ; hors aperçu, condition antérieure STRICTE.
+        if (preview || (chrome && !widget.ctx.field.readOnly))
+          _chromeFooter(context, theme),
       ],
     );
 
@@ -1420,7 +1451,12 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       return const SizedBox.shrink();
     }
     final bool readOnly = widget.ctx.field.readOnly;
-    final bool editable = !readOnly && (_config?.interactive ?? true);
+    // CR-A : en aperçu, les GESTES D'ÉDITION sont désarmés (tap d'ajout,
+    // drags) mais la carte reste manipulable (pan/zoom) — désarmer LE TAP,
+    // jamais la carte (parité legacy `gff:1668,1683` : `onMapTap:
+    // isFullscreen … ? _onMapTapped : (_) {}` avec `isInteractive` inchangé).
+    final bool preview = _isPreview;
+    final bool editable = !preview && !readOnly && (_config?.interactive ?? true);
     final ZGeoShape? areaShape = _collectsVertices ? _currentShape : null;
     ZGeoCircle? circle = _isCircle ? _circleOf(widget.ctx.value) : null;
     // G11 : aperçu 10 m entre le 1er tap (centre) et le 2e (rayon), parité
@@ -1467,7 +1503,9 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       circle: circle,
       // G13 : en mode « Déplacer », la carte n'est plus interactive (parité
       // legacy `gff:1673`) — seul le marqueur au centroïde se manipule.
-      interactive: editable && !_isMoveMode,
+      // CR-A : l'aperçu garde le pan/zoom (`interactive: true`) — c'est le
+      // TAP qui est désarmé (`onTap: null`), pas la carte.
+      interactive: preview || (editable && !_isMoveMode),
       // MEDIUM-1 (E11b-1) : surcharges par-champ RÉELLEMENT plombées à
       // l'adaptateur (chaque adaptateur honore celles qui le concernent).
       tileUrlTemplate: _config?.tileUrlTemplate,
@@ -1486,8 +1524,8 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
       // DP-21/M13 : signal neutre « rendre la forme en tracé ouvert » ; `true`
       // seulement en géométrie polyligne (honoré-si-supporté par l'adaptateur).
       renderShapeAsPolyline: _isPolyline,
-      onTap: (readOnly || _isMoveMode)
-          ? null // G13 : le tap est désarmé en mode Déplacer (parité legacy)
+      onTap: (preview || readOnly || _isMoveMode)
+          ? null // G13/CR-A : tap désarmé en mode Déplacer ET en aperçu
           : (ZGeoPoint point) {
               switch (_geometry) {
                 case ZGeoGeometry.polygon:

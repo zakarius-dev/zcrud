@@ -45,6 +45,27 @@ enum ZGeoGeometry {
   polyline,
 }
 
+/// Présentation du champ géo dans le **flux du formulaire** (CR
+/// `geo-inline-preview` point A). La restriction porte sur la présentation
+/// **en flux uniquement** — la route plein écran (G5) rend TOUJOURS le champ
+/// avec toutes ses capacités, quelle que soit cette valeur.
+enum ZGeoPresentation {
+  /// Éditeur complet dans le flux (comportement antérieur **STRICT** — défaut,
+  /// AD-4 : aucun hôte existant ne bouge).
+  inlineEditor,
+
+  /// **Aperçu inerte en flux / édition en plein écran** (parité legacy :
+  /// `gff:1525` — undo/clear rendus seulement `if (isFullscreen)` ;
+  /// `gff:1668,1683` — `onMapTap: isFullscreen && … ? _onMapTapped : (_) {}`,
+  /// le tap d'ajout est désarmé hors plein écran). En flux : chrome (si
+  /// activé) + carte **lecture seule** (pan/zoom conservés, tap d'ajout et
+  /// drags désarmés) + pied « N points » localisé (`geo.pointsDefined`) —
+  /// ni saisie lat/lng, ni liste de sommets, ni barre d'outils, ni picker de
+  /// style. L'icône plein écran n'apparaît que si le champ est **éditable**
+  /// (masquée en `readOnly` : l'aperçu reste, sans porte d'entrée).
+  previewWithFullscreen,
+}
+
 /// Config additive `const` du champ géo (AD-4). Vit dans `zcrud_geo` ; aucune
 /// modification du cœur. Tous les défauts sont neutres/surchargeables (AD-12).
 class ZGeoFieldConfig extends ZFieldConfig {
@@ -100,6 +121,7 @@ class ZGeoFieldConfig extends ZFieldConfig {
     this.minZoom,
     this.maxZoom,
     this.zoomStep,
+    this.presentation = ZGeoPresentation.inlineEditor,
   });
 
   /// Géométrie du champ (`null` → repli inférence par nom de type — E11a-1).
@@ -197,6 +219,13 @@ class ZGeoFieldConfig extends ZFieldConfig {
   /// retenu) — honnêteté documentée plutôt qu'une simulation.
   final double? zoomStep;
 
+  /// Présentation du champ **en flux** (CR `geo-inline-preview` A). Défaut
+  /// [ZGeoPresentation.inlineEditor] = comportement antérieur **strict**
+  /// (AD-4). [ZGeoPresentation.previewWithFullscreen] = aperçu inerte en
+  /// flux, édition complète réservée à la route plein écran — la route
+  /// immersive n'hérite **jamais** de la restriction d'aperçu.
+  final ZGeoPresentation presentation;
+
   /// Copie avec modifications ponctuelles (propage tous les champs, dont le
   /// [toolbarConfig] additif).
   ZGeoFieldConfig copyWith({
@@ -218,6 +247,7 @@ class ZGeoFieldConfig extends ZFieldConfig {
     double? minZoom,
     double? maxZoom,
     double? zoomStep,
+    ZGeoPresentation? presentation,
   }) =>
       ZGeoFieldConfig(
         geometry: geometry ?? this.geometry,
@@ -238,6 +268,7 @@ class ZGeoFieldConfig extends ZFieldConfig {
         minZoom: minZoom ?? this.minZoom,
         maxZoom: maxZoom ?? this.maxZoom,
         zoomStep: zoomStep ?? this.zoomStep,
+        presentation: presentation ?? this.presentation,
       );
 
   @override
@@ -262,7 +293,8 @@ class ZGeoFieldConfig extends ZFieldConfig {
           showChrome == other.showChrome &&
           minZoom == other.minZoom &&
           maxZoom == other.maxZoom &&
-          zoomStep == other.zoomStep;
+          zoomStep == other.zoomStep &&
+          presentation == other.presentation;
 
   @override
   int get hashCode => Object.hash(
@@ -291,6 +323,7 @@ class ZGeoFieldConfig extends ZFieldConfig {
         minZoom,
         maxZoom,
         zoomStep,
+        presentation,
       );
 
   static bool _listEquals(List<ZGeoGeometry>? a, List<ZGeoGeometry>? b) {

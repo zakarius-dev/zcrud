@@ -638,6 +638,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   ///
   /// Rôle : fond de **section/bande**. Ce n'est **pas** le fond d'un champ —
   /// celui-ci a son jeton dédié [fieldFillColor] (cf. son dartdoc).
+  /// Il peint AUSSI le **corps des cartes de champ markdown** (chrome GAP-6 de
+  /// `zcrud_markdown` — CR géo/markdown 2026-08-11, B1).
   final Color? surfaceColor;
 
   /// Échelle d'espacement — petit.
