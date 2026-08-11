@@ -32,10 +32,14 @@ environment:
 dependencies:
   zcrud_core: ^0.85.0
   zcrud_annotations: ^0.85.0
-  # architecture.md cible analyzer ^7 ; la résolution PARTAGÉE du workspace
-  # (flutter_test/test → analyzer >=8) impose ^8 ici. Variance assumée et
-  # documentée (Dev Notes) : contrainte de résolution unique, pas un choix libre.
-  analyzer: ^12.0.0
+  # Borne LARGE >=12 <14 (cr-generator-analyzer-constraint, 2026-08-11) : chez un
+  # hôte git, analyzer 13 est la fenêtre commune avec reflectable_builder 1.2.3 et
+  # riverpod_generator ^4 — la borne ^12 seule rendait la résolution INSOLUBLE.
+  # Les deux bornes sont PROUVÉES : le workspace résout et teste sous 12 (nos
+  # dev-deps test/flutter_test plafonnent analyzer <13 en local) ; la borne 13 est
+  # prouvée par bac à sable hors workspace (analyzer 13.0.0 + source_gen 4.2.4 +
+  # build 4.0.7 : dart analyze 0 erreur, 127/127 tests du générateur verts).
+  analyzer: ">=12.0.0 <14.0.0"
   build: ^4.0.0
   source_gen: ^4.0.0
 
