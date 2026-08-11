@@ -843,19 +843,30 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       formulaSpec: widget.formulaSpec,
     );
 
+    // CR double-bordure 2026-08-11 : sous chrome carte, la CARTE porte le
+    // cadre (bordure + ombre, TOUJOURS dessinés par [_maybeChrome] — largeurs
+    // `ZMarkdownChromeReference.borderWidthFilled/Empty`, non configurables,
+    // donc jamais de champ sans aucun cadre) ET le `fieldPadding` (le texte ne
+    // colle pas au bord). La zone d'édition devient une simple surface —
+    // précédent CR-IFFD-73 côté lecteur (`none` retire cadre ET padding,
+    // l'appelant habille). Sans chrome : rendu historique STRICTEMENT
+    // inchangé, c'est la bordure qui matérialise le champ.
+    final bool chromed = widget.chrome != null;
     final editor = Semantics(
       textField: true,
       label: label,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: borderColor),
-          borderRadius: BorderRadius.all(zTheme.radiusM),
-        ),
-        child: Padding(
-          padding: zTheme.fieldPadding,
-          child: quill,
-        ),
-      ),
+      child: chromed
+          ? quill
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: borderColor),
+                borderRadius: BorderRadius.all(zTheme.radiusM),
+              ),
+              child: Padding(
+                padding: zTheme.fieldPadding,
+                child: quill,
+              ),
+            ),
     );
 
     // Toolbar : montrée pour l'éditeur compact (inline) TOUJOURS ; pour la voie
