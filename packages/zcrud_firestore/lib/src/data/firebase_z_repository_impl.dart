@@ -45,6 +45,39 @@ typedef ZFirestoreLog = void Function(
 
 void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 
+/// Sémantique de **lecture** du drapeau de soft-delete `is_deleted` (CR-DODLP
+/// 2026-08-11 « parc documentaire existant »). Opt-in au constructeur de
+/// [FirebaseZRepositoryImpl] — le défaut [strict] est le comportement
+/// historique, **inchangé**.
+///
+/// Type **neutre** (aucun symbole `cloud_firestore` — AD-5) : il décrit un
+/// contrat de visibilité, pas une mécanique backend.
+enum ZDeletionSemantics {
+  /// Comportement historique (défaut) : le filtre serveur
+  /// `where('is_deleted', isEqualTo: false)` **exige la présence** du champ.
+  /// Un document SANS `is_deleted` est exclu de tous les chemins de lecture
+  /// (parc **né zcrud** — précondition « collection zcrud-native », backfill
+  /// d'onboarding requis sinon).
+  strict,
+
+  /// Mode **compat parc existant** : un document SANS `is_deleted` est
+  /// considéré **NON supprimé** (le sens métier legacy : absent = vivant).
+  ///
+  /// **Coût — filtrage client** : Firestore ne sait pas exprimer
+  /// `!= true OU absent` en une clause (`isNotEqualTo` exclut les documents
+  /// sans le champ). La lecture se fait donc **SANS** clause `is_deleted` et
+  /// le drapeau est filtré **au décodage** ([FirebaseZRepositoryImpl] écarte
+  /// `is_deleted == true`, et `legacyDeletedKey == true` si fournie) : chaque
+  /// page lit aussi les documents supprimés avant de les écarter — les
+  /// index/perf restent corrects tant que la corbeille est marginale.
+  /// `count()` perd l'agrégat serveur (décompte client, même raison).
+  ///
+  /// L'auto-réparation à l'écriture demeure : chaque `save` pose
+  /// `is_deleted:false`, le parc **converge** vers [strict] au fil des
+  /// écritures (bascule ultérieure possible sans backfill).
+  absentMeansAlive,
+}
+
 /// Adaptateur Firestore de [ZRepository] pour l'agrégat [T].
 ///
 /// **Injection** (pas de singleton statique — testabilité) : une instance
@@ -84,12 +117,29 @@ void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 ///   `where('is_deleted', isEqualTo:false)` **exige la présence** du champ : un
 ///   document sans `is_deleted` est **exclu de TOUS** les chemins de lecture
 ///   (getById / getAll / watch) de façon **COHÉRENTE** (aucune divergence, cf.
-///   [_isVisible]).
+///   [_matchesScope]).
 ///
 /// Brancher l'adaptateur sur une collection **préexistante** (intégration E7)
 /// impose donc un **backfill d'onboarding** (`id` de corps + `is_deleted:false`
 /// sur chaque document) — sans quoi les documents non conformes sont exclus des
-/// lectures triées/paginées et filtrées, silencieusement, EN PROD.
+/// lectures triées/paginées et filtrées, silencieusement, EN PROD. **OU** —
+/// depuis la CR-DODLP 2026-08-11 — le mode opt-in
+/// [ZDeletionSemantics.absentMeansAlive] (« absent = vivant », zéro migration
+/// de données), qui lève cette précondition pour le drapeau `is_deleted` (celle
+/// du corps `id` demeure pour les lectures **triées/paginées**).
+///
+/// **Corbeille (Lot 2a)** : `ZDataRequest.deletedScope`
+/// (`aliveOnly`/`includeDeleted`/`deletedOnly`) est honoré sur
+/// [getAll]/[watch]/[count] dans les DEUX sémantiques — clauses `where` en
+/// [ZDeletionSemantics.strict], filtrage client en
+/// [ZDeletionSemantics.absentMeansAlive] (`deletedOnly` y inclut
+/// `legacyDeletedKey == true`).
+///
+/// **Contrat `fromMap` (annexe CR)** : votre `fromMap` doit accepter les dates
+/// **ISO-8601** — le décodage normalise tout horodatage (`Timestamp` natif,
+/// `DateTime`, `{_seconds,_nanoseconds}`) en `String` ISO **avant** d'appeler
+/// le `fromMap` injecté (cf. [_normalizeTemporalDeep], CR-LEX-27) : un cast dur
+/// `as Timestamp?` y jette systématiquement.
 class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// Construit l'adaptateur à partir du couple (dé)sérialisation typé.
   FirebaseZRepositoryImpl({
@@ -101,6 +151,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
     Set<String> timestampFields = const <String>{},
+    ZDeletionSemantics deletionSemantics = ZDeletionSemantics.strict,
+    String? legacyDeletedKey,
   })  : assert(
           timestampFields.intersection(ZSyncMeta.reservedKeys).isEmpty,
           'AD-19 : aucune clé RÉSERVÉE (ZSyncMeta.reservedKeys = '
@@ -109,6 +161,20 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
           'au décodage (ZSyncMeta.updatedAt → null) et le merge dégénérerait en '
           '« le local gagne toujours ».',
         ),
+        assert(
+          legacyDeletedKey == null ||
+              deletionSemantics == ZDeletionSemantics.absentMeansAlive,
+          'legacyDeletedKey n\'est honorée qu\'en '
+          'ZDeletionSemantics.absentMeansAlive (le mode strict lit '
+          'EXCLUSIVEMENT le drapeau canonique is_deleted, par clauses '
+          'serveur) — la fournir en strict serait ignorée SILENCIEUSEMENT.',
+        ),
+        assert(
+          legacyDeletedKey == null ||
+              !ZSyncMeta.reservedKeys.contains(legacyDeletedKey),
+          'legacyDeletedKey ne peut pas être une clé réservée ZSyncMeta '
+          '(is_deleted est déjà lue nativement).',
+        ),
         _firestore = firestore,
         _collectionPath = collectionPath,
         _kind = kind,
@@ -116,6 +182,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         _toMap = toMap,
         _fromMapSafe = fromMapSafe,
         _log = logger ?? _noopLog,
+        _deletionSemantics = deletionSemantics,
+        _legacyDeletedKey = legacyDeletedKey,
         // Garde EXÉCUTOIRE (pas seulement en debug) : les clés réservées sont
         // retirées de l'ensemble hinté quoi qu'il arrive (l'`assert` ci-dessus
         // ne vit qu'en debug/test — la soustraction, elle, tient en release).
@@ -186,6 +254,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     T? Function(Map<String, dynamic> map)? fromMapSafe,
     ZFirestoreLog? logger,
     Set<String> timestampFields = const <String>{},
+    ZDeletionSemantics deletionSemantics = ZDeletionSemantics.strict,
+    String? legacyDeletedKey,
   }) {
     return FirebaseZRepositoryImpl<T>(
       firestore: firestore,
@@ -196,6 +266,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       fromMapSafe: fromMapSafe,
       logger: logger,
       timestampFields: timestampFields,
+      deletionSemantics: deletionSemantics,
+      legacyDeletedKey: legacyDeletedKey,
     );
   }
 
@@ -206,6 +278,17 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   final Map<String, dynamic> Function(T value) _toMap;
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final ZFirestoreLog _log;
+
+  /// Sémantique de lecture du drapeau `is_deleted` (CR-DODLP 2026-08-11).
+  /// Défaut [ZDeletionSemantics.strict] = comportement historique inchangé.
+  final ZDeletionSemantics _deletionSemantics;
+
+  /// Clé **legacy** de soft-delete du parc préexistant (ex. `'deleted'`,
+  /// camelCase DODLP), ou `null`. Honorée **uniquement** en
+  /// [ZDeletionSemantics.absentMeansAlive] (filtrage client) : un document dont
+  /// cette clé vaut `true` est traité comme supprimé (écarté d'`aliveOnly`,
+  /// inclus dans `deletedOnly`).
+  final String? _legacyDeletedKey;
 
   /// Clés persistées (corps d'entité) à encoder en `Timestamp` Firestore natif
   /// plutôt qu'en String ISO-8601 (gap B14, parité DODLP). Fourni par l'artefact
@@ -418,26 +501,66 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     }
   }
 
-  /// Un document est **VISIBLE** ssi `is_deleted == false` — sémantique **ALIGNÉE**
-  /// sur le filtre serveur `where('is_deleted', isEqualTo:false)` (MAJEUR-2). Un
-  /// champ `is_deleted` **ABSENT** (document non-zcrud-native) OU `== true`
-  /// (soft-deleted) est traité comme **non visible** de façon **COHÉRENTE** sur
-  /// TOUS les chemins de lecture (getById / getAll / watch) — voir la précondition
-  /// « collection zcrud-native » du dartdoc de classe. **Aucune divergence** get
-  /// vs getAll/watch pour un même document.
-  bool _isVisible(Map<String, dynamic> data) => data[_kIsDeleted] == false;
+  /// `true` si [data] porte le drapeau **legacy** de suppression
+  /// ([_legacyDeletedKey]` == true`). Toujours `false` si aucune clé legacy
+  /// n'est configurée.
+  bool _isLegacyDeleted(Map<String, dynamic> data) {
+    final key = _legacyDeletedKey;
+    return key != null && data[key] == true;
+  }
+
+  /// Prédicat de visibilité **applicatif** d'un document pour un [scope] donné,
+  /// selon [_deletionSemantics] :
+  ///
+  /// - **[ZDeletionSemantics.strict]** : sémantique historique **ALIGNÉE** sur
+  ///   les clauses serveur (MAJEUR-2). `aliveOnly` ⇔ `is_deleted == false` — un
+  ///   champ **ABSENT** (document non-zcrud-native) OU `== true` est non
+  ///   visible, de façon **COHÉRENTE** sur TOUS les chemins de lecture (getById
+  ///   / getAll / watch) — voir la précondition « collection zcrud-native » du
+  ///   dartdoc de classe. `deletedOnly` ⇔ `== true` ; `includeDeleted` ⇔ champ
+  ///   **présent** (booléen) — l'absent reste hors de tout scope strict.
+  /// - **[ZDeletionSemantics.absentMeansAlive]** : un document est « supprimé »
+  ///   ssi `is_deleted == true` **OU** [_isLegacyDeleted]. `aliveOnly` = non
+  ///   supprimé (l'**absence** du champ = vivant) ; `deletedOnly` = supprimé ;
+  ///   `includeDeleted` = tout.
+  bool _matchesScope(Map<String, dynamic> data, ZDeletedScope scope) {
+    switch (_deletionSemantics) {
+      case ZDeletionSemantics.strict:
+        switch (scope) {
+          case ZDeletedScope.aliveOnly:
+            return data[_kIsDeleted] == false;
+          case ZDeletedScope.deletedOnly:
+            return data[_kIsDeleted] == true;
+          case ZDeletedScope.includeDeleted:
+            return data[_kIsDeleted] is bool;
+        }
+      case ZDeletionSemantics.absentMeansAlive:
+        final deleted = data[_kIsDeleted] == true || _isLegacyDeleted(data);
+        switch (scope) {
+          case ZDeletedScope.aliveOnly:
+            return !deleted;
+          case ZDeletedScope.deletedOnly:
+            return deleted;
+          case ZDeletedScope.includeDeleted:
+            return true;
+        }
+    }
+  }
 
   /// Décode une liste de documents en **écartant** les corrompus (défensif) et
-  /// les non-visibles (belt-and-suspenders : le filtre serveur `is_deleted ==
-  /// false` les exclut déjà — [_isVisible] réaligne la couche applicative sur la
-  /// MÊME sémantique, MAJEUR-2).
+  /// les hors-[scope]. En mode strict c'est du belt-and-suspenders (les clauses
+  /// serveur excluent déjà — [_matchesScope] réaligne la couche applicative sur
+  /// la MÊME sémantique, MAJEUR-2) ; en mode `absentMeansAlive` c'est **LE**
+  /// filtre (lecture sans clause `is_deleted`, coût documenté sur
+  /// [ZDeletionSemantics.absentMeansAlive]).
   List<T> _decodeDocs(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    ZDeletedScope scope,
   ) {
     final out = <T>[];
     for (final d in docs) {
       final data = d.data();
-      if (!_isVisible(data)) continue;
+      if (!_matchesScope(data, scope)) continue;
       final entity = _decode(d.id, data);
       if (entity != null) out.add(entity);
     }
@@ -446,18 +569,51 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
 
   // ───────────────────────── Traduction ZDataRequest → Query (AC6/7/12) ──────
 
-  /// Requête de base : **exclusion serveur des soft-deleted** via égalité
-  /// `is_deleted == false` (ambiguïté #2 tranchée : l'égalité — contrairement à
-  /// `isNotEqualTo` — n'impose PAS de premier `orderBy` et n'entre pas en
-  /// conflit avec le tie-break `id`, et laisse `count()` fonctionner).
+  /// Requête de base pour un [scope] donné, selon [_deletionSemantics] :
   ///
-  /// **MAJEUR-2** : l'égalité Firestore **exige la présence** du champ — un
-  /// document SANS `is_deleted` est exclu ICI (serveur) ; la couche applicative
-  /// [_isVisible] applique la MÊME sémantique (get/getAll/watch cohérents).
-  /// Précondition « collection zcrud-native » : tout document écrit par [save]
-  /// porte `is_deleted=false` (invariant exécutoire, cf. [_encode]).
+  /// - **[ZDeletionSemantics.strict]** — clauses **serveur** :
+  ///   - `aliveOnly` : égalité `is_deleted == false` (ambiguïté #2 tranchée :
+  ///     l'égalité — contrairement à `isNotEqualTo` — n'impose PAS de premier
+  ///     `orderBy`, n'entre pas en conflit avec le tie-break `id`, et laisse
+  ///     `count()` fonctionner). **MAJEUR-2** : l'égalité Firestore **exige la
+  ///     présence** du champ — un document SANS `is_deleted` est exclu ICI
+  ///     (serveur) ; la couche applicative [_matchesScope] applique la MÊME
+  ///     sémantique (get/getAll/watch cohérents). Précondition « collection
+  ///     zcrud-native » : tout document écrit par [save] porte
+  ///     `is_deleted=false` (invariant exécutoire, cf. [_encode]).
+  ///   - `deletedOnly` : égalité `is_deleted == true` (corbeille, Lot 2a).
+  ///   - `includeDeleted` : `whereIn: [false, true]` — exige la présence du
+  ///     champ (l'absent reste exclu, cohérent avec strict). ⚠️ Firestore borne
+  ///     le nombre de clauses `in` par requête : combiner `includeDeleted` avec
+  ///     un `ZFilterOp.isIn` peut exiger un découpage côté appelant.
+  /// - **[ZDeletionSemantics.absentMeansAlive]** — **AUCUNE** clause
+  ///   `is_deleted` (Firestore ne sait pas exprimer `!= true OU absent`) : le
+  ///   scope est appliqué **client** au décodage ([_decodeDocs] /
+  ///   [_matchesScope]), coût documenté sur l'enum.
+  Query<Map<String, dynamic>> _scopedQuery(
+    ZDeletedScope scope, [
+    String? path,
+  ]) {
+    final raw = _rawCollection(path);
+    switch (_deletionSemantics) {
+      case ZDeletionSemantics.strict:
+        switch (scope) {
+          case ZDeletedScope.aliveOnly:
+            return raw.where(_kIsDeleted, isEqualTo: false);
+          case ZDeletedScope.deletedOnly:
+            return raw.where(_kIsDeleted, isEqualTo: true);
+          case ZDeletedScope.includeDeleted:
+            return raw.where(_kIsDeleted, whereIn: const <bool>[false, true]);
+        }
+      case ZDeletionSemantics.absentMeansAlive:
+        return raw;
+    }
+  }
+
+  /// Requête de base historique : scope [ZDeletedScope.aliveOnly] (exclusion
+  /// des soft-deleted) — voie des chemins SANS `ZDataRequest` ([watchAll]).
   Query<Map<String, dynamic>> _baseQuery([String? path]) =>
-      _rawCollection(path).where(_kIsDeleted, isEqualTo: false);
+      _scopedQuery(ZDeletedScope.aliveOnly, path);
 
   /// Applique les [filters] par **chaînage IMMUABLE** (réaffectation
   /// systématique — corrige le bug #1 : une `Query` est immuable, `where(...)`
@@ -585,11 +741,14 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   // ───────────────────────── Lectures (AC2/3/4/10/11) ───────────────────────
 
   @override
-  Stream<List<T>> watchAll() => _watchQuery(_baseQuery);
+  Stream<List<T>> watchAll() =>
+      _watchQuery(_baseQuery, ZDeletedScope.aliveOnly);
 
   @override
-  Stream<List<T>> watch(ZDataRequest request) =>
-      _watchQuery(() => _buildQuery(_baseQuery(), request));
+  Stream<List<T>> watch(ZDataRequest request) => _watchQuery(
+        () => _buildQuery(_scopedQuery(request.deletedScope), request),
+        request.deletedScope,
+      );
 
   /// Flux **NU** (AD-11) : seed immédiat (état courant) puis mutations. Les
   /// non-visibles/corrompus sont exclus. Une collection vide émet `[]` (AC10).
@@ -602,7 +761,10 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// addError]) — **jamais** relancé synchroniquement vers l'appelant. Les
   /// erreurs **runtime** de `snapshots()` transitent par le même canal
   /// (`onError`). Aucune exception ne remonte hors du flux.
-  Stream<List<T>> _watchQuery(Query<Map<String, dynamic>> Function() build) {
+  Stream<List<T>> _watchQuery(
+    Query<Map<String, dynamic>> Function() build,
+    ZDeletedScope scope,
+  ) {
     late final StreamController<List<T>> controller;
     // MEDIUM-1 (parité E5-1) : l'abonnement source `snapshots()` est capturé
     // pour être ANNULÉ à l'annulation du flux (`onCancel`) — pas seulement au
@@ -619,7 +781,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
               // est routée vers le canal d'erreur — miroir du `onError` — au lieu
               // de devenir une erreur asynchrone non gérée.
               try {
-                controller.add(_decodeDocs(snap.docs));
+                controller.add(_decodeDocs(snap.docs, scope));
               } on Object catch (e, s) {
                 _log('événement firestore en erreur (kind=$_kind)',
                     error: e, stackTrace: s);
@@ -670,11 +832,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
 
   @override
   Future<ZResult<List<T>>> getAll({ZDataRequest? request}) => _guard(() async {
+        final scope = request?.deletedScope ?? ZDeletedScope.aliveOnly;
         final query = request == null
-            ? _baseQuery()
-            : _buildQuery(_baseQuery(), request);
+            ? _scopedQuery(scope)
+            : _buildQuery(_scopedQuery(scope), request);
         final snap = await query.get();
-        return Right<ZFailure, List<T>>(_decodeDocs(snap.docs));
+        return Right<ZFailure, List<T>>(_decodeDocs(snap.docs, scope));
       });
 
   @override
@@ -686,13 +849,17 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
           );
         }
         final data = snap.data() ?? <String, dynamic>{};
-        // MAJEUR-2 : visibilité ALIGNÉE sur getAll/watch (`is_deleted == false`).
-        // Un `is_deleted` ABSENT (doc non-zcrud-native) est exclu ICI AUSSI, comme
-        // le filtre serveur l'exclut de getAll/watch → aucune divergence.
-        if (!_isVisible(data)) {
+        // MAJEUR-2 : visibilité ALIGNÉE sur getAll/watch (même prédicat
+        // `_matchesScope(…, aliveOnly)` selon la sémantique configurée) :
+        // - strict : un `is_deleted` ABSENT (doc non-zcrud-native) est exclu
+        //   ICI AUSSI, comme le filtre serveur l'exclut de getAll/watch ;
+        // - absentMeansAlive : un doc SANS `is_deleted` est VISIBLE ici aussi
+        //   (absent = vivant), le supprimé (canonique OU legacy) reste exclu.
+        // → aucune divergence get vs getAll/watch, quelle que soit la sémantique.
+        if (!_matchesScope(data, ZDeletedScope.aliveOnly)) {
           return Left<ZFailure, T>(
             ZNotFoundFailure(
-              data[_kIsDeleted] == true
+              data[_kIsDeleted] == true || _isLegacyDeleted(data)
                   ? 'Entité soft-deleted'
                   : 'Entité non visible (is_deleted absent — hors invariant '
                       'zcrud-native)',
@@ -713,11 +880,24 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   @override
   Future<ZResult<int>> count({ZDataRequest? request}) => _guard(() async {
         // Le tri/curseur/limit n'affectent pas un décompte : seuls les FILTRES
-        // (+ exclusion soft-deleted) comptent.
+        // (+ le scope de suppression) comptent.
+        final scope = request?.deletedScope ?? ZDeletedScope.aliveOnly;
         final query = _applyFilters(
-          _baseQuery(),
+          _scopedQuery(scope),
           request?.filters ?? const <ZFilter>[],
         );
+        if (_deletionSemantics == ZDeletionSemantics.absentMeansAlive) {
+          // Coût du mode compat (cf. ZDeletionSemantics.absentMeansAlive) :
+          // l'agrégat serveur `count()` ne sait pas exprimer « != true OU
+          // absent » — décompte CLIENT sur les documents lus, aligné sur le
+          // MÊME prédicat que les listes (`_matchesScope`).
+          final snap = await query.get();
+          var n = 0;
+          for (final d in snap.docs) {
+            if (_matchesScope(d.data(), scope)) n++;
+          }
+          return Right<ZFailure, int>(n);
+        }
         final agg = await query.count().get();
         return Right<ZFailure, int>(agg.count ?? 0);
       });

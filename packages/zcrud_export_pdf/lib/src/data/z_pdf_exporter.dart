@@ -28,8 +28,11 @@ import 'z_pdf_export_options.dart';
 ///
 /// [options] (E11b-3, Axe C) paramètre la MISE EN PAGE — anti-rognage (LOW-1
 /// d'E11a-3) : orientation (paysage → page plus large), titre optionnel dessiné
-/// en haut, en-tête répété. **Rétro-compat (AC9)** : `options == null` conserve
-/// le comportement E11a-3 (portrait, sans titre, largeurs réparties). La largeur
+/// en haut, en-tête répété, en-tête riche opt-in (`options.header`, CR pilote
+/// DODLP 2026-08-11 lot 4 — logo + lignes organisationnelles + sous-titre, voir
+/// [ZPdfHeaderSpec]). **Rétro-compat (AC9)** : `options == null` **ou**
+/// `options.header == null` conserve le comportement E11a-3 (portrait, sans
+/// titre riche, largeurs réparties) bit pour bit. La largeur
 /// des colonnes est répartie sur la largeur de page (`allowHorizontalOverflow =
 /// false` + `columns[i].width`) de sorte que la **dernière** colonne soit rendue
 /// même avec de nombreuses colonnes (AC10) ; le contenu (`col.format`) reste
@@ -48,10 +51,79 @@ Uint8List buildPdfBytes(ZExportTable table, {ZPdfExportOptions? options}) {
     final page = document.pages.add();
     final size = page.getClientSize();
 
-    // Titre optionnel dessiné en haut ; décale le haut de la grille.
+    // Titre optionnel (+ en-tête riche opt-in) dessiné en haut ; décale le haut
+    // de la grille.
     var gridTop = 0.0;
     final title = opts.title;
-    if (title != null && title.isNotEmpty) {
+    final header = opts.header;
+    if (header != null) {
+      // En-tête riche (CR pilote DODLP, lot 4 — parité `dodlp_pdf_header.dart`) :
+      // logo + lignes organisationnelles + titre centré + sous-titre, empilés
+      // verticalement. Purement additif (AC9) : SEULEMENT actif quand
+      // `options.header` est explicitement fourni — sinon la branche `else`
+      // ci-dessous reproduit le rendu E11a-3 bit pour bit.
+      var y = 0.0;
+      final logoBytes = header.logoBytes;
+      if (logoBytes != null) {
+        try {
+          final bitmap = PdfBitmap(logoBytes);
+          page.graphics.drawImage(
+            bitmap,
+            Rect.fromLTWH(0, y, header.logoWidth, header.logoHeight),
+          );
+        } catch (_) {
+          // Bytes non décodables comme image (AD-10) : logo omis, le reste de
+          // l'en-tête (lignes organisationnelles, titre, sous-titre) continue
+          // d'être rendu normalement — jamais de crash.
+        }
+        y += header.logoHeight + 4;
+      }
+      if (header.organizationLines.isNotEmpty) {
+        final orgFont = PdfStandardFont(
+          PdfFontFamily.helvetica,
+          10,
+          style: PdfFontStyle.bold,
+        );
+        final orgText = header.organizationLines.join('\n');
+        final orgSize = orgFont.measureString(orgText);
+        page.graphics.drawString(
+          orgText,
+          orgFont,
+          bounds: Rect.fromLTWH(0, y, size.width, orgSize.height),
+          format: PdfStringFormat(alignment: PdfTextAlignment.center),
+        );
+        y += orgSize.height + 6;
+      }
+      if (title != null && title.isNotEmpty) {
+        final titleFont = PdfStandardFont(PdfFontFamily.helvetica, 16);
+        page.graphics.drawString(
+          title,
+          titleFont,
+          bounds: Rect.fromLTWH(0, y, size.width, 22),
+          format: PdfStringFormat(alignment: PdfTextAlignment.center),
+        );
+        y += 22 + 6;
+      }
+      final subtitle = header.subtitle;
+      if (subtitle != null && subtitle.isNotEmpty) {
+        final subtitleFont = PdfStandardFont(
+          PdfFontFamily.helvetica,
+          10,
+          style: PdfFontStyle.italic,
+        );
+        final subtitleSize = subtitleFont.measureString(subtitle);
+        page.graphics.drawString(
+          subtitle,
+          subtitleFont,
+          bounds: Rect.fromLTWH(0, y, size.width, subtitleSize.height),
+          format: PdfStringFormat(alignment: PdfTextAlignment.center),
+        );
+        y += subtitleSize.height + 6;
+      }
+      gridTop = y;
+    } else if (title != null && title.isNotEmpty) {
+      // Rendu historique E11a-3, INCHANGÉ bit pour bit (AC9, rétro-compat) :
+      // titre seul, aligné par défaut, décalage fixe de 28.
       final titleFont = PdfStandardFont(PdfFontFamily.helvetica, 16);
       page.graphics.drawString(
         title,

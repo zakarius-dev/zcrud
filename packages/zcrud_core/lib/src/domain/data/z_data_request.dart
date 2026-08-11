@@ -41,6 +41,28 @@ enum ZFilterOp {
   isNull,
 }
 
+/// Sélection de **suppression logique** d'une requête de lecture (CR-DODLP
+/// 2026-08-11, Lot 2a « listing corbeille »). Valeurs en **camelCase**
+/// (canonique §5).
+///
+/// Étend `ZDataRequest` de façon **additive** : le défaut [aliveOnly] reproduit
+/// le comportement historique (exclusion des soft-deleted, AD-9) — aucun
+/// appelant existant n'est affecté. La sémantique exacte de « supprimé »
+/// (drapeau `is_deleted` hors-entité `ZSyncMeta`, éventuelle clé legacy) est
+/// tranchée par l'**adaptateur** (E5) : ce membre reste backend-agnostique
+/// (AD-5).
+enum ZDeletedScope {
+  /// Seuls les documents **vivants** (non soft-deleted) — défaut, comportement
+  /// historique inchangé.
+  aliveOnly,
+
+  /// Vivants **et** soft-deleted (vue « tout », badge corbeille).
+  includeDeleted,
+
+  /// Seuls les **soft-deleted** (listing corbeille : clear/restore).
+  deletedOnly,
+}
+
 /// Sens de tri d'un [ZSort]. Valeurs en **camelCase** (canonique §5).
 enum ZSortDirection {
   /// Ordre croissant.
@@ -129,6 +151,7 @@ class ZDataRequest {
     this.search,
     this.limit,
     this.startAfter,
+    this.deletedScope = ZDeletedScope.aliveOnly,
   });
 
   /// Prédicats de filtrage (conjonction). Par défaut : aucun.
@@ -146,6 +169,11 @@ class ZDataRequest {
   /// Curseur d'ancrage de la page suivante, ou `null` (première page).
   final ZCursor? startAfter;
 
+  /// Sélection de suppression logique (corbeille). Par défaut :
+  /// [ZDeletedScope.aliveOnly] — comportement historique **inchangé**
+  /// (exclusion des soft-deleted). Additif (CR-DODLP 2026-08-11, Lot 2a).
+  final ZDeletedScope deletedScope;
+
   /// Sentinelle interne : distingue « argument omis » de « mis explicitement à
   /// `null` » dans [copyWith].
   static const Object _unset = Object();
@@ -158,6 +186,7 @@ class ZDataRequest {
     Object? search = _unset,
     Object? limit = _unset,
     Object? startAfter = _unset,
+    ZDeletedScope? deletedScope,
   }) {
     return ZDataRequest(
       filters: filters ?? this.filters,
@@ -166,6 +195,7 @@ class ZDataRequest {
       limit: identical(limit, _unset) ? this.limit : limit as int?,
       startAfter:
           identical(startAfter, _unset) ? this.startAfter : startAfter as ZCursor?,
+      deletedScope: deletedScope ?? this.deletedScope,
     );
   }
 
@@ -177,6 +207,7 @@ class ZDataRequest {
           search == other.search &&
           limit == other.limit &&
           startAfter == other.startAfter &&
+          deletedScope == other.deletedScope &&
           _listEquals(filters, other.filters) &&
           _listEquals(sorts, other.sorts);
 
@@ -188,12 +219,13 @@ class ZDataRequest {
         search,
         limit,
         startAfter,
+        deletedScope,
       );
 
   @override
   String toString() =>
       'ZDataRequest(filters: $filters, sorts: $sorts, search: $search, '
-      'limit: $limit, startAfter: $startAfter)';
+      'limit: $limit, startAfter: $startAfter, deletedScope: $deletedScope)';
 }
 
 /// Égalité **profonde** de deux listes (élément par élément), en pur-Dart.

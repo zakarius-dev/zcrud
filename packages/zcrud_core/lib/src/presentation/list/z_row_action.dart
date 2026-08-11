@@ -21,9 +21,11 @@
 /// gestionnaire d'état (gardes de pureté SM-5).
 ///
 /// **Frontière** : E4-4 livre les **actions** soft-delete/restore ; le **listing**
-/// de la corbeille (voir les supprimés) exigerait une extension additive de
-/// `ZDataRequest` honorée par l'adaptateur E5 — **déféré** (le contrat E2-2 est
-/// gelé). Les sous-listes/onglets sont E4-5.
+/// de la corbeille (voir les supprimés) est servi depuis la CR-DODLP 2026-08-11
+/// (Lot 2a) par l'extension additive `ZDataRequest.deletedScope`
+/// (`ZDeletedScope.deletedOnly`/`includeDeleted`), honorée par l'adaptateur E5
+/// (`FirebaseZRepositoryImpl`) dans ses deux sémantiques de suppression. Les
+/// sous-listes/onglets sont E4-5.
 library;
 
 import 'dart:async';

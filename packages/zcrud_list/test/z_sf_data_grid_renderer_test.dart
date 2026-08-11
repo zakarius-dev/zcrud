@@ -1,6 +1,8 @@
 // AC5/AC6 (E4-1, AD-8/AD-13) : `ZSfDataGridRenderer` rend un `SfDataGrid` réel
 // depuis un `ZListRenderRequest` neutre — N colonnes (en-têtes = labels), N
 // lignes, hauteur ≥ 48 dp. C'est le SEUL package zcrud qui importe Syncfusion.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
@@ -467,5 +469,166 @@ void main() {
     // Colonne d'actions ajoutée (au-delà des 2 colonnes de données).
     expect(grid(tester).columns.length, equals(3));
     expect(find.widgetWithText(TextButton, 'Delete'), findsWidgets);
+  });
+
+  // ─────── CR-LIST-PARITY (Lot 5 + §2, 2026-08-11) : additif, opt-in ─────────
+
+  Widget frameWith(ZSfDataGridRenderer renderer, ZListRenderRequest req) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => SizedBox(
+            width: 800,
+            height: 600,
+            child: renderer.build(context, req),
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgets(
+      'Lot5/§2 : DÉFAUTS strictement inchangés — headerRowHeight 48, '
+      'columnWidthMode fill, PAS de loadMoreViewBuilder, PAS de colonne '
+      'd\'ordre, PAS de couleur de cellule', (tester) async {
+    await tester.pumpWidget(frame(request));
+    await tester.pumpAndSettle();
+    final g = grid(tester);
+    expect(g.headerRowHeight, equals(48.0));
+    expect(g.columnWidthMode, equals(ColumnWidthMode.fill));
+    expect(g.loadMoreViewBuilder, isNull);
+    expect(g.columns.length, equals(fields.length));
+    expect(find.text('#'), findsNothing);
+  });
+
+  testWidgets(
+      'Lot5 : SCROLL RÉEL jusqu\'à la fin déclenche onLoadMore via le '
+      'chemin Syncfusion natif (loadMoreViewBuilder), indicateur affiché '
+      'PUIS disparu à la résolution', (tester) async {
+    // 30 lignes >> viewport 300/48 ≈ 6 lignes visibles ⇒ maxScrollExtent > 0.
+    final manyRows = [
+      for (var i = 0; i < 30; i++)
+        ZListRow(id: '$i', cells: {'name': 'Row $i', 'age': i}),
+    ];
+    final manyRequest = ZListRenderRequest.fromSchema(fields, manyRows);
+    var calls = 0;
+    final completer = Completer<void>();
+    Future<void> onLoadMore() async {
+      calls++;
+      await completer.future;
+    }
+
+    await tester.pumpWidget(
+      frameWith(
+        ZSfDataGridRenderer(onLoadMore: onLoadMore),
+        manyRequest,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(calls, equals(0),
+        reason: 'aucun appel avant que le scroll n\'atteigne la fin');
+
+    // Scroll RÉEL (geste utilisateur) jusqu'au bout de l'extent vertical —
+    // c'est Syncfusion, PAS notre code, qui décide du seuil de déclenchement
+    // (`_verticalController.offset >= maxScrollExtent`, cf. amont).
+    await tester.drag(find.byType(SfDataGrid), const Offset(0, -100000));
+    await tester.pump();
+
+    expect(calls, equals(1),
+        reason: 'atteindre la fin du scroll DOIT déclencher onLoadMore par '
+            'le chemin natif loadMoreViewBuilder → handleLoadMoreRows');
+    expect(find.byType(CircularProgressIndicator), findsWidgets,
+        reason: 'indicateur affiché pendant l\'attente du callback hôte');
+
+    completer.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing,
+        reason: 'l\'indicateur se réduit à zéro une fois la page intégrée');
+  });
+
+  testWidgets(
+      'Lot5/§2 : headerRowHeight/columnWidthMode custom PASSÉS AU GRID',
+      (tester) async {
+    await tester.pumpWidget(
+      frameWith(
+        const ZSfDataGridRenderer(
+          headerRowHeight: 40,
+          columnWidthMode: ColumnWidthMode.auto,
+        ),
+        request,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final g = grid(tester);
+    expect(g.headerRowHeight, equals(40.0));
+    expect(g.columnWidthMode, equals(ColumnWidthMode.auto));
+    // Les LIGNES ne sont jamais concernées (cible tactile AD-13 préservée).
+    expect(g.rowHeight, equals(48.0));
+  });
+
+  testWidgets(
+      'Lot5/§2 : withOrderNumber ajoute une colonne "#" EN TÊTE, rang '
+      '1-based par position d\'affichage', (tester) async {
+    await tester.pumpWidget(
+      frameWith(const ZSfDataGridRenderer(withOrderNumber: true), request),
+    );
+    await tester.pumpAndSettle();
+    final g = grid(tester);
+    expect(g.columns.length, equals(fields.length + 1));
+    expect(g.columns.first.columnName, equals('__zOrder'));
+    expect(find.text('#'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Lot5/§2 : orderColumnHeader personnalisable (l10n hôte, '
+      'zcrud_core JAMAIS touché)', (tester) async {
+    await tester.pumpWidget(
+      frameWith(
+        const ZSfDataGridRenderer(
+          withOrderNumber: true,
+          orderColumnHeader: 'N°',
+        ),
+        request,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('N°'), findsOneWidget);
+    expect(find.text('#'), findsNothing);
+  });
+
+  testWidgets(
+      'Lot5/§2 : cellColorBuilder colore la cellule ciblée (reçoit '
+      'ZListRow/ZListColumn NEUTRES, aucun type Syncfusion exposé)',
+      (tester) async {
+    Color? colorFor(ZListRow row, ZListColumn column) {
+      if (column.name == 'name' && row.cells['name'] == 'Bob') {
+        return Colors.red;
+      }
+      return null;
+    }
+
+    await tester.pumpWidget(
+      frameWith(
+        ZSfDataGridRenderer(cellColorBuilder: colorFor),
+        request,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final bobContainer = tester.widget<Container>(
+      find.ancestor(of: find.text('Bob'), matching: find.byType(Container))
+          .first,
+    );
+    expect(bobContainer.color, equals(Colors.red));
+
+    final aliceContainer = tester.widget<Container>(
+      find.ancestor(of: find.text('Alice'), matching: find.byType(Container))
+          .first,
+    );
+    expect(aliceContainer.color, isNull,
+        reason: 'seule la cellule ciblée par le builder est colorée');
   });
 }
