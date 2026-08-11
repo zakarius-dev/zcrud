@@ -79,7 +79,12 @@ void main() {
     test('un VRAI secret en COMMENTAIRE reste détecté (raw)', () {
       final violations = <String>[];
       _forbiddenRaw.forEach((label, re) {
-        const line = "// exemple à ne jamais faire : 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567'";
+        // Leurre COMPOSÉ à l'exécution : la source ne doit contenir aucun
+        // littéral en forme de clé, sinon le scan de secrets repo-wide
+        // (gate:secrets, qui lit le brut À RAISON) prend la sonde pour une
+        // fuite réelle — mesuré au premier `melos run verify` post-conversion.
+        final line = "// exemple à ne jamais faire : '${'AI' 'za'}"
+            "SyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567'";
         if (re.hasMatch(line)) violations.add(label);
       });
       expect(violations, isNotEmpty,

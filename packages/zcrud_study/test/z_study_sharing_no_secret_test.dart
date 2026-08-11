@@ -87,7 +87,10 @@ void main() {
   group('🔴 CONTRE-PREUVE — la scission secret/URL n\'affaiblit pas la garde',
       () {
     test('une clé AWS en COMMENTAIRE reste détectée (raw)', () {
-      const line = '// ne jamais coder AKIAABCDEFGHIJKLMNOP en dur';
+      // Leurre COMPOSÉ à l'exécution : aucun littéral en forme de clé dans la
+      // source, sinon gate:secrets (repo-wide, lecture brute À RAISON) prend
+      // la sonde pour une fuite réelle — même correctif que la garde jumelle.
+      final line = '// ne jamais coder ${'AK' 'IA'}ABCDEFGHIJKLMNOP en dur';
       final hit = _forbiddenRaw['clé AWS (AKIA…)']!.hasMatch(line);
       expect(hit, isTrue,
           reason: 'une clé AWS en commentaire DOIT rester une fuite détectée');
