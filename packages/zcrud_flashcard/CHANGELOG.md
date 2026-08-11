@@ -1,15 +1,29 @@
 # Changelog
 
-All notable changes to `zcrud_flashcard` are documented in this file.
+Toutes les modifications notables de `zcrud_flashcard` sont documentées dans
+ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## 0.1.0
+## [0.86.0] — Chantier documentation
 
-Initial release.
+### Ajouté
 
-- `ZFlashcard`/`ZChoice`/`ZFlashcardType` models (6 card types) with open provenance via `ZSourceRegistry`, SRS state kept off the card.
-- Pluggable spaced-repetition scheduling: `ZRepetitionInfo` + `ZSrsScheduler` (SuperMemo-2 default), single write path `reviewCard() → apply`.
-- Study folders and sessions: `ZStudyFolder` (2-level hierarchy), `ZStudySession` filters, pure session selector.
-- Offline-first `ZFlashcardRepository` built on neutral core ports (no Firebase edge), top-level SRS invariant.
-- Additive edition widgets served through `ZWidgetRegistry` (does not replace the host app's study module).
-- Part of the [zcrud](https://github.com/zakarius-dev/zcrud) monorepo (14 packages, one declarative CRUD engine).
-- Published under the MIT license.
+- `README.md` du paquet réécrit en français au gabarit de la charte
+  documentaire : aperçu, installation, démarrage rapide, concepts clés, API
+  principale, cas limites et invariants.
+- Fiche `docs/site/paquets/zcrud_flashcard.md` (rôle, quand l'utiliser, types
+  clés).
+- `public_member_api_docs` activé dans `analysis_options.yaml` : l'exhaustivité
+  de la documentation de l'API publique devient un invariant vérifié par
+  l'analyse statique.
+
+### Modifié
+
+- Normalisation de la dartdoc de l'ensemble de l'API publique exportée par le
+  barrel : première phrase autonome, exemples compilables, invariants
+  d'architecture cités par leur nom stable (`docs/site/concepts/invariants.md`).
+  Purge des références de story et d'epic, des emoji de journal et des
+  comparatifs applicatifs nominatifs — conservation des invariants, cas
+  limites et avertissements de contrat. Aucun changement de code — la revue
+  ne porte que sur des commentaires.
+
+Historique antérieur : voir `git log` sur `packages/zcrud_flashcard/`.

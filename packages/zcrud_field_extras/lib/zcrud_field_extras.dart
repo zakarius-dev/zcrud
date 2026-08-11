@@ -1,5 +1,4 @@
-/// Barrel d'API publique de `zcrud_field_extras` — satellite CHAMPS SPÉCIALISÉS
-/// (fp-5-2, AD-53).
+/// Barrel d'API publique de `zcrud_field_extras` — satellite CHAMPS SPÉCIALISÉS.
 ///
 /// Fournit trois widgets d'édition **riches**, servis par `ZWidgetRegistry` et
 /// enrôlés par [registerZFieldExtrasFields] (patron `registerZMediaFieldWidgets`),
@@ -23,29 +22,30 @@
 /// ```
 ///
 /// Sans cet enrôlement, un champ `pin`/`autocomplete`/`editableTable` dégrade
-/// proprement en `ZUnsupportedFieldWidget` (AD-10) — jamais un crash.
+/// proprement en `ZUnsupportedFieldWidget` (invariant AD-10) — jamais un
+/// crash.
 ///
-/// ## ⚠️ SIGNAL 1 — persistance `editableTable` (SUIVI hors fp-5-2)
+/// ## Limite de persistance — `editableTable` en mémoire uniquement
 ///
 /// La valeur d'une table éditable est `List<Map<String, dynamic>>`. Le widget
 /// l'édite pleinement **en mémoire**, mais **la persistance via `@ZcrudModel`
-/// d'un tel champ N'EST PAS supportée par le générateur** (limite préexistante
-/// découverte en fp-5-1 : `InvalidGenerationSourceError` sur un élément `Map`).
-/// Un **type de valeur dédié + codec** est un SUIVI (story cœur/générateur).
+/// d'un tel champ N'EST PAS supportée par le générateur** actuel : il lève
+/// une erreur de génération sur un élément `Map` sans branche de
+/// classification dédiée. Un type de valeur dédié avec son propre codec de
+/// (dé)sérialisation serait requis pour lever cette limite.
 ///
-/// ## ⚠️ SIGNAL 2 — « tags riches » NON livré (décision owner requise, AC-D)
+/// ## « Tags riches » non couvert
 ///
 /// `EditionFieldType.tags` route vers la famille NATIVE `tags` (pas
 /// `registryOrFallback`) : un builder sous `kind == 'tags'` serait du **code
 /// mort** jamais atteint par le dispatcher. Le besoin « tag + icône + toggle »
-/// est déjà couvert **zéro-dép** par `ZSubListDisplayMode.tags` (fp-5-1).
-/// `flutter_tags`/`drag_and_drop_lists` sont **rejetés par l'étude** (morts dans
-/// DODLP). Un chemin dispatcher-atteignable exigerait un NOUVEAU type d'enum
-/// cœur (`richTags` routé `registryOrFallback`) = story cœur ultérieure.
+/// est déjà couvert **zéro-dép** par `ZSubListDisplayMode.tags`. Un chemin
+/// dispatcher-atteignable exigerait un nouveau type d'enum cœur (`richTags`
+/// routé `registryOrFallback`).
 ///
-/// 🔴 **Isolation (AD-1)** : la seule dép lourde (`pinput`) est confinée à
-/// `lib/src/` ; l'arête `zcrud_*` sortante unique est `zcrud_core` (CORE OUT=0,
-/// garde `test/z_field_extras_confinement_test.dart` + `graph_proof.py`).
+/// **Isolation (invariant AD-1)** : la seule dépendance lourde (`pinput`) est
+/// confinée à `lib/src/` ; l'arête `zcrud_*` sortante unique est
+/// `zcrud_core`.
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;

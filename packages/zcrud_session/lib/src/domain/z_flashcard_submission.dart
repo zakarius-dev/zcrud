@@ -1,19 +1,20 @@
-/// Soumission **ADVISORY** d'une réponse `ZFlashcardSubmission`
-/// (Story SU-3, AC2 — AD-33/AD-35).
+/// Soumission advisory d'une réponse (`ZFlashcardSubmission`).
 ///
-/// 🔒 **su-3 n'écrit RIEN** (AD-33). Ce VO est **émis** à l'hôte
-/// (`onSubmitted`) ; c'est **su-4** qui branchera l'écriture SRS sur le seam
-/// `ZSessionReviewer` — **unique** voie d'écriture du repo. Émettre un fait
-/// (« voici ce qui a été répondu ») au lieu d'écrire un état garde la surface de
-/// saisie **pure** et testable, et laisse l'hôte seul maître de la persistance.
+/// La surface de saisie n'écrit jamais l'état SRS elle-même : ce
+/// value-object est émis à l'hôte (`onSubmitted`) comme un simple fait —
+/// « voici ce qui a été répondu » — et c'est l'hôte qui branche l'écriture
+/// SRS sur le seam `ZSessionReviewer`, l'unique voie d'écriture du dépôt
+/// (invariant AD-9). Émettre un fait plutôt qu'écrire un état garde la
+/// surface de saisie pure et testable, et laisse l'hôte seul maître de la
+/// persistance.
 ///
-/// 🔒 **Pur-Dart : AUCUN import Flutter** (AD-2/NFR-S5). Ce fichier vit sous
-/// `lib/src/domain/`, que la garde `test/z_purity_test.dart` scanne en
-/// « runtime widget-free » : un import `flutter/material` ici la ferait ROUGIR.
-/// `Duration` relève de `dart:core` — aucune dépendance requise.
+/// Pur-Dart : aucun import Flutter. Ce fichier vit sous `lib/src/domain/`,
+/// que la garde de pureté du paquet scanne comme « runtime sans widget » —
+/// `Duration` relève de `dart:core`, aucune dépendance supplémentaire n'est
+/// requise.
 library;
 
-/// Fait **immuable** d'une réponse soumise (value-object, `==`/`hashCode` par
+/// Fait immuable d'une réponse soumise (value-object, `==`/`hashCode` par
 /// valeur).
 class ZFlashcardSubmission {
   /// Construit une soumission advisory.
@@ -25,27 +26,27 @@ class ZFlashcardSubmission {
     this.feedback,
   });
 
-  /// Qualité **finale** — 🔒 **déjà clampée ET plafonnée** (AC2/AC6).
+  /// Qualité finale, déjà clampée et plafonnée.
   ///
-  /// Elle a traversé la voie **unique** d'attribution, dans l'ordre imposé :
-  /// `config.clampQuality(...)` **puis** `zApplyHintCeiling(...)`. L'hôte la
-  /// consomme telle quelle : re-clamper ou re-plafonner en aval serait une
-  /// **seconde pénalité**.
+  /// Elle a traversé la voie unique d'attribution, dans l'ordre imposé :
+  /// `config.clampQuality(...)` puis `zApplyHintCeiling(...)`. L'hôte la
+  /// consomme telle quelle : re-clamper ou re-plafonner en aval appliquerait
+  /// une seconde pénalité par erreur.
   final int quality;
 
-  /// Temps de réponse mesuré — 🔒 **toujours renseigné**, y compris quand le
-  /// minuteur est `ZTimerDisplay.hidden` (AC7 : l'affichage n'est pas la mesure).
+  /// Temps de réponse mesuré, toujours renseigné — y compris quand le
+  /// minuteur est `ZTimerDisplay.hidden` : l'affichage n'est pas la mesure.
   final Duration timeTaken;
 
-  /// Nombre d'indices consommés pour cette carte (AC5/AC6).
+  /// Nombre d'indices consommés pour cette carte.
   final int hintsUsed;
 
-  /// Verdict du barème, ou `null` s'il ne se prononce pas / n'est pas sollicité
-  /// (`isCorrect?` d'AD-35).
+  /// Verdict du barème, ou `null` s'il ne se prononce pas ou n'est pas
+  /// sollicité.
   final bool? isCorrect;
 
   /// Retour pédagogique à afficher (prose du barème, ou repli l10n en cas
-  /// d'échec du port — AC3), ou `null`.
+  /// d'échec du port), ou `null`.
   final String? feedback;
 
   @override

@@ -29,7 +29,7 @@
 ///    rendue. Une navigation ne disparaît pas parce qu'une coquille tierce a
 ///    échoué.
 ///
-/// ## 🔴 Ce qu'une surface tierce ne peut PAS faire perdre
+/// ## Ce qu'une surface tierce ne peut PAS faire perdre
 ///
 /// ```
 /// ZSubfolderNarrowNav

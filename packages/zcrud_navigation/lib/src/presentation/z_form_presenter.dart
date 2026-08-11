@@ -1,28 +1,28 @@
-/// Port de **présentation d'un formulaire d'édition** (EX-UI.6, AD-30) —
+/// Port de **présentation d'un formulaire d'édition** —
 /// abstraction **pluggable, jamais `sealed`**.
 ///
 /// [ZFormPresenter] est le contrat qui **exécute** un [ZEditionPresentation]
-/// (mode calculé en amont par `ZPresentationPolicy`, EX-UI.5) sur la **bonne
+/// (mode calculé en amont par `ZPresentationPolicy`) sur la **bonne
 /// surface modale** (page pleine / bottom-sheet / dialog). Il est
 /// **form-agnostique** : il reçoit un [WidgetBuilder] opaque et un mode — il
-/// **n'inspecte jamais** le type du formulaire (l'heuristique historique
-/// `builder.runtimeType.endsWith("EditionScreen")` des apps GetX est
-/// **abandonnée**).
+/// **n'inspecte jamais** le type du formulaire par une heuristique de nom de
+/// classe.
 ///
-/// **Pluggable, jamais `sealed` (AD-4/NFR-U9)** : une implémentation définie
-/// **hors de ce package** (le présentateur GetX `ZGetFormPresenter` d'EX-UI.11,
-/// un présentateur `go_router`, ou un fake de test) **compile et se substitue**
-/// au défaut [ZAdaptivePresenter] via le seam `ZFormPresenterScope`.
+/// **Pluggable, jamais `sealed` (invariant AD-4)** : une implémentation
+/// définie **hors de ce package** (le présentateur GetX `ZGetFormPresenter`
+/// de `zcrud_get`, un présentateur `go_router`, ou un fake de test) **compile
+/// et se substitue** au défaut [ZAdaptivePresenter] via le seam
+/// `ZFormPresenterScope`.
 ///
-/// **Couche présentation (D1/AD-5/AD-14)** : ce port importe
+/// **Couche présentation (invariants AD-5/AD-14)** : ce port importe
 /// `package:flutter/widgets.dart` (il exige un [BuildContext] et un
 /// [WidgetBuilder]) — il **ne peut donc PAS** vivre sous `domain/`, qui reste
-/// **100 % pur-Dart** (enums + politique EX-UI.5). Il vit donc sous
+/// **100 % pur-Dart** (enums + politique de présentation). Il vit donc sous
 /// `presentation/`.
 ///
-/// **Aucun gestionnaire d'état ni routeur (AD-2/AD-15)** : le contrat n'impose
-/// **aucun** `get`/`go_router`/`flutter_riverpod`/`provider` ; le défaut
-/// [ZAdaptivePresenter] l'honore en **Flutter vanilla**.
+/// **Aucun gestionnaire d'état ni routeur (invariants AD-2/AD-15)** : le
+/// contrat n'impose **aucun** `get`/`go_router`/`flutter_riverpod`/`provider` ;
+/// le défaut [ZAdaptivePresenter] l'honore en **Flutter vanilla**.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -32,9 +32,9 @@ import '../domain/z_edition_presentation.dart';
 /// Contrat **pluggable** de présentation d'un formulaire d'édition.
 ///
 /// `abstract interface class` (Dart 3) : contrat d'implémentation **pur**,
-/// **jamais `sealed`** ni `final` — implémentable **hors package** (AD-4). Le
-/// présentateur par défaut est [ZAdaptivePresenter] ; les variantes manager
-/// (GetX / go_router) sont livrées par les **bindings** (EX-UI.11) comme impls
+/// **jamais `sealed`** ni `final` — implémentable **hors package** (invariant
+/// AD-4). Le présentateur par défaut est [ZAdaptivePresenter] ; les variantes
+/// manager (GetX / go_router) sont livrées par les **bindings** comme impls
 /// de **ce même port**.
 abstract interface class ZFormPresenter {
   /// Présente le formulaire construit par [builder] sur la surface dictée par
@@ -47,18 +47,18 @@ abstract interface class ZFormPresenter {
   /// - [builder] : contenu **opaque** (form-agnostique) — le port ne l'inspecte
   ///   pas.
   /// - [mode] : **toujours** l'`enum` [ZEditionPresentation] — **aucun**
-  ///   `bool fullscreenDialog`/`dialog` (NFR-U7).
+  ///   `bool fullscreenDialog`/`dialog`.
   /// - [maxWidth] / [maxHeight] : tailles max **explicites** (dp) pour `sheet`
   ///   et `dialog` ; `null` ⇒ défaut dérivé de `MediaQuery.sizeOf(context)`. En
   ///   mode `page` (route pleine) elles sont **ignorées**.
   /// - [useSafeArea] : encapsule la surface dans une `SafeArea` (a11y) pour
-  ///   `sheet` et `dialog`. 🔴 En mode `page` (route pleine) il est **ignoré**
+  ///   `sheet` et `dialog`. En mode `page` (route pleine) il est **ignoré**
   ///   — cf. « inertie déclarée » ci-dessous.
   /// - [barrierDismissible] : autorise la fermeture au tap sur la barrière
   ///   (mode `dialog`). En `sheet`, la barrière se règle par `isDismissible`
   ///   (port `ZImplicitDismissControl`) ; en `page` il n'y a pas de barrière.
   ///
-  /// ## 🔴 Inertie DÉCLARÉE (CR-IFFD-78)
+  /// ## Inertie DÉCLARÉE
   ///
   /// **Règle du port : tout paramètre est soit honoré sur une surface, soit
   /// déclaré inerte sur elle.** Jamais « passé, jamais lu, jamais dit ».
@@ -78,7 +78,7 @@ abstract interface class ZFormPresenter {
   /// gardes : elle doit publier sa propre matrice si elle veut la même
   /// garantie.
   ///
-  /// ⚠️ `useSafeArea` en mode `page` : l'inertie est **mesurée**, pas supposée.
+  /// `useSafeArea` en mode `page` : l'inertie est **mesurée**, pas supposée.
   /// Une route pleine n'insère aujourd'hui **aucune** `SafeArea` — ni avec
   /// `true` (le défaut) ni avec `false` : le contenu brut peint sous l'encoche
   /// dans les deux cas. Honorer la promesse déplacerait donc l'arbre **par

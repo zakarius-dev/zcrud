@@ -37,7 +37,7 @@
 /// qui manquait était le **point d'entrée par le sélecteur** — et il vient
 /// d'être posé côté `zcrud_session` (`ZSessionModeKind.cramming`).
 ///
-/// 🔴 **Le `switch` sans `default` a fait EXACTEMENT son travail** : l'ajout du
+/// **Le `switch` sans `default` a fait EXACTEMENT son travail** : l'ajout du
 /// membre n'a pas produit un bug muet (le mode voisin hérité en silence — et
 /// `learn`/`spaced` **écrivent du SRS**, AD-33/AD-34), il a produit une **erreur
 /// de compilation** qui a désigné le site à mettre à jour. C'est le coût

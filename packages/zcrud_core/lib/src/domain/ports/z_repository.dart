@@ -1,10 +1,9 @@
 /// Contrat de la couche **données** du domaine `zcrud_core`.
 ///
-/// origine: lex_core (module « Étude ») — `StudyFoldersRepository` /
-/// `FlashcardsRepository` / `MindmapsRepository` / `RepetitionRepository`,
-/// généralisés en `ZRepository<T extends ZEntity>`. Canonique §7 ;
-/// AD-5 (backend-agnostique) ; AD-11 (`Either`/flux nus) ; AD-14 (invariants
-/// métier au repository) ; AD-16 (soft-delete hors-entité).
+/// `ZRepository<T extends ZEntity>` généralise le patron repository à toute
+/// entité `zcrud`. Invariants portés : AD-5 (backend-agnostique), AD-11
+/// (`Either`/flux nus), AD-14 (invariants métier au repository), AD-16
+/// (soft-delete hors-entité).
 library;
 
 import 'package:dartz/dartz.dart' show Unit;
@@ -18,7 +17,7 @@ import '../failures/z_failure.dart';
 /// **Backend-agnostique** (AD-5) : aucune signature n'expose de type
 /// `cloud_firestore` (`Timestamp`/`Filter`/`DocumentSnapshot`…). La traduction
 /// `ZDataRequest → Filter` et le curseur `startAfter` concret vivent dans
-/// l'adaptateur (E5 `zcrud_firestore`), jamais ici.
+/// l'adaptateur (`zcrud_firestore`), jamais ici.
 ///
 /// **Contrat de résultat** (AD-11) : les opérations retournent `ZResult<...>`
 /// (`Either<ZFailure, T>`) et `ZResult<Unit>` pour les « void ». Les **flux**
@@ -31,7 +30,7 @@ import '../failures/z_failure.dart';
 ///   requise est rejetée par un `Left(ZDomainFailure)`.
 /// - [softDelete]/[restore] basculent le drapeau `is_deleted` **hors-entité**
 ///   (`ZSyncMeta`, AD-16) ; les lectures excluent les soft-deleted.
-/// Surface **LECTURE SEULE** d'un dépôt (CR-LEX-32).
+/// Surface **LECTURE SEULE** d'un dépôt.
 ///
 /// ## Pourquoi elle existe
 ///
@@ -70,12 +69,18 @@ abstract class ZReadOnlyRepository<T extends ZEntity> {
   Future<ZResult<int>> count({ZDataRequest? request});
 }
 
+/// Contrat repository en lecture-écriture pour l'entité [T].
+///
+/// Étend [ZReadOnlyRepository] avec les écritures (création, mise à jour,
+/// suppression). Toute méthode d'écriture retourne `Either<ZFailure, T>` (ou
+/// `Unit` pour les opérations sans valeur de retour) — invariant AD-11 : jamais
+/// d'exception non capturée à travers la frontière du repository.
 abstract class ZRepository<T extends ZEntity> implements ZReadOnlyRepository<T> {
   /// Flux temps réel **nu** de tous les éléments non soft-deleted.
   ///
   /// Équivalent du `dataChanges` canonique : seed immédiat puis diffusion des
-  /// mutations (sémantique broadcast portée par l'impl E5). Jamais enveloppé
-  /// dans un `Either` (AD-11).
+  /// mutations (sémantique broadcast portée par l'implémentation). Jamais enveloppé
+  /// dans un `Either` (invariant AD-11).
   @override
   Stream<List<T>> watchAll();
 
@@ -100,7 +105,7 @@ abstract class ZRepository<T extends ZEntity> implements ZReadOnlyRepository<T> 
   /// Soft-delete l'élément [id] (`is_deleted = true`, hors-entité `ZSyncMeta`).
   Future<ZResult<Unit>> softDelete(String id);
 
-  /// Restaure l'élément [id] soft-deleted (corbeille, E4-4).
+  /// Restaure l'élément [id] soft-deleted (corbeille).
   Future<ZResult<Unit>> restore(String id);
 
   /// Compte les éléments correspondant à [request] (exclut les soft-deleted).

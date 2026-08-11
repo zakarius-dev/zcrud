@@ -92,7 +92,7 @@ class ZStudyLegacyCodec {
   ///   `camelToSnake('quality')` rend `quality`, donc sans alias le champ
   ///   traverse sous son nom legacy et `last_quality` reste **absent** — la
   ///   qualité de la dernière révision est silencieusement perdue.
-  ///   ⚠️ À ne pas confondre avec [syncMetaKeyAliases], qui vise les clés
+  ///   À ne pas confondre avec [syncMetaKeyAliases], qui vise les clés
   ///   **réservées** hors-entité ; ici la cible est une clé **métier** ordinaire.
   /// - [preserveAbsenceUnder] (**CR-IFFD-12**) : champs (nom canonique
   ///   snake_case **ou** legacy) dont l'**ABSENCE** doit survivre à la migration
@@ -186,7 +186,7 @@ class ZStudyLegacyCodec {
   /// **Une liste, pas N clés** : un marqueur par champ multiplierait les clés
   /// sur un corpus large ; la liste est vide-donc-absente dans le cas nominal.
   ///
-  /// ⚠️ **Cumulative entre passages.** Au 2ᵉ passage le champ vaut `''` et non
+  /// **Cumulative entre passages.** Au 2ᵉ passage le champ vaut `''` et non
   /// plus `null` : recalculer la liste l'effacerait, et l'absence — que cette
   /// clé existe pour retenir — serait perdue au moment même où on la relit.
   /// [toCanonical] fusionne donc avec la liste déjà présente. C'est la même
@@ -247,7 +247,7 @@ class ZStudyLegacyCodec {
       // CR-IFFD-3 — alias de clé de SYNC : la clé legacy DÉSIGNE une clé
       // réservée. Elle est CONSOMMÉE (renommée), jamais dupliquée, et la valeur
       // brute est préservée sous `_legacy_<snake>` (AD-4, zéro perte).
-      // ⚠️ Résolu APRÈS la boucle (cf. `aliased`) : sur un corpus PARTIELLEMENT
+      // Résolu APRÈS la boucle (cf. `aliased`) : sur un corpus PARTIELLEMENT
       // migré, le document porte à la fois `deleted:true` (la vérité legacy) et
       // un `is_deleted:false` ajouté à tort par un passage antérieur. Appliquer
       // l'alias dans la boucle le laisserait écraser par le passthrough de la

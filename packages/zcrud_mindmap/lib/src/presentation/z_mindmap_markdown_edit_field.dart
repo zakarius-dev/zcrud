@@ -1,31 +1,32 @@
 /// `ZMindmapMarkdownEditField` — seam **d'ÉDITION** rich-text opt-in d'un champ de
-/// nœud de carte mentale (Story SU-12, AD-40 / AD-28 / AD-7 / AD-10).
+/// nœud de carte mentale.
 ///
-/// ⚠️ **ADAPTATEUR MINCE** (patron `ZMindmapMarkdownContent`, pendant ÉDITION du
+/// **ADAPTATEUR MINCE** (patron `ZMindmapMarkdownContent`, pendant ÉDITION du
 /// rendu) : il compose `ZMarkdownField.fromContext` (voie `ctx` value-in-slice) +
 /// `const ZDeltaCodec()` (codec **IDENTITÉ**) de `zcrud_markdown` **TELS QUELS**.
 /// **AUCUN** `QuillController`/`Delta`/`flutter_math_fork` dans une signature
-/// publique (AD-7) : la valeur portée est **neutre** (ops Delta JSON). L'arête
-/// `zcrud_mindmap → zcrud_markdown` **préexiste** (aucune arête nouvelle, AD-1) ;
-/// l'adaptateur vit CHEZ LE CONSOMMATEUR (`zcrud_mindmap`), **jamais** dans
-/// `zcrud_markdown` (test de graphe anti-cycle).
+/// publique (invariant AD-7) : la valeur portée est **neutre** (ops Delta JSON).
+/// L'arête `zcrud_mindmap → zcrud_markdown` **préexiste** (aucune arête
+/// nouvelle, invariant AD-1) ; l'adaptateur vit CHEZ LE CONSOMMATEUR
+/// (`zcrud_mindmap`), **jamais** dans `zcrud_markdown` (test de graphe
+/// anti-cycle).
 ///
-/// **OQ-S5 / AD-28** : `ZMindmapNode.label`/`content` restent **texte brut** ; le
-/// payload rich vit dans le **slot AD-4** `extra[slotKey]` — **le MÊME** slot que
-/// `ZMindmapMarkdownContent` LIT (symétrie round-trip R22, écriture ⇄ lecture).
-/// Les deux fabriques sont symétriques :
+/// `ZMindmapNode.label`/`content` restent **texte brut** ; le payload rich
+/// vit dans le **slot d'extension invariant AD-4** `extra[slotKey]` — **le
+/// MÊME** slot que `ZMindmapMarkdownContent` LIT (symétrie écriture ⇄
+/// lecture). Les deux fabriques sont symétriques :
 /// `ZMindmapMarkdownContent.builder(slotKey:)` (rendu) ⇄
 /// `ZMindmapMarkdownEditField.builder(slotKey:)` (édition).
 ///
-/// **Slot par KIND** (SU-12) : le slot `content` écrit `extra[slotKey]` (symétrie
+/// **Slot par KIND** : le slot `content` écrit `extra[slotKey]` (symétrie
 /// EXACTE avec le rendu) ; le slot `label` écrit `extra['${slotKey}__label']`
 /// (payload distinct — jamais de collision content⇄label, `node.label` reste
 /// plain). Voir [slotKeyFor].
 ///
-/// **AD-2/SM-1** : place stable (`ValueKey(node.id + kind)`) ⇒ le `State`/le
-/// `QuillController` isolé ne sont **jamais** recréés au rebuild structurel de
-/// l'outline (zéro perte de focus/curseur). **AD-7 borné (AC7)** : mode `inline`
-/// + `maxLines` ⇒ hauteur **bornée**, défilement interne — l'éditeur ne vole pas
+/// **Invariant AD-2** : place stable (`ValueKey(node.id + kind)`) ⇒ le
+/// `State`/le `QuillController` isolé ne sont **jamais** recréés au rebuild
+/// structurel de l'outline (zéro perte de focus/curseur). Mode `inline` +
+/// `maxLines` ⇒ hauteur **bornée**, défilement interne — l'éditeur ne vole pas
 /// le scroll de l'outline (`ListView.builder`).
 library;
 
@@ -57,7 +58,7 @@ class ZMindmapMarkdownEditField extends StatelessWidget {
   /// dérivé par [slotKeyFor] selon `ctx.kind` (content = base, label = `__label`).
   final String baseSlotKey;
 
-  /// Hauteur MAX (en lignes) de l'éditeur compact borné (AC7). `null` ⇒ défaut
+  /// Hauteur MAX (en lignes) de l'éditeur compact borné. `null` ⇒ défaut
   /// par kind (`label` → 2, `content` → 4).
   final int? maxLines;
 
@@ -145,11 +146,11 @@ class ZMindmapMarkdownEditField extends StatelessWidget {
         // Valeur neutre courante (ops Delta) lue dans le slot AD-4.
         value: _currentOps(slotKey),
         // Écriture : pousse les ops NEUTRES dans le slot AD-4 via la voie du
-        // contexte (→ `controller.editRichSlot`, SANS notifier — SM-1). `label`/
-        // `content` restent plain (OQ-S5/AD-28).
+        // contexte (→ `controller.editRichSlot`, SANS notifier). `label`/
+        // `content` restent plain.
         onChanged: (value) => ctx.writeRichSlot(slotKey, _coerceOps(value)),
       ),
-      // Éditeur compact BORNÉ (AC7) : hauteur plafonnée ⇒ défilement interne, ne
+      // Éditeur compact BORNÉ : hauteur plafonnée ⇒ défilement interne, ne
       // vole pas le scroll de l'outline.
       mode: ZMarkdownFieldMode.inline,
       minLines: minLines,

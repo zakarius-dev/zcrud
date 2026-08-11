@@ -1,7 +1,7 @@
 /// **Lot 1 « étude »** — les TRANCHES RÉACTIVES de l'écran de session
 /// (AD-2/AD-15/SM-1).
 ///
-/// ## 🔴 Pourquoi des tranches, et pas un état d'écran
+/// ## Pourquoi des tranches, et pas un état d'écran
 ///
 /// L'assemblage de référence (`example/lib/demos/study_session_demo_screen.dart`)
 /// pilote tout par `setState` **à l'échelle de l'écran** : 5 sites
@@ -55,7 +55,7 @@ enum ZStudySessionPhase {
   /// La file est épuisée : place au résumé de session.
   celebrating,
 
-  /// 🔴 Le mode demandé **ne peut pas** être servi avec ce qui a été injecté —
+  /// Le mode demandé **ne peut pas** être servi avec ce qui a été injecté —
   /// en pratique : un mode SRS (`spaced`/`learn`) sans `ZSessionReviewer`.
   ///
   /// Cette phase existe parce que les **deux** échappatoires sont interdites :
@@ -94,7 +94,7 @@ class ZStudySessionProgress {
 
   /// Nombre de cartes encore en file.
   ///
-  /// ⚠️ **`remaining + reviewed != total` en régime SRS**, et c'est correct :
+  /// **`remaining + reviewed != total` en régime SRS**, et c'est correct :
   /// le moteur `ZStudySessionEngine` est **cyclique** — il réinsère les lapses
   /// dans sa file. Une carte ratée est donc comptée dans `reviewed` **et**
   /// toujours présente dans `remaining`. Un compteur qui « corrigerait » cet
@@ -150,7 +150,7 @@ class ZStudySessionSlices {
 
   /// File **courante** (identités seules).
   ///
-  /// 🔴 En régime SRS c'est `engine.state.queue` — la file **dynamique** du
+  /// En régime SRS c'est `engine.state.queue` — la file **dynamique** du
   /// moteur, pas une copie figée prise au démarrage. C'est la clause « une
   /// seule source de séquence » (su-10 D1) : le swiper **suit** le moteur, il
   /// ne tient pas un second curseur qui divergerait au 1ᵉʳ lapse.
@@ -169,7 +169,7 @@ class ZStudySessionSlices {
 
 /// Empreinte d'identité d'une file — l'ordre de ses `flashcardId`.
 ///
-/// 🔴 Sert de `key` au sous-arbre de la pile (su-4 D1). Deux files de même
+/// Sert de `key` au sous-arbre de la pile (su-4 D1). Deux files de même
 /// longueur mais d'ordre différent produisent deux empreintes différentes :
 /// l'`Element` du swiper est remonté, et aucun index ne survit à la file qu'il
 /// n'indexe plus. Une `key` constante — ou dérivée de la seule **longueur** —

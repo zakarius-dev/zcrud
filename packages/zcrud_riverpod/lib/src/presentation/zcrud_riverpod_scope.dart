@@ -1,12 +1,12 @@
-/// `ZcrudRiverpodScope` + provider auto-dispose du `ZFormController` (E2-9).
+/// `ZcrudRiverpodScope` + provider auto-dispose du `ZFormController`.
 ///
-/// origine: équivalent de `ZcrudScope` pour l'idiome Riverpod (cible E8). Le
-/// scope (a) possède un `ProviderContainer` (monté via `UncontrolledProviderScope`,
-/// équivalent d'un `ProviderScope`), (b) expose le `ZFormController` par un
-/// provider AUTO-DISPOSE (`ref.onDispose(controller.dispose)`), puis (c) enveloppe
-/// l'enfant dans un `ZcrudScope` porteur d'un `ZRiverpodResolver` manager-backed.
-/// Le binding NE réimplémente PAS la réactivité : il réutilise `ZFormController`
-/// (AD-2) tel quel.
+/// Équivalent de `ZcrudScope` pour l'idiome Riverpod. Le scope (a) possède un
+/// `ProviderContainer` (monté via `UncontrolledProviderScope`, équivalent
+/// d'un `ProviderScope`), (b) expose le `ZFormController` par un provider
+/// AUTO-DISPOSE (`ref.onDispose(controller.dispose)`), puis (c) enveloppe
+/// l'enfant dans un `ZcrudScope` porteur d'un `ZRiverpodResolver`
+/// manager-backed. Le binding ne réimplémente pas la réactivité : il
+/// réutilise `ZFormController` (invariant AD-2) tel quel.
 library;
 
 import 'package:flutter/widgets.dart';

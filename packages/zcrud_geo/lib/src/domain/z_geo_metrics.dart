@@ -1,50 +1,48 @@
-/// Métriques géo **pures** (G12 + « point-dans-zone » §2, AD-1/AD-14/AD-10) —
-/// aire, périmètre, boîte englobante, centroïde, appartenance d'un point.
+/// Métriques géo **pures** — aire, périmètre, boîte englobante, centroïde,
+/// appartenance d'un point à une zone.
 ///
-/// ## Nature des formules (mesurée sur le legacy, pas crue)
+/// ## Nature des formules
 ///
-/// Reproduction **à l'identique** des formules du legacy DODLP
-/// (`data_crud/models/geo_shape.dart`, `gs:398-577`) :
-///
-/// - **Aire de polygone (`gs:504-522`)** : approximation **SPHÉRIQUE** (excès
-///   sphérique simplifié, type Chamberlain–Duquette) —
+/// - **Aire de polygone** : approximation **sphérique** (excès sphérique
+///   simplifié, type Chamberlain–Duquette) —
 ///   `Σ dLng·(2 + sin φ1 + sin φ2) · R²/2`, valeur absolue, avec
-///   `R = 6371000 m` ([ZGeoPoint.earthRadiusMeters]). Ce n'est NI une aire
-///   planaire NI une aire ellipsoïdale (WGS-84) : précision excellente pour des
-///   emprises locales (ports, zones de contrôle), divergence croissante sur des
-///   polygones continentaux. **Les trous ne sont PAS déduits** (parité stricte :
-///   le legacy ignore `holes` dans `area`) — écart documenté, pas un oubli.
-/// - **Aire de cercle (`gs:424-426`)** : **PLANAIRE** — `π·r²` (le legacy ne
-///   projette pas le disque sur la sphère).
-/// - **Périmètre (`gs:524-533`)** : somme de distances **haversine** (sphère
+///   `R = 6371000 m` ([ZGeoPoint.earthRadiusMeters]). Ce n'est ni une aire
+///   planaire ni une aire ellipsoïdale (WGS-84) : précision excellente pour
+///   des emprises locales (ports, zones de contrôle), divergence croissante
+///   sur des polygones continentaux. **Les trous ne sont pas déduits** de
+///   l'aire — écart documenté, pas un oubli.
+/// - **Aire de cercle** : **planaire** — `π·r²` (le disque n'est pas
+///   projeté sur la sphère).
+/// - **Périmètre** : somme de distances **haversine** (sphère
 ///   `R = 6371000 m`), **segment de fermeture inclus** (polygone fermé).
-///   Pour un tracé OUVERT (polyligne), utiliser [ZGeoShapeMetrics.lengthMeters]
-///   (parité `gs:535-541` : pas de segment de fermeture).
-/// - **Bounds (`gs:469-498`)** : min/max lat/lng des sommets ; le cercle étend
-///   sa boîte de `radius × (1/111320) °/m` (approximation legacy `gs:486`,
-///   volontairement grossière en longitude — parité, documentée).
-/// - **Centroïde (`gs:405-415`)** : moyenne arithmétique des sommets.
+///   Pour un tracé **ouvert** (polyligne), utiliser
+///   [ZGeoShapeMetrics.lengthMeters] (pas de segment de fermeture).
+/// - **Boîte englobante** : min/max lat/lng des sommets ; le cercle étend
+///   sa boîte de `radius × (1/111320) °/m` (approximation volontairement
+///   grossière en longitude, documentée).
+/// - **Centroïde** : moyenne arithmétique des sommets.
 ///
-/// ## Point-dans-zone (enrichissement §2 — aucune des deux implémentations)
+/// ## Appartenance d'un point à une zone
 ///
-/// [ZGeoShapeMetrics.containsPoint] : **ray casting** (parité d'algorithme
-/// classique pair-impair) sur les coordonnées lat/lng traitées en plan local —
-/// adapté aux zones métier locales (même domaine de validité que l'aire
-/// sphérique ci-dessus ; non valable pour un polygone enjambant l'antiméridien,
-/// écart documenté). **Les trous sont gérés** : un point dans un trou (≥3
-/// sommets) n'appartient PAS à la zone. **Frontière INCLUSIVE et
-/// déterministe** : un point exactement sur un sommet ou une arête (au bord
-/// extérieur COMME au bord d'un trou) appartient à la zone — le ray casting nu
-/// est ambigu sur la frontière, un test d'appartenance au segment (ε 1e-12) le
-/// tranche AVANT le lancer de rayon.
+/// [ZGeoShapeMetrics.containsPoint] : **ray casting** (algorithme classique
+/// pair-impair) sur les coordonnées lat/lng traitées en plan local — adapté
+/// aux zones métier locales (même domaine de validité que l'aire sphérique
+/// ci-dessus ; non valable pour un polygone enjambant l'antiméridien). **Les
+/// trous sont gérés** : un point dans un trou (≥3 sommets) n'appartient pas à
+/// la zone. **Frontière inclusive et déterministe** : un point exactement sur
+/// un sommet ou une arête (au bord extérieur comme au bord d'un trou)
+/// appartient à la zone — le ray casting nu est ambigu sur la frontière, un
+/// test d'appartenance au segment (ε 1e-12) le tranche avant le lancer de
+/// rayon.
 ///
 /// [ZGeoCircleMetrics.containsPoint] : distance **haversine** centre→point
 /// ≤ rayon (frontière inclusive, cohérente avec la forme).
 ///
-/// **Défensif (AD-10)** : jamais de throw ; entrée dégénérée (< 3 sommets pour
-/// une aire, forme vide, rayon invalide) → `null`/`false`, jamais NaN propagé.
+/// **Désérialisation défensive (invariant AD-10)** : jamais de throw ;
+/// entrée dégénérée (< 3 sommets pour une aire, forme vide, rayon invalide) →
+/// `null`/`false`, jamais de NaN propagé.
 ///
-/// **Pur-Dart (AD-14)** : aucun Flutter, aucun SDK carte.
+/// **Pur-Dart (invariant AD-14)** : aucun Flutter, aucun SDK carte.
 library;
 
 import 'dart:math' as math;
@@ -53,8 +51,8 @@ import 'z_geo_circle.dart';
 import 'z_geo_point.dart';
 import 'z_geo_shape.dart';
 
-/// Boîte englobante géographique neutre (coins SW/NE) — résultat de `bounds`
-/// (parité legacy `gs:469-498`, qui rend `[southwest, northeast]`).
+/// Boîte englobante géographique neutre (coins sud-ouest/nord-est) — résultat
+/// des getters `bounds`.
 class ZGeoBounds {
   /// Construit la boîte `const` à partir de ses coins.
   const ZGeoBounds({required this.southWest, required this.northEast});
@@ -144,16 +142,17 @@ bool _onSegment(ZGeoPoint a, ZGeoPoint b, ZGeoPoint p) {
   return withinLat && withinLng;
 }
 
-/// Métriques pures d'une [ZGeoShape] (G12 + §2 — parité formules `gs:398-577`).
+/// Métriques pures d'une [ZGeoShape] — voir la doc de bibliothèque pour la
+/// nature des formules.
 extension ZGeoShapeMetrics on ZGeoShape {
-  /// Aire **sphérique approchée** en m² (excès sphérique simplifié, parité
-  /// stricte `gs:504-522` — cf. doc de bibliothèque : les trous ne sont PAS
-  /// déduits, comme le legacy). `< 3` sommets → `null` (pas d'aire).
+  /// Aire **sphérique approchée** en m² (excès sphérique simplifié — voir la
+  /// doc de bibliothèque : les trous ne sont pas déduits). `< 3` sommets →
+  /// `null` (pas d'aire).
   double? get areaSquareMeters =>
       vertices.length < 3 ? null : _ringAreaSquareMeters(vertices);
 
-  /// Périmètre **fermé** en mètres (haversine, segment de fermeture inclus —
-  /// parité `gs:524-533`). `< 2` sommets → `null`.
+  /// Périmètre **fermé** en mètres (haversine, segment de fermeture inclus).
+  /// `< 2` sommets → `null`.
   double? get perimeterMeters {
     if (vertices.length < 2) return null;
     double total = 0;
@@ -164,8 +163,8 @@ extension ZGeoShapeMetrics on ZGeoShape {
     return total;
   }
 
-  /// Longueur **ouverte** en mètres (polyligne : haversine SANS segment de
-  /// fermeture — parité `gs:535-541`). `< 2` sommets → `null`.
+  /// Longueur **ouverte** en mètres (polyligne : haversine sans segment de
+  /// fermeture). `< 2` sommets → `null`.
   double? get lengthMeters {
     if (vertices.length < 2) return null;
     double total = 0;
@@ -175,7 +174,7 @@ extension ZGeoShapeMetrics on ZGeoShape {
     return total;
   }
 
-  /// Boîte englobante des sommets (parité `gs:469-483`). Forme vide → `null`.
+  /// Boîte englobante des sommets. Forme vide → `null`.
   ZGeoBounds? get bounds {
     if (vertices.isEmpty) return null;
     double minLat = double.infinity, maxLat = double.negativeInfinity;
@@ -192,8 +191,7 @@ extension ZGeoShapeMetrics on ZGeoShape {
     );
   }
 
-  /// Centroïde (moyenne arithmétique des sommets — parité `gs:405-415`).
-  /// Forme vide → `null`.
+  /// Centroïde (moyenne arithmétique des sommets). Forme vide → `null`.
   ZGeoPoint? get centroid {
     if (vertices.isEmpty) return null;
     double lat = 0, lng = 0;
@@ -204,10 +202,11 @@ extension ZGeoShapeMetrics on ZGeoShape {
     return ZGeoPoint(lat: lat / vertices.length, lng: lng / vertices.length);
   }
 
-  /// **Point-dans-zone** (ray casting pair-impair, frontière INCLUSIVE —
-  /// cf. doc de bibliothèque). Gère les **trous** (un point dans un trou de ≥3
-  /// sommets n'appartient pas à la zone, SAUF s'il est exactement sur le bord
-  /// du trou — frontière inclusive partout). `< 3` sommets → `false` (AD-10).
+  /// **Appartenance à la zone** (ray casting pair-impair, frontière
+  /// inclusive — voir la doc de bibliothèque). Gère les **trous** : un point
+  /// dans un trou (≥3 sommets) n'appartient pas à la zone, sauf s'il est
+  /// exactement sur le bord du trou (frontière inclusive partout). `< 3`
+  /// sommets → `false` (défensif, invariant AD-10).
   bool containsPoint(ZGeoPoint point) {
     if (!point.isValid || vertices.length < 3) return false;
     if (!_ringContains(vertices, point)) return false;
@@ -230,11 +229,11 @@ extension ZGeoShapeMetrics on ZGeoShape {
     return true;
   }
 
-  /// G16 — réordonne les sommets **par angle autour du centroïde** pour
-  /// prévenir l'auto-intersection (parité stricte `gff:922-959`,
-  /// `_optimizePolygon` : tri par `atan2(lat - centreLat, lng - centreLng)`).
-  /// `< 3` sommets → forme inchangée (parité du garde legacy `gff:923`).
-  /// Attributs (id/label/style/holes/metadata) préservés.
+  /// Réordonne les sommets **par angle autour du centroïde**
+  /// (`atan2(lat - centreLat, lng - centreLng)`) pour prévenir
+  /// l'auto-intersection d'un polygone dessiné dans le désordre. `< 3`
+  /// sommets → forme inchangée. Attributs (id/label/style/holes/metadata)
+  /// préservés.
   ZGeoShape sortedByAngleAroundCentroid() {
     if (vertices.length < 3) return this;
     final ZGeoPoint c = centroid!;
@@ -249,20 +248,20 @@ extension ZGeoShapeMetrics on ZGeoShape {
   }
 }
 
-/// Métriques pures d'un [ZGeoCircle] (G12 — parité formules legacy).
+/// Métriques pures d'un [ZGeoCircle].
 extension ZGeoCircleMetrics on ZGeoCircle {
-  /// Aire **planaire** `π·r²` (parité stricte `gs:424-426` — le legacy ne
-  /// projette pas le disque sur la sphère). Cercle invalide → `null`.
+  /// Aire **planaire** `π·r²` (le disque n'est pas projeté sur la sphère).
+  /// Cercle invalide → `null`.
   double? get areaSquareMeters =>
       isValid ? math.pi * radiusMeters * radiusMeters : null;
 
-  /// Circonférence `2·π·r` (parité `gs:439-441`). Cercle invalide → `null`.
+  /// Circonférence `2·π·r`. Cercle invalide → `null`.
   double? get perimeterMeters => isValid ? 2 * math.pi * radiusMeters : null;
 
   /// Boîte englobante : centre ± `radius × (1/111320) °/m` (approximation
-  /// legacy `gs:485-492`, volontairement grossière en longitude — parité
-  /// documentée). Cercle invalide → `null`. Les bornes sont ÉCRÊTÉES aux
-  /// limites géographiques (AD-10 : jamais un coin hors-bornes).
+  /// volontairement grossière en longitude, documentée). Cercle invalide →
+  /// `null`. Les bornes sont **écrêtées** aux limites géographiques
+  /// (invariant AD-10 : jamais un coin hors-bornes).
   ZGeoBounds? get bounds {
     if (!isValid) return null;
     final double radiusDeg = radiusMeters * _kDegreesPerMeter;

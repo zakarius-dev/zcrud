@@ -1,12 +1,12 @@
-/// Helper de câblage **responsivité → présentation** (EX-UI.6, AD-30) — le
+/// Helper de câblage **responsivité → présentation** — le
 /// « maillon vivant ».
 ///
-/// [presentEdition] matérialise la chaîne complète que **aucune app** ne réalise :
-/// `largeur → ZWindowSizeClass → ZPresentationPolicy.resolve → ZEditionPresentation
-/// → ZFormPresenter → surface`. C'est le **seul** endroit qui lie
-/// `context → largeur` côté présentation (via `ZWindowSizeClass.of(context)` de
-/// `zcrud_responsive`, EX-UI.1) — la politique EX-UI.5 reste **pure** (sans
-/// `BuildContext`).
+/// [presentEdition] matérialise la chaîne complète, du breakpoint à la
+/// surface : `largeur → ZWindowSizeClass → ZPresentationPolicy.resolve →
+/// ZEditionPresentation → ZFormPresenter → surface`. C'est le **seul** endroit
+/// qui lie `context → largeur` côté présentation (via
+/// `ZWindowSizeClass.of(context)` de `zcrud_responsive`) — la politique de
+/// résolution reste **pure** (sans `BuildContext`).
 library;
 
 import 'package:flutter/widgets.dart';
@@ -26,24 +26,25 @@ import 'z_sheet_frame.dart';
 
 /// Présente un formulaire d'édition en **dérivant le mode du breakpoint courant**.
 ///
-/// Étapes (AD-30) :
+/// Étapes :
 /// 1. mesure la classe de fenêtre : `ZWindowSizeClass.of(context)`
 ///    (`zcrud_responsive`, `MediaQuery.sizeOf` — jamais `Get.width`) ;
 /// 2. dérive le mode : `policy.resolve(sizeClass, formWeight: formWeight)`
-///    (`ZPresentationPolicy`, EX-UI.5, **pure**) ;
+///    (`ZPresentationPolicy`, **pure**) ;
 /// 3. résout le présentateur effectif : [presenter] fourni, **sinon** le seam
 ///    `ZFormPresenterScope.of(context)` (défaut `const ZAdaptivePresenter()`) ;
 /// 4. délègue à `present<T>(context, builder: ..., mode: ...)`.
 ///
 /// [policy] **et** [presenter] sont **injectables** (défauts M3 + défaut
-/// pur-Flutter) — surchargeables par app sans modifier le package (AD-6/AD-4).
+/// pur-Flutter) — surchargeables par app sans modifier le package (invariants
+/// AD-6/AD-4).
 ///
-/// ## [chrome] — STRICTEMENT opt-in (CR chrome-presentation-aware)
+/// ## [chrome] — STRICTEMENT opt-in
 ///
 /// * `chrome: null` (**le défaut**) ⇒ le builder est passé **tel quel** au
-///   presenter : l'arbre rendu est **celui d'aujourd'hui, à l'identique** — pas
-///   « équivalent ». Épinglé par `z_edition_chrome_identity_test.dart` (arbre
-///   sérialisé + empreinte SHA-256, non-vacuité prouvée).
+///   presenter : l'arbre rendu est **strictement identique** au rendu sans
+///   chrome — pas « équivalent ». Épinglé par une garde d'identité d'arbre
+///   (empreinte SHA-256, non-vacuité prouvée).
 /// * `chrome != null` ⇒ le builder est enveloppé dans un [ZEditionScaffold]
 ///   monté sur le **mode résolu**, qui fournit titre / actions / comportement
 ///   d'en-tête propre au mode.
@@ -51,12 +52,12 @@ import 'z_sheet_frame.dart';
 /// De plus, si le chrome arme un garde d'abandon
 /// ([ZEditionChrome.guardsDiscard]) **et** que le presenter effectif implémente
 /// [ZImplicitDismissControl], les voies de fermeture qui **court-circuitent
-/// `PopScope`** sont neutralisées (en `sheet` : le **glissement**, mesuré
-/// perdant la saisie sans confirmation). Un presenter qui n'implémente pas
-/// cette capacité optionnelle est utilisé **tel quel** (AD-10 : repli, jamais
-/// d'exception) — il n'offrira simplement pas cette garantie.
+/// `PopScope`** sont neutralisées (en `sheet` : le **glissement**, qui
+/// perdrait sinon la saisie sans confirmation). Un presenter qui n'implémente
+/// pas cette capacité optionnelle est utilisé **tel quel** (invariant AD-10 :
+/// repli, jamais d'exception) — il n'offrira simplement pas cette garantie.
 ///
-/// ⚠️ La **sélection du mode par breakpoint** n'est touchée en RIEN par
+/// La **sélection du mode par breakpoint** n'est touchée en RIEN par
 /// [chrome] : elle reste la chaîne `largeur → ZWindowSizeClass → policy`.
 ///
 /// ## [forcedMode] — TROISIÈME point de contrôle, et sa règle de priorité
@@ -74,68 +75,68 @@ import 'z_sheet_frame.dart';
 /// Quand [forcedMode] est non-`null` :
 /// * [policy] **n'est pas consultée du tout** (ni `resolve`, ni instanciée) ;
 /// * `ZWindowSizeClass.of(context)` **n'est pas lu** — donc **aucune dépendance
-///   à `MediaQuery`** n'est enregistrée sur le contexte appelant. Mesuré : lire
-///   la classe de fenêtre depuis un `build` fait **reconstruire le call-site à
-///   chaque changement de taille de fenêtre** ; quand le résultat est ignoré,
-///   c'est une reconstruction gratuite. Garde :
-///   `z_edition_forced_mode_test.dart` (volet « aucune dépendance MediaQuery »).
+///   à `MediaQuery`** n'est enregistrée sur le contexte appelant. Lire la
+///   classe de fenêtre depuis un `build` fait reconstruire le call-site à
+///   chaque changement de taille de fenêtre ; quand le résultat est ignoré,
+///   c'est une reconstruction gratuite — évitée ici par construction.
 /// * **aucune cohérence n'est exigée** avec le breakpoint : forcer `page` sur un
 ///   écran `compact`, ou `dialog` sur mobile, **fonctionne** — aucune assertion,
 ///   aucun repli silencieux. C'est tout l'intérêt du paramètre.
 /// * [chrome], s'il est fourni, est monté sur le mode **effectif** — donc sur le
 ///   mode **forcé**, jamais sur un mode dérivé qu'on aurait recalculé.
 ///
-/// ## [sheetFrame] — feuille CONTRAINTE et ENCADRÉE (CR-IFFD-SHEET, 2026-08-09)
+/// ## [sheetFrame] — feuille CONTRAINTE et ENCADRÉE
 ///
-/// 🔴 **Changement de DÉFAUT, visible pour tout hôte passif.** En mode `sheet`,
-/// le socle contraint désormais la largeur (`min(largeur × 0,9, 640 dp)`) et
-/// peint un **cadre** (`BorderSide` sur le rôle `ColorScheme.outlineVariant`).
-/// C'est une décision du propriétaire, portée par `z_sheet_frame.dart`.
+/// En mode `sheet`, le socle contraint la largeur (`min(largeur × 0,9,
+/// 640 dp)`) et peint un **cadre** (`BorderSide` sur le rôle
+/// `ColorScheme.outlineVariant`) — voir `z_sheet_frame.dart` pour le détail
+/// de cette décision.
 ///
-/// **Hôte qui compensait** : si vous restituiez cette marge (un `Padding`
-/// externe, un `Container(constraints: maxWidth: …)` autour de votre contenu,
-/// un `Card.outlined` interne — c'est exactement ce que fait IFFD), **retirez
-/// votre compensation** : elle s'additionne au socle. Sinon vous obtiendrez une
+/// **Hôte qui compensait** : si vous restituiez cette marge par vos propres
+/// moyens (un `Padding` externe, un `Container(constraints: maxWidth: …)`
+/// autour de votre contenu, une carte encadrée interne), **retirez votre
+/// compensation** : elle s'additionne au socle. Sinon vous obtiendrez une
 /// marge double et **deux bords concentriques**.
 ///
 /// **Échappatoires** (chaîne **paramètre > jeton `ZcrudTheme.editionSheet*` >
 /// référence**) :
 /// * pour UN appel : `sheetFrame: ZSheetFrameSpec(mode: ZSheetFrameMode.never)` ;
 /// * pour toute l'app : `ZcrudTheme(editionSheetFrameMode:
-///   ZSheetFrameMode.never.name)` (le jeton est un `String` — AD-1 interdit à
-///   `zcrud_core` d'importer l'énumération ; l'enum reste la source du nom) ;
+///   ZSheetFrameMode.never.name)` (le jeton est un `String` — l'invariant AD-1
+///   interdit à `zcrud_core` d'importer l'énumération ; l'enum reste la
+///   source du nom) ;
 /// * pleine largeur : `ZSheetFrameSpec(widthRatio: 1, maxWidth: double.infinity)`
 ///   — **indépendant** du cadre (retirer la bordure ne rend PAS la feuille
 ///   pleine largeur, et inversement) ;
-/// * [maxWidth] explicite **reprime sur tout** (inchangé depuis toujours).
+/// * [maxWidth] explicite **prime sur tout** (inchangé depuis toujours).
 ///
 /// [ZSheetFrameMode.unlessChrome] est résolu **ici**, et seulement ici : c'est
-/// le seul endroit qui sait si l'appelant a **déclaré** un [chrome]. Le socle ne
-/// devine jamais « ceci est une édition » — écart délibéré avec l'heuristique
-/// `runtimeType.toString().endsWith("EditionScreen")` d'IFFD.
+/// le seul endroit qui sait si l'appelant a **déclaré** un [chrome]. Le socle
+/// ne devine jamais « ceci est une édition » par une heuristique de type sur
+/// le contenu.
 ///
-/// ⚠️ Un presenter qui n'implémente pas [ZImplicitDismissControl] est appelé
-/// par `present` **tel quel** : il n'aura ni la marge ni le cadre (AD-10 :
-/// repli, jamais d'exception).
+/// Un presenter qui n'implémente pas [ZImplicitDismissControl] est appelé
+/// par `present` **tel quel** : il n'aura ni la marge ni le cadre (invariant
+/// AD-10 : repli, jamais d'exception).
 ///
-/// ## [isDismissible] — barrière de la FEUILLE (CR-IFFD-78, ②)
+/// ## [isDismissible] — barrière de la FEUILLE
 ///
 /// Défaut `true` ⇒ **rien ne bouge** pour un hôte passif. `false` rend la
 /// barrière de la bottom-sheet **non fermante** — voie « interdire le
 /// renoncement », à ne pas confondre avec le « garder le renoncement » que pose
 /// un [chrome] armant `guardsDiscard`. Les deux réglages sont **orthogonaux** et
-/// se composent : la règle complète, avec ses conséquences mesurées, est au
-/// dartdoc de `ZImplicitDismissControl.presentWithDismissControl`.
+/// se composent : la règle complète est au dartdoc de
+/// `ZImplicitDismissControl.presentWithDismissControl`.
 ///
-/// ⚠️ **Inerte** en `page` et en `dialog` (mesuré, jamais supposé) — en
-/// `dialog`, c'est [barrierDismissible] qui règle la barrière.
+/// **Inerte** en `page` et en `dialog` — en `dialog`, c'est
+/// [barrierDismissible] qui règle la barrière.
 ///
-/// ⚠️ Comme [sheetFrame], ce paramètre ne transite que par
+/// Comme [sheetFrame], ce paramètre ne transite que par
 /// [ZImplicitDismissControl] : un presenter **tiers** qui ne l'implémente pas
-/// est appelé par `present` et ne le recevra pas (AD-10 : repli, jamais
-/// d'exception).
+/// est appelé par `present` et ne le recevra pas (invariant AD-10 : repli,
+/// jamais d'exception).
 ///
-/// ## [bodyFit] — corps qui DÉFILE (CR scaffold-scrollable-body, 2026-08-09)
+/// ## [bodyFit] — corps qui DÉFILE
 ///
 /// Ne concerne que la voie [chrome] (sans chrome, le socle ne place rien).
 /// Défaut [ZEditionBodyFit.intrinsic] ⇒ **aucun changement** pour un hôte
@@ -144,19 +145,13 @@ import 'z_sheet_frame.dart';
 /// `bodyFit: ZEditionBodyFit.scrollable` : le **contenant** le bornera, et le
 /// corps gardera son propre défilement.
 ///
-/// 🔴 **Hôte qui CONTOURNAIT** : si vous passiez `shrinkWrap: true` +
+/// **Hôte qui contournait** : si vous passiez `shrinkWrap: true` +
 /// `NeverScrollableScrollPhysics()` à votre `DynamicEdition` pour survivre au
 /// mode `page`, **retirez ce contournement en même temps** que vous déclarez
 /// [ZEditionBodyFit.scrollable] — les deux ensemble donneraient un corps
 /// non-scrollable placé dans un contenant qui l'attend scrollable. Garder le
 /// contournement **et** le défaut [ZEditionBodyFit.intrinsic] reste, lui,
 /// parfaitement valide et inchangé.
-///
-/// ✅ **Ce n'est plus le cas de `ZGetFormPresenter`** (mesuré sur disque le
-/// 2026-08-09 : `class ZGetFormPresenter implements ZFormPresenter,
-/// ZImplicitDismissControl`, et il appelle `zSheetFrameMetricsOf`). Le
-/// présentateur GetX reçoit donc bien `sheetFrame`, la marge et le cadre. Le
-/// repli ci-dessus ne concerne plus qu'un presenter **tiers**.
 Future<T?> presentEdition<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -187,11 +182,11 @@ Future<T?> presentEdition<T>(
   //
   // Seul cet endroit SAIT si l'appelant a déclaré un chrome. Le presenter, lui,
   // ne voit qu'un `WidgetBuilder` opaque — le laisser trancher l'obligerait à
-  // inspecter le contenu, c'est-à-dire à REFAIRE l'heuristique de type d'IFFD.
-  // On lui transmet donc un mode déjà réduit à `always`/`never`.
+  // inspecter le contenu par une heuristique de type. On lui transmet donc un
+  // mode déjà réduit à `always`/`never`.
   ZSheetFrameSpec? effectiveSheetFrame = sheetFrame;
   if (mode == ZEditionPresentation.sheet) {
-    // AD-10 : un jeton `editionSheetFrameMode` INCONNU (chaîne libre, thème
+    // invariant AD-10 : un jeton `editionSheetFrameMode` INCONNU (chaîne libre, thème
     // sérialisé par une version plus récente) rend `null` ⇒ la référence
     // décide. Jamais d'exception.
     final ZSheetFrameMode declared = sheetFrame?.mode ??

@@ -1,19 +1,19 @@
-/// Dérivation **déclarative** d'un champ à partir d'autres champs (CR-IFFD-22).
+/// Dérivation **déclarative** d'un champ à partir d'autres champs.
 ///
-/// origine: motif redécouvert à l'identique par chaque hôte — « choisir un
-/// dossier force le titre », « choisir un client remplit son adresse ». La
-/// capacité existait déjà (`fieldListenable(a).addListener(...) → setValue(b)`)
-/// mais **impérativement**, recâblée par formulaire, avec deux pièges que
-/// chacun réécrivait seul : la **sérialisation des résolutions asynchrones**
-/// (deux sélections rapprochées se résolvant dans le désordre) et la politique
-/// d'**écrasement d'une saisie manuelle**. Les deux appartiennent au socle.
+/// Un motif fréquent — « choisir un dossier force le titre », « choisir un
+/// client remplit son adresse » — est atteignable **impérativement**
+/// (`fieldListenable(a).addListener(...) → setValue(b)`), mais recâblé par
+/// formulaire avec deux pièges qu'il faut alors réécrire soi-même : la
+/// **sérialisation des résolutions asynchrones** (deux sélections rapprochées
+/// se résolvant dans le désordre) et la politique d'**écrasement d'une saisie
+/// manuelle**. Les deux appartiennent au socle.
 ///
-/// **Pur-Dart** (couche `domain`, garde `domain_purity_test.dart`) : aucune
-/// dépendance Flutter. Contrairement au reste de `ZFieldSpec`, [ZDerivation]
-/// porte des **closures** fournies par l'hôte : elle n'est donc PAS émise par
-/// le générateur (AD-3, `ConstantReader`) — c'est une **surcharge runtime**
-/// posée par l'hôte via `spec.copyWith(derivedFrom: ...)` ou une spec écrite à
-/// la main. Le schéma statique reste pur-données.
+/// **Pur-Dart** (couche `domain`) : aucune dépendance Flutter. Contrairement
+/// au reste de `ZFieldSpec`, [ZDerivation] porte des **closures** fournies par
+/// l'hôte : elle n'est donc PAS émise par le générateur (invariant AD-3,
+/// `ConstantReader`) — c'est une **surcharge runtime** posée par l'hôte via
+/// `spec.copyWith(derivedFrom: ...)` ou une spec écrite à la main. Le schéma
+/// statique reste pur-données.
 library;
 
 import 'z_field_choice.dart';
@@ -89,7 +89,7 @@ class ZFieldBounds {
 /// ```
 abstract final class ZDerivationChannels {
   /// Préfixe commun (choisi pour ne jamais entrer en collision avec une clé
-  /// persistée snake_case — AD-3).
+  /// persistée snake_case — invariant AD-3).
   static const String prefix = r'$zderived';
 
   /// Tranche portant la `List<ZFieldChoice>` dérivée du champ [field].
@@ -114,8 +114,7 @@ typedef ZDerivationValueFn = Future<Object?> Function(
   Map<String, Object?> sources,
 );
 
-/// Marqueur rendu par un [ZDerivationValueFn] pour dire **« ne touche à rien »**
-/// (CR-IFFD-26 §2).
+/// Marqueur rendu par un [ZDerivationValueFn] pour dire **« ne touche à rien »**.
 ///
 /// Sans lui, la valeur rendue était écrite INCONDITIONNELLEMENT : rendre `null`
 /// EFFACE la cible, il n'existait donc aucune façon d'exprimer l'abstention. Or
@@ -165,7 +164,7 @@ typedef ZDerivationBoundsFn = ZFieldBounds? Function(
   Map<String, Object?> sources,
 );
 
-/// Déclaration « ce champ **dérive** de ces champs-là » (CR-IFFD-22).
+/// Déclaration « ce champ **dérive** de ces champs-là ».
 ///
 /// **Quatre cibles séparées et optionnelles** — surtout pas un callback
 /// fourre-tout : chacune a son canal de sortie propre et sa robustesse propre.
@@ -203,7 +202,7 @@ class ZDerivation {
     this.bounds,
   });
 
-  /// Champs **sources** observés (abonnement CIBLÉ à leur tranche — SM-1).
+  /// Champs **sources** observés (abonnement CIBLÉ à leur tranche).
   final List<String> sources;
 
   /// Politique d'écrasement de [value] — **requise**, aucun défaut.
@@ -228,16 +227,15 @@ class ZDerivation {
       value != null || options != null || visible != null || bounds != null;
 }
 
-/// Détecte les **cycles** du graphe de dérivation de [fields] (CR-IFFD-22,
-/// décision 3).
+/// Détecte les **cycles** du graphe de dérivation de [fields].
 ///
 /// Retourne la liste des cycles trouvés, chacun sous forme de chemin NOMMÉ et
 /// **normalisé** (rotation commençant par le plus petit nom, arête de retour
 /// incluse) : `['a', 'b', 'a']` pour `a → b → a`.
 ///
 /// **Pur et sans effet de bord** — même idiome que
-/// `ZSyncMeta.collidingReservedKeys` (CR-IFFD-14) : un hôte peut l'appeler
-/// **avant** d'attacher son formulaire, y compris en release. Un cycle reste
+/// `ZSyncMeta.collidingReservedKeys` : un hôte peut l'appeler **avant**
+/// d'attacher son formulaire, y compris en release. Un cycle reste
 /// **exprimable** : le moteur ne lève pas, il le signale (debug) et coupe la
 /// propagation à l'exécution (garde de réentrance).
 List<List<String>> zDerivationCycles(List<ZFieldSpec> fields) {

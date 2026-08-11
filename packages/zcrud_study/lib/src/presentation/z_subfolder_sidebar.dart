@@ -93,7 +93,7 @@ class ZSubfolderSidebar extends StatelessWidget {
 
   /// **État courant** du redimensionnement (dp), détenu par le PARENT (AD-2).
   ///
-  /// 🔴 **Ce paramètre n'applique AUCUNE contrainte de layout.** Ce n'est pas un
+  /// **Ce paramètre n'applique AUCUNE contrainte de layout.** Ce n'est pas un
   /// oubli : la sidebar ne décide pas de sa taille (AD-2) — elle rend une `Row`
   /// d'`Expanded` et occupe donc **toute la largeur que son parent lui donne**.
   ///
@@ -115,7 +115,7 @@ class ZSubfolderSidebar extends StatelessWidget {
   /// )
   /// ```
   ///
-  /// ⚠️ **Symptôme si on l'oublie** — placer la sidebar dans une `Row` (ou tout
+  /// **Symptôme si on l'oublie** — placer la sidebar dans une `Row` (ou tout
   /// parent à largeur non bornée) sans `SizedBox` produit des **milliers**
   /// d'exceptions de rendu `Failed assertion: … 'hasSize'`, levées **loin du
   /// site fautif** (dans les descendants, pas ici). Si vous voyez ce symptôme,

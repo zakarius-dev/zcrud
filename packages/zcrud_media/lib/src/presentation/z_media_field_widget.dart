@@ -1,32 +1,33 @@
 /// `ZMediaFieldWidget` — affordances **riches** média servies via
-/// `ZWidgetRegistry` (fp-4-2, AC4/AC6) : zone de dépôt (`dotted_border`),
-/// ouverture au tap (`open_file`), vignette vidéo (`video_thumbnail`, type
-/// neutre `Uint8List`).
+/// `ZWidgetRegistry` : zone de dépôt (`dotted_border`), ouverture au tap
+/// (`open_file`), vignette vidéo (`video_thumbnail`, type neutre
+/// `Uint8List`).
 ///
-/// **Patron `zcrud_intl`** (`registerZAddressFieldWidgets`) : une fonction
-/// top-level [registerZMediaFieldWidgets] enregistre le(s) builder(s) sous les
-/// `kind` [mediaImageFieldKind]/[mediaFileFieldKind]/[mediaVideoFieldKind]
+/// Une fonction top-level [registerZMediaFieldWidgets] enregistre le(s)
+/// builder(s) sous les `kind`
+/// [mediaImageFieldKind]/[mediaFileFieldKind]/[mediaVideoFieldKind]
 /// (alignés sur `EditionFieldType.mediaImage/mediaFile/mediaVideo.name`) ; les
 /// collaborateurs (picker/thumbnailer/opener) sont capturés par **closure**
-/// (AD-4). Chaque montage crée SON état.
+/// (invariant AD-4). Chaque montage crée SON état.
 ///
-/// 🔴 **Dispatch cœur (fp-4-2/MAJEUR-1)** : le cœur route les types
+/// **Dispatch cœur** : le cœur route les types
 /// `mediaImage`/`mediaFile`/`mediaVideo` vers la famille `registryOrFallback`
 /// (dispatcher `ZFieldWidget`) → il résout le builder par `field.type.name`
 /// dans le `ZWidgetRegistry` injecté au `ZcrudScope`. Un champ
 /// `ZFieldSpec(type: EditionFieldType.mediaImage)` atteint donc CE builder dès
 /// que [registerZMediaFieldWidgets] a peuplé ce registre ; sinon repli
-/// `ZUnsupportedFieldWidget` (AD-10). Les types NATIFS `image`/`file`/`document`
-/// restent, EUX, routés vers `ZAppFileField` (famille `file`) — les types média
-/// riches sont un chemin DISTINCT, jamais un override du natif.
+/// `ZUnsupportedFieldWidget` (invariant AD-10). Les types NATIFS
+/// `image`/`file`/`document` restent, EUX, routés vers `ZAppFileField`
+/// (famille `file`) — les types média riches sont un chemin DISTINCT, jamais
+/// un override du natif.
 ///
-/// **AD-2 / SM-1** : value-in-slice — le builder lit `ctx.value` et écrit via
+/// **Invariant AD-2** : value-in-slice — le builder lit `ctx.value` et écrit via
 /// `ctx.onChanged` **dans** la frontière de rebuild ; aucune souscription
-/// élargie, aucun `TextEditingController`. **AD-13 / FR-26** : cibles ≥ 48 dp,
+/// élargie, aucun `TextEditingController`. **Invariant AD-13** : cibles ≥ 48 dp,
 /// `Semantics` explicites sans double-annonce, insets **directionnels**, thème
 /// injecté (`ZcrudTheme.of`, repli `Theme.of`) — aucune couleur codée en dur.
-/// **AD-10** : ouverture échouée / picker absent / vignette indisponible →
-/// résultat défini, jamais un throw traversant.
+/// **Invariant AD-10** : ouverture échouée / picker absent / vignette
+/// indisponible → résultat défini, jamais un throw traversant.
 library;
 
 import 'dart:typed_data';
@@ -40,19 +41,19 @@ import '../data/z_media_plugin_seams.dart';
 import '../domain/z_media_seams.dart';
 
 /// `kind` du champ **image riche** (drop-zone + ouverture), ALIGNÉ sur le nom
-/// de l'`EditionFieldType` que le dispatcher cœur route vers le registre
-/// (fp-4-2/MAJEUR-1) : `EditionFieldType.mediaImage.name == 'mediaImage'`. Un
-/// champ `ZFieldSpec(type: EditionFieldType.mediaImage)` atteint donc ce builder
+/// de l'`EditionFieldType` que le dispatcher cœur route vers le registre :
+/// `EditionFieldType.mediaImage.name == 'mediaImage'`. Un champ
+/// `ZFieldSpec(type: EditionFieldType.mediaImage)` atteint donc ce builder
 /// dès que [registerZMediaFieldWidgets] a peuplé le `ZWidgetRegistry` injecté au
-/// `ZcrudScope` (sinon repli `ZUnsupportedFieldWidget`, AD-10).
+/// `ZcrudScope` (sinon repli `ZUnsupportedFieldWidget`, invariant AD-10).
 final String mediaImageFieldKind = EditionFieldType.mediaImage.name;
 
 /// `kind` du champ **fichier/document riche** (drop-zone + ouverture), aligné
-/// sur `EditionFieldType.mediaFile.name == 'mediaFile'` (fp-4-2/MAJEUR-1).
+/// sur `EditionFieldType.mediaFile.name == 'mediaFile'`.
 final String mediaFileFieldKind = EditionFieldType.mediaFile.name;
 
 /// `kind` du champ **vidéo** (drop-zone + vignette `Uint8List`), aligné sur
-/// `EditionFieldType.mediaVideo.name == 'mediaVideo'` (fp-4-2/MAJEUR-1).
+/// `EditionFieldType.mediaVideo.name == 'mediaVideo'`.
 final String mediaVideoFieldKind = EditionFieldType.mediaVideo.name;
 
 /// Mode de rendu d'un champ média riche (pilote l'icône, la source
@@ -72,12 +73,13 @@ enum ZMediaFieldMode {
 /// [mediaImageFieldKind]/[mediaFileFieldKind]/[mediaVideoFieldKind] dans
 /// [registry].
 ///
-/// **Point d'enrôlement EXPLICITE (AC6/AR-4)** : à appeler au **bootstrap** du
+/// **Point d'enrôlement EXPLICITE** : à appeler au **bootstrap** du
 /// binding/app — **jamais** un side-effect d'import. Le cœur reste agnostique
 /// (aucune modif de `zcrud_core`). [picker] (à injecter aussi dans
 /// `ZcrudScope.filePicker`) alimente les zones de dépôt ; `null` ⇒ drop-zone
-/// désactivée proprement (AD-10). [thumbnailer]/[opener] par défaut = plugins
-/// réels. [onInit]/[onBuild] sont des hooks de test (SM-1).
+/// désactivée proprement (invariant AD-10). [thumbnailer]/[opener] par défaut
+/// = plugins réels. [onInit]/[onBuild] sont des hooks de test (mesure de la
+/// granularité des rebuilds).
 void registerZMediaFieldWidgets(
   ZWidgetRegistry registry, {
   ZMediaFilePicker? picker,
@@ -153,11 +155,12 @@ class ZMediaFieldWidget extends StatefulWidget {
   /// Façade d'acquisition (`null` ⇒ drop-zone désactivée proprement).
   final ZMediaFilePicker? picker;
 
-  /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
+  /// Hook de test : appelé UNE FOIS en `initState`.
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build (mesure de la granularité des
+  /// rebuilds).
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -188,7 +191,7 @@ class ZMediaFieldWidget extends StatefulWidget {
 }
 
 class _ZMediaFieldWidgetState extends State<ZMediaFieldWidget> {
-  /// Cache des vignettes vidéo MÉMOÏSÉES par `localPath` (MED-2/SM-1/AD-2) : le
+  /// Cache des vignettes vidéo MÉMOÏSÉES par `localPath` (invariant AD-2) : le
   /// `Future` de génération native est calculé **une seule fois par chemin** et
   /// réutilisé à chaque rebuild de la tranche — sinon `FutureBuilder(future:
   /// generate(...))` en `build()` régénérerait la vignette à CHAQUE frappe. Une
@@ -204,7 +207,7 @@ class _ZMediaFieldWidgetState extends State<ZMediaFieldWidget> {
 
   /// `Future` de vignette MÉMOÏSÉ pour [localPath] : première demande ⇒ appel du
   /// seam (`generate`) mis en cache ; demandes suivantes ⇒ même `Future`
-  /// (aucun nouvel appel natif — MED-2). Le thumbnailer est stable (closure),
+  /// (aucun nouvel appel natif). Le thumbnailer est stable (closure),
   /// donc un changement de `widget.thumbnailer` reste hors du chemin de frappe.
   Future<Uint8List?> _thumbFor(String localPath) =>
       _thumbCache.putIfAbsent(localPath, () => widget.thumbnailer.generate(localPath));
@@ -225,13 +228,13 @@ class _ZMediaFieldWidgetState extends State<ZMediaFieldWidget> {
   /// Source d'acquisition selon le mode (image/vidéo → galerie ; fichier →
   /// sélecteur de documents).
   ///
-  /// ⚠️ **LIMITE CONNUE (fp-4-2/LOW)** : en mode [ZMediaFieldMode.video], la
-  /// drop-zone acquiert via `ZFileSource.gallery` (image_picker → `pickImages`)
-  /// — il n'existe PAS encore de chemin `pickVideo` dans le contrat cœur
+  /// **LIMITE CONNUE** : en mode [ZMediaFieldMode.video], la drop-zone
+  /// acquiert via `ZFileSource.gallery` (image_picker → `pickImages`) — il
+  /// n'existe PAS encore de chemin `pickVideo` dans le contrat cœur
   /// `ZFileSource`. Le champ vidéo gère aujourd'hui pleinement la **vignette**
   /// d'un `AppFile` vidéo **préexistant** (valeur de tranche) ; l'ACQUISITION
-  /// vidéo directe depuis la drop-zone est un SUIVI (ajout d'une source vidéo au
-  /// seam/`ZFileSource` côté cœur). Consigné dans `code-review-fp-4-2.md`.
+  /// vidéo directe depuis la drop-zone reste un suivi (ajout d'une source
+  /// vidéo au seam/`ZFileSource` côté cœur).
   ZFileSource get _source =>
       widget.mode == ZMediaFieldMode.file
           ? ZFileSource.filePicker
@@ -421,8 +424,8 @@ class _ZMediaFieldWidgetState extends State<ZMediaFieldWidget> {
   }
 
   /// Vignette (mode vidéo) ou icône dérivée du mode. La vignette vidéo est un
-  /// type **neutre** (`Uint8List`) résolu par le seam (AD-40) ; échec ⇒ icône
-  /// (AD-10).
+  /// type **neutre** (`Uint8List`) résolu par le seam ; échec ⇒ icône
+  /// (invariant AD-10).
   Widget _leading(AppFile file) {
     if (widget.mode != ZMediaFieldMode.video || file.localPath == null) {
       return SizedBox(

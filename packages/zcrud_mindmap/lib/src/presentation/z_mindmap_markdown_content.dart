@@ -1,26 +1,25 @@
 /// `ZMindmapMarkdownContent` — seam rich-text **opt-in** du contenu d'un nœud de
-/// carte mentale (Story ES-7.2, OQ-S5 / AD-28 / AD-4 / AD-7 / AD-10).
+/// carte mentale.
 ///
-/// ⚠️ **ADAPTATEUR MINCE** (R20/R21, patron ES-6.1 `ZSmartNoteReader`) : il
-/// compose `ZMarkdownReader` + `const ZDeltaCodec()` (codec **IDENTITÉ**) de
-/// `zcrud_markdown` **TELS QUELS**. **AUCUN** nouveau codec, **AUCUNE** heuristique
-/// markdown-vs-Delta, **AUCUN** `QuillController`/`Delta` construit à la main.
-/// L'arête `zcrud_mindmap → zcrud_markdown` **préexiste** (aucune nouvelle arête,
-/// AD-1).
+/// **ADAPTATEUR MINCE** : il compose `ZMarkdownReader` + `const ZDeltaCodec()`
+/// (codec **IDENTITÉ**) de `zcrud_markdown` **TELS QUELS**. **AUCUN** nouveau
+/// codec, **AUCUNE** heuristique markdown-vs-Delta, **AUCUN**
+/// `QuillController`/`Delta` construit à la main. L'arête `zcrud_mindmap →
+/// zcrud_markdown` **préexiste** (aucune nouvelle arête, invariant AD-1).
 ///
-/// **OQ-S5 (AD-28)** : `ZMindmapNode.content` **reste texte brut** ; le payload
-/// rich vit dans le **slot AD-4** (`extra[<clé applicative>]` ou `extension`). Ce
-/// builder :
-/// 1. **résout** les ops Delta depuis le slot AD-4 (clé applicative **paramétrée**
+/// `ZMindmapNode.content` **reste texte brut** ; le payload rich vit dans le
+/// **slot d'extension invariant AD-4** (`extra[<clé applicative>]` ou
+/// `extension`). Ce builder :
+/// 1. **résout** les ops Delta depuis le slot (clé applicative **paramétrée**
 ///    — `zcrud_mindmap` n'impose aucune clé réservée) ;
 /// 2. les rend en rich-text via `ZMarkdownReader` (**identité** du codec : le
-///    payload stocké EST la valeur neutre rendue — round-trip R22) ;
+///    payload stocké EST la valeur neutre rendue) ;
 /// 3. **retombe en texte brut** (`content`/`label`) si le slot est absent ou mal
-///    formé (défensif AD-10, **jamais** de throw).
+///    formé (défensif invariant AD-10, **jamais** de throw).
 ///
-/// Le `nodeContentBuilder` **par défaut** de `ZMindmapView` reste texte brut : ce
-/// builder est un **choix explicite de l'app** (IFFD) ⇒ les autres apps ne sont
-/// **pas** forcées de tirer un rendu riche.
+/// Le `nodeContentBuilder` **par défaut** de `ZMindmapView` reste texte brut :
+/// un rendu riche est un **choix explicite de l'application hôte** ⇒ les
+/// autres applications ne sont **pas** forcées de le tirer.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -48,7 +47,7 @@ class ZMindmapMarkdownContent extends StatelessWidget {
     super.key,
   });
 
-  /// Nœud immuable rendu (son `content` reste **texte brut**, OQ-S5).
+  /// Nœud immuable rendu (son `content` reste **texte brut**).
   final ZMindmapNode node;
 
   /// Clé applicative du slot AD-4 (`extra`) portant le payload rich (ops Delta).
@@ -76,7 +75,7 @@ class ZMindmapMarkdownContent extends StatelessWidget {
   /// formé (repli plain-text). **Défensif** (AD-10) : n'exige que la forme
   /// minimale `List<Map<String, dynamic>>` ; toute autre forme ⇒ `null`.
   ///
-  /// ⚠️ **AUCUNE heuristique** de contenu (pas de `startsWith('[')` ni de
+  /// **AUCUNE heuristique** de contenu (pas de `startsWith('[')` ni de
   /// `contains('"insert"')`) : on ne devine pas un format, on lit un slot typé.
   List<Map<String, dynamic>>? _resolveRichOps() {
     final raw = node.extra[slotKey];

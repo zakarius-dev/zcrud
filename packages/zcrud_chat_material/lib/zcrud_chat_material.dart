@@ -1,37 +1,32 @@
-/// Barrel d'API publique de `zcrud_chat_material` — lot K3 (chantier
-/// composer-lex, arbitrage owner S1+S2 du 2026-08-07).
+/// Barrel d'API publique de `zcrud_chat_material`.
 ///
-/// ## Ce que ce paquet est — et ce qu'il n'est PAS
+/// ## Ce que ce paquet est
 ///
-/// C'est le **satellite de skin Material** du composer de chat : les builders
-/// pixel-perfect lex_douane (FAB d'envoi, chips d'effort, badges, chips de
+/// C'est le satellite de **skin Material** du composer de chat : des
+/// builders pixel-perfect (FAB d'envoi, chips d'effort, badges, chips de
 /// pièces jointes, slider de budget labellisé) que le socle `zcrud_chat` —
-/// chromatiquement nu par construction, `material.dart` banni — ne peut pas
-/// porter.
+/// chromatiquement nu par construction — ne porte pas lui-même.
 ///
-/// 🔴 **Des builders sur les créneaux du socle, JAMAIS une vue parallèle**
-/// (motif CR-LEX-78, que ce dépôt a déjà payé : `ZSfAssistConversationView`,
-/// doublon né d'une couture au mauvais niveau). Aucun composer bis, aucune
-/// feuille bis : chaque widget se monte dans `ZChatComposer.trailing/tools/
-/// leading` ou dans `ZChatSettingsSheet.computeBudgetBuilder`, et l'envoi passe
-/// par [ZChatComposerSlot.submit] — le site unique fourni par le socle.
+/// Chaque widget se branche sur un créneau existant du socle
+/// (`ZChatComposer.trailing`/`tools`/`leading`, ou
+/// `ZChatSettingsSheet.computeBudgetBuilder`) : ce paquet ne construit ni
+/// composer ni feuille de réglages parallèles, et l'envoi passe toujours par
+/// `ZChatComposerSlot.submit`, le site unique fourni par le socle.
 ///
-/// 🔴 **Zéro valeur recopiée.** Toute dimension, durée ou couleur d'identité
-/// vient de la chaîne du chrome K2 (`zChatComposerChromeOf` : paramètre >
-/// jeton > référence) ou des constantes de `ZChatComposerReference` ; les rôles
-/// Material (`ColorScheme`) viennent du `Theme` de l'hôte. La garde de source
-/// du paquet interdit tout littéral numérique, `Color(`, `Colors.` et
-/// `Duration(` dans `lib/` — exemption ZÉRO.
+/// ## Ce que ce paquet ne fait pas
 ///
-/// 🔴 **Les défauts lex ne sont pas reproduits** : cibles ≥ 48 dp en géométrie
-/// RENDUE (le retirer-PJ 20 dp de lex est inexprimable ici — la chip entière
-/// retire), directionnel partout (AD-13), et ce paquet **n'anime rien
-/// lui-même** (aucun `Timer`/`AnimationController` : les transitions viennent
-/// des primitives K2 du socle, qui respectent Reduce-Motion — mesuré chez K2).
+/// Aucune dimension, durée ou couleur d'identité n'est codée en dur ici :
+/// tout passe par la chaîne de résolution du chrome (`zChatComposerChromeOf`,
+/// priorité paramètre > jeton de thème > référence) ou par les constantes de
+/// `ZChatComposerReference` ; les rôles Material viennent du `Theme` de
+/// l'hôte. Toute cible tactile est tenue ≥ 48 dp en géométrie rendue et reste
+/// directionnelle (invariant AD-13, RTL) ; ce paquet n'anime rien par
+/// lui-même — les transitions viennent des primitives du socle, qui
+/// respectent déjà le réglage de réduction des animations de la plateforme.
 ///
-/// **AD-4** : chaque builder est indépendant — l'hôte en monte un, plusieurs ou
-/// aucun ; un réglage absent (`slot.settings == null`, catalogue vide…) rend
-/// `null`/rien, jamais une affordance inerte.
+/// Chaque builder est indépendant (invariant AD-4) : l'hôte en monte un,
+/// plusieurs ou aucun ; un réglage absent (contrôleur non fourni, catalogue
+/// vide…) fait rendre `null`, jamais une affordance inerte.
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;

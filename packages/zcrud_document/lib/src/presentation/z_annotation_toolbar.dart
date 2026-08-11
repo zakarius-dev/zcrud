@@ -1,37 +1,37 @@
-/// `ZAnnotationToolbar` — barre d'outils d'annotation ACCESSIBLE (ES-8.2, D2,
-/// FR-S28) : sélection du **kind** (surlignage / sticky note) + palette de
-/// **colorKey**, bâtie AU-DESSUS des modèles déjà livrés (`ZDocumentAnnotation`,
-/// `ZDocumentAnnotationKind`) — **aucun modèle n'est touché**.
+/// `ZAnnotationToolbar` — barre d'outils d'annotation accessible : sélection
+/// du kind (surlignage / note ancrée) + palette de colorKey, bâtie
+/// au-dessus des modèles déjà livrés (`ZDocumentAnnotation`,
+/// `ZDocumentAnnotationKind`) — aucun modèle n'est touché.
 ///
-/// ## Accessibilité WCAG = CŒUR (AD-13 / NFR-S6)
+/// ## Accessibilité WCAG (invariant AD-13)
 ///
-/// - **Couleur JAMAIS seul canal** (D5) : chaque swatch porte (1) un
-///   `Semantics.label` NON vide et DISTINCT (la `colorKey` / son libellé
-///   injecté) et (2) un **marqueur STRUCTUREL non-coloré** — icône « coché »
+/// - **Couleur jamais seul canal** : chaque swatch porte (1) un
+///   `Semantics.label` non vide et distinct (la `colorKey` / son libellé
+///   injecté) et (2) un marqueur structurel non-coloré — icône « coché »
 ///   keyée [kAnnotationSelectedMarkerKey] — dans la swatch sélectionnée
-///   UNIQUEMENT ; chaque kind porte **icône + libellé texte**. Deux options qui
-///   ne diffèrent que par la couleur restent distinguables SANS la voir.
-/// - **Contraste MESURÉ** (D6) : la couleur du marqueur/foreground dessiné SUR
-///   une swatch est **dérivée** du `ColorScheme` (le rôle `onSurface`/`surface`
-///   qui contraste le plus avec le fond résolu) — **jamais** un `Colors.white`
+///   uniquement ; chaque kind porte icône + libellé texte. Deux options qui
+///   ne diffèrent que par la couleur restent distinguables sans la voir.
+/// - **Contraste mesuré** : la couleur du marqueur/foreground dessiné sur
+///   une swatch est dérivée du `ColorScheme` (le rôle `onSurface`/`surface`
+///   qui contraste le plus avec le fond résolu) — jamais un `Colors.white`
 ///   en dur (qui serait invisible sur une swatch claire).
-/// - **Cibles ≥ 48 dp**, **`Semantics` explicites** (`button`/`label`/
-///   `selected`), rendu **directionnel** (`EdgeInsetsDirectional`,
+/// - **Cibles ≥ 48 dp**, `Semantics` explicites (`button`/`label`/
+///   `selected`), rendu directionnel (`EdgeInsetsDirectional`,
 ///   `Wrap`/`WrapAlignment.start` mirrorés en RTL).
 ///
-/// ## Réactivité Flutter-native (AD-2/AD-15, SM-1)
+/// ## Réactivité Flutter-native (invariants AD-2/AD-15)
 ///
 /// L'état vit dans un [ZAnnotationToolController] (owned/injected). Chaque
-/// tranche est scopée par un `ValueListenableBuilder` : sélectionner une couleur
-/// ne reconstruit PAS la rangée des kinds, et inversement. AUCUN `setState`
-/// d'échelle toolbar, AUCUN gestionnaire d'état tiers.
+/// tranche est scopée par un `ValueListenableBuilder` : sélectionner une
+/// couleur ne reconstruit pas la rangée des kinds, et inversement. Aucun
+/// `setState` d'échelle toolbar, aucun gestionnaire d'état tiers.
 ///
-/// ## Couleur/libellés INJECTÉS (FR-26/AD-13)
+/// ## Couleur/libellés injectés (invariant AD-13)
 ///
 /// La `Color` d'une swatch vient de `ZcrudScope.colorKeyResolver`
-/// (`zResolveColorKeyOrSlot`, repli total sur le `ColorScheme` courant, AD-10) —
-/// **jamais** un hex en dur. Les libellés (kind, couleur) viennent de
-/// `ZcrudScope.labels` via `label(context, key, fallback)`.
+/// (`zResolveColorKeyOrSlot`, repli total sur le `ColorScheme` courant,
+/// invariant AD-10) — jamais un hex en dur. Les libellés (kind, couleur)
+/// viennent de `ZcrudScope.labels` via `label(context, key, fallback)`.
 library;
 
 import 'package:flutter/material.dart';
@@ -45,12 +45,14 @@ import 'z_annotation_tool_controller.dart';
 class ZAnnotationToolbar extends StatefulWidget {
   /// Construit la toolbar.
   ///
-  /// - [controller] : controller INJECTÉ (l'appelant en garde la propriété/le
-  ///   cycle de vie) ; `null` ⇒ la toolbar en possède un et le `dispose` ;
+  /// - [controller] : controller injecté (l'appelant en garde la
+  ///   propriété/le cycle de vie) ; `null` ⇒ la toolbar en possède un et le
+  ///   `dispose` ;
   /// - [palette] : registre borné de `colorKey` proposées (défaut
   ///   `ZColorPalette.defaultStudy()`) ;
-  /// - [onKindSelected] / [onColorSelected] : callbacks de remontée (`null` =
-  ///   action absente, AD-4) — la `colorKey` remonte **BRUTE** (`String`).
+  /// - [onKindSelected] / [onColorSelected] : callbacks de remontée (`null`
+  ///   = action absente, invariant AD-4) — la `colorKey` remonte brute
+  ///   (`String`).
   const ZAnnotationToolbar({
     this.controller,
     this.palette = const ZColorPalette.defaultStudy(),
@@ -64,24 +66,25 @@ class ZAnnotationToolbar extends StatefulWidget {
   /// Controller injecté (owned/injected) ; `null` ⇒ possédé par la toolbar.
   final ZAnnotationToolController? controller;
 
-  /// Palette de `colorKey` proposées (injectée, jamais une couleur concrète).
+  /// Palette de `colorKey` proposées (injectée, jamais une couleur
+  /// concrète).
   final ZColorPalette palette;
 
   /// Remontée du `kind` sélectionné (`null` = non câblé).
   final ValueChanged<ZDocumentAnnotationKind>? onKindSelected;
 
-  /// Remontée de la `colorKey` BRUTE sélectionnée (`null` = non câblé).
+  /// Remontée de la `colorKey` brute sélectionnée (`null` = non câblé).
   final ValueChanged<String>? onColorSelected;
 
-  /// Seam de test (identité du controller au `build` — AC8/R20). Reçoit le
-  /// controller RÉELLEMENT utilisé à chaque `build` : recréer le controller
-  /// dans `build` changerait l'identité observée.
+  /// Seam de test (identité du controller au `build`). Reçoit le
+  /// controller réellement utilisé à chaque `build` : recréer le
+  /// controller dans `build` changerait l'identité observée.
   @visibleForTesting
   final ValueChanged<ZAnnotationToolController>? onDebugBuild;
 
-  /// Seam de test (compteur de rebuild de la rangée des kinds — AC8/SM-1).
-  /// Appelé à CHAQUE (re)build de la tranche `selectedKind` : un `setState`
-  /// d'échelle toolbar le ferait grimper quand on change la COULEUR.
+  /// Seam de test (compteur de rebuild de la rangée des kinds). Appelé à
+  /// chaque (re)build de la tranche `selectedKind` : un `setState` d'échelle
+  /// toolbar le ferait grimper quand on change la couleur.
   @visibleForTesting
   final VoidCallback? onDebugKindRowBuild;
 
@@ -113,14 +116,14 @@ class _ZAnnotationToolbarState extends State<ZAnnotationToolbar> {
 
   @override
   Widget build(BuildContext context) {
-    // Seam d'identité (AC8/R20) : reporte le controller EN COURS D'USAGE.
+    // Seam d'identité : reporte le controller en cours d'usage.
     widget.onDebugBuild?.call(_controller);
     final theme = ZcrudTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // ── Tranche « kind » — n'écoute QUE selectedKind (SM-1) ──────────────
+        // ── Tranche « kind » — n'écoute QUE selectedKind. ────────────────────
         ValueListenableBuilder<ZDocumentAnnotationKind>(
           valueListenable: _controller.selectedKind,
           builder: (context, selectedKind, _) {
@@ -145,7 +148,7 @@ class _ZAnnotationToolbarState extends State<ZAnnotationToolbar> {
           },
         ),
         SizedBox(height: theme.gapM),
-        // ── Tranche « colorKey » — n'écoute QUE selectedColorKey (SM-1) ──────
+        // ── Tranche « colorKey » — n'écoute QUE selectedColorKey. ────────────
         ValueListenableBuilder<String>(
           valueListenable: _controller.selectedColorKey,
           builder: (context, selectedColorKey, _) {
@@ -176,7 +179,7 @@ class _ZAnnotationToolbarState extends State<ZAnnotationToolbar> {
 }
 
 /// Bouton d'un `kind` : icône + libellé (canal non-coloré), cible ≥ 48 dp,
-/// `Semantics` explicite (D5/D7).
+/// `Semantics` explicite.
 class _KindButton extends StatelessWidget {
   const _KindButton({
     required this.kind,
@@ -226,8 +229,8 @@ class _KindButton extends StatelessWidget {
   }
 }
 
-/// Swatch d'une `colorKey` : fond coloré INJECTÉ + libellé sémantique distinct +
-/// marqueur STRUCTUREL de sélection (D5/D6/D7). Cible ≥ 48 dp.
+/// Swatch d'une `colorKey` : fond coloré injecté + libellé sémantique
+/// distinct + marqueur structurel de sélection. Cible ≥ 48 dp.
 class _Swatch extends StatelessWidget {
   const _Swatch({
     required this.colorKey,
@@ -246,13 +249,13 @@ class _Swatch extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final theme = ZcrudTheme.of(context);
-    // Couleur INJECTÉE (FR-26) : seam host → repli ColorScheme (AD-10), jamais
-    // un hex en dur.
+    // Couleur injectée : seam hôte → repli ColorScheme (invariant AD-10),
+    // jamais un hex en dur.
     final pair = zResolveColorKeyOrSlot(context, colorKey, slotIndex: slotIndex);
-    // Marqueur DÉRIVÉ (D6/AD-13) : le rôle du ColorScheme qui contraste le plus
-    // avec le fond — jamais fixé (`Colors.white` interdit).
+    // Marqueur dérivé : le rôle du ColorScheme qui contraste le plus avec
+    // le fond — jamais fixé (`Colors.white` interdit).
     final markerColor = _contrastingForeground(pair.color, scheme);
-    // Canal NON-coloré redondant (D5) : libellé distinct par colorKey (injecté).
+    // Canal non-coloré redondant : libellé distinct par colorKey (injecté).
     final text = label(
       context,
       'zcrud.annotation.color.$colorKey',
@@ -280,8 +283,8 @@ class _Swatch extends StatelessWidget {
                   child: const SizedBox(width: 48, height: 48),
                 ),
                 if (selected)
-                  // Marqueur STRUCTUREL non-coloré (R24) : présent UNIQUEMENT
-                  // dans la swatch sélectionnée.
+                  // Marqueur structurel non-coloré : présent uniquement dans
+                  // la swatch sélectionnée.
                   Icon(
                     Icons.check,
                     key: const ValueKey<String>(kAnnotationSelectedMarkerKey),
@@ -297,7 +300,7 @@ class _Swatch extends StatelessWidget {
   }
 }
 
-/// Icône d'un `kind` (canal non-coloré, D5). `IconData` — jamais une `Color`.
+/// Icône d'un `kind` (canal non-coloré). `IconData` — jamais une `Color`.
 IconData _kindIcon(ZDocumentAnnotationKind kind) {
   switch (kind) {
     case ZDocumentAnnotationKind.highlight:
@@ -318,7 +321,7 @@ double _wcagContrastRatio(Color a, Color b) {
 }
 
 /// Choisit, entre les rôles `onSurface` et `surface` du [scheme], celui qui
-/// **contraste le plus** avec [background] — foreground DÉRIVÉ, jamais fixé.
+/// contraste le plus avec [background] — foreground dérivé, jamais fixé.
 Color _contrastingForeground(Color background, ColorScheme scheme) {
   final onSurface = scheme.onSurface;
   final surface = scheme.surface;

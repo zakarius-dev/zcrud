@@ -1,31 +1,31 @@
-/// Normalisation du fil textuel d'IFFD vers les événements **typés** du kernel
-/// — CHAT-6.
+/// Normalisation du fil textuel encodé selon la convention IFFD vers les
+/// événements typés du kernel.
 ///
-/// `ZIffdLexer` découpe ; ce fichier **décide**. Il transforme des segments en
-/// `ZResult<ZChatStreamEvent>` : `Right(ZChatTokenEvent)` pour la réponse,
-/// `Right(ZChatThinkingEvent)` pour la trace, `Right(ZChatCustomStreamEvent)`
-/// pour une charge utile structurée, et **`Left(ZChatProviderFailure)` pour
-/// tout diagnostic d'échec** — jamais un message de conversation (AD-5).
+/// `ZIffdLexer` découpe ; ce fichier décide. Il transforme des segments en
+/// `ZResult<ZChatStreamEvent>` : un événement de jeton pour la réponse, un
+/// événement de raisonnement pour la trace, un événement personnalisé pour
+/// une charge utile structurée, et un échec typé pour tout diagnostic
+/// d'erreur — jamais un message de conversation (invariant AD-5).
 ///
-/// ## 🔴 Les cinq décisions face à un flux malformé
+/// ## Les décisions face à un flux malformé
 ///
-/// | Cas | Décision | Pourquoi |
-/// |---|---|---|
-/// | sentinelle **jamais refermée** | le contenu est émis **au fil de l'eau**, aucun événement n'attend une fermeture | IFFD garde `reasoning = true` pour toujours (`iffd_ai_repository_impl.dart:140-155`) et **jette** tout le reste du tour ; ici rien ne dépend d'un `</…>` qui n'arrivera pas |
-/// | balise **fermante orpheline** | ignorée, jamais rendue comme texte | l'afficher est le défaut d'IFFD (cinq nettoyages par regex, divergents) ; la traiter comme ouvrante inverserait le canal |
-/// | balise **inconnue** | canal `thinking` par défaut, aucune exception | le backend ajoute des balises au fil de ses agents ; le repli « réponse » ferait ré-apparaître du raisonnement dans le corps affiché |
-/// | **JSON illisible** dans `<FINAL_ANSWER_PAYLOAD>` | événement ouvert portant le texte **brut** sous `raw` | AD-10 : un payload corrompu ne fait jamais échouer le tour, et n'est pas perdu |
-/// | **flux tronqué** en plein milieu | `close()` vide la ligne partielle et la charge utile partielle | rien ne reste captif du décodeur |
+/// | Cas | Décision |
+/// |---|---|
+/// | sentinelle jamais refermée | le contenu est émis au fil de l'eau, aucun événement n'attend une fermeture qui n'arrivera pas |
+/// | balise fermante orpheline | ignorée, jamais rendue comme texte, jamais traitée comme ouvrante |
+/// | balise inconnue | canal de raisonnement par défaut, aucune exception — le repli vers la réponse ferait réapparaître du raisonnement dans le corps affiché |
+/// | JSON illisible dans la charge utile finale | événement ouvert portant le texte brut, invariant AD-10 : un payload corrompu ne fait jamais échouer le tour |
+/// | flux tronqué en plein milieu | `close()` vide la ligne partielle et la charge utile partielle : rien ne reste captif du décodeur |
 ///
-/// ## 🔴 Pourquoi aucun `sequenceId` n'est fabriqué
+/// ## Pourquoi aucun identifiant de séquence n'est fabriqué
 ///
-/// `ZChatStreamEvent.sequenceId` sert à **reprendre** un flux coupé sans rejouer
-/// le tour (`ZChatRequestToken.resumeFrom`). Le fil d'IFFD n'en transporte
-/// aucun et son serveur n'a aucun point de reprise : numéroter les événements
-/// ici ferait croire à l'hôte que `resumeFrom` est honoré, alors qu'une
-/// reconnexion rejouerait le tour entier (message dupliqué, quota consommé deux
-/// fois). Les événements sortent donc avec `sequenceId == null` — l'aveu exact
-/// de ce que le transport sait faire.
+/// `ZChatStreamEvent.sequenceId` sert à reprendre un flux coupé sans rejouer
+/// le tour. Ce fil n'en transporte aucun et son serveur n'a aucun point de
+/// reprise : numéroter les événements ici ferait croire à l'hôte qu'une
+/// reprise est honorée, alors qu'une reconnexion rejouerait le tour entier
+/// (message dupliqué, quota consommé deux fois). Les événements sortent donc
+/// avec `sequenceId == null` — l'aveu exact de ce que le transport sait
+/// faire.
 library;
 
 import 'dart:convert';
@@ -45,10 +45,11 @@ class _ZIffdScope {
   final ZIffdChannel channel;
 }
 
-/// Décodeur **incrémental** et sans état partagé : une instance par requête.
+/// Décodeur incrémental et sans état partagé : une instance par requête.
 ///
-/// Pur-Dart, aucune dépendance de transport : l'hôte lui pousse les fragments
-/// qu'il a lui-même extraits du SSE (AD-11/AD-12).
+/// Pur-Dart, aucune dépendance de transport : l'hôte lui pousse les
+/// fragments qu'il a lui-même extraits de son flux (invariants AD-11,
+/// AD-12).
 class ZIffdStreamNormalizer {
   /// Construit un décodeur pour un tour.
   ZIffdStreamNormalizer();
@@ -60,8 +61,9 @@ class ZIffdStreamNormalizer {
   /// Ligne en cours de constitution sur le canal courant.
   String _pending = '';
 
-  /// `true` quand la ligne courante du canal `answer` est déjà **acquittée**
-  /// comme n'étant pas une erreur en clair : le reste part sans retenue (SM-1).
+  /// `true` quand la ligne courante du canal `answer` est déjà acquittée
+  /// comme n'étant pas une erreur en clair : le reste part sans retenue
+  /// supplémentaire.
   bool _lineReleased = false;
 
   ZIffdChannel get _channel =>
@@ -143,11 +145,11 @@ class ZIffdStreamNormalizer {
     }
   }
 
-  /// Sur le canal `answer`, relâche le début de ligne dès qu'il est **certain**
+  /// Sur le canal `answer`, relâche le début de ligne dès qu'il est certain
   /// qu'il ne s'agit pas d'une erreur en clair.
   ///
   /// Sans cela, chaque ligne de la réponse attendrait son `\n` avant d'être
-  /// affichée — le contraire d'un rendu au fil de l'eau (SM-1). Avec cela, la
+  /// affichée — le contraire d'un rendu au fil de l'eau. Avec cela, la
   /// retenue ne dure que le temps de comparer les premiers caractères au
   /// préfixe [kZIffdPlainErrorPrefix].
   void _maybeReleaseAnswerPrefix(List<ZResult<ZChatStreamEvent>> out) {
@@ -178,10 +180,9 @@ class ZIffdStreamNormalizer {
     _lineReleased = false;
     if (line.isEmpty) return;
 
-    // Une erreur en clair est un `Left` typé sur TOUS les canaux : le serveur
-    // écrit `⚠️ Erreur <Agent> : …` via le même canal que la réponse
-    // (`synthesizer_executor.py:225`, `evaluator_executor.py:151`,
-    // `supervisor_executor.py:118`), sans garantie d'être sous une balise.
+    // Une erreur en clair est un `Left` typé sur tous les canaux : le
+    // serveur peut écrire son préfixe d'erreur via le même canal que la
+    // réponse, sans garantie d'être sous une balise.
     if (!released && line.trimLeft().startsWith(kZIffdPlainErrorPrefix)) {
       out.add(
         Left<ZFailure, ZChatStreamEvent>(

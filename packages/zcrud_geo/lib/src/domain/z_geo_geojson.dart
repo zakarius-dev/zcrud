@@ -1,17 +1,11 @@
-/// Import/export **GeoJSON** (RFC 7946) des valeurs géo neutres
-/// (enrichissement §2 « valeur haute / coût faible », AD-1/AD-10/AD-14).
+/// Import/export **GeoJSON** (RFC 7946) des valeurs géo neutres.
 ///
-/// ## Périmètre mesuré (pas cru)
+/// Cette bibliothèque expose des fonctions pures de conversion
+/// (`toGeoJson` / [ZGeoJson.fromGeoJsonSafe]) — aucun widget, aucune UI :
+/// l'application hôte branche ses propres actions (sélecteur de fichier,
+/// partage) sur ces fonctions.
 ///
-/// Le legacy DODLP n'a **AUCUN** code GeoJSON : grep négatif rejoué sur tout
-/// `data_crud/` (`grep -rn -i "geojson\|kml"` → 0 occurrence géo ; les boutons
-/// ↑/↓ visibles sur la capture device ne correspondent à aucun code source
-/// mesurable dans `geofence_field.dart`). Il n'y a donc **rien à copier au
-/// niveau champ** : cette bibliothèque expose l'**API seulement** (`toGeoJson`
-/// / [ZGeoJson.fromGeoJsonSafe]) — l'app hôte branche ses propres boutons
-/// (file picker / partage) sur ces fonctions pures.
-///
-/// ## ⚠️ Ordre des coordonnées (piège classique, gardé spécifiquement)
+/// ## Ordre des coordonnées (piège classique, documenté spécifiquement)
 ///
 /// RFC 7946 §3.1.1 : une position GeoJSON est **`[longitude, latitude]`** —
 /// l'INVERSE de l'ordre d'affichage courant « lat, lng » et des clés
@@ -102,7 +96,7 @@ extension ZGeoShapeGeoJson on ZGeoShape {
   /// Géométrie GeoJSON. Par défaut `Polygon` : anneau extérieur **fermé**
   /// (1er = dernier) + trous de ≥3 sommets (chacun fermé). [asLineString] :
   /// `true` → `LineString` (tracé ouvert — la forme zcrud ne porte pas
-  /// l'ouverture, c'est la géométrie du champ qui la connaît, DP-21).
+  /// l'ouverture, c'est la géométrie du champ qui la connaît).
   Map<String, Object?> toGeoJson({bool asLineString = false}) {
     if (asLineString) {
       return <String, Object?>{
@@ -136,8 +130,9 @@ extension ZGeoCircleGeoJson on ZGeoCircle {
       };
 }
 
-/// Import GeoJSON **défensif et discriminé** (pendant RFC du routeur legacy
-/// `ZGeoValue.fromMapSafe`). Espace de noms statique : non instanciable.
+/// Import GeoJSON **défensif et discriminé** — le pendant RFC 7946 du
+/// routeur [ZGeoValue.fromMapSafe]. Espace de noms statique : non
+/// instanciable.
 abstract final class ZGeoJson {
   /// Parse un GeoJSON (`Map`, ou `String` JSON) en valeur zcrud neutre :
   /// [ZGeoPoint] (`Point`), [ZGeoShape] (`Polygon`/`LineString`), [ZGeoCircle]

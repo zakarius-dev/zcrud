@@ -16,7 +16,7 @@
 ///
 /// **paramètre > jeton `ZcrudTheme.studySession*` > défaut-référence**
 ///
-/// ⚠️ **Les jetons `studySession*` n'existent PAS ENCORE** dans `ZcrudTheme`
+/// **Les jetons `studySession*` n'existent PAS ENCORE** dans `ZcrudTheme`
 /// (mesuré : `grep -n "studySession"` sur `z_theme.dart` → vide ; `zcrud_core`
 /// appartient à un autre lot). La chaîne effective d'aujourd'hui est donc
 /// **paramètre > référence**, et [zStudySessionChromeOf] est écrit de sorte que
@@ -26,7 +26,7 @@
 ///
 /// ## FR-26 — matière en rôles, TOUJOURS
 ///
-/// 🔴 **AUCUNE couleur ici.** Les seules valeurs figées sont des DIMENSIONS,
+/// **AUCUNE couleur ici.** Les seules valeurs figées sont des DIMENSIONS,
 /// des proportions et des scalaires. Chaque couleur du rendu de référence est
 /// un rôle du `ColorScheme` courant, résolu au rendu par
 /// [zStudySessionChromeOf] : séparateur `outlineVariant`, texte secondaire
@@ -53,7 +53,7 @@ abstract final class ZStudySessionReference {
   /// Part verticale de la **zone de saisie/notation** (`Expanded(flex: 2)` —
   /// `study_session_demo_screen.dart:506`).
   ///
-  /// 🔴 La saisie et la notation sont des **FRÈRES** de la pile, jamais des
+  /// La saisie et la notation sont des **FRÈRES** de la pile, jamais des
   /// descendants : un `TextField` sous le `PanGestureRecognizer` du swiper fait
   /// se battre le placement du curseur contre la navigation (cf. dartdoc de
   /// `ZSessionCardSwiper`, § « L'ARÈNE DES GESTES »). Ces deux flex sont donc

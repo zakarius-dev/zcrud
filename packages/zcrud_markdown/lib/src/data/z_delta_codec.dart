@@ -1,5 +1,5 @@
 /// `ZDeltaCodec` — codec **identité** (format persisté = Delta JSON), la voie
-/// interne d'E6-1 factorisée (AD-7). Round-trip **sans perte** (AC2).
+/// interne factorisée (AD-7). Round-trip **sans perte**.
 library;
 
 import 'dart:convert';
@@ -14,9 +14,9 @@ import 'delta_neutral_ops.dart';
 /// - [decode] : `String` JSON / `List` Delta / valeur corrompue → ops neutres,
 ///   **DÉFENSIF** (AD-10 : `[]` sur corrompu, jamais de throw).
 ///
-/// Round-trip **IDENTITÉ** : `jsonDecode(encode(ops)) == ops` exactement (y.c.
-/// ops embed opaques — AC9). Avec ce codec, persisté == tranche (Delta JSON) ⇒
-/// **rétrocompatibilité stricte** avec E6-1.
+/// Round-trip **IDENTITÉ** : `jsonDecode(encode(ops)) == ops` exactement, y.c.
+/// pour des ops embed opaques. Avec ce codec, persisté == tranche (Delta
+/// JSON) ⇒ **rétrocompatibilité stricte** avec un contenu déjà en Delta.
 final class ZDeltaCodec implements ZCodec {
   /// Codec identité `const` (aucun état).
   const ZDeltaCodec();

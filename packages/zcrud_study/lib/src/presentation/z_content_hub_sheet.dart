@@ -8,7 +8,7 @@
 /// désactivée** (`enabled == false`) **OU sans callback** (`onTap == null`) ⇒
 /// **non actionnable** (AD-4 — capacité absente, jamais un no-op silencieux).
 ///
-/// ## 🔴 CR-IFFD-65 — le DÉFAUT a changé, et c'est une RUPTURE DE RENDU
+/// ## CR-IFFD-65 — le DÉFAUT a changé, et c'est une RUPTURE DE RENDU
 ///
 /// La CR a mesuré quatre manques : pas de **groupement**, pas d'**identité
 /// visuelle** par entrée, pas de **mise en avant** (détournée par `hint` chez
@@ -18,7 +18,7 @@
 /// badge, entrées en cartes, chevron, **hauteur d'item de référence assumée**,
 /// **défilement attendu**.
 ///
-/// ⚠️ **Cette décision CONTREDIT délibérément la CR** (§ « ce que nous ne
+/// **Cette décision CONTREDIT délibérément la CR** (§ « ce que nous ne
 /// demandons PAS » : « la densité du socle est meilleure […] nous ne demandons
 /// pas de le défaire »). L'argument d'ÉCHELLE de la CR n'est **pas réfuté** —
 /// à douze types la mise en page de référence demande plusieurs écrans — il est
@@ -26,7 +26,7 @@
 /// (paramètre) ou `ZcrudTheme.contentHubDensity` (jeton) restitue exactement la
 /// densité d'avant. La densité n'a pas disparu ; elle a cessé d'être le défaut.
 ///
-/// 🔴 **Tout hôte PASSIF voit son rendu changer** sans avoir rien demandé.
+/// **Tout hôte PASSIF voit son rendu changer** sans avoir rien demandé.
 /// C'est assumé et déclaré, au même titre que `studyCardElevation: 1` côté
 /// IFFD : *écart de conception, pas une parité*.
 ///
@@ -94,7 +94,7 @@ class ZContentHubEntry {
 
   /// Aide/indice LOCALISÉ INJECTÉ (optionnel). `null` ⇒ **absent** de l'arbre.
   ///
-  /// ⚠️ **Ce n'est PAS le créneau d'une mise en avant** : la CR déclarait
+  /// **Ce n'est PAS le créneau d'une mise en avant** : la CR déclarait
   /// détourner `hint` pour y écrire « Recommandé », faute de mieux. Le créneau
   /// existe désormais — [badgeLabel] — et le détournement est inutile.
   final String? hint;
@@ -114,7 +114,7 @@ class ZContentHubEntry {
   /// Clé d'identité **OPAQUE** et STABLE de l'entrée (`'flashcards.ai'`…), qui
   /// gouverne son créneau de teinte. `null` ⇒ dérivée du [label].
   ///
-  /// 🔴 **Jamais un index d'affichage** : c'est ce qui rend la teinte STABLE
+  /// **Jamais un index d'affichage** : c'est ce qui rend la teinte STABLE
   /// quand une application **insère un type au milieu** (« non mesuré » n°4 de
   /// la CR). Une clé explicite la rend en outre stable **d'une langue à
   /// l'autre**, ce que le repli par libellé ne garantit pas.
@@ -123,7 +123,7 @@ class ZContentHubEntry {
   /// Libellé de **MISE EN AVANT** LOCALISÉ INJECTÉ (« Recommandé »…) —
   /// CR-IFFD-65 ③. `null` ⇒ badge **ABSENT** de l'arbre (AD-4).
   ///
-  /// 🔴 **Requis ou nullable, JAMAIS un défaut littéral** : `badgeLabel =
+  /// **Requis ou nullable, JAMAIS un défaut littéral** : `badgeLabel =
   /// 'Recommandé'` fuirait en français dans une application anglaise sans voie
   /// d'override (règle « défaut de constructeur en dur » de la garde de
   /// source). Le canal est **textuel donc accessible** — c'est l'exigence
@@ -158,7 +158,7 @@ class ZContentHubSection {
   /// en-tête** : l'intitulé est **absent de l'arbre** (AD-4), jamais un texte
   /// vide réservant de la place.
   ///
-  /// 🔴 Nullable **sans défaut littéral** (FR-26) — le socle ne connaît ni
+  /// Nullable **sans défaut littéral** (FR-26) — le socle ne connaît ni
   /// « Flashcards » ni « Documents ».
   final String? title;
 
@@ -226,7 +226,7 @@ class ZContentHubSheet extends StatelessWidget {
   /// Densité du rendu. `null` ⇒ jeton `contentHubDensity`, puis référence
   /// ([ZContentHubDensity.comfortable] — le rendu legacy).
   ///
-  /// 🔴 [ZContentHubDensity.compact] **restitue la densité d'avant
+  /// [ZContentHubDensity.compact] **restitue la densité d'avant
   /// CR-IFFD-65** : une entrée = une ligne au plancher de 48 dp, glyphe nu,
   /// ni carte ni chevron, une seule colonne. C'est la réponse à l'argument
   /// d'échelle de la CR.
@@ -425,7 +425,7 @@ class ZContentHubSheet extends StatelessWidget {
       container: true,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          // ⚠️ MESURÉ, contre un « non mesuré » de la CR : le legacy passe à
+          // MESURÉ, contre un « non mesuré » de la CR : le legacy passe à
           // DEUX colonnes dès 600 lp de large (`_buildContentGrid` l.376-377).
           // La CR avait retiré l'écart de grille en le déclarant non comparé ;
           // le code, lui, ne laisse aucune ambiguïté.
@@ -477,7 +477,7 @@ class ZContentHubSheet extends StatelessWidget {
                                 crossAxisCount: columns,
                                 mainAxisSpacing: chrome.spacing,
                                 crossAxisSpacing: chrome.spacing,
-                                // ⚠️ « Non mesuré » n°2 de la CR (facteur
+                                // « Non mesuré » n°2 de la CR (facteur
                                 // d'échelle de texte) : une cellule de grille
                                 // a une hauteur IMPOSÉE — la figer à 112
                                 // déborderait dès que l'utilisateur agrandit
@@ -510,7 +510,7 @@ class ZContentHubSheet extends StatelessWidget {
 /// Enveloppe [child] de sorte que le glyphe [icon] soit **retourné en RTL**,
 /// même s'il ne porte pas `IconData.matchTextDirection`.
 ///
-/// 🔴 **MESURÉ, et il INFIRME le grief RTL porté contre le chevron legacy** :
+/// **MESURÉ, et il INFIRME le grief RTL porté contre le chevron legacy** :
 /// le widget `Icon` **n'a aucune** propriété `matchTextDirection` — elle vit
 /// sur `IconData`, et `Icons.arrow_forward_ios` la porte **déjà à `true`**
 /// (`icons.dart:2510-2514` du SDK, vérifié sur pièces). Le chevron legacy se
@@ -520,7 +520,7 @@ class ZContentHubSheet extends StatelessWidget {
 /// chevron qui ne la porte pas, et l'affordance pointerait alors à l'envers en
 /// arabe. Ce repli le rattrape.
 ///
-/// ⚠️ **Pourquoi PAS reconstruire un `IconData`** : ses trois premiers
+/// **Pourquoi PAS reconstruire un `IconData`** : ses trois premiers
 /// paramètres sont `@mustBeConst` dans le SDK — un `IconData` fabriqué à
 /// l'exécution **casse le tree-shaking des icônes** en release. La correction
 /// passe donc par une transformation de RENDU, jamais par un glyphe forgé.
@@ -535,7 +535,7 @@ Widget zMirrorIfNeeded(
 
 /// Créneau **DÉTERMINISTE** de [seed] dans une palette de [count] teintes.
 ///
-/// 🔴 **Jamais un index d'affichage** — c'est toute la différence mesurée par
+/// **Jamais un index d'affichage** — c'est toute la différence mesurée par
 /// la garde d'insertion : ajouter un type au milieu de la liste ne doit
 /// **déplacer aucune teinte** des entrées voisines (« non mesuré » n°4 de la
 /// CR). Une fonction de la seule identité de l'entrée le garantit.
@@ -632,7 +632,7 @@ class _ZSectionHeader extends StatelessWidget {
 /// Une entrée rendue au dessin de référence — carte teintable, pastille
 /// circulaire, badge textuel, chevron d'affordance.
 ///
-/// 🔴 **UN SEUL `InkWell` pour toute la carte** (patron legacy) : la pastille
+/// **UN SEUL `InkWell` pour toute la carte** (patron legacy) : la pastille
 /// (40 dp) n'est **jamais** une cible tactile indépendante, elle passerait
 /// sinon sous le plancher de 48 dp (AD-13/NFR-S6).
 class _ZContentHubTile extends StatelessWidget {
@@ -660,7 +660,7 @@ class _ZContentHubTile extends StatelessWidget {
         ? _buildCard(context, material, accent, itemSurface)
         : _buildCompact(context, material, accent, itemSurface);
 
-    // 🔴 **Pas de `MergeSemantics` ici, et c'est MESURÉ.** On en avait posé un
+    // **Pas de `MergeSemantics` ici, et c'est MESURÉ.** On en avait posé un
     // « pour fusionner le badge dans le bouton » : injection R3 à l'appui, le
     // retirer ne change **rien** au nœud rendu (même libellé annoncé, même
     // `childrenCount`). Le badge n'est pas une FRONTIÈRE sémantique (aucun

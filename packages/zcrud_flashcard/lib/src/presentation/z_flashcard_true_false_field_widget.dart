@@ -1,9 +1,10 @@
-/// `ZTrueFalseFieldWidget` — sélecteur **vrai/faux** (`isTrue`), servi via
-/// `ZWidgetRegistry` (Story E9-5, AC1/AD-2/AD-4/AD-13/AD-10/FR-26).
+/// `ZTrueFalseFieldWidget` — sélecteur vrai/faux (`isTrue`), servi via
+/// `ZWidgetRegistry`.
 ///
-/// Émet un `bool` via `ctx.onChanged` ; défensif (AD-10) : une valeur illisible
-/// retombe sur « aucune sélection » (`null`). `StatefulWidget` sans contrôleur
-/// de texte (AD-2) : lit `ctx.value`, écrit via `ctx.onChanged`.
+/// Émet un `bool` via `ctx.onChanged` ; défensif (invariant AD-10) : une
+/// valeur illisible retombe sur « aucune sélection » (`null`).
+/// `StatefulWidget` sans contrôleur de texte (invariant AD-2) : lit
+/// `ctx.value`, écrit via `ctx.onChanged`.
 library;
 
 import 'package:flutter/material.dart';
@@ -14,8 +15,8 @@ import 'z_flashcard_option_tile.dart';
 
 /// Sélecteur vrai/faux (widget d'édition additif).
 class ZTrueFalseFieldWidget extends StatefulWidget {
-  /// Construit le sélecteur pour [ctx]. [trueLabel]/[falseLabel] surchargent les
-  /// libellés (défaut FR).
+  /// Construit le sélecteur pour [ctx]. [trueLabel]/[falseLabel] surchargent
+  /// les libellés (défaut FR).
   const ZTrueFalseFieldWidget({
     required this.ctx,
     this.trueLabel = 'Vrai',
@@ -28,17 +29,17 @@ class ZTrueFalseFieldWidget extends StatefulWidget {
   /// Contexte du champ (`ctx.value` = `bool?` courant ; `ctx.onChanged`).
   final ZFieldWidgetContext ctx;
 
-  /// Libellé de l'option « vrai » (paramétrable — AD-4).
+  /// Libellé de l'option « vrai » (paramétrable, invariant AD-4).
   final String trueLabel;
 
-  /// Libellé de l'option « faux » (paramétrable — AD-4).
+  /// Libellé de l'option « faux » (paramétrable, invariant AD-4).
   final String falseLabel;
 
-  /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
+  /// Hook de test : appelé une fois en `initState`.
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build.
   @visibleForTesting
   final VoidCallback? onBuild;
 

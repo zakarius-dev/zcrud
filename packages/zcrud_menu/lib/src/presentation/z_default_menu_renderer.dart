@@ -1,13 +1,11 @@
-/// [ZDefaultMenuRenderer] — repli SDK, ZÉRO dépendance tierce (AD-57, CHAT-4).
+/// [ZDefaultMenuRenderer] — repli SDK, ZÉRO dépendance tierce.
 ///
-/// 🔴 **Ce repli est un PORT FIDÈLE de `ZItemActionsMenu`**
-/// (`packages/zcrud_study/lib/src/presentation/z_item_actions_menu.dart`), pas
-/// une paraphrase appauvrie. Les décisions qui y ont été payées cher sont
-/// REPRISES telles quelles, avec leur motif :
+/// Ce repli encode des décisions d'accessibilité et de composition non
+/// évidentes, reprises ici avec leur motif :
 /// * `Semantics(label:) + excludeSemantics: true` sur chaque entrée (porté par
-///   [ZMenuEntryTile]) — `PopupMenuItem` FUSIONNE son sous-arbre : sans exclusion
-///   le lecteur d'écran annonce l'action DEUX FOIS (« Ouvrir\nOuvrir », mesuré
-///   SU-8/AC20) ; retirer le `label:` rend le nœud MUET ;
+///   [ZMenuEntryTile]) — `PopupMenuItem` FUSIONNE son sous-arbre : sans
+///   exclusion le lecteur d'écran annonce l'action DEUX FOIS (« Ouvrir\nOuvrir »)
+///   ; retirer le `label:` rend le nœud MUET ;
 /// * le contenu injecté est porté par un `PopupMenuEntry` **NU**, jamais un
 ///   `PopupMenuItem` — celui-ci imposerait sa hauteur, son `padding` et son
 ///   `TextStyle` au sous-arbre de l'hôte, et poserait un `InkWell` qui ferme le
@@ -15,20 +13,18 @@
 /// * pas de `Semantics(label:)` supplémentaire sur le déclencheur : le `tooltip`
 ///   de `PopupMenuButton` porte DÉJÀ le nom accessible et `button: true`.
 ///
-/// Ce qu'il ajoute par rapport à `ZItemActionsMenu` :
+/// Capacités offertes au-delà d'un menu d'actions classique :
 /// * l'entrée **désactivée avec motif** ([ZMenuEntry.disabledReason]) ;
 /// * le glyphe d'entrée **optionnel** ;
 /// * le déclencheur porté par un **widget** (`ZMenuTrigger.widget`) ;
 /// * un menu **sans entrées mais à contenu injecté** reste ouvrable — c'est la
-///   forme des sélecteurs de menu d'IFFD (`task_due_date_picker.dart`,
-///   `recurrence_picker.dart`, `task_reminder_picker.dart`,
-///   `event_reminders_widget.dart` — LECTURE SEULE), dont le contenu n'est pas
-///   une liste d'actions ;
+///   forme d'un sélecteur (date, récurrence, rappel…) dont le contenu n'est
+///   pas une liste d'actions ;
 /// * une liste vide SANS contenu injecté rend un déclencheur **inerte**, jamais
-///   une surface fantôme (AD-10).
+///   une surface fantôme (invariant AD-10).
 ///
-/// FR-26/NFR-S7 : AUCUNE couleur littérale, AUCUNE chaîne d'interface en dur —
-/// tout libellé vient de l'appelant, tout style du thème.
+/// AUCUNE couleur littérale, AUCUNE chaîne d'interface en dur — tout libellé
+/// vient de l'appelant, tout style du thème.
 library;
 
 import 'package:flutter/material.dart';
@@ -56,16 +52,16 @@ class ZDefaultMenuRenderer extends ZMenuRenderer {
         minHeight: kZMenuMinTapTarget,
       ),
       child: PopupMenuButton<ZMenuEntry>(
-        // AD-10 : rien à montrer ⇒ déclencheur INERTE (jamais une surface vide,
-        // jamais une levée). Un contenu injecté suffit à donner quelque chose à
-        // montrer, même sans aucune entrée (menus SÉLECTEURS).
+        // invariant AD-10 : rien à montrer ⇒ déclencheur INERTE (jamais une
+        // surface vide, jamais une levée). Un contenu injecté suffit à donner
+        // quelque chose à montrer, même sans aucune entrée (menus SÉLECTEURS).
         enabled: entries.isNotEmpty || contentBuilder != null,
         icon: trigger.child == null ? Icon(trigger.icon) : null,
         // Nom accessible : porté UNE seule fois, par le tooltip (qui fournit
         // aussi `button: true`). `semanticLabel` étant requis et non vide, le
         // déclencheur ne peut pas être muet — y compris hors Material.
         tooltip: trigger.tooltip ?? trigger.semanticLabel,
-        // Voie UNIQUE de sélection (contrat ZMenuRenderer §3).
+        // Voie UNIQUE de sélection (contrat ZMenuRenderer, point 3).
         onSelected: request.select,
         itemBuilder: (context) => <PopupMenuEntry<ZMenuEntry>>[
           if (contentBuilder != null)

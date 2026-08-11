@@ -1,9 +1,9 @@
-/// [ZActionMenu] — le point d'entrée unique du menu contextuel (CHAT-4).
+/// [ZActionMenu] — le point d'entrée unique du menu contextuel.
 ///
 /// L'appelant DÉCLARE ses entrées et son déclencheur ; le rendu est résolu par
-/// [zResolveMenuRenderer] (chaîne totale : paramètre → scope → repli SDK). Aucun
-/// gestionnaire d'état (AD-2/AD-15) : ce widget est `StatelessWidget` et ne
-/// détient rien.
+/// [zResolveMenuRenderer] (chaîne totale : paramètre → scope → repli SDK).
+/// Aucun gestionnaire d'état (invariants AD-2/AD-15) : ce widget est
+/// `StatelessWidget` et ne détient rien.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -18,14 +18,15 @@ import 'z_menu_scope.dart';
 class ZActionMenu extends StatelessWidget {
   /// Construit le menu.
   ///
-  /// [entries] : entrées candidates, ordre PRÉSERVÉ. La règle d'absence (AD-4)
-  /// leur est appliquée ICI, une seule fois, avant tout renderer.
+  /// [entries] : entrées candidates, ordre PRÉSERVÉ. La règle d'absence
+  /// (invariant AD-4) leur est appliquée ICI, une seule fois, avant tout
+  /// renderer.
   ///
   /// [trigger] : description du déclencheur (jamais un widget construit par
   /// l'appelant — c'est ce qui le rend substituable).
   ///
   /// [contentBuilder] : présentation INJECTÉE du contenu (`null` ⇒ celle du
-  /// renderer). Pendant de `ZItemActionsMenu.menuBuilder`.
+  /// renderer).
   ///
   /// [renderer] : surcharge PONCTUELLE du renderer, prioritaire sur [ZMenuScope]
   /// (utile pour un écran isolé ou un test). `null` ⇒ scope, puis repli.
@@ -51,9 +52,9 @@ class ZActionMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // AD-4 — filtrage AMONT, site UNIQUE : la liste transmise au renderer est
-    // déjà filtrée ; la règle lui est INOPPOSABLE, il ne peut ni la contourner
-    // ni la ré-implémenter de travers.
+    // Filtrage AMONT, site UNIQUE (invariant AD-4) : la liste transmise au
+    // renderer est déjà filtrée ; la règle lui est INOPPOSABLE, il ne peut ni
+    // la contourner ni la ré-implémenter de travers.
     final visible = zVisibleMenuEntries(entries);
     return zResolveMenuRenderer(context, override: renderer).build(
       context,
@@ -61,25 +62,23 @@ class ZActionMenu extends StatelessWidget {
         trigger: trigger,
         entries: visible,
         contentBuilder: contentBuilder,
-        // 🔴 UNIQUE site d'invocation de l'effet, pour TOUS les renderers.
-        // Un renderer (y compris un adaptateur tiers) ne peut pas exécuter une
+        // UNIQUE site d'invocation de l'effet, pour TOUS les renderers. Un
+        // renderer (y compris un adaptateur tiers) ne peut pas exécuter une
         // entrée désactivée ni une entrée qu'il aurait fabriquée lui-même : la
         // garde est ici, pas dans sa bonne volonté.
         //
-        // 🔴 On RÉSOUT l'entrée dans la liste COURANTE, puis on invoque l'effet
+        // On RÉSOUT l'entrée dans la liste COURANTE, puis on invoque l'effet
         // de CELLE-LÀ — jamais celui porté par la valeur reçue.
         //
-        // Pourquoi pas `visible.contains(entry)` (défaut MESURÉ en CHAT-4b,
-        // garde `test/z_menu_stale_entry_test.dart`) : `ZMenuEntry.==` compare
+        // Pourquoi pas `visible.contains(entry)` : `ZMenuEntry.==` compare
         // `onSelected`, donc une IDENTITÉ DE CLOSURE. Or une surface flottante
         // capture la valeur de l'entrée à l'OUVERTURE et lit le callback de
         // sélection à la SÉLECTION ; tout hôte déclarant `onSelected: () =>
         // faire(x)` — le patron normal — en refabrique à chaque rebuild. Un
         // simple rebuild pendant que le menu est ouvert rendait donc l'entrée
         // « non contenue » et AVALAIT la sélection SANS AUCUNE TRACE : le no-op
-        // silencieux que AD-4 proscrit, entré par la porte de derrière du
-        // garde-fou censé le prévenir. Trois gardes de `zcrud_study` l'ont
-        // attrapé.
+        // silencieux que l'invariant AD-4 proscrit, entré par la porte de
+        // derrière du garde-fou censé le prévenir.
         //
         // Ce que la résolution garde intact : une entrée FABRIQUÉE par un
         // renderer ne peut toujours pas imposer son effet (c'est l'effet

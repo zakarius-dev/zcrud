@@ -1,5 +1,5 @@
-/// `ZNoteAudio` — slot audio **typé, versionné, OPT-IN** d'une note (ES-2.2,
-/// **D6**, AD-4 pt.1).
+/// `ZNoteAudio` — slot audio **typé, versionné, OPT-IN** d'une note (
+/// , AD-4 pt.1).
 ///
 /// ## 🔵 Le PREMIER `ZExtension` CONCRET du repo — un filet qu'on n'avait jamais
 /// vu mordre
@@ -8,12 +8,11 @@
 /// story : AD-4 pt.1 (« slot type additif **versionné**, parsé **défensivement**,
 /// **jamais** de throw ») n'avait **jamais été exercé concrètement** — c'était de
 /// la **prose**. [fromJsonSafe] lui donne son premier cas réel **et** ses tests de
-/// corruption (rétro ES-1, §7 : *« un filet qu'on n'a pas vu échouer n'est pas un
-/// filet »*).
+/// corruption (*« un filet qu'on n'a pas vu échouer n'est pas un filet »*).
 ///
-/// ## Pourquoi l'audio est HORS-SCHÉMA (FR-S5)
+/// ## Pourquoi l'audio est HORS-SCHÉMA
 ///
-/// FR-S5 : *« Les champs audio (`audioUrl`/`audioPath`/`audioTextHash`) vivent en
+/// *« Les champs audio (`audioUrl`/`audioPath`/`audioTextHash`) vivent en
 /// `ZExtension`/`extra` ; une note sans audio se désérialise **sur le défaut** »*.
 /// ⇒ [ZSmartNote] ne déclare **AUCUN** champ audio. **Deux voies**, les deux
 /// supportées et testées :
@@ -23,25 +22,25 @@
 ///  2. **`ZNoteAudio`** (voie **typée**, opt-in) — injectée via
 ///     `ZSmartNote.fromMap(map, extensionParser: ZNoteAudio.fromJsonSafe)`.
 ///
-/// ## 🔴 Divergence de type RÉELLE (lex ↔ IFFD), trouvée sur disque
+/// ## Divergence de type RÉELLE (lex ↔ un consommateur legacy), trouvée sur disque
 ///
 /// `audioTextHash` est **`String?`** chez lex (`smart_note.dart` l. 36) et
-/// **`int?`** chez IFFD (`smart_note_model.dart` l. 11, décodé par
+/// **`int?`** chez un consommateur legacy (`smart_note_model.dart` l. 11, décodé par
 /// `int.tryParse(map['audioTextHash'].toString())`). ⇒ [textHash] **coerce**
 /// défensivement `String` **OU** `num` vers `String?` — **jamais** de throw.
-/// *(IFFD porte en plus `audioText: String?`, sans équivalent lex : il tombe dans
-/// `extra` — cf. dette DW-ES22-2, due à l'adapter, ES-11.2.)*
+/// *(un consommateur legacy porte en plus `audioText: String?`, sans équivalent lex : il tombe dans
+/// `extra` — cf. dette, due à l'adapter, .)*
 ///
 /// ## Hors gate `reserved-keys` (et c'est correct)
 ///
 /// `ZNoteAudio` n'est **ni `@ZcrudModel` ni `ZExtensible`** ⇒ hors `E_disk` /
 /// `R_disk` ⇒ **AUCUN câblage `manual_probes.dart`** (même raisonnement que
-/// `ZDocumentLearningInfo`, D3 d'ES-2.1 : l'y ajouter serait une erreur).
+/// `ZDocumentLearningInfo`, : l'y ajouter serait une erreur).
 ///
-/// ## ⛔⛔ DW-ES14-2 — CE SLOT N'EST **JAMAIS TYPÉ** PAR LA VOIE DU REGISTRE
+/// ## ⛔⛔ — CE SLOT N'EST **JAMAIS TYPÉ** PAR LA VOIE DU REGISTRE
 ///
 /// **En étant le premier `ZExtension` concret du repo, `ZNoteAudio` FALSIFIE la
-/// clause d'échappement n°1 de DW-ES14-2** (`firebase_z_repository_impl.dart` :
+/// clause d'échappement n°1 de** (`firebase_z_repository_impl.dart` :
 /// *« si — et seulement si — **l'entité n'utilise pas le slot `extension`** »*). La
 /// dette n'est **plus théorique** : elle porte désormais sur une entité **livrée**.
 ///
@@ -49,22 +48,22 @@
 /// `extensionParser` (le registre **n'offre aucun slot d'injection**) ⇒
 /// `registry.decode('smart_note', map).extension` **n'est JAMAIS un `ZNoteAudio`**.
 ///
-/// - **Donnée** : ✅ **PRÉSERVÉE** (remédiation MAJEUR-1/MAJEUR-2) — le payload non
+/// - **Donnée** : ✅ **PRÉSERVÉE** (cette remédiation) — le payload non
 ///   typé est porté par `ZOpaqueNoteExtension` et **réémis VERBATIM**. *(Avant :
 ///   `extension == null` ⇒ `toMap()` **omettait la clé** ⇒ **le slot audio était
 ///   EFFACÉ du store au premier `put`**.)*
 /// - **Type** : ⛔ **PERDU** sur cette voie — l'app **ne peut pas lire l'audio**.
 ///   Le correctif de fond (slot d'injection dans `ZcrudRegistry`) écrit
-///   **`zcrud_core`** ⇒ **hors périmètre ES-2.2** (D9). **Épinglé en machine**
-///   (`z_smart_note_test.dart` › groupe `DW-ES14-2`).
+/// **`zcrud_core`** ⇒ **hors périmètre**. **Épinglé en machine**
+/// (`z_smart_note_test.dart` › groupe).
 ///
-/// ⇒ **Câblage CORRECT (obligatoire tant que DW-ES14-2 n'est pas soldée)** :
+/// ⇒ **Câblage CORRECT (obligatoire tant que n'est pas soldée)** :
 ///
 /// ```dart
 /// ZSmartNote.fromMap(map, extensionParser: ZNoteAudio.fromJsonSafe); // ✅ typé
 /// ```
 ///
-/// ## 🔴 Une version NON GÉRÉE rend `null` — **et le payload SURVIT quand même**
+/// ## Une version NON GÉRÉE rend `null` — **et le payload SURVIT quand même**
 ///
 /// [fromJsonSafe] rend `null` sur une `format_version` inconnue (contrat AD-10 :
 /// jamais de throw). **Ce `null` ne détruit plus rien** : `ZSmartNote` enveloppe
@@ -79,7 +78,7 @@ import 'package:zcrud_core/domain.dart';
 /// (AD-4 pt.1). Une version **non gérée** fait rendre `null` à [ZNoteAudio.fromJsonSafe]
 /// (jamais de throw) : la note **survit**, sans son slot audio **TYPÉ** — mais son
 /// **payload BRUT est PRÉSERVÉ** (`ZOpaqueNoteExtension`, réémis **verbatim**) au
-/// lieu d'être **effacé du store** à la réécriture (MAJEUR-2).
+/// lieu d'être **effacé du store** à la réécriture .
 const int kZNoteAudioFormatVersion = 1;
 
 /// Clé de la version dans la map `extension`.
@@ -100,7 +99,7 @@ class ZNoteAudio implements ZExtension {
   /// Hash du texte source de l'audio (**clé de cache**) — `null` si pas d'audio.
   ///
   /// Toujours une `String` **côté domaine**, même quand le store porte un
-  /// **entier** (IFFD) : cf. [fromJsonSafe].
+  /// **entier** (un consommateur legacy) : cf. [fromJsonSafe].
   final String? textHash;
 
   @override
@@ -122,7 +121,7 @@ class ZNoteAudio implements ZExtension {
   /// `url` numérique, un `text_hash` qui est une liste) retombe sur `null`
   /// **sans** invalider les autres.
   ///
-  /// [textHash] accepte **`String` (lex)** *et* **`num` (IFFD)** et rend toujours
+  /// [textHash] accepte **`String` (lex)** *et* **`num` (un consommateur legacy)** et rend toujours
   /// une `String?`.
   ///
   /// Bâtie sur [ZExtension.guard] : **toute** exception imprévue (donnée
@@ -147,8 +146,8 @@ class ZNoteAudio implements ZExtension {
   /// `String` telle quelle ; **tout autre type** ⇒ `null` (défensif).
   static String? _asString(Object? v) => v is String ? v : null;
 
-  /// 🔴 Coercition de la **divergence lex ↔ IFFD** : `String` (lex) **ou** `num`
-  /// (IFFD, `int?`) ⇒ `String?`. Tout le reste (`List`, `Map`, `bool`) ⇒ `null`.
+  /// Coercition de la **divergence lex ↔ un consommateur legacy** : `String` (lex) **ou** `num`
+  /// (un consommateur legacy, `int?`) ⇒ `String?`. Tout le reste (`List`, `Map`, `bool`) ⇒ `null`.
   static String? _asTextHash(Object? v) {
     if (v is String) return v;
     if (v is num) return v.toString();

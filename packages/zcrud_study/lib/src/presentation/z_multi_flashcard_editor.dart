@@ -637,7 +637,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
   }
 
   Widget _buildList(ZcrudTheme theme, ZMultiFlashcardEditorLabels labels) {
-    // 🔴 SM-1 : la liste n'écoute QUE la tranche STRUCTURELLE `orderKeys` — éditer
+    // SM-1 : la liste n'écoute QUE la tranche STRUCTURELLE `orderKeys` — éditer
     // un champ (`updateCard`) ne l'émet PAS ⇒ la liste ne se reconstruit pas à la
     // frappe. Ajout/suppression/champ commun/lot généré l'émettent (recalcul).
     return ValueListenableBuilder<List<String>>(
@@ -671,7 +671,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     if (card == null) return const SizedBox.shrink();
     final content = widget.rowContentBuilder?.call(context, card) ??
         Text(card.question, textAlign: TextAlign.start);
-    // 🔴 FIX-8/AD-13 : la ligne porte DEUX actionnables INDÉPENDANTS — la bascule
+    // FIX-8/AD-13 : la ligne porte DEUX actionnables INDÉPENDANTS — la bascule
     // de sélection (Checkbox) ET l'ouverture du volet détail (InkWell). On NE les
     // FUSIONNE PAS (pas de `MergeSemantics`) : la fusion écrasait l'une des deux
     // actions de tap au lecteur d'écran (une seule survivait). Chaque nœud reste
@@ -744,7 +744,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
                 // re-seedés) ; taper DANS une carte garde les controllers stables.
                 key: ValueKey<String>('z-card-form-$key'),
                 initialCard: card,
-                // 🔴 BUG-1 : base VIVANTE relue à chaque `_rebuild` (jamais le
+                // BUG-1 : base VIVANTE relue à chaque `_rebuild` (jamais le
                 // snapshot figé `initialCard`). Un champ commun appliqué HORS
                 // formulaire (folderId/tags/type) mute `_draft.cardOf(key)` sans
                 // reconstruire ce volet ; sans cette relecture, la frappe suivante
@@ -802,7 +802,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
 
 /// Formulaire d'ÉDITION d'une carte (volet détail) — controllers STABLES (AD-2).
 ///
-/// 🔴 SM-1 : chaque `TextField` porte un `TextEditingController` créé UNE fois en
+/// SM-1 : chaque `TextField` porte un `TextEditingController` créé UNE fois en
 /// `initState` (jamais recréé au rebuild) ⇒ taper ne perd jamais le focus. Le type
 /// est une tranche `ValueListenable` isolée (enum, pas un booléen). Aucune frappe
 /// ne reconstruit la liste (l'édition passe par `updateCard`, hors tranche
@@ -865,7 +865,7 @@ class _ZCardFormState extends State<_ZCardForm> {
   /// Reconstruit la carte depuis les controllers (édition IN MEMORY, `id`
   /// PRÉSERVÉ — une carte éphémère reste éphémère, une persistée garde son `id`).
   ///
-  /// 🔴 BUG-1 : la base est la carte VIVANTE ([ZMultiFlashcardEditor] la relit via
+  /// BUG-1 : la base est la carte VIVANTE ([ZMultiFlashcardEditor] la relit via
   /// `baseCardOf`), pas le snapshot figé — sinon un champ commun appliqué hors
   /// formulaire serait écrasé à la frappe suivante.
   ZFlashcard _rebuild() => widget.baseCardOf().copyWith(

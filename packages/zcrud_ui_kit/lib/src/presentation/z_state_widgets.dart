@@ -1,11 +1,11 @@
-/// Widgets d'état de contenu génériques + aiguilleur (AD-32, AD-13).
+/// Widgets d'état de contenu génériques + aiguilleur (invariant AD-13).
 ///
-/// `ZEmptyState` / `ZLoadingState` / `ZErrorState` neutralisent les états
-/// dupliqués des applications (dodlp `state_widgets.dart`, iffd `empty_*`) en
-/// widgets **purs** : thème & couleurs dérivés du `ColorScheme` (jamais de hex),
-/// textes fournis par l'appelant (l10n injectée), `Semantics` explicites, cibles
-/// tactiles ≥ 48 dp, mise en page **directionnelle** (RTL-safe). `ZContentStateView`
-/// aiguille vers le bon widget selon [ZContentState] via un `switch` exhaustif.
+/// `ZEmptyState` / `ZLoadingState` / `ZErrorState` factorisent les widgets
+/// d'état de contenu en widgets **purs** : thème & couleurs dérivés du
+/// `ColorScheme` (jamais de hex), textes fournis par l'appelant (l10n
+/// injectée), `Semantics` explicites, cibles tactiles ≥ 48 dp, mise en page
+/// **directionnelle** (RTL-safe). `ZContentStateView` aiguille vers le bon
+/// widget selon [ZContentState] via un `switch` exhaustif.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,10 +24,10 @@ final ButtonStyle _kA11yButtonStyle = TextButton.styleFrom(
 /// État **vide** générique : contenu chargé mais aucune donnée à afficher.
 ///
 /// Rend une icône **optionnelle** + un titre **optionnel** + un [message]
-/// **toujours présent** (l'icône n'est jamais le seul canal d'information —
-/// AD-13/NFR-U4) + un CTA **optionnel** ([actionLabel] + [onAction]). Les textes
-/// sont fournis par l'appelant (aucune chaîne métier codée en dur) ; les couleurs
-/// proviennent du `Theme.of(context)` courant.
+/// **toujours présent** (l'icône n'est jamais le seul canal d'information,
+/// invariant AD-13) + un CTA **optionnel** ([actionLabel] + [onAction]). Les
+/// textes sont fournis par l'appelant (aucune chaîne métier codée en dur) ;
+/// les couleurs proviennent du `Theme.of(context)` courant.
 class ZEmptyState extends StatelessWidget {
   /// Construit un état vide. [message] est requis (canal texte garanti).
   const ZEmptyState({
@@ -68,7 +68,7 @@ class ZEmptyState extends StatelessWidget {
   }
 }
 
-/// État **chargement** générique : indicateur de progression + message optionnel.
+/// État **chargement** générique: indicateur de progression + message optionnel.
 ///
 /// Porte un `Semantics(label:)` explicite pour les lecteurs d'écran. Le [message]
 /// (optionnel) est fourni par l'appelant (l10n injectée).
@@ -81,10 +81,10 @@ class ZLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A11y (AD-13 / WCAG 4.1.3) : annoncer le chargement au lecteur d'écran
+    // A11y (AD-13 / WCAG 4.1.3): annoncer le chargement au lecteur d'écran
     // MÊME sans message visible (le repli par défaut de `ZContentStateView` est
     // `const ZLoadingState()` sans message). Libellé dérivé de la l10n injectée
-    // par composition DÉFENSIVE (jamais `.of()` qui pourrait lever ; que des
+    // par composition DÉFENSIVE (jamais `.of()` qui pourrait lever; que des
     // `maybeOf`/`maybeResolve`), jamais un `Semantics.label` nul.
     final String a11yLabel = message ??
         ZcrudScope.maybeOf(context)?.labels?.maybeResolve('loading') ??
@@ -102,7 +102,7 @@ class ZLoadingState extends StatelessWidget {
       ],
     ];
     return Semantics(
-      // Rôle « en direct » : annonce le chargement en cours.
+      // Rôle « en direct »: annonce le chargement en cours.
       liveRegion: true,
       label: a11yLabel,
       child: Center(
@@ -118,12 +118,12 @@ class ZLoadingState extends StatelessWidget {
   }
 }
 
-/// État **erreur** générique : icône + message + CTA « réessayer » optionnel.
+/// État **erreur** générique: icône + message + CTA « réessayer » optionnel.
 ///
 /// La teinte d'erreur est **dérivée** du `ColorScheme` courant via `ZcrudTheme`
 /// (`ZcrudScope.theme?.errorColor` → repli `ZcrudTheme.fallback(Theme.of).errorColor`
-/// = `ColorScheme.error`) — jamais un littéral hex (AD-13/NFR-U5). Le [message]
-/// (texte) reste toujours présent : la couleur n'est jamais le seul canal.
+/// = `ColorScheme.error`) — jamais un littéral hex (invariant AD-13). Le [message]
+/// (texte) reste toujours présent: la couleur n'est jamais le seul canal.
 class ZErrorState extends StatelessWidget {
   /// Construit un état d'erreur. [message] requis (canal texte garanti).
   const ZErrorState({
@@ -170,14 +170,15 @@ class ZErrorState extends StatelessWidget {
 
 /// Aiguilleur : rend le widget d'état correspondant à un [ZContentState].
 ///
-/// `switch` **exhaustif sans `default`** sur les 5 valeurs (un nouveau palier
-/// casserait la compilation → détection à froid, NFR-U7). Replis **sûrs**
-/// (AD-10, jamais de throw) :
+/// `switch` **exhaustif sans `default`** sur les 5 valeurs (un nouveau
+/// palier casserait la compilation → détection à froid). Replis **sûrs**
+/// (invariant AD-10, jamais de throw) :
 /// - `success` → [successBuilder] (obligatoire) ;
 /// - `loading` → [loading] fourni, sinon `const ZLoadingState()` ;
-/// - `idle` / `empty` / `error` → la tranche fournie, sinon `SizedBox.shrink()`.
+/// - `idle` / `empty` / `error` → la tranche fournie, sinon
+///   `SizedBox.shrink()`.
 class ZContentStateView extends StatelessWidget {
-  /// Construit l'aiguilleur. [state] et [successBuilder] sont requis ; les
+  /// Construit l'aiguilleur. [state] et [successBuilder] sont requis; les
   /// tranches [idle]/[loading]/[empty]/[error] sont optionnelles (replis sûrs).
   const ZContentStateView({
     required this.state,
@@ -195,21 +196,21 @@ class ZContentStateView extends StatelessWidget {
   /// Constructeur du contenu prêt (rendu pour `ZContentState.success`).
   final WidgetBuilder successBuilder;
 
-  /// Tranche `idle` optionnelle (repli : `SizedBox.shrink()`).
+  /// Tranche `idle` optionnelle (repli: `SizedBox.shrink()`).
   final Widget? idle;
 
-  /// Tranche `loading` optionnelle (repli : `const ZLoadingState()`).
+  /// Tranche `loading` optionnelle (repli: `const ZLoadingState()`).
   final Widget? loading;
 
-  /// Tranche `empty` optionnelle (repli : `SizedBox.shrink()`).
+  /// Tranche `empty` optionnelle (repli: `SizedBox.shrink()`).
   final Widget? empty;
 
-  /// Tranche `error` optionnelle (repli : `SizedBox.shrink()`).
+  /// Tranche `error` optionnelle (repli: `SizedBox.shrink()`).
   final Widget? error;
 
   @override
   Widget build(BuildContext context) {
-    // Exhaustif sans `default` : un nouveau membre de ZContentState casserait la
+    // Exhaustif sans `default`: un nouveau membre de ZContentState casserait la
     // compilation (garde à froid — enums > booléens).
     switch (state) {
       case ZContentState.idle:
@@ -226,7 +227,7 @@ class ZContentStateView extends StatelessWidget {
   }
 }
 
-/// Ossature commune (privée) des états vide/erreur : icône optionnelle + titre
+/// Ossature commune (privée) des états vide/erreur: icône optionnelle + titre
 /// optionnel + message + CTA optionnel, centrés, directionnels, avec `Semantics`.
 class _ZStateScaffold extends StatelessWidget {
   const _ZStateScaffold({
@@ -253,7 +254,7 @@ class _ZStateScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final showAction = actionLabel != null && onAction != null;
-    // Bloc informationnel (icône + titre + message) : la sémantique est portée
+    // Bloc informationnel (icône + titre + message): la sémantique est portée
     // UNE seule fois par le container (label explicite), les nœuds texte/icône
     // visuels sont exclus pour éviter la double annonce (a11y). Le CTA reste
     // HORS de cette exclusion → il garde sa propre sémantique cliquable.

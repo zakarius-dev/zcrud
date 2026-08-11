@@ -1,23 +1,23 @@
 /// Factory d'enregistrement des champs **HTML** `zcrud_markdown` dans un
-/// [ZWidgetRegistry] injecté (DP-4 / gap B5, AC2, AD-4).
+/// [ZWidgetRegistry] injecté. Invariant AD-4.
 ///
 /// Enregistre les `kind` `html` (mode `block`) et `inlineHtml` (mode `inline`)
 /// sur le MÊME adaptateur `ctx`-natif ([ZMarkdownField.fromContext]) que
-/// markdown (DP-3), paramétré par le mode + un [ZCodec] (défaut [ZHtmlCodec]).
+/// markdown, paramétré par le mode + un [ZCodec] (défaut [ZHtmlCodec]).
 /// Le widget réel est fourni par CE package satellite (le cœur reste agnostique
 /// — AD-1) ; le registre est INSTANCIABLE et injecté via
 /// `ZcrudScope.widgetRegistry` — jamais un singleton statique mutable.
 ///
 /// Le format persisté est donc du **HTML** (`String`), converti vers/depuis le
 /// Delta interne à la COUTURE DE PERSISTANCE (hors chemin chaud de frappe —
-/// SM-1/AD-2). Aucun WYSIWYG HTML natif (`html_editor_enhanced`/WebView) :
-/// l'édition passe par l'éditeur Delta isolé de DP-3, thémé (FR-26).
+/// AD-2). Aucun WYSIWYG HTML natif (`html_editor_enhanced`/WebView) :
+/// l'édition passe par l'éditeur Delta isolé et thémé de ce paquet.
 ///
 /// Une collision de `kind` fait **`throw`** (contrat `ZWidgetRegistry.register`).
 ///
 /// > Porte de sortie : un futur besoin WYSIWYG HTML natif serait un satellite
 /// > `zcrud_html` DISTINCT enregistrant son propre builder sur ces mêmes kinds —
-/// > hors périmètre DP-4 (parité de MIGRATION, pas copie du chrome WebView).
+/// > hors périmètre (parité de MIGRATION, pas copie du chrome WebView).
 library;
 
 import 'package:flutter/widgets.dart';

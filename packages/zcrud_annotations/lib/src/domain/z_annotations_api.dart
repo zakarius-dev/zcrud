@@ -1,16 +1,16 @@
 import 'package:zcrud_core/edition.dart';
 
-/// Marqueur d'API publique de `zcrud_annotations` (placeholder E1-2).
+/// Marqueur d'API publique de `zcrud_annotations`.
 ///
-/// Substance réelle posée dans la feature-story dédiée. Référence les
-/// marqueurs des dépendances `zcrud_*` pour rendre les arêtes AD-1
-/// effectivement utilisées (acyclicité tangible, pas d'import mort).
+/// Référence les marqueurs des dépendances `zcrud_*` pour rendre l'arête
+/// acyclique vers `zcrud_core` (invariant AD-1) effectivement utilisée — pas
+/// d'import mort.
 abstract final class ZAnnotationsApi {
   const ZAnnotationsApi._();
 
-  /// Version de l'API publique au stade squelette.
+  /// Version de l'API publique de ce paquet.
   static const String version = '0.0.1';
 
-  /// Rattache l'arête AD-1 `zcrud_annotations -> zcrud_core`.
+  /// Rattache l'arête (invariant AD-1) `zcrud_annotations -> zcrud_core`.
   static const String coreApiVersion = ZCoreApi.version;
 }

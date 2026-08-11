@@ -1,17 +1,14 @@
-/// Choix de QCM `ZChoice` (Story E9-1, AC2).
+/// Choix de QCM `ZChoice`.
 ///
-/// origine: lex_core (module « Étude ») — `lexia_flashcard.dart:15`
-/// (`FlashcardChoice`) : déjà générique, zéro dépendance.
+/// Sous-modèle du codegen. Il est décodé défensivement, élément par élément,
+/// dans la liste `ZFlashcard.choices` : un élément corrompu est ignoré,
+/// jamais un échec du parent (invariant AD-10).
 ///
-/// Sous-modèle `@ZcrudModel` (patron `Author` du corpus générateur, E2-5). Il
-/// est décodé **défensivement par élément** dans la liste `ZFlashcard.choices`
-/// (chemin `listModel` : un élément corrompu est ignoré, jamais de throw du
-/// parent — AD-10).
+/// Aucune validation métier (au moins deux choix, au moins un correct) ici :
+/// c'est la validation de la couche d'édition. L'entité transporte
+/// simplement le choix.
 ///
-/// **Aucune** validation métier (min 2 choix + 1 correct) ici : c'est la
-/// validation **éditeur** (E9-5). L'entité **transporte** simplement le choix.
-///
-/// Importe la surface **pure** `edition.dart` (jamais le barrel principal, qui
+/// Importe la surface pure `edition.dart` (jamais le barrel principal, qui
 /// tire Flutter) : `ZChoice` reste pur-Dart et testable sous `dart test`.
 library;
 
@@ -26,16 +23,17 @@ class ZChoice {
   /// Construit un choix (constructeur `const` — source du `copyWith` généré).
   const ZChoice({this.content = '', this.isCorrect = false});
 
-  /// Reconstruit depuis une map persistée (délègue au `fromMap` généré défensif :
-  /// `content` absent → `''`, `is_correct` absent → `false`, jamais de throw).
+  /// Reconstruit depuis une map persistée (délègue au décodeur généré et
+  /// défensif : `content` absent → `''`, `is_correct` absent → `false`,
+  /// jamais d'exception).
   factory ZChoice.fromMap(Map<String, dynamic> map) => _$ZChoiceFromMap(map);
 
-  /// Libellé du choix (défaut `''` si absent — AC2).
+  /// Libellé du choix (défaut `''` si absent).
   @ZcrudField(label: 'Choix')
   final String content;
 
-  /// `true` si ce choix est la bonne réponse (persisté `is_correct`, snake_case ;
-  /// défaut `false` si absent — AC2).
+  /// `true` si ce choix est la bonne réponse (persisté `is_correct`,
+  /// snake_case ; défaut `false` si absent).
   @ZcrudField()
   final bool isCorrect;
 

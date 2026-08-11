@@ -1,67 +1,55 @@
-/// `ZStudySessionResult` — value-object PUR du résultat d'UNE session d'étude
-/// (ES-2.7, **FR-S10**).
+/// `ZStudySessionResult` — value-object pur du résultat d'une session
+/// d'étude.
 ///
-/// origine: lex_core (module « Étude ») —
-/// `entities/education/study_session.dart` (`StudySessionResult`,
-/// `@JsonSerializable(fieldRename: snake)`, `{mode, total, correct,
-/// byQuality: Map(String,int)}`). **AUCUN `id`, AUCUN `folderId`, AUCUNE
-/// `date`** : c'est le résumé d'un run (mode + total + correct + répartition
-/// des qualités SM-2).
+/// Aucun identifiant, aucun `folderId`, aucune date : c'est le résumé d'un
+/// parcours (mode + total + réponses correctes + répartition des qualités
+/// SM-2).
 ///
-/// ## 🔴 D1 — pourquoi un value-object PUR, et NON un `@ZcrudModel`
+/// ## Pourquoi un value-object pur, et non un modèle enregistré
 ///
-/// La source lex est un simple `@JsonSerializable` **sans `id`** ; l'épic ET le
-/// PRD le nomment explicitement **« value-object »**. ⇒ patron VO PUR du repo
-/// (précédent EXACT [ZReminderTime] d'ES-2.6 : classe pure, `fromMap`/`toMap`
-/// **écrits à la main**, `==`/`hashCode` de valeur, AUCUN codegen, AUCUN
-/// `@JsonSerializable`, AUCUN `registerZ…`).
+/// [ZStudySessionResult] n'est le champ (sous-modèle) d'aucune entité
+/// enregistrée du kernel — il n'a donc aucune raison d'être un modèle
+/// `@ZcrudModel`. De plus, son [byQuality] (`Map<String,int>`) n'est pas
+/// codegen-able : le générateur ne sait pas classifier un type `Map` en
+/// champ. Le rendre `@ZcrudModel` forcerait un canal hors-codegen, une clé
+/// réservée et un câblage de registre pour un gain nul.
 ///
-/// Deux raisons TECHNIQUES de rester VO pur plutôt que `@ZcrudModel` :
-/// 1. [ZStudySessionResult] n'est le champ (sous-modèle) d'AUCUNE entité
-///    enregistrée de cette story (contraste `ZChoice`⊂`ZFlashcard`) — il n'a
-///    donc **aucune raison** d'être `@ZcrudModel` ;
-/// 2. son [byQuality] `Map<String,int>` **n'est PAS codegen-able** — le
-///    générateur `_classify` n'a **aucune branche `isDartCoreMap`** (cf.
-///    `ZFolderContentsOrder.sectionOrders`). Le rendre `@ZcrudModel` forcerait
-///    un canal hors-codegen + une clé réservée + un câblage de gate, pour un
-///    gain **nul**.
+/// Conséquence : aucun câblage du gate de clés réservées (ni registrar, ni
+/// nature, ni écriture dans `extra`).
 ///
-/// Conséquence : **aucun câblage du gate `reserved-keys`** (ni registrar, ni
-/// kind, ni writer `extra`) — AC14.
+/// ## Défensif et total (invariant AD-10) — jamais de `throw`
 ///
-/// ## Défensif et TOTAL (AD-10) — jamais de throw
+/// [ZStudySessionResult.fromMap] ne lève jamais, pas même sur une map vide :
+/// `mode` inconnu/absent → [ZReviewMode.spaced] ; `total`/`correct` absent,
+/// non-`num`, ou négatif → `0` ; [byQuality] décodé défensivement à deux
+/// niveaux (map absente/non-`Map` → `{}` ; valeur non-`int` → paire
+/// ignorée ; clés verbatim), rendu non modifiable.
 ///
-/// [ZStudySessionResult.fromMap] ne **throw JAMAIS**, pas même
-/// `ZStudySessionResult.fromMap(const {})` : `mode` inconnu/absent → [ZReviewMode.spaced] ;
-/// `total`/`correct` absent, non-`num`, ou **négatif** → `0` ; [byQuality]
-/// décodé **défensivement à 2 niveaux** (map absente/non-`Map` → `{}` ; valeur
-/// non-`int` → paire **ignorée** ; clés **verbatim**), rendu **NON MODIFIABLE**.
-///
-/// **Pur-Dart, Flutter-free** : aucune dépendance Material/Firebase.
-/// **NON `ZExtensible`** : ce n'est pas un point d'extension (AD-4).
+/// Pur-Dart, sans dépendance Flutter. Non `ZExtensible` : ce n'est pas un
+/// point d'extension (invariant AD-4).
 library;
 
 import 'package:zcrud_core/domain.dart';
 
 import 'z_review_mode.dart';
 
-/// Résultat d'UNE session d'étude — value-object immuable (D1).
+/// Résultat d'une session d'étude — value-object immuable.
 ///
 /// `mode` (mode de révision), `total` (cartes vues), `correct` (bonnes
-/// réponses), [byQuality] (`qualité SM-2 "0".."5" → compte`). Persisté en
-/// snake_case (`by_quality`), valeurs d'enum en **camelCase** (`mode.name`).
+/// réponses), [byQuality] (qualité SM-2 `"0".."5"` → compte). Persisté en
+/// snake_case (`by_quality`), valeurs d'enum en camelCase (`mode.name`).
 class ZStudySessionResult {
-  /// Construit un résultat de session (primitif `const`).
+  /// Construit un résultat de session (constructeur `const`).
   ///
-  /// ⛔ **AUCUN filtre / `assert` ici** (AD-10, patron des VO `const` du repo,
-  /// cf. [ZReminderTime]) : l'immuabilité NON MODIFIABLE de [byQuality] est
-  /// portée par la frontière [fromMap] (la seule qui reçoit des valeurs BRUTES
-  /// du corpus persisté). Un appelant qui passe une `Map` mutable en mémoire
-  /// obtient un VO qui la référence — c'est **son** invariant à tenir.
+  /// Aucun filtre ni `assert` ici (invariant AD-10) : l'immuabilité non
+  /// modifiable de [byQuality] est portée par la frontière [fromMap] (la
+  /// seule qui reçoit des valeurs brutes du corpus persisté). Un appelant
+  /// qui passe une `Map` mutable en mémoire obtient un objet qui la
+  /// référence — c'est son invariant à tenir.
   ///
-  /// 🔴 **DW-ES24-1 (ES-3.0)** : le slot STOCKÉ [_byQuality] reste **BRUT** (ctor
-  /// `const` : ne filtre RIEN, AD-10 y interdit l'`assert`) ; c'est l'**ACCESSEUR**
-  /// [byQuality] qui rend une vue **NON MODIFIABLE INCONDITIONNELLEMENT**.
+  /// Le slot stocké interne reste brut (le constructeur `const` ne filtre
+  /// rien, l'invariant AD-10 y interdit l'`assert`) ; c'est l'accesseur
+  /// [byQuality] qui rend une vue non modifiable inconditionnellement.
   const ZStudySessionResult({
     this.mode = ZReviewMode.spaced,
     this.total = 0,
@@ -70,16 +58,16 @@ class ZStudySessionResult {
     // ignore: prefer_initializing_formals
   }) : _byQuality = byQuality;
 
-  /// Reconstruit **défensivement** depuis une map persistée (AD-10, D6) — **ne
-  /// throw JAMAIS**, pas même `ZStudySessionResult.fromMap(const {})`.
+  /// Reconstruit défensivement depuis une map persistée (invariant AD-10)
+  /// — ne lève jamais, pas même sur une map vide.
   ///
   /// - `mode` : décodé par nom (camelCase) avec repli [ZReviewMode.spaced]
   ///   (absent/inconnu → `spaced`, jamais de cast dur) ;
-  /// - `total`/`correct` : `int` avec fallback **`0`** (absent, non-`num`, ou
-  ///   **négatif** → `0`) ;
-  /// - `by_quality` : décodage **défensif à 2 niveaux** (map absente/non-`Map`
-  ///   → `{}` ; valeur non-`int` → paire **ignorée** ; clés **verbatim**),
-  ///   rendu **NON MODIFIABLE**.
+  /// - `total`/`correct` : `int` avec repli `0` (absent, non-`num`, ou
+  ///   négatif → `0`) ;
+  /// - `by_quality` : décodage défensif à deux niveaux (map absente/non-
+  ///   `Map` → `{}` ; valeur non-`int` → paire ignorée ; clés verbatim),
+  ///   rendu non modifiable.
   factory ZStudySessionResult.fromMap(Map<String, dynamic> map) =>
       ZStudySessionResult(
         mode: _decodeMode(map['mode']),
@@ -95,25 +83,28 @@ class ZStudySessionResult {
   /// après [fromMap]).
   final int total;
 
-  /// Nombre de réponses correctes (défaut `0`, jamais négatif après [fromMap]).
+  /// Nombre de réponses correctes (défaut `0`, jamais négatif après
+  /// [fromMap]).
   final int correct;
 
   /// Répartition `qualité SM-2 → compte` (défaut `const {}`).
   ///
-  /// 🔴 Rendu **NON MODIFIABLE INCONDITIONNELLEMENT** (DW-ES24-1) : l'accesseur
-  /// rend une vue `unmodifiable` du slot brut — muter en place lève
-  /// `UnsupportedError`, **même** sur une instance née du ctor `const` invoqué
-  /// non-`const`. Sans quoi le [hashCode] changerait et l'instance se perdrait
-  /// dans son propre `Set`. Clés **opaques** (verbatim, ex. `"0".."5"`).
+  /// Rendu non modifiable inconditionnellement : l'accesseur rend une vue
+  /// `unmodifiable` du slot brut — muter en place lève `UnsupportedError`,
+  /// même sur une instance née du constructeur `const` invoqué non-`const`.
+  /// Sans quoi le [hashCode] changerait et l'instance se perdrait dans son
+  /// propre `Set`. Clés opaques (verbatim, ex. `"0".."5"`).
   Map<String, int> get byQuality => zUnmodifiableScalarMap(_byQuality);
 
-  /// Slot **BRUT tel que reçu par le constructeur** — lu **NULLE PART** ailleurs
-  /// que dans l'accesseur [byQuality] (le ctor `const` ne peut pas le filtrer).
+  /// Slot brut tel que reçu par le constructeur — lu nulle part ailleurs que
+  /// dans l'accesseur [byQuality] (le constructeur `const` ne peut pas le
+  /// filtrer).
   final Map<String, int> _byQuality;
 
-  /// Sérialise vers la map persistée (snake_case, `mode` en camelCase `name`).
+  /// Sérialise vers la map persistée (snake_case, `mode` en camelCase
+  /// `name`).
   ///
-  /// `by_quality` réémis en `Map<String,int>` **plate** (copie fraîche) —
+  /// `by_quality` réémis en `Map<String,int>` plate (copie fraîche) —
   /// round-trip idempotent (`ZStudySessionResult.fromMap(r.toMap()) == r`).
   Map<String, dynamic> toMap() => <String, dynamic>{
         'mode': mode.name,
@@ -125,11 +116,12 @@ class ZStudySessionResult {
       };
 
   // ---------------------------------------------------------------------------
-  // Décodage défensif (AD-10, D6) — aucune de ces fonctions ne throw.
+  // Décodage défensif (invariant AD-10) — aucune de ces fonctions ne lève.
   // ---------------------------------------------------------------------------
 
-  /// Décode `mode` par **nom** (camelCase), repli [ZReviewMode.spaced] — jamais
-  /// de cast dur (une valeur inconnue/absente/non-`String` retombe sur `spaced`).
+  /// Décode `mode` par nom (camelCase), repli [ZReviewMode.spaced] — jamais
+  /// de cast dur (une valeur inconnue/absente/non-`String` retombe sur
+  /// `spaced`).
   static ZReviewMode _decodeMode(Object? raw) {
     for (final value in ZReviewMode.values) {
       if (value.name == raw) return value;
@@ -137,8 +129,8 @@ class ZStudySessionResult {
     return ZReviewMode.spaced;
   }
 
-  /// Décode un compteur : `num` **clampé à `>= 0`** ; toute autre valeur
-  /// (absente, `String`, `bool`…) ou négative → **`0`** (fallback sûr, R6).
+  /// Décode un compteur : `num` clampé à `>= 0` ; toute autre valeur
+  /// (absente, `String`, `bool`…) ou négative → `0` (repli sûr).
   static int _decodeCount(Object? raw) {
     if (raw is num) {
       final v = raw.toInt();
@@ -147,13 +139,14 @@ class ZStudySessionResult {
     return 0;
   }
 
-  /// Décode [byQuality] à **2 niveaux** (AD-10) — jamais de throw, rend une map
-  /// **NON MODIFIABLE**.
+  /// Décode [byQuality] à deux niveaux (invariant AD-10) — jamais de
+  /// `throw`, rend une map non modifiable.
   ///
-  /// - Niveau 1 : `by_quality` absente / non-`Map` (`42`, `"x"`, une liste) → `{}` ;
-  /// - Niveau 2 : valeur non-`int` (`'nan'`, `2.0`, `null`) → paire **IGNORÉE**
-  ///   (jamais de nettoyage silencieux du reste — R6) ;
-  /// - clés **verbatim** (opaques, `''` toléré).
+  /// - Niveau 1 : `by_quality` absente / non-`Map` (`42`, `"x"`, une liste)
+  ///   → `{}` ;
+  /// - Niveau 2 : valeur non-`int` (`'nan'`, `2.0`, `null`) → paire ignorée
+  ///   (jamais de nettoyage silencieux du reste) ;
+  /// - clés verbatim (opaques, `''` toléré).
   static Map<String, int> _decodeByQuality(Object? raw) {
     if (raw is! Map) return const <String, int>{};
     final out = <String, int>{};
@@ -162,12 +155,12 @@ class ZStudySessionResult {
       // Niveau 2 : valeur non-`int` ⇒ paire ignorée (clé opaque verbatim).
       if (value is int) out['${entry.key}'] = value;
     }
-    // DW-ES24-1 : vue NON MODIFIABLE (idempotente ⇒ accesseur zéro-copie, AC14).
+    // Vue non modifiable (idempotente ⇒ accesseur zéro-copie).
     return zUnmodifiableScalarMap(out);
   }
 
   // ---------------------------------------------------------------------------
-  // Égalité de valeur — [byQuality] COMMUTATIF sur les clés (D7)
+  // Égalité de valeur — [byQuality] commutatif sur les clés.
   // ---------------------------------------------------------------------------
 
   @override
@@ -183,8 +176,8 @@ class ZStudySessionResult {
   int get hashCode =>
       Object.hash(mode, total, correct, _byQualityHash(byQuality));
 
-  /// Égalité D7 : **ensembliste sur les clés** (l'ordre d'insertion n'a aucun
-  /// sens), **valeurs comparées** (`{'0':1} != {'0':2}` ; `{'0':1} != {'1':1}`).
+  /// Égalité ensembliste sur les clés (l'ordre d'insertion n'a aucun sens),
+  /// valeurs comparées (`{'0':1} != {'0':2}` ; `{'0':1} != {'1':1}`).
   static bool _byQualityEquals(Map<String, int> a, Map<String, int> b) {
     if (identical(a, b)) return true;
     if (a.length != b.length) return false;
@@ -196,8 +189,9 @@ class ZStudySessionResult {
     return true;
   }
 
-  /// Hash D7 : **COMMUTATIF** (somme sur les paires ⇒ indépendant de l'ordre des
-  /// clés) mais sensible aux clés ET aux valeurs (`Object.hash(key, value)`).
+  /// Hash commutatif (somme sur les paires ⇒ indépendant de l'ordre des
+  /// clés) mais sensible aux clés ET aux valeurs (`Object.hash(key,
+  /// value)`).
   static int _byQualityHash(Map<String, int> m) {
     var acc = 0;
     for (final entry in m.entries) {

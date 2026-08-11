@@ -1,40 +1,38 @@
-/// Résolveur de **chemins Firestore bi-topologie** (ES-3.2, FR-S13, AD-5/AD-11/
-/// AD-20/NFR-S8) — l'unique endroit du système qui décide *où* vit une
-/// collection, sans jamais coder un chemin en dur dans le domaine.
+/// Résolveur de **chemins Firestore bi-topologie** (invariants AD-5/AD-11/
+/// AD-20) — l'unique endroit du système qui décide *où* vit une collection,
+/// sans jamais coder un chemin en dur dans le domaine.
 ///
-/// ## Le doublon factorisé (origine lex + IFFD)
+/// ## Le doublon factorisé
 ///
-/// Deux topologies Firestore réelles cohabitent chez les consommateurs :
-///  - **nested** (lex_douane) : `users/{uid}/study_folders/{folderId}/flashcards`
-///    (`study_folders_repository_impl.dart:68-75`, cascade `:426`) ;
-///  - **flat top-level by type** (IFFD) : `db.collection(name)`
-///    (`databases_functions.dart:23-24,45-46`) — avec un **CRUD quasi-réflexif à
-///    BANNIR** : `getFirebaseCollectionName<T>` dérive la collection de
-///    `T.toString()` (`databases_functions.dart:8-9`), c.-à-d. **le nom de classe
-///    par réflexion**. Une topologie **globale** existe aussi
-///    (`study_share_links` **hors** `users/{uid}`, `study_sharing_repository_impl
-///    .dart:71`).
+/// Deux topologies Firestore cohabitent couramment chez les applications
+/// hôtes :
+///  - **imbriquée** (nested) : `users/{uid}/study_folders/{folderId}/flashcards` ;
+///  - **plate au premier niveau, par type** (flat) : `db.collection(name)` —
+///    à l'exclusion de tout CRUD quasi-réflexif qui dériverait le nom de
+///    collection de `T.toString()` (le nom de classe par réflexion). Une
+///    topologie **globale** existe aussi (ex. des liens de partage, hors de
+///    tout scope `users/{uid}`).
 ///
-/// ## Ce que ce résolveur garantit (AD-20 / NFR-S8 / AD-5)
+/// ## Ce que ce résolveur garantit (invariants AD-20 / AD-5)
 ///
 /// - **Entrée NEUTRE, sortie `String`** : `resolveCollection`/`resolveDoc`
 ///   n'acceptent **aucun** type `cloud_firestore` (ni `CollectionReference`, ni
 ///   `DocumentReference`, ni `Query`) et **retournent un chemin `String`**. Le
 ///   dépôt fait `firestore.collection(path)` **en interne** — le type Firestore
-///   reste **confiné** (AD-5/AD-11).
+///   reste **confiné** (invariants AD-5/AD-11).
 /// - **Config explicite & STATIQUE** : la topologie de chaque `kind` est une
 ///   **règle littérale déclarée** ([ZFirestorePathRule]) injectée à la
 ///   construction. Le segment de collection est un **littéral** (`'flashcards'`),
-///   **jamais** dérivé de `T.toString()`/`runtimeType` : le CRUD quasi-réflexif
-///   d'IFFD (`databases_functions.dart:9`) est **structurellement impossible ici**
-///   (le résolveur ne connaît **aucun** type générique `T` — seulement des
-///   `String kind`).
-/// - **Aucun chemin en dur dans le domaine** (AD-20) : le kernel/les entités
-///   n'importent **jamais** ce résolveur ; il vit dans `zcrud_firestore`.
+///   **jamais** dérivé de `T.toString()`/`runtimeType` : un CRUD quasi-réflexif
+///   est **structurellement impossible ici** (le résolveur ne connaît **aucun**
+///   type générique `T` — seulement des `String kind`).
+/// - **Aucun chemin en dur dans le domaine** (invariant AD-20) : le
+///   kernel/les entités n'importent **jamais** ce résolveur ; il vit dans
+///   `zcrud_firestore`.
 ///
-/// ## Erreur EXPLICITE plutôt que chemin muet (AD-10/AD-11)
+/// ## Erreur explicite plutôt que chemin muet (invariants AD-10/AD-11)
 ///
-/// Une résolution impossible (kind inconnu, topologie `nested` **sans**
+/// Une résolution impossible (kind inconnu, topologie imbriquée **sans**
 /// `parentId`, topologie user-scopée **sans** `userId`) retourne un
 /// `Left(ZDomainFailure)` **explicite** — **jamais** un chemin silencieusement
 /// incorrect qui écrirait dans la mauvaise collection.

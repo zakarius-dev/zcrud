@@ -1,5 +1,5 @@
 /// Factory d'enregistrement des champs rich-text `zcrud_markdown` dans un
-/// [ZWidgetRegistry] injecté (DP-3, AC6, AD-4).
+/// [ZWidgetRegistry] injecté (AD-4).
 ///
 /// Enregistre les `kind` `markdown` (mode `block`), `inlineMarkdown` (mode
 /// `inline`) et `richText` (mode `block`, alias) sur le MÊME adaptateur
@@ -34,19 +34,19 @@ import 'z_rich_text_toolbar_config.dart';
 /// | `richText`       | block   |
 ///
 /// `field.readOnly` est honoré par l'adaptateur (rendu lecteur, prioritaire).
-/// [minLines]/[maxLines] (MIN-1) bornent la hauteur de l'éditeur inline
-/// (mode compact) ; [characterLimit] (MIN-1) active un compteur + troncature
-/// souple. [styleSet]/[chrome]/[textScaleFactor]/[formulaSpec] (GAP-5/6/7, CR
+/// [minLines]/[maxLines] bornent la hauteur de l'éditeur inline
+/// (mode compact) ; [characterLimit] active un compteur + troncature
+/// souple. [styleSet]/[chrome]/[textScaleFactor]/[formulaSpec] (6/7, CR
 /// parité 2026-08-11) : défauts de REGISTRE partagés par tous les champs
 /// rich-text du sous-arbre (styles « signature » de l'hôte, habillage carte,
-/// échelle, formules). [toolbarConfig] (GAP-9/DP-22, CR B2 2026-08-11) :
+/// échelle, formules). [toolbarConfig] (CR B2 2026-08-11) :
 /// config granulaire de la barre d'outils (boutons + `themedBarBackground`)
 /// partagée par tous les champs rich-text — le registre est la SEULE voie de
 /// construction pour un hôte, donc tout paramètre par-champ de [ZMarkdownField]
 /// DOIT être posable ici (garde de parité
 /// `z_markdown_registration_parity_test.dart`). [showLabel] : `false` masque
-/// le libellé rendu par le champ (hôte posant le sien — CR-IFFD-25).
-/// Tous OPTIONNELS : omis ⇒ comportement DP-3 INCHANGÉ.
+/// le libellé rendu par le champ (hôte posant le sien).
+/// Tous OPTIONNELS : omis ⇒ comportement INCHANGÉ.
 void registerZMarkdownFields(
   ZWidgetRegistry registry, {
   ZCodec? codec,

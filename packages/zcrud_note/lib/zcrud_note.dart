@@ -1,45 +1,45 @@
-/// Barrel d'API publique de `zcrud_note` (ES-2.2, **FR-S5**).
+/// Barrel d'API publique de `zcrud_note`.
 ///
 /// Note intelligente à **contenu TYPÉ** :
 /// - `ZSmartNote` : le **contenu PARTAGEABLE** (titre, dossier, corps) dont le
 ///   corps est une **`List<Map<String, dynamic>>`** d'ops Delta neutres — **jamais
-///   une `String` ambiguë** (AD-28) ;
-/// - `normalizeNoteContentOps` : la coercition **défensive et TOTALE** du corpus
-///   legacy (**D5**) — une `String` markdown **survit VERBATIM**, **jamais `[]`** ;
+///   une `String` ambiguë**. Invariant AD-28 ;
+/// - `normalizeNoteContentOps` : la coercition **défensive et TOTALE** d'un
+///   corpus historique — une `String` markdown **survit VERBATIM**, **jamais `[]`** ;
 /// - `ZNoteAudio` : le slot audio **typé, versionné, OPT-IN** (`ZExtension`,
-///   AD-4 pt.1) — l'audio est **hors-schéma** (FR-S5) ;
+///   invariant AD-4) — l'audio est **hors-schéma** ;
 /// - `ZOpaqueNoteExtension` : le **canal de SURVIE** d'un payload `extension` que
 ///   **rien n'a su typer** — il est **réémis VERBATIM** au lieu d'être **détruit**
-///   (AD-4 pt.1, « évolution additive »).
+///   (AD-4, « évolution additive »).
 ///
-/// ## ⛔ DW-ES14-2 — À LIRE AVANT DE CÂBLER UN STORE SUR `ZSmartNote`
+/// ## À lire avant de câbler un store sur `ZSmartNote`
 ///
-/// `ZNoteAudio` est la **PREMIÈRE `ZExtension` concrète du repo** : elle
-/// **FALSIFIE** la clause d'échappement n°1 de **DW-ES14-2** (*« la voie registre
-/// reste utilisable si — et seulement si — l'entité n'utilise pas le slot
-/// `extension` »*). `ZcrudRegistry` / `FirebaseZRepositoryImpl.fromRegistry`
-/// appellent `ZSmartNote.fromMap(map)` **sans `extensionParser`** ⇒ le slot n'est
-/// **jamais typé** sur cette voie (le payload, lui, **survit** — cf.
-/// `ZOpaqueNoteExtension`). **Pour utiliser l'audio, câbler l'entité par le
-/// constructeur nominal avec `extensionParser: ZNoteAudio.fromJsonSafe`.**
+/// `ZNoteAudio` est la **première `ZExtension` concrète** de ce paquet : la voie
+/// registre reste utilisable seulement si l'entité n'utilise pas le slot
+/// `extension` — or elle l'utilise. `ZcrudRegistry` /
+/// `FirebaseZRepositoryImpl.fromRegistry` appellent `ZSmartNote.fromMap(map)`
+/// **sans `extensionParser`** ⇒ le slot n'est **jamais typé** sur cette voie (le
+/// payload, lui, **survit** — cf. `ZOpaqueNoteExtension`). **Pour utiliser
+/// l'audio, câbler l'entité par le constructeur nominal avec
+/// `extensionParser: ZNoteAudio.fromJsonSafe`.**
 ///
-/// **AD-19** : `ZSmartNote` ne déclare **NI `updated_at` NI `is_deleted`** —
-/// l'autorité Last-Write-Wins et le soft-delete vivent **hors-entité**
-/// (`ZSyncMeta`). Porter le schéma lex verbatim — qui loge `updatedAt` **inline**
-/// et en maintient « à la main » une copie hors-entité — recréerait la perte de
-/// valeur métier soldée en ES-1.3 (le store écrit sa méta **APRÈS** le corps à
-/// chaque `put`).
+/// **Invariant AD-19** : `ZSmartNote` ne déclare **NI `updated_at` NI
+/// `is_deleted`** — l'autorité Last-Write-Wins et le soft-delete vivent
+/// **hors-entité** (`ZSyncMeta`), qui écrit sa méta **APRÈS** le corps à
+/// chaque `put`. Un champ métier qui reprendrait l'une de ces clés serait donc
+/// écrasé silencieusement.
 ///
 /// Dépend **UNIQUEMENT** de `zcrud_core` (surface **pur-Dart** `domain.dart`) et
-/// `zcrud_annotations` (AD-1/AD-17) — **zéro** dép lourde, **zéro** gestionnaire
+/// `zcrud_annotations` — **zéro** dép lourde, **zéro** gestionnaire
 /// d'état, **zéro** `cloud_firestore`, **zéro** SDK Flutter, **zéro** Quill
-/// (NFR-S3/SM-S5/NFR-S10). Tests sous **`dart test`**.
+/// dans le domaine. Tests sous **`dart test`**.
 ///
-/// ⛔ **Pas d'arête vers `zcrud_markdown`** (D4) : c'est un package **Flutter**
-/// (`flutter_quill`, `flutter_math_fork`) — l'arête ferait de ce **domaine pur**
-/// un package Flutter. Elle naîtra en **ES-6.1**, avec le **premier widget**.
+/// **Pas d'arête vers `zcrud_markdown`** dans le domaine : c'est un paquet
+/// **Flutter** (`flutter_quill`, `flutter_math_fork`) ; l'arête n'existe que
+/// côté **présentation** (`ZSmartNoteEditor`/`ZSmartNoteReader`), qui compose
+/// les widgets `zcrud_markdown` **tels quels**.
 ///
-/// ## 🔴 Extensions générées masquées (`hide`) — règle **(h)**, tenue par machine
+/// ## Extensions générées masquées (`hide`), tenue par machine
 ///
 /// `ZSmartNoteZcrud` porte un `copyWith` **GÉNÉRÉ** qui ne connaît que les champs
 /// `@ZcrudField` : il **IGNORE** `extra`, `extension` **et le canal hors-codegen
@@ -53,25 +53,25 @@
 ///                                             //   REMIS AUX DÉFAUTS. DÉTRUITS.
 /// ```
 ///
-/// C'était **littéralement** le finding **H3** d'ES-2.1 : `ZFlashcardZcrud` — la
-/// classe phare, porteuse du canal `source` — était **EXPORTÉE**, **sous 1000+
-/// tests verts**. ⇒ **Politique UNIFORME : aucune extension générée n'est
-/// exportée.** La (dé)sérialisation et la copie passent par l'**API d'instance**
-/// (`fromMap` / `toMap` / `copyWith` à sentinelle). La règle est désormais tenue
-/// par `scripts/ci/gate_reserved_keys.dart` (règle **(h)**), plus par un
-/// commentaire.
+/// Une classe d'extension générée exportée par erreur reste verte sous des
+/// centaines de tests tant que personne n'appelle son `copyWith` explicitement
+/// — c'est ce qui rend le défaut facile à manquer. ⇒ **Politique UNIFORME :
+/// aucune extension générée n'est exportée.** La (dé)sérialisation et la copie
+/// passent par l'**API d'instance** (`fromMap` / `toMap` / `copyWith` à
+/// sentinelle). La règle est tenue par `scripts/ci/gate_reserved_keys.dart`,
+/// pas par un simple commentaire.
 ///
-/// ## ES-6.1 — Présentation : édition/lecture du corps riche (FR-S25)
+/// ## Présentation : édition/lecture du corps riche
 ///
-/// `ZSmartNoteEditor` / `ZSmartNoteReader` sont de **minces adaptateurs** (D1/D2)
+/// `ZSmartNoteEditor` / `ZSmartNoteReader` sont de **minces adaptateurs**
 /// composant `ZMarkdownField`/`ZMarkdownReader` + `ZDeltaCodec` de `zcrud_markdown`
-/// **TELS QUELS** (SM-S4 : aucun nouveau codec, aucune duplication). Ils exposent
+/// **TELS QUELS** (aucun nouveau codec, aucune duplication). Ils exposent
 /// **UNIQUEMENT** des symboles neutres — `ZSmartNote`, `ValueChanged<ZSmartNote>`,
 /// valeurs neutres — **jamais** un type Quill (`QuillController`/`Document`/
-/// `Delta`, AC8/AD-1/AD-7). Cette moitié `presentation/` fait de `zcrud_note` un
+/// `Delta`), invariants AD-1/AD-7. Cette moitié `presentation/` fait de `zcrud_note` un
 /// package **Flutter** (tests sous `flutter test`) ; le DOMAINE reste PUR-DART.
 ///
-/// ## 🔴 CR-IFFD-66 — `ZNoteContentFaithChannel` : À LIRE SI VOS DONNÉES
+/// ## `ZNoteContentFaithChannel` : À LIRE SI VOS DONNÉES
 /// PRÉCÈDENT LA MIGRATION
 ///
 /// Un hôte migré par *strangler fig* **double** son corps de note : le champ TYPÉ
@@ -86,7 +86,7 @@
 /// producteur zcrud pur (aucun doublage) est **strictement inchangé** — le
 /// paramètre est `null` par défaut, aucune rupture d'API.
 ///
-/// ⚠️ Le round-trip `String → ops → String` n'est **pas** fidèle à l'octet
+/// Le round-trip `String → ops → String` n'est **pas** fidèle à l'octet
 /// (mesuré sur 46 constructions markdown : **2 %** en octet, **67 %** en tolérant
 /// le `\n` terminal ; cassent notamment le **LaTeX bloc**, la fusion du **saut de
 /// ligne simple**, les lignes vides multiples, les entités HTML). C'est pourquoi

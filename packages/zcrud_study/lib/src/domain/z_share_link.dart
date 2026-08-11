@@ -1,27 +1,28 @@
-/// Lien de partage **révocable** `ZShareLink` (Story ES-9.4, AC4/AC5/AC6, AD-20).
+/// Lien de partage révocable d'un dossier d'étude.
 ///
-/// origine: `study_share_links` (collection **GLOBALE** côté lex — résolution de
-/// chemin **hors domaine**, AD-20). Un lien lie un dossier (`folderId`) à son
-/// owner (`ownerUid`) et porte un état de **révocation MONOTONE** (`revoked` +
-/// `revokedAt`). C'est une entité **owner-contrôlée** : `revoked` et `ownerUid`
-/// sont des **champs de contrôle** (AC5) — un contributeur ne peut PAS
-/// dé-révoquer un lien (la « dé-révocation LWW » de lex est fermée au niveau de
-/// l'autorisation domaine via [ZStudySharingAcl]).
+/// Un lien lie un dossier (`folderId`) à son propriétaire (`ownerUid`) et
+/// porte un état de révocation monotone (`revoked` + `revokedAt`). C'est une
+/// entité contrôlée par le propriétaire : `revoked` et `ownerUid` sont des
+/// champs de contrôle — un contributeur ne peut pas dé-révoquer un lien,
+/// cette possibilité étant fermée au niveau de l'autorisation domaine (voir
+/// `ZStudySharingAcl`).
 ///
-/// **Aucun** nom de collection en dur ici (`study_share_links` = concern
-/// d'adapter, AD-20) ; **aucun** état personnel (AC3). Entité hand-written
-/// défensive (AD-10), AD-19.1 sur [extra] (slot `_extra` + `zSanitizeExtra`).
+/// Aucun nom de collection n'est codé en dur ici : la résolution du chemin
+/// de stockage est un concern d'adaptateur, hors du domaine. Aucun état
+/// personnel n'y vit non plus. Entité écrite à la main et désérialisée
+/// défensivement (invariant AD-10).
 library;
 
 import 'package:zcrud_core/domain.dart';
 
-/// Lien de partage **immuable** et **révocable** (value-object, `==`/`hashCode`
-/// par valeur — égalité **profonde** de [extra]).
+/// Lien de partage immuable et révocable (value-object, `==`/`hashCode` par
+/// valeur — égalité profonde de [extra]).
 ///
-/// La révocation **survit au décodage** (round-trip `toJson`/`fromJson`, AC4) :
-/// un lien révoqué reste révoqué (parité leçon M3 kernel).
+/// La révocation survit au décodage (round-trip `toJson`/`fromJson`) : un
+/// lien révoqué reste révoqué.
 class ZShareLink {
-  /// Construit un lien de partage. [id]/[token] opaques, [revoked] défaut `false`.
+  /// Construit un lien de partage. [id]/[token] opaques, [revoked] défaut
+  /// `false`.
   const ZShareLink({
     this.id,
     this.token = '',
@@ -42,13 +43,15 @@ class ZShareLink {
     'revoked_at',
   };
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// Reconstruit **défensivement** depuis une map (AD-10) — **jamais** de throw.
+  /// Reconstruit défensivement depuis une map (invariant AD-10) — ne lève
+  /// jamais.
   ///
-  /// L'état de révocation **survit** (AC4) ; `revoked` non-`bool` ⇒ `false` sûr ;
-  /// `revoked_at` mal formé ⇒ `null`. Les clés inconnues atterrissent dans [extra].
+  /// L'état de révocation survit à la reconstruction ; un `revoked`
+  /// non-`bool` retombe sur `false` ; un `revoked_at` mal formé retombe sur
+  /// `null`. Les clés inconnues atterrissent dans [extra].
   static ZShareLink fromJson(Object? json) {
     if (json is! Map) return const ZShareLink();
     final map = <String, dynamic>{
@@ -71,7 +74,7 @@ class ZShareLink {
   static DateTime? _parseIso(Object? v) =>
       v is String ? DateTime.tryParse(v) : null;
 
-  /// Identité opaque `String` (nullable pour l'éphémère AD-14).
+  /// Identité opaque `String`, nullable pour le lien pas encore persisté.
   final String? id;
 
   /// Jeton de partage opaque `String` (défaut `''`).
@@ -80,31 +83,34 @@ class ZShareLink {
   /// Dossier ciblé par le lien (clé neutre `String`).
   final String folderId;
 
-  /// 🔴 **Champ de CONTRÔLE** (AC5) — propriétaire du lien (uid opaque).
+  /// Champ de contrôle : propriétaire du lien (identifiant opaque).
   final String ownerUid;
 
-  /// 🔴 **Champ de CONTRÔLE MONOTONE** (AC5) — `true` une fois révoqué. Un
-  /// non-owner ne peut PAS le remettre à `false` ([ZStudySharingAcl]).
+  /// Champ de contrôle monotone : `true` une fois révoqué. Un
+  /// non-propriétaire ne peut pas le remettre à `false` (voir
+  /// `ZStudySharingAcl`).
   final bool revoked;
 
   /// Horodatage de révocation (ISO-8601), ou `null` si actif.
   final DateTime? revokedAt;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée. **Normalisée à la LECTURE (AD-19.1)**.
+  /// Échappatoire non typée, normalisée à la lecture.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Retourne une **copie révoquée** de ce lien (helper de révocation monotone).
+  /// Retourne une copie révoquée de ce lien (aide à la révocation
+  /// monotone).
   ///
-  /// [at] horodate la révocation (défaut : conserve [revokedAt] courant s'il
-  /// existe, sinon `null`). La révocation est **monotone** côté domaine : ce
-  /// helper ne dé-révoque **jamais**.
+  /// [at] horodate la révocation (défaut : conserve [revokedAt] courant
+  /// s'il existe, sinon `null`). La révocation est monotone côté domaine :
+  /// cette méthode ne dé-révoque jamais.
   ZShareLink revoke({DateTime? at}) =>
       copyWith(revoked: true, revokedAt: at ?? revokedAt);
 
-  /// Sérialise en clés snake_case. Étale [extra] (clés réservées déjà écartées).
+  /// Sérialise en clés snake_case. Étale [extra] (clés réservées déjà
+  /// écartées).
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'token': token,
@@ -115,8 +121,8 @@ class ZShareLink {
         ...extra,
       };
 
-  /// Copie modifiée (champ à champ). [revokedAt] via sentinelle pour permettre la
-  /// remise à `null`.
+  /// Copie modifiée (champ à champ). [revokedAt] passe par une sentinelle
+  /// pour permettre la remise à `null`.
   ZShareLink copyWith({
     String? id,
     String? token,
@@ -166,5 +172,6 @@ class ZShareLink {
       'ownerUid: $ownerUid, revoked: $revoked)';
 }
 
-/// Sentinelle interne de [ZShareLink.copyWith] (distingue « omis » de `null`).
+/// Sentinelle interne de [ZShareLink.copyWith] (distingue « omis » de
+/// `null`).
 const Object _unset = Object();

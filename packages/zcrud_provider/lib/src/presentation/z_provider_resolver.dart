@@ -1,8 +1,9 @@
-/// `ZProviderResolver` — implémentation `provider` du seam de résolution (AD-6).
+/// `ZProviderResolver` — implémentation `provider` du seam de résolution
+/// (invariant AD-6).
 ///
-/// origine: matérialise le contrat `ZDependencyResolver` du cœur en déléguant à
+/// Matérialise le contrat `ZDependencyResolver` du cœur en déléguant à
 /// `context.read<T>()` (lecture non écoutante du package `provider`). Le cœur
-/// ignore totalement `provider` (AD-15) : il n'appelle que
+/// ignore totalement `provider` (invariant AD-15) : il n'appelle que
 /// `ZcrudScope.of(context).resolver.resolve<T>()`.
 library;
 
@@ -16,14 +17,14 @@ import 'package:zcrud_core/zcrud_core.dart';
 /// [ZcrudProviderScope]) via `Provider.of<T>(..., listen: false)` — l'équivalent
 /// de `context.read<T>()`. Si aucun provider ne fournit `T`, la
 /// `ProviderNotFoundException` interne est convertie en [ZScopeError] actionnable
-/// (« seams throw par défaut », AD-6).
+/// (« seams throw par défaut », invariant AD-6).
 ///
-/// **Identité stable (parité AD-15, MEDIUM-1)** : l'instance est **mémoïsée** par
+/// **Identité stable (parité invariant AD-15)** : l'instance est **mémoïsée** par
 /// le [ZcrudProviderScope] (créée une fois) ; son [BuildContext] sous les
 /// providers est (ré)injecté par [attach] à chaque rebuild du scope SANS changer
 /// l'identité du resolver. `ZcrudScope.updateShouldNotify` compare le resolver
 /// par `identical(...)` : une identité stable évite le sur-rebuild de tous les
-/// consommateurs de `ZcrudScope.of`, à parité avec `zcrud_get`/`zcrud_riverpod`.
+/// consommateurs de `ZcrudScope.of`, à parité avec les autres bindings.
 class ZProviderResolver extends ZDependencyResolver {
   /// Construit le resolver. Le [BuildContext] situé sous les providers peut être
   /// fourni au montage ou (ré)attaché ensuite via [attach].

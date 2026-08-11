@@ -11,14 +11,14 @@
 /// `folder_content_add_dialog_widget.dart`, 550 l.) devienne le **DÉFAUT**,
 /// hauteur d'item de référence **assumée** et **défilement attendu**.
 ///
-/// 🔴 **Cette décision CONTREDIT délibérément la CR**, qui écrivait « la densité
+/// **Cette décision CONTREDIT délibérément la CR**, qui écrivait « la densité
 /// du socle est meilleure […] nous ne demandons pas de le défaire ». L'argument
 /// d'ÉCHELLE de la CR (douze types ⇒ trois ou quatre écrans) **n'est pas
 /// réfuté** : il est répondu par le RÉGLAGE — [ZContentHubDensity.compact],
 /// atteignable par paramètre ET par jeton, restitue la densité d'avant
 /// CR-IFFD-65.
 ///
-/// ## ⚠️ Exception FR-26 ENCADRÉE (arbitrage owner 2026-08-04, étendu ici)
+/// ## Exception FR-26 ENCADRÉE (arbitrage owner 2026-08-04, étendu ici)
 ///
 /// L'exception vaut **par famille**. Ce fichier est le **SECOND et dernier**
 /// du package autorisé à porter des couleurs littérales — les **six teintes
@@ -43,7 +43,7 @@
 /// `onSurfaceVariant`, fond de carte `CardTheme`/`surface` — aucun hex ici pour
 /// elles.
 ///
-/// ## 🔴 Le contraste — mesuré, jamais reproduit à l'aveugle
+/// ## Le contraste — mesuré, jamais reproduit à l'aveugle
 ///
 /// **MESURÉ (« non mesuré » n°3 de la CR — le thème sombre)** : le legacy
 /// n'adapte **RIEN** en sombre. Preuve négative exécutée sur le fichier
@@ -78,14 +78,14 @@ abstract final class ZContentHubReference {
   /// Les clés d'identité **stables** des familles de contenu courantes, à passer
   /// à `ZContentHubEntry.colorKey`.
   ///
-  /// 🔴 **Ce ne sont PAS des libellés** — ni rendus, ni traduits, ni affichés.
+  /// **Ce ne sont PAS des libellés** — ni rendus, ni traduits, ni affichés.
   /// Ce sont des **identités opaques** dont la seule fonction est de fixer le
   /// créneau de teinte d'une entrée (`zAccentSlot`). C'est ce qui rend la teinte
   /// STABLE quand une application **insère un type au milieu** de sa liste
   /// (« non mesuré » n°4 de CR-IFFD-65) et **d'une langue à l'autre** — le repli
   /// par libellé, lui, change de créneau dès que le libellé change.
   ///
-  /// ⚠️ **Aucune table type → teinte n'est introduite ici** : le socle ne
+  /// **Aucune table type → teinte n'est introduite ici** : le socle ne
   /// connaît toujours aucun « type de contenu » (cf. [accents], « c'est une
   /// PALETTE, pas une table par type »). Ces constantes ne font que **nommer**
   /// des identités, pour que deux écrans d'une même application n'inventent pas
@@ -115,7 +115,7 @@ abstract final class ZContentHubReference {
   /// Les six clés ci-dessus, dans un ordre **stable et déclaré** (support de
   /// garde : une clé ajoutée sans être recensée fait rougir).
   ///
-  /// ⚠️ L'ordre de cette liste n'a **aucun** effet sur les teintes : le créneau
+  /// L'ordre de cette liste n'a **aucun** effet sur les teintes : le créneau
   /// est une fonction de l'identité, jamais de la position (`zAccentSlot`).
   static const List<String> colorKeys = <String>[
     colorKeyFlashcards,
@@ -133,14 +133,14 @@ abstract final class ZContentHubReference {
   /// (`orange`), numérisation (`teal`), note (`green`), carte mentale
   /// (**`deepPurple`**).
   ///
-  /// 🔴 **La sixième n'est PAS l'indigo annoncé par la CR.** Le legacy pose
+  /// **La sixième n'est PAS l'indigo annoncé par la CR.** Le legacy pose
   /// `iconColor: Colors.deepPurple` (`folder_content_add_dialog_widget.dart:337`),
   /// soit `0xFF673AB7` — et non `Colors.indigo` (`0xFF3F51B5`), qui n'apparaît
   /// **nulle part** dans le fichier legacy (recherche négative exécutée). La CR
   /// (§ ② et sa vérification par défilement § ⑤) confond deux teintes Material
   /// distinctes.
   ///
-  /// ⚠️ **C'est une PALETTE, pas une table par type.** Le socle ne connaît
+  /// **C'est une PALETTE, pas une table par type.** Le socle ne connaît
   /// aucun « type de contenu » : une entrée reçoit sa teinte par
   /// `ZContentHubEntry.tint` (injectée), ou à défaut par un créneau
   /// **déterministe de son identité** (`colorKey`, à défaut son libellé) — donc
@@ -171,7 +171,7 @@ abstract final class ZContentHubReference {
   /// ratio du legacy `_buildContentGrid` l.380 : `cardWidth / (kToolbarHeight *
   /// 2)` rend une hauteur de **112 quelle que soit la largeur**).
   ///
-  /// 🔴 C'est la « hauteur d'item de référence assumée » de la décision du
+  /// C'est la « hauteur d'item de référence assumée » de la décision du
   /// propriétaire. Le plancher AD-13 de **48 dp** ([minTapTarget]) reste, mais
   /// il n'est plus la hauteur CIBLE — il redevient ce qu'il est : un plancher.
   static const double itemExtent = kToolbarHeight * 2;
@@ -197,7 +197,7 @@ abstract final class ZContentHubReference {
   /// Opacité de la teinte de FOND de la carte d'entrée (**0** — carte
   /// NEUTRE).
   ///
-  /// 🔴 **MESURÉ, et il INFIRME la formulation « entrées en cartes (fond
+  /// **MESURÉ, et il INFIRME la formulation « entrées en cartes (fond
   /// teinté) »** de la décision-cadre : le legacy pose un `Card(elevation: 0,
   /// shape: … side: outlineVariant)` **sans aucune couleur de fond** — le fond
   /// est celui du `CardTheme` ambiant. Ce qui est teinté, c'est la **pastille**
@@ -211,7 +211,7 @@ abstract final class ZContentHubReference {
   /// Diamètre de la pastille (**40** — legacy : `EdgeInsets.all(8)` autour d'un
   /// glyphe de 24, soit 8 + 24 + 8).
   ///
-  /// ⚠️ **AD-13** : la pastille est sous les 48 dp de la cible tactile, et ce
+  /// **AD-13** : la pastille est sous les 48 dp de la cible tactile, et ce
   /// n'est **pas** un défaut — dans le legacy comme ici, elle n'est **jamais**
   /// une cible tactile indépendante : toute la carte est un **seul** `InkWell`.
   static const double avatarSize = 40;
@@ -226,7 +226,7 @@ abstract final class ZContentHubReference {
 
   /// Glyphe du chevron (`arrow_forward_ios` — legacy l.469).
   ///
-  /// ⚠️ **MESURÉ, et il INFIRME le grief RTL** porté contre le legacy : `Icon`
+  /// **MESURÉ, et il INFIRME le grief RTL** porté contre le legacy : `Icon`
   /// **n'a pas** de propriété `matchTextDirection` (elle vit sur `IconData`), et
   /// `Icons.arrow_forward_ios` la porte **déjà à `true`** dans le SDK
   /// (`icons.dart:2510-2514`). Le chevron legacy **se retourne donc bien** en
@@ -288,7 +288,7 @@ abstract final class ZContentHubReference {
   /// Largeur à partir de laquelle le legacy passe à **deux** colonnes
   /// (**600** — legacy l.376 : `isSmallScreen = constraints.maxWidth < 600`).
   ///
-  /// 🔴 **MESURÉ, contre un « non mesuré » de la CR.** La CR a retiré l'écart
+  /// **MESURÉ, contre un « non mesuré » de la CR.** La CR a retiré l'écart
   /// de grille en le déclarant non comparé en large. Le code legacy, lui,
   /// impose **sans ambiguïté** `crossAxisCount = 2` au-delà de 600 lp
   /// (l.377) — jamais une colonne unique. Reproduire le legacy intégralement
@@ -303,7 +303,7 @@ abstract final class ZContentHubReference {
   /// Plancher de contraste des SURFACES et COMPOSANTS graphiques — pastille,
   /// glyphe (**3.0:1**, WCAG 2.2 §1.4.11).
   ///
-  /// 🔴 **Ce n'est PAS une valeur du legacy** : le legacy peint la teinte
+  /// **Ce n'est PAS une valeur du legacy** : le legacy peint la teinte
   /// BRUTE, sans aucune mesure et sans branche de luminosité. C'est une valeur
   /// de socle — une teinte d'entrée peut être **injectée par l'hôte**, donc
   /// arbitraire.

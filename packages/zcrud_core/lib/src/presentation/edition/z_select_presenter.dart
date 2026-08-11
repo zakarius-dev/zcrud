@@ -1,19 +1,18 @@
-/// Seam de **présentation riche des familles de sélection** (AD-48).
+/// Seam de **présentation riche des familles de sélection**.
 ///
-/// origine: parité DODLP `awesome_select` (`SmartSelect`) — un présentateur riche
-/// (modal/bottom-sheet/chips avec recherche) que l'app peut brancher à la place
-/// du rendu natif zcrud des familles `select`/`radio`/`checkbox`/`relation`.
+/// Un présentateur riche (modal/bottom-sheet/chips avec recherche) que
+/// l'application peut brancher à la place du rendu natif zcrud des familles
+/// `select`/`radio`/`checkbox`/`relation`.
 ///
-/// **Abstraction Material-free au cœur** (patron **strict** de `ZListRenderer`,
-/// AD-8) : `zcrud_core` n'expose QUE le contrat + un **DTO neutre**
-/// [ZSelectPresentation]. L'implémentation concrète (adossée à `awesome_select`)
-/// vit **exclusivement** dans `zcrud_select` (fp-4-1) et est **injectée** via
-/// `ZcrudScope.selectPresenter` (défaut `null` → rendu natif conservé). Le cœur
-/// n'importe AUCUN paquet de sélection : CORE OUT=0 préservé (AD-1).
+/// **Abstraction Material-free au cœur** (même patron que `ZListRenderer`,
+/// invariant AD-8) : `zcrud_core` n'expose QUE le contrat + un **DTO neutre**
+/// [ZSelectPresentation]. Une implémentation concrète (adossée par exemple à
+/// `awesome_select`) vit **exclusivement** dans un paquet satellite et est
+/// **injectée** via `ZcrudScope.selectPresenter` (défaut `null` → rendu natif
+/// conservé). Le cœur n'importe aucun paquet de sélection (invariant AD-1).
 ///
-/// Imports limités à `package:flutter/widgets.dart` + types `zcrud_core`
-/// (garde `presentation_purity_test.dart`) : AUCUN `awesome_select`, aucune
-/// dépendance lourde, aucun gestionnaire d'état.
+/// Imports limités à `package:flutter/widgets.dart` + types `zcrud_core` :
+/// aucune dépendance lourde, aucun gestionnaire d'état.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -22,12 +21,12 @@ import '../../domain/edition/z_field_choice.dart';
 import '../../domain/ports/z_relation_crud.dart';
 import '../../domain/edition/z_field_spec.dart';
 
-/// **Requête** de chargement d'options adressée à un [ZSelectOptionsLoader]
-/// (CR-SELECT-SEAM, 2026-08-09).
+/// **Requête** de chargement d'options adressée à un [ZSelectOptionsLoader].
 ///
-/// Type **NEUTRE** (Dart pur) : aucun `S2ChoiceLoaderInfo` ni aucun autre type
-/// d'un satellite ne franchit la frontière (AD-1/AD-40). Le présentateur
-/// traduit ce porte-valeurs vers la forme attendue par son moteur.
+/// Type **NEUTRE** (Dart pur) : aucun type d'un satellite (par exemple un
+/// `S2ChoiceLoaderInfo` d'un moteur de sélection concret) ne franchit la
+/// frontière (invariant AD-1). Le présentateur traduit ce porte-valeurs vers
+/// la forme attendue par son moteur.
 @immutable
 class ZSelectOptionsQuery {
   /// Construit une requête de page d'options.
@@ -43,17 +42,17 @@ class ZSelectOptionsQuery {
   final int? limit;
 }
 
-/// Charge **asynchronement** une page d'options (parité `choiceLoader` DODLP).
+/// Charge **asynchronement** une page d'options.
 ///
-/// 🔴 **Contrat défensif (AD-10)** : le seam n'exige RIEN de l'hôte. Une `Future`
-/// qui **échoue** (`Error` comme `Exception`) ou qui **ne se termine jamais** ne
-/// doit pas casser le rendu : c'est au présentateur d'envelopper l'appel et de
-/// retomber sur un **rendu dégradé défini** (liste vide + issue de sortie), sans
+/// **Contrat défensif (invariant AD-10)** : le seam n'exige RIEN de l'hôte.
+/// Une `Future` qui **échoue** ou qui **ne se termine jamais** ne doit pas
+/// casser le rendu : c'est au présentateur d'envelopper l'appel et de retomber
+/// sur un **rendu dégradé défini** (liste vide + issue de sortie), sans
 /// jamais laisser remonter l'exception ni bloquer l'écran.
 ///
-/// 🔴 **AD-2/SM-1** : le chargement ne passe **jamais** par le `ZFormController`
-/// et ne doit reconstruire que la surface qui affiche les options — jamais le
-/// formulaire.
+/// **Réactivité granulaire (invariant AD-2)** : le chargement ne passe
+/// **jamais** par le `ZFormController` et ne doit reconstruire que la
+/// surface qui affiche les options — jamais le formulaire.
 typedef ZSelectOptionsLoader = Future<List<ZFieldChoice>> Function(
   ZSelectOptionsQuery query,
 );
@@ -64,10 +63,10 @@ typedef ZSelectOptionsLoader = Future<List<ZFieldChoice>> Function(
 /// Porte ce qu'un builder d'option a besoin de **lire** ([choice], [selected],
 /// [enabled]) et l'unique action qu'il a le droit d'exercer ([select]).
 ///
-/// 🔴 [select] est indispensable : chez DODLP, tout `choiceBuilder` réel appelle
-/// `choice.select!(bool)` depuis son propre contrôle (mesuré : `organigramme`,
-/// `users_roles_screen`, `agents_screens`). Un builder **display-only** aurait
-/// été une capacité en trompe-l'œil.
+/// [select] est indispensable : un builder de rendu d'option a presque
+/// toujours besoin de déclencher lui-même la sélection depuis son propre
+/// contrôle — un builder strictement lecture-seule serait une capacité en
+/// trompe-l'œil.
 @immutable
 class ZSelectChoiceContext {
   /// Construit le contexte d'une option servie à un builder hôte.
@@ -88,60 +87,46 @@ class ZSelectChoiceContext {
   /// `ZFieldChoice.disabled`).
   final bool enabled;
 
-  /// Sélectionne/désélectionne l'option. Le builder **notifie** — il n'a jamais
-  /// accès au `ZFormController` (AD-2).
+  /// Sélectionne/désélectionne l'option. Le builder **notifie** — il n'a
+  /// jamais accès au `ZFormController` (invariant AD-2).
   final ValueChanged<bool> select;
 }
 
-/// Construit le **rendu complet d'une option** (parité `choiceBuilder` DODLP).
+/// Construit le **rendu complet d'une option**.
 ///
-/// Neutre : ne reçoit qu'un [BuildContext] et un [ZSelectChoiceContext] — aucun
-/// type `S2*`, aucun état interne du moteur de sélection (AD-40).
+/// Neutre : ne reçoit qu'un [BuildContext] et un [ZSelectChoiceContext] —
+/// aucun état interne du moteur de sélection concret.
 typedef ZSelectChoiceBuilder = Widget Function(
   BuildContext context,
   ZSelectChoiceContext ctx,
 );
 
-/// Construit l'**affordance de fin de ligne** d'une option (parité
-/// `choiceSecondaryBuilder` DODLP — chez eux, les boutons Modifier/Copier de
-/// l'entité liée).
+/// Construit l'**affordance de fin de ligne** d'une option (par exemple des
+/// boutons Modifier/Copier sur l'entité liée).
 ///
-/// Retourne `null` pour **ne rien** ajouter à cette option (AD-4 : le slot est
-/// alors absent de l'arbre). Même contexte neutre que [ZSelectChoiceBuilder] :
-/// l'affordance peut donc aussi sélectionner l'option si elle le souhaite.
+/// Retourne `null` pour **ne rien** ajouter à cette option (invariant AD-4 :
+/// le slot est alors absent de l'arbre). Même contexte neutre que
+/// [ZSelectChoiceBuilder] : l'affordance peut donc aussi sélectionner
+/// l'option si elle le souhaite.
 typedef ZSelectChoiceSecondaryBuilder = Widget? Function(
   BuildContext context,
   ZSelectChoiceContext ctx,
 );
 
-/// DTO **NEUTRE** présenté au seam (AD-48). Ne porte **QUE des données** — jamais
-/// le `ZFormController` (AD-2) ni aucun type `awesome_select` (AD-40).
+/// DTO **NEUTRE** présenté au seam. Ne porte **QUE des données** — jamais le
+/// `ZFormController` (invariant AD-2) ni aucun type d'un présentateur
+/// concret.
 ///
-/// Suffisant pour `select`/`radio`/`checkbox`/`relation` (fp-4-1) ; extensible
+/// Suffisant pour `select`/`radio`/`checkbox`/`relation` ; extensible
 /// **additivement** (aucune montée de version requise).
 ///
-/// ## Élargissement CR-SELECT-SEAM (2026-08-09) — STRICTEMENT ADDITIF
-///
-/// Trois capacités mesurées comme inatteignables par le lot de fidélité
-/// précédent ont été réexaminées ; **deux** ont été ajoutées, **une** ne l'a pas
-/// été et **une** n'avait pas lieu d'être :
-///
-/// | Capacité DODLP | Statut | Motif |
-/// |---|---|---|
-/// | `field.leading` | ❌ **rien à ajouter** | déjà atteignable : [field] est un `ZFieldSpec` complet, donc `presentation.field.leading` est lisible, et `resolveAdornment` est exporté par le barrel. La mesure « non atteignable » du lot précédent était **fausse**. |
-/// | `isLoading` | ✅ ajouté ([isLoading]) | `ZRelationFieldWidget` en dispose réellement (`_isLoading`) et ne le transmettait pas : la règle d'inertie de DODLP était donc irreproductible. |
-/// | `choiceBuilder` | ✅ ajouté ([choiceBuilder]) | exprimable **neutrement** via [ZSelectChoiceContext] (l'action `select` incluse). |
-/// | `choiceLoader` | ✅ ajouté ([optionsLoader]) | exprimable neutrement via [ZSelectOptionsQuery] — mais cf. la note d'alimentation ci-dessous. |
-///
-/// 🔴 **Alimentation — ce que les deux sites ont réellement.** `isLoading` est
-/// alimenté pour de bon (`relation`). [choiceBuilder] et [optionsLoader] sont
-/// des **fermetures** : `ZFieldSpec` est `const`/sérialisable et AD-3/AD-14
-/// interdisent d'y loger une closure. Ils sont donc alimentés par un
-/// **paramètre de widget** (`ZSelectFieldWidget`/`ZRelationFieldWidget`, tous
-/// deux publics), et **pas** par le dispatcher déclaratif : celui-ci exigerait
-/// un registre injecté au scope + une clé de config (patron
-/// `relationSourceRegistry`/`sourceKey`), surface publique que ce lot n'a pas
-/// inventée faute de demande d'un hôte.
+/// **Où vivent [choiceBuilder] et [optionsLoader]** : `ZFieldSpec` est
+/// `const`/sérialisable et les invariants AD-3/AD-14 interdisent d'y loger une
+/// closure. Ils sont donc alimentés par un **paramètre de widget**
+/// (`ZSelectFieldWidget`/`ZRelationFieldWidget`, tous deux publics), et pas
+/// par le dispatcher déclaratif : celui-ci exigerait un registre injecté au
+/// scope + une clé de configuration, surface publique que ce seam n'expose
+/// pas en l'absence de besoin démontré.
 @immutable
 class ZSelectPresentation {
   /// Construit le contrat neutre transmis au présentateur.
@@ -192,62 +177,59 @@ class ZSelectPresentation {
   final String? label;
 
   /// `true` tant que les options **ne sont pas encore connues** (source
-  /// asynchrone branchée mais silencieuse) — parité `isLoading` DODLP.
+  /// asynchrone branchée mais silencieuse).
   ///
   /// Défaut `false` : un présentateur qui l'ignore rend comme avant.
   ///
-  /// 🔴 **Distinct de `options.isEmpty`** : « je n'ai encore rien » et « il n'y
+  /// **Distinct de `options.isEmpty`** : « je n'ai encore rien » et « il n'y
   /// a rien » n'appellent pas le même rendu (indicateur d'attente vs état vide).
-  /// C'est précisément la distinction que le seam ne permettait pas de faire.
   final bool isLoading;
 
-  /// Rendu **complet** d'une option, fourni par l'hôte (parité `choiceBuilder`
-  /// DODLP). `null` (défaut) ⇒ le présentateur rend l'option lui-même.
+  /// Rendu **complet** d'une option, fourni par l'hôte. `null` (défaut) ⇒ le
+  /// présentateur rend l'option lui-même.
   ///
-  /// 🔴 Chez DODLP, un `choiceBuilder` **ré-active** le déclencheur même en
-  /// lecture seule / en chargement (`choiceBuilder == null && (readOnly ||
-  /// isLoading) ? null : showModal`) : le builder est le seul rendu possible de
-  /// la donnée, il faut donc pouvoir l'atteindre. Un présentateur fidèle
-  /// reproduit cette règle ; sans ce champ elle se réduisait à
-  /// `readOnly ⇒ inerte`.
+  /// Quand [choiceBuilder] est fourni, il reste le seul rendu possible de la
+  /// donnée même en lecture seule ou en chargement : un présentateur fidèle
+  /// laisse le builder atteignable dans ces états plutôt que de le neutraliser
+  /// silencieusement.
   final ZSelectChoiceBuilder? choiceBuilder;
 
-  /// **Affordance de fin de ligne** d'une option, fournie par l'hôte (parité
-  /// `choiceSecondaryBuilder` DODLP). `null` (défaut) ⇒ aucune affordance.
+  /// **Affordance de fin de ligne** d'une option, fournie par l'hôte. `null`
+  /// (défaut) ⇒ aucune affordance.
   ///
   /// Complète [choiceBuilder] sans le remplacer : là où [choiceBuilder] REND
   /// l'option entière, celui-ci n'ajoute qu'un widget de fin de ligne au rendu
-  /// natif du présentateur (chez DODLP : Modifier / Copier sur l'entité liée).
+  /// natif du présentateur.
   final ZSelectChoiceSecondaryBuilder? choiceSecondaryBuilder;
 
-  /// Chargeur **asynchrone paginé** d'options (parité `choiceLoader` DODLP).
-  /// `null` (défaut) ⇒ [options] est la liste complète, rien n'est chargé.
+  /// Chargeur **asynchrone paginé** d'options. `null` (défaut) ⇒ [options] est
+  /// la liste complète, rien n'est chargé.
   ///
-  /// 🔴 Quand il est fourni, [options] reste utile : elle sert à résoudre le
+  /// Quand il est fourni, [options] reste utile : elle sert à résoudre le
   /// **libellé de la sélection courante** avant tout chargement (sans quoi le
   /// déclencheur afficherait le placeholder alors qu'une valeur existe).
   final ZSelectOptionsLoader? optionsLoader;
 
   /// **CRUD inline** neutre de l'entité liée (port déjà existant du cœur,
-  /// `ZRelationCrudHandler` — DP-15/M8, parité `showCrudButton` DODLP).
-  /// `null` (défaut) ⇒ aucune action de création/édition dans le sélecteur.
+  /// `ZRelationCrudHandler`). `null` (défaut) ⇒ aucune action de
+  /// création/édition dans le sélecteur.
   ///
-  /// 🔴 **Pas d'invention** : c'est le port que `ZRelationFieldWidget` résout
-  /// déjà au runtime (`ZcrudScope.relationCrudRegistry` +
-  /// `ZRelationConfig.crudKey`) et que le rendu NATIF exploite depuis DP-15. Le
-  /// seam ne le portait simplement pas, si bien qu'un présentateur riche
-  /// **perdait** une capacité que le rendu natif avait — le pire des écarts.
-  /// Contrairement à [choiceBuilder]/[optionsLoader], celui-ci est donc alimenté
-  /// **de bout en bout, par le dispatcher déclaratif**.
+  /// C'est le port que `ZRelationFieldWidget` résout déjà au runtime
+  /// (`ZcrudScope.relationCrudRegistry` + `ZRelationConfig.crudKey`) et que le
+  /// rendu natif exploite. Contrairement à [choiceBuilder]/[optionsLoader],
+  /// celui-ci est donc alimenté **de bout en bout, par le dispatcher
+  /// déclaratif** — un présentateur riche ne doit pas perdre une capacité que
+  /// le rendu natif possède déjà.
   final ZRelationCrudHandler? crudHandler;
 }
 
-/// Seam de **présentation** des familles de sélection (AD-48). Patron `ZListRenderer` :
-/// `abstract class` + constructeur `const` + une méthode [present].
+/// Seam de **présentation** des familles de sélection. Même patron que
+/// `ZListRenderer` : `abstract class` + constructeur `const` + une méthode
+/// [present].
 ///
-/// Défaut `null` dans `ZcrudScope` ⇒ le rendu **natif** zcrud est conservé (aucune
-/// régression). Une impl concrète (`zcrud_select`) reçoit un [ZSelectPresentation]
-/// neutre et retourne le sous-arbre riche.
+/// Défaut `null` dans `ZcrudScope` ⇒ le rendu **natif** zcrud est conservé
+/// (aucune régression). Une implémentation concrète reçoit un
+/// [ZSelectPresentation] neutre et retourne le sous-arbre riche.
 abstract class ZSelectPresenter {
   /// Constructeur `const` (présentateurs immuables/`const`).
   const ZSelectPresenter();

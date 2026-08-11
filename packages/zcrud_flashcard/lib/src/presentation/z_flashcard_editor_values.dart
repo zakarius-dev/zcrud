@@ -1,12 +1,12 @@
-/// Coercitions **défensives** (AD-10) des valeurs de tranche flashcard —
-/// partagées par les widgets d'édition et le validateur (Story E9-5).
+/// Coercitions défensives (invariant AD-10) des valeurs de tranche flashcard
+/// — partagées par les widgets d'édition et le validateur.
 ///
-/// La tranche d'un champ flashcard peut porter la valeur **typée** (produite par
-/// nos widgets : `ZFlashcardType`, `List<ZChoice>`, `bool`) **ou** une forme
-/// **persistée/corrompue** (String, `List<Map>`, `null`) au premier montage
-/// (reseed depuis une map). Ces helpers **ne jettent jamais** : une valeur
-/// illisible retombe sur un défaut sûr (type → `openQuestion`, choix → `[]`,
-/// vrai/faux → `null`).
+/// La tranche d'un champ flashcard peut porter la valeur typée (produite par
+/// nos widgets : `ZFlashcardType`, `List<ZChoice>`, `bool`) ou une forme
+/// persistée/corrompue (`String`, `List<Map>`, `null`) au premier montage
+/// (reseed depuis une map). Ces fonctions ne lèvent jamais : une valeur
+/// illisible retombe sur un défaut sûr (type → `openQuestion`, choix →
+/// `[]`, vrai/faux → `null`).
 library;
 
 import '../domain/z_choice.dart';
@@ -16,7 +16,7 @@ import '../domain/z_flashcard_type.dart';
 ///
 /// - déjà un [ZFlashcardType] → tel quel ;
 /// - `String` (nom camelCase persisté) → valeur correspondante, sinon
-///   [ZFlashcardType.openQuestion] (repli défensif AC1) ;
+///   [ZFlashcardType.openQuestion] (repli défensif) ;
 /// - tout le reste (`null`, type inattendu) → [ZFlashcardType.openQuestion].
 ZFlashcardType coerceFlashcardType(Object? value) {
   if (value is ZFlashcardType) return value;
@@ -28,12 +28,13 @@ ZFlashcardType coerceFlashcardType(Object? value) {
   return ZFlashcardType.openQuestion;
 }
 
-/// Coerce défensivement une valeur de tranche en `List<ZChoice>` (jamais `null`).
+/// Coerce défensivement une valeur de tranche en `List<ZChoice>` (jamais
+/// `null`).
 ///
 /// - `List<ZChoice>` → copie mutable ;
-/// - `List` hétérogène → chaque élément décodé (ZChoice tel quel, `Map` via
-///   `ZChoice.fromMap`, sinon ignoré) ;
-/// - tout le reste → `[]`.
+/// - `List` hétérogène → chaque élément décodé (`ZChoice` tel quel, `Map`
+///   via `ZChoice.fromMap`, sinon ignoré) ;
+/// - tout le reste → liste vide.
 List<ZChoice> coerceChoices(Object? value) {
   if (value is List<ZChoice>) return List<ZChoice>.of(value);
   if (value is List) {
@@ -53,7 +54,8 @@ List<ZChoice> coerceChoices(Object? value) {
 /// Coerce défensivement une valeur de tranche en `bool?` (vrai/faux).
 ///
 /// - déjà `bool` → tel quel ;
-/// - `String` `'true'`/`'false'` (insensible) → booléen correspondant ;
+/// - `String` `'true'`/`'false'` (insensible à la casse) → booléen
+///   correspondant ;
 /// - tout le reste → `null` (aucune sélection).
 bool? coerceTrueFalse(Object? value) {
   if (value is bool) return value;

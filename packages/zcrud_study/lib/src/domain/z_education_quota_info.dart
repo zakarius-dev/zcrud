@@ -1,40 +1,42 @@
-/// Value-object de quota IA éducatif `ZEducationQuotaInfo` — **fail-open**
-/// (Story ES-9.1, AC3/AC4).
+/// Value-object de quota IA éducatif, à la politique délibérément
+/// **fail-open**.
 ///
-/// origine: seam IA neutre du domaine `zcrud_study` (AD-11/AD-4, quota fail-open
-/// — architecture-zcrud-study §280). VO **éphémère** construit CÔTÉ APP à partir
-/// des en-têtes HTTP du fournisseur IA : le domaine ne connaît **ni** endpoint,
-/// **ni** clé, **ni** nom d'en-tête provider (AD-12). Ce n'est **pas** une entité
-/// persistée (`@ZcrudModel`) — aucun `*.g.dart` : (dé)sérialisation **manuelle**
-/// défensive (AD-10).
+/// Value-object éphémère construit côté application à partir des en-têtes
+/// HTTP du fournisseur IA : le domaine ne connaît ni endpoint, ni clé, ni nom
+/// d'en-tête provider (invariant AD-12). Ce n'est pas une entité persistée
+/// (`@ZcrudModel`) — sa (dé)sérialisation est manuelle et défensive
+/// (invariant AD-10).
 ///
-/// **Politique fail-open (règle centrale, l'inverse du réflexe)** : un quota
-/// **indisponible** (tous champs `null`) NE BLOQUE PAS — [allowsRequest] vaut
-/// `true`. Le SEUL cas bloquant est un `remaining` **connu** et ≤ 0. Le VO ne
-/// décide **jamais** de politique réseau/retry : il expose seulement
-/// [allowsRequest].
+/// Politique fail-open : un quota indisponible (tous champs `null`) ne
+/// bloque rien — [allowsRequest] vaut `true`. Le seul cas bloquant est un
+/// `remaining` connu et inférieur ou égal à zéro. Ce value-object ne décide
+/// jamais d'une politique réseau ou de nouvelle tentative : il expose
+/// uniquement [allowsRequest].
 library;
 
-/// Quota IA éducatif transport-agnostique. Les trois champs sont **nullables** :
-/// `null` = information absente ⇒ **ne bloque pas** (fail-open, AC3).
+/// Quota IA éducatif transport-agnostique. Les trois champs sont
+/// nullables : `null` signifie une information absente, qui ne bloque pas
+/// (politique fail-open).
 class ZEducationQuotaInfo {
   /// Construit un quota à partir de ses trois compteurs (tous optionnels).
   const ZEducationQuotaInfo({this.limit, this.remaining, this.resetSeconds});
 
-  /// Quota **indisponible** : aucune information (tous champs `null`).
+  /// Quota indisponible : aucune information (tous champs `null`).
   ///
-  /// Fail-open : [allowsRequest] vaut `true` (l'absence d'info n'interdit rien).
+  /// Politique fail-open : [allowsRequest] vaut `true` (l'absence
+  /// d'information n'interdit rien).
   const ZEducationQuotaInfo.unavailable()
       : limit = null,
         remaining = null,
         resetSeconds = null;
 
-  /// Reconstruit **défensivement** depuis une valeur brute (AD-10).
+  /// Reconstruit défensivement depuis une valeur brute (invariant AD-10 :
+  /// désérialisation qui ne jette jamais).
   ///
-  /// - `raw` non-map / `null` ⇒ [ZEducationQuotaInfo.unavailable] ;
-  /// - valeurs non numériques (`"abc"`, `true`, listes) ⇒ champ `null` (repli
-  ///   sûr via [_asIntOrNull] : coercion `int`/`num`/`int.tryParse`) ;
-  /// - **jamais** de `throw`.
+  /// - `raw` non-map ou `null` : repli sur [ZEducationQuotaInfo.unavailable] ;
+  /// - valeurs non numériques (`"abc"`, `true`, listes) : champ `null` (repli
+  ///   sûr via une coercion `int`/`num`/`int.tryParse`) ;
+  /// - ne lève jamais.
   factory ZEducationQuotaInfo.fromJson(Object? raw) {
     if (raw is! Map) return const ZEducationQuotaInfo.unavailable();
     return ZEducationQuotaInfo(
@@ -44,13 +46,15 @@ class ZEducationQuotaInfo {
     );
   }
 
-  /// Reconstruit depuis des en-têtes HTTP **avec noms de header INJECTÉS**.
+  /// Reconstruit depuis des en-têtes HTTP dont les noms sont injectés par
+  /// l'appelant.
   ///
-  /// Les noms d'en-tête ([limitKey]/[remainingKey]/[resetKey]) sont **fournis
-  /// par l'app** (le datasource connaît son fournisseur) : le VO ne code **aucun**
-  /// nom de header provider en dur, sinon ce serait une fuite transport (viole
-  /// AD-11/AD-12). Défensif : `headers` `null` ou clé
-  /// absente / illisible ⇒ champ `null` (fail-open), **jamais** de `throw`.
+  /// Les noms d'en-tête ([limitKey], [remainingKey], [resetKey]) sont
+  /// fournis par l'application (la source de données connaît son
+  /// fournisseur) : ce value-object ne code aucun nom d'en-tête de
+  /// fournisseur en dur — ce serait une fuite de détail de transport
+  /// (invariant AD-12). Défensif : `headers` `null` ou clé absente ou
+  /// illisible produit un champ `null` (fail-open), jamais un `throw`.
   factory ZEducationQuotaInfo.fromHeaders(
     Map<String, String>? headers, {
     required String limitKey,
@@ -75,10 +79,11 @@ class ZEducationQuotaInfo {
   /// Secondes avant réinitialisation de la fenêtre, ou `null` si inconnu.
   final int? resetSeconds;
 
-  /// **Fail-open** : `true` sauf si le quota est **connu épuisé**
+  /// Politique fail-open : `true` sauf si le quota est connu épuisé
   /// (`remaining != null && remaining <= 0`).
   ///
-  /// Quota indisponible (tous champs `null`) ⇒ `true` (ne bloque pas).
+  /// Un quota indisponible (tous champs `null`) vaut `true` : il ne bloque
+  /// pas.
   bool get allowsRequest => !(remaining != null && remaining! <= 0);
 
   /// Sérialise vers une map (les trois champs, `null` inclus — round-trip exact).
@@ -105,9 +110,11 @@ class ZEducationQuotaInfo {
       'resetSeconds: $resetSeconds)';
 }
 
-/// Coercion défensive vers `int?` (tolère `int`/`num`/`String`, repli `null`).
+/// Coercion défensive vers `int?` (tolère `int`, `num`, `String`, repli
+/// `null`).
 ///
-/// Ne lève **jamais** (AD-10) : `bool`, `List`, `Map`, `null` ⇒ `null`.
+/// Ne lève jamais (invariant AD-10) : `bool`, `List`, `Map` ou `null`
+/// produisent `null`.
 int? _asIntOrNull(Object? v) {
   if (v is int) return v;
   if (v is num) return v.toInt();

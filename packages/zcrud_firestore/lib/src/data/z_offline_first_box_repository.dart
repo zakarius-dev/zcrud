@@ -363,7 +363,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   /// le store **fusionne** au lieu d'écraser ([ZLocalStore.putMerged]). Le push
   /// distant reste inchangé — il pousse l'entité fusionnée relue localement.
   ///
-  /// ⚠️ **Le push distant, lui, reste un `set` écrasant** : la fusion protège le
+  /// **Le push distant, lui, reste un `set` écrasant** : la fusion protège le
   /// document LOCAL (source de vérité offline-first, AD-9). Un autre hôte qui
   /// aurait écrit des clés **uniquement au cloud** sans passer par le store local
   /// n'est pas couvert — cas hors périmètre offline-first (le local fait autorité).

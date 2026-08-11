@@ -1,75 +1,45 @@
-/// Backend Syncfusion du port `ZChatShellRenderer` — CHAT-3b (ex-CHAT-6).
+/// Backend Syncfusion du port `ZChatShellRenderer`.
 ///
-/// ## 🔴 Ce que ce fichier REMPLACE, et pourquoi c'était un doublon
-///
-/// C6 avait livré `ZSfAssistConversationView` : un widget **parallèle** à
-/// `ZChatConversationView`, faute d'une couture au niveau LISTE. Conséquence
-/// **mesurée** : un hôte qui choisissait Syncfusion **perdait** la région live
-/// (`liveAnnouncement`), le dépli inline et `ZChatMessageTile` — la coquille ne
-/// réimplémentait aucun des trois. Et les deux vues étaient promises à diverger,
-/// motif **CR-LEX-78** que ce dépôt a déjà payé.
-///
-/// `ZSfAssistShellRenderer` n'est plus une vue : c'est un **backend du port**.
-/// Il rend le **CADRE** (`SfAIAssistView`) et rappelle, pour chaque index, la
-/// fabrique du socle (`request.itemBuilder`). Tout ce qui n'est pas le cadre —
-/// région live, tuile, dépli, seam de blocs de l'hôte, tranche de streaming par
-/// requête — reste produit par `zcrud_chat` et lui est **hors d'atteinte**.
-///
-/// Ce que la consommation du seam a **supprimé** :
-/// * `ZSfAssistConversationView` (217 lignes) — la vue parallèle ;
-/// * son `_ZSfStreamingBody` — la tuile de streaming recopiée, avec son propre
-///   `Semantics`, sa propre contrainte de 48 dp et son propre abonnement
-///   (contrainte **remontée** dans le rendu neutre, où elle vaut pour les deux
-///   chemins) ;
-/// * son `_accessibleSummary` — le résumé accessible local qui ne connaissait
-///   que `ZTextBlock` (**tableaux et sources non annoncés**), remplacé par
-///   `ZContentBlock.accessibleText` du kernel, exhaustif par construction ;
-/// * son paramètre `streamingText` — le texte en cours passait HORS de la
-///   couture, il la traverse désormais ;
-/// * `ZSfAssistRenderer` — un renderer de BLOCS qui déclinait tout et ne
-///   servait qu'à rechaîner celui de l'hôte. Les deux ports vivant dans deux
-///   scopes **indépendants**, le seam de bloc n'a jamais été intercepté : le
-///   chaînage manuel n'avait plus d'objet.
+/// `ZSfAssistShellRenderer` n'est pas une vue de conversation : c'est un
+/// backend de port. Il rend le cadre (`SfAIAssistView`) et rappelle, pour
+/// chaque index, la fabrique de tuile du socle (`request.itemBuilder`).
+/// Tout ce qui n'est pas le cadre — région live d'accessibilité, dépli
+/// inline, port de rendu de bloc de l'hôte, tranche de streaming par
+/// requête — reste produit par `zcrud_chat` et hors d'atteinte de cette
+/// coquille. Une vue de conversation qui réimplémenterait elle-même ces
+/// pièces en perdrait la cohérence avec le rendu neutre, et divergerait
+/// dans le temps.
 ///
 /// ## La surface Syncfusion adaptée, et pourquoi pas davantage
 ///
-/// IFFD ne consomme de `SfAIAssistView` que le **squelette de liste** :
-/// `messages:`, `composer: AssistComposer.builder(...)`, `placeholderBehavior`,
-/// `placeholderBuilder` (`chatbot_conversation_screen.dart:3417-3436`). On
-/// adapte ces quatre membres plus `messageContentBuilder` — par lequel le
-/// contenu repart vers le socle. Cinq membres.
+/// Cinq membres de `SfAIAssistView` sont adaptés : `messages`, `composer`,
+/// `placeholderBehavior`, `placeholderBuilder`, et
+/// `messageContentBuilder` — par lequel le contenu repart vers le socle.
+/// `requestMessageSettings`/`responseMessageSettings` s'y ajoutent, mais
+/// uniquement si l'hôte fournit un [ZSfAssistShellRenderer.notebookSkin] ;
+/// sans skin, ils valent `const AssistMessageSettings()`, le défaut de
+/// Syncfusion, laissant l'arbre inchangé pour un hôte qui n'a rien demandé.
 ///
-/// 🔴 **Le lot γ (CR-IFFD-72) en ajoute DEUX, et seulement deux** :
-/// `requestMessageSettings` / `responseMessageSettings`. Ce ne sont pas des
-/// membres « de plus » choisis par le socle — ce sont **exactement** ceux que le
-/// legacy IFFD règle (`chatbot_conversation_screen.dart:3568-3594`), et ils ne
-/// sont posés que si l'hôte fournit un [ZSfAssistShellRenderer.notebookSkin].
-/// Sans skin, ils valent `const AssistMessageSettings()` — le défaut de
-/// Syncfusion, donc l'arbre d'avant.
+/// Délibérément laissés à l'hôte (réglages de barre d'outils de message,
+/// constructeurs d'en-tête/avatar/chargement, sélection d'action) : ce sont
+/// des choix d'apparence et d'actions produit, hors du rôle de ce backend.
 ///
-/// Délibérément laissés à l'hôte (`AssistMessageToolbarSettings`,
-/// `messageHeaderBuilder`, `messageAvatarBuilder`, `responseLoadingBuilder`,
-/// `onToolbarItemSelected`, `actionButton`) : ce sont des choix d'**apparence et
-/// d'actions produit**, et FR-26 interdit au socle de décider d'une couleur ou
-/// d'un libellé.
+/// ## `AssistMessage.data` n'est ni le corps rendu ni la voie d'annonce
 ///
-/// 🔴 **`data:` n'est jamais le corps rendu.** Syncfusion exige un `String` pour
-/// `AssistMessage.data` ; on lui donne le **résumé accessible du kernel**, et le
-/// corps visible vient de `messageContentBuilder`. Aplatir les blocs en texte
-/// pour l'affichage, c'est perdre tableaux, sources et diagrammes — ce que fait
-/// IFFD.
+/// Syncfusion exige un `String` pour `AssistMessage.data` ; ce backend lui
+/// donne le résumé accessible du kernel, et le corps visible vient de
+/// `messageContentBuilder`. Aplatir les blocs en texte pour l'affichage
+/// perdrait tableaux, sources et diagrammes.
 ///
-/// ⚠️ **HIGH-2 — et `data:` n'est PAS NON PLUS la voie d'annonce.**
-/// `syncfusion_flutter_chat` ne lit `AssistMessage.data` que dans la branche
-/// `else` de son constructeur de contenu, celle qu'un `messageContentBuilder`
-/// **court-circuite toujours** — et nous en fournissons un systématiquement. Le
-/// champ est donc **inerte** pour un lecteur d'écran. Le résumé y reste (c'est
-/// la donnée que le modèle de Syncfusion exige, et un futur usage tiers la
-/// lira), mais l'annonce réelle est portée par le `Semantics` de
+/// `data` n'est pas non plus la voie d'annonce à l'accessibilité :
+/// `syncfusion_flutter_chat` ne le lit que dans la branche de son
+/// constructeur de contenu qu'un `messageContentBuilder` fourni
+/// systématiquement court-circuite toujours. Le champ est donc inerte pour
+/// un lecteur d'écran ; l'annonce réelle est portée par le `Semantics` de
 /// `ZChatMessageTile`, dans `zcrud_chat`, sur le chemin commun aux deux
-/// branches de rendu. Les gardes de ce paquet assertent désormais l'**arbre
-/// sémantique fusionné**, pas la propriété de widget : la version « propriété »
-/// serait restée verte alors même que personne n'entendait rien.
+/// branches de rendu. Les gardes de ce paquet vérifient donc l'arbre
+/// sémantique effectivement rendu, pas la seule valeur de la propriété
+/// `data`.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -90,10 +60,10 @@ import 'z_sf_assist_labels.dart';
 /// )
 /// ```
 ///
-/// AD-2 : aucun gestionnaire d'état, aucun `setState` d'échelle conversation —
-/// l'état reste dans le `ZChatController` du socle.
+/// Invariant AD-2 : aucun gestionnaire d'état, aucun `setState` d'échelle
+/// conversation — l'état reste dans le `ZChatController` du socle.
 class ZSfAssistShellRenderer extends ZChatShellRenderer {
-  /// Construit le backend. `const` : il est comparé par **identité** par
+  /// Construit le backend. `const` : il est comparé par identité par
   /// `ZChatShellRendererScope.updateShouldNotify`.
   const ZSfAssistShellRenderer({
     this.composerBuilder,
@@ -110,55 +80,43 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
 
   /// Contenu affiché tant qu'aucun message n'existe.
   ///
-  /// `null` ⇒ pas de placeholder. Aucun texte n'est inventé ici (FR-26).
+  /// `null` ⇒ pas de placeholder. Aucun texte n'est inventé ici.
   final WidgetBuilder? placeholderBuilder;
 
-  /// Surcharge **locale** du seam d'annonce (AD-4/FR-26).
+  /// Surcharge locale du résolveur de texte accessible (invariant AD-4).
   ///
-  /// C'est par lui qu'un hôte annonce **son** bloc ouvert
-  /// (`'legalReference'`, `'flashcards'`, `'mindmap'`) et **localise** ce qui
-  /// doit l'être : le kernel, pur-Dart, n'émet que de la donnée.
+  /// C'est par lui qu'un hôte annonce son propre bloc ouvert et localise ce
+  /// qui doit l'être : le kernel, pur-Dart, n'émet que de la donnée.
   ///
-  /// 🔴 **Le point d'injection de référence est `ZChatAccessibleTextScope`**, et
-  /// c'est lui qu'il faut préférer : le résolveur doit alimenter **deux**
-  /// consommateurs — ce champ `data` (inerte pour un lecteur d'écran) et le
-  /// nœud `Semantics` de `ZChatMessageTile` (celui qui est réellement énoncé).
-  /// Renseigner ce champ **seul** annoncerait un résumé au champ mort et un
-  /// autre à l'utilisateur : la divergence exacte que CHAT-3b avait supprimée.
-  /// `null` ⇒ le résolveur du scope, sinon le résumé du kernel seul.
+  /// Le point d'injection de référence reste `ZChatAccessibleTextScope`,
+  /// à préférer à ce champ : le résolveur doit alimenter deux
+  /// consommateurs — le résumé de `AssistMessage.data` (inerte pour un
+  /// lecteur d'écran) et le nœud `Semantics` de `ZChatMessageTile` (celui
+  /// qui est réellement énoncé). Renseigner ce champ seul annoncerait un
+  /// résumé au champ mort et un autre à l'utilisateur. `null` ⇒ le
+  /// résolveur du scope, sinon le résumé du kernel seul.
   final ZAccessibleTextResolver? accessibleTextResolver;
 
-  /// 🔴 **Skin de RÉFÉRENCE du notebook — OPT-IN** (lot γ, CR-IFFD-72).
+  /// Skin de référence du notebook, opt-in.
   ///
-  /// `null` (le défaut) ⇒ **aucun** réglage de bulle n'est posé : les deux
+  /// `null` (le défaut) ⇒ aucun réglage de bulle n'est posé : les deux
   /// `AssistMessageSettings` restent ceux de Syncfusion, à l'octet près, et
-  /// l'arbre d'un hôte passif est celui d'avant ce lot. La garde
-  /// `test/z_sf_notebook_skin_test.dart` le mesure sur le widget monté (les
-  /// deux réglages sont `== const AssistMessageSettings()` champ par champ).
+  /// l'arbre d'un hôte qui n'a rien demandé est inchangé.
   ///
-  /// Renseigné, il apporte **exactement** les paramètres que le legacy IFFD
-  /// fige autour de `SfAIAssistView`
-  /// (`chatbot_conversation_screen.dart:3568-3594`) : la fraction de largeur, le
-  /// rayon de la bulle de **requête**, et le masquage avatar/nom. Rien d'autre —
-  /// la géométrie fine de la bulle appartient à Syncfusion et n'est pas
-  /// mesurable depuis le dépôt legacy.
+  /// Renseigné, il apporte la fraction de largeur de bulle, le rayon de la
+  /// bulle de requête, et le masquage avatar/nom d'une référence de
+  /// notebook. Il n'y a pas de rayon de réponse dans cette référence : en
+  /// inventer un serait une valeur que personne n'a mesurée. Le format
+  /// d'horodatage n'est pas non plus repris : `timestampFormat` reste nul,
+  /// et la coquille suit la locale plutôt qu'un format figé.
   ///
-  /// ⚠️ Il n'y a **pas** de rayon de réponse : le legacy ne pose `shape:` que
-  /// sur la requête. En inventer un serait une valeur que personne n'a mesurée.
-  ///
-  /// ⚠️ Le **format d'horodatage** n'est pas repris : le motif legacy
-  /// (`dd/MM/yyyy HH:mm:ss`) est un format EU figé, insensible à la locale.
-  /// Le publier dans la référence sert l'hôte qui veut la parité stricte ;
-  /// l'imposer ici reproduirait le défaut « libellé en dur » une couche plus
-  /// bas. `timestampFormat` reste donc nul, et la coquille suit la locale.
-  ///
-  /// Le skin est un objet **pur** de `zcrud_chat` : la chaîne
-  /// `paramètre > jeton > référence` est arbitrée là-bas, sans Syncfusion. Ce
-  /// fichier ne fait que **mapper** le résultat.
+  /// Le skin est un objet pur de `zcrud_chat` : la chaîne de résolution
+  /// paramètre > jeton > référence est arbitrée là-bas, sans Syncfusion. Ce
+  /// fichier ne fait que mapper le résultat.
   final ZChatNotebookSkin? notebookSkin;
 
-  /// Traduit un style résolu en réglages Syncfusion. `shape` n'est posé que si
-  /// un rayon existe (AD-4 : rien de nul n'entre dans l'arbre).
+  /// Traduit un style résolu en réglages Syncfusion. `shape` n'est posé que
+  /// si un rayon existe (invariant AD-4 : rien de nul n'entre dans l'arbre).
   AssistMessageSettings _settings({
     required ZChatNotebookStyle style,
     required Radius? radius,
@@ -169,8 +127,8 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
     showTimestamp: style.showTimestamp,
     shape: radius == null
         ? null
-        // AD-13 : rayon DIRECTIONNEL — le legacy écrit `BorderRadius.circular`,
-        // symétrique par accident, jamais par décision.
+        // Invariant AD-13 : rayon directionnel, jamais un rayon symétrique
+        // par défaut.
         : RoundedRectangleBorder(
             borderRadius: BorderRadiusDirectional.all(radius),
           ),
@@ -196,20 +154,20 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
             author: AssistMessageAuthor(id: m.id, name: assistantName),
           ),
       for (final String requestId in request.activeRequestIds)
-        // 🔴 `data` VIDE, et c'est correct : le texte en cours n'est PAS une
-        // donnée figée. Il arrive par la tranche `ValueListenable` que le socle
-        // fait traverser la couture de bloc — s'il transitait par `data`, la
-        // liste entière se reconstruirait à chaque jeton (SM-1).
+        // `data` vide, et c'est correct : le texte en cours n'est pas une
+        // donnée figée. Il arrive par la tranche `ValueListenable` que le
+        // socle fait traverser le port de rendu de bloc — s'il transitait
+        // par `data`, la liste entière se reconstruirait à chaque jeton.
         AssistMessage.response(
           data: '',
           author: AssistMessageAuthor(id: requestId, name: assistantName),
         ),
     ];
 
-    // 🔴 `null` ⇒ on passe LE MÊME objet que le défaut de `SfAIAssistView`
-    // (`const AssistMessageSettings()`), donc l'arbre est inchangé pour un hôte
-    // passif. Le résoudre systématiquement aurait matérialisé la référence IFFD
-    // chez tout le monde — l'inverse de « strictement additif ».
+    // `null` ⇒ on passe le même objet que le défaut de `SfAIAssistView`
+    // (`const AssistMessageSettings()`), donc l'arbre est inchangé pour un
+    // hôte qui n'a rien demandé. Résoudre systématiquement le skin de
+    // référence l'aurait imposé à tout le monde.
     final ZChatNotebookStyle? style = notebookSkin?.resolve(context);
 
     return SfAIAssistView(
@@ -225,28 +183,27 @@ class ZSfAssistShellRenderer extends ZChatShellRenderer {
           : AssistComposer.builder(builder: composerBuilder!),
       placeholderBehavior: AssistPlaceholderBehavior.hideOnMessage,
       placeholderBuilder: placeholderBuilder,
-      // 🔴 LE point où la coquille rend la main. Elle ne construit AUCUNE tuile :
-      // elle rappelle la fabrique du socle. C'est ce qui rend la non-perte
-      // structurelle — région live, dépli inline, tuile et seam de blocs sont
-      // hors de sa portée.
+      // Le point où la coquille rend la main. Elle ne construit aucune
+      // tuile elle-même : elle rappelle la fabrique du socle, ce qui garde
+      // la région live, le dépli inline, la tuile et le port de rendu de
+      // bloc hors de sa portée.
       messageContentBuilder: (BuildContext context, int index, _) =>
           request.itemBuilder(context, index),
     );
   }
 
-  /// Résumé **accessible** d'un message pour `AssistMessage.data`.
+  /// Résumé accessible d'un message pour `AssistMessage.data`.
   ///
-  /// 🔴 Il vient du **kernel** (`accessibleText`, `switch` exhaustif sur l'union
-  /// scellée), plus d'un résumé local. C6 en avait écrit un qui ne connaissait
-  /// que `ZTextBlock` : un tableau ou un bloc de sources n'était annoncé
-  /// **nulle part**. Régler cela une fois, côté kernel, vaut pour tout
-  /// adaptateur présent et futur.
+  /// Il vient du kernel (`accessibleText`, exhaustif sur la famille de
+  /// blocs), et non d'un résumé local qui ne connaîtrait qu'un sous-ensemble
+  /// des variantes de bloc — un tableau ou un bloc de sources ne serait
+  /// alors annoncé nulle part.
   String _summary(BuildContext context, ZChatMessage message) =>
       zChatAccessibleTextOf(
         message.contentBlocks,
-        // 🔴 UN seul résolveur pour les deux consommateurs : la surcharge
-        // locale d'abord, sinon celui du scope — jamais deux résumés distincts
-        // entre ce champ et le nœud `Semantics` de la tuile.
+        // Un seul résolveur pour les deux consommateurs : la surcharge
+        // locale d'abord, sinon celui du scope — jamais deux résumés
+        // distincts entre ce champ et le nœud `Semantics` de la tuile.
         resolver:
             accessibleTextResolver ??
             ZChatAccessibleTextScope.resolverOf(context),

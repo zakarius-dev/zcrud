@@ -8,7 +8,7 @@
 /// est donc coupé **en plein milieu d'une ligne**, sans qu'aucun signe ne dise
 /// qu'il continue. Le grief est fondé — *absorber n'est pas signaler*.
 ///
-/// 🔴 **`TextOverflow.ellipsis` n'est PAS atteignable sur ce contenu**, et
+/// **`TextOverflow.ellipsis` n'est PAS atteignable sur ce contenu**, et
 /// c'est structurel, pas un manque de volonté : le rendu par défaut de
 /// l'énoncé est **RICHE** (`ZFlashcardMarkdownContent` → Quill), c'est-à-dire
 /// une **colonne de blocs** (paragraphes, listes, blocs de code), pas un

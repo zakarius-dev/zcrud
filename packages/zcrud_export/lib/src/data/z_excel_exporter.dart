@@ -1,20 +1,20 @@
 /// Backend Excel du service d'export — **SEULE arête `syncfusion_flutter_xlsio`**
-/// du graphe zcrud (E11a-3, AD-8/SM-5).
+/// du graphe zcrud.
 ///
-/// origine: E11a-3. L'import Syncfusion xlsio est **confiné à ce fichier** : il
-/// n'est JAMAIS réexporté par le barrel `zcrud_export.dart`, et aucun type
+/// L'import Syncfusion xlsio est **confiné à ce fichier** : il n'est JAMAIS
+/// réexporté par le barrel `zcrud_export.dart`, et aucun type
 /// `Workbook`/`Worksheet`/`Range` n'apparaît dans une signature publique. La
 /// fonction [buildExcelBytes] prend une [ZExportTable] **neutre** (chaînes) et
 /// rend des **bytes neutres** (`Uint8List`) : la fuite de type est structurellement
-/// impossible (AD-1 signature). Un consommateur qui n'importe pas `zcrud_export`
-/// ne tire donc AUCUNE dépendance Excel (SM-5).
+/// impossible (invariant AD-1). Un consommateur qui n'importe pas
+/// `zcrud_export` ne tire donc AUCUNE dépendance Excel.
 ///
 /// **Aucune clé/licence Syncfusion committée** : `SyncfusionLicense.registerLicense`
-/// est une config plateforme de l'app hôte, jamais du package (AD-12).
+/// est une config plateforme de l'app hôte, jamais du package (invariant AD-12).
 ///
-/// **Anti-fuite de cycle de vie (learning E5)** : le `Workbook` est `dispose()`
-/// en `finally`, y compris sur le chemin d'export vide ou en cas d'exception —
-/// aucune ressource native non libérée (AC10).
+/// **Anti-fuite de cycle de vie** : le `Workbook` est `dispose()` en
+/// `finally`, y compris sur le chemin d'export vide ou en cas d'exception —
+/// aucune ressource native non libérée.
 library;
 
 import 'dart:typed_data';

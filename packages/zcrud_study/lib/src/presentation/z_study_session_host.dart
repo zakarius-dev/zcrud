@@ -3,7 +3,7 @@
 /// Il possède le moteur de session, nourrit [ZStudySessionView] en tranches et
 /// en callbacks, et **reçoit** son `ZSessionReviewer` — il n'en fabrique jamais.
 ///
-/// ## 🔴 Le runtime est DÉSIGNÉ, jamais redécidé
+/// ## Le runtime est DÉSIGNÉ, jamais redécidé
 ///
 /// Le choix du runtime passe par `zSessionRuntimeForMode` (`zcrud_session`,
 /// AD-34) — **table unique du dépôt**. L'assemblage de référence, lui,
@@ -24,7 +24,7 @@
 /// propre dartdoc). Un seul appel sert donc les deux modes, et le point
 /// d'entrée « cramming » devient gratuit.
 ///
-/// ## 🔴 ZÉRO `setState` — et pourquoi ce n'est pas une coquetterie
+/// ## ZÉRO `setState` — et pourquoi ce n'est pas une coquetterie
 ///
 /// La référence pilote tout par `setState` d'écran. Ici, tout l'état vit dans
 /// des `ValueNotifier` **possédés**, et `build()` ne lit **aucune** de leurs
@@ -93,7 +93,7 @@ typedef ZStudySessionResultBuilder = Widget Function(
 
 /// Construit la surface de saisie/notation **branchée sur le runtime**.
 ///
-/// 🔴 **Reçoit [submit]** — et c'est le point du type. `ZStudySessionView`
+/// **Reçoit [submit]** — et c'est le point du type. `ZStudySessionView`
 /// prend un builder à deux arguments : elle n'a pas de runtime, donc rien à
 /// offrir. Le **host**, lui, en détient un ; un slot de notation qui ne pourrait
 /// pas l'atteindre serait une **commande morte** — l'hôte remplacerait la
@@ -579,7 +579,7 @@ class _ZStudySessionHostState extends State<ZStudySessionHost> {
   /// Repli AD-10 **observable** : les deux listes parallèles (file d'identités
   /// / table `flashcardId → ZFlashcard`) se sont désynchronisées.
   ///
-  /// 🔴 Jamais un `SizedBox.shrink()` : un défaut rendu invisible est un défaut
+  /// Jamais un `SizedBox.shrink()` : un défaut rendu invisible est un défaut
   /// qu'aucun test — et aucun utilisateur — ne peut signaler. Jamais une
   /// exception non plus : la désynchronisation d'une carte ne fait pas tomber
   /// la session.

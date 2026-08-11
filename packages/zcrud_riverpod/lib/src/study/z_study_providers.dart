@@ -1,24 +1,25 @@
 /// Providers Riverpod GÉNÉRIQUES branchant le port `ZStudyRepository<T>` et la
-/// primitive PURE `ZStudySessionSelector` du kernel sur Riverpod (Story ES-10.1,
-/// AC1/AC3/AC4/AC5 — FR-S33, AD-1/AD-2/AD-5/AD-6/AD-10/AD-15/AD-24).
+/// primitive PURE `ZStudySessionSelector` du kernel sur Riverpod (invariants
+/// AD-1/AD-2/AD-5/AD-6/AD-10/AD-15/AD-24).
 ///
 /// ## Forme d'API : fonction fabrique (Riverpod n'a pas de provider générique)
 ///
 /// Riverpod ne permet PAS `Provider.family<T, …>` générique sur `T`. On expose
 /// donc des **fonctions fabriques** paramétrées par le type d'entité :
 /// - [zStudyRepositoryProvider] — le **seam** du repo (un `Provider` qui *throw*
-///   [ZScopeError] tant qu'il n'est pas surchargé — patron seam AD-6, réutilise
-///   le contrat de `ZRiverpodResolver`) ; l'app le crée **une fois** et le
-///   surcharge (`overrideWith`) avec son repo concret (ES-10.2) ;
+///   [ZScopeError] tant qu'il n'est pas surchargé — patron seam invariant AD-6,
+///   réutilise le contrat de `ZRiverpodResolver`) ; l'app le crée **une fois**
+///   et le surcharge (`overrideWith`) avec son repo concret ;
 /// - [zStudyWatchAllProvider] — un `StreamProvider.autoDispose` émettant la
-///   `Stream<List<T>>` **NUE** du repo (`watchAll()`, AD-5), sans transformation.
+///   `Stream<List<T>>` **NUE** du repo (`watchAll()`, invariant AD-5), sans
+///   transformation.
 ///
-/// Les providers **typés concrets** (adossés à `ZStudyDocument`/`ZSmartNote`/
-/// `ZExam`…) et leurs adapters `zcrud_firestore` nested sont **ES-10.2** — cette
-/// story reste générique et sans dépendance aux packages d'entités (fan-in
-/// minimal = kernel seul, AC6).
+/// Les providers **typés concrets** (adossés à une entité applicative) et
+/// leurs adapters `zcrud_firestore` nested sont instanciés **côté
+/// application** — ce paquet reste générique et sans dépendance aux packages
+/// d'entités (fan-in minimal = kernel seul).
 ///
-/// ## Sélection de session : family clée par `ZSessionConfigKey` (SM-1, AD-24)
+/// ## Sélection de session : family clée par `ZSessionConfigKey` (invariant AD-24)
 ///
 /// [zStudySessionSelectorProvider] est une `family` clée par [ZSessionConfigKey]
 /// (égalité PROFONDE au binding). Deux `ZStudySessionConfig` structurellement
@@ -39,9 +40,10 @@ import 'z_session_config_key.dart';
 
 /// Fabrique le **seam** d'un `ZStudyRepository<T>` : un `Provider` qui *throw*
 /// [ZScopeError] tant qu'il n'a pas été surchargé (`overrideWith`) avec un repo
-/// concret — jamais de résolution silencieuse (AD-6 « seams throw », AD-10).
+/// concret — jamais de résolution silencieuse (invariants AD-6 « seams
+/// throw », AD-10).
 ///
-/// L'app (ES-10.2) crée le seam **une fois**
+/// L'application hôte crée le seam **une fois**
 /// (`final docsRepo = zStudyRepositoryProvider<ZStudyDocument>();`) et le
 /// surcharge dans son `ProviderScope`/`ZcrudRiverpodScope`. Le message d'erreur
 /// nomme le `Type` manquant (cohérent avec `ZRiverpodResolver`), le rendant
@@ -57,21 +59,20 @@ Provider<ZStudyRepository<T>> zStudyRepositoryProvider<T extends ZEntity>() =>
     );
 
 /// Fabrique un `StreamProvider.autoDispose` exposant le flux **nu**
-/// `watchAll()` (`Stream<List<T>>`, AD-5) du repo résolu par [repo].
+/// `watchAll()` (`Stream<List<T>>`, invariant AD-5) du repo résolu par [repo].
 ///
 /// - [repo] : le seam du repo (typiquement le `Provider` de
-///   [zStudyRepositoryProvider], surchargé par l'app). S'il n'est pas fourni,
-///   sa lecture *throw* [ZScopeError] (AC4).
+///   [zStudyRepositoryProvider], surchargé par l'application hôte). S'il
+///   n'est pas fourni, sa lecture *throw* [ZScopeError].
 /// - **`.autoDispose`** : dès que plus personne n'écoute (ou que le
-///   `ProviderContainer` est disposé), Riverpod annule la souscription au flux
-///   du repo — aucune fuite (AC5, même patron que `zFormControllerProvider`).
-///   ⚠️ **Riverpod 3** : l'auto-dispose est devenu le comportement **par
+///   `ProviderContainer` est disposé), Riverpod annule la souscription au
+///   flux du repo — aucune fuite (même patron que `zFormControllerProvider`).
+///   **Riverpod 3** : l'auto-dispose est devenu le comportement **par
 ///   défaut** et le type `AutoDisposeStreamProvider` a disparu de l'API. Le type
 ///   de retour est donc `StreamProvider<List<T>>` — la sémantique (annulation de
-///   la souscription dès le dernier auditeur parti) est **inchangée**, et reste
-///   prouvée par le test AC5.
+///   la souscription dès le dernier auditeur parti) est **inchangée**.
 /// - Aucune transformation : la liste émise est **exactement** celle du repo
-///   (ordre et contenu préservés, AD-5).
+///   (ordre et contenu préservés, invariant AD-5).
 StreamProvider<List<T>> zStudyWatchAllProvider<T extends ZEntity>({
   required ProviderListenable<ZStudyRepository<T>> repo,
 }) =>

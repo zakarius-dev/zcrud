@@ -1,16 +1,16 @@
-/// `ZStudyProgressRings` — anneau(x) de progression `correct / total`
-/// (présentation PURE via `CustomPaint`, ES-4.5, AC3).
+/// `ZStudyProgressRings` — anneau de progression `correct / total`
+/// (présentation pure via `CustomPaint`).
 ///
-/// Consomme un DTO d'affichage **pré-calculé** [ZProgressRingsData] (fonction
+/// Consomme un DTO d'affichage pré-calculé [ZProgressRingsData] (fonction
 /// pure [ZProgressRingsData.fromResult] sur `ZStudySessionResult`), puis un
-/// [CustomPainter] PUR le peint **sans aucune logique métier** (aucun accès
-/// repo, aucun calcul SRS). `total == 0` ⇒ anneau vide (JAMAIS de division par
-/// zéro), `ratio` clampé `[0, 1]`.
+/// [CustomPainter] pur le peint sans aucune logique métier (aucun accès
+/// repo, aucun calcul SRS). `total == 0` donne un anneau vide (jamais de
+/// division par zéro), `ratio` clampé à `[0, 1]`.
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatelessWidget` + `CustomPaint`. Couleurs
-/// (piste + progression) INJECTÉES via `ZColorKeyResolver` (repli `Theme.of`),
-/// jamais de `Colors.*`. `Semantics` « correct/total » (couleur jamais seul
-/// canal, AD-13).
+/// Widget pur (invariants AD-2/AD-15) : `StatelessWidget` + `CustomPaint`.
+/// Couleurs (piste + progression) injectées via `ZColorKeyResolver` (repli
+/// `Theme.of`), jamais de `Colors.*`. `Semantics` « correct/total » — la
+/// couleur n'est jamais le seul canal d'information (invariant AD-13).
 library;
 
 import 'dart:math' as math;
@@ -33,11 +33,11 @@ class ZProgressRingsData {
     required this.ratio,
   });
 
-  /// Dérive le DTO d'un `ZStudySessionResult` (fonction PURE, AC3).
+  /// Dérive le DTO d'un `ZStudySessionResult` (fonction pure).
   ///
-  /// `total == 0` ⇒ [ratio] `0` (pas de division par zéro). Sinon
-  /// `correct / total` **clampé** dans `[0, 1]` (défensif : un corpus incohérent
-  /// `correct > total` ne dépasse jamais l'anneau plein).
+  /// `total == 0` donne [ratio] `0` (pas de division par zéro). Sinon
+  /// `correct / total` clampé dans `[0, 1]` (défensif : un corpus incohérent
+  /// où `correct > total` ne dépasse jamais l'anneau plein).
   factory ZProgressRingsData.fromResult(ZStudySessionResult result) {
     final total = result.total;
     final correct = result.correct;

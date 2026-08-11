@@ -1,17 +1,18 @@
-/// Entrée publique **pure-Dart** de la surface d'autorité du moteur déclaratif
-/// (E2-4) : catalogue `EditionFieldType` + types-valeur `const`
+/// Entrée publique **pure-Dart** de la surface d'autorité du moteur déclaratif :
+/// catalogue `EditionFieldType` + types-valeur `const`
 /// (`ZValidatorSpec`/`ZFieldChoice`/`ZCondition`/`ZFieldConfig`/`ZFieldRename`)
 /// + marqueur `ZCoreApi`.
 ///
 /// **Pourquoi une entrée dédiée** (en plus du barrel principal `zcrud_core.dart`,
-/// qui exporte aussi ces types — AC9) : le barrel principal ré-exporte la couche
-/// `presentation` (E2-7, `ChangeNotifier`/`ValueListenable`, qui tire le SDK
-/// Flutter → `dart:ui`). Les consommateurs **pur-Dart** de la seule surface
-/// d'autorité — au premier chef `zcrud_annotations` (annotations `const`) et le
-/// générateur E2-5 — importent CE point d'entrée pour référencer le catalogue et
-/// les types-valeur **sans** charger transitivement Flutter, et rester
-/// exécutables sous `dart test`. L'arête AD-1 `zcrud_annotations → zcrud_core`
-/// (pubspec) est inchangée ; seule la granularité d'import l'est.
+/// qui exporte aussi ces types) : le barrel principal ré-exporte la couche
+/// `presentation` (`ChangeNotifier`/`ValueListenable`, qui tire le SDK Flutter
+/// → `dart:ui`). Les consommateurs **pur-Dart** de la seule surface
+/// d'autorité — au premier chef `zcrud_annotations` (annotations `const`) et
+/// `zcrud_generator` — importent CE point d'entrée pour référencer le
+/// catalogue et les types-valeur **sans** charger transitivement Flutter, et
+/// rester exécutables sous `dart test`. L'arête `zcrud_annotations →
+/// zcrud_core` (invariant AD-1, déclarée dans le pubspec) est inchangée ;
+/// seule la granularité d'import l'est.
 library;
 
 export 'src/domain/edition/edition_field_type.dart';

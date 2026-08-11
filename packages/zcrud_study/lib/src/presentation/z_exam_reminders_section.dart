@@ -5,7 +5,7 @@
 /// `ListView.builder` accessible (AD-13). L'horloge `now` est **INJECTÉE** (jamais
 /// `DateTime.now()`, AC5).
 ///
-/// ## 🔴 AC5 — la planification OS est un SEAM APP ; ici, exposition SEULE
+/// ## AC5 — la planification OS est un SEAM APP ; ici, exposition SEULE
 ///
 /// La section **ne planifie JAMAIS** de notification : elle ne calcule que
 /// `isApproaching(now)` (déterministe) et EXPOSE les approchants à l'app via
@@ -34,16 +34,20 @@ typedef ZApproachingReminderTileBuilder = Widget Function(
   ZApproachingReminder reminder,
 );
 
-/// Exposition des approchants à l'app pour la planification OS (AC5). Invoquée
-/// après le calcul (post-frame) — la section ne planifie JAMAIS elle-même.
+/// Exposition des rappels approchants à l'application, pour qu'elle
+/// planifie ses propres notifications système. Invoquée après le calcul
+/// (post-frame) — cette section ne planifie jamais elle-même une
+/// notification.
 typedef ZRemindersComputed = void Function(List<ZApproachingReminder> reminders);
 
-/// Section listant les examens approchants dérivés d'un `now` INJECTÉ.
+/// Section listant les examens approchants, dérivés d'un `now` injecté.
 ///
-/// `StatefulWidget` **uniquement** pour recalculer les approchants quand les entrées
-/// ([exams]/[now]) changent et NOTIFIER l'app (post-frame) — jamais pour un état
-/// d'entité. La liste est un `ListView.builder` (AD-13, jamais `ListView(children:)`).
+/// `StatefulWidget` uniquement pour recalculer les rappels quand les
+/// entrées ([exams]/[now]) changent et notifier l'application (post-frame)
+/// — jamais pour porter un état d'entité. La liste est un
+/// `ListView.builder` (invariant AD-13).
 class ZExamRemindersSection extends StatefulWidget {
+  /// Construit une section de rappels d'examens.
   const ZExamRemindersSection({
     required this.exams,
     required this.now,

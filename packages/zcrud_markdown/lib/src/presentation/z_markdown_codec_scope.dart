@@ -1,4 +1,4 @@
-/// `ZMarkdownCodecScope` — défaut d'app pour le [ZCodec] du rich-text (AC4).
+/// `ZMarkdownCodecScope` — défaut d'app pour le [ZCodec] du rich-text.
 ///
 /// InheritedWidget **LOCAL à `zcrud_markdown`** (JAMAIS via `ZcrudScope`/core :
 /// le concept Delta/Markdown/HTML reste cantonné au package rich-text — AD-1).

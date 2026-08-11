@@ -1,12 +1,12 @@
-/// `ZFlashcardOptionTile` — tuile d'option **mono-choix** accessible, partagée
-/// par le sélecteur de type et le sélecteur vrai/faux (Story E9-5, AD-13/FR-26).
+/// `ZFlashcardOptionTile` — tuile d'option mono-choix accessible, partagée
+/// par le sélecteur de type et le sélecteur vrai/faux.
 ///
-/// **a11y opérable (AD-13)** : expose une **action sémantique `tap`
-/// déclenchable** (via `Semantics(onTap:)`, opérable par un lecteur d'écran) ET
-/// mesure **≥ 48 dp** de haut (`BoxConstraints(minHeight: 48)`). Le
-/// `GestureDetector` est `excludeFromSemantics` pour ne pas dupliquer le nœud
-/// d'action. **Directionnel** (`EdgeInsetsDirectional`/`TextAlign.start`) ;
-/// **thème injecté** (aucune couleur en dur — FR-26).
+/// Accessible et opérable (invariant AD-13) : expose une action sémantique
+/// `tap` déclenchable (via `Semantics(onTap:)`, opérable par un lecteur
+/// d'écran) et mesure au moins 48 dp de haut. Le `GestureDetector` est
+/// `excludeFromSemantics` pour ne pas dupliquer le nœud d'action.
+/// Directionnel (`EdgeInsetsDirectional`/`TextAlign.start`) ; thème injecté
+/// (aucune couleur en dur).
 library;
 
 import 'package:flutter/material.dart';
@@ -30,14 +30,14 @@ class ZFlashcardOptionTile extends StatelessWidget {
   /// `true` si l'option est la sélection courante.
   final bool selected;
 
-  /// Callback de sélection (déclenché au tap pointeur **et** à l'action
+  /// Callback de sélection (déclenché au tap pointeur et à l'action
   /// sémantique `tap`). Ignoré si [enabled] est `false`.
   final VoidCallback onTap;
 
   /// Libellé sémantique (défaut : [label]).
   final String? semanticLabel;
 
-  /// Option interactive (défaut `true`). `false` → grisée, non opérable.
+  /// Option interactive (défaut `true`). `false` ⇒ grisée, non opérable.
   final bool enabled;
 
   @override

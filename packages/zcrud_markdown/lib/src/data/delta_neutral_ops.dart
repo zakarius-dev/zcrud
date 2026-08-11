@@ -1,6 +1,6 @@
 /// Utilitaires de conversion **neutre** + décodage **défensif** (AD-10) Delta,
-/// factorisés depuis `ZMarkdownField` (E6-1) pour être PARTAGÉS par le champ et
-/// les codecs (E6-2), **sans changer** le comportement prouvé d'E6-1.
+/// factorisés depuis `ZMarkdownField` pour être PARTAGÉS par le champ et
+/// les codecs, **sans changer** le comportement prouvé.
 ///
 /// ISOLATION (AD-1) : ce fichier vit sous `lib/src/` de `zcrud_markdown` et peut
 /// donc consommer `flutter_quill`. AUCUN type Quill/lib de conversion n'est
@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 
-/// Conversions NEUTRE ↔ Delta + décodage défensif partagées (E6-1/E6-2).
+/// Conversions NEUTRE ↔ Delta + décodage défensif partagées.
 ///
 /// La « valeur neutre » est une `List<Map<String, dynamic>>` d'ops Delta JSON-safe
 /// (jamais un `Document`/`Delta`). Le décodage défensif ne throw **JAMAIS**
@@ -25,7 +25,7 @@ abstract final class DeltaNeutralOps {
   /// Normalise une valeur de tranche en `List<Map<String, dynamic>>` (ops Delta)
   /// ou `null` si non convertible. Accepte une `List` (Delta JSON déjà décodé)
   /// ou une `String` JSON (tolérance). Peut throw sur JSON invalide → capté par
-  /// l'appelant (AD-10). Comportement IDENTIQUE à `_asDeltaOps` d'E6-1.
+  /// l'appelant (AD-10). Comportement IDENTIQUE à `_asDeltaOps`.
   static List<Map<String, dynamic>>? asDeltaOps(Object? value) {
     Object? raw = value;
     if (raw is String) {
@@ -70,7 +70,7 @@ abstract final class DeltaNeutralOps {
   /// `null` / vide / JSON invalide / structure inattendue / opération malformée
   /// (`insert` manquant, type non-`List`, …) → [Document] VIDE utilisable,
   /// **jamais** de throw (log non-fatal en debug). Parité stricte avec
-  /// `_decodeDefensive` d'E6-1.
+  /// `_decodeDefensive`.
   static Document decodeDefensiveDocument(Object? sliceValue) {
     if (sliceValue == null) return Document();
     try {
@@ -88,7 +88,7 @@ abstract final class DeltaNeutralOps {
   }
 
   /// Décode DÉFENSIVEMENT une valeur en ops Delta NEUTRES **sans** normaliser
-  /// via [Document] (préserve l'IDENTITÉ des ops, y.c. embeds opaques — AC2/AC9).
+  /// via [Document] (préserve l'IDENTITÉ des ops, y.c. embeds opaques).
   ///
   /// `null` / vide / corrompu / legacy → `[]`, **jamais** de throw (AD-10).
   static List<Map<String, dynamic>> decodeDefensiveOps(Object? value) {
@@ -108,7 +108,7 @@ abstract final class DeltaNeutralOps {
 
   /// Encode un [Document] en **valeur neutre** JSON-safe
   /// (`List<Map<String, dynamic>>`) — JAMAIS un type Quill exposé (AD-1/AD-8).
-  /// Parité stricte avec `_encodeNeutral` d'E6-1.
+  /// Parité stricte avec `_encodeNeutral`.
   static List<Map<String, dynamic>> encodeNeutral(Document document) {
     final json = document.toDelta().toJson();
     return <Map<String, dynamic>>[
@@ -122,8 +122,8 @@ abstract final class DeltaNeutralOps {
 
   /// Convertit des ops neutres en [Delta] prête pour `DeltaToMarkdown` :
   ///
-  /// - PERTE BORNÉE À L'EMBED (AC9, HIGH-1) : un `insert` **embed** (Map opaque —
-  ///   formule LaTeX E6-3, tableau E6-4) n'est pas exprimable en Markdown et
+  /// - PERTE BORNÉE À L'EMBED : un `insert` **embed** (Map opaque —
+  /// formule LaTeX, tableau ) n'est pas exprimable en Markdown et
   ///   ferait **throw** `DeltaToMarkdown` (aucun handler d'embed inconnu) → la
   ///   conversion échouerait et le document ENTIER serait persisté vide (perte
   ///   TOTALE). On remplace donc chaque embed par un **placeholder TEXTUEL**
@@ -158,7 +158,7 @@ abstract final class DeltaNeutralOps {
   }
 
   /// Remplace chaque `insert` **embed** opaque (Map) par un **placeholder
-  /// TEXTUEL** `[embed:<type>]` (perte BORNÉE — HIGH-1 / DP-4 AC1), sur des ops
+  /// TEXTUEL** `[embed:<type>]` (perte BORNÉE), sur des ops
   /// NEUTRES (`List<Map>`), sans passer par [Delta]. Réutilisé par les codecs
   /// non-Delta (HTML) qui ne savent pas exprimer un embed opaque : seul l'embed
   /// dégrade, le texte environnant SURVIT (jamais un document vidé). Les `insert`
@@ -199,18 +199,18 @@ abstract final class DeltaNeutralOps {
 
   /// Un embed est PRÉSERVÉ (non dégradé en placeholder) si son type figure dans
   /// [preserveEmbedTypes] — c'est-à-dire si l'encodeur aval sait l'exprimer
-  /// nativement (CR-IFFD-24 §1 : l'image et la vidéo s'écrivent en Markdown, les
+  /// nativement ( : l'image et la vidéo s'écrivent en Markdown, les
   /// remplacer par `[embed:image]` DÉTRUISAIT une donnée exprimable).
   ///
   /// N'accorder cette préservation qu'aux types réellement gérés en aval : un
   /// embed préservé SANS handler ferait throw `DeltaToMarkdown` et viderait le
-  /// document ENTIER (la régression HIGH-1 que le placeholder évite).
+  /// document ENTIER (la régression que le placeholder évite).
   static bool _isPreserved(Map<Object?, dynamic> insert, Set<String> preserved) {
     if (preserved.isEmpty || insert.keys.isEmpty) return false;
     return preserved.contains(insert.keys.first.toString());
   }
 
-  /// Placeholder textuel d'un `insert` embed opaque (perte bornée — AC9). Le
+  /// Placeholder textuel d'un `insert` embed opaque (perte bornée). Le
   /// **type** de l'embed (1re clé de la Map, ex. `formula`/`z-table`) est conservé
   /// pour tracer QUELLE donnée a dégradé, sans jamais casser la conversion.
   static String _embedPlaceholder(Map<Object?, dynamic> insert) {

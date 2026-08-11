@@ -20,7 +20,7 @@ import 'z_study_tools_item_card.dart';
 /// [titleMaxLines] sont **recopiés à l'identique** de ceux du socle, pour que
 /// passer par la façade et passer par la voie directe rendent la même chose.
 ///
-/// 🔴 **Tout nouveau slot ajouté à [ZStudyToolsItemCard] DOIT être répercuté
+/// **Tout nouveau slot ajouté à [ZStudyToolsItemCard] DOIT être répercuté
 /// ici** — sinon la façade redevient **plus pauvre** que la voie directe, et
 /// l'hôte qui l'adopte perd silencieusement une capacité.
 ///

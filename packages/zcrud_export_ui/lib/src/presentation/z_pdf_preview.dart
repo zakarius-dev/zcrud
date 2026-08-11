@@ -1,19 +1,20 @@
-/// Widget de **prévisualisation** PDF (su-11, AC6). Arête `printing` **confinée**
-/// (avec `z_pdf_share_service.dart`).
+/// Widget de **prévisualisation** PDF. Arête `printing` **confinée** (avec
+/// `z_pdf_share_service.dart`).
 ///
-/// origine: su-11 (E-STUDY-UI, FR-SU16, AD-42). Prévisualise des bytes PDF déjà
-/// rendus (`ZFlashcardPdfTemplate`, PUR) et offre les actions natives de
-/// `printing` (imprimer / partager / choisir l'imprimante).
+/// Prévisualise des bytes PDF déjà rendus (`ZFlashcardPdfTemplate`, PUR) et
+/// offre les actions natives de `printing` (imprimer / partager / choisir
+/// l'imprimante).
 ///
-/// 🔴 **API publique 100% `Uint8List`** : `ZPdfPreview` prend des `bytes` ; le
+/// **API publique 100% `Uint8List`** : `ZPdfPreview` prend des `bytes` ; le
 /// callback interne de `printing` reçoit un `PdfPageFormat` qui est **ABSORBÉ**
 /// (ignoré — les bytes sont déjà mis en page). Aucun type `printing`/`pdf`
-/// n'apparaît en signature publique ni au barrel. Gardé par
-/// `test/z_export_ui_confinement_test.dart`.
+/// n'apparaît en signature publique ni au barrel. Gardé par un test de
+/// confinement dédié.
 ///
-/// **A11y (AD-13)** : la surface porte un [Semantics] (« aperçu du document PDF »)
-/// et délègue les actions à la barre de `PdfPreview` (cibles natives). Aucun
-/// libellé ni couleur codé en dur au-delà du label a11y (fourni via [semanticsLabel]).
+/// **A11y (invariant AD-13)** : la surface porte un [Semantics] (« aperçu du
+/// document PDF ») et délègue les actions à la barre de `PdfPreview` (cibles
+/// natives). Aucun libellé ni couleur codé en dur au-delà du label a11y
+/// (fourni via [semanticsLabel]).
 library;
 
 import 'dart:typed_data';

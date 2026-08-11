@@ -1,18 +1,17 @@
-/// Signalement de modération `ZStudyFolderReport` (Story ES-9.4, AC1/AC3/AC6).
+/// Signalement de modération d'un dossier d'étude publié.
 ///
-/// origine: modération communautaire d'un dossier publié (FR-S32). Un utilisateur
-/// (`reporterUid`) signale un dossier (`folderId`) avec un motif (`reason`) et un
-/// **statut** de traitement ([ZReportStatus]). Le port [ZStudyModerationPort]
-/// consomme cette entité (`report`/`resolveReport`/`takedown`). **Aucun** état
-/// personnel (AC3).
+/// Un utilisateur (`reporterUid`) signale un dossier (`folderId`) avec un
+/// motif (`reason`) et un statut de traitement ([ZReportStatus]). Le port
+/// `ZStudyModerationPort` consomme cette entité. Aucun état personnel n'y
+/// vit.
 ///
-/// Entité hand-written défensive (AD-10), AD-19.1 sur [extra].
+/// Entité écrite à la main et désérialisée défensivement (invariant AD-10).
 library;
 
 import 'package:zcrud_core/domain.dart';
 
-/// Statut de traitement d'un signalement — enum **OUVERT** (AD-10) : valeur
-/// inconnue ⇒ [unknown] (jamais de throw).
+/// Statut de traitement d'un signalement — enum ouvert (invariant AD-10) :
+/// une valeur inconnue retombe sur [unknown], jamais de throw.
 enum ZReportStatus {
   /// Signalement ouvert, non traité.
   open,
@@ -26,10 +25,10 @@ enum ZReportStatus {
   /// Rejeté (pas d'action).
   dismissed,
 
-  /// Statut **inconnu** (repli défensif AD-10).
+  /// Statut inconnu (repli défensif).
   unknown;
 
-  /// Reconstruit **défensivement** un statut depuis une valeur brute (AD-10).
+  /// Reconstruit défensivement un statut depuis une valeur brute.
   static ZReportStatus fromName(Object? raw) {
     if (raw is! String) return unknown;
     for (final s in values) {
@@ -39,10 +38,11 @@ enum ZReportStatus {
   }
 }
 
-/// Signalement **immuable** (value-object, `==`/`hashCode` par valeur — égalité
-/// **profonde** de [extra]).
+/// Signalement immuable (value-object, `==`/`hashCode` par valeur —
+/// égalité profonde de [extra]).
 class ZStudyFolderReport {
-  /// Construit un signalement. [id] opaque, [status] défaut [ZReportStatus.open].
+  /// Construit un signalement. [id] opaque, [status] défaut
+  /// [ZReportStatus.open].
   const ZStudyFolderReport({
     this.id,
     this.folderId = '',
@@ -63,10 +63,11 @@ class ZStudyFolderReport {
     'created_at',
   };
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// Reconstruit **défensivement** depuis une map (AD-10) — **jamais** de throw.
+  /// Reconstruit défensivement depuis une map (invariant AD-10) — ne lève
+  /// jamais.
   static ZStudyFolderReport fromJson(Object? json) {
     if (json is! Map) return const ZStudyFolderReport();
     final map = <String, dynamic>{
@@ -89,13 +90,14 @@ class ZStudyFolderReport {
     );
   }
 
-  /// Identité opaque `String` (nullable pour l'éphémère AD-14).
+  /// Identité opaque `String`, nullable pour le signalement pas encore
+  /// persisté.
   final String? id;
 
   /// Dossier signalé (clé neutre `String`).
   final String folderId;
 
-  /// Auteur du signalement (uid opaque).
+  /// Auteur du signalement (identifiant opaque).
   final String reporterUid;
 
   /// Motif libre du signalement.
@@ -107,10 +109,10 @@ class ZStudyFolderReport {
   /// Date du signalement (ISO-8601), ou `null`.
   final DateTime? createdAt;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée. **Normalisée à la LECTURE (AD-19.1)**.
+  /// Échappatoire non typée, normalisée à la lecture.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
   /// Sérialise en clés snake_case ; le statut en camelCase. Étale [extra].

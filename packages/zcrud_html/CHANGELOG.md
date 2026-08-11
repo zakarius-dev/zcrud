@@ -1,23 +1,28 @@
 # Changelog
 
-All notable changes to `zcrud_html` are documented in this file.
+Toutes les modifications notables de `zcrud_html` sont documentées dans ce
+fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## Unreleased (fp-4-3)
+## [0.86.0] — Chantier documentation
 
-WYSIWYG HTML adapter (AD-50, epic E-FORM-PARITY).
+### Ajouté
 
-- `registerZHtmlFields(registry)` enrolls the `html` (block) and `inlineHtml` (inline) kinds on an injected `ZWidgetRegistry`. Mutually exclusive with `zcrud_markdown` — the second owner of a kind throws `ZDuplicateRegistrationError` (core contract, no `zcrud_markdown` edge).
-- `ZHtmlEditorField`: isolated-controller WYSIWYG editor (`html_editor_enhanced` WebView) — `late final HtmlEditorController` created once in `initState`, stable `ValueKey` place, debounced off-keystroke commit, out-of-focus re-sync (SM-1/AD-2). Persisted format is HTML `String`.
-- `ZHtmlCommitDebouncer`: pure-Dart, injectable temporal mechanics (falsifiable SM-1 unit — the WebView `State` is not mountable in `flutter_test`).
-- `ZHtmlView`: native HTML reader (`flutter_html`) — defensive (AD-10: corrupt/null/non-`String` renders empty, never throws), themed (FR-26), `Semantics` container.
-- Heavy deps `html_editor_enhanced: ^2.7.1` + `flutter_html: ^3.0.0` added, confined to `lib/src/` (no third-party type in the public barrel, AD-40); confinement guard + R12 probe updated (probe intruder now `get`).
-- Documented limits: WebView a11y (best-effort), bounded round-trip losses, no MathJax CDN.
+- `README.md` du paquet réécrit en français, au gabarit de la charte
+  documentaire : aperçu, installation, démarrage rapide, concepts clés, API
+  principale, cas limites et invariants.
+- Fiche `docs/site/paquets/zcrud_html.md` (rôle, quand l'utiliser, types
+  clés).
+- `public_member_api_docs` activé dans `analysis_options.yaml` : l'exhaustivité
+  de la documentation de l'API publique devient un invariant vérifié par
+  l'analyse statique.
 
-## 0.2.1
+### Modifié
 
-Initial skeleton (fp-1-2, epic E-FORM-PARITY).
+- Normalisation de la dartdoc de l'ensemble de l'API publique exportée par le
+  barrel : première phrase autonome, invariants d'architecture cités par leur
+  nom stable (`docs/site/concepts/invariants.md`). Purge des emoji de journal
+  et des noms d'applications legacy utilisés comme justification —
+  conservation des invariants, cas limites et avertissements de contrat.
+  Aucun changement de code — la revue ne porte que sur des commentaires.
 
-- HTML satellite substrate (AD-50): pubspec, barrel, `lib/src/{domain,data,presentation}` tree with documented placeholder, confinement guard.
-- Depends only on `zcrud_core` among zcrud packages (AD-1, CORE OUT=0).
-- No heavy dependency yet (`html_editor_enhanced`/`flutter_html` land confined in fp-4-3).
-- Published under the MIT license.
+Historique antérieur : voir `git log` sur `packages/zcrud_html/`.

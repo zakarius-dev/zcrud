@@ -177,12 +177,12 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
 
   /// Remplace la carte de la clé [key] par [card] — **édition IN MEMORY** (AC2).
   ///
-  /// ⚠️ **SM-1** : ne notifie **PAS** la tranche structurelle [orderKeys] (la
+  /// **SM-1** : ne notifie **PAS** la tranche structurelle [orderKeys] (la
   /// liste ne se reconstruit pas à la frappe) — il ne recalcule que [isDirty].
   /// C'est la voie unique par laquelle l'éditeur de carte pousse ses édits.
   void updateCard(String key, ZFlashcard card) {
     if (_disposed || !_cards.containsKey(key)) return;
-    // 🔴 FIX-9/SM-1 — chemin CHAUD (une frappe) : la composition ne change pas
+    // FIX-9/SM-1 — chemin CHAUD (une frappe) : la composition ne change pas
     // (même longueur, même ordre). On ajuste la divergence de façon INCRÉMENTALE
     // (une seule comparaison de valeur : la carte modifiée vs sa contrepartie de
     // snapshot) au lieu de reconstruire toute la liste de travail et de la
@@ -232,7 +232,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     Future<ZResult<Unit>> Function(List<ZFlashcard> cards) onCommit,
   ) async {
     final list = _computeWorkingList();
-    // 🔴 BUG-2/AD-10 — un `onCommit` injecté qui `throw` NE DOIT PAS traverser la
+    // BUG-2/AD-10 — un `onCommit` injecté qui `throw` NE DOIT PAS traverser la
     // surface : on le capte et on le convertit en `Left(ZServerFailure)` (même
     // patron que `ZListSelectionController.batchApply`). Le brouillon reste alors
     // *dirty* intact (aucune mise à jour du snapshot) — aucune perte (AC9).

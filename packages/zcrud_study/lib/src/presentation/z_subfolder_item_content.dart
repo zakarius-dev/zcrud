@@ -25,7 +25,7 @@ import 'z_subfolder_ref.dart';
 
 /// Libellé de la **ligne racine** d'une surface de LISTE (CR-IFFD-46, point 1).
 ///
-/// 🔴 **Source UNIQUE de ce repli.** Les trois surfaces de liste (feuille,
+/// **Source UNIQUE de ce repli.** Les trois surfaces de liste (feuille,
 /// sidebar, rangée de puces) doivent répondre la même chose ; le déclencheur de
 /// la barre, lui, doit répondre AUTRE CHOSE — il lit `allSubfoldersLabel`
 /// directement et n'appelle **jamais** cette fonction. Recopier `?? ` sur
@@ -46,7 +46,7 @@ String zSubfolderRootItemLabel(ZSubfolderNavSpec spec) =>
 /// existant rend le bon libellé **sans être modifié**.
 ///
 /// [rootIcon] : glyphe de tête de la ligne racine (CR-IFFD-46, point 1).
-/// 🔴 **Paramètre EXPLICITE et non `spec.rootItemIcon` lu ici** : `refOrNull`
+/// **Paramètre EXPLICITE et non `spec.rootItemIcon` lu ici** : `refOrNull`
 /// est `null` sur la ligne racine COMME sur le déclencheur sans sélection. Le
 /// lire depuis la spec l'aurait donc posé sur le déclencheur aussi — soit
 /// exactement le défaut « les deux surfaces sont indiscernables » que
@@ -78,7 +78,7 @@ Widget zBuildSubfolderItemContent(
 /// badge de compteur (si `count`) — MÊMES informations que la rangée de la
 /// sidebar (parité R-SUF2). Aucune couleur ni libellé en dur (FR-26).
 ///
-/// 🔴 **Fonction (et non widget)** : le sélecteur en puces rendait déjà ce `Row`
+/// **Fonction (et non widget)** : le sélecteur en puces rendait déjà ce `Row`
 /// SANS élément intermédiaire. En faire une classe insérerait un élément dans
 /// l'arbre du mode `compact`, dont CR-IFFD-40 promet le rendu **strictement
 /// inchangé**.

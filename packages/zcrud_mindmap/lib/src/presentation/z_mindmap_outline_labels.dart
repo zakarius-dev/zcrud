@@ -1,4 +1,4 @@
-/// Libellés a11y **externalisés** de l'éditeur outline (Story E10-3, AD-13/FR-26).
+/// Libellés a11y **externalisés** de l'éditeur outline (invariant AD-13).
 ///
 /// AD-13 exige des libellés a11y externalisés (jamais de chaîne UI métier codée
 /// en dur dans le widget). Cet objet **immuable** porte tous les libellés
@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 
 /// Bundle **immuable** de libellés a11y pour [ZMindmapOutlineEditor].
 ///
-/// Chaque champ a un **repli neutre non-nul** (AC4). Toutes les chaînes UI de
+/// Chaque champ a un **repli neutre non-nul**. Toutes les chaînes UI de
 /// l'éditeur passent par cet objet : le widget ne code **aucune** chaîne en dur.
 @immutable
 class ZMindmapOutlineLabels {
@@ -66,9 +66,9 @@ class ZMindmapOutlineLabels {
   /// Hint a11y / placeholder du champ d'édition de `content`.
   final String contentHint;
 
-  /// Titre **visible** de l'état vide (CR-IFFD-67) — `null` par défaut.
+  /// Titre **visible** de l'état vide — `null` par défaut.
   ///
-  /// 🔴 **Volontairement NULLABLE, sans repli littéral.** Les champs ci-dessus
+  /// **Volontairement NULLABLE, sans repli littéral.** Les champs ci-dessus
   /// portent un repli français parce qu'ils sont d'abord des libellés *a11y*
   /// (annonce d'un bouton-icône) ; ceux de l'état vide sont du **texte de page**
   /// affiché tel quel. Un repli en dur y serait un libellé métier codé dans le

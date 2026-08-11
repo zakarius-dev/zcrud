@@ -1,32 +1,31 @@
-/// `ZAutocompleteFieldWidget` — champ **texte auto-complété** (fp-5-2, FR-35)
-/// servi via `ZWidgetRegistry` sous le `kind` [autocompleteFieldKind] (aligné sur
+/// `ZAutocompleteFieldWidget` — champ **texte auto-complété** servi via
+/// `ZWidgetRegistry` sous le `kind` [autocompleteFieldKind] (aligné sur
 /// `EditionFieldType.autocomplete.name`).
 ///
-/// 🔴 **Zéro dépendance lourde (AC-B3)** : implémenté avec le widget **natif
-/// Flutter `Autocomplete<String>`** — l'étude REJETTE `autocomplete_textfield`
-/// (non-portable) et confirme que DODLP utilise `Autocomplete` natif. Aucune
-/// arête ajoutée au graph_proof (CORE OUT=0 préservé).
+/// **Zéro dépendance lourde** : implémenté avec le widget **natif Flutter
+/// `Autocomplete<String>`**, sans dépendance tierce. Aucune arête
+/// supplémentaire n'est ajoutée au graphe de dépendances.
 ///
 /// **Dispatch cœur** : `EditionFieldType.autocomplete` → famille
 /// `registryOrFallback` → `registry.tryBuilderFor('autocomplete')`. Repli
-/// `ZUnsupportedFieldWidget` tant que non enregistré (AD-10).
+/// `ZUnsupportedFieldWidget` tant que non enregistré (invariant AD-10).
 ///
-/// **AD-2 / SM-1** : value-in-slice — lit `ctx.value` (`String`), écrit via
+/// **Invariant AD-2** : value-in-slice — lit `ctx.value` (`String`), écrit via
 /// `ctx.onChanged`. Le `TextEditingController`/`FocusNode` sont détenus par
 /// l'état (alloués **une seule fois** en `initState`, jamais recréés au rebuild
 /// — aucune perte de focus) et fournis à `RawAutocomplete`. Une **ré-injection
 /// externe** de `ctx.value` (reset / rechargement d'entité) est re-synchronisée
-/// via [didUpdateWidget] (patron mirroir du PIN) — `initialValue` ne s'appliquant
-/// qu'à la création, il ne suffisait pas (LOW fp-5-2). Un champ voisin qui change
-/// ne reconstruit pas ce champ.
+/// via [didUpdateWidget] (patron mirroir du champ PIN) — `initialValue` ne
+/// s'appliquant qu'à la création, il ne suffisait pas. Un champ voisin qui
+/// change ne reconstruit pas ce champ.
 ///
-/// **AD-13 / FR-26** : champ texte ≥ 48 dp, options **directionnelles** (RTL),
-/// `Semantics` **sans double annonce** (`excludeSemantics: true` sur l'option —
-/// le label du bouton suffit, le `Text` enfant ne ré-émet pas de nœud), thème
-/// injecté (`ZcrudTheme`/`Theme.of`).
+/// **Invariant AD-13** : champ texte ≥ 48 dp, options **directionnelles**
+/// (RTL), `Semantics` **sans double annonce** (`excludeSemantics: true` sur
+/// l'option — le label du bouton suffit, le `Text` enfant ne ré-émet pas de
+/// nœud), thème injecté (`ZcrudTheme`/`Theme.of`).
 ///
-/// **AD-10** : valeur externe non-`String`/`null`/corrompue ⇒ champ vide, jamais
-/// un crash.
+/// **Invariant AD-10** : valeur externe non-`String`/`null`/corrompue ⇒ champ
+/// vide, jamais un crash.
 library;
 
 import 'package:flutter/material.dart';
@@ -44,7 +43,8 @@ class ZAutocompleteFieldWidget extends StatefulWidget {
   /// Contexte du champ (`ctx.value` = `String`, `ctx.onChanged` = écriture).
   final ZFieldWidgetContext ctx;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build (mesure de la granularité des
+  /// rebuilds).
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -59,11 +59,12 @@ class ZAutocompleteFieldWidget extends StatefulWidget {
 }
 
 class _ZAutocompleteFieldWidgetState extends State<ZAutocompleteFieldWidget> {
-  /// Contrôleur/focus alloués **une seule fois** (AD-2) — jamais recréés.
+  /// Contrôleur/focus alloués **une seule fois** (invariant AD-2) — jamais
+  /// recréés.
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
 
-  /// Valeur `String` défensive de la tranche (AD-10).
+  /// Valeur `String` défensive de la tranche (invariant AD-10).
   String get _sliceValue {
     final v = widget.ctx.value;
     return v is String ? v : '';
@@ -174,7 +175,7 @@ class _ZAutocompleteFieldWidgetState extends State<ZAutocompleteFieldWidget> {
                             label: option,
                             // Le label du bouton porte déjà l'option ; on exclut
                             // la sémantique du Text enfant pour éviter la DOUBLE
-                            // annonce (« Apple Apple ») — MED-3 fp-5-2.
+                            // annonce (« Apple Apple »).
                             excludeSemantics: true,
                             child: Container(
                               constraints:

@@ -1,10 +1,8 @@
-/// Le **slider Material labellisé** du budget de calcul — lot K3.
+/// Un slider Material labellisé pour le budget de calcul, alternative aux
+/// chips par défaut de la feuille de réglages du socle.
 ///
-/// C'est le pixel-perfect de la tuile « Réflexion » de lex : `Slider` 1..5 à
-/// divisions, étiquette de palier (Rapide/Équilibré/Profond) et échelle sous le
-/// rail (`tools_sheet.dart:322-392`). Le socle, lui, garde ses **chips** par
-/// défaut (verdict F4 de l'étude, verrouillé par SET-S1/CR-74) — ce slider est
-/// l'ÉCART ASSUMÉ du satellite, à brancher explicitement :
+/// Le socle rend le budget de calcul sous forme de chips par défaut ; ce
+/// widget est l'écart assumé de ce satellite, à brancher explicitement :
 ///
 /// ```dart
 /// ZChatSettingsSheet(
@@ -13,16 +11,18 @@
 /// )
 /// ```
 ///
-/// * bornes et divisions viennent de [ZChatComputeEffort.min]/[max] — jamais
-///   des littéraux ; l'écriture passe par `setComputeEffort` (voie unique) ;
-/// * les repères Rapide/Équilibré/Profond sont les libellés du registre du
-///   socle (les mêmes clés que l'échelle des chips K2) ; l'échelle visuelle est
-///   `ExcludeSemantics` — le `Slider` porte déjà la valeur pour un lecteur
-///   d'écran ([Slider.semanticFormatterCallback]) ;
-/// * budget ABSENT (`computeEffort == null` = « l'hôte décide ») : le rail se
-///   pose au palier médian SANS écrire — la première écriture est un geste
-///   utilisateur, jamais un effet de montage (le montage d'une feuille ne
-///   change pas la requête).
+/// Les bornes et le nombre de divisions viennent de
+/// [ZChatComputeEffort.min]/[ZChatComputeEffort.max] — jamais d'un littéral
+/// local — et l'écriture passe par `setComputeEffort`, la seule voie
+/// d'écriture du contrôleur. Les repères textuels (rapide/équilibré/profond)
+/// sont les libellés du registre du socle ; l'échelle visuelle sous le rail
+/// est exclue de la sémantique, car le `Slider` porte déjà la valeur pour un
+/// lecteur d'écran via `Slider.semanticFormatterCallback`.
+///
+/// Quand aucun budget n'est encore choisi (`computeEffort == null`,
+/// signifiant « l'hôte décide »), le rail se positionne au palier médian
+/// sans écrire dans le contrôleur : la première écriture reste un geste de
+/// l'utilisateur, jamais un effet de bord du montage de la feuille.
 library;
 
 import 'package:flutter/material.dart';
@@ -44,7 +44,7 @@ class ZChatMaterialBudgetSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 LA tranche des réglages, et elle seule (SM-1).
+    // Abonné uniquement à la tranche des réglages (invariant AD-2).
     return ValueListenableBuilder<ZChatGenerationSettings>(
       valueListenable: controller.settings,
       builder:
@@ -61,12 +61,11 @@ class ZChatMaterialBudgetSlider extends StatelessWidget {
               children: <Widget>[
                 Text(
                   zChatLabel(context, kZChatLabelComputeBudget),
-                  // AD-13 : jamais `TextAlign.left`.
+                  // Invariant AD-13 : jamais `TextAlign.left`.
                   textAlign: TextAlign.start,
                 ),
-                // 🔴 AD-13 : la cible du pouce est tenue ≥ 48 dp en géométrie
-                // RENDUE par la contrainte plancher — pas par une promesse de
-                // thème.
+                // Invariant AD-13 : la cible du pouce est tenue ≥ 48 dp en
+                // géométrie rendue par la contrainte plancher.
                 ConstrainedBox(
                   constraints: const BoxConstraints(
                     minHeight: kZChatMinTapTarget,
@@ -86,8 +85,8 @@ class ZChatMaterialBudgetSlider extends StatelessWidget {
                     ),
                   ),
                 ),
-                // L'échelle lex (Rapide/Équilibré/Profond) sous le rail —
-                // décorative : le `Slider` annonce déjà le palier.
+                // Échelle décorative sous le rail : le `Slider` annonce déjà
+                // le palier à l'accessibilité.
                 ExcludeSemantics(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -107,8 +106,8 @@ class ZChatMaterialBudgetSlider extends StatelessWidget {
   }
 }
 
-/// Palier → repère, par PROJECTION des bornes du kernel (`low`/`high` sont les
-/// projections IFFD 1/5) : jamais un seuil littéral.
+/// Palier → repère textuel, dérivé des bornes du kernel — jamais un seuil
+/// littéral local.
 String _tierLabel(BuildContext context, int level) {
   if (level <= ZChatComputeEffort.low.level) {
     return zChatLabel(context, kZChatLabelComputeBudgetFast);

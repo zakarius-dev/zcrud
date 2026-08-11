@@ -1,5 +1,5 @@
 /// Tableau ↔ Markdown — rendu et relecture **symétriques**, plus un repli
-/// **sans perte** (suite de CR-IFFD-24 §2).
+/// **sans perte**.
 ///
 /// Avant ce module, un embed tableau persisté en Markdown perdait **toutes ses
 /// cellules** : `encode` écrivait `[embed:table]` et le contenu disparaissait au
@@ -12,8 +12,8 @@
 /// échappé — le bloc n'est pas capté et son texte est mutilé. Or c'est
 /// exactement ce que produit un rendu correct d'une cellule contenant `|`.
 /// Un parseur qui ne sait pas relire ce que notre encodeur écrit rouvre le
-/// défaut d'asymétrie que CR-IFFD-24 dénonce. La symétrie prime donc sur la
-/// réutilisation : les deux moitiés sont écrites ici, face à face.
+/// même défaut d'asymétrie. La symétrie prime donc sur la réutilisation : les
+/// deux moitiés sont écrites ici, face à face.
 ///
 /// Interne à `zcrud_markdown` (aucun symbole exporté par le barrel).
 library;
@@ -167,8 +167,8 @@ List<List<String>>? zCellsOfTablePayload(Object? data) {
   return cells;
 }
 
-/// Relit un tableau Markdown **LEGACY DODLP** en matrice, ou `null` si [raw]
-/// n'en tire aucune ligne (GAP-2, CR parité 2026-08-11).
+/// Relit un tableau Markdown **LEGACY** en matrice, ou `null` si [raw]
+/// n'en tire aucune ligne (CR parité 2026-08-11).
 ///
 /// PORT FIDÈLE de l'algorithme de lecture du legacy
 /// (`table_view_embed.dart:78-177`, `_parseMarkdown`) — c'est LUI qui définit ce

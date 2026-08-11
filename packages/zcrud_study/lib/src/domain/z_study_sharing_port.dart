@@ -1,32 +1,29 @@
-/// Port neutre de **partage** `ZStudySharingPort` (Story ES-9.4, AC1/AC4/AC7).
+/// Contrat de partage d'un dossier d'étude — liens, adhésions, galerie
+/// publique.
 ///
-/// origine: seam de partage OPTIONNEL du domaine `zcrud_study` (AD-5/AD-11/AD-26).
-/// Contrat **pur** (`abstract interface class`, **jamais** `sealed` — AD-4 :
-/// frontière inter-package, l'app *implements* librement). L'app hôte le branche
-/// sur son backend (Firestore/Hive/HTTP…) : **aucun** SDK, endpoint, clé, token,
-/// nom de collection en dur ni crypto ne fuit ici (AD-11/AD-12).
+/// Seam optionnelle du domaine `zcrud_study` : contrat pur
+/// (`abstract interface class`, jamais `sealed`, invariant AD-4) que
+/// l'application hôte implémente en le branchant sur son propre backend
+/// (Firestore, Hive, HTTP…). Aucun SDK, endpoint, clé, jeton, nom de
+/// collection ni primitive de chiffrement ne fuit dans ce port (invariant
+/// AD-12).
 ///
-/// ## Surface AD-5 (pincée par liaison de type statique)
+/// Toute mutation retourne `Future<ZResult<T>>` (invariant AD-11,
+/// `Either<ZFailure, T>`), ou `Future<ZResult<Unit>>` pour un effet sans
+/// valeur ; tout flux est un `Stream<List<T>>` nu — jamais un `T` nu, jamais
+/// un flux enveloppé dans [ZResult].
 ///
-/// Toute mutation retourne `Future<ZResult<T>>` (= `Either<ZFailure, T>`), ou
-/// `Future<ZResult<Unit>>` pour un void ; tout flux est un `Stream<List<T>>`
-/// **NU** — **jamais** un `T` nu, **jamais** un `Stream` enveloppé dans `ZResult`.
+/// Chaque mutation d'un **champ de contrôle** (`createShareLink`,
+/// `revokeShareLink`, `grantMembership`, `publishToGallery`, `unpublish`)
+/// doit consommer `ZStudySharingAcl.canMutateControl` : une mutation tentée
+/// par un acteur qui n'est pas propriétaire du dossier remonte `Left`
+/// (échec d'autorisation domaine), jamais un `Right` silencieux.
+/// L'application hôte doit répliquer cette même règle dans ses propres
+/// règles de sécurité serveur — ce contrat neutre ne l'impose pas lui-même.
 ///
-/// ## 🔴 Consommation de la garde ACL (AC5, dette sécu lex)
-///
-/// Chaque mutation d'un **champ de contrôle** (`createShareLink`/`revokeShareLink`/
-/// `grantMembership`/`publishToGallery`/`unpublish`) DOIT **consommer**
-/// `ZStudySharingAcl.canMutateControl(...)` : une mutation par un **non-owner**
-/// remonte `Left(ZFailure)` (échec d'autorisation domaine), **jamais** un `Right`
-/// silencieux. L'enforcement **serveur** reste HORS domaine (**DW-ES94-1**, cf.
-/// `ZStudySharingAcl`) : les règles backend de l'app doivent **répliquer** ce
-/// prédicat.
-///
-/// ## `study_share_links` — collection GLOBALE (AD-20)
-///
-/// La collection des liens est **globale** : sa résolution de chemin est un
-/// concern d'**adapter** (hors domaine). Ce port ne code **aucun** nom de
-/// collection.
+/// La collection des liens de partage est **globale** (partagée entre tous
+/// les dossiers) ; la résolution de son chemin de stockage est un concern
+/// d'adaptateur, hors du domaine — ce port ne code aucun nom de collection.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -35,7 +32,8 @@ import 'z_public_study_folder.dart';
 import 'z_share_link.dart';
 import 'z_study_membership.dart';
 
-/// Contrat neutre de partage d'un dossier d'étude (AD-5 : `Either<ZFailure,·>`).
+/// Contrat neutre de partage d'un dossier d'étude (invariant AD-5 : domaine
+/// backend-agnostique, `Either<ZFailure, T>`).
 abstract interface class ZStudySharingPort {
   /// Crée (ou active) un [ZShareLink] pour [folderId]. `Left` si non autorisé
   /// (garde ACL owner-only) ou en cas d'échec ; `Right(ZShareLink)` en succès.

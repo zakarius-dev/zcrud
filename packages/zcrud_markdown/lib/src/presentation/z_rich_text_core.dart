@@ -1,6 +1,6 @@
-/// Noyau **interne partagé** du rich-text Quill (DP-3) : embeds LaTeX/tableau,
+/// Noyau **interne partagé** du rich-text Quill : embeds LaTeX/tableau,
 /// config de toolbar STABLE et insertion/édition d'embed — FACTORISÉ depuis
-/// `ZMarkdownField` (E6-1..E6-4) pour être RÉUTILISÉ **sans dupliquer le chemin
+/// `ZMarkdownField` pour être RÉUTILISÉ **sans dupliquer le chemin
 /// chaud** par les trois voies rich-text :
 ///   1. l'éditeur pleine-toolbar de la voie publique `ZMarkdownField({controller})`,
 ///   2. l'éditeur compact de la voie `ctx`/registre (mode `inline`),
@@ -9,7 +9,7 @@
 /// ISOLATION (AD-1/AD-7) : ce fichier vit sous `lib/src/` de `zcrud_markdown` et
 /// peut donc consommer `flutter_quill`. AUCUN de ses symboles n'est re-exporté
 /// par le barrel : la surface publique reste NEUTRE (aucun type Quill/math). Le
-/// comportement d'insertion/édition d'embed est le MIROIR EXACT d'E6-3/E6-4 —
+/// comportement d'insertion/édition d'embed est le MIROIR EXACT
 /// seule la localisation du code change (méthodes d'instance → fonctions
 /// top-level paramétrées par le [QuillController]), pas la sémantique.
 library;
@@ -18,10 +18,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../data/delta_neutral_ops.dart';
-// GAP-2 : conversion de la charge tableau LEGACY (string Markdown) pour le
+// conversion de la charge tableau LEGACY (string Markdown) pour le
 // pré-remplissage d'édition — parseur legacy-fidèle de la couture data.
 import '../data/z_table_markdown.dart';
-// SOURCE UNIQUE du type d'embed tableau (SM-S4 / ES-6.2) : re-câblage D3 sur la
+// SOURCE UNIQUE du type d'embed tableau : re-câblage sur la
 // couture NEUTRE, `z_table_embed.dart` ne re-déclare plus `kTableEmbedType`.
 import '../data/z_table_ops.dart';
 import 'z_divider_embed.dart';
@@ -40,14 +40,14 @@ export 'z_divider_embed.dart' show kZUnknownEmbedBuilder;
 /// hauteur minimale. PARTAGÉE par toutes les voies rich-text.
 const double kZMinTapTarget = 48;
 
-/// `EmbedBuilder`s branchés sur `QuillEditorConfig.embedBuilders` (E6-3/E6-4).
+/// `EmbedBuilder`s branchés sur `QuillEditorConfig.embedBuilders`.
 ///
 /// Liste `const` (donc CANONICALISÉE → instance UNIQUE partagée par tous les
 /// builds ET par toutes les voies rich-text) : la référence est STABLE, aucune
-/// allocation à chaque (re)build de tranche (SM-1/AD-2). MÊME liste pour LaTeX
-/// (E6-3) ET tableau (E6-4), en édition ET en lecture. Définie HORS de la
+/// allocation à chaque (re)build de tranche (AD-2). MÊME liste pour LaTeX
+/// ET tableau, en édition ET en lecture. Définie HORS de la
 /// surface publique scannée par les tests d'isolation de signature.
-/// 🔴 **CR-IFFD-73 — `ZDividerEmbedBuilder` comblait un TROU, pas un manque de
+/// ** — `ZDividerEmbedBuilder` comblait un TROU, pas un manque de
 /// confort.** `ZMarkdownCodec` compte `divider` parmi ses types d'embed
 /// NATIFS : un `---` de Markdown produisait donc une op que **rien** ne savait
 /// rendre, et le lecteur comme l'éditeur levaient un `UnimplementedError` suivi
@@ -61,18 +61,17 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
   ZMediaEmbedBuilder(ZMediaKind.image),
   ZMediaEmbedBuilder(ZMediaKind.video),
   ZDividerEmbedBuilder(),
-  // GAP-1/GAP-2 (CR parité 2026-08-11) : LECTURE des embeds LEGACY DODLP —
-  // `formula`/`formula_inline` (string LaTeX nu) et `x-embed-table` (string
-  // Markdown). Sans eux, tout contenu DODLP existant tombait sur le repli
-  // d'embed inconnu (invisible). L'ÉCRITURE reste sur nos clés
-  // `latex`/`latexBlock`/`table` — migration à sens unique.
+  // LECTURE des embeds legacy `formula`/`formula_inline` (string LaTeX nu) et
+  // `x-embed-table` (string Markdown). Sans eux, tout contenu legacy existant
+  // tombait sur le repli d'embed inconnu (invisible). L'ÉCRITURE reste sur nos
+  // clés `latex`/`latexBlock`/`table` — migration à sens unique.
   ZLegacyFormulaEmbedBuilder(),
   ZLegacyFormulaInlineEmbedBuilder(),
   ZLegacyTableEmbedBuilder(),
 ];
 
-/// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant (MIN-1,
-/// FR-26) : titres H1..H6 alignés sur les rôles typographiques du [TextTheme]
+/// Construit des [DefaultStyles] Quill dérivés du **thème** ambiant : titres
+/// H1..H6 alignés sur les rôles typographiques du [TextTheme]
 /// (couleurs/tailles/graisses du thème), SANS couleur codée en dur.
 ///
 /// Part de `DefaultStyles.getInstance(context)` (déjà thémé par Quill) et
@@ -82,23 +81,23 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
 /// Quill (`DefaultStyles`) ne fuit JAMAIS dans le barrel — il n'est consommé que
 /// par les `QuillEditorConfig` internes (éditeur / lecteur / plein-écran).
 ///
-/// AD-13 (documenté) : la parité DODLP (`QuillDefaultStylesHelper` + google_fonts
-/// + palette de couleurs figée) n'est PAS reproduite — pas de dépendance
+/// Invariant AD-13 : la parité visuelle avec un éditeur historique (police et
+/// palette de couleurs figées) n'est PAS reproduite — pas de dépendance
 /// `google_fonts`, pas de couleur en dur. Seule la dérivation thème est portée.
 /// [baseStyle] (optionnel, DP-RT) : style **attendu par l'appelant** pour le
 /// CORPS de texte (contrat `ZRichTextRenderer.build`). Quand il est fourni, il
 /// devient la base des blocs de corps — paragraphe, listes, citation — par
-/// FUSION sur le style Quill ambiant. 🔴 Il ne peut PAS être obtenu en
+/// FUSION sur le style Quill ambiant. Il ne peut PAS être obtenu en
 /// enveloppant l'éditeur d'un `DefaultTextStyle` : mesuré,
 /// `DefaultStyles.getInstance` repart bien de `DefaultTextStyle.of(context)`
 /// mais **écrase `fontSize` à 16** — un `bodySmall` passé par l'ambiant perdrait
 /// donc sa taille en silence. Les **rôles matérialisés** (titres H1..H6, code
-/// inline) en dévient délibérément et restent dérivés du thème (FR-26).
+/// inline) en dévient délibérément et restent dérivés du thème.
 /// `null` ⇒ comportement historique strictement inchangé.
 ///
-/// [styleSet] (optionnel, GAP-5 — CR parité 2026-08-11) : jeu de styles NEUTRE
+/// [styleSet] (optionnel, — CR parité 2026-08-11) : jeu de styles NEUTRE
 /// injecté PAR CHAMP par l'hôte ([ZRichTextStyleSet]) — la voie « signature
-/// DODLP » SANS faire entrer les valeurs legacy dans le paquet (polices Google
+/// l'éditeur historique » SANS faire entrer les valeurs legacy dans le paquet (polices Google
 /// et palette restent chez l'hôte, cf. `z_rich_text_style_set.dart`). Appliqué
 /// EN DERNIER (par-dessus thème + [baseStyle]) : chaque slot fusionne sur le
 /// style courant, les slots absents ne changent RIEN. `null` ⇒ inchangé
@@ -114,7 +113,7 @@ DefaultStyles zQuillThemedStyles(
   return _applyZStyleSet(themed, styleSet);
 }
 
-/// Dérivation thème + [baseStyle] HISTORIQUE (MIN-1/DP-RT) — inchangée.
+/// Dérivation thème + [baseStyle] HISTORIQUE (DP-RT) — inchangée.
 DefaultStyles _zQuillThemedBase(BuildContext context, {TextStyle? baseStyle}) {
   final DefaultStyles base = DefaultStyles.getInstance(context);
   final TextTheme tt = Theme.of(context).textTheme;
@@ -144,7 +143,7 @@ DefaultStyles _zQuillThemedBase(BuildContext context, {TextStyle? baseStyle}) {
       paragraph: merge(themed.paragraph, baseStyle),
       lists: mergedLists,
       quote: merge(themed.quote, baseStyle),
-      // 🔴 `leading` porte la PUCE et le NUMÉRO de liste. Mesuré : sans lui,
+      // `leading` porte la PUCE et le NUMÉRO de liste. Mesuré : sans lui,
       // un `bodySmall` rendait le texte à 11 et la puce restait au plancher
       // Quill (16) — une liste dont les marqueurs sont plus gros que ses
       // items. Le marqueur appartient au corps, pas aux rôles matérialisés.
@@ -276,7 +275,7 @@ DefaultStyles _applyZStyleSet(DefaultStyles base, ZRichTextStyleSet s) {
   );
 }
 
-/// Enveloppe PARTAGÉE du contenu rich-text (GAP-7, CR parité 2026-08-11) —
+/// Enveloppe PARTAGÉE du contenu rich-text (CR parité 2026-08-11)
 /// consommée par l'éditeur, le lecteur ET le dialog plein-écran :
 ///
 /// * [textScaleFactor] ⇒ `MediaQuery` LOCAL portant un [TextScaler.linear] —
@@ -311,9 +310,9 @@ Widget zWrapRichTextContent(
   return wrapped;
 }
 
-/// Construit une [QuillSimpleToolbarConfig] STABLE (SM-1/AD-2) branchée sur les
+/// Construit une [QuillSimpleToolbarConfig] STABLE (AD-2) branchée sur les
 /// callbacks d'insertion d'embed, PILOTÉE par une [ZRichTextToolbarConfig]
-/// granulaire (DP-22, M20) — chaque bouton (natif Quill ET custom
+/// granulaire (M20) — chaque bouton (natif Quill ET custom
 /// LaTeX/table/image/vidéo) est activé/masqué au drapeau.
 ///
 /// [config] traduit la granularité NEUTRE (aucun type Quill ne fuit à l'appelant)
@@ -338,7 +337,7 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       // CR 2026-08-11 : tri-état — `null` = AUTO par surface ([autoMultiRow]),
       // `true`/`false` = forçage hôte respecté sur les deux surfaces.
       multiRowsDisplay: config.multiRow ?? autoMultiRow,
-      // GAP-9 : icônes rounded OPT-IN — SEUL `iconData` est posé, jamais de
+      // icônes rounded OPT-IN — SEUL `iconData` est posé, jamais de
       // `tooltip` : les tooltips restent ceux de Quill, DÉJÀ localisés.
       buttonOptions: config.roundedIcons
           ? _kZRoundedButtonOptions
@@ -367,9 +366,9 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       showSearchButton: config.showSearch,
       showSubscript: config.showSubscript,
       showSuperscript: config.showSuperscript,
-      // GAP-4 (CR parité 2026-08-11) : boutons presse-papier NATIFS de Quill
+      // (CR parité 2026-08-11) : boutons presse-papier NATIFS de Quill
       // (désactivés par défaut côté Quill — le drapeau zcrud les pilote).
-      // `@experimental` chez Quill 11.x, MESURÉ fonctionnels ; le legacy DODLP
+      // `@experimental` chez Quill 11.x, MESURÉ fonctionnels ; le legacy
       // s'appuie sur ces mêmes drapeaux (`qmew:227-228`). L'ignore est LOCAL :
       // si Quill retire l'API, la compile rougit ici et nulle part ailleurs.
       // ignore: experimental_member_use
@@ -379,7 +378,7 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       customButtons: <QuillToolbarCustomButtonOptions>[
         if (config.showLatexButton)
           QuillToolbarCustomButtonOptions(
-            // GAP-9 : variante rounded opt-in (parité legacy `qmew:244`).
+            // variante rounded opt-in (parité legacy `qmew:244`).
             icon: Icon(
                 config.roundedIcons ? Icons.functions_rounded : Icons.functions),
             tooltip: 'Insérer une formule',
@@ -387,7 +386,7 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
           ),
         if (config.showTableButton)
           QuillToolbarCustomButtonOptions(
-            // GAP-10 (CR parité 2026-08-11) : icône alignée sur le legacy
+            // (CR parité 2026-08-11) : icône alignée sur le legacy
             // (`table_chart_rounded`, `qmew:249`) — remplace `grid_on`.
             icon: const Icon(Icons.table_chart_rounded),
             tooltip: 'Insérer un tableau',
@@ -408,12 +407,12 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       ],
     );
 
-/// GAP-9 — jeu d'icônes **`*_rounded`** (opt-in [ZRichTextToolbarConfig.roundedIcons]).
+/// jeu d'icônes **`*_rounded`** (opt-in [ZRichTextToolbarConfig.roundedIcons]).
 ///
-/// Jeu MESURÉ sur le legacy DODLP (`qmew:118-208`) : seuls les boutons que le
+/// Jeu MESURÉ sur le legacy (`qmew:118-208`) : seuls les boutons que le
 /// legacy re-skinnait sont couverts — on n'INVENTE pas d'icône pour les autres
-/// (search, couleur, police… gardent l'icône Quill). 🔴 AUCUN `tooltip` posé :
-/// Quill fournit les siens, déjà localisés (FR-26/l10n) — poser un libellé ici
+/// (search, couleur, police… gardent l'icône Quill). AUCUN `tooltip` posé :
+/// Quill fournit les siens, déjà localisés (l10n) — poser un libellé ici
 /// serait un libellé en dur.
 const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
     QuillSimpleToolbarButtonOptions(
@@ -455,9 +454,9 @@ const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
   clipboardPaste: QuillToolbarClipboardButtonOptions(iconData: Icons.paste_rounded),
 );
 
-/// GAP-9 — habillage OPT-IN de la barre d'outils
+/// habillage OPT-IN de la barre d'outils
 /// ([ZRichTextToolbarConfig.themedBarBackground]) : surface + liseré bas
-/// dérivés des RÔLES du thème (FR-26 : zéro couleur en dur — les gris figés du
+/// dérivés des RÔLES du thème ( : zéro couleur en dur — les gris figés du
 /// legacy `qmew:70-74` ne sont PAS repris, c'est le thème de l'hôte qui parle).
 /// Drapeau `false` ⇒ [child] retourné TEL QUEL (rendu historique, AD-4).
 Widget zDecorateToolbar(
@@ -476,11 +475,11 @@ Widget zDecorateToolbar(
   );
 }
 
-// ─────────────────────────────── Embed LaTeX (E6-3) ──────────────────────────
+// ─────────────────────────────── Embed LaTeX ──────────────────────────
 
 /// Ouvre le dialogue de saisie/édition d'une formule LaTeX puis insère (ou
 /// remplace) l'op embed `{insert:{latex:...}}` au point d'insertion courant du
-/// [quill]. MIROIR EXACT d'E6-3 (`_promptAndInsertLatex`), paramétré par le
+/// [quill]. MIROIR EXACT (`_promptAndInsertLatex`), paramétré par le
 /// controller pour être partagé par toutes les voies. [isMounted] garde contre
 /// une écriture après démontage de l'hôte.
 Future<void> insertZLatex(
@@ -495,7 +494,7 @@ Future<void> insertZLatex(
     initialBlock: existing?.block ?? false,
   );
   if (input == null || !isMounted()) return;
-  // MIN-1 : bascule inline/bloc → embed `latex` (text) vs `latexBlock` (display).
+  // bascule inline/bloc → embed `latex` (text) vs `latexBlock` (display).
   final Embeddable embed = input.block
       ? ZLatexBlockEmbed(input.source)
       : ZLatexEmbed(input.source);
@@ -521,7 +520,7 @@ Future<void> insertZLatex(
 }
 
 /// Détecte un embed LaTeX (inline `latex` OU bloc `latexBlock`) sous/juste-avant
-/// le caret (pour l'édition, E6-3 + MIN-1). Retient le mode `block`.
+/// le caret (pour l'édition, +). Retient le mode `block`.
 _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   final TextSelection sel = quill.selection;
   if (!sel.isValid) return null;
@@ -532,7 +531,7 @@ _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   for (final Map<String, dynamic> op in ops) {
     final Object? insert = op['insert'];
     if (insert is Map) {
-      // GAP-1 : les clés LEGACY DODLP (`formula` display / `formula_inline`)
+      // les clés LEGACY (`formula` display / `formula_inline`)
       // sont détectées pour l'ÉDITION — le REMPLACEMENT ré-écrit sur NOS clés
       // (`latex`/`latexBlock`), migration à sens unique par embed édité.
       final bool isBlock = insert[kLatexBlockEmbedType] is String ||
@@ -555,11 +554,11 @@ _LatexEmbedHit? _latexEmbedAtSelection(QuillController quill) {
   return null;
 }
 
-// ─────────────────────────────── Embed tableau (E6-4) ────────────────────────
+// ─────────────────────────────── Embed tableau ────────────────────────
 
 /// Ouvre le dialogue de saisie/édition d'un tableau puis insère (ou remplace)
 /// l'op embed `{insert:{table:...}}` au point d'insertion courant du [quill].
-/// MIROIR EXACT d'E6-4 (`_promptAndInsertTable`), paramétré par le controller.
+/// MIROIR EXACT (`_promptAndInsertTable`), paramétré par le controller.
 Future<void> insertZTable(
   BuildContext context,
   QuillController quill, {
@@ -590,7 +589,7 @@ Future<void> insertZTable(
   );
 }
 
-/// Détecte un embed tableau sous/juste-avant le caret (pour l'édition, E6-4).
+/// Détecte un embed tableau sous/juste-avant le caret (pour l'édition).
 _TableEmbedHit? _tableEmbedAtSelection(QuillController quill) {
   final TextSelection sel = quill.selection;
   if (!sel.isValid) return null;
@@ -618,7 +617,7 @@ _TableEmbedHit? _tableEmbedAtSelection(QuillController quill) {
 
 /// Extrait la structure `{rows,columns,cells}` d'un insert tableau — natif
 /// (`table`, Map) OU LEGACY (`x-embed-table`, string Markdown converti via
-/// [zParseLegacyMarkdownTable]). GAP-2 : l'édition d'un embed legacy pré-remplit
+/// [zParseLegacyMarkdownTable]). : l'édition d'un embed legacy pré-remplit
 /// le dialogue puis le REMPLACEMENT ré-écrit un embed `table` structuré
 /// (migration à sens unique par embed édité). `null` si la charge legacy est
 /// illisible (AD-10 : on n'invente pas une grille — l'insertion reste possible,
@@ -640,7 +639,7 @@ Map<String, dynamic>? _tableStructureOfInsert(Map<dynamic, dynamic> insert) {
   return null;
 }
 
-// ─────────────────────────────── Embed média (DP-22) ────────────────────────
+// ─────────────────────────────── Embed média ────────────────────────
 
 /// Ouvre le dialogue de saisie/édition d'une **source média** ([kind] image ou
 /// vidéo) puis insère (ou remplace) l'op embed `{insert:{image|video:<source>}}`
@@ -722,7 +721,7 @@ class _LatexEmbedHit {
   final int index;
   final String source;
 
-  /// `true` si l'embed détecté est un `latexBlock` (display) — MIN-1.
+  /// `true` si l'embed détecté est un `latexBlock` (display).
   final bool block;
 }
 

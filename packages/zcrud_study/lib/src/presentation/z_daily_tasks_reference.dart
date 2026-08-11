@@ -8,7 +8,7 @@
 /// (1101 l.) et `…/widgets/weekdays_widget.dart` (93 l.). Chaque constante
 /// ci-dessous porte le `fichier:ligne` d'où elle est relevée.
 ///
-/// ## 🔴 FR-26 — AUCUNE couleur ici, et ce n'est PAS un oubli
+/// ## FR-26 — AUCUNE couleur ici, et ce n'est PAS un oubli
 ///
 /// Contrairement à `ZFlashcardCardReference` et `ZContentHubReference`, ce
 /// fichier **ne demande AUCUNE exemption** de la garde anti-couleurs : les seules
@@ -19,7 +19,7 @@
 /// exceptions près, qui sont des `Colors.grey` et que le socle **ne reproduit
 /// pas** (cf. [ZDailyTasksReference.borderRoleNote]).
 ///
-/// ## 🔴 UNE divergence délibérée avec le legacy — et UNE SUSPICION RÉFUTÉE
+/// ## UNE divergence délibérée avec le legacy — et UNE SUSPICION RÉFUTÉE
 ///
 /// ① **Divergence RETENUE — le liseré et le numéro non sélectionnés.** Le legacy
 /// pose `Colors.grey` (`daily_tasks_page.dart:175` et `:218`) — un gris
@@ -36,7 +36,7 @@
 /// est `onPrimaryContainer`), et une première rédaction de ce fichier en avait
 /// conclu qu'il fallait diverger « pour le contraste ».
 ///
-/// 🔴 **La mesure a INFIRMÉ cette conclusion, et la divergence a été retirée.**
+/// **La mesure a INFIRMÉ cette conclusion, et la divergence a été retirée.**
 /// `zContrastRatio` sur **12 graines × 2 luminosités** de `ColorScheme.fromSeed`
 /// (dont noir, blanc, gris moyen et jaune — les cas extrêmes) :
 ///
@@ -118,7 +118,7 @@ abstract final class ZDailyTasksReference {
 
   /// Épaisseur du liseré d'une cellule SÉLECTIONNÉE (**2** — même ligne).
   ///
-  /// 🔴 **Ce n'est pas une redondance avec la couleur** : AD-13 interdit que la
+  /// **Ce n'est pas une redondance avec la couleur** : AD-13 interdit que la
   /// couleur soit le SEUL canal d'une information. L'épaisseur double est le
   /// second canal visuel de la sélection, et `Semantics(selected:)` en est le
   /// canal non visuel (garde dédiée).
@@ -126,7 +126,7 @@ abstract final class ZDailyTasksReference {
 
   /// Cible tactile minimale d'une cellule de jour (**48** — AD-13/NFR-S6).
   ///
-  /// 🔴 **Ce n'est PAS une valeur du legacy** : le legacy pose un
+  /// **Ce n'est PAS une valeur du legacy** : le legacy pose un
   /// `GestureDetector` sur un `Container` dont la hauteur n'est **contrainte par
   /// rien** (`daily_tasks_page.dart:159-231`) — à fort rétrécissement de texte,
   /// sa cible passe sous le plancher. Le socle la contraint, et la garde le
@@ -178,7 +178,7 @@ abstract final class ZDailyTasksReference {
   /// §1.4.3 AA) — utilisé par la garde de divergence ②, jamais par le rendu.
   static const double textMinContrast = 4.5;
 
-  // ⚠️ Pas de constante « note d'audit » ici, et c'est MESURÉ : une première
+  // Pas de constante « note d'audit » ici, et c'est MESURÉ : une première
   // rédaction en portait une, dont la VALEUR citait le `Colors.grey` du legacy.
   // La garde anti-couleurs (`z_widgets_hardcode_scan_test.dart`) l'a attrapée —
   // à raison : son scanner ignore les commentaires mais lit les chaînes, et il

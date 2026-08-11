@@ -1,24 +1,22 @@
 /// `ZFieldAdornment` — ornement **déclaratif pur-données** d'un champ d'édition
-/// (DP-12, parité DODLP M1 : `leading`/`preffix`/`suffix`).
+/// (`leading`/`prefix`/`suffix`).
 ///
-/// origine: DODLP porte par champ des slots `leading`/`preffix`/`preffixText`/
-/// `preffixIcon`/`suffix`/`suffixText`/`suffixIcon` (`models.dart:742-752`). Le
-/// `suffix` DODLP est une **closure** état-dépendante
-/// (`Widget? Function(Map<String,dynamic> editionState)`) — **NON portable en
-/// pur-données** (AD-3/AD-14). zcrud remplace ces slots par un **type-valeur
-/// `const`** discriminé, résolu en `Widget` **côté présentation** :
+/// Un ornement dynamique dépendant de l'état du formulaire prendrait la forme
+/// d'une **closure** — **non portable en pur-données** (invariants
+/// AD-3/AD-14). zcrud exprime donc ces slots avec un **type-valeur `const`**
+/// discriminé, résolu en `Widget` **côté présentation** :
 /// - [ZFieldAdornment.text] — un texte littéral ou une clé l10n (résolu UI) ;
 /// - [ZFieldAdornment.icon] — une **clé d'icône neutre** (`String`), résolue en
 ///   `Widget` côté présentation (jamais un `IconData` dans le domaine) ;
 /// - [ZFieldAdornment.widget] — une **clé de registre** neutre servie via le
-///   seam `ZcrudScope.widgetRegistry` (host-fourni), couvrant le cas
-///   état-dépendant DODLP (`suffix(editionState)`) SANS closure sérialisée.
+///   seam `ZcrudScope.widgetRegistry` (fourni par l'hôte), couvrant le cas
+///   état-dépendant SANS closure sérialisée.
 ///
-/// **Pur-Dart `const`** (couche `domain`, AD-1/AD-3/AD-14, garde
-/// `domain_purity_test.dart`) : aucun `IconData`, aucun `Widget`, aucune closure,
-/// aucune dépendance Flutter. Un seul payload `String` ([value]) discriminé par
-/// [kind]. Égalité de **valeur** (`==`/`hashCode`/`toString`) — utile aux tests
-/// de projection (E2-5) et à la mémoïsation runtime (E3).
+/// **Pur-Dart `const`** (couche `domain`, invariants AD-1/AD-3/AD-14) : aucun
+/// `IconData`, aucun `Widget`, aucune closure, aucune dépendance Flutter. Un
+/// seul payload `String` ([value]) discriminé par [kind]. Égalité de
+/// **valeur** (`==`/`hashCode`/`toString`) — utile aux tests de projection et
+/// à la mémoïsation runtime.
 library;
 
 /// Nature d'un [ZFieldAdornment] — discriminant du payload [ZFieldAdornment.value].
@@ -30,7 +28,7 @@ enum ZAdornmentKind {
   icon,
 
   /// [ZFieldAdornment.value] est une **clé de registre** de widget (servie par
-  /// `ZcrudScope.widgetRegistry` — cas état-dépendant DODLP sans closure).
+  /// `ZcrudScope.widgetRegistry` — cas état-dépendant sans closure).
   widget,
 }
 
@@ -43,14 +41,14 @@ class ZFieldAdornment {
   const ZFieldAdornment.text(String value) : this._(ZAdornmentKind.text, value);
 
   /// Ornement **icône** : [iconKey] est une **clé neutre** (`String`) résolue en
-  /// `Widget` côté présentation (table de correspondance / seam host) — jamais un
-  /// `IconData` dans le domaine (AD-3/AD-14).
+  /// `Widget` côté présentation (table de correspondance / seam hôte) — jamais un
+  /// `IconData` dans le domaine (invariants AD-3/AD-14).
   const ZFieldAdornment.icon(String iconKey)
       : this._(ZAdornmentKind.icon, iconKey);
 
   /// Ornement **widget** : [kind] est une **clé de registre** neutre résolue via
   /// `ZcrudScope.widgetRegistry.tryBuilderFor(kind)` — porte le cas
-  /// état-dépendant DODLP (`suffix(editionState)`) SANS closure sérialisée.
+  /// état-dépendant SANS closure sérialisée.
   const ZFieldAdornment.widget(String kind)
       : this._(ZAdornmentKind.widget, kind);
 

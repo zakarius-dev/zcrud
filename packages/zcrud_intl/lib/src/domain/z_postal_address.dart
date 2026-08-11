@@ -1,17 +1,19 @@
-/// `ZPostalAddress` — **adresse postale neutre structurée** (E11a-2,
-/// AD-1/AD-14/AD-10).
+/// `ZPostalAddress` — **adresse postale neutre structurée** (invariants
+/// AD-1, AD-14, AD-10).
 ///
-/// origine: valeur de tranche du champ `address` du `ZFormController`. Modèle
-/// **pur-Dart** : uniquement des `String`. Aucune lib d'adresse/géocodage n'entre
-/// ici (AD-1) ; l'autocomplétion réseau est explicitement HORS périmètre
-/// (E11b/AD-12 : sous-ensemble MVP hors-ligne).
+/// Valeur de tranche du champ `address` du `ZFormController`. Modèle
+/// **pur-Dart** : uniquement des `String`. Aucune lib d'adresse/géocodage
+/// n'entre ici (invariant AD-1) ; l'autocomplétion réseau est explicitement
+/// hors périmètre de ce modèle (invariant AD-12 : ce sous-ensemble reste
+/// utilisable hors-ligne).
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map` →
-/// `null` ; champs non-`String` dégradés à `null` ; une map dont tous les champs
+/// **Défensif (invariant AD-10)** : [fromMapSafe] ne **throw jamais**.
+/// `raw` non-`Map` → `null` ; champs non-`String` dégradés à `null` ; une
+/// map dont tous les champs
 /// sont vides donne une adresse **neutre/vide** (non-`null`, [isEmpty]).
 library;
 
-/// Adresse postale neutre : lignes + ville/région/code postal + pays + rendu.
+/// Adresse postale neutre: lignes + ville/région/code postal + pays + rendu.
 class ZPostalAddress {
   /// Construit une adresse structurée. Tous les champs sont optionnels.
   const ZPostalAddress({
@@ -67,7 +69,7 @@ class ZPostalAddress {
         if (_notEmpty(formatted)) 'formatted': formatted,
       };
 
-  /// Parse **défensif** (AD-10) : `null` sans jamais throw si [raw] n'est pas une
+  /// Parse **défensif** (AD-10): `null` sans jamais throw si [raw] n'est pas une
   /// `Map`. Champs non-`String` dégradés à `null`. Une map « tous champs vides »
   /// donne une adresse neutre (non-`null`, [isEmpty]).
   static ZPostalAddress? fromMapSafe(Object? raw) {

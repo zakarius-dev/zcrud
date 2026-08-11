@@ -1,14 +1,14 @@
 /// `ZHtmlCommitDebouncer` — mécanique temporelle PURE (Dart, sans WebView) du
-/// champ HTML WYSIWYG (fp-4-3, AD-50/AD-2/SM-1).
+/// champ HTML WYSIWYG. Invariants AD-50/AD-2.
 ///
-/// 🔴 **Unité FALSIFIABLE de SM-1.** Le `State` de la WebView `html_editor_enhanced`
-/// n'est pas montable en `flutter_test` (VM, pas de moteur WebView — cf. ET-5) :
-/// toute la logique « débounce du commit hors-frappe » + « garde de re-sync hors
-/// focus » est donc EXTRAITE ici, en Dart pur, injectable (ordonnanceur/horloge),
-/// testable au caractère près.
+/// **Unité testée en isolation.** Le `State` de la WebView
+/// `html_editor_enhanced` n'est pas montable en `flutter_test` (VM, pas de
+/// moteur WebView) : toute la logique « débounce du commit hors-frappe » +
+/// « garde de re-sync hors focus » est donc EXTRAITE ici, en Dart pur,
+/// injectable (ordonnanceur/horloge), testable au caractère près.
 ///
 /// INVARIANTS (NON-NÉGOCIABLES) :
-/// - **AD-2 / SM-1** : une frappe ne pousse **JAMAIS** de commit synchrone —
+/// - **AD-2** : une frappe ne pousse **JAMAIS** de commit synchrone —
 ///   [onContentChanged] se contente de (re)programmer un commit différé. N frappes
 ///   rapides ⇒ **≤ 1** commit poussé dans la fenêtre (les précédents sont annulés).
 /// - **AD-2 (re-sync guardée)** : une valeur EXTERNE entrante n'est acceptée
@@ -79,7 +79,7 @@ class ZHtmlCommitDebouncer {
   bool _hasFocus = false;
   int _commitCount = 0;
 
-  /// Nombre de commits EFFECTIVEMENT poussés (assertion SM-1 en test).
+  /// Nombre de commits EFFECTIVEMENT poussés (assertion en test).
   @visibleForTesting
   int get debugCommitCount => _commitCount;
 

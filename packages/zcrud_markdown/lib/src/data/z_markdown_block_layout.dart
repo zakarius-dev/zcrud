@@ -1,10 +1,10 @@
 /// Passes de **mise en page de bloc** appliquées au Markdown émis par
-/// `DeltaToMarkdown` — réponses à CR-LEX-49 et CR-LEX-51 §B.
+/// `DeltaToMarkdown` §B.
 ///
 /// Pourquoi ICI et pas dans la lib de conversion : les deux défauts vivent dans
 /// `markdown_quill`, à des endroits que sa surface publique **n'expose pas**.
 ///
-/// - CR-LEX-49 : `DeltaToMarkdown.visitLine` écrit DEUX `writeln()` pour une
+/// `DeltaToMarkdown.visitLine` écrit DEUX `writeln` pour une
 ///   ligne sans attribut de bloc (donc une ligne vide, frontière de bloc) mais
 ///   un SEUL pour une ligne à attribut de scope `block` — c'est le cas du
 ///   blockquote. Le cas `list` dispose d'une clause de sortie de bloc explicite ;
@@ -12,7 +12,7 @@
 ///   `visitLineHandleNewLine`, ne reçoit QUE le `Style` de la ligne : il ne peut
 ///   pas reproduire la clause `list` (qui interroge `line.nextLine`). L'utiliser
 ///   échangerait donc un défaut de frontière contre un autre.
-/// - CR-LEX-51 §B : la numérotation vient de `_prefixNumber`, fonction privée
+/// B : la numérotation vient de `_prefixNumber`, fonction privée
 ///   sans hameçon, qui compte les frères précédents et repart donc TOUJOURS de 1.
 ///
 /// Ces passes sont **conservatrices par construction** : chacune rend la chaîne
@@ -28,7 +28,7 @@ final RegExp _kQuoteLine = RegExp(r'^ {0,3}>');
 /// Item de liste ordonnée, tel que `DeltaToMarkdown` l'écrit (`1. `).
 final RegExp _kOrderedItem = RegExp(r'^(\s*)(\d+)([.)])(\s)');
 
-/// Insère la **ligne vide de sortie de bloc** après une citation (CR-LEX-49).
+/// Insère la **ligne vide de sortie de bloc** après une citation.
 ///
 /// Sans elle, `> …\n` est immédiatement suivi du paragraphe, et CommonMark
 /// applique la *lazy continuation* : le paragraphe est AVALÉ DANS la citation au
@@ -103,7 +103,7 @@ List<_BlockLine> _blockLines(List<Map<String, dynamic>> ops) {
   return out;
 }
 
-/// Restitue le **numéro de départ** d'une liste ordonnée (CR-LEX-51 §B).
+/// Restitue le **numéro de départ** d'une liste ordonnée (B).
 ///
 /// `_prefixNumber` de `DeltaToMarkdown` compte les frères précédents : une liste
 /// reprise en cours de séquence (« 3. … 4. … ») est renumérotée à partir de 1,

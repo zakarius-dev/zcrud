@@ -1,7 +1,7 @@
 /// `ZOpaqueNoteExtension` — **canal de SURVIE** du payload `extension` **non
-/// décodé** (remédiation **MAJEUR-1** et **MAJEUR-2**, code-review ES-2.2).
+/// décodé** (cette remédiation).
 ///
-/// ## 🔴 Le problème : `formatVersion` avait une EXISTENCE, aucun POUVOIR
+/// ## Le problème : `formatVersion` avait une EXISTENCE, aucun POUVOIR
 ///
 /// `ZExtension` promet une extension *« riche, **rétro-compatible**, versionnée
 /// indépendamment du parent »* et une **« évolution additive »** (AD-4 pt.1 /
@@ -12,13 +12,13 @@
 /// disparaissait **définitivement** :
 ///
 /// ```dart
-/// // (1) MAJEUR-1 — LA VOIE DU REGISTRE (la SEULE que le store emprunte) :
+/// // (1) LA VOIE DU REGISTRE (la SEULE que le store emprunte) :
 /// //     `ZcrudRegistry` n'offre AUCUN slot d'injection ⇒ il appelle
 /// //     `ZSmartNote.fromMap(map)` TOUT COURT, sans `extensionParser`.
 /// ZSmartNote.fromMap({'extension': {'format_version': 1, 'url': '…'}});
 /// //   ⇒ extension == null  ⇒  toMap() N'ÉMET PAS la clé  ⇒  ⛔ EFFACÉE au `put`.
 ///
-/// // (2) MAJEUR-2 — UNE VERSION FUTURE, MÊME AVEC LE PARSER :
+/// // (2) UNE VERSION FUTURE, MÊME AVEC LE PARSER :
 /// ZSmartNote.fromMap({'extension': {'format_version': 2, …}},
 ///                    extensionParser: ZNoteAudio.fromJsonSafe);
 /// //   ⇒ ZNoteAudio.fromJsonSafe rend `null` (version non gérée)
@@ -45,18 +45,18 @@
 /// **C'est la SEULE lecture d'AD-4 qui rende le mot « additive » VRAI** : ce qu'on
 /// ne sait pas lire, on ne le détruit pas — on le rend tel qu'on l'a reçu.
 ///
-/// ## ⛔ Ce que ce correctif NE règle PAS — **DW-ES14-2 reste OUVERTE**
+/// ## ⛔ Ce que ce correctif NE règle PAS —** reste OUVERTE**
 ///
 /// La **donnée** survit ; le **type** ne revient pas. Sur la voie registre, le
 /// parser de l'app (`ZNoteAudio.fromJsonSafe`) n'est **toujours pas injectable** ⇒
 /// `note.extension` est une [ZOpaqueNoteExtension], **jamais** un `ZNoteAudio` :
 /// l'app **ne peut pas s'en servir**. Le correctif de fond (slot d'injection dans
-/// `ZcrudRegistry`) **écrit `zcrud_core`** ⇒ **hors périmètre ES-2.2** (D9).
+/// `ZcrudRegistry`) **écrit `zcrud_core`** ⇒ **hors périmètre**.
 ///
 /// ⇒ La perte **fonctionnelle** est **ÉPINGLÉE EN MACHINE** (verrou
-/// `z_smart_note_test.dart` › groupe `DW-ES14-2`), et la dette est **escaladée**
+/// `z_smart_note_test.dart` › groupe ), et la dette est **escaladée**
 /// (`architecture.md` § Deferred) : `ZNoteAudio` **FALSIFIE** la clause
-/// d'échappement n°1 de DW-ES14-2 (*« l'entité n'utilise pas le slot
+/// d'échappement n°1 de (*« l'entité n'utilise pas le slot
 /// `extension` »*) — elle est la **première `ZExtension` concrète du repo**.
 library;
 
@@ -69,15 +69,15 @@ import 'z_note_content.dart';
 ///
 /// Produite par [ZSmartNote.fromMap] quand — et **seulement** quand — la clé
 /// `extension` porte une **`Map`** que **rien** n'a su typer :
-/// - **aucun** `extensionParser` n'a été injecté (⚠️ **voie du registre** —
-///   DW-ES14-2) ;
+/// - **aucun** `extensionParser` n'a été injecté (**voie du registre** —
+/// );
 /// - **ou** le parser injecté a rendu `null` (version **future/non gérée**,
 ///   sous-schéma inconnu).
 ///
 /// Elle n'est **jamais** produite pour un payload non-`Map` (`42`, `'texte'`,
 /// `[]`) : il n'y a alors **rien de structuré à préserver** ⇒ `extension == null`.
 ///
-/// ⚠️ **Ce n'est PAS un type applicatif** : une app ne doit **jamais** en dépendre
+/// **Ce n'est PAS un type applicatif** : une app ne doit **jamais** en dépendre
 /// pour lire l'audio — elle doit tester `note.extension is ZNoteAudio`. Sa seule
 /// raison d'être est de **ne pas détruire** ce qu'on ne sait pas lire.
 class ZOpaqueNoteExtension implements ZExtension {
@@ -103,7 +103,7 @@ class ZOpaqueNoteExtension implements ZExtension {
   /// La version **déclarée par le payload** (`format_version`), ou `0` si elle est
   /// absente/illisible.
   ///
-  /// ⚠️ Elle est **rapportée, jamais interprétée** : cette classe ne prétend
+  /// Elle est **rapportée, jamais interprétée** : cette classe ne prétend
   /// **rien** comprendre au sous-schéma — c'est précisément pourquoi elle le
   /// **préserve** au lieu de le juger.
   @override
@@ -114,7 +114,7 @@ class ZOpaqueNoteExtension implements ZExtension {
     return 0;
   }
 
-  /// 🔴 **IDENTITÉ** — réémet le payload **VERBATIM**. C'est tout le correctif :
+  /// **IDENTITÉ** — réémet le payload **VERBATIM**. C'est tout le correctif :
   /// ce que le domaine n'a pas su lire, il le **rend tel quel**, au lieu de
   /// l'effacer.
   @override

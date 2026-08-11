@@ -1,9 +1,9 @@
 /// Normalisation des **conventions d'index** du paquet tiers vers la convention
-/// LINÉAIRE du port `ZReorderRenderer` (AD-57, condition 2 : le tiers est une
-/// implémentation, jamais le contrat).
+/// LINÉAIRE du port `ZReorderRenderer` (le tiers est une implémentation,
+/// jamais le contrat).
 ///
-/// **Aucun import du paquet tiers ici** : ce fichier est de l'arithmétique pure,
-/// testable sans surface widget (et donc réellement mordant — discipline R3).
+/// **Aucun import du paquet tiers ici** : ce fichier est de l'arithmétique
+/// pure, testable sans surface widget.
 library;
 
 /// Résultat d'une normalisation : un couple d'index **linéaires** en convention
@@ -47,7 +47,7 @@ ZLinearMove? normalizePackageReorder({
 }) {
   if (length <= 0) return null;
   final int oldIndex = rawOldIndex.clamp(0, length - 1);
-  // 🔴 PAS de `- 1` quand `rawNewIndex > oldIndex` : ce serait la convention
+  // PAS de `- 1` quand `rawNewIndex > oldIndex` : ce serait la convention
   // `ReorderableListView`, pas celle de `reorderable_grid_view`.
   final int newIndex = rawNewIndex.clamp(0, length - 1);
   if (oldIndex == newIndex) return null;

@@ -1,27 +1,31 @@
-/// `ZFlashcardGenerationSheet` + point d'entrée conditionnel (SU-9/AC1/AC10..AC13
-/// — AD-37/AD-2/AD-13).
+/// `ZFlashcardGenerationSheet` — feuille de génération de flashcards par IA,
+/// et son point d'entrée conditionnel.
 ///
 /// ## Composition, pas de logique dupliquée
 ///
-/// - Bornage `count` / répartition par type ⇒ `z_flashcard_generation_defaults`
-///   (SOURCE UNIQUE — aucun littéral `1`/`50`, aucune répartition maison ici).
-/// - Cycle de vie asynchrone / jeton de fraîcheur / handoff ⇒
+/// - Bornage de `count` et répartition par type : délégués à
+///   `z_flashcard_generation_defaults`, source unique — aucun littéral `1`
+///   ou `50`, aucune répartition maison ici.
+/// - Cycle de vie asynchrone, jeton de fraîcheur, handoff : délégués à
 ///   [ZFlashcardGenerationController] (aucun store).
-/// - Aperçu des cartes ⇒ [ZFlashcardPreview] → `ZFlashcardReviewCard` (su-2),
-///   **jamais** un rendu de flashcard parallèle (AC10).
-/// - Confirmation des tags ⇒ [ZFlashcardTagConfirmSheet] → [ZTagEditor] (AC9).
+/// - Aperçu des cartes : [ZFlashcardPreview] compose le rendu de révision
+///   existant, jamais un rendu de flashcard parallèle.
+/// - Confirmation des tags : [ZFlashcardTagConfirmSheet] compose [ZTagEditor].
 ///
-/// ## SM-1 (AC13) : réactivité granulaire
+/// ## Réactivité granulaire (invariant AD-2)
 ///
-/// Les `TextEditingController` (contenu/instructions/modelId) sont créés UNE FOIS
-/// en `initState` (jamais dans `build`) et vivent HORS du `ListenableBuilder` du
-/// statut ⇒ taper n'y reconstruit pas l'aire d'aperçu et ne perd jamais le focus.
-/// Slider et chips sont pilotés par des `ValueNotifier` LOCAUX (tranche ciblée).
+/// Les `TextEditingController` (contenu, instructions, modèle) sont créés
+/// une seule fois en `initState` (jamais dans `build`) et vivent hors du
+/// `ListenableBuilder` du statut : taper n'y reconstruit pas l'aire
+/// d'aperçu et ne perd jamais le focus. Le curseur de nombre de cartes et
+/// les puces de type sont pilotés par des `ValueNotifier` locaux, à tranche
+/// ciblée.
 ///
-/// ## `modelId` OPAQUE (AC2)
+/// ## Identifiant de modèle opaque
 ///
-/// Le champ `modelId` est une simple `String` transportée VERBATIM : la feuille ne
-/// l'interprète jamais (aucun `enum`, aucun `switch`, aucun catalogue).
+/// Le champ `modelId` est une simple `String` transportée telle quelle : la
+/// feuille ne l'interprète jamais (aucun `enum`, aucun `switch`, aucun
+/// catalogue).
 library;
 
 import 'package:flutter/material.dart';

@@ -1,24 +1,22 @@
-/// Le **composer assemblé Material** — CR-IFFD-76, le rendu satellite de
-/// `ZDefaultChatComposer` : les glyphes (`Icons.*`), les rôles Material
-/// (`ColorScheme`) et le FAB d'envoi pixel-perfect lex, posés sur l'assemblage
-/// PUR du socle.
+/// Le composer assemblé Material : les glyphes (`Icons.*`), les rôles
+/// Material (`ColorScheme`) et le FAB d'envoi pixel-perfect, posés sur
+/// l'assemblage neutre du socle `ZDefaultChatComposer`.
 ///
-/// ## Ce que ce widget est — et ce qu'il n'est PAS
+/// L'hôte monte un seul widget et obtient la barre complète (conteneur
+/// arrondi, sélecteurs de pièces jointes, bascules réflexion/recherche web,
+/// bouton d'outils avec compteur, sélecteur d'effort, sélecteur de modèle,
+/// bouton d'envoi, bouton d'arrêt, bandeau d'édition, placeholder animé).
+/// Ce n'est pas une vue parallèle au socle : chaque pièce reste celle du
+/// socle, ce fichier ne fait qu'y injecter des glyphes et des rôles de
+/// couleur.
 ///
-/// C'est le pendant « Material » de la carte `ZDefaultFolderCard` : l'hôte
-/// monte UN widget et obtient la barre lex complète (conteneur arrondi, `+`
-/// pickers, bascules réfléchir/internet, outils + compteur, effort à menu,
-/// sélecteur de modèle, FAB, STOP, bandeau d'édition, placeholder animé).
-/// Ce n'est PAS une vue parallèle : chaque pièce reste celle du socle —
-/// ce fichier ne fait qu'injecter des glyphes et des rôles.
-///
-/// * **dimensions** : `ZChatComposerReference` / chaîne du chrome K2 — rien
-///   n'est recopié (garde MAT-L1) ;
-/// * **couleurs** : rôles du `ColorScheme` de l'hôte — aucune teinte ici
-///   (MAT-L2) ;
-/// * **envoi** : [zChatMaterialSendFab] via le slot du socle —
-///   `ZChatComposerSlot.submit`, le site unique (G-CH1/G-U1) ;
-/// * **STOP** : la pièce du socle, câblée sur le verbe EXISTANT
+/// * **dimensions** : dérivées de `ZChatComposerReference` ou de la chaîne
+///   de résolution du chrome — jamais recopiées ;
+/// * **couleurs** : rôles du `ColorScheme` de l'hôte, aucune teinte codée en
+///   dur ;
+/// * **envoi** : [zChatMaterialSendFab] passe par le créneau du socle
+///   (`ZChatComposerSlot.submit`), le site d'envoi unique ;
+/// * **arrêt** : la pièce du socle, câblée sur le verbe existant
 ///   `runAction(ZChatCancelAction)` — ce satellite n'ajoute aucun verbe.
 library;
 
@@ -29,12 +27,15 @@ import 'package:zcrud_chat/zcrud_chat.dart';
 import 'z_chat_material_badge.dart';
 import 'z_chat_material_send_fab.dart';
 
-/// L'assemblé Material — `ZDefaultChatComposer` + glyphes/rôles Material.
+/// L'assemblé Material — `ZDefaultChatComposer` avec glyphes et rôles
+/// Material.
 class ZChatMaterialComposer extends StatelessWidget {
   /// Construit l'assemblé Material.
   ///
-  /// 🔴 [settings] est requis, comme sur l'assemblé pur : le défaut ② d'IFFD
-  /// (réglages réglés puis jetés) ne compile pas.
+  /// [settings] est requis, comme sur l'assemblé neutre : un composer sans
+  /// contrôleur de réglages câblé sur l'envoi ne compile pas — un réglage
+  /// choisi puis silencieusement ignoré à l'envoi est une classe de défaut
+  /// que le type interdit par construction.
   const ZChatMaterialComposer({
     required this.controller,
     required this.settings,
@@ -62,10 +63,10 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Le contrôleur de conversation du socle.
   final ZChatController controller;
 
-  /// Le contrôleur de réglages — câblé d'office sur `send()` (défaut ②).
+  /// Le contrôleur de réglages, câblé d'office sur l'envoi.
   final ZChatSettingsController settings;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// {@macro zcrud.chat_material.chrome_param}
   final ZChatComposerChrome? chrome;
 
   /// Couleur du curseur. `null` ⇒ rôle `primary` de l'hôte.
@@ -74,16 +75,13 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Fond du conteneur. `null` ⇒ rôle `surfaceContainerHighest` de l'hôte.
   final Color? backgroundColor;
 
-  /// 🔴 Couleur du FILET du conteneur (CR-IFFD-77 ③). `null` ⇒ le
-  /// **`Theme.of(context).dividerColor`** de l'hôte — le rôle exact que lex
-  /// applique (`chat_input.dart:474-482`, `Border.all(color: dividerColor)`).
+  /// Couleur du filet du conteneur. `null` ⇒ `Theme.of(context).dividerColor`
+  /// de l'hôte.
   ///
-  /// ⚠️ **Changement visible** pour l'hôte de `ZChatMaterialComposer` : le
-  /// conteneur porte désormais un filet là où il n'en avait pas. C'est ce que
-  /// la CR demande ; un hôte qui n'en veut pas passe `Colors.transparent`.
-  /// L'hôte qui **compensait** en enveloppant la surface d'un second conteneur
-  /// doit RETIRER sa compensation, sans quoi deux filets se superposeront à
-  /// deux rayons différents.
+  /// Un hôte qui avait déjà obtenu ce filet en enveloppant la surface d'un
+  /// second conteneur doit retirer cette compensation en migrant vers ce
+  /// paramètre : les deux filets se superposeraient sinon, à des rayons
+  /// différents. Un hôte qui ne veut aucun filet passe `Colors.transparent`.
   final Color? borderColor;
 
   /// Rognage du contenu au rayon du conteneur — `Clip.none` par défaut.
@@ -95,11 +93,11 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Suggestions du placeholder animé, localisées par l'hôte.
   final List<String> hints;
 
-  /// Catalogue du menu `+` — contrat opaque du socle.
+  /// Catalogue du menu d'ajout de pièce jointe — contrat opaque du socle.
   final List<ZChatComposerPickerAction> pickers;
 
-  /// OUVRE la feuille de réglages (le déclencheur est dans la bande ; la
-  /// feuille, elle, appartient à l'hôte — défaut ①).
+  /// Ouvre la feuille de réglages. Le déclencheur (bouton, badge) vit dans
+  /// la bande du composer ; la feuille elle-même reste montée par l'hôte.
   final VoidCallback? onOpenTools;
 
   /// Catalogue du sélecteur de modèle.
@@ -111,10 +109,11 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Remontée de la sélection de modèle.
   final ValueChanged<String>? onSelectModel;
 
-  /// Présences en bande — mêmes régimes que l'assemblé pur.
+  /// Présence de la bascule « réflexion » dans la bande — mêmes régimes que
+  /// l'assemblé neutre.
   final bool showThinkingToggle;
 
-  /// Présence de la bascule « internet ».
+  /// Présence de la bascule « recherche web ».
   final bool showWebSearchToggle;
 
   /// Présence du déclencheur d'effort.
@@ -123,15 +122,17 @@ class ZChatMaterialComposer extends StatelessWidget {
   /// Créneau libre au-dessus du champ (une bande de capture d'hôte).
   final ZChatComposerSlotBuilder? dictation;
 
-  /// 🔴 Le GESTE de dictée (CR-IFFD-77 ④) — `null` ⇒ le déclencheur compact
-  /// est absent (AD-4). Le socle ne fournit **aucun moteur** : brancher
+  /// Le geste de dictée. `null` ⇒ le déclencheur compact est absent
+  /// (invariant AD-4) : ce satellite ne fournit aucun moteur de
+  /// reconnaissance vocale, brancher
   /// `ZChatCaptureController.startDictation()`/`stopDictation()` reste le
   /// choix de l'hôte.
   final VoidCallback? onDictate;
 
   /// La tranche d'écoute injectée (typiquement
-  /// `ZChatCaptureController.listening`). Elle pilote ici le **glyphe** et le
-  /// **rôle** : micro au repos, `stop` teinté `error` pendant l'écoute.
+  /// `ZChatCaptureController.listening`). Elle pilote le glyphe et le rôle
+  /// de couleur du déclencheur : micro au repos, glyphe d'arrêt teinté
+  /// `error` pendant l'écoute.
   final ValueListenable<bool>? dictationListening;
 
   @override
@@ -144,8 +145,8 @@ class ZChatMaterialComposer extends StatelessWidget {
       chrome: chrome,
       cursorColor: cursorColor ?? scheme.primary,
       backgroundColor: backgroundColor ?? scheme.surfaceContainerHighest,
-      // 🔴 CR-IFFD-77 ③ : le rôle de lex, câblé par le point d'ancrage que le
-      // socle vient d'ouvrir — plus aucun second conteneur à faire coïncider.
+      // Câblé par le point d'ancrage du socle — plus aucun second conteneur
+      // à faire coïncider pour obtenir ce filet.
       borderColor: borderColor ?? Theme.of(context).dividerColor,
       clipBehavior: clipBehavior,
       focusNode: focusNode,
@@ -158,8 +159,8 @@ class ZChatMaterialComposer extends StatelessWidget {
       pickerGlyph: Icon(Icons.add, size: glyphSide),
       onOpenTools: onOpenTools,
       toolsGlyph: Icon(Icons.settings, size: glyphSide),
-      // 🔴 Le badge VIVANT du socle satellite (tranche `activeCount`), rendu
-      // DANS la cible du bouton — le tap passe (défaut ③).
+      // Le badge vivant (tranche `activeCount`), rendu à l'intérieur de la
+      // cible du bouton pour que le tap continue de porter.
       toolsBadge: onOpenTools == null
           ? null
           : ZChatMaterialToolsBadge(controller: settings, chrome: chrome),
@@ -172,7 +173,6 @@ class ZChatMaterialComposer extends StatelessWidget {
       showWebSearchToggle: showWebSearchToggle,
       webSearchGlyph: Icon(Icons.public, size: glyphSide),
       showEffortSelector: showEffortSelector,
-      // Le « ✦ » de lex (lex/f011).
       effortGlyph: Icon(Icons.auto_awesome, size: glyphSide),
       effortSelectionMark: Icon(Icons.check, size: glyphSide),
       stopGlyph: Icon(Icons.stop, size: glyphSide),
@@ -182,8 +182,8 @@ class ZChatMaterialComposer extends StatelessWidget {
       ),
       editingCancelGlyph: Icon(Icons.close, size: glyphSide),
       dictation: dictation,
-      // 🔴 CR-IFFD-77 ④ : glyphe ET rôle changent pendant l'écoute — le socle
-      // n'écoute rien, il rend l'état que l'hôte lui injecte.
+      // Le glyphe et le rôle changent pendant l'écoute ; ce widget n'écoute
+      // rien lui-même, il rend l'état que l'hôte lui injecte.
       onDictate: onDictate,
       dictationListening: dictationListening,
       dictationGlyph: Icon(Icons.mic, size: glyphSide),
@@ -192,8 +192,7 @@ class ZChatMaterialComposer extends StatelessWidget {
         size: glyphSide,
         color: scheme.error,
       ),
-      // 🔴 Le FAB lex (disque `primary`, échelle 0.7→1) — via le slot du
-      // socle, donc le MÊME site d'envoi que la touche « valider ».
+      // Via le créneau du socle : même site d'envoi que le geste « valider ».
       sendBuilder: (BuildContext context, ZChatComposerSlot slot) =>
           ZChatMaterialSendFab(slot: slot, chrome: chrome),
     );

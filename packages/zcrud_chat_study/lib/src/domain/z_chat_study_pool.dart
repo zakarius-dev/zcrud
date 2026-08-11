@@ -1,48 +1,45 @@
-/// Constitution du **pool de session** : cartes du dossier ∪ cartes de la
-/// conversation, **dédoublonnées** (CHAT-8).
+/// Constitution du pool de session : cartes du dossier union cartes de la
+/// conversation, dédoublonnées.
 ///
-/// ## Ce fichier ne réécrit AUCUN filtre
+/// ## Ce fichier ne réécrit aucun filtre
 ///
-/// Le filtrage (dossier ∧ étiquettes ∧ types, puis plafond `count`) est celui de
-/// `ZStudySessionSelector` (`zcrud_study_kernel`), **réutilisé tel quel**. Ce
-/// module n'ajoute que ce que le sélecteur ne peut pas savoir : qu'il y a **deux
-/// origines** de cartes, et que leur union doit être dédoublonnée.
+/// Le filtrage (dossier, étiquettes, types, puis plafond de nombre de
+/// cartes) est celui de `ZStudySessionSelector` (`zcrud_study_kernel`),
+/// réutilisé tel quel. Ce module n'ajoute que ce que le sélecteur ne peut
+/// pas savoir : qu'il y a deux origines de cartes, et que leur union doit
+/// être dédoublonnée.
 ///
-/// ## 🔴 Pourquoi IFFD est la référence ici, et pas lex
+/// ## Les cartes de conversation entrent sans détour par le dossier
 ///
-/// Chez lex, « commencer à apprendre » fait un **aller-retour par le dossier** :
-/// les cartes issues de la conversation doivent d'abord être persistées dans un
-/// dossier pour devenir éligibles. Conséquence : une carte que l'assistant vient
-/// de produire n'est PAS révisable tant qu'elle n'a pas été rangée.
+/// Le filtre dossier ne s'applique qu'aux cartes déjà rangées dans un
+/// dossier. Les cartes produites dans la conversation entrent dans le pool
+/// directement : elles sont éphémères (sans `folderId`), et leur appliquer
+/// le filtre dossier les éliminerait toutes — obligeant à les ranger d'abord
+/// pour pouvoir les réviser, ce que ce parcours évite délibérément. Les
+/// filtres étiquettes/types, eux, restent appliqués aux deux origines
+/// puisqu'ils portent sur le contenu, pas sur le rangement : c'est
+/// [_withoutFolderFilter] qui neutralise la seule dimension « rangement »,
+/// en réutilisant le même sélecteur.
 ///
-/// Ici, le filtre **dossier** ne s'applique qu'aux cartes **du dossier**. Les
-/// cartes de la conversation entrent dans le pool **sans détour** : elles n'ont
-/// pas de `folderId` (elles sont éphémères, `id == null`) et le filtre dossier
-/// les éliminerait toutes — ce qui restaurerait exactement le détour de lex.
-/// Les filtres **étiquettes/types**, eux, restent appliqués aux deux origines
-/// (ils portent sur le CONTENU, pas sur le rangement) : c'est
-/// [_withoutFolderFilter] qui neutralise la seule dimension « rangement », en
-/// RÉUTILISANT le même sélecteur.
+/// ## Dédoublonnage, et pourquoi la carte persistée gagne
 ///
-/// ## Dédoublonnage — et pourquoi le persisté gagne
+/// Une même carte peut arriver des deux côtés (l'assistant régénère une
+/// carte déjà rangée dans le dossier). L'ordre de parcours est dossier
+/// d'abord, et c'est la première occurrence qui est retenue. Ce n'est pas
+/// arbitraire : la carte du dossier porte un `id`, donc son état de
+/// répétition espacée (`ZRepetitionInfo`, entité séparée jointe par
+/// `flashcardId`) lui est attaché. Retenir la copie éphémère effacerait cet
+/// historique de la session, qui repartirait de zéro sur une carte déjà
+/// apprise, en silence.
 ///
-/// Une même carte peut arriver des deux côtés (l'assistant régénère une carte
-/// déjà rangée dans le dossier). L'ordre de parcours est **dossier d'abord**, et
-/// c'est la **première occurrence qui est retenue**. Ce n'est pas arbitraire :
-/// la carte du dossier porte un `id`, donc son état SRS (`ZRepetitionInfo`,
-/// entité SÉPARÉE jointe par `flashcardId`) lui est attaché. Retenir la copie
-/// éphémère (`id == null`) rendrait cet historique **inatteignable** — la
-/// session repartirait de zéro sur une carte déjà apprise, en silence.
+/// ## Soft-delete uniquement (invariant AD-9)
 ///
-/// ## AD-9 — soft-delete, JAMAIS de hard-delete
-///
-/// Écarter une carte du pool est une **lecture filtrée**, jamais une
+/// Écarter une carte du pool est une lecture filtrée, jamais une
 /// suppression : ce module ne détient aucun repository, n'écrit rien et
 /// n'efface rien. Une carte soft-supprimée (`ZSyncMeta.isDeleted`, méta
-/// **hors-entité** — la carte elle-même ne porte pas le drapeau) est exclue via
-/// [ZStudyPoolRequest.softDeletedIds], résolu par l'appelant depuis son store.
-/// ⛔ On ne porte PAS la suppression de lex, qui est un **hard-delete** : elle
-/// diverge d'AD-9 et détruirait la convergence Last-Write-Wins.
+/// hors-entité — la carte elle-même ne porte pas le drapeau) est exclue via
+/// [ZStudyPoolRequest.softDeletedIds], résolu par l'appelant depuis son
+/// store.
 library;
 
 // `ZStudySessionConfig`/`ZStudySessionSelector`/`ZReviewMode` viennent de
@@ -53,7 +50,7 @@ library;
 // kernel directement, sans passer par `zcrud_flashcard`.
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
-/// Requête **immuable** de constitution de pool.
+/// Requête immuable de constitution de pool.
 class ZStudyPoolRequest {
   /// Construit une requête de pool.
   const ZStudyPoolRequest({
@@ -66,21 +63,23 @@ class ZStudyPoolRequest {
   /// Cartes déjà rangées dans le dossier d'étude (persistées, `id` non nul).
   final List<ZFlashcard> folderCards;
 
-  /// Cartes produites dans la conversation (typiquement éphémères, `id == null`).
+  /// Cartes produites dans la conversation (typiquement éphémères,
+  /// `id == null`).
   final List<ZFlashcard> conversationCards;
 
-  /// Filtres + plafond de session (`null` = aucun filtre, aucun plafond).
+  /// Filtres et plafond de session (`null` = aucun filtre, aucun plafond).
   final ZStudySessionConfig? config;
 
-  /// Identifiants **soft-supprimés** (`ZSyncMeta.isDeleted`), résolus par
-  /// l'appelant depuis son store — la méta est hors-entité (AD-9).
+  /// Identifiants soft-supprimés (`ZSyncMeta.isDeleted`), résolus par
+  /// l'appelant depuis son store — la méta est hors-entité (invariant AD-9).
   final Set<String> softDeletedIds;
 }
 
-/// Résultat de la constitution du pool — la sélection **et** ce qu'elle a coûté.
+/// Résultat de la constitution du pool — la sélection et ce qu'elle a coûté.
 ///
-/// Les compteurs ne sont pas décoratifs : sans eux, « le pool fait 12 cartes »
-/// ne distingue pas « rien n'a été dédoublonné » de « la moitié a été jetée ».
+/// Les compteurs ne sont pas décoratifs : sans eux, « le pool fait 12
+/// cartes » ne distingue pas « rien n'a été dédoublonné » de « la moitié a
+/// été jetée ».
 class ZStudyPool {
   /// Construit un pool.
   const ZStudyPool({
@@ -91,7 +90,7 @@ class ZStudyPool {
     required this.softDeletedDropped,
   });
 
-  /// Pool **vide** (aucune carte, aucun rejet) — repli neutre.
+  /// Pool vide (aucune carte, aucun rejet) — repli neutre.
   static const ZStudyPool empty = ZStudyPool(
     cards: <ZFlashcard>[],
     fromFolder: 0,
@@ -112,35 +111,36 @@ class ZStudyPool {
   /// Nombre de doublons écartés (une occurrence ultérieure d'une clé déjà vue).
   final int duplicatesDropped;
 
-  /// Nombre de cartes écartées parce que **soft-supprimées** (AD-9).
+  /// Nombre de cartes écartées parce que soft-supprimées (invariant AD-9).
   final int softDeletedDropped;
 
   /// `true` si aucune carte n'est révisable.
   bool get isEmpty => cards.isEmpty;
 }
 
-/// Clés de dédoublonnage d'une carte — **toujours au moins la clé de contenu**.
+/// Clés de dédoublonnage d'une carte — toujours au moins la clé de contenu.
 ///
-/// 🔴 **Le piège que ce choix évite (mesuré par la garde correspondante).** Une
-/// première version rendait UNE seule clé : `'id:<id>'` si la carte est
-/// persistée, sinon la clé de contenu. Les deux familles vivent alors dans des
-/// **espaces disjoints** — une carte du dossier (clé `id:`) et sa régénération
-/// éphémère par l'assistant (clé `content:`) ne peuvent **jamais** collisionner,
-/// donc le cas de doublon LE PLUS FRÉQUENT du parcours passait à travers. C'est
-/// exactement le défaut d'IFFD (concaténation `+`, ids synthétiques côté chat)
-/// qu'on prétendait corriger : la garde serait restée verte pour tous les autres
-/// cas, et le doublon serait passé en production.
+/// Une carte peut porter jusqu'à deux clés : une clé d'identifiant si elle
+/// est persistée, et une clé de contenu dans tous les cas. Émettre la clé de
+/// contenu pour toute carte, persistée ou non, est ce qui permet de détecter
+/// le cas de doublon le plus fréquent de ce parcours : une carte déjà rangée
+/// dans le dossier (clé d'identifiant) et sa régénération éphémère par
+/// l'assistant (clé de contenu seule, sans identifiant partagé) doivent
+/// pouvoir collisionner. N'émettre qu'une seule clé par carte, selon qu'elle
+/// est persistée ou non, ferait vivre les deux familles dans des espaces
+/// disjoints et laisserait ce cas passer à travers.
 ///
-/// D'où : la clé de **contenu** est émise pour TOUTE carte, et la clé d'**id**
-/// s'y ajoute quand la carte est persistée. Deux cartes sont des doublons dès
-/// qu'elles **partagent une clé quelconque**.
+/// Deux cartes sont donc des doublons dès qu'elles partagent une clé
+/// quelconque.
 ///
-/// Corollaire ASSUMÉ : deux cartes persistées de contenu identique (même type,
-/// même question, même réponse) sont fusionnées. C'est voulu — revoir deux fois
-/// la même question dans une session est un défaut, pas une fonctionnalité.
+/// Corollaire assumé : deux cartes persistées de contenu identique (même
+/// type, même question, même réponse) sont fusionnées. C'est voulu — revoir
+/// deux fois la même question dans une session est un défaut, pas une
+/// fonctionnalité.
 ///
-/// La normalisation est volontairement **minimale** (casse + espaces collapsés) :
-/// plus agressive, elle fusionnerait des cartes réellement distinctes.
+/// La normalisation est volontairement minimale (casse et espaces
+/// collapsés) : plus agressive, elle fusionnerait des cartes réellement
+/// distinctes.
 Set<String> zStudyPoolKeys(ZFlashcard card) {
   final String content = 'content:${card.type.name}'
       '|${_normalize(card.question)}'
@@ -150,17 +150,17 @@ Set<String> zStudyPoolKeys(ZFlashcard card) {
   return <String>{'id:${id.trim()}', content};
 }
 
-/// Constitue le pool de session (fonction **PURE**, sans I/O ni horloge).
+/// Constitue le pool de session (fonction pure, sans E/S ni horloge).
 ///
-/// Ne lève **jamais** (AD-10) : entrées vides, `config` nulle, `count <= 0`
-/// dégradent en pool vide.
+/// Ne lève jamais (invariant AD-10) : entrées vides, `config` nulle,
+/// `count <= 0` dégradent en pool vide.
 ZStudyPool zBuildStudyPool(ZStudyPoolRequest request) {
   final ZStudySessionConfig? config = request.config;
   final ZStudySessionSelector? folderSelector =
       config == null ? null : ZStudySessionSelector(config);
-  // 🔴 Le filtre DOSSIER est neutralisé pour l'origine « conversation » : une
-  // carte tout juste produite n'a pas de `folderId`, et l'exiger recréerait
-  // l'aller-retour par le dossier que lex impose (cf. en-tête).
+  // Le filtre dossier est neutralisé pour l'origine « conversation » : une
+  // carte tout juste produite n'a pas de `folderId` (voir la dartdoc de tête,
+  // section sur l'absence de détour par le dossier).
   final ZStudySessionSelector? chatSelector = config == null
       ? null
       : ZStudySessionSelector(_withoutFolderFilter(config));
@@ -247,12 +247,12 @@ ZStudyPool zBuildStudyPool(ZStudyPoolRequest request) {
   );
 }
 
-/// Copie de [config] avec le **seul** filtre dossier neutralisé.
+/// Copie de [config] avec le seul filtre dossier neutralisé.
 ///
-/// `copyWith` ne peut PAS remettre `folderId` à `null` (une sentinelle traite
-/// `null` comme « inchangé ») : le constructeur nominal est la seule voie
-/// correcte — même raisonnement que `zDuplicateFlashcardForEditing`. Le plafond
-/// `count` est aussi neutralisé : il s'applique à l'UNION, pas à chaque origine.
+/// `copyWith` ne peut pas remettre `folderId` à `null` (une sentinelle
+/// traite `null` comme « inchangé ») : le constructeur nominal est la seule
+/// voie correcte. Le plafond `count` est aussi neutralisé ici : il
+/// s'applique à l'union des deux origines, pas à chacune séparément.
 ZStudySessionConfig _withoutFolderFilter(ZStudySessionConfig config) =>
     ZStudySessionConfig(
       mode: config.mode,

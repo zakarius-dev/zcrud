@@ -1,35 +1,37 @@
-/// `ZMindmapView` — vue d'une forêt `ZMindmap` (Story E10-2, FR-19, AD-13 ;
-/// COMBLEMENTS ES-7.2 : zoom piloté clampé, compact, plein-écran, super-racine).
+/// `ZMindmapView` — vue d'une forêt `ZMindmap` (invariant AD-13) : zoom
+/// piloté clampé, compact, plein-écran, super-racine.
 ///
 /// Deux surfaces **équivalentes** partageant le même `nodeContentBuilder` :
 /// - **graphe** auto-agencé `graphite` (`DirectGraph`, orientation descendante),
 ///   zoom/pan bornés via l'`InteractiveViewer` interne de `graphite`, **AUCUN
 ///   drag libre** de nœud ; enveloppé d'`ExcludeSemantics` (surface VISUELLE) ;
 /// - **liste** sémantique indentée par `level` ([ZMindmapListView]) = **surface
-///   a11y de référence** (AD-13).
+///   a11y de référence** (invariant AD-13).
 ///
-/// **Lecture seule** (AD-2/AD-15) : la vue est pilotée par la donnée immuable
-/// passée en entrée ; toute interaction (tap/sélection) est **remontée par
-/// callback**, jamais une mutation d'arbre. **AUCUN** gestionnaire d'état tiers,
-/// `WidgetRef`/`Get.find`/`Provider.of` : l'état de vue local (sélection, mode)
-/// vit dans des `ValueNotifier` pur-Flutter + `ValueListenableBuilder` (rebuild
-/// ciblé). **FR-26** : toutes les couleurs viennent de `ZcrudTheme`.
+/// **Lecture seule** (invariants AD-2/AD-15) : la vue est pilotée par la
+/// donnée immuable passée en entrée ; toute interaction (tap/sélection) est
+/// **remontée par callback**, jamais une mutation d'arbre. **AUCUN**
+/// gestionnaire d'état tiers, `WidgetRef`/`Get.find`/`Provider.of` : l'état de
+/// vue local (sélection, mode) vit dans des `ValueNotifier` pur-Flutter +
+/// `ValueListenableBuilder` (rebuild ciblé). Toutes les couleurs viennent de
+/// `ZcrudTheme`.
 ///
-/// ## COMBLEMENTS ES-7.2 (ADDITIF STRICT — AC6/D8)
+/// ## Barre de contrôles additive
 /// Un [controller] **optionnel** (`ZMindmapViewController`) active une barre de
 /// contrôles user-facing : **zoom** piloté/clampé, toggle **compact**, toggle
 /// **plein-écran**, toggle **super-racine** multi-forêt. `controller == null` ⇒
-/// comportement E10 **strictement inchangé** (aucune barre, aucune enveloppe).
+/// comportement **strictement inchangé** pour un hôte passif (aucune barre,
+/// aucune enveloppe).
 ///
-/// - **Zoom (D4/DW-ES72-1)** : `graphite` 1.2.1 **n'expose pas** de
-///   `TransformationController` (le paramètre est documenté mais **absent** du
-///   constructeur) ⇒ l'`InteractiveViewer` interne n'est **pas pilotable**. On
-///   enveloppe donc la surface graphe dans un `Transform.scale` **externe** piloté
-///   par `controller.scale` (clampé au contrôleur), et on **neutralise** le zoom
+/// - **Zoom** : `graphite` **n'expose pas** de `TransformationController` (le
+///   paramètre est documenté mais **absent** du constructeur) ⇒
+///   l'`InteractiveViewer` interne n'est **pas pilotable**. On enveloppe donc
+///   la surface graphe dans un `Transform.scale` **externe** piloté par
+///   `controller.scale` (clampé au contrôleur), et on **neutralise** le zoom
 ///   interne (`minScale = maxScale = 1`) pour éviter le double-zoom — **sans
 ///   forker `graphite`** ; le pan interne reste actif. Le `child` du
 ///   `Transform.scale` est passé **une fois** (arg `child:`) ⇒ un zoom **ne
-///   reconstruit pas** les nœuds (SM-1).
+///   reconstruit pas** les nœuds.
 library;
 
 import 'package:flutter/material.dart';
@@ -44,10 +46,9 @@ import 'z_mindmap_node_card.dart';
 import 'z_mindmap_view_config.dart';
 import 'z_mindmap_view_controls.dart';
 
-/// Clé de la surface « maximisée » (AC4) : le wrapper `SizedBox.expand` n'est
+/// Clé de la surface « maximisée » : le wrapper `SizedBox.expand` n'est
 /// présent QUE lorsque `controller.fullscreen == true`. Exposée pour rendre la
-/// présence du wrapper OBSERVABLE en test (pouvoir discriminant R12 : neutraliser
-/// le wrapper fait rougir l'assertion AC4, jamais un simple libellé de bouton).
+/// présence du wrapper OBSERVABLE en test.
 const String kMindmapMaximizedSurfaceKey = 'zMindmapMaximizedSurface';
 
 /// Vue lecture d'une carte mentale : graphe auto-agencé + liste a11y équivalente.
@@ -93,12 +94,12 @@ class ZMindmapView extends StatefulWidget {
   /// Libellé **externalisé** de l'état vide (repli neutre si `null`).
   final String? emptyLabel;
 
-  /// Contrôleur de vue **optionnel** (ES-7.2) : zoom/compact/plein-écran/super-
-  /// racine. `null` ⇒ comportement E10 inchangé (aucune barre de contrôles).
-  /// Cycle de vie (création/`dispose`) porté par l'app hôte (AD-2).
+  /// Contrôleur de vue **optionnel** : zoom/compact/plein-écran/super-
+  /// racine. `null` ⇒ aucune barre de contrôles rendue.
+  /// Cycle de vie (création/`dispose`) porté par l'app hôte (invariant AD-2).
   final ZMindmapViewController? controller;
 
-  /// Libellés a11y **externalisés** des contrôles ES-7.2 (repli neutre non-nul).
+  /// Libellés a11y **externalisés** des contrôles (repli neutre non-nul).
   final ZMindmapViewLabels viewLabels;
 
   @override
@@ -152,22 +153,21 @@ class _ZMindmapViewState extends State<ZMindmapView> {
     final controller = widget.controller;
     // Chemin E10 STRICT : aucun contrôleur ⇒ surface nue, comportement inchangé.
     if (controller == null) return _buildSurface(context, null);
-    // Chemin ES-7.2 : barre de contrôles + plein-écran, tranches isolées.
+    // Barre de contrôles + plein-écran, tranches isolées.
     return ValueListenableBuilder<bool>(
       valueListenable: controller.fullscreen,
       builder: (context, fullscreen, _) {
         final body = _buildControlledBody(context, controller);
         if (!fullscreen) return body;
-        // « Maximisé » (AC4) : la surface s'ÉTEND pour REMPLIR L'ESPACE DISPONIBLE
+        // « Maximisé » : la surface s'ÉTEND pour REMPLIR L'ESPACE DISPONIBLE
         // que l'hôte lui accorde (`SizedBox.expand`) sur un fond opaque, l'affordance
         // de SORTIE étant le bouton étiqueté `exitFullscreen` de la barre. Sur un hôte
         // à surface large/non bornée (page mindmap dédiée) la carte occupe toute la
-        // page ; sur un hôte à hauteur BORNÉE (section study contrainte, ES-7.1) elle
+        // page ; sur un hôte à hauteur BORNÉE (section contrainte) elle
         // remplit ce cadre — un vrai plein-écran par Overlay/route qui ÉCHAPPE à
-        // l'arbre est une amélioration DÉFÉRÉE (DW-ES72-5), hors périmètre M ES-7.2.
-        // Défaut off ⇒ ce chemin n'est jamais pris par E10 (additif strict AC6). La
-        // `ValueKey` rend la présence du wrapper OBSERVABLE par le test (pouvoir
-        // discriminant : sans le wrapper, l'assertion AC4 rougit).
+        // l'arbre reste une amélioration possible, hors périmètre ici.
+        // Défaut off ⇒ ce chemin n'est jamais pris pour un hôte passif. La
+        // `ValueKey` rend la présence du wrapper OBSERVABLE par le test.
         final theme = ZcrudTheme.of(context);
         final bg = theme.surfaceColor ?? Theme.of(context).colorScheme.surface;
         return SizedBox.expand(
@@ -258,7 +258,7 @@ class _ZMindmapViewState extends State<ZMindmapView> {
     if (controller == null) return graph;
     return ValueListenableBuilder<double>(
       valueListenable: controller.scale,
-      // 🔴 `child` passé UNE FOIS : un changement d'échelle rebuild le SEUL
+      // `child` passé UNE FOIS : un changement d'échelle rebuild le SEUL
       // Transform.scale, JAMAIS le sous-arbre graphe (nœuds non reconstruits).
       child: graph,
       builder: (context, scale, child) => Transform.scale(
@@ -288,7 +288,7 @@ class _ZMindmapViewState extends State<ZMindmapView> {
       index(r);
     }
 
-    // Neutralisation du zoom INTERNE de `graphite` en mode contrôlé (DW-ES72-1) :
+    // Neutralisation du zoom INTERNE de `graphite` en mode contrôlé :
     // notre `Transform.scale` externe pilote le zoom ⇒ on verrouille le zoom
     // interne (min = max = 1) pour éviter le double-zoom (pan interne conservé).
     final controlled = controller != null;
@@ -311,9 +311,9 @@ class _ZMindmapViewState extends State<ZMindmapView> {
           // Racine virtuelle multi-racine.
           if (data.usesVirtualRoot &&
               nodeInput.id == ZMindmapGraphMapper.virtualRootId) {
-            // E10 : non affichée. ES-7.2 : affichable en super-racine étiquetée
+            // Non affichée par défaut ; affichable en super-racine étiquetée
             // (opt-in `showSuperRoot`) — réutilise le MÊME virtual root (aucun
-            // 2e mécanisme). 1 racine ⇒ `usesVirtualRoot == false` ⇒ jamais ici.
+            // second mécanisme). 1 racine ⇒ `usesVirtualRoot == false` ⇒ jamais ici.
             if (controller == null) return const SizedBox.shrink();
             return ValueListenableBuilder<bool>(
               valueListenable: controller.showSuperRoot,
@@ -335,9 +335,9 @@ class _ZMindmapViewState extends State<ZMindmapView> {
             valueListenable: _selected,
             builder: (context, selectedId, _) {
               final isSelected = selectedId == node.id;
-              // Bornage AD-41 (SU-12) : la cellule GRAPHE borne le contenu
-              // (riche compris) à `cellSize` — troncature clippée, jamais de
-              // RenderFlex overflow. La vue liste, elle, reste NON bornée.
+              // La cellule GRAPHE borne le contenu (riche compris) à
+              // `cellSize` — troncature clippée, jamais de RenderFlex
+              // overflow. La vue liste, elle, reste NON bornée.
               if (controller == null) {
                 return ZMindmapCellClip(
                   size: widget.config.cellSize,
@@ -382,7 +382,7 @@ class _ZMindmapViewState extends State<ZMindmapView> {
   }
 }
 
-/// Nœud « super-racine » affiché (ES-7.2, AC5) : étiquette externalisée groupant
+/// Nœud « super-racine » affiché : étiquette externalisée groupant
 /// la forêt multi-racine. Thématisé (FR-26), cible ≥ 48 dp, `TextAlign.start`.
 class _SuperRootNode extends StatelessWidget {
   const _SuperRootNode({required this.label, required this.config});
@@ -427,7 +427,7 @@ class _SuperRootNode extends StatelessWidget {
   }
 }
 
-/// Barre de contrôles user-facing (ES-7.2) : zoom in/out/reset, compact, plein-
+/// Barre de contrôles user-facing : zoom in/out/reset, compact, plein-
 /// écran, super-racine. Chaque bouton est **≥ 48 dp**, `Semantics(button:true)`
 /// avec libellé **externalisé**, directionnel, **sans couleur codée en dur**
 /// (icônes thématisées par défaut). Les toggles écoutent leur tranche via un
@@ -446,7 +446,7 @@ class _ZMindmapControlBar extends StatelessWidget {
         horizontal: theme.gapS,
         vertical: theme.gapS,
       ),
-      // Défilement horizontal (LOW-2) : 6 cibles ≥ 48 dp (~288 dp) débordent un
+      // Défilement horizontal : 6 cibles ≥ 48 dp (~288 dp) débordent un
       // hôte étroit/RTL — un `SingleChildScrollView` évite le `RenderFlex overflow`
       // sans jamais rogner une cible tactile (AD-13). Directionnel (RTL-safe).
       child: SingleChildScrollView(

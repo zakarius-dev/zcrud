@@ -1,49 +1,47 @@
-/// Entité canonique `ZStudyStreak` — la « flamme » d'assiduité (SU-6, FR-SU11,
-/// AC1/AC3 — décisions D1/D5).
+/// Entité canonique `ZStudyStreak` — la « flamme » d'assiduité.
 ///
-/// origine: best-of-breed IFFD (`docs/parity-study-ui-2026-07-16/annexes/
-/// iffd_flashcards.md` — badge flamme du sélecteur de session). Vit dans
-/// `zcrud_study_kernel` (D1) : le streak n'a besoin **que de dates** — aucun
-/// `ZSrsConfig`, aucun `ZRepetitionInfo` ⇒ il ne réclame **aucune** arête
-/// sortante (le kernel ne dépend que de `zcrud_core` + `zcrud_annotations`,
-/// AD-1/AD-17).
+/// Vit dans `zcrud_study_kernel` : le streak n'a besoin que de dates —
+/// aucune dépendance à la configuration de répétition espacée ni à son
+/// état ⇒ il ne réclame aucune arête sortante supplémentaire (le kernel ne
+/// dépend que de `zcrud_core` et `zcrud_annotations`, invariant AD-1).
 ///
-/// **Pur-Dart, ZÉRO import Flutter** (le kernel tourne sous `dart test`).
+/// Pur-Dart, zéro import Flutter (le kernel tourne sous `dart test`).
 ///
-/// **Généré par `@ZcrudModel` (AD-3)** : `melos run generate` émet
-/// `z_study_streak.g.dart` (`part`, **suivi par git** sous `packages/*/lib/` —
-/// gate `codegen-distribution`, NFR-SU10) portant `_$ZStudyStreakFromMap`,
-/// l'extension `ZStudyStreakZcrud` (`toMap`/`copyWith`), `$ZStudyStreakFieldSpecs`
-/// et `registerZStudyStreak(ZcrudRegistry)`.
+/// Généré par `@ZcrudModel` (invariant AD-3) : `melos run generate` émet le
+/// fichier compagnon (suivi par git sous `packages/*/lib/`) portant le
+/// décodeur défensif, l'extension `toMap`/`copyWith`, les spécifications de
+/// champ et l'enregistrement au registre.
 ///
-/// **NON-`ZExtensible`** (comme `ZSuggestedTag`/`ZChoice`) : le streak est un
-/// compteur d'assiduité fermé — ni `extra`, ni `extension`. Le garde runtime
-/// `_$zRequireExtraPreserved` ne s'applique donc pas, et la délégation au
-/// `_$…FromMap` généré est autorisée (le générateur ne rejette la délégation nue
-/// que pour les `ZExtensible`). [ZStudyStreak.fromMap] ne délègue toutefois pas
-/// **nuement** : elle **sanitise** en plus les compteurs négatifs et le jour
-/// civil illisible (AC1, patron `ZRepetitionInfo.fromMap`).
+/// Non `ZExtensible` (comme les value objects du kernel) : le streak est un
+/// compteur d'assiduité fermé — ni `extra`, ni `extension`. La délégation au
+/// décodeur généré est donc autorisée (le générateur ne rejette la
+/// délégation nue que pour les types `ZExtensible`). [ZStudyStreak.fromMap]
+/// ne délègue toutefois pas nuement : elle sanitise en plus les compteurs
+/// négatifs et le jour civil illisible.
 ///
-/// ## 🔴 Le jour civil : arithmétique CALENDAIRE, jamais une DURÉE (AC3)
+/// ## Le jour civil : arithmétique calendaire, jamais une durée
 ///
-/// [lastGradedDay] est une **date civile** `yyyy-MM-dd`, **jamais** un instant.
-/// C'est un choix structurel, pas cosmétique : `at.difference(other).inDays` est
-/// **INTERDIT** par la story parce qu'il mesure du **temps écoulé**, pas des
-/// jours de calendrier — un jour de DST dure **23 h** (⇒ `inDays` rend `0` pour
-/// « hier → aujourd'hui » : le streak casserait) ou **25 h**. En ne stockant que
-/// des champs civils et en ne comparant que des **numéros de jour civil**
-/// ([zCivilDayNumber], arithmétique entière pure — algorithme de Hinnant), la
-/// classe de bug DST est **structurellement** hors d'atteinte : aucune `Duration`
-/// n'intervient jamais.
+/// [lastGradedDay] est une date civile `yyyy-MM-dd`, jamais un instant.
+/// C'est un choix structurel, pas cosmétique : `at.difference(other).inDays`
+/// est interdit ici parce qu'il mesure du temps écoulé, pas des jours de
+/// calendrier — un jour d'heure d'été/hiver dure 23 h (⇒ `inDays` rend `0`
+/// pour « hier → aujourd'hui » : le streak casserait) ou 25 h. En ne
+/// stockant que des champs civils et en ne comparant que des numéros de
+/// jour civil ([zCivilDayNumber], arithmétique entière pure — algorithme de
+/// Hinnant), la classe de bug liée au changement d'heure est
+/// structurellement hors d'atteinte : aucune `Duration` n'intervient
+/// jamais.
 ///
-/// **AD-14 — horloge PARAMÉTRÉE** : cette bibliothèque n'appelle **JAMAIS**
-/// `DateTime.now()`. Le seul point de dérivation « instant → jour civil » est
-/// [ZCivilDayOf] (défaut [zLocalCivilDay], qui lit les champs **LOCAUX**
-/// `at.year/month/day`), **injectable** — c'est ce qui rend le DST réellement
-/// testable sans dépendre du `TZ` de la machine de CI (AC3).
+/// **Horloge paramétrée (invariant AD-14)** : cette bibliothèque n'appelle
+/// jamais `DateTime.now()`. Le seul point de dérivation « instant → jour
+/// civil » est [ZCivilDayOf] (défaut [zLocalCivilDay], qui lit les champs
+/// locaux `at.year/month/day`), injectable — c'est ce qui rend le
+/// changement d'heure réellement testable sans dépendre du fuseau de la
+/// machine d'exécution.
 ///
-/// **AD-19** : aucun `updatedAt`/`isDeleted` inline — la fraîcheur LWW et le
-/// soft-delete vivent hors-entité (`ZSyncMeta`, repository — AD-16).
+/// Aucune clé de synchronisation (mise à jour, suppression) inline — la
+/// fraîcheur Last-Write-Wins et le soft-delete vivent hors-entité
+/// (`ZSyncMeta`, côté repository — invariant AD-9).
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -51,24 +49,24 @@ import 'package:zcrud_core/domain.dart';
 
 part 'z_study_streak.g.dart';
 
-/// Dérive le **jour civil** (`yyyy-MM-dd`) d'un instant — le SEUL point de
-/// dérivation instant → jour (AC3).
+/// Dérive le jour civil (`yyyy-MM-dd`) d'un instant — le seul point de
+/// dérivation instant → jour.
 ///
-/// **Injectable** (AD-14 / D5) : `zAdvanceStreak` le reçoit en paramètre, défaut
-/// [zLocalCivilDay]. Un test substitue un **calendrier simulé** pour éprouver un
-/// jour de 23 h / 25 h (DST) **sans** dépendre du fuseau de la CI — impossible
-/// autrement.
+/// Injectable (invariant AD-14) : `zAdvanceStreak` le reçoit en paramètre,
+/// défaut [zLocalCivilDay]. Un test substitue un calendrier simulé pour
+/// éprouver un jour de 23 h / 25 h (changement d'heure) sans dépendre du
+/// fuseau de l'environnement d'exécution — impossible autrement.
 typedef ZCivilDayOf = String Function(DateTime at);
 
-/// Jour civil **LOCAL** de [at], au format ISO-8601 `yyyy-MM-dd` (défaut de
+/// Jour civil local de [at], au format ISO-8601 `yyyy-MM-dd` (défaut de
 /// [ZCivilDayOf]).
 ///
-/// Lit les champs **LOCAUX** `at.year`/`at.month`/`at.day` — le calendrier de
-/// l'apprenant, jamais UTC (un même instant peut tomber sur deux jours civils
-/// différents selon le fuseau : c'est le LOCAL qui fait foi, AC3).
+/// Lit les champs locaux `at.year`/`at.month`/`at.day` — le calendrier de
+/// l'apprenant, jamais UTC (un même instant peut tomber sur deux jours
+/// civils différents selon le fuseau : c'est le local qui fait foi).
 ///
-/// N'effectue **aucune** arithmétique de durée (pas de `DateTime.add`, pas de
-/// `difference`) ⇒ insensible au DST **par construction**.
+/// N'effectue aucune arithmétique de durée (pas de `DateTime.add`, pas de
+/// `difference`) ⇒ insensible au changement d'heure par construction.
 String zLocalCivilDay(DateTime at) => zFormatCivilDay(at.year, at.month, at.day);
 
 /// Formate un triplet civil en `yyyy-MM-dd` (zéro-padding strict).
@@ -79,7 +77,7 @@ String zFormatCivilDay(int year, int month, int day) {
   return '$y-$m-$d';
 }
 
-/// Motif STRICT d'un jour civil `yyyy-MM-dd` (4-2-2, zéro-padé).
+/// Motif strict d'un jour civil `yyyy-MM-dd` (4-2-2, zéro-padé).
 final RegExp _civilDayPattern = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
 
 /// Nombre de jours du mois [month] de l'année [year] (bissextiles incluses).
@@ -92,22 +90,22 @@ int _daysInMonth(int year, int month) {
   return lengths[month - 1];
 }
 
-/// [day] est-il un jour civil **LISIBLE** (`yyyy-MM-dd`, date réellement
+/// [day] est-il un jour civil lisible (`yyyy-MM-dd`, date réellement
 /// existante) ?
 ///
-/// **Défensif (AD-10)** : rend `false` — jamais de throw — pour `null`, une
-/// chaîne vide, un format libre (`'28/03/2026'`), ou une date **impossible**
-/// (`'2026-02-31'`, `'2026-13-01'`). C'est le critère **UNIQUE** de lisibilité
-/// consommé par [ZStudyStreak.fromMap] (AC1) **et** par `zAdvanceStreak` (AC3) :
+/// Défensif (invariant AD-10) : rend `false` — jamais de `throw` — pour
+/// `null`, une chaîne vide, un format libre (`'28/03/2026'`), ou une date
+/// impossible (`'2026-02-31'`, `'2026-13-01'`). C'est le critère unique de
+/// lisibilité consommé par [ZStudyStreak.fromMap] et par `zAdvanceStreak` :
 /// aucune date ne peut tomber entre les deux.
 bool zIsCivilDay(String? day) => zParseCivilDayNumber(day) != null;
 
-/// Parse un jour civil `yyyy-MM-dd` en **numéro de jour civil**, ou `null` si
-/// illisible (**jamais** de throw — AD-10).
+/// Parse un jour civil `yyyy-MM-dd` en numéro de jour civil, ou `null` si
+/// illisible (jamais de `throw` — invariant AD-10).
 ///
-/// C'est la voie **UNIQUE** de conversion `String → numéro de jour` : elle
-/// n'utilise **aucun** `DateTime` (donc aucun fuseau, aucun DST). Cf.
-/// [zCivilDayNumber].
+/// C'est la voie unique de conversion `String → numéro de jour` : elle
+/// n'utilise aucun `DateTime` (donc aucun fuseau, aucun changement d'heure).
+/// Voir [zCivilDayNumber].
 int? zParseCivilDayNumber(String? day) {
   if (day == null) return null;
   final match = _civilDayPattern.firstMatch(day);
@@ -121,15 +119,16 @@ int? zParseCivilDayNumber(String? day) {
   return zCivilDayNumber(year, month, dayOfMonth);
 }
 
-/// Numéro de **jour civil** (jours depuis l'époque civile 1970-01-01) — pure
-/// **arithmétique entière**, algorithme *days_from_civil* de Howard Hinnant.
+/// Numéro de jour civil (jours depuis l'époque civile 1970-01-01) — pure
+/// arithmétique entière, algorithme *days_from_civil* de Howard Hinnant.
 ///
-/// 🔴 **C'est LE cœur de l'immunité DST (AC3)** : la distance entre deux jours
-/// civils est `zCivilDayNumber(a) - zCivilDayNumber(b)` — une soustraction
-/// d'**entiers de calendrier**. Elle vaut `1` pour « hier → aujourd'hui »
-/// **quelle que soit** la durée réelle écoulée (23 h en DST de printemps, 25 h en
-/// DST d'automne, 2 s pour `23:59:59 → 00:00:01`). `at.difference(o).inDays`,
-/// lui, rendrait respectivement `0`, `1` et `0` — **trois** réponses fausses.
+/// C'est le cœur de l'immunité au changement d'heure : la distance entre
+/// deux jours civils est `zCivilDayNumber(a) - zCivilDayNumber(b)` — une
+/// soustraction d'entiers de calendrier. Elle vaut `1` pour « hier →
+/// aujourd'hui » quelle que soit la durée réelle écoulée (23 h en heure
+/// d'été, 25 h en heure d'hiver, 2 s pour `23:59:59 → 00:00:01`).
+/// `at.difference(o).inDays`, lui, rendrait respectivement `0`, `1` et `0`
+/// — trois réponses fausses.
 ///
 /// Aucune `DateTime`, aucune `Duration`, aucun fuseau n'intervient.
 int zCivilDayNumber(int year, int month, int day) {
@@ -144,15 +143,17 @@ int zCivilDayNumber(int year, int month, int day) {
 }
 
 /// Série d'assiduité (« flamme ») — compteur de jours civils consécutifs
-/// portant au moins une **répétition notée** (FR-SU11).
+/// portant au moins une répétition notée.
 @ZcrudModel(kind: 'study_streak', fieldRename: ZFieldRename.snake)
 class ZStudyStreak extends ZEntity {
-  /// Construit un streak (constructeur nominal `const` — source du `copyWith`).
+  /// Construit un streak (constructeur nominal `const` — source du
+  /// `copyWith`).
   ///
-  /// Aucun `assert` (AD-10 : le décodeur généré l'appelle avec des valeurs
-  /// **BRUTES** — un `assert` ferait throw la désérialisation d'une donnée
-  /// corrompue). Les invariants de valeur sont portés par [fromMap] (frontière
-  /// d'entrée) et par `zAdvanceStreak` (voie d'avancement unique).
+  /// Aucun `assert` (invariant AD-10 : le décodeur généré l'appelle avec
+  /// des valeurs brutes — un `assert` ferait lever la désérialisation d'une
+  /// donnée corrompue). Les invariants de valeur sont portés par [fromMap]
+  /// (frontière d'entrée) et par `zAdvanceStreak` (voie d'avancement
+  /// unique).
   const ZStudyStreak({
     this.id,
     this.current = 0,
@@ -160,21 +161,20 @@ class ZStudyStreak extends ZEntity {
     this.lastGradedDay,
   });
 
-  /// Reconstruit **défensivement** depuis une map persistée (AD-10, AC1).
+  /// Reconstruit défensivement depuis une map persistée (invariant AD-10).
   ///
-  /// Recopie le `_$ZStudyStreakFromMap` **généré** (défauts sûrs : `current`/
-  /// `best` absents **ou non-int** → `0` via `_$asInt(...) ?? 0` ; `id`/
-  /// `last_graded_day` absents → `null`) PUIS applique les deux sanitisations que
-  /// le codegen ne peut pas connaître :
-  /// - compteurs **négatifs** → `0` (un compteur d'assiduité n'est jamais
-  ///   négatif — patron `ZRepetitionInfo.fromMap`, `interval`/`repetitions`) ;
-  /// - [lastGradedDay] **illisible** → `null` (format libre ou date impossible,
-  ///   critère unique [zIsCivilDay]) ⇒ le streak repart proprement (`started`)
-  ///   au lieu de comparer une date fantôme.
+  /// Recopie le décodeur généré (défauts sûrs : `current`/`best` absents ou
+  /// non-`int` → `0` ; `id`/`last_graded_day` absents → `null`) puis
+  /// applique les deux sanitisations que le codegen ne peut pas connaître :
+  /// - compteurs négatifs → `0` (un compteur d'assiduité n'est jamais
+  ///   négatif) ;
+  /// - [lastGradedDay] illisible → `null` (format libre ou date impossible,
+  ///   critère unique [zIsCivilDay]) ⇒ le streak repart proprement
+  ///   (`started`) au lieu de comparer une date fantôme.
   ///
   /// Aucun cas ne fait échouer le parent : `fromMap(const {})`,
-  /// `{'current': 'x', 'best': -4}`, `{'last_graded_day': '28/03/2026'}` rendent
-  /// tous un streak valide — **jamais** de throw.
+  /// `{'current': 'x', 'best': -4}`, `{'last_graded_day': '28/03/2026'}`
+  /// rendent tous un streak valide — jamais de `throw`.
   factory ZStudyStreak.fromMap(Map<String, dynamic> map) {
     final base = _$ZStudyStreakFromMap(map);
     final rawDay = base.lastGradedDay;
@@ -186,77 +186,60 @@ class ZStudyStreak extends ZEntity {
     );
   }
 
-  /// Identité opaque (nullable pour l'éphémère — AD-14 ; jamais attribuée par
-  /// l'entité, matérialisée au repository).
+  /// Identité opaque (nullable pour l'éphémère — invariant AD-14 ; jamais
+  /// attribuée par l'entité, matérialisée au repository).
   @override
   @ZcrudId()
   final String? id;
 
-  /// Série **en cours** — nombre de jours civils consécutifs notés. `0` = aucune
-  /// série.
+  /// Série en cours — nombre de jours civils consécutifs notés. `0` =
+  /// aucune série.
   ///
-  /// **Jamais négatif** — et la garantie porte désormais sur **toutes** les
-  /// voies, pas seulement celles qu'elle citait :
-  /// - [fromMap] (la frontière de persistance) **planche les négatifs à `0`** ;
-  /// - `zAdvanceStreak` (**la seule voie d'avancement**) ne rend jamais moins de
-  ///   `1` : `started`/`resetToOne` posent `1`, `incremented` **planche** une
-  ///   entrée négative à `1` (elle faisait `current + 1` **nu** — code-review
-  ///   su-6, LOW-3 : `copyWith(current: -5)` + J+1 rendait **-4**, affiché par
-  ///   le badge, sous cette dartdoc même) ;
-  /// - `alreadyCountedToday`/`skippedNotGraded` rendent l'entrée **inchangée**
+  /// Jamais négatif — la garantie porte sur toutes les voies :
+  /// - [fromMap] (la frontière de persistance) planche les négatifs à `0` ;
+  /// - `zAdvanceStreak` (la seule voie d'avancement) ne rend jamais moins
+  ///   de `1` : `started`/`resetToOne` posent `1`, `incremented` planche
+  ///   une entrée négative à `1` ;
+  /// - `alreadyCountedToday`/`skippedNotGraded` rendent l'entrée inchangée
   ///   (ils ne créent donc aucun négatif).
   ///
-  /// ⚠️ **Portée honnête** : le constructeur est `const` **sans assert**
-  /// (délibéré — AD-10 : le décodeur généré l'appelle avec des valeurs brutes) et
-  /// le `copyWith` généré est public. Un appelant **peut** donc construire un
-  /// `ZStudyStreak(current: -5)` en mémoire : rien ne l'en empêche, et rien ne
-  /// throw. Ce que garantissent les voies ci-dessus, c'est qu'un tel objet ne
-  /// peut ni **naître** d'une désérialisation, ni **survivre** à un
-  /// `zAdvanceStreak`.
+  /// Portée honnête : le constructeur est `const` sans `assert` (délibéré
+  /// — invariant AD-10 : le décodeur généré l'appelle avec des valeurs
+  /// brutes) et le `copyWith` généré est public. Un appelant peut donc
+  /// construire un `ZStudyStreak(current: -5)` en mémoire : rien ne l'en
+  /// empêche, et rien ne lève. Ce que garantissent les voies ci-dessus,
+  /// c'est qu'un tel objet ne peut ni naître d'une désérialisation, ni
+  /// survivre à un `zAdvanceStreak`.
   @ZcrudField()
   final int current;
 
-  /// **Record** historique de [current].
+  /// Record historique de [current].
   ///
-  /// Maintenu à `max(best, current)` par `zAdvanceStreak` — **la seule voie
-  /// d'avancement**. ⚠️ **Portée honnête** : [fromMap] **ne RENFORCE PAS**
-  /// `best >= current` (elle ne fait que planchers les négatifs à `0`, AC1) — une
-  /// map corrompue est reconstruite **telle quelle**, pour préserver le
-  /// round-trip zéro-perte (patron `ZRepetitionInfo` : le constructeur est
-  /// `const`, il ne peut rien normaliser ; le forcer ici casserait
-  /// `fromMap(toMap(x)) == x`). Un `best < current` persisté est **inoffensif**
-  /// (le badge affiche un record minoré, aucune exception) et se **répare seul**
-  /// au premier `zAdvanceStreak`.
+  /// Maintenu à `max(best, current)` par `zAdvanceStreak` — la seule voie
+  /// d'avancement. Portée honnête : [fromMap] ne renforce pas `best >=
+  /// current` (elle ne fait que plancher les négatifs à `0`) — une map
+  /// corrompue est reconstruite telle quelle, pour préserver le round-trip
+  /// zéro-perte (le constructeur est `const`, il ne peut rien normaliser ;
+  /// le forcer ici casserait `fromMap(toMap(x)) == x`). Un `best < current`
+  /// persisté est inoffensif (le badge affiche un record minoré, aucune
+  /// exception) et se répare seul au premier `zAdvanceStreak`.
   @ZcrudField()
   final int best;
 
-  /// **Jour civil** (`yyyy-MM-dd`, persisté `last_graded_day`) de la dernière
-  /// répétition **notée**, ou `null` si aucune (jamais noté).
+  /// Jour civil (`yyyy-MM-dd`, persisté `last_graded_day`) de la dernière
+  /// répétition notée, ou `null` si aucune (jamais noté).
   ///
-  /// Une **date civile**, jamais un instant : cf. le dartdoc de bibliothèque —
-  /// c'est ce qui rend la classe de bug DST inatteignable. Toujours **LISIBLE**
-  /// sur une instance issue de [fromMap] (critère [zIsCivilDay]).
+  /// Une date civile, jamais un instant : voir la dartdoc de bibliothèque —
+  /// c'est ce qui rend la classe de bug liée au changement d'heure
+  /// inatteignable. Toujours lisible sur une instance issue de [fromMap]
+  /// (critère [zIsCivilDay]).
   @ZcrudField()
   final String? lastGradedDay;
 
-  // ⚠️ **NI `toMap()` NI `copyWith()` écrits à la main — délibérément.**
-  //
-  // Mon premier jet en portait deux, justifiés par un dartdoc affirmant que « le
-  // `copyWith` généré ne sait pas distinguer « omis » de « null » ». **C'était
-  // FAUX** — mesuré sur `z_study_streak.g.dart` : le généré porte EXACTEMENT la
-  // même sentinelle `_$undefined` (`identical(x, _$undefined) ? this.x : x as
-  // T?`) et le même `toMap()` snake_case. Les deux méthodes étaient donc une
-  // **SECONDE SOURCE** pure, protégée par une prose rassurante : précisément le
-  // défaut que cette story traque (« un dartdoc rassurant » + « un défaut est un
-  // MOTIF »).
-  //
-  // `ZStudyStreak` n'étant **PAS** `ZExtensible` (aucun `extra`/`extension` que
-  // le généré remettrait aux défauts — le finding H3 d'ES-2.1), son `copyWith`
-  // généré est **complet et sûr** : on le CONSOMME. Précédent EXACT :
-  // `ZSuggestedTag` (non-`ZExtensible`, aucune méthode à la main, extension
-  // générée exportée SANS `hide`). Les entités qui écrivent les leurs
-  // (`ZFlashcardTag`, `ZFlashcard`, `ZStudyFolder`) sont TOUTES `ZExtensible` —
-  // la règle est là, et elle ne s'applique pas ici.
+  // Ni `toMap()` ni `copyWith()` écrits à la main, délibérément :
+  // `ZStudyStreak` n'étant pas `ZExtensible` (aucun `extra`/`extension` que
+  // le généré remettrait aux défauts), son `copyWith` généré est complet et
+  // sûr — il est directement consommé.
 
   @override
   bool operator ==(Object other) =>

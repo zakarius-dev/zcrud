@@ -1,65 +1,59 @@
-/// Seam IA neutre de **génération de flashcards** `ZFlashcardGenerationPort`
-/// (Story ES-9.1, AC1/AC5).
+/// Seam IA neutre de génération de flashcards à partir d'un contenu
+/// d'étude.
 ///
-/// origine: seam IA neutre du domaine `zcrud_study` (AD-5/AD-11/AD-12). Le port
-/// est un **contrat pur** (`abstract interface class`) : l'app hôte l'*implements*
-/// avec son routeur IA. **Aucune** mécanique de transport ne fuit dans le
-/// domaine — prompts, `toWireJson`, SSE, endpoints et clés restent CÔTÉ APP.
+/// Le port est un contrat pur (`abstract interface class`, jamais `sealed`
+/// — invariant AD-4, l'application hôte l'implémente librement) : elle le
+/// branche sur son propre routeur IA. Aucune mécanique de transport ne fuit
+/// dans le domaine (invariant AD-12) — prompts, format de transport, flux
+/// serveur, endpoints et clés restent côté application. Aucune
+/// implémentation de référence n'est fournie dans ce paquet : le port n'a
+/// aucun comportement neutre à factoriser.
 ///
-/// **`abstract interface class` (AD-4)** : frontière inter-package ⇒ **jamais
-/// `sealed`** (pas d'exhaustivité imposée, l'app *implements* librement). Aucune
-/// impl de référence n'est fournie dans le package : le port n'a aucun
-/// comportement neutre à factoriser (contraste avec un repository Template
-/// Method).
-///
-/// **Provenance registre-pluggable (AC5)** : la requête porte une
-/// [ZFlashcardSource] optionnelle (variant IFFD/lex `article`/`subject`/
-/// `hsSection`/`chatConversationId` enregistré par l'app via `ZSourceRegistry`,
-/// AD-4). L'impl app-side **estampille** `request.provenance` dans
-/// [ZFlashcard.source] des cartes produites, de sorte que la provenance
-/// round-trippe **exactement** via `ZFlashcard.toMap`/`fromMap(sourceRegistry:)`.
-/// `zcrud_study` ne code **aucun** `kind` de provenance en dur.
+/// La requête porte une [ZFlashcardSource] optionnelle — une provenance
+/// ouverte enregistrée par l'application via `ZSourceRegistry` (invariant
+/// AD-4). L'implémentation côté application estampille `request.provenance`
+/// dans [ZFlashcard.source] des cartes produites, de sorte que la provenance
+/// fait l'aller-retour exactement via `ZFlashcard.toMap`/`fromMap(sourceRegistry:)`.
+/// Ce paquet ne code aucun type de provenance en dur.
 library;
 
 import 'package:zcrud_core/domain.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
-/// Source de génération **RÉSOLUE** (CR-IFFD-70) — value-object immuable.
+/// Source de génération résolue — value-object immuable.
 ///
-/// La feuille de génération permet de **choisir** des sources du contexte
-/// courant (documents, notes) et d'en **acquérir** sur place ; leur contenu est
-/// résolu **à la demande** par l'hôte (le socle ne sait ni lire un PDF ni
-/// scanner — l'extraction appartient à l'hôte, comme la génération appartient à
-/// [ZFlashcardGenerationPort]). Une source résolue prend l'une de TROIS formes,
-/// toutes légitimes :
+/// La feuille de génération permet de choisir des sources du contexte
+/// courant (documents, notes) et d'en acquérir sur place ; leur contenu est
+/// résolu à la demande par l'hôte (ce paquet ne sait ni lire un PDF ni
+/// scanner — l'extraction appartient à l'hôte, comme la génération
+/// appartient à [ZFlashcardGenerationPort]). Une source résolue prend l'une
+/// de trois formes, toutes légitimes :
 ///
 /// * **texte composé** — [text] non nul ;
-/// * **contenu PAGINÉ, éventuellement PARTIEL** — [pagesContents] non nul :
-///   index de page → contenu, pour les **seules pages choisies** (une source
-///   volumineuse — PDF de 300 pages — n'oblige jamais à tout résoudre ; le
-///   legacy IFFD passe exactement cette forme,
-///   `generateFlashcardsFromDocumentPagesContents(pagesContents: Map<int,String>)`) ;
-/// * **PAR RÉFÉRENCE** — [text] et [pagesContents] nuls : la [provenance]
-///   (variant `ZSourceRegistry`, ex. `documentId`) porte la référence et l'impl
-///   app-side du port extrait côté serveur — couvre l'appel legacy
-///   `generateFlashcardsFromWholeDocument(documentId)` (commenté chez IFFD).
+/// * **contenu paginé, éventuellement partiel** — [pagesContents] non nul :
+///   index de page vers contenu, pour les seules pages choisies (une source
+///   volumineuse — un PDF de 300 pages — n'oblige jamais à tout résoudre) ;
+/// * **par référence** — [text] et [pagesContents] nuls : la [provenance]
+///   porte la référence et l'implémentation côté application du port
+///   extrait le contenu côté serveur.
 ///
-/// Le contrat n'impose **ni** que la source acquise soit conservée dans le
-/// dossier **ni** qu'elle reste éphémère : question de PRODUIT, tranchée par
-/// l'hôte hors de ce type (AD-4).
+/// Le contrat n'impose ni que la source acquise soit conservée dans le
+/// dossier ni qu'elle reste éphémère : c'est une question de produit,
+/// tranchée par l'hôte hors de ce type.
 class ZResolvedGenerationSource {
-  /// Construit une source résolue (toutes formes optionnelles — cf. classe).
+  /// Construit une source résolue (toutes les formes sont optionnelles —
+  /// voir la documentation de la classe).
   const ZResolvedGenerationSource({this.text, this.pagesContents, this.provenance});
 
   /// Contenu texte composé, ou `null` (forme paginée ou par référence).
   final String? text;
 
-  /// Contenu paginé PARTIEL (index de page → contenu des pages **choisies**),
-  /// ou `null`.
+  /// Contenu paginé partiel (index de page vers contenu des pages
+  /// choisies), ou `null`.
   final Map<int, String>? pagesContents;
 
-  /// Provenance de CETTE source (variant `ZSourceRegistry`), ou `null`.
-  /// Porte la référence dans la forme « par référence ».
+  /// Provenance de cette source, ou `null`. Porte la référence dans la
+  /// forme « par référence ».
   final ZFlashcardSource? provenance;
 
   @override
@@ -73,7 +67,7 @@ class ZResolvedGenerationSource {
   @override
   int get hashCode => Object.hash(text, provenance, _pagesHash(pagesContents));
 
-  /// Égalité PROFONDE de deux contenus paginés, `null`-safe.
+  /// Égalité profonde de deux contenus paginés, `null`-safe.
   static bool _pagesEquals(Map<int, String>? a, Map<int, String>? b) {
     if (identical(a, b)) return true;
     if (a == null || b == null) return false;
@@ -84,7 +78,7 @@ class ZResolvedGenerationSource {
     return true;
   }
 
-  /// Hash indépendant de l'ordre d'un contenu paginé (`null` → `0`).
+  /// Hash indépendant de l'ordre d'un contenu paginé (`null` retourne `0`).
   static int _pagesHash(Map<int, String>? m) => m == null
       ? 0
       : Object.hashAllUnordered(
@@ -92,35 +86,30 @@ class ZResolvedGenerationSource {
         );
 }
 
-/// Résolveur **À LA DEMANDE** du contenu d'une source (CR-IFFD-70 — AD-5/AD-10).
+/// Résolveur à la demande du contenu d'une source (invariant AD-5 : domaine
+/// backend-agnostique).
 ///
-/// Fourni par l'hôte, invoqué par le flux de génération **au moment de la
-/// soumission seulement** (jamais à l'ouverture de la feuille — un dossier peut
-/// porter 50 documents, SM-1). Tout échec (fichier illisible, OCR raté) revient
-/// en `Left(ZFailure)` — **jamais** un throw exigé ; un throw est néanmoins
-/// capté par le contrôleur (AD-10) et converti en échec affiché.
+/// Fourni par l'hôte, invoqué par le flux de génération au moment de la
+/// soumission seulement — jamais à l'ouverture de la feuille, pour ne pas
+/// résoudre en une fois le contenu de dizaines de documents. Tout échec
+/// (fichier illisible, OCR manqué) revient en `Left(ZFailure)` — un throw
+/// n'est pas exigé, mais s'il survient il est capté par le contrôleur
+/// (invariant AD-10) et converti en échec affiché.
 typedef ZGenerationSourceResolver = Future<ZResult<ZResolvedGenerationSource>>
     Function();
 
-/// Requête **immuable** de génération de flashcards (value-object, `==`/`hashCode`
-/// par valeur).
+/// Requête immuable de génération de flashcards (value-object,
+/// `==`/`hashCode` par valeur).
 ///
-/// Ne porte que du **contenu source neutre** : aucun prompt, aucun endpoint,
-/// aucune clé (AC2/AD-12). Le [provenance] optionnel est apposé aux cartes
-/// produites (AC5).
+/// Ne porte que du contenu source neutre : aucun prompt, aucun endpoint,
+/// aucune clé (invariant AD-12). Le [provenance] optionnel est apposé aux
+/// cartes produites.
 ///
-/// ## Requête d'UNION canonique (AD-37, SU-9/AC1)
-///
-/// Porte les **6 dimensions** de la demande : `{source (content+provenance),
-/// count, typesDistribution, languageTag, instructions, modelId}`. Les trois
-/// derniers champs ([typesDistribution]/[instructions]/[modelId]) ont été
-/// **ajoutés en SU-9** de façon **OPTIONNELLE et ADDITIVE** : le DTO n'est PAS
-/// codegen (aucune annotation, aucune (dé)sérialisation générée) ⇒ l'extension
-/// n'a **aucun** impact rétro-compat pour l'unique consommateur (le port), dont
-/// la signature reste inchangée. Ces champs canoniques passent par des propriétés
-/// TYPÉES, **jamais** par [extra] (l'échappatoire non typée n'est pas le lieu
-/// d'un champ canonique — sinon on masquerait le contrat de [modelId] et on
-/// violerait « source unique » d'AD-37).
+/// Cette requête est la forme canonique d'union de la demande : elle porte
+/// six dimensions — source (contenu et provenance), nombre de cartes,
+/// répartition par type, langue, consignes et identifiant de modèle. Ces
+/// champs canoniques passent par des propriétés typées, jamais par [extra]
+/// — l'échappatoire non typée n'est pas le lieu d'un champ canonique.
 class ZFlashcardGenerationRequest {
   /// Construit une requête de génération à partir du [content] source.
   const ZFlashcardGenerationRequest({
@@ -135,60 +124,65 @@ class ZFlashcardGenerationRequest {
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
-  /// Contenu source neutre à partir duquel générer les cartes (texte, note…).
+  /// Contenu source neutre à partir duquel générer les cartes (texte,
+  /// note…).
   final String content;
 
-  /// Nombre de cartes souhaité, ou `null` (l'app décide un défaut).
+  /// Nombre de cartes souhaité, ou `null` (l'application décide d'un
+  /// défaut).
   final int? count;
 
   /// Étiquette de langue BCP-47 souhaitée (ex. `"fr"`), ou `null`.
   final String? languageTag;
 
-  /// Provenance **ouverte** à estampiller dans `ZFlashcard.source` des cartes
-  /// produites (variant IFFD/lex enregistré via `ZSourceRegistry`, AC5). `null`
-  /// = pas de provenance imposée.
+  /// Provenance ouverte à estampiller dans `ZFlashcard.source` des cartes
+  /// produites. `null` signifie qu'aucune provenance n'est imposée.
   final ZFlashcardSource? provenance;
 
-  /// Répartition souhaitée du lot par type de carte (`{multipleChoice: 3, …}`),
-  /// ou `null` (l'app/le module de défauts calcule une répartition équitable).
+  /// Répartition souhaitée du lot par type de carte (`{multipleChoice: 3,
+  /// …}`), ou `null` (l'application ou le module de défauts calcule une
+  /// répartition équitable).
   ///
-  /// SU-9/AC1 : porté PAR VALEUR (deux requêtes qui n'en diffèrent que par cette
-  /// map ne sont PAS égales). La normalisation (négatifs → 0, types inconnus
-  /// écartés, somme bornée) est faite par `zNormalizeTypesDistribution`
-  /// (`z_flashcard_generation_defaults.dart`), source UNIQUE — jamais ici.
+  /// Portée par valeur : deux requêtes qui n'en diffèrent que par cette map
+  /// ne sont pas égales. La normalisation (négatifs ramenés à `0`, types
+  /// inconnus écartés, somme bornée) est faite par
+  /// `zNormalizeTypesDistribution` (`z_flashcard_generation_defaults.dart`),
+  /// source unique — jamais ici.
   final Map<ZFlashcardType, int>? typesDistribution;
 
-  /// Consigne libre optionnelle transmise telle quelle à l'impl app-side (ex.
-  /// « insiste sur les définitions »), ou `null`. Contenu neutre — aucun prompt
-  /// système, aucun endpoint (AD-12).
+  /// Consigne libre optionnelle transmise telle quelle à l'implémentation
+  /// côté application (ex. « insiste sur les définitions »), ou `null`.
+  /// Contenu neutre — aucun prompt système, aucun endpoint (invariant
+  /// AD-12).
   final String? instructions;
 
-  /// Identifiant de modèle **OPAQUE** (SU-9/AC2), transporté VERBATIM et **jamais
-  /// interprété** par zcrud : aucun `enum`, aucun `switch`, aucun catalogue,
-  /// aucun libellé. Le type reste `String?` — le catalogue de modèles (et sa
-  /// résolution) vit **entièrement** côté app (AD-15/AD-35). `null` = l'app
-  /// décide.
+  /// Identifiant de modèle opaque, transporté tel quel et jamais interprété
+  /// par ce paquet : aucun `enum`, aucun `switch`, aucun catalogue. Le
+  /// catalogue de modèles et sa résolution vivent entièrement côté
+  /// application. `null` signifie que l'application décide.
   final String? modelId;
 
-  /// Sources du contexte **résolues à la demande** (CR-IFFD-70), ou `null`.
+  /// Sources du contexte résolues à la demande, ou `null`.
   ///
-  /// Champ **ADDITIF et OPTIONNEL** (même discipline que l'extension SU-9) :
-  /// tout hôte existant construit sa requête sans y toucher — `null` = flux
-  /// historique inchangé, le contenu vient de [content]. Quand la feuille porte
-  /// des sources sélectionnées, chacune arrive ici **dans l'ordre de
-  /// présentation**, sous sa forme résolue (texte, pages CHOISIES, ou par
-  /// référence — cf. [ZResolvedGenerationSource]). Les sources sont COMPOSITES :
-  /// la liste peut en porter plusieurs, l'impl app-side du port compose.
+  /// Champ additif et optionnel : tout hôte existant construit sa requête
+  /// sans y toucher — `null` signifie que le contenu vient uniquement de
+  /// [content]. Quand la feuille porte des sources sélectionnées, chacune
+  /// arrive ici dans l'ordre de présentation, sous sa forme résolue (texte,
+  /// pages choisies, ou par référence — voir [ZResolvedGenerationSource]).
+  /// Les sources sont composites : la liste peut en porter plusieurs,
+  /// l'implémentation côté application du port les compose.
   ///
   /// [content] et [provenance] gardent leur sémantique historique (champ de
-  /// texte libre de la feuille ; provenance du sélecteur single-select) — les
-  /// provenances PAR SOURCE voyagent dans chaque élément de cette liste.
+  /// texte libre de la feuille ; provenance du sélecteur à choix unique) —
+  /// les provenances par source voyagent dans chaque élément de cette
+  /// liste.
   final List<ZResolvedGenerationSource>? resolvedSources;
 
-  /// Copie de la requête portant [resolvedSources] (tout le reste inchangé).
+  /// Copie de la requête portant [resolvedSources] (tout le reste
+  /// inchangé).
   ///
-  /// Utilisée par le contrôleur pour apposer les sources résolues au moment de
-  /// la soumission — la requête reste un value-object immuable.
+  /// Utilisée par le contrôleur pour apposer les sources résolues au moment
+  /// de la soumission — la requête reste un value-object immuable.
   ZFlashcardGenerationRequest withResolvedSources(
     List<ZResolvedGenerationSource> sources,
   ) =>
@@ -204,16 +198,17 @@ class ZFlashcardGenerationRequest {
         extra: _extra,
       );
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée (paramètres app-specific neutres). Défaut `const {}`.
-  /// **Normalisée à la LECTURE (AD-19.1)** : les clés de sync réservées
-  /// (`updated_at`/`is_deleted`) sont écartées — jamais réémises. Ce DTO n'est
-  /// pas persisté, mais la garde machine reste uniforme sur tout porteur d'`extra`.
+  /// Échappatoire non typée pour des paramètres spécifiques à
+  /// l'application, normalisée à la lecture : les clés de synchronisation
+  /// réservées (`updated_at`, `is_deleted`) sont toujours écartées. Ce DTO
+  /// n'est pas persisté, mais cette normalisation garde un comportement
+  /// uniforme sur tout porteur d'`extra` du domaine. Défaut `const {}`.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   @override
@@ -243,9 +238,9 @@ class ZFlashcardGenerationRequest {
         zJsonHash(extra),
       );
 
-  /// Égalité PROFONDE et ORDONNÉE de deux listes de sources résolues (CR-70),
-  /// `null`-safe — deux requêtes qui n'en diffèrent que par ces sources ne sont
-  /// PAS égales (value-object).
+  /// Égalité profonde et ordonnée de deux listes de sources résolues,
+  /// `null`-safe — deux requêtes qui n'en diffèrent que par ces sources ne
+  /// sont pas égales (value-object).
   static bool _sourcesEquals(
     List<ZResolvedGenerationSource>? a,
     List<ZResolvedGenerationSource>? b,
@@ -259,11 +254,11 @@ class ZFlashcardGenerationRequest {
     return true;
   }
 
-  /// Hash ORDONNÉ des sources résolues (`null` → `0`).
+  /// Hash ordonné des sources résolues (`null` retourne `0`).
   static int _sourcesHash(List<ZResolvedGenerationSource>? s) =>
       s == null ? 0 : Object.hashAll(s);
 
-  /// Égalité PROFONDE de deux répartitions (clés + valeurs), `null`-safe (AC1).
+  /// Égalité profonde de deux répartitions (clés et valeurs), `null`-safe.
   static bool _typesDistEquals(
     Map<ZFlashcardType, int>? a,
     Map<ZFlashcardType, int>? b,
@@ -277,7 +272,7 @@ class ZFlashcardGenerationRequest {
     return true;
   }
 
-  /// Hash indépendant de l'ordre d'une répartition (`null` → `0`).
+  /// Hash indépendant de l'ordre d'une répartition (`null` retourne `0`).
   static int _typesDistHash(Map<ZFlashcardType, int>? m) => m == null
       ? 0
       : Object.hashAllUnordered(
@@ -285,14 +280,15 @@ class ZFlashcardGenerationRequest {
         );
 }
 
-/// Port neutre de **génération de flashcards** (AD-5 : `Either<ZFailure,·>`).
+/// Port neutre de génération de flashcards (invariant AD-5 : domaine
+/// backend-agnostique).
 ///
-/// L'app hôte l'*implements* avec son routeur IA. Retourne
-/// `ZResult<List<ZFlashcard>>` (`Either<ZFailure, List<ZFlashcard>>`) — **jamais**
-/// une `List<ZFlashcard>` nue, **jamais** un `Stream` enveloppé (AD-5).
+/// L'application hôte l'implémente avec son propre routeur IA. Retourne
+/// `ZResult<List<ZFlashcard>>` (`Either<ZFailure, List<ZFlashcard>>`) —
+/// jamais une `List<ZFlashcard>` nue.
 abstract interface class ZFlashcardGenerationPort {
   /// Génère des flashcards depuis [request]. `Left` en cas d'échec (quota,
-  /// réseau, parsing), `Right` avec les cartes produites en cas de succès.
+  /// réseau, analyse), `Right` avec les cartes produites en cas de succès.
   Future<ZResult<List<ZFlashcard>>> generateFlashcards(
     ZFlashcardGenerationRequest request,
   );

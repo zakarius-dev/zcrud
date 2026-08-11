@@ -25,7 +25,7 @@ enum ZTableCellContent {
   /// multiples — et les embeds que les ponts déclarés savent produire, formules
   /// LaTeX inline **et bloc** comprises.
   ///
-  /// ⚠️ **C'est un pont : le sens d'un texte ordinaire change.** Une cellule
+  /// **C'est un pont : le sens d'un texte ordinaire change.** Une cellule
   /// contenant `- a` devient une puce, `*x*` devient de l'italique. Sur un
   /// corpus écrit à l'époque du texte brut, l'apparence peut donc bouger. C'est
   /// pour cela que ce mode se déclare et ne s'active jamais tout seul.
@@ -45,6 +45,7 @@ enum ZTableCellContent {
 /// )
 /// ```
 class ZTableCellScope extends InheritedWidget {
+  /// Diffuse [content] (et [codec] optionnel) au sous-arbre [child].
   const ZTableCellScope({
     required this.content,
     required super.child,

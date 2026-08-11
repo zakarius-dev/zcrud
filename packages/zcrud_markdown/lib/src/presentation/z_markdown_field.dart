@@ -1,8 +1,8 @@
 /// `ZMarkdownField` — champ **rich-text** (éditeur Quill) au controller ISOLÉ,
 /// scellé sur **sa seule tranche** de `ZFormController` (AD-2, AD-7, OBJECTIF
-/// PRODUIT N°1 / SM-1).
+/// PRODUIT N°1).
 ///
-/// origine (E6-1) : `ZEditionField` [zcrud_core] est le patron canonique AD-2
+/// origine : `ZEditionField` [zcrud_core] est le patron canonique AD-2
 /// (`TextEditingController` stable, sync guardée hors focus, saisie à sens
 /// unique). `ZMarkdownField` MIROITE exactement ce contrat en remplaçant le
 /// `TextEditingController` par un [QuillController] et l'`onChanged` par un
@@ -11,7 +11,7 @@
 /// réimplémenté) — jamais un voisin, jamais le formulaire — et ne recrée JAMAIS
 /// le [QuillController] (focus + sélection/curseur préservés).
 ///
-/// DP-3 ajoute (SANS régresser E6) :
+/// ajoute (SANS régresser) :
 /// - une voie d'intégration **`ctx`-native** ([ZMarkdownField.fromContext])
 ///   pilotée par un [ZFieldWidgetContext] (`field`/`value`/`onChanged`) — pour
 ///   le [ZWidgetRegistry] injecté (le builder ne reçoit PAS le `ZFormController`) ;
@@ -33,7 +33,7 @@
 ///   AUCUN type Quill n'apparaît dans la signature publique.
 /// - **AD-10** : décodage **défensif** — valeur absente/vide/Delta corrompu →
 ///   document VIDE utilisable, **jamais** de throw.
-/// - **AD-13/FR-26** : directionnel, [Semantics] explicites, cibles ≥ 48 dp,
+/// - **AD-13** : directionnel, [Semantics] explicites, cibles ≥ 48 dp,
 ///   couleurs issues du thème injecté (repli `Theme.of`), **zéro** couleur codée
 ///   en dur.
 ///
@@ -47,7 +47,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 // SEULE arête Quill du package (AD-1). Aucun symbole Quill n'est re-exporté par
-// le barrel : l'isolation de type est garantie (AC8).
+// le barrel : l'isolation de type est garantie.
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -63,7 +63,7 @@ import 'z_rich_text_fullscreen_dialog.dart';
 import 'z_rich_text_style_set.dart';
 import 'z_rich_text_toolbar_config.dart';
 
-/// Mode de présentation d'un champ rich-text servi par le registre (DP-3, B6).
+/// Mode de présentation d'un champ rich-text servi par le registre (B6).
 ///
 /// - [inline] : éditeur **compact en place** (toolbar minimale, hauteur bornée)
 ///   + bouton toggle plein-écran. Dérivé de `EditionFieldType.inlineMarkdown`.
@@ -105,7 +105,7 @@ abstract interface class ZMarkdownFieldDebug {
 /// Expose/consomme une **valeur neutre** (Delta JSON `List<Map<String, dynamic>>`)
 /// — jamais un type Quill (AD-1/AD-7).
 class ZMarkdownField extends StatefulWidget {
-  /// Construit le champ rich-text (voie **`controller`** — E6-1, INCHANGÉE) pour
+  /// Construit le champ rich-text (voie **`controller`**, INCHANGÉE) pour
   /// [field], lié à la tranche `field.name` du [controller].
   ///
   /// Rendu par DÉFAUT : éditeur pleine-toolbar (mode « legacy » — le mode
@@ -132,14 +132,14 @@ class ZMarkdownField extends StatefulWidget {
   })  : ctx = null,
         mode = ZMarkdownFieldMode.inline;
 
-  /// Construit le champ rich-text (voie **`ctx`**/registre — DP-3) piloté par un
+  /// Construit le champ rich-text (voie **`ctx`**/registre) piloté par un
   /// [ZFieldWidgetContext] (`field`/`value`/`onChanged`), SANS `ZFormController`.
   ///
   /// [mode] fixe la présentation (`inline` compact vs `block` aperçu+dialog).
   /// `ctx.field.readOnly` est honoré (rendu lecteur, prioritaire sur le mode).
   /// L'assembleur (dispatcher) rend ce widget DANS sa frontière de rebuild
   /// value-in-slice : le `State` persiste (place stable) ⇒ le [QuillController]
-  /// n'est jamais recréé (SM-1/AD-2).
+  /// n'est jamais recréé (AD-2).
   ZMarkdownField.fromContext({
     required ZFieldWidgetContext this.ctx,
     required this.mode,
@@ -161,7 +161,7 @@ class ZMarkdownField extends StatefulWidget {
         field = ctx.field,
         showToolbar = true;
 
-  /// Le libellé du champ est-il RENDU au-dessus de l'éditeur ? (CR-IFFD-25 §1)
+  /// Le libellé du champ est-il RENDU au-dessus de l'éditeur ?
   ///
   /// `true` par défaut : c'est ce que font tous les autres types de champ, via
   /// `InputDecoration.labelText`. Un hôte qui pose déjà son propre libellé peut
@@ -184,67 +184,67 @@ class ZMarkdownField extends StatefulWidget {
   /// Affiche la **toolbar** Quill presets (voie `controller` ; défaut `true`).
   final bool showToolbar;
 
-  /// Configuration GRANULAIRE par bouton de la toolbar (DP-22, M20).
+  /// Configuration GRANULAIRE par bouton de la toolbar (M20).
   ///
-  /// RÉTRO-COMPAT : `null` (défaut) ⇒ comportement E6-1/DP-3 INCHANGÉ — préset
+  /// RÉTRO-COMPAT : `null` (défaut) ⇒ comportement INCHANGÉ — préset
   /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran,
   /// [ZRichTextToolbarConfig.minimal] pour le mode `inline`. Fournie ⇒ pilote
   /// chaque bouton (natif + custom LaTeX/table/image/vidéo). `showToolbar`
   /// (voie `controller`) reste prioritaire pour AFFICHER/MASQUER toute la barre.
   final ZRichTextToolbarConfig? toolbarConfig;
 
-  /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE — GAP-3, CR
+  /// Placeholder (texte indicatif) affiché dans l'éditeur VIDE, CR
   /// parité 2026-08-11 (legacy `mef:438`).
   ///
-  /// Chaîne FR-26 : **paramètre > `field.hintText` (résolu l10n) > rien** — le
+  /// Chaîne : **paramètre > `field.hintText` (résolu l10n) > rien** — le
   /// TEXTE vient toujours de l'hôte ou du système l10n injecté
   /// (`label(context, key, fallback: key)`), JAMAIS d'un libellé codé en dur
   /// dans le paquet. `null` (défaut) ⇒ repli sur `ZFieldSpec.hintText` ; si le
   /// champ n'en a pas non plus, aucun placeholder (comportement historique).
   final String? placeholder;
 
-  /// `ZCodec` de (dé)sérialisation du **format persisté** (E6-2, AD-7).
+  /// `ZCodec` de (dé)sérialisation du **format persisté** (AD-7).
   ///
   /// Précédence : ce paramètre > [ZMarkdownCodecScope] hérité > `ZDeltaCodec()`.
   final ZCodec? codec;
 
-  /// Nombre MINIMAL de lignes de hauteur de l'éditeur (MIN-1). `null` ⇒ hauteur
-  /// intrinsèque (comportement E6-1 inchangé).
+  /// Nombre MINIMAL de lignes de hauteur de l'éditeur. `null` ⇒ hauteur
+  /// intrinsèque (comportement inchangé).
   final int? minLines;
 
-  /// Nombre MAXIMAL de lignes de hauteur de l'éditeur (MIN-1, mode compact borné).
-  /// `null` ⇒ hauteur intrinsèque non bornée (comportement E6-1 inchangé). Quand
+  /// Nombre MAXIMAL de lignes de hauteur de l'éditeur (mode compact borné).
+  /// `null` ⇒ hauteur intrinsèque non bornée (comportement inchangé). Quand
   /// fourni, l'éditeur défile en interne au-delà de cette hauteur.
   final int? maxLines;
 
-  /// Limite SOUPLE de caractères (texte brut) — MIN-1. `null` ⇒ aucune limite
-  /// (comportement E6-1 inchangé). Fournie ⇒ un compteur vivant est affiché et
+  /// Limite SOUPLE de caractères (texte brut). `null` ⇒ aucune limite
+  /// (comportement inchangé). Fournie ⇒ un compteur vivant est affiché et
   /// la saisie au-delà de la limite est tronquée (best-effort, hors chemin chaud
   /// pour les champs sans limite).
   final int? characterLimit;
 
-  /// Jeu de styles NEUTRE par champ (GAP-5, CR parité 2026-08-11) — la voie
-  /// « signature DODLP » par INJECTION DE L'HÔTE (polices Google et palette
+  /// Jeu de styles NEUTRE par champ — la voie « signature visuelle » passe
+  /// par INJECTION DE L'HÔTE (polices Google et palette
   /// legacy restent chez lui, cf. `z_rich_text_style_set.dart`). `null` ⇒
   /// styles historiques (thème seul) STRICTEMENT inchangés (AD-57). Propagé à
   /// l'éditeur, au lecteur ET au dialog plein-écran.
   final ZRichTextStyleSet? styleSet;
 
-  /// Habillage « carte » OPT-IN (GAP-6) : en-tête icône+libellé, bordure/ombre
+  /// Habillage « carte » OPT-IN : en-tête icône+libellé, bordure/ombre
   /// teintées, pilule d'action (« Rédiger / Modifier / Valider »). `null`
   /// (défaut) ⇒ rendu historique STRICTEMENT inchangé. Voir
-  /// [ZMarkdownFieldChrome] (chaîne de couleurs FR-26, articulation
+  /// [ZMarkdownFieldChrome] (chaîne de couleurs, articulation
   /// `deferWrites`).
   final ZMarkdownFieldChrome? chrome;
 
-  /// Facteur d'échelle du TEXTE de l'éditeur/lecteur (GAP-7, parité
+  /// Facteur d'échelle du TEXTE de l'éditeur/lecteur (parité
   /// `textScaleFactor` legacy). Appliqué par [TextScaler.linear] via
   /// `MediaQuery` LOCAL au contenu (mesuré : Quill lit
   /// `MediaQuery.textScalerOf`, `text_line.dart:182`) — la toolbar et le
   /// libellé ne changent pas. `null` ⇒ échelle ambiante inchangée.
   final double? textScaleFactor;
 
-  /// Rendu des formules par champ (GAP-7) : style + facteurs d'échelle
+  /// Rendu des formules par champ : style + facteurs d'échelle
   /// bloc/inline ([ZRichTextFormulaSpec]). `null` ⇒ rendu historique.
   final ZRichTextFormulaSpec? formulaSpec;
 
@@ -257,7 +257,7 @@ class ZMarkdownField extends StatefulWidget {
   final VoidCallback? onBuild;
 
   /// Valeur PERSISTÉE (format du [codec]) de la tranche [name] portée par
-  /// [controller] — **voie de persistance PUBLIQUE** (AC6, AD-7).
+  /// [controller] — **voie de persistance PUBLIQUE** (AD-7).
   ///
   /// Le codec n'intervient QU'ICI (couture de persistance), jamais dans le
   /// chemin chaud de frappe. Robuste au type de la tranche (décode
@@ -280,7 +280,7 @@ enum _RenderMode {
   /// `field.readOnly == true` (voie `controller` OU `ctx`) → lecteur exclusif.
   reader,
 
-  /// Voie `controller` éditable → éditeur pleine-toolbar (E6-1 legacy).
+  /// Voie `controller` éditable → éditeur pleine-toolbar (legacy).
   fullEditor,
 
   /// Voie `ctx` `inline` éditable → éditeur compact + toggle plein-écran.
@@ -290,7 +290,7 @@ enum _RenderMode {
   blockPreview,
 }
 
-/// Action portée par la pilule d'en-tête du chrome carte (GAP-6).
+/// Action portée par la pilule d'en-tête du chrome carte.
 enum _ChromeAction {
   /// Lecture seule : aucune pilule.
   none,
@@ -326,24 +326,24 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// Compteur d'invocations effectives du listener de mutation.
   int _documentChangeCount = 0;
 
-  /// Codec de (dé)sérialisation du format persisté (E6-2). Résolu UNE FOIS.
+  /// Codec de (dé)sérialisation du format persisté. Résolu UNE FOIS.
   late final ZCodec _codec;
 
-  /// Config de toolbar STABLE (SM-1/AD-2) — construite UNE FOIS si édition.
+  /// Config de toolbar STABLE (AD-2) — construite UNE FOIS si édition.
   QuillSimpleToolbarConfig? _toolbarConfig;
 
   /// Ce que le champ rend, calculé UNE FOIS en [initState].
   late final _RenderMode _renderMode;
 
-  /// Styles Quill dérivés du thème (MIN-1) — mémoïsés (recalculés seulement si
+  /// Styles Quill dérivés du thème — mémoïsés (recalculés seulement si
   /// les dépendances de thème changent, jamais dans le chemin chaud de frappe).
   DefaultStyles? _themedStyles;
 
-  /// Garde de ré-entrance de l'application de la limite de caractères (MIN-1).
+  /// Garde de ré-entrance de l'application de la limite de caractères.
   bool _enforcingLimit = false;
 
   /// Longueur de texte brut VIVANTE — n'existe que si [ZMarkdownField.characterLimit]
-  /// est posé. Le compteur s'y abonne ([ValueListenableBuilder]) : granulaire (SM-1).
+  /// est posé. Le compteur s'y abonne ([ValueListenableBuilder]) : granulaire.
   ValueNotifier<int>? _plainLength;
 
   @override
@@ -393,10 +393,10 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       _renderMode == _RenderMode.fullEditor ||
       _renderMode == _RenderMode.inlineEditor;
 
-  /// Config de toolbar EFFECTIVE pilotant chaque bouton (DP-22, M20).
+  /// Config de toolbar EFFECTIVE pilotant chaque bouton (M20).
   ///
   /// RÉTRO-COMPAT (NON-NÉGOCIABLE) : si aucune [ZRichTextToolbarConfig] n'est
-  /// fournie, on retombe EXACTEMENT sur le comportement E6-1/DP-3 —
+  /// fournie, on retombe EXACTEMENT sur le comportement
   /// [ZRichTextToolbarConfig.full] pour la voie `controller`/plein-écran
   /// (`fullEditor`), [ZRichTextToolbarConfig.minimal] pour le mode `inline`
   /// (`inlineEditor`). Fournie ⇒ elle pilote intégralement les boutons.
@@ -433,14 +433,14 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // MIN-1 : (re)calcule les styles thémés quand le thème ambiant change —
+    // (re)calcule les styles thémés quand le thème ambiant change —
     // hors chemin chaud de frappe (le thème ne change pas à chaque caractère).
-    // GAP-5 : le jeu de styles par champ est fusionné ICI (même cadence que le
+    // le jeu de styles par champ est fusionné ICI (même cadence que le
     // thème — jamais dans le chemin chaud de frappe).
     _themedStyles = zQuillThemedStyles(context, styleSet: widget.styleSet);
   }
 
-  /// GAP-6 : l'écriture est-elle DIFFÉRÉE (articulation legacy opt-in) ?
+  /// l'écriture est-elle DIFFÉRÉE (articulation legacy opt-in) ?
   /// Seulement quand un chrome le demande ET qu'une voie d'édition existe.
   bool get _deferWrites =>
       (widget.chrome?.deferWrites ?? false) && _needsEditingController;
@@ -459,13 +459,13 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _focus = FocusNode();
     _scroll = ScrollController();
     if (widget.characterLimit != null) {
-      // Compteur GRANULAIRE (SM-1) : un ValueNotifier dédié — la frappe ne
+      // Compteur GRANULAIRE : un ValueNotifier dédié — la frappe ne
       // rebâtit que le compteur, jamais le champ (indispensable en écriture
-      // différée GAP-6, où la tranche ne bouge plus à chaque caractère).
+      // différée, où la tranche ne bouge plus à chaque caractère).
       _plainLength = ValueNotifier<int>(_plainTextLength);
     }
     if (_deferWrites) {
-      // GAP-6 (articulation legacy MESURÉE, `mef:97-101`) : commit sur PERTE
+      // (articulation legacy MESURÉE, `mef:97-101`) : commit sur PERTE
       // DE FOCUS — la frappe n'écrit plus la tranche, « Valider » ou le blur
       // le font. Sans ce commit au blur, la sync guardée hors focus
       // ré-injecterait la valeur EXTERNE périmée par-dessus la saisie.
@@ -542,11 +542,11 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     }
     final q = _quill;
     if (q == null) return;
-    // MIN-1 : borne SOUPLE de caractères (best-effort, opt-in). La troncature
+    // borne SOUPLE de caractères (best-effort, opt-in). La troncature
     // émet une mutation imbriquée qui persistera la valeur bornée.
     _enforceCharacterLimit();
     _plainLength?.value = _plainTextLength;
-    // GAP-6 : écriture DIFFÉRÉE (opt-in chrome) — la tranche n'est écrite que
+    // écriture DIFFÉRÉE (opt-in chrome) — la tranche n'est écrite que
     // par [_commitDeferred] (« Valider » / perte de focus), parité `mef:93-101`.
     if (_deferWrites) return;
     final neutral = DeltaNeutralOps.encodeNeutral(q.document);
@@ -556,7 +556,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _write(neutral);
   }
 
-  /// GAP-6 : commit EXPLICITE de la valeur neutre courante (pilule « Valider »
+  /// commit EXPLICITE de la valeur neutre courante (pilule « Valider »
   /// ou perte de focus en écriture différée). Idempotent (dédup JSON).
   void _commitDeferred() {
     final q = _quill;
@@ -568,7 +568,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _write(neutral);
   }
 
-  /// GAP-6 : listener de focus posé UNIQUEMENT en écriture différée — commit au
+  /// listener de focus posé UNIQUEMENT en écriture différée — commit au
   /// blur (parité legacy `mef:97-101`).
   void _onFocusChangedDeferred() {
     final f = _focus;
@@ -584,7 +584,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     return plain.endsWith('\n') ? (raw - 1).clamp(0, raw) : raw;
   }
 
-  /// MIN-1 — Applique la limite SOUPLE de caractères : tronque l'excédent juste
+  /// Applique la limite SOUPLE de caractères : tronque l'excédent juste
   /// avant le `\n` terminal. Best-effort, DÉFENSIF (jamais de throw), gardé
   /// contre la ré-entrance. No-op si aucune limite (chemin chaud intact).
   void _enforceCharacterLimit() {
@@ -640,7 +640,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           action: _ChromeAction.none,
         );
       case _RenderMode.fullEditor:
-        // Voie `controller` (E6-1) : frontière de rebuild value-in-slice.
+        // Voie `controller` : frontière de rebuild value-in-slice.
         return ZFieldListenableBuilder(
           controller: widget.controller!,
           name: _name,
@@ -669,7 +669,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       case _RenderMode.blockPreview:
         widget.onBuild?.call();
         if (!chromed) return _buildBlockPreview(widget.ctx!.value);
-        // GAP-6 : sous chrome, l'affordance d'édition MONTE dans la pilule
+        // sous chrome, l'affordance d'édition MONTE dans la pilule
         // d'en-tête (« Rédiger »/« Modifier », parité `mef`) — le bouton bas
         // du rendu par défaut disparaît (une seule affordance).
         return _maybeChrome(
@@ -681,7 +681,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     }
   }
 
-  /// SYNC GUARDÉE (AC10, FR-1) : reflète une valeur EXTERNE dans l'éditeur
+  /// SYNC GUARDÉE : reflète une valeur EXTERNE dans l'éditeur
   /// UNIQUEMENT hors focus et si elle diffère. Pendant l'édition, priorité
   /// ABSOLUE à la saisie/au curseur (aucune ré-injection).
   void _syncFromExternal(Object? value) {
@@ -731,13 +731,13 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       initialValue: _currentValueForDialog(),
       title: _field.label ?? _field.name,
       codec: _codec,
-      // GAP-3 : le plein-écran porte le MÊME placeholder que le champ.
+      // le plein-écran porte le MÊME placeholder que le champ.
       placeholder: _effectivePlaceholder(context),
-      // GAP-5/GAP-7 : le plein-écran rend avec les MÊMES styles par champ.
+      // le plein-écran rend avec les MÊMES styles par champ.
       styleSet: widget.styleSet,
       textScaleFactor: widget.textScaleFactor,
       formulaSpec: widget.formulaSpec,
-      // GAP-9 : la config de barre FOURNIE par l'hôte suit en plein-écran
+      // la config de barre FOURNIE par l'hôte suit en plein-écran
       // (habillage compris). `null` ⇒ défaut historique du dialog (full).
       toolbarConfig: widget.toolbarConfig,
     );
@@ -746,7 +746,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _forceApplyNeutral(result);
   }
 
-  /// Placeholder EFFECTIF (GAP-3) — chaîne FR-26 : paramètre >
+  /// Placeholder EFFECTIF — chaîne : paramètre >
   /// `field.hintText` résolu par `label(context, key, fallback: key)` (même
   /// voie que `zFieldDecoration` pour les autres familles) > `null` (rien).
   String? _effectivePlaceholder(BuildContext context) {
@@ -762,12 +762,12 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         value: value,
         codec: _codec,
         label: _field.label ?? _field.name,
-        // GAP-6 : sous chrome carte, le lecteur perd son propre cadre (la carte
-        // habille) — sinon boîte dans une boîte (précédent CR-IFFD-73).
+        // sous chrome carte, le lecteur perd son propre cadre (la carte
+        // habille) — sinon boîte dans une boîte (précédent).
         chrome: chromeless
             ? ZMarkdownReaderChrome.none
             : ZMarkdownReaderChrome.bordered,
-        // GAP-5/GAP-7 : mêmes styles/échelle/formules qu'en édition.
+        // mêmes styles/échelle/formules qu'en édition.
         styleSet: widget.styleSet,
         textScaleFactor: widget.textScaleFactor,
         formulaSpec: widget.formulaSpec,
@@ -782,12 +782,12 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
     final label = _field.label ?? _field.name;
 
-    // MIN-1 : hauteur bornée (mode compact) via minLines/maxLines. Quand une
+    // hauteur bornée (mode compact) via minLines/maxLines. Quand une
     // borne max est posée, l'éditeur défile en interne (scrollable) et sa
-    // hauteur est plafonnée ; sinon comportement E6-1 (intrinsèque, non-scroll).
+    // hauteur est plafonnée; sinon comportement (intrinsèque, non-scroll).
     final double lineHeight =
         (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16) * 1.5;
-    // CR-IFFD-25 §2 : la hauteur est une propriété du CHAMP, pas de
+    // la hauteur est une propriété du CHAMP, pas de
     // l'application. Elle n'était lisible que depuis le registre
     // (`registerZMarkdownFields(minLines:)`), donc fixée par sous-arbre : un
     // formulaire portant deux éditeurs de hauteurs différentes (3/5 et 5/10)
@@ -808,19 +808,19 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       focusNode: _focus!,
       scrollController: _scroll!,
       config: QuillEditorConfig(
-        // Borné ⇒ défilement interne ; sinon hauteur intrinsèque (E6-1).
+        // Borné ⇒ défilement interne ; sinon hauteur intrinsèque.
         scrollable: bounded,
         padding: EdgeInsetsDirectional.zero,
         embedBuilders: kZEmbedBuilders,
-        // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+        // (AD-10) : repli TOTAL. Sans lui, un type
         // d'embed inconnu — d'un hôte, d'une version future, ou né
         // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
         // BUILD, donc irrattrapable : écran rouge, puis cascade de
         // `RenderErrorBox`. Mesuré sur `divider`.
         unknownEmbedBuilder: kZUnknownEmbedBuilder,
-        // MIN-1 : styles de titres dérivés du thème (FR-26, zéro couleur en dur).
+        // styles de titres dérivés du thème (zéro couleur en dur).
         customStyles: _themedStyles,
-        // GAP-3 : placeholder par champ (paramètre > hintText l10n > rien).
+        // placeholder par champ (paramètre > hintText l10n > rien).
         placeholder: _effectivePlaceholder(context),
       ),
     );
@@ -833,7 +833,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         child: quill,
       );
     }
-    // GAP-7 : échelle de texte par champ (MediaQuery LOCAL au contenu — Quill
+    // échelle de texte par champ (MediaQuery LOCAL au contenu — Quill
     // lit `MediaQuery.textScalerOf`) + spec de formules ambiante. `null` ⇒
     // aucun wrapper (rendu historique inchangé, AD-57).
     quill = zWrapRichTextContent(
@@ -848,7 +848,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     // `ZMarkdownChromeReference.borderWidthFilled/Empty`, non configurables,
     // donc jamais de champ sans aucun cadre) ET le `fieldPadding` (le texte ne
     // colle pas au bord). La zone d'édition devient une simple surface —
-    // précédent CR-IFFD-73 côté lecteur (`none` retire cadre ET padding,
+    // précédent côté lecteur (`none` retire cadre ET padding
     // l'appelant habille). Sans chrome : rendu historique STRICTEMENT
     // inchangé, c'est la bordure qui matérialise le champ.
     final bool chromed = widget.chrome != null;
@@ -870,7 +870,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     );
 
     // Toolbar : montrée pour l'éditeur compact (inline) TOUJOURS ; pour la voie
-    // `controller` (legacy) selon `showToolbar` (parité E6-1 STRICTE).
+    // `controller` (legacy) selon `showToolbar` (parité STRICTE).
     final bool showToolbar = _renderMode == _RenderMode.inlineEditor
         ? true
         : widget.showToolbar;
@@ -879,18 +879,18 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // CR-IFFD-25 §1 : le libellé n'était RENDU nulle part — il n'alimentait
+        // le libellé n'était RENDU nulle part — il n'alimentait
         // que la sémantique et le titre du dialog plein écran. Dans un même
         // formulaire, « Titre » s'affichait au-dessus de son champ et
         // « Contenu » non : incohérence INTERNE au socle, tous les autres types
         // passant par `zFieldDecoration` (donc par un `InputDecoration.labelText`
         // visible).
         //
-        // ⚠️ `ExcludeSemantics` est indispensable : le libellé est DÉJÀ porté
+        // `ExcludeSemantics` est indispensable : le libellé est DÉJÀ porté
         // par le `Semantics(textField:, label:)` de l'éditeur. Sans exclusion,
         // un lecteur d'écran l'annoncerait DEUX FOIS — exactement le défaut
         // corrigé sur `ZStudyToolsItemCard` (handoff v0.4.6 §2), et la raison
-        // pour laquelle IFFD s'est délibérément abstenue de le contourner.
+        // pour laquelle un consommateur legacy s'est délibérément abstenue de le contourner.
         if (_showLabel)
           ExcludeSemantics(
             child: Padding(
@@ -905,7 +905,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
             child: Row(
               children: <Widget>[
                 Expanded(
-                  // GAP-9 : fond de barre thémé OPT-IN — drapeau `false` ⇒
+                  // fond de barre thémé OPT-IN — drapeau `false` ⇒
                   // aucun wrapper (rendu historique inchangé).
                   child: zDecorateToolbar(
                     context,
@@ -942,14 +942,14 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   ///
   /// Non quand l'hôte l'a explicitement désactivé, ni quand le champ n'a aucun
   /// libellé propre (`label` retombe alors sur `name`, un identifiant technique
-  /// qu'il vaut mieux ne pas afficher), ni sous chrome carte (GAP-6 : le
-  /// libellé vit dans l'EN-TÊTE de la carte — le doubler serait le défaut
-  /// d'annonce corrigé par CR-IFFD-25).
+  /// qu'il vaut mieux ne pas afficher), ni sous chrome carte : le libellé vit
+  /// dans l'EN-TÊTE de la carte — le doubler produirait une annonce
+  /// d'accessibilité redondante.
   bool get _showLabel =>
       widget.showLabel && _field.label != null && widget.chrome == null;
 
   /// Style du libellé — aligné sur celui d'un `InputDecoration.labelText`, pour
-  /// que le champ riche s'accorde visuellement à ses voisins (FR-26 : aucune
+  /// que le champ riche s'accorde visuellement à ses voisins ( : aucune
   /// couleur ni taille en dur).
   TextStyle? _labelStyle(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -959,12 +959,12 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         );
   }
 
-  /// Compteur vivant de caractères (MIN-1) — affiché sous l'éditeur quand une
-  /// [characterLimit] est fournie. Couleur d'alerte issue du thème (FR-26) à
+  /// Compteur vivant de caractères — affiché sous l'éditeur quand une
+  /// [characterLimit] est fournie. Couleur d'alerte issue du thème à
   /// l'approche/au dépassement, `Semantics` lisible. Directionnel.
   ///
-  /// GRANULAIRE (SM-1) : abonné au [ValueNotifier] de longueur — la frappe ne
-  /// rebâtit QUE ce compteur (indispensable en écriture différée GAP-6, où la
+  /// GRANULAIRE : abonné au [ValueNotifier] de longueur — la frappe ne
+  /// rebâtit QUE ce compteur (indispensable en écriture différée, où la
   /// tranche — donc la frontière value-in-slice — ne bouge plus à la frappe).
   Widget _characterCounter(BuildContext context) {
     final int limit = widget.characterLimit!;
@@ -1019,9 +1019,9 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         ),
       );
 
-  // ───────────────────────── Chrome carte (GAP-6) ─────────────────────────
+  // ───────────────────────── Chrome carte ─────────────────────────
 
-  /// Dégradé EFFECTIF du chrome — chaîne FR-26 : paramètre hôte > seam
+  /// Dégradé EFFECTIF du chrome — chaîne : paramètre hôte > seam
   /// `zResolveGradient` ([ZMarkdownFieldChrome.gradientKey], défaut = nom du
   /// champ) > rôles `primaryContainer → tertiaireContainer` (même paire mesurée
   /// que `zDerivedGradientResolver`). AUCUNE couleur legacy dans le paquet.
@@ -1044,7 +1044,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     );
   }
 
-  /// Enveloppe [content] dans la carte chrome (GAP-6) si un
+  /// Enveloppe [content] dans la carte chrome si un
   /// [ZMarkdownFieldChrome] est fourni — sinon retourne [content] TEL QUEL
   /// (rendu historique STRICTEMENT inchangé, AD-57).
   Widget _maybeChrome(
@@ -1103,7 +1103,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
               chrome.icon ?? Icons.article_rounded,
               size: ZMarkdownChromeReference.headerIconSize,
               // Puce quasi-transparente (opacité 40/255) : le fond effectif
-              // est la surface — la couleur du thème y reste lisible (FR-26).
+              // est la surface — la couleur du thème y reste lisible.
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -1111,7 +1111,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           Expanded(
             // Libellé DÉJÀ porté par la sémantique du contenu (éditeur
             // `Semantics(textField:, label:)` / lecteur `Semantics(label:)`) —
-            // même exclusion que le libellé texte historique (CR-IFFD-25).
+            // même exclusion que le libellé texte historique.
             child: ExcludeSemantics(
               child: chrome.labelBuilder?.call(context, label) ??
                   Text(
@@ -1173,9 +1173,9 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     return card;
   }
 
-  /// Pilule d'action de l'en-tête (GAP-6) — « Valider » (commit, modes
+  /// Pilule d'action de l'en-tête — « Valider » (commit, modes
   /// éditeur) ou « Rédiger »/« Modifier » (plein-écran, mode block). Cible
-  /// ≥ 48 dp (AD-13), `Semantics` bouton, dégradé paramétré (FR-26).
+  /// ≥ 48 dp (AD-13), `Semantics` bouton, dégradé paramétré.
   Widget _chromeActionPill(
     BuildContext context, {
     required _ChromeAction action,

@@ -3,7 +3,7 @@
 /// `ZToasterScope` est un `InheritedWidget` **local** (zéro dépendance manager)
 /// permettant à une app de **substituer** son propre [ZToaster] (GetX,
 /// `toastification`, …) **sans** que `zcrud_ui_kit` n'importe aucun tiers. Le
-/// helper [zToast] est le point d'entrée « une ligne » pour les écrans : il
+/// helper [zToast] est le point d'entrée « une ligne » pour les écrans: il
 /// résout le toaster effectif et délègue.
 library;
 
@@ -15,10 +15,10 @@ import 'z_scaffold_messenger_toaster.dart';
 
 /// Fournit un [ZToaster] aux descendants (seam de substitution, AD-6).
 ///
-/// Monter `ZToasterScope(toaster: MonToaster(), child: ...)` fait résoudre
+/// Monter `ZToasterScope(toaster: MonToaster(), child:...)` fait résoudre
 /// [zToast] / [of] sur ce toaster custom. **Sans** scope monté, [of] retombe
 /// sur `const ZScaffoldMessengerToaster()` (défaut sûr — **jamais de throw**,
-/// AD-10). Ce seam est **spécifique au toaster** ; il ne remplace pas
+/// AD-10). Ce seam est **spécifique au toaster**; il ne remplace pas
 /// `ZcrudScope` (thème/labels).
 class ZToasterScope extends InheritedWidget {
   /// Construit le scope avec le [toaster] à exposer aux descendants.
@@ -38,7 +38,7 @@ class ZToasterScope extends InheritedWidget {
         ?.toaster;
   }
 
-  /// Résout le toaster effectif : celui du scope, sinon le **défaut sûr**
+  /// Résout le toaster effectif: celui du scope, sinon le **défaut sûr**
   /// `const ZScaffoldMessengerToaster()` (jamais de throw — AD-10).
   static ZToaster of(BuildContext context) {
     return maybeOf(context) ?? const ZScaffoldMessengerToaster();
@@ -52,7 +52,7 @@ class ZToasterScope extends InheritedWidget {
 
 /// Affiche un toast via le [ZToaster] résolu par [ZToasterScope.of].
 ///
-/// Point d'entrée de convenance : résout le toaster effectif (custom via un
+/// Point d'entrée de convenance: résout le toaster effectif (custom via un
 /// [ZToasterScope] monté, sinon [ZScaffoldMessengerToaster] par défaut) puis
 /// délègue à `toaster.show(...)`. [severity] défaut [ZToastSeverity.info]
 /// (défaut sûr, AD-10). N'importe **aucun** gestionnaire d'état (AD-2/AD-15).

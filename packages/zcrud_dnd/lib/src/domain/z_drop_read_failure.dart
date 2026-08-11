@@ -1,5 +1,5 @@
-/// Échec **neutre** de lecture d'un contenu déposé (AD-57 : aucun type de
-/// `super_drag_and_drop` / `super_clipboard` ne franchit cette frontière).
+/// Échec **neutre** de lecture d'un contenu déposé : aucun type de
+/// `super_drag_and_drop` / `super_clipboard` ne franchit cette frontière.
 library;
 
 import 'package:flutter/foundation.dart';

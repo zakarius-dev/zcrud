@@ -1,17 +1,18 @@
-/// Index alphabétique vertical A→Z **cliquable** (AD-32, AD-13).
+/// Index alphabétique vertical A→Z **cliquable** (invariant AD-13).
 ///
-/// `ZAlphabetIndexBar` neutralise l'index dupliqué des applications (lex
-/// `alphabet_index_bar.dart`, `ConsumerWidget`/`WidgetRef` **morts**) en un
-/// `StatelessWidget` **pur** `const` :
-/// * **aucun** gestionnaire d'état (ni `flutter_riverpod`/`get`/`provider`) ni
-///   routeur — le widget **émet** la lettre choisie via [ZAlphabetIndexBar.onLetter]
-///   ; c'est l'appelant qui scrolle sa liste (aucun `ScrollController` interne) ;
-/// * jeu de lettres **injectable** ([kZDefaultAlphabet] par défaut, A→Z) pour
-///   d'autres alphabets/segments (NFR-U5) ;
-/// * distinction actif/inerte/courant **multi-canal** : la couleur (dérivée du
-///   `ColorScheme`, jamais de hex) n'est **jamais le seul canal** — l'état a11y
-///   `enabled`/`selected` et l'inactivité du geste (`onTap: null`) sont des canaux
-///   non-couleur (AD-13/NFR-U4) ;
+/// `ZAlphabetIndexBar` factorise l'index alphabétique en un
+/// `StatelessWidget` **pur** `const`, sans dépendre d'un gestionnaire
+/// d'état :
+/// * **aucun** gestionnaire d'état (ni `flutter_riverpod`/`get`/`provider`)
+///   ni routeur — le widget **émet** la lettre choisie via
+///   [ZAlphabetIndexBar.onLetter] ; c'est l'appelant qui scrolle sa liste
+///   (aucun `ScrollController` interne) ;
+/// * jeu de lettres **injectable** ([kZDefaultAlphabet] par défaut, A→Z)
+///   pour d'autres alphabets/segments ;
+/// * distinction actif/inerte/courant **multi-canal** : la couleur (dérivée
+///   du `ColorScheme`, jamais de hex) n'est **jamais le seul canal** —
+///   l'état a11y `enabled`/`selected` et l'inactivité du geste
+///   (`onTap: null`) sont des canaux non-couleur (invariant AD-13) ;
 /// * cibles tactiles **≥ 48 dp**, `Semantics` explicites, mise en page
 ///   **directionnelle** (RTL-safe).
 library;
@@ -25,18 +26,18 @@ const double _kMinTouchTarget = 48;
 ///
 /// Défaut **neutre** (pas une chaîne métier) et injectable via
 /// [ZAlphabetIndexBar.letters] pour supporter d'autres alphabets ou des segments
-/// arbitraires (NFR-U5).
+/// arbitraires.
 final List<String> kZDefaultAlphabet = List<String>.unmodifiable(
   List<String>.generate(26, (i) => String.fromCharCode(65 + i)),
 );
 
 /// Index alphabétique vertical cliquable qui **notifie** la lettre choisie.
 ///
-/// Le widget ne possède **aucun** état de liste : au tap (ou au scrub vertical
+/// Le widget ne possède **aucun** état de liste: au tap (ou au scrub vertical
 /// si [enableScrub]) il invoque [onLetter] avec la lettre courante. Le
 /// défilement de la liste indexée est la responsabilité de l'appelant.
 class ZAlphabetIndexBar extends StatelessWidget {
-  /// Construit un index. [onLetter] est requis ; [letters] vaut
+  /// Construit un index. [onLetter] est requis; [letters] vaut
   /// [kZDefaultAlphabet] (A→Z) par défaut.
   const ZAlphabetIndexBar({
     required this.onLetter,
@@ -51,7 +52,7 @@ class ZAlphabetIndexBar extends StatelessWidget {
   final ValueChanged<String> onLetter;
 
   /// Ensemble des lettres **cliquables**. `null` ⇒ **toutes** actives (défaut
-  /// permissif sûr, AD-10) ; sinon une lettre est active ssi présente ici.
+  /// permissif sûr, AD-10); sinon une lettre est active ssi présente ici.
   final Set<String>? activeLetters;
 
   /// Lettre **courante** mise en évidence par un canal non-couleur additionnel
@@ -65,7 +66,7 @@ class ZAlphabetIndexBar extends StatelessWidget {
 
   /// Active le **scrub vertical** (glisser le long de l'index émet la lettre
   /// survolée, dé-dupliquée au changement). Prédicat strictement binaire
-  /// non extensible — **seule** exception `bool` tolérée (NFR-U7).
+  /// non extensible — **seule** exception `bool` tolérée.
   final bool enableScrub;
 
   /// Lettres effectivement rendues (repli sur [kZDefaultAlphabet]).
@@ -77,7 +78,7 @@ class ZAlphabetIndexBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _effectiveLetters;
-    // Défaut sûr (AD-10) : jamais de throw, un jeu vide ne rend rien.
+    // Défaut sûr (AD-10): jamais de throw, un jeu vide ne rend rien.
     if (items.isEmpty) return const SizedBox.shrink();
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -98,7 +99,7 @@ class ZAlphabetIndexBar extends StatelessWidget {
 
     if (!enableScrub) return column;
 
-    // Zone de scrub accessible : glisser verticalement émet la lettre survolée,
+    // Zone de scrub accessible: glisser verticalement émet la lettre survolée,
     // dé-dupliquée au changement (l'index reste une cible continue ≥ 48 dp large).
     return _ZAlphabetScrubDetector(
       letters: items,
@@ -109,7 +110,7 @@ class ZAlphabetIndexBar extends StatelessWidget {
   }
 }
 
-/// Une lettre de l'index : cible ≥ 48 dp, multi-canal, `Semantics` explicites.
+/// Une lettre de l'index: cible ≥ 48 dp, multi-canal, `Semantics` explicites.
 class _ZAlphabetLetter extends StatelessWidget {
   const _ZAlphabetLetter({
     required this.letter,
@@ -127,14 +128,14 @@ class _ZAlphabetLetter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Couleur DÉRIVÉE du ColorScheme (jamais de hex) :
-    // - courante/active → primary ;
+    // Couleur DÉRIVÉE du ColorScheme (jamais de hex):
+    // - courante/active → primary;
     // - inerte → onSurfaceVariant atténué (canal secondaire, jamais le seul).
     final Color color = active
         ? colorScheme.primary
         : colorScheme.onSurfaceVariant.withValues(alpha: 0.38);
 
-    // Canal NON-couleur pour la lettre courante : graisse + pastille de fond.
+    // Canal NON-couleur pour la lettre courante: graisse + pastille de fond.
     final TextStyle style = TextStyle(
       fontSize: 11,
       color: color,
@@ -160,13 +161,13 @@ class _ZAlphabetLetter extends StatelessWidget {
       enabled: active,
       selected: current,
       label: letter,
-      // Le nœud parent porte toute la sémantique ; on masque le doublon du texte.
+      // Le nœud parent porte toute la sémantique; on masque le doublon du texte.
       child: ExcludeSemantics(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
           // Cible tactile ≥ 48 dp en LARGEUR (colonne de scrub accessible,
-          // AD-13). La hauteur reste compacte : un index A→Z de 26 lettres à
+          // AD-13). La hauteur reste compacte: un index A→Z de 26 lettres à
           // 48 dp de haut dépasserait tout écran — la dimension tactile est la
           // largeur, la sélection verticale fine passe par le scrub.
           child: ConstrainedBox(
@@ -189,7 +190,7 @@ class _ZAlphabetLetter extends StatelessWidget {
   }
 }
 
-/// Détecteur de scrub vertical : mappe la position `dy` sur la lettre survolée
+/// Détecteur de scrub vertical: mappe la position `dy` sur la lettre survolée
 /// et émet [onLetter] uniquement au **changement** de lettre (dé-dupliqué).
 class _ZAlphabetScrubDetector extends StatefulWidget {
   const _ZAlphabetScrubDetector({

@@ -1,4 +1,4 @@
-/// `ZMarkdownReader` — **lecteur** rich-text NON éditable (DP-3, B4/AC1).
+/// `ZMarkdownReader` — **lecteur** rich-text NON éditable (B4).
 ///
 /// Rend une **valeur neutre** (Delta JSON) en lecture seule via un [QuillEditor]
 /// readOnly, SANS toolbar, SANS voie d'écriture. Réutilise les MÊMES embed
@@ -7,7 +7,7 @@
 /// voie `ctx`), et (b) comme APERÇU du mode `block` (avant ouverture du dialog).
 ///
 /// INVARIANTS (NON-NÉGOCIABLES) :
-/// - **AD-2/SM-1** : [QuillController] readOnly créé UNE FOIS en `initState`,
+/// - **AD-2** : [QuillController] readOnly créé UNE FOIS en `initState`
 ///   disposé en `dispose`, JAMAIS recréé au rebuild. **AUCUN** abonnement
 ///   `document.changes`, **AUCUN** `setValue`/`onChanged` : la voie de frappe
 ///   n'existe pas en lecture. Une nouvelle valeur EXTERNE ré-hydrate le document
@@ -16,7 +16,7 @@
 ///   optionnel ; AUCUN type Quill dans la signature publique.
 /// - **AD-10** : valeur absente/vide/corrompue → rendu VIDE propre (placeholder
 ///   discret), JAMAIS de throw.
-/// - **AD-13/FR-26** : directionnel, `Semantics` **lisible** (le contenu est
+/// - **AD-13** : directionnel, `Semantics` **lisible** (le contenu est
 ///   exposé au lecteur d'écran) mais SANS action d'édition ; couleurs issues du
 ///   thème injecté (repli `Theme.of`), zéro couleur codée en dur.
 library;
@@ -34,7 +34,7 @@ import '../domain/z_codec.dart';
 import 'z_rich_text_core.dart';
 import 'z_rich_text_style_set.dart';
 
-/// Habillage du [ZMarkdownReader] — CR-IFFD-73.
+/// Habillage du [ZMarkdownReader].
 ///
 /// Le lecteur a été écrit pour une **place de champ de formulaire** : cadre,
 /// rayon, `fieldPadding`. Ce chrome est juste là, et il reste le défaut. Il est
@@ -93,13 +93,13 @@ class ZMarkdownReader extends StatefulWidget {
   /// Texte affiché quand le contenu est vide (AD-10).
   final String placeholder;
 
-  /// Habillage du lecteur (CR-IFFD-73). Défaut [ZMarkdownReaderChrome.bordered]
+  /// Habillage du lecteur. Défaut [ZMarkdownReaderChrome.bordered]
   /// = rendu historique inchangé.
   final ZMarkdownReaderChrome chrome;
 
   /// Pose le nœud [Semantics] `readOnly` du lecteur (défaut `true` = historique).
   ///
-  /// 🔴 **Pourquoi c'est débrayable, et mesuré.** Un appelant qui annonce
+  /// **Pourquoi c'est débrayable, et mesuré.** Un appelant qui annonce
   /// DÉJÀ le contenu au-dessus — c'est le cas de `ZChatMessageTile`, qui pose
   /// un `Semantics` de message alimenté par `ZContentBlock.accessibleText` —
   /// ferait, sans ce drapeau, **deux** nœuds pour un seul contenu : le message
@@ -117,49 +117,49 @@ class ZMarkdownReader extends StatefulWidget {
   /// le vide ne change pas de taille en cours de route.
   final TextStyle? baseStyle;
 
-  /// Jeu de styles NEUTRE par champ (GAP-5) — mêmes slots qu'en édition,
+  /// Jeu de styles NEUTRE par champ — mêmes slots qu'en édition,
   /// appliqué PAR-DESSUS thème + [baseStyle]. `null` ⇒ rendu historique (AD-57).
   final ZRichTextStyleSet? styleSet;
 
-  /// Facteur d'échelle ABSOLU du texte rendu (GAP-7). `null` ⇒ échelle ambiante.
+  /// Facteur d'échelle ABSOLU du texte rendu. `null` ⇒ échelle ambiante.
   final double? textScaleFactor;
 
-  /// Rendu des formules par champ (GAP-7). `null` ⇒ rendu historique.
+  /// Rendu des formules par champ. `null` ⇒ rendu historique.
   final ZRichTextFormulaSpec? formulaSpec;
 
-  /// GAP-11 (opt-in) : un **appui long** sur le contenu copie la valeur au
+  /// (opt-in) : un **appui long** sur le contenu copie la valeur au
   /// presse-papier (parité legacy `edition_screen:1293-1300`).
   ///
   /// Charge copiée : la valeur ENCODÉE par le codec du lecteur — un
   /// `ZMarkdownCodec` copie donc le **string Markdown** (comportement legacy) ;
   /// un codec dont l'encodage n'est pas un `String` (ex. `ZDeltaCodec`) copie
-  /// le Delta JSON sérialisé. ⚠️ Mesuré : le long-press de SÉLECTION de
+  /// le Delta JSON sérialisé. Mesuré : le long-press de SÉLECTION de
   /// l'éditeur (enfant) gagne l'arène gestuelle sur un `GestureDetector`
   /// parent — l'opt-in **désactive donc la sélection interactive** du lecteur,
   /// exactement l'articulation legacy (lecteur non sélectionnable, appui long
   /// = tout copier). Défaut `false` ⇒ rendu ET gestes historiques inchangés.
   final bool copyOnLongPress;
 
-  /// GAP-11 : libellé du retour (SnackBar via `ScaffoldMessenger.maybeOf`)
+  /// libellé du retour (SnackBar via `ScaffoldMessenger.maybeOf`)
   /// après copie — INJECTÉ par l'hôte (l10n chez lui, aucun libellé en dur
   /// ici). `null` OU messenger absent ⇒ copie **silencieuse** (aucun crash).
   final String? copiedFeedbackText;
 
-  /// GAP-11 : libellé `Semantics` du geste de copie (hint annoncé au lecteur
+  /// libellé `Semantics` du geste de copie (hint annoncé au lecteur
   /// d'écran). `null` ⇒ l'action long-press reste exposée, annoncée par le
   /// système (localisé), sans hint supplémentaire.
   final String? copySemanticsLabel;
 
-  /// GAP-12 (opt-in) : constructeur d'état vide ENTIÈREMENT custom — prioritaire
+  /// (opt-in) : constructeur d'état vide ENTIÈREMENT custom — prioritaire
   /// sur [emptyIcon]/[emptySubtitle]. `null` (et icône/sous-titre `null`) ⇒
   /// état vide historique STRICTEMENT inchangé ([placeholder] seul).
   final WidgetBuilder? emptyBuilder;
 
-  /// GAP-12 (opt-in) : icône de l'état vide enrichi (parité legacy
+  /// (opt-in) : icône de l'état vide enrichi (parité legacy
   /// `notes_rounded`, `mef:386` — l'ICÔNE est choisie par l'hôte, rien d'imposé).
   final IconData? emptyIcon;
 
-  /// GAP-12 (opt-in) : seconde ligne de l'état vide enrichi (sous le
+  /// (opt-in) : seconde ligne de l'état vide enrichi (sous le
   /// [placeholder]) — libellé INJECTÉ par l'hôte (aucun texte en dur ici).
   final String? emptySubtitle;
 
@@ -176,7 +176,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
   late final ScrollController _scroll;
 
   /// `FocusNode` NON focusable (lecture seule) — requis par [QuillEditor] mais
-  /// ne prend jamais le focus clavier ni la traversée (AC1). Créé UNE FOIS.
+  /// ne prend jamais le focus clavier ni la traversée. Créé UNE FOIS.
   late final FocusNode _focus;
 
   /// Codec de normalisation de l'entrée (résolu UNE FOIS).
@@ -191,7 +191,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     _codec = widget.codec ?? const ZDeltaCodec();
     final ops = _codec.decode(widget.value);
     final document = DeltaNeutralOps.decodeDefensiveDocument(ops);
-    // readOnly: true ⇒ le controller REJETTE toute mutation (AC1) ; aucun
+    // readOnly: true ⇒ le controller REJETTE toute mutation ; aucun
     // abonnement `document.changes` n'est posé (voie de frappe absente).
     _quill = QuillController(
       document: document,
@@ -231,7 +231,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     return plain.isEmpty;
   }
 
-  /// GAP-11 : copie la valeur ENCODÉE (codec du lecteur) au presse-papier,
+  /// copie la valeur ENCODÉE (codec du lecteur) au presse-papier,
   /// puis retour opt-in — SnackBar seulement si un libellé est INJECTÉ **et**
   /// qu'un `ScaffoldMessenger` est monté ; sinon copie silencieuse (AD-10 :
   /// jamais de crash faute de canal de notification).
@@ -247,7 +247,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
         ?.showSnackBar(SnackBar(content: Text(feedback)));
   }
 
-  /// GAP-12 : état vide — historique STRICT quand aucun paramètre d'état vide
+  /// état vide — historique STRICT quand aucun paramètre d'état vide
   /// n'est fourni ; enrichi (icône + deux lignes) ou builder custom sinon.
   Widget _buildEmptyState(BuildContext context, EdgeInsetsGeometry pad) {
     final WidgetBuilder? builder = widget.emptyBuilder;
@@ -271,7 +271,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
       );
     }
     // Enrichi (opt-in) : icône + [placeholder] + sous-titre, centrés —
-    // couleurs issues des RÔLES du thème (FR-26, zéro couleur en dur).
+    // couleurs issues des RÔLES du thème (zéro couleur en dur).
     final Color muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return Padding(
       padding: pad,
@@ -311,20 +311,20 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     final borderColor =
         zTheme.fieldBorderColor ?? Theme.of(context).colorScheme.outline;
 
-    // CR-IFFD-73 : `none` retire cadre ET padding — l'appelant habille.
+    // `none` retire cadre ET padding — l'appelant habille.
     final bool chromeless = widget.chrome == ZMarkdownReaderChrome.none;
     final EdgeInsetsGeometry pad = chromeless
         ? EdgeInsetsDirectional.zero
         : zTheme.fieldPadding;
 
     final Widget content = _isEmpty
-        // GAP-12 : historique STRICT sans paramètre ; enrichi/builder opt-in.
+        // historique STRICT sans paramètre ; enrichi/builder opt-in.
         ? _buildEmptyState(context, pad)
         : Padding(
             padding: pad,
             child: zWrapRichTextContent(
               context,
-              // GAP-7 : échelle/formules par champ — `null` ⇒ aucun wrapper.
+              // échelle/formules par champ — `null` ⇒ aucun wrapper.
               textScaleFactor: widget.textScaleFactor,
               formulaSpec: widget.formulaSpec,
               QuillEditor(
@@ -337,20 +337,20 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 padding: EdgeInsetsDirectional.zero,
                 // Autorise la sélection/copie (lecture) mais AUCUNE saisie
                 // (controller readOnly). MÊMES embed builders qu'en édition.
-                // GAP-11 : l'opt-in `copyOnLongPress` DÉSACTIVE la sélection
+                // l'opt-in `copyOnLongPress` DÉSACTIVE la sélection
                 // interactive — mesuré, le recognizer long-press de sélection
                 // (enfant) gagnerait sinon l'arène sur le geste de copie.
                 enableInteractiveSelection: !widget.copyOnLongPress,
                 showCursor: false,
                 embedBuilders: kZEmbedBuilders,
-                // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+                // (AD-10) : repli TOTAL. Sans lui, un type
                 // d'embed inconnu — d'un hôte, d'une version future, ou né
                 // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
                 // BUILD, donc irrattrapable : écran rouge, puis cascade de
                 // `RenderErrorBox`. Mesuré sur `divider`.
                 unknownEmbedBuilder: kZUnknownEmbedBuilder,
-                  // MIN-1 : styles de titres dérivés du thème (FR-26).
-                  // GAP-5 : jeu de styles par champ fusionné par-dessus.
+                  // styles de titres dérivés du thème.
+                  // jeu de styles par champ fusionné par-dessus.
                   customStyles: zQuillThemedStyles(
                     context,
                     baseStyle: widget.baseStyle,
@@ -361,7 +361,7 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
             ),
           );
 
-    // GAP-11 (opt-in) : appui long = copie du contenu + retour. Jamais sur
+    // (opt-in) : appui long = copie du contenu + retour. Jamais sur
     // l'état vide (parité legacy : le geste n'existe que s'il y a un contenu).
     Widget gestured = content;
     if (widget.copyOnLongPress && !_isEmpty) {

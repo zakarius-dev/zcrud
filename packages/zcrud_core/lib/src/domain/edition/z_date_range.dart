@@ -1,15 +1,14 @@
-/// Type-valeur **plage de dates** `ZDateRange{start, end}` (AD-47).
+/// Type-valeur **plage de dates** `ZDateRange{start, end}`.
 ///
-/// origine: parité DODLP « champ plage de dates » (`dateRange`) — un couple
-/// `start`/`end` sérialisé `{start, end}` en **ISO-8601**, avec l'invariant
-/// **`end >= start`** (une plage inversée n'est jamais construite/retournée
-/// valide).
+/// Un couple `start`/`end` sérialisé `{start, end}` en **ISO-8601**, avec
+/// l'invariant **`end >= start`** (une plage inversée n'est jamais
+/// construite/retournée valide).
 ///
-/// **Domaine PUR-DART** (Flutter-free — garde `domain_purity_test.dart`) : ce
-/// type vit sous `lib/src/domain/edition/` et n'importe **aucun** SDK Flutter.
-/// La (dé)sérialisation défensive (AD-10) réutilise la brique [ZExtension.guard]
-/// (`fromJsonSafe` → `null` sur TOUTE anomalie, jamais de throw ; le parent
-/// survit toujours).
+/// **Domaine pur-Dart** (Flutter-free) : ce type vit sous
+/// `lib/src/domain/edition/` et n'importe **aucun** SDK Flutter. La
+/// (dé)sérialisation défensive (invariant AD-10) réutilise la brique
+/// [ZExtension.guard] (`fromJsonSafe` → `null` sur TOUTE anomalie, jamais de
+/// throw ; le parent survit toujours).
 library;
 
 import '../extension/z_extension.dart';

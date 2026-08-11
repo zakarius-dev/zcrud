@@ -1,14 +1,13 @@
-/// Port **additionnel** de contrôle des fermetures IMPLICITES (CR
-/// chrome-presentation-aware) — [ZImplicitDismissControl].
+/// Port **additionnel** de contrôle des fermetures IMPLICITES —
+/// [ZImplicitDismissControl].
 ///
-/// ## Le défaut mesuré (Flutter 3.44.4, 2026-08-09)
+/// ## Le défaut mesuré
 ///
 /// `ZDiscardGuard` (`zcrud_core`) est un `PopScope`. Or **`PopScope` n'est
 /// consulté que par `Navigator.maybePop`** (bouton retour, geste système, tap
 /// sur la barrière modale), **jamais par `Navigator.pop`**. Et
 /// `showModalBottomSheet` ferme la feuille **par glissement** via
-/// `BottomSheet.onClosing → Navigator.pop(context)`
-/// (`packages/flutter/lib/src/material/bottom_sheet.dart`).
+/// `BottomSheet.onClosing → Navigator.pop(context)`.
 ///
 /// Mesuré en test widget, feuille *dirty* + `ZDiscardGuard` monté :
 ///
@@ -21,23 +20,16 @@
 /// Aucun widget placé *dans* la feuille ne peut intercepter cette voie : la
 /// décision appartient à la **route**, donc au **presenter**.
 ///
-/// ## Pourquoi un port SÉPARÉ (AD-4, et pas une signature élargie)
+/// ## Pourquoi un port SÉPARÉ (invariant AD-4, et pas une signature élargie)
 ///
 /// Ajouter un paramètre nommé à `ZFormPresenter.present` **casserait** toute
-/// implémentation externe : au moment de l'introduction de ce port,
-/// `ZGetFormPresenter` (`zcrud_get`) faisait `implements ZFormPresenter` et
-/// n'aurait plus compilé. Le contrôle est donc offert par une **interface
-/// additionnelle et optionnelle** : `presentEdition` la teste
-/// (`is ZImplicitDismissControl`) et retombe silencieusement sur
-/// `ZFormPresenter.present` quand le presenter ne l'implémente pas (AD-10 :
-/// repli, jamais d'exception).
-///
-/// ✅ **État réel au 2026-08-09** (mesuré sur disque, pas supposé) :
-/// `packages/zcrud_get/lib/src/presentation/z_get_form_presenter.dart` déclare
-/// `class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl`
-/// — le présentateur GetX a **adopté** ce port. Le repli AD-10 ci-dessus reste
-/// la voie de tout presenter tiers qui ne l'implémenterait pas ; il n'est plus
-/// la voie de `zcrud_get`.
+/// implémentation externe déjà écrite contre la signature d'origine. Le
+/// contrôle est donc offert par une **interface additionnelle et
+/// optionnelle** : `presentEdition` la teste (`is ZImplicitDismissControl`)
+/// et retombe silencieusement sur `ZFormPresenter.present` quand le
+/// presenter ne l'implémente pas (invariant AD-10 : repli, jamais
+/// d'exception). `ZGetFormPresenter` (`zcrud_get`) implémente ce port ; le
+/// repli reste la voie de tout presenter tiers qui ne l'implémenterait pas.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -62,21 +54,20 @@ abstract interface class ZImplicitDismissControl {
   ///   par `PopScope`) — le neutraliser aussi retirerait une voie de sortie
   ///   parfaitement sûre, ce qui serait une régression d'ergonomie.
   ///
-  /// [sheetFrame] (CR-IFFD-SHEET, 2026-08-09) surcharge **par paramètre** la
-  /// feuille contrainte et encadrée (cf. `z_sheet_frame.dart`). `null` ⇒ le
-  /// maillon suivant décide (jetons `ZcrudTheme.editionSheet*`, puis
-  /// `ZSheetFrameReference`) — **ce n'est donc PAS « pas de cadre »** : le
-  /// défaut du socle encadre. Pour ne pas encadrer, il faut le **dire** :
+  /// [sheetFrame] surcharge **par paramètre** la feuille contrainte et
+  /// encadrée (cf. `z_sheet_frame.dart`). `null` ⇒ le maillon suivant décide
+  /// (jetons `ZcrudTheme.editionSheet*`, puis `ZSheetFrameReference`) — **ce
+  /// n'est donc PAS « pas de cadre »** : le défaut du socle encadre. Pour ne
+  /// pas encadrer, il faut le **dire** :
   /// `sheetFrame: ZSheetFrameSpec(mode: ZSheetFrameMode.never)`.
   ///
-  /// ⚠️ **Changement de signature** de ce port (introduit la veille, aucun
-  /// implémenteur hors `ZAdaptivePresenter` — grep négatif au rapport de CR).
   /// Paramètre **nommé et optionnel** : aucun appelant existant ne casse ; une
-  /// implémentation externe devrait ajouter le paramètre.
+  /// implémentation externe qui adopte ce port ajoute simplement le
+  /// paramètre.
   ///
-  /// ## [isDismissible] — INTERDIRE le renoncement (CR-IFFD-78, ②)
+  /// ## [isDismissible] — INTERDIRE le renoncement
   ///
-  /// 🔴 Ne pas confondre avec [allowImplicitDismiss] : **ce sont deux
+  /// Ne pas confondre avec [allowImplicitDismiss] : **ce sont deux
   /// intentions opposées, et elles se composent sans se contredire.**
   ///
   /// | Réglage | Voie visée | Intention |
@@ -89,8 +80,8 @@ abstract interface class ZImplicitDismissControl {
   /// * `allowImplicitDismiss: false` seul (ce que pose un `ZEditionChrome` qui
   ///   garde l'abandon) ⇒ glissement mort, **tap barrière vivant** et passant
   ///   par `Navigator.maybePop`, donc par le garde d'abandon : l'utilisateur
-  ///   peut renoncer, on lui demande confirmation. C'est le choix délibéré du
-  ///   lot v0.60.0, et il est **inchangé**.
+  ///   peut renoncer, on lui demande confirmation. C'est le comportement par
+  ///   défaut, **inchangé**.
   /// * `isDismissible: false` seul ⇒ glissement vivant (et **non gardé** :
   ///   `BottomSheet.onClosing` appelle `Navigator.pop`), barrière morte. Un
   ///   hôte qui coupe la barrière **sans** couper le glissement se retire la
@@ -98,14 +89,14 @@ abstract interface class ZImplicitDismissControl {
   /// * les deux à `false` ⇒ **aucune** sortie implicite : ni glissement, ni
   ///   barrière. La seule sortie est celle que le contenu offre (bouton
   ///   « Annuler », `Navigator.pop`). C'est la voie « interdire le
-  ///   renoncement » demandée par la CR ; elle **n'annule pas** le garde
-  ///   d'abandon, elle le rend sans objet sur ces deux voies — mesuré :
-  ///   le seam de confirmation n'est appelé sur aucune des deux.
+  ///   renoncement » ; elle **n'annule pas** le garde d'abandon, elle le rend
+  ///   sans objet sur ces deux voies — mesuré : le seam de confirmation
+  ///   n'est appelé sur aucune des deux.
   ///
   /// Défaut `true` ⇒ **comportement d'aujourd'hui strictement conservé**
   /// (barrière fermante), pour tout hôte passif.
   ///
-  /// ⚠️ Portée : mode **`sheet`** uniquement. En `dialog`, la barrière se règle
+  /// Portée : mode **`sheet`** uniquement. En `dialog`, la barrière se règle
   /// par [barrierDismissible] (un second canal pour la même propriété serait le
   /// motif de divergence que ce dépôt s'interdit) ; en `page`, il n'y a pas de
   /// barrière. Ces deux inerties sont **mesurées** par la matrice de paramètres

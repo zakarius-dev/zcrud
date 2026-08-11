@@ -1,81 +1,48 @@
-/// Note intelligente `ZSmartNote` (ES-2.2, **FR-S5**) — **contenu PARTAGEABLE**
-/// à **contenu TYPÉ**.
+/// Note intelligente à **contenu partageable** et **contenu typé**.
 ///
-/// origine: lex_core (module « Étude ») — `entities/education/smart_note.dart`
-/// (canonique retenu, **D1** : `SmartNoteModel` d'IFFD **importe
-/// `cloud_firestore`** l. 1 et hérite de `FolderContentModel`, qui décode des
-/// `Timestamp` — violation frontale de NFR-S3/SM-S5. **IFFD est un cas de
-/// MIGRATION (ES-11.2), jamais une source de forme.**)
+/// ## Invariant AD-28 — le contenu est TYPÉ, jamais une `String` ambiguë
 ///
-/// ## 🔴 AD-28 / D3 — `content` est TYPÉ. L'ambiguïté est STRUCTURELLEMENT
-/// IMPOSSIBLE.
+/// [content] est une `List<Map<String, dynamic>>` (ops Delta neutres), jamais
+/// une `String` dont le format (markdown ou Delta JSON) devrait être deviné à
+/// la lecture : le type porte le format par construction, aucune heuristique
+/// textuelle n'est nécessaire pour interpréter le corps d'une note. La
+/// coercition défensive d'un corpus historique (une `String` markdown, un
+/// Delta déjà sérialisé, une valeur corrompue) vit dans
+/// [normalizeNoteContentOps] : une `String` non-Delta survit VERBATIM, jamais
+/// réduite à `[]`.
 ///
-/// lex persiste `content` en **`String` markdown** (*« Contenu (markdown) »*).
-/// IFFD persiste `content` en `String?` qui est **tantôt du Delta JSON, tantôt du
-/// markdown** — et le désambiguïse par une **heuristique textuelle** répétée
-/// **VERBATIM en 4 sites** :
+/// Le pont avec `zcrud_markdown` est une **identité, sans conversion** : la
+/// valeur neutre attendue par `ZCodec`/`ZMarkdownField` est exactement
+/// `List<Map<String, dynamic>>`, donc `note.content` se branche directement
+/// sur l'éditeur sans transformation.
 ///
-/// ```dart
-/// if (trimmedValue.startsWith('[') && trimmedValue.contains('"insert"')) { … }
-/// // rich_text_editor_screen.dart:206 · :607 · delta_to_markdown_helper.dart:39
-/// // · editors/markdown_edition_field.dart:68
-/// ```
+/// ## Invariant AD-19/AD-16 — pas d'horodatage de synchronisation inline
 ///
-/// [content] est ici une **`List<Map<String, dynamic>>`** (ops Delta neutres) :
-/// **le TYPE dit le format**. Le *Prevents* d'AD-28 est tenu **par
-/// construction**, pas par convention — plus aucune regex ne peut se disperser
-/// dans l'UI. La coercition défensive du corpus legacy vit dans
-/// [normalizeNoteContentOps] (**D5** : une `String` non-Delta **survit
-/// VERBATIM** ; **jamais `[]`**), et sa détection est **STRUCTURELLE**.
+/// `ZSmartNote` ne déclare **ni `updatedAt` ni `isDeleted`** : l'autorité
+/// Last-Write-Wins et le soft-delete vivent HORS-ENTITÉ, dans `ZSyncMeta`, qui
+/// est écrite APRÈS le corps à chaque écriture — un champ métier logé sous une
+/// de ces clés réservées serait écrasé silencieusement. [createdAt] est
+/// conservé : sa clé `created_at` est distincte de toute clé réservée. Aucun
+/// `edited_at` n'est introduit : aucune source canonique n'expose de
+/// « dernière édition » distincte de l'horodatage de synchronisation.
 ///
-/// **Pont avec `zcrud_markdown` = IDENTITÉ, aucune conversion** : la « valeur
-/// neutre » de `ZCodec`/`ZMarkdownField` **EST** `List<Map<String, dynamic>>` ⇒
-/// ES-6.1 branchera `note.content` sur l'éditeur **sans transformer quoi que ce
-/// soit**. C'est pourquoi ce package **ne dépend PAS** de `zcrud_markdown` (D4 —
-/// prescription de l'epic **invalidée** : c'est un package **Flutter/Quill**).
+/// ## Audio : hors-schéma
 ///
-/// ## 🔴 AD-19 / D2 — `updatedAt` SUPPRIMÉ (le piège R-C, **réalisé DANS LA
-/// SOURCE**)
+/// Aucun champ `audioUrl`/`audioPath`/`audioTextHash` sur l'entité : l'audio
+/// vit soit dans [extra] (sans code dédié), soit dans le slot typé
+/// [extension] (`ZNoteAudio`, injecté via `extensionParser`). Une note sans
+/// audio se désérialise sur son défaut — `extension == null`, jamais un throw.
 ///
-/// lex déclare `final DateTime updatedAt;` **inline** (l. 42) **et** son
-/// `smart_notes_repository.dart` (l. 12-16) **avoue** maintenir « à la main »
-/// **DEUX copies** de la même clé : *« LWW `updated_at` hors-entité … bumpée à
-/// chaque mutation et **maintenue cohérente avec le champ `updatedAt` de
-/// `SmartNote`** »*. Dans zcrud, le store écrit `ZSyncMeta` **APRÈS** le corps à
-/// chaque `put` (`hive_z_local_store._encode`,
-/// `firebase_z_repository_impl._encode`) ⇒ un champ métier logé sous une clé
-/// réservée est **ÉCRASÉ SILENCIEUSEMENT**, sans erreur ni test rouge.
+/// ## La voie registre ne type pas le slot `extension`
 ///
-/// ⇒ `ZSmartNote` ne déclare **NI `updatedAt` NI `isDeleted`**. L'autorité LWW et
-/// le soft-delete vivent **HORS-ENTITÉ** (`ZSyncMeta`, AD-16/AD-19).
-/// [createdAt] est **conservé** : sa clé `created_at` est **DISTINCTE** de toute
-/// clé réservée (précédents : `ZStudyDocument.createdAt`,
-/// `ZStudyFolder.archivedAt`). **Aucun `edited_at` n'est inventé** : aucune source
-/// (lex ni IFFD) n'expose une « dernière édition » **distincte** de l'horodatage
-/// de sync.
-///
-/// ## Audio : HORS-SCHÉMA (FR-S5 / D6)
-///
-/// Aucun champ `audioUrl`/`audioPath`/`audioTextHash` ici : l'audio vit en
-/// [extra] (top-level legacy, zéro code) **ou** dans le slot typé [extension]
-/// (`ZNoteAudio`, injectable via `extensionParser`). Une note **sans audio** se
-/// désérialise **sur le défaut** — `extension == null`, jamais un throw.
-///
-/// ## ⛔ DW-ES14-2 — la voie REGISTRE ne sait pas TYPER le slot `extension`
-///
-/// `ZNoteAudio` est la **PREMIÈRE `ZExtension` concrète du repo** ⇒ elle
-/// **FALSIFIE** la clause d'échappement n°1 de **DW-ES14-2** (*« `fromRegistry`
-/// reste utilisable si — et seulement si — l'entité **n'utilise pas** le slot
-/// `extension` »*). `ZcrudRegistry` n'offre **aucun slot d'injection** : il appelle
-/// `ZSmartNote.fromMap(map)` **sans `extensionParser`**.
-///
-/// - **Donnée** : ✅ **PRÉSERVÉE** depuis la remédiation MAJEUR-1/MAJEUR-2 — le
-///   payload non typé est porté par [ZOpaqueNoteExtension] et **réémis verbatim**
-///   (avant : `extension == null` ⇒ **clé omise par `toMap()`** ⇒ **slot audio
-///   EFFACÉ du store au premier `put`, irréversiblement**).
-/// - **Type** : ⛔ **TOUJOURS PERDU** sur cette voie (`extension is! ZNoteAudio`) —
-///   le correctif de fond écrit **`zcrud_core`** (**D9** ⇒ hors périmètre).
-///   **Épinglé en machine** (`z_smart_note_test.dart` › groupe `DW-ES14-2`).
+/// `ZNoteAudio` est la première `ZExtension` concrète de ce paquet : la
+/// désérialisation via `ZcrudRegistry` (qui appelle [ZSmartNote.fromMap] SANS
+/// `extensionParser`) ne type donc jamais ce slot. La DONNÉE reste préservée
+/// — le payload non typé est porté par [ZOpaqueNoteExtension] et réémis
+/// verbatim — mais le TYPE est perdu sur cette voie (`extension is!
+/// ZNoteAudio`). Pour obtenir une instance typée, construire l'entité par
+/// [ZSmartNote.fromMap] en passant explicitement `extensionParser:
+/// ZNoteAudio.fromJsonSafe`.
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -95,13 +62,13 @@ part 'z_smart_note.g.dart';
 typedef ZSmartNoteExtensionParser = ZExtension? Function(
     Map<String, dynamic> json);
 
-/// Clé persistée du canal **HORS-CODEGEN** `content` (**D3**).
+/// Clé persistée du canal **HORS-CODEGEN** `content`.
 ///
 /// Déclarée **une seule fois** (patron `kLearningKey`), consommée par
 /// [ZSmartNote.fromMap], [ZSmartNote.toMap] **et** [ZSmartNote._reservedKeys] :
 /// **zéro littéral dupliqué**.
 ///
-/// ⚠️ Elle **DOIT** rester le **snake_case du nom de champ** (`content` →
+/// Elle **DOIT** rester le **snake_case du nom de champ** (`content` →
 /// `content`) : c'est la **contrainte normative** de la règle **(g1)** du gate —
 /// une clé non dérivable serait un canal que la machine ne peut pas garder.
 const String kContentKey = 'content';
@@ -111,14 +78,14 @@ const String kContentKey = 'content';
 class ZSmartNote extends ZEntity with ZExtensible {
   /// Construit une note (primitif `const`).
   ///
-  /// ⛔ **AUCUN `assert` ici, volontairement** (AC9) : le décodeur **généré**
+  /// ⛔ **AUCUN `assert` ici, volontairement** : le décodeur **généré**
   /// (`_$ZSmartNoteFromMap`) appelle ce constructeur avec les valeurs **BRUTES**
   /// de la map persistée. Un `assert` y ferait **échouer la désérialisation d'une
   /// donnée corrompue** — **violation frontale d'AD-10**. Les gardes de valeur
   /// vivent **exclusivement aux frontières** [fromMap] / [copyWith], et elles y
-  /// sont **la MÊME fonction nommée** ([normalizeNoteContentOps]) — leçon **H2**
-  /// d'ES-2.1, où `ZStudyDocument.copyWith` **rouvrait** l'invariant que `fromMap`
-  /// fermait, alors que la dartdoc promettait « jamais négative ».
+  /// sont **la MÊME fonction nommée** ([normalizeNoteContentOps]) — sans quoi
+  /// `copyWith` pourrait rouvrir l'invariant que `fromMap` ferme, alors que la
+  /// dartdoc promettrait « jamais négative ».
   const ZSmartNote({
     this.id,
     this.folderId = '',
@@ -128,10 +95,10 @@ class ZSmartNote extends ZEntity with ZExtensible {
     this.createdAt,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
-    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
+    // Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
     // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or les slots bruts
     // DOIVENT rester privés — ce sont les ACCESSEURS qui portent les gardes (le
-    // `extra` normalisant ES-2.2b, la vue immuable PROFONDE `content` DW-ES24-1).
+    // `extra` normalisant, la vue immuable PROFONDE `content` ).
     // ignore: prefer_initializing_formals
   })  : _content = content,
         // ignore: prefer_initializing_formals
@@ -144,12 +111,12 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// (défauts sûrs : `folder_id`/`title` absents ou non-`String` → `''` ;
   /// `sub_folder_id` illisible → `null` ; `created_at` illisible → `null`), **puis
   /// câble les canaux HORS-CODEGEN** :
-  /// - 🔴 [content] (**D3/D5**) via [normalizeNoteContentOps] — une `String`
+  /// [content] via [normalizeNoteContentOps] — une `String`
   ///   markdown legacy **survit VERBATIM**, **jamais** `[]` ;
   /// - [extension] via [extensionParser] (repli `null`) ;
   /// - [extra] = clés **non réservées** de la map (round-trip AD-4).
   ///
-  /// ⚠️ Corps **NON NU** obligatoire (`ZExtensible`) : une délégation nue à
+  /// Corps **NON NU** obligatoire (`ZExtensible`) : une délégation nue à
   /// `_$ZSmartNoteFromMap` laisserait `extra` **VIDE** — le **build la REFUSE**
   /// (`_rejectNakedCodegenDelegation`) et le garde runtime
   /// `_$zRequireExtraPreserved` émis dans le `.g.dart` **lèverait à
@@ -164,7 +131,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
       folderId: base.folderId,
       subFolderId: base.subFolderId,
       title: base.title,
-      // 🔴 CANAL HORS-CODEGEN (D3) — la MÊME garde qu'en `copyWith` (H2).
+      // CANAL HORS-CODEGEN — la MÊME garde qu'en `copyWith`.
       content: normalizeNoteContentOps(map[kContentKey]),
       createdAt: base.createdAt,
       extension: _decodeExtension(map['extension'], extensionParser),
@@ -173,15 +140,15 @@ class ZSmartNote extends ZEntity with ZExtensible {
   }
 
   /// Identité opaque (`null` pour l'éphémère — **jamais attribuée par l'entité** ;
-  /// la matérialisation est au repository, ES-3). AD-14.
+  /// la matérialisation est au repository). Invariant AD-14.
   @override
   @ZcrudId()
   final String? id;
 
   /// Dossier d'appartenance — **clé NEUTRE `String`** (défaut `''`).
   ///
-  /// ⚠️ **Aucun symbole de `zcrud_study_kernel` n'est importé** (D7, leçon **L2**
-  /// d'ES-2.1 : « dépendance DÉCLARÉE, aucun import ») — exactement comme
+  /// **Aucun symbole de `zcrud_study_kernel` n'est importé** (leçon **L2**
+  /// « dépendance DÉCLARÉE, aucun import ») — exactement comme
   /// `ZFlashcard.folderId` et `zcrud_mindmap`.
   @ZcrudField()
   final String folderId;
@@ -194,8 +161,8 @@ class ZSmartNote extends ZEntity with ZExtensible {
   @ZcrudField(label: 'Titre')
   final String title;
 
-  /// 🔴 **Corps de la note — ops Delta NEUTRES** (`List<Map<String, dynamic>>`),
-  /// **CANAL HORS-CODEGEN** (D3), défaut `[]`.
+  /// **Corps de la note — ops Delta NEUTRES** (`List<Map<String, dynamic>>`),
+  /// **CANAL HORS-CODEGEN**, défaut `[]`.
   ///
   /// **Pourquoi hors-codegen** : le générateur ne supporte **aucun type `Map`**
   /// (`_classify` : `List<T>` récurse sur `T`, et `Map` n'a **aucune branche`) ⇒
@@ -206,15 +173,15 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// **en double** par [toMap], cassant l'`==` entre une note en mémoire et la
   /// même relue du store.
   ///
-  /// 🟡 **Conséquence assumée (D11)** : un canal hors-codegen ne produit **aucun
+  /// **Conséquence assumée** : un canal hors-codegen ne produit **aucun
   /// `ZFieldSpec`** ⇒ `content` **n'apparaîtra PAS** dans un formulaire
   /// `DynamicEdition` **généré**. **Ce n'est pas un oubli** — c'est déjà le cas de
   /// `ZFlashcard.source` et `ZDocumentReadingState.learning`. L'éditeur de note
-  /// (**ES-6.1**) ajoutera son `ZMarkdownField` **explicitement**, câblé sur
-  /// `note.content` — **sans conversion** (la valeur neutre de `ZCodec` **EST** ce
-  /// type).
+  /// (`ZSmartNoteEditor`) ajoute son `ZMarkdownField` **explicitement**, câblé
+  /// sur `note.content` — **sans conversion** (la valeur neutre de `ZCodec`
+  /// **EST** ce type).
   ///
-  /// 🔴 **NON MODIFIABLE en PROFONDEUR INCONDITIONNELLEMENT** (DW-ES24-1) :
+  /// **NON MODIFIABLE en PROFONDEUR INCONDITIONNELLEMENT** :
   /// l'accesseur rend une vue `unmodifiable` de la liste, de **chaque op** ET de
   /// ses valeurs imbriquées — muter l'une d'elles lève `UnsupportedError`, **même**
   /// sur une instance née du ctor `const` invoqué non-`const`. Le slot STOCKÉ
@@ -229,7 +196,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
   ///
   /// ⛔ Il n'y a **volontairement AUCUN** `updatedAt` ici : la clé LWW est
   /// **hors-entité** (`ZSyncMeta.updatedAt`) — cf. la dartdoc de bibliothèque
-  /// (AD-19 / D2). Le porter — comme lex le fait — le ferait **écraser
+  /// (AD-19). Le porter — comme lex le fait — le ferait **écraser
   /// silencieusement** par le store à chaque `put`.
   @ZcrudField()
   final DateTime? createdAt;
@@ -239,36 +206,36 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// Trois états possibles (**et un seul rend `null`**) :
   /// - **`null`** ⇒ la clé `extension` est **absente** du store, ou son payload
   ///   n'est **pas une `Map`** (rien de structuré à préserver) ;
-  /// - **`ZNoteAudio`** (D6) ⇒ un `extensionParser` a été **injecté** dans
+  /// - **`ZNoteAudio`** ⇒ un `extensionParser` a été **injecté** dans
   ///   [fromMap] **et** a su typer le payload ;
-  /// - 🔴 **[ZOpaqueNoteExtension]** ⇒ le payload est une `Map` que **rien n'a su
-  ///   typer** : aucun parser injecté (**voie du REGISTRE** — DW-ES14-2) ou
-  ///   **version future/non gérée** (MAJEUR-2). Le payload est **PORTÉ VERBATIM**
+  /// - **[ZOpaqueNoteExtension]** ⇒ le payload est une `Map` que **rien n'a su
+  /// typer** : aucun parser injecté (**voie du REGISTRE**) ou
+  ///   **version future/non gérée** . Le payload est **PORTÉ VERBATIM**
   ///   et **RÉÉMIS À L'IDENTIQUE** par [toMap] — il n'est **PLUS DÉTRUIT**.
   ///
-  /// ## ⛔ DW-ES14-2 — CE QUE LE STORE NE SAIT TOUJOURS PAS FAIRE
+  /// ## ⛔ — CE QUE LE STORE NE SAIT TOUJOURS PAS FAIRE
   ///
   /// `ZcrudRegistry`/`FirebaseZRepositoryImpl.fromRegistry` appellent
   /// `ZSmartNote.fromMap(map)` **TOUT COURT** : **aucun slot d'injection** de
-  /// parser n'existe (le correctif est dans **`zcrud_core`** ⇒ hors périmètre
-  /// ES-2.2, **D9**). ⇒ Sur cette voie, `extension` est **TOUJOURS** une
+  /// parser n'existe (le correctif reste dans `zcrud_core`, hors périmètre
+  /// ici). ⇒ Sur cette voie, `extension` est **TOUJOURS** une
   /// [ZOpaqueNoteExtension], **jamais** un `ZNoteAudio` : **la donnée survit, le
   /// TYPE ne revient pas** — l'app **ne peut pas s'en servir**.
   ///
   /// ⇒ Pour **utiliser** l'audio, câbler l'entité par le **constructeur nominal**
   /// avec `extensionParser: ZNoteAudio.fromJsonSafe`. La perte fonctionnelle est
-  /// **épinglée en machine** (`z_smart_note_test.dart` › groupe `DW-ES14-2`) et la
-  /// dette est **escaladée** (`architecture.md` § Deferred) : **`ZNoteAudio`
-  /// FALSIFIE la clause d'échappement n°1 de DW-ES14-2** (*« l'entité n'utilise pas
-  /// le slot `extension` »*).
+  /// **épinglée en machine** (`z_smart_note_test.dart`) : **`ZNoteAudio`
+  /// FALSIFIE la clause d'échappement** (*« l'entité n'utilise pas
+  /// le slot `extension` »*) qui, sinon, garde la voie registre utilisable.
   @override
   final ZExtension? extension;
 
   /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`).
   ///
   /// **Porte l'audio top-level legacy** (`audio_url` / `audio_path` /
-  /// `audio_text_hash`) et les champs IFFD sans équivalent canonique
-  /// (`audioText`, `subjectId`, `creatorId`) — **jamais** le schéma partagé.
+  /// `audio_text_hash`) et les champs d'un consommateur legacy sans équivalent
+  /// canonique (`audioText`, `subjectId`, `creatorId`) — **jamais** le schéma
+  /// partagé.
   /// Hors-codegen.
   @override
   Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
@@ -292,13 +259,13 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// désormais TENUE SUR TOUTES LES VOIES** : ces clés appartiennent au store
   /// (`ZSyncMeta`), pas au domaine (AD-16/AD-19).
   ///
-  /// 🔴 **Remédiation MAJEUR-3 (code-review ES-2.2)** : la v1 promettait cela
+  /// **Remédiation apportée** : la v1 promettait cela
   /// **SANS CONDITION** dans cette dartdoc… et ne le tenait que sur la voie
   /// [fromMap]. `copyWith(extra:)` et le constructeur **ne traversaient pas** le
   /// filtre des clés réservées ⇒ **MESURÉ** :
   /// `note.copyWith(extra: {'updated_at': '1999-01-01', 'is_deleted': true}).toMap()`
   /// **réémettait les deux clés**. C'est **exactement** la forme du finding **H2**
-  /// d'ES-2.1 (*« `copyWith` contournait une garde que la dartdoc PROMETTAIT »*),
+  /// (*« `copyWith` contournait une garde que la dartdoc PROMETTAIT »*)
   /// rejouée sur l'**autre** garde du même `fromMap`.
   /// ⇒ Le dépouillement est une **fonction nommée UNIQUE** ([_sanitizeExtra]),
   /// appelée par **[fromMap] ET [copyWith] ET [toMap]** — **aucune** voie
@@ -308,21 +275,21 @@ class ZSmartNote extends ZEntity with ZExtensible {
   ///
   /// **Impact réel du défaut** : un `put` écrivait un `updated_at` **métier** dans
   /// le corps ; le store réécrit sa méta **APRÈS** le corps (AD-19) ⇒ écrasement
-  /// silencieux, ou corruption de l'autorité LWW selon l'ordre — le piège **R-C**
-  /// que la story déclare fermer.
+  /// silencieux, ou corruption de l'autorité LWW selon l'ordre — c'est ce
+  /// piège que ce `toMap()` d'instance ferme.
   ///
-  /// ⚠️ **Indispensable** : le `toMap()` **GÉNÉRÉ** n'étale **ni `extra` ni le
+  /// **Indispensable** : le `toMap()` **GÉNÉRÉ** n'étale **ni `extra` ni le
   /// canal** — sans ce `toMap()` d'**instance**, ce que [fromMap] a préservé ne
-  /// serait **jamais réémis** (jambe « sortie » de DW-ES14-1, observée par le
+  /// serait **jamais réémis** (jambe « sortie » de la garde, observée par le
   /// garde runtime émis dans le `.g.dart`).
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
-      // 🔴 MAJEUR-3 — la MÊME garde nommée qu'en `fromMap`/`copyWith`. Une note
+      // la MÊME garde nommée qu'en `fromMap`/`copyWith`. Une note
       // construite par le constructeur nominal (qui, lui, ne peut RIEN filtrer :
       // il est `const`) ne peut plus faire mentir la promesse ci-dessus.
-      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
+      // (remédiation) — étale l'**ACCESSEUR** (qui NORMALISE)
       // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
-      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
+      // **DÉCORATIF** — le retirer laissait le gate VERT
       // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
       // (i.1a)/(i.1b)/(i.1c) ROUGES.
       ...extra,
@@ -332,7 +299,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
     if (extension != null) {
       // Payload TYPÉ (`ZNoteAudio`) ou payload OPAQUE non décodé
       // (`ZOpaqueNoteExtension` ⇒ réémission VERBATIM) : dans les deux cas, le
-      // slot SURVIT au round-trip (MAJEUR-1 / MAJEUR-2).
+      // slot SURVIT au round-trip .
       map['extension'] = extension!.toJson();
     }
     return map;
@@ -343,8 +310,8 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// [extension] et [extra], que le `copyWith` **GÉNÉRÉ** remettrait à leurs
   /// **défauts** (perte silencieuse). Masque le `copyWith` de l'extension.
   ///
-  /// 🔴 **[content] est NORMALISÉ — par la MÊME fonction qu'en [fromMap]**
-  /// ([normalizeNoteContentOps]) : leçon **H2** d'ES-2.1. Un invariant de valeur a
+  /// **[content] est NORMALISÉ — par la MÊME fonction qu'en [fromMap]**
+  /// ([normalizeNoteContentOps]) : leçon **H2**. Un invariant de valeur a
   /// **DEUX** frontières — la **désérialisation** (une valeur corrompue qui ENTRE)
   /// **et** la **mutation applicative** (une valeur hors-domaine qu'on ÉCRIT). Ne
   /// fermer que la première laisse la garde **ROUVRABLE** :
@@ -369,7 +336,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
           ? this.subFolderId
           : subFolderId as String?,
       title: identical(title, _$undefined) ? this.title : title as String,
-      // 🔴 H2 : la garde est la MÊME FONCTION NOMMÉE qu'en `fromMap` — aucune voie
+      // H2 : la garde est la MÊME FONCTION NOMMÉE qu'en `fromMap` — aucune voie
       // d'écriture ne la contourne, et deux implémentations jumelles ne peuvent
       // pas diverger.
       content: identical(content, _$undefined)
@@ -381,7 +348,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
       extension: identical(extension, _$undefined)
           ? this.extension
           : extension as ZExtension?,
-      // 🔴 MAJEUR-3 : la garde de `extra` est la MÊME FONCTION NOMMÉE qu'en
+      // la garde de `extra` est la MÊME FONCTION NOMMÉE qu'en
       // `fromMap` — `copyWith` ne peut plus ROUVRIR le filtre des clés réservées
       // (leçon H2, appliquée à `content` mais OUBLIÉE sur `extra` en v1).
       extra: identical(extra, _$undefined)
@@ -396,8 +363,8 @@ class ZSmartNote extends ZEntity with ZExtensible {
   ///    préserver** ;
   /// 2. [parser] injecté **et** capable de typer le payload ⇒ l'extension
   ///    **TYPÉE** (`ZNoteAudio`) ;
-  /// 3. 🔴 **sinon** — aucun parser (**voie du REGISTRE**, DW-ES14-2) **ou** parser
-  ///    rendant `null` (**version future/non gérée**, MAJEUR-2) ⇒
+  /// 3. **sinon** — aucun parser (**voie du REGISTRE**) **ou** parser
+  ///    rendant `null` (**version future/non gérée**) ⇒
   ///    [ZOpaqueNoteExtension] : le payload est **PORTÉ VERBATIM** et
   ///    **RÉÉMIS À L'IDENTIQUE** par [toMap].
   ///
@@ -414,7 +381,7 @@ class ZSmartNote extends ZEntity with ZExtensible {
     final typed = parser == null
         ? null
         : ZExtension.guard<ZExtension?>(() => parser(map));
-    // 🔴 PRÉSERVATION : ce qu'on ne sait pas typer, on ne le DÉTRUIT PAS.
+    // PRÉSERVATION : ce qu'on ne sait pas typer, on ne le DÉTRUIT PAS.
     return typed ?? ZOpaqueNoteExtension.of(map);
   }
 
@@ -422,16 +389,16 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// + **clés de sync `ZSyncMeta`**) — dérivées de `$ZSmartNoteFieldSpecs` pour
   /// rester synchrones avec le codegen.
   ///
-  /// 🔴 **`...ZSyncMeta.reservedKeys` est ESSENTIEL** (AD-19.1, **R-A**) : cette
+  /// **`...ZSyncMeta.reservedKeys` est ESSENTIEL** : cette
   /// entité est persistée **top-level** et le store écrit `updated_at`/`is_deleted`
   /// **dans le corps** du document avant de passer la map **complète** à [fromMap].
   /// Sans ce spread, ces clés — qui appartiennent au **store** — atterriraient dans
   /// [extra] (AD-4 violé) et seraient **réémises** par [toMap] (AD-16 violé).
-  /// L'oubli s'est produit **2 fois sur 4** en ES-1.3, **sous 1193 tests verts** :
+  /// L'oubli est facile à manquer sous une suite de tests par ailleurs verte :
   /// il est ici prouvé **COMPORTEMENTALEMENT** (groupe de tests « AD-19 » +
   /// volet (A) du gate `reserved-keys`), jamais par la seule lecture.
   ///
-  /// 🔴 **[kContentKey] est ESSENTIEL** (D3, règle **(g1)**) : le canal hors-codegen
+  /// **[kContentKey] est ESSENTIEL** (règle **(g1)**) : le canal hors-codegen
   /// étant réémis **à la main** par [toMap], sa clé DOIT être réservée — sinon elle
   /// atterrirait **aussi** dans [extra] et serait émise **deux fois** (une par
   /// `...extra`, une par le câblage manuel), cassant l'idempotence du round-trip.
@@ -445,12 +412,12 @@ class ZSmartNote extends ZEntity with ZExtensible {
   /// Extrait `extra` = clés **non réservées** de [map] (round-trip préservé) —
   /// **frontière d'ENTRÉE** (patron prescrit par `zcrud_generator`).
   ///
-  /// C'est **[_sanitizeExtra]**, la garde **partagée** (MAJEUR-3) : `fromMap`,
+  /// C'est **[_sanitizeExtra]**, la garde **partagée** : `fromMap`,
   /// `copyWith` et `toMap` appellent **la même** fonction nommée.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
       _sanitizeExtra(map);
 
-  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (MAJEUR-3) — dépouille **toute** clé
+  /// **LA GARDE PARTAGÉE DE `extra`** — dépouille **toute** clé
   /// **RÉSERVÉE** (champs du schéma, `extension`, [kContentKey], **et les clés de
   /// sync `ZSyncMeta`**) et rend une `Map` **non modifiable**.
   ///

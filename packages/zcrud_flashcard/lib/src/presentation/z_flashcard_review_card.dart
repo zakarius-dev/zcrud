@@ -1,47 +1,55 @@
-/// `ZFlashcardReviewCard` — carte de révision adaptative (SU-2, AC1..AC7 —
-/// FR-SU1 / FR-SU21 aperçu).
+/// Carte de révision d'une [ZFlashcard] : rendu adapté au type, avec
+/// bascule question/réponse par tap.
 ///
-/// **Surface d'AFFICHAGE avec révélation** — rien de plus (frontière dure avec
-/// su-3) : les 6 types canoniques sont **rendus**, les choix QCM sont **affichés
-/// non interactifs**, et un **tap** bascule question↔réponse. **AUCUNE** saisie
-/// notée, **AUCUN** indice, **AUCUN** minuteur, **AUCUN** port d'évaluation : ils
-/// appartiennent à su-3. **AUCUN** `Dismissible`/drag horizontal : le geste de
-/// swipe appartient à su-4 (`ZSessionCardSwiper`) — le consommer ici le lui
-/// volerait.
+/// C'est une surface d'**affichage** avec révélation, rien de plus : les six
+/// types canoniques de carte sont rendus, les choix à choix multiples sont
+/// affichés **non interactifs**, et un tap bascule entre la question et la
+/// réponse. Cette carte ne porte ni saisie notée, ni indice, ni minuteur, ni
+/// port d'évaluation — ces responsabilités vivent dans la couche de session.
+/// Elle ne consomme pas non plus le glissement horizontal : ce geste
+/// appartient au composant qui empile les cartes en session
+/// (`ZSessionCardSwiper`), et l'intercepter ici le lui volerait.
 ///
-/// INVARIANTS (NON-NÉGOCIABLES) :
-/// - **AD-40** : **tout** contenu textuel de carte (question, réponse,
-///   `ZChoice.content`, `explanation`) passe par le slot injectable
-///   [ZFlashcardReviewCard.resolvedContentBuilder] — **aucun `Text(card.question)`
-///   en dur**. Le **défaut** reste le texte brut thématisé de su-1 : une app qui
-///   n'injecte rien **ne construit aucun widget Quill** (l'opt-in porte sur le
-///   **rendu** ; la *dépendance* `zcrud_markdown`, elle, est dans la fermeture du
-///   package quoi qu'il arrive — cf. `z_flashcard_markdown_content.dart`).
-/// - **Contenu = AFFICHAGE PUR** : le sous-arbre du slot est rendu **inerte aux
-///   gestes** ([IgnorePointer]). Sans cela, un contenu interactif (le `QuillEditor`
-///   du chemin markdown, qui autorise la sélection) **gagne l'arène des gestes**
-///   contre l'`InkWell` de la carte et **la révélation par tap ne se produit
-///   jamais**. La saisie est **su-3**, pas ici.
-/// - **AD-2/SM-1** : l'état de révélation vit dans un `ValueNotifier<bool>`
-///   **stable** lu par un `ValueListenableBuilder` ⇒ seule la **tranche de face**
-///   se reconstruit. **AUCUN `setState`** à l'échelle de la carte (objectif
-///   produit n°1). `AnimationController` créé UNE FOIS, **jamais** recréé au
-///   rebuild. Le builder de contenu est résolu par **tear-off statique**, jamais
-///   par une closure allouée dans `build()` (identité changeante ⇒ rebuilds
-///   cassés) — **et il est hissé en `child:` de l'`AnimatedBuilder`** : le contenu
-///   ne dépend pas de la valeur d'animation, il ne doit donc **jamais** être
-///   reconstruit par frame.
-/// - **AD-13** : Reduce Motion **PRIME** sur [ZRevealTransition] ; variantes
-///   directionnelles (RTL) ; `Semantics` explicites ; cibles ≥ 48 dp ; le choix
-///   correct est signalé par un **canal non-coloré** (icône + `Semantics`), jamais
-///   par la seule couleur.
-/// - **AD-10/NFR-SU6** : `answer`/`choices`/`isTrue` nuls ⇒ **repli l10n**,
-///   **jamais** de `!`, jamais d'exception, jamais un écran vide.
-/// - **AD-45** : `isReadOnly` (ou callback non fourni) ⇒ action **ABSENTE de
-///   l'arbre**, **jamais** grisée/désactivée. « Dupliquer pour modifier » est
-///   **su-8**, pas ici.
-/// - **AD-1** : **aucune** dépendance ajoutée — le flip 3D est **MAISON**
-///   (`flip_card` est interdite).
+/// ## Invariants
+///
+/// - **Contenu par slot injectable** : tout contenu textuel de carte
+///   (question, réponse, [ZChoice.content], explication) passe par
+///   [ZFlashcardReviewCard.resolvedContentBuilder] — jamais un
+///   `Text(card.question)` en dur. Le défaut reste un texte brut thématisé :
+///   une application qui n'injecte aucun builder ne construit aucun widget
+///   de rendu enrichi (l'opt-in porte sur le **rendu** ; la dépendance à
+///   `zcrud_markdown`, elle, reste dans la fermeture du paquet quoi qu'il
+///   arrive — voir `z_flashcard_markdown_content.dart`).
+/// - **Contenu en affichage pur** : le sous-arbre du slot est rendu inerte
+///   aux gestes ([IgnorePointer]). Sans cela, un contenu interactif (un
+///   éditeur enrichi qui autorise la sélection) gagnerait l'arène des
+///   gestes contre l'`InkWell` de la carte, et la révélation par tap ne se
+///   produirait jamais. Les `Semantics` du sous-arbre, elles, restent
+///   lisibles (invariant AD-13) : seule l'interactivité est neutralisée,
+///   pas l'accessibilité.
+/// - **Réactivité granulaire (invariant AD-2)** : l'état de révélation vit
+///   dans un `ValueNotifier<bool>` stable, lu par un
+///   `ValueListenableBuilder` — seule la tranche de face se reconstruit,
+///   jamais la carte entière. Aucun `setState` à l'échelle de la carte.
+///   `AnimationController` créé une seule fois, jamais recréé au rebuild.
+///   Le builder de contenu est résolu par tear-off statique, jamais par une
+///   closure allouée dans `build()` (une identité changeante casserait la
+///   stabilité des rebuilds) — et il est hissé en `child:` de
+///   l'`AnimatedBuilder` : le contenu ne dépend pas de la valeur
+///   d'animation, il n'est donc jamais reconstruit par frame.
+/// - **RTL, accessibilité (invariant AD-13)** : Reduce Motion prime sur
+///   [ZRevealTransition] ; variantes directionnelles ; `Semantics`
+///   explicites ; cibles ≥ 48 dp ; le choix correct est signalé par un
+///   canal non coloré (icône + `Semantics`), jamais par la seule couleur.
+/// - **Désérialisation défensive (invariant AD-10)** : `answer`/`choices`/
+///   `isTrue` nuls entraînent un repli l10n — jamais un opérateur `!`,
+///   jamais d'exception, jamais un écran vide.
+/// - **Actions structurellement absentes** : `isReadOnly` (ou l'absence du
+///   callback correspondant) fait disparaître l'action de l'arbre, jamais
+///   grisée ni désactivée.
+/// - **Aucune dépendance tierce ajoutée** : le flip 3D est implémenté en
+///   interne (`Matrix4` + `rotateY`), sans bibliothèque de flip-card
+///   externe.
 library;
 
 import 'dart:math' as math;
@@ -64,15 +72,15 @@ const double ZFlashcardReviewCardPerspective = 0.001;
 /// relais ET reçoit sa **contre-rotation** (sinon elle s'affiche **en miroir**).
 const double ZFlashcardReviewCardHalfTurn = 0.5;
 
-/// Cible tap minimale Material/AD-13 (dp) — patron `z_srs_quality_buttons.dart`.
+/// Cible tap minimale, en dp (invariant AD-13).
 const double ZFlashcardReviewCardMinTarget = 48;
 
 /// Construit le contenu déjà localisé du badge de type de question.
 ///
-/// Le package ne traduit ni ne nomme les valeurs de [ZFlashcardType] : l'hôte
-/// choisit son libellé et son éventuelle icône dans ce builder. Ce contrat suit
-/// le précédent de [ZFlashcardContentBuilder] : le discriminant métier est
-/// transmis à l'hôte, plutôt que converti en table de textes locale.
+/// Le paquet ne traduit ni ne nomme les valeurs de [ZFlashcardType] : l'hôte
+/// choisit son libellé et son éventuelle icône dans ce builder. Ce contrat
+/// suit le précédent de [ZFlashcardContentBuilder] : le discriminant métier
+/// est transmis à l'hôte, plutôt que converti en table de textes locale.
 typedef ZFlashcardQuestionTypeBadgeBuilder =
     Widget Function(BuildContext context, ZFlashcardType type);
 
@@ -80,16 +88,18 @@ typedef ZFlashcardQuestionTypeBadgeBuilder =
 class ZFlashcardReviewCard extends StatefulWidget {
   /// Construit la carte de révision de [card].
   ///
-  /// - [revealTransition] : transition **souhaitée** (Reduce Motion prime — AC3) ;
-  /// - [contentBuilder] : slot AD-40 **opt-in** (`null` ⇒ texte brut de su-1) ;
+  /// - [revealTransition] : transition **souhaitée** (Reduce Motion prime) ;
+  /// - [contentBuilder] : slot de rendu de contenu opt-in (`null` ⇒ texte
+  ///   brut) ;
   /// - [questionTypeBadgeBuilder] : badge de type déjà localisé par l'hôte ;
   /// - [instructionBanner] : consigne déjà localisée par l'hôte ;
   /// - [transitionDuration] : override explicite de durée. La priorité est
   ///   l'override, puis [ZcrudTheme.flipDuration], puis 250 ms ;
-  /// - [onRevealChanged] : **notification sortante** de la révélation (la carte
-  ///   ne cède jamais la propriété de son état — AD-2) ;
-  /// - [onEdit]/[onDelete]/[onSource] : actions injectées — `null` ⇒ action **ABSENTE**
-  ///   (AD-45), exactement comme [ZFlashcard.isReadOnly] : **une seule règle**.
+  /// - [onRevealChanged] : **notification sortante** de la révélation (la
+  ///   carte ne cède jamais la propriété de son état — invariant AD-2) ;
+  /// - [onEdit]/[onDelete]/[onSource] : actions injectées — `null` ⇒ action
+  ///   **absente**, exactement comme [ZFlashcard.isReadOnly] : une seule
+  ///   règle.
   const ZFlashcardReviewCard({
     required this.card,
     this.revealTransition = ZRevealTransition.flip3d,
@@ -108,20 +118,21 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Carte rendue (immuable).
   final ZFlashcard card;
 
-  /// Transition de révélation souhaitée (Reduce Motion la neutralise — AC3).
+  /// Transition de révélation souhaitée (Reduce Motion la neutralise).
   final ZRevealTransition revealTransition;
 
-  /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ défaut texte brut.
+  /// Slot de rendu de contenu opt-in — `null` ⇒ défaut texte brut.
   final ZFlashcardContentBuilder? contentBuilder;
 
-  /// Slot de badge de type **opt-in** — `null` ⇒ absent de l'arbre.
+  /// Slot de badge de type opt-in — `null` ⇒ absent de l'arbre.
   ///
-  /// Un builder est requis ici, comme pour [contentBuilder] : le type canonique
-  /// est fourni à l'hôte, seul propriétaire du libellé traduit et de sa
-  /// présentation. Le package ne contient donc aucune table type → libellé.
+  /// Un builder est requis ici, comme pour [contentBuilder] : le type
+  /// canonique est fourni à l'hôte, seul propriétaire du libellé traduit et
+  /// de sa présentation. Le paquet ne contient donc aucune table
+  /// type → libellé.
   final ZFlashcardQuestionTypeBadgeBuilder? questionTypeBadgeBuilder;
 
-  /// Bandeau de consigne **opt-in**, déjà traduit et composé par l'hôte.
+  /// Bandeau de consigne opt-in, déjà traduit et composé par l'hôte.
   ///
   /// Contrairement au badge, la consigne ne dépend pas du type : un [Widget]
   /// évite un builder sans donnée utile. `null` ⇒ absence structurelle.
@@ -130,34 +141,34 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Override explicite de la durée de transition.
   ///
   /// S'il est absent, [ZcrudTheme.flipDuration] est employé ; si ce token est
-  /// lui aussi absent, la durée historique de 250 ms est conservée.
+  /// lui aussi absent, la durée par défaut de 250 ms est conservée.
   final Duration? transitionDuration;
 
-  /// Pilotage EXTERNE de la révélation — `null` ⇒ la carte se gouverne seule
-  /// (comportement historique, **strictement inchangé**).
+  /// Pilotage externe de la révélation — `null` ⇒ la carte se gouverne seule
+  /// (comportement par défaut, strictement inchangé).
   ///
-  /// ## Pourquoi ce paramètre existe (CR-IFFD-38)
+  /// ## Pourquoi ce paramètre existe
   ///
-  /// [onRevealChanged] ne fait que **constater**. Un hôte qui possède un second
-  /// chemin de déclenchement — un bouton « Voir la réponse » à côté de la carte,
-  /// un bouton « Masquer la réponse » posé par le PARENT sur la face arrière —
-  /// n'avait alors aucune façon de **commander** la révélation : le bouton
-  /// restait affiché, cliquable et **sans effet**. *Une commande morte est plus
-  /// coûteuse qu'une commande absente, parce qu'elle promet.*
+  /// [onRevealChanged] ne fait que **constater**. Un hôte qui possède un
+  /// second chemin de déclenchement — un bouton « Voir la réponse » à côté
+  /// de la carte, un bouton « Masquer la réponse » posé par le parent sur la
+  /// face arrière — n'a alors aucune façon de **commander** la révélation :
+  /// le bouton reste affiché, cliquable et sans effet. Une commande morte
+  /// est plus coûteuse qu'une commande absente, parce qu'elle promet.
   ///
   /// ## Le contrat
   ///
-  /// Fourni, le contrôleur devient **LA SOURCE DE VÉRITÉ** : la carte ne garde
-  /// aucun miroir de la révélation (cf. [ZDisplayStateBinding]) ⇒ les deux états
-  /// ne peuvent pas diverger, parce qu'il n'y en a qu'un. Le geste de tap sur la
-  /// carte écrit **dans le contrôleur**, et [onRevealChanged] reste émis dans
-  /// les deux sens.
+  /// Fourni, le contrôleur devient **la source de vérité** : la carte ne
+  /// garde aucun miroir de la révélation (voir [ZDisplayStateBinding]) ⇒
+  /// les deux états ne peuvent pas diverger, parce qu'il n'y en a qu'un. Le
+  /// geste de tap sur la carte écrit **dans le contrôleur**, et
+  /// [onRevealChanged] reste émis dans les deux sens.
   ///
-  /// ⚠️ Le passage à la carte suivante (AC7) **écrit `false` dans le
-  /// contrôleur** : c'est la contrepartie de la source unique — la carte ne peut
-  /// pas revenir en face question sans le dire à son pilote.
+  /// Le passage à la carte suivante **écrit `false` dans le contrôleur** :
+  /// c'est la contrepartie de la source unique — la carte ne peut pas
+  /// revenir en face question sans le dire à son pilote.
   ///
-  /// 🔒 Le contrôleur doit être **possédé hors `build`** : c'est imposé par
+  /// Le contrôleur doit être **possédé hors `build`** : c'est imposé par
   /// [ZDisplayStateOwnerMixin], qui refuse un enregistrement postérieur à la
   /// première frame de son `State`. Un contrôleur créé dans `build` serait
   /// remplacé à chaque rebuild — donc silencieusement inerte.
@@ -166,27 +177,27 @@ class ZFlashcardReviewCard extends StatefulWidget {
   /// Notifié à chaque bascule de révélation (`true` = réponse affichée).
   ///
   /// **Conservé** malgré [revealController] : un hôte qui n'a pas besoin de
-  /// commander a toujours besoin de savoir (su-4 conditionne l'affichage de
-  /// `ZSrsQualityButtons` à la révélation).
+  /// commander a toujours besoin de savoir (l'affichage des boutons de
+  /// qualité SRS conditionne son rendu à la révélation).
   final ValueChanged<bool>? onRevealChanged;
 
-  /// Action d'édition — `null` ⇒ **absente** de l'arbre (jamais grisée, AD-45).
+  /// Action d'édition — `null` ⇒ **absente** de l'arbre (jamais grisée).
   final VoidCallback? onEdit;
 
-  /// Action de suppression — `null` ⇒ **absente** de l'arbre (AD-45).
+  /// Action de suppression — `null` ⇒ **absente** de l'arbre.
   final VoidCallback? onDelete;
 
-  /// Action « voir la source » (CR-LEX-6) — `null` ⇒ action **ABSENTE**, comme
+  /// Action « voir la source » — `null` ⇒ action **absente**, comme
   /// [onEdit]/[onDelete].
   ///
-  /// Remonter de la carte vers ce dont elle est tirée (article de code, note,
-  /// document, conversation…) est une **traçabilité** que l'hôte seul sait
-  /// résoudre : `ZFlashcard.source` est un slot ouvert (`ZSourceRegistry`), et
-  /// la carte ne sait donc NI ce que la source désigne NI comment y naviguer.
-  /// D'où un callback, jamais une résolution interne.
+  /// Remonter de la carte vers ce dont elle est tirée (article de code,
+  /// note, document, conversation…) est une traçabilité que l'hôte seul sait
+  /// résoudre : `ZFlashcard.source` est un slot ouvert (`ZSourceRegistry`),
+  /// et la carte ne sait donc ni ce que la source désigne ni comment y
+  /// naviguer. D'où un callback, jamais une résolution interne.
   final VoidCallback? onSource;
 
-  /// Clé de la rangée d'actions (testabilité — patron `buttonKeyPrefix`).
+  /// Clé de la rangée d'actions (testabilité).
   static const ValueKey<String> actionsKey = ValueKey<String>(
     'zFlashcardReviewCard_actions',
   );
@@ -201,51 +212,51 @@ class ZFlashcardReviewCard extends StatefulWidget {
     'zFlashcardReviewCard_delete',
   );
 
-  /// Clé de l'action « voir la source » (CR-LEX-6).
+  /// Clé de l'action « voir la source ».
   static const ValueKey<String> sourceActionKey = ValueKey<String>(
     'zFlashcardReviewCard_source',
   );
 
-  /// Clé de la barre de dégradé optionnelle (testabilité du seam VIS-1).
+  /// Clé de la barre de dégradé optionnelle (testabilité du seam de thème).
   static const ValueKey<String> gradientAccentKey = ValueKey<String>(
     'zFlashcardReviewCard_gradientAccent',
   );
 
-  /// Clé du chrome du badge de type (testabilité des slots IFFD).
+  /// Clé du chrome du badge de type (testabilité des slots).
   static const ValueKey<String> questionTypeBadgeKey = ValueKey<String>(
     'zFlashcardReviewCard_questionTypeBadge',
   );
 
-  /// Clé du slot de bandeau de consigne (testabilité des slots IFFD).
+  /// Clé du slot de bandeau de consigne (testabilité des slots).
   static const ValueKey<String> instructionBannerKey = ValueKey<String>(
     'zFlashcardReviewCard_instructionBanner',
   );
 
-  /// Builder de contenu **RÉELLEMENT** utilisé par `build` — **tear-off statique**
-  /// quand rien n'est injecté (AC1-d/AC7).
+  /// Builder de contenu **réellement** utilisé par `build` — tear-off
+  /// statique quand rien n'est injecté.
   ///
-  /// 🔒 Patron exact de `z_mindmap_view.dart` : `widget.contentBuilder ??
-  /// ZFlashcardDefaultContent.builder`. **JAMAIS** `?? (c, s) => …` : une closure
-  /// serait **réallouée à chaque build**, changerait d'identité et casserait la
-  /// stabilité des rebuilds (AD-2/SM-1). Les tear-offs de méthodes statiques sont
-  /// **canonicalisés** par Dart ⇒ `identical()` entre deux builds vaut `true`.
+  /// Patron partagé avec la carte mentale : `widget.contentBuilder ??
+  /// ZFlashcardDefaultContent.builder`. **Jamais** `?? (c, s) => …` : une
+  /// closure serait **réallouée à chaque build**, changerait d'identité et
+  /// casserait la stabilité des rebuilds (invariant AD-2). Les tear-offs de
+  /// méthodes statiques sont **canonicalisés** par Dart ⇒ `identical()`
+  /// entre deux builds vaut `true`.
   ///
-  /// Exposé pour que cette garde soit **falsifiable** : c'est l'unique voie de
+  /// Exposé pour que cette garde soit falsifiable : c'est l'unique voie de
   /// résolution, celle que `build` emprunte réellement.
   @visibleForTesting
   ZFlashcardContentBuilder get resolvedContentBuilder =>
       contentBuilder ?? ZFlashcardDefaultContent.builder;
 
-  /// Vrai si une action de **MUTATION** peut être rendue : jamais en lecture
-  /// seule (AD-45). Concerne [onEdit] et [onDelete].
+  /// Vrai si une action de **mutation** peut être rendue : jamais en lecture
+  /// seule. Concerne [onEdit] et [onDelete].
   ///
-  /// ⚠️ **Ne gouverne PAS [onSource]** (CR-LEX-12). `onSource` est une action de
-  /// **CONSULTATION** : remonter au texte dont la carte est tirée ne modifie
-  /// rien. La faire dépendre de `isReadOnly` la supprimait précisément sur la
-  /// population qui l'a motivée — les cartes **curées** issues d'un corpus
-  /// officiel, qui sont en lecture seule ET porteuses d'une source. La note
-  /// « consultation avant mutation » du rendu était donc annulée par cette
-  /// garde, et le défaut était verrouillé par un test.
+  /// **Ne gouverne pas [onSource]**. `onSource` est une action de
+  /// **consultation** : remonter au texte dont la carte est tirée ne
+  /// modifie rien. La faire dépendre de `isReadOnly` la supprimerait
+  /// précisément sur la population qui la motive — les cartes curées issues
+  /// d'un corpus officiel, qui sont en lecture seule ET porteuses d'une
+  /// source. La consultation précède la mutation.
   ///
   /// Les deux voies d'absence convergent toujours pour les mutations :
   /// `isReadOnly` **ou** callback non fourni ⇒ absence.
@@ -257,30 +268,31 @@ class ZFlashcardReviewCard extends StatefulWidget {
 
 class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     with SingleTickerProviderStateMixin {
-  /// État logique de révélation — **stable**, créé une fois, disposé (AD-2).
-  /// Lu par un `ValueListenableBuilder` : la révélation ne reconstruit QUE la
-  /// tranche de face, jamais la carte entière.
+  /// État logique de révélation — **stable**, créé une fois, disposé
+  /// (invariant AD-2). Lu par un `ValueListenableBuilder` : la révélation ne
+  /// reconstruit QUE la tranche de face, jamais la carte entière.
   ///
-  /// 🔴 CR-IFFD-38 : ce n'est plus un `ValueNotifier` privé mais une
-  /// **liaison** — état interne par défaut, contrôleur de l'hôte quand il y en
-  /// a un. La liaison ne **copie** rien : quand l'hôte pilote, la valeur est lue
-  /// et écrite **chez lui**. `_reveal.listenable` reste **stable** au travers
-  /// d'un changement de contrôleur, ce qui évite un `setState` d'échelle carte
-  /// (AD-2) sur la bascule.
+  /// Ce n'est pas un `ValueNotifier` privé mais une **liaison** — état
+  /// interne par défaut, contrôleur de l'hôte quand il y en a un. La liaison
+  /// ne **copie** rien : quand l'hôte pilote, la valeur est lue et écrite
+  /// **chez lui**. `_reveal.listenable` reste **stable** au travers d'un
+  /// changement de contrôleur, ce qui évite un `setState` d'échelle carte
+  /// sur la bascule.
   late final ZDisplayStateBinding<bool> _reveal;
 
-  /// Reporte la prochaine notification en fin de frame — cf. [_emitReveal].
+  /// Reporte la prochaine notification en fin de frame — voir [_emitReveal].
   bool _deferNextNotification = false;
 
-  /// Face **visuellement** au premier plan (`true` = dos/réponse) — **stable**.
+  /// Face **visuellement** au premier plan (`true` = dos/réponse) — stable.
   ///
-  /// ⚠️ **SM-1** : dérivé du controller par un listener, et **non** recalculé
-  /// dans le `builder:` de l'`AnimatedBuilder`. Il ne change qu'**une fois par
-  /// flip** (au passage de la mi-course) ⇒ le contenu n'est reconstruit qu'à ce
+  /// Dérivé du controller par un listener, et **non** recalculé dans le
+  /// `builder:` de l'`AnimatedBuilder`. Il ne change qu'une fois par flip (au
+  /// passage de la mi-course) ⇒ le contenu n'est reconstruit qu'à ce
   /// moment-là, jamais à chaque frame.
   late final ValueNotifier<bool> _showBack;
 
-  /// État **visuel** de la transition — **stable**, jamais recréé (AD-2).
+  /// État **visuel** de la transition — stable, jamais recréé (invariant
+  /// AD-2).
   late final AnimationController _controller;
 
   static const Duration _fallbackTransitionDuration = Duration(
@@ -300,14 +312,15 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     super.initState();
     _reveal = ZDisplayStateBinding<bool>(consumer: this, initialValue: false)
       ..bind(widget.revealController);
-    // 🔒 VOIE UNIQUE : tout changement de révélation — tap, commande de l'hôte,
-    // reset de carte — passe par ce listener. Une seconde voie ferait diverger
-    // l'animation de l'état, ou tairait la notification sur l'un des chemins.
+    // Voie unique : tout changement de révélation — tap, commande de
+    // l'hôte, reset de carte — passe par ce listener. Une seconde voie
+    // ferait diverger l'animation de l'état, ou tairait la notification sur
+    // l'un des chemins.
     _reveal.listenable.addListener(_onRevealChanged);
-    // ⚠️ Un contrôleur d'hôte peut arriver DÉJÀ révélé (l'hôte restaure une
-    // session). L'état VISUEL part alors de la face arrière : sans cela, la
-    // carte s'afficherait question tandis que sa source de vérité dit réponse —
-    // exactement la divergence que le contrat interdit.
+    // Un contrôleur d'hôte peut arriver déjà révélé (l'hôte restaure une
+    // session). L'état visuel part alors de la face arrière : sans cela, la
+    // carte s'afficherait question tandis que sa source de vérité dit
+    // réponse — exactement la divergence que le contrat interdit.
     final bool revealed = _reveal.value;
     _showBack = ValueNotifier<bool>(revealed);
     _controller = AnimationController(
@@ -336,17 +349,18 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   @override
   void didUpdateWidget(covariant ZFlashcardReviewCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Durée ajustée SUR le controller existant — jamais de recréation (AD-2).
+    // Durée ajustée SUR le controller existant — jamais de recréation
+    // (invariant AD-2).
     final duration = _effectiveTransitionDuration(context);
     if (_controller.duration != duration) _controller.duration = duration;
     // L'hôte a le droit de changer (ou de retirer) son pilote — sans quoi la
     // carte resterait branchée sur l'ancien, muette pour le nouveau.
     _reveal.bind(widget.revealController);
     if (widget.card != oldWidget.card) {
-      // Carte suivante ⇒ retour à la face QUESTION (AC7). Sans ce reset, la
-      // carte suivante s'ouvrirait réponse déjà révélée — bug fonctionnel réel.
-      // Quand l'hôte pilote, ce reset est ÉCRIT CHEZ LUI : la source de vérité
-      // est unique, la carte ne peut pas revenir en question en cachette.
+      // Carte suivante ⇒ retour à la face question. Sans ce reset, la carte
+      // suivante s'ouvrirait réponse déjà révélée. Quand l'hôte pilote, ce
+      // reset est écrit chez lui : la source de vérité est unique, la carte
+      // ne peut pas revenir en question en cachette.
       _setRevealed(false, deferNotification: true);
       _controller.value = 0;
     }
@@ -358,7 +372,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       ..removeListener(_syncShowBack)
       ..dispose();
     _showBack.dispose();
-    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // La liaison ne dispose jamais le contrôleur de l'hôte : il ne nous
     // appartient pas (son propriétaire est un `State` de l'hôte).
     _reveal.listenable.removeListener(_onRevealChanged);
     _reveal.dispose();
@@ -369,17 +383,17 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   /// l'hôte). Ne fait QUE écrire : l'animation et la notification sont la
   /// charge de [_onRevealChanged], qui écoute la source.
   ///
-  /// 🔴 CR-IFFD-38 — pourquoi la notification n'est PAS émise ici : il existe
-  /// désormais un chemin d'écriture qui ne passe **pas** par la carte (l'hôte
-  /// écrit dans son contrôleur). Émettre depuis l'écriture aurait laissé ce
-  /// chemin-là **muet**, et la promesse « notifié à chaque bascule » aurait été
-  /// tenue pour les seuls chemins internes.
+  /// Pourquoi la notification n'est pas émise ici : il existe un chemin
+  /// d'écriture qui ne passe **pas** par la carte (l'hôte écrit dans son
+  /// contrôleur). Émettre depuis l'écriture aurait laissé ce chemin-là
+  /// muet, et la promesse « notifié à chaque bascule » aurait été tenue
+  /// pour les seuls chemins internes.
   ///
   /// [deferNotification] : `didUpdateWidget` s'exécute **pendant le build du
-  /// parent** — notifier synchroniquement y ferait planter tout hôte qui réagit
-  /// par un `setState`/`markNeedsBuild` (« called during build »). La
-  /// notification est alors reportée en fin de frame ; l'**état**, lui, est juste
-  /// immédiatement.
+  /// parent** — notifier synchroniquement y ferait planter tout hôte qui
+  /// réagit par un `setState`/`markNeedsBuild` (« called during build »). La
+  /// notification est alors reportée en fin de frame ; l'**état**, lui, est
+  /// juste immédiatement.
   void _setRevealed(bool next, {required bool deferNotification}) {
     if (_reveal.value == next) return;
     _deferNextNotification = deferNotification;
@@ -387,17 +401,18 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     _deferNextNotification = false;
   }
 
-  /// **Voie UNIQUE** de réaction à un changement de révélation, d'où qu'il
-  /// vienne : tap sur la carte, reset de carte, **ou commande de l'hôte**.
+  /// **Voie unique** de réaction à un changement de révélation, d'où qu'il
+  /// vienne : tap sur la carte, reset de carte, ou commande de l'hôte.
   ///
   /// Le dartdoc de [ZFlashcardReviewCard.onRevealChanged] promet une
-  /// notification à **chaque** bascule — une voie muette ferait diverger l'état
-  /// de l'hôte du nôtre (su-4 afficherait `ZSrsQualityButtons` sur une carte non
-  /// révélée ⇒ note SRS faussée).
+  /// notification à **chaque** bascule — une voie muette ferait diverger
+  /// l'état de l'hôte du nôtre (les boutons de qualité SRS s'afficheraient
+  /// sur une carte non révélée ⇒ note SRS faussée).
   void _onRevealChanged() {
     final bool next = _reveal.value;
-    // Reduce Motion **prime** jusque sur le controller : aucune animation n'est
-    // même lancée (dégradation de l'ANIMATION, jamais de la FONCTION — AC3).
+    // Reduce Motion **prime** jusque sur le controller : aucune animation
+    // n'est même lancée (dégradation de l'animation, jamais de la
+    // fonction).
     if (zReduceMotionOf(context)) {
       _controller.value = next ? 1 : 0;
     } else if (next) {
@@ -429,22 +444,24 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   void _toggle() =>
       _setRevealed(!_reveal.value, deferNotification: false);
 
-  /// **Unique** call-site du slot AD-40 : tout contenu de carte passe par ici.
+  /// **Unique** point d'entrée du slot de contenu : tout contenu de carte
+  /// passe par ici.
   ///
-  /// ⚠️ [IgnorePointer] : en su-2 le contenu est **purement d'affichage**. Un
-  /// contenu qui capte les gestes (le `QuillEditor` du chemin markdown autorise
-  /// la sélection) **gagnerait l'arène** contre l'`InkWell` de la carte et
-  /// **tuerait la révélation par tap** sur le chemin d'usage documenté (AC6). Les
-  /// `Semantics` du sous-arbre, elles, restent lisibles (AD-13) : c'est
-  /// l'**interactivité** qui est neutralisée, pas l'accessibilité.
+  /// [IgnorePointer] : le contenu est **purement d'affichage**. Un contenu
+  /// qui capte les gestes (un éditeur enrichi qui autorise la sélection)
+  /// gagnerait l'arène contre l'`InkWell` de la carte et tuerait la
+  /// révélation par tap. Les `Semantics` du sous-arbre, elles, restent
+  /// lisibles (invariant AD-13) : c'est l'interactivité qui est
+  /// neutralisée, pas l'accessibilité.
   Widget _content(BuildContext context, String content) =>
       IgnorePointer(child: widget.resolvedContentBuilder(context, content));
 
-  /// Repli l10n d'un contenu absent (AD-10) — **jamais** un écran vide.
+  /// Repli l10n d'un contenu absent (invariant AD-10) — jamais un écran
+  /// vide.
   ///
-  /// Rendu par le défaut **thématisé** de su-1 (et non par le slot) : c'est un
-  /// libellé d'interface, pas un contenu de carte — l'injecter dans le slot
-  /// ferait passer un texte système pour du contenu utilisateur.
+  /// Rendu par le défaut thématisé (et non par le slot) : c'est un libellé
+  /// d'interface, pas un contenu de carte — l'injecter dans le slot ferait
+  /// passer un texte système pour du contenu utilisateur.
   Widget _fallback(BuildContext context) => ZFlashcardDefaultContent(
     content: label(
       context,
@@ -453,11 +470,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     ),
   );
 
-  /// **TABLE DE RENDU UNIQUE** par [ZFlashcardType] (AC1).
+  /// **Table de rendu unique** par [ZFlashcardType].
   ///
-  /// `switch` **exhaustif SANS `default`** : une 7ᵉ valeur d'enum casse la
-  /// **compilation** — jamais un repli silencieux à l'exécution. Le type n'est
-  /// redécidé **nulle part** ailleurs dans ce fichier.
+  /// `switch` **exhaustif sans `default`** : une septième valeur d'enum
+  /// casse la **compilation** — jamais un repli silencieux à l'exécution.
+  /// Le type n'est redécidé **nulle part** ailleurs dans ce fichier.
   Widget _faceBody(BuildContext context, bool revealed) {
     final card = widget.card;
     switch (card.type) {
@@ -470,7 +487,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
                   ..._choices(context, marked: true),
                   ..._explanation(context),
                 ]
-              // Face question : l'énoncé + les choix, NON interactifs (su-3).
+              // Face question : l'énoncé + les choix, non interactifs.
               : <Widget>[
                   _content(context, card.question),
                   ..._choices(context, marked: false),
@@ -497,19 +514,19 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
   }
 
   /// Colonne de face — `CrossAxisAlignment.start` (directionnel, RTL-safe) et
-  /// **DÉFILABLE** quand la hauteur est bornée.
+  /// **défilable** quand la hauteur est bornée.
   ///
-  /// ⚠️ Patron de la source de parité (`lex_ui/…/session_flashcard_view.dart:247`
-  /// — `SingleChildScrollView`). Sans lui, une face ordinaire déborde pour de
-  /// vrai : un QCM à 8 choix + explication à 800×600 ⇒ `RenderFlex overflowed`,
-  /// et un contenu long en produit des milliers de pixels. Le débordement n'a
-  /// rien d'un artefact de harnais — c'est ce que verrait l'utilisateur.
+  /// Sans le défilement, une face ordinaire déborde pour de vrai : un choix
+  /// multiple à 8 options + explication à 800×600 lève `RenderFlex
+  /// overflowed`, et un contenu long en produit des milliers de pixels. Le
+  /// débordement n'a rien d'un artefact de harnais de test — c'est ce que
+  /// verrait l'utilisateur.
   ///
   /// Le [LayoutBuilder] est **nécessaire** : un viewport exige une hauteur
   /// **bornée**. Dans un hôte à hauteur non bornée (une carte posée dans un
   /// `ListView`), la colonne est rendue **telle quelle** — elle y grandit
-  /// librement, et un `SingleChildScrollView` y lèverait « Vertical viewport was
-  /// given unbounded height ».
+  /// librement, et un `SingleChildScrollView` y lèverait « Vertical viewport
+  /// was given unbounded height ».
   Widget _column(BuildContext context, List<Widget> children) {
     final theme = ZcrudTheme.of(context);
     final column = Column(
@@ -530,11 +547,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Choix QCM — **non interactifs** (su-3 les rendra saisissables).
+  /// Choix à choix multiples — **non interactifs** (une couche ultérieure
+  /// les rendra saisissables).
   ///
-  /// [marked] : face réponse ⇒ le/les `isCorrect` sont signalés. AD-10 : liste
-  /// nulle/vide ⇒ repli l10n sur la face réponse (jamais un écran vide) ; sur la
-  /// face question, l'énoncé suffit.
+  /// [marked] : face réponse ⇒ le/les `isCorrect` sont signalés. Invariant
+  /// AD-10 : liste nulle/vide ⇒ repli l10n sur la face réponse (jamais un
+  /// écran vide) ; sur la face question, l'énoncé suffit.
   List<Widget> _choices(BuildContext context, {required bool marked}) {
     final choices = widget.card.choices;
     if (choices == null || choices.isEmpty) {
@@ -545,23 +563,24 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     ];
   }
 
-  /// Une ligne de choix : marqueur + contenu (par le slot AD-40).
+  /// Une ligne de choix : marqueur + contenu (par le slot de rendu de
+  /// contenu).
   ///
-  /// **Canal NON-COLORÉ obligatoire** (AD-13) : le choix correct porte une
-  /// **icône** ET un `Semantics.label` — un daltonien et un lecteur d'écran le
-  /// perçoivent sans lire la moindre couleur.
+  /// **Canal non coloré obligatoire** (invariant AD-13) : le choix correct
+  /// porte une **icône** ET un `Semantics.label` — un daltonien et un
+  /// lecteur d'écran le perçoivent sans lire la moindre couleur.
   ///
-  /// ⚠️ [MergeSemantics] : le marqueur doit être annoncé **AVEC son choix**. Le
-  /// `explicitChildNodes: true` du parent (indispensable pour que le marqueur ne
-  /// soit pas enterré dans un blob) en fait sinon un **nœud autonome** : le
-  /// lecteur d'écran lit « Paris » → « Bonne réponse » → « Lomé » et attache le
-  /// marqueur au choix **FAUX**. Fusionner la **ligne** conserve l'acquis (le
-  /// marqueur reste distinct des autres choix) tout en le rattachant au sien.
+  /// [MergeSemantics] : le marqueur doit être annoncé **avec son choix**. Le
+  /// `explicitChildNodes: true` du parent (indispensable pour que le
+  /// marqueur ne soit pas enterré dans un blob) en ferait sinon un **nœud
+  /// autonome** : le lecteur d'écran lirait « Paris » → « Bonne réponse » →
+  /// « Lomé » et attacherait le marqueur au choix **faux**. Fusionner la
+  /// **ligne** conserve l'acquis (le marqueur reste distinct des autres
+  /// choix) tout en le rattachant au sien.
   ///
-  /// ⚠️ **Aucune `size:` sur le marqueur** : elle était pilotée par `theme.gapL`,
-  /// un token d'**espacement** (seul cas du repo). Une app réglant `gapL: 8`
-  /// rétrécissait à 8 dp le `check_circle` — **seul canal visuel discriminant**
-  /// ⇒ AD-13 perdu pour un daltonien. La taille vient désormais de l'`IconTheme`.
+  /// **Aucune `size:` explicite sur le marqueur** : la taille vient de
+  /// l'`IconTheme` ambiant — un jeton d'espacement mal réglé par l'hôte ne
+  /// doit jamais rétrécir le seul canal visuel discriminant.
   Widget _choiceRow(
     BuildContext context,
     ZChoice choice, {
@@ -570,9 +589,10 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     final theme = ZcrudTheme.of(context);
     final isCorrect = marked && choice.isCorrect;
     // Repli aligné sur celui du contenu (`ZFlashcardDefaultContent` : `??
-    // onSurface`) : deux replis divergents peignaient marqueur et texte de la
-    // MÊME `Row` de couleurs différentes, et `primary` suggérait un élément
-    // interactif — que su-2 interdit précisément (les choix sont affichés).
+    // onSurface`) : deux replis divergents peindraient marqueur et texte de
+    // la MÊME `Row` de couleurs différentes, et `primary` suggérerait un
+    // élément interactif — que cette surface d'affichage interdit
+    // précisément (les choix sont affichés, jamais interactifs).
     final markerColor =
         theme.labelColor ?? Theme.of(context).colorScheme.onSurface;
     final marker = Icon(
@@ -602,10 +622,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Réponse Vrai/Faux dérivée de `isTrue` (AD-10 : `null` ⇒ repli l10n).
+  /// Réponse Vrai/Faux dérivée de `isTrue` (invariant AD-10 : `null` ⇒
+  /// repli l10n).
   ///
-  /// Libellé **l10n** (jamais un littéral utilisateur en dur) rendu par le défaut
-  /// thématisé : c'est une valeur d'interface dérivée, pas un contenu de carte.
+  /// Libellé **l10n** (jamais un littéral utilisateur en dur) rendu par le
+  /// défaut thématisé : c'est une valeur d'interface dérivée, pas un
+  /// contenu de carte.
   Widget _trueFalseAnswer(BuildContext context) {
     final isTrue = widget.card.isTrue;
     if (isTrue == null) return _fallback(context);
@@ -616,28 +638,31 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Réponse libre (AD-10 : nulle/vide ⇒ repli l10n, jamais de `!`).
+  /// Réponse libre (invariant AD-10 : nulle/vide ⇒ repli l10n, jamais de
+  /// `!`).
   Widget _freeAnswer(BuildContext context) {
     final answer = widget.card.answer;
     if (answer == null || answer.isEmpty) return _fallback(context);
     return _content(context, answer);
   }
 
-  /// Explication — affichée sur la face réponse **seulement si non vide** (AC1 :
-  /// jamais un bloc vide).
+  /// Explication — affichée sur la face réponse **seulement si non vide**
+  /// (jamais un bloc vide).
   List<Widget> _explanation(BuildContext context) {
     final explanation = widget.card.explanation;
     if (explanation == null || explanation.isEmpty) return const <Widget>[];
     return <Widget>[_content(context, explanation)];
   }
 
-  /// Face rendue selon la transition — **Reduce Motion PRIME sur l'enum** (AC3).
+  /// Face rendue selon la transition — **Reduce Motion prime sur l'enum**.
   Widget _animatedFace(BuildContext context, bool revealed) {
-    // AC3 : instantané. La révélation a bel et bien lieu — seule l'animation est
-    // dégradée. Aucune rotation n'est construite, à aucun instant.
+    // Reduce Motion : instantané. La révélation a bel et bien lieu — seule
+    // l'animation est dégradée. Aucune rotation n'est construite, à aucun
+    // instant.
     if (zReduceMotionOf(context)) return _faceBody(context, revealed);
 
-    // `switch` exhaustif SANS `default` : une 3ᵉ transition casse la compilation.
+    // `switch` exhaustif sans `default` : une troisième transition casse la
+    // compilation.
     switch (widget.revealTransition) {
       case ZRevealTransition.flip3d:
         return _flip3d(context);
@@ -646,30 +671,31 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     }
   }
 
-  /// Corps de face **hissable** : il ne dépend que de [_showBack], jamais de la
-  /// valeur d'animation ⇒ il vit en `child:` de l'`AnimatedBuilder` (SM-1).
+  /// Corps de face **hissable** : il ne dépend que de [_showBack], jamais de
+  /// la valeur d'animation ⇒ il vit en `child:` de l'`AnimatedBuilder`
+  /// (réactivité granulaire, invariant AD-2).
   ///
-  /// C'est **LE** point de la garde AC7 : le contenu se reconstruit au plus une
-  /// fois par flip (au franchissement de la mi-course), pas ~15 fois (une par
-  /// frame) — ce qui, sur le chemin markdown, coûtait autant de `md.Document` +
-  /// `MarkdownToDelta.convert` + `jsonEncode` **jetés** par la déduplication de
-  /// `ZMarkdownReader.didUpdateWidget`, qui n'arrive qu'APRÈS le travail.
+  /// C'est le point clé qui garantit que le contenu se reconstruit au plus
+  /// une fois par flip (au franchissement de la mi-course), et non à chaque
+  /// frame — ce qui, sur le chemin de rendu enrichi, éviterait de refaire
+  /// à chaque frame le travail de conversion et d'encodage que le contenu
+  /// ne demande qu'une fois par bascule.
   Widget _faceSlot(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: _showBack,
     builder: (BuildContext context, bool showBack, Widget? _) =>
         _faceBody(context, showBack),
   );
 
-  /// Flip 3D **MAISON** — `Matrix4` à perspective + `rotateY` (AC2).
+  /// Flip 3D **interne** — `Matrix4` à perspective + `rotateY`.
   ///
-  /// Aucune dépendance tierce (`flip_card` interdite). La face suit le
-  /// controller : elle bascule à mi-course (θ = π/2) et la face arrière reçoit
-  /// une **contre-rotation** de π — sans elle, le dos s'afficherait **en miroir**
-  /// (piège classique du flip maison).
+  /// Aucune dépendance tierce de flip-card. La face suit le controller :
+  /// elle bascule à mi-course (θ = π/2) et la face arrière reçoit une
+  /// **contre-rotation** de π — sans elle, le dos s'afficherait **en
+  /// miroir** (piège classique du flip fait maison).
   ///
-  /// ⚠️ **`child:` NON NÉGOCIABLE** (SM-1, objectif produit n°1) : seule la
-  /// `Matrix4` est réévaluée par frame. Rendre le contenu depuis le `builder:`
-  /// le reconstruirait à chaque tick.
+  /// `child:` **non négociable** (réactivité granulaire) : seule la
+  /// `Matrix4` est réévaluée par frame. Rendre le contenu depuis le
+  /// `builder:` le reconstruirait à chaque tick.
   Widget _flip3d(BuildContext context) => AnimatedBuilder(
     animation: _controller,
     child: _faceSlot(context),
@@ -689,12 +715,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     },
   );
 
-  /// Fondu court — **aucune rotation** (AC2).
+  /// Fondu court — **aucune rotation**.
   ///
-  /// `Opacity` piloté par le controller (et non un `FadeTransition` nu) : la face
-  /// doit **changer** à mi-course, ce qu'une opacité seule ne fait pas.
+  /// `Opacity` piloté par le controller (et non un `FadeTransition` nu) : la
+  /// face doit **changer** à mi-course, ce qu'une opacité seule ne fait pas.
   ///
-  /// ⚠️ **`child:`** : cf. [_flip3d] — seule l'opacité est réévaluée par frame.
+  /// `child:` : voir [_flip3d] — seule l'opacité est réévaluée par frame.
   Widget _fade(BuildContext context) => AnimatedBuilder(
     animation: _controller,
     child: _faceSlot(context),
@@ -711,14 +737,15 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     },
   );
 
-  /// Rangée d'actions — **absente** si lecture seule ou si aucun callback (AD-45).
+  /// Rangée d'actions — **absente** si lecture seule ou si aucun callback.
   ///
-  /// Retourne `null` (et non un widget désactivé) : l'absence est structurelle.
+  /// Retourne `null` (et non un widget désactivé) : l'absence est
+  /// structurelle.
   Widget? _actions(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // CR-LEX-12 — la CONSULTATION survit à la lecture seule ; seules les
-    // MUTATIONS y sont soumises. La garde s'applique donc par action, plus
-    // globalement à la rangée.
+    // La consultation (voir la source) survit à la lecture seule ; seules
+    // les mutations y sont soumises. La garde s'applique donc par action,
+    // pas globalement à la rangée.
     final mutationsAllowed = widget._actionsAllowed;
     final actions = <Widget>[
       // Consultation avant mutation : la source précède édition/suppression.
@@ -766,8 +793,8 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Une action : cible ≥ 48 dp, `Semantics` explicite, libellé l10n, couleur
-  /// thématisée (patron `z_srs_quality_buttons.dart`).
+  /// Une action : cible ≥ 48 dp, `Semantics` explicite, libellé l10n,
+  /// couleur thématisée.
   Widget _action(
     BuildContext context, {
     required Key key,
@@ -799,11 +826,13 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     );
   }
 
-  /// Barre décorative opt-in, résolue uniquement par le seam hôte VIS-1.
+  /// Barre décorative opt-in, résolue uniquement par le seam de thème de
+  /// l'hôte.
   ///
   /// L'identité est le nom stable du type, jamais une position de liste. Les
-  /// quatre entrées requises (spec + tokens VIS) restent nullables : l'absence
-  /// de l'une d'elles garde l'arbre historique strictement inchangé.
+  /// entrées requises (spécification + jetons de thème) restent nullables :
+  /// l'absence de l'une d'elles garde l'arbre historique strictement
+  /// inchangé.
   Gradient? _resolvedGradient(ZGradientSpec spec, ZcrudTheme theme) {
     final begin = theme.gradientBegin;
     final end = theme.gradientEnd;
@@ -821,11 +850,12 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     };
   }
 
-  /// Badge de type informatif, absent sans builder (parité IFFD).
+  /// Badge de type informatif, absent sans builder.
   ///
-  /// Le chrome réutilise les tokens de count-pill et la résolution de gradient
-  /// de la carte. [Semantics] laisse le libellé déjà localisé de l'hôte
-  /// annoncable : c'est une information, jamais une décoration.
+  /// Le chrome réutilise les jetons de pastille de comptage et la
+  /// résolution de gradient de la carte. [Semantics] laisse le libellé déjà
+  /// localisé de l'hôte annonçable : c'est une information, jamais une
+  /// décoration.
   Widget? _questionTypeBadge(
     BuildContext context,
     ZGradientSpec? gradientSpec,
@@ -898,10 +928,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     final theme = ZcrudTheme.of(context);
     final surface = theme.surfaceColor ?? Theme.of(context).colorScheme.surface;
 
-    // ⚠️ SM-1 : construit UNE FOIS par build de la carte, et rendu en SIBLING du
-    // `ValueListenableBuilder` — une révélation ne re-rentre PAS dans `build`,
-    // donc cette instance est **préservée** telle quelle (identité stable). Un
-    // `setState` de carte la reconstruirait : c'est ce que la garde SM-1 mesure.
+    // Construit UNE FOIS par build de la carte, et rendu en sibling du
+    // `ValueListenableBuilder` — une révélation ne re-rentre pas dans
+    // `build`, donc cette instance est **préservée** telle quelle (identité
+    // stable). Un `setState` de carte la reconstruirait — c'est précisément
+    // ce que la réactivité granulaire interdit.
     final actions = _actions(context);
     // Résolution UNIQUE : la barre et le badge lisent exactement le même
     // gradient hôte, indexé par l'identité stable du type.
@@ -910,24 +941,24 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
     final questionTypeBadge = _questionTypeBadge(context, gradientSpec);
     final instructionBanner = _instructionBanner();
 
-    // Seule tranche reconstruite à la révélation (AD-2/SM-1).
+    // Seule tranche reconstruite à la révélation (invariant AD-2).
     final face = ValueListenableBuilder<bool>(
       valueListenable: _reveal.listenable,
       builder: (BuildContext context, bool revealed, Widget? _) => Semantics(
         container: true,
-        // ⚠️ SANS ceci, le nœud FUSIONNE tous ses descendants : le lecteur
-        // d'écran annoncerait un unique bloc « Afficher la réponse · Q · Bon ·
-        // Mauvais… » et le marqueur « Bonne réponse » du choix correct serait
-        // ENTERRÉ dans ce blob — le canal non-coloré d'AD-13 serait perdu en
-        // pratique. (Le rattachement du marqueur à SON choix est assuré par le
-        // `MergeSemantics` de `_choiceRow`.)
+        // Sans ceci, le nœud FUSIONNE tous ses descendants : le lecteur
+        // d'écran annoncerait un unique bloc « Afficher la réponse · Q ·
+        // Bon · Mauvais… » et le marqueur « Bonne réponse » du choix
+        // correct serait enterré dans ce blob — le canal non coloré serait
+        // perdu en pratique. (Le rattachement du marqueur à SON choix est
+        // assuré par le `MergeSemantics` de `_choiceRow`.)
         explicitChildNodes: true,
         button: true,
         onTap: _toggle,
-        // ⚠️ Le libellé d'un contrôle TOGGLE doit décrire ce que le tap FAIT
-        // MAINTENANT : face réponse, il MASQUE. Un libellé constant annoncerait
-        // « Afficher la réponse » sur une réponse déjà affichée — faux dans 50 %
-        // des états.
+        // Le libellé d'un contrôle bascule doit décrire ce que le tap FAIT
+        // maintenant : face réponse, il masque. Un libellé constant
+        // annoncerait « Afficher la réponse » sur une réponse déjà
+        // affichée — faux dans la moitié des états.
         label: revealed
             ? label(
                 context,
@@ -939,7 +970,7 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
                 'zcrud.flashcard.reveal',
                 fallback: 'Afficher la réponse',
               ),
-        // L'état révélé est ANNONCÉ (AC5) : la révélation n'est pas qu'un effet
+        // L'état révélé est ANNONCÉ : la révélation n'est pas qu'un effet
         // visuel.
         value: revealed
             ? label(context, 'zcrud.flashcard.face.answer', fallback: 'Réponse')
@@ -957,10 +988,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
       borderRadius: BorderRadius.all(theme.radiusM),
       child: InkWell(
         onTap: _toggle,
-        // ⚠️ La révélation est DÉJÀ exposée, NOMMÉE, par le `Semantics` de la
-        // face. Sans cette exclusion, l'`InkWell` ajoute un second nœud tappable
-        // **ANONYME** (`label: ""`, `actions: tap`) autour de la carte :
-        // TalkBack annonce un contrôle sans nom qui duplique le premier.
+        // La révélation est déjà exposée, nommée, par le `Semantics` de la
+        // face. Sans cette exclusion, l'`InkWell` ajouterait un second nœud
+        // tappable **anonyme** (`label: ""`, `actions: tap`) autour de la
+        // carte : un lecteur d'écran annoncerait un contrôle sans nom qui
+        // duplique le premier.
         excludeFromSemantics: true,
         borderRadius: BorderRadius.all(theme.radiusM),
         child: ConstrainedBox(
@@ -971,11 +1003,11 @@ class _ZFlashcardReviewCardState extends State<ZFlashcardReviewCard>
           child: Padding(
             padding: theme.fieldPadding,
             child: LayoutBuilder(
-              // La face n'est **défilable** (AD-13/parité lex_ui) que si la
+              // La face n'est **défilable** (invariant AD-13) que si la
               // hauteur est bornée : `Flexible` lui cède alors la place
-              // restante. En hauteur non bornée (carte dans un `ListView`), un
-              // `Flexible` lèverait « non-zero flex … unbounded height » ⇒ la
-              // face est rendue telle quelle et grandit librement.
+              // restante. En hauteur non bornée (carte dans un `ListView`),
+              // un `Flexible` lèverait « non-zero flex … unbounded height »
+              // ⇒ la face est rendue telle quelle et grandit librement.
               builder: (BuildContext context, BoxConstraints constraints) =>
                   Column(
                     mainAxisSize: MainAxisSize.min,

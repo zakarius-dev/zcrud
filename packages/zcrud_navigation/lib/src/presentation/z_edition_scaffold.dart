@@ -1,5 +1,4 @@
-/// **Chrome d'édition rendu par mode** (CR chrome-presentation-aware) —
-/// [ZEditionScaffold].
+/// **Chrome d'édition rendu par mode** — [ZEditionScaffold].
 ///
 /// Le presenter reste responsable du **conteneur** (route / sheet / dialog) ;
 /// ce widget est responsable du **chrome interne**, et il l'adapte au
@@ -13,17 +12,17 @@
 ///
 /// ## Ce que ce fichier N'EST PAS
 ///
-/// * Il n'importe **aucun** gestionnaire d'état ni routeur (AD-2/AD-15) — que
-///   `package:flutter/material.dart` + `zcrud_core` (dépendance **déjà**
-///   déclarée : aucune arête nouvelle ; en particulier **pas** de
-///   `zcrud_ui_kit`, donc pas de `ZPageScaffold`).
-/// * Il ne code **aucune couleur** ni **aucun libellé** en dur (FR-26/NFR-S7) :
-///   couleurs = rôles du `ColorScheme`, libellés = `label(context, …)` de
+/// * Il n'importe **aucun** gestionnaire d'état ni routeur (invariants
+///   AD-2/AD-15) — que `package:flutter/material.dart` + `zcrud_core`
+///   (dépendance **déjà** déclarée : aucune arête nouvelle ; en particulier
+///   **pas** de `zcrud_ui_kit`, donc pas de `ZPageScaffold`).
+/// * Il ne code **aucune couleur** ni **aucun libellé** en dur : couleurs =
+///   rôles du `ColorScheme`, libellés = `label(context, …)` de
 ///   `ZcrudLocalizations`, tous **surchargeables par paramètre**.
 /// * Il n'est **jamais** monté par défaut : `presentEdition(chrome: null)` rend
 ///   l'arbre d'aujourd'hui, à l'identique (garde d'identité d'arbre).
 ///
-/// ## AD-13 (a11y / RTL)
+/// ## Invariant AD-13 (a11y / RTL)
 ///
 /// Toutes les insets/alignements sont **directionnels** ; chaque action porte
 /// un `Semantics(button:, enabled:, label:)` **explicite** et une cible tactile
@@ -63,7 +62,7 @@ class ZEditionScaffold extends StatelessWidget {
 
   /// Contenu du formulaire (opaque — jamais inspecté).
   ///
-  /// 🔴 « Opaque » est une **contrainte**, pas une description : ce widget ne
+  /// « Opaque » est une **contrainte**, pas une description : ce widget ne
   /// teste **jamais** le type de [body] pour deviner comment le placer. C'est
   /// [bodyFit] que l'appelant **déclare** — cf. `z_edition_body_fit.dart`.
   final Widget body;
@@ -79,7 +78,7 @@ class ZEditionScaffold extends StatelessWidget {
 
   /// **Déclaration** de l'appelant : comment [body] veut être placé.
   ///
-  /// Défaut [ZEditionBodyFit.intrinsic] — le comportement de v0.60.0, à
+  /// Défaut [ZEditionBodyFit.intrinsic] — le comportement historique, à
   /// l'identique. Passez [ZEditionBodyFit.scrollable] quand le corps défile
   /// lui-même : c'est alors le **contenant** qui le borne, et le corps garde son
   /// propre défilement (aucun `shrinkWrap` à poser côté appelant).
@@ -89,8 +88,9 @@ class ZEditionScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final ZEditionChromeMetrics m = metrics ?? zEditionChromeMetricsOf(context);
 
-    // AD-10 : chaîne de conditions avec REPLI TERMINAL — un mode ajouté plus
-    // tard à l'enum rend la forme `dialog` (la plus neutre) au lieu de lever.
+    // invariant AD-10 : chaîne de conditions avec REPLI TERMINAL — un mode
+    // ajouté plus tard à l'enum rend la forme `dialog` (la plus neutre) au
+    // lieu de lever.
     final Widget rendered;
     if (mode == ZEditionPresentation.page) {
       rendered = _buildPage(context, m);
@@ -107,12 +107,11 @@ class ZEditionScaffold extends StatelessWidget {
   // ── page ────────────────────────────────────────────────────────────────
   //
   // `SliverAppBar(floating: true, pinned: false)` : l'en-tête se REPLIE au
-  // défilement et reparaît au défilement inverse — le comportement du
-  // `listenToScrool` de `scaffoldDialog` (DODLP legacy), obtenu nativement.
+  // défilement et reparaît au défilement inverse, obtenu nativement.
   //
-  // 🔴 Corps SCROLLABLE (`bodyFit: scrollable`) : `NestedScrollView`, et NON
+  // Corps SCROLLABLE (`bodyFit: scrollable`) : `NestedScrollView`, et NON
   // `SliverFillRemaining(hasScrollBody: true)`. Les deux ont été mesurés
-  // (probe du 2026-08-09, corps `ListView` de 60 lignes, glissement de 400 px) :
+  // (corps `ListView` de 60 lignes, glissement de 400 px) :
   //
   //   * `SliverFillRemaining(hasScrollBody: true)` — le corps défile bien
   //     (`L0` sort de l'arbre, `L10` y entre), **mais l'en-tête ne se replie
@@ -128,13 +127,13 @@ class ZEditionScaffold extends StatelessWidget {
     if (bodyFit == ZEditionBodyFit.scrollable) {
       return Scaffold(
         body: NestedScrollView(
-          // 🔴 `floatHeaderSlivers: true` n'est PAS décoratif : sans lui,
+          // `floatHeaderSlivers: true` n'est PAS décoratif : sans lui,
           // l'en-tête `floating` se replie bien, mais ne REPARAÎT qu'une fois
           // le corps ramené tout en haut. Mesuré (glissement inverse de
           // 200 px) : sans le drapeau, titre toujours absent ; avec, titre
           // revenu. C'est le drapeau qui rend au corps scrollable le
-          // comportement EXACT du `SliverAppBar(floating: true)` livré en
-          // v0.60.0.
+          // comportement EXACT du `SliverAppBar(floating: true)` livré par
+          // ailleurs.
           floatHeaderSlivers: true,
           headerSliverBuilder: (BuildContext _, bool _) => <Widget>[bar],
           body: body,
@@ -160,8 +159,8 @@ class ZEditionScaffold extends StatelessWidget {
     return SliverAppBar(
       floating: true,
       pinned: false,
-      // `title` ABSENT de l'arbre quand aucun titre n'est fourni (AD-4) —
-      // jamais un `SizedBox.shrink` de remplissage.
+      // `title` ABSENT de l'arbre quand aucun titre n'est fourni (invariant
+      // AD-4) — jamais un `SizedBox.shrink` de remplissage.
       title:
           title == null ? null : Semantics(header: true, child: Text(title)),
       leading: _ZChromeAction(
@@ -177,10 +176,10 @@ class ZEditionScaffold extends StatelessWidget {
 
   // ── dialog ──────────────────────────────────────────────────────────────
   //
-  // 🔴 [bodyFit] n'a **aucun effet** ici, et ce n'est pas un oubli : `Flexible`
-  // donne déjà au corps une hauteur BORNÉE. Mesuré (probe du 2026-08-09) : un
-  // corps `ListView` en mode `dialog` monte avec **zéro** exception, là où
-  // `page` en lève 14 et `sheet` 23. Aucune symétrie n'a été supposée entre les
+  // [bodyFit] n'a **aucun effet** ici, et ce n'est pas un oubli : `Flexible`
+  // donne déjà au corps une hauteur BORNÉE. Mesuré : un corps `ListView` en
+  // mode `dialog` monte avec **zéro** exception, là où `page` et `sheet` en
+  // lèvent sans cette garantie. Aucune symétrie n'a été supposée entre les
   // trois modes — chacun a été mesuré séparément. Aucune garde de corps non
   // borné n'est posée ici non plus : le cas ne peut pas se produire.
   Widget _buildDialog(BuildContext context, ZEditionChromeMetrics m) {
@@ -202,7 +201,7 @@ class ZEditionScaffold extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        // Poignée ABSENTE de l'arbre si désactivée (AD-4).
+        // Poignée ABSENTE de l'arbre si désactivée (invariant AD-4).
         if (chrome.showDragHandle)
           Semantics(
             excludeSemantics: true,
@@ -230,11 +229,11 @@ class ZEditionScaffold extends StatelessWidget {
             ),
           ),
         _header(context, m),
-        // 🔴 Un corps qui défile DÉJÀ ne s'imbrique pas dans un
+        // Un corps qui défile DÉJÀ ne s'imbrique pas dans un
         // `SingleChildScrollView` : celui-ci lui donne une hauteur INFINIE,
         // c'est le même piège qu'en `page`. Mesuré : `ListView` en feuille
-        // `intrinsic` ⇒ 23 exceptions ; sous `Flexible` nu ⇒ 0, et le corps
-        // défile tandis que la barre d'actions reste ancrée.
+        // `intrinsic` lève une exception ; sous `Flexible` nu, aucune, et le
+        // corps défile tandis que la barre d'actions reste ancrée.
         if (bodyFit == ZEditionBodyFit.scrollable)
           Flexible(child: body)
         else
@@ -254,7 +253,7 @@ class ZEditionScaffold extends StatelessWidget {
   /// En-tête compacte : titre (si fourni) + actions supplémentaires.
   ///
   /// Si ni titre ni action supplémentaire n'existent, l'en-tête reste un
-  /// `Padding`+`Row` **vides** — jamais un `throw` (AD-10).
+  /// `Padding`+`Row` **vides** — jamais un `throw` (invariant AD-10).
   Widget _header(BuildContext context, ZEditionChromeMetrics m) {
     final String? title = chrome.title;
     final TextTheme text = Theme.of(context).textTheme;
@@ -304,7 +303,8 @@ class ZEditionScaffold extends StatelessWidget {
   }
 
   /// Les actions **positives** : `extraActions` puis l'enregistrement.
-  /// Liste **vide** (donc rien dans l'arbre) si aucune n'existe (AD-4).
+  /// Liste **vide** (donc rien dans l'arbre) si aucune n'existe (invariant
+  /// AD-4).
   List<Widget> _actions(BuildContext context, ZEditionChromeMetrics m) {
     final List<Widget> out = <Widget>[...chrome.extraActions];
     if (!chrome.hasSubmitAction) return out;
@@ -322,8 +322,9 @@ class ZEditionScaffold extends StatelessWidget {
       return out;
     }
     out.add(
-      // SM-1 : n'écoute QUE le canal `state` du contrôleur de soumission —
-      // une frappe dans le formulaire ne reconstruit pas ce bouton.
+      // Rebuild ciblé (invariant AD-2) : n'écoute QUE le canal `state` du
+      // contrôleur de soumission — une frappe dans le formulaire ne
+      // reconstruit pas ce bouton.
       ValueListenableBuilder<ZSubmissionState>(
         valueListenable: submitController.state,
         builder: (BuildContext context, ZSubmissionState state, Widget? _) {
@@ -364,8 +365,8 @@ class ZDiscardGuardHost {
   /// Le chrome dont on lit [ZEditionChrome.guardsDiscard].
   final ZEditionChrome chrome;
 
-  /// Retourne [child] tel quel si aucun garde n'est armé (AD-4 : `null` ⇒
-  /// **absent de l'arbre**, jamais un nœud neutre de remplissage), sinon
+  /// Retourne [child] tel quel si aucun garde n'est armé (invariant AD-4 :
+  /// `null` ⇒ **absent de l'arbre**, jamais un nœud neutre de remplissage), sinon
   /// [child] enveloppé dans un `ZDiscardGuard`.
   Widget wrap(Widget child) {
     final controller = chrome.formController;
@@ -378,9 +379,9 @@ class ZDiscardGuardHost {
   }
 }
 
-/// Garde de **développement** (AD-10) : transforme l'écran blanc de la CR
-/// scaffold-scrollable-body en **un** message actionnable qui nomme le
-/// paramètre à passer.
+/// Garde de **développement** (invariant AD-10) : transforme un écran blanc
+/// silencieux (corps non borné placé en régime intrinsèque) en **un** message
+/// actionnable qui nomme le paramètre à passer.
 ///
 /// ## Ce qui n'était PAS atteignable, et pourquoi
 ///
@@ -397,13 +398,13 @@ class ZDiscardGuardHost {
 /// `layout` ». Elle ne peut pas produire de faux positif : un `layout` réussi
 /// pose toujours une taille (mesuré : corps `Text` court ⇒ aucune détection).
 ///
-/// ## FR-26 — ce message ne peut PAS s'afficher
+/// ## Ce message ne peut PAS s'afficher à l'utilisateur
 ///
 /// Il n'est **jamais** un widget : aucun `Text`, aucun `ErrorWidget`, aucune
 /// couleur. C'est un `FlutterErrorDetails` **construit et rapporté à
-/// l'intérieur d'un `assert`** — donc élidé du binaire en profil et en release
-/// (la garde de source `z_edition_chrome_source_guard_test.dart` continue par
-/// ailleurs d'interdire tout littéral de couleur ou de libellé d'UI).
+/// l'intérieur d'un `assert`** — donc élidé du binaire en profil et en
+/// release (une garde de source dédiée continue par ailleurs d'interdire
+/// tout littéral de couleur ou de libellé d'UI dans ce fichier).
 class _ZUnboundedBodyGuard extends SingleChildRenderObjectWidget {
   const _ZUnboundedBodyGuard({required Widget super.child});
 
@@ -474,7 +475,7 @@ class _ZRenderUnboundedBodyGuard extends RenderProxyBox {
 }
 
 /// Emphase visuelle d'une action de chrome — **jamais** le seul canal : la
-/// sémantique porte `button`/`enabled`/`label` en parallèle (AD-13).
+/// sémantique porte `button`/`enabled`/`label` en parallèle (invariant AD-13).
 enum _ZActionEmphasis { neutral, primary }
 
 /// Action textuelle du chrome, à cible tactile **assertée** (≥ `minTouchTarget`

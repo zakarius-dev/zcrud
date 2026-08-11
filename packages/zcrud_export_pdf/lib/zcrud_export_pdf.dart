@@ -1,16 +1,16 @@
 /// API publique d'export **PDF** de zcrud — sans aucune dépendance tableur.
 ///
-/// CR-LEX-40 : `zcrud_export` forçait `syncfusion_flutter_xlsio` (+ son
-/// transitif `syncfusion_officecore`, + `jiffy`) dans le graphe d'un hôte qui
-/// n'exporte que du PDF, pour n'être jamais appelés. Dart n'ayant pas de
-/// dépendance optionnelle, seule une frontière de paquet peut les écarter.
+/// Un hôte qui n'exporte que du PDF n'a besoin d'aucune dépendance tableur
+/// (`syncfusion_flutter_xlsio` et ses transitifs `syncfusion_officecore`,
+/// `jiffy`). Dart n'ayant pas de dépendance optionnelle, seule une frontière
+/// de paquet peut les écarter.
 ///
 /// **Un hôte PDF-seul dépend de CE paquet.** `zcrud_export` le ré-exporte
 /// intégralement en y ajoutant l'Excel : aucun consommateur existant ne change.
 ///
-/// **Isolation (AD-1/AD-8)** : `syncfusion_flutter_pdf` est CONFINÉ aux impls
-/// concrètes sous `lib/src/data/` — aucun type Syncfusion n'apparaît dans cette
-/// API (bytes neutres `Uint8List`, tables neutres).
+/// **Isolation (invariants AD-1/AD-8)** : `syncfusion_flutter_pdf` est CONFINÉ
+/// aux impls concrètes sous `lib/src/data/` — aucun type Syncfusion n'apparaît
+/// dans cette API (bytes neutres `Uint8List`, tables neutres).
 library;
 
 export 'src/data/z_answer_visibility.dart' show ZAnswerVisibility;
@@ -37,7 +37,8 @@ export 'src/data/z_pdf_export_options.dart'
 export 'src/data/z_pdf_exporter.dart' show buildPdfBytes;
 export 'src/domain/z_font_coverage.dart' show ZFontCoverage;
 export 'src/domain/z_latex_rasterizer.dart' show ZLatexRasterizer;
-// CR-LEX-38 : port de police TrueType. Sans lui, tout Unicode hors WinAnsi
-// (arabe, grec, CJK, emoji) était DÉTRUIT en `?` à l'export — sans aucun
-// contournement hôte possible, le gabarit n'exposant aucun point d'injection.
+// Port de police TrueType. Sans lui, tout Unicode hors WinAnsi (arabe, grec,
+// CJK, emoji) est réduit en `?` à l'export — le fournir est le seul
+// contournement possible, le gabarit n'exposant aucun autre point
+// d'injection.
 export 'src/domain/z_pdf_font_provider.dart' show ZPdfFontProvider;

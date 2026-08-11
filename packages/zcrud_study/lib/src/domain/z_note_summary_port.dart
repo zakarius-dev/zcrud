@@ -1,18 +1,18 @@
-/// Seam IA neutre de **résumé de note** `ZNoteSummaryPort` (Story ES-9.1,
-/// AC1/AC2).
+/// Seam IA neutre de résumé d'une note d'étude.
 ///
-/// origine: seam IA neutre du domaine `zcrud_study` (AD-5/AD-11/AD-12). Contrat
-/// pur (`abstract interface class`, AD-4 — **jamais `sealed`**) : l'app hôte
-/// l'*implements* avec son routeur IA. Aucun prompt / endpoint / clé / transport
-/// ne fuit dans le domaine (impls CÔTÉ APP).
+/// Contrat pur (`abstract interface class`, jamais `sealed`, invariant AD-4)
+/// que l'application hôte implémente en le branchant sur son propre routeur
+/// IA. Aucun prompt, endpoint, clé ni détail de transport ne fuit dans le
+/// domaine (invariant AD-12) : ces éléments vivent uniquement dans
+/// l'implémentation côté application.
 library;
 
 import 'package:zcrud_core/domain.dart';
 
-/// Requête **immuable** de résumé (value-object, `==`/`hashCode` par valeur).
+/// Requête immuable de résumé (value-object, `==`/`hashCode` par valeur).
 ///
-/// Contenu neutre à résumer + longueur cible optionnelle. Aucun prompt/secret
-/// (AC2).
+/// Porte un contenu neutre à résumer et une longueur cible optionnelle —
+/// jamais un prompt ni un secret.
 class ZNoteSummaryRequest {
   /// Construit une requête de résumé du [content].
   const ZNoteSummaryRequest({
@@ -35,13 +35,15 @@ class ZNoteSummaryRequest {
   /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée (paramètres app-specific neutres). Défaut `const {}`.
-  /// **Normalisée à la LECTURE (AD-19.1)** : les clés de sync réservées
-  /// (`updated_at`/`is_deleted`) sont écartées — jamais réémises. Ce DTO n'est
-  /// pas persisté, mais la garde machine reste uniforme sur tout porteur d'`extra`.
+  /// Échappatoire non typée pour des paramètres spécifiques à l'application,
+  /// normalisée à la lecture : les clés de synchronisation réservées
+  /// (`updated_at`, `is_deleted`) sont toujours écartées, même si elles ont
+  /// été fournies au constructeur. Ce DTO n'est pas persisté, mais cette
+  /// normalisation garde un comportement uniforme sur tout porteur d'`extra`
+  /// du domaine. Défaut `const {}`.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   @override
@@ -58,10 +60,11 @@ class ZNoteSummaryRequest {
       Object.hash(content, maxLength, languageTag, zJsonHash(extra));
 }
 
-/// Port neutre de **résumé de note** (AD-5 : `Either<ZFailure,·>`).
+/// Port neutre de résumé de note (invariant AD-5 : domaine
+/// backend-agnostique).
 ///
-/// Retourne `ZResult<String>` (`Either<ZFailure, String>`) — jamais une `String`
-/// nue, jamais un `Stream` enveloppé (AD-5). L'app hôte fournit l'impl.
+/// Retourne `ZResult<String>` (`Either<ZFailure, String>`) — jamais une
+/// `String` nue. L'application hôte fournit l'implémentation.
 abstract interface class ZNoteSummaryPort {
   /// Résume [request]. `Left` en cas d'échec, `Right` avec le résumé produit.
   Future<ZResult<String>> summarize(ZNoteSummaryRequest request);

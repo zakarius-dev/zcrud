@@ -1,15 +1,16 @@
 /// Implémentation **opt-in** du port `ZReorderRenderer` adossée au paquet
-/// `reorderable_grid_view` de l'écosystème pub.dev (AD-57).
+/// `reorderable_grid_view` de l'écosystème pub.dev.
 ///
 /// **Le tiers est CONFINÉ à ce fichier.** Aucun type de `reorderable_grid_view`
 /// n'apparaît dans une signature publique de ce paquet : l'hôte ne manipule que
 /// `ZReorderRenderer` / `ZReorderRenderRequest` (types `zcrud_core`) et, au plus,
-/// le constructeur ci-dessous. C'est la condition 2 d'AD-57.
+/// le constructeur ci-dessous.
 ///
 /// **Le repli reste garanti** : un consommateur qui n'installe pas
 /// `zcrud_reorder` garde `ZDefaultReorderRenderer` (`zcrud_responsive`,
 /// zéro-dépendance). Les deux sont **interchangeables** — même convention
-/// d'index, même voie accessible, même repli AD-10 — et un test le prouve.
+/// d'index, même voie accessible, même repli défensif (invariant AD-10) — et
+/// un test le prouve.
 library;
 
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -50,8 +51,8 @@ const String kDefaultMoveAfterLabel = 'Déplacer après';
 ///    chaque cellule ;
 /// 3. **l'appelant est la source de vérité** — ordre optimiste local, resynchronisé
 ///    sur `request.itemIds` dès que l'hôte en repousse un nouveau ;
-/// 4. **AD-10** — un `onReorder` qui lève restaure l'ordre affiché et n'est pas
-///    propagé (jamais de crash de rendu au milieu d'un geste).
+/// 4. **invariant AD-10** — un `onReorder` qui lève restaure l'ordre affiché et
+///    n'est pas propagé (jamais de crash de rendu au milieu d'un geste).
 class ZPackageReorderRenderer extends ZReorderRenderer {
   /// Construit le renderer. `const` : il peut être injecté tel quel.
   const ZPackageReorderRenderer({this.dragStartDelay, this.dragEnabled = true});
@@ -95,7 +96,7 @@ class _ZPackageReorderGridState extends State<_ZPackageReorderGrid> {
   /// Ordre OPTIMISTE local (permutation de `request.itemIds`).
   ///
   /// `ValueNotifier` + `ValueListenableBuilder` et non `setState` : réordonner
-  /// ne reconstruit ni le parent ni la page (SM-1/AD-2). Aucun gestionnaire
+  /// ne reconstruit ni le parent ni la page (invariant AD-2). Aucun gestionnaire
   /// d'état.
   late final ValueNotifier<List<String>> _order;
 
@@ -245,7 +246,7 @@ class _ZPackageReorderGridState extends State<_ZPackageReorderGrid> {
     final int sourceIndex = request.itemIds.indexOf(id);
     final int lastPosition = ids.length - 1;
 
-    // 🔴 Voie NON-GESTUELLE — ajoutée PAR CE PAQUET : `reorderable_grid_view`
+    // Voie NON-GESTUELLE — ajoutée PAR CE PAQUET : `reorderable_grid_view`
     // n'offre que l'appui long, inatteignable au lecteur d'écran. Sans ces
     // actions, la capacité n'existerait tout simplement pas en navigation
     // assistée (AD-13). Libellés injectés par l'hôte, repli localisé sinon.

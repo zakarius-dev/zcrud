@@ -1,54 +1,53 @@
-/// `ZFlashcardListView` — liste de flashcards : recherche, filtres, tris, ordre
-/// manuel, duplication (SU-8, FR-SU14/FR-SU21 — AC1/AC3/AC8/AC14-AC18/AC20/AC21).
+/// `ZFlashcardListView` — liste de flashcards : recherche, filtres, tris,
+/// ordre manuel, duplication.
 ///
-/// ## Pourquoi ce widget vit dans `zcrud_study` (et pas `zcrud_flashcard`)
+/// ## Pourquoi ce widget vit dans `zcrud_study` et pas dans `zcrud_flashcard`
 ///
-/// Il a besoin de `zReorderFlashcards`/`zReorderIds` (ordre manuel), qui vivent
-/// ici. Or `zcrud_study → zcrud_flashcard` : l'héberger dans `zcrud_flashcard`
-/// exigerait l'arête inverse ⇒ **CYCLE**, violation AD-1. Et dupliquer
-/// `zReorderIds` serait la « seconde voie » qu'AD-38 interdit.
+/// Il a besoin des utilitaires de réordonnancement d'ordre manuel
+/// (`zReorderFlashcards`/`zReorderIds`), qui vivent ici. Or `zcrud_study`
+/// dépend de `zcrud_flashcard` : l'héberger dans `zcrud_flashcard`
+/// exigerait l'arête inverse, donc un cycle (invariant AD-1).
 ///
-/// ## SM-1 (objectif produit n°1) — taper ne reconstruit QUE le champ
+/// ## Rebuilds granulaires (invariant AD-2) — taper ne reconstruit que le
+/// champ
 ///
-/// La liste peut porter des **milliers** de cartes. Deux mécanismes, tous deux
-/// nécessaires :
-/// 1. **Débounce local** ([_kSearchDebounce]) — patron su-3
-///    (`z_flashcard_answer_input.dart`, `Timer` local **disposé** au démontage).
-///    Aucune primitive de débounce générique n'existe dans le repo
-///    (`grep -rn "class ZDebounc\|zDebounce"` ⇒ **RC=1**) : en inventer une
-///    abstraction transverse ici serait hors périmètre ;
-/// 2. **`ValueListenable` ciblée** — seul le sous-arbre de la liste écoute
-///    [_query] ; le `TextField` n'est **jamais** reconstruit par la frappe (il
-///    possède son propre `TextEditingController`, **stable**), donc le **focus
-///    est conservé** et le curseur ne saute pas.
+/// La liste peut porter des milliers de cartes. Deux mécanismes,
+/// nécessaires ensemble :
+/// 1. un débounce local ([_kSearchDebounce]) sur un `Timer` disposé au
+///    démontage du widget ;
+/// 2. une `ValueListenable` ciblée — seul le sous-arbre de la liste écoute
+///    [_query] ; le `TextField` n'est jamais reconstruit par la frappe (il
+///    possède son propre `TextEditingController`, stable), donc le focus
+///    est conservé et le curseur ne saute pas.
 ///
-/// Prouvé par **compteur** (`z_flashcard_list_view_sm1_test.dart`), jamais par
-/// opinion : 100 caractères ⇒ rebuilds de liste **bornés**, focus intact.
+/// Prouvé par compteur de rebuilds dans les tests, jamais par opinion :
+/// taper 100 caractères produit des rebuilds de liste bornés, focus intact.
 ///
-/// ## Sélection multiple — branchement ADDITIF (me-3, FR-SU19)
+/// ## Sélection multiple — branchement additif
 ///
-/// La sélection est **opt-in** par le paramètre [ZFlashcardListView.selection] :
-/// **absent** ⇒ la liste est **exactement** su-8 (zéro case, zéro barre — la
-/// non-régression su-8 est un invariant, AC2). **Fourni** ⇒ la liste *consomme*
-/// un `ZListSelectionController` me-1 (propriétaire UNIQUE, AD-44), affiche une
-/// case ≥ 48 dp par carte (keyée par `id` STABLE, jamais un index) et une
-/// `ZBatchActionBar` d'actions **déclarées** (supprimer/déplacer/custom — absente
-/// si son seam est `null`). La **suppression** cascade la **purge SRS** via le
-/// seam injecté `zFlashcardCascadeDeleteRoot` (dette d'orphelins lex corrigée).
+/// La sélection est opt-in par le paramètre [ZFlashcardListView.selection] :
+/// absent, la liste ne montre aucune case ni barre d'action (la
+/// non-régression du comportement sans sélection est un invariant de ce
+/// widget). Fourni, la liste consomme un `ZListSelectionController`
+/// (propriétaire unique de cet état), affiche une case ≥ 48 dp par carte
+/// (repérée par un `id` stable, jamais un index) et une `ZBatchActionBar`
+/// d'actions déclarées (supprimer, déplacer, personnalisée — absente si son
+/// seam est `null`). La suppression cascade la purge de l'état de
+/// répétition espacée via le seam injecté `zFlashcardCascadeDeleteRoot`.
 ///
-/// ## Ce que ce widget ne fait PAS
+/// ## Ce que ce widget ne fait pas
 ///
-/// - **Aucun flux de génération IA** (**su-9**) : l'option est **ABSENTE** sans
-///   port, par **composition** ([ZFeatureAvailability.gate] fabrique le `null`
-///   que `ZItemAction.onSelected` consomme déjà) — jamais un `if (kEnableAi)` ni
-///   un booléen local (AC16) ;
-/// - **Aucun rendu riche en dur** : le contenu passe par le slot AD-40, dont le
-///   défaut est du **texte brut thématisé** (AC3).
+/// - **Aucun flux de génération IA** : l'option est absente sans port
+///   fourni, par composition ([ZFeatureAvailability.gate] fabrique le
+///   `null` que `ZItemAction.onSelected` consomme déjà) — jamais un booléen
+///   local codé en dur ;
+/// - **aucun rendu riche en dur** : le contenu passe par un slot dont le
+///   défaut est du texte brut thématisé.
 ///
-/// Invariants (AD-2/AD-13/AD-15) : aucun gestionnaire d'état ; aucun `setState`
-/// de liste ; controllers **stables** ; labels/icônes **INJECTÉS** ; thème via
-/// `ZcrudTheme.of` (repli `Theme.of`) ; cibles ≥ 48 dp ; `Semantics` explicites ;
-/// API **directionnelles** uniquement.
+/// Invariants (AD-2/AD-13/AD-15) : aucun gestionnaire d'état ; aucun
+/// `setState` de liste ; controllers stables ; libellés et icônes injectés ;
+/// thème via `ZcrudTheme.of` (repli `Theme.of`) ; cibles ≥ 48 dp ;
+/// `Semantics` explicites ; API directionnelles uniquement.
 library;
 
 import 'dart:async';
@@ -179,7 +178,7 @@ class ZFlashcardListLabels {
 /// rendu de référence CR-IFFD-57) — la continuité visuelle ne se rompt plus au
 /// moment où l'utilisateur demande « plus de la même chose ».
 ///
-/// ⚠️ La **tuile n'est PAS supprimée** (la CR le demande explicitement) : en
+/// La **tuile n'est PAS supprimée** (la CR le demande explicitement) : en
 /// densité contrainte — sélection par lot massive, réordonnancement long — une
 /// forme compacte reste un choix légitime. C'est un **mode explicite**, jamais
 /// un remplacement sec : l'hôte tranche, le socle offre les deux.
@@ -463,7 +462,7 @@ class ZFlashcardListView extends StatefulWidget {
 
   /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ texte brut thématisé.
   ///
-  /// ⚠️ Ne vit QUE sur la **tuile** : le fournir replie l'item sur
+  /// Ne vit QUE sur la **tuile** : le fournir replie l'item sur
   /// [ZFlashcardListItemStyle.tile] (**neutralité CR-IFFD-58** : un hôte qui
   /// passait `contentBuilder` obtient EXACTEMENT ce qu'il obtenait).
   final ZFlashcardTileContentBuilder? contentBuilder;
@@ -523,7 +522,7 @@ class ZFlashcardListView extends StatefulWidget {
   /// plafond qui se comporterait autrement ici que sur `ZSectionedStudyLayout`
   /// serait exactement la « variante » que la CR refuse.
   ///
-  /// ⚠️ **Ne s'applique PAS au mode réordonnable** (tri manuel + aucun filtre de
+  /// **Ne s'applique PAS au mode réordonnable** (tri manuel + aucun filtre de
   /// contenu actif) : ce chemin est un `ReorderableListView.builder` mono-colonne
   /// du SDK, où la notion de colonne n'existe pas. L'écart est le MÊME que sur
   /// `ZStudyToolsSectionSpec` avant CR-IFFD-15, et il est **visible** (l'ordre
@@ -567,7 +566,7 @@ class ZFlashcardListView extends StatefulWidget {
 class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   /// Controller du champ de recherche — **STABLE**, créé une fois, disposé.
   ///
-  /// 🔴 SM-1 : le recréer à chaque build **perdrait le focus et la sélection** à
+  /// SM-1 : le recréer à chaque build **perdrait le focus et la sélection** à
   /// chaque frappe. C'est le bug historique n°1 que zcrud corrige par conception.
   late final TextEditingController _searchController;
 
@@ -619,7 +618,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   @override
   void didUpdateWidget(covariant ZFlashcardListView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 🔴 D5 — `filters.query` est une prop VIVANTE, au même titre que
+    // D5 — `filters.query` est une prop VIVANTE, au même titre que
     // `searchFields`/`sources` (déjà relus à chaque build via _effectiveFilters).
     // Un parent qui pousse une nouvelle requête (deep-link, filtre restauré,
     // puce de tag) doit la voir appliquée — sans quoi le champ afficherait un
@@ -725,7 +724,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
   /// Exige le mode **manuel** ET un `onOrderChanged` : réordonner sans persister
   /// serait une fonctionnalité morte (l'ordre sauterait au prochain rebuild).
   ///
-  /// ⚠️ Condition **nécessaire mais non suffisante** : sous un filtre de contenu
+  /// Condition **nécessaire mais non suffisante** : sous un filtre de contenu
   /// actif, le réordonnancement est en plus **désactivé** (cf.
   /// [_contentFilterActive] / décision D1). L'état runtime réel est calculé dans
   /// [_buildList].
@@ -734,7 +733,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       widget.onOrderChanged != null;
 
   /// `true` si un filtre **DE CONTENU** masque potentiellement des cartes de la
-  /// **même** section (🔴 D1 — HIGH, RISQUE DE DONNÉES).
+  /// **même** section (D1 — HIGH, RISQUE DE DONNÉES).
   ///
   /// `zReorderFlashcards` **REMPLACE** l'entrée de section par les seuls
   /// `visibleIds` : sous un tel filtre, l'ordre persisté des cartes masquées
@@ -786,7 +785,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
           labels: widget.labels,
         ),
         SizedBox(height: theme.gapM),
-        // 🔴 SM-1 : SEUL ce sous-arbre écoute la requête. Le champ ci-dessus est
+        // SM-1 : SEUL ce sous-arbre écoute la requête. Le champ ci-dessus est
         // HORS du builder ⇒ taper ne le reconstruit pas, le focus est conservé.
         Expanded(
           child: ValueListenableBuilder<String>(
@@ -847,7 +846,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         if (deleteRoot != null)
           ZBatchAction(
             kind: ZBatchActionKind.delete,
-            // 🔴 MED-5 — jamais de repli `?? ''` silencieux : l'assert du
+            // MED-5 — jamais de repli `?? ''` silencieux : l'assert du
             // constructeur garantit `deleteActionLabel != null` dès que
             // `deleteRoot` (donc cette branche) existe (jamais un bouton muet).
             label: sel.deleteActionLabel!,
@@ -878,7 +877,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     final deleteRoot = sel.deleteRoot;
     if (deleteRoot == null) return;
     final report = await controller.batchDelete(deleteRoot: deleteRoot);
-    // 🔴 MED-1/AD-39 — `onBatchResult` est un canal de l'APPELANT (réussites +
+    // MED-1/AD-39 — `onBatchResult` est un canal de l'APPELANT (réussites +
     // échecs), PAS un `setState` : il DOIT être remonté INCONDITIONNELLEMENT,
     // même si la liste s'est démontée pendant l'await (le lot, unawaited, va au
     // bout). Une garde `!mounted` ici AVALERAIT le rapport (y compris les échecs
@@ -897,7 +896,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     ZListSelectionController controller,
     ZFlashcardListBatchMove move,
   ) async {
-    // 🔴 MED-3/AD-10 — la résolution de destination est un seam INJECTÉ (picker
+    // MED-3/AD-10 — la résolution de destination est un seam INJECTÉ (picker
     // app) qui peut `throw` (picker KO, assertion Navigator). `_runBatchMove`
     // étant `unawaited`, un throw non capté rejetterait un Future non-awaité et
     // TRAVERSERAIT la surface (Zone/FlutterError). On l'enveloppe : sur throw,
@@ -916,7 +915,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       destination: chosen.value,
       moveRoot: move.moveRoot,
     );
-    // 🔴 MED-1/AD-39 — rapport remonté INCONDITIONNELLEMENT (canal appelant, pas
+    // MED-1/AD-39 — rapport remonté INCONDITIONNELLEMENT (canal appelant, pas
     // un setState) : jamais avalé par un démontage pendant l'await (cf. delete).
     sel.onBatchResult?.call(report);
   }
@@ -938,12 +937,12 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       );
     }
 
-    // 🔴 D1 (HIGH) — le réordonnancement n'est proposé que si AUCUN filtre de
+    // D1 (HIGH) — le réordonnancement n'est proposé que si AUCUN filtre de
     // contenu ne masque de carte de la même section (sinon `zReorderFlashcards`
     // écraserait l'ordre persisté des cartes masquées). Le sous-dossier scope la
     // clé ⇒ il ne compte PAS comme filtre de contenu (cf. [_contentFilterActive]).
     //
-    // 🔴 R3 — une carte ÉPHÉMÈRE (`id == null`, ex. une duplication non encore
+    // R3 — une carte ÉPHÉMÈRE (`id == null`, ex. une duplication non encore
     // persistée) fait DIVERGER l'espace d'indices de la liste affichée (`visible`,
     // qui la contient) de celui des `visibleIds` persistables (`_reorder`/
     // `zReorderFlashcards` écartent les cartes sans id) : un drag déplacerait
@@ -967,7 +966,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       );
     }
 
-    // 🔴 AC1/NFR-SU9 — grille responsive VIRTUALISÉE : `ZAdaptiveGrid.builder`
+    // AC1/NFR-SU9 — grille responsive VIRTUALISÉE : `ZAdaptiveGrid.builder`
     // (jamais `children:`, qui matérialiserait des MILLIERS de widgets à chaque
     // frappe ; jamais une grille réécrite).
     return ZAdaptiveGrid.builder(
@@ -1041,7 +1040,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
           actions: _actionsFor(card, visible, reorderable: reorderable),
         ),
         onTap: onOpen == null ? null : () => onOpen(card),
-        // ⚠️ AUCUN `onLongPress` : l'InkWell de la carte gagnerait l'arène
+        // AUCUN `onLongPress` : l'InkWell de la carte gagnerait l'arène
         // d'appui long (leçon CR-54, MESURÉE) et le drag du
         // `ReorderableListView` — qui démarre par appui long sur mobile — ne
         // partirait jamais. L'appui long reste au listener de réordonnancement.
@@ -1095,7 +1094,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     final onDelete = widget.onDelete;
     final onDuplicate = widget.onDuplicate;
 
-    // 🔴 AD-45 — une carte en lecture seule n'est NI éditable NI supprimable.
+    // AD-45 — une carte en lecture seule n'est NI éditable NI supprimable.
     // L'absence est obtenue par `null` (le mécanisme existant), jamais par un
     // item grisé : `ZItemActionsMenu` FILTRE déjà les `onSelected == null`.
     final editable = !card.isReadOnly;
@@ -1124,7 +1123,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
             ? null
             : () => onDuplicate(zDuplicateFlashcardForEditing(card)),
       ),
-      // 🔴 AC11 — boutons a11y : MÊME voie que le drag (`_reorder`).
+      // AC11 — boutons a11y : MÊME voie que le drag (`_reorder`).
       // `null` ⇒ ABSENT : le 1er ne remonte pas, le dernier ne descend pas.
       ZItemAction(
         kind: ZItemActionKind.custom,
@@ -1143,7 +1142,7 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         onSelected:
             _moveCallback(card, visible, reorderable: reorderable, up: false),
       ),
-      // 🔴 AC16 — « Générer avec l'IA » : ABSENTE sans port, par COMPOSITION.
+      // AC16 — « Générer avec l'IA » : ABSENTE sans port, par COMPOSITION.
       // `gate` fabrique le `null` que `onSelected` consomme DÉJÀ — jamais un
       // `if (kEnableAi)`, jamais un booléen local.
       ZItemAction(
@@ -1202,7 +1201,7 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 D3 — le libellé a11y est porté par `InputDecoration(labelText:)` : le
+    // D3 — le libellé a11y est porté par `InputDecoration(labelText:)` : le
     // SDK l'attache alors au **nœud sémantique DU champ** (focusable, actionnable).
     // Un `Semantics(label:)` PARENT ne fusionnerait PAS dans le `TextField` (qui
     // est sa propre frontière sémantique) : il créerait un nœud `isTextField`
@@ -1274,7 +1273,7 @@ class _ReorderableList extends StatelessWidget {
       // règle AD-13 est donc tenue (ce n'est pas une exception, c'est un cas où
       // la question ne se pose pas).
       padding: EdgeInsets.all(theme.gapS),
-      // 🔴 `onReorderItem` (SDK ≥ v3.41 — `onReorder` est DÉPRÉCIÉ) : il fournit
+      // `onReorderItem` (SDK ≥ v3.41 — `onReorder` est DÉPRÉCIÉ) : il fournit
       // un `newIndex` DÉJÀ ajusté pour le retrait de l'item à `oldIndex`, ce qui
       // correspond EXACTEMENT à la convention `removeAt` puis `insert` de
       // `zReorderIds` (aucun `-1` manuel à appliquer). Patron
@@ -1339,7 +1338,7 @@ class _FlashcardTile extends StatelessWidget {
     final theme = ZcrudTheme.of(context);
     final scheme = Theme.of(context).colorScheme;
     final surface = theme.surfaceColor ?? scheme.surfaceContainerHighest;
-    // 🔴 Contraste : le premier plan est LISIBLE SUR le fond réellement peint
+    // Contraste : le premier plan est LISIBLE SUR le fond réellement peint
     // (`onSurfaceVariant` est le rôle apparié à `surfaceContainerHighest` —
     // jamais une couleur de FOND utilisée en premier plan, défaut su-6).
     final foreground = theme.labelColor ?? scheme.onSurfaceVariant;
@@ -1350,7 +1349,7 @@ class _FlashcardTile extends StatelessWidget {
       // Un seul nœud sémantique par tuile : le lecteur d'écran annonce la carte
       // d'un bloc, pas ses fragments un à un.
       //
-      // 🔴 **AUCUN `label:` explicite ici** — délibérément. `container: true`
+      // **AUCUN `label:` explicite ici** — délibérément. `container: true`
       // **FUSIONNE déjà** les labels des descendants (question, badge de type,
       // badge lecture seule…) dans ce nœud. Ajouter `label: card.question`
       // ferait annoncer la question **DEUX FOIS** (« Annoncée, openQuestion,
@@ -1407,7 +1406,7 @@ class _FlashcardTile extends StatelessWidget {
               Flexible(
                 child: ZForegroundOverride(
                   color: foreground,
-                  // 🔴 `Builder` OBLIGATOIRE : le slot AD-40 est un *builder*.
+                  // `Builder` OBLIGATOIRE : le slot AD-40 est un *builder*.
                   // L'invoquer avec le `context` de la tuile le ferait résoudre
                   // `Theme.of` AU-DESSUS de l'enveloppe — la couleur imposée
                   // n'atteindrait alors rien du tout. Mesuré, pas supposé.
@@ -1441,13 +1440,13 @@ class _FlashcardTile extends StatelessWidget {
               if (card.source != null) ...<Widget>[
                 SizedBox(height: theme.gapS),
                 Text(
-                  // 🔴 D2/AC20 — libellé INJECTÉ (repli sur la clé opaque),
+                  // D2/AC20 — libellé INJECTÉ (repli sur la clé opaque),
                   // jamais le `kind` brut codé en dur (patron `tagLabels`).
                   sourceLabels?[card.source!.kind] ?? card.source!.kind,
                   textAlign: TextAlign.start,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  // 🔴 R2 — taille via le thème (`labelSmall`), jamais un
+                  // R2 — taille via le thème (`labelSmall`), jamais un
                   // `fontSize:` littéral : un nombre en dur ignore la mise à
                   // l'échelle du texte (a11y) et casse le thème (FR-26/AD-13).
                   // `foreground` reste apposé (repli `const TextStyle()`).
@@ -1529,7 +1528,7 @@ class _TypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 D2/AC20 — la clé de type (`type.name`) est OPAQUE mais NE DOIT PAS être
+    // D2/AC20 — la clé de type (`type.name`) est OPAQUE mais NE DOIT PAS être
     // servie telle quelle à l'utilisateur (« openQuestion » est un identifiant
     // Dart, écrit pour un dev). Le libellé est INJECTÉ via `typeLabels`, avec
     // repli sur la clé (patron `tagLabels`) — jamais une traduction en dur.
@@ -1538,7 +1537,7 @@ class _TypeBadge extends StatelessWidget {
       textAlign: TextAlign.start,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      // 🔴 R2 — taille via le thème (`labelSmall`), jamais un `fontSize:`
+      // R2 — taille via le thème (`labelSmall`), jamais un `fontSize:`
       // littéral (a11y / thème — FR-26/AD-13). `foreground` reste apposé.
       style: (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
           .copyWith(color: foreground),
@@ -1568,7 +1567,7 @@ class _Tags extends StatelessWidget {
           Text(
             tagLabels?[id] ?? id,
             textAlign: TextAlign.start,
-            // 🔴 R2 — taille via le thème (`labelSmall`), jamais un `fontSize:`
+            // R2 — taille via le thème (`labelSmall`), jamais un `fontSize:`
             // littéral (a11y / thème — FR-26/AD-13). `foreground` reste apposé.
             style: (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
                 .copyWith(color: foreground),
@@ -1580,7 +1579,7 @@ class _Tags extends StatelessWidget {
 
 /// Case de sélection d'une carte (me-3, AC1/AC8/AC9).
 ///
-/// 🔴 SM-1 — rebuild GRANULAIRE : ce widget écoute la SEULE tranche
+/// SM-1 — rebuild GRANULAIRE : ce widget écoute la SEULE tranche
 /// `selectedIds` du contrôleur et ne se reconstruit (`setState`) **QUE** si SON
 /// appartenance change. Cocher la carte `A` ne reconstruit donc **que** la case
 /// de `A` (et la barre, qui lit sa propre tranche) — **jamais** les N tuiles.
@@ -1589,12 +1588,12 @@ class _Tags extends StatelessWidget {
 /// AD-13 : cible **≥ 48 dp**, directionnel (Row/Checkbox neutres), `Semantics`
 /// annonçant la case (libellé INJECTÉ).
 ///
-/// 🔴 LOW-B — la case elle-même ne porte **aucune** `key` : son identité stable
+/// LOW-B — la case elle-même ne porte **aucune** `key` : son identité stable
 /// vient de la **tuile parente** (`ValueKey('tile-<id>')`, [_buildTile]) qui,
 /// keyée par l'`id` STABLE de la carte (jamais un index — leçon su-8), préserve
 /// (ou recycle) l'élément — donc le `State` — de cette case au bon grain.
 ///
-/// 🔴 MED-2/AD-44 — le contrôleur peut être **swappé** légitimement par la liste
+/// MED-2/AD-44 — le contrôleur peut être **swappé** légitimement par la liste
 /// (`didUpdateWidget` de `_ZFlashcardListViewState`). Ce `State` se **réconcilie**
 /// alors ([didUpdateWidget] ci-dessous) : désabonne l'ancien, réabonne le
 /// nouveau, resync l'affichage — jamais un listener orphelin ni une case qui
@@ -1631,7 +1630,7 @@ class _SelectionCheckboxState extends State<_SelectionCheckbox> {
   @override
   void didUpdateWidget(covariant _SelectionCheckbox oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 🔴 MED-2/AD-44 — la liste swappe légitimement le contrôleur (config
+    // MED-2/AD-44 — la liste swappe légitimement le contrôleur (config
     // basculée ou contrôleur injecté remplacé — cf. `_ZFlashcardListViewState.
     // didUpdateWidget`). SANS cette réconciliation, la case resterait abonnée à
     // l'ANCIEN contrôleur (listener orphelin) et **afficherait** son état alors

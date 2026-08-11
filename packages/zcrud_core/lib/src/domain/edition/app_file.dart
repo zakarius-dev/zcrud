@@ -1,12 +1,10 @@
-/// `AppFile` — **value object de référence de fichier** (E3-3c, parité DODLP
-/// SM-2) + enum d'état d'upload [ZAppFileUploadState].
+/// `AppFile` — **value object de référence de fichier** + enum d'état
+/// d'upload [ZAppFileUploadState].
 ///
-/// origine: `AppFile` DODLP (`models/app_file.dart`, couplé au singleton +
-/// Firestore + `cloudPath` métier). E3-3c le **découple** : pur-Dart (couche
-/// `domain`, aucune dépendance Flutter/Firebase — garde `domain_purity_test`),
-/// **sans bytes** (aucun `Uint8List`) et sans chemin cloud métier (le transport
-/// binaire + le `cloudPath` sont la responsabilité de l'impl picker/storage —
-/// E5/E7).
+/// `AppFile` est pur-Dart (couche `domain`, aucune dépendance
+/// Flutter/Firebase), **sans bytes** (aucun `Uint8List`) et sans chemin cloud
+/// métier : le transport binaire et le chemin de stockage distant sont la
+/// responsabilité de l'implémentation picker/storage fournie par l'hôte.
 ///
 /// **INVARIANT AD-2 (tranche légère)** : `AppFile` porte une **référence**
 /// (id/nom/mime/taille/URL distante/chemin local/état d'upload), **jamais** les
@@ -17,7 +15,7 @@
 /// inconnu → repli [ZAppFileUploadState.pending], jamais un `throw`).
 library;
 
-/// État d'upload d'un [AppFile] (E3-3c, canonique §5 — valeurs **camelCase**).
+/// État d'upload d'un [AppFile] (valeurs **camelCase**, persistées telles quelles).
 ///
 /// L'état vit **dans** [AppFile] (une seule voie de vérité de l'état du
 /// fichier). Discipline défensive (AD-10) : une valeur inconnue à la
@@ -27,7 +25,7 @@ enum ZAppFileUploadState {
   /// Fichier **local**, pas encore uploadé (défaut sûr / repli défensif).
   pending,
 
-  /// Upload **en cours** (transport binaire délégué à l'impl storage — E5).
+  /// Upload **en cours** (transport binaire délégué à l'implémentation storage).
   uploading,
 
   /// Upload **terminé** : une URL distante ([AppFile.remoteUrl]) est disponible.

@@ -1,13 +1,14 @@
-/// Implémentations **par défaut** des seams média, adossées aux plugins réels
-/// (fp-4-2). 🔴 **CONFINEMENT (AD-1/AD-40)** : c'est le SEUL endroit qui importe
+/// Implémentations **par défaut** des seams média, adossées aux plugins réels.
+///
+/// **Confinement (invariant AD-1)** : c'est le SEUL endroit qui importe
 /// `image_picker`/`file_picker`/`image_cropper`/`video_thumbnail`/`open_file` ;
 /// aucun type de ces plugins ne franchit une signature publique (les seams
 /// exposent [AppFile]/`String`/`Uint8List`). Ces impls ne sont **pas** exercées
-/// en test (fakes injectés — discipline R3) ; elles sont le comportement de
-/// production quand aucun seam n'est injecté.
+/// en test (fakes injectés) ; elles sont le comportement de production quand
+/// aucun seam n'est injecté.
 ///
-/// 🔴 **AD-10** : chaque méthode enveloppe le plugin et retombe sur un résultat
-/// défini (`[]` / `null` / `false`) — jamais un throw traversant.
+/// **Invariant AD-10** : chaque méthode enveloppe le plugin et retombe sur un
+/// résultat défini (`[]` / `null` / `false`) — jamais un throw traversant.
 library;
 
 import 'dart:typed_data';
@@ -22,7 +23,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../domain/z_media_crop_options.dart';
 import '../domain/z_media_seams.dart';
 
-/// Seam images par défaut (`image_picker`). Caméra = délégation OS (ET-5).
+/// Seam images par défaut (`image_picker`). Caméra = délégation au système
+/// d'exploitation.
 class ZPluginImagePickSeam implements ZImagePickSeam {
   /// Construit le seam ; [picker] injectable pour un remplacement fin (défaut =
   /// vrai `ImagePicker`).
@@ -39,7 +41,7 @@ class ZPluginImagePickSeam implements ZImagePickSeam {
   }) async {
     try {
       if (fromCamera) {
-        // ET-5 : parité DODLP — capture via l'appareil photo OS (jamais le
+        // Capture via l'appareil photo du système d'exploitation (jamais le
         // paquet `camera` en chemin par défaut).
         final x = await _picker.pickImage(source: ImageSource.camera);
         return x == null ? const <AppFile>[] : <AppFile>[_toAppFile(x)];
@@ -51,7 +53,8 @@ class ZPluginImagePickSeam implements ZImagePickSeam {
       final x = await _picker.pickImage(source: ImageSource.gallery);
       return x == null ? const <AppFile>[] : <AppFile>[_toAppFile(x)];
     } catch (_) {
-      // AD-10 : annulation / permission refusée / plugin défaillant → défini.
+      // invariant AD-10 : annulation / permission refusée / plugin défaillant
+      // → défini.
       return const <AppFile>[];
     }
   }
@@ -118,7 +121,8 @@ class ZPluginImageCropSeam implements ZImageCropSeam {
       if (cropped == null) return null; // annulé → original conservé (façade).
       return source.copyWith(localPath: cropped.path);
     } catch (_) {
-      // AD-10 : échec du recadrage → `null` (façade conserve l'original).
+      // invariant AD-10 : échec du recadrage → `null` (façade conserve
+      // l'original).
       return null;
     }
   }

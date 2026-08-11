@@ -1,11 +1,12 @@
-/// [ZAppBarSearchConfig] — configuration DÉCLARATIVE de la recherche intégrée
-/// (SUF-1, AC4–AC8).
+/// [ZAppBarSearchConfig] — configuration déclarative de la recherche
+/// intégrée au page-shell.
 ///
-/// AD-2/AD-15 : le page-shell **détient lui-même** l'état de recherche
-/// (`isSearching`/`query`) — aucun gestionnaire d'état, aucun contrôleur externe.
-/// Cette config ne porte donc **pas** d'état : elle n'expose qu'un callback
-/// d'émission ([onQueryChanged]), un libellé de hint optionnel et une valeur
-/// initiale. `search == null` ⇒ aucune recherche possible (AC8).
+/// Invariants AD-2/AD-15 : le page-shell **détient lui-même** l'état de
+/// recherche (`isSearching`/`query`) — aucun gestionnaire d'état, aucun
+/// contrôleur externe. Cette config ne porte donc **pas** d'état : elle
+/// n'expose qu'un callback d'émission ([onQueryChanged]), un libellé de
+/// hint optionnel et une valeur initiale. `search == null` ⇒ aucune
+/// recherche possible.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -13,7 +14,7 @@ import 'package:flutter/foundation.dart';
 /// Configuration immuable de la recherche d'app-bar.
 @immutable
 class ZAppBarSearchConfig {
-  /// Construit la config. [onQueryChanged] est requis : il reçoit le texte
+  /// Construit la config. [onQueryChanged] est requis: il reçoit le texte
   /// **exact** saisi (le shell n'accentue/normalise rien — c'est le rôle de
   /// l'app). [hintLabel] surcharge explicitement le libellé résolu par l10n
   /// (`'search'`). [initialQuery] pré-remplit le champ.
@@ -35,7 +36,7 @@ class ZAppBarSearchConfig {
 
   /// Masque les actions déclarées par l'hôte pendant la recherche.
   ///
-  /// Par défaut `false` : le rendu historique est strictement conservé.
+  /// Par défaut `false`: le rendu historique est strictement conservé.
   /// La loupe/fermeture propre au shell reste toujours disponible.
   final bool hidesHostActions;
 }

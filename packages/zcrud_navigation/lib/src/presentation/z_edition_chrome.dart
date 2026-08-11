@@ -1,13 +1,12 @@
-/// **Chrome d'édition** (CR chrome-presentation-aware, 2026-08-06) — le
-/// porte-valeurs du chrome interne d'un formulaire présenté.
+/// **Chrome d'édition** — le porte-valeurs du chrome interne d'un formulaire
+/// présenté.
 ///
-/// `zcrud_navigation` savait déjà choisir et ouvrir le **conteneur**
-/// (`page`/`sheet`/`dialog`, dérivé du breakpoint — supérieur au tri par type
-/// d'appareil des apps historiques). Il ne fournissait **pas** le chrome
-/// interne : titre, actions submit/discard, et surtout le **comportement
-/// d'en-tête propre à chaque mode**. Chaque app le recodait
-/// (`scaffoldDialog` de `forms_utils.dart` — DODLP/IFFD), avec des rendus
-/// divergents.
+/// `zcrud_navigation` sait déjà choisir et ouvrir le **conteneur**
+/// (`page`/`sheet`/`dialog`, dérivé du breakpoint). Il ne fournissait pas le
+/// chrome interne : titre, actions submit/discard, et surtout le
+/// **comportement d'en-tête propre à chaque mode** — un besoin qu'une
+/// intégration ad hoc recode habituellement à la main, avec des rendus
+/// divergents d'une application à l'autre.
 ///
 /// [ZEditionChrome] est le **descripteur** de ce chrome ; [ZEditionScaffold]
 /// (fichier voisin) en fait le rendu **par mode**. Les deux sont **opt-in** :
@@ -16,22 +15,22 @@
 ///
 /// ## Invariants portés par ce fichier
 ///
-/// * **AD-4 (extension ouverte)** : classe **non-`sealed`, non-`final`**, avec
-///   [ZEditionChrome.copyWith] ; un champ `null` signifie **absent de l'arbre**
-///   — jamais un `SizedBox.shrink`, jamais un `throw`.
-/// * **AD-10 (repli, jamais d'exception)** : un chrome **partiel** (aucun
-///   titre, aucune action) reste rendable ; un mode non prévu retombe sur la
-///   forme la plus neutre.
-/// * **FR-26 / NFR-S7** : **aucune couleur** ici (que des dimensions et des
+/// * **Invariant AD-4 (extension ouverte)** : classe **non-`sealed`,
+///   non-`final`**, avec [ZEditionChrome.copyWith] ; un champ `null` signifie
+///   **absent de l'arbre** — jamais un `SizedBox.shrink`, jamais un `throw`.
+/// * **Invariant AD-10 (repli, jamais d'exception)** : un chrome **partiel**
+///   (aucun titre, aucune action) reste rendable ; un mode non prévu retombe
+///   sur la forme la plus neutre.
+/// * **Aucune couleur codée en dur** ici (que des dimensions et des
 ///   scalaires), **aucun libellé** codé en dur — les libellés se résolvent par
 ///   `label(context, 'save'|'cancel'|'close')` de `ZcrudLocalizations`
 ///   (`zcrud_core`, tables fr/en déjà en place), surchargeables par paramètre.
-/// * **Priorité de résolution** (patron `zStudyCardChromeOf` de `zcrud_study`) :
+/// * **Priorité de résolution** (même patron que les autres jetons `ZcrudTheme`) :
 ///   **paramètre > jeton `ZcrudTheme.*` > défaut-référence
 ///   [ZEditionChromeReference]**.
-/// * **AD-2/AD-15** : aucun gestionnaire d'état ; Flutter vanilla uniquement —
-///   ce fichier n'ajoute **aucune arête** au graphe (`zcrud_core` est déjà une
-///   dépendance de `zcrud_navigation`).
+/// * **Invariants AD-2/AD-15** : aucun gestionnaire d'état ; Flutter vanilla
+///   uniquement — ce fichier n'ajoute **aucune arête** au graphe (`zcrud_core`
+///   est déjà une dépendance de `zcrud_navigation`).
 library;
 
 import 'package:flutter/material.dart';
@@ -42,14 +41,14 @@ import 'package:zcrud_core/zcrud_core.dart'
         ZFormController,
         ZcrudTheme;
 
-/// Les **valeurs de référence** du chrome d'édition — le point d'audit unique
-/// (patron `ZStudyCardReference`, exception FR-26 encadrée).
+/// Les **valeurs de référence** du chrome d'édition — le point d'audit unique.
 ///
-/// 🔴 **AUCUNE COULEUR ici** : uniquement des **dimensions**. Chaque couleur du
+/// **AUCUNE COULEUR ici** : uniquement des **dimensions**. Chaque couleur du
 /// chrome est un **rôle** du `ColorScheme` courant, résolu au rendu.
 abstract final class ZEditionChromeReference {
-  /// Cible tactile minimale (dp) — AD-13. **Assertée explicitement** par le
-  /// chrome (`ConstrainedBox`), jamais empruntée au plancher ambiant du SDK :
+  /// Cible tactile minimale (dp) — invariant AD-13. **Assertée explicitement**
+  /// par le chrome (`ConstrainedBox`), jamais empruntée au plancher ambiant du
+  /// SDK :
   /// une garde qui mesurerait le 48 du SDK serait vacante.
   static const double minTouchTarget = 48;
 
@@ -85,7 +84,7 @@ abstract final class ZEditionChromeReference {
 /// Métriques **résolues** du chrome (paramètre > jeton > référence).
 ///
 /// Porte-valeurs **immuable** consommé par [ZEditionScaffold] ; il ne contient
-/// que des dimensions (FR-26).
+/// que des dimensions.
 @immutable
 class ZEditionChromeMetrics {
   /// Construit un jeu de métriques déjà résolu.
@@ -118,9 +117,9 @@ class ZEditionChromeMetrics {
 }
 
 /// Résout les métriques du chrome — **paramètre > jeton `ZcrudTheme` >
-/// référence [ZEditionChromeReference]** (patron `zStudyCardChromeOf`).
+/// référence [ZEditionChromeReference]**.
 ///
-/// ## Le maillon JETON, et ce qu'il ne couvre PAS (CR-TOKENS, 2026-08-09)
+/// ## Le maillon JETON, et ce qu'il ne couvre PAS
 ///
 /// Quatre des six métriques ont un jeton dédié dans `ZcrudTheme`
 /// (`editionChromeMinTouchTarget`, `editionChromeHeaderPadding`,
@@ -133,8 +132,8 @@ class ZEditionChromeMetrics {
 /// * **[ZEditionChromeMetrics.gap]** lit déjà `ZcrudTheme.gapM`, jeton
 ///   générique **existant** et réglable à l'échelle de l'app. Un
 ///   `editionChromeGap` serait un **second canal pour la même propriété** —
-///   exactement la « vue parallèle » que ce dépôt s'interdit (CR-LEX-78), et le
-///   motif que cette même CR vient de retirer côté feuille.
+///   exactement le motif de divergence que ce dépôt s'interdit ailleurs
+///   (cf. `z_sheet_frame.dart`).
 /// * **[ZEditionChromeMetrics.actionPadding]** est le dégagement interne d'un
 ///   seul widget d'action : un micro-détail de rendu, pas une décision de
 ///   design prise à l'échelle d'une app. Il reste entièrement surchargeable —
@@ -175,13 +174,14 @@ ZEditionChromeMetrics zEditionChromeMetricsOf(
 ///
 /// Tous les champs sont **optionnels** : un chrome vide (`ZEditionChrome()`)
 /// rend un en-tête sans titre ni action — **jamais** un `throw`, **jamais** un
-/// `SizedBox.shrink` de remplissage (AD-4/AD-10).
+/// `SizedBox.shrink` de remplissage (invariants AD-4/AD-10).
 ///
 /// ## Branchement sur le cœur (aucune arête nouvelle)
 ///
 /// * [submitController] : `ZEditionSubmitController` de `zcrud_core` — quand il
-///   est fourni, l'action d'enregistrement **écoute son état** (`SM-1` : elle
-///   n'écoute QUE `state`) et se désactive pendant `inProgress`.
+///   est fourni, l'action d'enregistrement **écoute son état** (rebuild ciblé,
+///   invariant AD-2 : elle n'écoute QUE `state`) et se désactive pendant
+///   `inProgress`.
 /// * [formController] + [onConfirmDiscard] : `ZDiscardGuard` de `zcrud_core` —
 ///   quand [formController] est fourni, [ZEditionScaffold] enveloppe **tout**
 ///   le chrome dans un `ZDiscardGuard`, et `presentEdition` **neutralise les
@@ -190,7 +190,8 @@ ZEditionChromeMetrics zEditionChromeMetricsOf(
 ///   `Navigator.pop` — jamais `maybePop` — et perd donc la saisie sans
 ///   confirmation).
 class ZEditionChrome {
-  /// Construit un descripteur de chrome. Tout est optionnel (AD-4/AD-10).
+  /// Construit un descripteur de chrome. Tout est optionnel (invariants
+  /// AD-4/AD-10).
   const ZEditionChrome({
     this.title,
     this.submitLabel,
@@ -249,8 +250,8 @@ class ZEditionChrome {
   /// `true` ssi une action d'enregistrement doit exister dans l'arbre.
   bool get hasSubmitAction => onSubmit != null || submitController != null;
 
-  /// Copie modifiée (AD-4 : extension par composition, jamais par héritage
-  /// sérialisé).
+  /// Copie modifiée (invariant AD-4 : extension par composition, jamais par
+  /// héritage sérialisé).
   ZEditionChrome copyWith({
     String? title,
     String? submitLabel,

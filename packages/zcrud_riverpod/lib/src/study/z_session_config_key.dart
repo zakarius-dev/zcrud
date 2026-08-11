@@ -1,17 +1,17 @@
-/// `ZSessionConfigKey` — clé de family Riverpod à ÉGALITÉ PROFONDE possédée par
-/// le binding (Story ES-10.1, **AD-24**).
+/// `ZSessionConfigKey` — clé de family Riverpod à ÉGALITÉ PROFONDE possédée
+/// par le binding (invariant AD-24).
 ///
-/// ## Pourquoi ici et PAS au kernel (le point subtil d'AD-24)
+/// ## Pourquoi ici et pas au kernel
 ///
 /// `ZStudySessionConfig` (`zcrud_study_kernel`) porte DÉJÀ un `operator ==`/
-/// `hashCode` par valeur profonde — **forme persistable unique**, round-trip
-/// AD-10. Rien à changer côté kernel. **AD-24 exige néanmoins que le contrat
-/// d'égalité utilisé comme clé de family Riverpod (contrat de *caching*) vive
-/// dans le BINDING**, jamais dans le kernel/cœur :
+/// `hashCode` par valeur profonde — forme persistable unique, round-trip
+/// invariant AD-10. Rien à changer côté kernel. L'invariant AD-24 exige
+/// néanmoins que le contrat d'égalité utilisé comme clé de family Riverpod
+/// (contrat de *caching*) vive dans le BINDING, jamais dans le kernel/cœur :
 /// - (a) sinon le kernel deviendrait garant d'un contrat Riverpod (couplage
-///   inverse interdit — le domaine ne connaît pas Riverpod, AD-15) ;
+///   inverse interdit — le domaine ne connaît pas Riverpod, invariant AD-15) ;
 /// - (b) la garantie « pas de rebuild si la valeur profonde est inchangée »
-///   (SM-1, objectif produit n°1) doit être **prouvée localement** dans
+///   (objectif produit n°1) doit être **prouvée localement** dans
 ///   `zcrud_riverpod`, indépendamment de ce que le kernel décide de son propre
 ///   `==`.
 ///
@@ -27,11 +27,9 @@
 /// l'accesseur `ZStudySessionConfig.extra`), seulement la *responsabilité de
 /// clé*.
 ///
-/// > **Note de test (R27, leçon ES-9.3 MEDIUM-1)** : l'égalité DOIT être prouvée
-/// > en variant **CHAQUE champ un à un** (7 cas mono-champ), jamais « tous à la
-/// > fois » (qui ne teste que la présence de `==`, pas la contribution de chaque
-/// > champ). Neutraliser la comparaison d'un seul champ ci-dessous DOIT faire
-/// > rougir le cas mono-champ correspondant.
+/// > **Note de test** : l'égalité DOIT être prouvée en variant **CHAQUE
+/// > champ un à un**, jamais « tous à la fois » (qui ne teste que la
+/// > présence de `==`, pas la contribution de chaque champ).
 library;
 
 import 'package:zcrud_core/zcrud_core.dart' show zJsonEquals, zJsonHash;
@@ -52,8 +50,8 @@ class ZSessionConfigKey {
     if (other is! ZSessionConfigKey) return false;
     final a = config;
     final b = other.config;
-    // Égalité PROFONDE par VALEUR sur les 7 champs (varier chaque champ un à un
-    // dans le test — R27). `tagIds`/`types` : listes profondes ; `extra` : JSON
+    // Égalité PROFONDE par VALEUR sur les 7 champs (varier chaque champ un à
+    // un dans le test). `tagIds`/`types` : listes profondes ; `extra` : JSON
     // imbriqué → [zJsonEquals] (jamais l'égalité d'identité d'une Map/List).
     return a.mode == b.mode &&
         a.folderId == b.folderId &&

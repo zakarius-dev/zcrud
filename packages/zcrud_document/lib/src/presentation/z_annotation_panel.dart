@@ -1,17 +1,17 @@
-/// `ZAnnotationPanel` — liste ACCESSIBLE des annotations existantes (ES-8.2, D3,
-/// D8, FR-S28). Lecture/sélection ; l'édition du texte d'une sticky note est
-/// **déléguée à l'hôte** (hors périmètre du panel).
+/// `ZAnnotationPanel` — liste accessible des annotations existantes.
+/// Lecture/sélection ; l'édition du texte d'une note ancrée est déléguée à
+/// l'hôte (hors périmètre du panel).
 ///
-/// - **`ListView.builder`** (NFR-S6) — jamais `ListView(children: [...])` : la
-///   liste est LAZY (seul un sous-ensemble d'entrées est construit).
-/// - Chaque entrée : icône + libellé de `kind` (canal non-coloré, D5), swatch
-///   (fond INJECTÉ + libellé `colorKey` redondant), extrait `text`/`page`, cible
-///   ≥ 48 dp, `Semantics` explicite (kind + page + extrait).
-/// - **Défensif** (AD-10) : `text == null`/`colorKey == ''`/`kind` par défaut ⇒
-///   rendu propre (placeholder + swatch de repli `ColorScheme`) ; liste vide ⇒
-///   **empty-state** ; `colorKeyResolver` absent ⇒ repli `ColorScheme`. Jamais
-///   de throw.
-/// - `onSelect == null` ⇒ entrée NON tapable (AD-4).
+/// - `ListView.builder` — jamais `ListView(children: [...])` : la liste est
+///   lazy (seul un sous-ensemble d'entrées est construit).
+/// - Chaque entrée : icône + libellé de `kind` (canal non-coloré), swatch
+///   (fond injecté + libellé `colorKey` redondant), extrait `text`/`page`,
+///   cible ≥ 48 dp, `Semantics` explicite (kind + page + extrait).
+/// - Défensif (invariant AD-10) : `text == null`/`colorKey == ''`/`kind`
+///   par défaut ⇒ rendu propre (placeholder + swatch de repli
+///   `ColorScheme`) ; liste vide ⇒ état vide dédié ; résolveur de couleur
+///   absent ⇒ repli `ColorScheme`. Jamais de `throw`.
+/// - `onSelect == null` ⇒ entrée non tapable (invariant AD-4).
 library;
 
 import 'package:flutter/material.dart';
@@ -27,9 +27,11 @@ class ZAnnotationPanel extends StatelessWidget {
   /// Construit le panneau.
   ///
   /// - [annotations] : liste à afficher (ordre stable, conservé) ;
-  /// - [onSelect] : callback de sélection (`null` = entrées non tapables, AD-4) ;
+  /// - [onSelect] : callback de sélection (`null` = entrées non tapables,
+  ///   invariant AD-4) ;
   /// - [palette] : palette de résolution des `colorKey` (injectée) ;
-  /// - [emptyState] : widget d'état vide (défaut : libellé accessible injecté).
+  /// - [emptyState] : widget d'état vide (défaut : libellé accessible
+  ///   injecté).
   const ZAnnotationPanel({
     required this.annotations,
     this.onSelect,
@@ -127,10 +129,11 @@ class _PanelEntry extends StatelessWidget {
       'zcrud.annotation.entry.page',
       fallback: 'page',
     );
-    // Fond INJECTÉ, repli total ColorScheme (AD-10) — jamais un hex en dur.
+    // Fond injecté, repli total ColorScheme (invariant AD-10) — jamais un
+    // hex en dur.
     final pair =
         zResolveColorKeyOrSlot(context, annotation.colorKey, slotIndex: slotIndex);
-    // Canal texte redondant (D5/D7) : kind + page + extrait, JAMAIS la couleur
+    // Canal texte redondant : kind + page + extrait, jamais la couleur
     // seule.
     final semanticsValue = '$kindText · $pageText ${annotation.page} · $excerpt';
 
@@ -184,7 +187,8 @@ class _PanelEntry extends StatelessWidget {
   }
 }
 
-/// Icône d'entrée selon le `kind` (canal non-coloré). `IconData`, jamais `Color`.
+/// Icône d'entrée selon le `kind` (canal non-coloré). `IconData`, jamais
+/// `Color`.
 IconData _entryIcon(ZDocumentAnnotationKind kind) {
   switch (kind) {
     case ZDocumentAnnotationKind.highlight:
@@ -193,4 +197,3 @@ IconData _entryIcon(ZDocumentAnnotationKind kind) {
       return Icons.sticky_note_2_outlined;
   }
 }
-

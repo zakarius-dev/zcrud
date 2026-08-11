@@ -1,12 +1,12 @@
 /// `ZCodec` — abstraction **pluggable** de (dé)sérialisation du format PERSISTÉ
 /// du contenu rich-text, choisie par l'app (AD-7).
 ///
-/// L'éditeur ([ZMarkdownField], E6-1) travaille TOUJOURS en **Delta interne** et
+/// L'éditeur ([ZMarkdownField]) travaille TOUJOURS en **Delta interne** et
 /// porte sur sa tranche `ZFormController` une **valeur neutre** (Delta JSON =
 /// `List<Map<String, dynamic>>`). Le `ZCodec` transforme cette valeur neutre
 /// **à la couture de PERSISTANCE** (modèle `toMap`/`fromMap`) vers/depuis un
 /// **format persisté** choisi par l'app (Delta JSON, Markdown, HTML…) — **hors**
-/// de la tranche et **hors** du chemin chaud de frappe (AD-2 / SM-1 préservés).
+/// de la tranche et **hors** du chemin chaud de frappe (AD-2 préservés).
 library;
 
 /// Codec pluggable Delta ↔ format persisté (AD-7).

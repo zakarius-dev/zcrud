@@ -173,7 +173,7 @@ ZFirestorePathResolver buildUserScopedResolver({
 /// câbler au repository, et refaire ce geste à chaque site. Le contournement a
 /// fini par entrer en **production** chez un consommateur.
 ///
-/// ## ⚠️ `userScoped` est REQUIS, délibérément
+/// ## `userScoped` est REQUIS, délibérément
 ///
 /// Contrairement à la fabrique folder-scopée (où il vaut `true` par défaut), ce
 /// paramètre **n'a pas de défaut** ici : un défaut se trompant de sens écrirait

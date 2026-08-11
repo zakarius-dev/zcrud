@@ -1,4 +1,4 @@
-/// Embeds **image / vidéo** (DP-22, M20) de `zcrud_markdown` : embeds Quill
+/// Embeds **image vidéo** (M20) de `zcrud_markdown` : embeds Quill
 /// STANDARD de type `image` / `video` (op Delta `{"insert":{"image":<source>}}` /
 /// `{"insert":{"video":<source>}}`), leurs `EmbedBuilder`s de rendu DÉFENSIF, et
 /// le **seam de résolution de source** ([ZMediaEmbedScope]/[ZMediaResolver]) qui
@@ -9,7 +9,7 @@
 /// contrat `Embeddable`, même `EmbedBuilder` défensif, même placeholder thémé,
 /// même label a11y. Le TYPE (`image`/`video`) est celui STANDARD de flutter_quill
 /// (`BlockEmbed.imageType`/`videoType`) : la valeur portée par la tranche est donc
-/// interopérable avec un Delta produit par un autre éditeur Quill (parité DODLP,
+/// interopérable avec un Delta produit par un autre éditeur Quill (parité legacy,
 /// dont les op embed image/vidéo empruntent ces mêmes clés).
 ///
 /// SEAM NEUTRE (AD-1, « pas d'upload réseau dans le package ») : le package ne
@@ -30,16 +30,18 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
 /// Clé/type Delta de l'embed image — op `{"insert": {"image": "<source>"}}`.
-/// IDENTIQUE à `BlockEmbed.imageType` de flutter_quill (interop, parité DODLP).
+/// IDENTIQUE à `BlockEmbed.imageType` de flutter_quill (interop, parité legacy).
 const String kImageEmbedType = 'image';
 
 /// Clé/type Delta de l'embed vidéo — op `{"insert": {"video": "<source>"}}`.
-/// IDENTIQUE à `BlockEmbed.videoType` de flutter_quill (interop, parité DODLP).
+/// IDENTIQUE à `BlockEmbed.videoType` de flutter_quill (interop, parité legacy).
 const String kVideoEmbedType = 'video';
 
-/// Libellés a11y (AD-13) des placeholders — lisibles par lecteur d'écran.
+/// Libellé a11y (AD-13) du placeholder image — lisible par lecteur d'écran.
 @visibleForTesting
 const String kImagePlaceholderLabel = 'image';
+
+/// Libellé a11y (AD-13) du placeholder vidéo — lisible par lecteur d'écran.
 @visibleForTesting
 const String kVideoPlaceholderLabel = 'vidéo';
 
@@ -127,7 +129,7 @@ class ZVideoEmbed extends Embeddable {
 
 /// `EmbedBuilder` de rendu DÉFENSIF (AD-10) d'un média (image OU vidéo) via le
 /// seam [ZMediaResolver], sinon placeholder thémé. Sans état ⇒ instance `const`
-/// STABLE (SM-1/AD-2 : aucune allocation par (re)build ; hors chemin chaud).
+/// STABLE (AD-2 : aucune allocation par (re)build; hors chemin chaud).
 class ZMediaEmbedBuilder extends EmbedBuilder {
   /// Builder `const` pour la nature [kind] (clé Delta `image` ou `video`).
   const ZMediaEmbedBuilder(this.kind);
@@ -178,7 +180,7 @@ class ZMediaEmbedBuilder extends EmbedBuilder {
   IconData get _icon =>
       kind == ZMediaKind.image ? Icons.image_outlined : Icons.videocam_outlined;
 
-  /// Placeholder BLOC thémé (AD-13/FR-26) : icône + libellé + source tronquée,
+  /// Placeholder BLOC thémé (AD-13) : icône + libellé + source tronquée
   /// enveloppé d'un [Semantics] lisible. Insets DIRECTIONNELS. Zéro couleur en
   /// dur (bordure/texte issus de `ZcrudTheme`/`Theme`).
   Widget _placeholder(BuildContext context, {required String? source}) {

@@ -50,7 +50,7 @@ class ZRailItem extends StatelessWidget {
   /// token `ZcrudTheme.railItemHeight`, puis **aucune contrainte de hauteur**
   /// (l'item garde la hauteur de son contenu — rendu strictement inchangé).
   ///
-  /// 🔴 **Pourquoi aucun repli chiffré, contrairement à [width]** : une
+  /// **Pourquoi aucun repli chiffré, contrairement à [width]** : une
   /// largeur non bornée dans un défileur horizontal est une FAUTE de layout
   /// (rien n'est peint, et le debug lève en rafale), donc un repli y est
   /// obligatoire ; une hauteur non bornée est licite et c'est le rendu actuel
@@ -59,7 +59,7 @@ class ZRailItem extends StatelessWidget {
   /// RÉFÉRENCE (200) reste portée par la carte de flashcard par défaut, là où
   /// elle a un sens (`ZFlashcardCardReference.cardHeight`).
   ///
-  /// ⚠️ La hauteur ainsi posée est **TIGHT** : elle est le « cadre » au sens
+  /// La hauteur ainsi posée est **TIGHT** : elle est le « cadre » au sens
   /// de CR-IFFD-62 ⑤. Une carte du socle qui la reçoit **la remplit** (son
   /// pied est poussé au bas) au lieu d'additionner ses hauteurs.
   final double? height;

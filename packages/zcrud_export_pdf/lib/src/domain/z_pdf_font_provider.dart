@@ -1,4 +1,4 @@
-/// Port **neutre** de fourniture de police PDF (CR-LEX-38).
+/// Port **neutre** de fourniture de police PDF.
 ///
 /// ## Le défaut qu'il ferme
 ///
@@ -27,7 +27,7 @@ import 'dart:typed_data';
 /// L'implémentation vit **hors** de ce paquet (l'app charge sa police depuis
 /// ses assets). Retourner `null` — ou lever — laisse le gabarit retomber sur la
 /// police standard : le rendu **fonctionne toujours**, il redevient simplement
-/// borné au latin-1 (AD-10 : jamais de throw propagé).
+/// borné au latin-1 (invariant AD-10 : jamais de throw propagé).
 ///
 /// ```dart
 /// class NotoProvider implements ZPdfFontProvider {
@@ -38,10 +38,11 @@ import 'dart:typed_data';
 /// }
 /// ```
 ///
-/// ⚠️ **Une seule police pour tout le document.** Le gabarit ne compose pas
+/// **Une seule police pour tout le document.** Le gabarit ne compose pas
 /// plusieurs fontes : si votre corpus mêle arabe et CJK, fournissez une police
-/// qui couvre les deux (ou acceptez que l'autre dégrade). Le dire ici plutôt
-/// que de le faire découvrir à l'export.
+/// qui couvre les deux (ou acceptez que l'autre dégrade) — ou utilisez
+/// `ZFlashcardPdfTemplate.fallbackFontProviders`, qui lève cette limite avec
+/// une chaîne de polices.
 abstract interface class ZPdfFontProvider {
   /// Octets d'une police TrueType, ou `null` pour retomber sur la police
   /// standard. **Ne doit jamais lever** — une exception est traitée comme

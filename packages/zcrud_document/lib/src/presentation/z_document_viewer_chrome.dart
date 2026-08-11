@@ -2,7 +2,7 @@
 ///
 /// L'hôte fournit le contenu, les barres, les vues d'état et les libellés
 /// localisés. Cette surface ne connaît donc ni PDF, ni contrôleur de rendu,
-/// ni dépendance tierce (AD-57).
+/// ni dépendance tierce.
 library;
 
 import 'package:flutter/material.dart';

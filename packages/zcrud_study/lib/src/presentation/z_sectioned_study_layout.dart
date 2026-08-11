@@ -413,14 +413,14 @@ class _ZStudySection extends StatelessWidget {
     // (`LongPressDraggable`/`DragTarget`/`Scrollable`), elle délègue le calcul
     // de colonnes à `ZAdaptiveGrid`, donc à `computeCrossAxisCount`.
     //
-    // ⚠️ RECTIFICATION (AD-57) — un commentaire de ce fichier a longtemps
+    // RECTIFICATION (AD-57) — un commentaire de ce fichier a longtemps
     // affirmé que `reorderable_grid_view` était « refusé par AD-1 ». C'ÉTAIT
     // FAUX : AD-1 ne contraint que `zcrud_core`, et 15 satellites dépendaient
     // déjà de paquets pub.dev. Le rendu est désormais choisi via le port
     // `ZReorderRenderer` — le maison n'est que le repli, un satellite peut
     // brancher un paquet de l'écosystème.
     //
-    // ⚠️ Seule exclusivité restante : réordonner + VIRTUALISER. Une cellule non
+    // Seule exclusivité restante : réordonner + VIRTUALISER. Une cellule non
     // construite ne peut pas être une cible de dépôt ; en cas de conflit, la
     // réordonnabilité l'emporte et la grille est rendue *eager* (documenté sur
     // `ZStudyToolsSectionSpec.crossAxisMinItemWidth`, jamais silencieux).
@@ -470,7 +470,7 @@ class _ZStudySection extends StatelessWidget {
       // scrolle de lui-même. Indispensable dès quelques dizaines d'items — en
       // mode eager, TOUT est construit ET layouté, même hors écran.
       if (spec.crossAxisVirtualized) {
-        // ⚠️ La grille virtualisée EST la surface scrollable (ni `shrinkWrap`,
+        // La grille virtualisée EST la surface scrollable (ni `shrinkWrap`,
         // ni `NeverScrollableScrollPhysics`). Imbriquée telle quelle dans le
         // `ListView.builder` du layout, elle reçoit une hauteur NON BORNÉE et
         // lève « Vertical viewport was given unbounded height ». Une hauteur de
@@ -638,7 +638,7 @@ class _ZStudySection extends StatelessWidget {
     // quel : AUCUNE lecture d'`InheritedWidget`, aucun chemin nouveau, rendu
     // strictement antérieur.
     //
-    // 🔴 La résolution du hub est **non dépendante** (`ZContentHubScope.openerOf`
+    // La résolution du hub est **non dépendante** (`ZContentHubScope.openerOf`
     // → `getInheritedWidgetOfExactType`) : cet en-tête ne s'inscrit PAS comme
     // dépendant du scope. Un hôte qui recompose son launcher à chaque frame ne
     // reconstruit donc AUCUNE section (SM-1, mesuré par garde).
@@ -672,7 +672,7 @@ class _ZStudySection extends StatelessWidget {
     // inchangé). `adjacentToTitle` ⇒ le compteur SUIT le titre : c'est le titre
     // qu'il qualifie (« Notes — 6 »), pas le bord de l'écran.
     //
-    // 🔴 Le compteur n'est JAMAIS écrasé par un titre long : il reste
+    // Le compteur n'est JAMAIS écrasé par un titre long : il reste
     // INFLEXIBLE et c'est le titre qui est `Flexible` + ellipsé. Le `Expanded`
     // enveloppant l'ensemble garde les cibles tactiles (actions, chevron) à
     // leur largeur pleine — l'invariant de CR-IFFD-50 est préservé.
@@ -1137,7 +1137,7 @@ class _CountBadge extends StatelessWidget {
 /// reconstruit NI les autres sections NI la page (SM-1/AD-2), exactement comme
 /// l'ordre optimiste de `_ReorderableItems`.
 ///
-/// 🔴 Depuis CR-IFFD-38, le repli n'est même plus reconstruit par un `setState`
+/// Depuis CR-IFFD-38, le repli n'est même plus reconstruit par un `setState`
 /// **de section** : il est lu par un `ValueListenableBuilder` branché sur la
 /// liaison. Et quand l'hôte pilote, la valeur est lue **et écrite chez lui** —
 /// la section n'en garde aucune copie, donc rien ne peut diverger (le chevron
@@ -1198,7 +1198,7 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
 
   @override
   void dispose() {
-    // ⚠️ Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas.
+    // Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas.
     _expanded.dispose();
     super.dispose();
   }

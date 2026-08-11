@@ -1,38 +1,42 @@
-/// `ZAddressCodec` — **codec de compatibilité de schéma** entre la valeur d'adresse
-/// **legacy String** (DODLP, gap B10) et le modèle structuré [ZPostalAddress]
-/// (E11a-2). Pur-Dart, couche `domain` (AD-1/AD-14), sans aucune lib lourde.
+/// `ZAddressCodec` — **codec de compatibilité de schéma** entre une valeur
+/// d'adresse **legacy `String`** et le modèle structuré [ZPostalAddress].
+/// Pur-Dart, couche `domain` (invariants AD-1, AD-14), sans aucune lib
+/// lourde.
 ///
-/// origine: DODLP persiste le champ adresse comme une **String plate** (adresse
-/// formatée), tandis que zcrud persiste un [ZPostalAddress] structuré. Ce couple
-/// (decode/encode) fait le **pont** pour qu'une collection DODLP migrée ne soit
-/// **pas réécrite** en `Map` (mode « compat String »), sans embarquer de parseur
-/// d'adresse.
+/// Une application existante peut persister le champ adresse comme une
+/// **String plate** (adresse formatée), tandis que zcrud persiste un
+/// [ZPostalAddress] structuré. Ce couple (decode/encode) fait le **pont**
+/// pour qu'une collection existante ne soit **pas réécrite** en `Map`
+/// (mode « compat String »), sans embarquer de parseur d'adresse.
 ///
-/// **Stratégie « String legacy → `formatted` »** : une String legacy est portée
-/// **telle quelle** dans [ZPostalAddress.formatted] (sous-champs structurés à
-/// `null`). On ne tente **aucune** re-décomposition en `line1/city/…`.
+/// **Stratégie « String legacy → `formatted` »** : une String legacy est
+/// portée **telle quelle** dans [ZPostalAddress.formatted] (sous-champs
+/// structurés à `null`). On ne tente **aucune** re-décomposition en
+/// `line1/city/…`.
 ///
-/// **Perte structure → String (documentée, volontaire)** : [encodeToString] d'un
-/// [ZPostalAddress] structuré **sans** `formatted` produit une String composée
-/// (jointe par `", "`) ; la re-décoder via [decodeString] ne rend qu'un
-/// [ZPostalAddress] dont **seul `formatted`** est renseigné. La re-décomposition
-/// en sous-champs relèverait d'un **parseur d'adresse** (non fourni, HORS
-/// périmètre). La migration fidèle consiste à **ne pas perdre la String**, pas à
+/// **Perte structure → String (documentée, volontaire)** :
+/// [encodeToString] d'un [ZPostalAddress] structuré **sans** `formatted`
+/// produit une String composée (jointe par `", "`) ; la re-décoder via
+/// [decodeString] ne rend qu'un [ZPostalAddress] dont **seul `formatted`**
+/// est renseigné. La re-décomposition en sous-champs relèverait d'un
+/// **parseur d'adresse** (non fourni, hors périmètre de ce codec). La
+/// migration fidèle consiste à **ne pas perdre la String**, pas à
 /// reconstruire la structure.
 ///
-/// **Défensif (AD-10)** : [decodeString] et [encodeToString] ne **throw JAMAIS**
-/// (aucune valeur d'entrée — `Map`, `int`, `List`, `null`… — ne provoque
-/// d'exception).
+/// **Défensif (invariant AD-10)** : [decodeString] et [encodeToString] ne
+/// **throw jamais** (aucune valeur d'entrée — `Map`, `int`, `List`,
+/// `null`… — ne provoque d'exception).
 library;
 
 import 'z_postal_address.dart';
 
 /// Couple de fonctions pures (dé)sérialisant une adresse legacy `String` ⇄
-/// [ZPostalAddress]. Aucun état, aucune dépendance lourde (AD-1/AD-14).
+/// [ZPostalAddress]. Aucun état, aucune dépendance lourde (invariants AD-1,
+/// AD-14).
 abstract final class ZAddressCodec {
   const ZAddressCodec._();
 
-  /// Ordre canonique de composition des sous-champs vers une String (AC1).
+  /// Ordre canonique de composition des sous-champs vers une String.
   static const List<String> _composeOrder = <String>[
     'line1',
     'line2',
@@ -58,14 +62,14 @@ abstract final class ZAddressCodec {
   /// Encode un [ZPostalAddress] en String legacy (mode « compat String »).
   ///
   /// `null`/[ZPostalAddress.isEmpty] → `null`. Sinon **préfère `addr.formatted`**
-  /// (round-trip String à l'octet près) ; à défaut **compose** une String depuis
+  /// (round-trip String à l'octet près); à défaut **compose** une String depuis
   /// les sous-champs renseignés, dans l'ordre `line1, line2, city, region,
   /// postalCode, countryCode`, jointe par `", "`. Ne throw jamais (AD-10).
   static String? encodeToString(ZPostalAddress? addr) {
     if (addr == null || addr.isEmpty) return null;
     final formatted = addr.formatted;
     if (formatted != null && formatted.trim().isNotEmpty) {
-      // Fidélité migration : rendu formaté préféré, non altéré (AC2/AC3a).
+      // Fidélité migration: rendu formaté préféré, non altéré.
       return formatted;
     }
     // Composition ordonnée depuis les sous-champs (structure → String, lossy).

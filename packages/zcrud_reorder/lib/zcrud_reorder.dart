@@ -1,13 +1,13 @@
 /// **zcrud_reorder** — implémentation OPT-IN du port `ZReorderRenderer`
 /// (`zcrud_core`) adossée au paquet `reorderable_grid_view` de l'écosystème
-/// pub.dev (AD-57).
+/// pub.dev.
 ///
 /// ## Ce que ce barrel expose — et ce qu'il n'expose PAS
 ///
 /// Il n'expose **qu'un renderer** : [ZPackageReorderRenderer]. **Aucun** type de
-/// `reorderable_grid_view` n'apparaît ici ni dans une signature publique — c'est
-/// la condition 2 d'AD-57 (« le tiers est une implémentation du port, jamais le
-/// type public que l'hôte manipule »). L'hôte continue de ne connaître que
+/// `reorderable_grid_view` n'apparaît ici ni dans une signature publique : le
+/// tiers reste une implémentation du port, jamais le type public que l'hôte
+/// manipule. L'hôte continue de ne connaître que
 /// `ZReorderRenderer` / `ZReorderRenderRequest`.
 ///
 /// ## Installer ce paquet est un CHOIX, jamais une obligation

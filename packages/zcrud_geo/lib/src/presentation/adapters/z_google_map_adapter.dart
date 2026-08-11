@@ -1,30 +1,32 @@
 /// `ZGoogleMapAdapter` — implémentation Google Maps du port [ZMapAdapter] via
-/// `google_maps_flutter` (E11b-1, AD-1/AD-12).
+/// `google_maps_flutter`.
 ///
-/// **CONFINEMENT SDK (AD-1)** : c'est le SEUL fichier de `zcrud_geo` qui importe
-/// `google_maps_flutter`. Les types SDK (`GoogleMap`, `GoogleMapController`,
-/// `LatLng`, `Marker`, `Polygon`, `Circle`, `CameraPosition`…) restent
-/// **internes** : l'API publique de cette classe (`implements ZMapAdapter`) ne
-/// parle QUE de types neutres (`ZGeoPoint`/`ZGeoShape`/`ZGeoCircle`/`Widget`).
-/// Ce fichier n'est PAS exporté par le barrel principal `lib/zcrud_geo.dart` — il
-/// est atteint via l'entrée dédiée `package:zcrud_geo/adapters/google.dart`.
+/// **Confinement SDK (invariant AD-1)** : c'est le seul fichier de
+/// `zcrud_geo` qui importe `google_maps_flutter`. Les types SDK (`GoogleMap`,
+/// `GoogleMapController`, `LatLng`, `Marker`, `Polygon`, `Circle`,
+/// `CameraPosition`…) restent **internes** : l'API publique de cette classe
+/// (`implements ZMapAdapter`) ne parle que de types neutres
+/// (`ZGeoPoint`/`ZGeoShape`/`ZGeoCircle`/`Widget`). Ce fichier n'est pas
+/// exporté par le barrel principal `lib/zcrud_geo.dart` — il est atteint via
+/// l'entrée dédiée `package:zcrud_geo/adapters/google.dart`.
 ///
-/// **AD-12 : ZÉRO clé/secret.** Aucune clé API Google Maps n'apparaît dans ce
-/// package : la clé vit dans la **config plateforme** de l'app hôte (manifest
-/// Android `com.google.android.geo.API_KEY` / `AppDelegate` iOS — E1-5). Le
-/// [mapStyleJson] (style de carte) est **surchargeable** par l'app ; aucun
-/// endpoint privé en dur, aucun `badCertificateCallback`.
+/// **Invariant AD-12 : zéro clé/secret.** Aucune clé API Google Maps
+/// n'apparaît dans ce package : la clé vit dans la **config plateforme** de
+/// l'application hôte (manifest Android `com.google.android.geo.API_KEY` /
+/// `AppDelegate` iOS). Le [mapStyleJson] (style de carte) est
+/// **surchargeable** par l'application ; aucun endpoint privé en dur, aucun
+/// `badCertificateCallback`.
 ///
-/// **Cycle de vie (learning E5, MAJEUR-1)** : l'adaptateur possède un
-/// `GoogleMapController` natif (obtenu de façon asynchrone via un `Completer`),
-/// disposé en [dispose] (idempotent). Une instance est **à usage unique par
-/// montage de champ** (fabrique `ZGoogleMapAdapter.new`), jamais aliasée.
+/// **Cycle de vie** : l'adaptateur possède un `GoogleMapController` natif
+/// (obtenu de façon asynchrone via un `Completer`), disposé en [dispose]
+/// (idempotent). Une instance est **à usage unique par montage de champ**
+/// (fabrique `ZGoogleMapAdapter.new`), jamais aliasée.
 ///
 /// **Testabilité** : `google_maps_flutter` s'affiche via une **PlatformView
-/// native** non peinte sous `flutter test` (headless). La preuve automatisée se
-/// limite à : conformité de signature neutre, confinement SDK, no-secret,
-/// `dispose` idempotent, `buildMap(...)` sans exception au build. Le rendu
-/// interactif réel est validé hors CI (appareil/intégration).
+/// native** non peinte sous `flutter test` (headless). La preuve automatisée
+/// se limite à : conformité de signature neutre, confinement SDK, absence de
+/// secret, `dispose` idempotent, `buildMap(...)` sans exception au build. Le
+/// rendu interactif réel se valide hors CI (appareil/intégration).
 library;
 
 import 'dart:async';
@@ -42,16 +44,16 @@ import '../z_map_adapter.dart';
 
 /// Traduit un entier ARGB neutre (`0xAARRGGBB`) en `Color` SDK — **confiné** à
 /// cet adaptateur (AD-1 : aucune couleur SDK ne fuit dans le domaine). `null` →
-/// `null` (l'appelant retombe sur le thème injecté, FR-26).
+/// `null` (l'appelant retombe sur le thème injecté).
 Color? _argb(int? argb) => argb == null ? null : Color(argb);
 
-/// Adaptateur carte Google Maps (clé API = config plateforme, jamais ici — AD-12).
-/// Possède un `GoogleMapController` natif disposé via [dispose] (learning E5).
+/// Adaptateur carte Google Maps (clé API = config plateforme, jamais ici —
+/// invariant AD-12). Possède un `GoogleMapController` natif disposé via
+/// [dispose].
 ///
-/// **G7/G11/G13** : opte pour [ZMapCameraCapable] (via `GoogleMapController.
-/// animateCamera`) et [ZMapGesturesCapable] (marqueurs **draggables natifs** du
-/// SDK : `Marker(draggable: true, onDragEnd:)` — même mécanique que le legacy
-/// `gma`). Handler `null` ⇒ rendu strictement inchangé (AD-4).
+/// Opte pour [ZMapCameraCapable] (via `GoogleMapController.animateCamera`)
+/// et [ZMapGesturesCapable] (marqueurs **draggables natifs** du SDK :
+/// `Marker(draggable: true, onDragEnd:)`). Handler `null` ⇒ rendu inchangé.
 class ZGoogleMapAdapter
     implements ZMapAdapter, ZMapCameraCapable, ZMapGesturesCapable {
   /// Construit l'adaptateur. [fallbackCenter] est le centre neutre si aucun
@@ -78,23 +80,23 @@ class ZGoogleMapAdapter
       Completer<GoogleMapController>();
   bool _disposed = false;
 
-  /// G13 — fin de drag d'un sommet (`null` → aucun marqueur de sommet rendu,
-  /// comportement antérieur strict : cet adaptateur ne rendait PAS les sommets).
+  /// Fin de drag d'un sommet (`null` → aucun marqueur de sommet rendu ; cet
+  /// adaptateur ne rend pas les sommets sans handler).
   @override
   ZGeoVertexDragEnd? onVertexDragEnd;
 
-  /// G13 — fin de déplacement de forme via le marqueur au centroïde.
+  /// Fin de déplacement de forme via le marqueur au centroïde.
   @override
   ZGeoShapeDragEnd? onShapeDragEnd;
 
-  /// G11 — fin de drag de la poignée de rayon du cercle.
+  /// Fin de drag de la poignée de rayon du cercle.
   @override
   ZGeoRadiusDragEnd? onCircleRadiusDragEnd;
 
-  /// G7 — déplace la caméra (parité `UnifiedMapController.moveCamera`).
-  /// Contrôleur natif pas encore créé (carte jamais montée) / disposé / point
-  /// invalide → **no-op silencieux** (AD-10 : jamais de throw, jamais un await
-  /// suspendu sur un `Completer` qui ne complètera pas).
+  /// Déplace la caméra. Contrôleur natif pas encore créé (carte jamais
+  /// montée) / disposé / point invalide → **no-op silencieux** (défensif,
+  /// invariant AD-10 : jamais de throw, jamais un await suspendu sur un
+  /// `Completer` qui ne complètera pas).
   @override
   Future<void> moveCamera(ZGeoPoint center, {double? zoom}) async {
     if (_disposed || !center.isValid || !_controllerCompleter.isCompleted) {
@@ -113,7 +115,8 @@ class ZGoogleMapAdapter
     }
   }
 
-  /// G7 — cadre la caméra sur la boîte SW→NE. Mêmes garanties que [moveCamera].
+  /// Cadre la caméra sur la boîte sud-ouest→nord-est. Mêmes garanties que
+  /// [moveCamera].
   @override
   Future<void> fitBounds(ZGeoPoint southWest, ZGeoPoint northEast) async {
     if (_disposed ||

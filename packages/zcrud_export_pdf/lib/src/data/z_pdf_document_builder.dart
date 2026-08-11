@@ -1,19 +1,20 @@
-/// Backend PDF **images → document** — arête `syncfusion_flutter_pdf` CONFINÉE
-/// (E11b-3, Axe A, AD-8/SM-5).
+/// Backend PDF **images → document** — arête `syncfusion_flutter_pdf` CONFINÉE.
 ///
-/// origine: E11b-3. Déduplique le `PdfCreationService` copié à l'identique dans
-/// DODLP et IFFD (scans/images → PDF multi-pages) en une **source unique**. Comme
-/// les autres backends (`z_excel_exporter.dart`/`z_pdf_exporter.dart`), l'import
-/// Syncfusion est **confiné à ce fichier** : il n'est JAMAIS réexporté par le
-/// barrel, et aucun type `PdfDocument`/`PdfBitmap` n'apparaît dans une signature
-/// publique. Entrée = bytes d'images **neutres** (`List<Uint8List>`), sortie =
-/// **bytes neutres** (`Uint8List`, préfixe `%PDF-`) → fuite de type structurellement
-/// impossible (AD-1 signature). Aucune clé/licence committée, aucun `badCert`
-/// (AD-12). Anti-fuite de cycle de vie (learning E5) : `PdfDocument.dispose()` en
-/// `finally`, y compris chemins vide/exception.
+/// Offre une **source unique** pour assembler des scans/images en PDF
+/// multi-pages, évitant qu'un tel service soit dupliqué par chaque
+/// application hôte. Comme les autres backends
+/// (`z_excel_exporter.dart`/`z_pdf_exporter.dart`), l'import Syncfusion est
+/// **confiné à ce fichier** : il n'est JAMAIS réexporté par le barrel, et
+/// aucun type `PdfDocument`/`PdfBitmap` n'apparaît dans une signature
+/// publique. Entrée = bytes d'images **neutres** (`List<Uint8List>`), sortie
+/// = **bytes neutres** (`Uint8List`, préfixe `%PDF-`) → fuite de type
+/// structurellement impossible (invariant AD-1). Aucune clé/licence
+/// committée, aucun `badCert` (invariant AD-12). Anti-fuite de cycle de vie :
+/// `PdfDocument.dispose()` en `finally`, y compris chemins vide/exception.
 ///
-/// **Aucun second moteur PDF** (AD-8) : réutilise `syncfusion_flutter_pdf` DÉJÀ
-/// déclaré (`PdfBitmap` + `page.graphics.drawImage`). Pas de `pdf`/`printing`.
+/// **Aucun second moteur PDF (invariant AD-8)** : réutilise
+/// `syncfusion_flutter_pdf` DÉJÀ déclaré (`PdfBitmap` +
+/// `page.graphics.drawImage`). Pas de `pdf`/`printing`.
 library;
 
 import 'dart:math' as math;
@@ -29,14 +30,14 @@ import 'z_pdf_export_options.dart';
 /// (`Uint8List`, préfixe `%PDF-`).
 ///
 /// Fit-to-page préservant le ratio, image centrée : une image plus large/haute
-/// que la page n'est **ni rognée ni déformée** (AC2). [options] `orientation`
-/// (défaut portrait) est réutilisé si fourni (AC2).
+/// que la page n'est **ni rognée ni déformée**. [options] `orientation`
+/// (défaut portrait) est réutilisé si fourni.
 ///
-/// **Défensif (AD-10, AC3)** :
+/// **Défensif (invariant AD-10)** :
 /// - [images] vide → PDF **valide** d'une page vide (jamais 0-page/exception).
 /// - un élément dont les bytes ne sont **pas** une image décodable est **ignoré**
 ///   (page sautée), le reste est produit **sans crash**.
-/// - `PdfDocument.dispose()` en `finally` sur TOUS les chemins (anti-fuite E5).
+/// - `PdfDocument.dispose()` en `finally` sur TOUS les chemins.
 Uint8List buildImagesPdf(
   List<Uint8List> images, {
   ZPdfExportOptions? options,

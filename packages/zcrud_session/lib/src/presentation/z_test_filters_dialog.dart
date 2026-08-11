@@ -1,45 +1,34 @@
-/// `ZTestFiltersDialog` — le dialog de filtres test/examen (SU-6, FR-SU12 —
-/// AC10/AC13/AC14/AC15).
+/// `ZTestFiltersDialog` — le dialog de filtres test/examen.
 ///
-/// ## Il PILOTE la fonction pure. Il ne filtre rien lui-même
+/// ## Il pilote la fonction pure. Il ne filtre rien lui-même
 ///
-/// Le filtrage **est** `zApplyTestFilters` (`zcrud_flashcard`, PURE, AD-33 :
-/// sélection AMONT). Ce dialog **compose un `ZFlashcardTestFilters`** et le rend
-/// à l'hôte via [Navigator.pop] : aucune règle métier n'est réimplémentée ici —
-/// les seaux de maîtrise viennent de `ZMasteryLevel`, jamais d'une liste recopiée.
+/// Le filtrage est `zApplyTestFilters` (`zcrud_flashcard`, fonction pure,
+/// sélection en amont). Ce dialog compose un `ZFlashcardTestFilters` et le
+/// rend à l'hôte via [Navigator.pop] : aucune règle métier n'est
+/// réimplémentée ici — les seaux de maîtrise viennent de `ZMasteryLevel`,
+/// jamais d'une liste recopiée.
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatefulWidget` sans gestionnaire d'état, état
-/// **local au dialog** (les cases cochées), aucun moteur, aucune écriture SRS.
+/// Widget pur (invariants AD-2/AD-15) : `StatefulWidget` sans gestionnaire
+/// d'état, état local au dialog (les cases cochées), aucun moteur, aucune
+/// écriture SRS.
 ///
-/// **A11y/RTL/l10n (AD-13)** : `Semantics(label:)` issu de `ZcrudLabels` sur
-/// chaque bascule, cibles ≥ 48 dp, variantes directionnelles, aucune couleur en
-/// dur. ⚠️ Ces affirmations ne valent que parce qu'un test les **énumère** :
-/// le groupe « AC14 — `Semantics` sur TOUTES les tuiles du diff » de
-/// `test/presentation/z_session_mode_selector_test.dart` monte **ce dialog** et
-/// parcourt `ZMasteryLevel.values`, les sources et les 3 contrôles de comptage,
-/// en assertant le libellé à sa **valeur EXACTE** (un `isNotEmpty` ne verrait ni
-/// une fusion, ni un littéral en dur).
+/// A11y/RTL/l10n (invariant AD-13) : `Semantics(label:)` issu de
+/// `ZcrudLabels` sur chaque bascule, cibles ≥ 48 dp, variantes
+/// directionnelles, aucune couleur en dur.
 ///
-/// ## 🔴 Défaut MESURÉ (code-review su-6, D2) — la double annonce, RÉCIDIVE de su-5/D1
+/// ## Chaque case cochée re-déclare son état et son action
 ///
-/// Mon premier jet posait `Semantics(label:, selected:)` **par-dessus** un
-/// `CheckboxListTile` portant `title: Text(text)` : le lecteur d'écran annonçait
-/// **« Maîtrisées, sélectionné » puis « Maîtrisées »** — libellé **doublé** sur
-/// les 3 seaux ET chaque source, tandis que l'état coché ne vivait **que** sur le
-/// nœud parent (l'enfant, celui qui *a l'air* d'être la case, n'exposait
-/// **aucun** état : `hasCheckedState=false`).
-///
-/// C'est **exactement** le MAJEUR D1 de su-5 (« Cartes, 8, Cartes — valeur : 8 »),
-/// re-commis dans un diff dont la story **cite** la leçon. La cause racine n'est
-/// pas l'oubli : c'est que **rien ne regardait ce fichier** (0 test sur 240
-/// lignes publiques).
-///
-/// Correctif (patron entériné par su-5 et par le cœur — `z_date_field_widget.dart`) :
-/// **`excludeSemantics: true`** + **re-déclaration explicite** de tout ce que
-/// l'exclusion masque — `checked:` (l'état, `checked` et non `selected` : c'est
-/// une case à cocher) et `onTap:` (l'action, sinon un lecteur d'écran ne pourrait
-/// plus basculer le filtre). Exclure sans re-déclarer serait **pire** que le
-/// défaut.
+/// Chaque bascule pose `Semantics(label:, checked:)` par-dessus un
+/// `CheckboxListTile` qui porte le même libellé en `title: Text(text)`.
+/// Sans `excludeSemantics: true`, le libellé serait annoncé deux fois par le
+/// lecteur d'écran (une fois par le nœud `Semantics` parent, une fois par le
+/// `Text` enfant), tandis que l'état coché ne serait exposé que sur le nœud
+/// parent. Le correctif (même patron que le cœur, `z_date_field_widget.dart`) :
+/// `excludeSemantics: true`, puis re-déclaration explicite de tout ce que
+/// l'exclusion masque — `checked:` (et non `selected:` : c'est une case à
+/// cocher) et `onTap:` (l'action, sinon un lecteur d'écran ne pourrait plus
+/// basculer le filtre). Exclure sans re-déclarer serait pire que ne pas
+/// exclure du tout.
 library;
 
 import 'package:flutter/material.dart';
@@ -47,8 +36,9 @@ import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_flashcard/zcrud_flashcard.dart'
     show ZFlashcardTestFilters, ZMasteryLevel;
 
-/// Clé l10n du libellé d'un seau de maîtrise — **dérivée de l'enum**, jamais
-/// d'une table recopiée (un 4ᵉ seau ajouté demain ne peut pas être oublié).
+/// Clé l10n du libellé d'un seau de maîtrise — dérivée de l'enum, jamais
+/// d'une table recopiée (un quatrième seau ajouté demain ne peut pas être
+/// oublié).
 String zMasteryLabelKey(ZMasteryLevel level) => 'zcrud.study.mastery.${level.name}';
 
 /// Repli lisible d'un seau (utilisé si l'app ne fournit pas la clé).
@@ -64,12 +54,12 @@ String zMasteryFallback(ZMasteryLevel level) => switch (level) {
 class ZTestFiltersDialog extends StatefulWidget {
   /// Construit le dialog.
   ///
-  /// - [initial] : filtres de départ (défaut : `questionCount: 10`, aucun seau
-  ///   ⇒ tous) ;
-  /// - [availableSources] : `kind` de source proposés (registre **ouvert**
-  ///   AD-4) — vide ⇒ la section n'est pas affichée ;
-  /// - [minQuestionCount] / [maxQuestionCount] : bornes du réglage du **nombre
-  ///   de questions** — **INJECTÉES**, jamais des littéraux enfouis dans le
+  /// - [initial] : filtres de départ (défaut : `questionCount: 10`, aucun
+  ///   seau, donc tous) ;
+  /// - [availableSources] : `kind` de source proposés (registre ouvert,
+  ///   invariant AD-4) — vide, la section n'est pas affichée ;
+  /// - [minQuestionCount] / [maxQuestionCount] : bornes du réglage du nombre
+  ///   de questions — injectées, jamais des littéraux enfouis dans le
   ///   `build` (un hôte à gros dossiers voudra plus de 100).
   const ZTestFiltersDialog({
     this.initial = const ZFlashcardTestFilters(),
@@ -79,7 +69,7 @@ class ZTestFiltersDialog extends StatefulWidget {
     super.key,
   });
 
-  /// Clé du bouton « Valider » — les tests le **tapent** (jamais un `find.text`).
+  /// Clé du bouton « Valider » — un test le cible ainsi, jamais par son texte.
   static const ValueKey<String> confirmKey = ValueKey<String>('zFiltersConfirm');
 
   /// Clé du bouton « Annuler ».
@@ -111,10 +101,11 @@ class ZTestFiltersDialog extends StatefulWidget {
   /// `kind` de source proposés.
   final List<String> availableSources;
 
-  /// Borne basse du nombre de questions (défaut **1** — `<= 0` ⇒ tirage vide).
+  /// Borne basse du nombre de questions (défaut 1 — `<= 0` donnerait un
+  /// tirage vide).
   final int minQuestionCount;
 
-  /// Borne haute du nombre de questions (défaut **100**).
+  /// Borne haute du nombre de questions (défaut 100).
   final int maxQuestionCount;
 
   @override
@@ -129,19 +120,20 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
   @override
   void initState() {
     super.initState();
-    // État local INITIALISÉ une fois (jamais réinjecté au rebuild — AD-2).
+    // État local initialisé une fois (jamais réinjecté au rebuild, invariant
+    // AD-2).
     _levels = <ZMasteryLevel>{...widget.initial.masteryLevels};
     _sources = <String>{...widget.initial.sources};
-    // Borné dès l'entrée : un `initial` hors bornes (0, 10 000 — hôte, données
-    // corrompues) ne doit ni throw ni piéger le stepper (AD-10).
+    // Borné dès l'entrée : un `initial` hors bornes (données d'hôte
+    // corrompues) ne doit ni lever, ni piéger le stepper (invariant AD-10).
     _questionCount = _clampCount(widget.initial.questionCount);
   }
 
-  /// Borne un comptage aux bornes INJECTÉES (jamais un littéral ici).
+  /// Borne un comptage aux bornes injectées (jamais un littéral ici).
   int _clampCount(int value) {
     final lo = widget.minQuestionCount;
     final hi = widget.maxQuestionCount;
-    // Bornes incohérentes (`hi < lo`) ⇒ on ne throw pas : `lo` fait foi (AD-10).
+    // Bornes incohérentes (`hi < lo`) : on ne lève pas, `lo` fait foi.
     if (hi < lo) return lo;
     return value < lo ? lo : (value > hi ? hi : value);
   }
@@ -161,19 +153,8 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // 🔴 Le NOMBRE DE QUESTIONS est RÉGLABLE (FR-SU12 : « nombre de
-            // questions (défaut 10, tirage aléatoire si excédent) … + dialog de
-            // configuration »).
-            //
-            // Mon premier jet portait `late int _questionCount` initialisé dans
-            // `initState` et relu au `pop` — **jamais réassigné**, sans aucun
-            // contrôle de saisie : un champ mutable dont l'unique rôle était le
-            // pass-through **donnait l'apparence** de la configurabilité. Le
-            // « dialog de configuration » de FR-SU12 ne configurait donc pas ce
-            // que FR-SU12 nomme en premier : l'apprenant voulant 20 questions ne
-            // pouvait pas les demander, alors que `zDrawQuestions` sait les
-            // tirer (prouvé). Le seul chemin d'accès utilisateur manquait —
-            // et le fichier n'ayant AUCUN test, rien ne pouvait le voir (D2/D3).
+            // Le nombre de questions est réglable dans ce dialog (défaut 10,
+            // tirage aléatoire si excédent).
             _QuestionCountStepper(
               value: _questionCount,
               canDecrement: _questionCount > widget.minQuestionCount,
@@ -183,8 +164,9 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
             ),
             SizedBox(height: theme.gapM),
 
-            // 🔴 Les seaux ÉNUMÈRENT `ZMasteryLevel.values` — jamais une liste
-            // recopiée : un 4ᵉ seau apparaîtrait ici sans toucher ce fichier.
+            // Les seaux énumèrent `ZMasteryLevel.values` — jamais une liste
+            // recopiée : un quatrième seau apparaîtrait ici sans toucher ce
+            // fichier.
             for (final level in ZMasteryLevel.values)
               _FilterToggle(
                 tileKey: ZTestFiltersDialog.masteryKey(level),
@@ -195,10 +177,10 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
                 ),
                 selected: _levels.contains(level),
                 onChanged: (value) => setState(() {
-                  // `setState` LOCAL au dialog (quelques cases) — ce n'est PAS
+                  // `setState` local au dialog (quelques cases) — ce n'est pas
                   // un formulaire d'édition : aucun `TextEditingController`,
-                  // aucun champ à focus. AD-2 vise le rebuild global d'un
-                  // FORMULAIRE, pas une case à cocher de dialog.
+                  // aucun champ à focus. L'invariant AD-2 vise le rebuild
+                  // global d'un formulaire, pas une case à cocher de dialog.
                   if (value) {
                     _levels.add(level);
                   } else {
@@ -211,9 +193,9 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
               for (final source in widget.availableSources)
                 _FilterToggle(
                   tileKey: ZTestFiltersDialog.sourceKey(source),
-                  // La clé l10n DÉRIVE du `kind` (registre ouvert AD-4) : aucune
-                  // enum fermée, aucun libellé en dur. Le repli est le `kind`
-                  // lui-même (opaque, non traduisible).
+                  // La clé l10n dérive du `kind` (registre ouvert, invariant
+                  // AD-4) : aucune enum fermée, aucun libellé en dur. Le
+                  // repli est le `kind` lui-même (opaque, non traduisible).
                   text: label(
                     context,
                     'zcrud.study.source.$source',
@@ -237,12 +219,11 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
           key: ZTestFiltersDialog.cancelKey,
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            // 🔴 Clé NUE `'cancel'` — jamais un namespace `zcrud.action.*`
-            // inventé ici (code-review su-6, D6). `_enLabels` porte DÉJÀ
-            // `'cancel'`/`'confirm'`, et le patron du dépôt est la clé nue
-            // (`z_color_field_widget.dart:478`). Avec `zcrud.action.cancel`, une
-            // app anglaise ratait `_enLabels` et retombait sur le fallback
-            // FRANÇAIS : « Annuler » au milieu d'une UI en « Cancel ».
+            // Clé nue `'cancel'`, jamais un namespace `zcrud.action.*`
+            // inventé ici : la table du cœur porte déjà `'cancel'`/`'confirm'`,
+            // et c'est le patron attendu du dépôt. Avec un namespace inventé,
+            // une application anglaise raterait la table du cœur et
+            // retomberait sur le fallback français.
             label(context, 'cancel', fallback: 'Annuler'),
           ),
         ),
@@ -264,13 +245,13 @@ class _ZTestFiltersDialogState extends State<ZTestFiltersDialog> {
   }
 }
 
-/// Réglage du **nombre de questions** (FR-SU12) — stepper borné.
+/// Réglage du nombre de questions — stepper borné.
 ///
-/// **A11y (AD-13)** : la valeur passe par `Semantics(value:)` — jamais seulement
-/// par le texte ; les deux boutons portent un libellé **d'action** distinct du
-/// libellé du champ (« une question de plus » ≠ « Nombre de questions »), et des
-/// cibles ≥ 48 dp. Un bouton **désactivé aux bornes** est annoncé comme tel
-/// (`enabled:`), jamais silencieusement inerte.
+/// A11y (invariant AD-13) : la valeur passe par `Semantics(value:)`, jamais
+/// seulement par le texte ; les deux boutons portent un libellé d'action
+/// distinct du libellé du champ (« une question de plus » ≠ « Nombre de
+/// questions »), et des cibles ≥ 48 dp. Un bouton désactivé aux bornes est
+/// annoncé comme tel (`enabled:`), jamais silencieusement inerte.
 class _QuestionCountStepper extends StatelessWidget {
   const _QuestionCountStepper({
     required this.value,
@@ -300,15 +281,15 @@ class _QuestionCountStepper extends StatelessWidget {
           child: Semantics(
             key: ZTestFiltersDialog.questionCountKey,
             label: text,
-            // La VALEUR est le nombre (jamais concaténée au label) — le lecteur
+            // La valeur est le nombre (jamais concaténée au label) — le lecteur
             // d'écran annonce « Nombre de questions, 10 ».
             value: '$value',
-            // Le `Text` ci-dessous rend le MÊME contenu : sans exclusion, il
-            // serait annoncé une seconde fois (motif su-5/D1).
+            // Le `Text` ci-dessous rend le même contenu : sans exclusion, il
+            // serait annoncé une seconde fois.
             excludeSemantics: true,
             child: Text(
-              // Interpolation PURE pour le nombre : le SENS est porté par `text`
-              // (issu de `ZcrudLabels`), la VALEUR par le nombre.
+              // Interpolation pure pour le nombre : le sens est porté par
+              // `text` (issu de `ZcrudLabels`), la valeur par le nombre.
               '$text : $value',
               textAlign: TextAlign.start,
             ),
@@ -333,7 +314,7 @@ class _QuestionCountStepper extends StatelessWidget {
   }
 }
 
-/// Bouton d'incrément/décrément — **le seul patron** (un défaut est un MOTIF).
+/// Bouton d'incrément/décrément — le seul patron de ce fichier.
 class _CountAction extends StatelessWidget {
   const _CountAction({
     required this.buttonKey,
@@ -356,13 +337,13 @@ class _CountAction extends StatelessWidget {
       label: label(context, labelKey, fallback: labelFallback),
       button: true,
       enabled: onPressed != null,
-      // 🔴 `excludeSemantics` MASQUE l'action du bouton Material : on la
-      // RE-DÉCLARE ici, sinon le filtre deviendrait inactionnable au lecteur
-      // d'écran (une correction a11y qui casse l'a11y serait pire que le défaut).
+      // `excludeSemantics` masque l'action du bouton Material : on la
+      // re-déclare ici, sinon le filtre deviendrait inactionnable au lecteur
+      // d'écran.
       excludeSemantics: true,
       onTap: onPressed,
       child: ConstrainedBox(
-        // Cible ≥ 48 dp (AD-13/NFR-SU3).
+        // Cible ≥ 48 dp (invariant AD-13).
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         child: IconButton(
           onPressed: onPressed,
@@ -374,13 +355,12 @@ class _CountAction extends StatelessWidget {
   }
 }
 
-/// Bascule d'un filtre — **LE seul patron** (seaux de maîtrise ET sources).
+/// Bascule d'un filtre — le seul patron, partagé entre seaux de maîtrise et
+/// sources.
 ///
-/// 🔴 **Un défaut est un MOTIF** : mon premier jet portait DEUX classes de
-/// bascule quasi identiques (`_MasteryToggle`/`_SourceToggle`). Deux copies, ce
-/// sont deux endroits où corriger — et su-5 a démontré qu'on n'en corrige qu'un.
-/// Les seaux et les sources traversent donc **ce** widget : aucune bascule ne
-/// peut diverger de l'autre.
+/// Les seaux et les sources traversent ce même widget : deux copies quasi
+/// identiques seraient deux endroits où corriger, et un correctif appliqué à
+/// l'un pourrait diverger de l'autre.
 class _FilterToggle extends StatelessWidget {
   const _FilterToggle({
     required this.tileKey,
@@ -391,7 +371,7 @@ class _FilterToggle extends StatelessWidget {
 
   final ValueKey<String> tileKey;
 
-  /// Libellé **déjà résolu** via `ZcrudLabels` par l'appelant.
+  /// Libellé déjà résolu via `ZcrudLabels` par l'appelant.
   final String text;
   final bool selected;
   final ValueChanged<bool> onChanged;
@@ -400,20 +380,20 @@ class _FilterToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       key: tileKey,
-      // 🔴 Libellé A11y issu de `ZcrudLabels` (angle mort DÉCLARÉ de la garde de
-      // libellés — tenu par l'énumération AC14, qui l'assert à sa valeur EXACTE).
+      // Libellé a11y issu de `ZcrudLabels`.
       label: text,
-      // 🔴 `checked:`, pas `selected:` — c'est une CASE À COCHER : le lecteur
-      // d'écran doit annoncer « cochée / non cochée », jamais la couleur seule
-      // (AD-13). C'est aussi l'information que `excludeSemantics` retire au
-      // `CheckboxListTile` : elle est donc RE-DÉCLARÉE ici, jamais perdue.
+      // `checked:`, pas `selected:` — c'est une case à cocher : le lecteur
+      // d'écran doit annoncer « cochée / non cochée », jamais la couleur
+      // seule (invariant AD-13). C'est aussi l'information que
+      // `excludeSemantics` retire au `CheckboxListTile` : elle est donc
+      // re-déclarée ici, jamais perdue.
       checked: selected,
-      // 🔴 L'ACTION est re-déclarée pour la même raison : sans elle, la bascule
+      // L'action est re-déclarée pour la même raison : sans elle, la bascule
       // serait annoncée mais inactionnable au lecteur d'écran.
       onTap: () => onChanged(!selected),
-      // 🔴 Le `title: Text(text)` de la tuile rend le MÊME libellé que ce
-      // `Semantics(label:)` : sans exclusion, TalkBack annonce « Maîtrisées,
-      // cochée » PUIS « Maîtrisées » (su-5/D1, mesuré à nouveau ici).
+      // Le `title: Text(text)` de la tuile rend le même libellé que ce
+      // `Semantics(label:)` : sans exclusion, un lecteur d'écran annoncerait
+      // le libellé deux fois.
       excludeSemantics: true,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 48),

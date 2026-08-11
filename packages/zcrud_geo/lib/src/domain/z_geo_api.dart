@@ -1,16 +1,16 @@
 import 'package:zcrud_core/zcrud_core.dart';
 
-/// Marqueur d'API publique de `zcrud_geo` (placeholder E1-2).
+/// Marqueur d'API publique de `zcrud_geo`.
 ///
-/// Substance réelle posée dans la feature-story dédiée. Référence les
-/// marqueurs des dépendances `zcrud_*` pour rendre les arêtes AD-1
-/// effectivement utilisées (acyclicité tangible, pas d'import mort).
+/// Espace de noms statique portant les métadonnées de version de l'API
+/// (invariant AD-1 : la dépendance unique de `zcrud_geo` vers `zcrud_core`
+/// est référencée ici pour rester tangible).
 abstract final class ZGeoApi {
   const ZGeoApi._();
 
-  /// Version de l'API publique au stade squelette.
+  /// Version de l'API publique de `zcrud_geo`.
   static const String version = '0.0.1';
 
-  /// Rattache l'arête AD-1 `zcrud_geo -> zcrud_core`.
+  /// Version de l'API publique de `zcrud_core` dont dépend ce paquet.
   static const String coreApiVersion = ZCoreApi.version;
 }

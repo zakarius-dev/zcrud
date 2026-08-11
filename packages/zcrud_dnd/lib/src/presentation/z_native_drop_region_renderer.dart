@@ -1,5 +1,5 @@
 /// Implémentation NATIVE du port `ZDropRegionRenderer` (`zcrud_core`), adossée
-/// à `super_drag_and_drop` (AD-57).
+/// à `super_drag_and_drop`.
 ///
 /// C'est le SEUL fichier du paquet qui importe le tiers. Tout le reste — les
 /// règles de traduction, de filtrage et de robustesse — vit dans
@@ -196,7 +196,7 @@ List<DataFormat<Object>> _formatsFor(Set<ZDropKind> accepts) {
 ///
 /// C'est ici, et nulle part ailleurs, que le tiers est converti en vocabulaire
 /// neutre. Cette classe est privée : aucun type tiers ne peut donc fuir dans
-/// une signature publique du paquet (AD-57, condition 2).
+/// une signature publique du paquet.
 class _SuperDropItemSource extends ZDropItemSource {
   _SuperDropItemSource(this._item);
 

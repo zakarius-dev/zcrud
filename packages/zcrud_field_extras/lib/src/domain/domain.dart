@@ -1,5 +1,6 @@
-// Couche DOMAINE (pure) du satellite `zcrud_field_extras` (fp-1-2, AD-53).
+// Couche DOMAINE (pure) du satellite `zcrud_field_extras`.
 //
-// 🔴 Substrat : matérialise la couche `domain` de l'hexagone. Vide au stade
-// squelette — peuplée aux Finitions. Aucune dépendance hors {flutter,
-// zcrud_core}. Fichier documenté sans symbole.
+// Matérialise la couche `domain` de l'hexagone. Actuellement vide : la
+// logique du paquet vit entièrement dans `presentation` (les trois widgets de
+// champ n'ont pas encore de règles métier séparées de leur rendu). Aucune
+// dépendance hors {flutter, zcrud_core}. Fichier documenté sans symbole.

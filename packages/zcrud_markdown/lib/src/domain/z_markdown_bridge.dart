@@ -1,4 +1,4 @@
-/// Ponts **Markdown ↔ embed** injectables — CR-IFFD-23 §3 / CR-IFFD-24 §2.
+/// Ponts **Markdown ↔ embed** injectables .
 ///
 /// Le paquet savait RENDRE des embeds (formule LaTeX, tableau) qu'il ne savait
 /// pas PRODUIRE depuis du Markdown : un embed était un aller simple. L'auteur
@@ -30,11 +30,12 @@ import 'package:flutter/foundation.dart';
 /// )
 /// ```
 ///
-/// ⚠️ **Un pont change le sens d'un texte ordinaire.** Une fois `$…$` déclaré,
+/// **Un pont change le sens d'un texte ordinaire.** Une fois `$…$` déclaré,
 /// une phrase contenant deux `$` devient une formule. C'est précisément pourquoi
 /// la déclaration est explicite et jamais implicite.
 @immutable
 final class ZMarkdownEmbedBridge {
+  /// Déclare un pont entre une syntaxe Markdown inline et un embed Delta.
   const ZMarkdownEmbedBridge({
     required this.embedType,
     required this.pattern,
@@ -72,7 +73,7 @@ final class ZMarkdownEmbedBridge {
   /// relire », déjà appliquée à `~` pour le barré.
   final Set<String> escapedCharacters;
 
-  /// Garde au **DÉCODAGE** (CR-LEX-48). `null` (défaut) = tout accepter, donc
+  /// Garde au **DÉCODAGE**. `null` (défaut) = tout accepter, donc
   /// comportement inchangé pour un hôte existant (AD-57).
   ///
   /// [escapedCharacters] protège l'**écriture** : un texte ordinaire est réécrit
@@ -116,7 +117,7 @@ final class ZMarkdownEmbedBridge {
   }
 }
 
-/// Garde par défaut des ponts LaTeX fournis (CR-LEX-48, CR-54).
+/// Garde par défaut des ponts LaTeX fournis (CR-54).
 ///
 /// Une charge vide est refusée. Les espaces de bordure sont ignorés pour la
 /// décision : `$ V = P + F $` et `$ x^2 $` restent donc des formules. Une
@@ -177,7 +178,7 @@ abstract final class ZMarkdownBridges {
         ),
         ZMarkdownEmbedBridge(
           embedType: 'latexBlock',
-          // CR-LEX-50 : `(?<!\\)` sur les DEUX délimiteurs. Sans ces gardes, le
+          // `(?<!\\)` sur les DEUX délimiteurs. Sans ces gardes, le
           // `\]` né d'un backslash littéral doublé par l'encodeur (`a\]` →
           // `a\\]`) refermait un bloc ouvert par un crochet échappé.
           pattern: RegExp(r'(?<!\\)\\\[(.+?)(?<!\\)\\\]'),
@@ -205,7 +206,7 @@ abstract final class ZMarkdownBridges {
         ),
         ZMarkdownEmbedBridge(
           embedType: 'latex',
-          // CR-LEX-50 : mêmes gardes que la forme bloc `\[…\]`.
+          // mêmes gardes que la forme bloc `\[…\]`.
           pattern: RegExp(r'(?<!\\)\\\((.+?)(?<!\\)\\\)'),
           toMarkdown: (data) => '\$$data\$',
           escapedCharacters: const <String>{r'$'},

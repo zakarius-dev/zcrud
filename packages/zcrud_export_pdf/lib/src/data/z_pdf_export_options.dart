@@ -1,22 +1,21 @@
 /// Options de **mise en page PDF** — neutres, immuables, `const`-constructibles.
 ///
-/// origine: E11b-3 (Axe C, clôt LOW-1 d'E11a-3 : tables larges rognées). Ce type
-/// vit ENTIÈREMENT dans `zcrud_export` (aucun ajout dans `zcrud_core`) : il ne
-/// porte AUCUN type Syncfusion ni `zcrud_core`. Il paramètre le **rendu** des
-/// backends confinés (`z_pdf_exporter.dart`, `z_pdf_document_builder.dart`) sans
-/// jamais toucher la **projection** tabulaire (`ZExportTable.fromRequest`, source
-/// unique de formatage, SM-5).
+/// Ce type vit ENTIÈREMENT dans `zcrud_export_pdf` (aucun ajout dans
+/// `zcrud_core`) : il ne porte AUCUN type Syncfusion ni `zcrud_core`. Il
+/// paramètre le **rendu** des backends confinés (`z_pdf_exporter.dart`,
+/// `z_pdf_document_builder.dart`) sans jamais toucher la **projection**
+/// tabulaire (`ZExportTable.fromRequest`, source unique de formatage).
 ///
-/// Champs (tous à défaut sûr = comportement E11a-3 quand `ZPdfExportOptions()`
-/// non fourni) :
+/// Champs (tous à défaut sûr = comportement historique quand
+/// `ZPdfExportOptions()` non fourni) :
 /// - [orientation] : portrait (défaut) ou paysage. Le paysage élargit la page →
 ///   plus de colonnes rendues avant pagination (anti-rognage complémentaire).
 /// - [title] : titre optionnel dessiné en haut du document (null = aucun).
 /// - [repeatHeader] : répète la ligne d'en-tête sur chaque page auto-paginée
 ///   (défaut `true`).
-/// - [header] : en-tête riche optionnel (CR pilote DODLP, lot 4 — parité
-///   `dodlp_pdf_header.dart`), voir [ZPdfHeaderSpec]. `null` (défaut) = repli
-///   STRICT sur le rendu historique du [title] seul (E11a-3, AC9).
+/// - [header] : en-tête riche optionnel (logo + hiérarchie organisationnelle +
+///   sous-titre), voir [ZPdfHeaderSpec]. `null` (défaut) = repli STRICT sur
+///   le rendu historique du [title] seul.
 library;
 
 import 'dart:typed_data';
@@ -32,20 +31,20 @@ enum ZPdfOrientation {
   landscape,
 }
 
-/// En-tête PDF **riche**, neutre et immuable (CR pilote DODLP 2026-08-11, lot 4
-/// — parité `dodlp_pdf_header.dart` : logo + hiérarchie organisationnelle +
-/// sous-titre).
+/// En-tête PDF **riche**, neutre et immuable : logo + hiérarchie
+/// organisationnelle + sous-titre.
 ///
 /// Purement déclaratif : ni police, ni couleur, ni type Syncfusion — seulement
 /// des DONNÉES (bytes d'image + chaînes fournies par l'hôte). Le rendu (police,
 /// alignement, gabarit) reste interne au backend confiné
-/// (`z_pdf_exporter.dart`). Aucun libellé n'est codé en dur ici (FR-26) : les
+/// (`z_pdf_exporter.dart`). Aucun libellé n'est codé en dur ici : les
 /// [organizationLines]/[subtitle] sont systématiquement fournis par l'appelant,
 /// jamais une valeur littérale zcrud.
 ///
-/// Défensif (AD-10) : des [logoBytes] non décodables comme image ne font PAS
-/// échouer le rendu — le logo est simplement omis, le reste de l'en-tête (lignes
-/// organisationnelles, titre, sous-titre) est rendu normalement.
+/// Défensif (invariant AD-10) : des [logoBytes] non décodables comme image ne
+/// font PAS échouer le rendu — le logo est simplement omis, le reste de
+/// l'en-tête (lignes organisationnelles, titre, sous-titre) est rendu
+/// normalement.
 class ZPdfHeaderSpec {
   /// Construit un en-tête riche immuable.
   const ZPdfHeaderSpec({
@@ -57,7 +56,8 @@ class ZPdfHeaderSpec {
   });
 
   /// Bytes d'image du logo (PNG/JPEG…), dessiné en haut du document. `null` =
-  /// aucun logo. Bytes non décodables → logo omis, sans exception (AD-10).
+  /// aucun logo. Bytes non décodables → logo omis, sans exception (invariant
+  /// AD-10).
   final Uint8List? logoBytes;
 
   /// Largeur de rendu du logo (points PDF). Défaut `60`.
@@ -117,7 +117,7 @@ class ZPdfHeaderSpec {
 
 /// Options de mise en page immuables pour l'export PDF (tabulaire + images).
 class ZPdfExportOptions {
-  /// Construit des options immuables. Défauts = comportement E11a-3
+  /// Construit des options immuables. Défauts = comportement historique
   /// (portrait, sans titre, en-tête répété, sans en-tête riche).
   const ZPdfExportOptions({
     this.orientation = ZPdfOrientation.portrait,
@@ -135,7 +135,7 @@ class ZPdfExportOptions {
 
   /// En-tête riche optionnel (logo, lignes organisationnelles, sous-titre) —
   /// voir [ZPdfHeaderSpec]. `null` (défaut) : repli STRICT sur le rendu
-  /// historique du [title] seul (AC9, rétro-compat).
+  /// historique du [title] seul, sans rupture pour un appelant existant.
   final ZPdfHeaderSpec? header;
 
   /// Répète la ligne d'en-tête sur chaque page auto-paginée (défaut `true`).
@@ -144,12 +144,12 @@ class ZPdfExportOptions {
   /// Interprète `$...$` comme du **LaTeX inline** dans les gabarits qui composent
   /// texte + formules (défaut `true` = comportement historique).
   ///
-  /// CR-LEX-41 §B : la tokenisation était **inconditionnelle**, donc un corpus
-  /// où `$` est un symbole monétaire (« 100 $ US ») n'avait aucun recours. Passer
-  /// `false` traite le texte comme littéral — `$` compris.
+  /// Une tokenisation inconditionnelle laisserait un corpus où `$` est un
+  /// symbole monétaire (« 100 $ US ») sans recours. Passer `false` traite le
+  /// texte comme littéral — `$` compris.
   ///
-  /// ⚠️ Ce drapeau ne « répare » pas le repli : depuis CR-LEX-41, le repli texte
-  /// **réémet les délimiteurs** dans les deux cas, donc `true` n'est plus lossy.
+  /// Ce drapeau ne « répare » pas le repli : le repli texte **réémet les
+  /// délimiteurs** dans les deux cas, `true` n'est donc jamais lossy.
   /// `latexEnabled: false` sert à empêcher la *rasterisation* d'un segment qui
   /// n'est pas une formule, pas à éviter une perte.
   final bool latexEnabled;

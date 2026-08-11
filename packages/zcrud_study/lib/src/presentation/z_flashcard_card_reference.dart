@@ -1,7 +1,7 @@
 /// **CR-IFFD-57** — le RENDU DE RÉFÉRENCE de la carte de flashcard par défaut,
 /// centralisé en UN SEUL endroit (patron [ZStudyCardReference], CR-IFFD-56).
 ///
-/// ## ⚠️ Exception FR-26 ENCADRÉE (arbitrage owner, 2026-08-04)
+/// ## Exception FR-26 ENCADRÉE (arbitrage owner, 2026-08-04)
 ///
 /// Ce fichier est le **SEUL** du package autorisé à porter des couleurs
 /// littérales : les **quatre paires de dégradé par type** de la référence
@@ -196,7 +196,7 @@ abstract final class ZFlashcardCardReference {
   /// Étendue du **fondu de continuation** appliqué au bas de l'énoncé quand
   /// il déborde sa borne (**CR-IFFD-62 ③**, 12 dp).
   ///
-  /// 🔴 **Ce n'est PAS une valeur du legacy** : le legacy ne signalait RIEN
+  /// **Ce n'est PAS une valeur du legacy** : le legacy ne signalait RIEN
   /// (le texte était coupé net en milieu de ligne — le grief le plus grave de
   /// la CR). C'est une valeur de socle, choisie ≈ à la hauteur d'une ligne du
   /// corps de référence (13 × 1.15 ≈ 15) pour que l'effacement porte sur la

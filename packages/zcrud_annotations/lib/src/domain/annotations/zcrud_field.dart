@@ -3,46 +3,46 @@ import 'package:zcrud_core/edition.dart';
 import 'z_persist_as.dart';
 
 /// Annotation de **champ d'instance** déclarant la surface d'autorité d'un
-/// champ du schéma `zcrud` : un même schéma pilote formulaire (`DynamicEdition`,
-/// E3) **et** liste (`DynamicList`, E4).
+/// champ du schéma `zcrud` : un même schéma pilote formulaire d'édition **et**
+/// liste.
 ///
-/// Le générateur E2-5 lit chaque paramètre **statiquement** (`ConstantReader`)
-/// et le projette dans le `ZFieldSpec` correspondant (table de correspondance
-/// ci-dessous). Classe `const` **pur-données** : tous champs `final`, tous
-/// optionnels avec défaut sûr, **zéro closure** (AC1/AC3).
+/// Le générateur `zcrud_generator` lit chaque paramètre **statiquement**
+/// (`ConstantReader`) et le projette dans le `ZFieldSpec` correspondant (table
+/// de correspondance ci-dessous). Classe `const` **pur-données** : tous champs
+/// `final`, tous optionnels avec défaut sûr, **zéro closure**.
 ///
-/// **Table de correspondance `@ZcrudField` → `ZFieldSpec` (émis en E2-5)** :
+/// **Table de correspondance `@ZcrudField` → `ZFieldSpec`** :
 /// | Paramètre | `ZFieldSpec` | Interprète |
 /// |---|---|---|
-/// | [name] (ou dérivé via `fieldRename`) | `name` (clé persistée) | E2-5 |
-/// | [label] | `label` | E3/E4 (résolution l10n) |
-/// | [type] (`null` ⇒ inféré) | `type` | E3 (widget), E4 (colonne) |
-/// | [validators] | `validators` | E3 compose → `FormBuilderValidators` |
-/// | [config] | `config` | E3 (config par type) |
-/// | [choices] | `choices` | E3 (select/radio/checkbox) |
-/// | [condition] | `condition` (displayCondition) | E3 évalue (AD-2) |
-/// | [searchable] | `searchable` | E4 (filtre/recherche) |
-/// | [defaultValue] | `defaultValue` | E3/E2-5 (`fromMap` défaut) |
-/// | [readOnly] / [showIfNull] | idem | E3 (mode lecture) |
-/// | [multiple] | `multiple` | E3 (multi-select) |
+/// | [name] (ou dérivé via `fieldRename`) | `name` (clé persistée) | générateur |
+/// | [label] | `label` | résolution l10n |
+/// | [type] (`null` ⇒ inféré) | `type` | rendu du widget / de la colonne |
+/// | [validators] | `validators` | compose `FormBuilderValidators` |
+/// | [config] | `config` | config par type |
+/// | [choices] | `choices` | select/radio/checkbox |
+/// | [condition] | `condition` (displayCondition) | visibilité conditionnelle (invariant AD-2) |
+/// | [searchable] | `searchable` | filtre/recherche de la liste |
+/// | [defaultValue] | `defaultValue` | défaut de `fromMap` |
+/// | [readOnly] / [showIfNull] | idem | mode lecture |
+/// | [multiple] | `multiple` | multi-sélection |
 /// | [persistAs] | *(métadonnée neutre `Set<String>` séparée)* | `zcrud_firestore` (encode `Timestamp`) |
 ///
-/// **Hint de persistance (`persistAs`, gap B14)** : contrairement aux autres
+/// **Hint de persistance (`persistAs`)** : contrairement aux autres
 /// paramètres, [persistAs] n'est **pas** projeté dans le `ZFieldSpec` mais dans
 /// un artefact généré **neutre** (`const Set<String> $XxxTimestampFields`) — un
 /// ensemble de clés persistées consommé par l'adaptateur Firestore pour encoder
-/// ces champs en `Timestamp` natif (AD-5 : `Timestamp` reste confiné à
-/// `zcrud_firestore`).
+/// ces champs en `Timestamp` natif (invariant AD-5 : `Timestamp` reste confiné
+/// à `zcrud_firestore`).
 ///
 /// **N'entre PAS dans l'annotation** (exige une closure/valeur runtime,
-/// illisible par `ConstantReader`) — **attaché au runtime** :
+/// illisible par `ConstantReader`) — attaché au runtime à la place :
 /// - builder `widget` libre → `EditionFieldType.widget` **nomme** le type ; la
-///   closure est fournie via `ZTypeRegistry` / la config de champ (E3-3b) ;
-/// - `stateValidators` (dépendant de l'état) → `ZFormController` (E3) ;
+///   closure est fournie via `ZTypeRegistry` / la config de champ ;
+/// - `stateValidators` (dépendant de l'état) → `ZFormController` ;
 /// - `displayCondition` dynamique dépendant du CRUD → remplacé par [ZCondition]
-///   déclaratif ; cas irréductibles via surcouche runtime (E3) ;
+///   déclaratif ; cas irréductibles via surcouche runtime ;
 /// - relation dynamique (`choiceItemsRepository`) → `EditionFieldType.relation`
-///   nomme le type ; la source est câblée au runtime (E4/ports E2-2).
+///   nomme le type ; la source est câblée au runtime.
 class ZcrudField {
   /// Construit l'annotation `const` avec des défauts sûrs.
   const ZcrudField({
@@ -98,10 +98,9 @@ class ZcrudField {
   final bool readOnly;
 
   /// En **mode lecture global**, afficher le champ même si sa valeur est
-  /// vide/nulle (DODLP `showIfNull`).
+  /// vide/nulle.
   ///
-  /// **Défaut `false`** (DP-13, aligné sur `ZFieldSpec.showIfNull` et DODLP
-  /// `models.dart:843`) : un champ vide est **masqué** en lecture, sauf
+  /// **Défaut `false`** : un champ vide est **masqué** en lecture, sauf
   /// `showIfNull: true` explicite. Sans effet hors mode lecture.
   final bool showIfNull;
 
@@ -109,36 +108,32 @@ class ZcrudField {
   /// `@ZcrudModel.fieldRename`.
   final String? name;
 
-  /// Multi-sélection (`multiple=true` — inventaire §3).
+  /// Multi-sélection.
   final bool multiple;
 
   /// Hint de **format de persistance** d'un champ date (défaut
   /// [ZPersistAs.iso8601]). Avec [ZPersistAs.timestamp], le générateur collecte
   /// la clé persistée du champ dans l'artefact neutre `$XxxTimestampFields`
   /// (`Set<String>`) que `zcrud_firestore` consomme pour encoder le champ en
-  /// `Timestamp` natif (gap B14, AD-5 préservé). Sans effet hors du chemin
+  /// `Timestamp` natif (invariant AD-5 préservé). Sans effet hors du chemin
   /// Firestore distant.
   final ZPersistAs persistAs;
 
-  /// Ornement de **tête** (parité DODLP `leading`) — projeté dans
-  /// `ZFieldSpec.leading` (DP-12, M1). Pur-données ([ZFieldAdornment],
-  /// `text`/`icon`/`widget` — jamais une closure/`IconData`, AD-3/AD-14).
+  /// Ornement de **tête** du champ — projeté dans `ZFieldSpec.leading`.
+  /// Pur-données ([ZFieldAdornment], `text`/`icon`/`widget` — jamais une
+  /// closure/`IconData`, invariants AD-3/AD-14).
   final ZFieldAdornment? leading;
 
-  /// Ornement **préfixe interne** (parité DODLP `preffix*`) — projeté dans
-  /// `ZFieldSpec.prefix` (DP-12, M1).
+  /// Ornement **préfixe interne** du champ — projeté dans `ZFieldSpec.prefix`.
   final ZFieldAdornment? prefix;
 
-  /// Ornement **suffixe interne** (parité DODLP `suffix*`) — projeté dans
-  /// `ZFieldSpec.suffix` (DP-12, M1). Le cas état-dépendant DODLP
-  /// (`suffix(editionState)`) passe par `ZFieldAdornment.widget(kind)`.
+  /// Ornement **suffixe interne** du champ — projeté dans `ZFieldSpec.suffix`.
+  /// Le cas état-dépendant passe par `ZFieldAdornment.widget(kind)`.
   final ZFieldAdornment? suffix;
 
-  /// Texte indicatif (parité DODLP `hintText`) — projeté dans
-  /// `ZFieldSpec.hintText` (DP-12, M6). Clé l10n ou littéral.
+  /// Texte indicatif, projeté dans `ZFieldSpec.hintText`. Clé l10n ou littéral.
   final String? hintText;
 
-  /// Texte d'aide (parité DODLP `helperText`) — projeté dans
-  /// `ZFieldSpec.helperText` (DP-12, M6). Clé l10n ou littéral.
+  /// Texte d'aide, projeté dans `ZFieldSpec.helperText`. Clé l10n ou littéral.
   final String? helperText;
 }

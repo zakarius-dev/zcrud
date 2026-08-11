@@ -1,17 +1,19 @@
-/// `ZCurrencyCatalog` — **catalogue devise chargé paresseusement** (E11b-2,
-/// FR-21, AD-1/AD-10/AD-12). Calqué **à l'identique** sur `ZCountryCatalog`
-/// (paresse + cache + dé-dup `_loading` MEDIUM-1 + `fromList`/`bundle` + défensif
-/// + partagé LOW-1).
+/// `ZCurrencyCatalog` — **catalogue devise chargé paresseusement**
+/// (invariants AD-1, AD-10, AD-12). Calqué **à l'identique** sur
+/// `ZCountryCatalog` (paresse + cache + dé-dup de la charge en vol +
+/// `fromList`/`bundle` + défensif + instance partagée).
 ///
-/// origine: le sélecteur de code devise (`ZCurrencyField`) a besoin de la liste
-/// ISO 4217 (code, nom, symbole, décimales). Cette liste vit dans un **asset JSON
-/// bundlé** (`lib/assets/currencies.json`), chargé **à la première demande**
-/// ([load]) via `rootBundle`, puis **mis en cache** (lecture seule, immuable →
-/// cache partageable légitime, PAS une ressource disposable).
+/// Le sélecteur de code devise (`ZCurrencyField`) a besoin de la liste ISO
+/// 4217 (code, nom, symbole, décimales). Cette liste vit dans un **asset
+/// JSON bundlé** (`lib/assets/currencies.json`), chargé **à la première
+/// demande** ([load]) via `rootBundle`, puis **mis en cache** — lecture
+/// seule, immuable, donc un cache partageable légitime, pas une ressource
+/// disposable.
 ///
-/// **Défensif (AD-10)** : [load] ne **throw jamais**. Asset absent, JSON malformé,
-/// entrée non conforme → catalogue **vide**. **Isolation (AD-1)** : aucune lib
-/// devise ici. **Zéro secret / zéro réseau** (AD-12).
+/// **Défensif (invariant AD-10)** : [load] ne **throw jamais**. Asset
+/// absent, JSON malformé, entrée non conforme → catalogue **vide**.
+/// **Isolation (invariant AD-1)** : aucune lib devise ici. **Zéro secret /
+/// zéro réseau** (invariant AD-12).
 library;
 
 import 'dart:convert';
@@ -24,19 +26,19 @@ import '../domain/z_currency_info.dart';
 const String kDefaultCurrenciesAsset =
     'packages/zcrud_intl/assets/currencies.json';
 
-/// Instance PARTAGÉE lazy du catalogue par défaut (LOW-1).
+/// Instance PARTAGÉE lazy du catalogue par défaut.
 ZCurrencyCatalog? _sharedDefaultCurrencyCatalog;
 
-/// Catalogue devise par défaut **partagé** (paresseux) : plusieurs
+/// Catalogue devise par défaut **partagé** (paresseux): plusieurs
 /// `ZCurrencyField` sans `catalog` injecté partagent CETTE instance → **une
 /// seule** lecture d'asset.
 ZCurrencyCatalog sharedDefaultCurrencyCatalog() =>
     _sharedDefaultCurrencyCatalog ??= ZCurrencyCatalog();
 
-/// Catalogue devise paresseux + caché, injectable (AD-1/AD-10/FR-21).
+/// Catalogue devise paresseux + caché, injectable (invariants AD-1, AD-10).
 class ZCurrencyCatalog {
   /// Catalogue **chargé depuis un asset** (paresseux). [assetPath] par défaut
-  /// pointe l'asset bundlé ; [bundle] permet d'injecter un `AssetBundle` de test.
+  /// pointe l'asset bundlé; [bundle] permet d'injecter un `AssetBundle` de test.
   ZCurrencyCatalog({
     String assetPath = kDefaultCurrenciesAsset,
     AssetBundle? bundle,
@@ -58,13 +60,13 @@ class ZCurrencyCatalog {
   List<ZCurrencyInfo>? _cache;
   Map<String, ZCurrencyInfo> _byCode = const <String, ZCurrencyInfo>{};
 
-  /// Chargement **en vol** mémoïsé (MEDIUM-1) : l'asset n'est lu/parsé qu'une
-  /// seule fois sous charges concurrentes. Effacé à la résolution.
+  /// Chargement **en vol** mémoïsé : l'asset n'est lu/parsé qu'une seule
+  /// fois sous charges concurrentes. Effacé à la résolution.
   Future<List<ZCurrencyInfo>>? _loading;
 
   int _assetReads = 0;
 
-  /// Lectures d'asset effectuées (test-only : prouve paresse + cache).
+  /// Lectures d'asset effectuées (test-only: prouve paresse + cache).
   int get assetReads => _assetReads;
 
   /// `true` si [load] a déjà résolu (cache présent).
@@ -107,7 +109,7 @@ class ZCurrencyCatalog {
     };
   }
 
-  /// Parse **défensif** (AD-10) : non-liste → vide ; entrées non conformes
+  /// Parse **défensif** (AD-10): non-liste → vide; entrées non conformes
   /// ignorées ([ZCurrencyInfo.fromMapSafe] → `null`).
   static List<ZCurrencyInfo> _parse(String raw) {
     Object? decoded;
@@ -123,11 +125,11 @@ class ZCurrencyCatalog {
     ];
   }
 
-  /// Recherche l'entrée du code devise [code] (insensible à la casse) ; `null`
+  /// Recherche l'entrée du code devise [code] (insensible à la casse); `null`
   /// si absent ou catalogue non chargé (AD-10).
   ZCurrencyInfo? byCode(String code) => _byCode[code.toUpperCase()];
 
-  /// Filtre le cache par [query] (code, nom ou symbole ; insensible à la casse).
+  /// Filtre le cache par [query] (code, nom ou symbole; insensible à la casse).
   /// Catalogue non chargé → liste vide. Requête vide → tout le cache.
   List<ZCurrencyInfo> search(String query) {
     final list = _cache;

@@ -1,27 +1,28 @@
-/// Dépôt **offline-first** `ZOfflineFirstRepository<T>` (E5-3) : compose un store
+/// Dépôt **offline-first** `ZOfflineFirstRepository<T>` : compose un store
 /// LOCAL **autoritaire** ([ZLocalStore]) et un store DISTANT **best-effort**
 /// ([ZRemoteStore]) derrière le sur-port [ZSyncableRepository].
 ///
-/// origine: canonique §7 / AD-9 — patron offline-first standardisé : store local
-/// source de vérité, distant fire-and-forget, merge **Last-Write-Wins** sur
+/// Patron offline-first standardisé (invariant AD-9) : store local source de
+/// vérité, distant fire-and-forget, merge **Last-Write-Wins** sur
 /// `updatedAt` (tombstones inclus), soft-delete `is_deleted` **hors-entité**
-/// ([ZSyncMeta]), propagation **bornée ≤ 450**. Le *quand* (débounce/multi-dépôts,
-/// `ZSyncOrchestrator`) reste **E5-4** — ce dépôt n'expose qu'un [sync] one-shot.
+/// ([ZSyncMeta]), propagation **bornée ≤ 450**. Le *quand* (débounce/multi-dépôts)
+/// vit dans l'orchestrateur de ce paquet — ce dépôt n'expose qu'un [sync] one-shot.
 ///
-/// **Composition, pas héritage** (AD-4) : ni `HiveZLocalStore` ni
+/// **Composition, pas héritage** (invariant AD-4) : ni `HiveZLocalStore` ni
 /// `FirestoreZRemoteStore` ne sont sous-classés — seuls les **ports neutres** sont
-/// injectés. **Isolation AD-5 (héritée E5-1/E5-2, re-vérifiée)** : ce fichier
+/// injectés. **Isolation (invariant AD-5, re-vérifiée)** : ce fichier
 /// n'importe **aucun** type `hive`/`cloud_firestore` ; toutes les signatures
 /// publiques restent `ZResult<…>` / `Stream<List<T>>` **nues**.
 ///
-/// **Frontière de story** : E5-3 = le *comment* (composition + merge LWW +
-/// soft-delete propagé + lot ≤ 450 + `Right(unit)` si offline). E5-4 = le *quand*
-/// (débounce ~400 ms, registre multi-dépôts, échec partiel toléré) — **hors** de
-/// ce fichier.
+/// **Périmètre** : ce fichier porte le *comment* (composition + merge LWW +
+/// soft-delete propagé + lot ≤ 450 + `Right(unit)` si offline). Le *quand*
+/// (débounce, registre multi-dépôts, échec partiel toléré) vit dans
+/// l'orchestrateur de synchronisation de ce paquet.
 library;
 
-// `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en paramètre
-// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier comme E5-1/2.
+// `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en
+// paramètre nommé — `this._x` interdit par Dart). Désactivé au niveau
+// fichier, comme les autres adaptateurs de ce paquet.
 // ignore_for_file: prefer_initializing_formals
 
 import 'dart:async';
@@ -30,8 +31,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 /// Journal minimal **neutre** du dépôt offline-first (aucune dépendance backend).
 /// Un échec distant **best-effort** (assimilé à « offline ») est **loggé** ici
-/// avant d'être avalé en `Right(unit)` — jamais silencieux (AD-11). Miroir de
-/// `ZLocalStoreLog`/`ZFirestoreLog` (E5-2/E5-1).
+/// avant d'être avalé en `Right(unit)` — jamais silencieux (invariant AD-11).
+/// Miroir de `ZLocalStoreLog`/`ZFirestoreLog`.
 typedef ZOfflineFirstLog = void Function(
   String message, {
   Object? error,
@@ -229,12 +230,12 @@ class ZOfflineFirstRepository<T extends ZEntity>
       (r) => r,
     );
     if (remoteEntries == null) {
-      // MEDIUM-2 (dette E5-4 assumée) : un `Left` distant est assimilé à
-      // « offline » → Right(unit). ⚠️ Ceci englobe AUSSI les erreurs NON
-      // réseau (permission/quota/misconfig) : une telle sync « réussit » sans
-      // jamais converger. Le drop est loggé en clair (jamais muet, AD-11) ;
-      // la distinction réseau vs serveur (pour ne re-Right que le réseau) est
-      // portée par E5-4 (`ZSyncOrchestrator` + typage connectivité).
+      // Un `Left` distant est assimilé à « offline » → Right(unit). Ceci
+      // englobe AUSSI les erreurs NON réseau (permission/quota/misconfig) :
+      // une telle sync « réussit » sans jamais converger. Le drop est loggé
+      // en clair (jamais muet, invariant AD-11) ; la distinction réseau vs
+      // serveur (pour ne re-Right que le réseau) est portée par
+      // `ZSyncOrchestrator` + typage connectivité — dette assumée.
       remoteRes.leftMap((f) => _log(
           'sync: pull distant en échec, assimilé offline → Right(unit) '
           'best-effort — ⚠️ inclut permission/quota (dette E5-4) : ${f.message}'));

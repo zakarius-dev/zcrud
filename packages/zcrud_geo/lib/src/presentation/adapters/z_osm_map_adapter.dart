@@ -1,18 +1,18 @@
-/// `ZOsmMapAdapter` — implémentation OSM du port [ZMapAdapter] via `flutter_map`
-/// (E11a-1, AD-1/AD-12).
+/// `ZOsmMapAdapter` — implémentation OSM du port [ZMapAdapter] via
+/// `flutter_map`.
 ///
-/// **CONFINEMENT SDK (AD-1)** : c'est le SEUL fichier de `zcrud_geo` qui importe
-/// `flutter_map`/`latlong2`. Les types SDK (`LatLng`, `MapController`,
-/// `FlutterMap`…) restent **internes** : l'API publique de cette classe
-/// (`implements ZMapAdapter`) ne parle QUE de types neutres (`ZGeoPoint`/
-/// `ZGeoShape`/`Widget`). Ce fichier n'est PAS exporté par le barrel principal
-/// `lib/zcrud_geo.dart` — il est atteint via l'entrée dédiée
+/// **Confinement SDK (invariant AD-1)** : c'est le seul fichier de
+/// `zcrud_geo` qui importe `flutter_map`/`latlong2`. Les types SDK (`LatLng`,
+/// `MapController`, `FlutterMap`…) restent **internes** : l'API publique de
+/// cette classe (`implements ZMapAdapter`) ne parle que de types neutres
+/// (`ZGeoPoint`/`ZGeoShape`/`Widget`). Ce fichier n'est pas exporté par le
+/// barrel principal `lib/zcrud_geo.dart` — il est atteint via l'entrée dédiée
 /// `package:zcrud_geo/adapters/osm.dart` (voie d'import explicite).
 ///
-/// **AD-12 : ZÉRO clé/secret.** OSM ne requiert aucune clé API. Le `urlTemplate`
-/// des tuiles est le point de terminaison public OSM standard, **surchargeable**
-/// par l'app hôte via [tileUrlTemplate] (jamais un endpoint privé en dur, jamais
-/// de `badCertificateCallback`).
+/// **Invariant AD-12 : zéro clé/secret.** OSM ne requiert aucune clé API. Le
+/// `urlTemplate` des tuiles est le point de terminaison public OSM standard,
+/// **surchargeable** par l'application hôte via [tileUrlTemplate] (jamais un
+/// endpoint privé en dur, jamais de `badCertificateCallback`).
 library;
 
 import 'dart:math' as math;
@@ -32,17 +32,16 @@ import '../z_map_adapter.dart';
 
 /// Traduit un entier ARGB neutre (`0xAARRGGBB`) en `Color` SDK — **confiné** à
 /// cet adaptateur (AD-1 : aucune couleur SDK ne fuit dans le domaine). `null` →
-/// `null` (l'appelant retombe sur le thème injecté, FR-26).
+/// `null` (l'appelant retombe sur le thème injecté).
 Color? _argb(int? argb) => argb == null ? null : Color(argb);
 
-/// Adaptateur carte OSM (sans clé API). Possède un `MapController` natif disposé
-/// via [dispose] (learning E5).
+/// Adaptateur carte OSM (sans clé API). Possède un `MapController` natif
+/// disposé via [dispose].
 ///
-/// **G7/G11/G13** : opte pour les capacités [ZMapCameraCapable] (caméra pilotée
-/// via `MapController.move`/`fitCamera`) et [ZMapGesturesCapable]. `flutter_map`
-/// n'a **aucun marqueur draggable natif** (le legacy OSM masquait d'ailleurs
-/// l'outil « Déplacer », `gff:1439` `if (!isOsm)`) : le drag est implémenté ici
-/// par geste custom ([_ZOsmDraggableMarker]) — conversion écran↔coordonnées via
+/// Opte pour les capacités [ZMapCameraCapable] (caméra pilotée via
+/// `MapController.move`/`fitCamera`) et [ZMapGesturesCapable]. `flutter_map`
+/// n'a **aucun marqueur draggable natif** : le drag est implémenté ici par
+/// geste custom ([_ZOsmDraggableMarker]) — conversion écran↔coordonnées via
 /// `MapCamera.of(context)` (`latLngToScreenOffset`/`screenOffsetToLatLng`),
 /// position appliquée en **fin de drag** (contrat `*DragEnd`).
 class ZOsmMapAdapter
@@ -65,8 +64,8 @@ class ZOsmMapAdapter
   /// S'applique au type `normal` (et à toute carte sans `mapOptions`).
   final String tileUrlTemplate;
 
-  /// Gabarits de tuiles **par type de carte** (G3, surchargeables au
-  /// constructeur ; primés par le paramètre `tileUrlTemplates` de `buildMap`).
+  /// Gabarits de tuiles **par type de carte**, surchargeables au
+  /// constructeur ; primés par le paramètre `tileUrlTemplates` de `buildMap`.
   /// `null`/type absent → défauts audités `ZGeoTileReference.defaults`.
   final Map<ZGeoMapType, String>? tileUrlTemplates;
 
@@ -82,23 +81,23 @@ class ZOsmMapAdapter
   final MapController _controller = MapController();
   bool _disposed = false;
 
-  /// G13 — fin de drag d'un sommet (`null` → sommets non draggables, rendu
-  /// strictement inchangé — AD-4).
+  /// Fin de drag d'un sommet (`null` → sommets non draggables, rendu
+  /// inchangé).
   @override
   ZGeoVertexDragEnd? onVertexDragEnd;
 
-  /// G13 — fin de déplacement de forme via le marqueur au centroïde (`null` →
+  /// Fin de déplacement de forme via le marqueur au centroïde (`null` →
   /// aucun marqueur de déplacement).
   @override
   ZGeoShapeDragEnd? onShapeDragEnd;
 
-  /// G11 — fin de drag de la poignée de rayon (`null` → aucune poignée).
+  /// Fin de drag de la poignée de rayon (`null` → aucune poignée).
   @override
   ZGeoRadiusDragEnd? onCircleRadiusDragEnd;
 
-  /// G7 — déplace la caméra (parité `UnifiedMapController.moveCamera`).
-  /// Carte non montée / adaptateur disposé / point invalide → no-op silencieux
-  /// (AD-10, jamais de throw).
+  /// Déplace la caméra. Carte non montée / adaptateur disposé / point
+  /// invalide → no-op silencieux (défensif, invariant AD-10, jamais de
+  /// throw).
   @override
   Future<void> moveCamera(ZGeoPoint center, {double? zoom}) async {
     if (_disposed || !center.isValid) return;
@@ -110,7 +109,8 @@ class ZOsmMapAdapter
     }
   }
 
-  /// G7 — cadre la caméra sur la boîte SW→NE. Mêmes garanties que [moveCamera].
+  /// Cadre la caméra sur la boîte sud-ouest→nord-est. Mêmes garanties que
+  /// [moveCamera].
   @override
   Future<void> fitBounds(ZGeoPoint southWest, ZGeoPoint northEast) async {
     if (_disposed || !southWest.isValid || !northEast.isValid) return;
@@ -155,10 +155,10 @@ class ZOsmMapAdapter
     List<ZGeoMapOverlay>? overlays,
     ValueChanged<String>? onOverlayMarkerTap,
   }) {
-    // G3 : tuiles résolues par type de carte. Chaîne de priorité (FR-26-like,
-    // paramètre > config > référence) : `tileUrlTemplates[type]` (par-champ) >
+    // Tuiles résolues par type de carte. Chaîne de priorité (paramètre >
+    // config > référence) : `tileUrlTemplates[type]` (par-champ) >
     // constructeur `this.tileUrlTemplates[type]` > pour `normal` (ou sans
-    // options) le gabarit historique [tileUrlTemplate] > défaut audité
+    // options) le gabarit [tileUrlTemplate] > défaut audité
     // `ZGeoTileReference.defaults[type]`.
     final ZGeoMapType mapType = mapOptions?.mapType ?? ZGeoMapType.normal;
     final String effectiveTiles = tileUrlTemplates?[mapType] ??
@@ -179,7 +179,7 @@ class ZOsmMapAdapter
     ];
 
     // DP-21/M13 : style de forme neutre honoré (couleurs ARGB → `Color` confiné
-    // à ce fichier, AD-1) avec repli sur le thème injecté (FR-26, aucune couleur
+    // à ce fichier, AD-1) avec repli sur le thème injecté (aucune couleur
     // en dur). `visible == false` → la forme n'est pas rendue.
     final ZGeoShapeStyle? shapeStyle = shape?.style;
     final bool shapeVisible = shapeStyle?.visible ?? true;
@@ -494,7 +494,7 @@ class ZOsmMapAdapter
   /// Parité legacy `gma:185-233` : quand `infoWindowTitle` est renseigné, le
   /// legacy REMPLACE le marqueur par une pastille de texte (fond blanc bordé
   /// noir, rayon 16). Ici la pastille reprend cette géométrie mais ses couleurs
-  /// viennent du **thème injecté** (FR-26 : `surface`/`onSurface`), jamais de
+  /// viennent du **thème injecté** (`surface`/`onSurface`), jamais de
   /// littéraux. `iconAsset` → image d'asset de l'app hôte (repli défensif sur
   /// l'icône par défaut si l'asset manque — AD-10) ; `iconColorArgb` → teinte ;
   /// `iconSize` → taille ; `iconRotation` → rotation en degrés (G17).
@@ -535,7 +535,7 @@ class ZOsmMapAdapter
     final String? title = style.infoWindowTitle;
     if (title != null && title.isNotEmpty) {
       // G14 : pastille de libellé (parité géométrique gma:208-218, couleurs
-      // par rôles de thème — FR-26).
+      // par rôles de thème).
       final ColorScheme scheme = Theme.of(context).colorScheme;
       return Marker(
         point: point,

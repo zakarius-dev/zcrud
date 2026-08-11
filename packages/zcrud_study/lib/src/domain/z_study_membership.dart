@@ -1,47 +1,42 @@
-/// Entité d'**adhésion** à un dossier d'étude partagé `ZStudyMembership`
-/// (Story ES-9.4, AC1/AC3/AC5/AC6).
+/// Entité d'adhésion d'un acteur à un dossier d'étude partagé.
 ///
-/// origine: surface de partage OPTIONNELLE du domaine `zcrud_study` (AD-26 : le
-/// partage est une extension activable, **jamais** un invariant du domaine). Une
-/// adhésion lie un acteur (`actorUid`) à un dossier (`folderId`) avec un **rôle**
-/// ([ZMembershipRole]) — c'est une entité **owner-contrôlée** : le `role` est un
-/// **champ de contrôle** protégé par [ZStudySharingAcl] (dette sécu lex corrigée,
-/// AC5). **Aucun** état personnel (SRS / ordre / lecture) n'y vit (AC3).
+/// Surface de partage optionnelle du domaine : une adhésion lie un acteur
+/// (`actorUid`) à un dossier (`folderId`) avec un rôle ([ZMembershipRole]).
+/// C'est une entité contrôlée par le propriétaire : le `role` est un champ
+/// de contrôle protégé par `ZStudySharingAcl`. Aucun état personnel
+/// (répétition espacée, ordre, lecture) n'y vit.
 ///
-/// Entité **hand-written défensive** (AD-10), PAS `@ZcrudModel` : `zcrud_study`
-/// n'a aucun codegen. Immuable, `const`, `==`/`hashCode` par valeur (égalité
-/// **profonde** de [extra]). AD-19.1 : slot `_extra` brut + accesseur
-/// [extra] = `zSanitizeExtra` (les clés de sync réservées `updated_at`/`is_deleted`
-/// sont écartées à la LECTURE ; aucun champ `updatedAt`/`isDeleted` interne — LWW
-/// **hors-entité** exclusivement).
+/// Entité écrite à la main et désérialisée défensivement (invariant AD-10),
+/// et non générée par codegen. Immuable, `const`, `==`/`hashCode` par
+/// valeur (égalité profonde de [extra]).
 library;
 
 import 'package:zcrud_core/domain.dart';
 
-/// Rôle d'un membre dans un dossier partagé — enum **OUVERT** (AD-10) : toute
-/// valeur inconnue retombe sur [unknown] (jamais de throw).
+/// Rôle d'un membre dans un dossier partagé — enum ouvert (invariant AD-10) :
+/// toute valeur inconnue retombe sur [unknown], jamais de throw.
 ///
-/// **`role` est un champ de CONTRÔLE** (AC5) : seul l'owner peut le muter — cf.
-/// [ZStudySharingAcl.canMutateControl]. Un [contributor]/[viewer] ne peut PAS
-/// s'auto-promouvoir owner.
+/// `role` est un champ de contrôle : seul le propriétaire peut le muter —
+/// voir `ZStudySharingAcl.canMutateControl`. Un [contributor] ou un [viewer]
+/// ne peut pas s'auto-promouvoir propriétaire.
 enum ZMembershipRole {
-  /// Propriétaire — **seul** habilité à muter les champs de contrôle (AC5).
+  /// Propriétaire — seul habilité à muter les champs de contrôle.
   owner,
 
-  /// Contributeur — peut éditer le contenu partageable, **jamais** un champ de
-  /// contrôle (cœur de la dette sécu lex, AC5).
+  /// Contributeur — peut éditer le contenu partageable, jamais un champ de
+  /// contrôle.
   contributor,
 
   /// Lecteur — accès en lecture seule.
   viewer,
 
-  /// Rôle **inconnu** (repli défensif AD-10) — traité comme non habilité.
+  /// Rôle inconnu (repli défensif) — traité comme non habilité.
   unknown;
 
-  /// Reconstruit **défensivement** un rôle depuis une valeur brute (AD-10).
+  /// Reconstruit défensivement un rôle depuis une valeur brute.
   ///
-  /// Une valeur non-`String` ou un nom non reconnu (`"moderator"`, `42`, `null`)
-  /// retombe sur [unknown] — **jamais** de throw.
+  /// Une valeur non-`String` ou un nom non reconnu (`"moderator"`, `42`,
+  /// `null`) retombe sur [unknown] — jamais de throw.
   static ZMembershipRole fromName(Object? raw) {
     if (raw is! String) return unknown;
     for (final r in values) {
@@ -51,10 +46,11 @@ enum ZMembershipRole {
   }
 }
 
-/// Adhésion **immuable** d'un acteur à un dossier partagé (value-object,
-/// `==`/`hashCode` par valeur — égalité **profonde** de [extra]).
+/// Adhésion immuable d'un acteur à un dossier partagé (value-object,
+/// `==`/`hashCode` par valeur — égalité profonde de [extra]).
 class ZStudyMembership {
-  /// Construit une adhésion. [id] est opaque et nullable (éphémère AD-14).
+  /// Construit une adhésion. [id] est opaque et nullable pour une adhésion
+  /// pas encore persistée.
   const ZStudyMembership({
     this.id,
     this.folderId = '',
@@ -71,14 +67,15 @@ class ZStudyMembership {
     'role',
   };
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// Reconstruit **défensivement** depuis une map (AD-10) — **jamais** de throw.
+  /// Reconstruit défensivement depuis une map (invariant AD-10) — ne lève
+  /// jamais.
   ///
-  /// Map non conforme / champs corrompus ⇒ défauts sûrs ; rôle inconnu ⇒
-  /// [ZMembershipRole.unknown] ; les clés inconnues (hors [_keys]) atterrissent
-  /// dans [extra] (round-trip additif AD-4).
+  /// Une map non conforme ou des champs corrompus retombent sur des
+  /// défauts sûrs ; un rôle inconnu retombe sur [ZMembershipRole.unknown] ;
+  /// les clés inconnues (hors [_keys]) atterrissent dans [extra].
   static ZStudyMembership fromJson(Object? json) {
     if (json is! Map) return const ZStudyMembership();
     final map = <String, dynamic>{
@@ -96,26 +93,29 @@ class ZStudyMembership {
     );
   }
 
-  /// Identité opaque `String` (nullable pour l'éphémère AD-14).
+  /// Identité opaque `String`, nullable pour l'adhésion pas encore
+  /// persistée.
   final String? id;
 
   /// Dossier d'appartenance (clé neutre `String`).
   final String folderId;
 
-  /// Acteur membre (uid opaque `String`).
+  /// Acteur membre (identifiant opaque `String`).
   final String actorUid;
 
-  /// 🔴 **Champ de CONTRÔLE** (AC5) — muté par le seul owner ([ZStudySharingAcl]).
+  /// Champ de contrôle : muté par le seul propriétaire (voir
+  /// `ZStudySharingAcl`).
   final ZMembershipRole role;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée. **Normalisée à la LECTURE (AD-19.1)** : les clés de
-  /// sync réservées (`updated_at`/`is_deleted`) sont écartées — jamais réémises.
+  /// Échappatoire non typée, normalisée à la lecture : les clés de
+  /// synchronisation réservées (`updated_at`, `is_deleted`) sont toujours
+  /// écartées.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Sérialise en clés snake_case ; le rôle en camelCase (AD-3). Étale [extra]
+  /// Sérialise en clés snake_case ; le rôle en camelCase. Étale [extra]
   /// (accesseur — donc clés réservées déjà écartées).
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,

@@ -1,18 +1,21 @@
-/// `ZCurrencyInfo` — **entrée de catalogue devise neutre** (E11b-2,
-/// AD-1/AD-14/AD-10).
+/// `ZCurrencyInfo` — **entrée de catalogue devise neutre** (invariants
+/// AD-1, AD-14, AD-10).
 ///
-/// origine: entrée de l'asset `currencies.json` bundlé dans `zcrud_intl`, servant
-/// le sélecteur de code devise (`ZCurrencyField`). Modèle **pur-Dart**.
+/// Entrée de l'asset `currencies.json` bundlé dans `zcrud_intl`, servant le
+/// sélecteur de code devise (`ZCurrencyField`). Modèle **pur-Dart**.
 ///
-/// **IMPORTANT — valeur de tranche = code devise ISO 4217 `String` opaque**, PAS
-/// ce modèle. [ZCurrencyInfo] enrichit l'affichage du picker (nom/symbole/
-/// décimales) mais n'est **jamais** la valeur écrite dans le `ZFormController`.
+/// **Important — valeur de tranche = code devise ISO 4217 `String`
+/// opaque**, pas ce modèle. [ZCurrencyInfo] enrichit l'affichage du picker
+/// (nom/symbole/décimales) mais n'est **jamais** la valeur écrite dans le
+/// `ZFormController`.
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map` ou
-/// [code] absent/vide → `null` ; `decimalDigits` non entier → `null`.
+/// **Défensif (invariant AD-10)** : [fromMapSafe] ne **throw jamais**.
+/// `raw` non-`Map` ou [code] absent/vide → `null` ; `decimalDigits` non
+/// entier → `null`.
 library;
 
-/// Entrée de catalogue devise : code ISO 4217 + nom/symbole/décimales optionnels.
+/// Entrée de catalogue devise : code ISO 4217 + nom/symbole/décimales
+/// optionnels.
 class ZCurrencyInfo {
   /// Construit une entrée de catalogue. Seul [code] est requis (clé du picker).
   const ZCurrencyInfo({
@@ -42,7 +45,7 @@ class ZCurrencyInfo {
         if (decimalDigits != null) 'decimalDigits': decimalDigits,
       };
 
-  /// Parse **défensif** (AD-10) : `null` sans throw si [raw] n'est pas une `Map`
+  /// Parse **défensif** (AD-10): `null` sans throw si [raw] n'est pas une `Map`
   /// ou si le code (`code`) est absent/vide. Accepte l'alias `currencyCode`.
   static ZCurrencyInfo? fromMapSafe(Object? raw) {
     if (raw is! Map) return null;

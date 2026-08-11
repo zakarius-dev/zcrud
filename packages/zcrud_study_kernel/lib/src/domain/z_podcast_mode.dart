@@ -1,23 +1,18 @@
-/// Mode de synthèse d'un podcast généré (ES-2.8, FR-S11).
+/// Mode de synthèse d'un podcast généré (voix unique ou dialogue).
 ///
-/// origine: lex_core (module « Étude ») — `enums/podcast_mode.dart`
-/// `PodcastMode {simple, dialogue}` (fallback défensif `simple`,
-/// `fromJson → simple`, mode par défaut du contrat backend). Forme canonique
-/// retenue à l'identique.
+/// **L'ordre de déclaration est normatif** : le générateur zcrud décode un
+/// enum par nom et, pour un champ non-nullable sans valeur par défaut, son
+/// repli défensif (invariant AD-10) est **la première constante déclarée**.
+/// Réordonner cet enum changerait silencieusement le comportement défensif
+/// de `ZStudyPodcast.mode` et le suffixe de `ZStudyPodcast.buildId`.
 ///
-/// 🔴 **L'ORDRE DE DÉCLARATION EST NORMATIF** (D3) : le générateur `zcrud` décode
-/// un enum **par NOM** et, pour un champ **non-nullable sans `defaultValue`**, son
-/// repli défensif (AD-10) est **`T.values.first`**. **La première constante
-/// déclarée EST donc le défaut** — réordonner cet enum changerait
-/// **silencieusement** le comportement défensif de `ZStudyPodcast.mode` et le
-/// suffixe de `ZStudyPodcast.buildId`.
-///
-/// Pur Dart — aucune dépendance Flutter/Firebase/crypto (NFR-S3/NFR-S10/SM-S5).
+/// Pur Dart — aucune dépendance Flutter/Firebase/crypto.
 library;
 
 /// Mode de génération d'un podcast (voix unique vs dialogue).
 enum ZPodcastMode {
-  /// Narration à voix unique (**défaut défensif** — 1ʳᵉ constante, D3 ; parité lex).
+  /// Narration à voix unique — valeur de repli défensive (première constante
+  /// déclarée).
   simple,
 
   /// Dialogue à deux voix.

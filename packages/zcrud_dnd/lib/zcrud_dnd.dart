@@ -1,6 +1,6 @@
 /// **zcrud_dnd** — implémentation OPT-IN du port `ZDropRegionRenderer`
 /// (`zcrud_core`) adossée au paquet `super_drag_and_drop` de l'écosystème
-/// pub.dev (AD-57).
+/// pub.dev.
 ///
 /// ## Drag-and-drop NATIF — et rien d'autre
 ///
@@ -23,8 +23,8 @@
 /// ## Ce que ce barrel expose — et ce qu'il n'expose PAS
 ///
 /// **Aucun** type de `super_drag_and_drop` ni de `super_clipboard` n'apparaît
-/// ici ni dans une signature publique (AD-57, condition 2) : l'adaptateur qui
-/// les manipule est privé. L'hôte ne connaît que `ZDropRegionRenderer`,
+/// ici ni dans une signature publique : l'adaptateur qui les manipule est
+/// privé. L'hôte ne connaît que `ZDropRegionRenderer`,
 /// `ZDropRegionRequest`, `ZDroppedItem` et `ZDropKind`, tous portés par
 /// `zcrud_core`.
 ///

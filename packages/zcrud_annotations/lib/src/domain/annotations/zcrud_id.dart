@@ -1,10 +1,10 @@
 /// Annotation **marqueur** désignant le champ identifiant (`id`) d'un modèle
 /// `@ZcrudModel`.
 ///
-/// Consommée par le générateur E2-5 pour repérer la clé d'identité (`String`
-/// opaque, nullable pour l'éphémère — canonique §5). Sans paramètre.
+/// Consommée par `zcrud_generator` pour repérer la clé d'identité (`String`
+/// opaque, nullable pour l'éphémère). Sans paramètre.
 ///
-/// Classe `const` pur-données (AC1).
+/// Classe `const` pur-données.
 ///
 /// ```dart
 /// @ZcrudModel()

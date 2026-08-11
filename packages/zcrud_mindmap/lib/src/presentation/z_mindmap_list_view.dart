@@ -1,4 +1,4 @@
-/// Vue liste sémantique indentée = **surface a11y de référence** (Story E10-2).
+/// Vue liste sémantique indentée = **surface a11y de référence**.
 ///
 /// Parcours **profondeur-d'abord** de la forêt, **une entrée par nœud**,
 /// **indentation dérivée de `level`** via `EdgeInsetsDirectional.only(start:)`
@@ -36,7 +36,7 @@ class ZMindmapListView extends StatelessWidget {
     super.key,
   });
 
-  /// Racines de la forêt (lues telles quelles ; `level` déjà cohérent E10-1).
+  /// Racines de la forêt (lues telles quelles ; `level` déjà cohérent).
   final List<ZMindmapNode> roots;
 
   /// Constructeur de contenu injecté (identique au graphe).
@@ -57,12 +57,12 @@ class ZMindmapListView extends StatelessWidget {
   /// Marge externe optionnelle de la liste (directionnelle recommandée).
   final EdgeInsetsGeometry? padding;
 
-  /// Tranche **compact** optionnelle (ES-7.2, AC3). `null` ⇒ rendu plein (E10
+  /// Tranche **compact** optionnelle. `null` ⇒ rendu plein (E10
   /// inchangé, ADDITIF STRICT). Quand fourni, chaque entrée écoute cette tranche
   /// et rend le mode condensé label-seul (rebuild ciblé, SM-1).
   final ValueListenable<bool>? compactListenable;
 
-  /// Étiquette de **super-racine** optionnelle (ES-7.2, AC5). `null` ⇒ aucune
+  /// Étiquette de **super-racine** optionnelle. `null` ⇒ aucune
   /// super-racine (E10 inchangé). Quand non-null **ET** `roots.length > 1`, une
   /// entête de super-racine groupe la forêt (réutilise l'invariant
   /// `usesVirtualRoot == roots.length > 1` du mapper — aucun 2e mécanisme). Avec
@@ -100,7 +100,7 @@ class ZMindmapListView extends StatelessWidget {
       );
     }
 
-    // Super-racine user-facing (ES-7.2, AC5) : entête groupant la forêt, UNIQUEMENT
+    // Super-racine user-facing : entête groupant la forêt, UNIQUEMENT
     // si un libellé est fourni ET `roots.length > 1` (invariant `usesVirtualRoot`
     // du mapper). 1 seule racine ⇒ jamais (même libellé non-null). Aucun 2e
     // mécanisme de racine virtuelle : on réutilise la même condition de forêt.
@@ -145,7 +145,7 @@ class ZMindmapListView extends StatelessWidget {
             node.label.isNotEmpty ? node.label : (node.content ?? '');
 
         // POINT D'ÉCOUTE UNIQUE de la ligne (M1) : la carte reçoit `isSelected`
-        // résolu ; elle ne s'abonne plus elle-même. Le mode compact (ES-7.2) est
+        // résolu ; elle ne s'abonne plus elle-même. Le mode compact est
         // une tranche SÉPARÉE : quand `compactListenable != null`, un
         // `ValueListenableBuilder<bool>` imbriqué la résout SANS toucher la
         // sélection (rebuild ciblé indépendant, SM-1).

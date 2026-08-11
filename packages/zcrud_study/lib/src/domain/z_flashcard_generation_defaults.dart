@@ -1,38 +1,41 @@
-/// Défauts PURS de génération de flashcards (SU-9/AC3/AC4 — AD-37/AD-10).
+/// Règles pures de génération de flashcards : bornage du nombre de cartes et
+/// répartition par type.
 ///
-/// **SOURCE UNIQUE** des règles de bornage du `count` et de répartition par type.
-/// Module de DOMAINE pur (aucun `import 'package:flutter/...'`, aucun widget) :
-/// testable en `dart test`, réutilisé par la feuille de génération ET le
-/// contrôleur — **jamais** dupliqué dans un widget (une seconde implémentation
-/// divergerait en silence, garde `z_generation_source_unique_test.dart`).
+/// Source unique de ces règles : module de domaine pur (aucune dépendance
+/// Flutter), réutilisé aussi bien par la feuille de génération que par son
+/// contrôleur — jamais dupliqué dans un widget, ce qui éviterait qu'une
+/// seconde implémentation diverge en silence.
 ///
-/// **AD-10 — JAMAIS de throw** : `count` incohérent (`0`/négatif/énorme/`null`),
-/// répartition incohérente (somme ≠ count, type inconnu, valeur négative) sont
-/// **dégradés gracieusement**, jamais une exception. Le domaine ne fait pas
-/// confiance à ses entrées.
+/// Ne jette jamais (invariant AD-10) : un `count` incohérent (`0`, négatif,
+/// énorme ou `null`) et une répartition incohérente (somme différente du
+/// compte, type inconnu, valeur négative) sont dégradés gracieusement plutôt
+/// que de lever une exception. Le domaine ne fait pas confiance à ses
+/// entrées.
 library;
 
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcardType;
 
-/// Bornes inclusives du nombre de cartes générables (parité lex : slider 1..50).
+/// Bornes inclusives du nombre de cartes générables (`1..50`).
 ///
-/// Exposées comme un record `(min, max)` pour que la feuille (slider) et le
-/// bornage partagent la MÊME source (pas deux littéraux `1`/`50` à re-synchroniser).
+/// Exposées comme un record `(min, max)` pour que l'interface de génération
+/// (curseur) et le bornage partagent la même source — pas deux littéraux
+/// `1`/`50` à resynchroniser séparément.
 const ({int min, int max}) zGenerationCountBounds = (min: 1, max: 50);
 
-/// Défaut CONSIGNÉ quand `count == null` (l'app n'a rien demandé) : `10` cartes.
+/// Défaut appliqué quand `count == null` (l'application n'a rien demandé) :
+/// `10` cartes.
 ///
-/// Choix conservateur (dans `[1, 50]`), documenté pour que la garde de bornage
-/// soit falsifiable — `null` ne lève jamais (AD-10), il retombe ici.
+/// Choix conservateur, dans `[1, 50]`. `null` ne lève jamais (invariant
+/// AD-10) : il retombe sur cette valeur.
 const int zDefaultGenerationCount = 10;
 
-/// Borne [raw] dans `[zGenerationCountBounds.min, .max]`, **sans jamais lever**
-/// (AC3, AD-10).
+/// Borne [raw] dans `[zGenerationCountBounds.min, .max]`, sans jamais lever
+/// (invariant AD-10).
 ///
-/// - `null` → [zDefaultGenerationCount] (`10`) ;
-/// - `0` / négatif → `min` (`1`) ;
-/// - `> max` (ex. `10000`) → `max` (`50`) ;
-/// - dans les bornes → inchangé.
+/// - `null` : repli sur [zDefaultGenerationCount] (`10`) ;
+/// - `0` ou négatif : ramené à `min` (`1`) ;
+/// - supérieur à `max` (ex. `10000`) : ramené à `max` (`50`) ;
+/// - dans les bornes : inchangé.
 int zClampGenerationCount(int? raw) {
   if (raw == null) return zDefaultGenerationCount;
   if (raw < zGenerationCountBounds.min) return zGenerationCountBounds.min;
@@ -40,15 +43,15 @@ int zClampGenerationCount(int? raw) {
   return raw;
 }
 
-/// Répartition **équitable** de [count] cartes sur [types] (AC3).
+/// Répartition équitable de [count] cartes sur [types].
 ///
-/// Chaque type reçoit `count ~/ n`, et le **reste** (`count % n`) est distribué
-/// **déterministement** sur les PREMIERS types de la liste (ordre d'entrée) ⇒ la
-/// somme des valeurs **égale exactement** le `count` borné (invariant testé).
+/// Chaque type reçoit `count ~/ n`, et le reste (`count % n`) est distribué
+/// de façon déterministe sur les premiers types de la liste (ordre
+/// d'entrée) : la somme des valeurs égale exactement le `count` borné.
 ///
-/// [count] est d'abord borné par [zClampGenerationCount] (une valeur folle ne
-/// produit jamais une map folle). [types] vide ⇒ map vide (AD-10, jamais de
-/// division par zéro).
+/// [count] est d'abord borné par [zClampGenerationCount] (une valeur
+/// aberrante ne produit jamais une répartition aberrante). [types] vide
+/// retourne une map vide (invariant AD-10 : jamais de division par zéro).
 Map<ZFlashcardType, int> zEvenTypesDistribution(
   int count,
   List<ZFlashcardType> types,
@@ -74,23 +77,23 @@ Map<ZFlashcardType, int> zEvenTypesDistribution(
   return result;
 }
 
-/// Normalise une répartition [raw] éventuellement incohérente (AC4, AD-10).
+/// Normalise une répartition [raw] éventuellement incohérente (invariant
+/// AD-10 : jamais de throw).
 ///
-/// **La distribution fournie fait FOI** (décision tranchée) : le `count` effectif
-/// devient la somme (bornée) des valeurs retenues — aucune divergence silencieuse,
-/// aucun throw. Règles :
-/// - valeur **négative** → ramenée à `0` ;
-/// - type **hors** des [types] admis (ex. non présent dans la liste des 6) →
-///   **écarté** (entrée retirée) ;
-/// - une entrée à `0` est **conservée** (un type explicitement à zéro reste une
-///   information — il n'est pas ré-inventé) ;
-/// - [raw] `null` ⇒ repli sur [zEvenTypesDistribution] du [countIfNull] borné.
+/// La distribution fournie fait foi : le `count` effectif devient la somme
+/// (bornée) des valeurs retenues — aucune divergence silencieuse. Règles :
+/// - une valeur négative est ramenée à `0` ;
+/// - un type hors des [types] admis est écarté (entrée retirée) ;
+/// - une entrée à `0` est conservée (un type explicitement à zéro reste une
+///   information, elle n'est pas réinventée) ;
+/// - [raw] `null` retombe sur [zEvenTypesDistribution] du [countIfNull]
+///   borné.
 ///
-/// La somme finale est **bornée** par [zGenerationCountBounds] (une somme > 50
-/// est ramenée proportionnellement n'est PAS faite ici — on borne le TOTAL en
-/// tronquant les valeurs de tête au besoin, déterministe), garantissant que le
-/// `count` effectif reste dans `[1, 50]` **si** au moins une carte est demandée ;
-/// une somme nulle est laissée telle quelle (l'app décide — pas de carte).
+/// La somme finale est bornée par [zGenerationCountBounds] : un dépassement
+/// est résorbé en tronquant déterministement les valeurs de tête, ce qui
+/// garantit que le `count` effectif reste dans `[1, 50]` si au moins une
+/// carte est demandée. Une somme nulle est laissée telle quelle — c'est à
+/// l'application de décider qu'aucune carte n'est demandée.
 Map<ZFlashcardType, int> zNormalizeTypesDistribution(
   Map<ZFlashcardType, int>? raw, {
   required List<ZFlashcardType> types,

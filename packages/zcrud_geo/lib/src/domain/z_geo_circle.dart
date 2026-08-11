@@ -1,27 +1,25 @@
-/// `ZGeoCircle` — **cercle géographique neutre** (E11b-1, AD-1/AD-14/AD-10).
+/// `ZGeoCircle` — modèle de valeur **cercle géographique neutre**.
 ///
-/// origine: valeur de tranche d'un champ géo en géométrie `circle`
-/// ([ZGeoGeometry.circle], portée par `ZGeoFieldConfig`). Un cercle = un
-/// [ZGeoPoint] `center` + un `radiusMeters` (rayon en mètres). Modèle
-/// **pur-Dart** : aucun Flutter, aucun SDK carte (pas de `Circle`/`LatLng`) — la
-/// conversion vers/depuis un type SDK vit EXCLUSIVEMENT dans l'adaptateur carte
-/// concret (`src/presentation/adapters/`), jamais ici (AD-1).
+/// Valeur de tranche d'un champ géo en géométrie `circle`
+/// ([ZGeoGeometry.circle], portée par `ZGeoFieldConfig`). Un cercle est un
+/// [ZGeoPoint] `center` et un `radiusMeters` (rayon en mètres). Modèle
+/// **pur-Dart** : aucun Flutter, aucun SDK carte (pas de `Circle`/`LatLng`) —
+/// la conversion vers/depuis un type SDK vit exclusivement dans l'adaptateur
+/// carte concret (invariant AD-1).
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. Centre
-/// absent/invalide, rayon absent/non numérique/non fini (NaN/Inf)/≤0 → `null`
-/// (état neutre). L'évolution de schéma reste additive.
+/// **Désérialisation défensive (invariant AD-10)** : [fromMapSafe] ne throw
+/// jamais. Centre absent/invalide, rayon absent/non numérique/non fini
+/// (NaN/Inf)/≤0 → `null` (état neutre).
 ///
-/// **Lecture legacy DODLP (G1)** : [fromMapSafe] accepte aussi (a) une
-/// **chaîne JSON** (enveloppe legacy, décodée défensivement), (b) le cercle
-/// legacy `{type:'circle', points:[centre], radius}` — alias de LECTURE
+/// **Compatibilité de lecture avec un format hérité** : [fromMapSafe] accepte
+/// aussi (a) une chaîne JSON encodée (décodée défensivement), (b) le cercle
+/// historique `{type:'circle', points:[centre], radius}` — alias de lecture
 /// `radius` → `radius_m` (quand `radius_m` est absente) et centre repris de
-/// `points[0]` (quand `center` est absente). LECTURE seulement : [toMap] est
-/// strictement inchangé (`center`/`radius_m`).
+/// `points[0]` (quand `center` est absente). Lecture seulement : [toMap]
+/// écrit toujours `center`/`radius_m`. Détails : `doc/migration-legacy-dodlp-geo.md`.
 ///
-/// **G9 (additif, AD-4)** : le cercle porte un [style] de rendu **nullable**
-/// ([ZGeoShapeStyle]) — `null` ⇒ comportement/rendu strictement inchangés.
-/// [fromMapSafe] lit la clé `style` (zcrud comme legacy) ; [toMap] ne l'émet
-/// que non-`null` (schéma additif).
+/// Le cercle porte un [style] de rendu nullable ([ZGeoShapeStyle]) — `null`
+/// signifie un rendu inchangé, dérivé du thème injecté.
 library;
 
 import 'z_geo_legacy_codec.dart';
@@ -50,8 +48,8 @@ class ZGeoCircle {
   /// Libellé lisible optionnel.
   final String? label;
 
-  /// Style de rendu neutre optionnel (G9, additif — `null` ⇒ rendu inchangé :
-  /// l'adaptateur retombe sur le thème injecté, FR-26).
+  /// Style de rendu neutre optionnel. `null` ⇒ rendu inchangé : l'adaptateur
+  /// retombe sur le thème injecté.
   final ZGeoShapeStyle? style;
 
   /// `true` si le [center] est dans les bornes ET le rayon est fini > 0.
@@ -67,15 +65,15 @@ class ZGeoCircle {
         if (style != null) 'style': style!.toMap(),
       };
 
-  /// Parse **défensif** (AD-10) : retourne `null` sans jamais throw si [raw]
-  /// n'est pas une `Map`, si le centre est absent/invalide, ou si le rayon est
+  /// Parse **défensif** : retourne `null` sans jamais throw si [raw] n'est
+  /// pas une `Map`, si le centre est absent/invalide, ou si le rayon est
   /// absent/non numérique/non fini/≤0. `label` non-`String` → `null`.
   static ZGeoCircle? fromMapSafe(Object? raw) {
     final decoded = zGeoDecodeLegacyEnvelope(raw);
     if (decoded is! Map) return null;
-    // Centre : clé zcrud `center` d'abord ; repli legacy `points[0]` UNIQUEMENT
-    // quand `center` est absente (un `center` présent-mais-corrompu reste
-    // `null` comme avant — la lecture élargie ne secourt pas la stricte).
+    // Centre : clé zcrud `center` d'abord ; repli compatibilité `points[0]`
+    // UNIQUEMENT quand `center` est absente (un `center` présent-mais-corrompu
+    // reste `null` comme avant — la lecture élargie ne secourt pas la stricte).
     var center = ZGeoPoint.fromMapSafe(decoded['center']);
     if (center == null && decoded['center'] == null) {
       final points = decoded['points'];
@@ -84,8 +82,9 @@ class ZGeoCircle {
       }
     }
     if (center == null) return null;
-    // Rayon : clé zcrud `radius_m` d'abord ; alias de LECTURE legacy `radius`
-    // uniquement quand `radius_m` est absente (même règle de non-secours).
+    // Rayon : clé zcrud `radius_m` d'abord ; alias de lecture compatibilité
+    // `radius` uniquement quand `radius_m` est absente (même règle de
+    // non-secours).
     final rawRadius = decoded['radius_m'] ?? decoded['radius'];
     final radius = _asPositiveFiniteDouble(rawRadius);
     if (radius == null) return null;

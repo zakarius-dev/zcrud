@@ -1,20 +1,21 @@
-/// Entrée **neutre** du gabarit PDF flashcards (su-11, AC1/AC3/T1).
+/// Entrée **neutre** du gabarit PDF flashcards.
 ///
-/// origine: su-11 (FR-SU16). `ZFlashcardPdfTemplate` est une fonction PURE de
-/// `zcrud_export` : elle ne peut PAS importer `zcrud_flashcard` (l'arête réelle
-/// est `zcrud_flashcard → zcrud_export`, jamais l'inverse — AD-1). Le modèle
-/// d'entrée est donc **projeté chez l'appelant** (`zcrud_flashcard`/app) en
-/// primitives neutres : c'est cette projection que reçoit le gabarit.
+/// `ZFlashcardPdfTemplate` est une fonction PURE de ce paquet : elle ne peut
+/// PAS importer `zcrud_flashcard` (l'arête réelle est `zcrud_flashcard →
+/// zcrud_export_pdf`, jamais l'inverse — invariant AD-1). Le modèle d'entrée
+/// est donc **projeté chez l'appelant** (`zcrud_flashcard`/app) en primitives
+/// neutres : c'est cette projection que reçoit le gabarit.
 ///
 /// **Type de carte = clé neutre `String`** (`typeKey`, camelCase, ex.
 /// `"multipleChoice"`), JAMAIS l'enum `ZFlashcardType` de `zcrud_flashcard` (qui
 /// forcerait une arête interdite). Une clé inconnue/absente retombe défensivement
-/// sur le badge « question ouverte » ([kFlashcardPdfTypeOpenQuestion]) — AD-10.
+/// sur le badge « question ouverte » ([kFlashcardPdfTypeOpenQuestion]) —
+/// invariant AD-10.
 ///
 /// **Libellés injectés** ([ZFlashcardPdfLabels]) : le gabarit produit des BYTES
 /// sans `BuildContext` (aucune l10n runtime possible) ; les libellés (badges,
 /// « Réponse », « Explication »…) sont donc **fournis par l'appelant** (défauts
-/// FR documentés), jamais figés dans le rendu (esprit AD-13/FR-26).
+/// documentés), jamais figés dans le rendu (esprit invariant AD-13).
 library;
 
 /// Clés de type **neutres** (camelCase = `ZFlashcardType.name`) — miroir STABLE
@@ -82,7 +83,7 @@ class ZFlashcardPdfCard {
   /// Choix de QCM (marqués ✓/✗ en `withAnswers`, non marqués en `withoutAnswers`).
   final List<ZFlashcardPdfChoice>? choices;
 
-  /// Indice (CR-LEX-39) — **rendu AUSSI en `withoutAnswers`**, contrairement à
+  /// Indice — **rendu AUSSI en `withoutAnswers`**, contrairement à
   /// [answer] et [explanation].
   ///
   /// C'est délibéré et c'est tout l'intérêt : `withoutAnswers` est le mode
@@ -97,7 +98,8 @@ class ZFlashcardPdfCard {
 }
 
 /// Libellés **injectés** du gabarit (défauts FR documentés). Aucun texte figé
-/// dans le rendu : l'appelant peut fournir des libellés localisés (AD-13/FR-26).
+/// dans le rendu : l'appelant peut fournir des libellés localisés (invariant
+/// AD-13).
 class ZFlashcardPdfLabels {
   /// Construit un jeu de libellés (défauts FR).
   const ZFlashcardPdfLabels({
@@ -131,7 +133,7 @@ class ZFlashcardPdfLabels {
   /// Badge du type texte à trous.
   final String fillBlank;
 
-  /// Libellé de l'indice (CR-LEX-39), défaut FR « Indice ».
+  /// Libellé de l'indice, défaut FR « Indice ».
   final String hintLabel;
 
   /// Badge du type réponse courte.
@@ -149,25 +151,25 @@ class ZFlashcardPdfLabels {
   /// Libellé « faux » (V/F).
   final String falseLabel;
 
-  /// Patron de **numérotation de carte** (CR-LEX-42), défaut FR
+  /// Patron de **numérotation de carte**, défaut FR
   /// `'Carte {index} / {total}'`.
   ///
-  /// Jusqu'au tag `v0.16.0` cette chaîne était écrite **en dur** dans le
-  /// gabarit : un hôte qui surchargeait scrupuleusement les onze autres
-  /// libellés obtenait quand même un document mixte, sans aucun recours.
+  /// Ce patron reste toujours surchargeable par l'hôte, au même titre que les
+  /// autres libellés : un document ne mêle jamais un texte figé à des
+  /// libellés par ailleurs entièrement localisés.
   ///
   /// Les jetons `{index}` et `{total}` sont substitués par [cardNumberFor].
   /// Un patron qui n'en contient aucun est rendu **tel quel** — c'est un choix
   /// d'hôte légitime (numérotation supprimée : passer `''`), pas une erreur.
   final String cardNumberPattern;
 
-  /// Titre de repli quand `ZFlashcardPdfInput.title` est vide (CR-LEX-42),
-  /// défaut FR `'Flashcards'` — lui aussi codé en dur auparavant.
+  /// Titre de repli quand `ZFlashcardPdfInput.title` est vide, défaut FR
+  /// `'Flashcards'`.
   final String untitledLabel;
 
   /// Rend la numérotation de la carte [index] sur [total] via
   /// [cardNumberPattern]. Substitution littérale, sans regex : `{index}` et
-  /// `{total}`. Ne lève jamais (AD-10).
+  /// `{total}`. Ne lève jamais (invariant AD-10).
   String cardNumberFor(int index, int total) => cardNumberPattern
       .replaceAll('{index}', '$index')
       .replaceAll('{total}', '$total');

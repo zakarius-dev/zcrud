@@ -1,36 +1,33 @@
-/// Configuration persistée d'une session d'étude `ZStudySessionConfig`
-/// (Story E9-3, AC1/AC3/AC7).
+/// Configuration persistée d'une session d'étude `ZStudySessionConfig`.
 ///
-/// origine: lex_core (module « Étude ») — filtres de session (canonique §2.3,
-/// FR-18). **Config de valeur** (pas d'`id`, pas de `ZEntity`) : elle décrit
-/// *quelles* cartes composent une session — `mode` + filtres `folderId`/`tagIds`/
-/// `types` + plafond `count`. La **sélection effective** est portée par la
-/// primitive pure `ZStudySessionSelector` (`z_study_session_selector.dart`).
+/// Config de valeur (pas d'identifiant, pas de `ZEntity`) : elle décrit
+/// *quelles* cartes composent une session — `mode` + filtres
+/// `folderId`/`tagIds`/`types` + plafond `count`. La sélection effective est
+/// portée par la primitive pure `ZStudySessionSelector`
+/// (`z_study_session_selector.dart`).
 ///
-/// **Généré par `@ZcrudModel` (AD-3)** : `melos run generate` émet
-/// `z_study_session_config.g.dart` (`part`, gitignoré, régénéré) portant
-/// `_$ZStudySessionConfigFromMap`, l'extension `ZStudySessionConfigZcrud`
-/// (`toMap`/`copyWith`), `$ZStudySessionConfigFieldSpecs` et
-/// `registerZStudySessionConfig(ZcrudRegistry)`.
+/// Généré par `@ZcrudModel` (invariant AD-3) : `melos run generate` émet le
+/// fichier compagnon (`part`, gitignoré, régénéré) portant le décodeur
+/// défensif, l'extension `toMap`/`copyWith`, les spécifications de champ et
+/// l'enregistrement au registre.
 ///
-/// **`types` (liste de clés de type NEUTRES) — découplage AD-1/AD-17 (ES-1.1,
-/// AC6)** : le champ conserve le **nom `types`** (clé JSON `types` inchangée)
-/// mais son type d'élément est **neutre `String`** (`List<String>?`) — et non
-/// plus `List<ZFlashcardType>` (concept flashcard-spécifique, banni du noyau par
-/// AD-17). Les valeurs persistées restent les **noms d'enum camelCase**
-/// (ex. `"multipleChoice"`) ⇒ le wire est **byte-identique** à E9 (round-trip
-/// AD-10, gate `verify:serialization` préservé). Le générateur zcrud
+/// **`types` — clés de type neutres, découplage (invariant AD-1)** : le
+/// champ conserve le nom `types` (clé JSON `types` inchangée) mais son type
+/// d'élément est neutre `String` (`List<String>?`), et non un type d'enum
+/// spécifique à un satellite (banni du kernel). Les valeurs persistées
+/// restent les noms d'enum camelCase (ex. `"multipleChoice"`) ⇒ le wire
+/// reste identique (round-trip, invariant AD-10). Le générateur zcrud
 /// (dé)sérialise nativement `List<String>?` (mêmes défauts défensifs que
-/// `tag_ids` : non-liste → `null`, éléments non-`String` filtrés). L'ergonomie
-/// typée `ZFlashcardType` (mapping String↔enum, drop défensif des inconnus) est
-/// restituée **côté `zcrud_flashcard`** via une extension (`flashcardTypes` /
-/// `withFlashcardTypes`), jamais dans le noyau.
+/// `tag_ids` : non-liste → `null`, éléments non-`String` filtrés).
+/// L'ergonomie typée (mapping `String` ↔ enum, rejet défensif des inconnus)
+/// est restituée côté satellite via une extension, jamais dans le kernel.
 ///
-/// **`mode` défensif → [ZReviewMode.spaced] (AC1)** via `defaultValue` : une
-/// valeur inconnue/absente retombe sur `spaced`, sans throw.
+/// **`mode` défensif → [ZReviewMode.spaced]** via `defaultValue` : une
+/// valeur inconnue/absente retombe sur `spaced`, sans `throw`.
 ///
-/// **Slots d'extension AD-4** : mixe `ZExtensible` (cœur) → [extra] + [extension]
-/// (câblés manuellement autour du code généré, même patron que `ZFlashcard`).
+/// **Slots d'extension (invariant AD-4)** : mixe `ZExtensible` (cœur) →
+/// [extra] + [extension] (câblés manuellement autour du code généré, même
+/// patron que les autres entités du kernel).
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -44,12 +41,13 @@ part 'z_study_session_config.g.dart';
 
 /// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou `null`.
 ///
-/// Injecté dans [ZStudySessionConfig.fromMap] (AD-4) ; toute exception est
-/// absorbée en `null` par [ZExtension.guard] (AD-10).
+/// Injecté dans [ZStudySessionConfig.fromMap] (invariant AD-4) ; toute
+/// exception est absorbée en `null` par [ZExtension.guard] (invariant
+/// AD-10).
 typedef ZSessionConfigExtensionParser = ZExtension? Function(
     Map<String, dynamic> json);
 
-/// Filtres persistés d'une session d'étude (config de valeur immuable — AC7).
+/// Filtres persistés d'une session d'étude (config de valeur immuable).
 @ZcrudModel(kind: 'study_session_config', fieldRename: ZFieldRename.snake)
 class ZStudySessionConfig with ZExtensible {
   /// Construit une config (constructeur nommé — source du `copyWith`).
@@ -61,18 +59,17 @@ class ZStudySessionConfig with ZExtensible {
     this.count,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
-    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
-    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
-    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // Un paramètre nommé ne peut pas être privé en Dart, mais le slot brut
+    // doit rester privé — c'est l'accesseur `extra` qui porte la garde.
     // ignore: prefer_initializing_formals
   }) : _extra = extra;
 
-  /// Reconstruit **défensivement** depuis une map persistée (AD-10).
+  /// Reconstruit défensivement depuis une map persistée (invariant AD-10).
   ///
-  /// Délègue au `_$ZStudySessionConfigFromMap` **généré** (`mode` inconnu →
-  /// `spaced` ; `tag_ids`/`types` non-liste → `null` ; élément de `types`
-  /// inconnu → ignoré ; `count` non-int → `null`), puis câble les deux canaux
-  /// hors-codegen : [extension] (repli `null`) et [extra] (clés non réservées).
+  /// Délègue au décodeur généré (`mode` inconnu → `spaced` ; `tag_ids`/
+  /// `types` non-liste → `null` ; élément de `types` inconnu → ignoré ;
+  /// `count` non-int → `null`), puis câble les deux canaux hors-codegen :
+  /// [extension] (repli `null`) et [extra] (clés non réservées).
   ///
   /// Aucun cas ne fait échouer le parent.
   factory ZStudySessionConfig.fromMap(
@@ -91,65 +88,64 @@ class ZStudySessionConfig with ZExtensible {
     );
   }
 
-  /// Mode de session (défaut/repli défensif `spaced` — AC1).
+  /// Mode de session (défaut/repli défensif `spaced`).
   @ZcrudField(defaultValue: ZReviewMode.spaced)
   final ZReviewMode mode;
 
-  /// Dossier cible (`null` = **toutes** les cartes éligibles, pas de filtre —
-  /// AC7/AC8). Couvre le dossier ET ses sous-dossiers (cf. sélecteur).
+  /// Dossier cible (`null` = toutes les cartes éligibles, pas de filtre).
+  /// Couvre le dossier ET ses sous-dossiers (voir le sélecteur).
   @ZcrudField()
   final String? folderId;
 
-  /// Étiquettes filtrantes (`null` ou vide = pas de filtre ; sinon intersection
-  /// non vide — AC8).
+  /// Étiquettes filtrantes (`null` ou vide = pas de filtre ; sinon
+  /// intersection non vide).
   @ZcrudField()
   final List<String>? tagIds;
 
-  /// Types filtrants **neutres** (`null` ou vide = pas de filtre ; sinon
-  /// appartenance sur la clé opaque `ZSessionCandidate.typeKey` — AC6). Clés
-  /// camelCase (ex. `"multipleChoice"`) ; l'ergonomie typée `ZFlashcardType` est
-  /// restituée côté `zcrud_flashcard`.
+  /// Types filtrants neutres (`null` ou vide = pas de filtre ; sinon
+  /// appartenance sur la clé opaque `ZSessionCandidate.typeKey`). Clés
+  /// camelCase (ex. `"multipleChoice"`) ; l'ergonomie typée est restituée
+  /// côté satellite.
   @ZcrudField()
   final List<String>? types;
 
-  /// Plafond du nombre de cartes (`null` = illimité ; `<= 0` = sélection vide —
-  /// AC8).
+  /// Plafond du nombre de cartes (`null` = illimité ; `<= 0` = sélection
+  /// vide).
   @ZcrudField()
   final int? count;
 
-  /// Slot type additif **versionné** (AD-4 pt.1), `null` si absent. Hors-codegen.
+  /// Slot type additif versionné (invariant AD-4), `null` si absent.
+  /// Hors-codegen.
   @override
   final ZExtension? extension;
 
-  /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`).
-  /// Hors-codegen.
+  /// Échappatoire non typée (invariant AD-4), défaut `const {}` (jamais
+  /// `null`). Hors-codegen.
   @override
   Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
 
-  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
-  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  /// Slot `extra` brut tel que reçu par le constructeur — lu nulle part
+  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni
+  /// `hashCode`).
   ///
-  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
-  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
-  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
-  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  /// Il peut être pollué : le constructeur nominal est `const`, il ne peut
+  /// appeler aucune fonction dans son initializer, et l'invariant AD-10
+  /// interdit d'y mettre un `assert`. C'est l'accesseur [extra] qui porte
+  /// la garde (`zNormalizeExtra`) — le seul point que toutes les voies
+  /// traversent.
   final Map<String, dynamic> _extra;
 
-  /// Sérialise vers la map persistée **complète** (snake_case).
+  /// Sérialise vers la map persistée complète (snake_case).
   ///
-  /// Réutilise le `toMap()` **généré** (mode camelCase, `types` en `name`) puis
+  /// Réutilise le `toMap()` généré (mode camelCase, `types` en `name`) puis
   /// superpose [extra] et [extension].
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
-      // 🔴 DW-ES22-3 (ES-2.2b) — MÊME garde nommée qu'en `fromMap`/`copyWith`.
-      // `toMap()` est la **frontière de SORTIE** : la seule que TOUTES les voies
-      // d'écriture traversent ⇒ la promesse est INCONDITIONNELLE, y compris pour
-      // une instance née du constructeur nominal (qui ne peut RIEN filtrer).
-      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
-      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
-      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
-      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
-      // (i.1a)/(i.1b)/(i.1c) ROUGES.
+      // `toMap()` est la frontière de sortie : la seule que toutes les
+      // voies d'écriture traversent ⇒ la promesse est inconditionnelle, y
+      // compris pour une instance née du constructeur nominal (qui ne peut
+      // rien filtrer). Étale l'accesseur (qui normalise), jamais le champ
+      // brut `_extra`.
       ...extra,
       ...ZStudySessionConfigZcrud(this).toMap(),
     };
@@ -159,9 +155,9 @@ class ZStudySessionConfig with ZExtensible {
     return map;
   }
 
-  /// Copie avec sentinelle (un argument omis préserve la valeur, `null` explicite
-  /// le remet à `null`). Couvre [extension]/[extra] (ignorés du `copyWith`
-  /// généré).
+  /// Copie avec sentinelle (un argument omis préserve la valeur, `null`
+  /// explicite le remet à `null`). Couvre [extension]/[extra] (ignorés du
+  /// `copyWith` généré).
   ZStudySessionConfig copyWith({
     Object? mode = _$undefined,
     Object? folderId = _$undefined,
@@ -185,8 +181,8 @@ class ZStudySessionConfig with ZExtensible {
         extension: identical(extension, _$undefined)
             ? this.extension
             : extension as ZExtension?,
-        // 🔴 DW-ES22-3 (ES-2.2b) : MÊME FONCTION NOMMÉE qu'en `fromMap` —
-        // `copyWith` ne peut plus ROUVRIR le filtre des clés réservées.
+        // Même fonction nommée qu'en `fromMap` — `copyWith` ne peut pas
+        // rouvrir le filtre des clés réservées.
         extra: identical(extra, _$undefined)
             ? this.extra
             : _sanitizeExtra(extra as Map<String, dynamic>),
@@ -197,28 +193,27 @@ class ZStudySessionConfig with ZExtensible {
     Object? raw,
     ZSessionConfigExtensionParser? parser,
   ) {
-    // CR-LEX-33 : le corps de cette méthode était `if (parser == null) return
-    // null;` — un hôte SANS parser lisait `null`, et comme `extension` est une
-    // clé CONNUE (donc exclue d'`extra`), le payload d'un AUTRE hôte était
-    // DÉTRUIT au décodage, avant toute ligne de code applicatif. Le cœur
-    // préserve désormais verbatim ce que personne n'a su typer.
+    // Un hôte sans parser doit préserver verbatim ce qu'il n'a pas su
+    // typer plutôt que le détruire au décodage : `extension` étant une clé
+    // connue (donc exclue d'`extra`), un `null` inconditionnel effacerait
+    // le payload d'un autre hôte avant toute ligne de code applicatif.
     return zDecodeExtension(raw, parser);
   }
 
-  /// Clés persistées **réservées** (champs générés + `extension` + **clés de
-  /// sync `ZSyncMeta`**) — dérivées de `$ZStudySessionConfigFieldSpecs`.
+  /// Clés persistées réservées (champs générés + `extension` + clés de
+  /// synchronisation) — dérivées des spécifications de champ générées.
   ///
-  /// **AD-19 (ES-1.3)** — le spread `...ZSyncMeta.reservedKeys` (`updated_at`,
-  /// `is_deleted`) est **obligatoire pour toute entité annotée** : l'entité est
-  /// enregistrée au `ZcrudRegistry` (`kind: 'study_session_config'`) donc
-  /// persistable comme document autonome, et les stores écrivent leurs
-  /// métadonnées de sync **dans le corps** avant de passer la map **complète** à
-  /// [fromMap]. Sans ce spread, `updated_at`/`is_deleted` — propriété du
-  /// **store**, pas du domaine — atterriraient dans [extra] (AD-4) et seraient
-  /// **réémises** par [toMap] (AD-16 : soft-delete hors-entité).
+  /// Le spread des clés de synchronisation (`updated_at`, `is_deleted`) est
+  /// obligatoire pour toute entité annotée : l'entité est enregistrée au
+  /// registre (nature `'study_session_config'`) donc persistable comme
+  /// document autonome, et les stores écrivent leurs métadonnées de
+  /// synchronisation dans le corps avant de passer la map complète à
+  /// [fromMap]. Sans ce spread, ces clés — propriété du store, pas du
+  /// domaine — atterriraient dans [extra] et seraient réémises par [toMap]
+  /// (invariant AD-9 : soft-delete hors-entité).
   ///
-  /// C'est le **patron canonique du noyau** : toute entité d'ES-2
-  /// (`ZStudyDocument`, `ZSmartNote`, `ZExam`, …) le reproduit à l'identique.
+  /// C'est le patron canonique du kernel : toute entité annotée le
+  /// reproduit à l'identique.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZStudySessionConfigFieldSpecs) spec.name,
     'extension',
@@ -226,13 +221,13 @@ class ZStudySessionConfig with ZExtensible {
   };
 
   /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
-  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
+  /// frontière d'entrée. C'est [_sanitizeExtra], la garde partagée.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
       _sanitizeExtra(map);
 
-  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par les
-  /// **TROIS** voies : [fromMap], [copyWith] **et** [toMap]. Délègue à
-  /// [zSanitizeExtra] (`zcrud_core`, implémentation UNIQUE du repo).
+  /// La garde partagée de `extra` — appelée par les trois voies :
+  /// [fromMap], [copyWith] et [toMap]. Délègue à [zSanitizeExtra]
+  /// (`zcrud_core`, implémentation unique du dépôt).
   static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
       zSanitizeExtra(raw, _reservedKeys);
 

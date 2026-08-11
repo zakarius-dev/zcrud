@@ -1,8 +1,8 @@
-/// Éditeur outline `ZMindmapOutlineEditor` (Story E10-3, FR-19).
+/// Éditeur outline `ZMindmapOutlineEditor`.
 ///
 /// **Liste indentée éditable** d'une forêt `ZMindmap` dont la **sauvegarde
-/// applique RÉELLEMENT les modifications** (correction du bug lex — dette n°5) :
-/// la forêt vit dans un [ZMindmapOutlineController] (source de vérité unique),
+/// applique RÉELLEMENT les modifications** : la forêt vit dans un
+/// [ZMindmapOutlineController] (source de vérité unique),
 /// mutée en continu via `ZMindmapTreeOps`, et `onSave` émet **exactement**
 /// `controller.forest`. Aucun chemin ne re-persiste l'arbre d'origine.
 ///
@@ -31,7 +31,7 @@ import 'z_mindmap_view_config.dart';
 /// Callback recevant une forêt `ZMindmapNode` (sauvegarde / changement).
 typedef ZMindmapForestCallback = void Function(List<ZMindmapNode> forest);
 
-/// Constructeur injectable de l'**état vide** de l'éditeur outline (CR-IFFD-67).
+/// Constructeur injectable de l'**état vide** de l'éditeur outline.
 ///
 /// Reçoit [onAddRoot] — l'ajout de racine, EXACTEMENT celui de la barre d'outils
 /// — pour que l'état vide substitué reste une vraie affordance et pas un décor.
@@ -70,7 +70,7 @@ class ZMindmapOutlineEditor extends StatefulWidget {
   /// Contrôleur injecté optionnel (sinon interne, créé/disposé par le widget).
   final ZMindmapOutlineController? controller;
 
-  /// Confirmation demandée AVANT de supprimer un nœud (CR-LEX-21) — `null` par
+  /// Confirmation demandée AVANT de supprimer un nœud — `null` par
   /// défaut, donc **non cassant** (suppression immédiate, comportement actuel).
   ///
   /// `deleteNode` retire un **sous-arbre entier** : un geste peut emporter
@@ -107,7 +107,7 @@ class ZMindmapOutlineEditor extends StatefulWidget {
   /// inchangés (SM-1) ; l'adaptateur riche écrit un slot AD-4 séparé (`extra`).
   final ZMindmapEditFieldBuilder? editFieldBuilder;
 
-  /// **État vide injectable** (CR-IFFD-67). `null` (défaut) ⇒ état vide du socle :
+  /// **État vide injectable**. `null` (défaut) ⇒ état vide du socle :
   /// illustration + bouton d'ajout CENTRÉ (≥ [ZMindmapViewConfig.minTapTarget]),
   /// plus les textes de [ZMindmapOutlineLabels] `emptyTitle`/`emptyMessage`/
   /// `emptyActionLabel` **s'ils sont fournis** (sinon absents de l'arbre, AD-4 —
@@ -125,11 +125,11 @@ class ZMindmapOutlineEditor extends StatefulWidget {
 }
 
 class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
-  // CR-LEX-20 : NON `late final`. Un `State` survit au remplacement de son
-  // widget ; figer le contrôleur à la construction rendait tout contrôleur
-  // injecté ensuite **inerte** — l'éditeur continuait d'écouter et de muter
-  // l'ancien, sans erreur ni signal. C'est le défaut AD-2 que ce socle existe
-  // pour éliminer, dans l'un de ses propres widgets.
+  // NON `late final`. Un `State` survit au remplacement de son
+  // widget ; figer le contrôleur à la construction rendrait tout contrôleur
+  // injecté ensuite **inerte** — l'éditeur continuerait d'écouter et de muter
+  // l'ancien, sans erreur ni signal. C'est précisément le défaut AD-2 que ce
+  // socle élimine, y compris dans l'un de ses propres widgets.
   late ZMindmapOutlineController _controller;
   late bool _ownsController;
 
@@ -150,7 +150,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
     }
   }
 
-  /// CR-LEX-20 — prend en compte un contrôleur **remplacé** par l'appelant.
+  /// Prend en compte un contrôleur **remplacé** par l'appelant.
   ///
   /// Règle de propriété, et c'est elle qui rend le correctif sûr :
   /// - on ne `dispose` **QUE** ce qu'on possède. Un contrôleur injecté
@@ -194,7 +194,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
   void _notifyChanged() => widget.onChanged?.call(_controller.forest);
 
   /// Ajout d'une racine — voie UNIQUE partagée par la barre d'outils ET l'état
-  /// vide (CR-IFFD-67) : deux affordances, un seul chemin de mutation.
+  /// vide : deux affordances, un seul chemin de mutation.
   /// Référence de méthode STABLE (pas une closure recréée à chaque build, SM-1).
   void _addRoot() {
     _controller.addRoot();
@@ -225,8 +225,8 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
             builder: (context, _) {
               final flat = _flatten(_controller.forest);
               if (flat.isEmpty) {
-                // CR-IFFD-67 ② — une forêt vide ne laisse plus une page blanche
-                // avec une affordance en coin : elle GUIDE vers le premier geste.
+                // Une forêt vide ne laisse pas une page blanche avec une
+                // affordance en coin : elle GUIDE vers le premier geste.
                 // Priorité paramètre > config > référence.
                 final injected = widget.emptyBuilder;
                 if (injected != null) return injected(context, _addRoot);
@@ -269,7 +269,7 @@ class _ZMindmapOutlineEditorState extends State<ZMindmapOutlineEditor> {
 }
 
 /// Barre d'outils supérieure : « ajouter une racine » (toujours) + « enregistrer »
-/// (si `onSave`). Affordance d'ajout accessible même sur forêt vide (AC1).
+/// (si `onSave`). Affordance d'ajout accessible même sur forêt vide.
 class _OutlineToolbar extends StatelessWidget {
   const _OutlineToolbar({
     required this.labels,
@@ -316,28 +316,27 @@ class _OutlineToolbar extends StatelessWidget {
   }
 }
 
-/// **État vide** du socle (CR-IFFD-67 ②) : illustration + textes optionnels +
-/// bouton d'ajout CENTRÉ, à la place de la page blanche.
+/// **État vide** du socle : illustration + textes optionnels + bouton
+/// d'ajout CENTRÉ, à la place d'une page blanche.
 ///
-/// 🔴 **Argumentaire du défaut (CR-56 — « un défaut se juge à ce qu'il donne
-/// SANS réglage »)**, parce que deux exigences se croisent ici :
-/// - FR-26/NFR-S7 interdit qu'un package impose un libellé métier dans une
-///   langue ; on ne peut donc PAS livrer « Aucun nœud » en dur.
-/// - CR-56 interdit qu'un défaut non réglé reproduise le défaut signalé ; rendre
-///   l'état vide *entièrement* absent tant que l'hôte n'injecte rien redonnerait
-///   EXACTEMENT la page blanche que la CR mesure.
+/// Deux exigences se croisent ici : un package ne doit jamais imposer un
+/// libellé métier codé en dur (« Aucun nœud »&nbsp;: interdit) ; et un
+/// défaut non réglé ne doit pas reproduire le défaut qu'il corrige — rendre
+/// l'état vide *entièrement* absent tant que l'hôte n'injecte rien
+/// redonnerait exactement la page blanche visée.
 ///
-/// Repli retenu : **la structure est toujours rendue, le texte jamais imposé.**
-/// Sans aucune injection, l'hôte obtient une affordance d'ajout **visible,
-/// centrée et actionnable** (illustration + bouton ≥ [ZMindmapViewConfig
-/// .minTapTarget], annoncée par `labels.addRoot` dont le repli est non-nul) —
-/// donc jamais un widget inerte, et pas un mot de français de plus qu'avant.
-/// Chaque ligne de texte (`emptyTitle`, `emptyMessage`, `emptyActionLabel`) n'est
-/// **montée que si l'hôte la fournit** (AD-4) : `null` ⇒ absente de l'arbre.
+/// Repli retenu : **la structure est toujours rendue, le texte jamais
+/// imposé.** Sans aucune injection, l'hôte obtient une affordance d'ajout
+/// **visible, centrée et actionnable** (illustration + bouton ≥
+/// [ZMindmapViewConfig.minTapTarget], annoncée par `labels.addRoot` dont le
+/// repli est non-nul) — jamais un widget inerte, et aucun texte imposé.
+/// Chaque ligne de texte (`emptyTitle`, `emptyMessage`, `emptyActionLabel`)
+/// n'est **montée que si l'hôte la fournit** (invariant AD-4) : `null` ⇒
+/// absente de l'arbre.
 ///
-/// AD-13 : `EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlign.center`,
-/// cible ≥ 48 dp réellement active (mêmes facteurs d'alignement que
-/// [_OutlineActionButton] — cf. le commentaire CR-IFFD-67 qui y figure).
+/// Invariant AD-13 : `EdgeInsetsDirectional`, `AlignmentDirectional`,
+/// `TextAlign.center`, cible ≥ 48 dp réellement active (mêmes facteurs
+/// d'alignement que [_OutlineActionButton]).
 class _OutlineEmptyState extends StatelessWidget {
   const _OutlineEmptyState({
     required this.labels,
@@ -470,7 +469,7 @@ class _OutlineEmptyAction extends StatelessWidget {
             ),
             // Mêmes facteurs qu'en `_OutlineActionButton` : sans eux le bouton
             // s'approprierait toute la largeur offerte et le plancher tactile
-            // redeviendrait une contrainte inerte (CR-IFFD-67 ①).
+            // redeviendrait une contrainte inerte.
             child: Align(
               alignment: AlignmentDirectional.center,
               widthFactor: 1,
@@ -538,12 +537,12 @@ class _OutlineRow extends StatelessWidget {
   final ZMindmapEditFieldBuilder? editFieldBuilder;
   final VoidCallback onStructuralChange;
 
-  /// CR-LEX-21 — confirmation avant suppression d'un sous-arbre (`null` = pas
-  /// de confirmation, comportement historique).
+  /// Confirmation avant suppression d'un sous-arbre (`null` = pas de
+  /// confirmation, suppression immédiate).
   final Future<bool> Function(ZMindmapNode node)? onConfirmDelete;
 
-  /// Supprime après confirmation (CR-LEX-21). Sans hook, le comportement est
-  /// **identique à avant** : suppression immédiate, synchrone.
+  /// Supprime après confirmation. Sans hook fourni, la suppression reste
+  /// **immédiate, synchrone**.
   ///
   /// Avec hook, l'attente est **asynchrone** — une confirmation réelle l'exige.
   /// Un `false` annule : aucune mutation, aucune notification.
@@ -739,7 +738,7 @@ Widget _defaultEditField(BuildContext context, ZMindmapEditFieldContext ctx) {
 /// Bouton d'action a11y (≥ 48 dp, `Semantics` externalisé, icône thématisée).
 ///
 /// La sémantique (label + action `onTap`) est portée par le `Semantics` parent ;
-/// l'icône est `ExcludeSemantics` pour éviter tout doublon (patron E10-2).
+/// l'icône est `ExcludeSemantics` pour éviter tout doublon.
 class _OutlineActionButton extends StatelessWidget {
   const _OutlineActionButton({
     required this.label,
@@ -771,32 +770,23 @@ class _OutlineActionButton extends StatelessWidget {
             minWidth: config.minTapTarget,
             minHeight: config.minTapTarget,
           ),
-          // 🔴 CR-IFFD-67 — `widthFactor`/`heightFactor` OBLIGATOIRES. Sans eux
+          // `widthFactor`/`heightFactor` OBLIGATOIRES. Sans eux
           // (`Center` nu, ou `Align` sans facteurs), l'alignement **prend tout le
           // maximum offert** : dans le `Wrap` des actions de nœud, chaque bouton
-          // mesurait la largeur ENTIÈRE du `Wrap` (mesuré : 720 dp à 720 dp de
-          // viewport, 1200 dp à 1200) et le `Wrap` n'en plaçait qu'UN par ligne —
-          // sept lignes, un nœud de 472 dp de haut.
+          // s'étalerait sur la largeur ENTIÈRE du `Wrap`, forçant un seul bouton
+          // par ligne au lieu de plusieurs.
           //
           // Avec les facteurs à 1, l'alignement se dimensionne sur l'icône, puis
           // le `ConstrainedBox` REMONTE la taille au plancher : le `minTapTarget`
           // devient la contrainte **réellement active** (48×48), au lieu d'être un
           // minimum masqué par un maximum pris d'office.
           //
-          // ⚠️ Même défaut, même correction que
-          // `zcrud_chat/…/z_chat_diffusion_bar.dart` : là aussi la garde « ≥ 48 dp »
-          // passait pour la mauvaise raison. Ici la garde de LARGEUR était vacante
-          // (prouvé : `minWidth: 1` injecté, garde restée VERTE) — voir
-          // `cr_iffd67_action_row_test.dart`, qui mesure désormais la GÉOMÉTRIE
-          // rendue (largeur du bouton + nombre de lignes du `Wrap`).
-          //
-          // ⚠️ Honnêteté de mesure : SEUL `widthFactor` est porteur ici. Mesuré
-          // en R3 — retirer `heightFactor` seul ne change RIEN (le `Wrap` comme
-          // la `Row` de la barre d'outils offrent une hauteur NON bornée, donc
-          // l'alignement se dimensionne déjà sur l'icône). Il est conservé pour
-          // que le bouton reste borné si un futur parent impose une hauteur
-          // (`IntrinsicHeight`, `crossAxisAlignment: stretch`, `SizedBox`) — pas
-          // parce qu'une garde le prouverait aujourd'hui.
+          // Seul `widthFactor` est porteur ici : dans ce contexte, le `Wrap`
+          // comme la `Row` de la barre d'outils offrent une hauteur NON bornée,
+          // donc l'alignement se dimensionne déjà sur l'icône. `heightFactor`
+          // est conservé pour que le bouton reste borné si un futur parent
+          // impose une hauteur (`IntrinsicHeight`, `crossAxisAlignment:
+          // stretch`, `SizedBox`).
           child: Align(
             alignment: AlignmentDirectional.center,
             widthFactor: 1,

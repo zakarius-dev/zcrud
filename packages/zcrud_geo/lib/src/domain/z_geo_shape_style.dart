@@ -1,29 +1,27 @@
-/// `ZGeoShapeStyle` — **style de rendu neutre d'une forme géo** (DP-21/M13,
-/// AD-1/AD-5/AD-14/AD-10).
+/// `ZGeoShapeStyle` — modèle de valeur **style de rendu neutre d'une forme
+/// géo**.
 ///
-/// origine: DODLP (`data_crud/models/geo_shape.dart → GeoShapeStyle`) porte le
-/// style de rendu des formes (couleur de remplissage/contour, épaisseur,
-/// opacité, icône de marqueur, draggable, info-window). Ce modèle en est le
-/// **portage neutre** : pur-données `const`, **AUCUN type SDK carte ni
-/// `dart:ui`/`Color`** dans sa signature (AD-1/AD-5) — les couleurs sont
-/// exprimées en **entier ARGB 32 bits** (`0xAARRGGBB`), traduites vers le
-/// `Color` du SDK **exclusivement** dans l'adaptateur carte concret
-/// (`src/presentation/adapters/`), jamais ici.
+/// Style de rendu des formes : couleur de remplissage/contour, épaisseur,
+/// opacité, icône de marqueur, draggable, info-window. Pur-données `const` —
+/// **aucun type SDK carte ni `dart:ui`/`Color`** dans sa signature (invariants
+/// AD-1/AD-5) — les couleurs sont exprimées en **entier ARGB 32 bits**
+/// (`0xAARRGGBB`), traduites vers le `Color` du SDK exclusivement dans
+/// l'adaptateur carte concret, jamais ici.
 ///
-/// **Pur-données `const` (AD-14)** : aucune closure, aucun widget, aucune
-/// dépendance lourde ni Flutter. Deux instances aux mêmes champs sont `==`.
+/// **Pur-données `const` (invariant AD-14)** : aucune closure, aucun widget,
+/// aucune dépendance lourde ni Flutter. Deux instances aux mêmes champs sont
+/// `==`.
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map` →
-/// `null` ; toute clé absente/corrompue retombe sur son **défaut neutre** (une
-/// couleur non entière → `null`, une opacité hors [0,1]/non finie → bornée ou
-/// défaut). L'évolution de schéma reste **additive**.
+/// **Désérialisation défensive (invariant AD-10)** : [fromMapSafe] ne throw
+/// jamais. `raw` non-`Map` → `null` ; toute clé absente/corrompue retombe sur
+/// son **défaut neutre** (une couleur non entière → `null`, une opacité hors
+/// [0,1]/non finie → bornée ou défaut).
 ///
-/// **G17** : [iconSize]/[iconAnchor]/[iconRotation] (parité `gs:109-116`) sont
-/// désormais portés ET LUS par [fromMapSafe] (les données legacy posées par G1
-/// ne sont plus jetées). **G18** : les presets [defaultPoint]/[defaultCircle]/
-/// [defaultPolygon]/[defaultPolyline] rendent les valeurs legacy auditées de
-/// `ZGeoStyleReference` (fichier de référence unique — exception FR-26
-/// encadrée) ; ils restent **opt-in** (aucun preset n'est appliqué d'office).
+/// [iconSize]/[iconAnchor]/[iconRotation] sont lus par [fromMapSafe] au même
+/// titre que les autres champs. Les presets [defaultPoint]/[defaultCircle]/
+/// [defaultPolygon]/[defaultPolyline] rendent les valeurs de référence
+/// auditées de `ZGeoStyleReference` ; ils restent **opt-in** (aucun preset
+/// n'est appliqué d'office).
 library;
 
 import 'z_geo_point.dart';
@@ -56,11 +54,11 @@ class ZGeoShapeStyle {
   });
 
   /// Couleur de remplissage **ARGB 32 bits** (`0xAARRGGBB`) — polygone/cercle.
-  /// `null` → l'adaptateur choisit un défaut neutre (thème injecté, FR-26).
+  /// `null` → l'adaptateur choisit un défaut neutre (thème injecté).
   final int? fillColorArgb;
 
   /// Couleur de contour/trait **ARGB 32 bits** — polygone/cercle/polyligne.
-  /// `null` → défaut neutre côté adaptateur (thème injecté, FR-26).
+  /// `null` → défaut neutre côté adaptateur (thème injecté).
   final int? strokeColorArgb;
 
   /// Épaisseur du trait en pixels (≥0 ; défaut `3`).
@@ -90,16 +88,15 @@ class ZGeoShapeStyle {
   /// Marqueur : teinte d'icône **ARGB 32 bits** (`null` → aucune teinte imposée).
   final int? iconColorArgb;
 
-  /// Marqueur : taille d'icône en dp (G17, parité `gs:110` ; `null` → défaut
-  /// adaptateur).
+  /// Marqueur : taille d'icône en dp (`null` → défaut adaptateur).
   final double? iconSize;
 
-  /// Marqueur : point d'ancrage normalisé `(0.0-1.0, 0.0-1.0)` (G17, parité
-  /// `gs:112-113` — le legacy le sérialise en `GeoPoint {lat,lng}`, repris tel
-  /// quel en [ZGeoPoint] pour la compat de lecture ; `null` → défaut adaptateur).
+  /// Marqueur : point d'ancrage normalisé `(0.0-1.0, 0.0-1.0)`, exprimé en
+  /// [ZGeoPoint] (`lat`/`lng` réutilisés comme composantes normalisées) ;
+  /// `null` → défaut adaptateur.
   final ZGeoPoint? iconAnchor;
 
-  /// Marqueur : rotation en degrés (G17, parité `gs:116` ; défaut `0.0`).
+  /// Marqueur : rotation en degrés (défaut `0.0`).
   final double iconRotation;
 
   /// Marqueur : afficher l'info-window (défaut `false`).
@@ -117,19 +114,19 @@ class ZGeoShapeStyle {
   /// Borne supérieure d'opacité.
   static const double maxOpacity = 1.0;
 
-  // ===== Presets legacy audités (G18, opt-in — valeurs : ZGeoStyleReference) ==
+  // ===== Presets de référence audités (opt-in — ZGeoStyleReference) =====
 
-  /// Preset point/marqueur legacy (`gs:154-157`, référence auditée — opt-in).
+  /// Preset point/marqueur de référence (audité — opt-in).
   static const ZGeoShapeStyle defaultPoint = ZGeoStyleReference.defaultPoint;
 
-  /// Preset cercle legacy (`gs:159-164`, référence auditée — opt-in).
+  /// Preset cercle de référence (audité — opt-in).
   static const ZGeoShapeStyle defaultCircle = ZGeoStyleReference.defaultCircle;
 
-  /// Preset polygone legacy (`gs:166-171`, référence auditée — opt-in).
+  /// Preset polygone de référence (audité — opt-in).
   static const ZGeoShapeStyle defaultPolygon =
       ZGeoStyleReference.defaultPolygon;
 
-  /// Preset polyligne legacy (`gs:173-177`, référence auditée — opt-in).
+  /// Preset polyligne de référence (audité — opt-in).
   static const ZGeoShapeStyle defaultPolyline =
       ZGeoStyleReference.defaultPolyline;
 
@@ -155,16 +152,15 @@ class ZGeoShapeStyle {
         if (infoWindowSnippet != null) 'infoWindowSnippet': infoWindowSnippet,
       };
 
-  /// Parse **défensif** (AD-10) : `null` si [raw] n'est pas une `Map`. Chaque
-  /// clé absente/corrompue retombe sur son défaut neutre ; l'opacité est bornée
+  /// Parse **défensif** : `null` si [raw] n'est pas une `Map`. Chaque clé
+  /// absente/corrompue retombe sur son défaut neutre ; l'opacité est bornée
   /// à `[0,1]` (non finie → défaut). Ne throw **jamais**.
   ///
-  /// **Alias de LECTURE legacy DODLP (G1)** : `fillColor`/`strokeColor`/
-  /// `iconColor` (int ARGB `Color.value`, mesuré dans le JSON legacy) sont lues
-  /// quand la clé zcrud `*Argb` est absente — la lecture stricte prime
-  /// toujours. **G17** : `iconSize`/`iconAnchor`/`iconRotation` (mêmes clés des
-  /// deux côtés) sont désormais LUES au lieu d'être jetées — un `iconAnchor`
-  /// corrompu retombe à `null`, une rotation non numérique au défaut `0.0`.
+  /// Alias de lecture compatibilité : `fillColor`/`strokeColor`/`iconColor`
+  /// (int ARGB) sont lues quand la clé zcrud `*Argb` est absente — la lecture
+  /// stricte prime toujours. `iconSize`/`iconAnchor`/`iconRotation` sont
+  /// lues au même titre ; un `iconAnchor` corrompu retombe à `null`, une
+  /// rotation non numérique au défaut `0.0`.
   static ZGeoShapeStyle? fromMapSafe(Object? raw) {
     if (raw is! Map) return null;
     return ZGeoShapeStyle(
@@ -221,7 +217,7 @@ class ZGeoShapeStyle {
 
   static bool _asBool(Object? v, bool fallback) => v is bool ? v : fallback;
 
-  /// `double` **fini** ou `null` (défensif — G17).
+  /// `double` **fini** ou `null` (défensif).
   static double? _asFiniteDouble(Object? v) {
     double? d;
     if (v is num) {

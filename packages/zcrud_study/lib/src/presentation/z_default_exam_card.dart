@@ -162,7 +162,7 @@ class ZDefaultExamCard extends StatelessWidget {
   ) =>
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // 🔴 `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
+        // `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
         // facteur REMPLIT la hauteur disponible (carte gonflée à 854 dp).
         heightFactor: 1,
         child: DecoratedBox(

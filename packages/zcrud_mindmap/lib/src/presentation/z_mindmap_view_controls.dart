@@ -1,19 +1,20 @@
 /// État de vue **local** et libellés a11y des contrôles de `ZMindmapView`
-/// (Story ES-7.2, AD-2/AD-15/AD-13/FR-26).
+/// (invariants AD-2/AD-15/AD-13).
 ///
 /// [ZMindmapViewController] est un **détenteur d'état pur-Flutter** (agrégat de
 /// `ValueNotifier`) — **AUCUN** gestionnaire d'état tiers (`flutter_riverpod`,
 /// `get`, `provider`), **AUCUN** `setState` global : chaque tranche (zoom,
 /// compact, plein-écran, super-racine) est une `ValueNotifier` isolée pilotant un
-/// `ValueListenableBuilder` ciblé (rebuild granulaire, SM-1). Le zoom est
+/// `ValueListenableBuilder` ciblé (rebuild granulaire). Le zoom est
 /// **CLAMPÉ** à `[minScale, maxScale]` **dans le contrôleur** (la garde de
-/// bornage vit ici, pas dans le widget) : le retirer laisse la valeur d'échelle
-/// dépasser `maxScale` (INJ-1, AC2).
+/// bornage vit ici, pas dans le widget) : le retirer laisserait la valeur
+/// d'échelle dépasser `maxScale`.
 ///
-/// **ADDITIF STRICT (AC6/D8)** : `ZMindmapView` n'expose ce contrôleur qu'en
-/// paramètre **optionnel** ; `null` ⇒ comportement E10 inchangé (aucune barre de
-/// contrôle, aucune enveloppe de zoom). Instancier/`dispose` du contrôleur est à
-/// la charge de l'app hôte (cycle de vie stable, AD-2).
+/// **Additif strict** : `ZMindmapView` n'expose ce contrôleur qu'en
+/// paramètre **optionnel** ; `null` ⇒ comportement inchangé pour un hôte
+/// passif (aucune barre de contrôle, aucune enveloppe de zoom). Instancier/
+/// `dispose` du contrôleur est à la charge de l'app hôte (cycle de vie
+/// stable, invariant AD-2).
 library;
 
 import 'package:flutter/foundation.dart';
@@ -22,12 +23,12 @@ import 'package:flutter/foundation.dart';
 ///
 /// Pur-Flutter (`ValueNotifier`), **sans** dépendance à un gestionnaire d'état.
 /// Chaque affordance est une tranche indépendante : muter l'une ne notifie **que**
-/// ses propres écouteurs (rebuild ciblé, AD-2/AD-15/SM-1).
+/// ses propres écouteurs (rebuild ciblé, invariants AD-2/AD-15).
 class ZMindmapViewController {
   /// Construit un contrôleur de vue.
   ///
   /// - [initialScale] : échelle de départ (clampée à `[minScale, maxScale]`) ;
-  /// - [minScale]/[maxScale] : bornes **dures** du zoom (garde AC2) ;
+  /// - [minScale]/[maxScale] : bornes **dures** du zoom ;
   /// - [zoomStep] : pas d'un zoom-in/out (> 0) ;
   /// - [compact]/[fullscreen]/[showSuperRoot] : états initiaux des toggles.
   ZMindmapViewController({
@@ -74,16 +75,16 @@ class ZMindmapViewController {
   /// Borne supérieure de zoom (lecture pour l'UI / les tests).
   double get maxScale => _maxScale;
 
-  /// Zoom avant d'un pas, **clampé** à `maxScale` (AC2, garde INJ-1).
+  /// Zoom avant d'un pas, **clampé** à `maxScale`.
   void zoomIn() => scale.value = _clampScale(scale.value + _zoomStep);
 
-  /// Zoom arrière d'un pas, **clampé** à `minScale` (AC2, garde INJ-1).
+  /// Zoom arrière d'un pas, **clampé** à `minScale`.
   void zoomOut() => scale.value = _clampScale(scale.value - _zoomStep);
 
   /// Restaure l'échelle initiale (déjà bornée à la construction).
   void resetZoom() => scale.value = _initialScale;
 
-  /// Fixe une échelle arbitraire, **clampée** aux bornes (AC2).
+  /// Fixe une échelle arbitraire, **clampée** aux bornes.
   void setScale(double value) => scale.value = _clampScale(value);
 
   /// Bascule le mode compact.
@@ -95,7 +96,7 @@ class ZMindmapViewController {
   /// Bascule l'affichage de la super-racine multi-forêt.
   void toggleSuperRoot() => showSuperRoot.value = !showSuperRoot.value;
 
-  /// 🔴 **LA GARDE DE BORNAGE DU ZOOM** (AC2/INJ-1). Toute mutation d'échelle
+  /// **LA GARDE DE BORNAGE DU ZOOM**. Toute mutation d'échelle
   /// passe par ici : l'échelle appliquée ne **dépasse jamais** `[min, max]`.
   /// La retirer (renvoyer `value` brut) laisse N zoom-in dépasser `maxScale`
   /// ⇒ test « échelle ≤ maxScale » ROUGE.

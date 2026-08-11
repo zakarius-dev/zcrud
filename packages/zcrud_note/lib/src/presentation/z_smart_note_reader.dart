@@ -1,9 +1,8 @@
-/// `ZSmartNoteReader` — **lecteur** du corps riche d'une [ZSmartNote] (ES-6.1,
-/// FR-S25).
+/// `ZSmartNoteReader` — **lecteur** du corps riche d'une [ZSmartNote].
 ///
-/// C'est un **MINCE ADAPTATEUR** (D1) : il compose le [ZMarkdownReader] de
+/// C'est un **MINCE ADAPTATEUR** : il compose le [ZMarkdownReader] de
 /// `zcrud_markdown` **TEL QUEL**, sans aucun nouveau codec ni aucune
-/// réimplémentation de lecteur rich-text (SM-S4/AD-28). Le pont domaine ↔ lecteur
+/// réimplémentation de lecteur rich-text (AD-28). Le pont domaine ↔ lecteur
 /// est une **IDENTITÉ** : [ZSmartNote.content] est déjà la « valeur neutre » que
 /// consomme `ZMarkdownReader`/`ZCodec` (`List<Map<String, dynamic>>` d'ops Delta)
 /// ⇒ le codec applicable est [ZDeltaCodec] (identité), **aucune conversion**.
@@ -11,11 +10,11 @@
 /// INVARIANTS (hérités des widgets `zcrud_markdown` réutilisés — l'adaptateur ne
 /// les régresse pas) :
 /// - **AD-7/AD-1** : entrée/sortie NEUTRES ; **aucun** type Quill
-///   (`QuillController`/`Document`/`Delta`) dans la signature publique (AC8).
+///   (`QuillController`/`Document`/`Delta`) dans la signature publique.
 /// - **AD-10** : contenu absent/vide/corrompu ⇒ placeholder propre, jamais de
 ///   throw (le décodage défensif est celui de `ZMarkdownReader`).
 /// - **AD-2** : `QuillController` readOnly créé une fois, aucune voie d'écriture.
-/// - **AD-13/FR-26** : directionnel, `Semantics` lisible, thème injecté.
+/// - **AD-13** : directionnel, `Semantics` lisible, thème injecté.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -46,7 +45,7 @@ class ZSmartNoteReader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pont IDENTITÉ (D1/D4) : `note.content` EST la valeur neutre — aucune
+    // Pont IDENTITÉ : `note.content` EST la valeur neutre — aucune
     // transformation, codec `ZDeltaCodec` (identité). `label` = titre de la note
     // pour la sémantique.
     return ZMarkdownReader(

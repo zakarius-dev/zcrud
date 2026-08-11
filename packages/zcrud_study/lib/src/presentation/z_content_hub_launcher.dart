@@ -1,43 +1,30 @@
-/// **Lot 2 « étude »** — la voie de PREMIÈRE CLASSE pour dire « le `+` ouvre le
-/// hub d'ajout », sans que le socle décide des entrées.
+/// Voie de première classe pour dire « le `+` ouvre le hub d'ajout de
+/// contenu », sans que ce paquet ne décide des entrées.
 ///
-/// ## Le manque, MESURÉ avant écriture
-///
-/// `ZContentHubSheet` est complet depuis v0.51.0 (CR-IFFD-65) mais **branché
-/// nulle part**. Grep négatif exécuté sur disque :
-///
-/// ```
-/// $ grep -rn "ContentHub" --include="*.dart" packages/ \
-///     | grep -E "z_study_folder_detail|z_study_tools_page|z_sectioned_study_layout"
-/// (sortie VIDE)
-/// ```
-///
-/// Il était **disponible**, pas **composé** : chaque hôte devait réécrire son
-/// propre `showModalBottomSheet` et le recâbler à DEUX endroits (le `+`
+/// `ZContentHubSheet` est le rendu du hub, mais un rendu disponible n'est pas
+/// un rendu composé : sans ce fichier, chaque hôte devait réécrire son
+/// propre `showModalBottomSheet` et le recâbler à deux endroits (le `+`
 /// d'app-bar et le `+` d'une section), sans aucune garantie que les deux
-/// ouvrent la **même** feuille.
+/// ouvrent la même feuille.
 ///
-/// ## Les trois pièces, et ce que chacune refuse de faire
+/// Trois pièces, chacune avec une responsabilité stricte :
 ///
 /// | Pièce | Ce qu'elle porte | Ce qu'elle refuse |
 /// |---|---|---|
-/// | [ZContentHubLauncher] | la **configuration** de la feuille + **comment** la présenter | décider d'une entrée, d'un libellé, d'un glyphe |
-/// | [ZContentHubScope] | la **portée** : un seul hub configuré, plusieurs `+` | contenir un état, imposer une présence |
-/// | slots hôtes | le **câblage** (`ZStudyFolderDetail.contentHubLauncher`, `ZStudyToolsSectionSpec.addOpensContentHub`) | changer quoi que ce soit quand ils sont absents |
+/// | [ZContentHubLauncher] | la configuration de la feuille et comment la présenter | décider d'une entrée, d'un libellé, d'un glyphe |
+/// | [ZContentHubScope] | la portée : un seul hub configuré, plusieurs `+` | contenir un état, imposer une présence |
+/// | slots hôtes | le câblage (`ZStudyFolderDetail.contentHubLauncher`, `ZStudyToolsSectionSpec.addOpensContentHub`) | changer quoi que ce soit quand ils sont absents |
 ///
-/// 🔴 **ZÉRO libellé ajouté par le socle.** [ZContentHubLauncher] ne porte
-/// **aucun** texte : pas de titre de feuille, pas de libellé de badge, pas de
-/// défaut de constructeur littéral. Tout texte rendu vient des
-/// `ZContentHubEntry`/`ZContentHubSection` que l'**hôte** construit. Le seul
-/// vocabulaire que le socle ajoute est un jeu de **clés de couleur stables**
-/// (`ZContentHubReference.colorKeyFlashcards`…), qui ne sont **pas** des
-/// libellés : elles ne sont jamais rendues, jamais traduites, et leur raison
-/// d'être est précisément de **ne pas** dépendre de la langue ni de la position
-/// d'affichage (cf. `ZContentHubEntry.colorKey`).
+/// Aucun libellé n'est ajouté par ce paquet. [ZContentHubLauncher] ne porte
+/// aucun texte : pas de titre de feuille, pas de libellé de badge, pas de
+/// défaut littéral. Tout texte rendu vient des
+/// `ZContentHubEntry`/`ZContentHubSection` que l'hôte construit. Le seul
+/// vocabulaire ajouté est un jeu de clés de couleur stables
+/// (`ZContentHubReference.colorKeyFlashcards`…), qui ne sont pas des
+/// libellés : elles ne sont jamais rendues ni traduites (voir
+/// `ZContentHubEntry.colorKey`).
 ///
-/// ## 🔴 SM-1 — pourquoi la portée ne se lit PAS par dépendance
-///
-/// [ZContentHubScope.maybeOf] utilise `getInheritedWidgetOfExactType`, **jamais**
+/// [ZContentHubScope.maybeOf] utilise `getInheritedWidgetOfExactType`, jamais
 /// `dependOnInheritedWidgetOfExactType`. Ce n'est pas une négligence :
 ///
 /// * ce dont un `+` a besoin, c'est d'un **callback**, résolu **au tap** — pas
@@ -294,7 +281,7 @@ class ZContentHubLauncher {
 /// immuable. Le poser est le seul geste qui « branche » le hub ; ne pas le poser
 /// laisse l'arbre strictement inchangé.
 ///
-/// 🔴 Voir la dartdoc de bibliothèque : la lecture est **non dépendante**
+/// Voir la dartdoc de bibliothèque : la lecture est **non dépendante**
 /// (`getInheritedWidgetOfExactType`) — c'est ce qui rend l'ouverture du hub
 /// sans effet sur les rebuilds de la liste (SM-1, mesuré par garde).
 class ZContentHubScope extends InheritedWidget {
@@ -312,7 +299,7 @@ class ZContentHubScope extends InheritedWidget {
   /// jamais d'`assert` : l'absence de hub est un cas ORDINAIRE, c'est même le
   /// défaut).
   ///
-  /// 🔴 **Lecture NON dépendante** — cf. dartdoc de bibliothèque (SM-1).
+  /// **Lecture NON dépendante** — cf. dartdoc de bibliothèque (SM-1).
   static ZContentHubLauncher? maybeOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<ZContentHubScope>()?.launcher;
 

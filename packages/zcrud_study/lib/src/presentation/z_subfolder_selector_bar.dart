@@ -16,7 +16,7 @@
 ///
 /// ## CR-IFFD-41 — la référence visuelle appartient à l'hôte IFFD
 ///
-/// 🔴 **La feuille modale REMPLACE le déploiement en ligne de v0.34.0.** Ce
+/// **La feuille modale REMPLACE le déploiement en ligne de v0.34.0.** Ce
 /// n'est pas un ajout et ce n'est pas la correction d'un défaut : le
 /// propriétaire a tranché que la maquette d'IFFD est la référence du socle
 /// partagé. Voir [ZSubfolderNarrowMode.selector] pour la note de migration.
@@ -189,7 +189,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 
   /// Contenu du DÉCLENCHEUR — il annonce le **filtre actif**.
   ///
-  /// 🔴 Repli sur [ZSubfolderNavSpec.allSubfoldersLabel], **jamais** sur
+  /// Repli sur [ZSubfolderNavSpec.allSubfoldersLabel], **jamais** sur
   /// `rootItemLabel` : « aucun filtre » se dit « tous les sous-dossiers », alors
   /// que la ligne racine de la feuille désigne le CONTENEUR (CR-IFFD-46,
   /// point 1). Aucun `rootIcon` non plus, pour la même raison.
@@ -245,7 +245,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 
   Widget _bar(BuildContext context, ZcrudTheme theme) {
     final EdgeInsetsGeometry? padding = theme.subfolderBarPadding;
-    // 🔴 Le sujet de la garde est le DÉCLENCHEUR, pas la barre. Mesuré : sous
+    // Le sujet de la garde est le DÉCLENCHEUR, pas la barre. Mesuré : sous
     // une marge horizontale, la `Row` garde la largeur qu'on lui donne et le
     // bouton `+` garde ses 48 dp intrinsèques — c'est l'`Expanded` du
     // déclencheur qui absorbe TOUT le retrait. Garder la barre aurait produit
@@ -449,7 +449,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     return Material(
       key: ZSubfolderSelectorBar.triggerChromeKey,
       color: painted,
-      // 🔴 0 par CONSTRUCTION : le relief est déjà dans `painted` (tonal).
+      // 0 par CONSTRUCTION : le relief est déjà dans `painted` (tonal).
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(theme.radiusM),
@@ -502,7 +502,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       );
       return;
     }
-    // 🔴 La feuille est rendue dans l'`Overlay` : elle SORT du sous-arbre de la
+    // La feuille est rendue dans l'`Overlay` : elle SORT du sous-arbre de la
     // barre. Deux héritages doivent donc être re-posés explicitement, sans quoi
     // le préréglage de l'hôte disparaîtrait précisément là où il doit se voir :
     // * la `Directionality` (un `Directionality` local n'est pas un
@@ -529,7 +529,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 
   /// Re-pose le [ZcrudScope] ambiant sous l'`Overlay`.
   ///
-  /// ⚠️ Recopie **champ par champ** : `ZcrudScope` est un `InheritedWidget` nu
+  /// Recopie **champ par champ** : `ZcrudScope` est un `InheritedWidget` nu
   /// (pas un `InheritedTheme`), il n'est donc pas capturé par
   /// `showModalBottomSheet`, et il n'expose pas de `copyWith`. Un champ ajouté à
   /// `ZcrudScope` et oublié ici serait perdu dans la feuille : c'est
@@ -696,7 +696,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   /// à `leadingGap` (CR-IFFD-61 ①) : un jeton générique portait plusieurs
   /// valeurs de référence incompatibles, on lui en retire une.
   ///
-  /// ⚠️ NE couvre PAS le padding des ITEMS de la feuille (`_emphasis`), qui
+  /// NE couvre PAS le padding des ITEMS de la feuille (`_emphasis`), qui
   /// reste `gapM`/`gapS` : c'est un rôle d'ITEM, pas de structure de feuille.
   EdgeInsetsGeometry _sheetGutter(ZcrudTheme theme) =>
       theme.subfolderSheetContentPadding ??
@@ -742,7 +742,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
           ref,
           isSelected,
         );
-        // 🔴 L'ACTION est posée HORS du conteneur sémantique de l'item, et
+        // L'ACTION est posée HORS du conteneur sémantique de l'item, et
         // c'est mesuré. Le premier jet gardait la structure de la barre (un
         // `Semantics` englobant tout, `excludeSemantics` levé pour laisser
         // passer l'action) : le lecteur d'écran annonçait alors
@@ -778,7 +778,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                       context,
                       theme,
                       selected: isSelected,
-                      // 🔴 `WidgetBuilder` et non `Widget` : le contenu doit
+                      // `WidgetBuilder` et non `Widget` : le contenu doit
                       // être CONSTRUIT SOUS les enveloppes d'inversion, sinon
                       // un `itemBuilder` d'hôte qui lit `IconTheme.of(context)`
                       // ou `DefaultTextStyle.of(context)` pour se colorer
@@ -828,7 +828,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 
   /// Point 6 — mise en évidence de l'élément courant.
   ///
-  /// 🔴 [ZSubfolderSelectedEmphasis.inverted] **retourne le couple** : fond
+  /// [ZSubfolderSelectedEmphasis.inverted] **retourne le couple** : fond
   /// `inverseSurface` ET premier plan forcé à `onInverseSurface` via
   /// [ZInvertedSurface] (`zcrud_core`), de sorte qu'un `itemBuilder` injecté
   /// s'inverse lui aussi — **y compris** quand il se style depuis

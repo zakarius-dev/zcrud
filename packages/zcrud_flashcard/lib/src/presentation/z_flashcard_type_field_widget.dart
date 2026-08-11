@@ -1,14 +1,15 @@
-/// `ZFlashcardTypeFieldWidget` — sélecteur du **type** de flashcard, servi via
-/// `ZWidgetRegistry` (Story E9-5, AC1/AD-2/AD-4/AD-13/AD-10/FR-26).
+/// `ZFlashcardTypeFieldWidget` — sélecteur du type de flashcard, servi via
+/// `ZWidgetRegistry`.
 ///
-/// Champ **additif** paramétré par l'entité de l'app : les 6 valeurs de
-/// [ZFlashcardType] sont proposées en tuiles mono-choix accessibles ; la
-/// sélection émet la valeur **typée** via `ctx.onChanged`. Défensif (AD-10) : une
-/// valeur de tranche illisible retombe sur `openQuestion`.
+/// Champ additif paramétré par l'entité de l'application : les six valeurs
+/// de [ZFlashcardType] sont proposées en tuiles mono-choix accessibles ; la
+/// sélection émet la valeur typée via `ctx.onChanged`. Défensif (invariant
+/// AD-10) : une valeur de tranche illisible retombe sur `openQuestion`.
 ///
-/// **AD-2** : `StatefulWidget` **sans** contrôleur de texte (aucune frappe) ;
-/// lit `ctx.value`, écrit via `ctx.onChanged` — aucune souscription élargie,
-/// aucun rebuild global. Les libellés sont **paramétrables par closure** (AD-4).
+/// `StatefulWidget` sans contrôleur de texte (invariant AD-2, aucune
+/// frappe) ; lit `ctx.value`, écrit via `ctx.onChanged` — aucune
+/// souscription élargie, aucun rebuild global. Les libellés sont
+/// paramétrables par closure (invariant AD-4).
 library;
 
 import 'package:flutter/material.dart';
@@ -18,13 +19,14 @@ import '../domain/z_flashcard_type.dart';
 import 'z_flashcard_editor_values.dart';
 import 'z_flashcard_option_tile.dart';
 
-/// Résout le libellé affiché d'un [ZFlashcardType] (paramétrable par l'app).
+/// Résout le libellé affiché d'un [ZFlashcardType] (paramétrable par
+/// l'application).
 typedef ZFlashcardTypeLabel = String Function(ZFlashcardType type);
 
 /// Sélecteur de type de flashcard (widget d'édition additif).
 class ZFlashcardTypeFieldWidget extends StatefulWidget {
-  /// Construit le sélecteur pour [ctx]. [labelResolver] surcharge les libellés
-  /// des 6 types (défaut : libellés FR intégrés).
+  /// Construit le sélecteur pour [ctx]. [labelResolver] surcharge les
+  /// libellés des six types (défaut : libellés FR intégrés).
   const ZFlashcardTypeFieldWidget({
     required this.ctx,
     this.labelResolver,
@@ -36,14 +38,14 @@ class ZFlashcardTypeFieldWidget extends StatefulWidget {
   /// Contexte du champ (`ctx.value` = type courant ; `ctx.onChanged` = écriture).
   final ZFieldWidgetContext ctx;
 
-  /// Résolveur de libellé (AD-4 — capturé par closure ; défaut FR).
+  /// Résolveur de libellé (capturé par closure, invariant AD-4 ; défaut FR).
   final ZFlashcardTypeLabel? labelResolver;
 
-  /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
+  /// Hook de test : appelé une fois en `initState`.
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build.
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -99,8 +101,9 @@ class _ZFlashcardTypeFieldWidgetState extends State<ZFlashcardTypeFieldWidget> {
           children: <Widget>[
             Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
             SizedBox(height: theme.gapS),
-            // Liste construite paresseusement (AD-13 : `ListView.builder`),
-            // bornée (6 items) → `shrinkWrap` sans scroll interne concurrent.
+            // Liste construite paresseusement (invariant AD-13 :
+            // `ListView.builder`), bornée (6 items) → `shrinkWrap` sans
+            // scroll interne concurrent.
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

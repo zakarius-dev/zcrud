@@ -1,42 +1,43 @@
 /// Configuration spécialisée par type de champ, portée par
 /// `@ZcrudField.config` (authoring) et projetée dans `ZFieldSpec.config`
-/// (runtime, E2-5).
+/// (runtime).
 ///
-/// origine: `*FieldConfig` DODLP (technical-inventory §3, colonne « Config
-/// specialisee »). E2-4 livre la **base d'extension abstraite** (AD-4) + les
+/// Le cœur livre la **base d'extension abstraite** (invariant AD-4) + les
 /// configs **triviales pur-cœur** (texte/nombre/date). Les configs **lourdes**
-/// (`GeoFieldConfig` → zcrud_geo/E11a, `FileFieldConfig` → E-fichier,
-/// `RichTextToolbarConfig` → E6, `StepperConfig` → E3) sont **additives** et
-/// appartiennent à leurs packages/stories — jamais tirées dans le cœur.
+/// (géographie → `zcrud_geo`, fichier → ce fichier même, texte riche →
+/// `zcrud_markdown`, assistant multi-étapes → moteur d'édition) sont
+/// **additives** et appartiennent à leurs paquets respectifs — jamais tirées
+/// dans le cœur.
 ///
-/// **Point d'extension AD-4** : base `abstract` (jamais `sealed` — extension
-/// inter-package) ; toute config concrète est `const` et pur-données.
+/// **Point d'extension (invariant AD-4)** : base `abstract` (jamais `sealed`
+/// — extension inter-package) ; toute config concrète est `const` et
+/// pur-données.
 library;
 
-/// Base abstraite `const` d'une configuration de champ (point d'extension
-/// AD-4). Les apps/satellites déclarent leurs sous-classes concrètes sans
-/// forker le cœur.
+/// Base abstraite `const` d'une configuration de champ (point d'extension,
+/// invariant AD-4). Les apps/satellites déclarent leurs sous-classes
+/// concrètes sans forker le cœur.
 abstract class ZFieldConfig {
   /// Constructeur `const` (sous-classes immuables).
   const ZFieldConfig();
 }
 
-/// Capitalisation **déclarative** d'un champ texte (CR-IFFD-8) — pur-données,
-/// aucun type Flutter (le mapping vers `TextCapitalization` + un
-/// `TextInputFormatter` déterministe vit en présentation, AD-2/AD-15).
+/// Capitalisation **déclarative** d'un champ texte — pur-données, aucun type
+/// Flutter (le mapping vers `TextCapitalization` + un `TextInputFormatter`
+/// déterministe vit en présentation, invariants AD-2/AD-15).
 ///
-/// ⚠️ **Déterministe, pas seulement indicatif.** `TextCapitalization` de Flutter
+/// **Déterministe, pas seulement indicatif.** `TextCapitalization` de Flutter
 /// n'est qu'un **indice de clavier logiciel** : il ne s'applique ni au collage,
 /// ni à la saisie programmatique, ni aux claviers physiques. Cette énumération
-/// pilote EN PLUS un formateur qui garantit la casse à chaque frappe, quelle que
-/// soit la source — c'est ce qui reproduit fidèlement le `ucFirstFormatter`
-/// historique d'IFFD ([sentences] sur une saisie mono-phrase).
+/// pilote EN PLUS un formateur qui garantit la casse à chaque frappe, quelle
+/// que soit la source ([sentences] sur une saisie mono-phrase reproduit un
+/// « majuscule en début de phrase » déterministe).
 enum ZTextCapitalization {
   /// Aucune transformation (défaut — rétro-compatible, rendu antérieur inchangé).
   none,
 
   /// Première lettre de chaque phrase en majuscule (début de champ + après
-  /// `.`/`!`/`?`). Équivaut à l'`ucFirst` d'IFFD sur une saisie mono-phrase.
+  /// `.`/`!`/`?`).
   sentences,
 
   /// Première lettre de chaque mot en majuscule.
@@ -47,8 +48,6 @@ enum ZTextCapitalization {
 }
 
 /// Config triviale pur-cœur des champs **texte** (`text`/`multiline`).
-///
-/// origine: colonne `inputType` + `minLines`/`maxLines` DODLP.
 class ZTextConfig extends ZFieldConfig {
   /// Construit une config texte `const`.
   const ZTextConfig({
@@ -65,32 +64,31 @@ class ZTextConfig extends ZFieldConfig {
   /// Nombre maximal de lignes affichées.
   final int? maxLines;
 
-  /// Indice de clavier neutre (opaque : le mapping vers `TextInputType` est E3).
+  /// Indice de clavier neutre (opaque : le mapping vers `TextInputType` vit
+  /// dans le moteur d'édition).
   final String? keyboardType;
 
-  /// Capitalisation appliquée à la saisie (CR-IFFD-8). Défaut [ZTextCapitalization.none]
-  /// (aucun formateur — le champ texte conserve exactement son rendu antérieur).
+  /// Capitalisation appliquée à la saisie. Défaut [ZTextCapitalization.none]
+  /// (aucun formateur — le champ texte conserve son rendu par défaut).
   final ZTextCapitalization capitalization;
 
-  /// Transformation de saisie **injectable par l'hôte** (CR-IFFD-13).
+  /// Transformation de saisie **injectable par l'hôte**.
   ///
   /// ## Pourquoi une fonction, et non un mode de plus dans [ZTextCapitalization]
   ///
-  /// La demande initiale était un mode « première lettre seule ». L'ajouter
-  /// n'aurait résolu que le cas d'un hôte : le suivant arrive avec sa propre
-  /// règle (code pays en majuscules, référence normalisée, numéro formaté…),
-  /// donc un mode de plus, indéfiniment. Une transformation injectable couvre
-  /// tout le reste — **y compris les besoins qu'aucune app n'a encore
-  /// exprimés** — et la règle vit là où elle appartient : dans l'application qui
-  /// la possède.
+  /// Un mode figé (« première lettre seule », « code pays en majuscules »,
+  /// « référence normalisée »…) ne couvrirait jamais qu'un besoin à la fois.
+  /// Une transformation injectable couvre tout le reste — **y compris les
+  /// besoins qu'aucune app n'a encore exprimés** — et la règle vit là où elle
+  /// appartient : dans l'application qui la possède.
   ///
   /// ## Pourquoi `String Function(String)` et non des `inputFormatters`
   ///
   /// `TextInputFormatter` est un type **Flutter**, et cette configuration est du
   /// **domaine pur** : c'est la raison pour laquelle [keyboardType] est une
   /// `String` opaque et non un `TextInputType`. Une fonction pure porte la même
-  /// capacité sans faire fuiter Flutter dans le domaine (AD-15) ; la
-  /// présentation l'enveloppe dans un `TextInputFormatter`.
+  /// capacité sans faire fuiter Flutter dans le domaine (invariant AD-15) ;
+  /// la présentation l'enveloppe dans un `TextInputFormatter`.
   ///
   /// ## Contrat
   ///
@@ -98,17 +96,17 @@ class ZTextConfig extends ZFieldConfig {
   /// effet de bord. Appliquée **APRÈS** [capitalization] si les deux sont
   /// fournies — l'hôte a le dernier mot.
   ///
-  /// ⚠️ **S'applique à la SAISIE, pas à la valeur soumise.** Une valeur
+  /// **S'applique à la SAISIE, pas à la valeur soumise.** Une valeur
   /// préremplie et jamais touchée ressort **inchangée** — c'est le comportement
   /// d'un `TextInputFormatter`, et il est délibéré : transformer en sortie
   /// modifierait des données que l'utilisateur n'a pas éditées.
   ///
-  /// ⚠️ Une transformation qui **change la longueur** du texte déplace
+  /// Une transformation qui **change la longueur** du texte déplace
   /// nécessairement le curseur ; il est alors ramené dans les bornes. Une
   /// transformation qui préserve la longueur (casse) préserve la position exacte.
   ///
   /// ```dart
-  /// // « première lettre seule » — le cas d'IFFD, exprimé par l'hôte :
+  /// // « première lettre seule », exprimé par l'hôte :
   /// ZTextConfig(
   ///   textTransform: (s) =>
   ///       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1),
@@ -135,8 +133,6 @@ class ZTextConfig extends ZFieldConfig {
 
 /// Config triviale pur-cœur des champs **numériques**
 /// (`number`/`integer`/`float`).
-///
-/// origine: `minValueKey`/`maxValueKey` + `isCurrency`/`isPercentage` DODLP.
 class ZNumberConfig extends ZFieldConfig {
   /// Construit une config numérique `const`.
   const ZNumberConfig({
@@ -159,11 +155,11 @@ class ZNumberConfig extends ZFieldConfig {
   /// Formatage en pourcentage.
   final bool isPercentage;
 
-  /// DP-17 (M17) — **symbole monétaire NEUTRE** (donnée, pas un style — FR-26)
-  /// affiché en suffixe/préfixe quand [isCurrency] est `true`. `null` (défaut) ⇒
-  /// repli sur le libellé l10n `currencySuffix` (générique) : le symbole exact
+  /// **Symbole monétaire NEUTRE** (donnée, pas un style) affiché en
+  /// suffixe/préfixe quand [isCurrency] est `true`. `null` (défaut) ⇒ repli
+  /// sur le libellé l10n `currencySuffix` (générique) : le symbole exact
   /// (€/$/FCFA…) est **fourni par l'app** (jamais codé en dur dans le cœur —
-  /// AD-1/FR-26). Sans effet si [isCurrency] est `false`.
+  /// invariant AD-1). Sans effet si [isCurrency] est `false`.
   final String? currencySymbol;
 
   @override
@@ -182,24 +178,22 @@ class ZNumberConfig extends ZFieldConfig {
       isCurrency, isPercentage, currencySymbol);
 }
 
-/// DP-17 (M14) — Config additive `const` du champ **couleur** (`color`).
+/// Config additive `const` du champ **couleur** (`color`).
 ///
-/// origine: `ColorFieldConfig`/`recentColors` DODLP (`flex_color_picker`). Le cœur
-/// reste **NEUTRE** (couleur = `int` ARGB 32 bits — donnée, jamais un style
-/// FR-26) et n'impose **aucune** dépendance de picker tierce lourde (AD-1) : la
-/// richesse (roue HSV/hex/opacité) est fournie soit par le **picker built-in
-/// neutre** (sliders pur-Flutter), soit par un **seam injecté**
-/// (`ZcrudScope.colorPicker`). Rétro-compat : un `color` **sans** cette config
-/// conserve exactement les 15 swatches E3-3b-1.
+/// Le cœur reste **NEUTRE** (couleur = `int` ARGB 32 bits — donnée, jamais un
+/// style) et n'impose **aucune** dépendance de picker tierce lourde (invariant
+/// AD-1) : la richesse (roue HSV/hex/opacité) est fournie soit par le
+/// **picker built-in neutre** (sliders pur-Flutter), soit par un **seam
+/// injecté** (`ZcrudScope.colorPicker`). Rétro-compat : un `color` **sans**
+/// cette config conserve exactement les swatches par défaut.
 ///
-/// **FP-4.4 / AD-52 — variante `multiple` native (additive)** : le drapeau
-/// [multiple] (défaut **`false`** ⇒ rétro-compat stricte : un `color` sans config,
-/// ou avec `ZColorConfig()`, reste **mono** — valeur `int` ARGB, `ZColorFieldWidget`
+/// **Variante `multiple` native (additive)** : le drapeau [multiple] (défaut
+/// **`false`** ⇒ rétro-compat stricte : un `color` sans config, ou avec
+/// `ZColorConfig()`, reste **mono** — valeur `int` ARGB, `ZColorFieldWidget`
 /// intact) commute le champ en **multi-sélection** (valeur `List<int>` ARGB,
-/// `ZColorMultiFieldWidget`). Le constructeur nommé `const ZColorConfig.multiple({…})`
-/// matérialise la surface littérale exigée par AD-52 en posant `multiple = true`,
-/// sans retirer ni rencommer aucun champ existant (couvre la variante `color`
-/// **multiple** de DODLP `color_picker_field` **sans forker** ni tirer de dép lourde).
+/// `ZColorMultiFieldWidget`). Le constructeur nommé `const
+/// ZColorConfig.multiple({…})` pose `multiple = true` sans retirer ni
+/// renommer aucun champ existant.
 class ZColorConfig extends ZFieldConfig {
   /// Construit une config couleur `const` **mono** (défaut historique :
   /// `multiple = false` ⇒ valeur `int` ARGB, rétro-compat stricte).
@@ -210,7 +204,7 @@ class ZColorConfig extends ZFieldConfig {
     this.recentColors = const <int>[],
   }) : multiple = false;
 
-  /// FP-4.4 (AD-52) — Construit une config couleur `const` **multiple**
+  /// Construit une config couleur `const` **multiple**
   /// (`multiple = true` ⇒ valeur `List<int>` ARGB, `ZColorMultiFieldWidget`).
   /// Additif : aucun champ retiré/renommé par rapport au constructeur par défaut.
   const ZColorConfig.multiple({
@@ -230,14 +224,14 @@ class ZColorConfig extends ZFieldConfig {
   /// Affiche la ligne des **couleurs récentes** [recentColors] (défaut `true`).
   final bool showRecent;
 
-  /// Couleurs récentes **pré-remplies** (ARGB `int`) — pur-données `const`
-  /// (parité `recentColors` DODLP). Vide (défaut) ⇒ aucune ligne récente.
+  /// Couleurs récentes **pré-remplies** (ARGB `int`) — pur-données `const`.
+  /// Vide (défaut) ⇒ aucune ligne récente.
   final List<int> recentColors;
 
-  /// FP-4.4 (AD-52) — Mode **multi-sélection** : `false` (défaut) ⇒ champ mono
-  /// (`int` ARGB) ; `true` (via `ZColorConfig.multiple`) ⇒ champ multiple
-  /// (`List<int>` ARGB). Rétro-compat : le défaut `false` préserve exactement le
-  /// comportement E3-3b-1/DP-17.
+  /// Mode **multi-sélection** : `false` (défaut) ⇒ champ mono (`int` ARGB) ;
+  /// `true` (via `ZColorConfig.multiple`) ⇒ champ multiple (`List<int>`
+  /// ARGB). Rétro-compat : le défaut `false` préserve le comportement mono par
+  /// défaut.
   final bool multiple;
 
   @override
@@ -256,22 +250,17 @@ class ZColorConfig extends ZFieldConfig {
       showRecent, multiple, Object.hashAll(recentColors));
 }
 
-/// Config triviale pur-cœur du champ **curseur** (`slider`, E3-3b).
+/// Config triviale pur-cœur du champ **curseur** (`slider`). Pur-données
+/// `const` : le mapping vers le widget `Slider` vit dans `ZSliderFieldWidget`.
 ///
-/// origine: bornes/pas d'un `Slider` DODLP. Pur-données `const` : le mapping vers
-/// le widget `Slider` est E3-3b (`ZSliderFieldWidget`).
-///
-/// **MIN-2 (slider défauts, parité DODLP)** : la plage par défaut est **`0..100`**
-/// (alignée sur DODLP), et non plus `0..1`. C'est un **changement de défaut borné
-/// et entièrement paramétrable** — toute config qui déclare explicitement
-/// `min`/`max` conserve exactement ses bornes (aucune régression pour les specs
-/// authored). Seul un `slider` **sans** `ZSliderConfig` (ou avec un `ZSliderConfig`
-/// aux `min`/`max` omis) voit sa plage passer de `0..1` à `0..100`. Note de
-/// migration : un usage historique s'appuyant sur le défaut `0..1` implicite doit
-/// désormais déclarer `ZSliderConfig(max: 1)`.
+/// La plage par défaut est **`0..100`**. Toute config qui déclare
+/// explicitement `min`/`max` conserve exactement ses bornes ; seul un
+/// `slider` **sans** `ZSliderConfig` (ou avec un `ZSliderConfig` aux
+/// `min`/`max` omis) utilise `0..100`. Pour un curseur `0..1`, déclarer
+/// explicitement `ZSliderConfig(max: 1)`.
 class ZSliderConfig extends ZFieldConfig {
-  /// Construit une config de curseur `const`. Défauts **`0..100`** continu
-  /// (parité DODLP, MIN-2) — paramétrables champ par champ.
+  /// Construit une config de curseur `const`. Défauts **`0..100`** continu —
+  /// paramétrables champ par champ.
   const ZSliderConfig({this.min = 0, this.max = 100, this.divisions});
 
   /// Borne minimale du curseur.
@@ -296,10 +285,9 @@ class ZSliderConfig extends ZFieldConfig {
   int get hashCode => Object.hash(runtimeType, min, max, divisions);
 }
 
-/// Config triviale pur-cœur du champ **note** (`rating`, E3-3b).
-///
-/// origine: nombre d'étoiles/segments d'un contrôle de notation. Pur-données
-/// `const` ; le rendu (étoiles) est E3-3b (`ZRatingFieldWidget`). Défaut `5`.
+/// Config triviale pur-cœur du champ **note** (`rating`) — nombre
+/// d'étoiles/segments d'un contrôle de notation. Pur-données `const` ; le
+/// rendu (étoiles) vit dans `ZRatingFieldWidget`. Défaut `5`.
 class ZRatingConfig extends ZFieldConfig {
   /// Construit une config de note `const`.
   const ZRatingConfig({this.max = 5});
@@ -318,23 +306,21 @@ class ZRatingConfig extends ZFieldConfig {
   int get hashCode => Object.hash(runtimeType, max);
 }
 
-/// CR-DODLP-BOOL (2026-08-10) — Config triviale pur-cœur du champ **booléen**
-/// (`boolean`). Pur-données `const` : elle active le **texte d'état** rendu à
-/// côté du `Switch` (parité legacy DODLP « ●— Non ») et permet d'en surcharger
-/// les libellés.
+/// Config triviale pur-cœur du champ **booléen** (`boolean`). Pur-données
+/// `const` : elle active le **texte d'état** rendu à côté du `Switch` et
+/// permet d'en surcharger les libellés.
 ///
 /// ## Activation EXPLICITE, défauts localisés ENSUITE
 ///
-/// La demande initiale (« des défauts Oui/Non quand la locale est `fr` ») ferait
-/// apparaître un texte chez **tous** les hôtes — un déplacement visible pour qui
-/// n'a rien demandé. La condition est donc **inversée** : l'affichage s'active
-/// explicitement ([showStateLabel] ou la fourniture d'un libellé) ; **une fois
-/// activé**, les libellés retombent sur les clés l10n `yes`/`no` (déjà traduites
-/// en/fr — FR-26 : aucun littéral en dur) si l'hôte n'en fournit pas.
+/// Poser des défauts Oui/Non localisés inconditionnellement ferait apparaître
+/// un texte chez **tous** les hôtes — un déplacement visible pour qui n'a rien
+/// demandé. L'affichage s'active donc explicitement ([showStateLabel] ou la
+/// fourniture d'un libellé) ; **une fois activé**, les libellés retombent sur
+/// les clés l10n `yes`/`no` (déjà traduites en/fr) si l'hôte n'en fournit pas.
 ///
 /// ⇒ **Hôte passif** (pas de config, ou `ZBooleanConfig()`) : [showsStateLabel]
-/// est `false` et `ZBooleanFieldWidget` emprunte **exactement** le chemin de
-/// rendu antérieur (`title: Text(label)`) — rendu et arbre sémantique inchangés.
+/// est `false` et `ZBooleanFieldWidget` emprunte le chemin de rendu par défaut
+/// (`title: Text(label)`) — rendu et arbre sémantique inchangés.
 ///
 /// ## Pourquoi [showStateLabel] ET les libellés activent tous deux
 ///
@@ -342,20 +328,20 @@ class ZRatingConfig extends ZFieldConfig {
 /// ignoré** faute d'avoir aussi posé le drapeau — un piège. [showsStateLabel]
 /// est le prédicat unique consommé par la présentation.
 ///
-/// ## CR-DODLP-BOOL-PILL (2026-08-10) — le rendu « pilule »
+/// ## Le rendu « pilule »
 ///
-/// [style] ajoute la **forme d'affichage** : [ZBooleanStyle.switchTile] (défaut,
-/// rendu v0.74 strictement inchangé) ou [ZBooleanStyle.pill] (piste arrondie,
-/// texte d'état **à l'intérieur**, parité `flutter_switch` du legacy DODLP).
-/// L'activation passe donc par le **même canal** que le texte d'état : la config
-/// du champ. Un hôte qui ne pose pas `style` ne voit **aucun** déplacement.
+/// [style] ajoute la **forme d'affichage** : [ZBooleanStyle.switchTile]
+/// (défaut, rendu par défaut inchangé) ou [ZBooleanStyle.pill] (piste
+/// arrondie, texte d'état **à l'intérieur**). L'activation passe donc par le
+/// **même canal** que le texte d'état : la config du champ. Un hôte qui ne
+/// pose pas `style` ne voit **aucun** déplacement.
 ///
-/// [boxed] ajoute l'**encart de champ** (CR-DODLP-BOOL-BOXED) : le conteneur
-/// décoré du thème, celui des voisins `text`/`number`/`select`. Opt-in, valable
-/// pour les deux formes, défaut `false` ⇒ rendu v0.75 inchangé.
+/// [boxed] ajoute l'**encart de champ** : le conteneur décoré du thème, celui
+/// des voisins `text`/`number`/`select`. Opt-in, valable pour les deux formes,
+/// défaut `false` ⇒ rendu inchangé.
 class ZBooleanConfig extends ZFieldConfig {
   /// Construit une config booléenne `const`. Défauts ⇒ **rétro-compat stricte**
-  /// (aucun texte d'état, aucune pilule, rendu E3-3a/v0.74 inchangé).
+  /// (aucun texte d'état, aucune pilule, rendu par défaut inchangé).
   const ZBooleanConfig({
     this.showStateLabel = false,
     this.trueLabel,
@@ -379,18 +365,16 @@ class ZBooleanConfig extends ZFieldConfig {
   /// sur la clé l10n `no`. Fournir ce libellé **active** le texte d'état.
   final String? falseLabel;
 
-  /// **Forme d'affichage** du booléen (CR-DODLP-BOOL-PILL). Défaut
-  /// [ZBooleanStyle.switchTile] ⇒ rendu v0.74 **strictement inchangé**.
+  /// **Forme d'affichage** du booléen. Défaut [ZBooleanStyle.switchTile] ⇒
+  /// rendu **strictement inchangé**.
   final ZBooleanStyle style;
 
   /// Clé sémantique de couleur de la pilule à l'état `true` — résolue par le
-  /// **seam** `ZcrudScope.colorKeyResolver` (`zResolveColorKey`), jamais par une
-  /// couleur littérale (FR-26 : le cœur ne possède ni « vert succès » ni
-  /// « ambre » ; Material 3 n'a pas ces rôles). `null` (défaut) ⇒ jeton
-  /// `ZcrudTheme.booleanPillActiveColor`, puis rôle `ColorScheme.primary`.
-  ///
-  /// C'est par cette clé que le legacy DODLP (`kSuccessColorLight`) entre :
-  /// l'app enregistre son resolver, le cœur ne connaît que le nom.
+  /// **seam** `ZcrudScope.colorKeyResolver` (`zResolveColorKey`), jamais par
+  /// une couleur littérale (le cœur ne possède ni « vert succès » ni
+  /// « ambre » : ce sont des rôles que l'application enregistre par son
+  /// resolver). `null` (défaut) ⇒ jeton `ZcrudTheme.booleanPillActiveColor`,
+  /// puis rôle `ColorScheme.primary`.
   final String? activeColorKey;
 
   /// Clé sémantique de couleur de la pilule à l'état `false` (même seam).
@@ -398,33 +382,32 @@ class ZBooleanConfig extends ZFieldConfig {
   /// `ColorScheme.outline`.
   final String? inactiveColorKey;
 
-  /// **Encart de champ** (CR-DODLP-BOOL-BOXED, 2026-08-10) — enveloppe le champ
-  /// booléen dans le **conteneur décoré du thème**, celui-là même que rendent
-  /// `text`/`number`/`select` : `ZcrudTheme.inputDecoration` (fond
-  /// `fieldFillColor`, bordure `fieldBorderColor`, rayon `inputRadius`, marge
-  /// interne `inputContentPadding`). Aucun jeton nouveau, aucun cadre peint à la
-  /// main : c'est **la même fabrique** que les familles décor-portantes.
+  /// **Encart de champ** — enveloppe le champ booléen dans le **conteneur
+  /// décoré du thème**, celui-là même que rendent `text`/`number`/`select` :
+  /// `ZcrudTheme.inputDecoration` (fond `fieldFillColor`, bordure
+  /// `fieldBorderColor`, rayon `inputRadius`, marge interne
+  /// `inputContentPadding`). Aucun jeton nouveau, aucun cadre peint à la main :
+  /// c'est **la même fabrique** que les familles décor-portantes.
   ///
   /// `false` (défaut) ⇒ **rendu strictement inchangé** : le booléen reste la
-  /// ligne nue de v0.74/v0.75. Le drapeau est donc **opt-in**, et vaut pour les
+  /// ligne nue par défaut. Le drapeau est donc **opt-in**, et vaut pour les
   /// **deux** formes ([ZBooleanStyle.switchTile] et [ZBooleanStyle.pill]).
   ///
-  /// 🔴 Ce que ce drapeau ne fait PAS : il ne pose **aucun libellé** dans la
+  /// Ce que ce drapeau ne fait PAS : il ne pose **aucun libellé** dans la
   /// décoration. Le libellé du champ reste le `title` du `ListTile` — y ajouter
   /// le label flottant de la décoration l'écrirait **deux fois** (visuellement
-  /// et dans l'arbre sémantique), le défaut mesuré et corrigé en v0.74 puis en
-  /// v0.75. La cible tactile, l'état `switch` et le tap sur toute la ligne sont
-  /// inchangés : l'encart est un pur décor.
+  /// et dans l'arbre sémantique). La cible tactile, l'état `switch` et le tap
+  /// sur toute la ligne sont inchangés : l'encart est un pur décor.
   final bool boxed;
 
   /// Prédicat unique d'affichage du texte d'état : `true` si l'hôte l'a demandé
   /// explicitement ([showStateLabel]) **ou** a fourni au moins un libellé.
   ///
-  /// 🔴 En [ZBooleanStyle.pill], le texte d'état vit **DANS** la pilule
-  /// (`showOnOff` du legacy) : le rendu n'ajoute alors **pas** de second texte
-  /// en fin de titre, même quand ce prédicat est vrai — sinon « Oui » serait
-  /// écrit deux fois sur la même ligne. La lecture de ce prédicat est donc
-  /// bornée au style `switchTile` (cf. `ZBooleanFieldWidget`).
+  /// En [ZBooleanStyle.pill], le texte d'état vit **DANS** la pilule : le rendu
+  /// n'ajoute alors **pas** de second texte en fin de titre, même quand ce
+  /// prédicat est vrai — sinon le texte d'état serait écrit deux fois sur la
+  /// même ligne. La lecture de ce prédicat est donc bornée au style
+  /// `switchTile` (cf. `ZBooleanFieldWidget`).
   bool get showsStateLabel =>
       showStateLabel || trueLabel != null || falseLabel != null;
 
@@ -454,37 +437,37 @@ class ZBooleanConfig extends ZFieldConfig {
       );
 }
 
-/// Forme d'affichage de la famille `boolean` (CR-DODLP-BOOL-PILL, 2026-08-10).
+/// Forme d'affichage de la famille `boolean`.
 ///
-/// Valeurs **camelCase** (canonique §5) — l'enum est `const`-émissible par le
-/// générateur (`ConstantReader`, AD-3) au même titre que le reste de
+/// Valeurs **camelCase** — l'enum est `const`-émissible par le générateur
+/// (`ConstantReader`, invariant AD-3) au même titre que le reste de
 /// [ZBooleanConfig].
 enum ZBooleanStyle {
-  /// `SwitchListTile` Material — **le défaut**, et le rendu v0.74 au widget
-  /// près (texte d'état optionnel en fin de titre).
+  /// `SwitchListTile` Material — **le défaut** (texte d'état optionnel en fin
+  /// de titre).
   switchTile,
 
-  /// **Pilule** : piste arrondie peinte, texte d'état à l'INTÉRIEUR, libellé du
-  /// champ à gauche. Parité `flutter_switch` du legacy DODLP — peinte
-  /// nativement, **sans aucune dépendance** (AD-1, CORE OUT = 0).
+  /// **Pilule** : piste arrondie peinte, texte d'état à l'INTÉRIEUR, libellé
+  /// du champ à gauche. Peinte nativement, **sans aucune dépendance**
+  /// (invariant AD-1).
   pill,
 }
 
-/// Source d'acquisition d'un fichier (E3-3c) — valeurs **camelCase** (canonique
-/// §5). L'impl concrète (scan/caméra/galerie/sélecteur) vit dans le picker
-/// injecté (`ZFilePicker`, E7) ; le cœur ne fait qu'énumérer les sources
-/// **autorisées** par la config.
+/// Source d'acquisition d'un fichier — valeurs **camelCase**. L'implémentation
+/// concrète (scan/caméra/galerie/sélecteur) vit dans le picker injecté
+/// (`ZFilePicker`) ; le cœur ne fait qu'énumérer les sources **autorisées**
+/// par la config.
 enum ZFileSource {
-  /// Numérisation de document (caméra + recadrage) — impl E7.
+  /// Numérisation de document (caméra + recadrage).
   scan,
 
-  /// Capture caméra directe — impl E7.
+  /// Capture caméra directe.
   camera,
 
-  /// Sélection depuis la galerie/photothèque — impl E7.
+  /// Sélection depuis la galerie/photothèque.
   gallery,
 
-  /// Sélecteur de fichier générique (documents) — impl E7.
+  /// Sélecteur de fichier générique (documents).
   filePicker,
 }
 
@@ -496,11 +479,11 @@ const List<ZFileSource> _allFileSources = <ZFileSource>[
   ZFileSource.filePicker,
 ];
 
-/// Config du champ **fichier/image/document** (`file`/`image`/`document`,
-/// E3-3c). Pur-données `const` (parité `FileFieldConfig` DODLP) : le rendu
-/// (boutons/préviz) est E3-3c (`ZAppFileField`) ; l'acquisition/stockage sont
-/// des **seams injectés** (`ZFilePicker`/`CloudStorageRepository`) — jamais des
-/// dépendances lourdes du cœur (AD-1).
+/// Config du champ **fichier/image/document** (`file`/`image`/`document`).
+/// Pur-données `const` : le rendu (boutons/préviz) vit dans `ZAppFileField` ;
+/// l'acquisition/stockage sont des **seams injectés**
+/// (`ZFilePicker`/`CloudStorageRepository`) — jamais des dépendances lourdes
+/// du cœur (invariant AD-1).
 ///
 /// La **multiplicité** single/multiple s'appuie sur `ZFieldSpec.multiple`
 /// (source unique) ; [maxFiles] en fixe seulement la **borne**.
@@ -532,24 +515,23 @@ class FileFieldConfig extends ZFieldConfig {
   /// Sources d'acquisition autorisées (défaut : toutes).
   final List<ZFileSource> allowedSources;
 
-  /// MIN-2 (parité DODLP `allowedDocumentTypes`) — extensions **groupées par
-  /// catégorie** (`{'images': ['png','jpg'], 'docs': ['pdf','docx']}`). Pur-données
+  /// Extensions **groupées par catégorie**
+  /// (`{'images': ['png','jpg'], 'docs': ['pdf','docx']}`). Pur-données
   /// `const` : permet de déclarer la granularité par **type de document** que
   /// [acceptedExtensions] (liste plate) n'exprime pas. Le picker injecté
-  /// (`ZFilePicker`, seam E7) consomme [effectiveExtensions] (union de
+  /// (`ZFilePicker`) consomme [effectiveExtensions] (union de
   /// [acceptedExtensions] et de toutes les valeurs de cette map). Vide (défaut) ⇒
   /// **rétro-compat stricte** : [effectiveExtensions] == [acceptedExtensions].
   final Map<String, List<String>> allowedDocumentTypes;
 
-  /// MIN-2 (parité DODLP « fallback image ») — quand `true`, un champ `image` dont
-  /// la valeur acquise **n'est pas** une image affiche malgré tout la
-  /// prévisualisation/l'icône **image** (repli visuel), au lieu de l'icône
-  /// document générique. Pur-données ; consommé par `ZAppFileField._iconFor`.
-  /// Défaut `false` ⇒ rendu E3-3c inchangé (icône dérivée du mime).
+  /// Quand `true`, un champ `image` dont la valeur acquise **n'est pas** une
+  /// image affiche malgré tout la prévisualisation/l'icône **image** (repli
+  /// visuel), au lieu de l'icône document générique. Pur-données ; consommé
+  /// par `ZAppFileField._iconFor`. Défaut `false` ⇒ icône dérivée du mime.
   final bool imageFallback;
 
-  /// Extensions **effectives** acceptées (MIN-2) : union de [acceptedExtensions]
-  /// et de toutes les extensions déclarées par catégorie dans
+  /// Extensions **effectives** acceptées : union de [acceptedExtensions] et de
+  /// toutes les extensions déclarées par catégorie dans
   /// [allowedDocumentTypes] (dédupliquées, ordre stable — plates d'abord). Sans
   /// [allowedDocumentTypes] ⇒ exactement [acceptedExtensions] (rétro-compat).
   List<String> get effectiveExtensions {
@@ -596,7 +578,7 @@ class FileFieldConfig extends ZFieldConfig {
       );
 }
 
-/// Égalité **profonde** de deux maps `catégorie → extensions` (pur-Dart, MIN-2).
+/// Égalité **profonde** de deux maps `catégorie → extensions` (pur-Dart).
 bool _docTypesEquals(
     Map<String, List<String>> a, Map<String, List<String>> b) {
   if (identical(a, b)) return true;
@@ -608,20 +590,21 @@ bool _docTypesEquals(
   return true;
 }
 
-/// Config du champ **select** (`select`/`radio`/`checkbox`, DP-15/M8+M22).
-/// Pur-données `const` : elle active le **modal de recherche** ([searchable] ou
-/// seuil [modalThreshold]) et déclare les **choix dynamiques cross-champ**
-/// ([choicesFromKey] = lecture directe d'une tranche portant les options, parité
-/// `stateChoiceItems` DODLP ; [choicesSourceKey] = source **calculée** résolue au
-/// runtime dans `ZChoicesSourceRegistry`, filtrée par [filterKeys]).
+/// Config du champ **select** (`select`/`radio`/`checkbox`). Pur-données
+/// `const` : elle active le **modal de recherche** ([searchable] ou seuil
+/// [modalThreshold]) et déclare les **choix dynamiques cross-champ**
+/// ([choicesFromKey] = lecture directe d'une tranche portant les options ;
+/// [choicesSourceKey] = source **calculée** résolue au runtime dans
+/// `ZChoicesSourceRegistry`, filtrée par [filterKeys]).
 ///
-/// **const-safe (AD-3)** : aucune closure/`Function` (non émissibles par
-/// `ConstantReader`) — le calcul réel des choix vit hors du cœur (binding/app),
-/// résolu par [choicesSourceKey] au runtime. La **multiplicité** single/multiple
-/// s'appuie sur `ZFieldSpec.multiple` (source unique — **jamais** dupliquée ici).
+/// **const-safe (invariant AD-3)** : aucune closure/`Function` (non
+/// émissibles par `ConstantReader`) — le calcul réel des choix vit hors du
+/// cœur (binding/app), résolu par [choicesSourceKey] au runtime. La
+/// **multiplicité** single/multiple s'appuie sur `ZFieldSpec.multiple` (source
+/// unique — **jamais** dupliquée ici).
 ///
 /// Rétro-compat : un `select`/`radio`/`checkbox` **sans** cette config conserve
-/// exactement le dropdown/radio/checkbox statique E3-3a sur `choices`.
+/// exactement le dropdown/radio/checkbox statique sur `choices`.
 class ZSelectConfig extends ZFieldConfig {
   /// Construit une config select `const`.
   const ZSelectConfig({
@@ -643,9 +626,9 @@ class ZSelectConfig extends ZFieldConfig {
   final int? modalThreshold;
 
   /// Clé d'un **autre champ** dont la tranche porte une `List<ZFieldChoice>` qui
-  /// **remplace** `field.choices` (parité `stateChoiceItems` DODLP — recalcul
-  /// déclaratif pur-cœur). `null` ⇒ aucune lecture cross-champ. L'abonnement à
-  /// cette clé est **ciblé** (SM-1) — jamais un canal global.
+  /// **remplace** `field.choices` (recalcul déclaratif pur-cœur). `null` ⇒
+  /// aucune lecture cross-champ. L'abonnement à cette clé est **ciblé** —
+  /// jamais un canal global.
   final String? choicesFromKey;
 
   /// Clé de résolution d'une `ZChoicesSource` **calculée** dans
@@ -656,13 +639,13 @@ class ZSelectConfig extends ZFieldConfig {
 
   /// Clés des champs formant le `filterContext` cross-champ passé à
   /// `ZChoicesSource.options(...)`. Vide ⇒ aucun filtre. L'abonnement à ces
-  /// tranches est **ciblé** (SM-1).
+  /// tranches est **ciblé**.
   final List<String> filterKeys;
 
-  /// MIN-2 (parité DODLP « radio = en réalité modal S2 ») — quand `true`, un champ
-  /// `radio` est rendu comme un **déclencheur ouvrant un modal** de choix unique
-  /// (au lieu des `RadioListTile` inline). Sans effet sur `select`/`checkbox`.
-  /// Défaut `false` ⇒ rendu `RadioListTile` inline E3-3a inchangé (rétro-compat).
+  /// Quand `true`, un champ `radio` est rendu comme un **déclencheur ouvrant
+  /// un modal** de choix unique (au lieu des `RadioListTile` inline). Sans
+  /// effet sur `select`/`checkbox`. Défaut `false` ⇒ rendu `RadioListTile`
+  /// inline inchangé (rétro-compat).
   final bool radioAsModal;
 
   @override
@@ -689,18 +672,17 @@ class ZSelectConfig extends ZFieldConfig {
       );
 }
 
-/// Config du champ **relation** (`relation`, ex-`crudDataSelect` DODLP — gap
-/// B7, DP-5). Pur-données `const` : elle porte SEULEMENT la **clé de source**
-/// dynamique (résolue au runtime dans `ZRelationSourceRegistry`), les **clés de
-/// champ** formant le filtre cross-champ, l'activation du modal de recherche, et
-/// (DP-15/M8) la **clé de handler CRUD inline** ([crudKey], résolue dans
-/// `ZRelationCrudRegistry`).
+/// Config du champ **relation** (`relation`). Pur-données `const` : elle
+/// porte SEULEMENT la **clé de source** dynamique (résolue au runtime dans
+/// `ZRelationSourceRegistry`), les **clés de champ** formant le filtre
+/// cross-champ, l'activation du modal de recherche, et la **clé de handler
+/// CRUD inline** ([crudKey], résolue dans `ZRelationCrudRegistry`).
 ///
-/// **const-safe (AD-3)** : aucune closure/`Stream`/`Function` (non émissibles
-/// par `ConstantReader`) — la source réelle (repository/flux + filtre métier)
-/// vit hors du cœur (binding/app), résolue par [sourceKey] au runtime. La
-/// **multiplicité** single/multiple s'appuie sur `ZFieldSpec.multiple` (source
-/// unique — jamais dupliquée ici).
+/// **const-safe (invariant AD-3)** : aucune closure/`Stream`/`Function` (non
+/// émissibles par `ConstantReader`) — la source réelle (repository/flux +
+/// filtre métier) vit hors du cœur (binding/app), résolue par [sourceKey] au
+/// runtime. La **multiplicité** single/multiple s'appuie sur
+/// `ZFieldSpec.multiple` (source unique — jamais dupliquée ici).
 ///
 /// Rétro-compat : un `ZFieldSpec(type: relation)` **sans** cette config (ou avec
 /// [sourceKey] `null`) conserve exactement le dropdown statique sur `choices`.
@@ -718,9 +700,9 @@ class ZRelationConfig extends ZFieldConfig {
   final String? sourceKey;
 
   /// Clés des champs formant le `filterContext` cross-champ passé à
-  /// `ZRelationSource.options(...)` (équivalent `ressourceFilter`). Vide ⇒
-  /// aucun filtre cross-champ (source non filtrée). L'abonnement à ces tranches
-  /// est **ciblé** (SM-1) — jamais un canal global.
+  /// `ZRelationSource.options(...)`. Vide ⇒ aucun filtre cross-champ (source
+  /// non filtrée). L'abonnement à ces tranches est **ciblé** — jamais un canal
+  /// global.
   final List<String> filterKeys;
 
   /// Active le modal de recherche (filtrage **client** sur les libellés). `false`
@@ -728,9 +710,8 @@ class ZRelationConfig extends ZFieldConfig {
   final bool searchable;
 
   /// Clé de résolution d'un `ZRelationCrudHandler` **CRUD inline** dans
-  /// `ZRelationCrudRegistry` (DP-15/M8, parité `showCrudButton` DODLP). `null`
-  /// (défaut) OU registre/handler absent ⇒ **aucun** bouton CRUD (rétro-compat
-  /// DP-5 stricte).
+  /// `ZRelationCrudRegistry`. `null` (défaut) OU registre/handler absent ⇒
+  /// **aucun** bouton CRUD (rétro-compat stricte).
   final String? crudKey;
 
   @override
@@ -754,7 +735,7 @@ class ZRelationConfig extends ZFieldConfig {
 }
 
 /// Égalité **profonde** de deux listes (pur-Dart — évite `package:collection`,
-/// AD-1 out-degree 0).
+/// invariant AD-1).
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
@@ -764,16 +745,15 @@ bool _listEquals<T>(List<T> a, List<T> b) {
   return true;
 }
 
-/// Mode d'édition d'un champ **date/heure** (parité du sous-type DODLP
-/// `InputType.date`/`time`/`both`, orthogonal à `EditionFieldType`) — valeurs
-/// **camelCase** (canonique §5). Neutre, pur-Dart, **non persisté** (porté par
-/// la config `const`, jamais sérialisé) : la discipline `@JsonKey(unknownEnumValue:)`
-/// ne s'applique pas ici (DP-10, D2).
+/// Mode d'édition d'un champ **date/heure** (orthogonal à
+/// `EditionFieldType`) — valeurs **camelCase**. Neutre, pur-Dart, **non
+/// persisté** (porté par la config `const`, jamais sérialisé) : la discipline
+/// `@JsonKey(unknownEnumValue:)` ne s'applique donc pas ici.
 enum ZDateMode {
   /// Date seule (picker de date ; valeur à minuit).
   date,
 
-  /// Date **et** heure combinées (picker date puis heure — fix B13).
+  /// Date **et** heure combinées (picker date puis heure).
   dateTime,
 
   /// Heure seule (picker d'heure ; valeur `HH:mm`).
@@ -781,16 +761,15 @@ enum ZDateMode {
 }
 
 /// Config triviale pur-cœur des champs **date/heure** (`dateTime`/`time`).
-///
-/// origine: `firstDateKey`/`lastDateKey` **+ `minDate`/`maxDate`** DODLP
-/// (`models.dart:643-647`). Les bornes s'expriment soit comme **clés d'autres
-/// champs** ([firstDateKey]/[lastDateKey], résolution cross-champ), soit comme
+/// Les bornes s'expriment soit comme **clés d'autres champs**
+/// ([firstDateKey]/[lastDateKey], résolution cross-champ), soit comme
 /// **littéraux ISO-8601** ([minDateIso]/[maxDateIso]).
 ///
-/// **const-safe (D1)** : les bornes littérales sont des `String?` ISO-8601 (et
+/// **const-safe** : les bornes littérales sont des `String?` ISO-8601 (et
 /// **non** des `DateTime`, qui n'ont pas de constructeur `const`) ⇒ la config
 /// reste `const` et pur-données dans une annotation `@ZcrudField.config`. Le
-/// parsing est **défensif** au runtime (AD-10 : ISO invalide ⇒ borne ignorée).
+/// parsing est **défensif** au runtime (invariant AD-10 : ISO invalide ⇒ borne
+/// ignorée).
 class ZDateConfig extends ZFieldConfig {
   /// Construit une config date `const`.
   const ZDateConfig({
@@ -807,10 +786,10 @@ class ZDateConfig extends ZFieldConfig {
   /// Clé d'un autre champ fixant la date maximale sélectionnable (cross-champ).
   final String? lastDateKey;
 
-  /// Borne minimale **littérale** ISO-8601 (prime sur [firstDateKey], D4).
+  /// Borne minimale **littérale** ISO-8601 (prime sur [firstDateKey]).
   final String? minDateIso;
 
-  /// Borne maximale **littérale** ISO-8601 (prime sur [lastDateKey], D4).
+  /// Borne maximale **littérale** ISO-8601 (prime sur [lastDateKey]).
   final String? maxDateIso;
 
   /// Mode d'édition explicite (`date`/`dateTime`/`time`). `null` ⇒ dérivé du

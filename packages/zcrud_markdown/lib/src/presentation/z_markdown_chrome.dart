@@ -1,4 +1,4 @@
-/// Habillage « carte » OPT-IN du champ rich-text (GAP-6, CR parité 2026-08-11)
+/// Habillage « carte » OPT-IN du champ rich-text (CR parité 2026-08-11)
 /// — en-tête icône + libellé, bordure/ombre, pilule d'action « Rédiger /
 /// Modifier / Valider ».
 ///
@@ -10,10 +10,10 @@
 /// (`mef:93-101`) : le listener `changes` est COMMENTÉ — l'inline n'écrit que
 /// sur PERTE DE FOCUS ou sur « Valider », jamais à la frappe.
 ///
-/// ## Chaîne de couleurs (FR-26) — paramètre > jeton/seam > rôle
+/// ## Chaîne de couleurs — paramètre > jeton/seam > rôle
 ///
-/// AUCUNE couleur legacy n'entre dans le paquet : le dégradé signature DODLP
-/// (`[Colors.blue, Colors.purple]` / `0xFF667EEA→0xFF764BA2`) reste CHEZ
+/// AUCUNE couleur legacy n'entre dans le paquet : le dégradé signature d'un
+/// éditeur historique (`[Colors.blue, Colors.purple]` / `0xFF667EEA→0xFF764BA2`) reste CHEZ
 /// L'HÔTE, qui le passe par [gradient] (voie « injection par l'hôte » —
 /// suffisante, donc préférée au fichier de référence de couleurs). À défaut :
 /// le seam `zResolveGradient` de `ZcrudScope` (jeton injecté, [gradientKey]),
@@ -86,7 +86,7 @@ abstract final class ZMarkdownChromeReference {
       EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6);
 }
 
-/// Configuration OPT-IN de l'habillage carte d'un champ rich-text (GAP-6).
+/// Configuration OPT-IN de l'habillage carte d'un champ rich-text.
 ///
 /// Passée à `ZMarkdownField(chrome: …)` — `null` (défaut) ⇒ rendu historique
 /// STRICTEMENT inchangé.
@@ -113,7 +113,7 @@ class ZMarkdownFieldChrome {
   /// Premier plan LISIBLE sur [gradient] (icône/texte de la pilule). Un
   /// dégradé seul ne permet pas d'en déduire un contraste fiable (même contrat
   /// que `ZGradientSpec.onGradient` du cœur) — le legacy posait `Colors.white`
-  /// en dur, REFUSÉ ici (FR-26) : chaîne paramètre > seam (`onGradient` du
+  /// en dur, REFUSÉ ici : chaîne paramètre > seam (`onGradient` du
   /// `ZGradientSpec` résolu) > rôle `onPrimaryContainer`.
   final Color? onGradient;
 

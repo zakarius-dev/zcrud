@@ -1,31 +1,30 @@
-/// `ZEditableTableFieldWidget` — **table éditable virtualisée** (fp-5-2, FR-36)
-/// servie via `ZWidgetRegistry` sous le `kind` [editableTableFieldKind] (aligné
-/// sur `EditionFieldType.editableTable.name`).
+/// `ZEditableTableFieldWidget` — **table éditable virtualisée** servie via
+/// `ZWidgetRegistry` sous le `kind` [editableTableFieldKind] (aligné sur
+/// `EditionFieldType.editableTable.name`).
 ///
-/// 🔴 **ZÉRO dépendance lourde (AC-C2)** : `ListView.builder` (jamais
-/// `ListView(children:)` — AD-13). L'étude REJETTE `editable` (mort). Aucune
-/// arête ajoutée au graph_proof (CORE OUT=0).
+/// **Zéro dépendance lourde** : `ListView.builder` (jamais
+/// `ListView(children:)` — invariant AD-13). Aucune arête supplémentaire
+/// n'est ajoutée au graphe de dépendances.
 ///
-/// ⚠️ **LIMITE DE PERSISTANCE (fp-5-2 / SIGNAL 1, D1) — RUNTIME UNIQUEMENT.**
-/// La valeur est `List<Map<String, dynamic>>`. Ce widget l'édite pleinement **en
-/// mémoire** (value-in-slice). Mais **la persistance via `@ZcrudModel` d'un champ
-/// `List<Map<String, dynamic>>` typé `editableTable` N'EST PAS supportée par le
-/// générateur** : fp-5-1 a découvert sur disque que le générateur lève
-/// `InvalidGenerationSourceError` sur un élément `Map` (aucune branche `_classify`
-/// pour `Map`) — le champ `tableValue` a d'ailleurs été RETIRÉ du corpus fp-5-1.
-/// La persistance nécessite un **type de valeur dédié + codec** = **SUIVI hors
-/// fp-5-2** (story cœur/générateur ultérieure). Ne PAS contourner ici (cœur
-/// disjoint).
+/// **Limite de persistance — exécution uniquement.** La valeur est
+/// `List<Map<String, dynamic>>`. Ce widget l'édite pleinement **en mémoire**
+/// (value-in-slice). Mais **la persistance via `@ZcrudModel` d'un champ
+/// `List<Map<String, dynamic>>` typé `editableTable` N'EST PAS supportée par
+/// le générateur** actuel : il lève une erreur de génération sur un élément
+/// `Map`, faute de branche de classification dédiée. La persistance
+/// nécessiterait un **type de valeur dédié avec son propre codec** — ne pas
+/// tenter de la contourner ici (le domaine du cœur reste disjoint de ce
+/// paquet).
 ///
 /// **Dispatch cœur** : `EditionFieldType.editableTable` → famille
 /// `registryOrFallback` → `registry.tryBuilderFor('editableTable')`. Repli
-/// `ZUnsupportedFieldWidget` tant que non enregistré (AD-10).
+/// `ZUnsupportedFieldWidget` tant que non enregistré (invariant AD-10).
 ///
-/// **AD-2 / SM-1** : value-in-slice — lit `ctx.value`, écrit `ctx.onChanged` ;
-/// aucun `ZFormController` capturé. **AD-10** : `null`/non-`List`/éléments
-/// non-`Map` ⇒ table vide, jamais un crash. **AD-13 / FR-26** : actions
-/// ajouter/supprimer ligne ≥ 48 dp, `Semantics`/tooltip localisables, bordures
-/// dérivées du thème injecté.
+/// **Invariant AD-2** : value-in-slice — lit `ctx.value`, écrit `ctx.onChanged` ;
+/// aucun `ZFormController` capturé. **Invariant AD-10** :
+/// `null`/non-`List`/éléments non-`Map` ⇒ table vide, jamais un crash.
+/// **Invariant AD-13** : actions ajouter/supprimer ligne ≥ 48 dp,
+/// `Semantics`/tooltip localisables, bordures dérivées du thème injecté.
 library;
 
 import 'package:flutter/material.dart';
@@ -39,7 +38,7 @@ final String editableTableFieldKind = EditionFieldType.editableTable.name;
 /// (aucune colonne dérivable des lignes existantes).
 const String kZTableDefaultColumn = 'value';
 
-/// Parse **défensif** (AD-10) d'une valeur de tranche en
+/// Parse **défensif** (invariant AD-10) d'une valeur de tranche en
 /// `List<Map<String, dynamic>>` : `null`/non-`List`/éléments non-`Map` ⇒ ignorés.
 /// Jamais un throw traversant.
 List<Map<String, dynamic>> zParseTableRows(Object? value) {
@@ -76,7 +75,8 @@ class ZEditableTableFieldWidget extends StatefulWidget {
   /// `ctx.onChanged` = écriture de la tranche).
   final ZFieldWidgetContext ctx;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build (mesure de la granularité des
+  /// rebuilds).
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -91,24 +91,26 @@ class ZEditableTableFieldWidget extends StatefulWidget {
 }
 
 class _ZEditableTableFieldWidgetState extends State<ZEditableTableFieldWidget> {
-  /// Clés stables par ligne (identité des `TextFormField` à travers les rebuilds
-  /// — AD-2 : leur contrôleur interne survit tant que la clé est stable). Une
-  /// ligne ajoutée reçoit une nouvelle clé ; une ligne retirée la perd.
+  /// Clés stables par ligne (identité des `TextFormField` à travers les
+  /// rebuilds — invariant AD-2 : leur contrôleur interne survit tant que la
+  /// clé est stable). Une ligne ajoutée reçoit une nouvelle clé ; une ligne
+  /// retirée la perd.
   final List<int> _rowKeys = <int>[];
   int _nextKey = 0;
 
-  /// Contrôleurs de cellule **gérés** (AD-2), indexés par `cell-<rowKey>-<col>`.
-  /// Alloués une seule fois par cellule (jamais recréés au rebuild — SM-1) et
-  /// disposés quand la ligne/colonne disparaît ou au démontage. Le patron
-  /// mirroir du PIN (`z_pin_field_widget.dart`) : une ré-injection externe
-  /// (reset / rechargement d'entité) qui change une cellule EXISTANTE est
+  /// Contrôleurs de cellule **gérés** (invariant AD-2), indexés par
+  /// `cell-<rowKey>-<col>`. Alloués une seule fois par cellule (jamais
+  /// recréés au rebuild) et disposés quand la ligne/colonne disparaît ou au
+  /// démontage. Le patron mirroir du champ PIN
+  /// (`z_pin_field_widget.dart`) : une ré-injection externe (reset /
+  /// rechargement d'entité) qui change une cellule EXISTANTE est
   /// re-synchronisée via [didUpdateWidget] — `initialValue` ne s'appliquant
-  /// qu'à la création, il ne suffisait pas (MED-1).
+  /// qu'à la création, il ne suffisait pas.
   final Map<String, TextEditingController> _cellControllers =
       <String, TextEditingController>{};
 
   /// Retourne le contrôleur de la cellule [key], en le créant (avec [text])
-  /// s'il n'existe pas encore. Jamais recréé si présent (SM-1).
+  /// s'il n'existe pas encore. Jamais recréé si présent.
   TextEditingController _cellController(String key, String text) =>
       _cellControllers.putIfAbsent(
         key,
@@ -266,7 +268,8 @@ class _ZEditableTableFieldWidgetState extends State<ZEditableTableFieldWidget> {
                 ],
               ),
             ),
-          // 🔴 VIRTUALISÉ (AD-13) : ListView.builder — jamais ListView(children:).
+          // VIRTUALISÉ (invariant AD-13) : ListView.builder — jamais
+          // ListView(children:).
           ListView.builder(
             key: const Key('z-editable-table-rows'),
             shrinkWrap: true,

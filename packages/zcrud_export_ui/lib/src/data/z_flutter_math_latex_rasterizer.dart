@@ -1,24 +1,23 @@
-/// Impl CONCRÈTE du port pur `ZLatexRasterizer` (su-11, AC4/AC9, AD-42).
+/// Impl CONCRÈTE du port pur `ZLatexRasterizer`.
 ///
-/// origine: su-11 (E-STUDY-UI). C'est le maillon PLATEFORME que `zcrud_export`
-/// (pur) ne peut pas porter : rasteriser une formule LaTeX exige un **rendu
-/// Flutter hors écran** (`flutter_math_fork` → `dart:ui` `toImage`), incompatible
-/// avec la pureté d'`zcrud_export` (AD-42). Le port `ZLatexRasterizer`
-/// (abstraction) vit dans `zcrud_export` ; cette impl vit ici.
+/// C'est le maillon PLATEFORME que `zcrud_export` (pur) ne peut pas porter :
+/// rasteriser une formule LaTeX exige un **rendu Flutter hors écran**
+/// (`flutter_math_fork` → `dart:ui` `toImage`), incompatible avec la pureté
+/// de `zcrud_export`. Le port `ZLatexRasterizer` (abstraction) vit dans
+/// `zcrud_export` ; cette impl vit ici.
 ///
-/// 🔴 **SEUL fichier de `lib/` autorisé à importer `flutter_math_fork`** (2ᵉ site
-/// du repo après `zcrud_markdown/z_latex_embed.dart`). Aucun type
-/// `Math`/`MathStyle`/… n'apparaît en signature publique ni n'est réexporté par
-/// le barrel : la sortie est en **bytes PNG neutres** (`Uint8List?`). Gardé par
-/// `test/z_export_ui_confinement_test.dart`.
+/// **Seul fichier de `lib/` autorisé à importer `flutter_math_fork`** dans ce
+/// package. Aucun type `Math`/`MathStyle`/… n'apparaît en signature publique
+/// ni n'est réexporté par le barrel : la sortie est en **bytes PNG neutres**
+/// (`Uint8List?`). Gardé par un test de confinement dédié.
 ///
 /// **Polices KaTeX** : `flutter_math_fork` embarque ses fontes (déclarées dans
 /// SON pubspec) ; elles sont bundlées automatiquement par l'app hôte qui dépend
 /// (transitivement) de ce package — aucun asset à re-déclarer ici.
 ///
-/// **Défensif (AD-10, AC9)** : LaTeX vide/invalide, ou toute erreur de rendu →
-/// `null` (JAMAIS de throw) ⇒ le gabarit `ZFlashcardPdfTemplate` retombe sur le
-/// **texte brut** de la formule.
+/// **Défensif (invariant AD-10)** : LaTeX vide/invalide, ou toute erreur de
+/// rendu → `null` (JAMAIS de throw) ⇒ le gabarit `ZFlashcardPdfTemplate`
+/// retombe sur le **texte brut** de la formule.
 library;
 
 import 'dart:typed_data';
@@ -61,8 +60,9 @@ class ZFlutterMathLatexRasterizer implements ZLatexRasterizer {
         latex,
         mathStyle: MathStyle.text,
         textStyle: TextStyle(color: textColor, fontSize: fontSize),
-        // AD-10 : LaTeX invalide ⇒ on note l'erreur et on rend un widget vide ;
-        // rasterize renverra `null` (repli texte brut côté gabarit).
+        // invariant AD-10 : LaTeX invalide ⇒ on note l'erreur et on rend un
+        // widget vide ; rasterize renverra `null` (repli texte brut côté
+        // gabarit).
         onErrorFallback: (Object error) {
           hadError = true;
           return const SizedBox.shrink();
@@ -75,7 +75,7 @@ class ZFlutterMathLatexRasterizer implements ZLatexRasterizer {
       if (hadError) return null;
       return bytes;
     } catch (_) {
-      return null; // AD-10 : jamais de throw vers l'appelant.
+      return null; // invariant AD-10 : jamais de throw vers l'appelant.
     }
   }
 

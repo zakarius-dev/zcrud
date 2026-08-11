@@ -193,7 +193,7 @@ class ZAppFileFieldAliases {
 
   /// Alias de `AppFile.sizeBytes`.
   ///
-  /// ⚠️ Volontairement **sans** équivalent DODLP : le champ `contentLength`
+  /// Volontairement **sans** équivalent legacy : le champ `contentLength`
   /// mesuré là-bas est la longueur du **texte extrait**, pas une taille en
   /// octets. L'assimiler serait inventer une convention.
   final List<String> sizeBytes;
@@ -203,7 +203,7 @@ class ZAppFileFieldAliases {
 
   /// Alias de `AppFile.localPath`.
   ///
-  /// ⚠️ `cloudPath` (DODLP) n'y figure **pas** : c'est un chemin **Storage
+  /// `cloudPath` n'y figure **pas** : c'est un chemin **Storage
   /// distant**, pas un chemin local. Il est préservé dans `AppFile.extra`.
   final List<String> localPath;
 

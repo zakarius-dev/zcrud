@@ -1,50 +1,51 @@
 /// Présentateur riche `ZSelectPresenter` adossé au fork vendorisé
-/// `awesome_select` (`SmartSelect`) — fp-4-1 (AD-48), **apparence DODLP**
-/// (CR-SELECT-FID, 2026-08-09).
+/// `awesome_select` (`SmartSelect`), **apparence de référence** par défaut.
 ///
 /// **Rôle** : implémentation CONCRÈTE du seam `ZSelectPresenter` (livré par le
-/// cœur, fp-1-1). Injectée via `ZcrudScope(selectPresenter: const
+/// cœur). Injectée via `ZcrudScope(selectPresenter: const
 /// ZSmartSelectPresenter())`, elle **supplante** le rendu natif des familles
 /// `select` / `radio` / `checkbox` / `multiselect` / `relation` par un
-/// **modal S2 responsive + recherche** à parité DODLP.
+/// **modal S2 responsive + recherche**.
 ///
-/// 🔴 **« Par défaut » — ce que ça peut et ne peut pas vouloir dire.** AD-1
-/// interdit à `zcrud_core` de dépendre de `zcrud_select` (CORE OUT = 0) : le
-/// socle **ne peut pas** monter `awesome_select` de lui-même. « Par défaut » ne
-/// signifie donc jamais « sans rien faire ». Ce qui est livré à la place :
+/// **« Par défaut » — ce que ça peut et ne peut pas vouloir dire.** L'invariant
+/// AD-1 interdit à `zcrud_core` de dépendre de `zcrud_select` (CORE OUT = 0) :
+/// le socle **ne peut pas** monter `awesome_select` de lui-même. « Par défaut »
+/// ne signifie donc jamais « sans rien faire ». Ce qui est livré à la place :
 ///
 /// 1. **l'enrôlement le plus court possible** — une seule expression `const`,
 ///    posée une fois pour toute l'application :
 ///    `ZcrudScope(selectPresenter: const ZSmartSelectPresenter(), …)` ;
-/// 2. **l'apparence DODLP comme défaut du présentateur** — c'est *là* que
-///    « par défaut » a un sens réel : un hôte qui enrôle le présentateur obtient
-///    le rendu DODLP **sans rien configurer**. Toute la personnalisation passe
-///    par [ZSelectTileSpec], qui est entièrement optionnel.
+/// 2. **une apparence de référence éprouvée comme défaut du présentateur** —
+///    c'est *là* que « par défaut » a un sens réel : un hôte qui enrôle le
+///    présentateur obtient ce rendu **sans rien configurer**. Toute la
+///    personnalisation passe par [ZSelectTileSpec], qui est entièrement
+///    optionnel.
 ///
-/// **Zéro side-effect d'import (AR-4)** : aucun `register*()` top-level,
-/// aucune mutation d'un registre global à l'import. Importer ce paquet ne change
-/// le rendu de rien ; seule l'injection au scope le fait. C'est délibéré — un
+/// **Zéro side-effect d'import** : aucun `register*()` top-level, aucune
+/// mutation d'un registre global à l'import. Importer ce paquet ne change le
+/// rendu de rien ; seule l'injection au scope le fait. C'est délibéré — un
 /// enrôlement implicite rendrait le rendu dépendant de l'ordre des imports et
 /// indébogable côté hôte.
 ///
-/// **Isolation (AD-40/AD-49)** : `SmartSelect` / `S2*` restent CONFINÉS sous
+/// **Isolation** : `SmartSelect` / `S2*` restent CONFINÉS sous
 /// `lib/src/` — AUCUN type `awesome_select` ne fuit au barrel ni dans la
 /// signature `present()` (neutre, `zcrud_core`). Les helpers de conversion
 /// `ZFieldChoice → S2Choice` et `ZSelectChoiceStyle → S2ChoiceType` sont
 /// **privés**.
 ///
-/// **AD-2/SM-1** : le présentateur ne touche JAMAIS le `ZFormController` ; il
-/// lit la tranche via `presentation.selected` et **notifie** via
-/// `presentation.onChanged` (valeur MÉTIER : scalaire en mono, `List` en multi —
-/// jamais un type S2, jamais la concaténation littérale `"S2Choice"` du DODLP).
-/// Il ne déclenche aucun `setState` de formulaire (le `Future.delayed(300ms,
-/// setState)` de DODLP est le bug produit n°1 du dépôt — non reproduit).
+/// **Invariant AD-2** : le présentateur ne touche JAMAIS le `ZFormController` ;
+/// il lit la tranche via `presentation.selected` et **notifie** via
+/// `presentation.onChanged` (valeur MÉTIER : scalaire en mono, `List` en
+/// multi — jamais un type S2, jamais une concaténation littérale encodée
+/// dans une chaîne). Il ne déclenche aucun `setState` de formulaire — un
+/// rebuild global temporisé après chaque changement serait exactement le
+/// défaut que l'objectif produit n°1 du dépôt corrige.
 ///
-/// **AD-10 (défensif)** : options vides / `selected` hors options / option
-/// `disabled` / spec absente → rendu **dégradé défini** (sélecteur vide
+/// **Invariant AD-10 (défensif)** : options vides / `selected` hors options /
+/// option `disabled` / spec absente → rendu **dégradé défini** (sélecteur vide
 /// accessible / placeholder / option non cochable), jamais une exception.
 ///
-/// **AD-13 / FR-26** : déclencheur avec une **seule** annonce accessible
+/// **Invariant AD-13** : déclencheur avec une **seule** annonce accessible
 /// (`Semantics(button:, label:, value:, enabled:)` + `excludeSemantics` sur
 /// l'habillage), cible **≥ 48 dp**, couleurs dérivées du `ColorScheme` par
 /// **rôles** (aucun littéral — table de correspondance dans
@@ -62,21 +63,21 @@ import 'z_select_tile_metrics.dart';
 import 'z_select_tile_reference.dart';
 
 /// Présentateur riche `select`/`radio`/`checkbox`/`multiselect`/`relation`
-/// (AD-48) au-dessus de `SmartSelect`, à l'**apparence DODLP** par défaut.
+/// au-dessus de `SmartSelect`, à l'**apparence de référence** par défaut.
 ///
 /// `const`-constructible et **sans side-effect d'import** (aucun `register*()`
-/// top-level) : l'enrôlement est **explicite** via `ZcrudScope.selectPresenter`
-/// (AR-4). Immuable ⇒ partageable en `const`.
+/// top-level) : l'enrôlement est **explicite** via `ZcrudScope.selectPresenter`.
+/// Immuable ⇒ partageable en `const`.
 class ZSmartSelectPresenter extends ZSelectPresenter {
   /// Constructeur `const` (présentateur immuable, injectable en `const`).
   ///
-  /// [spec] surcharge **partiellement** l'apparence de référence DODLP. `null`
-  /// (le défaut) ⇒ apparence DODLP intégrale.
+  /// [spec] surcharge **partiellement** l'apparence de référence. `null`
+  /// (le défaut) ⇒ apparence de référence intégrale.
   const ZSmartSelectPresenter({this.spec});
 
   /// Surcharge par paramètre — maillon de plus haute priorité de la chaîne
   /// `paramètre > jeton (`ZcrudTheme.select*`) > référence`, désormais
-  /// **complète** (CR-SELECT-SEAM) et résolue par `zSelectTileMetricsOf`.
+  /// **complète** et résolue par `zSelectTileMetricsOf`.
   final ZSelectTileSpec? spec;
 
   @override
@@ -87,7 +88,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         presentation.field.label ??
         presentation.field.name;
 
-    // CR-SELECT-SEAM — chaîne `paramètre > jeton > référence`, résolue UNE fois
+    // chaîne `paramètre > jeton > référence`, résolue UNE fois
     // pour tout le sous-arbre.
     final ZSelectTileMetrics metrics =
         zSelectTileMetricsOf(context, spec: spec);
@@ -104,9 +105,9 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     final bool enabled = !presentation.readOnly;
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // CR-SELECT-SEAM — `field.leading`, parité DODLP (`ListTile.leading`).
+    // `field.leading`, parité de référence (`ListTile.leading`).
     //
-    // 🔴 Cette capacité avait été rapportée « inatteignable, le DTO ne la porte
+    // Cette capacité avait été rapportée « inatteignable, le DTO ne la porte
     // pas ». C'était FAUX : le DTO porte `field`, donc `field.leading`, et
     // `resolveAdornment` est exporté par le barrel de `zcrud_core`. Aucun
     // élargissement du seam n'était nécessaire — seulement de le lire.
@@ -119,24 +120,24 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
       field: presentation.field,
     );
 
-    // CR-SELECT-SEAM — règle d'inertie EXACTE de DODLP :
+    // règle d'inertie EXACTE de référence :
     // `choiceBuilder == null && (readOnly || isLoading) ? null : showModal`.
     // Autrement dit un `choiceBuilder` RÉ-ACTIVE le déclencheur, y compris en
     // lecture seule : c'est le seul rendu possible de la donnée, il faut
     // pouvoir l'atteindre.
     //
-    // 🔴 Hôte passif : avec les défauts du seam (`isLoading: false`,
+    // Hôte passif : avec les défauts du seam (`isLoading: false`,
     // `choiceBuilder: null`), cette expression vaut `!readOnly` — exactement
     // l'ancienne règle. Rien ne bouge.
     final bool tappable = presentation.choiceBuilder != null ||
         (!presentation.readOnly && !presentation.isLoading);
 
-    // CR-SELECT-SEAM — barre d'actions du modal : ACTIVE par défaut (parité
-    // DODLP). Un hôte peut la couper (`ZSelectTileSpec.showModalActions:
+    // barre d'actions du modal : ACTIVE par défaut (parité
+    // de référence). Un hôte peut la couper (`ZSelectTileSpec.showModalActions:
     // false`) pour retrouver les seules actions par défaut du fork.
     final bool showActions = spec?.showModalActions ?? true;
 
-    // CR-SELECT-SEAM — chargeur asynchrone d'options, ENVELOPPÉ (AD-10).
+    // chargeur asynchrone d'options, ENVELOPPÉ (AD-10).
     final S2ChoiceLoader<dynamic>? choiceLoader =
         _wrapLoader(context, presentation);
 
@@ -146,7 +147,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // `SmartSelect` (paramètre `placeholder:`) ET employé directement dans le
     // déclencheur, pour que le libellé anglais du fork ne surface nulle part.
     //
-    // CR-SELECT-GAPS — `field.hintText` **et** `isLoading` se déversent ICI, et
+    // `field.hintText` **et** `isLoading` se déversent ICI, et
     // nulle part ailleurs, parce que c'est la place que leur donne le rendu
     // NATIF :
     //
@@ -158,7 +159,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     //   l'emporte donc sur le hint, et « je n'ai pas encore les options » cesse
     //   de se confondre avec « il n'y a rien à choisir ».
     //
-    // 🔴 Hôte passif : sans `hintText` et sans chargement, l'expression vaut
+    // Hôte passif : sans `hintText` et sans chargement, l'expression vaut
     // `label(context, 'select')` — le littéral d'avant, au caractère près.
     final String? hintText = presentation.field.hintText == null
         ? null
@@ -168,7 +169,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         ? label(context, 'loading')
         : (hintText ?? label(context, 'select'));
 
-    // CR-SELECT-GAPS — `field.helperText` : ligne d'aide PERSISTANTE que le
+    // `field.helperText` : ligne d'aide PERSISTANTE que le
     // natif rend SOUS le champ (`InputDecoration.helperText`), en plus du
     // contenu et jamais à sa place. Son équivalent en tuile est donc une ligne
     // de plus au BAS du sous-titre — surtout pas le sous-titre lui-même, qui
@@ -179,14 +180,14 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         : label(context, presentation.field.helperText!,
             fallback: presentation.field.helperText!);
 
-    // CR-SELECT-GAPS — ornements `prefix`/`suffix`. Le natif les pose DANS le
+    // ornements `prefix`/`suffix`. Le natif les pose DANS le
     // champ, de part et d'autre du CONTENU (`prefix`/`prefixIcon` et
     // `suffix`/`suffixIcon` de l'`InputDecoration`), pas dans ses marges : la
     // tête hors bordure est le slot `icon`, déjà occupé ici par `leading`, et la
     // fin de ligne du tile est occupée par le chevron. L'équivalent est donc la
     // ligne du sous-titre, qui porte la valeur.
     //
-    // 🔴 Comme `leading`, ces deux membres étaient **déjà atteignables** via
+    // Comme `leading`, ces deux membres étaient **déjà atteignables** via
     // `presentation.field` : aucun élargissement du seam n'était nécessaire —
     // seulement de les lire. `null` ⇒ slot ABSENT de l'arbre (AD-4).
     final Widget? prefix = resolveAdornment(
@@ -212,9 +213,9 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     final String? suffixText =
         _adornmentText(context, presentation.field.suffix);
 
-    // CR-SELECT-GAPS — **Modifier / Copier par option**. Le rendu NATIF de
+    // **Modifier / Copier par option**. Le rendu NATIF de
     // `relation` les expose dès qu'un `crudHandler` est résolu
-    // (`_CrudRowActions`, DP-15) ; le présentateur n'en rendait que **Créer** —
+    // (`_CrudRowActions`) ; le présentateur n'en rendait que **Créer** —
     // enrôler le présentateur RETIRAIT donc deux actions. Le DTO porte déjà
     // `crudHandler` : rien à élargir, seulement à lire.
     //
@@ -222,7 +223,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // TOUJOURS (c'est le même slot, et c'est SA décision). Sans handler ⇒ slot
     // absent (AD-4), rendu antérieur strictement conservé.
     //
-    // 🔴 Écart ASSUMÉ avec le natif : celui-ci ne conditionne pas ces deux
+    // Écart ASSUMÉ avec le natif : celui-ci ne conditionne pas ces deux
     // actions à `readOnly`. Ici elles suivent `enabled`, comme **Créer** — les
     // trois écrivent la sélection (auto-sélection du résultat), et une écriture
     // sur un champ en lecture seule n'a pas de sens.
@@ -230,7 +231,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         presentation.crudHandler != null &&
         enabled;
 
-    // 🔴 FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
+    // FR-26 — infobulles RÉSOLUES ICI, dans le `context` du CHAMP, et
     // passées par valeur. Mesuré : le modal est poussé sur le `Navigator`, donc
     // **au-dessus** du `ZcrudScope` — un `label(modalContext, 'edit')` ne voit
     // PAS les libellés injectés au scope et retombe silencieusement sur la table
@@ -239,12 +240,12 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     final String editTooltip = label(context, 'edit');
     final String copyTooltip = label(context, 'copy');
 
-    // CR-REQUIRED-INDICATOR — règle EXACTE de `ZFieldLabel` (cœur) :
+    // règle EXACTE de `ZFieldLabel` (cœur) :
     // `field.isRequired && !field.readOnly`. Lue sur `field`, pas sur
     // `presentation.readOnly` : c'est la spec du champ qui décide, comme dans le
     // rendu natif décoré (`zFieldDecoration` → `ZFieldLabel`).
     //
-    // 🔴 Hôte passif : un champ NON requis rend `false` ⇒ aucune des deux
+    // Hôte passif : un champ NON requis rend `false` ⇒ aucune des deux
     // branches ci-dessous n'est empruntée (ni libellé enrichi, ni
     // `modalHeaderBuilder`), le rendu antérieur est strictement conservé.
     final bool requiredIndicator =
@@ -255,7 +256,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     // (`s2_state.dart:289`).
     final String filterHint = label(context, 'search');
 
-    // Parité DODLP : `S2ChoiceStyle` d'option (sous-titre gris italique) et
+    // Parité de référence : `S2ChoiceStyle` d'option (sous-titre gris italique) et
     // d'option active (accent, gras) — exprimés en RÔLES.
     final S2ChoiceStyle choiceStyle = S2ChoiceStyle(
       subtitleStyle: TextStyle(
@@ -269,7 +270,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
       titleStyle: const TextStyle(fontWeight: FontWeight.bold),
     );
 
-    // Parité DODLP : en-tête de modal translucide + élévation 3.
+    // Parité de référence : en-tête de modal translucide + élévation 3.
     final S2ModalHeaderStyle headerStyle = S2ModalHeaderStyle(
       backgroundColor: scheme.surface.withValues(
         alpha: ZSelectTileReference.modalHeaderOpacity,
@@ -277,7 +278,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
       elevation: ZSelectTileReference.modalHeaderElevation,
     );
 
-    // Parité DODLP : `enableDrag`, `barrierDismissible`, `filterAuto` (la
+    // Parité de référence : `enableDrag`, `barrierDismissible`, `filterAuto` (la
     // recherche s'applique à la frappe, sans validation).
     const S2ModalConfig modalConfig = S2ModalConfig(
       enableDrag: true,
@@ -296,17 +297,17 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         // valeur hors options est simplement non représentée (placeholder).
         selectedValue: _asList(presentation.selected),
         choiceItems: choiceItems,
-        // CR-SELECT-SEAM : `null` ⇒ le fork reste SYNCHRONE sur `choiceItems`,
+        // `null` ⇒ le fork reste SYNCHRONE sur `choiceItems`,
         // strictement comme avant (`S2Choices.isSync`).
         choiceLoader: choiceLoader,
-        // CR-SELECT-SEAM : builder d'option hôte. `null` ⇒ le fork rend
+        // builder d'option hôte. `null` ⇒ le fork rend
         // l'option lui-même (switches/radios/…), rendu antérieur inchangé.
         choiceBuilder: presentation.choiceBuilder == null
             ? null
             : (ctx, _, choice) =>
                 _buildHostChoice(ctx, presentation, choice, enabled: enabled),
-        // CR-SELECT-SEAM : affordance de fin de ligne (Modifier/Copier chez
-        // DODLP). `null` ⇒ slot ABSENT (AD-4), rendu antérieur inchangé.
+        // affordance de fin de ligne (Modifier/Copier chez
+        // de référence). `null` ⇒ slot ABSENT (AD-4), rendu antérieur inchangé.
         choiceSecondaryBuilder: presentation.choiceSecondaryBuilder != null
             ? (ctx, _, choice) => _buildHostSecondary(
                   ctx,
@@ -324,14 +325,14 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                       copyTooltip: copyTooltip,
                     )
                 : null),
-        // Parité DODLP EXACTE (`choiceDivider: field.choiceBuilder != null`) :
+        // Parité de référence EXACTE (`choiceDivider: field.choiceBuilder != null`) :
         // un rendu d'option sur mesure a besoin d'un séparateur, le rendu natif
-        // du fork non. 🔴 Hôte passif : `false` — c'est aussi le DÉFAUT du fork
+        // du fork non. Hôte passif : `false` — c'est aussi le DÉFAUT du fork
         // (`S2ChoiceConfig.useDivider = false`), donc rien ne bouge.
         choiceDivider: presentation.choiceBuilder != null,
-        // CR-SELECT-SEAM — barre d'ACTIONS du modal (parité
-        // `_modalActionsBuilder` DODLP) : créer / confirmer / réinitialiser.
-        // 🔴 En MULTI searchable, la loupe est retirée : le champ de recherche
+        // barre d'ACTIONS du modal (parité
+        // `_modalActionsBuilder` de référence) : créer / confirmer / réinitialiser.
+        // En MULTI searchable, la loupe est retirée : le champ de recherche
         // est rendu en PERMANENCE sous la barre (cf. `modalHeaderBuilder`).
         modalActionsBuilder: showActions
             ? (ctx, state) => _modalActions(
@@ -351,7 +352,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                   showActions: showActions,
                   requiredIndicator: requiredIndicator,
                 )
-            // CR-REQUIRED-INDICATOR : hors multi searchable, l'en-tête du fork
+            // hors multi searchable, l'en-tête du fork
             // n'est REMPLACÉ que si l'astérisque est dû — sinon `null`, et
             // `defaultModalHeader` reste seul en charge (rendu inchangé).
             : (requiredIndicator
@@ -364,7 +365,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         modalType: modalType,
         modalFilter: presentation.searchable,
         modalFilterHint: filterHint,
-        // Parité DODLP (`useConfirm: readOnly ? false : true`) : en multi, la
+        // Parité de référence (`useConfirm: readOnly ? false : true`) : en multi, la
         // sélection se valide explicitement.
         modalConfirm: enabled,
         modalHeader: true,
@@ -379,7 +380,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         tileBuilder: (context, state) => _ZSmartSelectTile(
           label: title,
           placeholder: placeholder,
-          // Parité DODLP : le multi affiche des PUCES, une par titre
+          // Parité de référence : le multi affiche des PUCES, une par titre
           // sélectionné — jamais `state.selected.toString()` (qui retombe sur
           // `'Select one or more'` du fork quand la liste est vide, et rend un
           // `[a, b]` littéral sinon).
@@ -402,7 +403,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
       );
     }
 
-    // Mono : `select` / `radio` (parité `radioAsModal` DODLP) — choix unique en
+    // Mono : `select` / `radio` (parité `radioAsModal` de référence) — choix unique en
     // modal S2, `choiceType: radios` par défaut.
     return SmartSelect<dynamic>.single(
       title: title,
@@ -432,8 +433,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                   )
               : null),
       choiceDivider: presentation.choiceBuilder != null,
-      // CR-SELECT-SEAM — même barre d'actions ; en MONO la recherche reste une
-      // BASCULE (loupe), exactement comme DODLP (`useFilter: true`).
+      // même barre d'actions ; en MONO la recherche reste une
+      // BASCULE (loupe), exactement comme de référence (`useFilter: true`).
       modalActionsBuilder: showActions
           ? (ctx, state) => _modalActions(
                 ctx,
@@ -443,7 +444,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
                 withFilterToggle: true,
               )
           : null,
-      // CR-REQUIRED-INDICATOR — même règle qu'en multi : en-tête remplacé
+      // même règle qu'en multi : en-tête remplacé
       // UNIQUEMENT si l'astérisque est dû.
       modalHeaderBuilder: requiredIndicator
           ? (ctx, state) => _headerWithRequiredTitle(ctx, state, title)
@@ -484,7 +485,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     );
   }
 
-  /// **En-tête de modal portant l'astérisque « requis »** (CR-REQUIRED-INDICATOR).
+  /// **En-tête de modal portant l'astérisque « requis »**.
   ///
   /// Reproduit `S2State.defaultModalHeader` **à l'identique** (mêmes jetons de
   /// `modalHeaderStyle`, même `automaticallyImplyLeading`, même loupe de
@@ -492,7 +493,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   /// posée par `modalActionsBuilder` reste celle du présentateur), à une seule
   /// substitution près : le titre passe de `Text` à [_labelWithRequiredIndicator].
   ///
-  /// 🔴 Installé UNIQUEMENT quand l'astérisque est dû — sinon `modalHeaderBuilder`
+  /// Installé UNIQUEMENT quand l'astérisque est dû — sinon `modalHeaderBuilder`
   /// vaut `null` et le fork rend son en-tête par défaut, inchangé.
   Widget _headerWithRequiredTitle(
     BuildContext context,
@@ -530,19 +531,19 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     );
   }
 
-  /// **Barre d'actions du modal** — parité `_modalActionsBuilder` DODLP
+  /// **Barre d'actions du modal** — parité `_modalActionsBuilder` de référence
   /// (`edition_screen.dart` l. ~2633), rendue accessible.
   ///
-  /// Ordre et conditions **mesurés chez DODLP** :
+  /// Ordre et conditions **mesurés en référence** :
   ///
-  /// | Action | Condition DODLP | Ici |
+  /// | Action | Condition de référence | Ici |
   /// |---|---|---|
   /// | **Créer** | `crudDataSelect && allowErpRessourceCrud` | `crudHandler != null` et champ éditable |
   /// | **Confirmer** | `state.confirmButton` (mono) / `IconButton(check_circle_outline)` (multi) | une seule affordance, mêmes icônes |
   /// | **Réinitialiser** | `state.selection?.choice != null` | une valeur est sélectionnée, et le champ est éditable |
   /// | **Rechercher** (loupe) | `filter != null && !filter.activated` | idem, **sauf** en multi searchable (le champ est permanent) |
   ///
-  /// 🔴 **Trois défauts de DODLP non reproduits ici :**
+  /// **Trois défauts de référence non reproduits ici :**
   ///
   /// 1. leurs `IconButton` n'ont **ni tooltip ni `Semantics`** — un lecteur
   ///    d'écran annonce « bouton » sans dire lequel. Ici chaque action porte un
@@ -566,7 +567,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     required bool multiple,
     required bool withFilterToggle,
   }) {
-    // AD-10 : DODLP teste `state.mounted` en tête — un modal en cours de
+    // invariant AD-10 : teste `state.mounted` en tête — un modal en cours de
     // fermeture ne doit pas reconstruire d'actions sur un état mort.
     if (!state.mounted) return const <Widget>[];
 
@@ -578,8 +579,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
 
     final List<Widget> actions = <Widget>[];
 
-    // Pendant la recherche, DODLP masque TOUTES les actions sauf la bascule :
-    // la barre est alors occupée par le champ de saisie.
+    // Pendant la recherche, la barre masque TOUTES les actions sauf la bascule :
+    // elle est alors occupée par le champ de saisie.
     if (!filtering) {
       if (presentation.crudHandler != null && editable) {
         actions.add(
@@ -610,20 +611,19 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
         actions.add(
           IconButton(
             tooltip: label(context, 'reset'),
-            // FR-26 : RÔLE `error`, jamais le `kErrorColor` littéral de DODLP.
+            // FR-26 : RÔLE `error`, jamais le `kErrorColor` littéral de référence.
             color: Theme.of(context).colorScheme.error,
             icon: const Icon(Icons.block),
             onPressed: () {
               // AD-2/SM-1 : on NOTIFIE la tranche ; c'est la réécriture de la
               // valeur qui rafraîchit le sélecteur, pas un `setState` global.
               presentation.onChanged(multiple ? const <Object?>[] : null);
-              // 🔴 INDISPENSABLE, et mesuré : en MONO le fork n'exige pas de
+              // INDISPENSABLE, et mesuré : en MONO le fork n'exige pas de
               // confirmation (`useConfirm == false`), si bien que `showModal()`
               // rappelle `onChange()` à la fermeture **avec l'ancienne
-              // sélection** (`s2_state.dart`, l. ~800) — la valeur qu'on vient
-              // d'effacer serait aussitôt réécrite. Vider la sélection du fork
-              // rend `selection.choice` nul et coupe ce rappel. C'est
-              // exactement ce que DODLP fait à la main
+              // sélection** — la valeur qu'on vient d'effacer serait aussitôt
+              // réécrite. Vider la sélection du fork rend `selection.choice`
+              // nul et coupe ce rappel
               // (`state.selection!.choice = null; state.selected.choice = null;
               // state.selected.value = null;`), en une seule opération.
               state.selection?.clear();
@@ -643,14 +643,13 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     return actions;
   }
 
-  /// **En-tête du modal MULTI avec champ de recherche PERMANENT** — parité
-  /// `_modalBuilder` DODLP, qui pose la recherche dans une ligne **sous la barre
-  /// de titre et au-dessus des options** (leur `ListTile(leading: Icon(search),
-  /// title: state.modalFilter)`), après avoir forcé son ouverture depuis
-  /// `onModalOpen`.
+  /// **En-tête du modal MULTI avec champ de recherche PERMANENT** — pose la
+  /// recherche dans une ligne **sous la barre de titre et au-dessus des
+  /// options** (`ListTile(leading: Icon(search), title: state.modalFilter)`
+  /// du fork), après avoir forcé son ouverture depuis `onModalOpen`.
   ///
-  /// 🔴 **Pourquoi ne PAS reprendre leur mécanisme.** DODLP obtient ce rendu en
-  /// appelant `state.filter?.show(state.modalContext)` à l'ouverture, ce qui
+  /// **Pourquoi ne PAS reprendre le mécanisme natif du fork.** Il obtient ce
+  /// rendu en appelant `state.filter?.show(state.modalContext)` à l'ouverture, ce qui
   /// bascule le fork en mode « recherche » : la barre perd alors son **titre**
   /// (`defaultModalHeader` remplace `title` par le champ) et pousse une entrée
   /// d'historique de route, si bien qu'un premier retour arrière ferme la
@@ -683,7 +682,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           iconTheme: headerStyle.iconTheme,
           centerTitle: headerStyle.centerTitle,
           automaticallyImplyLeading: state.modalConfig.isFullPage,
-          // CR-REQUIRED-INDICATOR : le titre n'est enrichi que si l'astérisque
+          // le titre n'est enrichi que si l'astérisque
           // est dû ; sinon on garde le widget du fork MOT POUR MOT
           // (`Container(child: Text(title, style: headerStyle.textStyle))`) —
           // aucun nœud de l'arbre ne bouge pour un champ non requis.
@@ -714,12 +713,12 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
               // FR-26 : libellé LOCALISÉ, jamais le `'Search on $title'` du
-              // fork ni un littéral français comme chez DODLP.
+              // fork ni un littéral français comme en référence.
               labelText: label(context, 'search'),
               isDense: true,
             ),
             // Le filtre du fork applique la requête ; `filterAuto` étant actif,
-            // DODLP passerait par un debouncer — ici la liste est cliente et le
+            // de référence passerait par un debouncer — ici la liste est cliente et le
             // coût est nul, on applique directement.
             onChanged: (q) => state.filter?.apply(q),
           ),
@@ -728,8 +727,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     );
   }
 
-  /// **Modifier / Copier** l'entité d'une option (CR-SELECT-GAPS) — parité
-  /// `_CrudRowActions` du rendu NATIF de `relation` (DP-15), que l'enrôlement du
+  /// **Modifier / Copier** l'entité d'une option — parité avec
+  /// `_CrudRowActions` du rendu NATIF de `relation`, que l'enrôlement du
   /// présentateur faisait jusqu'ici disparaître.
   ///
   /// Rendu dans le slot `secondary` de la tuile d'option du fork (le même que
@@ -778,7 +777,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
 
   /// Exécute une opération CRUD via le port **neutre** `ZRelationCrudHandler`
   /// ([op] = `create` / `edit` / `copy`), puis **auto-sélectionne** l'option
-  /// résultante (parité DODLP `_onCrud` et `_selectResult` du natif).
+  /// résultante (parité avec `_onCrud` et `_selectResult` du rendu natif).
   ///
   /// [replaced] (édition) : si l'entité change de valeur, l'ancienne est retirée
   /// de la sélection multi avant l'ajout de la nouvelle — sans quoi une édition
@@ -786,9 +785,9 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   ///
   /// AD-10 : `Future` en erreur **ou** résultat `null` (annulation) ⇒ aucune
   /// écriture, aucun crash — équivalent exact de leur `try/catch (_) {}`.
-  /// AD-2 : la sélection passe par `onChanged`, jamais par une mutation directe
-  /// de l'état interne du fork (ce que DODLP fait, avec un
-  /// `Future.delayed(500ms)` pour que ça « prenne »).
+  /// Invariant AD-2 : la sélection passe par `onChanged`, jamais par une
+  /// mutation directe de l'état interne du fork (une approche naïve
+  /// muterait cet état avec un `Future.delayed(500ms)` pour que ça « prenne »).
   Future<void> _crudThenSelect(
     S2State<dynamic> state,
     ZSelectPresentation presentation,
@@ -815,10 +814,10 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   }
 
   /// Enveloppe le [ZSelectOptionsLoader] hôte en `S2ChoiceLoader` — **le seul**
-  /// point où la frontière asynchrone est franchie (AD-40 : `S2ChoiceLoaderInfo`
+  /// point où la frontière asynchrone est franchie (`S2ChoiceLoaderInfo`
   /// ne remonte jamais au seam).
   ///
-  /// 🔴 **AD-10 — trois défaillances, un seul rendu dégradé.** Le fork ne
+  /// **AD-10 — trois défaillances, un seul rendu dégradé.** Le fork ne
   /// rattrape QUE `on Error` (`s2/state/choices.dart`, `load()`) : une
   /// `Exception` — c'est-à-dire l'échec NORMAL d'une entrée/sortie en Dart —
   /// remonterait non capturée et laisserait le modal figé sur son indicateur
@@ -834,14 +833,14 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   /// `barrierDismissible`, en-tête à bouton de fermeture) : jamais d'écran
   /// bloqué sans issue.
   ///
-  /// 🔴 **Résolution l10n capturée SYNCHRONEMENT.** `label(context, …)` consulte
+  /// **Résolution l10n capturée SYNCHRONEMENT.** `label(context, …)` consulte
   /// des `InheritedWidget` (`dependOnInheritedWidgetOfExactType`) : l'appeler
   /// depuis une continuation asynchrone, sur un `context` peut-être démonté,
   /// serait un usage hors-`build`. Les deux résolveurs sont donc capturés ici,
   /// pendant `present()`, et la continuation n'appelle plus qu'une fonction
   /// **pure**.
   ///
-  /// 🔴 **AD-2/SM-1** : rien de tout cela ne touche le `ZFormController`, ne
+  /// **AD-2/SM-1** : rien de tout cela ne touche le `ZFormController`, ne
   /// crée de contrôleur ni ne reconstruit le champ. L'attente vit dans le
   /// `S2Choices` (un `ChangeNotifier` interne au modal) ; le déclencheur, lui,
   /// n'est même pas dans l'arbre du modal.
@@ -869,7 +868,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
           ),
         ).timeout(ZSelectTileReference.optionsLoadTimeout);
       } catch (_) {
-        // 🔴 `catch (_)` NU et délibéré : `on Exception` laisserait passer les
+        // `catch (_)` NU et délibéré : `on Exception` laisserait passer les
         // `Error` (dont `TimeoutException` n'est pas, mais `StateError` oui) et
         // reproduirait exactement le trou du fork.
         return const <S2Choice<dynamic>>[];
@@ -887,7 +886,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   }
 
   /// Traduit une option du fork vers le [ZSelectChoiceBuilder] **neutre** de
-  /// l'hôte (AD-40 : `S2Choice` ne franchit pas la frontière).
+  /// l'hôte (`S2Choice` ne franchit pas la frontière).
   ///
   /// L'option neutre est retrouvée par **valeur** dans `presentation.options` ;
   /// si elle n'y est pas (cas d'un chargement asynchrone), elle est reconstruite
@@ -909,7 +908,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
 
   /// Idem [_buildHostChoice] pour l'affordance de fin de ligne.
   ///
-  /// 🔴 **Écart assumé, et mesuré** : le seam laisse l'hôte rendre `null` pour
+  /// **Écart assumé, et mesuré** : le seam laisse l'hôte rendre `null` pour
   /// « aucune affordance sur CETTE option » (AD-4), mais le slot du fork est
   /// **non-nullable** par option (`S2ComplexWidgetBuilder` rend un `Widget`).
   /// Un `null` de l'hôte est donc dégradé en `SizedBox.shrink()` : rien n'est
@@ -964,7 +963,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
 
   /// Résout la forme du conteneur de modal — [ZSelectModalShape.adaptive]
   /// bascule sur la **largeur utile** (substitut mesurable au
-  /// `AppPlatform.isWebOrDesktop` de DODLP, cf. [ZSelectModalShape.adaptive]).
+  /// `AppPlatform.isWebOrDesktop` de référence, cf. [ZSelectModalShape.adaptive]).
   ///
   /// AD-10 : sans `MediaQuery` dans l'arbre, `maybeSizeOf` rend `null` et l'on
   /// retombe sur la feuille — jamais d'exception.
@@ -987,8 +986,8 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   }
 
   /// Traduit l'enum **local** [ZSelectChoiceStyle] en `S2ChoiceType` — **le
-  /// seul** point de traduction du paquet (AD-40 : le type fork ne franchit
-  /// jamais la frontière publique).
+  /// seul** point de traduction du paquet (le type fork ne franchit jamais la
+  /// frontière publique).
   static S2ChoiceType _s2ChoiceType(ZSelectChoiceStyle style) {
     switch (style) {
       case ZSelectChoiceStyle.radios:
@@ -1023,7 +1022,7 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
     ];
   }
 
-  /// Texte d'un ornement **`.text`** (CR-SELECT-GAPS), résolu l10n — `null`
+  /// Texte d'un ornement **`.text`**, résolu l10n — `null`
   /// pour toute autre nature (`.icon`, `.widget`) comme pour un ornement absent.
   ///
   /// Sert **uniquement** l'annonce accessible du tile : le rendu visuel, lui,
@@ -1042,9 +1041,9 @@ class ZSmartSelectPresenter extends ZSelectPresenter {
   }
 }
 
-/// Libellé + **astérisque « requis » décoratif** (CR-REQUIRED-INDICATOR).
+/// Libellé + **astérisque « requis » décoratif**.
 ///
-/// 🔴 **Pourquoi ce n'est PAS `ZFieldLabel`** — et ce n'est pas un choix de
+/// **Pourquoi ce n'est PAS `ZFieldLabel`** — et ce n'est pas un choix de
 /// confort : `ZFieldLabel` **impose un style de base au libellé** (`Text.rich`
 /// dont le `TextSpan` racine porte `tokens.largeLabelTextStyle` en `large`, et
 /// `tokens.labelTextStyle ?? textTheme.bodyMedium` sinon). C'est exactement ce
@@ -1110,7 +1109,7 @@ Widget _labelWithRequiredIndicator(
   );
 }
 
-/// Déclencheur du modal S2, à l'**apparence DODLP** (AD-13 / FR-26).
+/// Déclencheur du modal S2, à l'**apparence de référence** (AD-13 / FR-26).
 ///
 /// Structure reproduite de `edition_screen.dart` (cf.
 /// `z_select_tile_reference.dart` pour le relevé complet et la table de
@@ -1126,7 +1125,7 @@ Widget _labelWithRequiredIndicator(
 /// possible (l'action `tap` vit sur ce même nœud).
 ///
 /// **AD-13** : cible **≥ 48 dp** (`ConstrainedBox`, plancher jamais abaissable —
-/// défaut DODLP non reproduit n°2) ; `contentPadding` **directionnel** ; chevron
+/// défaut de référence non reproduit n°2) ; `contentPadding` **directionnel** ; chevron
 /// **retourné en RTL** ; l'état ne repose jamais sur la seule couleur (le
 /// placeholder est un **texte** distinct, `Semantics.value` n'est renseignée que
 /// s'il y a une valeur, `Semantics.enabled` porte la lecture seule).
@@ -1173,17 +1172,17 @@ class _ZSmartSelectTile extends StatelessWidget {
 
   /// `false` si le déclencheur ne doit PAS ouvrir le modal.
   ///
-  /// 🔴 **Distinct de [enabled]** depuis CR-SELECT-SEAM : DODLP neutralise le
+  /// **Distinct de [enabled]** : ce drapeau neutralise le
   /// tap sur `readOnly || isLoading`, **sauf** si un `choiceBuilder` est fourni.
   /// Sans les deux drapeaux du seam, ces deux notions se confondaient.
   final bool tappable;
 
   /// Affiche le chevron de fin de ligne (résolu par l'appelant : paramètre,
-  /// sinon la règle DODLP « oui sauf en lecture seule »).
+  /// sinon la règle de référence « oui sauf en lecture seule »).
   final bool showChevron;
 
-  /// CR-SELECT-SEAM — ornement de **tête** déjà résolu en widget par
-  /// `resolveAdornment` (parité `field.leading` DODLP). `null` ⇒ slot ABSENT de
+  /// ornement de **tête** déjà résolu en widget par
+  /// `resolveAdornment` (parité `field.leading` de référence). `null` ⇒ slot ABSENT de
   /// l'arbre (AD-4), rendu antérieur strictement conservé.
   final Widget? leading;
 
@@ -1193,29 +1192,29 @@ class _ZSmartSelectTile extends StatelessWidget {
   /// Métriques déjà résolues (paramètre > jeton > référence).
   final ZSelectTileMetrics metrics;
 
-  /// CR-REQUIRED-INDICATOR — `field.isRequired && !field.readOnly`, déjà résolu
+  /// `field.isRequired && !field.readOnly`, déjà résolu
   /// par `present()`. Pilote **deux** canaux, jamais un seul (AD-13) :
   /// l'astérisque **visuel** (décoratif) et `Semantics.isRequired` (annoncé).
   /// `false` ⇒ tile strictement identique au rendu antérieur.
   final bool requiredIndicator;
 
-  /// CR-SELECT-GAPS — `ZSelectPresentation.isLoading`. Le DTO le portait déjà et
+  /// `ZSelectPresentation.isLoading`. Le DTO le portait déjà et
   /// le tile ne l'AFFICHAIT pas : « pas encore chargé » se lisait comme « rien à
   /// choisir ». Pilote deux choses, jamais une seule (AD-13) : le [placeholder]
   /// (déjà résolu sur la clé l10n `loading` par l'appelant — un **texte**, pas
   /// un tourniquet) et l'annonce accessible (cf. [_semanticValue]).
   final bool isLoading;
 
-  /// CR-SELECT-GAPS — `field.helperText`, déjà résolu l10n. Rendu en ligne
+  /// `field.helperText`, déjà résolu l10n. Rendu en ligne
   /// SUPPLÉMENTAIRE au bas du sous-titre (jamais à la place de la valeur ou des
   /// puces) et annoncé via `Semantics.hint`. `null` ⇒ aucun nœud (AD-4).
   final String? helperText;
 
-  /// CR-SELECT-GAPS — ornement `field.prefix` déjà résolu en widget. `null` ⇒
+  /// ornement `field.prefix` déjà résolu en widget. `null` ⇒
   /// aucun nœud (AD-4).
   final Widget? prefix;
 
-  /// CR-SELECT-GAPS — ornement `field.suffix` déjà résolu en widget. `null` ⇒
+  /// ornement `field.suffix` déjà résolu en widget. `null` ⇒
   /// aucun nœud (AD-4).
   final Widget? suffix;
 
@@ -1231,11 +1230,11 @@ class _ZSmartSelectTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isRtl = Directionality.of(context) == TextDirection.rtl;
 
-    // Parité DODLP : `readOnly && rien de sélectionné` → le tile DISPARAÎT
+    // Parité de référence : `readOnly && rien de sélectionné` → le tile DISPARAÎT
     // (leur `const EmptyContainer()`, l. ~2905 et ~3072).
     if (!enabled && !hasValue) return const SizedBox.shrink();
 
-    // 🔴 AD-13 : le plancher de 48 dp ne peut être que REHAUSSÉ — la garantie
+    // AD-13 : le plancher de 48 dp ne peut être que REHAUSSÉ — la garantie
     // est déjà tenue par `zSelectTileMetricsOf` (paramètre ET jeton), ce
     // `math.max` la rend **locale** : quelle que soit l'origine des métriques,
     // ce widget ne pose jamais une contrainte inférieure au plancher.
@@ -1249,20 +1248,20 @@ class _ZSmartSelectTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      // 🔴 `tappable`, PAS `enabled` : on annonce ce qu'on peut faire, et un
+      // `tappable`, PAS `enabled` : on annonce ce qu'on peut faire, et un
       // `choiceBuilder` rend le déclencheur actionnable même en lecture seule.
       // Hôte passif : sans builder ni chargement, `tappable == !readOnly`,
       // c'est-à-dire exactement l'ancienne valeur — rien ne bouge.
       enabled: tappable,
       label: label,
       value: semanticValue,
-      // 🔴 AD-13 — l'astérisque n'est PAS le seul canal, et surtout pas un canal
+      // AD-13 — l'astérisque n'est PAS le seul canal, et surtout pas un canal
       // audible : il est `ExcludeSemantics`, et de toute façon `excludeSemantics:
       // true` ci-dessous écarte tous les descendants. C'est CE drapeau qui porte
       // « requis » jusqu'au lecteur d'écran, exactement comme le fait
       // `ZDecoratedFieldTrigger` du cœur.
       isRequired: requiredIndicator,
-      // CR-SELECT-GAPS / AD-13 — le `helperText` est une information, pas une
+      // invariant AD-13 — le `helperText` est une information, pas une
       // décoration : sous `excludeSemantics: true` il serait VU et jamais
       // ENTENDU. `hint` est le slot que Flutter réserve à la description
       // complémentaire d'un nœud actionnable. `null` ⇒ propriété absente.
@@ -1287,7 +1286,7 @@ class _ZSmartSelectTile extends StatelessWidget {
             contentPadding: metrics.contentPadding,
             // AD-4 : `null` ⇒ le slot n'existe pas dans l'arbre.
             leading: leading,
-            // CR-REQUIRED-INDICATOR : aucun style imposé (`style: null`) — le
+            // aucun style imposé (`style: null`) — le
             // titre garde la typographie de `ListTileThemeData.titleTextStyle`.
             title: _labelWithRequiredIndicator(
               context,
@@ -1299,11 +1298,11 @@ class _ZSmartSelectTile extends StatelessWidget {
                 ? Icon(isRtl ? Icons.chevron_left : Icons.chevron_right)
                 : null,
             onTap: tappable ? onTap : null,
-            // 🔴 MESURÉ : un `ListTile` à `enabled: false` IGNORE son `onTap`.
-            // Poser `enabled` ici aurait rendu la règle DODLP « un
+            // MESURÉ : un `ListTile` à `enabled: false` IGNORE son `onTap`.
+            // Poser `enabled` ici aurait rendu la règle « un
             // `choiceBuilder` ré-active le tap » inopérante — le tile aurait eu
-            // un `onTap` que rien ne pouvait déclencher. DODLP ne touche
-            // d'ailleurs jamais ce paramètre : il annule seulement `onTap`.
+            // un `onTap` que rien ne pouvait déclencher. Le rendu natif ne
+            // touche d'ailleurs jamais ce paramètre : il annule seulement `onTap`.
             enabled: tappable,
           ),
         ),
@@ -1311,11 +1310,11 @@ class _ZSmartSelectTile extends StatelessWidget {
     );
   }
 
-  /// Sous-titre complet du tile (CR-SELECT-GAPS) : le contenu antérieur
+  /// Sous-titre complet du tile : le contenu antérieur
   /// (valeur mono ou puces multi), **encadré** des ornements `prefix`/`suffix`
   /// et **suivi** de la ligne d'aide `helperText`.
   ///
-  /// 🔴 **Hôte passif immobile** : sans ornement et sans aide, la méthode rend
+  /// **Hôte passif immobile** : sans ornement et sans aide, la méthode rend
   /// EXACTEMENT le widget d'avant — aucune `Row`, aucune `Column`, aucun
   /// `Padding` intercalé (AD-4 : ce qui est `null` est absent de l'arbre, pas
   /// rendu en boîte vide).
@@ -1371,7 +1370,7 @@ class _ZSmartSelectTile extends StatelessWidget {
   ///
   /// * Rien de sélectionné et **pas** de chargement ⇒ `null` : l'état vide n'est
   ///   pas une valeur (invariant antérieur, conservé).
-  /// * Rien de sélectionné **en chargement** ⇒ le texte d'attente. 🔴 C'est un
+  /// * Rien de sélectionné **en chargement** ⇒ le texte d'attente. C'est un
   ///   canal NON VISUEL du chargement, et il va plus loin que le natif : son
   ///   `_SelectionTrigger` affiche « Chargement… » mais met `value: null`, donc
   ///   n'annonce rien du tout.
@@ -1386,7 +1385,7 @@ class _ZSmartSelectTile extends StatelessWidget {
     return <String>[?prefixText, base, ?suffixText].join(' ');
   }
 
-  /// Sous-titre **mono** — parité DODLP : le titre sélectionné, sinon le
+  /// Sous-titre **mono** — parité de référence : le titre sélectionné, sinon le
   /// placeholder ; taille 15 ; teintes par rôles.
   Widget _monoSubtitle(ThemeData theme) {
     final text = hasValue ? (valueText ?? placeholder) : placeholder;
@@ -1401,7 +1400,7 @@ class _ZSmartSelectTile extends StatelessWidget {
     );
   }
 
-  /// Sous-titre **multi** — parité DODLP : `Wrap(spacing: 6, runSpacing: 4)` de
+  /// Sous-titre **multi** — parité de référence : `Wrap(spacing: 6, runSpacing: 4)` de
   /// `Chip`s (texte 12), sinon le placeholder. Teintes par rôles.
   Widget _multiSubtitle(BuildContext context) {
     final labels = chipLabels ?? const <String>[];

@@ -1,24 +1,22 @@
-/// Provenance polymorphe d'une flashcard `ZFlashcardSource` (Story E9-1, AC6).
+/// Provenance polymorphe d'une flashcard `ZFlashcardSource`.
 ///
-/// origine: lex_core (module « Étude ») — `flashcard_source.dart:13` : union
-/// `sealed` interne à discriminant `kind`. **Recommandation zcrud (canonique
-/// §2.1)** : router les `kind` non reconnus vers un variant de repli
-/// [ZCustomSource] **au lieu de lever** — l'app hôte branche le variant
-/// « article » (douane) via `ZSourceRegistry.register('article', …)`, **sans
-/// forker** le package flashcard ni le cœur.
+/// Union scellée en interne, à discriminant `kind`. Les `kind` non reconnus
+/// sont routés vers un variant de repli ([ZCustomSource]) au lieu de lever :
+/// une application hôte peut brancher un variant applicatif (par exemple une
+/// provenance « article ») via `ZSourceRegistry.register('article', …)`,
+/// sans forker ce paquet ni le cœur.
 ///
-/// **AD-4 (extension inter-package par registre, PAS par `sealed`)** : la
-/// hiérarchie `sealed` ci-dessous reste `sealed` **en interne** (exhaustivité
-/// du `switch` du package) ; l'ouverture inter-package passe **exclusivement**
-/// par le [ZSourceRegistry] injecté. **`'article'` n'est JAMAIS un variant codé
-/// en dur ici** (sinon fork douane dans le générique).
+/// L'extension inter-paquet passe exclusivement par le [ZSourceRegistry]
+/// injecté (invariant AD-4) : la hiérarchie `sealed` ci-dessous reste scellée
+/// en interne (exhaustivité du `switch` de ce paquet), mais aucun variant
+/// applicatif n'est jamais codé en dur ici.
 ///
-/// **Seam d'injection du registre (Dev Notes Tâche 3)** : le générateur ne peut
-/// pas passer le registre au `fromMap` du modèle. `ZFlashcardSource` expose donc
-/// un [fromJson]/[toJson] **manuels** paramétrés par un `ZSourceRegistry?`
-/// optionnel, branchés depuis `ZFlashcard.fromMap`/`ZFlashcard.toMap`. Sans
-/// registre, un `kind` inconnu retombe **sûrement** sur [ZCustomSource]
-/// (payload conservé, round-trip préservé), **jamais** de throw (AD-10).
+/// Le générateur ne peut pas transmettre le registre au décodeur d'un
+/// modèle : `ZFlashcardSource` expose donc un [fromJson]/[toJson] manuels,
+/// paramétrés par un `ZSourceRegistry?` optionnel, branchés depuis
+/// `ZFlashcard.fromMap`/`ZFlashcard.toMap`. Sans registre, un `kind` inconnu
+/// retombe sûrement sur [ZCustomSource] (payload conservé, round-trip
+/// préservé), jamais sur une exception (invariant AD-10).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -26,9 +24,9 @@ import 'package:zcrud_core/domain.dart';
 /// Discriminant persisté du variant de provenance.
 const String _kKind = 'kind';
 
-/// Union scellée de provenance. Chaque variant porte son discriminant [kind] et
-/// sait se sérialiser via [toJson] (consultant le [ZSourceRegistry] injecté pour
-/// les `kind` ouverts, ex. « article »).
+/// Union scellée de provenance. Chaque variant porte son discriminant [kind]
+/// et sait se sérialiser via [toJson] (consultant le [ZSourceRegistry]
+/// injecté pour les `kind` ouverts).
 sealed class ZFlashcardSource {
   /// Constructeur `const` (variants immuables).
   const ZFlashcardSource();
@@ -39,19 +37,22 @@ sealed class ZFlashcardSource {
 
   /// Sérialise vers la map persistée (incluant [kind]).
   ///
-  /// Pour un [ZCustomSource] dont le [kind] est **enregistré** dans [registry],
-  /// le codec de l'app produit le corps ; sinon le payload est émis tel quel.
+  /// Pour un [ZCustomSource] dont le [kind] est enregistré dans [registry],
+  /// le codec de l'application produit le corps ; sinon le payload est émis
+  /// tel quel.
   Map<String, dynamic> toJson({ZSourceRegistry? registry});
 
-  /// Reconstruit **défensivement** une provenance depuis [raw] (AD-10).
+  /// Reconstruit défensivement une provenance depuis [raw] (invariant
+  /// AD-10).
   ///
-  /// - `raw` non-map / `null` → `null` ;
+  /// - `raw` non-map ou `null` → `null` ;
   /// - `kind` reconnu (`note`/`conversation`/`document`) → variant générique
   ///   (champs manquants → défauts sûrs) ;
-  /// - `kind` **enregistré** dans [registry] → [ZCustomSource] dont le payload
-  ///   est reconstruit par le codec de l'app ;
-  /// - `kind` inconnu et non enregistré → [ZCustomSource] conservant le payload ;
-  /// - **jamais** de throw (un `kind` absent → `null`).
+  /// - `kind` enregistré dans [registry] → [ZCustomSource] dont le payload
+  ///   est reconstruit par le codec de l'application ;
+  /// - `kind` inconnu et non enregistré → [ZCustomSource] conservant le
+  ///   payload ;
+  /// - jamais d'exception (un `kind` absent rend `null`).
   static ZFlashcardSource? fromJson(
     Object? raw, {
     ZSourceRegistry? registry,
@@ -78,7 +79,7 @@ sealed class ZFlashcardSource {
         final body = _bodyOf(map);
         final codec = registry?.tryCodecFor(kind);
         if (codec != null) {
-          // Codec de l'app hôte (ex. « article ») : reconstruction défensive.
+          // Codec de l'application hôte : reconstruction défensive.
           final decoded = _guard(() => codec.fromJson(map));
           final payload = _coerceStringMap(decoded) ?? body;
           return ZCustomSource(kind, payload);
@@ -181,12 +182,12 @@ class ZDocumentSource extends ZFlashcardSource {
   int get hashCode => Object.hash(kind, documentId, page);
 }
 
-/// Provenance **ouverte** de repli (`kind` arbitraire + payload libre).
+/// Provenance ouverte de repli (`kind` arbitraire et payload libre).
 ///
-/// Porte tout `kind` non reconnu par les variants génériques — notamment le
-/// variant « article » (douane) branché par l'app hôte via [ZSourceRegistry].
-/// Le [payload] préserve la donnée telle quelle (round-trip garanti même sans
-/// codec enregistré).
+/// Porte tout `kind` non reconnu par les variants génériques — notamment un
+/// variant applicatif branché par l'hôte via [ZSourceRegistry]. Le [payload]
+/// préserve la donnée telle quelle (round-trip garanti même sans codec
+/// enregistré).
 class ZCustomSource extends ZFlashcardSource {
   /// Construit une provenance ouverte pour [kind] portant [payload].
   ZCustomSource(this.kind, Map<String, dynamic> payload)
@@ -222,7 +223,7 @@ class ZCustomSource extends ZFlashcardSource {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers défensifs (AD-10) — pur-Dart, sans throw.
+// Fonctions défensives (invariant AD-10) — pur-Dart, sans exception.
 // ---------------------------------------------------------------------------
 
 /// Corps de la map sans le discriminant [_kKind].
@@ -231,7 +232,8 @@ Map<String, dynamic> _bodyOf(Map<String, dynamic> map) => <String, dynamic>{
         if (e.key != _kKind) e.key: e.value,
     };
 
-/// Coerce défensive vers `Map<String, dynamic>` (repli `null` — jamais de throw).
+/// Coerce défensive vers `Map<String, dynamic>` (repli `null` — jamais
+/// d'exception).
 Map<String, dynamic>? _coerceStringMap(Object? v) {
   if (v is Map<String, dynamic>) return v;
   if (v is Map) {

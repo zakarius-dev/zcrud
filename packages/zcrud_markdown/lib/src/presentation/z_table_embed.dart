@@ -1,9 +1,9 @@
-/// Embed **tableau** (E6-4) de `zcrud_markdown` : embed Quill CUSTOM de type
+/// Embed **tableau** de `zcrud_markdown` : embed Quill CUSTOM de type
 /// `table`, son `EmbedBuilder` de rendu DÉFENSIF (widget `Table` Flutter NATIF —
 /// AUCUNE dépendance ajoutée, AD-1 idéal), et le dialogue de saisie/édition de la
 /// grille (lignes / colonnes / cellules texte).
 ///
-/// PATRON : ce fichier MIROITE `z_latex_embed.dart` (E6-3) — même contrat d'embed
+/// PATRON : ce fichier MIROITE `z_latex_embed.dart` — même contrat d'embed
 /// custom (`Embeddable`), même `EmbedBuilder` défensif, même dialogue, même label
 /// a11y, même placeholder thémé.
 ///
@@ -28,18 +28,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
-// SOURCE UNIQUE du contrat table (SM-S4 / COMBLEMENT ES-6.2) : `kTableEmbedType`
+// SOURCE UNIQUE du contrat table (COMBLEMENT) : `kTableEmbedType`
 // et les clés de structure `rows`/`columns`/`cells` sont DÉFINIS dans la couture
 // NEUTRE `../data/z_table_ops.dart` (pur-Dart, réutilisée par le migrateur
 // `zcrud_note`). Ce fichier de RENDU les IMPORTE — il ne les re-déclare plus.
-// GAP-2 (CR parité 2026-08-11) : la relecture de la charge tableau LEGACY
+// (CR parité 2026-08-11) : la relecture de la charge tableau LEGACY
 // (`x-embed-table`, string Markdown) réutilise le parseur legacy-fidèle de la
 // couture data — jamais un second parseur dans le rendu.
 import '../data/z_table_markdown.dart';
 import '../data/z_table_ops.dart';
 import 'z_table_cell.dart';
 
-// Alias locaux privés pour préserver le corps E6-4 inchangé (clés importées).
+// Alias locaux privés pour préserver le corps inchangé (clés importées).
 const String _kRowsKey = kTableRowsKey;
 const String _kColumnsKey = kTableColumnsKey;
 const String _kCellsKey = kTableCellsKey;
@@ -54,7 +54,7 @@ const String kTableInvalidLabel = 'tableau invalide';
 /// (`{"rows": <int>, "columns": <int>, "cells": <List<List<String>>>}`).
 /// `toJson()` (hérité d'[Embeddable]) produit exactement `{"table": <structure>}`,
 /// d'où l'op Delta `{"insert": {"table": <structure>}}` (JSON-safe, opaque —
-/// traverse le round-trip d'E6-2 à l'identique via `ZDeltaCodec`).
+/// traverse le round-trip à l'identique via `ZDeltaCodec`).
 class ZTableEmbed extends Embeddable {
   /// Construit l'embed tableau portant la [structure] (grille JSON-safe).
   const ZTableEmbed(Map<String, dynamic> structure)
@@ -65,18 +65,18 @@ class ZTableEmbed extends Embeddable {
 /// `Table` **natif** de Flutter.
 ///
 /// `expanded == true` : le tableau est rendu en **bloc** (occupe sa propre ligne),
-/// choix conforme à la décision de conception E6-4 (block par défaut, cohérent
+/// choix conforme à la décision de conception (block par défaut, cohérent
 /// avec la nature d'un tableau). Le widget `Table` utilise
 /// [IntrinsicColumnWidth] : il se dimensionne à son contenu et reste donc
 /// robuste même si l'embed se retrouvait sur une ligne mixte (rendu inline via
 /// `WidgetSpan`) — jamais d'assertion de largeur non bornée. Sans état ⇒ instance
-/// `const` STABLE (SM-1/AD-2 : aucune allocation par (re)build de tranche ;
+/// `const` STABLE (AD-2 : aucune allocation par (re)build de tranche;
 /// n'entre jamais dans le flux `document.changes`).
 ///
-/// ÉDITION (AC3) : la RÉ-ÉDITION d'un tableau existant passe par la voie bouton
+/// ÉDITION : la RÉ-ÉDITION d'un tableau existant passe par la voie bouton
 /// toolbar « Tableau » (`_promptAndInsertTable` détecte l'embed sous le caret,
 /// pré-remplit le dialogue et REMPLACE l'op). Aucun geste n'est câblé sur le
-/// widget rendu, pour garder l'instance `const` sans état (SM-1) et l'op de
+/// widget rendu, pour garder l'instance `const` sans état et l'op de
 /// tranche opaque.
 class ZTableEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état, aucune ressource à disposer).
@@ -85,7 +85,7 @@ class ZTableEmbedBuilder extends EmbedBuilder {
   @override
   String get key => kTableEmbedType;
 
-  /// Rendu BLOC : le tableau occupe sa propre ligne (décision de conception E6-4).
+  /// Rendu BLOC : le tableau occupe sa propre ligne (décision de conception).
   @override
   bool get expanded => true;
 
@@ -105,7 +105,7 @@ class ZTableEmbedBuilder extends EmbedBuilder {
   /// Parse DÉFENSIF (AD-10) de la structure d'embed en matrice `List<List<String>>`.
   ///
   /// La **matrice `cells` est la source de vérité** (les champs `rows`/`columns`
-  /// éventuels sont ignorés — Dev Notes E6-4). Retourne `null` (⇒ placeholder)
+  /// éventuels sont ignorés — Dev Notes ). Retourne `null` (⇒ placeholder)
   /// si : [data] non-`Map` ; `cells` absent / non-`List` / vide ; une ligne
   /// non-`List` ; lignes de longueurs IRRÉGULIÈRES ; largeur nulle. Les cellules
   /// sont COERCÉES en `String` (jamais de throw sur une feuille non-`String`).
@@ -129,7 +129,7 @@ class ZTableEmbedBuilder extends EmbedBuilder {
     return matrix;
   }
 
-  /// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
+  /// Placeholder d'erreur INLINE thémé (AD-13) : icône `error_outline`
   /// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
   /// enveloppée d'un [Semantics] lisible ([kTableInvalidLabel]). Insets
   /// DIRECTIONNELS. Zéro couleur codée en dur.
@@ -137,8 +137,8 @@ class ZTableEmbedBuilder extends EmbedBuilder {
       _tableErrorPlaceholder(context);
 }
 
-/// `EmbedBuilder` de LECTURE de l'embed tableau **LEGACY DODLP**
-/// (`x-embed-table`, charge **string Markdown** — GAP-2, CR parité 2026-08-11).
+/// `EmbedBuilder` de LECTURE de l'embed tableau **LEGACY**
+/// (`x-embed-table`, charge **string Markdown**, CR parité 2026-08-11).
 ///
 /// DÉFENSIF (AD-10) : charge non-`String` / vide / illisible → placeholder
 /// annoté ([kTableInvalidLabel]), jamais de throw. La relecture passe par
@@ -208,7 +208,7 @@ Widget _buildTable(
     );
   }
 
-/// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
+/// Placeholder d'erreur INLINE thémé (AD-13) : icône `error_outline`
 /// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
 /// enveloppée d'un [Semantics] lisible ([kTableInvalidLabel]). Insets
 /// DIRECTIONNELS. Zéro couleur codée en dur. PARTAGÉ par les deux builders.
@@ -224,7 +224,7 @@ Widget _tableErrorPlaceholder(BuildContext context) {
   );
 }
 
-/// Ouvre le dialogue de saisie/édition d'un tableau (AC3, AD-13).
+/// Ouvre le dialogue de saisie/édition d'un tableau (AD-13).
 ///
 /// Retourne la **structure JSON-safe** validée
 /// (`{"rows": int, "columns": int, "cells": List<List<String>>}`), ou `null` si
@@ -260,14 +260,14 @@ class _ZTableDialogState extends State<_ZTableDialog> {
   /// Largeur d'une colonne de saisie dans la grille du dialogue.
   static const double _kCellWidth = 96;
 
-  /// Largeur de la gouttière de menus LIGNE (MIN-1) — cible ≥ 48 dp.
+  /// Largeur de la gouttière de menus LIGNE — cible ≥ 48 dp.
   static const double _kRowMenuWidth = 48;
 
   late int _rows;
   late int _columns;
 
   /// Matrice de contrôleurs (un par cellule) — créés/disposés dans ce [State]
-  /// (N contrôleurs : anti-fuite E6-1/E6-3).
+  /// (N contrôleurs : anti-fuite).
   late List<List<TextEditingController>> _cells;
 
   @override
@@ -357,7 +357,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
-  /// Insère une ligne VIDE à l'index [at] (0.._rows) — MIN-1 (menu ligne).
+  /// Insère une ligne VIDE à l'index [at] (0.._rows) — (menu ligne).
   void _insertRowAt(int at) {
     if (_rows >= _kMaxDim) return;
     final int idx = at.clamp(0, _rows);
@@ -370,7 +370,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
-  /// Supprime la ligne [at] (dispose ses contrôleurs) — MIN-1 (menu ligne).
+  /// Supprime la ligne [at] (dispose ses contrôleurs) — (menu ligne).
   /// No-op si on est déjà au minimum de lignes.
   void _deleteRowAt(int at) {
     if (_rows <= _kMinDim || at < 0 || at >= _rows) return;
@@ -383,7 +383,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
-  /// Insère une colonne VIDE à l'index [at] (0.._columns) — MIN-1 (menu colonne).
+  /// Insère une colonne VIDE à l'index [at] (0.._columns) — (menu colonne).
   void _insertColumnAt(int at) {
     if (_columns >= _kMaxDim) return;
     final int idx = at.clamp(0, _columns);
@@ -395,7 +395,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
-  /// Supprime la colonne [at] (dispose ses contrôleurs) — MIN-1 (menu colonne).
+  /// Supprime la colonne [at] (dispose ses contrôleurs) — (menu colonne).
   /// No-op si on est déjà au minimum de colonnes.
   void _deleteColumnAt(int at) {
     if (_columns <= _kMinDim || at < 0 || at >= _columns) return;
@@ -407,7 +407,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     });
   }
 
-  /// Valide la saisie (AC3) : construit la structure JSON-safe depuis la grille.
+  /// Valide la saisie : construit la structure JSON-safe depuis la grille.
   void _submit() {
     final List<List<String>> cells = <List<String>>[
       for (final List<TextEditingController> row in _cells)
@@ -451,8 +451,8 @@ class _ZTableDialogState extends State<_ZTableDialog> {
     );
   }
 
-  /// Menu contextuel d'une **ligne** [r] (MIN-1) : insérer au-dessus / en-dessous
-  /// / supprimer. Cible ≥ 48 dp (PopupMenuButton par défaut), `Semantics`.
+  /// Menu contextuel d'une **ligne** [r] : insérer au-dessus, en-dessous, ou
+  /// supprimer. Cible ≥ 48 dp (PopupMenuButton par défaut), `Semantics`.
   Widget _rowMenu(int r) => Semantics(
         button: true,
         label: 'Menu ligne ${r + 1}',
@@ -491,7 +491,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
         ),
       );
 
-  /// Menu contextuel d'une **colonne** [c] (MIN-1) : insérer avant / après /
+  /// Menu contextuel d'une **colonne** [c] : insérer avant / après /
   /// supprimer. Cible ≥ 48 dp, `Semantics`.
   Widget _columnMenu(int c) => Semantics(
         button: true,
@@ -575,7 +575,7 @@ class _ZTableDialogState extends State<_ZTableDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    // En-tête : coin vide + un menu par COLONNE (MIN-1).
+                    // En-tête : coin vide + un menu par COLONNE.
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[

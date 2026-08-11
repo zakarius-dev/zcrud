@@ -1,31 +1,29 @@
-/// Carte d'item d'outils d'étude — **primitive de base + slots** (CR-IFFD-16).
+/// Carte d'item d'outils d'étude — primitive de base à slots.
 ///
-/// `ZStudyToolsSectionSpec.itemBuilder` est fourni par l'**hôte** : le socle
-/// livrait le *layout de section* (titre, compteur, grille, repli, actions
-/// d'en-tête) et laissait **toute la carte d'item** à l'application. Chaque hôte
-/// réimplémentait donc les mêmes ornements — et, avec eux, refaisait à chaque
-/// fois le travail d'accessibilité (cible ≥ 48 dp, `Semantics`, RTL).
+/// L'`itemBuilder` d'une section d'outils d'étude est fourni par l'hôte :
+/// sans ce widget, chaque application réimplémente les mêmes ornements — et,
+/// avec eux, refait à chaque fois le travail d'accessibilité (cible ≥ 48
+/// dp, `Semantics`, RTL).
 ///
-/// **Voie B, arbitrée par l'owner** : les *ornements* sont communs à toutes les
-/// applications d'étude ; les *items* ne le sont pas — un document, une carte
-/// mémoire et une note n'ont ni le même contenu ni les mêmes actions. Une carte
-/// entièrement fournie par le socle serait rigide ; le statu quo fait tout
-/// réécrire. La base + slots capture le commun sans figer le spécifique.
+/// Les ornements sont communs à toutes les applications d'étude ; les items
+/// ne le sont pas — un document, une flashcard et une note n'ont ni le même
+/// contenu ni les mêmes actions. Une carte entièrement fournie par ce paquet
+/// serait rigide ; l'alternative fait tout réécrire à l'hôte. La base à
+/// slots capture le commun sans figer le spécifique.
 ///
-/// ⚠️ **Ce que cette carte NE connaît PAS**, et ne doit jamais connaître : les
-/// *types* d'items d'un hôte (document / note / carte mentale), ses règles de
-/// permissions, sa nomenclature d'extensions. Tout cela arrive **par les slots**.
-/// Le socle fournit la structure et la mise en forme, jamais la sémantique
-/// métier. Un slot qui aurait besoin de savoir « quel type d'item » serait le
-/// signe d'une frontière mal placée.
+/// Ce que cette carte ne connaît pas, et ne doit jamais connaître : les
+/// types d'items d'un hôte (document, note, carte mentale), ses règles de
+/// permissions, sa nomenclature d'extensions. Tout cela arrive par les
+/// slots. Ce paquet fournit la structure et la mise en forme, jamais la
+/// sémantique métier.
 ///
-/// Tous les slots sont **optionnels et `null` par défaut** : une carte réduite à
-/// son [title] rend exactement ce qu'un `ListTile` rendait, sans ornement.
+/// Tous les slots sont optionnels et `null` par défaut : une carte réduite à
+/// son [title] rend un contenu minimal, sans ornement.
 ///
-/// AD-13 : la carte entière est une **cible d'activation unique** ≥ 48 dp portant
-/// un `Semantics(button:)` lorsqu'elle est activable, et **aucun** inset ou
-/// alignement non directionnel (RTL). FR-26 : aucune couleur codée en dur — tout
-/// vient de `ZcrudTheme`/`Theme.of(context)`.
+/// Invariant AD-13 : la carte entière est une cible d'activation unique
+/// ≥ 48 dp portant un `Semantics(button:)` lorsqu'elle est activable, et
+/// aucun inset ou alignement non directionnel. Aucune couleur codée en dur —
+/// tout vient de `ZcrudTheme`/`Theme.of(context)`.
 library;
 
 import 'package:flutter/material.dart';
@@ -113,7 +111,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// nul en cellule contrainte** (`Flexible` en fit LOOSE : le slot *participe*
   /// à la hauteur allouée au lieu de s'y *ajouter*).
   ///
-  /// ⚠️ **Pourquoi [leading] ne pouvait pas en tenir lieu** : il vit dans la
+  /// **Pourquoi [leading] ne pouvait pas en tenir lieu** : il vit dans la
   /// `Row` de tête, donc **à côté** du bloc titre — pas au-dessus. Un ordre de
   /// lecture « ornement, puis énoncé » (celui de la carte de flashcard de
   /// référence : accent, badge de type, balises, **puis** énoncé) était donc
@@ -129,7 +127,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// Contenu secondaire rendu **sous [subtitle]**, dans la même colonne que
   /// [title] (**CR-LEX-75**) : puce d'état, chip, méta-information.
   ///
-  /// ⚠️ **Pourquoi [progress] ne pouvait pas en tenir lieu**, pour deux raisons
+  /// **Pourquoi [progress] ne pouvait pas en tenir lieu**, pour deux raisons
   /// distinctes : (1) il est rendu dans la `Row` de tête, donc **à côté** du
   /// bloc titre/sous-titre et non dessous — l'y placer déplace la lecture de la
   /// carte ; (2) il est **borné à [progressMaxWidth]**, borne justifiée pour un
@@ -173,7 +171,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Indicateur de traitement en cours (téléversement, conversion, génération).
   ///
-  /// ⚠️ **Contrainte de layout (CR-IFFD-20)** : le slot est rendu dans une
+  /// **Contrainte de layout (CR-IFFD-20)** : le slot est rendu dans une
   /// `Row`, donc dans un espace horizontal **non borné**. Un
   /// `LinearProgressIndicator` **nu** y lève *« unbounded width »* — un
   /// `CircularProgressIndicator`, qui s'auto-dimensionne, passe. La carte borne
@@ -194,14 +192,14 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// en cours de traitement invite à lancer une opération **concurrente**
   /// dessus.
   ///
-  /// ⚠️ **Mais toutes les actions d'un `trailing` ne sont pas concurrentes.**
+  /// **Mais toutes les actions d'un `trailing` ne sont pas concurrentes.**
   /// Écouter une note pendant qu'on la résume est une **consultation**, pas une
   /// mutation. L'éviction inconditionnelle rangeait donc sous « action » des
   /// choses qui n'en sont pas — et **seul l'hôte** sait lesquelles des siennes
   /// sont concurrentes. Passer `false` conserve [trailing] à côté de [progress] ;
   /// c'est alors à l'hôte de n'y laisser que le consultable.
   ///
-  /// ⚠️ **Piège du défaut `true` (CR-LEX-75)** : dès que [progress] est rempli,
+  /// **Piège du défaut `true` (CR-LEX-75)** : dès que [progress] est rempli,
   /// [trailing] — souvent un **menu contextuel** — **disparaît pendant tout le
   /// traitement**. Un hôte dont le trailing porte une action de
   /// **RÉCUPÉRATION** (annuler, supprimer un import bloqué) perd donc son seul
@@ -222,7 +220,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// (`Semantics(onLongPress:)`), comme l'est déjà [onTap] — jamais laissé au
   /// seul `InkWell`, dont la sémantique est exclue.
   ///
-  /// ⚠️ Il ne rend **pas** la carte « bouton » à lui seul : le rôle `button`
+  /// Il ne rend **pas** la carte « bouton » à lui seul : le rôle `button`
   /// reste conditionné à [onTap] (un appui long n'est pas une activation
   /// primaire, et l'annoncer comme telle mentirait sur la cible).
   final VoidCallback? onLongPress;
@@ -316,7 +314,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   ///
   /// `null` ⇒ `gapM` — **le rendu historique, strictement préservé**.
   ///
-  /// 🔴 **Pourquoi le défaut de la BASE ne devient PAS la valeur de référence
+  /// **Pourquoi le défaut de la BASE ne devient PAS la valeur de référence
   /// (16)** : cette primitive n'est pas une carte par défaut. Des hôtes la
   /// composent EUX-MÊMES (lex_douane, et le socle lui-même via les cartes de
   /// flashcard) ; leur écart de tête vaut aujourd'hui `gapM`, jeton qu'ils
@@ -339,7 +337,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// l'élévation native reste forcée à 0 (invariant CR-IFFD-27/57 : deux ombres
   /// ne se superposent jamais).
   ///
-  /// ⚠️ Une ombre de jetons PRIME toujours : quand elle est active, cette
+  /// Une ombre de jetons PRIME toujours : quand elle est active, cette
   /// valeur est ignorée et l'élévation native vaut 0. Sans quoi la carte
   /// porterait deux ombres.
   final double? elevation;
@@ -351,7 +349,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// c'est le comportement historique, et il le reste pour tout hôte qui ne
   /// demande rien.
   ///
-  /// 🔴 **Ce que la CR a mesuré, et que ce slot corrige** : une carte placée
+  /// **Ce que la CR a mesuré, et que ce slot corrige** : une carte placée
   /// dans un `SizedBox(height: 200)` occupait bien 200 dp, mais son CONTENU
   /// restait centré au milieu — le pied (pastille de type) remontait contre le
   /// texte et le bas du rail était dentelé. « Donner une hauteur » ne suffisait
@@ -359,7 +357,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// descendantes** (CR-IFFD-62 ⑤ : cadre imposé → corps qui remplit → pied en
   /// bas).
   ///
-  /// 🔴 **Il n'a d'effet QUE sous une hauteur IMPOSÉE** (contrainte verticale
+  /// **Il n'a d'effet QUE sous une hauteur IMPOSÉE** (contrainte verticale
   /// TIGHT : `SizedBox(height:)`, `ZRailItem(height:)`, cellule de grille à
   /// hauteur fixe). Sans cadre, il n'y a aucun espace libre à répartir et la
   /// carte garde EXACTEMENT sa hauteur intrinsèque : la bascule est mesurée au
@@ -407,7 +405,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     // `spread` : l'espace libre est POUSSÉ entre le bloc haut (en-tête +
     // énoncé) et le PIED, qui va au bas du cadre.
     //
-    // 🔴 **Pourquoi PAS un `Expanded` sur l'énoncé, et c'est MESURÉ** : rendre
+    // **Pourquoi PAS un `Expanded` sur l'énoncé, et c'est MESURÉ** : rendre
     // l'énoncé `Expanded` obligeait à rendre l'en-tête et le pied INFLEXIBLES
     // (sans quoi `RenderFlex` répartit l'espace entre trois enfants flexibles
     // et **perd** le reliquat des enfants LOOSE — la colonne ne remplit alors
@@ -437,7 +435,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
           ],
           // ExcludeSemantics CIBLÉ sur les seuls libellés : le nœud de la carte
           // les porte déjà dans son `label`, et les répéter ferait annoncer
-          // l'item deux fois. ⚠️ Volontairement NON étendu à `leading`/`badge`/
+          // l'item deux fois. Volontairement NON étendu à `leading`/`badge`/
           // `trailing` : exclure tout le contenu rendrait le menu contextuel de
           // l'hôte INATTEIGNABLE au lecteur d'écran — l'a11y qu'on prétend
           // apporter serait retirée d'une main pendant qu'on la donne de l'autre.
@@ -490,7 +488,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
                 // `badge` (CR-LEX-71) : ce contenu n'est pas dans le `label` de
                 // la carte, l'exclure le rendrait muet sans rien dédupliquer.
                 //
-                // 🔴 CR-IFFD-37 — le slot AJOUTAIT sa hauteur à la colonne au
+                // CR-IFFD-37 — le slot AJOUTAIT sa hauteur à la colonne au
                 // lieu d'y PARTICIPER : dans une cellule de hauteur fixe
                 // (grille dense), cette `Column` sizée au contenu et à enfants
                 // tous INFLEXIBLES débordait la hauteur que la `Row` lui prête
@@ -557,7 +555,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// DEUX groupes flexibles — « en-tête + énoncé » collé en haut, « pied »
   /// collé en bas, tout l'espace libre entre les deux.
   ///
-  /// 🔴 Les deux groupes restent `Flexible` (fit LOOSE) : c'est ce qui les
+  /// Les deux groupes restent `Flexible` (fit LOOSE) : c'est ce qui les
   /// fait CÉDER quand le cadre est plus petit que le contenu, au lieu de
   /// déborder (invariant CR-IFFD-37, mesuré rouge sur une cellule 300 × 120
   /// avec la variante `Expanded` + enfants inflexibles).

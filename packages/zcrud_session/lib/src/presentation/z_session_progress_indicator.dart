@@ -1,33 +1,37 @@
 /// `ZSessionProgressIndicator` + `ZSwipeEmotionIndicator` — indicateurs de
-/// session (présentation PURE, SU-4 AC8 — FR-SU7/NFR-SU3/AD-13).
+/// session (présentation pure).
 ///
-/// Deux surfaces distinctes, toutes deux **PURES** (AD-2/AD-15 : `StatelessWidget`,
-/// aucun gestionnaire d'état, aucun moteur, callbacks/couleurs/labels INJECTÉS) :
+/// Deux surfaces distinctes, toutes deux pures (invariants AD-2/AD-15 :
+/// `StatelessWidget`, aucun gestionnaire d'état, aucun moteur,
+/// callbacks/couleurs/labels injectés) :
 ///
-/// 1. [ZSessionProgressIndicator] — **où en suis-je dans la pile**, rendu selon
-///    [ZSessionProgressStyle] (**enum**, jamais un `bool isBatch` : une variante
-///    est un choix nommé, pas une bascule binaire qu'on ne saura plus étendre).
-/// 2. [ZSwipeEmotionIndicator] — le retour émotionnel **pendant le drag**, piloté
-///    par le `horizontalOffsetPercentage` que le `cardBuilder` fournit.
+/// 1. [ZSessionProgressIndicator] — où en suis-je dans la pile, rendu selon
+///    [ZSessionProgressStyle] (un enum plutôt qu'un `bool isBatch` : une
+///    variante est un choix nommé, pas une bascule binaire qu'on ne saura
+///    plus étendre).
+/// 2. [ZSwipeEmotionIndicator] — le retour émotionnel pendant le drag,
+///    piloté par le `horizontalOffsetPercentage` que le `cardBuilder`
+///    fournit.
 ///
-/// 🔴 **DISTINCT de `ZSessionQualityBreakdown` (arbitrage A3, vérifié sur
-/// disque)** — les deux rendent des segments colorés par qualité, d'où la
-/// question. Ils n'agrègent PAS la même chose et ne sont pas substituables :
+/// ## Distinct de `ZSessionQualityBreakdown`
 ///
-/// | | `ZSessionQualityBreakdown` (ES-4.5) | `ZSessionProgressIndicator` (su-4) |
+/// Les deux widgets rendent des segments colorés par qualité, d'où la
+/// question. Ils n'agrègent pas la même chose et ne sont pas substituables :
+///
+/// | | `ZSessionQualityBreakdown` | `ZSessionProgressIndicator` |
 /// |---|---|---|
-/// | Entrée | `Map<String,int> byQuality` — **compte par qualité** | `total` + `currentIndex` + seam `qualityOf(index)` |
-/// | Unité rendue | **une qualité** (« 4 cartes notées 5 ») | **une carte** (« la 3ᵉ carte, notée 5 ») |
-/// | Ordre | l'échelle de qualité | la **position** dans la file |
+/// | Entrée | `Map<String,int> byQuality` — compte par qualité | `total` + `currentIndex` + seam `qualityOf(index)` |
+/// | Unité rendue | une qualité (« 4 cartes notées 5 ») | une carte (« la 3ᵉ carte, notée 5 ») |
+/// | Ordre | l'échelle de qualité | la position dans la file |
 /// | Cardinalité | `scale.qualities.length` (6) | `total` (N cartes) |
 /// | Répond à | « comment ai-je noté ? » | « où en suis-je ? » |
 ///
-/// Le breakdown **a perdu la position** (sa map est une agrégation) : il ne peut
-/// pas rendre « où en suis-je », qui est *toute* la fonction d'AC8. Réutiliser
-/// l'un pour l'autre exigerait de lui rendre l'information qu'il agrège —
-/// c'est-à-dire d'en faire ce widget-ci. Aucune duplication : ils partagent en
-/// revanche les seams `labelKeyFor`/`colorKeyFor` et `ZQualityScale`, qui restent
-/// définis **une seule fois** (`z_srs_quality_buttons.dart`).
+/// Le breakdown a perdu la position (sa map est une agrégation) : il ne
+/// peut pas rendre « où en suis-je ». Réutiliser l'un pour l'autre
+/// exigerait de lui rendre l'information qu'il agrège — c'est-à-dire d'en
+/// faire ce widget-ci. Aucune duplication : ils partagent en revanche les
+/// seams `labelKeyFor`/`colorKeyFor` et `ZQualityScale`, définis une seule
+/// fois (`z_srs_quality_buttons.dart`).
 library;
 
 import 'package:flutter/material.dart';
@@ -35,40 +39,32 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_srs_quality_buttons.dart';
 
-/// Style de rendu de la progression — **enum, jamais un booléen**.
+/// Style de rendu de la progression — un enum, jamais un booléen.
 ///
-/// Le spine impose « variantes par enum » : un `bool isBatch` fermerait
-/// l'extension (une 3ᵉ variante n'aurait aucune place) et forcerait chaque
-/// appelant à retraduire la bascule.
+/// Un `bool isBatch` fermerait l'extension (une troisième variante n'aurait
+/// aucune place) et forcerait chaque appelant à retraduire la bascule.
 enum ZSessionProgressStyle {
-  /// **Points colorés par qualité** — un point par carte. Lisible tant que la
-  /// file tient à l'écran : le mode « lot N » (FR-SU7).
+  /// Points colorés par qualité — un point par carte. Lisible tant que la
+  /// file tient à l'écran : le mode « lot N ».
   dots,
 
-  /// **Barre segmentée** — segments proportionnels. Le mode « complet », où N
+  /// Barre segmentée — segments proportionnels. Le mode « complet », où N
   /// points deviendraient illisibles.
   segmentedBar,
 
-  /// **Barre CONTINUE** — une seule barre remplie à `position/total`, sans
-  /// découpage par carte (SUF-4, fermeture de l'écart de parité paire 4).
+  /// Barre continue — une seule barre remplie à `position/total`, sans
+  /// découpage par carte, pour les files longues où même une barre
+  /// segmentée deviendrait illisible (un segment par carte sur une file de
+  /// 200 cartes produit 200 traits d'un pixel).
   ///
-  /// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
-  /// packages/lex_ui/lib/presentation/screens/study_session_screen.dart:497-503`,
-  /// `_SessionHeader`) : lex rend un `LinearProgressIndicator(value: progress,
-  /// minHeight: 6)` **continu**. Ni [dots] ni [segmentedBar] ne le produisent —
-  /// tous deux rendent **N** éléments (un par carte) : sur une file de 200
-  /// cartes, lex montre une barre lisible et zcrud, 200 segments d'un pixel.
-  /// Aucune composition d'appelant ne comble ça (le widget ne prend pas de
-  /// `child`) ⇒ fermeture par valeur d'enum ADDITIVE, jamais par un booléen.
-  ///
-  /// 🔒 **Rien n'est codé en dur** : l'épaisseur vient de
-  /// [ZSessionProgressIndicator.linearThickness] (défaut : `ZcrudTheme.gapS`) —
-  /// **jamais** le `6` de lex ; le rayon de `ZcrudTheme.radiusS` ; les deux
-  /// couleurs des seams `zResolveColorKeyOrSlot` (remplissage `'primary'`, piste
+  /// Rien n'est codé en dur : l'épaisseur vient de
+  /// [ZSessionProgressIndicator.linearThickness] (défaut : `ZcrudTheme.gapS`) ;
+  /// le rayon de `ZcrudTheme.radiusS` ; les deux couleurs des seams
+  /// `zResolveColorKeyOrSlot` (remplissage `'primary'`, piste
   /// [ZSessionProgressIndicator.pendingColorKey]). Le contrat a11y est
-  /// **identique** aux deux autres styles : le `Semantics(value: 'position/total')`
-  /// reste porté par [ZSessionProgressIndicator.progressKey] — la couleur n'est
-  /// donc jamais le seul canal (AD-13).
+  /// identique aux deux autres styles : le `Semantics(value: 'position/total')`
+  /// reste porté par [ZSessionProgressIndicator.progressKey] — la couleur
+  /// n'est donc jamais le seul canal (invariant AD-13).
   linear,
 }
 
@@ -77,16 +73,17 @@ enum ZSessionProgressStyle {
 /// ne détient aucun état).
 typedef ZSessionQualityAtIndex = int? Function(int index);
 
-/// Indicateur de progression d'une session (présentation PURE).
+/// Indicateur de progression d'une session (présentation pure).
 class ZSessionProgressIndicator extends StatelessWidget {
   /// Construit l'indicateur.
   ///
   /// - [total] : nombre de cartes de la file ;
   /// - [currentIndex] : index de la carte courante (0-based) ;
-  /// - [passThreshold] : frontière réussite/lapse **INJECTÉE** (`ZSrsConfig`,
-  ///   jamais `3` en dur — AD-46) ;
-  /// - [style] : variante de rendu (**enum**) ;
-  /// - [qualityOf] : seam « qualité de la carte i », `null` ⇒ aucune carte notée ;
+  /// - [passThreshold] : frontière réussite/lapse injectée (`ZSrsConfig`,
+  ///   jamais un littéral en dur) ;
+  /// - [style] : variante de rendu (enum) ;
+  /// - [qualityOf] : seam « qualité de la carte i », `null` si aucune carte
+  ///   notée ;
   /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés).
   const ZSessionProgressIndicator({
     required this.total,
@@ -106,13 +103,13 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// Index 0-based de la carte courante.
   final int currentIndex;
 
-  /// Frontière réussite/lapse INJECTÉE (`quality >= passThreshold`).
+  /// Frontière réussite/lapse injectée (`quality >= passThreshold`).
   final int passThreshold;
 
-  /// Variante de rendu (**enum**, jamais un booléen).
+  /// Variante de rendu (enum, jamais un booléen).
   final ZSessionProgressStyle style;
 
-  /// Seam « qualité obtenue à l'index i » (`null` ⇒ non notée).
+  /// Seam « qualité obtenue à l'index i » (`null` si non notée).
   final ZSessionQualityAtIndex? qualityOf;
 
   /// Seam de clé de libellé l10n (défaut [zDefaultQualityLabelKey]).
@@ -121,59 +118,62 @@ class ZSessionProgressIndicator extends StatelessWidget {
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
 
-  /// Épaisseur de la barre [ZSessionProgressStyle.linear] — **INJECTÉE**
-  /// (SUF-4). `null` ⇒ **dérivée du thème** (`ZcrudTheme.of(context).gapS`).
+  /// Épaisseur de la barre [ZSessionProgressStyle.linear] — injectée.
+  /// `null` : dérivée du thème (`ZcrudTheme.of(context).gapS`).
   ///
-  /// 🔒 Ce paramètre existe pour qu'une app atteigne l'épaisseur exacte de son
-  /// design (lex : 6 dp) **sans** que ce widget code `6` en dur ni qu'elle doive
-  /// tordre le token global `gapS`, partagé par tout le chrome. Une valeur `<= 0`
-  /// ou non finie est **ignorée** (repli thème) — jamais une exception, jamais
-  /// une barre invisible (AD-10). Sans effet sur les styles [dots]/[segmentedBar].
+  /// Ce paramètre existe pour qu'une application atteigne l'épaisseur exacte
+  /// de son design sans que ce widget code une valeur en dur ni qu'elle
+  /// doive tordre le token global `gapS`, partagé par tout le chrome. Une
+  /// valeur `<= 0` ou non finie est ignorée (repli thème) — jamais une
+  /// exception, jamais une barre invisible (invariant AD-10). Sans effet
+  /// sur les styles [dots]/[segmentedBar].
   final double? linearThickness;
 
-  /// Clé du nœud portant la progression (testabilité — AC9 : l'ASSOCIATION du
-  /// `Semantics(value:)` se prouve sur CE nœud, jamais sur une chaîne trouvée
-  /// au hasard de l'arbre).
+  /// Clé du nœud portant la progression, pour la testabilité : l'association
+  /// du `Semantics(value:)` se prouve sur ce nœud, jamais sur une chaîne
+  /// trouvée au hasard de l'arbre.
   static const ValueKey<String> progressKey =
       ValueKey<String>('zSessionProgress');
 
   /// Clé l10n du libellé de progression (`Semantics.label`).
   static const String progressLabelKey = 'zcrud.session.progress';
 
-  /// Clé de couleur d'une carte **non notée** — rôle neutre, jamais une teinte
+  /// Clé de couleur d'une carte non notée — rôle neutre, jamais une teinte
   /// en dur.
   static const String pendingColorKey = 'neutral';
 
-  /// Clé du nœud de la **barre continue** (style [ZSessionProgressStyle.linear]).
+  /// Clé du nœud de la barre continue (style [ZSessionProgressStyle.linear]).
   ///
-  /// La garde SUF-4 lit l'épaisseur et la fraction **sur ce nœud** — jamais sur
-  /// un `LinearProgressIndicator` trouvé au hasard de l'arbre.
+  /// L'épaisseur et la fraction se lisent sur ce nœud — jamais sur un
+  /// `LinearProgressIndicator` trouvé au hasard de l'arbre.
   static const ValueKey<String> linearKey = ValueKey<String>('zProgressLinear');
 
-  /// Clé de couleur du **remplissage** de la barre continue — rôle Material 3
+  /// Clé de couleur du remplissage de la barre continue — rôle Material 3
   /// résolu par le cœur, jamais une teinte en dur.
   static const String linearFillColorKey = 'primary';
 
-  /// **Position 1-based** dans la file, bornée (`0` si la file est vide).
+  /// Position 1-based dans la file, bornée (`0` si la file est vide).
   ///
-  /// Source UNIQUE de la progression : le `Semantics(value:)` annoncé **et** la
-  /// fraction peinte par [ZSessionProgressStyle.linear] en dérivent tous deux —
-  /// ils ne peuvent donc pas diverger (un lecteur d'écran qui annonce « 3/4 »
-  /// devant une barre au quart serait exactement le défaut que ce dépôt traque).
-  /// Défensif (AD-10) : `total <= 0` ⇒ `0`, un `currentIndex` négatif ou
-  /// au-delà de la file est ramené dans `[1, total]`.
+  /// Source unique de la progression : le `Semantics(value:)` annoncé et la
+  /// fraction peinte par [ZSessionProgressStyle.linear] en dérivent tous
+  /// deux — ils ne peuvent donc pas diverger (un lecteur d'écran qui
+  /// annonce « 3/4 » devant une barre au quart serait exactement le défaut
+  /// évité ici). Défensif (invariant AD-10) : `total <= 0` donne `0`, un
+  /// `currentIndex` négatif ou au-delà de la file est ramené dans
+  /// `[1, total]`.
   int get position => total <= 0 ? 0 : (currentIndex + 1).clamp(1, total);
 
-  /// Fraction **résolue** de la barre continue (`0..1`).
+  /// Fraction résolue de la barre continue (`0..1`).
   ///
-  /// `total <= 0` ⇒ `0` : aucune division, aucune exception, barre vide (AD-10).
+  /// `total <= 0` donne `0` : aucune division, aucune exception, barre vide
+  /// (invariant AD-10).
   double get resolvedLinearValue =>
       total <= 0 ? 0 : (position / total).clamp(0.0, 1.0).toDouble();
 
-  /// Épaisseur **résolue** de la barre continue.
+  /// Épaisseur résolue de la barre continue.
   ///
-  /// [linearThickness] si elle est utilisable (finie et `> 0`), sinon le token
-  /// de thème `gapS` — **jamais** un littéral (le `6` de lex reste côté app).
+  /// [linearThickness] si elle est utilisable (finie et `> 0`), sinon le
+  /// token de thème `gapS` — jamais un littéral.
   double resolvedLinearThickness(ZcrudTheme theme) {
     final thickness = linearThickness;
     if (thickness == null || !thickness.isFinite || thickness <= 0) {
@@ -204,15 +204,15 @@ class ZSessionProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // Progression rendue en TEXTE dans le `Semantics.value` : la couleur n'est
-    // jamais le seul canal (AD-13). `total == 0` ⇒ aucune division, aucun
-    // segment (AD-10 : jamais d'exception sur une file vide).
+    // Progression rendue en texte dans le `Semantics.value` : la couleur
+    // n'est jamais le seul canal (invariant AD-13). `total == 0` donne
+    // aucune division, aucun segment (invariant AD-10).
     final value = '$position/$total';
 
     return Semantics(
       key: progressKey,
-      // 🔒 AC9 — l'ASSOCIATION : le `value` est porté par le nœud DE LA
-      // progression, pas déposé quelque part dans l'arbre.
+      // Le `value` est porté par le nœud de la progression elle-même, pas
+      // déposé quelque part dans l'arbre.
       label: label(context, progressLabelKey, fallback: value),
       value: value,
       child: switch (style) {
@@ -223,12 +223,12 @@ class ZSessionProgressIndicator extends StatelessWidget {
     );
   }
 
-  /// Barre **CONTINUE** — parité lex `_SessionHeader` (SUF-4, paire 4).
+  /// Barre continue.
   ///
   /// Aucune dimension ni couleur en dur : épaisseur par
-  /// [resolvedLinearThickness], rayon `theme.radiusS`, couleurs par les seams du
-  /// cœur. Le `Semantics(value:)` reste porté par le nœud parent
-  /// ([progressKey]) — contrat a11y IDENTIQUE aux deux autres styles.
+  /// [resolvedLinearThickness], rayon `theme.radiusS`, couleurs par les seams
+  /// du cœur. Le `Semantics(value:)` reste porté par le nœud parent
+  /// ([progressKey]) — contrat a11y identique aux deux autres styles.
   Widget _linear(BuildContext context, ZcrudTheme theme) {
     final fill = zResolveColorKeyOrSlot(
       context,
@@ -236,15 +236,12 @@ class ZSessionProgressIndicator extends StatelessWidget {
       slotIndex: 0,
     );
     final track = zResolveColorKeyOrSlot(context, pendingColorKey, slotIndex: 0);
-    // 🔴 Défaut MESURÉ par la garde SUF-4, pas anticipé : `semanticsValue: null`
-    // ne SUPPRIME pas l'annonce du `ProgressIndicator` — il la fait **calculer**
-    // (pourcentage). L'arbre sémantique RÉEL, sondé, portait DEUX valeurs :
-    //   zSessionProgress -> value = « 2/4 »
-    //   └─ (nœud du LinearProgressIndicator) -> value = « 50 »
-    // ⇒ le lecteur d'écran annonçait la progression DEUX FOIS, dans DEUX unités
-    // différentes (motif su-5/D1). `ExcludeSemantics` retire le nœud enfant ; le
-    // nœud parent ([progressKey]) porte DÉJÀ label + value, et l'indicateur
-    // n'est ni focusable ni actionnable : rien à re-déclarer.
+    // `semanticsValue: null` ne supprime pas l'annonce du `ProgressIndicator`
+    // : il la fait calculer (un pourcentage), ce qui produirait un second
+    // nœud sémantique annonçant la progression dans une unité différente du
+    // nœud parent. `ExcludeSemantics` retire ce nœud enfant ; le nœud parent
+    // ([progressKey]) porte déjà label et value, et l'indicateur n'est ni
+    // focusable ni actionnable : rien à re-déclarer.
     return ExcludeSemantics(
       child: ClipRRect(
         borderRadius: BorderRadius.all(theme.radiusS),
@@ -281,7 +278,7 @@ class ZSessionProgressIndicator extends StatelessWidget {
           for (var i = 0; i < total; i++)
             Expanded(
               child: Padding(
-                // Directionnel (AD-13) — jamais `EdgeInsets.only(left:)`.
+                // Directionnel (invariant AD-13) — jamais `EdgeInsets.only(left:)`.
                 padding: EdgeInsetsDirectional.only(end: theme.gapS / 2),
                 child: _Segment(
                   key: ValueKey<String>('$_segmentKeyPrefix$i'),
@@ -294,10 +291,10 @@ class ZSessionProgressIndicator extends StatelessWidget {
         ],
       );
 
-  /// Préfixe de [ValueKey] d'un point (testabilité, AC8).
+  /// Préfixe de [ValueKey] d'un point, pour la testabilité.
   static const String _dotKeyPrefix = 'zProgressDot_';
 
-  /// Préfixe de [ValueKey] d'un segment de barre (testabilité, AC8).
+  /// Préfixe de [ValueKey] d'un segment de barre, pour la testabilité.
   static const String _segmentKeyPrefix = 'zProgressSegment_';
 }
 
@@ -348,18 +345,17 @@ class _Segment extends StatelessWidget {
       );
 }
 
-/// Sens du drag en cours — **enum**, jamais un `bool isRight`.
+/// Sens du drag en cours — un enum, jamais un `bool isRight`.
 ///
-/// ⚠️ **Aucune sémantique de notation n'y est attachée** (FR-SU6, arbitrage A2) :
-/// le swipe **navigue**, les DEUX directions font avancer. Cet enum décrit
-/// seulement **où va le doigt**, pour placer le retour visuel du bon côté — il
-/// ne dit ni « réussi » ni « raté ».
+/// Aucune sémantique de notation n'y est attachée : le swipe navigue, les
+/// deux directions font avancer. Cet enum décrit seulement où va le doigt,
+/// pour placer le retour visuel du bon côté — il ne dit ni « réussi » ni
+/// « raté ».
 ///
-/// 🚫 **Cette neutralité est une contrainte de RENDU, pas une intention** : elle
+/// Cette neutralité est une contrainte de rendu, pas une intention : elle
 /// n'est tenue que si le glyphe rendu est lui aussi neutre. Un visage
-/// souriant/mécontent la **détruirait** — c'est exactement ce qui était rendu ici
-/// avant correction (cf. le commentaire de `build` de [ZSwipeEmotionIndicator]).
-/// Ne pas réintroduire de glyphe **évaluatif** sous couvert de cet enum.
+/// souriant ou mécontent la détruirait en réintroduisant une évaluation. Ne
+/// pas réintroduire de glyphe évaluatif sous couvert de cet enum.
 enum ZSwipeEmotion {
   /// Drag vers le **début** (gauche en LTR).
   towardsStart,
@@ -368,27 +364,27 @@ enum ZSwipeEmotion {
   towardsEnd,
 }
 
-/// Retour émotionnel **pendant le drag** (présentation PURE).
+/// Retour émotionnel pendant le drag (présentation pure).
 ///
-/// 🔴 **Reduce Motion : l'animation EXISTE VRAIMENT, et elle est RÉELLEMENT
-/// dégradée** (NFR-SU3/AD-13 — leçon su-3/D8, où un `AnimatedOpacity(opacity: 1)`
-/// n'animait rien et rendait son test incapable de rougir) :
-/// - **sans** Reduce Motion : opacité **et** échelle varient **continûment** avec
-///   [offsetPercentage] — l'indicateur *suit le doigt* ;
-/// - **avec** Reduce Motion : apparition **binaire au seuil**
-///   ([appearThreshold]), opacité et échelle **fixes**, **aucune interpolation**.
+/// Sous Reduce Motion, l'animation est réellement dégradée, pas seulement
+/// désactivée en apparence :
+/// - sans Reduce Motion : opacité et échelle varient continûment avec
+///   [offsetPercentage] — l'indicateur suit le doigt ;
+/// - avec Reduce Motion : apparition binaire au seuil ([appearThreshold]),
+///   opacité et échelle fixes, aucune interpolation.
 ///
-/// 🔒 **La FONCTION n'est jamais dégradée, seulement l'ANIMATION** (règle
-/// su-2/AC3) : au-delà du seuil, l'indicateur **apparaît toujours**, Reduce
-/// Motion ou non. Un utilisateur qui refuse les animations ne perd pas le retour
-/// visuel — il perd son interpolation.
+/// La fonction n'est jamais dégradée, seulement l'animation : au-delà du
+/// seuil, l'indicateur apparaît toujours, Reduce Motion ou non. Un
+/// utilisateur qui refuse les animations ne perd pas le retour visuel — il
+/// perd son interpolation.
 class ZSwipeEmotionIndicator extends StatelessWidget {
   /// Construit l'indicateur de drag.
   ///
-  /// - [offsetPercentage] : offset horizontal du drag en % du seuil (fourni tel
-  ///   quel par le `cardBuilder` de la pile) ;
-  /// - [reduceMotion] : signal **INJECTÉ** — résolu par `zReduceMotionOf` chez
-  ///   l'appelant (primitive UNIQUE du repo ; ce widget n'en lit pas une 2ᵉ).
+  /// - [offsetPercentage] : offset horizontal du drag en % du seuil (fourni
+  ///   tel quel par le `cardBuilder` de la pile) ;
+  /// - [reduceMotion] : signal injecté, résolu par `zReduceMotionOf` chez
+  ///   l'appelant (primitive unique du dépôt ; ce widget n'en lit pas une
+  ///   seconde).
   const ZSwipeEmotionIndicator({
     required this.offsetPercentage,
     required this.reduceMotion,
@@ -408,8 +404,8 @@ class ZSwipeEmotionIndicator extends StatelessWidget {
   /// Échelle minimale de l'indicateur (drag naissant), interpolée jusqu'à `1`.
   static const double _minScale = 0.5;
 
-  /// Clé du nœud d'opacité (testabilité : AC8 lit la valeur **résolue** sur le
-  /// widget, elle ne la déduit pas).
+  /// Clé du nœud d'opacité, pour la testabilité : un test lit la valeur
+  /// résolue sur le widget, il ne la déduit pas.
   static const ValueKey<String> opacityKey =
       ValueKey<String>('zSwipeEmotionOpacity');
 
@@ -423,17 +419,17 @@ class ZSwipeEmotionIndicator extends StatelessWidget {
           ? ZSwipeEmotion.towardsStart
           : ZSwipeEmotion.towardsEnd);
 
-  /// Opacité **résolue** — continue, ou binaire sous Reduce Motion.
+  /// Opacité résolue — continue, ou binaire sous Reduce Motion.
   double get resolvedOpacity {
     if (reduceMotion) {
-      // 🔒 Dégradation RÉELLE : aucune interpolation. La valeur ne dépend plus
+      // Dégradation réelle : aucune interpolation. La valeur ne dépend plus
       // de l'amplitude, seulement du franchissement du seuil.
       return _magnitude >= appearThreshold ? 1 : 0;
     }
     return _magnitude;
   }
 
-  /// Échelle **résolue** — continue, ou fixe sous Reduce Motion.
+  /// Échelle résolue — continue, ou fixe sous Reduce Motion.
   double get resolvedScale {
     if (reduceMotion) return 1;
     return _minScale + (1 - _minScale) * _magnitude;
@@ -445,7 +441,7 @@ class ZSwipeEmotionIndicator extends StatelessWidget {
     if (emotion == null) return const SizedBox.shrink();
 
     // Rôle Material 3 résolu par le cœur — jamais un `Colors.*`/`Color(0x…)`.
-    // Les deux sens sont NEUTRES quant à la note (A2) : on distingue le sens du
+    // Les deux sens sont neutres quant à la note : on distingue le sens du
     // geste, pas une réussite. D'où deux rôles décoratifs, pas `primary`/`error`.
     final pair = zResolveColorKeyOrSlot(
       context,
@@ -458,12 +454,12 @@ class ZSwipeEmotionIndicator extends StatelessWidget {
     final theme = ZcrudTheme.of(context);
 
     return IgnorePointer(
-      // 🔒 L'overlay ne doit RIEN voler à l'arène (AC6) : il est purement
+      // L'overlay ne doit rien voler à l'arène de gestes : il est purement
       // décoratif et vit au-dessus de la carte.
       child: Align(
-        // Directionnel (AD-13) — jamais `Alignment.centerLeft/Right`.
-        // 🔒 L'icône est placée DU CÔTÉ OÙ VA LE DOIGT (ce que la dartdoc de
-        // [ZSwipeEmotion] annonce). Une version antérieure les inversait.
+        // Directionnel (invariant AD-13) — jamais `Alignment.centerLeft/Right`.
+        // L'icône est placée du côté où va le doigt (ce que la dartdoc de
+        // [ZSwipeEmotion] annonce).
         alignment: switch (emotion) {
           ZSwipeEmotion.towardsEnd => AlignmentDirectional.topEnd,
           ZSwipeEmotion.towardsStart => AlignmentDirectional.topStart,
@@ -475,28 +471,20 @@ class ZSwipeEmotionIndicator extends StatelessWidget {
             opacity: resolvedOpacity,
             child: Transform.scale(
               scale: resolvedScale,
-              // 🚫 **Glyphe NEUTRE et DIRECTIONNEL — jamais un visage** (FR-SU6,
-              // arbitrage A2). Une version antérieure rendait ici
-              // `sentiment_very_satisfied` (fin) vs `sentiment_dissatisfied`
-              // (début) — les émojis de l'app source IFFD, où **la direction EST
-              // la note** (`quality < 3 ? left : right`). Portés ici, ils
-              // réintroduisaient verbatim la sémantique « gauche = raté /
-              // droite = réussi » que FR-SU6 interdit — et le faisaient dans le
-              // pire des mondes : l'apprenant voyait un visage mécontent suivre
-              // son doigt, en concluait avoir **noté**… alors que le swipe
-              // **n'écrit RIEN** (c'est l'AC centrale, AC4). Il pouvait « noter »
-              // une session entière sans une seule écriture SRS.
-              // Un visage est une **évaluation** — un signal strictement plus
-              // fort que les couleurs `primary`/`error` déjà écartées ci-dessus
-              // pour cette raison même. Une flèche ne dit que **où va le doigt**,
-              // ce qui est exactement — et seulement — ce que cet enum décrit.
+              // Glyphe neutre et directionnel — jamais un visage. Un visage
+              // souriant ou mécontent serait une évaluation, un signal
+              // strictement plus fort que les couleurs `primary`/`error` déjà
+              // écartées ci-dessus pour cette même raison : le swipe navigue
+              // et n'écrit aucune note, donc rien ne doit laisser croire à
+              // l'apprenant qu'il vient de noter la carte. Une flèche ne dit
+              // que où va le doigt, ce qui est exactement — et seulement — ce
+              // que cet enum décrit.
               //
-              // 🔒 RTL (AD-13) : `arrow_back`/`arrow_forward` portent
-              // `matchTextDirection: true` (vérifié sur disque —
-              // `flutter/lib/src/material/icons.dart:2290,2482`) ⇒ le glyphe
-              // **se retourne** avec la direction du texte. `towardsEnd` pointe
-              // donc vers la fin dans les DEUX directions — un émoji, lui,
-              // n'aurait rien retourné du tout.
+              // RTL (invariant AD-13) : `arrow_back`/`arrow_forward` portent
+              // `matchTextDirection: true`, donc le glyphe se retourne avec la
+              // direction du texte. `towardsEnd` pointe ainsi vers la fin
+              // dans les deux directions — un émoji, lui, n'aurait rien
+              // retourné du tout.
               child: Icon(
                 switch (emotion) {
                   ZSwipeEmotion.towardsEnd => Icons.arrow_forward,

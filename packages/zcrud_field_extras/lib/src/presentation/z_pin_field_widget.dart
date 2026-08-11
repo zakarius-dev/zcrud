@@ -1,28 +1,29 @@
-/// `ZPinFieldWidget` — champ **PIN / OTP** segmenté (fp-5-2, FR-34) servi via
+/// `ZPinFieldWidget` — champ **PIN / OTP** segmenté servi via
 /// `ZWidgetRegistry` sous le `kind` [pinFieldKind] (aligné sur
-/// `EditionFieldType.pin.name`). S'appuie sur `pinput` (BSD-3), **confiné** à ce
-/// satellite (AD-1, CORE OUT=0 — le cœur ne tire aucune dépendance lourde).
+/// `EditionFieldType.pin.name`). S'appuie sur `pinput` (BSD-3), **confiné** à
+/// ce satellite (invariant AD-1 — le cœur ne tire aucune dépendance lourde).
 ///
-/// 🔴 **Dispatch cœur (fp-5-1/fp-4-2)** : le cœur route `EditionFieldType.pin`
-/// vers la famille `registryOrFallback` → `registry.tryBuilderFor('pin')`. Un
-/// champ `ZFieldSpec(type: EditionFieldType.pin)` atteint donc CE builder dès que
+/// **Dispatch cœur** : le cœur route `EditionFieldType.pin` vers la famille
+/// `registryOrFallback` → `registry.tryBuilderFor('pin')`. Un champ
+/// `ZFieldSpec(type: EditionFieldType.pin)` atteint donc CE builder dès que
 /// [registerZFieldExtrasFields] a peuplé le `ZWidgetRegistry` injecté au
-/// `ZcrudScope` ; sinon repli propre `ZUnsupportedFieldWidget` (AD-10).
+/// `ZcrudScope` ; sinon repli propre `ZUnsupportedFieldWidget` (invariant
+/// AD-10).
 ///
-/// **AD-2 / SM-1** : value-in-slice — le builder lit `ctx.value` (`String`) et
-/// écrit via `ctx.onChanged` **dans** la frontière de rebuild du dispatcher ;
-/// aucune souscription élargie, aucun `ZFormController` capturé. Le
-/// `TextEditingController` interne est alloué **une seule fois** (`initState`) et
-/// disposé — jamais recréé au rebuild.
+/// **Invariant AD-2** : value-in-slice — le builder lit `ctx.value` (`String`)
+/// et écrit via `ctx.onChanged` **dans** la frontière de rebuild du
+/// dispatcher ; aucune souscription élargie, aucun `ZFormController` capturé.
+/// Le `TextEditingController` interne est alloué **une seule fois**
+/// (`initState`) et disposé — jamais recréé au rebuild.
 ///
-/// **AD-13 / FR-26** : chaque cellule ≥ 48 dp ([kZPinCellMinSize]), `Semantics`
-/// de **progression UNIQUE** (« n / N ») sans répéter le label, couleurs
-/// **dérivées** du `ThemeData`/`ZcrudTheme` injecté (aucune couleur codée en
-/// dur), Reduce Motion honoré (`PinAnimationType.none` si
+/// **Invariant AD-13** : chaque cellule ≥ 48 dp ([kZPinCellMinSize]),
+/// `Semantics` de **progression UNIQUE** (« n / N ») sans répéter le label,
+/// couleurs **dérivées** du `ThemeData`/`ZcrudTheme` injecté (aucune couleur
+/// codée en dur), Reduce Motion honoré (`PinAnimationType.none` si
 /// `MediaQuery.disableAnimations`).
 ///
-/// **AD-10** : une valeur externe non-`String`/`null`/corrompue ne crashe jamais
-/// (repli : champ vide).
+/// **Invariant AD-10** : une valeur externe non-`String`/`null`/corrompue ne
+/// crashe jamais (repli : champ vide).
 library;
 
 import 'package:flutter/material.dart';
@@ -33,18 +34,18 @@ import 'package:zcrud_core/zcrud_core.dart';
 /// dispatcher cœur route vers le registre : `EditionFieldType.pin.name == 'pin'`.
 /// Un champ `ZFieldSpec(type: EditionFieldType.pin)` atteint ce builder dès que
 /// [registerZFieldExtrasFields] a peuplé le `ZWidgetRegistry` (sinon repli
-/// `ZUnsupportedFieldWidget`, AD-10).
+/// `ZUnsupportedFieldWidget`, invariant AD-10).
 final String pinFieldKind = EditionFieldType.pin.name;
 
 /// Longueur PIN par défaut si le champ n'en spécifie pas.
 const int kZPinDefaultLength = 4;
 
-/// Cible tactile minimale d'une cellule PIN (AD-13, ≥ 48 dp).
+/// Cible tactile minimale d'une cellule PIN (invariant AD-13, ≥ 48 dp).
 const double kZPinCellMinSize = 48;
 
-/// Extrait défensivement (AD-10) la longueur du PIN depuis un [ZFieldSpec] : lit
-/// `hintText` s'il encode un entier, sinon [kZPinDefaultLength]. Valeur bornée
-/// `[1, 12]` (garde-fou UI).
+/// Extrait défensivement (invariant AD-10) la longueur du PIN depuis un
+/// [ZFieldSpec] : lit `hintText` s'il encode un entier, sinon
+/// [kZPinDefaultLength]. Valeur bornée `[1, 12]` (garde-fou UI).
 int zPinLengthOf(ZFieldSpec field) {
   final parsed = int.tryParse(field.hintText ?? '');
   if (parsed == null) return kZPinDefaultLength;
@@ -60,7 +61,8 @@ class ZPinFieldWidget extends StatefulWidget {
   /// écriture de la tranche).
   final ZFieldWidgetContext ctx;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build (mesure de la granularité des
+  /// rebuilds).
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -74,10 +76,11 @@ class ZPinFieldWidget extends StatefulWidget {
 }
 
 class _ZPinFieldWidgetState extends State<ZPinFieldWidget> {
-  /// Controller alloué **une seule fois** (AD-2) — jamais recréé au rebuild.
+  /// Controller alloué **une seule fois** (invariant AD-2) — jamais recréé au
+  /// rebuild.
   late final TextEditingController _controller;
 
-  /// Valeur `String` défensive de la tranche (AD-10) : non-`String`/`null` ⇒ ''.
+  /// Valeur `String` défensive de la tranche (invariant AD-10) : non-`String`/`null` ⇒ ''.
   String get _sliceValue {
     final v = widget.ctx.value;
     return v is String ? v : '';
@@ -120,8 +123,8 @@ class _ZPinFieldWidgetState extends State<ZPinFieldWidget> {
     final filled = _sliceValue.length.clamp(0, length);
     final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-    // PinTheme aux couleurs DÉRIVÉES du ColorScheme (FR-26 — aucune couleur en
-    // dur) et à la cible ≥ 48 dp (AD-13).
+    // PinTheme aux couleurs DÉRIVÉES du ColorScheme (aucune couleur en dur) et
+    // à la cible ≥ 48 dp (invariant AD-13).
     final pinTheme = PinTheme(
       width: kZPinCellMinSize,
       height: kZPinCellMinSize,
@@ -152,7 +155,8 @@ class _ZPinFieldWidgetState extends State<ZPinFieldWidget> {
           // Label rendu UNE fois (son propre nœud sémantique).
           Text(resolvedLabel, style: TextStyle(color: theme.labelColor)),
           SizedBox(height: theme.gapS),
-          // Nœud de PROGRESSION UNIQUE (AD-13) : ne répète PAS le label.
+          // Nœud de PROGRESSION UNIQUE (invariant AD-13) : ne répète PAS le
+          // label.
           Semantics(
             label: progressLabel,
             child: Pinput(

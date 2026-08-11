@@ -1,29 +1,28 @@
-/// `zShowStreakToast` — la confirmation de flamme (SU-6, FR-SU11 — AC6).
+/// `zShowStreakToast` — la confirmation de flamme d'assiduité.
 ///
-/// ## Le seam est RÉUTILISÉ, jamais redéclaré (D3)
+/// ## Le seam est réutilisé, jamais redéclaré
 ///
-/// Le toast passe par **`ZToasterScope.of(context).show(...)`** — le port
-/// `ZToaster` de `zcrud_ui_kit`. **Redéclarer un port de toast local à
-/// `zcrud_session` serait la violation** (spine : « seams réutilisés, jamais
-/// redéclarés »), et un `ScaffoldMessenger…showSnackBar` en dur en serait une
-/// autre : une app qui substitue son toaster (GetX, `toastification`) verrait la
+/// Le toast passe par `ZToasterScope.of(context).show(...)` — le port
+/// `ZToaster` de `zcrud_ui_kit`. Redéclarer un port de toast local à
+/// `zcrud_session` serait une violation de cette règle de réutilisation des
+/// seams, et un `ScaffoldMessenger…showSnackBar` en dur en serait une autre :
+/// une application qui substitue son toaster verrait la confirmation de
 /// flamme lui échapper.
 ///
-/// L'arête `zcrud_session → zcrud_ui_kit` a été ajoutée pour ça (D3) : elle est
-/// **sûre** — `zcrud_ui_kit → zcrud_core` est sa seule arête sortante ⇒ le graphe
-/// reste **ACYCLIQUE** (53 arêtes) avec **CORE OUT=0**, et **aucune dépendance
-/// tierce** n'entre.
+/// L'arête `zcrud_session → zcrud_ui_kit` est sûre : `zcrud_ui_kit →
+/// zcrud_core` est sa seule arête sortante, donc le graphe reste acyclique
+/// avec un cœur sans arête sortante, et aucune dépendance tierce n'entre.
 ///
-/// **AD-10 sans une ligne de code défensif** : `ZToasterScope.of` a un **repli
-/// sûr** (`const ZScaffoldMessengerToaster()`) — il ne throw **jamais**, même
-/// sans scope monté.
+/// Invariant AD-10 sans une ligne de code défensif : `ZToasterScope.of` a un
+/// repli sûr (`const ZScaffoldMessengerToaster()`) — il ne lève jamais,
+/// même sans scope monté.
 ///
-/// ## 🔴 Pas de spam (AC6)
+/// ## Pas de spam
 ///
-/// Seules les issues qui **changent** la flamme parlent
+/// Seules les issues qui changent la flamme parlent
 /// (`started`/`incremented`/`resetToOne`). `alreadyCountedToday` et
-/// `skippedNotGraded` ⇒ **AUCUN** toast : sans cette règle, chaque carte d'une
-/// session en déclencherait un.
+/// `skippedNotGraded` n'affichent aucun toast : sans cette règle, chaque
+/// carte d'une session en déclencherait un.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -33,26 +32,24 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'package:zcrud_ui_kit/zcrud_ui_kit.dart'
     show ZToastSeverity, ZToasterScope;
 
-/// Affiche la confirmation de flamme correspondant à [advance] — ou **rien**.
+/// Affiche la confirmation de flamme correspondant à [advance] — ou rien.
 ///
-/// - `started` / `incremented` → toast **success** ;
-/// - `resetToOne` → toast **warning** (la série a été rompue : ce n'est pas une
-///   erreur, c'est un avertissement — la répétition du jour **compte** déjà,
-///   `current == 1`) ;
-/// - `alreadyCountedToday` / `skippedNotGraded` → **AUCUN** toast (AC6).
+/// - `started` / `incremented` → toast de succès ;
+/// - `resetToOne` → toast d'avertissement (la série a été rompue : ce n'est
+///   pas une erreur, la répétition du jour compte déjà, `current == 1`) ;
+/// - `alreadyCountedToday` / `skippedNotGraded` → aucun toast.
 ///
-/// La sévérité est **toujours** un [ZToastSeverity] — jamais un `bool isError`
-/// (NFR-U7/AC15).
+/// La sévérité est toujours un [ZToastSeverity] — jamais un `bool isError`.
 ///
 /// Les libellés viennent de `ZcrudLabels` (`label(context, key, fallback:)`) :
-/// **zéro libellé en dur** (NFR-SU4).
+/// zéro libellé en dur.
 void zShowStreakToast(BuildContext context, ZStreakAdvance advance) {
   final severity = zStreakToastSeverityFor(advance.outcome);
   if (severity == null) return; // pas de spam : rien à annoncer.
 
   final message = _messageFor(context, advance);
 
-  // 🔴 LE seam : le toaster du scope, sinon le repli sûr — jamais un SnackBar.
+  // Le seam : le toaster du scope, sinon le repli sûr — jamais un SnackBar.
   ZToasterScope.of(context).show(
     context,
     message: message,
@@ -60,44 +57,45 @@ void zShowStreakToast(BuildContext context, ZStreakAdvance advance) {
   );
 }
 
-/// Sévérité du toast pour [outcome], ou `null` si **aucun** toast ne doit
-/// s'afficher — **fonction PURE** (testable sans widget).
+/// Sévérité du toast pour [outcome], ou `null` si aucun toast ne doit
+/// s'afficher — fonction pure (testable sans widget).
 ///
-/// Exposée pour que la règle « pas de spam » soit **prouvable en isolation**, et
-/// **énumérable** : un 6ᵉ `ZStreakOutcome` ajouté demain force une décision ici.
+/// Exposée pour que la règle « pas de spam » soit prouvable en isolation, et
+/// énumérable : un sixième `ZStreakOutcome` ajouté demain force une
+/// décision ici.
 ZToastSeverity? zStreakToastSeverityFor(ZStreakOutcome outcome) =>
     switch (outcome) {
       ZStreakOutcome.started => ZToastSeverity.success,
       ZStreakOutcome.incremented => ZToastSeverity.success,
       ZStreakOutcome.resetToOne => ZToastSeverity.warning,
-      // 🔴 Silence VOLONTAIRE : sans quoi chaque carte d'une session
+      // Silence volontaire : sans quoi chaque carte d'une session
       // déclencherait un toast.
       ZStreakOutcome.alreadyCountedToday => null,
       ZStreakOutcome.skippedNotGraded => null,
     };
 
-/// Message l10n de [advance] (clé + repli — patron SANCTIONNÉ).
+/// Message l10n de [advance] (clé + repli).
 ///
-/// ## 🔴 Le NOMBRE est composé HORS de `label()` (code-review su-6, D4)
+/// ## Le nombre est composé hors de `label()`
 ///
-/// `label(context, key, {fallback})` (`z_localizations.dart`) résout
-/// `scope → locale → _enLabels → fallback` et **rend la chaîne telle quelle** :
-/// il n'existe **aucun** mécanisme de substitution de paramètre ni de
-/// pluralisation. Mon premier jet écrivait
-/// `label(..., fallback: 'Série de $current jours')` : le nombre n'existait donc
-/// que dans le **repli en dur**, c'est-à-dire **uniquement quand la localisation
-/// échoue**. Dès qu'une app fournit `zcrud.study.streak.incremented` — la **raison
-/// d'être** de la clé — `label()` rend « Série en cours » et **le nombre
-/// disparaît silencieusement** : aucune exception, aucun test rouge, et
-/// l'apprenant d'une app localisée ne voit plus jamais sa série, alors que
-/// FR-SU11 fait du compteur *le* contenu du toast.
+/// `label(context, key, {fallback})` résout `scope → locale → table
+/// anglaise du cœur → fallback` et rend la chaîne telle quelle : il n'existe
+/// aucun mécanisme de substitution de paramètre ni de pluralisation. Écrire
+/// `label(..., fallback: 'Série de $current jours')` ferait exister le
+/// nombre uniquement dans le repli en dur, c'est-à-dire uniquement quand la
+/// localisation échoue. Dès qu'une application fournit
+/// `zcrud.study.streak.incremented`, `label()` rendrait « Série en cours »
+/// et le nombre disparaîtrait silencieusement : aucune exception, aucun
+/// test rouge, et l'apprenant d'une application localisée ne verrait plus
+/// jamais sa série — alors que le compteur est précisément le contenu du
+/// toast.
 ///
-/// Le bon patron est **dans la même story** : `z_streak_badge.dart` porte un
-/// libellé **statique et localisable** (`Semantics(label:)`) et le nombre dans un
-/// **canal séparé** (`Semantics(value:)`). Un toast n'ayant qu'un seul canal (sa
-/// chaîne), la décomposition équivalente est : libellé **statique** issu de
-/// `ZcrudLabels` **+** nombre **concaténé hors** de `label()`. Le compteur
-/// survit alors à **toute** traduction.
+/// Le bon patron : `z_streak_badge.dart` porte un libellé statique et
+/// localisable (`Semantics(label:)`) et le nombre dans un canal séparé
+/// (`Semantics(value:)`). Un toast n'ayant qu'un seul canal (sa chaîne), la
+/// décomposition équivalente est : libellé statique issu de `ZcrudLabels` +
+/// nombre concaténé hors de `label()`. Le compteur survit alors à toute
+/// traduction.
 String _messageFor(BuildContext context, ZStreakAdvance advance) {
   final current = advance.streak.current;
   return switch (advance.outcome) {
@@ -106,7 +104,7 @@ String _messageFor(BuildContext context, ZStreakAdvance advance) {
         'zcrud.study.streak.started',
         fallback: 'Série démarrée',
       ),
-    // 🔴 Libellé STATIQUE (traduisible intégralement) + nombre HORS de `label()`.
+    // Libellé statique (traduisible intégralement) + nombre hors de `label()`.
     ZStreakOutcome.incremented => _withCount(
         label(
           context,
@@ -120,17 +118,16 @@ String _messageFor(BuildContext context, ZStreakAdvance advance) {
         'zcrud.study.streak.reset',
         fallback: 'Nouvelle série',
       ),
-    // Inatteignable (filtré par `zStreakToastSeverityFor`), mais TOTAL : aucun
-    // `default` muet, aucun throw (AD-10).
+    // Inatteignable (filtré par `zStreakToastSeverityFor`), mais total :
+    // aucun `default` muet, aucun throw (invariant AD-10).
     ZStreakOutcome.alreadyCountedToday ||
     ZStreakOutcome.skippedNotGraded =>
       '',
   };
 }
 
-/// Adjoint [count] à un libellé **déjà localisé**, sans jamais le traverser.
+/// Adjoint [count] à un libellé déjà localisé, sans jamais le traverser.
 ///
-/// Le séparateur ne porte **aucune lettre** : il n'y a rien à traduire (c'est le
-/// critère même du scanner de libellés, `_isTranslatable`). Le SENS reste dans
-/// le libellé issu de `ZcrudLabels`, la VALEUR dans le nombre.
+/// Le séparateur ne porte aucune lettre : il n'y a rien à traduire. Le sens
+/// reste dans le libellé issu de `ZcrudLabels`, la valeur dans le nombre.
 String _withCount(String text, int count) => '$text : $count';

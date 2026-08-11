@@ -1,7 +1,7 @@
 /// Implémentation **stub** par défaut de `ZFileSaver` (plateforme sans `dart:io`
 /// ni `dart:js_interop`).
 ///
-/// origine: E11b-3 (Axe B). Chargée uniquement quand NI `dart.library.io` NI
+/// Chargée uniquement quand NI `dart.library.io` NI
 /// `dart.library.js_interop` ne sont disponibles (cas théorique). N'importe
 /// AUCUN symbole plateforme, aucun secret. Signale l'absence de support plutôt
 /// que d'écrire silencieusement dans le vide.

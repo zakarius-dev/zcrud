@@ -1,12 +1,13 @@
 /// Façade **neutre** cross-platform `ZFileSaver` : écrit des bytes en fichier.
 ///
-/// origine: E11b-3 (Axe B, AC5-8). API 100 % neutre (`Uint8List` + `String`) qui
-/// délègue par **imports conditionnels** à l'implémentation adaptée à la
-/// plateforme : `dart:io` (mobile/desktop → disque) ou `package:web` +
-/// `dart:js_interop` (web → téléchargement navigateur), avec un stub par défaut.
-/// AUCUN symbole `dart:io`/`package:web` ne fuit dans cette signature. Purement
-/// LOCAL : aucune requête réseau, aucun secret, aucun `badCertificateCallback`
-/// (AD-12). `dart:html` (déprécié) est BANNI — la voie web utilise `package:web`.
+/// API 100 % neutre (`Uint8List` + `String`) qui délègue par **imports
+/// conditionnels** à l'implémentation adaptée à la plateforme : `dart:io`
+/// (mobile/desktop → disque) ou `package:web` + `dart:js_interop` (web →
+/// téléchargement navigateur), avec un stub par défaut. AUCUN symbole
+/// `dart:io`/`package:web` ne fuit dans cette signature. Purement LOCAL :
+/// aucune requête réseau, aucun secret, aucun `badCertificateCallback`
+/// (invariant AD-12). `dart:html` (déprécié) est BANNI — la voie web utilise
+/// `package:web`.
 library;
 
 import 'dart:typed_data';
@@ -32,8 +33,8 @@ class ZFileSaver {
 
   /// Sauvegarde [bytes] sous [fileName]. [mimeType] annote le Blob (web) ;
   /// [directoryPath] (absolu, io uniquement) choisit le dossier cible, créé
-  /// récursivement si absent. Défensif (AD-12/AD-10) : bytes vides → fichier vide
-  /// valide, jamais de crash.
+  /// récursivement si absent. Défensif (invariants AD-12/AD-10) : bytes vides
+  /// → fichier vide valide, jamais de crash.
   Future<ZFileSaveResult> save(
     Uint8List bytes, {
     required String fileName,

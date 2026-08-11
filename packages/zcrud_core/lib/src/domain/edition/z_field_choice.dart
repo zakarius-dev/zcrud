@@ -1,24 +1,24 @@
 /// Option statique d'un champ à choix (`select`/`radio`/`checkbox`), portée par
 /// `@ZcrudField.choices` (authoring) et projetée dans `ZFieldSpec.choices`
-/// (runtime, E2-5).
+/// (runtime).
 ///
-/// origine: paire `choiceValueKey`/`choiceLabelKey` DODLP
-/// (technical-inventory §3, ligne `select`). Nom **distinct** de `ZChoice`
-/// (flashcard) : concept différent — option de champ, pas choix de QCM.
+/// Nom **distinct** de `ZChoice` (flashcard) : concept différent — option de
+/// champ, pas choix de QCM.
 library;
 
 /// Une option `{value, label}` proposée à la sélection.
 ///
-/// Type-valeur `const` pur-données (lisible par `ConstantReader` en E2-5) :
+/// Type-valeur `const` pur-données (lisible par `ConstantReader` par le
+/// générateur) :
 /// - [value] : valeur métier stockée (opaque, `Object?`).
-/// - [label] : libellé d'affichage (clé l10n ou littéral ; résolu côté UI, E3).
-/// - [subtitle] : **sous-titre** optionnel par option (DP-15/M8, parité
-///   `choiceSubTitleBuilder` DODLP ; défaut `null` ⇒ rendu E3-3a inchangé).
+/// - [label] : libellé d'affichage (clé l10n ou littéral ; résolu côté UI).
+/// - [subtitle] : **sous-titre** optionnel par option (défaut `null` ⇒ aucune
+///   ligne secondaire).
 /// - [disabled] : option **désactivée** (non sélectionnable mais visible/
-///   accessible — DP-15/M8, parité `s2ChoiceDisabled` DODLP ; défaut `false`).
+///   accessible ; défaut `false`).
 ///
 /// **Statique seulement** : les options issues d'une source dynamique
-/// (`relation` / `choiceItemsRepository`) sont câblées au runtime (E4), pas ici.
+/// (`relation` / dépôt de choix) sont câblées au runtime, pas ici.
 class ZFieldChoice {
   /// Construit une option statique `const`. [subtitle]/[disabled] sont
   /// **additifs** (défauts rétro-compat : `null`/`false`).
@@ -36,7 +36,7 @@ class ZFieldChoice {
   final String label;
 
   /// Sous-titre d'affichage optionnel (clé l10n ou littéral ; résolu côté UI).
-  /// `null` (défaut) ⇒ aucune ligne secondaire (rendu E3-3a strict).
+  /// `null` (défaut) ⇒ aucune ligne secondaire.
   final String? subtitle;
 
   /// Option **désactivée** : affichée/accessible mais non sélectionnable

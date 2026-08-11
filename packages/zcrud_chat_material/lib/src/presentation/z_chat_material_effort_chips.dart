@@ -1,22 +1,18 @@
-/// Les **chips d'effort** (paliers de verbosité) pixel-perfect lex — lot K3.
+/// Les chips d'effort (paliers de longueur de réponse), en Material
+/// pixel-perfect.
 ///
-/// lex rend ses paliers Mini/Plus/Pro en `ChoiceChip` à avatar 24 dp et radius
-/// 12 (`chat_input.dart:768-833`, `effort_chips.dart`), chaque palier portant
-/// sa teinte d'IDENTITÉ (vert/bleu/violet — exception FR-26 encadrée de K2).
+/// Chaque palier porte une teinte d'identité (une exception encadrée à
+/// l'interdiction générale des couleurs codées en dur, réservée aux teintes
+/// de repère d'un palier). Ces teintes ne sont pas codées ici : elles sont
+/// lues par [ZChatComposerChromeStyle.responseLengthAccent], au bout de la
+/// même chaîne de résolution que le reste du chrome (paramètre, puis jeton
+/// de thème, puis référence intégrée). La teinte n'est jamais le seul canal
+/// qui porte l'état sélectionné : la coche du `ChoiceChip` (canal non
+/// chromatique) et l'attribut `selected` en sémantique portent l'information
+/// indépendamment de la couleur.
 ///
-/// 🔴 **Les trois teintes ne vivent PAS ici** : elles sont lues par
-/// [ZChatComposerChromeStyle.responseLengthAccent] — la chaîne paramètre >
-/// (jeton demandé) > `ZChatComposerReference.responseLengthAccents`. Un hôte
-/// qui règle `ZChatComposerChrome.responseLengthAccents` (ou, demain, le jeton
-/// `chatResponseLengthAccents`) est suivi ici sans qu'une ligne change.
-///
-/// 🔴 La teinte n'est **jamais porteuse seule** : l'état choisi reste dit par
-/// la coche du `ChoiceChip` (canal non chromatique) et par `selected:` en
-/// sémantique — leçon CR-74.
-///
-/// L'axe est celui du **kernel** ([ZChatResponseLength]), les libellés ceux du
-/// registre du socle (`zchat.lengthConcise/Standard/Detailed`) — jamais un
-/// libellé métier en dur.
+/// L'axe est celui du kernel ([ZChatResponseLength]) ; les libellés viennent
+/// du registre de libellés du socle, jamais d'un texte métier codé en dur.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,9 +20,9 @@ import 'package:zcrud_chat/zcrud_chat.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 
 /// Builder prêt-à-brancher (créneau `tools` de `ZChatComposer`, ou toute
-/// rangée d'outils de l'hôte). Règle des trois cas : sans
-/// [ZChatComposerSlot.settings], il rend `null` — l'affordance est ABSENTE
-/// (AD-4), jamais une rangée de chips inertes.
+/// rangée d'outils de l'hôte). Sans [ZChatComposerSlot.settings], il rend
+/// `null` — l'affordance est absente (invariant AD-4), jamais une rangée de
+/// chips inertes.
 ZChatComposerSlotBuilder zChatMaterialEffortChips({
   ZChatComposerChrome? chrome,
 }) =>
@@ -50,7 +46,7 @@ class ZChatMaterialEffortChips extends StatelessWidget {
   /// `setResponseLength`, jamais par un second canal.
   final ZChatSettingsController controller;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// {@macro zcrud.chat_material.chrome_param}
   final ZChatComposerChrome? chrome;
 
   @override
@@ -59,8 +55,8 @@ class ZChatMaterialEffortChips extends StatelessWidget {
       context,
       chrome: chrome,
     );
-    // 🔴 LA tranche des réglages, et elle seule : cocher un corpus ailleurs ne
-    // reconstruit pas cette rangée (SM-1).
+    // Abonné uniquement à la tranche des réglages (invariant AD-2) : cocher
+    // un corpus ailleurs ne reconstruit pas cette rangée.
     return ValueListenableBuilder<ZChatGenerationSettings>(
       valueListenable: controller.settings,
       builder:
@@ -86,10 +82,10 @@ class ZChatMaterialEffortChips extends StatelessWidget {
     ZChatResponseLength length,
   ) {
     final bool selected = settings.responseLength == length;
-    // 🔴 AD-13 : la cible est imposée en GÉOMÉTRIE RENDUE — un `ChoiceChip` nu
-    // rend ~32 dp de haut (le `materialTapTargetSize` n'agrandit que la zone
-    // de hit, pas la boîte) ; la contrainte plancher rend la boîte elle-même
-    // ≥ 48 dp, mesurable.
+    // Invariant AD-13 : la cible est imposée en géométrie rendue — un
+    // `ChoiceChip` nu rend une boîte plus petite que la cible tactile
+    // minimale (l'agrandissement de la zone de hit ne suffit pas), la
+    // contrainte plancher rend donc la boîte elle-même conforme.
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: kZChatMinTapTarget,
@@ -102,15 +98,15 @@ class ZChatMaterialEffortChips extends StatelessWidget {
           child: DecoratedBox(
             decoration: ShapeDecoration(
               shape: const CircleBorder(),
-              // 🔴 LA chaîne du chrome — jamais un hex ici (FR-26 : les trois
-              // teintes vivent dans la référence K2, exception encadrée).
+              // La chaîne du chrome, jamais une valeur hexadécimale locale.
               color: style.responseLengthAccent(length),
             ),
           ),
         ),
         label: Text(zChatLabel(context, _labelKey(length))),
-        // La coche par défaut RESTE : c'est le canal non chromatique du choix
-        // (leçon CR-74) — la supprimer laisserait la teinte porter seule.
+        // La coche par défaut reste affichée : c'est le canal non
+        // chromatique du choix — la supprimer laisserait la teinte seule
+        // porter l'information de sélection.
         selected: selected,
         onSelected: (bool now) =>
             controller.setResponseLength(now ? length : null),

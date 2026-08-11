@@ -1,20 +1,21 @@
-/// `ZSubdivision` — **subdivision (état/province/région) neutre** (E11b-2,
-/// AD-1/AD-14/AD-10).
+/// `ZSubdivision` — **subdivision (état/province/région) neutre**
+/// (invariants AD-1, AD-14, AD-10).
 ///
-/// origine: entrée de l'asset `subdivisions.json` (indexé par pays), servant le
+/// Entrée de l'asset `subdivisions.json` (indexé par pays), servant le
 /// sélecteur d'état/province (`ZStateField`) dépendant du pays. Modèle
-/// **pur-Dart** : code ISO 3166-2 (ex. `"NE-2"`), code pays ISO 3166-1 (`"NE"`),
-/// nom et type optionnels.
+/// **pur-Dart** : code ISO 3166-2 (ex. `"NE-2"`), code pays ISO 3166-1
+/// (`"NE"`), nom et type optionnels.
 ///
-/// **IMPORTANT — valeur de tranche = code ISO 3166-2 `String` opaque**, PAS ce
-/// modèle. [ZSubdivision] enrichit l'affichage du picker mais n'est **jamais** la
-/// valeur écrite dans le `ZFormController`.
+/// **Important — valeur de tranche = code ISO 3166-2 `String` opaque**,
+/// pas ce modèle. [ZSubdivision] enrichit l'affichage du picker mais n'est
+/// **jamais** la valeur écrite dans le `ZFormController`.
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map`, ou
-/// [code]/[countryIso] absents (après repli sur `countryIso` de contexte) → `null`.
+/// **Défensif (invariant AD-10)** : [fromMapSafe] ne **throw jamais**.
+/// `raw` non-`Map`, ou [code]/[countryIso] absents (après repli sur
+/// `countryIso` de contexte) → `null`.
 library;
 
-/// Subdivision territoriale : code ISO 3166-2 + code pays + nom/type optionnels.
+/// Subdivision territoriale: code ISO 3166-2 + code pays + nom/type optionnels.
 class ZSubdivision {
   /// Construit une subdivision. [code] (ISO 3166-2) et [countryIso] (ISO 3166-1)
   /// sont requis.
@@ -45,7 +46,7 @@ class ZSubdivision {
         if (type != null) 'type': type,
       };
 
-  /// Parse **défensif** (AD-10) : `null` sans throw si [raw] n'est pas une `Map`,
+  /// Parse **défensif** (AD-10): `null` sans throw si [raw] n'est pas une `Map`,
   /// ou si le code (`code`) ou le pays (`countryIso`, avec repli sur
   /// [countryIso] de contexte fourni par le bucket du catalogue) sont absents.
   static ZSubdivision? fromMapSafe(Object? raw, {String? countryIso}) {

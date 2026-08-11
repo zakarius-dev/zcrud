@@ -1,30 +1,32 @@
 /// `ZOptionPickerField<T>` — **sélecteur inline générique réutilisable**
-/// (interne, E11b-2, AD-2/AD-13).
+/// (interne, invariants AD-2, AD-13).
 ///
-/// origine: `ZCurrencyField` (devise) et `ZStateField` (état/province), ainsi que
-/// le sous-champ `region` de `ZAddressField`, ont tous besoin du **même**
-/// comportement de sélection que le picker pays d'E11a-2 : une **cible tactile
-/// ≥48 dp** (Semantics **opérable** MEDIUM-2) qui déplie un **panneau recherche +
-/// liste** (`ListView.builder`). Pour **ne pas dupliquer** la logique a11y/RTL
-/// (retro E10 AI-E10-1) entre les nouveaux champs, ce widget la factorise **une
-/// seule fois**, paramétré par des accesseurs (`itemKey`/`itemTitle`/…).
+/// `ZCurrencyField` (devise) et `ZStateField` (état/province), ainsi que le
+/// sous-champ `region` de `ZAddressField`, ont tous besoin du **même**
+/// comportement de sélection que le picker pays : une **cible tactile
+/// ≥48 dp** (Semantics **opérable**) qui déplie un **panneau recherche +
+/// liste** (`ListView.builder`). Pour **ne pas dupliquer** la logique
+/// a11y/RTL entre ces champs, ce widget la factorise **une seule fois**,
+/// paramétré par des accesseurs (`itemKey`/`itemTitle`/…).
 ///
-/// **AD-2** : `TextEditingController`/`FocusNode` de recherche créés **1×**
-/// (`initState`), disposés, jamais recréés. Aucune reconstruction globale : la
-/// recherche déclenche un `setState` **local**.
+/// **Invariant AD-2** : `TextEditingController`/`FocusNode` de recherche
+/// créés **1×** (`initState`), disposés, jamais recréés. Aucune
+/// reconstruction globale : la recherche déclenche un `setState` **local**.
 ///
-/// **AD-13** : trigger + items Semantics **opérables** (action `tap` sur le nœud
-/// englobant), cibles **≥ 48 dp**, thème injecté (`ZcrudTheme.of`), directionnel.
+/// **Invariant AD-13** : trigger + items Semantics **opérables** (action
+/// `tap` sur le nœud englobant), cibles **≥ 48 dp**, thème injecté
+/// (`ZcrudTheme.of`), directionnel.
 ///
-/// **ZDisplayState (CR-IFFD-38)** : l'état « déplié » accepte un
-/// [ZOptionPickerField.openController] **optionnel**. Sans lui, comportement
-/// **strictement inchangé** (état interne). Avec lui, le contrôleur est **LA
-/// source de vérité** — aucun miroir n'est conservé (cf. [ZDisplayStateBinding]).
-/// Toute fermeture décidée par le composant (sélection, `readOnly`) est écrite
-/// **à travers** le contrôleur : l'hôte ne peut donc jamais croire le panneau
-/// ouvert alors qu'il est fermé.
+/// **État d'affichage** : l'état « déplié » accepte un
+/// [ZOptionPickerField.openController] **optionnel**. Sans lui,
+/// comportement **strictement inchangé** (état interne). Avec lui, le
+/// contrôleur est **la source de vérité** — aucun miroir n'est conservé
+/// (cf. [ZDisplayStateBinding]). Toute fermeture décidée par le composant
+/// (sélection, `readOnly`) est écrite **à travers** le contrôleur : l'hôte
+/// ne peut donc jamais croire le panneau ouvert alors qu'il est fermé.
 ///
-/// **Interne** : jamais exporté par le barrel ; n'expose aucun type de lib tierce.
+/// **Interne** : jamais exporté par le barrel ; n'expose aucun type de lib
+/// tierce.
 library;
 
 import 'package:flutter/material.dart';
@@ -34,16 +36,16 @@ import 'package:zcrud_core/zcrud_core.dart';
 class ZOptionPickerField<T> extends StatefulWidget {
   /// Construit le sélecteur.
   ///
-  /// - [keyPrefix] : préfixe des `Key` de test (`<prefix>-trigger`/`-search`/
-  ///   `-item-<key>`), ex. `"z-currency"` / `"z-state"` ;
-  /// - [search] : filtre les options selon la requête courante ;
-  /// - [itemKey]/[itemTitle] : clé stable + libellé d'une option ;
-  /// - [itemLeading]/[itemTrailing] : décor optionnel (symbole/code) ;
-  /// - [selectedTitle]/[selectedLeading] : affichage de l'option sélectionnée ;
-  /// - [onSelected] : émet l'option choisie ;
-  /// - [searchable] : masque la boîte de recherche si `false` (option neutre) ;
-  /// - [readOnly] : déploiement désactivé ;
-  /// - [openController] : commande **optionnelle** du déploiement par l'hôte.
+  /// - [keyPrefix]: préfixe des `Key` de test (`<prefix>-trigger`/`-search`/
+  ///   `-item-<key>`), ex. `"z-currency"` / `"z-state"`;
+  /// - [search]: filtre les options selon la requête courante;
+  /// - [itemKey]/[itemTitle]: clé stable + libellé d'une option;
+  /// - [itemLeading]/[itemTrailing]: décor optionnel (symbole/code);
+  /// - [selectedTitle]/[selectedLeading]: affichage de l'option sélectionnée;
+  /// - [onSelected]: émet l'option choisie;
+  /// - [searchable]: masque la boîte de recherche si `false` (option neutre);
+  /// - [readOnly]: déploiement désactivé;
+  /// - [openController]: commande **optionnelle** du déploiement par l'hôte.
   const ZOptionPickerField({
     required this.keyPrefix,
     required this.search,
@@ -64,15 +66,15 @@ class ZOptionPickerField<T> extends StatefulWidget {
     super.key,
   });
 
-  /// Décoration **thémée** du déclencheur (CR-DODLP-INTL-DECORATION).
+  /// Décoration **thémée** du déclencheur.
   ///
   /// `null` ⇒ rendu **strictement inchangé** (chemin des champs devise/état, qui
   /// ne sont pas dans le périmètre de la CR). Fournie ⇒ le déclencheur est rendu
-  /// par un `InputDecorator`, comme `ZDecoratedFieldTrigger` du cœur : libellé
+  /// par un `InputDecorator`, comme `ZDecoratedFieldTrigger` du cœur: libellé
   /// au repos quand vide / flottant quand rempli, chevron en `suffixIcon` sauf
   /// si un ornement de fin est déjà déclaré.
   ///
-  /// Une décoration **sans libellé** signale le mode `bare` : le nœud sémantique
+  /// Une décoration **sans libellé** signale le mode `bare`: le nœud sémantique
   /// n'en pose alors aucun (l'ancêtre `ZLargeFieldCard` le porte).
   final InputDecoration? decoration;
 
@@ -121,7 +123,7 @@ class ZOptionPickerField<T> extends StatefulWidget {
   /// Commande **optionnelle** du déploiement depuis l'hôte (AD-4).
   ///
   /// `null` ⇒ le champ se gouverne seul, comportement **strictement inchangé**.
-  /// Fourni ⇒ il devient la **source de vérité** de l'ouverture : l'hôte peut
+  /// Fourni ⇒ il devient la **source de vérité** de l'ouverture: l'hôte peut
   /// déplier (retour de validation pointant le champ fautif, bouton « choisir »
   /// placé ailleurs, restauration d'état) **et** replier (navigation).
   ///
@@ -136,12 +138,12 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
   late final TextEditingController _searchController;
   late final FocusNode _searchFocus;
 
-  /// État « déplié » : interne par défaut, **traversant** vers
+  /// État « déplié »: interne par défaut, **traversant** vers
   /// [ZOptionPickerField.openController] dès qu'il est fourni. Aucun miroir
   /// `bool` n'est conservé ⇒ les deux états ne peuvent pas diverger.
   late final ZDisplayStateBinding<bool> _open;
 
-  /// Vrai pendant `didUpdateWidget` : le rebuild vient de toute façon, un
+  /// Vrai pendant `didUpdateWidget`: le rebuild vient de toute façon, un
   /// `setState` y serait illégal (on est dans la phase de build).
   bool _inDidUpdate = false;
 
@@ -169,10 +171,10 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
 
   @override
   void dispose() {
-    // Anti-fuite (learning E5) : libérer contrôleur + focus de recherche.
+    // Anti-fuite (learning E5): libérer contrôleur + focus de recherche.
     _searchController.dispose();
     _searchFocus.dispose();
-    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // La liaison ne dispose JAMAIS le contrôleur de l'hôte: il ne nous
     // appartient pas (son propriétaire est un `State` de l'hôte).
     _open.listenable.removeListener(_onOpenChanged);
     _open.dispose();
@@ -185,7 +187,7 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
     setState(() {});
   }
 
-  /// `readOnly` **prime** : le panneau ne se déplie jamais. On REND alors la
+  /// `readOnly` **prime**: le panneau ne se déplie jamais. On REND alors la
   /// vérité au contrôleur (post-frame, pour ne jamais écrire pendant un build)
   /// — sans quoi l'hôte croirait le sélecteur ouvert alors qu'il est fermé.
   void _scheduleReadOnlyClose() {
@@ -209,7 +211,7 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
   void _select(T item) {
     widget.onSelected(item);
     _searchController.clear();
-    // Fermeture décidée par le composant : elle passe **par** le contrôleur.
+    // Fermeture décidée par le composant: elle passe **par** le contrôleur.
     _open.value = false;
   }
 
@@ -249,18 +251,18 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
       button: !widget.readOnly,
       label: semLabel,
       value: display,
-      // MEDIUM-2 (AD-13) : action de tap SUR le nœud englobant → opérable au
-      // lecteur d'écran malgré `ExcludeSemantics`.
+      // Invariant AD-13 : action de tap SUR le nœud englobant → opérable
+      // au lecteur d'écran malgré `ExcludeSemantics`.
       onTap: widget.readOnly ? null : _toggle,
       child: ExcludeSemantics(
         child: InkWell(
           key: Key('${widget.keyPrefix}-trigger'),
           onTap: widget.readOnly ? null : _toggle,
-          // AD-13 : cible tactile portée par la CONTRAINTE LIANTE, jamais par
-          // la hauteur intrinsèque de l'`InputDecorator`. 🔴 La contrainte est
+          // AD-13: cible tactile portée par la CONTRAINTE LIANTE, jamais par
+          // la hauteur intrinsèque de l'`InputDecorator`. La contrainte est
           // NOMMÉE (`<prefix>-tap-target`) pour qu'une garde vise la NÔTRE et
           // non le maximum des `ConstrainedBox` descendants (motif daté
-          // 2026-08-10 : une garde du paquet mesurait le plancher d'un tiers).
+          // 2026-08-10: une garde du paquet mesurait le plancher d'un tiers).
           child: ConstrainedBox(
             key: Key('${widget.keyPrefix}-tap-target'),
             constraints: const BoxConstraints(minHeight: 48),
@@ -307,7 +309,7 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
     bool hint = false,
   }) {
     final materialTheme = Theme.of(context);
-    // FR-26 : aucune couleur en dur.
+    // Aucune couleur en dur.
     final style = withChevron
         ? TextStyle(color: theme.labelColor)
         : hint
@@ -337,7 +339,7 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
         controller: _searchController,
         focusNode: _searchFocus,
         textAlign: TextAlign.start,
-        // Fabrique THÉMÉE du cœur : le panneau déplié ne peut pas rester en
+        // Fabrique THÉMÉE du cœur: le panneau déplié ne peut pas rester en
         // trait souligné sous un déclencheur encarté.
         decoration: theme.inputDecoration(
           context,
@@ -376,7 +378,7 @@ class _ZOptionPickerFieldState<T> extends State<ZOptionPickerField<T>> {
                 container: true,
                 button: true,
                 label: title,
-                // MEDIUM-2 : action de sélection portée par le nœud englobant.
+                // Action de sélection portée par le nœud englobant.
                 onTap: () => _select(item),
                 child: ExcludeSemantics(
                   child: ListTile(

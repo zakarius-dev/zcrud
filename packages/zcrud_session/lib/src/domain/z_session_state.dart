@@ -1,16 +1,18 @@
-/// État IMMUABLE d'une session (`ZSessionState`) — ES-4.2, D1 (value-object).
+/// État immuable d'une session, en value-object.
 ///
-/// Le moteur (`ZStudySessionEngine`) détient un `ZSessionState` **immuable** et
-/// l'expose en lecture seule ; les transitions passent par un **reducer PUR**
-/// (`reduceGrade`, cf. `z_study_session_engine.dart`) qui **retourne un nouvel
-/// état** (jamais de mutation en place). Value-object : `==`/`hashCode`
-/// **profonds** (égalité de file) ⇒ le moteur ne `notifyListeners()` que si
-/// l'état a **réellement** changé (granularité AD-2, AC8).
+/// Le moteur (`ZStudySessionEngine`) détient un `ZSessionState` immuable et
+/// l'expose en lecture seule ; les transitions passent par un reducer pur
+/// (`reduceGrade`, voir le fichier du moteur) qui retourne un nouvel état,
+/// jamais une mutation en place. Value-object : `==`/`hashCode` profonds
+/// (égalité de file) ⇒ le moteur ne notifie ses écouteurs que si l'état a
+/// réellement changé, conformément à la granularité de rebuild exigée par
+/// l'invariant AD-2.
 ///
-/// La [queue] contient les cartes **encore à réviser**, dans l'ordre courant ;
-/// [cursor] est l'index de la carte **courante**. Une carte réussie (`q ≥
-/// passThreshold`) **quitte** la file ; une carte en lapse est **réinsérée**
-/// plus loin (offset +2/+4, D2) — elle reste donc `remaining` jusqu'à réussite.
+/// La [queue] contient les cartes encore à réviser, dans l'ordre courant ;
+/// [cursor] est l'index de la carte courante. Une carte réussie (qualité
+/// supérieure ou égale au seuil de réussite) quitte la file ; une carte en
+/// lapse est réinsérée plus loin dans la file — elle reste donc comptée
+/// dans [remaining] jusqu'à réussite.
 library;
 
 import 'package:flutter/foundation.dart' show listEquals;
@@ -32,9 +34,9 @@ class ZSessionState {
     this.error,
   });
 
-  /// Amorce une session à partir d'une file **déjà sélectionnée** (le moteur ne
-  /// re-sélectionne pas — la sélection est portée par `ZStudySessionSelector`,
-  /// kernel). Curseur en tête, compteurs à zéro, aucune erreur.
+  /// Amorce une session à partir d'une file déjà sélectionnée — le moteur ne
+  /// re-sélectionne pas, la sélection est portée en amont par
+  /// `ZStudySessionSelector`. Curseur en tête, compteurs à zéro, aucune erreur.
   factory ZSessionState.initial(
     List<ZSessionItem> items, {
     ZReviewMode mode = ZReviewMode.spaced,
@@ -48,32 +50,34 @@ class ZSessionState {
         error: null,
       );
 
-  /// File des cartes **encore à réviser**, dans l'ordre courant (les cartes en
+  /// File des cartes encore à réviser, dans l'ordre courant (les cartes en
   /// lapse y sont réinsérées ; les cartes réussies en sont retirées).
   final List<ZSessionItem> queue;
 
-  /// Index de la carte **courante** dans [queue].
+  /// Index de la carte courante dans [queue].
   final int cursor;
 
-  /// Nombre de cartes **réussies** (consommées via `q ≥ passThreshold`). Un
-  /// lapse ne l'incrémente **jamais** (la carte reste `remaining`, AC7).
+  /// Nombre de cartes réussies (qualité au moins égale au seuil de
+  /// réussite). Un lapse ne l'incrémente jamais : la carte reste comptée
+  /// dans [remaining].
   final int reviewed;
 
-  /// Nombre d'événements de **lapse** (grades `q < passThreshold`).
+  /// Nombre d'événements de lapse (qualité sous le seuil de réussite).
   final int lapses;
 
   /// Mode de session (défaut `spaced`).
   final ZReviewMode mode;
 
-  /// Dernier échec de review **exposé** (jamais avalé, AD-5/R6) ; `null` si la
-  /// dernière transition a réussi ou n'a rien fait.
+  /// Dernier échec de review exposé (jamais avalé silencieusement,
+  /// invariant AD-5) ; `null` si la dernière transition a réussi ou n'a rien
+  /// fait.
   final ZFailure? error;
 
   /// Carte courante, ou `null` si la file est vide ([isComplete]).
   ZSessionItem? get current =>
       cursor >= 0 && cursor < queue.length ? queue[cursor] : null;
 
-  /// `true` quand toutes les cartes ont été consommées **et** qu'aucune n'attend
+  /// `true` quand toutes les cartes ont été consommées et qu'aucune n'attend
   /// une réinsertion (file vide).
   bool get isComplete => queue.isEmpty;
 
@@ -102,7 +106,7 @@ class ZSessionState {
       );
 
   /// État identique mais portant [failure] comme erreur exposée (file
-  /// **inchangée** — utilisé quand le seam de review renvoie `Left`, D5/AC6).
+  /// inchangée) — utilisé quand le seam de review renvoie un échec.
   ZSessionState withError(ZFailure failure) => copyWith(error: failure);
 
   @override

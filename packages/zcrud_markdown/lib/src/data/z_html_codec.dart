@@ -1,4 +1,4 @@
-/// `ZHtmlCodec` — codec Delta ↔ **HTML** (AD-7, DP-4 / gap B5). Round-trip
+/// `ZHtmlCodec` — codec Delta ↔ **HTML** (AD-7, gap B5). Round-trip
 /// **borné** au sous-ensemble exprimable en Delta, avec pertes DOCUMENTÉES.
 library;
 
@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 // Libs de conversion ISOLÉES (AD-1) — au SEUL pubspec zcrud_markdown. Aucun de
 // ces types (`QuillDeltaToHtmlConverter`, `HtmlToDelta`, `Delta`) n'apparaît
 // dans la signature publique de `ZCodec`/`registerZHtmlFields`. Ce sont les
-// MÊMES libs qu'utilise DODLP (`rich_text_editor_screen.dart:12-13`).
+// MÊMES libs qu'utilise l'éditeur historique (`rich_text_editor_screen.dart:12-13`).
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart'
     as html_from;
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart'
@@ -15,21 +15,21 @@ import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart'
 import '../domain/z_codec.dart';
 import 'delta_neutral_ops.dart';
 
-/// Codec **HTML** : le format persisté est une `String` HTML (DP-4 / B5).
+/// Codec **HTML** : le format persisté est une `String` HTML (B5).
 ///
 /// ## Décision de conception (B5) — extension `zcrud_markdown` via `ZCodec`
 ///
-/// Le type de champ `html`/`inlineHtml` de DODLP est un **FORMAT DE PERSISTANCE
+/// Le type de champ `html`/`inlineHtml` de l'éditeur historique est un **FORMAT DE PERSISTANCE
 /// au-dessus d'un contenu Delta** (`HtmlToDelta` à l'ouverture,
 /// `QuillDeltaToHtmlConverter` à la sauvegarde). C'est EXACTEMENT le rôle d'un
 /// [ZCodec] (AD-7) : `ZHtmlCodec` réutilise l'éditeur/lecteur rich-text isolé
 /// (`ZMarkdownField.fromContext` / `ZMarkdownReader` / dialog plein-écran de
-/// DP-3) plutôt qu'un WYSIWYG HTML tiers (`html_editor_enhanced` + WebView).
+/// ) plutôt qu'un WYSIWYG HTML tiers (`html_editor_enhanced` + WebView).
 /// Cela respecte AD-7 (Delta interne + `ZCodec` pluggable), AD-1 (aucun SDK
-/// d'éditeur ni type de contenu HTML natif exposé) et SM-1/AD-2 (le codec opère
+/// d'éditeur ni type de contenu HTML natif exposé) et /AD-2 (le codec opère
 /// HORS du chemin chaud de frappe). Un futur besoin WYSIWYG HTML natif resterait
 /// un **satellite distinct** (`zcrud_html`) enregistrant son propre builder sur
-/// les mêmes kinds — **hors périmètre** DP-4.
+/// les mêmes kinds — **hors périmètre**.
 ///
 /// - [encode] : ops Delta neutres → **`String` HTML** (via
 ///   `vsc_quill_delta_to_html`, isolée). `encode(const [])` → `''`. Défensif :
@@ -40,7 +40,7 @@ import 'delta_neutral_ops.dart';
 ///   throw. Une valeur `List` (Delta legacy déjà neutre) est tolérée et
 ///   normalisée en ops neutres (via [DeltaNeutralOps]), comme `ZMarkdownCodec`.
 ///
-/// ## Table des pertes (round-trip borné — DP-4 / AC1)
+/// ## Table des pertes (round-trip borné)
 ///
 /// Le round-trip `decode(encode(ops))` PRÉSERVE la sémantique du **sous-ensemble
 /// commun HTML↔Delta** (vérifié par test) : paragraphes, titres H1–H6, gras,
@@ -54,13 +54,13 @@ import 'delta_neutral_ops.dart';
 /// | `code` **inline**               | balise `<code>` émise à l'encode, mais |
 /// |                                 | non re-parsée au décode → l'attribut   |
 /// |                                 | est **perdu**, le TEXTE survit         |
-/// | Embed LaTeX/tableau (E6-3/E6-4) | dégradé en placeholder **textuel**     |
+/// | Embed LaTeX/tableau | dégradé en placeholder **textuel** |
 /// |                                 | `[embed:<type>]`, texte environnant    |
 /// |                                 | PRÉSERVÉ (perte **BORNÉE** à l'embed)  |
 /// | Attributs non standard / styles | non ré-exprimés → **perdus**           |
 /// | exotiques hors sous-ensemble    |                                        |
 ///
-/// > PERTE BORNÉE (HIGH-1) : un embed opaque au MILIEU du texte ne fait **jamais**
+/// > PERTE BORNÉE : un embed opaque au MILIEU du texte ne fait **jamais**
 /// > échouer la conversion ni vider le document — il est remplacé AVANT
 /// > conversion par un placeholder textuel (`[embed:latex]`, `[embed:table]`, …)
 /// > tandis que TOUT le texte non-embed survit. La perte est cantonnée à l'embed.
@@ -69,9 +69,9 @@ import 'delta_neutral_ops.dart';
 /// jamais silencieuses ni fatales. Pour un round-trip **sans perte**, utiliser
 /// `ZDeltaCodec` (format persisté = Delta).
 ///
-/// NOTE embeds LaTeX HTML : DODLP mappe des fragments LaTeX HTML ↔ embeds via un
+/// NOTE embeds LaTeX HTML : l'éditeur historique mappe des fragments LaTeX HTML ↔ embeds via un
 /// `CustomHtmlPart` (`latex_html_part.dart`). Ce mapping fin est **hors périmètre
-/// DP-4** (non requis pour la migration de base) : un fragment HTML non
+/// ** (non requis pour la migration de base) : un fragment HTML non
 /// convertible dégrade proprement en texte (AD-10), jamais de throw.
 final class ZHtmlCodec implements ZCodec {
   /// Codec `const` (aucun état mutable).
@@ -81,7 +81,7 @@ final class ZHtmlCodec implements ZCodec {
   Object? encode(List<Map<String, dynamic>> deltaOps) {
     if (deltaOps.isEmpty) return '';
     try {
-      // PERTE BORNÉE (HIGH-1) : les `insert` embed opaques (Map) — non
+      // PERTE BORNÉE : les `insert` embed opaques (Map) — non
       // exprimables en HTML de façon stable — sont remplacés par un placeholder
       // textuel AVANT conversion ; seul l'embed dégrade, le texte environnant
       // survit. Le convertisseur reçoit des ops NEUTRES (`List<Map>`) — aucun

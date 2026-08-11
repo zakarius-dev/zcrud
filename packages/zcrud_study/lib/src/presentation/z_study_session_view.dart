@@ -43,7 +43,7 @@
 /// | [summaryBuilder] | **absent de l'arbre** |
 /// | [emptyBuilder] | repli par défaut **observable** (AD-10 : jamais un vide) |
 ///
-/// 🔴 Un slot additif nul est retiré par une **absence de nœud**
+/// Un slot additif nul est retiré par une **absence de nœud**
 /// (`if (b != null) …` dans la liste d'enfants), **jamais** par un
 /// `SizedBox.shrink()` inerte : un tel placeholder occupe une place dans le
 /// `Column`, participe au calcul de flex, et rend l'assertion « le slot est
@@ -91,7 +91,7 @@ typedef ZStudySessionCounterBuilder = Widget Function(
 
 /// Construit la surface de saisie **et** de notation de la carte de devant.
 ///
-/// 🔴 Reçoit le [ZSessionItem] — **jamais un index**. C'est le piège su-7 fermé
+/// Reçoit le [ZSessionItem] — **jamais un index**. C'est le piège su-7 fermé
 /// par la signature elle-même : la vue ne dispose d'aucun index à passer.
 typedef ZStudySessionGradingBuilder = Widget Function(
   BuildContext context,
@@ -458,7 +458,7 @@ class _ProgressSlice extends StatelessWidget {
 
 /// Tranche « pile » — n'écoute que [ZStudySessionSlices.queue].
 ///
-/// 🔴 C'est ici que vit la `key` d'identité de file (su-4 D1). Elle est
+/// C'est ici que vit la `key` d'identité de file (su-4 D1). Elle est
 /// recalculée **à chaque valeur de la tranche**, jamais figée au montage.
 class _StackSlice extends StatelessWidget {
   const _StackSlice({

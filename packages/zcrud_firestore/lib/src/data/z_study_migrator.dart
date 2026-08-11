@@ -314,9 +314,9 @@ class ZLegacyStudyMigrator {
     // `uploading` : exactement le TRAP que la garde d'idempotence devait
     // franchir. `opaqueKeys` la neutralisait.
     final opaque = _codec.opaqueKeys;
-    // ⚠️ ÉLARGISSEMENT (banc d'invariants, 2026-07-22) — le principe de
-    // CR-IFFD-7 (« la détection doit refléter la conversion ») ne valait
-    // qu'à moitié : `opaqueKeys` était enjambé, mais la détection descendait
+    // ÉLARGISSEMENT — le principe « la détection doit refléter la
+    // conversion » ne valait qu'à moitié : `opaqueKeys` était enjambé, mais
+    // la détection descendait
     // TOUJOURS dans les sous-structures, y compris quand `recurseNested` est
     // FALSE — c'est-à-dire quand la conversion, elle, ne descend PAS.
     //

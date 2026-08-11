@@ -1,12 +1,12 @@
 /// Évaluateur **pur** d'une [ZCondition] déclarative contre l'état de formulaire
-/// (E3-4, AD-2). C'est le pendant **runtime** de la structure `const` posée par
-/// [ZCondition] (E2-4) : la donnée est évaluée ici, JAMAIS par une closure portée
-/// par l'annotation (cause historique du focus perdu — cf. `z_condition.dart`).
+/// (invariant AD-2). C'est le pendant **runtime** de la structure `const`
+/// posée par [ZCondition] : la donnée est évaluée ici, JAMAIS par une closure
+/// portée par l'annotation (cf. `z_condition.dart`).
 ///
-/// **Pur-Dart** (couche `domain`, garde `domain_purity_test.dart`) : aucune
-/// dépendance Flutter, aucun état. L'évaluation lit les valeurs de champ via une
-/// fonction d'accès [ZValueOf] injectée (typiquement `ZFormController.valueOf`),
-/// ce qui découple l'évaluateur du moteur réactif (AD-2 : la souscription CIBLÉE
+/// **Pur-Dart** (couche `domain`) : aucune dépendance Flutter, aucun état.
+/// L'évaluation lit les valeurs de champ via une fonction d'accès [ZValueOf]
+/// injectée (typiquement `ZFormController.valueOf`), ce qui découple
+/// l'évaluateur du moteur réactif (invariant AD-2 : la souscription CIBLÉE
 /// aux champs de garde vit en présentation, pas ici).
 ///
 /// **Frontière AD-2** : cet évaluateur est *sans effet* — il ne déclenche aucun
@@ -24,7 +24,7 @@ typedef ZValueOf = Object? Function(String field);
 
 /// Évalue [condition] contre l'état lu via [valueOf] et retourne sa vérité.
 ///
-/// **Accesseurs par source (DP-2, B3)** : chaque feuille désigne sa source de
+/// **Accesseurs par source** : chaque feuille désigne sa source de
 /// valeur ([ZCondition.source]). L'accesseur est résolu AVANT la lecture :
 /// - [ZValueSource.state] → [valueOf] (défaut ; comportement historique) ;
 /// - [ZValueSource.persisted] → [persistedValueOf] (item d'origine / baseline) ;
@@ -43,7 +43,7 @@ typedef ZValueOf = Object? Function(String field);
 ///   et non **vide** (`String`/`Iterable`/`Map` vide ⇒ faux) — cf. [zIsTruthy] ;
 /// - [ZConditionOp.isEmpty] / [ZConditionOp.isNotEmpty] : test de **forme** via
 ///   [zLengthOf] (`== 0` / `> 0`) — reproduit `(list).isNotEmpty` /
-///   `(str ?? '').isEmpty` DODLP (Forme B) ;
+///   `(str ?? '').isEmpty` ;
 /// - [ZConditionOp.lengthEquals]/`lengthGt`/`lengthGte`/`lengthLt`/`lengthLte` :
 ///   comparaison de [zLengthOf] au seuil `condition.length` (`null` ⇒ `0`) ;
 /// - [ZConditionOp.and] : conjonction de TOUS les `operands` (vide ⇒ `true`) ;
@@ -133,7 +133,7 @@ bool evaluateZCondition(
 }
 
 /// Sémantique **partagée** de « valeur vraie » (utilisée par [ZConditionOp.truthy]
-/// et par le filtre `showIfNull`/« champ vide » de la présentation E3-4).
+/// et par le filtre `showIfNull`/« champ vide » du moteur d'édition).
 ///
 /// `false` pour : `null`, le booléen `false`, `0`/`0.0` (numériques), et toute
 /// collection/chaîne **vide** (`String`/`Iterable`/`Map`). `true` sinon — en
@@ -156,8 +156,8 @@ bool zIsTruthy(Object? value) {
 /// - `null` ⇒ `0` ;
 /// - scalaire non-collection (`num`/`bool`/autre) ⇒ `0` (« pas de longueur »).
 ///
-/// **Ne lève jamais** (AD-10). Reproduit `(entries as List).length`,
-/// `(str ?? '').isEmpty` (via `== 0`) des `displayCondition` DODLP (Forme B).
+/// **Ne lève jamais** (invariant AD-10). Reproduit `(entries as List).length`,
+/// `(str ?? '').isEmpty` (via `== 0`).
 int zLengthOf(Object? value) {
   if (value == null) return 0;
   if (value is String) return value.length;
@@ -171,9 +171,9 @@ int zLengthOf(Object? value) {
 ///
 /// C'est le contrat qui permet au sélecteur de visibilité (présentation) de
 /// s'abonner UNIQUEMENT à ces champs — une frappe sur un champ **hors** de cet
-/// ensemble ne déclenche donc AUCUN recalcul de visibilité (SM-1, AD-2).
+/// ensemble ne déclenche donc AUCUN recalcul de visibilité (invariant AD-2).
 ///
-/// **DP-2 (B3)** : seules les feuilles de source [ZValueSource.state] contribuent
+/// Seules les feuilles de source [ZValueSource.state] contribuent
 /// — y compris les nouvelles feuilles de forme (`isNotEmpty`, `length*`). Les
 /// feuilles [ZValueSource.persisted] (baseline **immuable** dans une session) et
 /// [ZValueSource.context] (crud/mode **stables** dans une session) sont **exclues**
@@ -204,7 +204,7 @@ Set<String> zGuardFieldsOf(Iterable<ZCondition?> conditions) {
 /// l'union des `field` de source [ZValueSource.context] (récursif à travers
 /// `and`/`or`/`not`).
 ///
-/// **Companion de [zGuardFieldsOf] (DP-2, B3)** : permet à la présentation de
+/// **Companion de [zGuardFieldsOf]** : permet à la présentation de
 /// recalculer la visibilité **quand le contexte d'édition change** (bascule
 /// `crud`, changement de `mode`, drapeau applicatif) SANS polluer la souscription
 /// par frappe (les clés de contexte ne sont jamais des tranches de champ). Les
@@ -212,7 +212,7 @@ Set<String> zGuardFieldsOf(Iterable<ZCondition?> conditions) {
 /// baseline se lit via `persistedValueOf`, jamais par tranche de champ) : leur
 /// ré-évaluation est signalée en bloc par [zHasPersistedGuard] (un `reset`
 /// restaure la baseline d'origine, mais `reseed`/`markPristine` la **mutent** —
-/// il faut donc recalculer sur `reseedRevision`, cf. DP-2 MEDIUM-1).
+/// il faut donc recalculer sur `reseedRevision`.
 Set<String> zContextGuardKeysOf(Iterable<ZCondition?> conditions) {
   final keys = <String>{};
   void walk(ZCondition? c) {
@@ -237,13 +237,14 @@ Set<String> zContextGuardKeysOf(Iterable<ZCondition?> conditions) {
 /// `true` si au moins une feuille de l'ensemble de conditions lit la source
 /// [ZValueSource.persisted] (récursif à travers `and`/`or`/`not`).
 ///
-/// **Companion « en bloc » de [zGuardFieldsOf]/[zContextGuardKeysOf] (DP-2,
-/// MEDIUM-1)** : la baseline n'est PAS immuable dans une session — `reseed`
+/// **Companion « en bloc » de [zGuardFieldsOf]/[zContextGuardKeysOf]** : la
+/// baseline n'est PAS immuable dans une session — `reseed`
 /// (chargement async d'un item) et `markPristine` la **mutent** (le `reset`, lui,
 /// la restaure). La présentation ne peut donc pas se contenter de l'amorçage : si
 /// une feuille `persisted` existe, elle doit **recalculer la visibilité sur chaque
 /// `reseedRevision`**. Un seul booléen suffit (la valeur se relit via
-/// `persistedValueOf`, jamais par clé de tranche — canal STRUCTUREL, hors SM-1).
+/// `persistedValueOf`, jamais par clé de tranche — canal STRUCTUREL, hors de la
+/// souscription granulaire par frappe).
 bool zHasPersistedGuard(Iterable<ZCondition?> conditions) {
   bool walk(ZCondition? c) {
     if (c == null) return false;

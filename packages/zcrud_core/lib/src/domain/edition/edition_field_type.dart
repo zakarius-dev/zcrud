@@ -1,32 +1,31 @@
-/// Catalogue canonique des **types de champ** du moteur déclaratif `zcrud`
-/// (FR-2). Un même `EditionFieldType` pilote à la fois le widget d'édition
-/// (`DynamicEdition`, E3) et la colonne de liste (`DynamicList`, E4).
+/// Catalogue canonique des **types de champ** du moteur déclaratif `zcrud`.
+/// Un même `EditionFieldType` pilote à la fois le widget d'édition
+/// (`DynamicEdition`) et la colonne de liste (`DynamicList`).
 ///
-/// origine: catalogue de parité DODLP — `docs/technical-inventory.md` §3
-/// (tableau « Type », référence unique de la checklist de parité SM-2).
-/// Vit dans `zcrud_core` (couche `domain`, pur-Dart) — architecture.md:141
-/// (« enum canonique des champs = `EditionFieldType` ») et architecture.md:232
-/// (« Catalogue de champs (FR-2) → `zcrud_core` »). Placer cet enum dans
+/// Vit dans `zcrud_core` (couche `domain`, pur-Dart) : c'est l'enum canonique
+/// des types de champ de tout l'écosystème. Le placer dans
 /// `zcrud_annotations` forcerait l'arête interdite `zcrud_core →
-/// zcrud_annotations` (AD-1, cœur OUT=0) : impossible.
+/// zcrud_annotations` (invariant AD-1, le cœur n'a aucune dépendance
+/// `zcrud_*` sortante) : impossible.
 library;
 
-/// Type déclaratif d'un champ du schéma `zcrud` (source unique authoring ↔
-/// runtime : référencé par `@ZcrudField.type` en authoring et par le futur
-/// `ZFieldSpec.type` en runtime, émis par E2-5).
+/// Type déclaratif d'un champ du schéma `zcrud` — source unique entre le
+/// modèle annoté (`@ZcrudField.type`) et le schéma runtime (`ZFieldSpec.type`,
+/// produit par le générateur).
 ///
-/// **Enum ouvert (AD-4)** : la valeur [custom] absorbe toute extension de type
-/// projetée par une app hôte. Pour toute (dé)sérialisation d'introspection
-/// future, appliquer la discipline `@JsonKey(unknownEnumValue: custom)` (les
-/// valeurs d'enum restent en camelCase — canonique §5). L'enum lui-même n'est
-/// pas persisté en E2-4 ; la discipline est posée pour l'aval.
+/// **Enum ouvert (invariant AD-4)** : la valeur [custom] absorbe toute
+/// extension de type projetée par une app hôte. Pour toute (dé)sérialisation
+/// d'introspection future, appliquer la discipline
+/// `@JsonKey(unknownEnumValue: custom)` (les valeurs d'enum restent en
+/// camelCase). L'enum lui-même n'est pas persisté.
 ///
 /// **Résolution du widget déférée** : certains types ont leur widget hors du
-/// cœur ([markdown]/[inlineMarkdown]/[richText] → E6 ; [geoArea]/[location] →
-/// zcrud_geo/E11a ; [phoneNumber]/[country]/[address] → zcrud_intl/E11a). L'enum
-/// les **nomme** ; leur widget est servi runtime via `ZTypeRegistry` (E3-3b).
+/// cœur ([markdown]/[inlineMarkdown]/[richText] dans `zcrud_markdown` ;
+/// [geoArea]/[location] dans `zcrud_geo` ; [phoneNumber]/[country]/[address]
+/// dans `zcrud_intl`). L'enum les **nomme** ; leur widget est servi au runtime
+/// via `ZTypeRegistry`.
 ///
-/// **Cas limites documentés (technical-inventory §3)** :
+/// **Cas limites documentés** :
 /// - [icon] : **hors parité MVP** (non implémenté à la source ; déclaré comme
 ///   valeur, fallback au rendu).
 /// - [password] : `text` + validateur (valeur d'enum distincte, **pas** de
@@ -74,8 +73,8 @@ enum EditionFieldType {
   /// Choix multiple exposé en cases à cocher.
   checkbox,
 
-  /// Relation vers une autre entité (DODLP `crudDataSelect`) : la source
-  /// (repository/stream) est câblée au runtime (E4/ports E2-2), jamais dans
+  /// Relation vers une autre entité : la source
+  /// (repository/stream) est câblée au runtime, jamais dans
   /// l'annotation `const`.
   relation,
 
@@ -103,10 +102,10 @@ enum EditionFieldType {
   /// Point géographique.
   location,
 
-  /// Zone géographique (point/polygone/cercle) — widget en zcrud_geo (E11a).
+  /// Zone géographique (point/polygone/cercle) — widget en zcrud_geo.
   geoArea,
 
-  /// Numéro de téléphone international — widget en zcrud_intl (E11a).
+  /// Numéro de téléphone international — widget en zcrud_intl.
   phoneNumber,
 
   /// Pays (picker).
@@ -131,23 +130,23 @@ enum EditionFieldType {
   icon,
 
   /// Code PIN / OTP (saisie segmentée). Valeur **neutre** `String` (AD-53).
-  /// **Widget servi ailleurs** : `zcrud_field_extras` (fp-5-2, `pinput`) via
+  /// **Widget servi ailleurs** : `zcrud_field_extras` via
   /// `ZWidgetRegistry` ; tant que le `kind` n'est pas enregistré, le champ
   /// dégrade proprement en `ZUnsupportedFieldWidget` (jamais un crash). Le cœur
   /// ne **nomme** que le type (famille `registryOrFallback`) — aucune dépendance
-  /// lourde tirée ici (AD-1, CORE OUT=0).
+  /// lourde tirée ici (invariant AD-1).
   pin,
 
   /// Saisie **auto-complétée** (champ texte + suggestions). Valeur **neutre**
   /// `String` (AD-53). **Widget servi ailleurs** : `zcrud_field_extras`
-  /// (fp-5-2) via `ZWidgetRegistry` ; repli `ZUnsupportedFieldWidget` tant que
+  /// via `ZWidgetRegistry` ; repli `ZUnsupportedFieldWidget` tant que
   /// non enregistré. Le cœur ne nomme que le type (famille `registryOrFallback`,
   /// aucune dépendance lourde — AD-1).
   autocomplete,
 
   /// Table **éditable** (grille de lignes/colonnes). Valeur **neutre**
   /// `List<Map<String, dynamic>>` (AD-53). **Widget servi ailleurs** :
-  /// `zcrud_field_extras` (fp-5-2, table virtualisée) via `ZWidgetRegistry` ;
+  /// `zcrud_field_extras` via `ZWidgetRegistry` ;
   /// repli `ZUnsupportedFieldWidget` tant que non enregistré. Le cœur ne nomme
   /// que le type (famille `registryOrFallback`, aucune dépendance lourde —
   /// AD-1).
@@ -160,7 +159,7 @@ enum EditionFieldType {
   /// [name] (`'mediaImage'`) ; tant que le `kind` n'est pas enregistré, le
   /// champ dégrade proprement en `ZUnsupportedFieldWidget` (jamais un crash,
   /// AD-10). Le cœur ne **nomme** que le type (famille `registryOrFallback`) —
-  /// aucune dépendance média lourde tirée ici (AD-1, CORE OUT=0). Distinct du
+  /// aucune dépendance média lourde tirée ici (invariant AD-1). Distinct du
   /// type natif [image] (routé, lui, vers `ZAppFileField`).
   mediaImage,
 
@@ -179,10 +178,10 @@ enum EditionFieldType {
   /// lourde (AD-1).
   mediaVideo,
 
-  /// Markdown riche (bloc) — widget en zcrud_markdown (E6).
+  /// Markdown riche (bloc) — widget en zcrud_markdown.
   markdown,
 
-  /// Markdown en ligne — widget en zcrud_markdown (E6).
+  /// Markdown en ligne — widget en zcrud_markdown.
   inlineMarkdown,
 
   /// HTML riche (bloc).
@@ -191,7 +190,7 @@ enum EditionFieldType {
   /// HTML en ligne.
   inlineHtml,
 
-  /// Texte riche (Delta interne) — widget en zcrud_markdown (E6).
+  /// Texte riche (Delta interne) — widget en zcrud_markdown.
   richText,
 
   /// Regroupement multi-étapes (`stepper`).

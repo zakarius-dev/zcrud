@@ -1,13 +1,13 @@
-/// Poids d'un **formulaire d'édition** (EX-UI.5, AD-30) — enum PUR de domaine.
+/// Poids d'un **formulaire d'édition** — enum PUR de domaine.
 ///
 /// [ZFormWeight] qualifie la « lourdeur » d'un formulaire (nombre/richesse des
 /// champs). C'est le critère qui départage, sur **grand écran** (`expanded`), un
 /// mode `dialog` d'un mode `page` (cf. [ZPresentationPolicy]). C'est un **enum**
-/// — **jamais** un `bool isHeavy`/`isLong` (NFR-U7, « enums > booléens ») : un
-/// booléen se prêterait mal à un futur palier intermédiaire.
+/// — **jamais** un `bool isHeavy`/`isLong` : un booléen se prêterait mal à un
+/// futur palier intermédiaire.
 ///
-/// **Domaine pur (AD-5/AD-14)** : aucun `import 'package:flutter/...'`, aucun
-/// `BuildContext`.
+/// **Domaine pur (invariants AD-5/AD-14)** : aucun `import 'package:flutter/...'`,
+/// aucun `BuildContext`.
 library;
 
 /// Poids d'un formulaire d'édition (valeurs **camelCase**).

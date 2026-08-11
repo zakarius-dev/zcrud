@@ -1,12 +1,14 @@
-/// `ZStudyToolsSectionSpec` — descripteur PARAMÉTRIQUE d'une section « study
-/// tools » (AD-25, forme de référence IFFD `folder_study_tools_page.dart`).
+/// `ZStudyToolsSectionSpec` — descripteur paramétrique d'une section
+/// « study tools » (rail de flashcards, grille de documents, de notes, de
+/// cartes mentales…).
 ///
-/// Data-class de PRÉSENTATION immuable (`const`) : elle décrit *quoi* rendre
-/// (titre + compteur, items paginés par `itemBuilder`, état vide, action
-/// d'ajout) SANS jamais référencer un modèle d'app (`FlashcardModel` & co.) ni
-/// coder en dur une `Color`/`IconData`/un label — couleurs, libellés et l10n
-/// sont FOURNIS par l'appelant (injectés, AD-13/FR-26). Le descripteur n'est
-/// PAS l'entité domaine : c'est une projection présentation paramétrique.
+/// Data-class de présentation immuable (`const`) : elle décrit ce qu'il faut
+/// rendre (titre et compteur, items paginés par `itemBuilder`, état vide,
+/// action d'ajout) sans jamais référencer un modèle d'application, ni coder
+/// en dur une `Color`, une `IconData` ou un libellé — couleurs, libellés et
+/// localisation sont fournis par l'appelant (invariant AD-13). Le
+/// descripteur n'est pas l'entité domaine : c'est une projection de
+/// présentation paramétrique.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -29,79 +31,67 @@ import 'z_default_mindmap_card.dart';
 import 'z_flashcard_card_reference.dart';
 import 'z_rail_item.dart';
 
-/// Espacement de RÉFÉRENCE entre deux items d'un rail horizontal
-/// (**CR-IFFD-62 ④**) — 12 dp, mesuré sur le legacy IFFD
-/// (`Padding(EdgeInsets.only(right: 12))` autour de chaque `FlashcardCard`,
-/// `folder_study_tools_page.dart:1124-1127`).
+/// Espacement de référence entre deux items d'un rail horizontal — 12 dp.
 ///
-/// C'est le défaut des voies TYPÉES (qui rendent les cartes par défaut) ; le
-/// constructeur principal, lui, garde `gapS` — cf. `railItemGap`.
+/// C'est le défaut des voies typées (qui rendent les cartes par défaut) ; le
+/// constructeur principal, lui, garde `gapS` — voir `railItemGap`.
 const double kZRailItemReferenceGap = 12;
 
-/// Mode de PRÉSENTATION de la poignée de réordonnancement (CR-IFFD-54 ②).
+/// Mode de présentation de la poignée de réordonnancement.
 ///
-/// ## Pourquoi un réglage de SPEC et non un token de thème
-///
-/// Le mode ne déplace pas du chrome : il change le **contrat de geste** de la
-/// section, et sa validité dépend du CONTENU de la section — un item dont la
-/// carte consomme déjà l'appui long ([hiddenLongPress] serait un glisser MORT,
-/// cf. la mesure ci-dessous) ne peut pas être en mode appui-long. Seule la
-/// spec (qui connaît `onCardLongPress` sur les voies typées) peut REFUSER ce
-/// conflit à la construction ; un token de thème l'aurait rendu indétectable
-/// (le thème ne sait rien du contenu). C'est aussi la surface où vit déjà
-/// TOUTE la famille poignée (`reorderHandleIcon`/`reorderHandleSemanticLabel`) —
-/// éclater le mode vers le thème aurait réparti une capacité sur deux
-/// surfaces. Un hôte qui veut des grilles calmes PARTOUT le règle au point
-/// unique où il fabrique ses specs. (Le précédent thème
-/// `studySectionCollapsePlacement` place du chrome uniforme ; il ne change pas
-/// ce qu'un geste FAIT.)
+/// Ce réglage vit sur le descripteur de section plutôt que sur le thème,
+/// parce qu'il ne déplace pas du chrome : il change le contrat de geste de
+/// la section, et sa validité dépend du contenu de la section — un item dont
+/// la carte consomme déjà l'appui long rendrait un mode [hiddenLongPress]
+/// inopérant (glisser mort). Seul le descripteur, qui connaît
+/// `onCardLongPress` sur les voies typées, peut refuser ce conflit à la
+/// construction ; un token de thème l'aurait rendu indétectable puisque le
+/// thème ne sait rien du contenu. C'est aussi la surface où vit déjà toute
+/// la famille de la poignée (`reorderHandleIcon`,
+/// `reorderHandleSemanticLabel`).
 enum ZStudyReorderHandleMode {
-  /// Poignée AFFICHÉE (défaut — rendu strictement inchangé) : glyphe
-  /// `reorderHandleIcon` + nœud `Semantics` ≥ 48 dp sur chaque item.
+  /// Poignée affichée (défaut, rendu inchangé) : glyphe `reorderHandleIcon`
+  /// et nœud `Semantics` ≥ 48 dp sur chaque item.
   visible,
 
-  /// Poignée MASQUÉE, réordonnancement par **appui long sur l'item** (la
-  /// convention de plateforme de la référence IFFD). La sémantique est
-  /// CONSERVÉE (CR-IFFD-54 ②, exigence explicite) :
-  /// - chemin LISTE : les actions sémantiques du SDK
-  ///   (`SliverReorderableList._wrapWithSemantics` — « move up/down/to
-  ///   start/to end », `WidgetsLocalizations`) sont posées sur CHAQUE item
-  ///   indépendamment de toute poignée — prouvé par garde (le lecteur d'écran
-  ///   réordonne encore, poignée absente) ;
-  /// - chemin GRILLE : les actions `reorderMoveBeforeSemanticLabel` /
+  /// Poignée masquée, réordonnancement par appui long sur l'item. La
+  /// sémantique est conservée :
+  /// - côté liste, les actions sémantiques du SDK (« déplacer vers le haut /
+  ///   bas / au début / à la fin ») sont posées sur chaque item
+  ///   indépendamment de toute poignée : le lecteur d'écran réordonne
+  ///   encore, poignée absente ;
+  /// - côté grille, les actions `reorderMoveBeforeSemanticLabel` et
   ///   `reorderMoveAfterSemanticLabel` vivent dans `ZReorderRenderRequest`,
-  ///   PAS dans la poignée (qui n'y a jamais été un déclencheur) — inchangées.
+  ///   pas dans la poignée, qui n'y a jamais été un déclencheur.
   ///
-  /// 🔴 **Conflit de geste MESURÉ** (2026-08-04, gardes CR-54) : une carte qui
-  /// consomme l'appui long (`onLongPress` d'`InkWell`) GAGNE l'arène de gestes
-  /// contre `LongPressDraggable` (grille) comme contre
-  /// `ReorderableDelayedDragStartListener` (liste) — le drag ne démarre
-  /// JAMAIS depuis la carte (mesuré : `moves=[]`, callback carte invoqué). En
-  /// mode [visible] la poignée reste un déclencheur qui échappe à l'InkWell
-  /// de la carte (mesuré : drag OK depuis la poignée) ; en mode masqué il ne
-  /// resterait AUCUN déclencheur tactile. Les voies typées REFUSENT donc
-  /// `hiddenLongPress` + `onCardLongPress` + `onReorder` à la construction
-  /// (assert ; en release, repli AD-10 : mode [visible] — capacité conservée,
-  /// jamais un glisser mort). Sur le constructeur principal, l'`itemBuilder`
-  /// est OPAQUE : le socle ne peut pas détecter un appui long consommé par
-  /// l'item de l'hôte — c'est documenté ici, à l'hôte d'arbitrer.
+  /// Une carte qui consomme déjà l'appui long (`onLongPress` d'`InkWell`)
+  /// gagne l'arène de gestes contre le glisser (grille comme liste) : le
+  /// glisser ne démarre jamais depuis une telle carte. En mode [visible], la
+  /// poignée reste un déclencheur qui échappe à l'`InkWell` de la carte ; en
+  /// mode masqué, il ne resterait aucun déclencheur tactile si la carte
+  /// consomme déjà l'appui long. Les voies typées refusent donc la
+  /// combinaison `hiddenLongPress` + `onCardLongPress` + `onReorder` à la
+  /// construction (assert ; en mode release, repli sur le mode [visible] —
+  /// invariant AD-10, capacité conservée, jamais un glisser mort). Sur le
+  /// constructeur principal, l'`itemBuilder` est opaque : ce paquet ne peut
+  /// pas détecter un appui long consommé par l'item de l'hôte — c'est
+  /// documenté ici, à l'hôte d'arbitrer.
   ///
-  /// ⚠️ Seam `ZReorderRenderer` (AD-57) : côté grille, ce mode se traduit par
-  /// « aucune décoration de poignée EN AMONT du renderer ». Le renderer par
-  /// défaut (`zcrud_responsive`) réordonne déjà par appui long : le mode le
-  /// traverse intact. Pour un renderer INJECTÉ par l'hôte, le socle garantit
-  /// l'absence de poignée amont mais PAS le geste du renderer (il ne peut pas
-  /// simuler un comportement qu'il ne possède pas) : le déclencheur et la
-  /// sémantique du drag y appartiennent à l'hôte.
+  /// Côté grille, ce mode se traduit par l'absence de décoration de poignée
+  /// en amont du renderer de réordonnancement. Le renderer par défaut
+  /// réordonne déjà par appui long : le mode le traverse intact. Pour un
+  /// renderer injecté par l'hôte, ce paquet garantit l'absence de poignée
+  /// amont mais pas le geste du renderer lui-même — le déclencheur et la
+  /// sémantique du glisser y appartiennent à l'hôte.
   hiddenLongPress,
 }
 
 /// Descripteur immuable d'une section de la page « study tools ».
 ///
-/// Mapping des 4 sections IFFD mesurées (AD-25) → un `ZStudyToolsSectionSpec`
-/// par section : rail flashcards, grille documents, grille notes, grille
-/// mindmaps. Chaque section est rendue par [ZSectionedStudyLayout] dans son
-/// propre sous-arbre isolé (frontière rebuild — pré-requis SM-1/ES-5.2).
+/// Une instance par section (rail de flashcards, grille de documents, grille
+/// de notes, grille de cartes mentales…). Chaque section est rendue par
+/// [ZSectionedStudyLayout] dans son propre sous-arbre isolé (frontière de
+/// rebuild — invariant AD-2).
 @immutable
 class ZStudyToolsSectionSpec {
   /// Construit un descripteur de section.
@@ -176,7 +166,7 @@ class ZStudyToolsSectionSpec {
   /// Section de **flashcards** dont le socle fournit le rendu d'item
   /// (**CR-IFFD-47**) — la voie TYPÉE qui **porte les données**.
   ///
-  /// 🔴 **Pourquoi un constructeur nommé et PAS un `itemBuilder` facultatif.**
+  /// **Pourquoi un constructeur nommé et PAS un `itemBuilder` facultatif.**
   /// Le descripteur porte `itemCount` + `itemBuilder(context, index)` et
   /// **aucune donnée** : rendre `itemBuilder` facultatif ne permettrait au socle
   /// de rendre **rien du tout**, faute de savoir ce qu'est l'item numéro *i*. Ce
@@ -188,7 +178,7 @@ class ZStudyToolsSectionSpec {
   /// constructeur principal — un hôte qui fournit déjà le sien n'est **pas**
   /// touché, et ne **peut pas** l'être (aucune branche de repli n'existe).
   ///
-  /// 🔴 **CR-IFFD-52 — réordonnancement SANS affaiblir l'invariant.** La voie
+  /// **CR-IFFD-52 — réordonnancement SANS affaiblir l'invariant.** La voie
   /// typée accepte désormais [onReorder] (et les libellés/glyphes de
   /// réordonnancement), mais [itemIds] n'est **jamais** fourni par l'hôte : il
   /// est **DÉRIVÉ ici** de `cards[i].id`, et la garde du constructeur principal
@@ -208,7 +198,7 @@ class ZStudyToolsSectionSpec {
   /// [railPreviewCount] rendrait l'espace visible ≠ l'espace persistable :
   /// exactement le défaut original).
   ///
-  /// 🔴 **CR-IFFD-49 ① — le rendu par défaut tient dans les DEUX axes.** En
+  /// **CR-IFFD-49 ① — le rendu par défaut tient dans les DEUX axes.** En
   /// `axis: Axis.horizontal`, chaque carte fabriquée ici est **bornée en
   /// largeur** (sans quoi une carte à largeur non bornée dans un défileur
   /// horizontal ne peint RIEN en release, et lève en rafale « non-zero flex but
@@ -221,7 +211,7 @@ class ZStudyToolsSectionSpec {
   /// principal) reste, lui, responsable de son propre bornage — neutralité
   /// stricte, aucun emballage n'y est ajouté.
   ///
-  /// 🔴 **CR-IFFD-49 ② — le COUPLAGE « rail des N premiers → grille
+  /// **CR-IFFD-49 ② — le COUPLAGE « rail des N premiers → grille
   /// complète »** est porté par [railPreviewCount]. Fourni (et `> 0`, avec
   /// `axis: Axis.horizontal` — assert sinon), il câble ENSEMBLE les quatre
   /// décisions que l'hôte devait réussir séparément :
@@ -902,12 +892,12 @@ class ZStudyToolsSectionSpec {
   /// | 2 | un `ZContentHubScope` est en portée | le hub s'ouvre |
   /// | 3 | aucun scope | le `+` est **ABSENT de l'arbre** (AD-4) |
   ///
-  /// 🔴 **Le cas 3 est le point qui compte** : un `+` déclaré « ouvre le hub »
+  /// **Le cas 3 est le point qui compte** : un `+` déclaré « ouvre le hub »
   /// alors qu'aucun hub n'est branché ne doit pas être un bouton grisé, ni un
   /// bouton qui ne fait rien — deux façons de mentir à l'utilisateur. La
   /// capacité est absente, la commande l'est aussi (garde dédiée).
   ///
-  /// 🔴 **Aucune apparence n'est fournie par le socle** : [addActionIcon] et
+  /// **Aucune apparence n'est fournie par le socle** : [addActionIcon] et
   /// [addActionSemanticLabel] restent les seules sources de glyphe et
   /// d'annonce, exactement comme sur le chemin `addAction`. Ce drapeau
   /// n'apporte qu'une **commande**.
@@ -1118,7 +1108,7 @@ class ZStudyToolsSectionSpec {
   /// `Icons.drag_handle`), nœud `Semantics` au libellé INJECTÉ
   /// ([reorderHandleSemanticLabel], repli [title]) et cible ≥ 48 dp.
   ///
-  /// ⚠️ **Écart ASSUMÉ et documenté entre les deux chemins** : en liste, la
+  /// **Écart ASSUMÉ et documenté entre les deux chemins** : en liste, la
   /// poignée est un `ReorderableDragStartListener` — un point de départ de drag
   /// DISTINCT (glisser depuis la poignée, sans appui long). En grille, le
   /// déclencheur reste l'**appui long sur la cellule entière** (poignée
@@ -1134,7 +1124,7 @@ class ZStudyToolsSectionSpec {
   /// s'applique donc AUSSI à un `ZReorderRenderer` injecté par l'hôte (AD-57),
   /// et pas seulement au repli `zcrud_responsive`.
   ///
-  /// ⚠️ Reste **exclusif avec [crossAxisVirtualized]** : une cellule non
+  /// Reste **exclusif avec [crossAxisVirtualized]** : une cellule non
   /// construite ne peut pas être une cible de dépôt. Une section à la fois
   /// réordonnable et virtualisée est rendue **eager** (réordonnable), la
   /// virtualisation cédant — documenté, jamais dégradé en silence.
@@ -1143,7 +1133,7 @@ class ZStudyToolsSectionSpec {
   /// viewport et scrolle d'elle-même. `false` par défaut (grille *eager*,
   /// imbriquée dans le défilement de la page — rendu antérieur inchangé).
   ///
-  /// ⚠️ À activer dès qu'une section peut porter plusieurs dizaines d'items : en
+  /// À activer dès qu'une section peut porter plusieurs dizaines d'items : en
   /// mode *eager*, TOUTES les cellules sont construites ET layoutées, même hors
   /// écran. Une section alimentée par tout le contenu d'un dossier (héritage
   /// parent compris) est exactement ce cas.
@@ -1166,7 +1156,7 @@ class ZStudyToolsSectionSpec {
   /// Priorité : ce paramètre > jeton `ZcrudTheme.railItemGap` > `gapS` (le
   /// repli HISTORIQUE).
   ///
-  /// 🔴 **Le défaut DIFFÈRE selon le constructeur, et c'est l'arbitrage
+  /// **Le défaut DIFFÈRE selon le constructeur, et c'est l'arbitrage
   /// CR-IFFD-61 ① reconduit** :
   /// - constructeur PRINCIPAL (l'hôte fournit son `itemBuilder`) ⇒ `null`,
   ///   donc `gapS` : **rendu strictement inchangé** pour un hôte qui compose
@@ -1195,7 +1185,7 @@ class ZStudyToolsSectionSpec {
   /// Priorité : ce paramètre > jeton `ZcrudTheme.railPadding` > padding de
   /// section (comportement historique).
   ///
-  /// 🔴 **Pourquoi le défaut n'est PAS la valeur de référence (8 dp), contre
+  /// **Pourquoi le défaut n'est PAS la valeur de référence (8 dp), contre
   /// la règle habituelle** — mesuré, pas supposé : dans le legacy, le MÊME
   /// `Padding(all(8))` insère le titre de section ET le rail
   /// (`folder_study_tools_page.dart`), exactement comme notre padding de
@@ -1205,7 +1195,7 @@ class ZStudyToolsSectionSpec {
   /// c'est une décision de PAGE, que seul l'hôte peut prendre en cohérence
   /// avec son en-tête.
   ///
-  /// ⚠️ **Le retrait mesuré au bord de la première CARTE vaut ce padding PLUS
+  /// **Le retrait mesuré au bord de la première CARTE vaut ce padding PLUS
   /// la marge externe de la carte** (`CardThemeData.margin` de l'hôte, ou
   /// `ZcrudTheme.studyCardMargin`) : les deux s'AJOUTENT. C'est l'origine
   /// exacte des « 45 px » de la CR — cf. le rapport de lot.
@@ -1282,7 +1272,7 @@ class ZStudyToolsSectionSpec {
   ///   aucun miroir. [initiallyExpanded] est alors **ignoré** (la valeur
   ///   initiale appartient au contrôleur, seul propriétaire de l'état).
   ///
-  /// 🔴 **POSSESSION — qui crée le contrôleur quand il y a N sections.**
+  /// **POSSESSION — qui crée le contrôleur quand il y a N sections.**
   /// L'hôte, **jamais** ce package. Une section est un **élément de liste** :
   /// c'est le `State` qui construit la liste de specs qui possède les N
   /// contrôleurs (un champ, une `Map<String, ZToggleController>` indexée par
@@ -1294,7 +1284,7 @@ class ZStudyToolsSectionSpec {
   /// exactement le défaut mesuré chez l'hôte, et le patron existe pour le
   /// rendre impossible, pas pour l'industrialiser.
   ///
-  /// ⚠️ Un contrôleur déclaré et **jamais passé** dans une spec rendue reste
+  /// Un contrôleur déclaré et **jamais passé** dans une spec rendue reste
   /// détectable (`wasEverConsumed` — assert au `dispose` du mixin) : un
   /// « tout replier » câblé sur un contrôleur orphelin ne peut pas passer pour
   /// branché.

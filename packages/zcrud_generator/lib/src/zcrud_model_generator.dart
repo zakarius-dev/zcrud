@@ -1,12 +1,13 @@
-/// Générateur `source_gen` du moteur codegen `zcrud` (E2-5, AD-3).
+/// Générateur `source_gen` du moteur codegen `zcrud` (invariant AD-3).
 ///
 /// Lit STATIQUEMENT (`analyzer`/`ConstantReader`/`TypeChecker` — **jamais**
 /// `reflectable`, **jamais** d'exécution d'annotation) les classes annotées
-/// `@ZcrudModel` (+ champs `@ZcrudField`/`@ZcrudId`, E2-4) et émet, dans le
+/// `@ZcrudModel` (+ champs `@ZcrudField`/`@ZcrudId`) et émet, dans le
 /// `part '<file>.g.dart'` :
-///   1. `_$XxxFromMap` — reconstruction **défensive** (AD-10 : champ absent →
-///      `defaultValue`/valeur sûre ; enum inconnu → repli, jamais `byName` nu ;
-///      sous-objet corrompu → n'échoue jamais le parent) ;
+///   1. `_$XxxFromMap` — reconstruction **défensive** (invariant AD-10 :
+///      champ absent → `defaultValue`/valeur sûre ; enum inconnu → repli,
+///      jamais `byName` nu ; sous-objet corrompu → n'échoue jamais le
+///      parent) ;
 ///   2. l'extension publique `XxxZcrud` — `toMap()` (snake_case, enum `.name`
 ///      camelCase, dates ISO-8601, récursion sous-objets) + `copyWith()` **à
 ///      sentinelle** (reset-`null` distinct de « non fourni ») ;
@@ -16,8 +17,8 @@
 ///      fieldSpecs)`.
 ///
 /// **Échec de build EXPLICITE** (`InvalidGenerationSourceError`, jamais un cast
-/// `null` silencieux — AD-3) : type de champ non (dé)sérialisable, cible non
-/// classe, collision de clé persistée.
+/// `null` silencieux — invariant AD-3) : type de champ non (dé)sérialisable,
+/// cible non classe, collision de clé persistée.
 library;
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -98,8 +99,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   ) =>
       generateForModel(element, annotation);
 
-  /// Cœur d'émission, **indépendant de [BuildStep]** (testable directement, sans
-  /// pipeline `build_runner` — cf. `build_failure_test.dart`, AC9).
+  /// Cœur d'émission, **indépendant de [BuildStep]** (testable directement,
+  /// sans pipeline `build_runner`).
   Iterable<String> generateForModel(Element element, ConstantReader annotation) {
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(

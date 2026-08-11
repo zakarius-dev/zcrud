@@ -1,15 +1,16 @@
 /// Projection **neutre** (pur-Dart, headless) d'une `ZListRenderRequest` en une
 /// table de chaînes prête pour l'export, indépendante de tout backend.
 ///
-/// origine: E11a-3 (FR-24/SM-5/AD-1/AD-8/AD-10). C'est le POINT UNIQUE où le
-/// contrat neutre de liste du cœur (`ZListColumn`/`ZListRow`) est aplati en
-/// en-têtes + cellules texte. Les backends Excel/PDF (Syncfusion, confinés dans
+/// C'est le POINT UNIQUE où le contrat neutre de liste du cœur
+/// (`ZListColumn`/`ZListRow`) est aplati en en-têtes + cellules texte. Les
+/// backends Excel/PDF (Syncfusion, confinés dans
 /// `z_excel_exporter.dart`/`z_pdf_exporter.dart`) ne voient QUE cette table de
 /// `String` — AUCUN type `zcrud_core` ni Syncfusion ne les traverse, et la
 /// logique de formatage n'est PAS dupliquée : elle vient du formateur PUR du
-/// cœur `ZListColumn.format` (parité écran/fichier garantie, SM-5).
+/// cœur `ZListColumn.format` (parité écran/fichier garantie, invariants
+/// AD-1/AD-8).
 ///
-/// **Défensif (AD-10)** : `columns`/`rows` vides → table vide mais valide ;
+/// **Défensif (invariant AD-10)** : `columns`/`rows` vides → table vide mais valide ;
 /// clé de cellule absente → `col.format(null)` → cellule `''` ; le formateur du
 /// cœur « ne lève jamais ». Aucune exception ne remonte d'ici.
 library;

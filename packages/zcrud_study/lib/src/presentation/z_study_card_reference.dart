@@ -49,7 +49,7 @@ abstract final class ZStudyCardReference {
   /// Écart entre la tuile d'icône de tête et le titre (**16** —
   /// `SizedBox(width: 16)` du legacy IFFD `_buildGridItemCard`, CR-IFFD-61 ①).
   ///
-  /// 🔴 **Distinct du padding de carte (12)** : c'est précisément le point de
+  /// **Distinct du padding de carte (12)** : c'est précisément le point de
   /// la CR — les deux ridaient le MÊME jeton `gapM`, donc aucune valeur ne
   /// pouvait satisfaire les deux. Mesuré : la carte par défaut rendait
   /// `gapM` (8 en thème nu, 12 sous le thème IFFD) là où la référence pose 16.
@@ -58,7 +58,7 @@ abstract final class ZStudyCardReference {
   /// Élévation Material de la carte (**0** — `Card(elevation: 0)` du legacy
   /// IFFD, CR-IFFD-61 ②).
   ///
-  /// 🔴 **Ce que ce défaut corrige, MESURÉ** : sans élévation explicite, `Card`
+  /// **Ce que ce défaut corrige, MESURÉ** : sans élévation explicite, `Card`
   /// retombe sur le défaut Material 3 (**1.0**) et porte une **ombre portée**
   /// que la référence n'a pas. Capture de pixels comparée (carte par défaut vs
   /// réplique littérale du legacy) : les deux rendus étaient byte-identiques

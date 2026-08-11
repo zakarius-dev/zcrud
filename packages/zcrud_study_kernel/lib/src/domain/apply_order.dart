@@ -1,18 +1,18 @@
-/// `applyOrder<T>` — tri **stable** d'une collection selon un ordre personnel
-/// **partiel** (`List<String>` d'ids), avec position **déterministe** des
-/// items dont l'id est absent de l'ordre (ES-1.2, FR-S2, AC4).
+/// `applyOrder` — tri stable d'une collection selon un ordre personnel
+/// partiel (`List<String>` d'ids), avec position déterministe des items dont
+/// l'id est absent de l'ordre.
 ///
-/// Générique de **collection** (`T` + `idOf`), **sans dépendance métier** —
-/// aucun type study dans sa signature (AD-3 : générique de collection autorisé,
-/// jamais un générique de (dé)sérialisation). Usage prévu : `ZFolderContentsOrder`
-/// (FR-S7) — ordre manuel d'un dossier d'étude — mais réutilisable pour tout
-/// tri à ordre personnalisé partiel.
+/// Générique de collection (`T` + `idOf`), sans dépendance métier — aucun
+/// type d'étude dans sa signature (invariant AD-3 : un générique de
+/// collection est autorisé, jamais un générique de (dé)sérialisation). Usage
+/// prévu : `ZFolderContentsOrder` — ordre manuel d'un dossier d'étude — mais
+/// réutilisable pour tout tri à ordre personnalisé partiel.
 ///
-/// Fonction **pure** : ne mute ni `items` ni `order`, retourne une **nouvelle**
-/// `List<T>`. **Défensive** (AD-10) : aucun des cas dégradés ne throw.
+/// Fonction pure : ne mute ni `items` ni `order`, retourne une nouvelle
+/// `List<T>`. Défensive (invariant AD-10) : aucun des cas dégradés ne lève.
 library;
 
-/// Où placer les items dont l'id est **absent** de l'ordre personnel.
+/// Où placer les items dont l'id est absent de l'ordre personnel.
 enum ZUnorderedPlacement {
   /// Après les items ordonnés (défaut).
   end,
@@ -21,36 +21,34 @@ enum ZUnorderedPlacement {
   start,
 }
 
-/// Applique [order] (liste d'ids, **partielle** possible) à [items] :
-/// - les items dont `idOf(item)` figure dans [order] sortent **dans l'ordre
-///   de [order]** ;
-/// - les items **absents** de [order] gardent une position déterministe —
-///   à la fin par défaut ([ZUnorderedPlacement.end]) ou au début
-///   ([ZUnorderedPlacement.start]) — en préservant leur **ordre relatif
-///   d'entrée** (tri **stable**) ;
-/// - `order` **vide** → l'ordre d'entrée de [items] est intégralement
-///   préservé ;
-/// - un id de [order] qui ne correspond à **aucun** item est simplement
-///   ignoré ;
-/// - un id **dupliqué** dans [order] → la **1re** occurrence fait foi pour la
+/// Applique [order] (liste d'ids, partielle possible) à [items] :
+/// - les items dont `idOf(item)` figure dans [order] sortent dans l'ordre de
+///   [order] ;
+/// - les items absents de [order] gardent une position déterministe — à la
+///   fin par défaut ([ZUnorderedPlacement.end]) ou au début
+///   ([ZUnorderedPlacement.start]) — en préservant leur ordre relatif
+///   d'entrée (tri stable) ;
+/// - `order` vide → l'ordre d'entrée de [items] est intégralement préservé ;
+/// - un id de [order] qui ne correspond à aucun item est simplement ignoré ;
+/// - un id dupliqué dans [order] → la première occurrence fait foi pour la
 ///   position ;
-/// - des ids **dupliqués** dans [items] sont tous conservés, dans leur ordre
+/// - des ids dupliqués dans [items] sont tous conservés, dans leur ordre
 ///   relatif d'entrée.
 ///
-/// Ne mute ni [items] ni [order] ; retourne une **nouvelle** `List<T>`.
+/// Ne mute ni [items] ni [order] ; retourne une nouvelle `List<T>`.
 List<T> applyOrder<T>(
   Iterable<T> items,
   List<String> order, {
   required String Function(T item) idOf,
   ZUnorderedPlacement unordered = ZUnorderedPlacement.end,
 }) {
-  // Position de chaque id dans `order` — 1re occurrence gagne (AC4).
+  // Position de chaque id dans `order` — 1re occurrence gagne.
   final position = <String, int>{};
   for (var i = 0; i < order.length; i++) {
     position.putIfAbsent(order[i], () => i);
   }
 
-  // Partition en UN SEUL passage, préservant l'ordre d'entrée dans chaque
+  // Partition en un seul passage, préservant l'ordre d'entrée dans chaque
   // sous-liste (nécessaire à la stabilité du tri final).
   final entries = items.toList(growable: false);
   final ordered = <_Indexed<T>>[];
@@ -65,7 +63,7 @@ List<T> applyOrder<T>(
     }
   }
 
-  // Tri **stable** par construction : la clé secondaire (index d'entrée
+  // Tri stable par construction : la clé secondaire (index d'entrée
   // d'origine) départage tout ex-aequo sur la position — indépendant de la
   // stabilité (non garantie) de `List.sort` du SDK.
   ordered.sort((a, b) {

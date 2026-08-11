@@ -1,12 +1,12 @@
-/// `ZcrudProviderScope` — scope de binding `provider` (E2-9, AD-6/AD-15).
+/// `ZcrudProviderScope` — scope de binding `provider` (invariants AD-6/AD-15).
 ///
-/// origine: équivalent de `ZcrudScope` pour l'idiome `provider`. Il (a) monte un
+/// Équivalent de `ZcrudScope` pour l'idiome `provider`. Il (a) monte un
 /// `ChangeNotifierProvider<ZFormController>` (dont `provider` gère le `dispose()`
 /// automatiquement au démontage), (b) expose les seams applicatifs via des
 /// providers additionnels, puis (c) enveloppe l'enfant dans un `ZcrudScope`
 /// porteur d'un `ZProviderResolver` manager-backed (construit sous les
-/// providers). Le binding NE réimplémente PAS la réactivité : il réutilise
-/// `ZFormController` (AD-2) tel quel.
+/// providers). Le binding ne réimplémente pas la réactivité : il réutilise
+/// `ZFormController` (invariant AD-2) tel quel.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -22,7 +22,7 @@ import 'z_provider_resolver.dart';
 /// [ZProviderResolver] : son identité reste stable à travers les rebuilds du
 /// scope, si bien que `ZcrudScope.updateShouldNotify` (comparaison `identical`)
 /// n'oblige jamais les consommateurs de `ZcrudScope.of` à se reconstruire sans
-/// changement réel — à parité avec `zcrud_get`/`zcrud_riverpod` (MEDIUM-1,
+/// changement réel — à parité avec les autres bindings (invariants
 /// AD-15/AD-2). Le `dispose()` du `ZFormController` reste, lui, entièrement géré
 /// par `provider` (via `ChangeNotifierProvider`).
 class ZcrudProviderScope extends StatefulWidget {
@@ -60,7 +60,7 @@ class ZcrudProviderScope extends StatefulWidget {
 class _ZcrudProviderScopeState extends State<ZcrudProviderScope> {
   // Resolver MÉMOÏSÉ (identité stable) : créé une seule fois, son BuildContext
   // sous les providers lui est (ré)attaché à chaque build via `attach` — sans
-  // changer son identité (parité AD-15 avec get/riverpod, MEDIUM-1).
+  // changer son identité (parité invariant AD-15 avec les autres bindings).
   late final ZProviderResolver _resolver = ZProviderResolver();
 
   @override

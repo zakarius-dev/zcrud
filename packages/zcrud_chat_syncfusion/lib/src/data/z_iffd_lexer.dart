@@ -1,29 +1,33 @@
-/// Lexeur **incrémental** du fil textuel d'IFFD — CHAT-6.
+/// Lexeur incrémental d'un fil textuel encodé selon la convention IFFD.
 ///
-/// Transforme un flux de fragments `String` (déjà décadrés du SSE par le
-/// transport de l'hôte) en une suite de **segments** : du texte décodé, ou une
-/// balise ouvrante/fermante. C'est le seul endroit du dépôt qui connaît
-/// `###LINE###` et les sentinelles pseudo-XML.
+/// Transforme un flux de fragments `String` (déjà décadrés du transport par
+/// l'hôte) en une suite de segments : du texte décodé, ou une balise
+/// ouvrante/fermante. C'est le seul endroit de ce paquet qui connaît le
+/// marqueur de saut de ligne encodé et les sentinelles pseudo-XML de ce
+/// format de fil.
 ///
 /// ## Les trois pièges d'un flux fragmenté, et leur traitement
 ///
-/// 1. **Un marqueur coupé en deux.** `###LI` puis `NE###` : un `replaceAll`
-///    par fragment laisserait `###LI` dans la réponse affichée. Le lexeur
-///    **retient** la plus longue queue qui est un préfixe de [kZIffdLineMarker].
-/// 2. **Une balise coupée en deux.** `<RAG_THIN` puis `KING>` : idem, le lexeur
-///    retient la queue à partir du `<` tant qu'aucun `>` ne l'a fermée — mais
-///    **jamais au-delà de [_maxTagHold] caractères**, sinon un `<` littéral du
-///    texte (« a < b ») bloquerait le flux pour toujours. Passé ce seuil, la
-///    queue est relâchée **comme du texte** : rien n'est perdu, AD-10.
-/// 3. **Le préfixe `$` du serveur.** `vector_store_service.py:394` émet
-///    `f"${event} ###LINE###"` : la balise arrive collée derrière un `$`. Ce `$`
-///    est retiré quand il précède immédiatement une balise, et **conservé**
-///    partout ailleurs (un `$` de LaTeX dans une réponse est du contenu).
+/// 1. **Un marqueur coupé en deux fragments consécutifs.** Un simple
+///    remplacement de motif appliqué fragment par fragment laisserait la
+///    moitié du marqueur dans la réponse affichée. Le lexeur retient la plus
+///    longue queue qui est un préfixe de [kZIffdLineMarker].
+/// 2. **Une balise coupée en deux fragments consécutifs.** De même, le
+///    lexeur retient la queue à partir du `<` tant qu'aucun `>` ne l'a
+///    fermée — mais jamais au-delà de [_maxTagHold] caractères, sinon un `<`
+///    littéral du texte (« a < b ») bloquerait le flux indéfiniment. Passé
+///    ce seuil, la queue est relâchée comme du texte : rien n'est perdu
+///    (invariant AD-10).
+/// 3. **Un caractère de transport collé devant une balise.** Un `$` peut
+///    arriver immédiatement avant une balise en tant qu'artefact
+///    d'encodage du serveur plutôt que du contenu. Il est retiré dans ce
+///    seul cas, et conservé partout ailleurs (un `$` de LaTeX dans une
+///    réponse est du contenu).
 ///
-/// ## Ce que le lexeur ne décide PAS
+/// ## Ce que le lexeur ne décide pas
 ///
-/// Il ne classe rien en canal et ne produit aucun événement : il ne fait que
-/// **découper**. Le classement (réponse / trace / échec / charge utile) est la
+/// Il ne classe rien en canal et ne produit aucun événement : il ne fait
+/// que découper. Le classement (réponse, trace, échec, charge utile) est la
 /// responsabilité de `ZIffdStreamNormalizer`, pour que la forme du fil et la
 /// sémantique du kernel restent testables séparément.
 library;
@@ -72,12 +76,12 @@ final class ZIffdTagSegment extends ZIffdSegment {
   String toString() => 'ZIffdTagSegment(${closing ? '/' : ''}$identity)';
 }
 
-/// Forme **mesurée** d'une sentinelle IFFD : SCREAMING_SNAKE, argument
-/// numérique optionnel séparé par des espaces.
+/// Forme reconnue d'une sentinelle : SCREAMING_SNAKE, argument numérique
+/// optionnel séparé par des espaces.
 ///
-/// 🔴 Volontairement **restrictive**. Elle ne reconnaît ni `<b>`, ni `<div>`,
-/// ni `<T>` d'un extrait de code : du HTML ou du Dart cité dans une réponse
-/// reste du **texte**. Un lexeur qui avalerait tout `<…>` détruirait des
+/// Volontairement restrictive. Elle ne reconnaît ni `<b>`, ni `<div>`, ni
+/// `<T>` d'un extrait de code : du HTML ou du Dart cité dans une réponse
+/// reste du texte. Un lexeur qui avalerait tout `<…>` détruirait des
 /// réponses légitimes — le prix à payer serait plus lourd que la fuite qu'il
 /// prétend fermer.
 final RegExp _tagPattern = RegExp(r'<(/?)([A-Z][A-Z0-9_]*)(?: +([0-9]+))?>');
@@ -165,8 +169,8 @@ class ZIffdLexer {
 
   void _emitText(List<ZIffdSegment> out, String raw, {required bool beforeTag}) {
     String text = raw.replaceAll(kZIffdLineMarker, '\n');
-    // `$` collé devant une balise (vector_store_service.py:394) : marqueur de
-    // transport, pas du contenu. Ailleurs, un `$` est du contenu (LaTeX…).
+    // `$` collé devant une balise : artefact de transport, pas du contenu.
+    // Ailleurs, un `$` est du contenu (LaTeX…).
     if (beforeTag && text.endsWith(r'$')) {
       text = text.substring(0, text.length - 1);
     }

@@ -1,9 +1,9 @@
-/// Jeu de styles rich-text **NEUTRE** injectable PAR CHAMP (GAP-5, CR parité
-/// 2026-08-11) + spec de rendu des **formules** (GAP-7).
+/// Jeu de styles rich-text **NEUTRE** injectable PAR CHAMP (CR parité
+/// 2026-08-11) + spec de rendu des **formules**.
 ///
-/// ## Pourquoi l'« injection par l'hôte » et PAS des valeurs DODLP chez nous
+/// ## Pourquoi l'« injection par l'hôte » et PAS des valeurs l'éditeur historique chez nous
 ///
-/// Le legacy DODLP (`quill_default_styles_helper.dart`, `qdsh`) construit un
+/// Le legacy (`quill_default_styles_helper.dart`, `qdsh`) construit un
 /// `DefaultStyles` Quill « signature » : polices Google (**Inter** corps,
 /// **Poppins** titres, **FiraCode** code), palette figée (gras rose, italique
 /// bleu, H2 teal, souligné teal, barré rouge/gris, code inline orange/fond
@@ -16,9 +16,9 @@
 ///   lourds) au satellite — contraire à AD-1 (dépendances minimales) et
 ///   inutile : chaque slot de [ZRichTextStyleSet] est un [TextStyle] complet,
 ///   l'hôte y pose `GoogleFonts.inter(...)` LUI-MÊME.
-/// * **Refus de la palette en dur** (FR-26) : les couleurs signature restent
+/// * **Refus de la palette en dur** : les couleurs signature restent
 ///   chez l'hôte, qui les injecte par ce jeu de styles. La voie « injection »
-///   SUFFIT : le pilote DODLP porte ses propres styles, le socle n'a pas
+///   SUFFIT : le pilote historique porte ses propres styles, le socle n'a pas
 ///   besoin d'un fichier de référence de couleurs pour ce gap.
 /// * **Le défaut NE CHANGE PAS** (choix AD-13 assumé, `z_rich_text_core.dart`) :
 ///   `null` ⇒ styles dérivés du seul thème (titres via `TextTheme`), défauts
@@ -57,7 +57,7 @@ class ZRichTextSpacing {
   int get hashCode => Object.hash(top, bottom);
 }
 
-/// Jeu de styles rich-text PAR CHAMP (GAP-5) — chaque slot `null` laisse le
+/// Jeu de styles rich-text PAR CHAMP — chaque slot `null` laisse le
 /// style courant (thème + défauts Quill) STRICTEMENT inchangé (AD-57).
 ///
 /// Les slots couvrent la liste `qdsh` mesurée : corps/titres, gras / italique /
@@ -213,7 +213,7 @@ class ZRichTextStyleSet {
   final ZRichTextSpacing? listSpacing;
 }
 
-/// Rendu des **formules LaTeX** PAR CHAMP (GAP-7) — NEUTRE (aucun type Quill /
+/// Rendu des **formules LaTeX** PAR CHAMP — NEUTRE (aucun type Quill /
 /// math dans la signature).
 ///
 /// MESURE legacy (`rtes:85-101` + `qmew`) : `formulasTextStyle` est le SEUL

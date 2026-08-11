@@ -1,6 +1,6 @@
 /// `ZItemActionsMenu` — menu d'actions par item PARAMÉTRIQUE (ES-5.3, AD-25).
 ///
-/// 🔴 **CHAT-4b — ce widget est désormais un CONSOMMATEUR de `zcrud_menu`.**
+/// **CHAT-4b — ce widget est désormais un CONSOMMATEUR de `zcrud_menu`.**
 ///
 /// Il ne construit plus AUCUN `PopupMenuButton`/`PopupMenuItem`/`PopupMenuEntry` :
 /// il traduit sa `List<ZItemAction>` en `List<ZMenuEntry>` et délègue à
@@ -24,7 +24,7 @@
 ///   au [menuBuilder] (le renoncement a11y du slot est levé) ;
 /// * [renderer] / [ZMenuScope] — le déclencheur ET la surface substituables.
 ///
-/// ⚠️ **Seule divergence de rendu assumée** : un menu dont AUCUNE action n'est
+/// **Seule divergence de rendu assumée** : un menu dont AUCUNE action n'est
 /// visible et qui n'a pas de [menuBuilder] rend un déclencheur **inerte**
 /// (AD-10 : jamais une surface flottante vide). Avant CHAT-4b il s'ouvrait sur
 /// une surface vide. Aucun appelant du dépôt n'est dans ce cas.
@@ -66,7 +66,7 @@ const IconData _kMenuFallbackIcon = Icons.more_vert;
 /// Nature d'une action d'item — enum EXTENSIBLE (AD-4). [custom] couvre toute
 /// action hors nomenclature (l'appelant porte le [ZItemAction.label]/[icon]).
 ///
-/// 🔴 Depuis CHAT-4b, chaque membre a un pendant dans le vocabulaire d'identités
+/// Depuis CHAT-4b, chaque membre a un pendant dans le vocabulaire d'identités
 /// PARTAGÉ [ZMenuEntryIds] ([ZItemAction.entryId]) — adoptable par un package
 /// qui ne peut pas dépendre de `zcrud_study` (`zcrud_core`, CORE OUT = 0).
 enum ZItemActionKind {
@@ -284,7 +284,7 @@ class ZItemActionsMenu extends StatelessWidget {
   /// parcours clavier, position du séparateur destructif) alors que ces
   /// décisions dépendent de l'hôte.
   ///
-  /// 🟢 **A11y (AD-13) — le renoncement est LEVÉ depuis CHAT-4b.** La cellule
+  /// **A11y (AD-13) — le renoncement est LEVÉ depuis CHAT-4b.** La cellule
   /// [ZMenuEntryTile] est offerte à l'hôte : `ZMenuEntryTile(entry:
   /// action.toMenuEntry(), onSelected: () => select(action))` lui donne la cible
   /// ≥ 48 dp, les `Semantics` NON dupliquées et la directionnalité sans les
@@ -297,7 +297,7 @@ class ZItemActionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 Traduction 1:1, ordre PRÉSERVÉ. Le filtrage AD-4 n'est PAS refait ici :
+    // Traduction 1:1, ordre PRÉSERVÉ. Le filtrage AD-4 n'est PAS refait ici :
     // il a un site UNIQUE, `ZActionMenu` (`zVisibleMenuEntries`). Le refaire
     // serait la seconde source que ce lot supprime.
     final entries = <ZMenuEntry>[];

@@ -1,4 +1,4 @@
-/// Implémentation par défaut du port [ZToaster] — pur-Flutter (AD-32, AD-2, AD-13).
+/// Implémentation par défaut du port [ZToaster] — pur-Flutter (invariants AD-2, AD-13).
 ///
 /// `ZScaffoldMessengerToaster` affiche une `SnackBar` via
 /// `ScaffoldMessenger.of(context).showSnackBar` — **Flutter vanilla, AUCUN
@@ -12,10 +12,10 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../domain/z_toast_severity.dart';
 import '../domain/z_toaster.dart';
 
-/// Toaster par défaut : mappe une [ZToastSeverity] sur une `SnackBar` colorée.
+/// Toaster par défaut: mappe une [ZToastSeverity] sur une `SnackBar` colorée.
 ///
 /// **Couleur toujours dérivée du `ColorScheme` courant, JAMAIS de hex**
-/// (dark-mode-aware — s'adapte au `Brightness`) :
+/// (dark-mode-aware — s'adapte au `Brightness`):
 ///
 /// | Sévérité | Fond (rôle `ColorScheme`) | Texte/icône | Icône |
 /// |---|---|---|---|
@@ -24,10 +24,10 @@ import '../domain/z_toaster.dart';
 /// | `success` | `scheme.tertiary` | `scheme.onTertiary` | `check_circle_outline` |
 /// | `warning` | `scheme.secondary` | `scheme.onSecondary` | `warning_amber_outlined` |
 ///
-/// `ZcrudTheme`/M3 n'exposent pas de slot `success`/`warning`/`info` : le mapping
+/// `ZcrudTheme`/M3 n'exposent pas de slot `success`/`warning`/`info`: le mapping
 /// **dérive** ces sévérités de rôles `ColorScheme` **existants** (déterministe,
 /// documenté) — aucun littéral introduit. La sévérité est portée par **une icône
-/// + le texte** (couleur **jamais** seul canal — WCAG/AD-13/NFR-U4).
+/// + le texte** (couleur jamais seul canal, invariant AD-13).
 class ZScaffoldMessengerToaster implements ZToaster {
   /// Construit le toaster par défaut (immuable — AD-13).
   const ZScaffoldMessengerToaster();
@@ -50,8 +50,8 @@ class ZScaffoldMessengerToaster implements ZToaster {
     final snackBar = SnackBar(
       backgroundColor: background,
       duration: duration ?? const Duration(seconds: 4),
-      // Sévérité perceptible SANS la couleur : icône + texte (jamais seul canal).
-      // `Semantics` container (liveRegion) annonce le message une seule fois ;
+      // Sévérité perceptible SANS la couleur: icône + texte (jamais seul canal).
+      // `Semantics` container (liveRegion) annonce le message une seule fois;
       // les nœuds visuels sont exclus pour éviter la double annonce (a11y AD-13).
       content: Semantics(
         container: true,
@@ -86,7 +86,7 @@ class ZScaffoldMessengerToaster implements ZToaster {
   }
 
   /// Résout `(fond, avant-plan lisible, icône)` pour une sévérité — couleur
-  /// dérivée du `ColorScheme` (jamais hex). `error` réutilise l'idiome EX-UI.7
+  /// dérivée du `ColorScheme` (jamais hex). `error` réutilise l'idiome
   /// `ZcrudTheme.of(context).errorColor ?? scheme.error`.
   (Color, Color, IconData) _resolve(
     BuildContext context,

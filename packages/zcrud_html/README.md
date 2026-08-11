@@ -1,58 +1,111 @@
 # zcrud_html
 
-Satellite **HTML WYSIWYG** de zcrud (AD-50) — édition HTML riche en WYSIWYG via
-une WebView à **controller isolé** (`html_editor_enhanced`) + lecture native
-(`flutter_html`). Le format persisté est du **HTML `String`** (pas de Delta —
-c'est sa raison d'être vs la voie Delta de `zcrud_markdown`).
+Champ HTML WYSIWYG pour zcrud — édition via une WebView à controller isolé,
+lecture native, format persisté en `String` HTML.
 
-## Enrôlement
+## Aperçu {#apercu}
+
+`zcrud_html` est le satellite **HTML WYSIWYG** de zcrud : une **2ᵉ voie**
+rich-text, exclusive de celle de `zcrud_markdown`. Là où `zcrud_markdown`
+édite en Delta interne avec un `ZCodec` pluggable, `zcrud_html` édite
+**directement en HTML** via une WebView (`html_editor_enhanced`) et lit avec
+un rendu HTML natif (`flutter_html`) — sans jamais passer par un document
+Delta. C'est le choix pertinent quand le format persisté doit rester du HTML
+`String` sans intermédiaire de conversion.
+
+Ce paquet fournit :
+
+- `ZHtmlEditorField` — le champ d'édition WYSIWYG, au controller WebView
+  **isolé** (créé une seule fois, jamais recréé au rebuild) ;
+- `ZHtmlView` — le rendu de lecture, natif et défensif ;
+- `registerZHtmlFields` — l'enrôlement des `kind` `html`/`inlineHtml` dans un
+  `ZWidgetRegistry` injecté.
+
+**Utilisez ce paquet** quand votre application doit éditer du HTML `String`
+en WYSIWYG (par exemple pour interopérer avec un système existant qui attend
+du HTML). **N'utilisez pas ce paquet** si un round-trip Markdown ou Delta
+suffit, ou si l'accessibilité fine de l'édition est prioritaire : préférez
+alors `zcrud_markdown`, dont l'éditeur Quill est nativement accessible — la
+WebView de ce paquet reste hors du contrôle `Semantics` du socle côté
+édition.
+
+## Installation {#installation}
+
+Ce paquet est distribué en dépendance git privée depuis le monorepo zcrud —
+voir [Consommation privée des packages zcrud](../../docs/private-git-consumption.md)
+pour l'épinglage par tag et la déclaration `dependency_overrides` requise par
+les arêtes inter-`zcrud_*`.
+
+## Démarrage rapide {#demarrage-rapide}
 
 ```dart
+import 'package:zcrud_core/zcrud_core.dart';
 import 'package:zcrud_html/zcrud_html.dart';
 
-registerZHtmlFields(registry); // enregistre les kinds `html` et `inlineHtml`
+/// Enregistre les `kind` `html` (mode bloc) et `inlineHtml` (mode inline)
+/// dans le registre de widgets du cœur, une fois au bootstrap de l'app.
+void bootstrap(ZWidgetRegistry registry) {
+  registerZHtmlFields(registry);
+}
 ```
 
-Le builder honore `field.readOnly` (rendu lecteur `ZHtmlView` prioritaire) et
-pose une place stable `ValueKey('z-html-<field.name>')` (AD-2).
+Une fois enregistré, un `ZFieldSpec` de `kind: 'html'` (ou `'inlineHtml'`) est
+rendu automatiquement par `ZHtmlEditorField` en édition et `ZHtmlView` en
+lecture, au travers du dispatcher de champs du cœur — aucun câblage widget par
+widget n'est nécessaire.
 
-## Exclusivité `md` / `html`
+## Concepts clés {#concepts-cles}
 
-Les `kind` `html`/`inlineHtml` sont **mutuellement exclusifs** avec ceux de
-`zcrud_markdown` : une app choisit **une seule** voie au bootstrap. La collision
-est détectée par le contrat cœur `ZWidgetRegistry.register` (**`throw`
-`ZDuplicateRegistrationError`**) — jamais par une dépendance vers `zcrud_markdown`
-(arête interdite, AD-1).
+- **Exclusivité avec `zcrud_markdown`** — les `kind` `html`/`inlineHtml` sont
+  **mutuellement exclusifs** entre les deux paquets : une application choisit
+  une seule voie au bootstrap. La collision est détectée par le contrat cœur
+  `ZWidgetRegistry.register` (`throw`), jamais par une dépendance directe
+  entre les deux paquets — interdite par l'invariant [AD-1](../../docs/site/concepts/invariants.md#ad-1).
+- **Controller isolé et commit débouncé (invariant [AD-2](../../docs/site/concepts/invariants.md#ad-2))** —
+  le `HtmlEditorController` est créé une seule fois ; toute la mécanique
+  temporelle de débounce vit dans `ZHtmlCommitDebouncer`, une classe pur-Dart
+  testable indépendamment de la WebView.
+- **Isolation des dépendances lourdes (invariant [AD-1](../../docs/site/concepts/invariants.md#ad-1))** —
+  `html_editor_enhanced` et `flutter_html` sont confinées à `lib/src/` :
+  aucun de leurs types n'apparaît dans le barrel public.
 
-## Isolation & SM-1 (AD-50 / AD-2)
+## API principale {#api-principale}
 
-- **Controller unique** : `HtmlEditorController` créé une seule fois en
-  `initState` (`late final`), jamais recréé au rebuild de tranche.
-- **Commit débouncé hors-frappe** : toute la mécanique temporelle vit dans
-  `ZHtmlCommitDebouncer` (pur Dart, testable au caractère) — une frappe ne pousse
-  jamais de commit synchrone ; `onBlur` flushe le contenu final.
-- **Re-sync hors focus** : une valeur externe (`ctx.value`) n'est ré-injectée
-  (`setText`) que hors focus — jamais d'écrasement de la saisie.
+| Type | Rôle |
+|---|---|
+| `ZHtmlEditorField` | Champ d'édition HTML WYSIWYG à controller WebView isolé. |
+| `ZHtmlView` | Rendu de lecture HTML natif, défensif sur un contenu malformé. |
+| `registerZHtmlFields` | Enregistre les `kind` `html`/`inlineHtml` dans un `ZWidgetRegistry`. |
 
-## Dépendances
+## Cas limites et invariants {#cas-limites}
 
-- `zcrud_core` (unique arête `zcrud_*` sortante — AD-1, CORE OUT=0)
-- `html_editor_enhanced` (édition WYSIWYG) + `flutter_html` (lecture) — **confinées
-  à `lib/src/`**, aucun de leurs types en signature publique (AD-40, gardé par
-  `test/z_html_confinement_test.dart`).
+- **Décodage défensif (invariant [AD-10](../../docs/site/concepts/invariants.md#ad-10))** —
+  un contenu initial non-`String`/`null` rend un éditeur vide ; un HTML
+  malformé se rend en best-effort, jamais un `throw`.
+- **Re-sync guardée hors focus** — une valeur externe n'est réinjectée dans
+  l'éditeur que si le champ n'a pas le focus, pour ne jamais écraser une
+  saisie en cours.
+- **Pertes de round-trip bornées** — code inline, `<div>`/CSS inline exotiques
+  et embeds spécifiques à un éditeur tiers dégradent proprement plutôt que de
+  faire échouer la conversion.
+- **Accessibilité limitée côté édition** — la WebView embarque son propre DOM :
+  les `Semantics` fines y échappent au contrôle du paquet. Le rendu de lecture
+  `ZHtmlView`, lui, expose un `Semantics` de conteneur complet et hérite du
+  thème ambiant.
+- **Aucune dépendance réseau (invariant [AD-12](../../docs/site/concepts/invariants.md#ad-12))** —
+  ni CDN, ni endpoint en dur : un rendu de formule mathématique par CDN
+  externe est hors périmètre offline de zcrud et n'est jamais réintroduit ici.
+- **WebView non montable sous `flutter_test`** — la mécanique de débounce est
+  prouvée par `ZHtmlCommitDebouncer` en isolation, pas par un test qui monte
+  la WebView (indisponible en VM).
 
-## Limites connues (documentées)
+## Voir aussi {#voir-aussi}
 
-- **A11y (AD-13) au mieux côté édition** : `html_editor_enhanced` embarque son
-  propre DOM/Summernote (WebView) ; les `Semantics` fines y sont hors de notre
-  contrôle. Le rendu lecture `ZHtmlView` reçoit un `Semantics` de conteneur et
-  hérite du thème (`Theme.of`).
-- **Pertes de round-trip bornées** (dégradation gracieuse, AD-10) : code inline
-  (`<code>`/`<pre>`), `<div>`/CSS inline exotiques (best-effort), embeds
-  Summernote (ignorés). Le **LaTeX/MathJax** DODLP s'appuie sur un **CDN runtime**
-  — hors périmètre offline zcrud (AD-12), **jamais réintroduit** ici.
-- **WebView non montable en `flutter_test`** (VM sans moteur WebView) : la
-  mécanique SM-1 est prouvée par `ZHtmlCommitDebouncer` (extrait, falsifiable) +
-  la conception (`late final` + `ValueKey`), jamais par un test tautologique.
+- Fiche paquet : [`docs/site/paquets/zcrud_html.md`](../../docs/site/paquets/zcrud_html.md)
+- [Invariants d'architecture](../../docs/site/concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
+- `zcrud_markdown` — voie d'édition Delta/Markdown alternative, exclusive de ce paquet.
+- `zcrud_core` — `ZWidgetRegistry`, `ZFieldSpec`, dispatcher de champs.
 
-Publié sous licence MIT.
+## Licence {#licence}
+
+MIT — voir la racine du dépôt.

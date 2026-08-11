@@ -7,7 +7,7 @@
 /// **DÉFÉRÉ au consommateur** (ES-9.2) ». **ES-9.2 EST ce consommateur** : elle
 /// livre le câblage — sous forme d'un **ADAPTATEUR** côté `zcrud_study`.
 ///
-/// ## 🔴 Pourquoi un ADAPTATEUR ICI, et NON un `implements` dans `zcrud_exam`
+/// ## Pourquoi un ADAPTATEUR ICI, et NON un `implements` dans `zcrud_exam`
 ///
 /// Un `class ZExam implements ZApproachingExam` dans `zcrud_exam` ajouterait
 /// l'arête `zcrud_exam → zcrud_study_kernel` (le port vit au kernel) — arête que le
@@ -18,7 +18,7 @@
 /// ⇒ il est le SEUL point où les deux types se rencontrent. Coût graphe : **1 seule
 /// arête** `zcrud_study → zcrud_exam` (AD-1, acyclique).
 ///
-/// ## 🔴 Forwarder TRIVIAL — AUCUNE réimplémentation de la proximité (R20)
+/// ## Forwarder TRIVIAL — AUCUNE réimplémentation de la proximité (R20)
 ///
 /// [_ZExamApproaching] DÉLÈGUE `isApproaching(now)` / `daysUntil(now)` / `date` aux
 /// vraies méthodes de `ZExam` (pures, totales, déterministes, horloge INJECTÉE, D5)
@@ -26,7 +26,7 @@
 /// ligne de prod PROPRE à ES-9.2** : coder en dur `isApproaching(now) => true`
 /// laisserait fuiter un examen PASSÉ (R3-I4).
 ///
-/// ## 🔴 AC5 — la planification OS est un SEAM APP ; ici, calcul déterministe SEUL
+/// ## AC5 — la planification OS est un SEAM APP ; ici, calcul déterministe SEUL
 ///
 /// [examDailyTasks] / [approachingReminders] prennent l'horloge `now` en
 /// **PARAMÈTRE** (jamais `DateTime.now()`, R5) et ne font QUE DÉLÉGUER le filtre
@@ -86,12 +86,15 @@ List<ZDailyStudyTask> examDailyTasks({
   );
 }
 
-/// Un rappel approchant matérialisé : l'examen source + son décompte (AC4).
+/// Un rappel approchant matérialisé : l'examen source et son décompte.
 ///
-/// DÉRIVÉ de [examDailyTasks] : porte le [ZExam] complet (pour rendre l'intitulé,
-/// que le port neutre [ZApproachingExam] n'expose PAS) et le [daysUntil] déjà
-/// calculé par le kernel via l'adaptateur. Immuable, `==`/`hashCode` de valeur.
+/// Dérivé de [examDailyTasks] : porte le [ZExam] complet (pour rendre
+/// l'intitulé, que le port neutre `ZApproachingExam` n'expose pas) et le
+/// [daysUntil] déjà calculé par le kernel via l'adaptateur. Immuable,
+/// `==`/`hashCode` par valeur.
 class ZApproachingReminder {
+  /// Construit un rappel à partir de l'[exam] et de son décompte
+  /// [daysUntil].
   const ZApproachingReminder(this.exam, this.daysUntil);
 
   /// L'examen approchant (entité complète, intitulé/date disponibles).

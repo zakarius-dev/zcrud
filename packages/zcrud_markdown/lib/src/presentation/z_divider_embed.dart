@@ -1,7 +1,6 @@
-/// Embed **filet horizontal** (`divider`) et **repli d'embed inconnu** —
-/// CR-IFFD-73.
+/// Embed **filet horizontal** (`divider`) et **repli d'embed inconnu**.
 ///
-/// ## 🔴 Le défaut mesuré, et pourquoi il était invisible
+/// ## Le défaut mesuré, et pourquoi il était invisible
 ///
 /// `ZMarkdownCodec` déclare `divider` parmi ses `_kNativeEmbedTypes` : un
 /// `---` / `***` / `___` de Markdown produit bien l'op
@@ -27,7 +26,7 @@
 /// mordante, et braquée sur la mauvaise propriété.
 ///
 /// Le filet horizontal est par ailleurs **omniprésent** dans ce que produisent
-/// les modèles de langage — ce qui en fait un bloquant direct de CR-IFFD-73.
+/// les modèles de langage — ce qui en fait un cas à couvrir en priorité.
 ///
 /// ## Les deux moitiés de la réparation
 ///
@@ -38,7 +37,7 @@
 ///    lieu de lever. Le premier point corrige le cas connu ; le second ferme la
 ///    **classe** de défauts, et c'est lui qui compte.
 ///
-/// FR-26 : aucune couleur codée en dur (thème injecté, repli `Theme.of`).
+/// aucune couleur codée en dur (thème injecté, repli `Theme.of`).
 /// AD-13 : `Semantics` explicite, insets DIRECTIONNELS.
 library;
 
@@ -52,7 +51,7 @@ const String kDividerEmbedType = 'divider';
 
 /// `EmbedBuilder` de rendu du filet horizontal (`---`, `***`, `___`).
 ///
-/// Sans état ⇒ instance `const` STABLE (SM-1/AD-2 : aucune allocation par
+/// Sans état ⇒ instance `const` STABLE (AD-2 : aucune allocation par
 /// (re)build de tranche), comme les builders LaTeX/tableau/média.
 class ZDividerEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état, aucune ressource à disposer).
@@ -111,5 +110,5 @@ class ZUnknownEmbedBuilder extends EmbedBuilder {
   }
 }
 
-/// L'instance `const` partagée du repli — référence STABLE (SM-1).
+/// L'instance `const` partagée du repli — référence STABLE.
 const EmbedBuilder kZUnknownEmbedBuilder = ZUnknownEmbedBuilder();

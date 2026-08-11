@@ -1,23 +1,24 @@
-/// Contrôleur d'édition outline `ZMindmapOutlineController` (Story E10-3).
+/// Contrôleur d'édition outline `ZMindmapOutlineController`.
 ///
-/// **Correction par conception du bug lex (dette n°5)** : la forêt détenue par
-/// ce contrôleur est la **source de vérité UNIQUE** de l'éditeur. Toute mutation
+/// **Source de vérité unique par conception** : la forêt détenue par ce
+/// contrôleur est la **source de vérité UNIQUE** de l'éditeur. Toute mutation
 /// (label/content/add/delete/indent/outdent/reorder) est appliquée **en continu**
 /// via `ZMindmapTreeOps` et **remplace** la forêt interne — de sorte que
 /// `forest` reflète TOUJOURS l'état édité. La sauvegarde émet **exactement**
 /// `controller.forest` : il n'existe AUCUN chemin où l'arbre d'origine serait
-/// re-persisté par-dessus les edits (le bug lex historique).
+/// re-persisté par-dessus les modifications en cours d'édition.
 ///
-/// **Réactivité Flutter-native (AD-2/AD-15)** : `ChangeNotifier` **pur-Flutter**
-/// (aucun `flutter_riverpod`/`get`/`provider`, aucun `WidgetRef`/`Get.`/
-/// `Provider.of`). Les notifications sont réservées aux mutations
-/// **structurelles** (add/delete/indent/outdent/reorder) qui changent
-/// l'aplatissement de l'outline ; l'édition de **texte** (`label`/`content`)
-/// met à jour la forêt SANS notifier (le `TextField` porte déjà le texte via son
-/// `TextEditingController` stable — rebuild ciblé, zéro perte de focus, SM-1).
+/// **Réactivité Flutter-native (invariants AD-2/AD-15)** : `ChangeNotifier`
+/// **pur-Flutter** (aucun `flutter_riverpod`/`get`/`provider`, aucun
+/// `WidgetRef`/`Get.`/`Provider.of`). Les notifications sont réservées aux
+/// mutations **structurelles** (add/delete/indent/outdent/reorder) qui
+/// changent l'aplatissement de l'outline ; l'édition de **texte**
+/// (`label`/`content`) met à jour la forêt SANS notifier (le `TextField`
+/// porte déjà le texte via son `TextEditingController` stable — rebuild
+/// ciblé, zéro perte de focus).
 ///
 /// **Aucune reconstruction manuelle d'arbre, aucun recalcul de `level`** : tout
-/// passe par `ZMindmapTreeOps` (E10-1). `addSibling`/`addRoot` COMPOSENT les ops
+/// passe par `ZMindmapTreeOps`. `addSibling`/`addRoot` COMPOSENT les ops
 /// existantes (`addChild` + `outdentNode`) — pas d'op « insérer racine » requise.
 library;
 
@@ -39,14 +40,14 @@ class ZMindmapOutlineController extends ChangeNotifier {
   }) : _forest = List<ZMindmapNode>.unmodifiable(initialForest);
 
   /// Nombre MINIMAL de racines que la forêt ne peut pas franchir à la baisse
-  /// (CR-LEX-21) — défaut `0`, donc **non cassant**.
+  ///  — défaut `0`, donc **non cassant**.
   ///
   /// `deleteNode` supprime un **sous-arbre entier**, racine comprise : une
   /// forêt à une seule racine devient **vide** en un geste, sans confirmation
   /// possible. Poser `minRoots: 1` rend cet état **inatteignable par
   /// accident** — la suppression de la dernière racine est simplement refusée.
   ///
-  /// ⚠️ Ce n'est **pas** une confirmation : c'est un plancher structurel. Pour
+  /// Ce n'est **pas** une confirmation : c'est un plancher structurel. Pour
   /// demander à l'utilisateur, voir `ZMindmapOutlineEditor.onConfirmDelete`.
   final int minRoots;
 
@@ -62,11 +63,11 @@ class ZMindmapOutlineController extends ChangeNotifier {
 
   bool _disposed = false;
 
-  /// Forêt éditée **courante** — c'est CE que `onSave` doit émettre (AC2).
+  /// Forêt éditée **courante** — c'est CE que `onSave` doit émettre.
   List<ZMindmapNode> get forest => _forest;
 
   // ---------------------------------------------------------------------------
-  // TextEditingController stables par nœud (AC3 — zéro perte de focus)
+  // TextEditingController stables par nœud (zéro perte de focus)
   // ---------------------------------------------------------------------------
 
   /// `TextEditingController` **stable** du champ `label` de [node] : créé une
@@ -108,13 +109,14 @@ class ZMindmapOutlineController extends ChangeNotifier {
     if (!identical(next, _forest)) _forest = next;
   }
 
-  /// Écrit le payload rich (ops Delta neutres) dans le **slot AD-4** [slotKey] de
-  /// `node.extra` du nœud [id], **sans** `notifyListeners()` (voie d'édition
-  /// « live », comme [editLabel]/[editContent] — le champ rich porte déjà son
-  /// état via son propre controller isolé ; notifier reconstruirait l'outline et
-  /// ferait perdre le focus/curseur, AD-2/SM-1). `label`/`content` restent
-  /// **inchangés** (OQ-S5/AD-28 : le rich vit dans `extra`, jamais dans
-  /// `label`/`content`). Défensif (AD-10) : nœud introuvable → no-op.
+  /// Écrit le payload rich (ops Delta neutres) dans le **slot d'extension
+  /// invariant AD-4** [slotKey] de `node.extra` du nœud [id], **sans**
+  /// `notifyListeners()` (voie d'édition « live », comme
+  /// [editLabel]/[editContent] — le champ rich porte déjà son état via son
+  /// propre controller isolé ; notifier reconstruirait l'outline et ferait
+  /// perdre le focus/curseur, invariant AD-2). `label`/`content` restent
+  /// **inchangés** : le rich vit dans `extra`, jamais dans `label`/`content`.
+  /// Défensif (invariant AD-10) : nœud introuvable → no-op.
   void editRichSlot(String id, String slotKey, List<Map<String, dynamic>> ops) {
     final node = ZMindmapTreeOps.findNode(_forest, id);
     if (node == null) return;
@@ -163,12 +165,12 @@ class ZMindmapOutlineController extends ChangeNotifier {
   }
 
   /// Supprime le nœud [id] et tout son sous-arbre (`deleteNode`). Purge aussi les
-  /// `TextEditingController` du sous-arbre retiré (LOW-1 : anti-fuite mémoire).
+  /// `TextEditingController` du sous-arbre retiré (anti-fuite mémoire).
   void deleteNode(String id) {
     final next = ZMindmapTreeOps.deleteNode(_forest, id);
     if (identical(next, _forest)) return; // introuvable → aucun changement
-    // CR-LEX-21 : plancher structurel. Sans lui, supprimer la dernière racine
-    // vidait la forêt en un geste, sans retour possible.
+    // Plancher structurel : sans lui, supprimer la dernière racine
+    // viderait la forêt en un geste, sans retour possible.
     if (next.length < minRoots) return;
     final removed = ZMindmapTreeOps.findNode(_forest, id);
     if (removed != null) _disposeSubtreeControllers(removed);
@@ -176,7 +178,7 @@ class ZMindmapOutlineController extends ChangeNotifier {
   }
 
   /// Nombre de nœuds que [deleteNode] retirerait pour [id] — racine du
-  /// sous-arbre **comprise**. `0` si l'`id` est introuvable (CR-LEX-21).
+  /// sous-arbre **comprise**. `0` si l'`id` est introuvable.
   ///
   /// Permet à un hôte d'annoncer l'ampleur AVANT de supprimer (« ceci
   /// supprimera 12 nœuds »), au lieu de la découvrir après coup.

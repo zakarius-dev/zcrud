@@ -1,18 +1,18 @@
-/// Enregistrement des **widgets d'édition flashcard** dans un `ZWidgetRegistry`
-/// + fabriques de `ZFieldSpec` (Story E9-5, AC1/AC6/AD-2/AD-4).
+/// Enregistrement des widgets d'édition flashcard dans un `ZWidgetRegistry`
+/// et fabriques de `ZFieldSpec`.
 ///
-/// **Positionnement (UJ-4)** : widgets **additifs** rendus **dans**
-/// `DynamicEdition` du cœur — jamais un second moteur d'édition, jamais un modèle
-/// concurrent. Le cœur route un champ `EditionFieldType.custom` vers le
-/// `ZWidgetRegistry` injecté **par le nom d'enum** (`'custom'`). On enregistre
-/// donc **un unique** builder sous ce `kind` qui **discrimine** le sous-widget
-/// flashcard via [ZFlashcardFieldConfig.editorKind] (aucun singleton statique
-/// mutable ; **aucune** édition de `zcrud_core`). Les libellés/messages sont
-/// **paramétrables par closure** (AD-4) — aucune référence en dur au modèle
-/// `Flashcard` de lex.
+/// Positionnement : widgets additifs rendus dans `DynamicEdition` du cœur —
+/// jamais un second moteur d'édition, jamais un modèle concurrent. Le cœur
+/// route un champ `EditionFieldType.custom` vers le registre de widgets
+/// injecté par le nom d'enum (`'custom'`). On enregistre donc un unique
+/// builder sous ce `kind` qui discrimine le sous-widget flashcard via
+/// [ZFlashcardFieldConfig.editorKind] (aucun singleton statique mutable ;
+/// aucune édition de `zcrud_core`). Les libellés et messages sont
+/// paramétrables par closure (invariant AD-4) — aucune référence en dur à un
+/// modèle applicatif particulier.
 ///
-/// Les champs **texte** (énoncé/réponse/explication/indice) et **tags** utilisent
-/// les familles **du cœur** (`multiline`/`text`/`tags`) : les fabriques de
+/// Les champs texte (énoncé/réponse/explication/indice) et tags utilisent
+/// les familles du cœur (`multiline`/`text`/`tags`) : les fabriques de
 /// [ZFlashcardEditionFields] en fournissent les specs prêtes à l'emploi.
 library;
 
@@ -29,15 +29,15 @@ import 'z_flashcard_type_field_widget.dart';
 /// sur `EditionFieldType.custom.name` (convention du dispatcher du cœur).
 final String kZFlashcardEditorKindName = EditionFieldType.custom.name;
 
-/// Enregistre **le** builder d'édition flashcard dans [registry] (sous le `kind`
+/// Enregistre le builder d'édition flashcard dans [registry] (sous le `kind`
 /// `custom`). Le builder monte le sous-widget adéquat selon
 /// [ZFlashcardFieldConfig.editorKind] porté par le champ.
 ///
-/// Paramètres (capturés par closure — AD-4) : [typeLabelResolver] (libellés des
-/// 6 types), [trueLabel]/[falseLabel] (vrai/faux), [messages] (erreurs éditeur),
-/// [addChoiceLabel]. Un champ `custom` **sans** [ZFlashcardFieldConfig] (ou de
-/// config étrangère) retombe sur un widget vide **inoffensif** (jamais un throw,
-/// jamais `ZUnsupportedFieldWidget` — AD-10).
+/// Paramètres (capturés par closure, invariant AD-4) : [typeLabelResolver]
+/// (libellés des six types), [trueLabel]/[falseLabel] (vrai/faux),
+/// [messages] (erreurs d'éditeur), [addChoiceLabel]. Un champ `custom` sans
+/// [ZFlashcardFieldConfig] (ou avec une configuration étrangère) retombe sur
+/// un widget vide inoffensif (jamais une exception — invariant AD-10).
 void registerZFlashcardEditors(
   ZWidgetRegistry registry, {
   ZFlashcardTypeLabel? typeLabelResolver,
@@ -72,19 +72,20 @@ void registerZFlashcardEditors(
             falseLabel: falseLabel,
           );
         case null:
-          // Défensif (AD-10) : config manquante/étrangère → widget inoffensif.
+          // Défensif (invariant AD-10) : config manquante/étrangère → widget
+          // inoffensif.
           return const SizedBox.shrink();
       }
     },
   );
 }
 
-/// Fabriques de [ZFieldSpec] d'un formulaire d'édition flashcard **standard**
-/// (AC1). Les specs des trois champs flashcard-spécifiques (type/QCM/vrai-faux)
+/// Fabriques de [ZFieldSpec] d'un formulaire d'édition flashcard standard.
+/// Les specs des trois champs flashcard-spécifiques (type/QCM/vrai-faux)
 /// portent une [ZFlashcardFieldConfig] sur `EditionFieldType.custom` ; les
 /// champs texte/tags utilisent les familles du cœur.
 abstract final class ZFlashcardEditionFields {
-  /// Champ **sélecteur de type** (`custom` + config `type`).
+  /// Champ sélecteur de type (`custom` + config `type`).
   static ZFieldSpec type({String name = 'type', String? label}) => ZFieldSpec(
         name: name,
         type: EditionFieldType.custom,
@@ -92,10 +93,10 @@ abstract final class ZFlashcardEditionFields {
         config: const ZFlashcardFieldConfig(ZFlashcardEditorKind.type),
       );
 
-  /// Champ **éditeur QCM** (`custom` + config `choices`). La règle « ≥ 2 choix +
-  /// ≥ 1 correct » est portée par [ZFlashcardEditionValidator] (AC2), **pas**
-  /// par un `ZValidatorSpec` (chaîne-orienté), afin d'éviter tout message du
-  /// cœur sur une valeur `List<ZChoice>` stringifiée.
+  /// Champ éditeur QCM (`custom` + config `choices`). La règle « au moins 2
+  /// choix, au moins 1 correct » est portée par [ZFlashcardEditionValidator],
+  /// pas par un `ZValidatorSpec` (chaîne-orienté), afin d'éviter tout
+  /// message du cœur sur une valeur `List<ZChoice>` stringifiée.
   static ZFieldSpec choices({String name = 'choices', String? label}) =>
       ZFieldSpec(
         name: name,
@@ -104,7 +105,7 @@ abstract final class ZFlashcardEditionFields {
         config: const ZFlashcardFieldConfig(ZFlashcardEditorKind.choices),
       );
 
-  /// Champ **vrai/faux** (`custom` + config `trueFalse`).
+  /// Champ vrai/faux (`custom` + config `trueFalse`).
   static ZFieldSpec trueFalse({String name = 'is_true', String? label}) =>
       ZFieldSpec(
         name: name,
@@ -113,7 +114,7 @@ abstract final class ZFlashcardEditionFields {
         config: const ZFlashcardFieldConfig(ZFlashcardEditorKind.trueFalse),
       );
 
-  /// Champ **énoncé** (`multiline`, requis — validateur cœur `required`).
+  /// Champ énoncé (`multiline`, requis — validateur du cœur `required`).
   static ZFieldSpec question({String name = 'question', String? label}) =>
       ZFieldSpec(
         name: name,
@@ -122,7 +123,7 @@ abstract final class ZFlashcardEditionFields {
         validators: const <ZValidatorSpec>[ZValidatorSpec.required()],
       );
 
-  /// Champ **réponse libre** (`multiline`).
+  /// Champ réponse libre (`multiline`).
   static ZFieldSpec answer({String name = 'answer', String? label}) =>
       ZFieldSpec(
         name: name,
@@ -130,7 +131,7 @@ abstract final class ZFlashcardEditionFields {
         label: label ?? 'Réponse',
       );
 
-  /// Champ **explication** (`multiline`).
+  /// Champ explication (`multiline`).
   static ZFieldSpec explanation({String name = 'explanation', String? label}) =>
       ZFieldSpec(
         name: name,
@@ -138,21 +139,21 @@ abstract final class ZFlashcardEditionFields {
         label: label ?? 'Explication',
       );
 
-  /// Champ **indice** (`text`).
+  /// Champ indice (`text`).
   static ZFieldSpec hint({String name = 'hint', String? label}) => ZFieldSpec(
         name: name,
         type: EditionFieldType.text,
         label: label ?? 'Indice',
       );
 
-  /// Champ **tags** (`tags` — famille du cœur).
+  /// Champ tags (`tags` — famille du cœur).
   static ZFieldSpec tags({String name = 'tag_ids', String? label}) => ZFieldSpec(
         name: name,
         type: EditionFieldType.tags,
         label: label ?? 'Étiquettes',
       );
 
-  /// Catalogue **complet** d'un formulaire d'édition flashcard standard.
+  /// Catalogue complet d'un formulaire d'édition flashcard standard.
   static List<ZFieldSpec> all() => <ZFieldSpec>[
         question(),
         type(),

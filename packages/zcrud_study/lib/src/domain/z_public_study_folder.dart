@@ -1,13 +1,12 @@
-/// Métadonnées de **galerie publique** `ZPublicStudyFolder` (Story ES-9.4,
-/// AC1/AC3/AC5).
+/// Métadonnées de galerie publique d'un dossier d'étude partagé.
 ///
-/// origine: listing public d'un dossier partagé (AD-26). Ne porte QUE des
-/// métadonnées **partageables** (titre, owner, date de mise en ligne) — **JAMAIS**
-/// d'état personnel (SRS / ordre / lecture, AC3). L'`ownerUid` et le fait d'être
-/// listé (`listedAt`) sont des **champs de contrôle** (AC5) : seul l'owner publie
-/// / retire ([ZStudySharingAcl]).
+/// Ne porte que des métadonnées partageables (titre, propriétaire, date de
+/// mise en ligne) — jamais d'état personnel (répétition espacée, ordre,
+/// lecture). Le propriétaire (`ownerUid`) et le fait d'être listé
+/// (`listedAt`) sont des champs de contrôle : seul le propriétaire peut
+/// publier ou retirer (voir `ZStudySharingAcl`).
 ///
-/// Entité hand-written défensive (AD-10), AD-19.1 sur [extra].
+/// Entité écrite à la main, désérialisation défensive (invariant AD-10).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -34,10 +33,11 @@ class ZPublicStudyFolder {
     'listed_at',
   };
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra] à la lecture.
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// Reconstruit **défensivement** depuis une map (AD-10) — **jamais** de throw.
+  /// Reconstruit défensivement depuis une map (invariant AD-10) — ne lève
+  /// jamais.
   static ZPublicStudyFolder fromJson(Object? json) {
     if (json is! Map) return const ZPublicStudyFolder();
     final map = <String, dynamic>{
@@ -58,25 +58,25 @@ class ZPublicStudyFolder {
     );
   }
 
-  /// Identité opaque `String` (nullable pour l'éphémère AD-14).
+  /// Identité opaque `String`, nullable pour l'entité pas encore persistée.
   final String? id;
 
   /// Dossier listé (clé neutre `String`).
   final String folderId;
 
-  /// 🔴 **Champ de CONTRÔLE** (AC5) — propriétaire (uid opaque).
+  /// Champ de contrôle : propriétaire (identifiant opaque).
   final String ownerUid;
 
   /// Titre affiché en galerie (métadonnée partageable).
   final String title;
 
-  /// 🔴 **Champ de CONTRÔLE** (AC5) — date de mise en galerie, `null` si retiré.
+  /// Champ de contrôle : date de mise en galerie, `null` si retiré.
   final DateTime? listedAt;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Slot brut de l'échappatoire (normalisé à la lecture via [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée. **Normalisée à la LECTURE (AD-19.1)**.
+  /// Échappatoire non typée, normalisée à la lecture.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
   /// Sérialise en clés snake_case. Étale [extra] (clés réservées déjà écartées).

@@ -1,51 +1,44 @@
-/// `ZSessionSummaryView` — **écran de fin de session** (SU-5, AC1..AC11 —
-/// FR-SU8/FR-SU9).
+/// `ZSessionSummaryView` — écran de fin de session.
 ///
-/// ## Il ASSEMBLE. Il ne réimplémente RIEN (AC1)
+/// ## Il assemble. Il ne réimplémente rien
 ///
-/// Les pièces existent, sont exportées et testées : il **monte**
-/// `ZSessionQualityBreakdown` (alimenté par `result.byQuality` **verbatim** —
+/// Les pièces existent, sont exportées et testées : il monte
+/// `ZSessionQualityBreakdown` (alimenté par `result.byQuality` verbatim,
 /// aucun recomptage) et `ZStudyProgressRings` (alimenté par
-/// `ZProgressRingsData.fromResult(result)` — jamais un ratio recalculé).
-/// `scale`/`passThreshold` **dérivent** de la `ZSrsConfig` injectée
-/// (`ZQualityScale.fromConfig`, voie UNIQUE — AD-46).
+/// `ZProgressRingsData.fromResult(result)`, jamais un ratio recalculé).
+/// `scale`/`passThreshold` dérivent de la `ZSrsConfig` injectée
+/// (`ZQualityScale.fromConfig`, voie unique).
 ///
-/// ## 🔴 « maîtrisées » n'est PAS `result.correct` (D3)
+/// ## « Maîtrisées » n'est pas `result.correct`
 ///
-/// Fait LU sur disque (`z_white_exam_session_engine.dart:210-216`) :
-/// `correct = nombre de réponses q >= passThreshold` — soit **q3-4-5**. Or le
-/// glossaire PRD et l'AD-46 définissent **maîtrisée = q4-5**. Afficher `correct`
-/// sous le libellé « maîtrisées » serait un nombre **juste attribué au mauvais
-/// concept** — vert tant que personne ne compare les deux. [zMasteredCount] est
-/// donc **dérivé de `byQuality`**, avec un seuil **CONSOMMÉ** depuis son
-/// propriétaire AD-46 (`ZSrsConfig.masteredThreshold`), **jamais le littéral `4`**
-/// et **jamais redérivé ici** (su-6/D2 : le seuil a été **promu** dans
-/// `ZSrsConfig` — les filtres FR-SU12 vivent en AMONT et ne peuvent pas importer
-/// ce package ; `z_quality_scale_single_source_test.dart` rougit sur un littéral
-/// de borne ou un `masteredThreshold ?? <littéral>` ICI). Les anneaux, eux,
-/// continuent d'afficher `correct/total` : **deux nombres différents,
-/// volontairement**.
+/// `correct` compte les réponses de qualité au moins égale au seuil de
+/// réussite (q3, q4 ou q5). Le glossaire du domaine définit « maîtrisée »
+/// comme q4-5, un sous-ensemble strict. Afficher `correct` sous le libellé
+/// « maîtrisées » serait un nombre juste attribué au mauvais concept.
+/// [zMasteredCount] est donc dérivé de `byQuality`, avec un seuil consommé
+/// depuis son propriétaire, `ZSrsConfig.masteredThreshold`, jamais un
+/// littéral en dur ni redérivé ici. Les anneaux, eux, continuent d'afficher
+/// `correct/total` : deux nombres différents, volontairement.
 ///
-/// ## 🔴 La durée est INJECTÉE (D4)
+/// ## La durée est injectée
 ///
-/// `ZStudySessionResult` **ne porte AUCUNE durée** (grep RC=1) : le temps n'est
-/// mesuré que **par carte** (`ZFlashcardSubmission.timeTaken`). L'ajouter au VO
-/// déclencherait le gate de rétro-compatibilité de sérialisation d'un package
-/// **hors périmètre**, pour zéro gain d'AC. Elle est donc un **paramètre**,
-/// mesuré par l'appelant.
+/// `ZStudySessionResult` ne porte aucune durée : le temps n'est mesuré que
+/// par carte (`ZFlashcardSubmission.timeTaken`). L'ajouter au value-object
+/// du kernel déclencherait le gate de rétro-compatibilité de sérialisation
+/// d'un package hors périmètre de ce paquet, pour aucun bénéfice. Elle est
+/// donc un paramètre de cet écran, mesuré par l'appelant.
 ///
-/// ## 🔒 Confinement de `confetti` (AC8, NFR-SU7)
+/// ## Confinement de `confetti`
 ///
-/// **CE FICHIER est le SEUL de `lib/` à importer `confetti`** — le barrel ne le
-/// réexporte pas, et aucun type du paquet n'apparaît en signature publique
-/// (gardé par `test/z_third_party_confinement_test.dart` : `graph_proof` ne voit
-/// AUCUNE fuite tierce). Réglages **imposés par la lecture des sources du
-/// paquet** (cf. `_ConfettiBurst`).
+/// Ce fichier est le seul de `lib/` à importer `confetti` — le barrel ne le
+/// réexporte pas, et aucun type du paquet n'apparaît en signature publique.
+/// Réglages imposés par la lecture des sources du paquet (voir
+/// `_ConfettiBurst`).
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatefulWidget` sans aucun gestionnaire d'état,
-/// controllers **stables** (create/dispose), callbacks/thème/labels INJECTÉS,
-/// aucune écriture SRS (AD-33), directionnel + `Semantics` + cibles ≥ 48 dp
-/// (AD-13).
+/// Widget pur (invariants AD-2/AD-15) : `StatefulWidget` sans aucun
+/// gestionnaire d'état, controllers stables (create/dispose),
+/// callbacks/thème/labels injectés, aucune écriture SRS, directionnel,
+/// `Semantics`, cibles ≥ 48 dp (invariant AD-13).
 library;
 
 import 'package:confetti/confetti.dart';
@@ -61,23 +54,22 @@ import 'z_session_quality_breakdown.dart';
 import 'z_srs_quality_buttons.dart';
 import 'z_study_progress_rings.dart';
 
-/// Variante de **célébration** de l'écran de fin — **enum**, jamais un booléen
-/// (AC11, convention du spine « enums > booléens »).
+/// Variante de célébration de l'écran de fin — un enum, jamais un booléen.
 ///
-/// Le défaut est [ZSummaryCelebration.none] : le confetti est **OPT-IN**, jamais
-/// subi. Un `bool showConfetti` interdirait d'ajouter [ZSummaryCelebration.subtle]
-/// sans casser tous les appelants.
+/// Le défaut est [ZSummaryCelebration.none] : le confetti est opt-in, jamais
+/// subi. Un `bool showConfetti` interdirait d'ajouter
+/// [ZSummaryCelebration.subtle] sans casser tous les appelants.
 enum ZSummaryCelebration {
   /// Aucune célébration : le trophée n'est pas rendu, aucun confetti.
   none,
 
-  /// Célébration **sobre** : trophée + halo animés, **aucun confetti**.
+  /// Célébration sobre : trophée et halo animés, aucun confetti.
   subtle,
 
-  /// Célébration **complète** : trophée + halo + **un seul tir** de confetti.
+  /// Célébration complète : trophée, halo et un seul tir de confetti.
   ///
-  /// 🔒 Jamais sous Reduce Motion (NFR-SU3) : le `ConfettiWidget` n'est alors
-  /// **pas construit du tout**.
+  /// Jamais sous Reduce Motion : le `ConfettiWidget` n'est alors pas
+  /// construit du tout.
   confetti,
 }
 
@@ -89,13 +81,14 @@ enum ZSummaryCelebration {
 @immutable
 class ZCelebrationSpec {
   /// Crée une recette de célébration partielle ou complète.
-  /// 🔴 Les bornes ci-dessous reprennent celles que `confetti` **assertionne**
-  /// en interne (durée strictement positive, particules > 0, gravité et
-  /// fréquence dans `[0, 1]`). Sans elles, une valeur invalide traversait cette
-  /// API publique sans bruit et n'échouait qu'au fond du paquet tiers, avec un
-  /// message sans rapport avec le préréglage fautif (CR epic VIS, MEDIUM-1).
-  /// Échouer ICI nomme le vrai coupable — et `null` reste toujours licite :
-  /// il signifie « garde le défaut historique ».
+  ///
+  /// Les bornes ci-dessous reprennent celles que `confetti` assertionne en
+  /// interne (durée strictement positive, particules > 0, gravité et
+  /// fréquence dans `[0, 1]`). Sans elles, une valeur invalide traverserait
+  /// cette API publique sans bruit et n'échouerait qu'au fond du paquet
+  /// tiers, avec un message sans rapport avec le préréglage fautif. Échouer
+  /// ici nomme le vrai coupable — et `null` reste toujours licite : il
+  /// signifie « garde le défaut historique ».
   const ZCelebrationSpec({
     this.burstDuration,
     this.numberOfParticles,
@@ -108,10 +101,11 @@ class ZCelebrationSpec {
     this.ringsStrokeWidth,
     this.ringsTrackColorKey,
     this.ringsProgressColorKey,
-  }) : // ⚠️ `burstDuration` n'est PAS vérifiée ici : comparer deux `Duration`
-       // n'est pas évaluable dans un `assert` de constructeur `const` (opérateur
-       // non constant) — l'y mettre casse la compilation de tout appelant const.
-       // Sa validation vit donc au point de consommation, dans `_ConfettiBurst`.
+  }) : // `burstDuration` n'est pas vérifiée ici : comparer deux `Duration`
+       // n'est pas évaluable dans un `assert` de constructeur `const`
+       // (opérateur non constant) — l'y mettre casserait la compilation de
+       // tout appelant const. Sa validation vit donc au point de
+       // consommation, dans `_ConfettiBurst`.
        assert(
          numberOfParticles == null || numberOfParticles > 0,
          'numberOfParticles doit être > 0 ; utiliser `null` pour le défaut.',
@@ -168,34 +162,30 @@ class ZCelebrationSpec {
   final String? ringsProgressColorKey;
 }
 
-/// Compte des cartes **MAÎTRISÉES** — dérivé de [byQuality] (D3).
+/// Compte des cartes maîtrisées — dérivé de [byQuality].
 ///
-/// 🔴 **CE N'EST PAS `result.correct`** (= `q >= passThreshold`, soit q3+ —
-/// vérifié `z_white_exam_session_engine.dart:210-216`). Ici : `q >=
-/// [masteredThreshold]` (q4-5 en échelle canonique).
+/// Ce n'est pas `result.correct` (`q >= passThreshold`, donc q3 et plus).
+/// Ici : `q >= [masteredThreshold]` (q4-5 en échelle canonique).
 ///
-/// - somme les comptes des crans **de l'échelle** dont `q >= masteredThreshold` ;
-/// - une clé **hors échelle** (`'9'`, `'03'`, `''`) n'est **jamais** comptée :
-///   le breakdown la **signale** à part (R6), et une note que l'échelle ne
-///   reconnaît pas ne peut pas être « maîtrisée » ;
-/// - **jamais de throw** (AD-10) : `byQuality` corrompu ⇒ les paires inconnues
-///   sont ignorées, jamais une exception.
+/// - somme les comptes des crans de l'échelle dont `q >= masteredThreshold` ;
+/// - une clé hors échelle (`'9'`, `'03'`, `''`) n'est jamais comptée : le
+///   breakdown la signale à part, et une note que l'échelle ne reconnaît
+///   pas ne peut pas être « maîtrisée » ;
+/// - jamais de `throw` (invariant AD-10) : `byQuality` corrompu fait
+///   ignorer les paires inconnues, jamais une exception.
 ///
-/// 🔴 **Un cran NÉGATIF n'est jamais compté** (AD-10 — code-review su-5, D3).
-/// `ZStudySessionResult._decodeByQuality` ne filtre que le **type** (`is int`) :
-/// un `-3` venu d'un document persisté corrompu traverse **verbatim**. Sans ce
-/// plancher, l'écran afficherait « Maîtrisées : **-1** » et le lecteur d'écran
-/// annoncerait « moins un » — aucun throw, aucun test rouge. Le VO lui-même
-/// clampe déjà `total`/`correct` à `>= 0` (`_decodeCount` : « négatif → 0 ») :
-/// la norme du repo est explicite — *un compteur n'est jamais négatif*. su-5
-/// gardait déjà cette classe d'aberration pour la **durée** (`_formatDuration` :
-/// jamais `-1:-30`) ; elle la garde désormais aussi pour le **nombre** qu'il
-/// dérive. On clampe le CRAN (et non la somme) : un `{'5': -3, '4': 2}` rend
-/// `2`, jamais `-1` — ignorer le cran aberrant, sans laisser un autre cran
-/// valide compenser une valeur absurde.
+/// Un cran négatif n'est jamais compté (invariant AD-10). Le décodage de
+/// `ZStudySessionResult` ne filtre que le type (`is int`) : un `-3` venu
+/// d'un document persisté corrompu traverse verbatim. Sans ce plancher,
+/// l'écran afficherait « Maîtrisées : -1 » et le lecteur d'écran annoncerait
+/// « moins un » — aucun throw, aucun test rouge. Le value-object lui-même
+/// clampe déjà `total`/`correct` à `>= 0` : la norme du dépôt est explicite,
+/// un compteur n'est jamais négatif. On clampe le cran (et non la somme) :
+/// un `{'5': -3, '4': 2}` rend `2`, jamais `-1` — ignorer le cran aberrant,
+/// sans laisser un autre cran valide compenser une valeur absurde.
 ///
-/// Comparaison de **string EXACTE** (`'$quality'`), comme
-/// `ZSessionQualityBreakdown._isInScale` : les deux faces partagent le MÊME
+/// Comparaison de chaîne exacte (`'$quality'`), comme
+/// `ZSessionQualityBreakdown._isInScale` : les deux faces partagent le même
 /// critère canonique — aucune clé ne peut tomber entre les deux.
 int zMasteredCount(
   Map<String, int> byQuality,
@@ -206,33 +196,34 @@ int zMasteredCount(
   for (final quality in scale.qualities) {
     if (quality < masteredThreshold) continue;
     final raw = byQuality['$quality'] ?? 0;
-    // AD-10 — plancher défensif : un compteur n'est jamais négatif.
+    // Plancher défensif (invariant AD-10) : un compteur n'est jamais négatif.
     count += raw < 0 ? 0 : raw;
   }
   return count;
 }
 
-/// Écran de fin de session — **assemble**, ne réimplémente rien (FR-SU8).
+/// Écran de fin de session — assemble, ne réimplémente rien.
 class ZSessionSummaryView extends StatefulWidget {
   /// Construit l'écran de fin.
   ///
-  /// - [result] : `ZStudySessionResult` **INJECTÉ** (VO du kernel) ;
-  /// - [duration] : durée de session **INJECTÉE** — le VO ne la porte PAS (D4) ;
-  /// - [config] : `ZSrsConfig` → `scale` + `passThreshold` (AD-46) ;
-  /// - [onFinish] : callback « Terminer » **injecté** ;
-  /// - [dueRemaining] : cartes encore dues (`0` ⇒ bouton « Encore N dues »
-  ///   **ABSENT**, jamais grisé — patron AD-45) ;
-  /// - [onContinue] : callback « Encore N dues » **injecté** ;
-  /// - [celebration] : variante de célébration (**défaut `none`** : confetti
-  ///   OPT-IN, AC11) ;
-  /// - [masteredThreshold] : seuil de maîtrise — défaut **CONSOMMÉ** depuis
-  ///   `config.masteredThreshold` (son propriétaire AD-46), **jamais le littéral
-  ///   `4`**, **jamais redérivé ici** (D3/AD-46 ; su-6/D2) ;
+  /// - [result] : `ZStudySessionResult` injecté (value-object du kernel) ;
+  /// - [duration] : durée de session injectée — le value-object ne la porte
+  ///   pas ;
+  /// - [config] : `ZSrsConfig`, source de `scale` et `passThreshold` ;
+  /// - [onFinish] : callback « Terminer » injecté ;
+  /// - [dueRemaining] : cartes encore dues (`0` : bouton « Encore N dues »
+  ///   absent, jamais grisé) ;
+  /// - [onContinue] : callback « Encore N dues » injecté ;
+  /// - [celebration] : variante de célébration (défaut `none` : confetti
+  ///   opt-in) ;
+  /// - [masteredThreshold] : seuil de maîtrise — défaut consommé depuis
+  ///   `config.masteredThreshold` (son propriétaire), jamais un littéral en
+  ///   dur ni redérivé ici ;
   /// - [feedbackKey] : clé de message pédagogique (= `zFeedbackKeyFor(tier)`,
-  ///   calculée par l'hôte via la fonction PURE `zFeedbackTierFor` — D1 : ce
+  ///   calculée par l'hôte via la fonction pure `zFeedbackTierFor` — ce
   ///   widget ne connaît aucune soumission) ;
-  /// - [feedbackBank] : banque de messages — **remplace INTÉGRALEMENT** la
-  ///   banque par défaut (AC5).
+  /// - [feedbackBank] : banque de messages — remplace intégralement la
+  ///   banque par défaut.
   const ZSessionSummaryView({
     required this.result,
     required this.duration,
@@ -249,90 +240,90 @@ class ZSessionSummaryView extends StatefulWidget {
     super.key,
   });
 
-  /// Résultat de session **INJECTÉ** (VO pur du kernel).
+  /// Résultat de session injecté (value-object pur du kernel).
   final ZStudySessionResult result;
 
-  /// Durée de la session — **INJECTÉE** (D4 : le VO ne la porte pas).
+  /// Durée de la session — injectée (le value-object ne la porte pas).
   ///
-  /// Une durée **négative** (horloge incohérente) est affichée `00:00` — jamais
-  /// un temps négatif, jamais une exception (AD-10).
+  /// Une durée négative (horloge incohérente) est affichée `00:00` — jamais
+  /// un temps négatif, jamais une exception (invariant AD-10).
   final Duration duration;
 
-  /// Config SRS **INJECTÉE** : source UNIQUE de l'échelle et du seuil (AD-46).
+  /// Config SRS injectée : source unique de l'échelle et du seuil.
   final ZSrsConfig config;
 
-  /// Callback « Terminer » — voie UNIQUE de sortie (AC3).
+  /// Callback « Terminer » — voie unique de sortie.
   final VoidCallback onFinish;
 
-  /// Cartes encore dues. `0` ⇒ bouton « Encore N dues » **absent** (AC3).
+  /// Cartes encore dues. `0` : bouton « Encore N dues » absent.
   final int dueRemaining;
 
-  /// Callback « Encore N dues ». `null` ⇒ bouton absent (rien à faire).
+  /// Callback « Encore N dues ». `null` : bouton absent (rien à faire).
   final VoidCallback? onContinue;
 
-  /// Variante de célébration (**défaut `none`** — confetti OPT-IN, AC11).
+  /// Variante de célébration (défaut `none` : confetti opt-in).
   final ZSummaryCelebration celebration;
 
   /// Recette optionnelle de célébration ; les champs `null` gardent le rendu
-  /// historique, y compris sans injection de token VIS.
+  /// historique.
   final ZCelebrationSpec? celebrationSpec;
 
-  /// Seuil de maîtrise **injecté**. `null` ⇒ **consommé** depuis son propriétaire
-  /// AD-46, `config.masteredThreshold` (D3 ; su-6/D2 — jamais redérivé ici).
+  /// Seuil de maîtrise injecté. `null` : consommé depuis son propriétaire,
+  /// `config.masteredThreshold`, jamais redérivé ici.
   final int? masteredThreshold;
 
   /// Clé l10n du message pédagogique, ou `null` (aucun message rendu).
   final String? feedbackKey;
 
-  /// Banque de messages **injectée** — surcharge INTÉGRALE (AC5).
+  /// Banque de messages injectée — surcharge intégrale.
   final ZFeedbackBank? feedbackBank;
 
-  /// Couverture de la répartition (SUF-4, paire 2) — **passée telle quelle** à
-  /// [ZSessionQualityBreakdown]. Défaut historique : seules les clés présentes.
+  /// Couverture de la répartition, passée telle quelle à
+  /// [ZSessionQualityBreakdown]. Défaut historique : seules les clés
+  /// présentes.
   ///
-  /// Sans ce pass-through, une app montant CE widget ne pourrait pas atteindre
-  /// la répartition à longueur stable du natif lex : le breakdown est construit
-  /// ici, pas par l'appelant.
+  /// Sans ce pass-through, une application montant ce widget ne pourrait pas
+  /// atteindre une répartition à longueur stable : le breakdown est
+  /// construit ici, pas par l'appelant.
   final ZQualityBreakdownCoverage breakdownCoverage;
 
-  /// [ValueKey] du bouton « Terminer » (testabilité, AC3).
+  /// [ValueKey] du bouton « Terminer », pour la testabilité.
   static const ValueKey<String> finishButtonKey = ValueKey<String>(
     'zSummaryFinish',
   );
 
-  /// [ValueKey] du bouton « Encore N dues » (testabilité, AC3).
+  /// [ValueKey] du bouton « Encore N dues », pour la testabilité.
   static const ValueKey<String> continueButtonKey = ValueKey<String>(
     'zSummaryContinue',
   );
 
-  /// [ValueKey] de la valeur « cartes totales » (testabilité, AC2).
+  /// [ValueKey] de la valeur « cartes totales », pour la testabilité.
   static const ValueKey<String> totalValueKey = ValueKey<String>(
     'zSummaryTotalValue',
   );
 
-  /// [ValueKey] de la valeur « maîtrisées » (testabilité, AC2).
+  /// [ValueKey] de la valeur « maîtrisées », pour la testabilité.
   static const ValueKey<String> masteredValueKey = ValueKey<String>(
     'zSummaryMasteredValue',
   );
 
-  /// [ValueKey] de la valeur « durée » (testabilité, AC2).
+  /// [ValueKey] de la valeur « durée », pour la testabilité.
   static const ValueKey<String> durationValueKey = ValueKey<String>(
     'zSummaryDurationValue',
   );
 
-  /// [ValueKey] de l'icône du trophée — **sonde d'échelle** (AC7).
+  /// [ValueKey] de l'icône du trophée — sonde d'échelle.
   ///
-  /// L'échelle se mesure sur la **géométrie peinte** (`tester.getRect`), jamais
-  /// sur le champ `transform` du widget : `Transform.scale` ne le peuple pas
-  /// (faux négatif MESURÉ en su-4).
+  /// L'échelle se mesure sur la géométrie peinte (`tester.getRect`), jamais
+  /// sur le champ `transform` du widget : `Transform.scale` ne le peuple pas.
   static const ValueKey<String> trophyIconKey = ValueKey<String>(
     'zSummaryTrophyIcon',
   );
 
-  /// [ValueKey] du halo (`Opacity`) — **sonde d'opacité** (AC7).
+  /// [ValueKey] du halo (`Opacity`) — sonde d'opacité.
   static const ValueKey<String> glowKey = ValueKey<String>('zSummaryGlow');
 
-  /// Cible tap minimale Material/AD-13 (dp).
+  /// Cible tap minimale (dp), invariant AD-13.
   static const double minTarget = 48;
 
   /// Durée de l'animation d'entrée (trophée + halo).
@@ -342,59 +333,52 @@ class ZSessionSummaryView extends StatefulWidget {
   State<ZSessionSummaryView> createState() => ZSessionSummaryViewState();
 }
 
-/// État de [ZSessionSummaryView] — **public** pour exposer le compteur de tirs
-/// aux tests (patron `ScaffoldState`).
+/// État de [ZSessionSummaryView] — public pour exposer le compteur de tirs
+/// aux tests.
 class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     with SingleTickerProviderStateMixin {
-  /// Controller d'entrée **STABLE** (créé une fois, disposé une fois — AD-2 :
-  /// jamais recréé au rebuild).
+  /// Controller d'entrée stable (créé une fois, disposé une fois, invariant
+  /// AD-2 : jamais recréé au rebuild).
   late final AnimationController _entrance = AnimationController(
     vsync: this,
     duration: ZSessionSummaryView.entranceDuration,
   );
 
-  /// Controller de confetti — **POSSÉDÉ par nous** (T5), `null` tant qu'aucun
-  /// tir n'est parti (et à jamais sous Reduce Motion / hors opt-in).
+  /// Controller de confetti — possédé par ce `State`, `null` tant qu'aucun
+  /// tir n'est parti (et à jamais sous Reduce Motion ou hors opt-in).
   ConfettiController? _confetti;
 
-  /// 🔒 Latch **one-shot** du tir (patron `_stackEnded` de su-4, `:360`).
+  /// Latch one-shot du tir.
   bool _celebrationFired = false;
 
-  /// Latch de démarrage de l'animation d'entrée (idem : `didChangeDependencies`
-  /// est ré-entrant — il refire à CHAQUE changement de `MediaQuery`).
+  /// Latch de démarrage de l'animation d'entrée (`didChangeDependencies` est
+  /// ré-entrant — il refire à chaque changement de `MediaQuery`).
   bool _entranceStarted = false;
 
   int _celebrationPlays = 0;
 
-  /// Nombre de tirs de confetti **réellement** déclenchés (seam de test, AC6).
+  /// Nombre de tirs de confetti réellement déclenchés, un seam de test.
   ///
-  /// 🔴 On assère sur CE compteur, sur la présence du `ConfettiWidget` et sur
-  /// ses **réglages** — **jamais sur les particules** : le paquet calcule son
-  /// `deltaTime` sur l'horloge **murale** (`DateTime.now()`), donc le nombre de
-  /// particules d'une frame de test n'est pas déterministe. C'est un **détail
-  /// d'implémentation du paquet** : une assertion dessus serait fausse pour la
-  /// mauvaise raison.
-  ///
-  /// ⚠️ **Rectification (code-review su-5)** : la justification d'origine
-  /// invoquait « **zéro particule** en test, l'émission étant suspendue sous bas
-  /// framerate ». C'était vrai **avec le défaut** `pauseEmissionOnLowFrameRate:
-  /// true` (`particle.dart:165` : `if (pauseEmission) return;` **avant**
-  /// l'émission) — or on passe précisément `false` (T3) : la prémisse est
-  /// **inversée par le correctif lui-même**. La consigne tient, pour une raison
-  /// **meilleure** : on n'assère pas sur les internes d'un paquet tiers.
+  /// On assère sur ce compteur, sur la présence du `ConfettiWidget` et sur
+  /// ses réglages — jamais sur les particules : le paquet calcule son
+  /// `deltaTime` sur l'horloge murale (`DateTime.now()`), donc le nombre de
+  /// particules d'une frame de test n'est pas déterministe. C'est un détail
+  /// d'implémentation du paquet tiers ; une assertion dessus serait fausse
+  /// pour la mauvaise raison.
   @visibleForTesting
   int get celebrationPlays => _celebrationPlays;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // `zReduceMotionOf` = primitive UNIQUE (jamais un `MediaQuery.of(context)
-    // .disableAnimations` réécrit). Lue ICI : `MediaQuery` est une dépendance
-    // héritée ⇒ un changement de réglage système nous rappelle.
+    // `zReduceMotionOf` est la primitive unique (jamais un
+    // `MediaQuery.of(context).disableAnimations` réécrit). Lue ici :
+    // `MediaQuery` est une dépendance héritée, donc un changement de
+    // réglage système nous rappelle.
     final reduceMotion = zReduceMotionOf(context);
     if (reduceMotion) {
-      // Dégradation de l'ANIMATION, jamais de la FONCTION : l'état FINAL est
-      // rendu IMMÉDIATEMENT (pas de `forward`, pas d'interpolation).
+      // Dégradation de l'animation, jamais de la fonction : l'état final
+      // est rendu immédiatement (pas de `forward`, pas d'interpolation).
       _entrance.value = 1;
     } else if (!_entranceStarted) {
       _entranceStarted = true;
@@ -406,19 +390,18 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
   @override
   void didUpdateWidget(ZSessionSummaryView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Le latch survit aux rebuilds : `celebration` passant à `confetti` APRÈS
-    // coup ne redéclenche rien si un tir est déjà parti (AC6 : UN SEUL tir).
+    // Le latch survit aux rebuilds : `celebration` passant à `confetti`
+    // après coup ne redéclenche rien si un tir est déjà parti (un seul tir).
     _maybeCelebrate(reduceMotion: zReduceMotionOf(context));
   }
 
-  /// Déclenche le tir — **au plus une fois dans la vie du widget** (AC6).
+  /// Déclenche le tir — au plus une fois dans la vie du widget.
   void _maybeCelebrate({required bool reduceMotion}) {
-    if (_celebrationFired) return; // 🔒 one-shot.
+    if (_celebrationFired) return; // one-shot.
     if (widget.celebration != ZSummaryCelebration.confetti) return;
-    // 🔒 NFR-SU3 : sous Reduce Motion, on ne construit JAMAIS le confetti — et
-    // surtout pas « avec une durée nulle » : `ConfettiController` porte
-    // `assert(!duration.isNegative && duration.inMicroseconds > 0)`
-    // (`confetti.dart:501`) ⇒ `Duration.zero` fait ASSERT-FAIL.
+    // Sous Reduce Motion, on ne construit jamais le confetti — et surtout
+    // pas avec une durée nulle : `ConfettiController` assertionne une durée
+    // strictement positive, et `Duration.zero` ferait échouer cet assert.
     if (reduceMotion) return;
 
     _celebrationFired = true;
@@ -428,13 +411,13 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
         spec?.burstDuration ??
         ZcrudTheme.of(context).celebrationDuration ??
         _ConfettiBurst.burstDuration;
-    // 🔴 Repli DÉFENSIF sur une durée non strictement positive (CR epic VIS,
-    // MEDIUM-1 ; AD-10). `ConfettiController` assertionne sur
-    // `duration.inMicroseconds > 0` : une valeur nulle ferait planter le bilan
-    // de session — l'écran de fin d'apprentissage, au pire moment possible.
-    // La source ne peut pas être fermée en amont : le token de thème est
-    // interpolé pendant les transitions et transite par du code hôte. On
-    // retombe donc sur le défaut historique plutôt que de laisser lever.
+    // Repli défensif (invariant AD-10) sur une durée non strictement
+    // positive. `ConfettiController` assertionne une durée strictement
+    // positive : une valeur nulle ferait planter le bilan de session,
+    // l'écran de fin d'apprentissage, au pire moment possible. La source ne
+    // peut pas être fermée en amont : le token de thème est interpolé
+    // pendant les transitions et transite par du code hôte. On retombe donc
+    // sur le défaut historique plutôt que de laisser lever.
     final burstDuration = candidate > Duration.zero
         ? candidate
         : _ConfettiBurst.burstDuration;
@@ -445,21 +428,19 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
 
   @override
   void dispose() {
-    // T5 — ORDRE CRITIQUE, vérifié dans les sources du paquet : Flutter démonte
-    // les ENFANTS d'abord (`_InactiveElements._unmount` visite les enfants avant
-    // le parent), donc `_ConfettiWidgetState.dispose()` (`confetti.dart:377-382`)
-    // a DÉJÀ retiré son listener quand on arrive ici. Notre `dispose()` ne peut
-    // donc pas notifier un `State` démonté — alors que
-    // `ConfettiController.dispose()` fait bien `notifyListeners()` AVANT
-    // `super.dispose()` (`:531-534`).
+    // Ordre important, vérifié dans les sources du paquet : Flutter démonte
+    // les enfants d'abord, donc le `State` du `ConfettiWidget` a déjà retiré
+    // son listener quand on arrive ici. Notre `dispose()` ne peut donc pas
+    // notifier un `State` démonté, alors que `ConfettiController.dispose()`
+    // notifie ses écouteurs avant d'appeler `super.dispose()`.
     _confetti?.dispose();
     _entrance.dispose();
     super.dispose();
   }
 
-  /// Formate une durée en `mm:ss` — **défensif** (AD-10).
+  /// Formate une durée en `mm:ss` — défensif (invariant AD-10).
   ///
-  /// Une durée **négative** (horloge incohérente, mesure absente) rend `00:00` :
+  /// Une durée négative (horloge incohérente, mesure absente) rend `00:00` :
   /// jamais `-1:-30`, jamais une exception.
   static String _formatDuration(Duration duration) {
     final safe = duration.isNegative ? Duration.zero : duration;
@@ -471,14 +452,15 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // AD-46 — l'échelle DÉRIVE de la config : jamais redéclarée ici.
+    // L'échelle dérive de la config : jamais redéclarée ici.
     final scale = ZQualityScale.fromConfig(widget.config);
-    // 🔴 Défaut CONSOMMÉ depuis son PROPRIÉTAIRE AD-46 (`ZSrsConfig`), JAMAIS
-    // redérivé ici et JAMAIS le littéral `4` (su-6/D2 : le seuil a été **promu**
-    // dans `ZSrsConfig.masteredThreshold` parce que les filtres FR-SU12 vivent en
-    // AMONT, dans `zcrud_flashcard`, et qu'un amont ne peut pas importer un aval
-    // — AD-1). Le point d'injection `widget.masteredThreshold` de su-5 est
-    // **conservé tel quel** : seul le DÉFAUT change de foyer.
+    // Défaut consommé depuis son propriétaire, `ZSrsConfig`, jamais
+    // redérivé ici et jamais un littéral en dur : le seuil de maîtrise est
+    // possédé par `ZSrsConfig.masteredThreshold` parce que les filtres de
+    // test vivent en amont, dans `zcrud_flashcard`, et qu'un paquet en
+    // amont ne peut pas importer un aval (invariant AD-1). Le point
+    // d'injection `widget.masteredThreshold` reste disponible : seul le
+    // défaut change de foyer.
     final masteredThreshold =
         widget.masteredThreshold ?? widget.config.masteredThreshold;
     final mastered = zMasteredCount(
@@ -505,9 +487,9 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         SizedBox(height: theme.gapM),
-        // AC1 — les anneaux sont alimentés par la fonction PURE du DTO : jamais
-        // un ratio recalculé ici. `total == 0` ⇒ ratio 0 (aucune division par
-        // zéro) ; `correct > total` ⇒ ratio clampé. Contrat EXISTANT, consommé.
+        // Les anneaux sont alimentés par la fonction pure du DTO : jamais un
+        // ratio recalculé ici. `total == 0` donne un ratio de 0 (aucune
+        // division par zéro) ; `correct > total` donne un ratio clampé.
         ZStudyProgressRings(
           data: ZProgressRingsData.fromResult(widget.result),
           diameter: widget.celebrationSpec?.ringsDiameter ?? 96,
@@ -528,8 +510,8 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
         ],
         _buildStats(context, mastered: mastered),
         SizedBox(height: theme.gapM),
-        // AC1 — `byQuality` VERBATIM (aucun recomptage), `scale`/`passThreshold`
-        // dérivés de la config. Contrat EXISTANT, consommé.
+        // `byQuality` verbatim (aucun recomptage), `scale`/`passThreshold`
+        // dérivés de la config.
         ZSessionQualityBreakdown(
           byQuality: widget.result.byQuality,
           scale: scale,
@@ -541,10 +523,9 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
       ],
     );
 
-    // Jamais `ListView(children: [...])` (AD-13/garde) — et un écran de fin doit
-    // rester lisible en textScaler élevé ou en paysage : le contenu DÉFILE
-    // plutôt que de déborder (leçon su-2 : un débordement se corrige dans le
-    // widget, jamais en modifiant le test).
+    // Jamais `ListView(children: [...])` — et un écran de fin doit rester
+    // lisible en textScaler élevé ou en paysage : le contenu défile plutôt
+    // que de déborder.
     final scrollable = SingleChildScrollView(
       padding: theme.fieldPadding,
       child: content,
@@ -561,10 +542,11 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     );
   }
 
-  /// En-tête de célébration : halo + trophée — **animations RÉELLES** (D7).
+  /// En-tête de célébration : halo et trophée — animations réelles.
   ///
-  /// `AnimatedBuilder` n'abonne QUE ce sous-arbre au controller (AD-2 : rebuild
-  /// granulaire — le reste de l'écran ne se reconstruit pas à chaque frame).
+  /// `AnimatedBuilder` n'abonne que ce sous-arbre au controller (invariant
+  /// AD-2 : rebuild granulaire, le reste de l'écran ne se reconstruit pas à
+  /// chaque frame).
   Widget _buildCelebrationHeader(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final pair = zResolveColorKeyOrSlot(context, 'primary', slotIndex: 0);
@@ -584,13 +566,12 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           child: Transform.scale(scale: trophyScale, child: child),
         );
       },
-      // `child` est construit UNE fois et réutilisé à chaque frame (jamais
-      // reconstruit dans la closure — AD-2).
-      // 🟡 LOW (code-review su-5) : le repli était « Session terminée, bravo »,
-      // que le lecteur d'écran annonçait juste AVANT le titre « Session
-      // terminée » (`:376`) — deux nœuds quasi identiques, consécutifs. Le
-      // trophée ne porte que la CÉLÉBRATION ; le titre porte le FAIT. La clé
-      // l10n est inchangée (un hôte qui la surcharge n'est pas impacté).
+      // `child` est construit une fois et réutilisé à chaque frame (jamais
+      // reconstruit dans la closure, invariant AD-2).
+      //
+      // Le repli du trophée porte la célébration seule (« Bravo »), distinct
+      // du titre qui porte le fait (« Session terminée ») : deux nœuds
+      // sémantiques annonçant des contenus proches mais non identiques.
       child: Semantics(
         label: label(
           context,
@@ -613,7 +594,7 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     );
   }
 
-  /// Bloc de stats : **totales / maîtrisées / durée** (AC2).
+  /// Bloc de stats : totales, maîtrisées, durée.
   Widget _buildStats(BuildContext context, {required int mastered}) {
     final theme = ZcrudTheme.of(context);
     return Wrap(
@@ -630,9 +611,9 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
           ),
           valueText: '${widget.result.total}',
         ),
-        // 🔴 D3 — « maîtrisées » (q4-5), JAMAIS `result.correct` (q3+). Les
+        // « Maîtrisées » (q4-5), jamais `result.correct` (q3 et plus). Les
         // anneaux ci-dessus affichent `correct/total` : deux nombres
-        // DIFFÉRENTS, volontairement.
+        // différents, volontairement.
         _StatTile(
           valueKey: ZSessionSummaryView.masteredValueKey,
           labelText: label(
@@ -655,17 +636,17 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
     );
   }
 
-  /// Boutons d'action — callbacks **injectés** (AC3).
+  /// Boutons d'action — callbacks injectés.
   Widget _buildActions(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final onContinue = widget.onContinue;
-    // `dueRemaining == 0` ⇒ bouton ABSENT (jamais grisé — patron AD-45). Idem
-    // si aucun callback n'est fourni : un bouton qui ne fait rien est un
-    // mensonge d'affordance.
+    // `dueRemaining == 0` : bouton absent, jamais grisé. Idem si aucun
+    // callback n'est fourni : un bouton qui ne fait rien est un mensonge
+    // d'affordance.
     final showContinue = widget.dueRemaining > 0 && onContinue != null;
 
-    // Le compte vient du paramètre INJECTÉ, jamais d'un recomptage : le patron
-    // `{n}` laisse l'app placer le nombre où sa langue l'exige.
+    // Le compte vient du paramètre injecté, jamais d'un recomptage : le
+    // patron `{n}` laisse l'application placer le nombre où sa langue l'exige.
     final continueText = label(
       context,
       'zcrud.session.summary.continue',
@@ -699,8 +680,8 @@ class ZSessionSummaryViewState extends State<ZSessionSummaryView>
   }
 }
 
-/// Une tuile de stat : libellé + valeur **en texte** (couleur jamais seul canal,
-/// AD-13), `Semantics` label/value **localisés**.
+/// Une tuile de stat : libellé et valeur en texte (couleur jamais seul
+/// canal, invariant AD-13), `Semantics` label/value localisés.
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.valueKey,
@@ -715,20 +696,17 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // ⚠️ La garde de libellés ne couvre PAS `Semantics(label:)` (angle mort
-    // CONSIGNÉ) : ici, l'auto-discipline. `labelText` est DÉJÀ résolu par
-    // `label(context, …)` chez l'appelant — aucun littéral ne transite.
+    // `labelText` est déjà résolu par `label(context, …)` chez l'appelant :
+    // aucun littéral ne transite ici — la garde de libellés ne couvre pas
+    // `Semantics(label:)`, d'où cette discipline manuelle.
     //
-    // 🔴 Défaut MESURÉ (code-review su-5, D1) : sans cet `ExcludeSemantics`, les
-    // libellés des DEUX `Text` FUSIONNENT avec ceux du `Semantics` parent et le
-    // nœud annonce « Cartes\n8\nCartes — valeur : 8 » — le lecteur d'écran
-    // BÉGAIE sur les 3 tuiles. C'est le MOTIF déjà corrigé sur `_ActionButton`
-    // (`ExcludeSemantics`, plus bas) : un défaut trouvé est une CLASSE à
-    // balayer, jamais une occurrence à patcher. Le libellé et la valeur sont
-    // portés par le `Semantics` (canal UNIQUE) ; les deux `Text` ne sont que le
-    // canal VISUEL du même contenu (AD-13 : la couleur n'est jamais seul canal,
-    // le texte reste rendu). Gardé par un `getSemantics` sur les 3 tuiles —
-    // l'assertion sur le `Text` VISUEL ne l'aurait jamais vu.
+    // Sans cet `ExcludeSemantics`, les libellés des deux `Text` fusionneraient
+    // avec ceux du `Semantics` parent et le nœud annoncerait « Cartes\n8\n
+    // Cartes — valeur : 8 », le lecteur d'écran bégayant sur les trois
+    // tuiles. Le libellé et la valeur sont portés par le `Semantics` (canal
+    // unique) ; les deux `Text` ne sont que le canal visuel du même contenu
+    // (invariant AD-13 : la couleur n'est jamais seul canal, le texte reste
+    // rendu).
     return Semantics(
       label: labelText,
       value: valueText,
@@ -755,8 +733,8 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-/// Bouton d'action — cible **≥ 48 dp**, `Semantics(button: true)`, libellé l10n
-/// **déjà résolu** par l'appelant (AD-13).
+/// Bouton d'action — cible ≥ 48 dp, `Semantics(button: true)`, libellé l10n
+/// déjà résolu par l'appelant (invariant AD-13).
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.buttonKey,
@@ -797,12 +775,12 @@ class _ActionButton extends StatelessWidget {
               padding: theme.fieldPadding,
               child: Center(
                 widthFactor: 1,
-                // 🔴 Défaut RÉEL démasqué par le test d'AC3 : sans cet
-                // `ExcludeSemantics`, le libellé du `Text` FUSIONNE avec celui
-                // du `Semantics` parent et le nœud annonce « Terminer\nTerminer »
-                // — un lecteur d'écran le lit DEUX FOIS. Le libellé est porté
-                // par le `Semantics` du bouton (canal unique) ; le `Text` n'est
-                // ici que le canal VISUEL du même contenu.
+                // Sans cet `ExcludeSemantics`, le libellé du `Text` fusionnerait
+                // avec celui du `Semantics` parent et le nœud annoncerait
+                // « Terminer\nTerminer », un lecteur d'écran le lisant deux
+                // fois. Le libellé est porté par le `Semantics` du bouton
+                // (canal unique) ; le `Text` n'est ici que le canal visuel
+                // du même contenu.
                 child: ExcludeSemantics(
                   child: Text(
                     text,
@@ -819,21 +797,21 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-/// Tir de confetti — **CONFINÉ à ce fichier** (AC8), purement **décoratif**.
+/// Tir de confetti — confiné à ce fichier, purement décoratif.
 ///
-/// ## Réglages IMPOSÉS — lus dans les sources du paquet, pas devinés
+/// ## Réglages imposés — lus dans les sources du paquet, pas devinés
 ///
 /// | Fait lu | Réglage |
 /// |---|---|
-/// | `ConfettiController({duration = 30 s})` + `assert(duration.inMicroseconds > 0)` (`:501`) | [burstDuration] **explicite et courte** — jamais le défaut 30 s, jamais `Duration.zero` (**assert-fail**) |
-/// | `_animationStatusListener` appelle `_continueAnimation()` **HORS** du `if (!shouldLoop)` (`:252-258`) ⇒ relance **inconditionnelle** | `shouldLoop: false` **et** `pumpAndSettle` **INTERDIT** côté test (peut ne jamais converger) |
-/// | `pauseEmissionOnLowFrameRate = true` + `deltaTime` sur `DateTime.now()` (horloge **murale**) + `if (pauseEmission) return;` avant l'émission (`particle.dart:165`) | `pauseEmissionOnLowFrameRate: false` — et **aucune assertion sur les particules** (interne du paquet, non déterministe sous une horloge murale) |
-/// | `colors: null` ⇒ couleurs **aléatoires** ; `strokeColor = Colors.black` en dur | `colors:` **injectées du thème** (NFR-SU5) |
-/// | `grep Semantics confetti-0.8.0/lib/` → **RC=1** — **ZÉRO `Semantics`** | [ExcludeSemantics] : rien ne doit transiter par un canal que le lecteur d'écran ne voit pas |
+/// | `ConfettiController` assertionne une durée strictement positive et vaut 30 s par défaut | [burstDuration] explicite et courte — jamais le défaut, jamais `Duration.zero` (assert-fail) |
+/// | le paquet relance son animation inconditionnellement, hors du drapeau `shouldLoop` | `shouldLoop: false` et `pumpAndSettle` interdit côté test (peut ne jamais converger) |
+/// | `pauseEmissionOnLowFrameRate` par défaut suspend l'émission selon une horloge murale (`DateTime.now()`) | `pauseEmissionOnLowFrameRate: false` — et aucune assertion sur les particules, non déterministes sous une horloge murale |
+/// | `colors: null` donne des couleurs aléatoires ; le trait est noir en dur | `colors:` injectées du thème |
+/// | le paquet n'expose aucun `Semantics` | [ExcludeSemantics] : rien ne doit transiter par un canal que le lecteur d'écran ne voit pas |
 class _ConfettiBurst extends StatelessWidget {
   const _ConfettiBurst({required this.controller, required this.spec});
 
-  /// Durée du tir — **courte et explicite** (T1).
+  /// Durée du tir — courte et explicite.
   static const Duration burstDuration = Duration(milliseconds: 800);
 
   final ConfettiController controller;
@@ -842,16 +820,16 @@ class _ConfettiBurst extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // T4 — couleurs INJECTÉES du thème (jamais `null` ⇒ aléatoire, jamais un
-    // `Colors.*` : la garde de couleurs en dur rougirait, et à raison).
+    // Couleurs injectées du thème (jamais `null`, ce qui donnerait de
+    // l'aléatoire, jamais un `Colors.*` en dur).
     final colors = <Color>[
       zResolveColorKeyOrSlot(context, 'primary', slotIndex: 0).color,
       zResolveColorKeyOrSlot(context, 'secondary', slotIndex: 1).color,
       zResolveColorKeyOrSlot(context, 'tertiary', slotIndex: 2).color,
     ];
-    // T6 — le confetti est DÉCORATIF : aucune information n'y transite, et le
-    // paquet n'expose aucun `Semantics`. Un apprenant au lecteur d'écran ne perd
-    // donc RIEN (le bilan est porté par les stats et leurs `Semantics`).
+    // Le confetti est décoratif : aucune information n'y transite, et le
+    // paquet n'expose aucun `Semantics`. Un apprenant au lecteur d'écran ne
+    // perd donc rien (le bilan est porté par les stats et leurs `Semantics`).
     return ExcludeSemantics(
       child: ConfettiWidget(
         confettiController: controller,

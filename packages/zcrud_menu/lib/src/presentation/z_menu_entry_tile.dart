@@ -1,18 +1,16 @@
 /// [ZMenuEntryTile] — la cellule d'entrée, OFFERTE aux présentations injectées.
 ///
-/// 🔴 **Ce que ce widget corrige.** Le slot `menuBuilder` de `ZItemActionsMenu`
-/// s'accompagne d'un renoncement écrit noir sur blanc : « ⚠️ **A11y (AD-13) — ce
-/// que le socle ne peut plus garantir** : les cibles ≥ 48 dp, les `Semantics` et
-/// la directionnalité du contenu rendu par l'hôte sont à SA charge ». Le résultat
-/// est mesurable chez l'hôte : la grille à deux colonnes d'IFFD
-/// (`folder_actions_menu_zcrud.dart:_grid`, LECTURE SEULE) rend ses onze actions
-/// dans des `InkWell` **sans aucun plancher de taille** (cellules dérivées d'un
-/// `childAspectRatio`), avec un `Semantics(label:)` qui n'exclut pas son
-/// sous-arbre — donc un libellé annoncé **deux fois**.
+/// **Ce que ce widget résout.** Un slot de contenu injecté laisse l'hôte
+/// libre de sa disposition, mais lui délègue du même geste les cibles ≥ 48 dp,
+/// les `Semantics` et la directionnalité du contenu rendu — trois exigences
+/// facilement manquées : une grille dont les cellules dérivent d'un
+/// `childAspectRatio` peut tomber sous la cible tactile, et un `Semantics`
+/// dont le sous-arbre n'est pas exclu fait annoncer le libellé **deux fois**.
 ///
-/// Un renoncement n'est pas une fatalité : la CELLULE peut rester la propriété du
-/// socle même quand la DISPOSITION appartient à l'hôte. Cette tuile est le
-/// pendant, pour le contenu, de ce que [ZMenuRequest.select] est pour l'effet.
+/// Ces deux défauts ne sont pas une fatalité : la CELLULE peut rester la
+/// propriété de ce paquet même quand la DISPOSITION appartient à l'hôte.
+/// Cette tuile est le pendant, pour le contenu, de ce que [ZMenuRequest.select]
+/// est pour l'effet.
 ///
 /// L'hôte garde toute sa liberté : il l'utilise, ou il rend ce qu'il veut.
 library;
@@ -25,7 +23,7 @@ import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 
 import '../domain/z_menu_entry.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
+/// Cible de taille interactive minimale (invariant AD-13).
 const double kZMenuMinTapTarget = 48.0;
 
 /// Cellule d'entrée de menu : ≥ 48 dp, `Semantics` correctes, directionnelle,
@@ -41,7 +39,7 @@ class ZMenuEntryTile extends StatelessWidget {
   ///
   /// [direction] : [Axis.horizontal] (glyphe puis libellé, colonne de menu) ou
   /// [Axis.vertical] (glyphe au-dessus du libellé, cellule de grille — la forme
-  /// dont IFFD a besoin pour ses onze actions sur deux colonnes).
+  /// adaptée à un panneau d'actions disposé en grille plutôt qu'en colonne).
   const ZMenuEntryTile({
     required this.entry,
     this.onSelected,
@@ -58,7 +56,7 @@ class ZMenuEntryTile extends StatelessWidget {
   /// Sens de composition glyphe/libellé.
   final Axis direction;
 
-  /// 🔴 Disposition en GRILLE dont le plancher de 48 dp est **structurellement
+  /// Disposition en GRILLE dont le plancher de 48 dp est **structurellement
   /// intenable à écraser** — à utiliser à la place d'un `childAspectRatio`.
   ///
   /// ## Pourquoi ce point d'entrée existe
@@ -66,9 +64,10 @@ class ZMenuEntryTile extends StatelessWidget {
   /// La cellule seule ne PEUT PAS tenir la cible de 48 dp quand son parent lui
   /// impose une contrainte serrée : le protocole de disposition de Flutter
   /// interdit à un enfant de se rendre plus grand que la place reçue
-  /// (`BoxConstraints.enforce`). Mesuré dans la grille à deux colonnes d'IFFD
-  /// (`childAspectRatio: 3.5`) : la cellule tombait à `Size(100.0, 28.6)`, soit
-  /// 60 % de la cible — le plancher était **déclaré, jamais tenu** (CR-CHAT M-3).
+  /// (`BoxConstraints.enforce`). Mesuré sur une grille à deux colonnes dont
+  /// les cellules dérivaient d'un `childAspectRatio: 3.5` : la cellule tombait
+  /// à `Size(100.0, 28.6)`, soit 60 % de la cible — le plancher était
+  /// **déclaré, jamais tenu**.
   ///
   /// Le seul remède structurel est donc de faire porter le plancher par la
   /// **disposition**, et de la faire appartenir au socle. `mainAxisExtent` est
@@ -87,7 +86,7 @@ class ZMenuEntryTile extends StatelessWidget {
   }) {
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: crossAxisCount,
-      // 🔴 `math.max` et non un `assert` : un hôte qui demande 32 dp obtient une
+      // `math.max` et non un `assert` : un hôte qui demande 32 dp obtient une
       // cellule CONFORME, pas une exception. Le plancher n'est pas négociable —
       // c'est précisément ce que « structurel » veut dire ici.
       mainAxisExtent: math.max(mainAxisExtent, kZMenuMinTapTarget),
@@ -101,7 +100,7 @@ class ZMenuEntryTile extends StatelessWidget {
     final content = _content(context);
     // Un tap n'est posé QUE si l'entrée est actionnable ET qu'on nous demande de
     // le poser : une entrée désactivée ne peut pas devenir cliquable par
-    // l'insertion d'un `InkWell` (AD-4 — pas de no-op silencieux).
+    // l'insertion d'un `InkWell` (invariant AD-4 — pas de no-op silencieux).
     final tappable = onSelected != null && entry.isEnabled;
     return _ZMinTapTargetGuard(
       minSize: const Size(kZMenuMinTapTarget, kZMenuMinTapTarget),
@@ -114,12 +113,12 @@ class ZMenuEntryTile extends StatelessWidget {
         enabled: entry.isEnabled,
         label: entry.label,
         // Motif de désactivation ANNONCÉ dans le slot prévu pour cela : aucune
-        // chaîne n'est fabriquée par concaténation (donc aucun séparateur codé en
-        // dur à localiser — FR-23).
+        // chaîne n'est fabriquée par concaténation (donc aucun séparateur codé
+        // en dur à localiser).
         hint: entry.disabledReason,
-        // 🔴 Sans cette exclusion, le libellé de ce nœud ET celui du `Text` enfant
-        // sont tous deux annoncés — « Ouvrir\nOuvrir » (mesuré SU-8/AC20).
-        // Retirer le `label:` à la place NE MARCHE PAS : le nœud devient MUET.
+        // Sans cette exclusion, le libellé de ce nœud ET celui du `Text` enfant
+        // sont tous deux annoncés — « Ouvrir\nOuvrir ». Retirer le `label:` à
+        // la place NE MARCHE PAS : le nœud devient MUET.
         excludeSemantics: true,
         // Le `ConstrainedBox` porte le plancher quand la contrainte entrante est
         // LÂCHE (colonne de menu) : la cellule se rend à 48 dp. Il ne peut RIEN
@@ -143,7 +142,8 @@ class ZMenuEntryTile extends StatelessWidget {
     final reason = entry.disabledReason;
     final label = Text(
       entry.label,
-      // AD-13 : jamais `TextAlign.left`/`right` — `start` suit la directionnalité.
+      // invariant AD-13 : jamais `TextAlign.left`/`right` — `start` suit la
+      // directionnalité.
       textAlign: TextAlign.start,
     );
     final texts = <Widget>[
@@ -152,7 +152,7 @@ class ZMenuEntryTile extends StatelessWidget {
         Text(
           reason,
           textAlign: TextAlign.start,
-          // Style DÉRIVÉ du thème (FR-26) — aucune couleur littérale.
+          // Style DÉRIVÉ du thème — aucune couleur littérale.
           style: Theme.of(context).textTheme.bodySmall,
         ),
     ];
@@ -191,14 +191,14 @@ class ZMenuEntryTile extends StatelessWidget {
 ///
 /// ## Ce qu'elle remplace, et pourquoi
 ///
-/// Une première version tenait le plancher par extension du `hitTest` au-delà
-/// des bornes peintes (motif `_InputPadding` de Material). **Mesuré : elle ne
-/// se déclenche jamais dans le cas cible.** Tout ancêtre `RenderBox` filtre le
-/// pointeur par `size.contains(position)` avant de le transmettre — et une
-/// grille interpose d'office un `RepaintBoundary` autour de chaque cellule.
-/// Sondes : gouttière de 20 dp d'une grille 2 × 2, taps à +20 / +23 dp du
-/// centre ⇒ **aucune sélection**. Un dispositif inerte est pire que rien : il
-/// aurait re-promis exactement ce que CR-CHAT M-3 reproche.
+/// Une approche alternative tiendrait le plancher par extension du `hitTest`
+/// au-delà des bornes peintes (motif `_InputPadding` de Material). **Mesuré :
+/// elle ne se déclenche jamais dans le cas cible.** Tout ancêtre `RenderBox`
+/// filtre le pointeur par `size.contains(position)` avant de le transmettre —
+/// et une grille interpose d'office un `RepaintBoundary` autour de chaque
+/// cellule. Sondes : gouttière de 20 dp d'une grille 2 × 2, taps à
+/// +20 / +23 dp du centre ⇒ **aucune sélection**. Un dispositif inerte est
+/// pire que rien : il promettrait un plancher qu'il ne tient pas.
 ///
 /// Ce qui reste tenable depuis la cellule, c'est le **signal** : si la place
 /// reçue écrase la cible, on émet une erreur de disposition en mode debug — le

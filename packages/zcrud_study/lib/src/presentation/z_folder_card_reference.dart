@@ -12,7 +12,7 @@
 /// **paramètre de carte > jeton `ZcrudTheme.folderCard*` > défaut-référence**
 /// (les défauts-référence sont les constantes de [ZFolderCardReference]).
 ///
-/// ## 🔴 FR-26 — ce fichier n'a PAS besoin de l'exception encadrée
+/// ## FR-26 — ce fichier n'a PAS besoin de l'exception encadrée
 ///
 /// Contrairement à `ZFlashcardCardReference` (quatre dégradés par type, non
 /// dérivables d'un `ColorScheme`), **la carte de dossier n'a AUCUNE couleur
@@ -58,7 +58,7 @@ abstract final class ZFolderCardReference {
   /// Padding interne de la carte (**12**, directionnel — AD-13,
   /// `kFolderCardPadding`).
   ///
-  /// 🔴 **Distinct de `gapM`** : la primitive `ZFolderCard` pose
+  /// **Distinct de `gapM`** : la primitive `ZFolderCard` pose
   /// `EdgeInsetsDirectional.all(theme.gapM)`, et `gapM` vaut **8** en thème nu.
   /// Sans ce défaut-référence, la carte par défaut rendrait 8 là où la
   /// référence pose 12 (leçon CR-IFFD-61 ①, rejouée ici).
@@ -69,7 +69,7 @@ abstract final class ZFolderCardReference {
   /// NEUTRE : le legacy repose sur la surface du `CardTheme`, la couleur du
   /// dossier vivant dans la bande, le liseré et la tuile).
   ///
-  /// ⚠️ Diffère du défaut de la primitive `ZFolderCard` (`0.12`, parité lex) :
+  /// Diffère du défaut de la primitive `ZFolderCard` (`0.12`, parité lex) :
   /// c'est un **défaut de carte par défaut**, pas un changement de la
   /// primitive — un hôte passif de `ZFolderCard` rend le même pixel qu'avant.
   static const double tintAlpha = 0;
@@ -85,7 +85,7 @@ abstract final class ZFolderCardReference {
   /// DISPOSITION de référence du bas de carte
   /// (**[ZFolderCardFooterPlacement.below]** — CR-IFFD-68).
   ///
-  /// 🔴 **C'est un CHANGEMENT DE DÉFAUT** de `ZDefaultFolderCard` (livrée la
+  /// **C'est un CHANGEMENT DE DÉFAUT** de `ZDefaultFolderCard` (livrée la
   /// veille en v0.49.0, adoptée par un seul hôte — l'émetteur de la CR). La
   /// primitive `ZFolderCard`, elle, garde `beside` : **aucun hôte de la
   /// primitive ne bouge d'un pixel** (garde dédiée).
@@ -213,7 +213,7 @@ abstract final class ZFolderCardReference {
   /// Plancher de contraste des SURFACES et COMPOSANTS graphiques de la carte —
   /// bande d'accent, liseré, glyphe de tuile (**3.0:1**, WCAG 2.2 §1.4.11).
   ///
-  /// 🔴 **Ce n'est PAS une valeur du legacy** : le legacy peignait la couleur
+  /// **Ce n'est PAS une valeur du legacy** : le legacy peignait la couleur
   /// de dossier BRUTE (bande, tuile, glyphe, texte de badge), sans aucune
   /// mesure. C'est une valeur de socle, et c'est le cœur de CR-IFFD-64 : une
   /// couleur de dossier est choisie par l'utilisateur, donc arbitraire, et

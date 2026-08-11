@@ -1,55 +1,50 @@
-/// `ZSessionModeSelector` — le sélecteur de session (SU-6, FR-SU10 —
-/// AC6/AC7/AC13/AC14/AC15).
+/// `ZSessionModeSelector` — le sélecteur de session.
 ///
-/// ## Il ASSEMBLE. Il ne calcule rien (AD-33 : sélection AMONT, runtime AVAL)
+/// ## Il assemble. Il ne calcule rien
 ///
-/// La catégorisation est la **fonction PURE** `zCategorize` (`zcrud_flashcard`,
-/// **O(1) par carte** — mesuré par `z_session_categorization_test.dart`) ; le
-/// streak est la **fonction PURE** `zAdvanceStreak` (kernel). Ce widget
-/// **produit une file** via [onStart] : il ne démarre **aucun** runtime, ne
-/// touche **aucun** moteur (AD-34/D7) et n'écrit **aucun** SRS (AD-33 — gardé par
-/// `z_widgets_purity_test.dart`).
+/// La catégorisation est la fonction pure `zCategorize` (`zcrud_flashcard`,
+/// coût constant par carte) ; le streak est la fonction pure
+/// `zAdvanceStreak` (kernel). Ce widget produit une file via [onStart] : il
+/// ne démarre aucun runtime, ne touche aucun moteur et n'écrit aucun SRS.
 ///
-/// ## Les 4 options (FR-SU10 + point d'entrée « bachotage »)
+/// ## Les quatre options
 ///
 /// | Option | Règle | Visibilité |
 /// |---|---|---|
-/// | « Apprendre +N » | `repetitions == 0`, lot **configurable, défaut 30** ; anneau de progression | si > 0 |
-/// | « À réviser » | dues (`nextReviewDate <= at`), triées par **urgence** | **si > 0 seulement** |
-/// | « Test » | ouvre le dialog de filtres | **toujours** |
-/// | « Bachotage » | **tout le corpus**, ordre d'entrée, **aucune** lecture SRS | si le corpus > 0 |
+/// | « Apprendre +N » | `repetitions == 0`, lot configurable, défaut 30 ; anneau de progression | si > 0 |
+/// | « À réviser » | dues (`nextReviewDate <= at`), triées par urgence | si > 0 seulement |
+/// | « Test » | ouvre le dialog de filtres | toujours |
+/// | « Bachotage » | tout le corpus, ordre d'entrée, aucune lecture SRS | si le corpus > 0 |
 ///
-/// **Patron AD-45** : une option à `0` est **ABSENTE**, jamais grisée.
+/// Une option à `0` est absente, jamais grisée.
 ///
 /// ## Le point d'entrée « bachotage » (`ZSessionModeKind.cramming`)
 ///
-/// Le mode était déjà **entièrement exécutable** — `zSessionRuntimeForMode`
-/// (`z_session_runtime.dart:67`) envoie `list || cramming` sur
-/// `ZLinearSessionState` (runtime **sans aucun seam SRS**, AD-23/AD-34) — mais
-/// **aucun sélecteur n'y menait**. Ce widget est le point d'entrée manquant ; il
-/// ne change **rien** au runtime ni au régime d'écriture.
+/// Ce mode s'appuie sur `zSessionRuntimeForMode`, qui envoie déjà `list` ou
+/// `cramming` sur `ZLinearSessionState` (runtime sans aucun seam SRS). Ce
+/// widget en est le point d'entrée dans le sélecteur ; il ne change rien au
+/// runtime ni au régime d'écriture.
 ///
-/// 🔒 **Aucune lecture SRS** pour cette option : le bachotage porte sur le
-/// **corpus entier**, pas sur une catégorie SRS. La file est donc `cards` dans
-/// son **ordre d'entrée**, sans consulter [srsById] — cohérent avec un runtime
-/// qui n'écrit aucun SRS.
+/// Aucune lecture SRS pour cette option : le bachotage porte sur le corpus
+/// entier, pas sur une catégorie SRS. La file est donc `cards` dans son
+/// ordre d'entrée, sans consulter [srsById] — cohérent avec un runtime qui
+/// n'écrit aucun SRS.
 ///
-/// ⚠️ **Aucun mélange ici** (l'assemblage de référence IFFD, lui, `shuffle()` sa
-/// file avant d'entrer en cramming). Ce widget est **PUR et déterministe**
-/// (AD-14) : un `Random` dans un `build()` rendrait la file différente à chaque
+/// Aucun mélange n'est appliqué ici. Ce widget est pur et déterministe : un
+/// `Random` dans un `build()` rendrait la file différente à chaque
 /// rebuild — donc un ordre qui change sous les doigts de l'apprenant, et un
 /// widget intestable. Le mélange, s'il est voulu, est la responsabilité de
-/// l'**hôte**, dans son `onStart` (là où il compose la file avant de démarrer le
-/// runtime).
+/// l'hôte, dans son `onStart` (là où il compose la file avant de démarrer
+/// le runtime).
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatelessWidget`, aucun gestionnaire d'état,
-/// controllers inexistants (rien de mutable), callbacks/thème/labels **INJECTÉS**.
-/// L'instant [at] est un **PARAMÈTRE** (AD-14 : `DateTime.now()` interdit ici).
+/// Widget pur (invariants AD-2/AD-15) : `StatelessWidget`, aucun
+/// gestionnaire d'état, aucun controller mutable, callbacks/thème/labels
+/// injectés. L'instant [at] est un paramètre (invariant AD-14 :
+/// `DateTime.now()` interdit ici).
 ///
-/// **A11y/RTL/l10n (AD-13, NFR-SU3/4/5)** : `Semantics(label:)` issu de
-/// `ZcrudLabels` sur **CHAQUE** tuile (⚠️ angle mort connu : la garde de libellés
-/// ne voit pas `Semantics(label:)` — un test dédié **énumère** les tuiles),
-/// cibles ≥ 48 dp, variantes directionnelles, couleurs par clé injectée.
+/// A11y/RTL/l10n (invariant AD-13) : `Semantics(label:)` issu de
+/// `ZcrudLabels` sur chaque tuile, cibles ≥ 48 dp, variantes
+/// directionnelles, couleurs par clé injectée.
 library;
 
 import 'package:flutter/material.dart';
@@ -61,10 +56,10 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart' show ZStudyStreak;
 import 'z_streak_badge.dart';
 import 'z_study_progress_rings.dart';
 
-/// Le type d'option choisie — **enum**, jamais un `bool isTest` (AC15).
+/// Le type d'option choisie — un enum, jamais un `bool isTest`.
 ///
-/// **NON persisté** (valeur runtime passée à [ZSessionModeSelector.onStart]) ⇒
-/// pas de `@JsonKey(unknownEnumValue:)` — consigné.
+/// Non persisté (valeur runtime passée à [ZSessionModeSelector.onStart]) :
+/// pas de `@JsonKey(unknownEnumValue:)` requis.
 enum ZSessionModeKind {
   /// « Apprendre +N » — cartes jamais apprises.
   learnNew,
@@ -75,34 +70,31 @@ enum ZSessionModeKind {
   /// « Test » — ouvre le dialog de filtres.
   test,
 
-  /// « Bachotage » — parcours du **corpus entier** avec re-boucle des ratés,
-  /// **sans aucune écriture SRS** (`ZReviewMode.cramming` → `ZLinearSessionState`).
+  /// « Bachotage » — parcours du corpus entier avec re-boucle des ratés,
+  /// sans aucune écriture SRS (`ZReviewMode.cramming` → `ZLinearSessionState`).
   ///
-  /// 🔴 **AJOUTÉ EN QUEUE, jamais inséré.** Ce membre est le 4ᵉ et il l'est
-  /// *après* [test] : l'insérer au milieu décalerait l'`index` de [test]. Aucun
-  /// `.index` n'est consommé aujourd'hui (mesuré : `grep -rn "ZSessionModeKind"`
-  /// ne rend aucun `.index`/`.values[`), mais l'ordre d'un `enum` est un contrat
-  /// implicite qu'on ne rompt pas sans raison.
+  /// Ajouté en queue de l'enum, après [test], pour préserver l'ordre des
+  /// valeurs existantes : l'ordre d'un enum est un contrat implicite qu'on
+  /// ne rompt pas sans raison.
   ///
-  /// ⚠️ **Ce membre CASSE la compilation de tout `switch` exhaustif** sur ce
-  /// type — c'est **délibéré** (cf. `zSessionRuntimeForMode` : « une valeur de
-  /// plus casse la compilation plutôt que de retomber silencieusement dans le
-  /// régime du voisin, potentiellement un régime qui ÉCRIT du SRS »). Les deux
-  /// `switch` concernés sont, à cette date, `zReviewModeForKind`
-  /// (`zcrud_study`) et son ancêtre de démonstration (`example/`).
+  /// Ce membre casse volontairement la compilation de tout `switch`
+  /// exhaustif sur ce type — c'est délibéré, sur le même principe que
+  /// `zSessionRuntimeForMode` : une valeur de plus doit casser la
+  /// compilation plutôt que de retomber silencieusement dans le régime du
+  /// voisin, potentiellement un régime qui écrit du SRS.
   cramming,
 }
 
-/// Sélecteur de session : 4 options + badge flamme (FR-SU10).
+/// Sélecteur de session : quatre options et badge flamme.
 class ZSessionModeSelector extends StatelessWidget {
   /// Construit le sélecteur.
   ///
-  /// - [cards] / [srsById] : corpus + état SRS **indexé** (lookup O(1)) ;
-  /// - [at] : instant de référence — **INJECTÉ** (AD-14) ;
-  /// - [streak] : streak **INJECTÉ** (jamais calculé ici) ;
-  /// - [batchSize] : lot « Apprendre +N » — **configurable, défaut 30** ;
-  /// - [onStart] : reçoit `(ZSessionModeKind, List<ZFlashcard>)` — **la file
-  ///   produite** ;
+  /// - [cards] / [srsById] : corpus + état SRS indexé (lookup en temps constant) ;
+  /// - [at] : instant de référence — injecté (invariant AD-14) ;
+  /// - [streak] : streak injecté (jamais calculé ici) ;
+  /// - [batchSize] : lot « Apprendre +N » — configurable, défaut 30 ;
+  /// - [onStart] : reçoit `(ZSessionModeKind, List<ZFlashcard>)`, la file
+  ///   produite ;
   /// - [onOpenFilters] : ouvre le dialog de filtres (option « Test »).
   const ZSessionModeSelector({
     required this.cards,
@@ -115,8 +107,8 @@ class ZSessionModeSelector extends StatelessWidget {
     super.key,
   });
 
-  /// Clés de widget — les tests **tapent** ces contrôles (jamais un `find.text`
-  /// qui dépendrait de la langue).
+  /// Clés de widget — un test tape ces contrôles (jamais un `find.text` qui
+  /// dépendrait de la langue).
   static const ValueKey<String> learnKey = ValueKey<String>('zModeLearnNew');
 
   /// Clé de l'option « À réviser ».
@@ -132,19 +124,20 @@ class ZSessionModeSelector extends StatelessWidget {
   /// Corpus de cartes.
   final Iterable<ZFlashcard> cards;
 
-  /// État SRS **indexé** par `flashcardId` (`zIndexSrsById`) — lookup O(1).
+  /// État SRS indexé par `flashcardId` (`zIndexSrsById`) — lookup en temps
+  /// constant.
   final Map<String, ZRepetitionInfo> srsById;
 
-  /// Instant de référence — **INJECTÉ** (jamais `DateTime.now()` ici).
+  /// Instant de référence — injecté (jamais `DateTime.now()` ici).
   final DateTime at;
 
-  /// Streak affiché par le badge flamme (INJECTÉ).
+  /// Streak affiché par le badge flamme (injecté).
   final ZStudyStreak streak;
 
-  /// Taille du lot « Apprendre +N » (défaut **30** — FR-SU10).
+  /// Taille du lot « Apprendre +N » (défaut 30).
   final int batchSize;
 
-  /// Callback de démarrage : reçoit le **type** et la **file** produite.
+  /// Callback de démarrage : reçoit le type et la file produite.
   final void Function(ZSessionModeKind kind, List<ZFlashcard> queue) onStart;
 
   /// Ouvre le dialog de filtres (option « Test »).
@@ -154,19 +147,19 @@ class ZSessionModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
 
-    // 🔴 Catégorisation DÉLÉGUÉE à la fonction PURE du domaine (O(1)/carte) —
-    // jamais réimplémentée ici.
+    // Catégorisation déléguée à la fonction pure du domaine — jamais
+    // réimplémentée ici.
     final ZSessionCategories categories =
         zCategorize(cards, srsById: srsById, at: at);
 
     // Lot « Apprendre +N » : borné par `batchSize` (défaut 30). `batchSize <= 0`
-    // ⇒ file vide (l'option disparaît) — cohérent avec `count <= 0 ⇒ vide`.
+    // donne une file vide, donc l'option disparaît.
     final learnBatch = _batch(categories.neverLearned, batchSize);
 
-    // 🔒 Bachotage : le corpus ENTIER, ordre d'entrée, **sans consulter le SRS**
-    // (le runtime linéaire n'en écrit aucun — AD-23/AD-34). Matérialisé une
-    // seule fois : `cards` est une `Iterable`, et la ré-itérer à chaque tap
-    // rendrait la file dépendante du moment du geste.
+    // Bachotage : le corpus entier, ordre d'entrée, sans consulter le SRS
+    // (le runtime linéaire n'en écrit aucun). Matérialisé une seule fois :
+    // `cards` est une `Iterable`, et la ré-itérer à chaque tap rendrait la
+    // file dépendante du moment du geste.
     final List<ZFlashcard> crammingQueue = cards.toList(growable: false);
 
     return Column(
@@ -180,8 +173,8 @@ class ZSessionModeSelector extends StatelessWidget {
         ),
         SizedBox(height: theme.gapM),
 
-        // « Apprendre +N » — ABSENTE si aucune carte à apprendre (AD-45 : jamais
-        // grisée).
+        // « Apprendre +N » — absente si aucune carte à apprendre, jamais
+        // grisée.
         if (learnBatch.isNotEmpty) ...<Widget>[
           _ModeTile(
             tileKey: learnKey,
@@ -189,10 +182,9 @@ class ZSessionModeSelector extends StatelessWidget {
             labelFallback: 'Apprendre',
             countValue: learnBatch.length,
             colorKeyName: 'primary',
-            // L'anneau de progression RÉUTILISE le seam existant
-            // (`ZStudyProgressRings`, ES-4.5) — jamais un anneau redéclaré.
-            // Il est STATIQUE (CustomPaint) : rien à désactiver sous Reduce
-            // Motion, et aucune animation factice ajoutée (leçon su-3).
+            // L'anneau de progression réutilise `ZStudyProgressRings` —
+            // jamais un anneau redéclaré. Il est statique (`CustomPaint`) :
+            // rien à désactiver sous Reduce Motion, aucune animation factice.
             leading: ZStudyProgressRings(
               data: ZProgressRingsData(
                 total: categories.neverLearned.length,
@@ -211,7 +203,7 @@ class ZSessionModeSelector extends StatelessWidget {
           SizedBox(height: theme.gapS),
         ],
 
-        // « À réviser » — VISIBLE SEULEMENT si > 0 (AC7/AC13 : jamais grisée).
+        // « À réviser » — visible seulement si > 0, jamais grisée.
         if (categories.due.isNotEmpty) ...<Widget>[
           _ModeTile(
             tileKey: reviewKey,
@@ -224,16 +216,13 @@ class ZSessionModeSelector extends StatelessWidget {
           SizedBox(height: theme.gapS),
         ],
 
-        // « Test » — TOUJOURS présente, même sur un dossier vide (patron AD-45).
-        //
-        // ⚠️ Ce commentaire disait « elle ne démarre rien » DEUX LIGNES au-dessus
-        // d'un `onStart(...)` (code-review su-6, LOW-4). Le comportement est
-        // correct et verrouillé par test — c'est la PROSE qui était ambiguë : un
-        // hôte qui câble `onStart` sur « naviguer vers l'écran de session »
-        // recevrait, à chaque tap, une ouverture de dialog **ET** un événement de
-        // démarrage. Formulation exacte : elle ne produit **AUCUNE FILE** —
-        // l'hôte reçoit `onStart(test, [])` (la file naît des filtres qu'il
-        // composera) **et** l'ouverture du dialog.
+        // « Test » — toujours présente, même sur un corpus vide. Un tap
+        // ouvre le dialog de filtres et invoque `onStart(test, [])` dans le
+        // même geste : elle ne produit aucune file (la file naît des
+        // filtres que l'hôte composera), mais elle invoque bien `onStart`.
+        // Un hôte qui câble `onStart` sur une navigation doit donc s'attendre
+        // à recevoir, pour cette option, à la fois l'ouverture du dialog et
+        // l'événement de démarrage.
         _ModeTile(
           tileKey: testKey,
           labelKey: 'zcrud.study.mode.test',
@@ -245,10 +234,9 @@ class ZSessionModeSelector extends StatelessWidget {
           },
         ),
 
-        // « Bachotage » — ABSENTE sur un corpus vide (patron AD-45 : jamais
-        // grisée). Le gap est porté ICI, en TÊTE du bloc conditionnel : « Test »
-        // reste la tuile terminale quand le corpus est vide, exactement comme
-        // avant ce membre.
+        // « Bachotage » — absente sur un corpus vide, jamais grisée. Le gap
+        // est porté ici, en tête du bloc conditionnel : « Test » reste la
+        // tuile terminale quand le corpus est vide.
         if (crammingQueue.isNotEmpty) ...<Widget>[
           SizedBox(height: theme.gapS),
           _ModeTile(
@@ -256,11 +244,11 @@ class ZSessionModeSelector extends StatelessWidget {
             labelKey: 'zcrud.study.mode.cramming',
             labelFallback: 'Bachotage',
             countValue: crammingQueue.length,
-            // Rôle NEUTRE : le bachotage n'est ni une échéance (secondary) ni un
-            // engagement noté (tertiary) — il ne consomme aucune dette SRS. Les
-            // rôles disponibles sont bornés par `ZColorSlot`
-            // (primary/secondary/tertiary/error/neutral) ; `error` serait un
-            // contresens.
+            // Rôle neutre : le bachotage n'est ni une échéance (secondary)
+            // ni un engagement noté (tertiary) — il ne consomme aucune
+            // dette SRS. Les rôles disponibles sont bornés par `ZColorSlot`
+            // (primary/secondary/tertiary/error/neutral) ; `error` serait
+            // un contresens.
             colorKeyName: 'neutral',
             onTap: () => onStart(ZSessionModeKind.cramming, crammingQueue),
           ),
@@ -269,7 +257,7 @@ class ZSessionModeSelector extends StatelessWidget {
     );
   }
 
-  /// Borne [source] à [size] éléments (`size <= 0` ⇒ vide).
+  /// Borne [source] à [size] éléments (`size <= 0` donne une liste vide).
   static List<ZFlashcard> _batch(List<ZFlashcard> source, int size) {
     if (size <= 0) return const <ZFlashcard>[];
     if (source.length <= size) return source;
@@ -277,14 +265,12 @@ class ZSessionModeSelector extends StatelessWidget {
   }
 }
 
-/// Tuile d'option — **le SEUL patron de tuile** du sélecteur.
+/// Tuile d'option — le seul patron de tuile du sélecteur.
 ///
-/// 🔴 **Un défaut est un MOTIF** (leçon su-5 : `Semantics`+`Text` corrigé sur une
-/// tuile, **3 autres laissées cassées**). Les 4 options traversent donc **CE**
-/// widget : il n'existe **aucune** tuile écrite à part qui pourrait diverger.
-/// Le test A11y **énumère** les 4 tuiles — jamais une seule. C'est ce qui rend
-/// l'ajout du point d'entrée « bachotage » **gratuit** en a11y/contraste/RTL :
-/// la tuile neuve hérite du patron, elle ne le re-décrit pas.
+/// Les quatre options traversent ce même widget : il n'existe aucune tuile
+/// écrite à part qui pourrait diverger. C'est ce qui rend l'ajout d'une
+/// nouvelle option gratuit en a11y/contraste/RTL : la tuile neuve hérite du
+/// patron, elle ne le re-décrit pas.
 class _ModeTile extends StatelessWidget {
   const _ModeTile({
     required this.tileKey,
@@ -309,55 +295,37 @@ class _ModeTile extends StatelessWidget {
     final theme = ZcrudTheme.of(context);
     final pair = zResolveColorKeyOrSlot(context, colorKeyName, slotIndex: 0);
 
-    // 🔴 Libellé issu de `ZcrudLabels` — jamais un littéral (NFR-SU4).
+    // Libellé issu de `ZcrudLabels` — jamais un littéral.
     final text = label(context, labelKey, fallback: labelFallback);
     final count = countValue;
 
     return Semantics(
       key: tileKey,
-      // 🔴 `Semantics(label:)` issu de `ZcrudLabels` — l'angle mort de la garde
-      // de libellés, tenu par l'énumération AC14 de
-      // `z_session_mode_selector_test.dart` (à la valeur EXACTE : `isNotEmpty`
-      // ne voyait ni un littéral en dur, ni une fusion).
       label: text,
-      // Le NOMBRE passe par `value` : jamais concaténé dans le label (le lecteur
-      // d'écran annonce « Apprendre, 30 »).
+      // Le nombre passe par `value` : jamais concaténé dans le label (le
+      // lecteur d'écran annonce « Apprendre, 30 »).
       value: count == null ? null : '$count',
       button: true,
-      // 🔴 Défaut MESURÉ (code-review su-6, D2 — balayage du MOTIF).
+      // Sans exclusion, les `Text` descendants fusionneraient dans ce nœud,
+      // faisant annoncer le libellé deux fois et le compte concaténé au
+      // label plutôt que porté par `value` seul.
       //
-      // Sans exclusion, les `Text` descendants **fusionnaient** dans ce nœud.
-      // Arbre sémantique RÉEL, sondé :
-      //   zModeReview -> label = « L10N_REVIEW⏎L10N_REVIEW⏎1 »
-      //   zModeTest   -> label = « L10N_TEST⏎L10N_TEST »
-      // ⇒ TalkBack annonçait « À réviser, À réviser, 12 — valeur : 12 » : le
-      // libellé DOUBLÉ **et le compte CONCATÉNÉ AU LABEL** — c'est-à-dire
-      // exactement ce que le commentaire ci-dessus déclarait impossible. Une
-      // prose qui dit le contraire du code, sur le puits que la garde ne voit
-      // pas. C'est le MAJEUR su-5/D1, re-commis.
-      //
-      // ⚠️ La tuile « Apprendre » (la seule à porter un `leading`) avait, elle,
-      // un nœud PARENT propre — la duplication s'était déplacée dans son nœud
-      // ENFANT (« progression, 1/1, L10N_LEARN, 1 »). Une sonde qui ne lit que
-      // le parent de CETTE tuile conclut « le sélecteur est sain ». Il ne
-      // l'était pas.
-      //
-      // Ce que l'exclusion MASQUE, et pourquoi c'est assumé : le nœud propre de
-      // l'anneau (« progression, 30/60 »). L'anneau est une **redite décorative**
-      // des nombres que la tuile annonce déjà (`correct` = la file = ce `value`) ;
-      // seul le TOTAL du backlog disparaît du canal a11y — il n'est pas dans le
-      // contrat d'AC7 (« Apprendre +N » annonce N), il reste visible à l'œil, et
-      // le bilan de session le porte. En contrepartie, le nœud cesse d'être le
-      // charabia mesuré ci-dessus.
+      // Ce que l'exclusion masque, et pourquoi c'est assumé pour la tuile
+      // « Apprendre » (la seule à porter un `leading`) : le nœud propre de
+      // l'anneau de progression (« progression, 30/60 »). L'anneau est une
+      // redite décorative des nombres que la tuile annonce déjà (`correct`
+      // = la file = ce `value`) ; seul le total du backlog disparaît du
+      // canal a11y — il reste visible à l'œil, et le bilan de session le
+      // porte.
       excludeSemantics: true,
-      // 🔴 `excludeSemantics` masque aussi le `onTap` de l'`InkWell` : on le
-      // RE-DÉCLARE, sinon la tuile deviendrait inactionnable au lecteur d'écran
-      // (une correction a11y qui casse l'a11y serait pire que le défaut).
+      // `excludeSemantics` masque aussi le `onTap` de l'`InkWell` : on le
+      // re-déclare, sinon la tuile deviendrait inactionnable au lecteur
+      // d'écran.
       onTap: onTap,
       child: InkWell(
         onTap: onTap,
         child: ConstrainedBox(
-          // Cible ≥ 48 dp (AD-13/NFR-SU3).
+          // Cible ≥ 48 dp (invariant AD-13).
           constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
             // Directionnel (RTL).
@@ -378,23 +346,13 @@ class _ModeTile extends StatelessWidget {
                 ),
                 if (count != null)
                   Text(
-                    // Interpolation PURE (un nombre) : rien à traduire.
+                    // Interpolation pure (un nombre) : rien à traduire.
                     '$count',
-                    // 🔴 Contraste MESURÉ (code-review su-6, ÉCART-2 — le MÊME
-                    // défaut que `ZStreakBadge`, ici aussi).
-                    //
-                    // Ce compte portait `pair.color` — le rôle de **FOND** de la
-                    // paire — en PREMIER PLAN, sur une tuile qui ne peint AUCUN
-                    // fond : `primaryContainer` sur `surface`, ratio RÉEL
-                    // **1,23:1** contre les **4,5:1** de WCAG AA. Le « +N » de la
-                    // tuile « Apprendre » — le nombre même qu'AC7 exige
-                    // d'afficher — était donc illisible, à deux lignes d'un
-                    // libellé qui, lui, utilisait déjà `pair.onColor` (8,87:1)
-                    // dans le MÊME `Row`. Un défaut est un MOTIF : corriger le
-                    // badge et laisser CETTE tuile à 1,23:1, c'est exactement la
-                    // leçon su-5 (« une tuile corrigée, 3 laissées cassées »)
-                    // re-commise. Aligné sur son propre libellé — aucun
-                    // changement de mise en page.
+                    // `pair.onColor`, le rôle premier plan lisible sur
+                    // `pair.color` — jamais `pair.color` lui-même en premier
+                    // plan, qui produirait un contraste insuffisant sur une
+                    // tuile qui ne peint aucun fond dédié. Aligné sur le
+                    // libellé du même `Row`, qui utilise déjà `pair.onColor`.
                     style: TextStyle(color: pair.onColor),
                   ),
               ],

@@ -1,18 +1,21 @@
-/// Le **badge compteur** pixel-perfect lex — lot K3.
+/// Le badge compteur, en Material pixel-perfect.
 ///
-/// lex badge ses puces d'outils d'un compteur à radius 8, pad h4, fond
-/// `primary` quand il y a des réglages actifs et `surfaceContainerHighest`
-/// sinon (`chat_input.dart:856-874`). Ici :
+/// {@template zcrud.chat_material.chrome_param}
+/// Réglage de chrome pour ce builder — dimensions et couleurs d'identité.
+/// `null` résout la chaîne par défaut : jeton de thème du chrome composer,
+/// puis valeurs de référence Material intégrées à ce paquet.
+/// {@endtemplate}
 ///
-/// * le **radius** vient du chrome résolu ([ZChatComposerChromeStyle.badgeRadius]
-///   — paramètre > jeton `badgeRadius` > référence 8), la marge de
-///   `ZChatComposerReference.badgePadding` : rien n'est recopié ;
-/// * les **rôles** viennent du `ColorScheme` de l'hôte — jamais un hex.
+/// Le radius et la marge viennent du chrome résolu
+/// ([ZChatComposerChromeStyle.badgeRadius], `ZChatComposerReference.badgePadding`) ;
+/// les rôles de couleur viennent du `ColorScheme` de l'hôte, jamais d'une
+/// valeur hexadécimale codée en dur.
 ///
-/// ⚠️ Un badge est un GLYPHE, pas une cible : il se monte DANS une affordance
-/// ≥ 48 dp (le bouton « outils » de l'hôte), jamais seul comme surface
-/// tactile. Le nombre reste lisible par un lecteur d'écran (c'est un `Text`) —
-/// la couleur n'est jamais porteuse seule (CR-74).
+/// Un badge est un glyphe, pas une cible tactile : il se monte à l'intérieur
+/// d'une affordance déjà conforme (le bouton « outils » de l'hôte), jamais
+/// seul comme surface interactive. Le nombre reste lisible par un lecteur
+/// d'écran (c'est un `Text`) — la couleur n'est jamais le seul canal qui
+/// porte l'état actif/inactif.
 library;
 
 import 'package:flutter/material.dart';
@@ -23,12 +26,12 @@ class ZChatMaterialBadge extends StatelessWidget {
   /// Construit le badge.
   const ZChatMaterialBadge({required this.count, this.chrome, super.key});
 
-  /// Le compte affiché. `0` ⇒ variante discrète (les rôles de surface), comme
-  /// chez lex — jamais un badge masqué en silence : masquer est une décision
-  /// d'hôte (AD-4 : il ne monte simplement pas le badge).
+  /// Le compte affiché. `0` rend la variante discrète (rôles de surface) —
+  /// jamais un badge masqué en silence : masquer le badge lui-même reste une
+  /// décision de l'hôte (invariant AD-4), pas de ce widget.
   final int count;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// {@macro zcrud.chat_material.chrome_param}
   final ZChatComposerChrome? chrome;
 
   @override
@@ -60,9 +63,9 @@ class ZChatMaterialBadge extends StatelessWidget {
   }
 }
 
-/// Le badge VIVANT du bouton « outils » — lié à
-/// [ZChatSettingsController.activeCount] (la tranche F12 de K2) : il suit le
-/// nombre de réglages non-défaut sans que l'hôte recompte quoi que ce soit.
+/// Le badge vivant du bouton « outils » — lié à
+/// [ZChatSettingsController.activeCount] : il suit le nombre de réglages
+/// non-défaut sans que l'hôte recompte quoi que ce soit.
 class ZChatMaterialToolsBadge extends StatelessWidget {
   /// Construit le badge lié.
   const ZChatMaterialToolsBadge({
@@ -74,12 +77,12 @@ class ZChatMaterialToolsBadge extends StatelessWidget {
   /// Le contrôleur de réglages du socle.
   final ZChatSettingsController controller;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// {@macro zcrud.chat_material.chrome_param}
   final ZChatComposerChrome? chrome;
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 LA tranche `activeCount`, et elle seule (SM-1).
+    // Abonné uniquement à la tranche `activeCount` (invariant AD-2).
     return ValueListenableBuilder<int>(
       valueListenable: controller.activeCount,
       builder: (BuildContext context, int count, Widget? _) =>

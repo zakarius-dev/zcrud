@@ -1,58 +1,60 @@
-/// Seam IA neutre d'**évaluation de réponse** `ZFlashcardAnswerEvaluationPort`
-/// (Story SU-3, AC2/AC3 — AD-35).
+/// Seam IA neutre d'évaluation de réponse `ZFlashcardAnswerEvaluationPort`.
 ///
-/// origine: seam IA neutre du domaine flashcard (AD-5/AD-35). Le port est un
-/// **contrat pur** (`abstract interface class`) : l'app hôte l'*implements* avec
-/// son routeur IA. **Aucune** mécanique de transport ne fuit dans le domaine —
-/// prompts, endpoints et clés restent CÔTÉ APP (patron **exact**
-/// `z_flashcard_generation_port.dart`).
+/// Le port est un contrat pur (`abstract interface class`) : l'application
+/// hôte l'implémente avec son propre routeur IA. Aucune mécanique de
+/// transport ne fuit dans le domaine — prompts, points de terminaison et
+/// clés restent côté application (même patron que le port de génération de
+/// contenu du paquet d'étude).
 ///
-/// 🔒 **ADVISORY STRICT (AD-35)** — la raison d'être de ce fichier. Le port
-/// **suggère**, il ne **note** jamais :
-/// - sa sortie porte une `suggestedQuality`, pas une qualité ;
-/// - **rien ici n'écrit le SRS** (AD-33) : l'écriture passe *uniquement* par le
-///   seam `ZSessionReviewer` (`zcrud_session`), et su-3 n'écrit rien du tout ;
-/// - c'est le **tap de l'utilisateur** sur `ZSrsQualityButtons` qui vaut
-///   notation — la suggestion n'est qu'une **pré-sélection**.
+/// ## Consultatif, jamais notant
 ///
-/// 🔒 **JAMAIS appelé pour un QCM ou un Vrai/Faux** (AD-35 / AC1). Ces deux
-/// types sont évalués **LOCALEMENT et exactement** par `zEvaluateLocally`
-/// (`z_flashcard_local_evaluation.dart`) : la bonne réponse est **déjà connue**
-/// (`ZChoice.isCorrect` / `ZFlashcard.isTrue`), une comparaison ensembliste
-/// stricte est **exacte et gratuite**, là où un appel IA serait **coûteux,
-/// latent et faillible**. **Écart ASSUMÉ avec IFFD** (qui les fait passer par
-/// l'IA) : ne pas « corriger » vers IFFD.
+/// Le port suggère, il ne note jamais :
+/// - sa sortie porte une qualité suggérée, pas une qualité définitive ;
+/// - rien ici n'écrit l'état SRS : l'écriture passe uniquement par le seam
+///   de révision de session (`zcrud_session`), et ce port n'écrit rien du
+///   tout ;
+/// - c'est le geste de l'utilisateur sur les boutons de qualité SRS qui vaut
+///   notation — la suggestion n'est qu'une pré-sélection.
 ///
-/// 🔒 **Le plafond d'indices n'est PAS l'affaire du port** (AD-36) : `hintsUsed`
-/// lui est transmis **à titre INFORMATIF** (« le barème peut en tenir compte
-/// dans sa prose »), mais la **pénalité a un propriétaire unique — la couche
-/// locale** (`zApplyHintCeiling`, `z_hint_penalty.dart`), appliquée **EN DERNIER
-/// sur la valeur rendue**. Un port qui rendrait 5 avec 3 indices **ne contourne
-/// pas** le plafond.
+/// ## Jamais appelé pour un QCM ou un vrai/faux
 ///
-/// **`abstract interface class` (AD-4)** : frontière inter-package ⇒ **jamais
-/// `sealed`** (l'app *implements* librement). **`Either<ZFailure,·>` (AD-5)** :
-/// l'`errorKind` **typé** d'AD-35 **EST** le `ZFailure` (hiérarchie existante) —
-/// aucun nouveau canal d'erreur n'est inventé. Un `Left`, un port `null` ou même
-/// un `throw` de l'impl app retombent tous sur la **qualité neutre**
-/// (`config.passThreshold`) côté surface : **jamais d'exception** (AD-10).
+/// Ces deux types sont évalués localement et exactement par l'évaluation
+/// locale (voir `z_flashcard_local_evaluation.dart`) : la bonne réponse est
+/// déjà connue (`ZChoice.isCorrect` / `ZFlashcard.isTrue`), une comparaison
+/// ensembliste stricte est exacte et gratuite, là où un appel IA serait
+/// coûteux, latent et faillible.
 ///
-/// **Foyer imposé par le graphe (AD-1)** : `zcrud_study` **dépend de**
-/// `zcrud_flashcard` ⇒ loger ce port à côté de `ZFlashcardGenerationPort`
-/// (`zcrud_study`) créerait un **cycle** ; `zcrud_study_kernel` ignore
-/// `ZFlashcardType`. `zcrud_flashcard` est donc le **seul** foyer possible — ce
-/// n'est pas une préférence, c'est le graphe.
+/// ## Le plafond d'indices n'est pas l'affaire du port
+///
+/// `hintsUsed` lui est transmis à titre informatif (le barème peut en tenir
+/// compte dans sa prose), mais la pénalité a un propriétaire unique — la
+/// couche locale (`zApplyHintCeiling`, voir `z_hint_penalty.dart`), appliquée
+/// en dernier sur la valeur rendue. Un port qui rendrait une note haute avec
+/// plusieurs indices consommés ne contourne donc pas le plafond.
+///
+/// `abstract interface class` (invariant AD-4) : frontière inter-paquet, donc
+/// jamais `sealed` (l'application implémente librement). `Either<ZFailure,
+/// ·>` (invariant AD-5) : un `Left`, un port `null` ou même une exception
+/// levée par l'implémentation applicative retombent tous sur la qualité
+/// neutre (le seuil de passage de la configuration) côté surface — jamais
+/// d'exception propagée (invariant AD-10).
+///
+/// Ce port vit dans `zcrud_flashcard` plutôt que dans le paquet d'étude, où
+/// vit le port de génération de contenu voisin : le paquet d'étude dépend de
+/// `zcrud_flashcard`, et loger ce port à côté de son voisin créerait un
+/// cycle de dépendances (invariant AD-1).
 library;
 
 import 'package:zcrud_core/domain.dart';
 
 import 'z_flashcard_type.dart';
 
-/// Requête **immuable** d'évaluation d'une réponse rédigée (value-object,
-/// `==`/`hashCode` par valeur) — entrée d'AD-35, **mot pour mot**.
+/// Requête immuable d'évaluation d'une réponse rédigée (value-object,
+/// `==`/`hashCode` par valeur).
 ///
-/// Ne porte que du **contenu neutre** : aucun prompt, aucun endpoint, aucune clé
-/// (AD-12). N'est **jamais** construite pour un QCM/Vrai-Faux (AC1).
+/// Ne porte que du contenu neutre : aucun prompt, aucun point de
+/// terminaison, aucune clé (invariant AD-12). N'est jamais construite pour
+/// un QCM ou un vrai/faux.
 class ZFlashcardAnswerEvaluationRequest {
   /// Construit une requête d'évaluation.
   const ZFlashcardAnswerEvaluationRequest({
@@ -69,44 +71,46 @@ class ZFlashcardAnswerEvaluationRequest {
   /// Énoncé de la carte (`ZFlashcard.question`).
   final String question;
 
-  /// Réponse **rédigée** par l'apprenant (texte brut).
+  /// Réponse rédigée par l'apprenant (texte brut).
   final String userAnswer;
 
-  /// Type de la carte évaluée — **jamais** [ZFlashcardType.multipleChoice] ni
-  /// [ZFlashcardType.trueOrFalse] (évalués localement, AC1/AD-35).
+  /// Type de la carte évaluée — jamais [ZFlashcardType.multipleChoice] ni
+  /// [ZFlashcardType.trueOrFalse] (évalués localement).
   final ZFlashcardType cardType;
 
   /// Réponse attendue (`ZFlashcard.answer`), ou `null` si la carte n'en porte
-  /// pas — l'app décide alors de son barème.
+  /// pas — l'application décide alors de son barème.
   final String? expectedAnswer;
 
-  /// Explication pédagogique de la carte (`ZFlashcard.explanation`), ou `null`.
+  /// Explication pédagogique de la carte (`ZFlashcard.explanation`), ou
+  /// `null`.
   final String? explanation;
 
   /// Temps de réponse mesuré, ou `null`.
   ///
-  /// **Toujours mesuré** côté surface — y compris quand le minuteur est
-  /// `ZTimerDisplay.hidden` (AC7) : l'affichage est un réglage d'UI, pas une
-  /// condition de mesure.
+  /// Toujours mesuré côté surface, y compris quand l'affichage du minuteur
+  /// est masqué : l'affichage est un réglage d'interface, pas une condition
+  /// de mesure.
   final Duration? timeTaken;
 
-  /// Nombre d'indices consommés — 🔒 **INFORMATIF SEULEMENT** (AD-36).
+  /// Nombre d'indices consommés — informatif seulement.
   ///
-  /// Le port **n'en tire AUCUNE pénalité** : le plafond est appliqué **après**,
-  /// **localement**, par `zApplyHintCeiling` (propriétaire **unique**). Le
-  /// transmettre permet au barème d'en « tenir compte dans sa prose » (AD-36
-  /// mot pour mot) — jamais dans sa note.
+  /// Le port n'en tire aucune pénalité : le plafond est appliqué après,
+  /// localement, par `zApplyHintCeiling` (propriétaire unique). Le
+  /// transmettre permet au barème d'en tenir compte dans sa prose — jamais
+  /// dans sa note.
   final int hintsUsed;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Emplacement brut de l'échappatoire (normalisé à la lecture via
+  /// [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée (paramètres app-specific neutres). Défaut `const {}`.
-  /// **Normalisée à la LECTURE (AD-19.1)** : les clés de sync réservées
-  /// (`updated_at`/`is_deleted`) sont écartées — jamais réémises.
+  /// Échappatoire non typée (paramètres applicatifs neutres). Défaut
+  /// `const {}`. Normalisée à la lecture : les clés de synchronisation
+  /// réservées sont écartées, jamais réémises.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Clés réservées écartées de [extra] (AD-19.1, `...ZSyncMeta.reservedKeys`).
+  /// Clés réservées écartées de [extra].
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   @override
@@ -139,26 +143,19 @@ class ZFlashcardAnswerEvaluationRequest {
       'hintsUsed: $hintsUsed, timeTaken: $timeTaken)';
 }
 
-/// Sortie **ADVISORY** typée d'une évaluation (value-object immuable) — AD-35.
+/// Sortie consultative typée d'une évaluation (value-object immuable).
 ///
-/// 🔒 Le port **SUGGÈRE**, il ne **note** jamais : [suggestedQuality] est une
-/// *proposition*, pré-sélectionnée dans `ZSrsQualityButtons` ; seul le **tap**
-/// de l'utilisateur vaut notation.
+/// Le port suggère, il ne note jamais : [suggestedQuality] est une
+/// proposition, pré-sélectionnée dans l'interface de qualité SRS ; seul le
+/// geste de l'utilisateur vaut notation.
 ///
-/// 🔒 [suggestedQuality] est **CLAMPÉE à la réception** par
-/// `ZSrsConfig.clampQuality` (unique voie de clamp, AD-46) puis **plafonnée** par
-/// `zApplyHintCeiling` (AD-36) : ce VO transporte la valeur **brute** du port,
-/// telle qu'il l'a rendue — la discipline d'échelle est appliquée par le
-/// consommateur, en un seul endroit, dans un ordre imposé.
-///
-/// **`quota?` d'AD-35 : NON livré en v1** (arbitrage consigné). Le VO de quota
-/// canonique `ZEducationQuotaInfo` vit dans `zcrud_study` — **inatteignable
-/// sans cycle** (AD-1) ; le dupliquer serait une **seconde source**. Le spine le
-/// note **optionnel** et aucun besoin bi-consommateur n'est démontré
-/// (« généricité au juste besoin »). L'échappatoire [extra] (AD-4) le loge le
-/// jour où une app en a besoin, **sans** rupture de surface.
+/// [suggestedQuality] est clampée à la réception par `ZSrsConfig.clampQuality`
+/// (unique voie de clamp) puis plafonnée par `zApplyHintCeiling` : ce
+/// value-object transporte la valeur brute du port, telle qu'il l'a rendue —
+/// la discipline d'échelle est appliquée par le consommateur, en un seul
+/// endroit, dans un ordre imposé.
 class ZFlashcardAnswerEvaluation {
-  /// Construit une évaluation advisory.
+  /// Construit une évaluation consultative.
   const ZFlashcardAnswerEvaluation({
     required this.feedback,
     required this.suggestedQuality,
@@ -166,28 +163,30 @@ class ZFlashcardAnswerEvaluation {
     Map<String, dynamic> extra = const <String, dynamic>{},
   }) : _extra = extra;
 
-  /// Retour pédagogique **prêt à afficher** (prose du barème).
+  /// Retour pédagogique prêt à afficher (prose du barème).
   final String feedback;
 
-  /// Qualité **SUGGÉRÉE** (brute, telle que rendue par le port).
+  /// Qualité suggérée (brute, telle que rendue par le port).
   ///
-  /// 🔒 Peut être **hors bornes** : le consommateur la fait passer par
-  /// `config.clampQuality` (AD-46) **puis** `zApplyHintCeiling` (AD-36). Ce VO
-  /// ne clampe pas lui-même — sinon la discipline d'échelle aurait **deux**
-  /// propriétaires, et ils divergeraient en silence.
+  /// Peut être hors bornes : le consommateur la fait passer par
+  /// `config.clampQuality` puis `zApplyHintCeiling`. Ce value-object ne
+  /// clampe pas lui-même — sinon la discipline d'échelle aurait deux
+  /// propriétaires, qui pourraient diverger en silence.
   final int suggestedQuality;
 
   /// Verdict binaire du barème, ou `null` si le barème ne se prononce pas
-  /// (`isCorrect?` d'AD-35 — nullable **par contrat**).
+  /// (nullable par contrat).
   final bool? isCorrect;
 
-  /// Slot brut de l'échappatoire (normalisé à la LECTURE via [extra]).
+  /// Emplacement brut de l'échappatoire (normalisé à la lecture via
+  /// [extra]).
   final Map<String, dynamic> _extra;
 
-  /// Échappatoire non typée (AD-4) — loge notamment un `quota` app-specific.
+  /// Échappatoire non typée (invariant AD-4) — loge notamment un quota
+  /// applicatif.
   Map<String, dynamic> get extra => zSanitizeExtra(_extra, _reservedKeys);
 
-  /// Clés réservées écartées de [extra] (AD-19.1).
+  /// Clés réservées écartées de [extra].
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
   @override
@@ -208,21 +207,21 @@ class ZFlashcardAnswerEvaluation {
       '$suggestedQuality, isCorrect: $isCorrect)';
 }
 
-/// Port neutre d'**évaluation de réponse rédigée** (AD-5 : `Either<ZFailure,·>`).
+/// Port neutre d'évaluation de réponse rédigée (invariant AD-5 :
+/// `Either<ZFailure,·>`).
 ///
-/// L'app hôte l'*implements* avec son routeur IA. Retourne
-/// `ZResult<ZFlashcardAnswerEvaluation>` — **jamais** une évaluation nue.
+/// L'application hôte l'implémente avec son propre routeur IA. Retourne
+/// `ZResult<ZFlashcardAnswerEvaluation>` — jamais une évaluation nue.
 ///
-/// 🔒 **N'est JAMAIS appelé** pour [ZFlashcardType.multipleChoice] ni
-/// [ZFlashcardType.trueOrFalse] (AD-35/AC1) — la garde centrale de l'AC1 est une
-/// **assertion d'ABSENCE d'appel** (`spy.callCount == 0`).
+/// N'est jamais appelé pour [ZFlashcardType.multipleChoice] ni
+/// [ZFlashcardType.trueOrFalse].
 abstract interface class ZFlashcardAnswerEvaluationPort {
   /// Évalue la réponse rédigée décrite par [request].
   ///
-  /// `Left` en cas d'échec (quota, réseau, parsing) — l'`errorKind` typé d'AD-35
-  /// **est** ce `ZFailure`. Le consommateur retombe alors sur la **qualité
-  /// neutre** (`config.passThreshold`), **sans** exception (AD-10) : une impl qui
-  /// **throw** est couverte au même titre qu'un `Left`.
+  /// `Left` en cas d'échec (quota, réseau, analyse) — le consommateur
+  /// retombe alors sur la qualité neutre (`config.passThreshold`), sans
+  /// exception (invariant AD-10) : une implémentation qui lève une exception
+  /// est couverte au même titre qu'un `Left`.
   Future<ZResult<ZFlashcardAnswerEvaluation>> evaluateAnswer(
     ZFlashcardAnswerEvaluationRequest request,
   );

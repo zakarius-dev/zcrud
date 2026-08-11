@@ -1,59 +1,60 @@
-/// Surface de **SAISIE notée** `ZFlashcardAnswerInput`
-/// (Story SU-3 — FR-SU2/3/4/5, AD-33/AD-35/AD-36/AD-46).
+/// Surface de saisie notée `ZFlashcardAnswerInput`.
 ///
-/// ═══ 🎯 L'ARÈNE DES GESTES — le point de conception n°1 (AC9) ═══════════════
+/// ## L'arène des gestes — le point de conception principal
 ///
-/// Le code-review de su-2 a démasqué un **HIGH réel** (D1) : sur le chemin
-/// d'usage documenté (`contentBuilder: ZFlashcardMarkdownContent.builder()`), le
-/// `QuillEditor` **gagnait l'arène des gestes** contre l'`InkWell` de la carte —
-/// `onRevealChanged` ne recevait rien, **la réponse n'apparaissait jamais**, et
-/// ce sous **328/328 tests verts**. Le correctif fut un [IgnorePointer] sur le
-/// sous-arbre du slot (`z_flashcard_review_card.dart`), légitime **parce que
-/// « su-2 AFFICHE »**.
+/// Sur le chemin d'usage documenté (`contentBuilder:
+/// ZFlashcardMarkdownContent.builder()`), un `QuillEditor` gagnerait l'arène
+/// des gestes contre l'`InkWell` de la carte d'affichage : le tap de
+/// révélation ne recevrait rien, la réponse n'apparaissant jamais, y
+/// compris avec une suite de tests par ailleurs entièrement verte. Le
+/// correctif est un `IgnorePointer` sur le sous-arbre du slot de contenu
+/// (`z_flashcard_review_card.dart`), légitime parce que ce sous-arbre est de
+/// l'affichage.
 ///
-/// su-3 introduit la **saisie** : le contenu doit redevenir interactif — mais
-/// **PAS n'importe où**. Le conflit n'est ni arbitré par priorité de geste, ni
-/// « réglé » en retirant le correctif de su-2 : il est **DISSOUS par
-/// construction** —
+/// Cette surface introduit la saisie : le contenu doit redevenir
+/// interactif — mais pas n'importe où. Le conflit n'est ni arbitré par
+/// priorité de geste, ni « réglé » en retirant le correctif de la carte
+/// d'affichage : il est dissous par construction —
 ///
 /// | Zone | Régime | Pourquoi |
 /// |---|---|---|
-/// | Contenu (slot AD-40) | **[IgnorePointer] MAINTENU** | c'est de l'**affichage**, même ici : sans cela un `QuillEditor` volerait le geste aux contrôles de saisie (rejeu exact de D1) |
-/// | Contrôles de saisie | **SEULS interactifs** | ce sont les **seuls** capteurs de geste de la surface |
-/// | Révélation par tap | **ABSENTE** | 🔒 la correction est causée par la **SOUMISSION**, jamais par un tap |
+/// | Contenu | [IgnorePointer] maintenu | c'est de l'affichage, même ici : sans cela un `QuillEditor` volerait le geste aux contrôles de saisie |
+/// | Contrôles de saisie | seuls interactifs | ce sont les seuls capteurs de geste de la surface |
+/// | Révélation par tap | absente | la correction est causée par la soumission, jamais par un tap |
 ///
-/// 🔒 **« Répondre » et « dévoiler » sont MUTUELLEMENT EXCLUSIFS.** Un apprenant
-/// **noté** ne peut pas dévoiler la réponse d'un tap — ce serait **tricher** ET
-/// voler le geste au contrôle de saisie. `ZFlashcardReviewCard` (su-2) reste la
-/// surface d'**AFFICHAGE** avec sa révélation par tap ; celle-ci est la surface
-/// de **SAISIE**, sans tap-to-reveal. Un hôte qui compose les deux les compose
-/// en **FRÈRES** (sous-arbres **disjoints**) ⇒ **aucune arène commune**.
+/// « Répondre » et « dévoiler » sont mutuellement exclusifs. Un apprenant
+/// noté ne peut pas dévoiler la réponse d'un tap — ce serait tricher et
+/// voler le geste au contrôle de saisie. `ZFlashcardReviewCard` reste la
+/// surface d'affichage avec sa révélation par tap ; celle-ci est la surface
+/// de saisie, sans tap-to-reveal. Un hôte qui compose les deux les compose
+/// en frères (sous-arbres disjoints), donc aucune arène commune.
 ///
-/// 🚫 **INTERDIT** : retirer/affaiblir l'`IgnorePointer` de su-2 (correctif d'un
-/// HIGH réel, gardé par `z_flashcard_gesture_arena_test.dart`) · poser un
-/// `Dismissible`/`onHorizontalDrag` (le swipe appartient à **su-4**).
+/// Interdit : retirer ou affaiblir l'`IgnorePointer` du contenu ; poser un
+/// `Dismissible`/`onHorizontalDrag` (le swipe appartient à
+/// `ZSessionCardSwiper`).
 ///
-/// ═══ 🔒 CE QUE CETTE SURFACE N'ÉCRIT PAS (AD-33) ═════════════════════════════
+/// ## Ce que cette surface n'écrit pas
 ///
-/// **RIEN.** Elle **ÉMET** un fait ([ZFlashcardSubmission]) via `onSubmitted` ;
-/// **su-4** branchera `onQualitySelected` sur `ZSessionReviewer.reviewCard` —
-/// **unique** voie d'écriture SRS du repo. Le danger est **LOCAL** :
-/// `zcrud_flashcard` (dont ce package dépend) contient `ZSm2Scheduler`,
-/// `ZSrsScheduler` et `ZRepetitionStore` — tous atteignables d'ici. La garde
-/// `test/presentation/z_widgets_purity_test.dart` interdit de les **mentionner**.
+/// Rien. Elle émet un fait ([ZFlashcardSubmission]) via `onSubmitted` ;
+/// l'hôte branche `onQualitySelected` sur `ZSessionReviewer.reviewCard` —
+/// l'unique voie d'écriture SRS du dépôt (invariant AD-9). Le danger est
+/// local : `zcrud_flashcard` (dont ce package dépend) contient
+/// `ZSm2Scheduler`, `ZSrsScheduler` et `ZRepetitionStore` — tous
+/// atteignables d'ici. Une garde de pureté du paquet interdit de les
+/// mentionner.
 ///
-/// ═══ 🔒 L'ORDRE D'ATTRIBUTION DE LA QUALITÉ (AC2/AC6) ════════════════════════
+/// ## L'ordre d'attribution de la qualité
 ///
 /// ```text
 /// QCM/VF     → zEvaluateLocally (max/minQuality)  ─┐
 /// rédigée    → clampQuality(port.suggestedQuality) ─┤
-/// repli AD-10→ passThreshold                       ─┼→ zApplyHintCeiling(...) → quality
-/// « Je ne sais pas » → minQuality                  ─┘   ▲ UNE SEULE VOIE, EN DERNIER
+/// repli      → passThreshold                       ─┼→ zApplyHintCeiling(...) → quality
+/// « Je ne sais pas » → minQuality                  ─┘   ▲ une seule voie, en dernier
 /// ```
 ///
-/// 🔒 **Aucune borne en dur** (AD-46) : tout vient de [ZSrsConfig]. 🔒 Le plafond
-/// est appliqué **EN DERNIER, sur la valeur rendue** — « un port qui rend 10
-/// indices ne contourne pas le plafond » (AD-36).
+/// Aucune borne en dur : tout vient de [ZSrsConfig]. Le plafond est
+/// appliqué en dernier, sur la valeur rendue — un port qui suggère dix
+/// indices ne contourne pas le plafond.
 library;
 
 import 'dart:async';
@@ -86,19 +87,18 @@ class _Correction {
   final bool? isCorrect;
   final String? feedback;
 
-  /// Réponse **DONNÉE** par l'utilisateur sur un Vrai/Faux (`null` hors V/F).
+  /// Réponse donnée par l'utilisateur sur un Vrai/Faux (`null` hors V/F).
   ///
-  /// 🔒 Nécessaire au **canal de correction** d'AD-13 : sans elle, la surface ne
-  /// pouvait pas distinguer « le bouton que vous avez tapé » de « l'autre » —
-  /// les deux se **grisaient** à l'identique et l'apprenant n'apprenait **jamais**
-  /// qu'il s'était trompé.
+  /// Nécessaire au canal de correction (invariant AD-13) : sans elle, la
+  /// surface ne pourrait pas distinguer « le bouton que vous avez tapé » de
+  /// « l'autre » — les deux se griseraient à l'identique et l'apprenant
+  /// n'apprendrait jamais qu'il s'était trompé.
   final bool? answeredTrue;
 }
 
-/// Surface de saisie notée d'une flashcard (FR-SU2/3/4/5).
+/// Surface de saisie notée d'une flashcard.
 ///
-/// 🔒 **Ne pose AUCUN tap-to-reveal** (AC9) : la correction est causée par la
-/// **soumission**.
+/// Ne pose aucun tap-to-reveal : la correction est causée par la soumission.
 class ZFlashcardAnswerInput extends StatefulWidget {
   /// Construit la surface de saisie.
   const ZFlashcardAnswerInput({
@@ -122,113 +122,109 @@ class ZFlashcardAnswerInput extends StatefulWidget {
     super.key,
   });
 
-  /// Carte à répondre — 🔒 **JAMAIS mutée** (AC5 : les indices générés sont
-  /// **éphémères**, jamais persistés sur la carte).
+  /// Carte à répondre — jamais mutée : les indices générés sont éphémères,
+  /// jamais persistés sur la carte.
   final ZFlashcard card;
 
-  /// Mode de session — alimente la **table unique** [zDefaultAdvanceBehavior].
+  /// Mode de session — alimente la table unique [zDefaultAdvanceBehavior].
   final ZReviewMode mode;
 
-  /// Configuration SRS — 🔒 **propriétaire de l'échelle** (AD-46).
+  /// Configuration SRS — propriétaire de l'échelle.
   final ZSrsConfig srsConfig;
 
-  /// Slot AD-40 de rendu du contenu (`null` ⇒ défaut texte brut thématisé).
+  /// Slot de rendu du contenu (`null` : défaut texte brut thématisé).
   final ZFlashcardContentBuilder? contentBuilder;
 
-  /// Port d'évaluation ADVISORY (`null` ⇒ repli **qualité neutre**, AC3).
+  /// Port d'évaluation advisory (`null` : repli qualité neutre).
   ///
-  /// 🔒 **Jamais appelé** pour un QCM/Vrai-Faux (AD-35 / AC1).
+  /// Jamais appelé pour un QCM/Vrai-Faux : l'évaluation locale y est
+  /// déterministe et n'a pas besoin d'un port.
   final ZFlashcardAnswerEvaluationPort? evaluationPort;
 
-  /// Offre, **à chaque soumission**, une voie « évaluer sans IA » qui n'appelle
-  /// PAS [evaluationPort] (CR-LEX-13). `false` par défaut.
+  /// Offre, à chaque soumission, une voie « évaluer sans IA » qui n'appelle
+  /// pas [evaluationPort]. `false` par défaut.
   ///
-  /// zcrud modélisait le choix avec/sans IA comme une propriété de
-  /// **construction** (port fourni ou non) ; un hôte qui l'offre comme
-  /// **affordance d'interaction** — bouton d'auto-évaluation à côté du bouton
-  /// IA — devait remonter le widget entier à chaque bascule. Les deux modèles
-  /// sont cohérents ; ils n'étaient simplement pas superposables.
+  /// Le choix avec/sans IA peut être modélisé comme une propriété de
+  /// construction (port fourni ou non) ; un hôte qui l'offre comme
+  /// affordance d'interaction — bouton d'auto-évaluation à côté du bouton
+  /// IA — a besoin, lui, de ne pas remonter le widget entier à chaque
+  /// bascule. Les deux modèles sont cohérents ; ce drapeau permet le second.
   ///
   /// Sans effet si [evaluationPort] est `null` (il n'y a alors rien à esquiver).
   final bool allowSkipEvaluation;
 
-  /// Clé du bouton « évaluer sans IA » (CR-LEX-13, testabilité).
+  /// Clé du bouton « évaluer sans IA », pour la testabilité.
   static const ValueKey<String> skipEvaluationKey =
       ValueKey<String>('zSkipEvaluation');
 
-  /// Port d'indices (`null` ⇒ bouton « Indice » **ABSENT** après épuisement du
-  /// stocké — patron `ZItemActionsMenu` : **absent si non fourni**, jamais grisé).
+  /// Port d'indices (`null` : bouton « Indice » absent après épuisement du
+  /// stocké — absent si non fourni, jamais grisé).
   final ZFlashcardHintPort? hintPort;
 
-  /// Sert l'indice **stocké** de la carte d'emblée, sans geste (CR-LEX-13/18).
-  /// `false` par défaut — le bouton « Indice » reste l'unique voie.
+  /// Sert l'indice stocké de la carte d'emblée, sans geste. `false` par
+  /// défaut — le bouton « Indice » reste l'unique voie.
   ///
-  /// AD-36 fait de l'indice une ressource **consommée et pénalisée**, ce qui est
-  /// un choix produit cohérent — mais sa **visibilité** n'était pas
-  /// paramétrable : le modèle « aide toujours offerte », courant dans les jeux
-  /// de cartes, n'était pas exprimable. Adopter la surface faisait donc
-  /// **disparaître de l'écran** un contenu que l'hôte affichait.
+  /// L'indice est une ressource consommée et pénalisée par défaut, mais sa
+  /// visibilité est une décision distincte : ce drapeau permet le modèle
+  /// « aide toujours offerte », courant dans les jeux de cartes, sans faire
+  /// disparaître de l'écran un contenu que l'hôte veut afficher.
   ///
-  /// ⚠️ **La pénalité reste gouvernée par [hintPolicy]**, indépendamment de ce
-  /// drapeau : un indice révélé d'emblée est **compté** (`hintsUsed`) et plafonne
-  /// la qualité comme tout autre. Pour l'offrir sans coût, neutralisez le plafond
-  /// (`ZHintPenaltyPolicy(floor: config.maxQuality)`) — visibilité et pénalité
-  /// restent deux décisions distinctes, jamais couplées en douce.
+  /// La pénalité reste gouvernée par [hintPolicy], indépendamment de ce
+  /// drapeau : un indice révélé d'emblée est compté (`hintsUsed`) et
+  /// plafonne la qualité comme tout autre. Pour l'offrir sans coût,
+  /// neutralisez le plafond (`ZHintPenaltyPolicy(floor: config.maxQuality)`) —
+  /// visibilité et pénalité restent deux décisions distinctes, jamais
+  /// couplées en douce.
   final bool revealStoredHint;
 
-  /// Politique de plafond d'indices (plancher **dérivé** par défaut, AD-36).
+  /// Politique de plafond d'indices (plancher dérivé par défaut).
   final ZHintPenaltyPolicy hintPolicy;
 
-  /// Mode d'affichage du minuteur (défaut `hidden` — FR-SU4).
+  /// Mode d'affichage du minuteur (défaut `hidden`).
   ///
-  /// 🔒 Le temps est **TOUJOURS mesuré**, même en `hidden` (AC7).
+  /// Le temps est toujours mesuré, même en `hidden`.
   final ZTimerDisplay timerDisplay;
 
-  /// Limite de temps — requise par `countdown` ; `null` ⇒ **dégrade en
-  /// `elapsed`** (AD-10 : jamais de rebours depuis `null`).
+  /// Limite de temps — requise par `countdown` ; `null` dégrade en
+  /// `elapsed` (invariant AD-10 : jamais de rebours depuis `null`).
   final Duration? timeLimit;
 
-  /// Comportement d'avance — `null` ⇒ **table unique** [zDefaultAdvanceBehavior].
+  /// Comportement d'avance — `null` : table unique [zDefaultAdvanceBehavior].
   final ZCardAdvanceBehavior? advanceBehavior;
 
-  /// Délai d'auto-passage (défaut `200 ms` — parité IFFD F13).
+  /// Délai d'auto-passage (défaut 200 ms).
   final Duration autoAdvanceDelay;
 
-  /// Régime d'apparition de la correction (SU-7/D2) — défaut
-  /// [ZCorrectionVisibility.immediate] ⇒ **su-3 strictement inchangé**.
+  /// Régime d'apparition de la correction — défaut
+  /// [ZCorrectionVisibility.immediate], comportement historique inchangé.
   ///
-  /// 🔒 **Gate de RENDU UNIQUEMENT** : en [ZCorrectionVisibility.deferred], la
-  /// correction est **posée** (donc la saisie est **verrouillée** : `onTap`/
-  /// `onPressed` à `null`, bouton de soumission retiré, `_submitLocked` armé)
-  /// mais **jamais peinte**. Voir le dartdoc de [ZCorrectionVisibility] : mêler
-  /// ce gate au verrou rouvrirait la double soumission.
+  /// Gate de rendu uniquement : en [ZCorrectionVisibility.deferred], la
+  /// correction est posée (donc la saisie est verrouillée : `onTap`/
+  /// `onPressed` à `null`, bouton de soumission retiré, `_submitLocked`
+  /// armé) mais jamais peinte. Voir la dartdoc de [ZCorrectionVisibility] :
+  /// mêler ce gate au verrou rouvrirait la double soumission.
   final ZCorrectionVisibility correctionVisibility;
 
-  /// Émis à la soumission (**advisory** : su-3 n'écrit rien — AD-33).
+  /// Émis à la soumission (advisory : cette surface n'écrit rien).
   final ValueChanged<ZFlashcardSubmission>? onSubmitted;
 
-  /// Voie **UNIQUE** de notation — 🔒 `null` ⇒ rangée SRS **ABSENTE** (patron
-  /// `ZItemActionsMenu`/AD-44, jamais un booléen `showQualityButtons`).
+  /// Voie unique de notation — `null` : rangée SRS absente, jamais un
+  /// booléen `showQualityButtons`.
   final ValueChanged<int>? onQualitySelected;
 
-  /// Demande d'avance à la carte suivante (su-4 navigue — su-3 ne navigue pas).
+  /// Demande d'avance à la carte suivante (cette surface ne navigue pas
+  /// elle-même).
   final VoidCallback? onAdvance;
 
-  /// 🔒 **VOIE UNIQUE** de résolution du builder du slot AD-40 (AC10/SM-1).
+  /// Voie unique de résolution du builder du slot de contenu.
   ///
-  /// **Tear-off statique**, jamais `?? (c, s) => …` : une closure serait
-  /// **réallouée à chaque build**, changerait d'identité et casserait la
-  /// stabilité des rebuilds (patron `z_mindmap_view.dart`).
+  /// Tear-off statique, jamais `?? (c, s) => …` : une closure serait
+  /// réallouée à chaque build, changerait d'identité et casserait la
+  /// stabilité des rebuilds.
   ///
-  /// ⚠️ **Pourquoi cette fonction est PUBLIQUE (`@visibleForTesting`)** : l'AC10
-  /// prescrit le discriminant « `identical()` du **builder RÉSOLU** entre deux
-  /// builds ⇒ `true` ». Le builder résolu vivait dans un accesseur **privé** d'un
-  /// `State` **privé** : aucun test ne pouvait le lire, et le test qui prétendait
-  /// le garder comparait en réalité **deux `const` tear-offs déclarés dans le
-  /// test lui-même** — il testait la canonicalisation de **Dart**, pas la prod, et
-  /// **restait vert** sous l'injection R3-I10c (mesuré). Extraire la résolution
-  /// ici lui donne un **siège testable** : `z_flashcard_answer_input_sm1_test.dart`
-  /// ROUGIT désormais si le `??` redevient une closure.
+  /// Publique (`@visibleForTesting`) pour qu'un test puisse observer que le
+  /// builder résolu est `identical()` entre deux builds — un accesseur
+  /// privé serait invérifiable depuis l'extérieur du `State`.
   @visibleForTesting
   static ZFlashcardContentBuilder resolveContentBuilder(
     ZFlashcardContentBuilder? injected,
@@ -239,131 +235,132 @@ class ZFlashcardAnswerInput extends StatefulWidget {
 }
 
 class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
-  /// 🔒 **PREMIER `Stopwatch` du repo** (AC7). **Toujours** armé — y compris en
-  /// `ZTimerDisplay.hidden` : l'affichage est un réglage d'UI, pas une condition
-  /// de mesure. `timeTaken` est lu ici à la soumission.
+  /// Mesure de temps toujours armée, y compris en `ZTimerDisplay.hidden` :
+  /// l'affichage est un réglage d'UI, pas une condition de mesure.
+  /// `timeTaken` est lu ici à la soumission.
   final Stopwatch _stopwatch = Stopwatch();
 
-  /// Ticker d'AFFICHAGE — armé **uniquement** si le minuteur est visible (SM-1 :
-  /// en `hidden`, un tick réveillerait l'arbre pour rien). `cancel()` au dispose.
+  /// Ticker d'affichage — armé uniquement si le minuteur est visible (en
+  /// `hidden`, un tick réveillerait l'arbre pour rien). `cancel()` au dispose.
   ///
-  /// 🔒 **Ré-examiné à CHAQUE `didUpdateWidget`** ([_syncTicker]) : `timerDisplay`
-  /// est une **prop mutable**, pas une constante de montage. Sans ce ré-examen
-  /// (défaut réel de su-3, mesuré) une bascule `hidden → elapsed` à chaud figeait
-  /// l'affichage à `00:00` **pour toujours** pendant que [_stopwatch] comptait et
-  /// que `timeTaken` partait au barème — l'apprenant **chronométré sans le voir**.
+  /// Ré-examiné à chaque `didUpdateWidget` ([_syncTicker]) : `timerDisplay`
+  /// est une prop mutable, pas une constante de montage. Sans ce ré-examen,
+  /// une bascule `hidden → elapsed` à chaud figerait l'affichage à `00:00`
+  /// pour toujours pendant que [_stopwatch] compterait et que `timeTaken`
+  /// partirait au barème — l'apprenant chronométré sans le voir.
   Timer? _ticker;
 
   /// Période du ticker d'affichage (granularité de la seconde).
   static const Duration _tickPeriod = Duration(seconds: 1);
 
-  /// Timer d'auto-passage (AC8) — `cancel()` au dispose + garde `mounted`.
+  /// Timer d'auto-passage — `cancel()` au dispose et garde `mounted`.
   Timer? _advanceTimer;
 
-  /// Temps **AFFICHÉ**, cumulé par le ticker — 🔒 tranche du MINUTEUR (SM-1) :
-  /// un tick ne reconstruit QUE le `ValueListenableBuilder` abonné — **jamais**
-  /// la carte, **jamais** le champ.
+  /// Temps affiché, cumulé par le ticker — tranche du minuteur : un tick ne
+  /// reconstruit que le `ValueListenableBuilder` abonné, jamais la carte,
+  /// jamais le champ.
   ///
-  /// ⚠️ **Pourquoi l'AFFICHAGE cumule les ticks au lieu de lire [_stopwatch] à
-  /// chaque tick** : ce sont deux besoins distincts. La **mesure** (`timeTaken`,
-  /// envoyée au barème) doit être **exacte** ⇒ [_stopwatch], qui lit l'horloge
-  /// réelle. L'**affichage**, lui, n'a besoin que de progresser à la seconde, et
-  /// il est **piloté par le ticker** : le lier à l'horloge réelle à chaque tick
-  /// le rendrait **invérifiable** (le temps virtuel d'un test — `tester.pump(1s)`
-  /// — fait avancer les `Timer`, mais **pas** un `Stopwatch`, qui n'est pas
-  /// *fakeable* ⇒ l'affichage resterait figé à `00:00` et aucun test ne pourrait
-  /// prouver qu'`elapsed` croît et que `countdown` décroît).
+  /// L'affichage cumule les ticks plutôt que de relire [_stopwatch] à
+  /// chaque tick : ce sont deux besoins distincts. La mesure (`timeTaken`,
+  /// envoyée au barème) doit être exacte, d'où [_stopwatch], qui lit
+  /// l'horloge réelle. L'affichage, lui, n'a besoin que de progresser à la
+  /// seconde et est piloté par le ticker : le lier à l'horloge réelle à
+  /// chaque tick le rendrait invérifiable en test (le temps virtuel d'un
+  /// test fait avancer les `Timer`, mais pas un `Stopwatch`, qui n'est pas
+  /// simulable).
   ///
-  /// 🔒 **[_stopwatch] reste néanmoins la SOURCE DE MESURE UNIQUE** : l'affichage
-  /// en **dérive à chaque (RÉ)ARMEMENT** du ticker ([_syncTicker] : `_elapsed =
-  /// _stopwatch.elapsed`). Sans cette resynchronisation, un ticker annulé pendant
-  /// un masquage puis ré-armé reprendrait là où il s'était arrêté et **mentirait**
-  /// sur le temps écoulé — deux horloges qui divergent. Entre deux armements, la
-  /// dérive est bornée par les ticks manqués (jank, arrière-plan).
+  /// [_stopwatch] reste néanmoins la source de mesure unique : l'affichage
+  /// en dérive à chaque (ré)armement du ticker ([_syncTicker] :
+  /// `_elapsed = _stopwatch.elapsed`). Sans cette resynchronisation, un
+  /// ticker annulé pendant un masquage puis ré-armé reprendrait là où il
+  /// s'était arrêté et mentirait sur le temps écoulé. Entre deux
+  /// armements, la dérive est bornée par les ticks manqués (jank,
+  /// arrière-plan).
   final ValueNotifier<Duration> _elapsed = ValueNotifier<Duration>(
     Duration.zero,
   );
 
-  /// Sélection QCM — **positions** (`ZChoice` ne porte aucun `id` : deux choix
-  /// peuvent avoir le même `content`, la position est la seule identité fiable).
+  /// Sélection QCM — positions (`ZChoice` ne porte aucun `id` : deux choix
+  /// peuvent avoir le même `content`, la position est la seule identité
+  /// fiable).
   final ValueNotifier<Set<int>> _selected = ValueNotifier<Set<int>>(<int>{});
 
-  /// Indices **déjà montrés** (stocké inclus) — cumulatif, anti-répétition.
+  /// Indices déjà montrés (stocké inclus) — cumulatif, anti-répétition.
   final ValueNotifier<List<String>> _shownHints = ValueNotifier<List<String>>(
     const <String>[],
   );
 
-  /// Message d'erreur d'indice (l10n) — 🔒 un échec n'est **jamais silencieux**,
-  /// et **n'incrémente pas** [_shownHints] (un indice non obtenu ne pénalise pas).
+  /// Message d'erreur d'indice (l10n) — un échec n'est jamais silencieux,
+  /// et n'incrémente pas [_shownHints] (un indice non obtenu ne pénalise pas).
   final ValueNotifier<String?> _hintError = ValueNotifier<String?>(null);
 
-  /// Correction affichée après soumission (`null` ⇒ pas encore soumis).
+  /// Correction affichée après soumission (`null` : pas encore soumis).
   final ValueNotifier<_Correction?> _correction = ValueNotifier<_Correction?>(
     null,
   );
 
-  /// 🔒 **Controller STABLE** (AC10/SM-1 — objectif produit n°1) : créé **une
-  /// fois** ici, `dispose`é ci-dessous. **JAMAIS** recréé dans `build()` — ce
-  /// serait le bug historique que zcrud existe pour corriger (perte de focus et
-  /// de curseur à chaque frappe).
+  /// Controller stable (invariant AD-2) : créé une fois ici, disposé
+  /// ci-dessous. Jamais recréé dans `build()` — ce serait le bug historique
+  /// que zcrud existe pour corriger (perte de focus et de curseur à chaque
+  /// frappe).
   final TextEditingController _answerController = TextEditingController();
 
   /// `FocusNode` stable — même raison.
   final FocusNode _answerFocus = FocusNode();
 
-  /// 🔒 **Jeton de FRAÎCHEUR** — incrémenté à **chaque changement de carte**.
+  /// Jeton de fraîcheur — incrémenté à chaque changement de carte.
   ///
-  /// Capturé **avant** tout `await` de port et **re-comparé au retour** : un
-  /// résultat qui revient après un changement de carte est **PÉRIMÉ** et
-  /// **ignoré**.
+  /// Capturé avant tout `await` de port et re-comparé au retour : un
+  /// résultat qui revient après un changement de carte est périmé et
+  /// ignoré.
   ///
-  /// ⚠️ **`mounted` seul NE SUFFIT PAS** (défaut réel de su-3, mesuré) : quand la
-  /// carte change, seul le **widget** est remplacé — l'`Element` et le `State`
-  /// **survivent**, `mounted` reste `true`. Sans ce jeton, le feedback et la
-  /// **note** de la carte A atterrissaient **silencieusement** sur la carte B ; en
-  /// su-4 (`onSubmitted` branché sur `ZSessionReviewer.reviewCard`), c'est un
-  /// **SRS faux écrit sur la mauvaise carte**, par la voie légitime.
+  /// `mounted` seul ne suffit pas : quand la carte change, seul le widget
+  /// est remplacé — l'`Element` et le `State` survivent, `mounted` reste
+  /// `true`. Sans ce jeton, le feedback et la note de la carte A
+  /// atterriraient silencieusement sur la carte B ; une fois `onSubmitted`
+  /// branché sur `ZSessionReviewer.reviewCard`, ce serait un SRS faux écrit
+  /// sur la mauvaise carte, par la voie légitime.
   int _generation = 0;
 
-  /// 🔒 **Verrou de soumission ONE-SHOT** — une carte, **au plus une**
-  /// soumission.
+  /// Verrou de soumission one-shot — une carte, au plus une soumission.
   ///
-  /// Posé **à l'entrée** de chacun des **TROIS** chemins (rédigée, QCM/VF
-  /// auto-soumis, « Je ne sais pas »), il couvre la fenêtre `await` que le seul
-  /// gating par `_correction` **ne ferme pas** (la correction n'arrive qu'**après**
-  /// la réponse du port). Sans lui (défaut réel, mesuré) : un double-tap
-  /// facturait **deux appels IA** et émettait **deux `onSubmitted`** — et un tap
-  /// sur « Je ne sais pas » **après** une bonne réponse ré-émettait `[5, 0]`,
-  /// fabriquant un `lapse` sur une réponse exacte.
+  /// Posé à l'entrée de chacun des trois chemins (rédigée, QCM/VF
+  /// auto-soumis, « Je ne sais pas »), il couvre la fenêtre `await` que le
+  /// seul gating par `_correction` ne ferme pas (la correction n'arrive
+  /// qu'après la réponse du port). Sans lui, un double-tap facturerait deux
+  /// appels IA et émettrait deux `onSubmitted` — et un tap sur « Je ne sais
+  /// pas » après une bonne réponse ré-émettrait une note basse par-dessus,
+  /// fabriquant un lapse sur une réponse exacte.
   bool _submitLocked = false;
 
-  /// 🔒 **Verrou d'indice ONE-SHOT** (même discipline) — une demande en vol
+  /// Verrou d'indice one-shot (même discipline) — une demande en vol
   /// interdit la suivante.
   ///
-  /// Sans lui (défaut réel, mesuré) : deux demandes concurrentes capturaient le
-  /// **même** `shownHints`, la seconde réponse **écrasait** la première ⇒ un
-  /// indice **payé puis jeté**, `hintsUsed` sous-comptant les appels réels ⇒ le
-  /// **plafond d'AD-36 faussé**, et l'anti-répétition aveugle.
+  /// Sans lui, deux demandes concurrentes capturaient le même
+  /// `shownHints`, la seconde réponse écrasant la première : un indice
+  /// payé puis jeté, `hintsUsed` sous-comptant les appels réels, faussant
+  /// le plafond et rendant l'anti-répétition aveugle.
   bool _hintInFlight = false;
 
   @override
   void initState() {
     super.initState();
     _stopwatch.start();
-    // 🔒 Ticker armé UNIQUEMENT si le minuteur est affiché (SM-1) — la MESURE,
-    // elle, tourne toujours (`_stopwatch` ci-dessus). Pas de resynchronisation au
-    // montage : `_stopwatch` vient de démarrer, `_elapsed` est déjà exact (zéro).
+    // Ticker armé uniquement si le minuteur est affiché — la mesure, elle,
+    // tourne toujours (`_stopwatch` ci-dessus). Pas de resynchronisation au
+    // montage : `_stopwatch` vient de démarrer, `_elapsed` est déjà exact
+    // (zéro).
     _syncTicker(resync: false);
     _maybeRevealStoredHint();
   }
 
-  /// CR-LEX-18 — sert l'indice STOCKÉ d'emblée quand l'hôte le demande.
+  /// Sert l'indice stocké d'emblée quand l'hôte le demande.
   ///
-  /// Passe par la MÊME voie que le bouton (`_shownHints`) : l'indice est donc
-  /// **compté** (`hintsUsed`) et plafonne la qualité exactement comme s'il avait
-  /// été demandé. Un chemin parallèle qui l'afficherait sans le compter ferait
-  /// diverger la pénalité de ce que l'utilisateur a réellement vu — c'est
-  /// précisément le défaut du contournement app-side.
+  /// Passe par la même voie que le bouton (`_shownHints`) : l'indice est
+  /// donc compté (`hintsUsed`) et plafonne la qualité exactement comme s'il
+  /// avait été demandé. Un chemin parallèle qui l'afficherait sans le
+  /// compter ferait diverger la pénalité de ce que l'utilisateur a
+  /// réellement vu.
   void _maybeRevealStoredHint() {
     if (!widget.revealStoredHint) return;
     if (!_hasUnservedStoredHint) return;
@@ -373,31 +370,32 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   @override
   void didUpdateWidget(covariant ZFlashcardAnswerInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 🔒 La carte est une prop MUTABLE : sans réinitialisation, `_selected`,
-    // `_shownHints`, `_correction`, `_answerController` et `_stopwatch` fuyaient
-    // sur la carte suivante (défaut réel, mesuré). Deux dégâts AD-36 : l'indice
-    // stocké de B n'était JAMAIS servi (`_hasUnservedStoredHint` court-circuité
-    // à jamais) et le port recevait le contenu de A dans le prompt de B.
+    // La carte est une prop mutable : sans réinitialisation, `_selected`,
+    // `_shownHints`, `_correction`, `_answerController` et `_stopwatch`
+    // fuiraient sur la carte suivante. Deux dégâts possibles : l'indice
+    // stocké de la nouvelle carte ne serait jamais servi
+    // (`_hasUnservedStoredHint` court-circuité à jamais) et le port
+    // recevrait le contenu de l'ancienne carte dans le prompt de la nouvelle.
     if (oldWidget.card != widget.card) _resetForNewCard();
-    // 🔒 `timerDisplay`/`timeLimit` sont eux aussi des props mutables.
+    // `timerDisplay`/`timeLimit` sont eux aussi des props mutables.
     _syncTicker(resync: true);
   }
 
-  /// Réinitialise **tout** l'état de réponse pour une **nouvelle carte**.
+  /// Réinitialise tout l'état de réponse pour une nouvelle carte.
   void _resetForNewCard() {
-    // 🔒 Périme tout appel de port EN VOL (cf. [_generation]).
+    // Périme tout appel de port en vol (voir [_generation]).
     _generation++;
     _submitLocked = false;
     _hintInFlight = false;
     _selected.value = <int>{};
     _shownHints.value = const <String>[];
-    // CR-LEX-18 — la nouvelle carte doit servir SON indice stocké d'emblée.
+    // La nouvelle carte doit servir son indice stocké d'emblée.
     _maybeRevealStoredHint();
     _hintError.value = null;
     _correction.value = null;
     _answerController.clear();
-    // L'auto-passage de la carte PRÉCÉDENTE ne doit pas faire avancer la
-    // nouvelle (AC8).
+    // L'auto-passage de la carte précédente ne doit pas faire avancer la
+    // nouvelle.
     _advanceTimer?.cancel();
     _advanceTimer = null;
     _stopwatch
@@ -408,33 +406,32 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     _ticker = null;
   }
 
-  /// Le rebours est-il **épuisé** ? (Le ticker n'a alors plus rien à afficher.)
+  /// Le rebours est-il épuisé ? (Le ticker n'a alors plus rien à afficher.)
   bool get _countdownExhausted {
     if (_effectiveTimerDisplay != ZTimerDisplay.countdown) return false;
     final limit = widget.timeLimit;
     return limit != null && _elapsed.value >= limit;
   }
 
-  /// 🔒 **VOIE UNIQUE** d'(dés)armement du ticker d'AFFICHAGE — appelée au
-  /// montage **et** à chaque `didUpdateWidget`.
+  /// Voie unique d'(dés)armement du ticker d'affichage — appelée au montage
+  /// et à chaque `didUpdateWidget`.
   ///
-  /// - `hidden` ⇒ ticker **annulé** (SM-1 : l'invariant « armé uniquement si
-  ///   visible » n'était vrai qu'au **premier** build ; mesuré, un ticker
-  ///   survivait au masquage et tirait 60 fois en 60 s **sans aucun abonné**) ;
-  /// - `countdown` **épuisé** ⇒ ticker annulé (il reconstruisait indéfiniment un
-  ///   `00:00` immuable et faisait croître `_elapsed` sans borne) ;
-  /// - (ré)armement ⇒ l'affichage est **resynchronisé sur [_stopwatch]**, la
-  ///   source de mesure unique. Sans ce `resync`, corriger le ré-armement seul
-  ///   rendrait l'affichage **faux** : il repartirait de la valeur d'avant le
-  ///   masquage, en ignorant le temps réellement écoulé.
+  /// - `hidden` : ticker annulé, sans quoi il survivrait au masquage et
+  ///   tirerait sans aucun abonné ;
+  /// - `countdown` épuisé : ticker annulé (il reconstruirait indéfiniment
+  ///   un `00:00` immuable et ferait croître `_elapsed` sans borne) ;
+  /// - (ré)armement : l'affichage est resynchronisé sur [_stopwatch], la
+  ///   source de mesure unique. Sans ce `resync`, corriger le ré-armement
+  ///   seul rendrait l'affichage faux : il repartirait de la valeur d'avant
+  ///   le masquage, en ignorant le temps réellement écoulé.
   void _syncTicker({required bool resync}) {
     if (_effectiveTimerDisplay == ZTimerDisplay.hidden || _countdownExhausted) {
       _ticker?.cancel();
       _ticker = null;
       return;
     }
-    // Déjà armé : ne PAS ré-armer (ce serait resynchroniser à chaque rebuild de
-    // l'hôte, pour rien).
+    // Déjà armé : ne pas ré-armer (ce serait resynchroniser à chaque
+    // rebuild de l'hôte, pour rien).
     if (_ticker != null) return;
     if (resync) _elapsed.value = _stopwatch.elapsed;
     _ticker = Timer.periodic(_tickPeriod, (_) {
@@ -448,8 +445,8 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
 
   @override
   void dispose() {
-    // 🔒 AC7/AC8 : aucun tick, aucune avance après démontage (classe de bug
-    // réelle : un `Timer` survivant appelle `onAdvance` sur un arbre mort).
+    // Aucun tick, aucune avance après démontage : un `Timer` survivant
+    // appellerait `onAdvance` sur un arbre mort.
     _ticker?.cancel();
     _advanceTimer?.cancel();
     _stopwatch.stop();
@@ -463,44 +460,45 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     super.dispose();
   }
 
-  /// 🔒 Slot AD-40 — délègue à [ZFlashcardAnswerInput.resolveContentBuilder], la
-  /// **voie unique** de résolution (et le **seul** siège testable de l'invariant
-  /// AC10 « le builder résolu est STABLE entre deux builds »).
+  /// Slot de contenu — délègue à
+  /// [ZFlashcardAnswerInput.resolveContentBuilder], la voie unique de
+  /// résolution.
   ZFlashcardContentBuilder get _contentBuilder =>
       ZFlashcardAnswerInput.resolveContentBuilder(widget.contentBuilder);
 
-  /// AD-10 — `countdown` **sans** `timeLimit` ⇒ dégradation en `elapsed`
-  /// (jamais d'exception, jamais un rebours depuis `null`).
+  /// `countdown` sans `timeLimit` dégrade en `elapsed` (invariant AD-10 :
+  /// jamais d'exception, jamais un rebours depuis `null`).
   ZTimerDisplay get _effectiveTimerDisplay =>
       widget.timerDisplay == ZTimerDisplay.countdown && widget.timeLimit == null
       ? ZTimerDisplay.elapsed
       : widget.timerDisplay;
 
-  /// 🔒 Table **UNIQUE** (AC8) — une valeur explicite de l'hôte **prime**.
+  /// Table unique — une valeur explicite de l'hôte prime.
   ZCardAdvanceBehavior get _advanceBehavior =>
       widget.advanceBehavior ?? zDefaultAdvanceBehavior(widget.mode);
 
   int get _hintsUsed => _shownHints.value.length;
 
-  /// La carte porte-t-elle un indice **STOCKÉ** exploitable ?
+  /// La carte porte-t-elle un indice stocké exploitable ?
   bool get _hasStoredHint {
     final stored = widget.card.hint;
     return stored != null && stored.isNotEmpty;
   }
 
-  /// L'indice **STOCKÉ** est-il encore à servir ? (AD-36 : **stocké D'ABORD**.)
+  /// L'indice stocké est-il encore à servir ? (Le stocké passe toujours
+  /// avant le port.)
   ///
-  /// ⚠️ Dépend de `_shownHints.value` ⇒ **ne doit JAMAIS être lu depuis
-  /// `build()`** : le `build()` de la surface ne se rejoue pas quand un indice
-  /// s'ajoute (c'est tout l'objet de SM-1). Il est lu dans les callbacks, et la
-  /// **disponibilité affichée** est recalculée DANS le
+  /// Dépend de `_shownHints.value`, donc ne doit jamais être lu depuis
+  /// `build()` : le `build()` de la surface ne se rejoue pas quand un
+  /// indice s'ajoute (rebuild granulaire). Il est lu dans les callbacks, et
+  /// la disponibilité affichée est recalculée dans le
   /// `ValueListenableBuilder` de `_HintSection` — sinon le bouton « Indice »
-  /// resterait visible après épuisement (bug réel, démasqué par le test AC5).
+  /// resterait visible après épuisement.
   bool get _hasUnservedStoredHint =>
       _hasStoredHint && _shownHints.value.isEmpty;
 
-  /// 🔒 **VOIE UNIQUE** d'attribution : le plafond d'indices est appliqué **EN
-  /// DERNIER, sur la valeur rendue** (AD-36) — sur **TOUS** les chemins.
+  /// Voie unique d'attribution : le plafond d'indices est appliqué en
+  /// dernier, sur la valeur rendue, sur tous les chemins.
   int _finalQuality(int rawQuality) => zApplyHintCeiling(
     rawQuality: rawQuality,
     hintsUsed: _hintsUsed,
@@ -508,11 +506,11 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     policy: widget.hintPolicy,
   );
 
-  /// Émet la soumission **advisory** et arme l'auto-passage éventuel.
+  /// Émet la soumission advisory et arme l'auto-passage éventuel.
   ///
-  /// 🔒 **N'écrit RIEN** (AD-33) et **n'appelle PAS** `onQualitySelected` :
-  /// soumettre **≠** noter. Le port *suggère*, la rangée SRS *montre*, et seul le
-  /// **tap** de l'utilisateur note.
+  /// N'écrit rien et n'appelle pas `onQualitySelected` : soumettre n'est
+  /// pas noter. Le port suggère, la rangée SRS montre, et seul le tap de
+  /// l'utilisateur note.
   void _emit(_Correction correction) {
     _correction.value = correction;
     widget.onSubmitted?.call(
@@ -527,17 +525,16 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     if (_advanceBehavior == ZCardAdvanceBehavior.auto) {
       _advanceTimer?.cancel();
       _advanceTimer = Timer(widget.autoAdvanceDelay, () {
-        // 🔒 `mounted` : ne jamais tirer sur un arbre démonté (AC8).
+        // `mounted` : ne jamais tirer sur un arbre démonté.
         if (mounted) widget.onAdvance?.call();
       });
     }
   }
 
-  /// Soumission d'un QCM / Vrai-Faux — 🔒 **LOCALE**, le port n'est **JAMAIS**
-  /// appelé (AD-35 : « écart assumé avec IFFD, qui les fait passer par l'IA »).
+  /// Soumission d'un QCM / Vrai-Faux — locale, le port n'est jamais appelé.
   void _submitLocal({bool? answeredTrue}) {
-    // 🔒 ONE-SHOT (cf. [_submitLocked]) — le V/F s'auto-soumet au tap : rien
-    // n'empêchait deux taps d'émettre deux soumissions.
+    // One-shot (voir [_submitLocked]) — le V/F s'auto-soumet au tap : rien
+    // n'empêcherait deux taps d'émettre deux soumissions.
     if (_submitLocked) return;
     final raw = zEvaluateLocally(
       card: widget.card,
@@ -545,9 +542,9 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       answeredTrue: answeredTrue,
       config: widget.srsConfig,
     );
-    // AD-10 : carte malformée ⇒ aucune saisie n'était offerte ⇒ rien à soumettre.
-    // (Le verrou n'est posé qu'APRÈS : ne rien soumettre ne « consomme » pas la
-    // soumission unique de la carte.)
+    // Carte malformée (invariant AD-10) : aucune saisie n'était offerte,
+    // donc rien à soumettre. Le verrou n'est posé qu'après : ne rien
+    // soumettre ne « consomme » pas la soumission unique de la carte.
     if (raw == null) return;
     _submitLocked = true;
     _emit(
@@ -559,31 +556,26 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     );
   }
 
-  /// Soumission d'une réponse **rédigée** — port ADVISORY + replis AD-10 (AC3).
+  /// Soumission d'une réponse rédigée — port advisory + replis défensifs.
   Future<void> _submitWritten({bool skipEvaluation = false}) async {
-    // 🔒 AD-35 — **PROPRIÉTAIRE UNIQUE de la décision de routage**, et le SEUL
-    // point du code d'où le port est atteignable. `zIsLocallyEvaluatedType` était
-    // documentée (barrel + dartdoc) comme « la voie de ROUTAGE » alors qu'elle
-    // n'avait **AUCUN site d'appel** : la décision était en réalité prise par le
-    // `switch` d'affordance de `_buildInput`. Deux tables décidaient la même
-    // chose sans rien qui les lie ⇒ une 7ᵉ valeur (`cloze`) déclarée LOCALE dans
-    // l'une mais tombant dans la chaîne `||` de l'autre aurait envoyé à l'IA un
-    // type déclaré local — compilation verte, aucun test rouge. La seconde source
-    // est supprimée : la fonction du domaine décide, et elle seule (AD-46).
+    // Propriétaire unique de la décision de routage, et le seul point du
+    // code d'où le port est atteignable : la fonction du domaine décide,
+    // et elle seule, plutôt qu'une table redondante ici.
     if (zIsLocallyEvaluatedType(widget.card.type)) {
       _submitLocal();
       return;
     }
-    // 🔒 ONE-SHOT (cf. [_submitLocked]) : posé AVANT l'`await`, il ferme la
-    // fenêtre que le gating par `_correction` ne ferme pas (la correction n'arrive
-    // qu'APRÈS la réponse du port, et le bouton n'a aucun indicateur de charge).
+    // One-shot (voir [_submitLocked]) : posé avant l'`await`, il ferme la
+    // fenêtre que le gating par `_correction` ne ferme pas (la correction
+    // n'arrive qu'après la réponse du port, et le bouton n'a aucun
+    // indicateur de charge).
     if (_submitLocked) return;
     _submitLocked = true;
-    // 🔒 Jeton de FRAÎCHEUR capturé AVANT l'`await` (cf. [_generation]).
+    // Jeton de fraîcheur capturé avant l'`await` (voir [_generation]).
     final generation = _generation;
 
-    // CR-LEX-13 — `skipEvaluation` est une décision de SOUMISSION (affordance),
-    // pas de construction : l'hôte peut offrir « évaluer sans IA » à côté du
+    // `skipEvaluation` est une décision de soumission (affordance), pas de
+    // construction : l'hôte peut offrir « évaluer sans IA » à côté du
     // bouton IA sans remonter le widget.
     final port = skipEvaluation ? null : widget.evaluationPort;
     ZFlashcardAnswerEvaluation? evaluation;
@@ -598,56 +590,54 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
             expectedAnswer: widget.card.answer,
             explanation: widget.card.explanation,
             timeTaken: _stopwatch.elapsed,
-            // 🔒 INFORMATIF (AD-36) : le port n'en tire AUCUNE pénalité — le
-            // plafond local est l'unique propriétaire.
+            // Informatif : le port n'en tire aucune pénalité — le plafond
+            // local est l'unique propriétaire.
             hintsUsed: _hintsUsed,
           ),
         );
         evaluation = result.fold(
-          // 🔒 L'`errorKind` typé d'AD-35 EST le `ZFailure` (AD-5) : aucun
-          // nouveau canal d'erreur. Un échec ⇒ repli neutre.
+          // Un échec fait retomber sur un repli neutre, aucun nouveau
+          // canal d'erreur.
           (_) => null,
           (value) => value,
         );
       } on Object {
-        // 🔒 AD-10 — « jamais d'exception ». Le repli couvre AUSSI le `throw`
-        // d'une implémentation app hostile, pas seulement le `Left` : une
-        // session ne doit JAMAIS mourir parce qu'un routeur IA a paniqué.
-        // (Ce n'est pas un `try-catch` nu de repository : c'est la frontière
-        // défensive d'une surface face à du code tiers injecté.)
+        // Jamais d'exception (invariant AD-10). Le repli couvre aussi le
+        // `throw` d'une implémentation hôte hostile, pas seulement l'échec
+        // typé : une session ne doit jamais mourir parce qu'un routeur IA a
+        // paniqué. Ce n'est pas un `try-catch` nu de repository : c'est la
+        // frontière défensive d'une surface face à du code tiers injecté.
         evaluation = null;
       }
     }
 
-    // 🔒 `mounted` NE SUFFIT PAS : la carte a pu changer sous le `State` (qui,
-    // lui, survit). Un résultat périmé est **ignoré** — jamais écrit sur la
+    // `mounted` ne suffit pas : la carte a pu changer sous le `State` (qui,
+    // lui, survit). Un résultat périmé est ignoré, jamais écrit sur la
     // carte suivante.
     if (!mounted || generation != _generation) return;
 
     final int raw;
     final String feedback;
     if (evaluation == null) {
-      // 🔒 Qualité **NEUTRE** = `passThreshold` — jamais `3` en dur. Le PRD dit
-      // « repli qualité neutre 3 », le spine dit « seuil de passage » : les deux
-      // coïncident PARCE QUE `passThreshold == 3` est le défaut, et c'est
-      // `passThreshold` qui fait autorité (AD-46).
+      // Qualité neutre = `passThreshold`, jamais un littéral en dur : c'est
+      // le seuil de passage qui fait autorité.
       raw = widget.srsConfig.passThreshold;
-      // 🔒 L'échec n'est **jamais silencieux** (AC3) : jamais un blanc.
+      // L'échec n'est jamais silencieux : jamais un blanc.
       feedback = label(
         context,
         'zcrud.flashcard.evaluationUnavailable',
         fallback: 'Évaluation indisponible — note neutre proposée.',
       );
     } else {
-      // 🔒 `clampQuality` = **UNIQUE** voie de clamp (AD-46) : jamais un
-      // `.clamp(0, 5)` en dur, jamais une seconde échelle.
+      // `clampQuality` : unique voie de clamp, jamais un `.clamp(0, 5)` en
+      // dur, jamais une seconde échelle.
       raw = widget.srsConfig.clampQuality(evaluation.suggestedQuality);
       feedback = evaluation.feedback;
     }
 
     _emit(
       _Correction(
-        // 🔒 clamp PUIS plafond — l'ordre imposé (AD-36).
+        // Clamp puis plafond — l'ordre imposé.
         quality: _finalQuality(raw),
         isCorrect: evaluation?.isCorrect,
         feedback: feedback,
@@ -655,19 +645,14 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     );
   }
 
-  /// « Je ne sais pas » — 🔒 **borne basse**, **sans appel** au port (AD-35).
+  /// « Je ne sais pas » — borne basse, sans appel au port.
   ///
-  /// ⚠️ **Écart PRD assumé** (arbitrage n°1 de la story) : le PRD (FR-SU2) dit
-  /// « qualité **1** » ; le **spine (AD-35) et l'epic disent « borne basse »** ⇒
-  /// le spine prime (précédent AD-46, qui assume déjà l'écart d'échelle
-  /// PRD 1-5 → 0..5). `minQuality` **EST** la borne basse : `0` par défaut, `1`
-  /// si l'app configure `ZSrsConfig(minQuality: 1)` — **les deux lectures se
-  /// rejoignent** sans valeur en dur.
+  /// `minQuality` est la borne basse : `0` par défaut, `1` si l'application
+  /// configure `ZSrsConfig(minQuality: 1)`.
   void _submitDontKnow() {
-    // 🔒 ONE-SHOT (cf. [_submitLocked]) : le bouton restait actif APRÈS la
-    // correction ⇒ une bonne réponse déjà notée `5` pouvait être ré-émise à `0`
-    // (mesuré : `[5, 0]` pour une seule carte répondue juste). Aucun AC ne prévoit
-    // que « Je ne sais pas » reste offert une fois la réponse révélée.
+    // One-shot (voir [_submitLocked]) : sans lui, le bouton resterait actif
+    // après la correction, et une bonne réponse déjà notée pourrait être
+    // ré-émise à la borne basse pour une seule carte répondue juste.
     if (_submitLocked) return;
     _submitLocked = true;
     _emit(
@@ -678,28 +663,31 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     );
   }
 
-  /// Demande d'indice — 🔒 **stocké D'ABORD**, port **APRÈS ÉPUISEMENT** (AD-36).
+  /// Demande d'indice — stocké d'abord, port après épuisement.
   Future<void> _requestHint() async {
-    // 🔒 ONE-SHOT (cf. [_hintInFlight]) — une demande en vol interdit la suivante.
+    // One-shot (voir [_hintInFlight]) — une demande en vol interdit la
+    // suivante.
     if (_hintInFlight) return;
     _hintError.value = null;
 
-    // 🔒 1) L'indice STOCKÉ d'abord — le port n'est PAS appelé (AD-36 :
-    // « Prevents : un appel IA superflu »). La carte PORTE déjà son indice.
+    // 1) L'indice stocké d'abord — le port n'est pas appelé : la carte
+    // porte déjà son indice, appeler le port serait un aller IA superflu.
     if (_hasUnservedStoredHint) {
       _shownHints.value = <String>[widget.card.hint!];
       return;
     }
 
-    // 🔒 2) Le port, seulement APRÈS épuisement, AVEC les indices déjà montrés
-    // (anti-répétition : sans eux, le barème paraphraserait le même indice).
+    // 2) Le port, seulement après épuisement, avec les indices déjà
+    // montrés (anti-répétition : sans eux, le barème paraphraserait le
+    // même indice).
     final port = widget.hintPort;
-    if (port == null) return; // bouton absent — défensif (AD-10).
+    if (port == null) return; // bouton absent — défensif (invariant AD-10).
 
     _hintInFlight = true;
-    // 🔒 Jeton de FRAÎCHEUR capturé AVANT l'`await` (cf. [_generation]) : un
-    // indice qui revient après un changement de carte est PÉRIMÉ — l'afficher
-    // fuirait le contenu de la carte A sur la carte B et la plafonnerait à tort.
+    // Jeton de fraîcheur capturé avant l'`await` (voir [_generation]) : un
+    // indice qui revient après un changement de carte est périmé — l'afficher
+    // fuirait le contenu de la carte précédente sur la nouvelle et la
+    // plafonnerait à tort.
     final generation = _generation;
     final shown = List<String>.unmodifiable(_shownHints.value);
     try {
@@ -719,17 +707,18 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
           fallback: 'Indice indisponible.',
         ),
         (hint) {
-          // 🔒 ÉPHÉMÈRE : ajouté à l'état de SESSION, jamais persisté sur la
+          // Éphémère : ajouté à l'état de session, jamais persisté sur la
           // carte — `widget.card` n'est pas mutée, aucune écriture n'a lieu.
-          // 🔒 Cumul lu au DERNIER moment (jamais depuis la copie pré-`await`) :
-          // une accumulation depuis `shown` écraserait tout indice arrivé entre
-          // temps.
+          // Cumul lu au dernier moment (jamais depuis la copie pré-`await`) :
+          // une accumulation depuis `shown` écraserait tout indice arrivé
+          // entre-temps.
           _shownHints.value = <String>[..._shownHints.value, hint];
         },
       );
     } on Object {
-      // 🔒 AD-10 : aucune exception ne franchit la surface. Le compteur
-      // d'indices reste **inchangé** — un indice NON OBTENU ne pénalise pas.
+      // Aucune exception ne franchit la surface (invariant AD-10). Le
+      // compteur d'indices reste inchangé — un indice non obtenu ne
+      // pénalise pas.
       if (!mounted || generation != _generation) return;
       _hintError.value = label(
         context,
@@ -737,8 +726,8 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
         fallback: 'Indice indisponible.',
       );
     } finally {
-      // Le verrou est libéré même sur échec : un indice NON OBTENU doit pouvoir
-      // être redemandé (le compteur, lui, reste inchangé).
+      // Le verrou est libéré même sur échec : un indice non obtenu doit
+      // pouvoir être redemandé (le compteur, lui, reste inchangé).
       if (mounted && generation == _generation) _hintInFlight = false;
     }
   }
@@ -750,11 +739,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // 🔒 SLOT AD-40 SOUS `IgnorePointer` (AC9) — le contenu est de
-        // l'AFFICHAGE : un `QuillEditor` injecté ne peut PAS voler le tap d'une
-        // case QCM (rejeu exact du HIGH D1 de su-2). Les `Semantics` du
-        // sous-arbre restent lisibles : c'est l'INTERACTIVITÉ qui est
-        // neutralisée, pas l'accessibilité.
+        // Slot de contenu sous `IgnorePointer` : le contenu est de
+        // l'affichage, un `QuillEditor` injecté ne peut pas voler le tap
+        // d'une case QCM. Les `Semantics` du sous-arbre restent lisibles :
+        // c'est l'interactivité qui est neutralisée, pas l'accessibilité.
         IgnorePointer(child: _contentBuilder(context, widget.card.question)),
         SizedBox(height: theme.gapM),
         if (_effectiveTimerDisplay != ZTimerDisplay.hidden) ...<Widget>[
@@ -772,9 +760,10 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
           hintError: _hintError,
           hasStoredHint: _hasStoredHint,
           hasPort: widget.hintPort != null,
-          // 🔒 Gaté sur la correction, comme les trois autres contrôles : après
-          // soumission, un indice n'a plus d'effet sur la note déjà émise — et
-          // déclencherait un appel IA FACTURÉ pour une carte déjà corrigée.
+          // Gaté sur la correction, comme les trois autres contrôles :
+          // après soumission, un indice n'a plus d'effet sur la note déjà
+          // émise — et déclencherait un appel IA facturé pour une carte
+          // déjà corrigée.
           correction: _correction,
           onRequestHint: _requestHint,
         ),
@@ -791,12 +780,12 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     );
   }
 
-  /// 🔒 Table d'**affordance de SAISIE** par type — `switch` **exhaustif SANS
-  /// `default`** sur les **6** `ZFlashcardType` (une 7ᵉ valeur casse la
+  /// Table d'affordance de saisie par type — `switch` exhaustif sans
+  /// `default` sur les six `ZFlashcardType` (une septième valeur casse la
   /// compilation).
   ///
-  /// ⚠️ **Un propriétaire chacun** : cette table ne redécide **PAS** la table
-  /// d'**AFFICHAGE** de su-2 (`ZFlashcardReviewCard`). Deux tables, deux objets.
+  /// Un propriétaire chacun : cette table ne redécide pas la table
+  /// d'affichage de `ZFlashcardReviewCard`. Deux tables, deux objets.
   Widget _buildInput(BuildContext context) => switch (widget.card.type) {
     ZFlashcardType.multipleChoice => _ChoicesInput(
       card: widget.card,
@@ -809,8 +798,7 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
       card: widget.card,
       correction: _correction,
       visibility: widget.correctionVisibility,
-      // 🔒 FR-SU2 : le tap **VAUT** la soumission (auto-soumission,
-      // aucun second geste).
+      // Le tap vaut la soumission (auto-soumission, aucun second geste).
       onAnswer: (value) => _submitLocal(answeredTrue: value),
     ),
     ZFlashcardType.openQuestion ||
@@ -829,19 +817,17 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
     ),
   };
 
-  /// 🔒 Validateur **MÉMOÏSÉ** du champ de rédaction (AC10 : identité stable
-  /// entre builds — une closure recréée à chaque build ferait retravailler le
+  /// Validateur mémoïsé du champ de rédaction (identité stable entre
+  /// builds — une closure recréée à chaque build ferait retravailler le
   /// `FormField`).
   ///
-  /// ⚠️ **Pourquoi il vit ICI et non en `static` sur `_WrittenInput`** : le
-  /// message d'erreur est **AFFICHÉ à l'utilisateur** (`errorText` sous le champ,
-  /// `autovalidateMode: onUserInteraction`) — il doit donc être **localisé**, ce
-  /// qui exige un `BuildContext`. La version `static` rendait le littéral
-  /// **`'required'`** : un apprenant francophone qui tapait une lettre puis
-  /// l'effaçait voyait « required » en anglais. C'était **exactement** la dette
-  /// su-1 (`'ok'`/`'lapse'`) que su-3 venait de solder dix lignes plus haut.
-  /// La mémoïsation est **préservée** : la closure n'est reconstruite que si le
-  /// libellé résolu change (changement de locale).
+  /// Vit ici plutôt qu'en `static` sur `_WrittenInput` : le message
+  /// d'erreur est affiché à l'utilisateur (`errorText` sous le champ,
+  /// `autovalidateMode: onUserInteraction`) — il doit donc être localisé,
+  /// ce qui exige un `BuildContext`. Une version statique rendrait un
+  /// littéral en dur, invariablement anglais ou français. La mémoïsation
+  /// est préservée : la closure n'est reconstruite que si le libellé
+  /// résolu change (changement de locale).
   FormFieldValidator<String> _requiredValidator(BuildContext context) {
     final text = label(
       context,
@@ -860,8 +846,8 @@ class _ZFlashcardAnswerInputState extends State<ZFlashcardAnswerInput> {
   FormFieldValidator<String>? _cachedValidator;
 }
 
-/// Tranche **MINUTEUR** isolée (SM-1) — 🔒 seul ce sous-arbre se reconstruit au
-/// tick : ni la carte, ni le champ de saisie.
+/// Tranche minuteur isolée — seul ce sous-arbre se reconstruit au tick : ni
+/// la carte, ni le champ de saisie.
 class _TimerSlot extends StatelessWidget {
   const _TimerSlot({
     required this.elapsed,
@@ -892,17 +878,17 @@ class _TimerSlot extends StatelessWidget {
         ZTimerDisplay.hidden => '',
         ZTimerDisplay.elapsed => _format(value),
         ZTimerDisplay.countdown => _format(
-          // 🔒 S'arrête à ZÉRO, jamais de négatif (AD-10).
+          // S'arrête à zéro, jamais de négatif (invariant AD-10).
           () {
             final remaining = (timeLimit ?? Duration.zero) - value;
             return remaining.isNegative ? Duration.zero : remaining;
           }(),
         ),
       };
-      // 🔒 Le SENS est porté par le libellé (AD-13) : « Minuteur, 00:03 » ne
-      // dit pas s'il RESTE 3 s ou s'il en a été consommé 3 — l'information
-      // décisive en examen blanc (su-7). Pas de `liveRegion` : une annonce
-      // par seconde noierait le lecteur d'écran.
+      // Le sens est porté par le libellé (invariant AD-13) : « Minuteur,
+      // 00:03 » ne dit pas s'il reste 3 s ou s'il en a été consommé 3 —
+      // l'information décisive en examen blanc. Pas de `liveRegion` : une
+      // annonce par seconde noierait le lecteur d'écran.
       final timerLabel = switch (display) {
         ZTimerDisplay.hidden => label(
           context,
@@ -929,8 +915,8 @@ class _TimerSlot extends StatelessWidget {
   );
 }
 
-/// Saisie **QCM** — cases **exclusives** si 1 correct, **cumulatives** si ≥ 2
-/// (🔒 mode **DÉDUIT** des données, jamais d'un champ/paramètre — AC1).
+/// Saisie QCM — cases exclusives si un seul choix correct, cumulatives si
+/// deux ou plus (mode déduit des données, jamais d'un champ/paramètre).
 class _ChoicesInput extends StatelessWidget {
   const _ChoicesInput({
     required this.card,
@@ -944,20 +930,20 @@ class _ChoicesInput extends StatelessWidget {
   final ValueNotifier<Set<int>> selected;
   final ValueListenable<_Correction?> correction;
 
-  /// Régime d'apparition de la correction (SU-7/D2) — **rendu seul**.
+  /// Régime d'apparition de la correction — rendu seul.
   final ZCorrectionVisibility visibility;
   final VoidCallback onSubmit;
 
-
-  /// Préfixe de clé d'un choix (testabilité).
+  /// Préfixe de clé d'un choix, pour la testabilité.
   static const String choiceKeyPrefix = 'zAnswerChoice_';
 
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final choices = card.choices;
-    // 🔒 AD-10 — `choices` absent/vide ou sans aucun correct ⇒ **aucune saisie
-    // offerte**, et surtout **aucun plantage** : repli l10n, jamais un `!`.
+    // `choices` absent/vide ou sans aucun correct (invariant AD-10) :
+    // aucune saisie offerte, et surtout aucun plantage — repli l10n,
+    // jamais un `!`.
     if (choices == null ||
         choices.isEmpty ||
         zCorrectChoiceIndexes(card).isEmpty) {
@@ -982,23 +968,23 @@ class _ChoicesInput extends StatelessWidget {
                 index: i,
                 choice: choices[i],
                 isSelected: current.contains(i),
-                // La correction n'apparaît qu'APRÈS soumission (AC9 : causée par
+                // La correction n'apparaît qu'après soumission (causée par
                 // la soumission, jamais par un tap) — et, en `deferred`
-                // (examen blanc, SU-7/D2), **jamais** : l'hôte la révèle en fin
-                // d'examen.
-                // 🔒 Polarité UNIQUE via `paintsCorrection` (`switch` exhaustif)
-                // — jamais une comparaison `==` recopiée site par site.
+                // (examen blanc), jamais : l'hôte la révèle en fin d'examen.
+                // Polarité unique via `paintsCorrection` (`switch`
+                // exhaustif) — jamais une comparaison `==` recopiée site
+                // par site.
                 showCorrection: corrected != null && visibility.paintsCorrection,
                 single: single,
-                // 🔒 **NE JAMAIS mêler `visibility` à CE gate** (SU-7/G4) : il
-                // porte le **VERROU D'INTERACTION**, pas l'affichage. Le rendre
-                // sensible au report ferait re-taper un choix après soumission
-                // ⇒ double `onSubmitted` (défaut majeur D2 de su-3).
+                // Ne jamais mêler `visibility` à ce gate : il porte le
+                // verrou d'interaction, pas l'affichage. Le rendre sensible
+                // au report ferait re-taper un choix après soumission,
+                // donc un double `onSubmitted`.
                 onTap: corrected != null
                     ? null
                     : () {
-                        // 🔒 1 correct ⇒ EXCLUSIF (cocher B décoche A) ;
-                        //    ≥ 2 corrects ⇒ CUMULATIF.
+                        // Un seul correct : exclusif (cocher B décoche A) ;
+                        // deux ou plus corrects : cumulatif.
                         if (single) {
                           selected.value = <int>{i};
                         } else {
@@ -1017,9 +1003,9 @@ class _ChoicesInput extends StatelessWidget {
   }
 }
 
-/// Une ligne de choix — 🔒 `MergeSemantics` : le marqueur de correction est
-/// **ASSOCIÉ à SON choix** (leçon **D2** de su-2 : un marqueur détaché s'attache
-/// au **mauvais** choix et **enseigne une erreur** à un utilisateur non-voyant).
+/// Une ligne de choix — `MergeSemantics` : le marqueur de correction est
+/// associé à son choix (un marqueur détaché s'attacherait au mauvais choix
+/// et enseignerait une erreur à un utilisateur non-voyant).
 class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.index,
@@ -1038,24 +1024,24 @@ class _ChoiceRow extends StatelessWidget {
   final bool single;
   final VoidCallback? onTap;
 
-  /// Cible tap minimale (AD-13).
+  /// Cible tap minimale (invariant AD-13).
   static const double minTarget = 48;
 
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // 🔒 Canal NON-COLORÉ (AD-13) : une FORME porte l'état, jamais la seule
-    // couleur. Sélection : case cochée/décochée. Correction : ✓ / ✗.
+    // Canal non-coloré (invariant AD-13) : une forme porte l'état, jamais
+    // la seule couleur. Sélection : case cochée/décochée. Correction : ✓ / ✗.
     //
-    // 🔒 **DEUX informations, DEUX axes de forme** (défaut réel de su-3) : après
-    // correction, l'icône ne portait plus QUE la vérité (`check_circle`/`cancel`)
-    // et **effaçait le choix de l'utilisateur** — un choix faux COCHÉ et un choix
-    // faux NON coché étaient **pixel-identiques**. Le canal sémantique, lui,
-    // conservait `checked: isSelected` ⇒ **un utilisateur non-voyant était MIEUX
-    // informé qu'un voyant**, qui ne savait plus ce qu'il avait coché. AD-13 exige
-    // la **parité** des canaux, pas leur inversion. Désormais : ✓/✗ = la VÉRITÉ ;
-    // **plein** = « vous l'aviez coché », **contour** = « vous ne l'aviez pas
-    // coché ». Les deux axes sont des FORMES — aucune couleur n'est sollicitée.
+    // Deux informations, deux axes de forme : si l'icône ne portait que la
+    // vérité (`check_circle`/`cancel`), elle effacerait le choix de
+    // l'utilisateur — un choix faux coché et un choix faux non coché
+    // deviendraient pixel-identiques, alors que le canal sémantique
+    // conserverait `checked: isSelected`, rendant un utilisateur non-voyant
+    // mieux informé qu'un voyant. L'invariant AD-13 exige la parité des
+    // canaux, pas leur inversion. D'où : ✓/✗ = la vérité ; plein = « vous
+    // l'aviez coché », contour = « vous ne l'aviez pas coché ». Les deux
+    // axes sont des formes — aucune couleur n'est sollicitée.
     final IconData icon;
     if (showCorrection) {
       icon = choice.isCorrect
@@ -1106,8 +1092,8 @@ class _ChoiceRow extends StatelessWidget {
   }
 }
 
-/// Saisie **Vrai/Faux** — 🔒 **deux boutons à AUTO-SOUMISSION** (FR-SU2 : le tap
-/// **vaut** la soumission, aucun second geste).
+/// Saisie Vrai/Faux — deux boutons à auto-soumission : le tap vaut la
+/// soumission, aucun second geste.
 class _TrueFalseInput extends StatelessWidget {
   const _TrueFalseInput({
     required this.card,
@@ -1119,7 +1105,7 @@ class _TrueFalseInput extends StatelessWidget {
   final ZFlashcard card;
   final ValueListenable<_Correction?> correction;
 
-  /// Régime d'apparition de la correction (SU-7/D2) — **rendu seul**.
+  /// Régime d'apparition de la correction — rendu seul.
   final ZCorrectionVisibility visibility;
   final ValueChanged<bool> onAnswer;
 
@@ -1132,7 +1118,7 @@ class _TrueFalseInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
-    // 🔒 AD-10 — `isTrue == null` ⇒ aucune saisie, aucun plantage.
+    // `isTrue == null` (invariant AD-10) : aucune saisie, aucun plantage.
     if (card.isTrue == null) {
       return _UnavailableInput(
         labelKey: 'zcrud.flashcard.noAnswer',
@@ -1162,19 +1148,19 @@ class _TrueFalseInput extends StatelessWidget {
     );
   }
 
-  /// Un bouton V/F, **avec son canal de correction** (AC1/AD-13).
+  /// Un bouton V/F, avec son canal de correction (invariant AD-13).
   ///
-  /// 🔒 **Défaut réel de su-3 : il n'y avait AUCUN canal de correction sur V/F**
-  /// — ni icône, ni `Semantics.value`, ni feedback. Les deux boutons se
-  /// **grisaient**, point. Un apprenant qui répondait faux voyait deux boutons
-  /// gris et **n'apprenait jamais qu'il s'était trompé** ; un lecteur d'écran
-  /// annonçait « Faux, bouton, désactivé », `value` **vide**. La carte était
-  /// pédagogiquement **muette**, alors qu'AC1 nomme V/F explicitement et exige un
-  /// canal **non-coloré obligatoire** (icône + `Semantics`).
+  /// Sans canal de correction sur V/F — ni icône, ni `Semantics.value`, ni
+  /// feedback — les deux boutons se griseraient, point : un apprenant qui
+  /// répond faux verrait deux boutons gris sans jamais apprendre qu'il
+  /// s'est trompé, et un lecteur d'écran annoncerait un bouton désactivé
+  /// sans valeur. La carte serait pédagogiquement muette, alors que
+  /// l'invariant AD-13 exige un canal non-coloré obligatoire (icône et
+  /// `Semantics`).
   ///
-  /// Aligné sur `_ChoiceRow` : ✓/✗ = la **VÉRITÉ** de cette réponse ; **plein** =
-  /// « c'est ce que vous avez répondu », **contour** = « ce n'est pas ce que vous
-  /// avez répondu ». Deux axes de **forme**, aucune couleur.
+  /// Aligné sur `_ChoiceRow` : ✓/✗ = la vérité de cette réponse ; plein =
+  /// « c'est ce que vous avez répondu », contour = « ce n'est pas ce que
+  /// vous avez répondu ». Deux axes de forme, aucune couleur.
   Widget _tfButton(
     BuildContext context, {
     required _Correction? corrected,
@@ -1184,12 +1170,11 @@ class _TrueFalseInput extends StatelessWidget {
     final answered = corrected?.answeredTrue;
     final isCorrect = value == expected;
     final picked = answered == value;
-    // 🔒 SU-7/D2 — le canal de correction (icône ✓/✗ **ET** `Semantics.value`)
-    // est peint ssi la correction est posée **et** le régime est `immediate`.
-    // Les DEUX canaux suivent le MÊME gate : les découpler annoncerait à un
-    // lecteur d'écran une correction invisible à l'œil (défaut su-6 « un seul
-    // canal », en miroir).
-    // 🔒 Polarité UNIQUE via `paintsCorrection` (`switch` exhaustif).
+    // Le canal de correction (icône ✓/✗ et `Semantics.value`) est peint si
+    // et seulement si la correction est posée et le régime est `immediate`.
+    // Les deux canaux suivent le même gate : les découpler annoncerait à un
+    // lecteur d'écran une correction invisible à l'œil.
+    // Polarité unique via `paintsCorrection` (`switch` exhaustif).
     final reveal = corrected != null && visibility.paintsCorrection;
     return _ControlButton(
       buttonKey: value ? trueKey : falseKey,
@@ -1209,27 +1194,28 @@ class _TrueFalseInput extends StatelessWidget {
                     'zcrud.flashcard.incorrect',
                     fallback: 'incorrect',
                   )),
-      // 🔒 **VERROU D'INTERACTION** — gaté sur la correction SEULE, jamais sur
-      // `visibility` (SU-7/G4). Une réponse V/F reste définitive en `deferred`.
+      // Verrou d'interaction gaté sur la correction seule, jamais sur
+      // `visibility`. Une réponse V/F reste définitive en `deferred`.
       onPressed: corrected != null ? null : () => onAnswer(value),
     );
   }
 }
 
-/// Saisie **RÉDIGÉE** — 🔒 le cœur de SM-1 (AC10, **objectif produit n°1**).
+/// Saisie rédigée — le cœur du rebuild granulaire, l'objectif produit
+/// principal du dépôt.
 ///
-/// **`TextField` nu + controller détenu par l'hôte**, et **non**
-/// `ZTextFieldWidget` (arbitrage n°8 consigné) : celui-ci exige un `ZFieldSpec`
-/// — un concept du **moteur d'édition**, dérivé d'un modèle — alors qu'une
-/// réponse d'apprenant n'est **pas** un champ de modèle. Fabriquer un
-/// `ZFieldSpec` synthétique serait de la cérémonie sans gain, et importerait le
-/// décor d'édition dans une surface d'étude. Le **patron** E3-2 est imité
-/// (controller stable + `onUserInteraction`), pas le widget.
+/// `TextField` nu avec controller détenu par l'hôte, et non un widget de
+/// champ générique du moteur d'édition : celui-ci exige un `ZFieldSpec`, un
+/// concept dérivé d'un modèle, alors qu'une réponse d'apprenant n'est pas
+/// un champ de modèle. Fabriquer un `ZFieldSpec` synthétique serait de la
+/// cérémonie sans gain, et importerait le décor d'édition dans une surface
+/// d'étude. Le patron (controller stable + `onUserInteraction`) est imité,
+/// pas le widget.
 ///
-/// 🔒 **Saisie à SENS UNIQUE** : aucune valeur n'est ré-injectée dans le
-/// controller pendant la frappe — ce serait écraser la sélection/le curseur.
-/// 🔒 **Aucun `setState`** ici : la frappe ne notifie que l'`EditableText`
-/// interne ⇒ **rien d'autre** ne se reconstruit (ni la carte, ni le slot).
+/// Saisie à sens unique : aucune valeur n'est ré-injectée dans le
+/// controller pendant la frappe — ce serait écraser la sélection ou le
+/// curseur. Aucun `setState` ici : la frappe ne notifie que l'`EditableText`
+/// interne, donc rien d'autre ne se reconstruit (ni la carte, ni le slot).
 class _WrittenInput extends StatelessWidget {
   const _WrittenInput({
     required this.controller,
@@ -1244,13 +1230,13 @@ class _WrittenInput extends StatelessWidget {
   final FocusNode focusNode;
   final ValueListenable<_Correction?> correction;
 
-  /// 🔒 Validateur **résolu et mémoïsé par l'hôte** (`_requiredValidator`) : son
-  /// message est **localisé** et son **identité est stable** entre builds (AC10).
+  /// Validateur résolu et mémoïsé par l'hôte (`_requiredValidator`) : son
+  /// message est localisé et son identité est stable entre builds.
   final FormFieldValidator<String> validator;
   final VoidCallback onSubmit;
 
-  /// CR-LEX-13 — soumission qui n'appelle PAS le port d'évaluation. `null` ⇒
-  /// bouton ABSENT (patron d'absence structurelle du dépôt).
+  /// Soumission qui n'appelle pas le port d'évaluation. `null` : bouton
+  /// absent (patron d'absence structurelle du dépôt).
   final VoidCallback? onSubmitWithoutEvaluation;
 
   /// Clé du champ de rédaction.
@@ -1276,27 +1262,25 @@ class _WrittenInput extends StatelessWidget {
               key: fieldKey,
               controller: controller,
               focusNode: focusNode,
-              // 🔴 VERROU ONE-SHOT du champ rédigé — défaut MESURÉ. C'était le
-              // **SEUL** contrôle de su-3 sans verrou (`_ChoiceRow` : `onTap:
-              // null` ; `_tfButton` : `onPressed: null` ; `_DontKnowButton` :
-              // disparaît ; `_HintSection` : gatée) : après soumission le champ
-              // restait **vivant**. En `immediate` c'était inoffensif (la
-              // correction peinte juste en dessous dit « c'est fini ») — mais
-              // **`deferred` (SU-7) retire ce signal** : le seul indice de
-              // soumission devient la **disparition silencieuse du bouton**.
-              // L'apprenant continuait donc de peaufiner sa copie (« je réécris
-              // après coup ») en croyant l'améliorer, alors que sa qualité était
-              // **déjà notée** sur le texte soumis — et `ZFlashcardSubmission`
-              // ne porte **PAS** le texte : le verdict de la révélation portait
-              // sur une réponse **qui n'existait plus nulle part**.
+              // Verrou one-shot du champ rédigé, sur le même patron que les
+              // autres contrôles (`_ChoiceRow` : `onTap: null` ; `_tfButton` :
+              // `onPressed: null` ; `_DontKnowButton` : disparaît ;
+              // `_HintSection` : gatée). Sans lui, le champ resterait vivant
+              // après soumission : en `immediate` la correction peinte juste
+              // en dessous dit « c'est fini », mais `deferred` retire ce
+              // signal, et le seul indice de soumission deviendrait la
+              // disparition silencieuse du bouton. L'apprenant continuerait
+              // alors de peaufiner sa copie en croyant l'améliorer, alors
+              // que sa qualité est déjà notée sur le texte soumis — et
+              // `ZFlashcardSubmission` ne porte pas le texte : le verdict
+              // de la révélation porterait sur une réponse qui n'existe
+              // plus nulle part.
               //
-              // 🔒 `readOnly` (et non `enabled: false`) : le texte noté reste
-              // **lisible et sélectionnable** — l'apprenant doit pouvoir relire
-              // ce qui a été évalué. Cela rend D10 (« jamais changer une réponse
-              // donnée ») **vrai** pour les 4 `ZFlashcardType` rédigés, et
-              // améliore `immediate` au passage.
+              // `readOnly` (et non `enabled: false`) : le texte noté reste
+              // lisible et sélectionnable — l'apprenant doit pouvoir relire
+              // ce qui a été évalué.
               readOnly: corrected != null,
-              // 🔒 Par CHAMP (patron `z_text_field_widget.dart:37`).
+              // Par champ.
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: validator,
               textAlign: TextAlign.start,
@@ -1305,10 +1289,11 @@ class _WrittenInput extends StatelessWidget {
           ),
         ),
         SizedBox(height: theme.gapM),
-        // 🔒 ONE-SHOT (AC4) — même patron que `_ChoicesInput`/`_TrueFalseInput` :
-        // le bouton DISPARAÎT une fois la correction affichée. Le verrou
-        // `_submitLocked` couvre en plus la fenêtre `await` (avant la correction,
-        // le bouton est encore là et n'a aucun indicateur de charge).
+        // One-shot, même patron que `_ChoicesInput`/`_TrueFalseInput` : le
+        // bouton disparaît une fois la correction affichée. Le verrou
+        // `_submitLocked` couvre en plus la fenêtre `await` (avant la
+        // correction, le bouton est encore là et n'a aucun indicateur de
+        // charge).
         ValueListenableBuilder<_Correction?>(
           valueListenable: correction,
           builder: (context, corrected, _) => corrected != null
@@ -1317,8 +1302,8 @@ class _WrittenInput extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     _SubmitButton(onPressed: onSubmit),
-                    // CR-LEX-13 — voie « évaluer sans IA », offerte À CHAQUE
-                    // soumission et non figée à la construction.
+                    // Voie « évaluer sans IA », offerte à chaque soumission
+                    // et non figée à la construction.
                     if (onSubmitWithoutEvaluation != null) ...<Widget>[
                       const SizedBox(width: 8),
                       _ControlButton(
@@ -1336,7 +1321,7 @@ class _WrittenInput extends StatelessWidget {
   }
 }
 
-/// Section **INDICES** (AC5) — bouton **ABSENT** (jamais grisé) si rien à servir.
+/// Section indices — bouton absent (jamais grisé) si rien à servir.
 class _HintSection extends StatelessWidget {
   const _HintSection({
     required this.shownHints,
@@ -1360,16 +1345,16 @@ class _HintSection extends StatelessWidget {
   final bool hasPort;
   final VoidCallback onRequestHint;
 
-  /// 🔒 Le bouton « Indice » est-il offert ?
+  /// Le bouton « Indice » est-il offert ?
   ///
-  /// **ABSENT** (jamais grisé) quand il n'y a plus rien à servir : le stocké est
-  /// épuisé **ET** aucun port n'est fourni (patron `ZItemActionsMenu`/AD-44 — un
-  /// bouton grisé **promet une action qui n'existe pas**).
+  /// Absent (jamais grisé) quand il n'y a plus rien à servir : le stocké
+  /// est épuisé et aucun port n'est fourni — un bouton grisé promettrait
+  /// une action qui n'existe pas.
   ///
-  /// ⚠️ Calculé **ICI**, à partir de [shownHints] **observé** : le calculer dans
-  /// le `build()` de la surface le figerait à sa valeur initiale (le `build()`
-  /// de la surface ne se rejoue pas quand un indice s'ajoute — SM-1) et le
-  /// bouton **survivrait à l'épuisement**.
+  /// Calculé ici, à partir de [shownHints] observé : le calculer dans le
+  /// `build()` de la surface le figerait à sa valeur initiale (ce `build()`
+  /// ne se rejoue pas quand un indice s'ajoute, rebuild granulaire oblige)
+  /// et le bouton survivrait à l'épuisement.
   bool _available(List<String> shown) =>
       (hasStoredHint && shown.isEmpty) || hasPort;
 
@@ -1402,10 +1387,11 @@ class _HintSection extends StatelessWidget {
                     child: Text(hint, textAlign: TextAlign.start),
                   ),
                 ),
-              // 🔒 ABSENT si plus rien à servir — recalculé sur `hints`
-              // OBSERVÉ (jamais figé au premier build) — et ABSENT une fois la
-              // correction émise (un indice n'a plus d'effet sur une note déjà
-              // acquise, et coûterait un appel IA facturé pour rien).
+              // Absent si plus rien à servir — recalculé sur `hints`
+              // observé (jamais figé au premier build) — et absent une fois
+              // la correction émise (un indice n'a plus d'effet sur une
+              // note déjà acquise, et coûterait un appel IA facturé pour
+              // rien).
               ValueListenableBuilder<_Correction?>(
                 valueListenable: correction,
                 builder: (context, corrected, _) =>
@@ -1425,11 +1411,11 @@ class _HintSection extends StatelessWidget {
           valueListenable: hintError,
           builder: (context, error, _) => error == null
               ? const SizedBox.shrink()
-              // 🔒 `liveRegion` (AD-13/AC5) : ce texte apparaît de façon
-              // ASYNCHRONE, HORS du focus (qui reste sur le bouton « Indice »).
-              // Sans lui, l'échec était non-silencieux pour un voyant seulement :
-              // un utilisateur de lecteur d'écran n'entendait RIEN et ré-appuyait
-              // en boucle. AC5 exige que l'échec soit perceptible.
+              // `liveRegion` (invariant AD-13) : ce texte apparaît de façon
+              // asynchrone, hors du focus (qui reste sur le bouton « Indice »).
+              // Sans lui, l'échec ne serait non-silencieux que pour un
+              // voyant : un utilisateur de lecteur d'écran n'entendrait
+              // rien et ré-appuierait en boucle.
               : Semantics(
                   liveRegion: true,
                   child: Text(error, textAlign: TextAlign.start),
@@ -1440,7 +1426,7 @@ class _HintSection extends StatelessWidget {
   }
 }
 
-/// Bouton « **Je ne sais pas** » — borne basse, sans appel au port (AC4).
+/// Bouton « Je ne sais pas » — borne basse, sans appel au port.
 class _DontKnowButton extends StatelessWidget {
   const _DontKnowButton({required this.correction, required this.onPressed});
 
@@ -1453,9 +1439,9 @@ class _DontKnowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<_Correction?>(
     valueListenable: correction,
-    // 🔒 ONE-SHOT : ABSENT une fois la correction affichée — la réponse est
-    // révélée, « je ne sais pas » n'a plus de sens et ré-émettait la borne
-    // BASSE par-dessus une note déjà acquise (mesuré : `[5, 0]`).
+    // One-shot : absent une fois la correction affichée — la réponse est
+    // révélée, « je ne sais pas » n'a plus de sens et ré-émettrait la
+    // borne basse par-dessus une note déjà acquise.
     builder: (context, corrected, _) => corrected != null
         ? const SizedBox.shrink()
         : _ControlButton(
@@ -1467,7 +1453,7 @@ class _DontKnowButton extends StatelessWidget {
   );
 }
 
-/// Section **CORRECTION + rangée SRS pré-sélectionnée** (AC2).
+/// Section correction et rangée SRS pré-sélectionnée.
 class _CorrectionSection extends StatelessWidget {
   const _CorrectionSection({
     required this.correction,
@@ -1478,7 +1464,7 @@ class _CorrectionSection extends StatelessWidget {
 
   final ValueListenable<_Correction?> correction;
 
-  /// Régime d'apparition de la correction (SU-7/D2) — **rendu seul**.
+  /// Régime d'apparition de la correction — rendu seul.
   final ZCorrectionVisibility visibility;
   final ValueChanged<int>? onQualitySelected;
   final ZSrsConfig srsConfig;
@@ -1493,42 +1479,29 @@ class _CorrectionSection extends StatelessWidget {
       valueListenable: correction,
       builder: (context, corrected, _) {
         if (corrected == null) return const SizedBox.shrink();
-        // 🔒 SU-7/D2 — en `deferred` (examen blanc), la correction est POSÉE
-        // (verrous de su-3 intacts) mais **rien n'est peint** : ni feedback, ni
-        // rangée SRS. L'hôte révèle en fin d'examen, depuis les
-        // `ZFlashcardSubmission` mémorisées (D4).
-        // 🔒 Polarité UNIQUE via `paintsCorrection` (`switch` exhaustif) — ce
-        // site portait la polarité **INVERSE** (`== deferred`) des deux autres
-        // (`== immediate`) : une 3ᵉ valeur de l'enum aurait fait **fuiter le
-        // feedback** ici pendant que les icônes se taisaient ailleurs.
+        // En `deferred` (examen blanc), la correction est posée (verrous
+        // intacts) mais rien n'est peint : ni feedback, ni rangée SRS.
+        // L'hôte révèle en fin d'examen, depuis les `ZFlashcardSubmission`
+        // mémorisées.
+        // Polarité unique via `paintsCorrection` (`switch` exhaustif) —
+        // toute comparaison `== deferred` recopiée ici divergerait de la
+        // polarité `== immediate` des autres sites.
         if (!visibility.paintsCorrection) {
           return const SizedBox.shrink();
         }
         final selectedQuality = onQualitySelected;
-        // 🔒 **AUCUNE affordance de su-3 n'est ANIMÉE** ⇒ aucun appel à
-        // `zReduceMotionOf` ici. AC11 le formule exactement ainsi : « **toute
-        // affordance ANIMÉE** de su-3 passe par `zReduceMotionOf` » — sans
-        // animation, la clause est satisfaite **par vacuité**, et la story ne
-        // réclame nulle part une animation de correction.
-        //
-        // ⚠️ Ce bloc portait un `AnimatedOpacity(opacity: 1, duration: …)` dont
-        // la `duration` dérivait de `zReduceMotionOf`. Une animation implicite ne
-        // se déclenche que sur un **changement** de valeur : `opacity` étant la
-        // **constante 1** et le sous-arbre n'étant **créé** qu'à la correction,
-        // elle n'animait **JAMAIS** (mesuré : `FadeTransition.opacity.value == 1.0`
-        // à chaque pump). Le résultat de `zReduceMotionOf` était donc **inobservable**
-        // — du **code mort qui SIMULAIT la conformité AD-13** — et son test restait
-        // vert si la ligne était supprimée. Un verrou factice est **pire** qu'un
-        // verrou absent : il se donne pour une preuve. Retiré, avec son test.
+        // Aucune affordance de cette surface n'est animée, donc aucun
+        // appel à `zReduceMotionOf` ici : sans animation, l'invariant AD-13
+        // sur les animations est satisfait par vacuité.
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             if (corrected.feedback != null)
-              // 🔒 `liveRegion` (AD-13/AC3) : le feedback du barème est le
-              // CONTENU PÉDAGOGIQUE CENTRAL de la carte et il apparaît de façon
-              // ASYNCHRONE, hors du focus. Sans lui, il était rendu sans jamais
-              // être annoncé à un lecteur d'écran.
+              // `liveRegion` (invariant AD-13) : le feedback du barème est
+              // le contenu pédagogique central de la carte et il apparaît
+              // de façon asynchrone, hors du focus. Sans lui, il serait
+              // rendu sans jamais être annoncé à un lecteur d'écran.
               Semantics(
                 liveRegion: true,
                 child: Text(
@@ -1537,15 +1510,15 @@ class _CorrectionSection extends StatelessWidget {
                   textAlign: TextAlign.start,
                 ),
               ),
-            // 🔒 Rangée SRS **ABSENTE** si `onQualitySelected == null` (patron
-            // `ZItemActionsMenu`/AD-44 — jamais un booléen `showQualityButtons`).
+            // Rangée SRS absente si `onQualitySelected == null`, jamais un
+            // booléen `showQualityButtons`.
             if (selectedQuality != null) ...<Widget>[
               SizedBox(height: theme.gapM),
               ZSrsQualityButtons(
                 scale: ZQualityScale.fromConfig(srsConfig),
                 passThreshold: srsConfig.passThreshold,
-                // 🔒 ADVISORY : le cran suggéré est **PRÉ-SÉLECTIONNÉ**, et
-                // c'est le **tap** de l'utilisateur qui vaut notation.
+                // Advisory : le cran suggéré est pré-sélectionné, et c'est
+                // le tap de l'utilisateur qui vaut notation.
                 selectedQuality: corrected.quality,
                 onQualitySelected: selectedQuality,
               ),
@@ -1557,7 +1530,8 @@ class _CorrectionSection extends StatelessWidget {
   }
 }
 
-/// Repli l10n d'une saisie **indisponible** (AD-10) — jamais un écran vide.
+/// Repli l10n d'une saisie indisponible (invariant AD-10) — jamais un écran
+/// vide.
 class _UnavailableInput extends StatelessWidget {
   const _UnavailableInput({required this.labelKey, required this.fallback});
 
@@ -1589,9 +1563,8 @@ class _SubmitButton extends StatelessWidget {
   );
 }
 
-/// Bouton de contrôle générique — 🔒 `Semantics` explicites + cible ≥ 48 dp
-/// (AD-13 ; patron `z_srs_quality_buttons.dart:197,212`), libellé l10n, thème
-/// injecté, directionnel.
+/// Bouton de contrôle générique — `Semantics` explicites et cible ≥ 48 dp
+/// (invariant AD-13), libellé l10n, thème injecté, directionnel.
 class _ControlButton extends StatelessWidget {
   const _ControlButton({
     required this.buttonKey,
@@ -1613,7 +1586,7 @@ class _ControlButton extends StatelessWidget {
   /// Statut de correction lu par un lecteur d'écran, `null` hors correction.
   final String? statusValue;
 
-  /// Cible tap minimale Material/AD-13 (dp).
+  /// Cible tap minimale (dp), invariant AD-13.
   static const double minTarget = 48;
 
   @override
@@ -1625,8 +1598,8 @@ class _ControlButton extends StatelessWidget {
       button: true,
       enabled: onPressed != null,
       label: text,
-      // Porté par la MÊME node que le libellé ⇒ impossible de l'attacher au
-      // bouton voisin (leçon D2 de su-2).
+      // Porté par le même nœud que le libellé, donc impossible de
+      // l'attacher au bouton voisin.
       value: statusValue,
       child: ConstrainedBox(
         constraints: const BoxConstraints(

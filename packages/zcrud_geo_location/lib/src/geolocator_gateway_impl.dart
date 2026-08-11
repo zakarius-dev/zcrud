@@ -1,9 +1,9 @@
-/// Implémentation `geolocator` du port [ZGeoLocationGateway] (G10).
+/// Implémentation `geolocator` du port [ZGeoLocationGateway].
 ///
-/// **SEUL fichier du paquet qui importe `geolocator`** (AD-1 : SDK confiné,
-/// jamais exporté par le barrel — aucun type geolocator ne fuit). Les valeurs
-/// de lecture répliquent le legacy `gff:241-247` : `LocationAccuracy.high`,
-/// `distanceFilter: 10`, `timeLimit: 10 s`.
+/// **Seul fichier du paquet qui importe `geolocator`** (invariant AD-1 : SDK
+/// confiné, jamais exporté par le barrel — aucun type geolocator ne fuit).
+/// Réglages de lecture : `LocationAccuracy.high`, `distanceFilter: 10`,
+/// `timeLimit: 10 s`.
 library;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -19,10 +19,10 @@ class GeolocatorGateway implements ZGeoLocationGateway {
   /// Construit la passerelle réelle (sans état — le plugin est statique).
   const GeolocatorGateway();
 
-  /// Réglages de lecture, parité legacy `gff:242-246` (`LocationAccuracy.high`,
-  /// `distanceFilter: 10`, `timeLimit: 10 s`). Visibles pour que les tests
-  /// affirment la parité SANS toucher au canal natif (les enums/const de
-  /// `geolocator` sont du Dart pur).
+  /// Réglages de lecture (`LocationAccuracy.high`, `distanceFilter: 10`,
+  /// `timeLimit: 10 s`). Visibles pour que les tests affirment ces valeurs
+  /// sans toucher au canal natif (les enums/const de `geolocator` sont du
+  /// Dart pur).
   @visibleForTesting
   static const LocationSettings locationSettings = LocationSettings(
     accuracy: LocationAccuracy.high,
@@ -49,13 +49,13 @@ class GeolocatorGateway implements ZGeoLocationGateway {
     return ZGeoPoint(lat: position.latitude, lng: position.longitude);
   }
 
-  /// Projette les 5 valeurs de `LocationPermission` sur l'état neutre :
+  /// Projette les cinq valeurs de `LocationPermission` sur l'état neutre :
   /// `denied` → [ZGeoLocationPermission.denied] ; `deniedForever` →
   /// [ZGeoLocationPermission.deniedForever] ; `whileInUse`/`always` →
   /// [ZGeoLocationPermission.granted] ; `unableToDetermine` →
-  /// [ZGeoLocationPermission.granted] (parité `gff:232-241` : le legacy ne
-  /// court-circuite que `denied`/`deniedForever` et TENTE la lecture sinon —
-  /// un échec réel devient alors la cause `error`).
+  /// [ZGeoLocationPermission.granted] (seuls `denied`/`deniedForever`
+  /// court-circuitent la résolution ; sinon la lecture est tentée — un échec
+  /// réel devient alors la cause `error`).
   @visibleForTesting
   static ZGeoLocationPermission mapLocationPermission(
     LocationPermission permission,

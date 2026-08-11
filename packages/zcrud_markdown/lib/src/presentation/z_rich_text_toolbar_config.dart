@@ -1,8 +1,8 @@
-/// `ZRichTextToolbarConfig` (DP-22, M20) — configuration **granulaire par bouton**
+/// `ZRichTextToolbarConfig` (M20) — configuration **granulaire par bouton**
 /// de la barre d'outils rich-text, NEUTRE (aucun type Quill).
 ///
-/// Remplace/enrichit l'unique drapeau `showToolbar: bool` d'E6-1 par une
-/// granularité au bouton (parité DODLP `RichTextToolbarConfig` — présets
+/// Remplace/enrichit l'unique drapeau `showToolbar: bool` par une
+/// granularité au bouton (parité legacy `RichTextToolbarConfig` — présets
 /// `full`/`minimal`/`markdown`). Consommée par `ZMarkdownField` (voie `controller`
 /// ET voie `ctx`) et traduite EN INTERNE (sous `lib/src/`) vers la config Quill —
 /// AUCUN type Quill ne fuit dans cette classe ni dans la surface publique
@@ -10,7 +10,7 @@
 ///
 /// RÉTRO-COMPAT (NON-NÉGOCIABLE) : `toolbarConfig` est OPTIONNEL. Un
 /// `ZMarkdownField` sans `toolbarConfig` conserve EXACTEMENT le comportement
-/// E6-1/DP-3 (drapeau `showToolbar` honoré, toolbar pleine en voie `controller`,
+/// (drapeau `showToolbar` honoré, toolbar pleine en voie `controller`,
 /// toolbar compacte en mode `inline`).
 ///
 /// ISOLATION : classe de DONNÉES pure (booléens `const`) — sûre à exporter par le
@@ -20,17 +20,17 @@ library;
 
 import 'package:flutter/foundation.dart';
 
-/// Configuration granulaire (par bouton) de la toolbar rich-text (DP-22).
+/// Configuration granulaire (par bouton) de la toolbar rich-text.
 ///
 /// Chaque drapeau active/désactive UN groupe de boutons de la barre. Les présets
-/// [full]/[minimal]/[markdown] couvrent les cas parité DODLP ; [copyWith] permet
+/// [full]/[minimal]/[markdown] couvrent les cas parité legacy ; [copyWith] permet
 /// une personnalisation fine par field.
 @immutable
 class ZRichTextToolbarConfig {
   /// Construit une config granulaire. Tous les groupes sont activés par DÉFAUT
-  /// (équivaut au préset [full]) — SAUF [showStrikethrough] (GAP-8, cf. son
+  /// (équivaut au préset [full]) — SAUF [showStrikethrough] (cf. son
   /// doc) et les options d'HABILLAGE de barre ([roundedIcons],
-  /// [themedBarBackground], GAP-9) qui sont opt-in ; passez `false` pour
+  /// [themedBarBackground]) qui sont opt-in; passez `false` pour
   /// masquer un groupe. [multiRow] est TRI-ÉTAT : `null` (défaut) = AUTO par
   /// surface (cf. son doc).
   const ZRichTextToolbarConfig({
@@ -86,12 +86,12 @@ class ZRichTextToolbarConfig {
 
   /// Bouton barré.
   ///
-  /// GAP-8 (CR parité 2026-08-11) : défaut `false` — ALIGNÉ sur le legacy
-  /// DODLP, qui désactive le barré sur TOUS ses éditeurs
+  /// (CR parité 2026-08-11) : défaut `false` — ALIGNÉ sur le legacy
+  /// l'éditeur historique, qui désactive le barré sur TOUS ses éditeurs
   /// (`showStrikeThrough: false`, `qmew:85`, hors de portée des presets
-  /// legacy). MESURÉ avant le changement : AUCUN hôte (DODLP / lex_douane /
-  /// IFFD / DLCFTI) ne référence `ZRichTextToolbarConfig` ni ne passe
-  /// `toolbarConfig` — le seul consommateur du défaut est le pilote DODLP via
+  /// legacy). MESURÉ avant le changement : AUCUN hôte (l'éditeur historique / lex_douane /
+  /// un consommateur legacy / un autre consommateur legacy) ne référence `ZRichTextToolbarConfig` ni ne passe
+  /// `toolbarConfig` — le seul consommateur du défaut est le pilote historique via
   /// le registre, qui demande précisément ce retrait. Un hôte qui VEUT le
   /// bouton opte : `copyWith(showStrikethrough: true)`.
   final bool showStrikethrough;
@@ -138,33 +138,33 @@ class ZRichTextToolbarConfig {
   /// Bouton exposant (superscript).
   final bool showSuperscript;
 
-  /// Bouton **Copier** (presse-papier) — GAP-4, CR parité 2026-08-11.
+  /// Bouton **Copier** (presse-papier), CR parité 2026-08-11.
   ///
   /// Défaut `true` : cohérent avec le contrat du préset [full] (« tous les
-  /// groupes activés par défaut ») ET avec le legacy DODLP
+  /// groupes activés par défaut ») ET avec le legacy
   /// (`showClipboardCopy: true`, `qmew:227`).
   final bool showClipboardCopy;
 
-  /// Bouton **Coller** (presse-papier) — GAP-4. Défaut `true` (cf.
+  /// Bouton **Coller** (presse-papier). Défaut `true` (cf.
   /// [showClipboardCopy] ; legacy `showClipboardPaste: true`, `qmew:228`).
   final bool showClipboardPaste;
 
-  /// Bouton custom « Insérer une formule » (embed LaTeX, E6-3).
+  /// Bouton custom « Insérer une formule » (embed LaTeX).
   final bool showLatexButton;
 
-  /// Bouton custom « Insérer un tableau » (embed table, E6-4).
+  /// Bouton custom « Insérer un tableau » (embed table).
   final bool showTableButton;
 
-  /// Bouton custom « Insérer une image » (embed image, DP-22).
+  /// Bouton custom « Insérer une image » (embed image).
   final bool showImageButton;
 
-  /// Bouton custom « Insérer une vidéo » (embed vidéo, DP-22).
+  /// Bouton custom « Insérer une vidéo » (embed vidéo).
   final bool showVideoButton;
 
-  /// GAP-9 (opt-in) : icônes **`*_rounded`** sur les boutons de la barre
-  /// (jeu MESURÉ du legacy DODLP, `qmew:118-208` + boutons custom). Seule
+  /// (opt-in) : icônes **`*_rounded`** sur les boutons de la barre
+  /// (jeu MESURÉ du legacy, `qmew:118-208` + boutons custom). Seule
   /// l'icône (`iconData`) est remplacée — les **tooltips restent ceux de
-  /// Quill, déjà localisés** (aucun libellé posé ici, FR-26/l10n). Défaut
+  /// Quill, déjà localisés** (aucun libellé posé ici,l10n). Défaut
   /// `false` ⇒ icônes Quill historiques inchangées (AD-4).
   final bool roundedIcons;
 
@@ -173,7 +173,7 @@ class ZRichTextToolbarConfig {
   ///
   /// La MÊME config sert le champ en flux ET le dialog plein-écran : un booléen
   /// unique ne peut pas être juste pour les deux surfaces. Constat device
-  /// (pilote DODLP) : `true` en flux ⇒ la barre s'empile sur ~10 rangées et
+  /// (pilote historique) : `true` en flux ⇒ la barre s'empile sur ~10 rangées et
   /// noie le formulaire ; `false` en plein écran ⇒ boutons rejetés hors écran
   /// alors que la place abonde.
   ///
@@ -196,18 +196,17 @@ class ZRichTextToolbarConfig {
   /// TOUTE barre en flux, quel que soit inline/block.
   final bool? multiRow;
 
-  /// GAP-9 (opt-in) : **fond de barre thémé** — surface + liseré bas dérivés
-  /// des RÔLES du thème (`surfaceContainerLow` / `outlineVariant`, FR-26 :
-  /// zéro couleur en dur ; le legacy posait des gris figés, non repris).
+  /// Opt-in : **fond de barre thémé** — surface + liseré bas dérivés
+  /// des RÔLES du thème (`surfaceContainerLow`/`outlineVariant`) :
+  /// zéro couleur en dur ; le legacy posait des gris figés, non repris.
   /// Défaut `false` ⇒ aucune décoration (rendu historique).
   final bool themedBarBackground;
 
-  /// Préset **complet** : tous les boutons (défaut de la voie `controller`).
-  /// GAP-8 : le barré n'en fait plus partie (parité legacy — cf.
-  /// [showStrikethrough]) ; l'habillage GAP-9 reste opt-in.
+  /// Préset **complet** : tous les boutons (défaut de la voie `controller`),
+  /// SAUF le barré (cf. [showStrikethrough]) ; l'habillage reste opt-in.
   static const ZRichTextToolbarConfig full = ZRichTextToolbarConfig();
 
-  /// Préset **minimal** (parité DODLP `minimal`) : style inline de base + listes,
+  /// Préset **minimal** (parité legacy `minimal`) : style inline de base + listes,
   /// SANS police/couleur/alignement/embeds — pour un champ compact. C'est le
   /// préset appliqué par défaut au mode `inline`.
   static const ZRichTextToolbarConfig minimal = ZRichTextToolbarConfig(
@@ -238,14 +237,14 @@ class ZRichTextToolbarConfig {
     showVideoButton: false,
   );
 
-  /// Préset **markdown** (parité DODLP `markdown`) : style + listes + insertions
+  /// Préset **markdown** (parité legacy `markdown`) : style + listes + insertions
   /// (embeds), SANS police/couleur/alignement — pensé pour un rendu Markdown.
   static const ZRichTextToolbarConfig markdown = ZRichTextToolbarConfig(
     showUndoRedo: false,
     showFontFamily: false,
     showFontSize: false,
     showUnderline: true,
-    // GAP-8 : barré retiré du préset (parité legacy `qmew:85` — le legacy le
+    // barré retiré du préset (parité legacy `qmew:85` — le legacy le
     // désactive sur l'éditeur markdown lui-même, quel que soit le preset).
     showStrikethrough: false,
     showInlineCode: true,

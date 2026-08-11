@@ -1,7 +1,6 @@
-/// `ZNoteContentFaithChannel` — le **canal de FOI** du corps d'une note
-/// (CR-IFFD-66).
+/// `ZNoteContentFaithChannel` — le **canal de FOI** du corps d'une note.
 ///
-/// ## 🔴 Le défaut que ce type ferme (MESURÉ, pas lu)
+/// ## Le défaut que ce type ferme (MESURÉ, pas lu)
 ///
 /// Un hôte migré par *strangler fig* persiste son corps de note dans **son**
 /// format d'origine (une `String` markdown, une `String` Delta JSON…). Pour être
@@ -19,7 +18,7 @@
 /// ```text
 /// content typé        = '# Titre markdown legacy MODIF\n'   ← la frappe est là
 /// extra['<foi>']      = '# Titre markdown legacy'           ← figé
-/// relecture (foi)     = '# Titre markdown legacy'           ← 🔴 MODIF PERDU
+/// relecture (foi) = '# Titre markdown legacy' ← MODIF PERDU
 /// ```
 ///
 /// Aucune erreur, aucun champ vide, rien à l'écran : **perte silencieuse**.
@@ -43,7 +42,7 @@
 /// )
 /// ```
 ///
-/// ## ⚠️ Ce type ne rend PAS le round-trip fidèle — il rend les deux canaux
+/// ## Ce type ne rend PAS le round-trip fidèle — il rend les deux canaux
 /// COHÉRENTS
 ///
 /// L'[encode] est **fourni par l'hôte** parce que **seul l'hôte connaît son
@@ -92,7 +91,7 @@ final class ZNoteContentFaithChannel {
   /// Clé d'[ZSmartNote.extra] tenue en doublon du champ typé, et qui **fait FOI**
   /// à la relecture chez l'hôte.
   ///
-  /// ⚠️ Elle **DOIT** être une clé **non réservée** (ni un champ de schéma, ni
+  /// Elle **DOIT** être une clé **non réservée** (ni un champ de schéma, ni
   /// `extension`, ni `content`, ni une clé de sync `ZSyncMeta`) : `ZSmartNote`
   /// **dépouille** les clés réservées de `extra` sur **toutes** ses voies
   /// d'écriture. Une clé réservée rendrait le canal **INERTE** — le cas est
@@ -102,7 +101,7 @@ final class ZNoteContentFaithChannel {
 
   /// Projette les ops éditées vers la valeur que l'hôte persiste.
   ///
-  /// 🔴 Appelé **à chaque remontée d'édition** (donc potentiellement à chaque
+  /// Appelé **à chaque remontée d'édition** (donc potentiellement à chaque
   /// frappe) : il doit rester **bon marché**. Un encodeur markdown complet
   /// (`ZMarkdownCodec.encode`) l'est ; un aller-retour réseau ou disque ne le
   /// serait pas.

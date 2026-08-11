@@ -1,22 +1,25 @@
 /// `ZSubdivisionCatalog` — **catalogue états/provinces indexé par pays**
-/// (E11b-2, FR-21, AD-1/AD-10/AD-12). Même discipline que `ZCountryCatalog`
-/// (paresse + cache + dé-dup `_loading` MEDIUM-1 + injection + défensif +
-/// partagé LOW-1), mais **indexé par pays** (`{ "NE": [...], "US": [...] }`).
+/// (invariants AD-1, AD-10, AD-12). Même discipline que `ZCountryCatalog`
+/// (paresse + cache + dé-dup de la charge en vol + injection + défensif +
+/// instance partagée), mais **indexé par pays** (`{ "NE": [...], "US":
+/// [...] }`).
 ///
-/// origine: le sélecteur d'état/province (`ZStateField`) et le sous-champ
-/// `region` de `ZAddressField` ont besoin des subdivisions ISO 3166-2 **du pays
+/// Le sélecteur d'état/province (`ZStateField`) et le sous-champ `region`
+/// de `ZAddressField` ont besoin des subdivisions ISO 3166-2 **du pays
 /// courant**. Ces listes vivent dans un **asset JSON bundlé**
-/// (`lib/assets/subdivisions.json`), chargé **à la première demande** ([load]),
-/// puis **mis en cache** (lecture seule, immuable).
+/// (`lib/assets/subdivisions.json`), chargé **à la première demande**
+/// ([load]), puis **mis en cache** (lecture seule, immuable).
 ///
 /// **Périmètre pragmatique** : sous-ensemble **curaté et documenté** (pays
-/// prioritaires DODLP/lex_douane + échantillon multi-continent). Le catalogue est
-/// **injectable/extensible** ([ZSubdivisionCatalog.fromMap]) → couverture ISO
-/// 3166-2 exhaustive = v2. Aucun défaut national codé en dur non surchargeable.
+/// prioritaires + échantillon multi-continent). Le catalogue est
+/// **injectable/extensible** ([ZSubdivisionCatalog.fromMap]) pour qu'une
+/// couverture ISO 3166-2 plus large soit ajoutée sans changer l'API. Aucun
+/// défaut national codé en dur non surchargeable.
 ///
-/// **Défensif (AD-10)** : [load] ne **throw jamais** ; asset absent / JSON
-/// malformé / pays inconnu → **liste vide**. **Isolation (AD-1)** : aucune lib
-/// tierce. **Zéro secret / réseau** (AD-12).
+/// **Défensif (invariant AD-10)** : [load] ne **throw jamais** ; asset
+/// absent / JSON malformé / pays inconnu → **liste vide**. **Isolation
+/// (invariant AD-1)** : aucune lib tierce. **Zéro secret / réseau**
+/// (invariant AD-12).
 library;
 
 import 'dart:convert';
@@ -29,10 +32,10 @@ import '../domain/z_subdivision.dart';
 const String kDefaultSubdivisionsAsset =
     'packages/zcrud_intl/assets/subdivisions.json';
 
-/// Instance PARTAGÉE lazy du catalogue par défaut (LOW-1).
+/// Instance PARTAGÉE lazy du catalogue par défaut.
 ZSubdivisionCatalog? _sharedDefaultSubdivisionCatalog;
 
-/// Catalogue subdivisions par défaut **partagé** (paresseux) : plusieurs
+/// Catalogue subdivisions par défaut **partagé** (paresseux): plusieurs
 /// `ZStateField`/adresses sans `catalog` injecté partagent CETTE instance → une
 /// seule lecture d'asset.
 ZSubdivisionCatalog sharedDefaultSubdivisionCatalog() =>
@@ -41,7 +44,7 @@ ZSubdivisionCatalog sharedDefaultSubdivisionCatalog() =>
 /// Catalogue états/provinces paresseux + caché, indexé par pays, injectable.
 class ZSubdivisionCatalog {
   /// Catalogue **chargé depuis un asset** (paresseux). [assetPath] par défaut
-  /// pointe l'asset bundlé ; [bundle] permet d'injecter un `AssetBundle` de test.
+  /// pointe l'asset bundlé; [bundle] permet d'injecter un `AssetBundle` de test.
   ZSubdivisionCatalog({
     String assetPath = kDefaultSubdivisionsAsset,
     AssetBundle? bundle,
@@ -66,12 +69,12 @@ class ZSubdivisionCatalog {
 
   Map<String, List<ZSubdivision>>? _cache;
 
-  /// Chargement **en vol** mémoïsé (MEDIUM-1). Effacé à la résolution.
+  /// Chargement **en vol** mémoïsé. Effacé à la résolution.
   Future<Map<String, List<ZSubdivision>>>? _loading;
 
   int _assetReads = 0;
 
-  /// Lectures d'asset effectuées (test-only : prouve paresse + cache).
+  /// Lectures d'asset effectuées (test-only: prouve paresse + cache).
   int get assetReads => _assetReads;
 
   /// `true` si [load] a déjà résolu (cache présent).
@@ -113,7 +116,7 @@ class ZSubdivisionCatalog {
     };
   }
 
-  /// Parse **défensif** (AD-10) : non-objet → vide ; buckets non-listes ignorés ;
+  /// Parse **défensif** (AD-10): non-objet → vide; buckets non-listes ignorés;
   /// entrées non conformes ignorées ([ZSubdivision.fromMapSafe] → `null`). Le code
   /// pays du bucket est propagé comme `countryIso` de contexte.
   static Map<String, List<ZSubdivision>> _parse(String raw) {
@@ -140,7 +143,7 @@ class ZSubdivisionCatalog {
     return out;
   }
 
-  /// Subdivisions du pays [iso] (insensible à la casse) ; **liste vide** si pays
+  /// Subdivisions du pays [iso] (insensible à la casse); **liste vide** si pays
   /// inconnu ou catalogue non chargé (AD-10, jamais throw).
   List<ZSubdivision> forCountry(String iso) =>
       _cache?[iso.toUpperCase()] ?? const <ZSubdivision>[];

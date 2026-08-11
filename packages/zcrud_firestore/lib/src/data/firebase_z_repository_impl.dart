@@ -1,21 +1,23 @@
-/// Adaptateur **Firestore** concret du port neutre `ZRepository<T>` (E5-1).
+/// Adaptateur **Firestore** concret du port neutre `ZRepository<T>`.
 ///
-/// origine: lex_core (module « Étude ») — repositories Firestore
-/// (`StudyFoldersRepository`/`FlashcardsRepository`/…) généralisés. Réunit les
-/// **corrections** des 3 bugs historiques des apps (DODLP/IFFD/DLCFTI) :
-/// réassignation de clause perdue, `catch(_){}` silencieux, `null` traité comme
-/// erreur, écritures partielles non committées.
+/// Réunit des corrections consolidées à partir de plusieurs implémentations
+/// applicatives historiques : réassignation de clause perdue, `catch(_){}`
+/// silencieux, `null` traité comme erreur, écritures partielles non
+/// committées.
 ///
-/// **Isolation AD-5 (CRUCIAL)** : `cloud_firestore` est importé **uniquement**
-/// ici. Aucun type Firestore (`Query`/`Timestamp`/`DocumentSnapshot`/
-/// `CollectionReference`/`FirebaseException`/`Filter`) ne fuit dans une
-/// **signature publique** — toutes restent `ZResult<…>` / `Stream<List<T>>`
-/// **nues**. Les dates transitent en **ISO-8601 String** (jamais `Timestamp`).
+/// **Isolation (invariant AD-5, CRUCIAL)** : `cloud_firestore` est importé
+/// **uniquement** ici. Aucun type Firestore (`Query`/`Timestamp`/
+/// `DocumentSnapshot`/`CollectionReference`/`FirebaseException`/`Filter`) ne
+/// fuit dans une **signature publique** — toutes restent `ZResult<…>` /
+/// `Stream<List<T>>` **nues**. Les dates transitent en **ISO-8601 String**
+/// (jamais `Timestamp`), sauf pour les champs explicitement hintés en
+/// `Timestamp` natif via `timestampFields`.
 ///
-/// **Frontières de story (ne PAS déborder)** : E5-1 = repo Firestore + traduction
-/// `ZDataRequest→Query` + curseur + soft-delete/restore + count + décodage
-/// défensif. Le `ZLocalStore` (Hive), l'offline-first LWW et l'orchestrateur
-/// sont E5-2/E5-3/E5-4.
+/// **Périmètre** : ce fichier porte le repo Firestore, la traduction
+/// `ZDataRequest → Query`, le curseur, le soft-delete/restore, le comptage et
+/// le décodage défensif. Le `ZLocalStore` (Hive), l'offline-first LWW et
+/// l'orchestrateur de synchronisation vivent dans les autres fichiers de ce
+/// paquet.
 library;
 
 // `prefer_initializing_formals` est un FAUX POSITIF ici : les champs de config
@@ -45,10 +47,10 @@ typedef ZFirestoreLog = void Function(
 
 void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 
-/// Sémantique de **lecture** du drapeau de soft-delete `is_deleted` (CR-DODLP
-/// 2026-08-11 « parc documentaire existant »). Opt-in au constructeur de
-/// [FirebaseZRepositoryImpl] — le défaut [strict] est le comportement
-/// historique, **inchangé**.
+/// Sémantique de **lecture** du drapeau de soft-delete `is_deleted`, pour
+/// intégrer un parc documentaire existant sans backfill. Opt-in au
+/// constructeur de [FirebaseZRepositoryImpl] — le défaut [strict] est le
+/// comportement historique, **inchangé**.
 ///
 /// Type **neutre** (aucun symbole `cloud_firestore` — AD-5) : il décrit un
 /// contrat de visibilité, pas une mécanique backend.
@@ -97,17 +99,17 @@ enum ZDeletionSemantics {
 /// document mais restent séparées côté modèle (aucun champ métier touché par
 /// [softDelete]/[restore]).
 ///
-/// **Recherche accent-insensible — limite documentée (AC15)** : Firestore n'a ni
+/// **Recherche accent-insensible — limite documentée** : Firestore n'a ni
 /// `LIKE`, ni full-text, ni pliage diacritique natif. `ZDataRequest.search`
 /// n'est donc **pas** servi ici (préfixe/égalité ou champ normalisé pré-calculé
-/// requis côté app — voir E4/E7). Aucune normalisation NFD n'est appliquée.
+/// requis côté application). Aucune normalisation NFD n'est appliquée.
 ///
-/// **PRÉCONDITION — collection « zcrud-native » (MAJEUR-1 / MAJEUR-2)** : cet
-/// adaptateur suppose une collection gérée **exclusivement** par zcrud, où
-/// **tout** document écrit par [save] porte SYSTÉMATIQUEMENT (invariant
-/// **exécutoire**, garanti par [_encode] + [save]) :
-/// - un champ de **corps** `id` (= identité du document) — **clé de départage**
-///   du tri/curseur (AC12). En **prod**, `orderBy('id')` **exclut**
+/// **PRÉCONDITION — collection « zcrud-native »** : cet adaptateur suppose
+/// une collection gérée **exclusivement** par zcrud, où **tout** document
+/// écrit par [save] porte SYSTÉMATIQUEMENT (invariant **exécutoire**, garanti
+/// par [_encode] + [save]) :
+/// - un champ de **corps** `id` (= identité du document) — **clé de
+///   départage** du tri/curseur. En **prod**, `orderBy('id')` **exclut**
 ///   silencieusement tout document DÉPOURVU de ce champ (sémantique Firestore) :
 ///   un document hérité/non-zcrud sans corps `id` disparaît des lectures
 ///   **triées/paginées**. Choix de la clé de corps `id` (option (b)) plutôt que
@@ -119,26 +121,26 @@ enum ZDeletionSemantics {
 ///   (getById / getAll / watch) de façon **COHÉRENTE** (aucune divergence, cf.
 ///   [_matchesScope]).
 ///
-/// Brancher l'adaptateur sur une collection **préexistante** (intégration E7)
-/// impose donc un **backfill d'onboarding** (`id` de corps + `is_deleted:false`
-/// sur chaque document) — sans quoi les documents non conformes sont exclus des
-/// lectures triées/paginées et filtrées, silencieusement, EN PROD. **OU** —
-/// depuis la CR-DODLP 2026-08-11 — le mode opt-in
-/// [ZDeletionSemantics.absentMeansAlive] (« absent = vivant », zéro migration
-/// de données), qui lève cette précondition pour le drapeau `is_deleted` (celle
-/// du corps `id` demeure pour les lectures **triées/paginées**).
+/// Brancher l'adaptateur sur une collection **préexistante** impose donc un
+/// **backfill d'onboarding** (`id` de corps + `is_deleted:false` sur chaque
+/// document) — sans quoi les documents non conformes sont exclus des lectures
+/// triées/paginées et filtrées, silencieusement, EN PROD. **OU** — le mode
+/// opt-in [ZDeletionSemantics.absentMeansAlive] (« absent = vivant », zéro
+/// migration de données), qui lève cette précondition pour le drapeau
+/// `is_deleted` (celle du corps `id` demeure pour les lectures
+/// **triées/paginées**).
 ///
-/// **Corbeille (Lot 2a)** : `ZDataRequest.deletedScope`
+/// **Corbeille** : `ZDataRequest.deletedScope`
 /// (`aliveOnly`/`includeDeleted`/`deletedOnly`) est honoré sur
 /// [getAll]/[watch]/[count] dans les DEUX sémantiques — clauses `where` en
 /// [ZDeletionSemantics.strict], filtrage client en
 /// [ZDeletionSemantics.absentMeansAlive] (`deletedOnly` y inclut
 /// `legacyDeletedKey == true`).
 ///
-/// **Contrat `fromMap` (annexe CR)** : votre `fromMap` doit accepter les dates
+/// **Contrat `fromMap`** : votre `fromMap` doit accepter les dates
 /// **ISO-8601** — le décodage normalise tout horodatage (`Timestamp` natif,
 /// `DateTime`, `{_seconds,_nanoseconds}`) en `String` ISO **avant** d'appeler
-/// le `fromMap` injecté (cf. [_normalizeTemporalDeep], CR-LEX-27) : un cast dur
+/// le `fromMap` injecté (cf. [_normalizeTemporalDeep]) : un cast dur
 /// `as Timestamp?` y jette systématiquement.
 class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// Construit l'adaptateur à partir du couple (dé)sérialisation typé.
@@ -199,7 +201,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///
   /// ---
   ///
-  /// # ✅ DW-ES14-2 SOLDÉE (ES-3.0) — la voie registre TYPE `extension`/`source`
+  /// # La voie registre type `extension`/`source`
   ///
   /// `fromRegistry` est la **voie recommandée**. Depuis ES-3.0, le [ZcrudRegistry]
   /// porte un `ZDecodeContext` (câblé au bootstrap) que `registry.decode`/`.encode`
@@ -583,7 +585,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///     `is_deleted=false` (invariant exécutoire, cf. [_encode]).
   ///   - `deletedOnly` : égalité `is_deleted == true` (corbeille, Lot 2a).
   ///   - `includeDeleted` : `whereIn: [false, true]` — exige la présence du
-  ///     champ (l'absent reste exclu, cohérent avec strict). ⚠️ Firestore borne
+  ///     champ (l'absent reste exclu, cohérent avec strict). Firestore borne
   ///     le nombre de clauses `in` par requête : combiner `includeDeleted` avec
   ///     un `ZFilterOp.isIn` peut exiger un découpage côté appelant.
   /// - **[ZDeletionSemantics.absentMeansAlive]** — **AUCUNE** clause
@@ -671,7 +673,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// devient donc infaisable en test sous (a). On retient (b) — champ `id` de
   /// corps — sous la **précondition « collection zcrud-native »** (dartdoc de
   /// classe) : tout document écrit par [save] porte son `id` de corps (invariant
-  /// exécutoire). ⚠️ En **prod**, `orderBy('id')` **exclut** tout document
+  /// exécutoire). En **prod**, `orderBy('id')` **exclut** tout document
   /// dépourvu de corps `id` (documents non-zcrud → backfill d'onboarding E7). NB:
   /// le fake N'imite PAS cette exclusion (il classe le champ absent comme `null`),
   /// donc un test ne peut prouver l'exclusion prod — il prouve l'invariant

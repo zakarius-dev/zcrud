@@ -1,9 +1,9 @@
-/// Migration **legacy → contenu canonique** d'une note (ES-6.2, **FR-S25**) :
+/// Migration **legacy → contenu canonique** d'une note :
 /// couche d'ADAPTATION `lib/src/data/`.
 ///
 /// ## Ce que fait ce migrateur (portée VOLONTAIREMENT bornée)
 ///
-/// 1. **Sticky-note** (texte plat IFFD, `TextField`) → ops Delta neutres, VERBATIM,
+/// 1. **Sticky-note** (texte plat un consommateur legacy, `TextField`) → ops Delta neutres, VERBATIM,
 ///    en **DÉLÉGUANT** à `normalizeNoteContentOps` (aucune coercition maison).
 /// 2. **Tables markdown GFM** (`| … |` + séparateur `|---|`) noyées dans une op
 ///    texte → op embed **structurée** `{table:{rows,columns,cells}}`, la **prose
@@ -19,21 +19,21 @@
 ///   réémise VERBATIM ; `zMigrateNoteTables(zMigrateNoteTables(x))` est un NO-OP
 ///   profond.
 ///
-/// ## Pureté & réutilisation (NFR-S10 / SM-S4 / AD-28)
+/// ## Pureté & réutilisation (AD-28)
 ///
 /// - **AUCUN nouveau codec, AUCUNE heuristique textuelle** markdown-vs-Delta
-///   (`startsWith('[')`/`contains('"insert"')` — le code d'IFFD banni). La
+///   (`startsWith('[')`/`contains('"insert"')` — le code d'un consommateur legacy banni). La
 ///   détection de table est **STRUCTURELLE** (forme pipe-table ligne à ligne).
 /// - Le contrat table n'est **jamais dupliqué** : `zTableEmbedOp`/`kTableEmbedType`
 ///   sont **importés** de `package:zcrud_markdown` (couture NEUTRE — comblement
-///   ES-6.2). Ce fichier ne connaît QUE cette couture neutre — **jamais** Flutter
+/// ). Ce fichier ne connaît QUE cette couture neutre — **jamais** Flutter
 ///   ni Quill en direct (garde `data/`, `source_policy_test.dart`).
 ///
 /// ## Hors périmètre (rappel)
 ///
-/// **DW-ES22-2** (mapping de PERSISTANCE legacy IFFD : camelCase, `Timestamp`,
+/// (mapping de PERSISTANCE legacy : camelCase, `Timestamp`,
 /// `audioText`, `subjectId`/`creatorId`…) est dû à l'**adapter `zcrud_firestore`**
-/// (ES-3.5/ES-11.2, AD-27) — **jamais** ici. Ce migrateur opère sur des **ops
+/// (AD-27) — **jamais** ici. Ce migrateur opère sur des **ops
 /// neutres déjà normalisées** (contenu), pas sur la forme de persistance.
 library;
 
@@ -45,7 +45,7 @@ import '../domain/z_note_content.dart';
 
 /// Upgrade un **sticky-note** (texte plat legacy) vers des ops Delta neutres.
 ///
-/// **DÉLÈGUE** intégralement à [normalizeNoteContentOps] (D5 — préservant) : une
+/// **DÉLÈGUE** intégralement à [normalizeNoteContentOps] (préservant) : une
 /// `String` non-Delta non vide devient `[{'insert': '<raw>\n'}]` (le texte SURVIT
 /// VERBATIM, **jamais `[]`**). Aucune coercition ni heuristique n'est ajoutée ici.
 List<Map<String, dynamic>> zMigrateStickyNote(Object? raw) =>
@@ -67,7 +67,7 @@ List<Map<String, dynamic>> zMigrateNoteTables(List<Map<String, dynamic>> ops) {
     } else {
       // Op embed opaque (un tableau DÉJÀ migré porte `insert[kTableEmbedType]` ;
       // un embed LaTeX/média porte un autre type) OU op sans `insert` : réémise
-      // VERBATIM (idempotence AC6 / AD-10 — jamais ré-encapsulée ni altérée).
+      // VERBATIM (idempotence AD-10 — jamais ré-encapsulée ni altérée).
       out.add(op);
     }
   }
@@ -77,7 +77,7 @@ List<Map<String, dynamic>> zMigrateNoteTables(List<Map<String, dynamic>> ops) {
 /// Point d'entrée « corpus legacy → contenu canonique upgradé » :
 /// `zMigrateNoteTables(normalizeNoteContentOps(raw))`.
 ///
-/// [raw] = valeur `content` persistée quelconque (markdown lex, Delta JSON IFFD,
+/// [raw] = valeur `content` persistée quelconque (markdown lex, Delta JSON un consommateur legacy,
 /// texte plat…). Résultat : ops neutres, tables GFM structurées, prose préservée.
 List<Map<String, dynamic>> zUpgradeLegacyNoteContent(Object? raw) =>
     zMigrateNoteTables(normalizeNoteContentOps(raw));
@@ -111,7 +111,7 @@ void _emitTextWithTables(String text, List<Map<String, dynamic>> out) {
     if (tableStart > proseStart) {
       _addText(out, text.substring(proseStart, tableStart));
     }
-    // 2) Émet la table STRUCTURÉE (couture neutre — jamais dupliquée, SM-S4).
+    // 2) Émet la table STRUCTURÉE (couture neutre — jamais dupliquée).
     final Map<String, dynamic> embed = zTableEmbedOp(cells: span.cells);
     assert(
       (embed['insert']! as Map).containsKey(kTableEmbedType),

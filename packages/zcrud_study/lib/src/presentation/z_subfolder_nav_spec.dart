@@ -1,17 +1,18 @@
-/// `ZSubfolderNavSpec` — descripteur AGRÉGÉ (immuable) de la navigation de
-/// sous-dossiers de `ZStudyFolderDetail` (SUF-3, T1).
+/// `ZSubfolderNavSpec` — descripteur agrégé et immuable de la navigation de
+/// sous-dossiers de `ZStudyFolderDetail`.
 ///
-/// Regroupe la liste des sous-dossiers, le libellé de l'item racine, les slots
-/// (item builder, bouton « Ajouter », réordonnancement) et **tous** les libellés
-/// a11y — tous **injectés** (jamais codés en dur, AD-13/FR-26). Il ne porte
-/// **aucun état runtime** : la sélection, le repli et la largeur de la sidebar
-/// sont détenus par le widget (`ValueNotifier`, AD-2/AD-15) — ce descripteur ne
-/// fournit que la configuration et les bornes.
+/// Regroupe la liste des sous-dossiers, le libellé de l'item racine, les
+/// slots (constructeur d'item, bouton d'ajout, réordonnancement) et tous les
+/// libellés d'accessibilité — tous injectés, jamais codés en dur (invariant
+/// AD-13). Il ne porte aucun état d'exécution : la sélection, le repli et la
+/// largeur de la sidebar sont détenus par le widget (`ValueNotifier`,
+/// invariant AD-2) — ce descripteur ne fournit que la configuration et les
+/// bornes.
 ///
-/// L'item de sous-dossier est rendu via [itemBuilder] **injectable** (défaut =
-/// rangée neutre thémée) : `ZStudyFolderDetail` ne se couple donc PAS à la
-/// signature exacte de `ZFolderCard` (D3/R-SUF2) — l'hôte peut y brancher un
-/// rendu basé `ZFolderCard` s'il le souhaite.
+/// L'item de sous-dossier est rendu via [itemBuilder], injectable (défaut :
+/// rangée neutre thémée) : `ZStudyFolderDetail` ne se couple donc pas à la
+/// signature exacte d'une carte de dossier — l'hôte peut y brancher le rendu
+/// de son choix.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -20,23 +21,24 @@ import 'z_subfolder_ref.dart';
 import 'z_subfolder_selection_controller.dart';
 
 /// Construit l'item visuel d'un sous-dossier. [selected] permet à l'hôte de
-/// styler la sélection ; le widget applique DÉJÀ sa propre surbrillance neutre
-/// autour de l'item (ce builder n'est donc PAS obligé de la gérer).
+/// styler la sélection ; le widget applique déjà sa propre surbrillance
+/// neutre autour de l'item (ce builder n'est donc pas obligé de la gérer).
 ///
-/// **Le même builder sert les DEUX côtés du seuil de bascule** (sidebar ≥ 600 dp
-/// / sélecteur compact < 600 dp — contrat R-SUF2), or leurs contraintes de mise
-/// en page sont INCOMPATIBLES : la sidebar borne la largeur, le sélecteur
-/// compact ne la borne pas (rangée défilante). Un `ListTile`, un `Expanded` ou
-/// un `Spacer` exigent une largeur bornée et lèvent
-/// `BoxConstraints forces an infinite width` côté compact.
+/// Le même builder sert les deux côtés du seuil de bascule (sidebar large
+/// écran contre sélecteur compact petit écran), or leurs contraintes de mise
+/// en page sont incompatibles : la sidebar borne la largeur, le sélecteur
+/// compact ne la borne pas (rangée défilante). Un `ListTile`, un `Expanded`
+/// ou un `Spacer` exigent une largeur bornée et lèveraient une erreur de
+/// contrainte infinie côté compact.
 ///
-/// ⚠️ **Ne PAS tenter de lire la contrainte via un `LayoutBuilder`** : côté
-/// compact l'item est enveloppé dans un `ChoiceChip`, qui calcule un *dry
-/// layout* de son enfant ⇒ `The _RenderLayoutBuilder class does not support dry
-/// layout`. La voie est structurellement fermée.
+/// Ne pas tenter de lire la contrainte via un `LayoutBuilder` : côté
+/// compact, l'item est enveloppé dans un `ChoiceChip`, qui calcule un
+/// agencement à blanc de son enfant, incompatible avec `LayoutBuilder`. La
+/// voie est structurellement fermée.
 ///
-/// ✅ **Lire le mode via le `context` DÉJÀ reçu** — aucun paramètre
-/// supplémentaire, aucune duplication de la connaissance du seuil :
+/// La solution est de lire le mode via le `context` déjà reçu — aucun
+/// paramètre supplémentaire, aucune duplication de la connaissance du
+/// seuil :
 ///
 /// ```dart
 /// itemBuilder: (context, ref, selected) =>
@@ -54,7 +56,7 @@ typedef ZSubfolderItemBuilder = Widget Function(
 /// Construit l'**action** d'un item de fratrie — slot TRAILING, distinct du
 /// contenu (CR-IFFD-41, point 8).
 ///
-/// 🔴 **Mesuré avant d'ajouter** : ni [ZSubfolderItemBuilder] ni
+/// **Mesuré avant d'ajouter** : ni [ZSubfolderItemBuilder] ni
 /// `ZSubfolderNavRenderer` ne servaient déjà ce besoin.
 /// * `itemBuilder` construit le CONTENU, qui vit **à l'intérieur** de la zone
 ///   tapable de l'item : une action posée là est avalée par la sélection (et
@@ -113,7 +115,7 @@ enum ZSubfolderLayoutMode {
 /// **Quelle surface concrète** invoque un [ZSubfolderItemBuilder] — CR-IFFD-46,
 /// point 1.
 ///
-/// 🔴 **Le défaut que ce type ferme, et pourquoi [ZSubfolderLayoutMode] ne le
+/// **Le défaut que ce type ferme, et pourquoi [ZSubfolderLayoutMode] ne le
 /// fermait pas.** Avant CR-IFFD-46, la barre de sélection posait
 /// `ZSubfolderLayoutMode.compact` sur son DÉCLENCHEUR *et* sur sa FEUILLE, et
 /// `zBuildSubfolderItemContent` remettait la MÊME sentinelle
@@ -218,7 +220,7 @@ class ZSubfolderLayoutScope extends InheritedWidget {
 /// Surface de navigation rendue SOUS le seuil de bascule (< 600 dp) —
 /// CR-IFFD-40.
 ///
-/// 🔴 **Enum SÉPARÉ de [ZSubfolderLayoutMode], et c'est délibéré.** Ajouter une
+/// **Enum SÉPARÉ de [ZSubfolderLayoutMode], et c'est délibéré.** Ajouter une
 /// troisième valeur à [ZSubfolderLayoutMode] aurait cassé tout `switch`
 /// exhaustif d'hôte sur ce type — or c'est **le patron que son dartdoc
 /// recommande** et qu'un test de ce dépôt exerce
@@ -241,7 +243,7 @@ enum ZSubfolderNarrowMode {
   /// suis-je ». La question de l'utilisateur est « lequel est actif ? » **avant**
   /// « lesquels existent ? ».
   ///
-  /// 🔴 **CR-IFFD-41 — CHANGEMENT DE COMPORTEMENT** (nom du mode inchangé, API
+  /// **CR-IFFD-41 — CHANGEMENT DE COMPORTEMENT** (nom du mode inchangé, API
   /// inchangée) : la fratrie se déploie désormais en **feuille modale** (≤ 80 %
   /// de la hauteur d'écran), et non plus **en ligne** sous la barre comme en
   /// v0.34.0. L'hôte de référence (IFFD) a explicitement repris la main sur la
@@ -264,7 +266,7 @@ enum ZSubfolderNarrowMode {
 /// **Où** la navigation de fratrie est rendue dans une page à onglets
 /// (`ZStudyFolderDetail`) — CR-IFFD-43.
 ///
-/// 🔴 **Axe INDÉPENDANT du point de rupture.** Ce jeton dit *à quel niveau de la
+/// **Axe INDÉPENDANT du point de rupture.** Ce jeton dit *à quel niveau de la
 /// page* vit la navigation ; [ZSubfolderNarrowMode] dit *quelle surface* est
 /// rendue sous le seuil. Déduire le placement de la largeur reproduirait, sur
 /// l'axe « onglet », l'erreur que CR-IFFD-40 a corrigée sur l'axe « largeur ».
@@ -283,7 +285,7 @@ enum ZSubfolderNavPlacement {
   /// les onglets. L'onglet Matériel ne rend alors que son corps filtré — la
   /// navigation n'y est **pas** dupliquée.
   ///
-  /// 🔴 **Ce que devient la sidebar en forme large — arbitrage MESURÉ.**
+  /// **Ce que devient la sidebar en forme large — arbitrage MESURÉ.**
   /// Sous `aboveTabs`, **aucune sidebar n'est rendue, à aucune largeur** : la
   /// surface hissée est la **bande** (`ZSubfolderNarrowNav` : coquille de
   /// l'hôte, barre de sélection, ou rangée de puces selon
@@ -316,7 +318,7 @@ enum ZSubfolderNavPlacement {
   /// Matériel ne rend que son corps filtré (aucune duplication, **une seule**
   /// source de sélection).
   ///
-  /// 🔴 **Pourquoi un créneau DÉDIÉ et pas `subtitle` — mesuré, pas préféré.**
+  /// **Pourquoi un créneau DÉDIÉ et pas `subtitle` — mesuré, pas préféré.**
   /// `subtitle` vit dans le `title:` de l'`AppBar`, donc dans une toolbar de
   /// 56 dp **dont la hauteur ne dépend pas de son contenu**. Mesuré sur disque
   /// (écran 500×800, 3 onglets) : une bande de 48 dp y **recouvre le `TabBar`
@@ -326,7 +328,7 @@ enum ZSubfolderNavPlacement {
   /// comme à l'œil. Le créneau `aboveTabBar` du socle, lui, fait **réellement
   /// grandir** l'app-bar de la hauteur déclarée.
   ///
-  /// ⚠️ **La hauteur est DÉCLARÉE, jamais mesurée** (contrainte du socle : la
+  /// **La hauteur est DÉCLARÉE, jamais mesurée** (contrainte du socle : la
   /// hauteur doit être connue avant la mise en page, sans quoi le `Scaffold` a
   /// déjà réservé celle de l'app-bar). `ZStudyFolderDetail` la calcule à partir
   /// de la hauteur mesurée des deux surfaces du socle (48 dp) et de la marge de
@@ -354,7 +356,7 @@ enum ZSubfolderNavPlacement {
 /// réelle**. Ce n'est donc pas un réglage de masquage : l'action est la même,
 /// sa cible est la même ; seul son **emplacement** devient adressable.
 ///
-/// 🔴 **Ce jeton vit dans la SPEC, pas dans le thème — et c'est mesuré, pas
+/// **Ce jeton vit dans la SPEC, pas dans le thème — et c'est mesuré, pas
 /// stylistique.** Trois raisons, dans l'ordre de force :
 /// 1. Il décide de la **présence d'un contrôle interactif** dans l'arbre. Faire
 ///    dépendre l'atteignabilité d'une action d'un `ThemeExtension` ferait de
@@ -372,7 +374,7 @@ enum ZSubfolderNavPlacement {
 /// À l'inverse, `ZcrudTheme.subfolderBarPadding` (manque 2) est bien un token de
 /// thème : une marge ne fait apparaître ni disparaître aucune action.
 ///
-/// ⚠️ **Sans effet hors de la barre de sélection** ([ZSubfolderNarrowMode.selector]) :
+/// **Sans effet hors de la barre de sélection** ([ZSubfolderNarrowMode.selector]) :
 /// la rangée de puces et la sidebar n'ont **pas de feuille**, donc pas de second
 /// emplacement à arbitrer. Leur bouton d'ajout reste commandé par le seul
 /// `addAction` — y appliquer [sheetOnly] retirerait une action sans lui offrir
@@ -455,7 +457,7 @@ class ZSubfolderNavSpec {
   /// (CR-IFFD-46, point 1). `null` ⇒ repli sur [allSubfoldersLabel] ⇒ rendu
   /// strictement inchangé.
   ///
-  /// 🔴 **Deux surfaces, deux questions — c'est le défaut corrigé.**
+  /// **Deux surfaces, deux questions — c'est le défaut corrigé.**
   /// [allSubfoldersLabel] servait indistinctement :
   /// * le **DÉCLENCHEUR** de `ZSubfolderSelectorBar`, qui annonce le FILTRE
   ///   ACTIF — « aucun filtre » s'y dit bien « tous les sous-dossiers » ;
@@ -470,7 +472,7 @@ class ZSubfolderNavSpec {
   /// [ZSubfolderSurface.selectorSheet], [ZSubfolderSurface.sidebar],
   /// [ZSubfolderSurface.chips]. Le déclencheur ne le lit **jamais**.
   ///
-  /// ⚠️ Un [itemBuilder] injecté le reçoit dans la sentinelle racine
+  /// Un [itemBuilder] injecté le reçoit dans la sentinelle racine
   /// (`ZSubfolderRef(id: '', label: …)`) : il rend donc le bon libellé sans
   /// rien changer. Pour discriminer plus finement, il lit
   /// [ZSubfolderSurface.maybeOf].
@@ -495,7 +497,7 @@ class ZSubfolderNavSpec {
   /// Non-null ⇒ le libellé est autorisé à revenir à la ligne jusqu'à cette
   /// borne, puis s'abrège en `…` ([TextOverflow.ellipsis]).
   ///
-  /// 🔴 **Sans effet sur [ZSubfolderSurface.chips], et c'est MESURÉ, pas
+  /// **Sans effet sur [ZSubfolderSurface.chips], et c'est MESURÉ, pas
   /// omis.** Le retour à la ligne exige une largeur bornée ; la rangée de puces
   /// défile horizontalement, donc sa largeur est **non bornée**. Y poser le
   /// `Flexible` qu'exige le retour à la ligne lève *« RenderFlex children have
@@ -504,7 +506,7 @@ class ZSubfolderNavSpec {
   /// sur [ZSubfolderItemBuilder]. Le socle **n'y applique donc rien** plutôt que
   /// d'y planter. C'est [ZSubfolderSurface.boundsWidth] qui tranche.
   ///
-  /// 🔴 **Ce réglage CORRIGE un défaut, il ne fait pas qu'offrir un choix.**
+  /// **Ce réglage CORRIGE un défaut, il ne fait pas qu'offrir un choix.**
   /// Mesuré sur le rendu ACTUEL (`null`), feuille ouverte à 320 dp avec un
   /// libellé de 73 caractères : le `Text` est laissé à sa largeur intrinsèque de
   /// **1040,3 dp** dans une boîte de 279 dp et le socle lève
@@ -513,7 +515,7 @@ class ZSubfolderNavSpec {
   /// Le défaut n'est pas modifié pour autant (neutralité littérale exigée par
   /// AD-4) ; il est désormais **réparable en un champ**.
   ///
-  /// ⚠️ **ARBITRAGE TRANCHÉ — la bande hissée n'est PAS recalculée, et la
+  /// **ARBITRAGE TRANCHÉ — la bande hissée n'est PAS recalculée, et la
   /// mesure dit pourquoi.** Le même libellé sert la ligne racine **et** le
   /// déclencheur : la borne peut donc rendre le déclencheur plus haut, or sous
   /// [ZSubfolderNavPlacement.aboveTabBar] la hauteur de bande est **déclarée**
@@ -689,7 +691,7 @@ class ZSubfolderNavSpec {
   ///   aucun miroir : la barre, la sidebar, le corps Matériel filtré et le
   ///   second chemin de l'hôte commandent tous le **même et unique** état.
   ///
-  /// 🔴 **PRÉCÉDENCE tranchée — le contrôleur PRIME sur
+  /// **PRÉCÉDENCE tranchée — le contrôleur PRIME sur
   /// `ZStudyFolderDetail.initialSelectedSubfolderId`, qui est alors IGNORÉ.**
   /// C'est la clause 2 du patron appliquée sans exception : recopier l'amorce
   /// de la page dans le contrôleur reviendrait à ce que le socle **écrive**
@@ -700,7 +702,7 @@ class ZSubfolderNavSpec {
   /// contrôleur). Même arbitrage, même motif que
   /// `ZStudyToolsSectionSpec.expandController` vs `initiallyExpanded`.
   ///
-  /// 🔴 **POSSESSION** : l'hôte crée et détient le contrôleur (mixin
+  /// **POSSESSION** : l'hôte crée et détient le contrôleur (mixin
   /// `ZDisplayStateOwnerMixin` sur son `State`), **jamais** ce package — un
   /// contrôleur créé dans `build` serait remplacé à chaque rebuild et la
   /// commande deviendrait silencieusement inerte. Le patron le **refuse** au
@@ -714,7 +716,7 @@ class ZSubfolderNavSpec {
   /// pas besoin de **commander** a tout de même besoin de **savoir** (clause 3
   /// du patron — la notification ne suffit pas, mais elle reste nécessaire).
   ///
-  /// ⚠️ Émis à **chaque changement effectif de l'état, quelle qu'en soit
+  /// Émis à **chaque changement effectif de l'état, quelle qu'en soit
   /// l'origine** : un tap dans la barre, un tap dans la sidebar, **ou** une
   /// écriture de l'hôte sur [selectionController]. C'est délibéré : il n'y a
   /// qu'un état, donc un seul flux de vérité à constater ; filtrer les

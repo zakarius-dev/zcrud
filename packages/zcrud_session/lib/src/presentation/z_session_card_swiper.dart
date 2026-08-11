@@ -1,115 +1,113 @@
-/// `ZSessionCardSwiper` — pile de session **swipeable** (SU-4, AC1 — FR-SU6).
+/// `ZSessionCardSwiper` — pile de session swipeable.
 ///
-/// 🎯 **Le swipe est une NAVIGATION. Il ne note JAMAIS.**
+/// ## Le swipe est une navigation. Il ne note jamais.
 ///
-/// 🚫 Ce type n'a **AUCUN** paramètre de qualité, de notation ou de reviewer :
-/// la notation y est **structurellement impossible** (AD-33/AD-34 — le régime
-/// d'écriture est une propriété du TYPE). Elle appartient aux
-/// `ZSrsQualityButtons`, que l'hôte compose en **FRÈRE**, *hors* de la pile. La
-/// tentation « gauche = raté / droite = réussi » (le geste Tinder-like) est
-/// précisément ce que FR-SU6 interdit : ici, **les deux directions horizontales
-/// font avancer** (arbitrage A2) — ce qui **dissout** au passage la question RTL,
-/// `CardSwiperDirection.left/right` étant *physiques*.
+/// Ce type n'a aucun paramètre de qualité, de notation ou de reviewer : la
+/// notation y est structurellement impossible — le régime d'écriture est une
+/// propriété du type. Elle appartient aux `ZSrsQualityButtons`, que l'hôte
+/// compose en frère, hors de la pile. La tentation « gauche = raté / droite
+/// = réussi » (le geste façon appli de rencontre) est précisément ce que ce
+/// widget interdit : ici, les deux directions horizontales font avancer, ce
+/// qui dissout au passage la question RTL — `CardSwiperDirection.left/right`
+/// étant physiques, pas logiques.
 ///
-/// ## Pourquoi AUCUN retour arrière — ni au geste, ni au bouton
+/// ## Pourquoi aucun retour arrière — ni au geste, ni au bouton
 ///
-/// **La pile n'avance que.** Ce n'est pas un manque, c'est le modèle :
+/// La pile n'avance que. Ce n'est pas un manque, c'est le modèle :
 ///
-/// - **A2** — les deux directions de swipe **avancent**. Fait vérifié sur
-///   disque : `_swipe(dir)` mène à `_undoableIndex.state = _nextIndex`, soit
-///   **`+1` quelle que soit la direction** (`card_swiper_state.dart:295-300`).
-///   `CardSwiperController.swipe(left)` n'est **pas** « aller à la carte
-///   précédente » : c'est « chasser la carte courante vers la gauche », donc
-///   **avancer**.
-/// - **Aucun runtime ne recule** (AD-34) : dans les **trois** moteurs, `cursor`
-///   ne fait que croître (`cursor + 1`) ou se recaler après un retrait — aucun
-///   n'expose de retour arrière. Un bouton qui reculerait l'index **du widget**
-///   laisserait le `cursor` **du moteur** sur place : c'est-à-dire qu'il
-///   **fabriquerait** la désynchronisation à deux sources de vérité que
-///   [_queueGeneration] existe précisément pour fermer.
-/// - **AC9 n'en demande pas** : « l'apprenant veut **avancer** dans la pile ».
+/// - les deux directions de swipe avancent. `CardSwiperController.swipe(left)`
+///   n'est pas « aller à la carte précédente » : c'est « chasser la carte
+///   courante vers la gauche », donc avancer, quelle que soit la direction ;
+/// - aucun runtime ne recule : dans les trois moteurs, `cursor` ne fait que
+///   croître ou se recaler après un retrait — aucun n'expose de retour
+///   arrière. Un bouton qui reculerait l'index du widget laisserait le
+///   `cursor` du moteur sur place, fabriquant la désynchronisation à deux
+///   sources de vérité que [_queueGeneration] existe précisément pour
+///   fermer ;
+/// - le besoin qui motive ce widget est « avancer dans la pile », pas
+///   « revenir en arrière ».
 ///
-/// ⚠️ **Ce que [ZSessionCardSwiper.indexController] ne remet PAS en cause**
-/// (CR-IFFD-38) : le widget n'expose toujours **aucun bouton** de retour, et
-/// aucune de ses voies internes ne recule. Ce qui change, c'est qu'un hôte qui
-/// possède **déjà** une barre de navigation externe (flèches, saut direct à un
-/// index) cesse d'obtenir des **boutons morts** : il commande la carte courante
-/// par un [ZIndexController], et le composant lit/écrit **chez lui**. La
-/// synchronisation avec le `cursor` d'un moteur (qui, lui, ne recule pas) reste
-/// la charge de cet hôte — c'est **sa** commande, pas une voie du widget.
+/// Ce que [ZSessionCardSwiper.indexController] ne remet pas en cause : le
+/// widget n'expose toujours aucun bouton de retour, et aucune de ses voies
+/// internes ne recule. Ce qui change, c'est qu'un hôte qui possède déjà une
+/// barre de navigation externe (flèches, saut direct à un index) cesse
+/// d'obtenir des boutons morts : il commande la carte courante par un
+/// [ZIndexController], et le composant lit/écrit chez lui. La
+/// synchronisation avec le `cursor` d'un moteur (qui, lui, ne recule pas)
+/// reste la charge de cet hôte — c'est sa commande, pas une voie du widget.
 ///
-/// 🚫 Un bouton `previousButtonKey` étiqueté « carte précédente » a existé ici
-/// et **a été RETIRÉ** : câblé sur `swipe(left)`, il **avançait** (mesuré :
-/// index 0→1→**2**). Il ne mentait pas à n'importe qui — il mentait à
-/// **l'utilisateur de lecteur d'écran**, le seul public que cette rangée
-/// existe pour servir, et de façon **irrattrapable** (chaque tentative de
-/// correction avançait encore). La seule voie de retour du paquet, `undo()`,
-/// n'était câblée nulle part. **Un contrôle absent vaut mieux qu'un contrôle
-/// qui annonce l'inverse de ce qu'il fait** : l'utilisateur de lecteur d'écran
-/// dispose désormais **exactement** des mêmes déplacements que l'utilisateur du
-/// geste — la **parité** qu'exige AD-13.
+/// Un bouton « carte précédente » avait un temps existé ici, câblé sur
+/// `swipe(left)` — mais ce geste avance toujours, quelle que soit la
+/// direction. Il ne mentait donc pas à n'importe qui : il mentait à
+/// l'utilisateur de lecteur d'écran, le seul public que cette rangée existe
+/// pour servir, et de façon irrattrapable (chaque tentative de correction
+/// avançait encore). Un contrôle absent vaut mieux qu'un contrôle qui
+/// annonce l'inverse de ce qu'il fait : l'utilisateur de lecteur d'écran
+/// dispose donc exactement des mêmes déplacements que l'utilisateur du
+/// geste — la parité qu'exige l'invariant AD-13.
 ///
-/// ## L'ARÈNE DES GESTES, acte III — dissolution par la GÉOMÉTRIE
+/// ## L'arène des gestes — dissolution par la géométrie
 ///
-/// `flutter_card_swiper` pose sur la carte de devant un `GestureDetector` avec
-/// `onPanStart/Update/End` — un **`PanGestureRecognizer`, qui revendique LES DEUX
-/// AXES** (lu sur disque : `lib/src/widget/card_swiper_state.dart:109-174`) — **et** un `onTap`
-/// **toujours** enregistré. Il entre donc en arène contre tout ce qui vit
-/// **sous** lui. La réponse de su-4 n'est pas de dompter des recognizers, mais
-/// de faire en sorte que les gestes concurrents **ne se rencontrent jamais** :
+/// `flutter_card_swiper` pose sur la carte de devant un `GestureDetector`
+/// avec `onPanStart/Update/End` — un `PanGestureRecognizer` qui revendique
+/// les deux axes — et un `onTap` toujours enregistré. Il entre donc en
+/// arène contre tout ce qui vit sous lui. La réponse ici n'est pas de
+/// dompter des recognizers, mais de faire en sorte que les gestes
+/// concurrents ne se rencontrent jamais :
 ///
 /// ```text
 /// ZSessionCardSwiper           ← le pan ne couvre QUE ceci
 /// └── CardSwiper(cardBuilder:)
 ///     └── Stack
-///         ├── carte d'AFFICHAGE (su-2)   ← instance MÉMOÏSÉE (AC7)
-///         └── ZSwipeEmotionIndicator     ← IgnorePointer, ne vole rien
+///         ├── carte d'AFFICHAGE               ← instance mémoïsée
+///         └── ZSwipeEmotionIndicator          ← IgnorePointer, ne vole rien
 /// ─────────────────── frontière du swiper ───────────────────
-/// ZFlashcardAnswerInput   ← FRÈRE (su-3) — JAMAIS sous le pan
-/// ZSrsQualityButtons      ← FRÈRE (su-3) — la notation
+/// ZFlashcardAnswerInput   ← FRÈRE — jamais sous le pan
+/// ZSrsQualityButtons      ← FRÈRE — la notation
 /// ```
 ///
-/// 🚫 **Règle non négociable** : `ZFlashcardAnswerInput` / `ZSrsQualityButtons`
-/// ne descendent **JAMAIS** dans le [cardBuilder]. Un `TextField` sous un pan
-/// ancêtre, c'est le placement du curseur et la sélection qui se battent contre
-/// la navigation — aucun réglage de seuil ne rend cela fiable. Le conflit *drag
-/// ∥ saisie* est **dissous par construction**, pas arbitré.
+/// Règle non négociable : `ZFlashcardAnswerInput` / `ZSrsQualityButtons` ne
+/// descendent jamais dans le [cardBuilder]. Un `TextField` sous un pan
+/// ancêtre, c'est le placement du curseur et la sélection qui se battent
+/// contre la navigation — aucun réglage de seuil ne rend cela fiable. Le
+/// conflit drag contre saisie est dissous par construction, pas arbitré.
 ///
-/// ## Réglages du `CardSwiper` — chacun adossé à un fait vérifié sur disque
+/// ## Réglages du `CardSwiper` — chacun adossé à un comportement vérifié du
+/// paquet tiers
 ///
-/// | Réglage | Valeur | Pourquoi (AD-10) |
+/// | Réglage | Valeur | Pourquoi (invariant AD-10) |
 /// |---|---|---|
-/// | `cardsCount` | `queue.length`, **jamais 0** | `cardsCount = 0` ⇒ **2 asserts du ctor lèvent** ⇒ repli AVANT construction |
-/// | `numberOfCardsDisplayed` | `min(2, queue.length)` | défaut **2** ⇒ `assert(… <= cardsCount)` ⇒ **crash sur une file d'UNE carte** |
-/// | `isLoop` | **`false`** | défaut **`true`** ⇒ la session **ne se termine jamais** |
-/// | `duration` | `Duration.zero` sous Reduce Motion | animation **réelle** de 200 ms (NFR-SU3) |
-/// | `allowedSwipeDirection` | `symmetric(horizontal: true)` | **porteur PENDANT le drag ET à la fin** — cf. ci-dessous |
-/// | `onSwipe` | navigation seule → [onIndexChanged] | `FutureOr<bool>` **`await`é** par le paquet ⇒ handler gardé **SYNCHRONE** (AC12) |
+/// | `cardsCount` | `queue.length`, jamais 0 | `cardsCount = 0` ferait lever deux asserts du constructeur ⇒ repli avant construction |
+/// | `numberOfCardsDisplayed` | `min(2, queue.length)` | défaut 2 exigerait `<= cardsCount` ⇒ crash sur une file d'une carte |
+/// | `isLoop` | `false` | défaut `true` ⇒ la session ne se termine jamais |
+/// | `duration` | `Duration.zero` sous Reduce Motion | sinon une animation réelle de 200 ms persiste |
+/// | `allowedSwipeDirection` | `symmetric(horizontal: true)` | porteur pendant le drag et à la fin — voir ci-dessous |
+/// | `onSwipe` | navigation seule → [onIndexChanged] | `FutureOr<bool>` attendu par le paquet ⇒ handler gardé synchrone |
 ///
-/// ⚠️ **`allowedSwipeDirection` fait DEUX choses** (mesuré, contre une version
-/// antérieure de cette dartdoc qui n'en voyait qu'une) :
-/// 1. **à la fin du geste** — `_isValidDirection` (lu dans `_onEndAnimation`)
-///    rejette `top`/`bottom` ⇒ `_goBack()`, `onSwipe` jamais appelé ;
-/// 2. **PENDANT le drag** — `CardAnimation.update` (`card_animation.dart:79-96`)
-///    n'applique `dy` **que si** `up`/`down` est autorisé. Avec
-///    `symmetric(horizontal: true)`, `up == down == false` ⇒ **aucune branche**
-///    ⇒ `top` n'est **jamais** modifié : un pan vertical gagnant **ne translate
-///    rien** (mesuré : `topLeft` (8,8) → (8,8), delta 0).
+/// `allowedSwipeDirection` fait deux choses :
+/// 1. à la fin du geste, il rejette une direction verticale et empêche
+///    `onSwipe` d'être appelé ;
+/// 2. pendant le drag, le paquet n'applique un déplacement vertical que si
+///    la direction verticale correspondante est autorisée. Avec
+///    `symmetric(horizontal: true)`, aucune direction verticale n'est
+///    autorisée, donc aucun déplacement vertical n'est appliqué même pendant
+///    un pan qui gagne l'arène sur cet axe.
 ///
-/// 🚫 Ne pas en conclure que ce réglage est « cosmétique pendant le drag » et le
-/// remplacer par `AllowedSwipeDirection.all()` : cela **rendrait réelle** une
-/// translation verticale qui n'existe pas aujourd'hui, et sur une carte courte
-/// (où le `Scrollable` décline le geste, faute de quoi défiler) la carte se
-/// mettrait à suivre le doigt verticalement et à s'envoler. Le `PanGestureRecognizer`
-/// revendique bien les deux axes dans l'arène — c'est `CardAnimation.update` qui
-/// est le garde-fou, pas `_isValidDirection` seul.
+/// Ne pas en conclure que ce réglage est cosmétique pendant le drag et le
+/// remplacer par `AllowedSwipeDirection.all()` : cela rendrait réelle une
+/// translation verticale qui n'existe pas aujourd'hui, et sur une carte
+/// courte (où le `Scrollable` décline le geste, faute de quoi défiler) la
+/// carte se mettrait à suivre le doigt verticalement et à s'envoler. Le
+/// `PanGestureRecognizer` revendique bien les deux axes dans l'arène — c'est
+/// ce réglage qui est le garde-fou pendant le drag, pas seulement la
+/// validation de fin de geste.
 ///
-/// **Widget PUR** (AD-2/AD-15) : aucun gestionnaire d'état, aucun moteur, aucun
-/// `ZSrsScheduler`. Le `CardSwiperController` est **possédé** (créé en
-/// `initState`, libéré en `dispose` — jamais dans `build`).
+/// Widget pur (invariants AD-2/AD-15) : aucun gestionnaire d'état, aucun
+/// moteur, aucun `ZSrsScheduler`. Le `CardSwiperController` est possédé
+/// (créé en `initState`, libéré en `dispose` — jamais dans `build`).
 ///
-/// 🔒 **Confinement (AC10/NFR-SU7)** : c'est le **SEUL** fichier du monorepo qui
-/// importe `flutter_card_swiper`, et **aucun** type du paquet n'apparaît dans une
+/// Confinement : c'est le seul fichier du monorepo qui importe
+/// `flutter_card_swiper`, et aucun type du paquet n'apparaît dans une
 /// signature publique — le barrel ne le réexporte pas.
 library;
 
@@ -124,34 +122,34 @@ import 'package:zcrud_flashcard/zcrud_flashcard.dart' show zReduceMotionOf;
 import '../domain/z_session_item.dart';
 import 'z_session_progress_indicator.dart';
 
-/// Construit la carte d'**AFFICHAGE** d'un item (typiquement
-/// `ZFlashcardReviewCard`, su-2). **Jamais** une surface de saisie ou de
-/// notation : celles-ci vivent en frères, hors de la pile.
+/// Construit la carte d'affichage d'un item (typiquement
+/// `ZFlashcardReviewCard`). Jamais une surface de saisie ou de notation :
+/// celles-ci vivent en frères, hors de la pile.
 typedef ZSessionCardBuilder = Widget Function(
   BuildContext context,
   ZSessionItem item,
 );
 
-/// Pile de session swipeable — **navigation seule**.
+/// Pile de session swipeable — navigation seule.
 class ZSessionCardSwiper extends StatefulWidget {
   /// Construit la pile.
   ///
-  /// - [queue] : file **DÉJÀ sélectionnée** (AD-33 : ce widget ne sélectionne
-  ///   jamais — il ne connaît ni filtre, ni échéance, ni mode) ;
-  /// - [cardBuilder] : carte d'**AFFICHAGE** d'un item ;
-  /// - [onIndexChanged] : **navigation seule** — émis à chaque avancée, quelle
-  ///   qu'en soit l'origine (geste **ou** bouton d'accessibilité : une seule
-  ///   voie d'émission, arbitrage A6) ;
-  /// - [onStackEnd] : fin de pile. su-4 **émet** l'événement et rend **aucune**
-  ///   UI de fin — l'écran de fin est su-5 (arbitrage A7) ;
-  /// - [emptyBuilder] : repli **file vide** (AD-10/AC11) ;
-  /// - [progressStyle] : variante d'indicateur (**enum**) ;
+  /// - [queue] : file déjà sélectionnée — ce widget ne sélectionne jamais,
+  ///   il ne connaît ni filtre, ni échéance, ni mode ;
+  /// - [cardBuilder] : carte d'affichage d'un item ;
+  /// - [onIndexChanged] : navigation seule — émis à chaque avancée, quelle
+  ///   qu'en soit l'origine (geste ou bouton d'accessibilité : une seule
+  ///   voie d'émission) ;
+  /// - [onStackEnd] : fin de pile. Ce widget émet l'événement et ne rend
+  ///   aucune UI de fin — l'écran de fin est composé par l'hôte ;
+  /// - [emptyBuilder] : repli file vide (invariant AD-10) ;
+  /// - [progressStyle] : variante d'indicateur (enum) ;
   /// - [qualityOf] : seam « qualité obtenue à l'index i » (indicateur) ;
-  /// - [passThreshold] : frontière réussite/lapse **INJECTÉE** (jamais `3`) ;
-  /// - [swipeDuration] : durée d'animation, **ramenée à zéro** sous Reduce Motion.
+  /// - [passThreshold] : frontière réussite/lapse injectée (jamais un
+  ///   littéral en dur) ;
+  /// - [swipeDuration] : durée d'animation, ramenée à zéro sous Reduce Motion.
   ///
-  /// 🚫 **Aucun paramètre de notation** — c'est un invariant du type, pas un
-  /// oubli (AC1). En ajouter un rougit `z_swipe_never_grades_test.dart`.
+  /// Aucun paramètre de notation — c'est un invariant du type, pas un oubli.
   const ZSessionCardSwiper({
     required this.queue,
     required this.cardBuilder,
@@ -166,65 +164,63 @@ class ZSessionCardSwiper extends StatefulWidget {
     super.key,
   });
 
-  /// File **déjà sélectionnée** (AD-33).
+  /// File déjà sélectionnée (invariant AD-1).
   final List<ZSessionItem> queue;
 
   /// Constructeur de la carte d'affichage.
   final ZSessionCardBuilder cardBuilder;
 
-  /// Frontière réussite/lapse INJECTÉE, relayée à l'indicateur (AD-46).
+  /// Frontière réussite/lapse injectée, relayée à l'indicateur.
   final int passThreshold;
 
-  /// Notification d'avancée — **navigation seule**, jamais une note.
+  /// Notification d'avancée — navigation seule, jamais une note.
   final ValueChanged<int>? onIndexChanged;
 
-  /// Notification de fin de pile (aucune UI — su-5).
+  /// Notification de fin de pile (aucune UI de fin rendue ici).
   final VoidCallback? onStackEnd;
 
-  /// Repli **file vide** (AD-10). `null` ⇒ repli par défaut localisé.
+  /// Repli file vide (invariant AD-10). `null` : repli par défaut localisé.
   final WidgetBuilder? emptyBuilder;
 
-  /// Variante d'indicateur de progression (**enum**).
+  /// Variante d'indicateur de progression (enum).
   final ZSessionProgressStyle progressStyle;
 
-  /// Seam « qualité obtenue à l'index i » (`null` ⇒ aucune carte notée).
+  /// Seam « qualité obtenue à l'index i » (`null` : aucune carte notée).
   final ZSessionQualityAtIndex? qualityOf;
 
   /// Durée d'animation de swipe (`Duration.zero` sous Reduce Motion).
   final Duration swipeDuration;
 
-  /// Pilote **optionnel** de la carte courante (CR-IFFD-38, patron
-  /// [ZDisplayStateBinding]).
+  /// Pilote optionnel de la carte courante (patron [ZDisplayStateBinding]).
   ///
-  /// - `null` (défaut) ⇒ l'index vit **en interne**, comportement et rendu
-  ///   **strictement inchangés** ;
-  /// - non-null ⇒ **le contrôleur EST la source de vérité** : le composant n'en
-  ///   garde **aucun miroir** (il lit et écrit chez l'hôte), de sorte que deux
+  /// - `null` (défaut) : l'index vit en interne, comportement et rendu
+  ///   strictement inchangés ;
+  /// - non-null : le contrôleur est la source de vérité, le composant n'en
+  ///   garde aucun miroir (il lit et écrit chez l'hôte), de sorte que deux
   ///   états ne peuvent pas diverger. Une écriture de l'hôte (`value = 3`,
-  ///   `next()`, `previous()`) **déplace réellement la carte de devant** via
-  ///   `CardSwiperController.moveTo` — c'est ce qui distingue ce paramètre d'un
-  ///   passe-plat inerte.
+  ///   `next()`, `previous()`) déplace réellement la carte de devant via
+  ///   `CardSwiperController.moveTo` — c'est ce qui distingue ce paramètre
+  ///   d'un passe-plat inerte.
   ///
-  /// **AD-10 — commande hors bornes** : une valeur `< 0` ou `>= queue.length`
-  /// est **ramenée dans les bornes ET RÉÉCRITE dans le contrôleur** (jamais
-  /// simplement ignorée) : ignorer laisserait le contrôleur de l'hôte affirmer
-  /// un index que rien n'affiche — exactement la divergence que le contrat
-  /// interdit.
+  /// Défensif (invariant AD-10) : une commande hors bornes (`< 0` ou
+  /// `>= queue.length`) est ramenée dans les bornes et réécrite dans le
+  /// contrôleur, jamais simplement ignorée — l'ignorer laisserait le
+  /// contrôleur de l'hôte affirmer un index que rien n'affiche.
   ///
   /// [onIndexChanged] reste émis, quelle que soit l'origine (geste, bouton
-  /// d'accessibilité, **ou commande de l'hôte**) — la notification sortante
-  /// n'est pas remplacée par le pilote, elle lui survit (clause 3).
+  /// d'accessibilité, ou commande de l'hôte) — la notification sortante
+  /// n'est pas remplacée par le pilote, elle lui survit.
   final ZIndexController? indexController;
 
-  /// Clé du bouton de navigation **suivant** (alternative accessible, AC9).
+  /// Clé du bouton de navigation suivant (alternative accessible).
   ///
-  /// 🚫 **Il n'existe DÉLIBÉRÉMENT aucun bouton « précédent »** — cf. la
-  /// dartdoc de librairie, § « Pourquoi aucun retour arrière ».
+  /// Il n'existe délibérément aucun bouton « précédent » — voir la dartdoc
+  /// de librairie, section « Pourquoi aucun retour arrière ».
   static const ValueKey<String> nextButtonKey =
       ValueKey<String>('zSwiperNext');
 
-  /// Clé du repli **file vide** par défaut (AC11 — le test doit pouvoir
-  /// **observer** le repli, pas seulement constater l'absence d'exception).
+  /// Clé du repli file vide par défaut, pour qu'un test puisse observer le
+  /// repli plutôt que constater seulement l'absence d'exception.
   static const ValueKey<String> emptyKey = ValueKey<String>('zSwiperEmpty');
 
   /// Clé l10n du repli file vide.
@@ -233,12 +229,11 @@ class ZSessionCardSwiper extends StatefulWidget {
   /// Clé l10n du bouton « carte suivante ».
   static const String nextLabelKey = 'zcrud.session.next';
 
-  /// Cible tap minimale Material/AD-13 (dp).
+  /// Cible tap minimale (dp), invariant AD-13.
   ///
-  /// ⚠️ **Non négociable ici** : `grep -rn "Semantics" flutter_card_swiper-7.2.0/lib/`
-  /// → **RC=1**. Le paquet n'expose **AUCUNE** sémantique ⇒ la pile est
-  /// **inutilisable** au lecteur d'écran. Cette alternative n'est pas une
-  /// précaution : elle comble un **trou mesuré**.
+  /// Non négociable ici : le paquet tiers `flutter_card_swiper` n'expose
+  /// aucune sémantique, ce qui rendrait la pile inutilisable au lecteur
+  /// d'écran sans cette alternative accessible.
   static const double minTarget = 48;
 
   @override
@@ -246,91 +241,88 @@ class ZSessionCardSwiper extends StatefulWidget {
 }
 
 class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
-  /// Contrôleur **POSSÉDÉ** — créé ici, libéré ici. Jamais dans `build`
+  /// Contrôleur possédé — créé ici, libéré ici. Jamais dans `build`
   /// (`dispose()` est `Future<void>` et le recréer par frame fuirait).
   late final CardSwiperController _controller = CardSwiperController();
 
-  /// Carte courante — **liaison** CR-IFFD-38, jamais un miroir.
+  /// Carte courante — liaison vers l'index, jamais un miroir.
   ///
   /// Sans [ZSessionCardSwiper.indexController], l'état vit dans le
   /// `ValueNotifier` interne de la liaison (comportement d'origine). Avec un
-  /// contrôleur, **toute** lecture et **toute** écriture le traversent : il n'y
-  /// a qu'un seul état, donc rien qui puisse diverger.
+  /// contrôleur, toute lecture et toute écriture le traversent : il n'y a
+  /// qu'un seul état, donc rien qui puisse diverger.
   late final ZDisplayStateBinding<int> _current;
 
-  /// Index sur lequel se trouve **le paquet** (`CardSwiper._currentIndex`).
+  /// Index sur lequel se trouve le paquet tiers (`CardSwiper._currentIndex`).
   ///
-  /// ⚠️ Ce n'est **pas** un miroir de l'état d'affichage : c'est notre
-  /// connaissance du curseur **interne d'une dépendance tierce**, que rien
-  /// n'expose en lecture. Il sert à décider si une nouvelle valeur vient du
-  /// paquet (rien à faire) ou de l'hôte (le paquet doit être déplacé) — sans
-  /// lui, chaque swipe déclencherait un `moveTo` redondant sur l'index où le
-  /// paquet se trouve déjà.
+  /// Ce n'est pas un miroir de l'état d'affichage : c'est notre connaissance
+  /// du curseur interne d'une dépendance tierce, que rien n'expose en
+  /// lecture. Il sert à décider si une nouvelle valeur vient du paquet (rien
+  /// à faire) ou de l'hôte (le paquet doit être déplacé) — sans lui, chaque
+  /// swipe déclencherait un `moveTo` redondant sur l'index où le paquet se
+  /// trouve déjà.
   int _swiperIndex = 0;
 
   /// Vrai pendant la remise à zéro consécutive à un changement de file : la
-  /// réconciliation et l'émission sont alors **suspendues** (avant CR-IFFD-38,
-  /// ce reset n'émettait rien — il ne doit pas se mettre à émettre).
+  /// réconciliation et l'émission sont alors suspendues (ce reset n'a jamais
+  /// dû émettre d'événement).
   bool _resettingQueue = false;
 
-  /// 🔒 **Verrou ONE-SHOT de [ZSessionCardSwiper.onIndexChanged]** : le dernier
+  /// Verrou one-shot de [ZSessionCardSwiper.onIndexChanged] : le dernier
   /// index réellement émis — dédoublonne toute ré-émission d'un même index.
   ///
-  /// ⚠️ **Portée honnête, MESURÉE** : avec le paquet en 7.2.0 et un
-  /// [_handleSwipe] **synchrone**, ce verrou n'est **jamais atteint** (mesuré :
-  /// un triple tap sans laisser retomber l'animation n'émet qu'un seul index —
-  /// le paquet avance `_undoableIndex` une fois par swipe **complété**). Il est
-  /// conservé comme **défense en profondeur** d'AC12, pas comme la cause du
-  /// comportement : ce dernier tient à la **synchronicité** de [_handleSwipe]
-  /// (cf. sa dartdoc) et au gating d'animation du paquet.
+  /// Portée honnête : avec un [_handleSwipe] synchrone, ce verrou n'est
+  /// jamais réellement sollicité en pratique (le paquet n'avance son index
+  /// interne qu'une fois par swipe complété). Il est conservé comme défense
+  /// en profondeur, pas comme la cause du comportement observé : celui-ci
+  /// tient à la synchronicité de [_handleSwipe] (voir sa dartdoc) et au
+  /// gating d'animation du paquet.
   int? _lastEmittedIndex;
 
-  /// 🔒 **Verrou ONE-SHOT de fin de pile** (même portée honnête que
-  /// [_lastEmittedIndex] : non atteint avec `isLoop: false`, où l'index devient
-  /// `null` après la dernière carte et interdit tout swipe ultérieur).
+  /// Verrou one-shot de fin de pile (même portée honnête que
+  /// [_lastEmittedIndex] : non atteint avec `isLoop: false`, où l'index
+  /// devient `null` après la dernière carte et interdit tout swipe ultérieur).
   bool _stackEnded = false;
 
-  /// Cache d'instances de carte **par index** (AC7/NFR-SU2).
+  /// Cache d'instances de carte par index.
   ///
-  /// ⚠️ **Pourquoi un cache et non un `const`** : `onPanUpdate` appelle
-  /// `setState` ⇒ le [ZSessionCardSwiper.cardBuilder] **EST** ré-invoqué à
-  /// **chaque frame** de drag (fait vérifié sur disque, non contournable depuis
-  /// l'extérieur du paquet). La granularité s'obtient donc en rendant
-  /// l'invocation **inoffensive** : on renvoie l'instance **identique**
-  /// (`identical(w1, w2) == true`) ⇒ `Element.updateChild` court-circuite tout
-  /// le sous-arbre de la carte. Patron hérité de su-2 (contenu hissé en `child:`).
+  /// Pourquoi un cache et non un `const` : `onPanUpdate` appelle `setState`,
+  /// donc le [ZSessionCardSwiper.cardBuilder] est ré-invoqué à chaque frame
+  /// de drag (comportement du paquet tiers, non contournable depuis
+  /// l'extérieur). La granularité s'obtient donc en rendant l'invocation
+  /// inoffensive : on renvoie l'instance identique
+  /// (`identical(w1, w2) == true`), ce qui fait court-circuiter tout le
+  /// sous-arbre de la carte par `Element.updateChild`.
   final Map<int, Widget> _cardCache = <int, Widget>{};
 
-  /// 🔑 **Génération de file** — incrémentée à chaque changement RÉEL de
-  /// [ZSessionCardSwiper.queue], et **seulement** là. Sert de `key` au
-  /// `CardSwiper` (cf. [build]).
+  /// Génération de file — incrémentée à chaque changement réel de
+  /// [ZSessionCardSwiper.queue], et seulement là. Sert de `key` au
+  /// `CardSwiper` (voir [build]).
   ///
-  /// ⚠️ **Ce n'est PAS un jeton décoratif** (à ne pas confondre avec le jeton
-  /// `_generation` de concurrence, retiré à raison — cf. [_handleSwipe]) : il
-  /// ferme un **crash mesuré**. Le `CardSwiper` porte sa **propre** source de
-  /// vérité d'index (`_undoableIndex`), posée **uniquement en `initState`**
-  /// (`card_swiper_state.dart:32`) et que **son** `didUpdateWidget` ne
-  /// réinitialise **jamais** (`:54-60` — il ne fait que ré-abonner le
-  /// contrôleur). Sans `key`, l'`Element` est réutilisé au changement de file :
-  /// l'index du paquet **survit** à une file qu'il n'indexe plus.
+  /// Ce n'est pas un jeton décoratif : il ferme un crash réel. Le
+  /// `CardSwiper` porte sa propre source de vérité d'index, posée
+  /// uniquement à sa construction et que son cycle de mise à jour ne
+  /// réinitialise jamais (il ne fait que ré-abonner le contrôleur). Sans
+  /// `key`, l'`Element` est réutilisé au changement de file : l'index du
+  /// paquet survit à une file qu'il n'indexe plus.
   ///
-  /// Trois défauts en découlaient, **tous mesurés**, tous de cette racine :
-  /// 1. **CRASH** (`RangeError`) — file qui **rétrécit** : `numberOfCardsOnScreen()`
-  ///    rend `min(displayed, cardsCount - index)` (`:338-350`), **négatif** dès
-  ///    que `index > cardsCount` ⇒ `List.generate(-1, …)` **lève en plein
-  ///    `build`** (écran rouge). Or `ZStudySessionEngine.reduceGrade` fait
-  ///    `queue.removeAt(cursor)` **sans réinsérer sur une réussite**
-  ///    (`z_study_session_engine.dart:79`) : **toute réussite rétrécit la file**.
-  ///    C'était le chemin **NOMINAL**, pas un cas limite.
-  /// 2. **Indicateur MENTEUR** — file remplacée à longueur égale : `_index`
-  ///    repartait à `0` (« 1/3 ») pendant que le paquet restait sur la 3ᵉ carte.
-  /// 3. **Cul-de-sac** — `index == cardsCount` : `min(2, 0) = 0` ⇒ écran **vide**
-  ///    sans repli (la file n'est pas vide ⇒ `emptyBuilder` hors d'atteinte) et
-  ///    **`onStackEnd` jamais émis** ⇒ session sans fin ni recours (AD-10).
+  /// Trois défauts en découlaient, tous de cette même racine :
+  /// 1. crash (`RangeError`) sur une file qui rétrécit : le calcul du
+  ///    nombre de cartes visibles à l'écran devient négatif dès que l'index
+  ///    interne dépasse la nouvelle longueur de file, et lève en plein
+  ///    `build`. Or `ZStudySessionEngine.reduceGrade` retire la carte
+  ///    courante sans la réinsérer sur une réussite : toute réussite
+  ///    rétrécit la file. C'était le chemin nominal, pas un cas limite ;
+  /// 2. indicateur menteur — file remplacée à longueur égale : l'indicateur
+  ///    de ce widget repartait à `0` pendant que le paquet restait sur une
+  ///    carte plus avancée ;
+  /// 3. cul-de-sac — quand l'index atteignait le nombre de cartes, l'écran
+  ///    restait vide sans repli et `onStackEnd` n'était jamais émis, donc
+  ///    une session sans fin ni recours (invariant AD-10).
   ///
-  /// En remontant le `CardSwiper`, `initState` est rejoué ⇒ `_undoableIndex`
-  /// revient à `initialIndex` (0) — **aligné** sur le `_index = 0` que ce State
-  /// s'impose déjà. Les trois défauts se ferment d'un seul geste.
+  /// En remontant le `CardSwiper`, son état interne est reconstruit et
+  /// revient à son index initial (0) — aligné sur le `_swiperIndex = 0` que
+  /// ce `State` s'impose déjà. Les trois défauts se ferment d'un seul geste.
   int _queueGeneration = 0;
 
   @override
@@ -338,7 +330,7 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
     super.initState();
     _current = ZDisplayStateBinding<int>(consumer: this, initialValue: 0)
       ..bind(widget.indexController);
-    // 🔒 VOIE UNIQUE de réaction : geste du paquet, bouton d'accessibilité ET
+    // Voie unique de réaction : geste du paquet, bouton d'accessibilité et
     // commande de l'hôte convergent ici. Deux voies feraient diverger le
     // comptage émis de la carte affichée.
     _current.listenable.addListener(_onCurrentChanged);
@@ -353,7 +345,8 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
     }
   }
 
-  /// Ramène [index] dans les bornes de la file (AD-10) — file vide ⇒ `0`.
+  /// Ramène [index] dans les bornes de la file (invariant AD-10) — file
+  /// vide donne `0`.
   int _clampIndex(int index) {
     final int last = widget.queue.length - 1;
     if (last < 0) return 0;
@@ -380,8 +373,9 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
       _resettingQueue = true;
       _current.value = 0;
       _resettingQueue = false;
-      // 🔑 Remonte le `CardSwiper` : sans cela son index interne survivrait à la
-      // file (crash / indicateur menteur / cul-de-sac — cf. [_queueGeneration]).
+      // Remonte le `CardSwiper` : sans cela son index interne survivrait à
+      // la file (crash / indicateur menteur / cul-de-sac — voir
+      // [_queueGeneration]).
       _queueGeneration++;
     }
   }
@@ -389,85 +383,75 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   @override
   void dispose() {
     _controller.dispose();
-    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // La liaison ne dispose jamais le contrôleur de l'hôte : il ne nous
     // appartient pas (son propriétaire est un `State` de l'hôte).
     _current.listenable.removeListener(_onCurrentChanged);
     _current.dispose();
     super.dispose();
   }
 
-  /// Écrit l'avancée **à la source** (interne, ou contrôleur de l'hôte).
+  /// Écrit l'avancée à la source (interne, ou contrôleur de l'hôte).
   ///
-  /// Ne fait QUE écrire : la réconciliation du paquet et l'émission sont la
-  /// charge de [_onCurrentChanged], qui écoute la source. Émettre ici laisserait
-  /// **muet** le chemin qui ne passe pas par le composant (l'hôte écrivant dans
-  /// son contrôleur), et la promesse « émis à chaque avancée » ne vaudrait que
-  /// pour les chemins internes.
+  /// Ne fait qu'écrire : la réconciliation du paquet et l'émission sont la
+  /// charge de [_onCurrentChanged], qui écoute la source. Émettre ici
+  /// laisserait muet le chemin qui ne passe pas par le composant (l'hôte
+  /// écrivant dans son contrôleur), et la promesse « émis à chaque avancée »
+  /// ne vaudrait que pour les chemins internes.
   void _emitIndexChanged(int index) {
-    _swiperIndex = index; // le paquet est DÉJÀ là : aucun `moveTo` à demander.
+    _swiperIndex = index; // le paquet est déjà là : aucun `moveTo` à demander.
     _current.value = index;
   }
 
-  /// **Voie UNIQUE** de réaction à un changement de carte courante, d'où qu'il
-  /// vienne : swipe, bouton d'accessibilité, **ou commande de l'hôte**.
+  /// Voie unique de réaction à un changement de carte courante, d'où qu'il
+  /// vienne : swipe, bouton d'accessibilité, ou commande de l'hôte.
   void _onCurrentChanged() {
     if (_resettingQueue) return;
     final int raw = _current.value;
     final int clamped = _clampIndex(raw);
     if (clamped != raw) {
-      // AD-10 — commande hors bornes : corrigée À LA SOURCE (ré-entrée avec la
-      // valeur valide). L'ignorer laisserait le contrôleur de l'hôte affirmer
-      // un index que rien n'affiche.
+      // Commande hors bornes : corrigée à la source (ré-entrée avec la
+      // valeur valide). L'ignorer laisserait le contrôleur de l'hôte
+      // affirmer un index que rien n'affiche.
       _current.value = clamped;
       return;
     }
     if (clamped != _swiperIndex) {
-      // Origine HÔTE : le paquet ne bouge pas tout seul. Sans ce `moveTo`, le
-      // paramètre serait un passe-plat inerte — un bouton mort de plus.
+      // Origine hôte : le paquet ne bouge pas tout seul. Sans ce `moveTo`,
+      // le paramètre serait un passe-plat inerte — un bouton mort de plus.
       _swiperIndex = clamped;
       _controller.moveTo(clamped);
     }
-    if (_lastEmittedIndex == clamped) return; // 🔒 one-shot
+    if (_lastEmittedIndex == clamped) return; // one-shot
     _lastEmittedIndex = clamped;
     widget.onIndexChanged?.call(clamped);
   }
 
-  /// `onSwipe` du paquet — **navigation SEULE**, et **SYNCHRONE** (AC12).
+  /// `onSwipe` du paquet — navigation seule, et synchrone.
   ///
-  /// 🚫 Aucune qualité n'est dérivée de [direction] : le paramètre est ignoré,
-  /// et c'est **délibéré** (FR-SU6/AC2). Le mapper serait le geste Tinder-like
-  /// que la story interdit.
+  /// Aucune qualité n'est dérivée de [direction] : le paramètre est ignoré,
+  /// et c'est délibéré. Le mapper serait le geste façon appli de rencontre
+  /// que ce widget interdit.
   ///
-  /// 🔒 **SYNCHRONE — c'est ICI que la fenêtre de concurrence est DISSOUTE, pas
-  /// gardée** (AC12). `CardSwiperOnSwipe` est un `FutureOr<bool>` que le paquet
-  /// **`await`e** (`_handleCompleteSwipe` :
-  /// `await widget.onSwipe?.call(...) == false`). Un handler **asynchrone**
-  /// ouvrirait donc une fenêtre réelle pendant laquelle la file peut changer —
-  /// la racine exacte du D1 MAJEUR de su-3.
+  /// Synchrone : c'est ici que la fenêtre de concurrence est dissoute, pas
+  /// gardée. `CardSwiperOnSwipe` est un `FutureOr<bool>` que le paquet
+  /// attend. Un handler asynchrone ouvrirait donc une fenêtre réelle pendant
+  /// laquelle la file peut changer.
   ///
-  /// ⚠️ **Formulation exacte** (une version antérieure de cette dartdoc disait
-  /// « aucune fenêtre ne s'ouvre » — **techniquement faux**) : en Dart,
-  /// `await <non-Future>` **suspend quand même** (reprise en microtâche). Le
-  /// paquet cède donc une microtâche sur son `await`, **inconditionnellement**,
-  /// même face à un handler synchrone. Ce qui est vrai — et qui **suffit** — est
-  /// autre : en **retournant `bool`** (et non `Future<bool>`), ce handler
-  /// s'exécute **INTÉGRALEMENT avant** ce point de suspension. Quand la fenêtre
-  /// du paquet s'ouvre, su-4 **n'a plus rien à faire** : tout son travail est
-  /// déjà commis. Aucun jeton de fraîcheur n'aurait donc quoi que ce soit à
-  /// garder ici. La propriété appartient à **notre handler**, pas au paquet — ne
-  /// pas lire l'inverse.
+  /// En Dart, `await <non-Future>` suspend quand même (reprise en
+  /// microtâche) : le paquet cède donc une microtâche sur son `await`,
+  /// inconditionnellement, même face à un handler synchrone. Ce qui compte
+  /// est autre : en retournant `bool` (et non `Future<bool>`), ce handler
+  /// s'exécute intégralement avant ce point de suspension. Quand la fenêtre
+  /// du paquet s'ouvre, il n'y a plus rien à faire ici : tout le travail est
+  /// déjà commis. Aucun jeton de fraîcheur n'a donc quoi que ce soit à
+  /// garder dans ce handler — cette propriété lui appartient, elle n'est pas
+  /// garantie par le paquet lui-même.
   ///
-  /// ⚠️ **Un jeton `_generation` a été écrit puis RETIRÉ** : l'injection R3-I17a
-  /// (le supprimer) **ne rougissait aucun test** — il était **structurellement
-  /// inatteignable**, et sa dartdoc affirmait « capturé avant l'`await` » alors
-  /// qu'il n'existe **aucun** `await`. C'était le défaut **D8 de su-3** rejoué
-  /// (du code décoratif adossé à un test incapable de rougir), et une **fausse
-  /// affirmation de conformité**. La dissolution est conservée ; l'invariant qui
-  /// la rend vraie — la **synchronicité** — est désormais **GARDÉ** par
-  /// `z_session_swipe_concurrency_test.dart`, qui rougit si ce handler devient
-  /// `async`. Le jeton reste RÉELLEMENT nécessaire là où la fenêtre existe :
-  /// `z_flashcard_answer_input.dart:280` (port d'évaluation `await`é, su-3) —
-  /// et l'assemblage le prouve.
+  /// L'invariant qui rend cette dissolution vraie — la synchronicité — est
+  /// gardé par un test dédié qui rougit si ce handler devient `async`. Un
+  /// jeton de fraîcheur reste réellement nécessaire là où une fenêtre de
+  /// concurrence existe réellement, par exemple autour d'un port
+  /// d'évaluation attendu (`await`) côté surface de saisie.
   bool _handleSwipe(int previousIndex, int? currentIndex, Object? direction) {
     if (currentIndex == null) return true; // fin de pile : `onEnd` s'en charge.
     _emitIndexChanged(currentIndex);
@@ -477,29 +461,28 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
   /// `onEnd` du paquet — n'est appelé que sur la **dernière** carte, **après**
   /// `onSwipe` (vérifié : `_handleCompleteSwipe`).
   void _handleEnd() {
-    if (_stackEnded) return; // 🔒 one-shot : `onEnd` peut être ré-entrant.
+    if (_stackEnded) return; // one-shot : `onEnd` peut être ré-entrant.
     _stackEnded = true;
     widget.onStackEnd?.call();
   }
 
-  /// **Avancée** programmatique (alternative accessible, AC9).
+  /// Avancée programmatique (alternative accessible).
   ///
-  /// Passe par `controller.swipe` — et **non** par `moveTo` : vérifié sur disque,
-  /// `_moveTo` **court-circuite `onSwipe`** (`lib/src/widget/card_swiper_state.dart:329-336`),
-  /// donc [ZSessionCardSwiper.onIndexChanged] ne serait **jamais** émis pour une
-  /// navigation au clavier/lecteur d'écran. `swipe`, lui, rejoint
-  /// `_handleCompleteSwipe` ⇒ **une seule voie d'émission** (arbitrage A6).
+  /// Passe par `controller.swipe` et non par `moveTo` : `moveTo`
+  /// court-circuite `onSwipe`, donc [ZSessionCardSwiper.onIndexChanged] ne
+  /// serait jamais émis pour une navigation au clavier ou au lecteur
+  /// d'écran. `swipe`, lui, rejoint le même chemin que le geste — une seule
+  /// voie d'émission.
   ///
-  /// ⚠️ **`direction` ne choisit PAS un sens de déplacement** — fait vérifié sur
-  /// disque : `_swipe(dir)` mène à `_undoableIndex.state = _nextIndex`, soit
-  /// **`+1` quelle que soit la direction** (`card_swiper_state.dart:295-300`) ;
-  /// `direction` n'est lue que par `_isValidDirection` (validation de fin de
-  /// geste). C'est cohérent avec A2 (« les deux directions avancent ») — et c'est
-  /// **exactement pourquoi il ne peut exister aucun bouton « précédent »** ici
-  /// (cf. § « Pourquoi aucun retour arrière »).
+  /// `direction` ne choisit pas un sens de déplacement : le paquet avance
+  /// toujours son index d'un cran, quelle que soit la direction passée ;
+  /// `direction` n'est lue que pour la validation de fin de geste. C'est
+  /// cohérent avec le fait que les deux directions avancent — et c'est
+  /// exactement pourquoi il ne peut exister aucun bouton « précédent » ici
+  /// (voir la section « Pourquoi aucun retour arrière »).
   void _advance() => _controller.swipe(CardSwiperDirection.right);
 
-  /// Carte **mémoïsée** par index (AC7).
+  /// Carte mémoïsée par index.
   Widget _cardAt(BuildContext context, int index) =>
       _cardCache.putIfAbsent(index, () {
         return widget.cardBuilder(context, widget.queue[index]);
@@ -507,10 +490,9 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 AC11 — file VIDE : `cardsCount = 0` fait lever **DEUX** asserts du ctor
-    // de `CardSwiper` (`numberOfCardsDisplayed >= 1 && <= cardsCount`, puis
-    // `initialIndex < cardsCount`). On ne le construit donc PAS : repli défini,
-    // jamais un crash (AD-10).
+    // File vide : `cardsCount = 0` ferait lever deux asserts du constructeur
+    // de `CardSwiper`. On ne le construit donc pas : repli défini, jamais un
+    // crash (invariant AD-10).
     if (widget.queue.isEmpty) {
       return widget.emptyBuilder?.call(context) ?? _defaultEmpty(context);
     }
@@ -522,27 +504,29 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
       children: <Widget>[
         Expanded(
           child: CardSwiper(
-            // 🔑 AD-10 — l'index interne du paquet DOIT mourir avec la file
-            // qu'il indexait (crash mesuré sans cela — cf. [_queueGeneration]).
+            // L'index interne du paquet doit mourir avec la file qu'il
+            // indexait (crash sans cela — voir [_queueGeneration]).
             key: ValueKey<int>(_queueGeneration),
             controller: _controller,
             cardsCount: widget.queue.length,
-            // Un contrôleur d'hôte peut arriver DÉJÀ positionné : la première
-            // carte montée est alors la SIENNE, jamais l'index 0 (sans quoi
-            // l'affichage contredirait la source de vérité dès le montage).
-            // Borné : `assert(initialIndex < cardsCount)` dans le ctor du paquet.
+            // Un contrôleur d'hôte peut arriver déjà positionné : la
+            // première carte montée est alors la sienne, jamais l'index 0
+            // (sans quoi l'affichage contredirait la source de vérité dès
+            // le montage). Borné par l'assert du constructeur du paquet.
             initialIndex: _clampIndex(_swiperIndex),
-            // 🔴 défaut `2` ⇒ `assert(numberOfCardsDisplayed <= cardsCount)`
-            // ⇒ CRASH sur une file d'UNE carte — une session parfaitement
-            // normale.
+            // Défaut du paquet à 2, ce qui exigerait `<= cardsCount` et
+            // crasherait sur une file d'une seule carte — une session
+            // parfaitement normale.
             numberOfCardsDisplayed: math.min(2, widget.queue.length),
-            // 🔴 défaut `true` ⇒ la pile boucle ⇒ la session NE SE TERMINE
-            // JAMAIS et `onEnd` n'est jamais atteint.
+            // Défaut du paquet à `true`, ce qui ferait boucler la pile : la
+            // session ne se terminerait jamais et `onEnd` ne serait jamais
+            // atteint.
             isLoop: false,
-            // 🔒 Animation RÉELLE (200 ms) réellement supprimée (NFR-SU3).
+            // Animation réelle (200 ms) réellement supprimée sous Reduce
+            // Motion.
             duration: reduceMotion ? Duration.zero : widget.swipeDuration,
-            // ⚠️ Ne filtre QUE la fin de geste : n'empêche PAS le pan de
-            // revendiquer le vertical (cf. dartdoc de librairie).
+            // Ne filtre que la fin de geste : n'empêche pas le pan de
+            // revendiquer le vertical (voir la dartdoc de librairie).
             allowedSwipeDirection:
                 const AllowedSwipeDirection.symmetric(horizontal: true),
             onSwipe: _handleSwipe,
@@ -551,11 +535,11 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
             cardBuilder: (context, index, horizontalOffset, verticalOffset) {
               return Stack(
                 children: <Widget>[
-                  // 🔒 AC7 — instance IDENTIQUE d'une frame à l'autre : le
-                  // `cardBuilder` est ré-invoqué à chaque frame de drag, mais
-                  // `Element.updateChild` court-circuite ce sous-arbre.
+                  // Instance identique d'une frame à l'autre : le
+                  // `cardBuilder` est ré-invoqué à chaque frame de drag,
+                  // mais `Element.updateChild` court-circuite ce sous-arbre.
                   _cardAt(context, index),
-                  // Seul nœud qui dépend RÉELLEMENT de l'offset ⇒ seul à se
+                  // Seul nœud qui dépend réellement de l'offset : seul à se
                   // reconstruire pendant le drag (frère, sous IgnorePointer).
                   ZSwipeEmotionIndicator(
                     offsetPercentage: horizontalOffset,
@@ -572,19 +556,21 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
     );
   }
 
-  /// Alternative **accessible** au swipe (AC9/AD-13) + progression annoncée.
+  /// Alternative accessible au swipe (invariant AD-13) et progression
+  /// annoncée.
   ///
-  /// 🚫 **Un seul bouton, et c'est délibéré** : la pile n'a **aucun** retour
-  /// arrière (cf. § « Pourquoi aucun retour arrière » de la dartdoc de
-  /// librairie). L'utilisateur de lecteur d'écran dispose donc **exactement**
+  /// Un seul bouton, et c'est délibéré : la pile n'a aucun retour arrière
+  /// (voir la section « Pourquoi aucun retour arrière » de la dartdoc de
+  /// librairie). L'utilisateur de lecteur d'écran dispose donc exactement
   /// des mêmes déplacements que l'utilisateur du geste — c'est la parité
-  /// qu'exige AD-13, et non un contrôle supplémentaire qui mentirait.
+  /// qu'exige l'invariant AD-13, et non un contrôle supplémentaire qui
+  /// mentirait.
   Widget _navigationRow(BuildContext context, ZcrudTheme theme) => Row(
         children: <Widget>[
           Expanded(
-            // AD-2/SM-1 — l'avancée ne reconstruit QUE l'indicateur : la valeur
-            // est lue **à la source** (interne ou contrôleur de l'hôte), jamais
-            // dans une copie locale rafraîchie par `setState`.
+            // L'avancée ne reconstruit que l'indicateur (invariant AD-2) :
+            // la valeur est lue à la source (interne ou contrôleur de
+            // l'hôte), jamais dans une copie locale rafraîchie par `setState`.
             child: ValueListenableBuilder<int>(
               valueListenable: _current.listenable,
               builder: (BuildContext context, int currentIndex, Widget? _) =>
@@ -607,7 +593,7 @@ class _ZSessionCardSwiperState extends State<ZSessionCardSwiper> {
         ],
       );
 
-  /// Repli **file vide** par défaut — localisé, observable (AC11).
+  /// Repli file vide par défaut — localisé, observable.
   Widget _defaultEmpty(BuildContext context) => Center(
         key: ZSessionCardSwiper.emptyKey,
         child: Text(

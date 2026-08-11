@@ -1,47 +1,48 @@
-/// `ZDefaultFlashcardCard` — **carte de flashcard PAR DÉFAUT** du socle
-/// (CR-IFFD-47, rendu de référence CR-IFFD-57, réplication ACHEVÉE CR-IFFD-59 :
-/// ligne d'en-tête tuile+balises, énoncé RICHE borné en dessous pleine
-/// largeur, aperçu de réponse en MODE, tampon Vrai/Faux, liseré teinté par
-/// type — complément owner).
+/// `ZDefaultFlashcardCard` — carte de flashcard par défaut de ce paquet :
+/// ligne d'en-tête tuile et balises, énoncé riche borné en dessous pleine
+/// largeur, aperçu de réponse selon le mode, tampon vrai/faux, liseré teinté
+/// par type.
 ///
-/// ## Le besoin, et la forme qu'il ne pouvait PAS prendre
+/// ## Le besoin, et la forme qu'il ne pouvait pas prendre
 ///
-/// `ZStudyToolsSectionSpec.itemBuilder` est **requis** : chaque application
-/// d'étude réécrit donc la même carte de flashcard. Le besoin est réel.
+/// L'`itemBuilder` d'une section d'outils d'étude est requis : chaque
+/// application d'étude réécrirait donc la même carte de flashcard sans ce
+/// widget.
 ///
-/// 🔴 La forme demandée — « rendre `itemBuilder` facultatif, avec un rendu par
-/// défaut » — **ne peut pas fonctionner**, et c'est vérifiable sur la data-class
-/// elle-même : `ZStudyToolsSectionSpec` porte `itemCount` + `itemBuilder(context,
-/// index)` et **AUCUNE donnée**. Sans `itemBuilder`, le socle ne sait pas ce
-/// qu'est l'item numéro *i* : il ne pourrait rendre **rien du tout**. Le défaut
-/// n'est pas un manque de volonté, c'est une **absence d'information**.
+/// Rendre cet `itemBuilder` facultatif avec un rendu par défaut ne peut pas
+/// fonctionner, et c'est vérifiable sur le descripteur de section
+/// lui-même : il porte `itemCount` et `itemBuilder(context, index)` et
+/// aucune donnée. Sans `itemBuilder`, ce paquet ne sait pas ce qu'est l'item
+/// numéro *i* : il ne pourrait rendre rien du tout. Le défaut n'est pas un
+/// manque de volonté, c'est une absence d'information.
 ///
-/// Deux livrables remplacent donc cette forme, et suppriment réellement le
+/// Deux éléments remplacent donc cette forme, et suppriment réellement le
 /// travail répété :
-/// 1. **ce widget** — autonome, instanciable dans l'`itemBuilder` de l'hôte ;
-/// 2. **`ZStudyToolsSectionSpec.flashcards(cards: …)`** — la voie TYPÉE qui
-///    porte les données, et fabrique elle-même `itemCount` **et** un
+/// 1. ce widget — autonome, instanciable dans l'`itemBuilder` de l'hôte ;
+/// 2. `ZStudyToolsSectionSpec.flashcards(cards: …)` — la voie typée qui
+///    porte les données, et fabrique elle-même `itemCount` et un
 ///    `itemBuilder` bâti sur ce widget.
 ///
-/// ## Le rendu de référence (CR-IFFD-57)
+/// ## Le rendu de référence
 ///
-/// Mesuré chez IFFD (`flashcard_widgets.dart:88-156, 265-340`) et centralisé
-/// dans [ZFlashcardCardReference] — l'unique fichier autorisé à porter les hex
-/// des dégradés (exception FR-26 encadrée, cf. sa dartdoc) :
-/// - **bande DÉGRADÉE en tête, par type** (violet QCM, vert V/F, cyan question
-///   ouverte, rose exercice) ;
-/// - **tuile d'icône** teintée à 15 % de la couleur primaire du type, rayon 8,
-///   glyphe teinté ;
-/// - **zone de balises** : puces colorées, « + Tags » appel à l'action quand
-///   vide ([emptyTagsLabel]) ;
-/// - **pastille de type en pied** : point dégradé + libellé teintés par le
-///   type — l'information type reste EN TEXTE (AD-13) ;
-/// - carte : rayon 12, liseré `outline`, ombre douce (repli SOUS les jetons
-///   `cardShadow*`), fond `scaffoldBackground`.
+/// Centralisé dans [ZFlashcardCardReference] — l'unique fichier autorisé à
+/// porter des valeurs de dégradé de référence (exception encadrée à
+/// l'invariant sur les couleurs codées en dur, voir sa dartdoc) :
+/// - une bande dégradée en tête, par type (violet pour un QCM, vert pour un
+///   vrai/faux, cyan pour une question ouverte, rose pour un exercice) ;
+/// - une tuile d'icône teintée à 15 % de la couleur primaire du type, rayon
+///   8, glyphe teinté ;
+/// - une zone de balises : puces colorées, invite « + Tags » quand vide
+///   ([emptyTagsLabel]) ;
+/// - une pastille de type en pied : point dégradé et libellé teintés par le
+///   type — l'information de type reste toujours en texte (invariant
+///   AD-13) ;
+/// - une carte au rayon 12, liseré `outline`, ombre douce, fond
+///   `scaffoldBackground`.
 ///
-/// ## Deux axes de couleur — préséance ARBITRÉE (CR-IFFD-57, « non mesuré » n°2)
+/// ## Deux axes de couleur, préséance arbitrée
 ///
-/// - **Axe TYPE** ([typeColors] → jeton `ZcrudTheme.flashcardTypeGradients` →
+/// - **Axe type** ([typeColors] → jeton `ZcrudTheme.flashcardTypeGradients` →
 ///   seam `ZcrudScope.gradientResolver` (clé `flashcard.type.<type.name>`) →
 ///   référence [ZFlashcardCardReference.typeGradients]) : gouverne la bande,
 ///   la teinte de la tuile d'icône et la pastille de type.
@@ -120,7 +121,7 @@ const double _kMinTapTarget = 48.0;
 /// clair, 0.55-0.75 en sombre). Les FONDS décoratifs (tuile à 15 %, pastille
 /// à 10 %) gardent la couleur brute — seul le premier plan est ajusté.
 ///
-/// ## 🔴 CR-IFFD-64 — la fenêtre HSL ne GARANTIT rien, [surface] la garantit
+/// ## CR-IFFD-64 — la fenêtre HSL ne GARANTIT rien, [surface] la garantit
 ///
 /// Mesuré sur pièces : la fenêtre de clarté ci-dessus est une bande de
 /// **clarté HSL**, pas de **luminance relative WCAG**. Sur une couleur
@@ -132,13 +133,13 @@ const double _kMinTapTarget = 48.0;
 /// une correction de luminance qui **garantit** [minContrast] sur la couleur
 /// retournée (cf. [zReadableTintOn]).
 ///
-/// ⚠️ **Rendu INCHANGÉ sur le jeu fermé des quatre types** : leurs contrastes
+/// **Rendu INCHANGÉ sur le jeu fermé des quatre types** : leurs contrastes
 /// mesurés valent 5.28 à 9.59 en clair et 7.49 à 13.00 en sombre — tous
 /// au-dessus de [kZTextMinContrast], donc la correction ne s'y applique pas et
 /// les quatre sorties RVB restent bit-identiques (garde
 /// `cr_iffd64_readable_tint_test.dart`).
 ///
-/// ⚠️ `surface == null` ⇒ comportement legacy STRICT, **sans garantie** : la
+/// `surface == null` ⇒ comportement legacy STRICT, **sans garantie** : la
 /// fonction ne peut pas deviner la surface, et fabriquer une surface de repli
 /// serait coder une couleur en dur (FR-26). Préférer [zReadableTintOn], dont
 /// la surface est REQUISE — et qui préserve en outre les teintes achromatiques
@@ -285,7 +286,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// tableau de la CR. Le style de référence (13/w600) est appliqué au défaut ;
   /// un builder fourni porte son propre style.
   ///
-  /// ⚠️ Remplace `questionMaxLines` (v0.46) : le rendu riche n'a pas de notion
+  /// Remplace `questionMaxLines` (v0.46) : le rendu riche n'a pas de notion
   /// de ligne — la borne legacy est une HAUTEUR ([questionMaxHeight]).
   final ZFlashcardContentBuilder? questionBuilder;
 
@@ -302,7 +303,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// le rendu v0.47.0 (voie de retour explicite pour un hôte que le fondu
   /// dérange).
   ///
-  /// 🔴 **Ce n'est PAS une ellipse, et le mot serait un mensonge** :
+  /// **Ce n'est PAS une ellipse, et le mot serait un mensonge** :
   /// `TextOverflow.ellipsis` est une propriété de *paragraphe*, sans prise sur
   /// le rendu RICHE par défaut (une colonne de blocs markdown/Quill — cf.
   /// [ZFadedOverflow]). Un hôte qui veut une VRAIE ellipse passe un
@@ -375,7 +376,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// l'espace libre, la pastille de type est POUSSÉE au bas de la carte —
   /// toutes les cartes d'un rail ont alors la même ligne de base).
   ///
-  /// 🔴 **Sans cadre, il n'a AUCUN effet** : passer `height: null` **et** ne
+  /// **Sans cadre, il n'a AUCUN effet** : passer `height: null` **et** ne
   /// pas borner la carte de l'extérieur rend exactement la hauteur
   /// intrinsèque, identique pour les trois valeurs (il n'y a pas d'espace
   /// libre à répartir). La bascule est mesurée sur les contraintes reçues.
@@ -814,7 +815,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       // AD-45 — pas de bouton inerte : sans action, c'est une simple invite.
       return Align(
         alignment: AlignmentDirectional.centerStart,
-        // 🔴 `heightFactor: 1` — MESURÉ, pas supposé : un `Align` sans facteur
+        // `heightFactor: 1` — MESURÉ, pas supposé : un `Align` sans facteur
         // **remplit** la hauteur disponible. Sous une colonne à hauteur non
         // bornée (rail, cellule libre), la carte passait ainsi de ~140 dp à
         // **854 dp** — un vide de ~400 dp entre les balises et la puce de pied.
@@ -861,7 +862,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   ) =>
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // 🔴 `heightFactor: 1` — cf. la zone de balises : sans lui, l'`Align`
+        // `heightFactor: 1` — cf. la zone de balises : sans lui, l'`Align`
         // remplit la hauteur disponible et gonfle la carte (mesuré).
         heightFactor: 1,
         child: DecoratedBox(
@@ -906,7 +907,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
                     textAlign: TextAlign.start,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    // 🔴 Taille depuis le thème (jamais un `fontSize:`
+                    // Taille depuis le thème (jamais un `fontSize:`
                     // littéral : a11y/`textScaler`) ; le premier plan est la
                     // teinte de type AJUSTÉE lisible ([zReadableTypeTint]) sur
                     // le fond teinté à 10 % — le legacy peignait la couleur
@@ -936,7 +937,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
 
   /// Clé du point de type de la pastille de pied (testabilité).
   ///
-  /// ⚠️ CR-IFFD-57 : le point vit désormais DANS la pastille de pied (forme de
+  /// CR-IFFD-57 : le point vit désormais DANS la pastille de pied (forme de
   /// référence) — il n'y a plus de pastille d'en-tête.
   static const ValueKey<String> typeDotKey =
       ValueKey<String>('zDefaultFlashcardCard_typeDot');

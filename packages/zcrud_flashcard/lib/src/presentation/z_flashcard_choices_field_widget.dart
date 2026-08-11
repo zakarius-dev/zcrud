@@ -1,27 +1,28 @@
-/// `ZChoicesFieldWidget` — éditeur **QCM** d'une `List<ZChoice>`, servi via
-/// `ZWidgetRegistry` (Story E9-5, AC1/AC2/AC3/AD-2/AD-13/AD-10/FR-26).
+/// `ZChoicesFieldWidget` — éditeur QCM d'une `List<ZChoice>`, servi via
+/// `ZWidgetRegistry`.
 ///
-/// Édite les choix d'un QCM : **ajouter / supprimer / réordonner** un choix,
-/// **éditer** son libellé (`content`), **basculer** son caractère correct
-/// (`isCorrect`). Émet la `List<ZChoice>` **neutre** via `ctx.onChanged`.
+/// Édite les choix d'un QCM : ajouter, supprimer, réordonner un choix,
+/// éditer son libellé (`content`), basculer son caractère correct
+/// (`isCorrect`). Émet la `List<ZChoice>` neutre via `ctx.onChanged`.
 ///
-/// **AD-2 (SM-1 — OBJECTIF PRODUIT N°1)** : chaque ligne possède SON
-/// `TextEditingController`/`FocusNode` **stables** (créés 1× à la construction de
-/// la ligne, disposés) — **jamais** recréés ni `.text=` réinjectés pendant la
-/// frappe (sync guardée **hors focus** dans `didUpdateWidget`). Le réordonnancement
-/// **déplace** les lignes (identité contrôleur/focus préservée). Écriture
-/// **exclusivement** via `ctx.onChanged`. **Un seul** point d'écoute par tranche
-/// (AI-E10-3) : le widget lit `ctx.value`, n'ouvre aucun ré-abonnement interne au
-/// notifier partagé.
+/// Rebuilds granulaires (invariant AD-2, objectif produit n°1) : chaque
+/// ligne possède son `TextEditingController`/`FocusNode` stables (créés une
+/// fois à la construction de la ligne, disposés) — jamais recréés ni
+/// réinjectés pendant la frappe (synchronisation gardée hors focus dans
+/// `didUpdateWidget`). Le réordonnancement déplace les lignes (identité de
+/// contrôleur/focus préservée). Écriture exclusivement via `ctx.onChanged`.
+/// Un seul point d'écoute par tranche : le widget lit `ctx.value`, n'ouvre
+/// aucun ré-abonnement interne au notifieur partagé.
 ///
-/// **AC2 (validation révélée, sans `Form` global)** : ≥ 2 choix + ≥ 1 correct ;
-/// le message est **révélé** quand le canal `reveal` du `ZFormController`
-/// (exposé par [ZFlashcardEditingScope]) s'incrémente à la soumission agrégée —
-/// jamais un `Form`/`FormBuilder` global (AD-2). Scope absent → aucune
-/// révélation (dégradation propre).
+/// Validation révélée, sans `Form` global : au moins deux choix, au moins
+/// un correct ; le message est révélé quand le canal `reveal` du
+/// `ZFormController` (exposé par [ZFlashcardEditingScope]) s'incrémente à
+/// la soumission agrégée — jamais un `Form`/`FormBuilder` global (invariant
+/// AD-2). Scope absent ⇒ aucune révélation (dégradation propre).
 ///
-/// **AD-13/FR-26** : chaque cible (ajouter/supprimer/monter/descendre/toggle
-/// correct/champ éditable) est opérable (action sémantique `tap`) et **≥ 48 dp** ;
+/// Accessibilité et thème (invariant AD-13) : chaque cible (ajouter,
+/// supprimer, monter, descendre, basculer correct, champ éditable) est
+/// opérable (action sémantique `tap`) et mesure au moins 48 dp ;
 /// directionnel ; thème injecté (aucune couleur en dur) ; `ListView.builder`.
 library;
 
@@ -37,7 +38,7 @@ import 'z_flashcard_editor_values.dart';
 /// Éditeur QCM d'une liste de [ZChoice] (widget d'édition additif).
 class ZChoicesFieldWidget extends StatefulWidget {
   /// Construit l'éditeur QCM pour [ctx]. [messages] surcharge les libellés
-  /// d'erreur (défaut FR — AD-4).
+  /// d'erreur (défaut FR, invariant AD-4).
   const ZChoicesFieldWidget({
     required this.ctx,
     this.messages = ZFlashcardEditionValidator.defaultMessages,
@@ -51,22 +52,22 @@ class ZChoicesFieldWidget extends StatefulWidget {
   /// Contexte du champ (`ctx.value` = `List<ZChoice>?` courant ; `ctx.onChanged`).
   final ZFieldWidgetContext ctx;
 
-  /// Nom du champ **type** dans le formulaire (défaut `'type'`) : la surface
-  /// d'erreur QCM n'est révélée que si le type courant vaut `multipleChoice`
-  /// (aligné sur `ZFlashcardEditionValidator.validate`, MEDIUM-1).
+  /// Nom du champ type dans le formulaire (défaut `'type'`) : la surface
+  /// d'erreur QCM n'est révélée que si le type courant vaut
+  /// `multipleChoice` (aligné sur `ZFlashcardEditionValidator.validate`).
   final String typeFieldName;
 
-  /// Messages d'erreur éditeur (paramétrables — AD-4).
+  /// Messages d'erreur d'éditeur (paramétrables, invariant AD-4).
   final ZFlashcardEditionMessages messages;
 
-  /// Libellé du bouton d'ajout (paramétrable — AD-4).
+  /// Libellé du bouton d'ajout (paramétrable, invariant AD-4).
   final String addChoiceLabel;
 
-  /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
+  /// Hook de test : appelé une fois en `initState`.
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build.
   @visibleForTesting
   final VoidCallback? onBuild;
 
@@ -74,7 +75,7 @@ class ZChoicesFieldWidget extends StatefulWidget {
   State<ZChoicesFieldWidget> createState() => _ZChoicesFieldWidgetState();
 }
 
-/// Ligne d'édition d'un choix : buffer de frappe **stable** + état `isCorrect`.
+/// Ligne d'édition d'un choix : buffer de frappe stable et état `isCorrect`.
 class _ChoiceRow {
   _ChoiceRow({required String content, required this.isCorrect})
       : controller = TextEditingController(text: content),
@@ -106,8 +107,9 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
   @override
   void didUpdateWidget(covariant ZChoicesFieldWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // SYNC GUARDÉE (AD-2) : reflet d'une valeur EXTERNE (reseed) **hors focus**
-    // uniquement — jamais pendant une frappe (priorité absolue à la saisie).
+    // Synchronisation gardée (invariant AD-2) : reflet d'une valeur externe
+    // (reseed) hors focus uniquement — jamais pendant une frappe (priorité
+    // absolue à la saisie).
     if (_hasFocus) return;
     final incoming = coerceChoices(widget.ctx.value);
     if (_listEquals(incoming, _currentChoices)) return;
@@ -127,8 +129,9 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
   List<ZChoice> get _currentChoices =>
       <ZChoice>[for (final r in _rows) r.toChoice()];
 
-  /// Reconstruit les lignes depuis [choices] (dispose les anciennes) — appelé au
-  /// montage et au reseed hors focus (jamais dans la voie de frappe).
+  /// Reconstruit les lignes depuis [choices] (dispose les anciennes) —
+  /// appelé au montage et au reseed hors focus (jamais dans la voie de
+  /// frappe).
   void _rebuildRows(List<ZChoice> choices) {
     for (final row in _rows) {
       row.dispose();
@@ -141,7 +144,8 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
       ]);
   }
 
-  /// Voie d'écriture UNIQUE (AD-2) : émet la liste courante via `ctx.onChanged`.
+  /// Voie d'écriture unique (invariant AD-2) : émet la liste courante via
+  /// `ctx.onChanged`.
   void _emit() => widget.ctx.onChanged(_currentChoices);
 
   void _addChoice() {
@@ -161,8 +165,8 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
     _emit();
   }
 
-  /// Déplace la ligne [index] de [delta] (±1) en **préservant** l'identité du
-  /// contrôleur/focus (réordonnancement, non recréation — AD-2).
+  /// Déplace la ligne [index] de [delta] (±1) en préservant l'identité du
+  /// contrôleur/focus (réordonnancement, non recréation — invariant AD-2).
   void _move(int index, int delta) {
     final target = index + delta;
     if (target < 0 || target >= _rows.length) return;
@@ -260,8 +264,8 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
     );
   }
 
-  /// Bascule accessible du caractère « correct » d'un choix (≥ 48 dp, action
-  /// sémantique `tap` opérable, thème injecté).
+  /// Bascule accessible du caractère « correct » d'un choix (au moins
+  /// 48 dp, action sémantique `tap` opérable, thème injecté).
   Widget _correctToggle(
     ZcrudTheme theme,
     int index,
@@ -303,7 +307,7 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
         icon: Icon(icon),
         color: color,
         tooltip: tooltip,
-        // Cible tactile ≥ 48 dp garantie (AD-13).
+        // Cible tactile d'au moins 48 dp garantie (invariant AD-13).
         constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
         onPressed: onPressed,
       );
@@ -334,9 +338,9 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
         ),
       );
 
-  /// Surface d'erreur **accessible** révélée par le canal `reveal` (AC2), sans
-  /// `Form` global. Écoute UNIQUEMENT `controller.reveal` (tranche dédiée) — via
-  /// [ZFlashcardEditingScope] ; absent → aucune révélation.
+  /// Surface d'erreur accessible révélée par le canal `reveal`, sans `Form`
+  /// global. Écoute uniquement `controller.reveal` (tranche dédiée) via
+  /// [ZFlashcardEditingScope] ; absent ⇒ aucune révélation.
   Widget _buildErrorSurface(ZcrudTheme theme) {
     final controller = ZFlashcardEditingScope.maybeOf(context)?.controller;
     if (controller == null) return const SizedBox.shrink();
@@ -344,10 +348,11 @@ class _ZChoicesFieldWidgetState extends State<ZChoicesFieldWidget> {
       valueListenable: controller.reveal,
       builder: (context, revealEpoch, _) {
         if (revealEpoch <= 0) return const SizedBox.shrink();
-        // MEDIUM-1 : ne révéler l'erreur QCM que si le type courant est bien
-        // `multipleChoice` — sinon une carte non-QCM (dont le champ `choices`
-        // est monté par `ZFlashcardEditionFields.all()`) afficherait un message
-        // parasite lors d'un reveal déclenché par une AUTRE erreur (énoncé).
+        // Ne révéler l'erreur QCM que si le type courant est bien
+        // `multipleChoice` — sinon une carte non-QCM (dont le champ
+        // `choices` est monté par `ZFlashcardEditionFields.all()`)
+        // afficherait un message parasite lors d'un reveal déclenché par
+        // une autre erreur (énoncé).
         final isMultipleChoice =
             coerceFlashcardType(controller.values[widget.typeFieldName]) ==
                 ZFlashcardType.multipleChoice;

@@ -1,11 +1,11 @@
-/// [ZAppBarAction] — action d'app-bar DÉCLARÉE EN DONNÉES (SUF-1, AC2/AC3).
+/// [ZAppBarAction] — action d'app-bar DÉCLARÉE EN DONNÉES.
 ///
-/// Une action est une **valeur immuable** : icône + libellé a11y explicite
+/// Une action est une **valeur immuable**: icône + libellé a11y explicite
 /// (jamais nul) + callback + tooltip optionnel + drapeau de débordement. Le
 /// page-shell mappe chaque action vers **un** `IconButton` (cible ≥ 48 dp,
 /// `Semantics` via `Icon.semanticLabel`) — ou une entrée de menu de débordement
 /// si [isOverflow]. Une action **non déclarée est structurellement absente**
-/// (aucun bouton fantôme) : la liste des actions pilote seule l'arbre.
+/// (aucun bouton fantôme): la liste des actions pilote seule l'arbre.
 library;
 
 import 'package:flutter/widgets.dart';

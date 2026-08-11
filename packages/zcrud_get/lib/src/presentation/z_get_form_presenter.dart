@@ -1,73 +1,67 @@
-/// Présentateur **GetX** (EX-UI.11, AD-30/AD-15) — implémentation manager du
+/// Présentateur **GetX** (invariants AD-30/AD-15) — implémentation manager du
 /// port [ZFormPresenter] de `zcrud_navigation`.
 ///
 /// [ZGetFormPresenter] **transpose** le présentateur par défaut pur-Flutter
 /// `ZAdaptivePresenter` à l'idiome GetX : les trois modes [ZEditionPresentation]
 /// deviennent `Get.to(fullscreenDialog:)` / `Get.bottomSheet` / `Get.dialog`.
-/// C'est la réécriture **neutralisée** du `showPushedDialog<T>` des apps GetX
-/// historiques (dodlp/iffd `forms_utils.dart`) :
-/// * les booléens ad hoc `fullscreenDialog`/`dialog` → l'`enum`
-///   [ZEditionPresentation] (NFR-U7) ;
-/// * `Get.height`/`Get.width` → **`MediaQuery.sizeOf(context)`** (le port reçoit
-///   le [BuildContext]) — ⛔ jamais `Get.width`/`Get.height`/`Get.context!` ;
-/// * l'heuristique `builder is DynamicEditionScreen` → **supprimée** : le port
-///   est **form-agnostique**, le [WidgetBuilder] est opaque (jamais inspecté) ;
-/// * `barrierColor: Colors.black…` en dur → **supprimé** (défaut GetX / thème ;
-///   aucun littéral hex introduit — AD-13).
+/// Par rapport à une intégration GetX ad hoc typique, cette implémentation :
+/// * remplace les booléens ad hoc `fullscreenDialog`/`dialog` par l'`enum`
+///   [ZEditionPresentation] ;
+/// * lit **`MediaQuery.sizeOf(context)`** plutôt que `Get.height`/`Get.width`
+///   (le port reçoit le [BuildContext]) — jamais
+///   `Get.width`/`Get.height`/`Get.context!` ;
+/// * reste **form-agnostique** : le [WidgetBuilder] est opaque, jamais
+///   inspecté par son type concret ;
+/// * ne code en dur aucune couleur de barrière (défaut GetX / thème ;
+///   invariant AD-13).
 ///
-/// **`get` confiné ici (AD-15/NFR-U2)** : ce fichier importe `package:get/get.dart`
-/// — c'est légitime UNIQUEMENT dans le binding `zcrud_get`. `zcrud_navigation`
-/// (qui définit le port) n'importe **NI** `get` **NI** `go_router`. La
-/// substitution au défaut passe par le seam **déjà fourni** `ZFormPresenterScope`
-/// (aucun nouveau seam) : `ZFormPresenterScope(presenter: const ZGetFormPresenter(), child: …)`.
+/// **`get` confiné ici (invariant AD-15)** : ce fichier importe
+/// `package:get/get.dart` — c'est légitime UNIQUEMENT dans le binding
+/// `zcrud_get`. `zcrud_navigation` (qui définit le port) n'importe **NI**
+/// `get` **NI** `go_router`. La substitution au défaut passe par le seam
+/// **déjà fourni** `ZFormPresenterScope` (aucun nouveau seam) :
+/// `ZFormPresenterScope(presenter: const ZGetFormPresenter(), child: …)`.
 ///
 /// **Bornes alignées sur `ZAdaptivePresenter`** (documentées, non hex) : dialog
 /// ≤ 560 dp (M3 medium), sheet ≤ 90 % de la hauteur d'écran — mesurées via
 /// `MediaQuery.sizeOf(context)`, pas via une largeur globale.
 ///
-/// ## 🔴 Alignement CR-IFFD-SHEET / chrome-presentation-aware (2026-08-09)
+/// ## Contrôle explicite du rejet implicite
 ///
-/// Ce présentateur `implements` **aussi** [ZImplicitDismissControl]. Mesuré
-/// avant cet alignement, il ne l'implémentait pas — avec **deux** conséquences
-/// silencieuses pour DODLP et IFFD, les deux hôtes GetX :
+/// Ce présentateur `implements` **aussi** [ZImplicitDismissControl], pour
+/// deux raisons mesurées côté hôtes GetX :
 ///
-/// | Défaut | Cause mesurée | Effet chez l'hôte GetX |
+/// | Sans ce contrôle | Cause | Effet |
 /// |---|---|---|
-/// | fermeture par **glissement** non gardée | `presentEdition` teste `is ZImplicitDismissControl` et **retombe** sur `present` (AD-10) | `enableDrag` reste au défaut GetX (`true`) ⇒ `BottomSheet.onClosing → Navigator.pop` court-circuite `PopScope`/`ZDiscardGuard` : **saisie perdue sans confirmation** |
+/// | fermeture par **glissement** non gardée | `presentEdition` teste `is ZImplicitDismissControl` et **retombe** sur `present` (invariant AD-10) | `enableDrag` resterait au défaut GetX (`true`) ⇒ `BottomSheet.onClosing → Navigator.pop` court-circuiterait `PopScope`/`ZDiscardGuard` : saisie perdue sans confirmation |
 /// | ni **marge** ni **cadre** | `sheetFrame` n'est porté QUE par `presentWithDismissControl` | feuille pleine largeur, sans bordure |
 ///
-/// Pire pour le second point : la branche `sheet` passait
-/// `maxWidth ?? double.infinity` à son `ConstrainedBox`. Ce n'était pas neutre
-/// — le `BottomSheet` du SDK résout `widget.constraints ?? theme ?? defaults`
-/// (`flutter/lib/src/material/bottom_sheet.dart` l. 351-352), donc le plafond
-/// M3 de 640 dp (`_BottomSheetDefaultsM3.constraints`, l. 1489) restait bien
-/// actif côté route GetX, mais **aucune** marge n'existait sous ce plafond.
+/// Sur le second point, une largeur maximale non contrainte
+/// (`maxWidth ?? double.infinity`) n'est pas neutre : le `BottomSheet` du SDK
+/// résout `widget.constraints ?? theme ?? defaults`, donc le plafond M3 de
+/// 640 dp reste actif côté route GetX même sans marge déclarée en dessous.
 ///
 /// Les deux trous sont fermés en **consommant** la chaîne partagée de
 /// `zcrud_navigation` : `zSheetFrameMetricsOf` résout **paramètre
 /// ([ZSheetFrameSpec]) > jetons `ZcrudTheme.editionSheet*` (`zcrud_core`) >
-/// [ZSheetFrameReference]**. (Le maillon intermédiaire fut brièvement une
-/// `ThemeExtension` locale à `zcrud_navigation` ; elle a été **supprimée** le
-/// 2026-08-09 au profit du canal de thème unique du dépôt — le mode y transite
-/// désormais en `String?`, converti par `zSheetFrameModeFromToken`, qui rend
-/// `null` sur une valeur inconnue et laisse la référence décider, sans lever.)
+/// [ZSheetFrameReference]**, le mode transitant en `String?` converti par
+/// `zSheetFrameModeFromToken` (`null` sur une valeur inconnue, sans lever).
 /// **Aucune valeur n'est recopiée ici** : ni le ratio 0,9, ni le plafond 640,
-/// ni une épaisseur, ni une couleur. La garde de source
-/// `z_get_form_presenter_source_guard_test.dart` (exemption **zéro**) le tient.
+/// ni une épaisseur, ni une couleur. Une garde de source dédiée le vérifie.
 ///
-/// ### Divergence RÉSIDUELLE, mesurée et assumée : le plafond dur de GetX
+/// ### Divergence résiduelle, assumée : le plafond dur de GetX
 ///
-/// `Get.bottomSheet` **n'expose pas** `constraints` (get 4.7.2,
-/// `extension_navigation.dart` l. 19-36) et `GetModalBottomSheetRoute` ne le
-/// transmet pas davantage. Notre `ConstrainedBox` ne peut donc que **rétrécir**
-/// la feuille, jamais l'élargir au-delà de ce que le `BottomSheet` résout
-/// lui-même. Conséquence : l'échappatoire « pleine largeur »
+/// `Get.bottomSheet` n'expose pas de paramètre `constraints` et
+/// `GetModalBottomSheetRoute` ne le transmet pas davantage. Le
+/// `ConstrainedBox` posé ici ne peut donc que **rétrécir** la feuille, jamais
+/// l'élargir au-delà de ce que le `BottomSheet` résout lui-même. Conséquence :
+/// l'échappatoire « pleine largeur »
 /// (`ZSheetFrameSpec(widthRatio: 1, maxWidth: double.infinity)`) rend bien la
 /// pleine largeur **sous 640 dp**, mais reste plafonnée à 640 dp au-delà —
-/// là où `ZAdaptivePresenter` rendrait 1600. L'hôte GetX qui veut vraiment
-/// dépasser 640 doit le dire à son thème
+/// là où `ZAdaptivePresenter` rendrait la largeur d'écran réelle. L'hôte GetX
+/// qui veut vraiment dépasser 640 doit le dire à son thème
 /// (`BottomSheetThemeData(constraints: …)`), seul canal que GetX laisse
-/// passer. Épinglé par le volet `GS-9` de `z_get_sheet_frame_test.dart`.
+/// passer.
 ///
 /// ### `unlessChrome` n'est PAS résolu ici
 ///
@@ -75,30 +69,24 @@
 /// comme dans `ZAdaptivePresenter`. La collapse de
 /// `ZSheetFrameMode.unlessChrome` appartient à `presentEdition`, seul endroit
 /// qui **sait** si l'appelant a déclaré un chrome. Le présentateur ne reçoit
-/// donc que `always`/`never`, et **n'inspecte jamais** le contenu : l'heuristique
-/// `runtimeType.toString().endsWith("EditionScreen")` d'IFFD reste écartée.
+/// donc que `always`/`never`, et **n'inspecte jamais** le contenu par
+/// heuristique de type.
 ///
-/// ## 🔴 « Surface avec le cadre » — le fond effacé par GetX est RÉTABLI
+/// ## « Surface avec le cadre » — le fond effacé par GetX est rétabli
 ///
-/// Mesuré dans `get 4.7.2` : `Get.bottomSheet` **force** le fond,
-/// `backgroundColor: backgroundColor ?? Colors.transparent`
-/// (`extension_navigation.dart` l. 46). Comme la valeur remise à la route n'est
-/// alors **jamais `null`**, `GetModalBottomSheetRoute.buildPage` court-circuite
-/// sa propre chaîne `?? sheetTheme.modalBackgroundColor ?? sheetTheme.backgroundColor`
-/// (`bottomsheet.dart` l. 89-91) : le `BottomSheetThemeData` de l'hôte **ne sert
-/// à rien**, et la feuille est transparente. Divergence franche avec
-/// `showModalBottomSheet`, qui résout
-/// `backgroundColor ?? modalBackgroundColor ?? backgroundColor ?? defaults`
-/// (`bottom_sheet.dart` l. 1145-1149) avec, en M3,
-/// `_BottomSheetDefaultsM3.backgroundColor => ColorScheme.surfaceContainerLow`
-/// (l. 1496) — et, en M2 (`useMaterial3: false`), `defaults` vide (l. 1139-1141)
-/// donc `Material(color: null)`, c'est-à-dire `ThemeData.canvasColor`.
+/// `Get.bottomSheet` **force** le fond
+/// (`backgroundColor: backgroundColor ?? Colors.transparent`). Comme la
+/// valeur remise à la route n'est alors **jamais `null`**,
+/// `GetModalBottomSheetRoute.buildPage` court-circuite sa propre chaîne de
+/// résolution : le `BottomSheetThemeData` de l'hôte ne sert à rien, et la
+/// feuille est transparente. Divergence franche avec `showModalBottomSheet`,
+/// qui résout `backgroundColor ?? modalBackgroundColor ?? backgroundColor ??
+/// defaults`, avec en M3 `_BottomSheetDefaultsM3.backgroundColor =>
+/// ColorScheme.surfaceContainerLow`, et en M2 le repli `ThemeData.canvasColor`.
 ///
-/// C'est très probablement pourquoi IFFD enveloppe son contenu dans un
-/// `Card.outlined` (`forms_utils.dart` ~l. 690-712, **vérifié**) : la carte n'y
-/// apporte pas seulement la bordure, elle apporte **la surface** que GetX venait
-/// d'effacer. Sans elle, le cadre livré par CR-IFFD-SHEET se peindrait comme un
-/// **contour flottant sur la barrière**, sans fond.
+/// Un hôte qui veut peindre un cadre autour de sa feuille a donc besoin d'une
+/// **surface** en plus de la bordure, sans quoi le cadre flotterait sur la
+/// barrière, sans fond.
 ///
 /// **Décision propriétaire — « surface avec le cadre »** :
 ///
@@ -113,10 +101,10 @@
 /// `ZcrudTheme(editionSheetFrameMode: ZSheetFrameMode.never.name)`) et retrouve
 /// exactement la feuille transparente de GetX.
 ///
-/// 🔴 **FR-26** : [_themeSheetSurface] n'invente **aucune** teinte — elle lit
+/// [_themeSheetSurface] n'invente **aucune** teinte — elle lit
 /// d'abord le `BottomSheetThemeData` de l'hôte, et son dernier maillon est un
-/// **rôle** du `ColorScheme` (ou `canvasColor`), jamais un littéral. La garde de
-/// source `GSG-2` interdit `Color(`/`Colors.` dans ce fichier.
+/// **rôle** du `ColorScheme` (ou `canvasColor`), jamais un littéral. Une garde
+/// de source interdit `Color(`/`Colors.` dans ce fichier.
 library;
 
 import 'package:flutter/material.dart';
@@ -193,7 +181,7 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
       case ZEditionPresentation.page:
         // Route pleine page — tailles max IGNORÉES (la page occupe l'écran),
         // `useSafeArea` IGNORÉ (aucune `SafeArea` n'est insérée, ni avec `true`
-        // ni avec `false` — mesuré, CR-IFFD-78 ①), `barrierDismissible` /
+        // ni avec `false`), `barrierDismissible` /
         // `isDismissible` / `allowImplicitDismiss` / `sheetFrame` sans objet.
         // Mêmes inerties que `ZAdaptivePresenter`, et DÉCLARÉES au port. `Get.to` renvoie `Future<T?>?` (nullable
         // si la navigation est refusée) : on garantit le contrat `Future<T?>`
@@ -226,14 +214,14 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
             useSafeArea: useSafeArea,
           ),
           isScrollControlled: true,
-          // 🔴 La fermeture par GLISSEMENT passe par `Navigator.pop` et
+          // La fermeture par GLISSEMENT passe par `Navigator.pop` et
           // COURT-CIRCUITE `PopScope` (donc `ZDiscardGuard`). Quand un garde
           // d'abandon est armé, la voie est désactivée ; sinon `true`, qui est
           // le défaut de `Get.bottomSheet` ⇒ voie historique inchangée. La
           // barrière, elle, RESTE fermante (`isDismissible` non touché) : elle
           // passe par `maybePop`, donc par le garde.
           enableDrag: allowImplicitDismiss,
-          // 🔴 Voie ORTHOGONALE au glissement (CR-IFFD-78 ②) : GetX transmet
+          // Voie ORTHOGONALE au glissement : GetX transmet
           // `isDismissible` à `GetModalBottomSheetRoute`, dont
           // `barrierDismissible` en dérive (get 4.7.x,
           // `extension_navigation.dart` l. 52 ; `bottomsheet.dart`). `false` ⇒
@@ -255,7 +243,7 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
               (frame.framed ? _themeSheetSurface(context) : null),
           // `null` quand le cadre est désactivé ⇒ AUCUNE `shape` imposée : le
           // `BottomSheet` du SDK retrouve sa résolution native
-          // (`thème > défauts M3`), AD-4 — `null` ⇒ absent de l'arbre.
+          // (`thème > défauts M3`), invariant AD-4 — `null` ⇒ absent de l'arbre.
           shape: frame.resolveShape(Theme.of(context).bottomSheetTheme.shape),
         );
 
@@ -275,21 +263,17 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
             ),
           ),
           barrierDismissible: barrierDismissible,
-          // 🔴 TROUVÉ PAR LA MATRICE (CR-IFFD-78 ③), pas par lecture — et
-          // invisible à toute garde qui LIT le code : `_constrained` reçoit
-          // bien `useSafeArea` et pose bien sa `SafeArea`, donc le paramètre
-          // « est lu ». Il était pourtant **inerte**.
+          // Un paramètre peut être lu par le code (`_constrained` reçoit bien
+          // `useSafeArea` et pose bien sa `SafeArea`) et rester pourtant
+          // **inerte** en pratique : `Get.dialog` porte SON PROPRE
+          // `useSafeArea`, à `true` par défaut, et enveloppe la page dans une
+          // `SafeArea` **en amont**. L'encart est donc déjà consommé quand la
+          // `SafeArea` interne s'applique : `useSafeArea: false` rendrait
+          // exactement le même arbre que `true`, sans avertissement — une
+          // divergence franche avec `ZAdaptivePresenter`, où `showDialog`
+          // honore réellement ce paramètre.
           //
-          // Cause, lue dans `get 4.7.x` (`extension_navigation.dart` l. 73-93) :
-          // `Get.dialog` porte SON PROPRE `useSafeArea`, à `true` par défaut, et
-          // enveloppe la page dans une `SafeArea` **en amont**. L'encart était
-          // donc déjà consommé quand notre `SafeArea` interne s'appliquait :
-          // `useSafeArea: false` rendait exactement le même arbre que `true`.
-          // (Divergence franche avec `ZAdaptivePresenter`, où `showDialog`
-          // reçoit le paramètre — la matrice les affichait « honoré » d'un côté,
-          // « inerte » de l'autre.)
-          //
-          // ⚠️ Défaut INCHANGÉ pour tout hôte passif : `true` ⇒ la `SafeArea` de
+          // Défaut INCHANGÉ pour tout hôte passif : `true` ⇒ la `SafeArea` de
           // GetX est posée comme hier, et la `SafeArea` interne reste au même
           // endroit de l'arbre. Seul l'opt-out `false` change — il devient
           // effectif au lieu d'être silencieusement ignoré.
@@ -319,9 +303,9 @@ class ZGetFormPresenter implements ZFormPresenter, ZImplicitDismissControl {
   ///   vide (l. 1139-1141), le `BottomSheet` remet donc `null` à son `Material`,
   ///   dont la couleur de repli est `ThemeData.canvasColor`.
   ///
-  /// 🔴 FR-26 : deux **rôles** du thème de l'hôte, zéro littéral. La teinte
+  /// Deux **rôles** du thème de l'hôte, zéro littéral. La teinte
   /// suit le thème (clair/sombre, `seedColor`) sans que ce paquet n'en impose
-  /// aucune. AD-10 : aucun chemin d'exception, le repli est total.
+  /// aucune. Invariant AD-10 : aucun chemin d'exception, le repli est total.
   Color _themeSheetSurface(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final BottomSheetThemeData sheetTheme = theme.bottomSheetTheme;

@@ -1,44 +1,41 @@
-/// Extension de partage concrète `ZStudySharingExtension` (Story ES-9.4, AC1/AC3/AC5).
+/// Extension de partage concrète pour le slot d'extension d'un dossier
+/// d'étude.
 ///
-/// origine: le slot **opt-in** `ZStudyFolder.extension` (`ZExtension?`, kernel).
-/// Cette sous-classe **CONCRÈTE** porte les champs de **contrôle PARTAGEABLES**
-/// d'un dossier — `isPublic`, `joinableWithLink`, `coOwnersCanInvite`,
-/// `shareLinkId` — **jamais** d'état personnel (SRS / ordre / lecture, AC3).
+/// Occupe le slot opt-in `ZStudyFolder.extension` (`ZExtension?`, kernel).
+/// Cette sous-classe concrète porte les champs de contrôle partageables d'un
+/// dossier — `isPublic`, `joinableWithLink`, `coOwnersCanInvite`,
+/// `shareLinkId` — jamais d'état personnel.
 ///
-/// ## `implements ZExtension` — JAMAIS `extends`, JAMAIS `sealed` (AD-4)
-///
-/// Calque le précédent `ZNoteAudio` (premier `ZExtension` concret du repo) :
-/// `formatVersion` propre, `toJson` incluant `format_version`, `fromJsonSafe`
-/// bâti sur [ZExtension.guard] (version non gérée / corrompu ⇒ `null`, **jamais**
-/// de throw, AD-10). L'app injecte
+/// `implements ZExtension`, jamais `extends` ni `sealed` (invariant AD-4) :
+/// `formatVersion` propre, `toJson` incluant `format_version`,
+/// `fromJsonSafe` bâti sur [ZExtension.guard] (version non gérée ou
+/// corrompue retombe sur `null`, jamais de throw — invariant AD-10).
+/// L'application injecte
 /// `ZStudyFolder.fromMap(map, extensionParser: ZStudySharingExtension.fromJsonSafe)`.
 ///
-/// ## Optionalité (AC2, AD-26)
+/// Le partage est activé uniquement si l'application injecte ce parser. Une
+/// application qui ne l'active pas décode le dossier normalement
+/// (`extension == null`) : aucune entité ni backend de partage n'est tiré.
 ///
-/// Le partage est **activé** UNIQUEMENT si l'app injecte ce parser. Une app qui ne
-/// l'active pas décode le dossier normalement (`extension == null`) : ni entités,
-/// ni backend de partage tirés. Le slot kernel est **RÉUTILISÉ** (R21), jamais
-/// re-déclaré.
-///
-/// ## 🔴 Dette sécu lex — séparation structurelle (AC5 pt.1)
-///
-/// Les champs de contrôle **effectifs** (propriété, rôle, révocation, listing)
-/// vivent dans les **entités owner-contrôlées** ([ZShareLink]/[ZStudyMembership]/
-/// [ZPublicStudyFolder]), protégées par [ZStudySharingAcl]. Cette extension ne
-/// porte que les **préférences de partage** du dossier ; le bloc V2c **inerte** de
-/// `ZStudyFolder` n'est **PAS** réactivé et ne route **aucune** décision d'autorité.
+/// Les champs de contrôle effectifs (propriété, rôle, révocation, listing)
+/// vivent dans des entités contrôlées par le propriétaire ([ZShareLink],
+/// [ZStudyMembership], [ZPublicStudyFolder]), protégées par
+/// `ZStudySharingAcl`. Cette extension ne porte que les préférences de
+/// partage du dossier — elle ne route aucune décision d'autorité.
 library;
 
 import 'package:zcrud_core/domain.dart';
 
-/// Version du sous-schéma de [ZStudySharingExtension] (indépendante du parent,
-/// AD-4 pt.1). Une version **non gérée** fait rendre `null` à [fromJsonSafe].
+/// Version du sous-schéma de [ZStudySharingExtension], indépendante de celle
+/// du parent (invariant AD-4). Une version non gérée fait rendre `null` à
+/// [fromJsonSafe].
 const int kZStudySharingFormatVersion = 1;
 
 /// Clé de la version dans la map `extension`.
 const String kZStudySharingFormatVersionKey = 'format_version';
 
-/// Extension typée de **partage** d'un dossier — **opt-in, versionnée** (AD-4).
+/// Extension typée de partage d'un dossier — opt-in et versionnée
+/// (invariant AD-4).
 class ZStudySharingExtension implements ZExtension {
   /// Construit une extension de partage (tous les champs ont un défaut sûr).
   const ZStudySharingExtension({
@@ -72,13 +69,13 @@ class ZStudySharingExtension implements ZExtension {
         'share_link_id': shareLinkId,
       };
 
-  /// Reconstruit **défensivement** depuis sa map JSON, ou `null` (AD-4/AD-10) —
-  /// **ne throw JAMAIS**.
+  /// Reconstruit défensivement depuis sa map JSON, ou `null` (invariant
+  /// AD-10) — ne lève jamais.
   ///
-  /// Rend `null` si [json] est `null`, non-map, de `format_version` **absente**
-  /// ou **non gérée**. Un champ non-`bool` retombe sur `false`. Bâtie sur
-  /// [ZExtension.guard] : toute exception imprévue retombe sur `null`, le parent
-  /// (dossier) survivant toujours.
+  /// Retourne `null` si [json] est `null`, non-map, ou de `format_version`
+  /// absente ou non gérée. Un champ non-`bool` retombe sur `false`. Bâtie
+  /// sur [ZExtension.guard] : toute exception imprévue retombe sur `null`,
+  /// le dossier parent survivant toujours.
   static ZStudySharingExtension? fromJsonSafe(Object? json) =>
       ZExtension.guard<ZStudySharingExtension?>(() {
         final map = _asStringMap(json);

@@ -1,14 +1,30 @@
 # Changelog
 
-All notable changes to `zcrud_mindmap` are documented in this file.
+Toutes les modifications notables de `zcrud_mindmap` sont documentées dans ce
+fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## 0.1.0
+## [0.86.0] — Chantier documentation
 
-Initial release.
+### Ajouté
 
-- Immutable `ZMindmap`/`ZMindmapNode` tree model (nesting + denormalized `level`) with pure `ZMindmapTreeOps` (add/update/delete/find + move/indent/outdent/reorder with level recomputation, anti-cycle, structural sharing).
-- `ZMindmapView`: `graphite` auto-layout (bounded zoom/pan) plus an accessible indented list surface, with an injectable node content builder.
-- Outline editor whose save actually applies edits (Flutter-native reactivity, targeted rebuilds).
-- Sync metadata kept off the entity (`ZSyncMeta`); defensive deserialization (AD-10).
-- Part of the [zcrud](https://github.com/zakarius-dev/zcrud) monorepo (14 packages, one declarative CRUD engine).
-- Published under the MIT license.
+- `README.md` du paquet en français, au gabarit de la charte documentaire
+  (remplace le README anglais initial) : aperçu, installation, démarrage
+  rapide, concepts clés, API principale, cas limites et invariants.
+- Fiche `docs/site/paquets/zcrud_mindmap.md` (rôle, quand l'utiliser, types
+  clés).
+- `public_member_api_docs` activé dans `analysis_options.yaml` : l'exhaustivité
+  de la documentation de l'API publique devient un invariant vérifié par
+  l'analyse statique.
+- `CHANGELOG.md` au format Keep a Changelog FR (remplace le changelog
+  anglais initial ; ce fichier).
+
+### Modifié
+
+- Normalisation de la dartdoc et des commentaires internes de l'ensemble du
+  paquet : purge des références de story, d'AC et de revue de code, et des
+  comparatifs d'historique de correctifs — conservation des invariants, des
+  cas limites et des avertissements de contrat cités par leur nom stable
+  (`docs/site/concepts/invariants.md`). Aucun changement de code — la revue
+  ne porte que sur des commentaires.
+
+Historique antérieur : voir `git log` sur `packages/zcrud_mindmap/`.

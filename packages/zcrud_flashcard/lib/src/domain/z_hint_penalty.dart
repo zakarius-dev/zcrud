@@ -1,54 +1,34 @@
-/// Plafond de qualité par **indices consommés** (Story SU-3, AC6 — AD-36).
+/// Plafond de qualité par indices consommés.
 ///
-/// 🔒 **PROPRIÉTAIRE UNIQUE de la pénalité d'indices** (AD-36 mot pour mot :
-/// « la pénalité a un propriétaire unique : la couche **locale** »). Une seule
-/// fonction pure la possède : [zApplyHintCeiling]. Toute autre application de
-/// pénalité — dans un widget, dans un port, dans un barème — serait une
-/// **seconde source** : les deux se **cumuleraient** (double peine invisible) ou
-/// se **contrediraient**.
+/// Propriétaire unique de la pénalité d'indices : la pénalité a un
+/// propriétaire unique, la couche locale. Une seule fonction pure la
+/// possède : [zApplyHintCeiling]. Toute autre application de pénalité — dans
+/// un widget, dans un port, dans un barème — serait une seconde source : les
+/// deux se cumuleraient (double peine invisible) ou se contrediraient.
 ///
-/// 🔒 **APPLIQUÉ EN DERNIER, SUR LA VALEUR RENDUE** — y compris sur la
-/// `suggestedQuality` d'un port. C'est la **garde anti-contournement** d'AD-36 :
-/// « un port qui rend 10 indices ne contourne pas le plafond ». L'ordre est
-/// **imposé par mandat** (AD-36) :
+/// ## Appliqué en dernier, sur la valeur rendue
+///
+/// Y compris sur la qualité suggérée par un port : c'est la garde
+/// anti-contournement — un port qui rend une note haute avec plusieurs
+/// indices consommés ne contourne pas le plafond. L'ordre imposé est :
 ///
 /// ```text
 /// port  → config.clampQuality(suggestedQuality) → zApplyHintCeiling(...) → qualité
 /// local → max/minQuality                        → zApplyHintCeiling(...) → qualité
 /// repli → config.passThreshold                  → zApplyHintCeiling(...) → qualité
-/// « Je ne sais pas » → config.minQuality        → zApplyHintCeiling(...) → qualité
-///                                                 ▲ UNE SEULE VOIE, EN DERNIER
+/// « je ne sais pas » → config.minQuality        → zApplyHintCeiling(...) → qualité
+///                                                 ▲ une seule voie, en dernier
 /// ```
 ///
-/// ⚠️ **Ce que cet ordre garantit RÉELLEMENT — dit sans le surestimer.**
-/// Cette dartdoc a affirmé que l'ordre était « **non commutatif** » et
-/// « **verrouillé par un test dédié** ». **Les deux étaient FAUX**, et le
-/// contre-exemple qu'elle construisait démontrait en réalité l'**égalité** des
-/// deux ordres. Mesure faite (1144 combinaisons, **0 divergence**), puis prouvée
-/// algébriquement :
+/// L'invariant réellement porteur n'est pas cet ordre en lui-même, mais la
+/// propriété `ceiling >= minQuality`, structurellement garantie par
+/// l'assertion `minQuality < passThreshold` de `ZSrsConfig` : les
+/// configurations qui casseraient cette propriété sont inconstructibles.
+/// L'ordre reste imposé par mandat et par robustesse (il cesserait d'être
+/// équivalent à l'ordre inverse si les assertions de `ZSrsConfig` étaient un
+/// jour relâchées).
 ///
-/// ```text
-/// clamp(x) = max(minQ, min(maxQ, x))   apply(x) = min(x, c)   c = max(maxQ-used, floor)
-/// Ordre imposé   A = min(clamp(x), c)        Ordre inverse  B = clamp(min(x, c))
-/// Soit m = min(maxQ, x) :
-///   m >= minQ : A = min(m, c) ; B = max(minQ, min(m, c)) = min(m, c)   (car c >= minQ)
-///   m <  minQ : A = min(minQ, c) = minQ ; B = max(minQ, min(m, c)) = minQ
-/// ⇒ A == B, à la SEULE condition que c >= minQ.
-/// ```
-///
-/// Or `c >= floor >= passThreshold - 1 >= minQuality`, **structurellement
-/// garanti** par l'`assert(minQuality < passThreshold)` de `ZSrsConfig` (AD-46) :
-/// les configs qui casseraient l'égalité sont **inconstructibles**.
-///
-/// ⇒ **L'invariant PORTEUR n'est donc pas l'ordre : c'est `ceiling >= minQuality`**
-/// — et c'est LUI qui est pinné (`z_hint_penalty_test.dart`, « le plafond ne
-/// descend jamais sous `minQuality` » : retirer le plancher dérivé le fait
-/// **ROUGIR**). L'ordre reste imposé **par mandat AD-36 et par robustesse** (il
-/// cesserait d'être équivalent si un jour AD-46 relâchait ses asserts), **pas**
-/// parce qu'un test le verrouille : un tel test **ne pourrait jamais rougir**, et
-/// l'écrire aurait été fabriquer une preuve.
-///
-/// 🔒 **Fonction PURE** : aucun Flutter, aucun port, aucun état.
+/// Fonction pure : aucun Flutter, aucun port, aucun état.
 library;
 
 import 'dart:math' as math;
@@ -57,26 +37,26 @@ import 'z_srs_config.dart';
 
 /// Politique de plafonnement par indices (value-object immuable).
 ///
-/// Ne porte que le **plancher** du plafond : le pas de pénalité (**un cran par
-/// indice**) est fixé par AD-36 et n'est pas un réglage.
+/// Ne porte que le plancher du plafond : le pas de pénalité (un cran par
+/// indice) est fixe et n'est pas un réglage.
 class ZHintPenaltyPolicy {
-  /// Construit une politique. [floor] `null` ⇒ plancher **DÉRIVÉ**
+  /// Construit une politique. [floor] `null` ⇒ plancher dérivé
   /// (`config.passThreshold - 1`).
   const ZHintPenaltyPolicy({this.floor});
 
-  /// Plancher du **plafond** (jamais de la note), ou `null` ⇒ dérivé.
+  /// Plancher du plafond (jamais de la note), ou `null` ⇒ dérivé.
   ///
-  /// 🔒 **Ne descend JAMAIS sous `config.passThreshold - 1`** (= `2` par défaut).
-  /// Une valeur plus basse est **REMONTÉE** à cette borne (AD-10 : dégrader,
-  /// jamais lever d'exception).
+  /// Ne descend jamais sous `config.passThreshold - 1` (`2` par défaut). Une
+  /// valeur plus basse est remontée à cette borne (invariant AD-10 :
+  /// dégrader, jamais lever d'exception).
   ///
-  /// **Pourquoi ce plancher, et pourquoi DÉRIVÉ** : sous `passThreshold - 1`, un
-  /// apprenant qui demande quelques indices basculerait **mécaniquement en
-  /// lapse** — l'indice, qui est une aide **pédagogique**, deviendrait une
-  /// sanction SRS et la carte reviendrait en boucle. Le PRD parle d'un
-  /// « plancher 2 » : c'est la **conséquence** de `passThreshold == 3`, pas une
-  /// constante. Le coder en dur ferait diverger silencieusement toute app qui
-  /// configure `passThreshold: 4` (son plancher doit alors valoir **3**).
+  /// Pourquoi ce plancher, et pourquoi dérivé : sous `passThreshold - 1`, un
+  /// apprenant qui demande quelques indices basculerait mécaniquement en
+  /// lapse — l'indice, qui est une aide pédagogique, deviendrait une
+  /// sanction SRS et la carte reviendrait en boucle. Un plancher de `2` est
+  /// la conséquence de `passThreshold == 3`, pas une constante indépendante.
+  /// Le coder en dur ferait diverger silencieusement toute application qui
+  /// configure un `passThreshold` différent.
   final int? floor;
 
   @override
@@ -91,42 +71,42 @@ class ZHintPenaltyPolicy {
   String toString() => 'ZHintPenaltyPolicy(floor: $floor)';
 }
 
-/// Plancher **effectif** du plafond : [ZHintPenaltyPolicy.floor] **remonté** à
+/// Plancher effectif du plafond : [ZHintPenaltyPolicy.floor] remonté à
 /// `config.passThreshold - 1` s'il est plus bas (ou `null`).
 ///
-/// Exposé pour que la garde de dérivation soit testable **directement** (une app
-/// à `passThreshold: 4` ⇒ plancher `3`, jamais le littéral `2`).
+/// Exposé pour que la dérivation soit testable directement (une application
+/// à `passThreshold: 4` a un plancher `3`, jamais un littéral figé).
 int zHintCeilingFloor({
   required ZSrsConfig config,
   ZHintPenaltyPolicy policy = const ZHintPenaltyPolicy(),
 }) {
-  // 🔒 DÉRIVÉ, jamais le littéral 2 : `passThreshold - 1` est « le cran
-  // immédiatement inférieur au seuil de passage » (AD-36).
+  // Dérivé, jamais le littéral 2 : `passThreshold - 1` est le cran
+  // immédiatement inférieur au seuil de passage.
   final derived = config.passThreshold - 1;
   final requested = policy.floor;
   if (requested == null || requested < derived) return derived;
   return requested;
 }
 
-/// Applique le **plafond d'indices** à [rawQuality] — 🔒 **EN DERNIER**, sur la
-/// **valeur rendue** (AD-36).
+/// Applique le plafond d'indices à [rawQuality] — en dernier, sur la valeur
+/// rendue.
 ///
-/// Chaque indice **abaisse d'UN CRAN la qualité maximale attribuable** :
+/// Chaque indice abaisse d'un cran la qualité maximale attribuable :
 /// `ceiling = max(config.maxQuality - hintsUsed, floor)`, puis
-/// 🔒 `quality = min(rawQuality, ceiling)`.
+/// `quality = min(rawQuality, ceiling)`.
 ///
-/// 🔒 **Il PLAFONNE, il ne REMONTE JAMAIS une note basse** (`min`, jamais `max`) :
-/// `raw = 1` avec 3 indices vaut **1**, pas `2`. Un plafond qui remonterait une
-/// note serait une **récompense** pour avoir demandé de l'aide — l'inverse exact
-/// de son objet.
+/// Il plafonne, il ne remonte jamais une note basse (`min`, jamais `max`) :
+/// une note brute de 1 avec 3 indices vaut 1, pas 2. Un plafond qui
+/// remonterait une note serait une récompense pour avoir demandé de l'aide —
+/// l'inverse exact de son objet.
 ///
-/// 🔒 **Défensif (AD-10)** : un [hintsUsed] négatif est traité comme `0` ; le
-/// plancher est **remonté** si la politique en demande un trop bas ; aucune
+/// Défensif (invariant AD-10) : un [hintsUsed] négatif est traité comme `0` ;
+/// le plancher est remonté si la politique en demande un trop bas ; aucune
 /// exception n'est jamais levée.
 ///
-/// Le résultat reste **dans l'échelle** dès lors que [rawQuality] y est (il n'est
-/// que diminué) — le clamp d'échelle reste la charge de `config.clampQuality`,
-/// **appelé avant** (AD-46 : une seule voie de clamp).
+/// Le résultat reste dans l'échelle dès lors que [rawQuality] y est (il
+/// n'est que diminué) — le clamp d'échelle reste la charge de
+/// `config.clampQuality`, appelé avant (une seule voie de clamp).
 int zApplyHintCeiling({
   required int rawQuality,
   required int hintsUsed,
@@ -137,6 +117,6 @@ int zApplyHintCeiling({
   final floor = zHintCeilingFloor(config: config, policy: policy);
   // Un cran de moins par indice, jamais sous le plancher.
   final ceiling = math.max(config.maxQuality - used, floor);
-  // 🔒 `min` : plafonne, ne remonte pas.
+  // `min` : plafonne, ne remonte pas.
   return math.min(rawQuality, ceiling);
 }

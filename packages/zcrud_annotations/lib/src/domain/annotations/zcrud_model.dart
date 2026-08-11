@@ -1,21 +1,19 @@
 import 'package:zcrud_core/edition.dart';
 
 /// Annotation de **classe** déclarant un modèle `zcrud` sérialisable et
-/// enregistrable (source unique de vérité — AD-3).
+/// enregistrable (source unique de vérité — invariant AD-3).
 ///
-/// Le générateur E2-5 (`build_runner`) lit cette annotation **statiquement**
-/// (`TypeChecker`/`ConstantReader`, jamais d'exécution ni de réflexion — AD-3,
-/// `reflectable` banni) pour émettre `toMap`/`fromMap`/`copyWith`, le
-/// `ZFieldSpec[]` et l'enregistrement au `ZcrudRegistry`.
+/// Le générateur `zcrud_generator` (`build_runner`) lit cette annotation
+/// **statiquement** (`TypeChecker`/`ConstantReader`, jamais d'exécution ni de
+/// réflexion — invariant AD-3, `reflectable` banni) pour émettre
+/// `toMap`/`fromMap`/`copyWith`, le `ZFieldSpec[]` et l'enregistrement au
+/// `ZcrudRegistry`.
 ///
-/// Classe `const` **pur-données** (tous champs `final`, zéro comportement — AC1).
+/// Classe `const` **pur-données** (tous champs `final`, zéro comportement).
 ///
 /// ---
 ///
-/// # ⚠️ CONTRAT OBLIGATOIRE — un décodeur de DOMAINE `fromMap`
-///
-/// > **CHANGEMENT CASSANT** pour tout modèle existant qui n'en déclare pas —
-/// > cf. `zcrud_generator/CHANGELOG.md` (note de migration).
+/// # CONTRAT OBLIGATOIRE — un décodeur de DOMAINE `fromMap`
 ///
 /// Toute classe `@ZcrudModel` **DOIT** déclarer
 /// `Xxx.fromMap(Map<String, dynamic> map)` — **factory** ou **méthode statique**,
@@ -36,12 +34,12 @@ import 'package:zcrud_core/edition.dart';
 /// }
 /// ```
 ///
-/// **Classe `ZExtensible`** (slot `extra`, AD-4) : cette délégation est
-/// **INTERDITE** — `_$XxxFromMap` ne connaît QUE les champs `@ZcrudField` et
-/// laisse `extra` **VIDE**. Un store câblé sur `registry.decode` effacerait alors
-/// **toute clé métier inconnue du schéma**, à chaque cycle lecture → écriture,
-/// **irréversiblement** (dette DW-ES14-1). La factory doit peupler `extra`, et le
-/// `toMap()` d'instance doit le **réémettre** :
+/// **Classe `ZExtensible`** (slot `extra`, invariant AD-4) : cette délégation
+/// est **INTERDITE** — `_$XxxFromMap` ne connaît QUE les champs `@ZcrudField`
+/// et laisse `extra` **VIDE**. Un store câblé sur `registry.decode` effacerait
+/// alors **toute clé métier inconnue du schéma**, à chaque cycle
+/// lecture → écriture, **irréversiblement**. La factory doit peupler `extra`,
+/// et le `toMap()` d'instance doit le **réémettre** :
 ///
 /// ```dart
 /// @ZcrudModel(kind: 'flashcard')
@@ -59,7 +57,7 @@ import 'package:zcrud_core/edition.dart';
 ///
 ///   static final Set<String> _reservedKeys = <String>{
 ///     for (final spec in $ZFlashcardFieldSpecs) spec.name,
-///     ...ZSyncMeta.reservedKeys,                      // AD-19.1
+///     ...ZSyncMeta.reservedKeys,
 ///   };
 ///
 ///   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
@@ -70,7 +68,7 @@ import 'package:zcrud_core/edition.dart';
 /// }
 /// ```
 ///
-/// ## Ce contrat est vérifié PAR MACHINE — trois filets
+/// ## Ce contrat est vérifié par la chaîne d'outillage — trois filets
 ///
 /// 1. **BUILD** : décodeur absent, ou signature incompatible ⇒
 ///    `InvalidGenerationSourceError`.

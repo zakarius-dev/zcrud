@@ -1,4 +1,4 @@
-/// `ZRichTextFullscreenDialog` — éditeur rich-text **plein-écran** (DP-3, B6/AC3).
+/// `ZRichTextFullscreenDialog` — éditeur rich-text **plein-écran** (B6).
 ///
 /// Présente l'éditeur Quill COMPLET (toolbar complète + embeds LaTeX/tableau) en
 /// **dialog dimensionné 80 %×70 %** de l'écran, avec **repli `Scaffold`
@@ -16,7 +16,7 @@
 ///   remontée se fait UNIQUEMENT à la validation).
 /// - **AD-10** : valeur d'entrée absente/corrompue → document VIDE éditable,
 ///   jamais de throw ; annulation → `null`.
-/// - **AD-13/FR-26** : actions ≥ 48 dp, `Semantics` explicites, directionnel ;
+/// - **AD-13** : actions ≥ 48 dp, `Semantics` explicites, directionnel ;
 ///   couleurs issues du thème injecté (repli `Theme.of`).
 library;
 
@@ -57,7 +57,7 @@ Future<Object?> showZRichTextFullscreenDialog(
   return showDialog<Object?>(
     context: context,
     // Plein-écran (petit écran) : dialog opaque plein cadre ; sinon dialog
-    // centré dimensionné (AC3).
+    // centré dimensionné.
     useSafeArea: !fullscreen,
     builder: (BuildContext dialogContext) => ZRichTextFullscreenDialog(
       initialValue: initialValue,
@@ -99,21 +99,21 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
   /// Codec de normalisation de l'entrée / défaut `ZDeltaCodec`.
   final ZCodec? codec;
 
-  /// Placeholder (texte indicatif) de l'éditeur VIDE — GAP-3. Le texte vient de
+  /// Placeholder (texte indicatif) de l'éditeur VIDE. Le texte vient de
   /// l'appelant (déjà résolu l10n par `ZMarkdownField`) ; `null` ⇒ aucun
-  /// placeholder. JAMAIS de libellé codé en dur ici (FR-26).
+  /// placeholder. JAMAIS de libellé codé en dur ici.
   final String? placeholder;
 
-  /// Jeu de styles NEUTRE par champ (GAP-5) — MÊME rendu que le champ appelant.
+  /// Jeu de styles NEUTRE par champ — MÊME rendu que le champ appelant.
   final ZRichTextStyleSet? styleSet;
 
-  /// Facteur d'échelle ABSOLU du texte (GAP-7). `null` ⇒ échelle ambiante.
+  /// Facteur d'échelle ABSOLU du texte. `null` ⇒ échelle ambiante.
   final double? textScaleFactor;
 
-  /// Rendu des formules par champ (GAP-7). `null` ⇒ rendu historique.
+  /// Rendu des formules par champ. `null` ⇒ rendu historique.
   final ZRichTextFormulaSpec? formulaSpec;
 
-  /// Config de barre NEUTRE transmise par le champ appelant (GAP-9).
+  /// Config de barre NEUTRE transmise par le champ appelant.
   /// `null` ⇒ défaut historique du dialog ([ZRichTextToolbarConfig.full]).
   final ZRichTextToolbarConfig? toolbarConfig;
 
@@ -149,7 +149,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
           insertZLatex(context, _quill, isMounted: () => mounted),
       onInsertTable: () =>
           insertZTable(context, _quill, isMounted: () => mounted),
-      // GAP-9 : config transmise par le champ appelant ; `null` ⇒ full
+      // config transmise par le champ appelant ; `null` ⇒ full
       // (défaut historique du dialog, inchangé).
       config: widget.toolbarConfig ?? ZRichTextToolbarConfig.full,
       // CR 2026-08-11 : SURFACE plein-écran ⇒ AUTO = multi-rangées (c'est là
@@ -187,7 +187,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
         Semantics(
           container: true,
           label: 'Barre d\'outils',
-          // GAP-9 : fond thémé OPT-IN — `false`/`null` ⇒ aucun wrapper.
+          // fond thémé OPT-IN — `false`/`null` ⇒ aucun wrapper.
           child: zDecorateToolbar(
             context,
             widget.toolbarConfig ?? ZRichTextToolbarConfig.full,
@@ -207,7 +207,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
             ),
             child: Padding(
               padding: zTheme.fieldPadding,
-              // GAP-7 : mêmes échelle/formules que le champ appelant.
+              // mêmes échelle/formules que le champ appelant.
               child: zWrapRichTextContent(
                 context,
                 textScaleFactor: widget.textScaleFactor,
@@ -219,17 +219,17 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
                   config: QuillEditorConfig(
                     padding: EdgeInsetsDirectional.zero,
                     embedBuilders: kZEmbedBuilders,
-                    // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+                    // (AD-10) : repli TOTAL. Sans lui, un type
                     // d'embed inconnu — d'un hôte, d'une version future, ou né
                     // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
                     // BUILD, donc irrattrapable : écran rouge, puis cascade de
                     // `RenderErrorBox`. Mesuré sur `divider`.
                     unknownEmbedBuilder: kZUnknownEmbedBuilder,
-                    // MIN-1 : styles de titres dérivés du thème (FR-26).
-                    // GAP-5 : jeu de styles par champ fusionné par-dessus.
+                    // styles de titres dérivés du thème.
+                    // jeu de styles par champ fusionné par-dessus.
                     customStyles:
                         zQuillThemedStyles(context, styleSet: widget.styleSet),
-                    // GAP-3 : même placeholder que le champ appelant.
+                    // même placeholder que le champ appelant.
                     placeholder: widget.placeholder,
                   ),
                 ),
@@ -304,7 +304,7 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
     final Widget content = widget.fullscreen
         // Plein-écran : Scaffold occupe tout le cadre du dialog.
         ? Dialog.fullscreen(child: scaffold)
-        // Dialog dimensionné 80 %×70 % (AC3).
+        // Dialog dimensionné 80 %×70 %.
         : _sizedDialog(context, title);
 
     return Localizations.override(

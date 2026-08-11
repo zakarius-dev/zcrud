@@ -1,19 +1,19 @@
-/// Transitions de route **RTL-aware** et **découplées de tout routeur** (AD-32,
-/// AD-13, NFR-U2/U6/U7).
+/// Transitions de route **RTL-aware** et **découplées de tout routeur**
+/// (invariant AD-13).
 ///
-/// Neutralise `transitions.dart` de lex (couplé à `go_router` via
-/// `CustomTransitionPage`/`GoRouterState`) en primitives **`package:flutter`
-/// natives** :
-/// * [zSlideBeginOffset] : **fonction pure** (testable sans `BuildContext`)
-///   calculant l'offset de début du slide selon la `TextDirection` — cœur de
-///   l'inversion RTL (AD-13/NFR-U6) ;
-/// * [zPageRoute] : `PageRouteBuilder<T>` **neutre** (aucun `go_router`), piloté
-///   par l'enum [ZRouteTransition] (jamais un `bool` — NFR-U7), durées/courbes
+/// Primitives **`package:flutter` natives**, sans aucun couplage à un
+/// routeur tiers :
+/// * [zSlideBeginOffset] : **fonction pure** (testable sans
+///   `BuildContext`) calculant l'offset de début du slide selon la
+///   `TextDirection` — cœur de l'inversion RTL (invariant AD-13) ;
+/// * [zPageRoute] : `PageRouteBuilder<T>` **neutre** (aucun `go_router`),
+///   piloté par l'enum [ZRouteTransition] (jamais un `bool`), durées/courbes
 ///   **injectées** ;
-/// * [ZPageTransitionsBuilder] : `PageTransitionsBuilder` natif enregistrable
-///   dans `PageTransitionsTheme`, réutilisant la même logique RTL.
+/// * [ZPageTransitionsBuilder] : `PageTransitionsBuilder` natif
+///   enregistrable dans `PageTransitionsTheme`, réutilisant la même
+///   logique RTL.
 ///
-/// ⛔ **Aucun** routeur : le câblage dans un `GoRouter`/`Navigator` réel
+/// **Aucun** routeur : le câblage dans un `GoRouter`/`Navigator` réel
 /// appartient à l'app/binding, pas à `zcrud_ui_kit`.
 library;
 
@@ -23,12 +23,12 @@ import '../domain/z_route_transition.dart';
 
 /// Offset de **DÉBUT** du slide entrant, selon la direction de lecture.
 ///
-/// Le contenu entre par le côté **« fin » (end)** de la lecture :
-/// * LTR : le « end » est à droite → `Offset(1, 0)` ;
-/// * RTL : le « end » est à gauche → `Offset(-1, 0)`.
+/// Le contenu entre par le côté **« fin » (end)** de la lecture:
+/// * LTR: le « end » est à droite → `Offset(1, 0)`;
+/// * RTL: le « end » est à gauche → `Offset(-1, 0)`.
 ///
 /// L'offset horizontal **change de signe** entre LTR et RTL — c'est l'inversion
-/// exigée par AD-13. **Fonction pure** : aucun `BuildContext`, déterministe et
+/// exigée par AD-13. **Fonction pure**: aucun `BuildContext`, déterministe et
 /// totale sur les deux valeurs de [TextDirection] (jamais de throw).
 Offset zSlideBeginOffset(TextDirection direction) =>
     Offset(direction == TextDirection.rtl ? -1.0 : 1.0, 0.0);
@@ -43,7 +43,7 @@ Widget _buildZTransition({
   required Curve curve,
   required Widget child,
 }) {
-  // Exhaustif sans `default` : un nouveau palier casserait la compilation.
+  // Exhaustif sans `default`: un nouveau palier casserait la compilation.
   switch (transition) {
     case ZRouteTransition.slide:
       final begin = zSlideBeginOffset(Directionality.of(context));
@@ -61,9 +61,9 @@ Widget _buildZTransition({
 
 /// Route de page **neutre** (aucun routeur) appliquant une transition RTL-aware.
 ///
-/// Retourne un `PageRouteBuilder<T>` `package:flutter` pur : aucun
+/// Retourne un `PageRouteBuilder<T>` `package:flutter` pur: aucun
 /// `CustomTransitionPage`, aucun `GoRouterState`, aucun `go_router`. Le sens du
-/// slide est dérivé de `Directionality.of(context)` via [zSlideBeginOffset] ;
+/// slide est dérivé de `Directionality.of(context)` via [zSlideBeginOffset];
 /// [duration] et [curve] sont **injectés** (jamais codés en dur non
 /// surchargeable).
 PageRouteBuilder<T> zPageRoute<T>({
@@ -92,7 +92,7 @@ PageRouteBuilder<T> zPageRoute<T>({
 /// `PageTransitionsBuilder` natif RTL-aware, enregistrable dans un
 /// `PageTransitionsTheme` (`builders: {TargetPlatform.x: ZPageTransitionsBuilder()}`).
 ///
-/// Réutilise [zSlideBeginOffset] : même inversion RTL que [zPageRoute], sans
+/// Réutilise [zSlideBeginOffset]: même inversion RTL que [zPageRoute], sans
 /// dépendre d'aucun routeur.
 class ZPageTransitionsBuilder extends PageTransitionsBuilder {
   /// Construit un builder de transition. [transition] et [curve] injectés.
@@ -101,7 +101,7 @@ class ZPageTransitionsBuilder extends PageTransitionsBuilder {
     this.curve = Curves.easeInOut,
   });
 
-  /// Type de transition appliqué (enum, jamais un `bool` — NFR-U7).
+  /// Type de transition appliqué (enum, jamais un `bool`).
   final ZRouteTransition transition;
 
   /// Courbe d'animation injectée.

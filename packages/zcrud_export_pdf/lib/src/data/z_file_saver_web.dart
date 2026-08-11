@@ -1,17 +1,17 @@
 /// Implémentation **web** de `ZFileSaver` — arêtes `package:web` + `dart:js_interop`
-/// CONFINÉES à ce fichier conditionnel (comble le trou DODLP : `save_file_web`
-/// était un stub VIDE).
+/// CONFINÉES à ce fichier conditionnel.
 ///
-/// origine: E11b-3 (Axe B, AC6). Déclenche un **téléchargement navigateur** de
+/// Déclenche un **téléchargement navigateur** de
 /// [bytes] sous [fileName] : Blob (annoté par [mimeType]) → URL objet → ancre
 /// `<a download>` cliquée → révocation de l'URL objet (anti-fuite mémoire). Voie
 /// web MODERNE : `dart:html` (déprécié) est BANNI → `package:web` + `dart:js_interop`.
-/// Purement LOCAL : aucune requête réseau, aucun secret, aucun `badCert` (AD-12).
-/// Ces symboles web ne fuient jamais dans la façade neutre `ZFileSaver`.
+/// Purement LOCAL : aucune requête réseau, aucun secret, aucun `badCert`
+/// (invariant AD-12). Ces symboles web ne fuient jamais dans la façade
+/// neutre `ZFileSaver`.
 ///
 /// NOTE : non exerçable sous `flutter test` (VM Dart) — l'import conditionnel y
-/// charge la version io/stub, jamais ce fichier. Couvert par le gate statique
-/// (compile analyzer-clean, n'importe que web/js_interop, aucun secret) — AC12.
+/// charge la version io/stub, jamais ce fichier. Couvert par un gate statique
+/// dédié (compile analyzer-clean, n'importe que web/js_interop, aucun secret).
 library;
 
 import 'dart:js_interop';

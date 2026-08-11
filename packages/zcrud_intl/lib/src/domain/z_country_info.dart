@@ -1,18 +1,20 @@
-/// `ZCountryInfo` — **entrée de catalogue pays neutre** (E11a-2,
-/// AD-1/AD-14/AD-10).
+/// `ZCountryInfo` — **entrée de catalogue pays neutre** (invariants AD-1,
+/// AD-14, AD-10).
 ///
-/// origine: entrée de l'asset `countries.json` bundlé dans `zcrud_intl`, servant
-/// le picker pays et la liaison indicatif du champ téléphone. Modèle **pur-Dart**
-/// (uniquement des `String`).
+/// Entrée de l'asset `countries.json` bundlé dans `zcrud_intl`, servant le
+/// picker pays et la liaison indicatif du champ téléphone. Modèle
+/// **pur-Dart** (uniquement des `String`).
 ///
-/// **IMPORTANT — valeur de tranche `country` = code ISO alpha-2 `String`
-/// opaque** (canonique « `id` String opaque »), PAS ce modèle. [ZCountryInfo]
-/// enrichit l'affichage du picker (nom/indicatif/drapeau) mais n'est **jamais**
-/// la valeur écrite dans le `ZFormController` — seul [isoCode] l'est.
+/// **Important — valeur de tranche `country` = code ISO alpha-2 `String`
+/// opaque** (canonique « `id` String opaque »), pas ce modèle.
+/// [ZCountryInfo] enrichit l'affichage du picker (nom/indicatif/drapeau)
+/// mais n'est **jamais** la valeur écrite dans le `ZFormController` — seul
+/// [isoCode] l'est.
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map` ou
-/// [isoCode] absent/vide → `null` (une entrée sans code ISO est inexploitable) ;
-/// les autres champs non-`String` sont dégradés à `null`.
+/// **Défensif (invariant AD-10)** : [fromMapSafe] ne **throw jamais**.
+/// `raw` non-`Map` ou [isoCode] absent/vide → `null` (une entrée sans code
+/// ISO est inexploitable) ; les autres champs non-`String` sont dégradés à
+/// `null`.
 library;
 
 /// Entrée de catalogue pays : code ISO + nom/indicatif/drapeau optionnels.
@@ -40,9 +42,10 @@ class ZCountryInfo {
   final String? flagEmoji;
 
   /// Sérialise en `Map` neutre. **Clés canoniques** alignées sur l'asset
-  /// `countries.json` : `iso` / `name` / `dialCode` / `flag`. Le round-trip est
-  /// symétrique — [fromMapSafe] relit ces mêmes clés (et accepte en plus les
-  /// alias `isoCode` / `flagEmoji` pour l'interop d'un schéma externe, LOW-3).
+  /// `countries.json` : `iso` / `name` / `dialCode` / `flag`. Le round-trip
+  /// est symétrique — [fromMapSafe] relit ces mêmes clés (et accepte en
+  /// plus les alias `isoCode` / `flagEmoji` pour l'interop d'un schéma
+  /// externe).
   Map<String, Object?> toMap() => <String, Object?>{
         'iso': isoCode,
         if (name != null) 'name': name,
@@ -50,7 +53,7 @@ class ZCountryInfo {
         if (flagEmoji != null) 'flag': flagEmoji,
       };
 
-  /// Parse **défensif** (AD-10) : `null` sans throw si [raw] n'est pas une `Map`
+  /// Parse **défensif** (AD-10): `null` sans throw si [raw] n'est pas une `Map`
   /// ou si le code ISO (`iso`) est absent/vide. Accepte les alias `iso`/`isoCode`
   /// et `flag`/`flagEmoji` (robustesse de schéma).
   static ZCountryInfo? fromMapSafe(Object? raw) {

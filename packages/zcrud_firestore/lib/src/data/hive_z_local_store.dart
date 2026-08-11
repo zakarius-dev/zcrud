@@ -1,36 +1,39 @@
-/// Adaptateur **Hive** concret du port neutre `ZLocalStore<T>` (E5-2).
+/// Adaptateur **Hive** concret du port neutre `ZLocalStore<T>`.
 ///
-/// origine: canonique §7 — store LOCAL **source de vérité** offline-first (AD-9).
-/// Réplique côté cache les corrections d'E5-1 : invariant **corps `id`** toujours
-/// écrit (MAJEUR-1), visibilité `is_deleted` **cohérente** get/getAll/watch
-/// (MAJEUR-2), décodage **défensif** (AD-10, un corrompu parmi N → N-1),
-/// soft-delete **hors-entité** (`ZSyncMeta`), erreurs enveloppées en
-/// `Left(ZCacheFailure)` (AD-11, jamais de `catch(_){}`).
+/// Store LOCAL **source de vérité** offline-first (invariant AD-9). Réplique
+/// côté cache les mêmes garanties que l'adaptateur Firestore : invariant
+/// **corps `id`** toujours écrit, visibilité `is_deleted` **cohérente**
+/// get/getAll/watch, décodage **défensif** (invariant AD-10, un corrompu
+/// parmi N → N-1), soft-delete **hors-entité** (`ZSyncMeta`), erreurs
+/// enveloppées en `Left(ZCacheFailure)` (invariant AD-11, jamais de
+/// `catch(_){}`).
 ///
-/// **Isolation AD-5 (CRUCIAL)** : `package:hive` est importé **uniquement** ici.
-/// Aucun type Hive (`Box`, `HiveObject`, `HiveInterface`, `BoxEvent`,
-/// `HiveError`) ne fuit dans une **signature publique de méthode** — toutes
-/// restent `ZResult<…>` / `Stream<List<T>>` **nues**. L'injection d'une
-/// [Box] au constructeur (ou l'ouverture via [openBox]) est la SEULE couture
-/// (voulue) vers le backend — exactement comme E5-1 injecte `FirebaseFirestore`.
+/// **Isolation (invariant AD-5, CRUCIAL)** : `package:hive` est importé
+/// **uniquement** ici. Aucun type Hive (`Box`, `HiveObject`, `HiveInterface`,
+/// `BoxEvent`, `HiveError`) ne fuit dans une **signature publique de
+/// méthode** — toutes restent `ZResult<…>` / `Stream<List<T>>` **nues**.
+/// L'injection d'une [Box] au constructeur (ou l'ouverture via [openBox]) est
+/// la SEULE couture (voulue) vers le backend — exactement comme l'adaptateur
+/// Firestore injecte `FirebaseFirestore`.
 ///
 /// **Stockage JSON sans `TypeAdapter`** : chaque entité est persistée comme
 /// **JSON** (`jsonEncode` de la map codée) keyée par son `id` — pas de codegen
 /// Hive. Le décodage relit la chaîne, la reparse et route par la voie défensive.
 ///
-/// **Frontière de story (ne PAS déborder)** : E5-2 = le store local + son port.
-/// Le **merge Last-Write-Wins** sur `updatedAt` (E5-3), la cascade bornée ≤ 450
-/// (E5-3) et le `ZSyncOrchestrator`/débounce (E5-4) sont **hors périmètre** —
-/// aucune méthode `sync()`/`merge()` ici. La suppression locale est un
-/// **soft-delete** (drapeau), jamais une purge physique ([clear] est une
-/// maintenance distincte du chemin de suppression métier).
+/// **Périmètre** : ce fichier porte le store local et son port. Le **merge
+/// Last-Write-Wins** sur `updatedAt`, la cascade bornée ≤ 450 et
+/// l'orchestrateur de synchronisation/débounce vivent dans les autres
+/// fichiers de ce paquet — aucune méthode `sync()`/`merge()` ici. La
+/// suppression locale est un **soft-delete** (drapeau), jamais une purge
+/// physique ([clear] est une maintenance distincte du chemin de suppression
+/// métier).
 library;
 
 // `prefer_initializing_formals` est un FAUX POSITIF ici : les champs de config
 // sont **privés** et exposés en paramètres **nommés**. Dart interdit un formal
 // d'initialisation nommé privé (`this._x`) — l'assignation en liste
-// d'initialisation est la SEULE forme possible. Désactivé au niveau fichier pour
-// garder `analyze` à zéro info (gate melos fatal-infos), comme en E5-1.
+// d'initialisation est la SEULE forme possible. Désactivé au niveau fichier
+// pour garder `analyze` à zéro info (gate melos fatal-infos).
 // ignore_for_file: prefer_initializing_formals
 
 import 'dart:async';
@@ -43,8 +46,9 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 /// Journal minimal **neutre** de l'adaptateur (type public sans dépendance
 /// Hive). Une entrée non décodable ou une erreur de flux est **loggée** ici puis
-/// écartée (AD-10) — jamais avalée silencieusement. Miroir de `ZFirestoreLog`
-/// d'E5-1 (aucun port `ZLogger` n'existe dans `zcrud_core` — hors périmètre).
+/// écartée (invariant AD-10) — jamais avalée silencieusement. Miroir de
+/// `ZFirestoreLog` (aucun port `ZLogger` n'existe dans `zcrud_core` — hors
+/// périmètre).
 typedef ZLocalStoreLog = void Function(
   String message, {
   Object? error,

@@ -1,32 +1,33 @@
-/// Gabarit PDF flashcards — composition **inline** texte + LaTeX (su-11,
-/// AC1/AC2/AC5/AC9). Arête `syncfusion_flutter_pdf` **CONFINÉE à ce fichier**.
+/// Gabarit PDF flashcards — composition **inline** texte + LaTeX. Arête
+/// `syncfusion_flutter_pdf` **CONFINÉE à ce fichier**.
 ///
-/// origine: su-11 (E-STUDY-UI, FR-SU16). Produit un PDF imprimable typé d'un
-/// dossier entier **ou** d'une sélection de cartes, avec ou sans réponses. Comme
-/// les autres backends (`z_pdf_exporter.dart` / `z_pdf_document_builder.dart`),
-/// l'import Syncfusion est confiné ici : il n'est JAMAIS réexporté par le barrel,
-/// et aucun type `PdfDocument`/`PdfBitmap`/… n'apparaît dans une signature
-/// publique. Entrée = [ZFlashcardPdfInput] **neutre** ; sortie = [ZExportedFile]
-/// **neutre** (bytes `%PDF-`) → fuite de type structurellement impossible (AD-1).
+/// Produit un PDF imprimable typé d'un dossier entier **ou** d'une sélection
+/// de cartes, avec ou sans réponses. Comme les autres backends
+/// (`z_pdf_exporter.dart` / `z_pdf_document_builder.dart`), l'import
+/// Syncfusion est confiné ici : il n'est JAMAIS réexporté par le barrel, et
+/// aucun type `PdfDocument`/`PdfBitmap`/… n'apparaît dans une signature
+/// publique. Entrée = [ZFlashcardPdfInput] **neutre** ; sortie =
+/// [ZExportedFile] **neutre** (bytes `%PDF-`) → fuite de type
+/// structurellement impossible (invariant AD-1).
 ///
-/// **PUR (AD-42)** : ce fichier n'importe NI `printing`, NI `flutter_math_fork`,
+/// **Pur** : ce fichier n'importe NI `printing`, NI `flutter_math_fork`,
 /// NI `dart:ui` de rendu écran (`RepaintBoundary`/`toImage`/`PictureRecorder`).
 /// La rasterisation LaTeX passe par le **port pur** [ZLatexRasterizer] (impl
 /// concrète hors package, dans `zcrud_export_ui`). Le gabarit reste exécutable
 /// sous `flutter test` **sans plateforme ni pixel réel** (rasterizer = fake/null).
 ///
-/// **Composition inline (AC5)** : au-delà de `buildImagesPdf` (une image par
-/// page), ce gabarit compose **texte + bitmap DANS le flux** (`drawString` mot à
-/// mot + `drawImage` positionné à la volée). Une formule s'insère DANS le
-/// paragraphe ; le texte non-LaTeX reste **extractible** (dessiné en texte).
+/// **Composition inline** : au-delà d'une image par page, ce gabarit compose
+/// **texte + bitmap DANS le flux** (`drawString` mot à mot + `drawImage`
+/// positionné à la volée). Une formule s'insère DANS le paragraphe ; le texte
+/// non-LaTeX reste **extractible** (dessiné en texte).
 ///
-/// **Défensif (AD-10, AC9)** : dossier vide → PDF 1 page (titre) ; carte
+/// **Défensif (invariant AD-10)** : dossier vide → PDF 1 page (titre) ; carte
 /// malformée → rendue sans crash ; LaTeX invalide (rasterizer `null`) → repli sur
 /// le **texte brut** de la formule ; explication longue → **pagination** ;
 /// Unicode/RTL → rendu sans exception. `PdfDocument.dispose()` en `finally` sur
-/// TOUS les chemins (learning E5).
+/// TOUS les chemins.
 ///
-/// **AD-12** : aucune clé/licence Syncfusion committée, aucun `badCertificateCallback`.
+/// **Invariant AD-12** : aucune clé/licence Syncfusion committée, aucun `badCertificateCallback`.
 library;
 
 import 'dart:typed_data';
@@ -46,7 +47,7 @@ import 'z_pdf_export_options.dart';
 ///
 /// Le [rasterizer] est un **port** injecté (impl concrète dans `zcrud_export_ui`).
 /// S'il est `null` ou échoue sur une formule, le gabarit retombe sur le texte
-/// brut de la formule (AC9) — il ne lève JAMAIS vers l'appelant.
+/// brut de la formule — il ne lève JAMAIS vers l'appelant.
 class ZFlashcardPdfTemplate {
   /// Construit le gabarit. [rasterizer] optionnel (repli texte brut si absent) ;
   /// [options] paramètre l'orientation (portrait par défaut).
@@ -60,26 +61,26 @@ class ZFlashcardPdfTemplate {
   /// Port de rasterisation LaTeX (impl concrète hors package). `null` → repli texte.
   final ZLatexRasterizer? rasterizer;
 
-  /// Port de police **TrueType** (CR-LEX-38) — `null` ⇒ police standard
+  /// Port de police **TrueType** — `null` ⇒ police standard
   /// WinAnsi, donc **latin-1 seulement**, et tout caractère hors jeu redevient
   /// `?`. Le fournir suffit à ce que l'arabe, le grec, le cyrillique, le CJK ou
   /// les emoji survivent à l'export.
   ///
-  /// ⚠️ Une police seule ne couvre **jamais** toutes les écritures — voir
-  /// [fallbackFontProviders], qui lève cette limite (CR-LEX-43).
+  /// Une police seule ne couvre **jamais** toutes les écritures — voir
+  /// [fallbackFontProviders], qui lève cette limite.
   final ZPdfFontProvider? fontProvider;
 
-  /// **Chaîne de repli** de polices (CR-LEX-43) — consultées dans l'ordre quand
+  /// **Chaîne de repli** de polices — consultées dans l'ordre quand
   /// [fontProvider] ne porte pas un caractère.
   ///
-  /// 🔴 **Le défaut que ce champ ferme.** CR-LEX-38 livrait UNE police par
-  /// document, et sa dartdoc conseillait « fournissez une police qui couvre les
-  /// deux ». Mesuré côté hôte : **une telle police n'existe pas** dans un bundle
+  /// **Pourquoi une chaîne, pas une seule police.** Une police unique par
+  /// document impose de trouver une fonte qui couvre toutes les écritures
+  /// attendues — or **une telle police n'existe pas** dans un bundle
   /// mobile raisonnable — `NotoSans-Regular` porte 2840 glyphes sans l'arabe,
   /// `NotoSansArabic-Regular` en porte 1161 **sans même la lettre `A`**. Les
   /// fontes Noto sont découpées **par écriture**, c'est leur principe de
-  /// conception. Le conseil était donc inapplicable : un document mêlant latin
-  /// et arabe était impossible, sans aucun recours hôte.
+  /// conception. Sans chaîne de repli, un document mêlant latin et arabe est
+  /// donc impossible.
   ///
   /// ```dart
   /// ZFlashcardPdfTemplate(
@@ -93,7 +94,7 @@ class ZFlashcardPdfTemplate {
   /// Un caractère que **personne** ne porte devient `?` — une perte **visible**,
   /// jamais un `.notdef` invisible (cf. [ZFontCoverage]).
   ///
-  /// ⚠️ Un mot mêlant deux écritures peut être coupé en fin de ligne entre ses
+  /// Un mot mêlant deux écritures peut être coupé en fin de ligne entre ses
   /// deux portions : le retour à la ligne opère par élément placé.
   final List<ZPdfFontProvider> fallbackFontProviders;
 
@@ -102,7 +103,7 @@ class ZFlashcardPdfTemplate {
 
   // Métriques de rendu (points PDF). Documentées : le gabarit produit des BYTES
   // sans BuildContext (aucune l10n/thème runtime) → constantes documentées, non
-  // « couleurs codées en dur évitables » (T2 : « sinon constantes documentées »).
+  // des couleurs codées en dur évitables.
   static const double _titleSize = 18;
   static const double _headingSize = 12;
   static const double _bodySize = 11;
@@ -150,7 +151,7 @@ class ZFlashcardPdfTemplate {
     // Pré-rasterisation (le port est asynchrone) : on résout TOUTES les formules
     // rendues AVANT la mise en page synchrone. Cache par source (dé-duplication).
     final bitmaps = await _prerasterize(input, answerVisibility);
-    // CR-LEX-38 : octets de police chargés UNE fois, défensivement. Un provider
+    // Octets de police chargés UNE fois, défensivement. Un provider
     // absent, rendant `null`, ou levant ⇒ repli sur la police standard : le
     // rendu fonctionne toujours, il redevient borné au latin-1.
     final chain = _FontChain(await _loadFontChain());
@@ -168,7 +169,7 @@ class ZFlashcardPdfTemplate {
 
       // Titre (toujours présent, même dossier vide → PDF 1 page jamais 0-page).
       const titleFont = _FontRef(_titleSize, PdfFontStyle.bold);
-      // CR-LEX-42 : le repli de titre était lui aussi écrit en français en dur.
+      // Le repli de titre est une clé l10n de l'hôte, jamais un texte figé.
       flow.drawText(
         input.title.isEmpty ? input.labels.untitledLabel : input.title,
         titleFont,
@@ -206,8 +207,8 @@ class ZFlashcardPdfTemplate {
       for (final ch in card.choices ?? const <ZFlashcardPdfChoice>[]) {
         sources.addAll(_latexOf(ch.content));
       }
-      // CR-LEX-39 : l'indice est rendu dans LES DEUX modes — ses formules
-      // doivent donc être pré-rasterisées inconditionnellement.
+      // L'indice est rendu dans LES DEUX modes — ses formules doivent donc
+      // être pré-rasterisées inconditionnellement.
       sources.addAll(_latexOf(card.hint ?? ''));
       if (visibility == ZAnswerVisibility.withAnswers) {
         sources.addAll(_latexOf(card.answer ?? ''));
@@ -252,9 +253,9 @@ class ZFlashcardPdfTemplate {
     // métriques proches ; mélanger les hauteurs ferait sauter l'interligne).
     final bodyH = flow.chain.primary(bodyFont).height;
 
-    // Numérotation (heading) — table unique. CR-LEX-42 : la seule chaîne
-    // française que l'hôte ne pouvait PAS surcharger. Un patron vide supprime
-    // la numérotation, ce qui est un choix d'hôte légitime.
+    // Numérotation (heading) — table unique, surchargeable par l'hôte via ses
+    // libellés. Un patron vide supprime la numérotation, ce qui est un choix
+    // d'hôte légitime.
     final numbering = input.labels.cardNumberFor(index, total);
     if (numbering.isNotEmpty) {
       flow.drawText(numbering, headingFont);
@@ -288,7 +289,7 @@ class ZFlashcardPdfTemplate {
       flow.newParagraph(_paraGap / 2);
     }
 
-    // CR-LEX-39 — INDICE, rendu HORS du bloc réponse : il reste visible en
+    // INDICE, rendu HORS du bloc réponse : il reste visible en
     // `withoutAnswers`, qui est le mode RÉVISION, celui où un indice sert le
     // plus. Le masquer avec la réponse en ferait un doublon de l'explication.
     final hint = card.hint;
@@ -335,7 +336,7 @@ class ZFlashcardPdfTemplate {
 
   /// Écrit [text] en composant texte + LaTeX INLINE : les segments `$...$` sont
   /// rasterisés (bitmap), les autres dessinés en texte (extractible). Repli sur
-  /// le texte brut de la source LaTeX si son bitmap est absent (AC9).
+  /// le texte brut de la source LaTeX si son bitmap est absent.
   void _drawInline(
     _Flow flow,
     String text,
@@ -349,10 +350,10 @@ class ZFlashcardPdfTemplate {
         if (bmp != null) {
           flow.drawInlineBitmap(bmp, h);
         } else {
-          // CR-LEX-41 §B — repli défensif (AC9) : on réémet le texte SOURCE,
-          // DÉLIMITEURS COMPRIS. Auparavant `seg.text` était peint nu : les `$`
-          // disparaissaient du document, et avec eux le sens (« 100 $ US » →
-          // « 100  US »). Le repli ne doit rien coûter.
+          // Repli défensif : on réémet le texte SOURCE, DÉLIMITEURS COMPRIS.
+          // Peindre le contenu nu ferait disparaître les `$` du document, et
+          // avec eux le sens (« 100 $ US » → « 100  US »). Le repli ne doit
+          // rien coûter.
           flow.drawText(seg.raw, font);
         }
       } else if (seg.raw.isNotEmpty) {
@@ -368,17 +369,17 @@ class ZFlashcardPdfTemplate {
     }
   }
 
-  /// Interprétation LaTeX active (CR-LEX-41 §B) — `ZPdfExportOptions.latexEnabled`.
+  /// Interprétation LaTeX active — `ZPdfExportOptions.latexEnabled`.
   bool get _latexEnabled => (options ?? const ZPdfExportOptions()).latexEnabled;
 
   /// Découpe [text] en segments alternés texte / LaTeX sur le délimiteur `$`.
   ///
-  /// 🔴 **INVARIANT SANS PERTE (CR-LEX-41 §B)** : la concaténation des [_Seg.raw]
+  /// **Invariant sans perte** : la concaténation des [_Seg.raw]
   /// reconstitue [text] **caractère pour caractère**. C'est ce qui garantit qu'un
   /// `$` — délimiteur apparié, délimiteur orphelin, ou simple symbole monétaire —
-  /// ne peut plus s'évaporer du document. L'ancienne version, bâtie sur un
-  /// `split(r'$')` dont les délimiteurs n'étaient jamais réémis, violait cet
-  /// invariant en silence. Un test le vérifie sur un corpus.
+  /// ne peut plus s'évaporer du document. Un découpage naïf sur le seul
+  /// caractère `$`, sans réémission des délimiteurs, violerait cet invariant
+  /// en silence. Un test le vérifie sur un corpus.
   ///
   /// Un `$` non apparié rattache le reste au TEXTE (défensif). Aucun throw.
   static List<_Seg> _tokenize(String text, {bool latexEnabled = true}) {
@@ -409,7 +410,8 @@ class ZFlashcardPdfTemplate {
   }
 
   /// Couleur documentée « correct » (vert). Pas de BuildContext dans un
-  /// générateur de bytes → constante documentée (T2), non couleur « évitable ».
+  /// générateur de bytes → constante documentée, non couleur codée en dur
+  /// évitable.
   static final PdfColor _correctColor = PdfColor(27, 128, 62);
 
   /// Couleur documentée « incorrect » (rouge).
@@ -417,7 +419,7 @@ class ZFlashcardPdfTemplate {
 }
 
 /// Descripteur de police **indépendant des octets** : taille + style. Le choix
-/// de la fonte réelle est différé au dessin, caractère par caractère (CR-LEX-43).
+/// de la fonte réelle est différé au dessin, caractère par caractère.
 class _FontRef {
   const _FontRef(this.size, [this.style]);
   final double size;
@@ -427,9 +429,9 @@ class _FontRef {
 /// Chaîne de polices : les octets, leur couverture `cmap`, et le cache des
 /// `PdfFont` construits.
 ///
-/// 🔴 **Pourquoi un cache** : `PdfTrueTypeFont` est coûteux à construire, et le
-/// gabarit en demandait **quatre par carte** avant CR-LEX-43. Un document de
-/// 200 cartes reconstruisait 800 fois les mêmes polices.
+/// **Pourquoi un cache** : `PdfTrueTypeFont` est coûteux à construire, et le
+/// gabarit en demande plusieurs par carte. Sans cache, un document de
+/// 200 cartes reconstruirait des centaines de fois les mêmes polices.
 class _FontChain {
   _FontChain(this._bytes);
 
@@ -445,8 +447,8 @@ class _FontChain {
   /// Index de la première police portant [codePoint], ou `-1` si aucune.
   ///
   /// Une police dont le `cmap` est illisible est **éligible** : sans cela, une
-  /// police valide mais exotique serait écartée en silence, ce qui régresserait
-  /// le comportement de CR-LEX-38.
+  /// police valide mais exotique serait écartée en silence, ce qui priverait
+  /// l'hôte d'une police fournie explicitement.
   int indexFor(int codePoint) {
     if (ZFontCoverage.isLayoutCodePoint(codePoint)) return 0;
     for (var i = 0; i < _bytes.length; i++) {
@@ -458,7 +460,7 @@ class _FontChain {
 
   /// Police construite pour l'index [i] (`-1`/hors chaîne ⇒ standard WinAnsi).
   /// Un `PdfTrueTypeFont` invalide retombe sur le standard — jamais d'export
-  /// perdu (AD-10).
+  /// perdu (invariant AD-10).
   PdfFont fontAt(int i, _FontRef ref) {
     final key = '$i|${ref.size}|${ref.style}';
     final hit = _cache[key];
@@ -485,11 +487,11 @@ class _FontChain {
   /// Découpe [text] en **suites de caractères servies par la même police**.
   ///
   /// Un caractère qu'AUCUNE police ne porte est remplacé par `?` et rattaché à
-  /// la suite de la police primaire : la perte redevient **visible**. C'est la
-  /// garantie que CR-LEX-38 annonçait et que la mesure a infirmée — avec une
-  /// police TrueType, `measureString` **ne lève jamais**, donc l'ancien
-  /// `_sanitize` était un **no-op** et le non-couvert devenait un `.notdef`,
-  /// c'est-à-dire une case vide indiscernable d'une mise en page.
+  /// la suite de la police primaire : la perte redevient **visible**. Avec une
+  /// police TrueType, `measureString` **ne lève jamais** sur un caractère non
+  /// couvert : sans cette substitution explicite, le non-couvert deviendrait
+  /// un `.notdef` silencieux, c'est-à-dire une case vide indiscernable d'une
+  /// mise en page.
   List<_Run> runs(String text) {
     // Sans chaîne TrueType, rien à sélectionner ni à substituer ici : c'est
     // `_sanitize` (qui discrimine, lui, sur une police standard) qui opère.
@@ -535,7 +537,7 @@ class _Seg {
 
   /// Contenu **tel qu'il figure dans la source**, délimiteurs compris. C'est ce
   /// qui est peint en repli : `raw` concaténé sur tous les segments reconstitue
-  /// le texte d'origine à l'identique (CR-LEX-41 §B).
+  /// le texte d'origine à l'identique.
   final String raw;
 }
 
@@ -546,7 +548,7 @@ class _Flow {
 
   final PdfDocument _document;
 
-  /// Chaîne de polices (CR-LEX-43) — la fonte réelle est choisie au dessin.
+  /// Chaîne de polices — la fonte réelle est choisie au dessin.
   final _FontChain chain;
   late PdfPage _page;
   late double _contentW;
@@ -619,20 +621,19 @@ class _Flow {
   /// = un élément plaçable) : le texte reste **extractible** (drawString), avec
   /// habillage et pagination.
   ///
-  /// 🔴 **CR-LEX-41 §A — les sauts de ligne étaient une PERTE SILENCIEUSE.** Le
-  /// découpage ne portait que sur l'espace : un mot contenant `\n` partait en
-  /// **un seul** `drawString` dans un `Rect` d'**une** hauteur de ligne, et tout
-  /// ce qui suivait le saut sortait du rectangle — jamais rendu, sans exception
-  /// ni compteur. Le PDF restait valide et **amputé**. C'était plus grave que la
-  /// substitution Unicode de CR-LEX-38 : celle-ci laissait au moins un `?`.
-  /// Un saut de ligne est désormais un **vrai retour à la ligne**.
+  /// **Les sauts de ligne ne doivent jamais être une perte silencieuse.** Un
+  /// découpage qui ne porterait que sur l'espace enverrait un mot contenant
+  /// `\n` en **un seul** `drawString` dans un `Rect` d'**une** hauteur de
+  /// ligne : tout ce qui suit le saut sortirait du rectangle — jamais rendu,
+  /// sans exception ni compteur, le PDF restant valide et **amputé**. Un saut
+  /// de ligne est donc traité comme un **vrai retour à la ligne**.
   ///
-  /// Défensif (AD-10) : les polices STANDARD (WinAnsi) ne portent PAS tous les
-  /// glyphes Unicode (arabe/CJK/emoji…) et `measureString`/`drawString`
-  /// **lèveraient** sur un caractère non supporté. Chaque ligne est donc
-  /// [_sanitize]é (les glyphes hors police → `?`) — le rendu ne throw JAMAIS
-  /// (le shaping RTL/complexe complet exige une police TrueType, cf. CR-LEX-38 :
-  /// `ZPdfFontProvider`).
+  /// Défensif (invariant AD-10) : les polices STANDARD (WinAnsi) ne portent
+  /// PAS tous les glyphes Unicode (arabe/CJK/emoji…) et
+  /// `measureString`/`drawString` **lèveraient** sur un caractère non
+  /// supporté. Chaque ligne est donc [_sanitize]é (les glyphes hors police →
+  /// `?`) — le rendu ne throw JAMAIS (le shaping RTL/complexe complet exige
+  /// une police TrueType, cf. `ZPdfFontProvider`).
   void drawText(String rawText, _FontRef ref, {PdfColor? color}) {
     if (rawText.isEmpty) return;
     final font = chain.primary(ref);
@@ -648,12 +649,11 @@ class _Flow {
 
   /// Dessine UNE ligne (garantie sans rupture) mot à mot.
   ///
-  /// ⚠️ La tabulation n'est **pas** transformée, et c'est un choix MESURÉ, pas un
-  /// oubli. La CR-LEX-41 demandait de découper aussi sur `\t` ; l'extraction du
-  /// PDF montre que `\t` ne perdait **rien** — `'AAA\tBBB'` ressort `AAA    BBB`,
-  /// intact. La perte venait entièrement du `\n`. Une expansion en espaces a été
-  /// écrite puis **retirée** : aucune assertion ne pouvait la faire rougir, et du
-  /// code qu'aucun test ne peut infirmer est précisément ce que ce dépôt traque.
+  /// La tabulation n'est **pas** transformée, et c'est un choix MESURÉ, pas un
+  /// oubli. L'extraction du PDF montre que `\t` ne perd **rien** —
+  /// `'AAA\tBBB'` ressort `AAA    BBB`, intact ; la perte venait entièrement
+  /// du `\n`. Une expansion en espaces serait donc du code qu'aucun test ne
+  /// peut distinguer de son absence — un signe qu'elle n'a pas sa place ici.
   void _drawSingleLine(String rawLine, _FontRef ref, {PdfColor? color}) {
     if (rawLine.isEmpty) return;
     final primary = chain.primary(ref);
@@ -669,7 +669,7 @@ class _Flow {
         if (_x > 0) _x += spaceW;
         continue;
       }
-      // CR-LEX-43 : un mot peut mêler deux écritures — il est découpé en suites
+      // Un mot peut mêler deux écritures — il est découpé en suites
       // servies par une même police, chacune peinte avec la sienne.
       for (final run in chain.runs(token)) {
         final f = chain.fontAt(run.fontIndex, ref);
@@ -689,10 +689,9 @@ class _Flow {
 
   /// Dessine un badge : texte encadré d'un rectangle de fond léger (bloc).
   ///
-  /// 🔴 Le badge souffrait de la **même amputation** que [drawText] avant
-  /// CR-LEX-41 §A — un libellé multi-ligne était peint dans un rectangle d'une
-  /// seule hauteur de ligne, et la suite disparaissait. La CR ne le signalait
-  /// pas ; c'est le jumeau du défaut, deux méthodes plus loin.
+  /// Le badge est exposé au **même risque d'amputation** que [drawText] : un
+  /// libellé multi-ligne peint dans un rectangle d'une seule hauteur de ligne
+  /// verrait sa suite disparaître.
   ///
   /// Un badge est par construction un **encadré d'une ligne** : plutôt que
   /// d'inventer un encadré multi-ligne, les blancs sont **aplatis** (`\s+` → un

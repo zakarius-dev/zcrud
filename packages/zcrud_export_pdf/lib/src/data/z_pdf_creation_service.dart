@@ -1,10 +1,11 @@
 /// Façade **neutre** `ZPdfCreationService` : images/scans → document PDF unique.
 ///
-/// origine: E11b-3 (Axe A, AC1/AC4). Source UNIQUE remplaçant le `PdfCreationService`
-/// dupliqué à l'identique dans DODLP/IFFD. Signature 100 % neutre :
+/// Source UNIQUE d'assemblage d'images en PDF, évitant qu'un tel service soit
+/// dupliqué par chaque application hôte. Signature 100 % neutre :
 /// `List<Uint8List>` (bytes d'images) → `Uint8List` (bytes PDF). AUCUN type
 /// Syncfusion n'apparaît ici : la logique de rendu vit dans le backend confiné
-/// `z_pdf_document_builder.dart`. Défensif (AD-10) délégué au backend.
+/// `z_pdf_document_builder.dart`. Défensif (invariant AD-10) délégué au
+/// backend.
 library;
 
 import 'dart:typed_data';

@@ -1,21 +1,21 @@
-/// `ZMediaCropOptions` — options **neutres** de recadrage d'image (fp-4-2, AC2).
+/// `ZMediaCropOptions` — options **neutres** de recadrage d'image.
 ///
-/// 🔴 **API NEUTRE (AD-40)** : ce value object pur-Dart ne référence **AUCUN**
+/// **API neutre** : ce value object pur-Dart ne référence **AUCUN**
 /// type `image_cropper` (`CropAspectRatio`/`AndroidUiSettings`/…). Il exprime le
 /// recadrage en données neutres ; la traduction vers `image_cropper` vit dans le
 /// seam par défaut `ZPluginImageCropSeam` (couche `data`, confinée).
 ///
 /// Le recadrage est **désactivé par défaut** ([disabled]) : sans opt-in
 /// explicite, le flux d'acquisition d'image de `ZMediaFilePicker` est
-/// **strictement inchangé** (rétro-compat AC2).
+/// **strictement inchangé**.
 library;
 
-/// Options `const` de recadrage post-pick (neutres, AD-40).
+/// Options `const` de recadrage post-pick, neutres.
 class ZMediaCropOptions {
   /// Construit des options de recadrage.
   ///
   /// [enabled] pilote l'activation : `false` (défaut) ⇒ aucun recadrage (flux
-  /// d'AC1 inchangé). [aspectRatioX]/[aspectRatioY] fixent un ratio verrouillé
+  /// d'acquisition inchangé). [aspectRatioX]/[aspectRatioY] fixent un ratio verrouillé
   /// optionnel (tous deux `> 0`) ; [lockAspectRatio] empêche l'utilisateur de le
   /// modifier. [maxWidth]/[maxHeight] bornent la sortie (pixels) ;
   /// [compressQuality] est un pourcentage `0..100` (défaut `100`).

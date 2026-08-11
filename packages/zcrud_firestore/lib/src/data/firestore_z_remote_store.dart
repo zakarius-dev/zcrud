@@ -1,39 +1,40 @@
-/// Adaptateur **Firestore** concret du port neutre `ZRemoteStore<T>` (E5-2).
+/// Adaptateur **Firestore** concret du port neutre `ZRemoteStore<T>`.
 ///
-/// origine: canonique §7 — store DISTANT **fire-and-forget** (AD-9). Réalisé par
-/// **composition** sur l'adaptateur Firestore d'E5-1
-/// ([FirebaseZRepositoryImpl]) — PAS d'héritage (AD-4 rejette l'héritage de
-/// classes sérialisées) et PAS de second traducteur `ZDataRequest→Query`. Le
-/// port distant reste **mince** : `push→save`, `remoteDelete→softDelete`,
-/// `pull→getAll`, `watchAll→watchAll`.
+/// Store DISTANT **fire-and-forget** (invariant AD-9). Réalisé par
+/// **composition** sur l'adaptateur Firestore [FirebaseZRepositoryImpl] — pas
+/// d'héritage (invariant AD-4 rejette l'héritage de classes sérialisées) et
+/// pas de second traducteur `ZDataRequest→Query`. Le port distant reste
+/// **mince** : `push→save`, `remoteDelete→softDelete`, `pull→getAll`,
+/// `watchAll→watchAll`.
 ///
-/// **Fire-and-forget best-effort (borné E5-2)** : la sémantique du port est que
+/// **Fire-and-forget best-effort (borné)** : la sémantique du port est que
 /// le distant **n'est jamais la source de vérité** (un échec distant ≠ un échec
-/// du store local). L'impl E5-2 se **contente de déléguer** à l'adaptateur E5-1
-/// et de **propager son `ZResult` typé** (`ZServerFailure` inclus, jamais avalé).
-/// L'**orchestration** — débounce, best-effort silencieux (`Right(unit)` si
-/// déconnecté), cascade bornée ≤ 450, merge Last-Write-Wins sur `updatedAt` —
-/// **appartient à E5-3/E5-4** et n'est **PAS** implémentée ici (frontière
-/// **volontaire**).
+/// du store local). Cette implémentation se **contente de déléguer** à
+/// l'adaptateur Firestore et de **propager son `ZResult` typé**
+/// (`ZServerFailure` inclus, jamais avalé). L'**orchestration** — débounce,
+/// best-effort silencieux (`Right(unit)` si déconnecté), cascade bornée ≤
+/// 450, merge Last-Write-Wins sur `updatedAt` — vit dans les autres fichiers
+/// de ce paquet et n'est **PAS** implémentée ici (frontière **volontaire**).
 ///
-/// **Isolation AD-5 (héritée d'E5-1, re-vérifiée)** : aucun type
-/// `cloud_firestore` ne fuit — la classe n'importe même **pas** `cloud_firestore`
-/// (elle ne connaît que le repository neutre). Les signatures restent
-/// `ZResult<…>` / `Stream<List<T>>` **nues**.
+/// **Isolation (invariant AD-5, re-vérifiée)** : aucun type `cloud_firestore`
+/// ne fuit — la classe n'importe même **pas** `cloud_firestore` (elle ne
+/// connaît que le repository neutre). Les signatures restent `ZResult<…>` /
+/// `Stream<List<T>>` **nues**.
 library;
 
-// `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en paramètre
-// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier comme E5-1.
+// `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en
+// paramètre nommé — `this._x` interdit par Dart). Désactivé au niveau
+// fichier, comme les autres adaptateurs de ce paquet.
 // ignore_for_file: prefer_initializing_formals
 
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'firebase_z_repository_impl.dart';
 
-/// Adaptateur Firestore de [ZRemoteStore] pour l'agrégat [T], par **composition**
-/// sur un [FirebaseZRepositoryImpl] (E5-1).
+/// Adaptateur Firestore de [ZRemoteStore] pour l'agrégat [T], par
+/// **composition** sur un [FirebaseZRepositoryImpl].
 ///
-/// **Injection** : le [repository] Firestore d'E5-1 (couture DI ; il porte
+/// **Injection** : le [repository] Firestore (couture DI ; il porte
 /// lui-même l'instance `FirebaseFirestore`). Le remote store n'ajoute aucune
 /// logique de traduction — il **délègue** intégralement, préservant la MÊME
 /// sémantique de clé (corps `id`) et de soft-delete (`is_deleted`/`updated_at`

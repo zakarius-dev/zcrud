@@ -1,7 +1,7 @@
 /// `ZFlashcardPreview` — aperçu **en lecture seule** d'une flashcard (SU-8,
 /// AC14 — AD-45).
 ///
-/// ## 🔴 Il ne rend RIEN lui-même : il COMPOSE `ZFlashcardReviewCard`
+/// ## Il ne rend RIEN lui-même : il COMPOSE `ZFlashcardReviewCard`
 ///
 /// AD-45 exige qu'une carte s'ouvre en aperçu « rendu par `ZFlashcardReviewCard`
 /// (su-2) — **jamais un rendu parallèle** ». Réécrire ici un affichage
@@ -70,7 +70,7 @@ class ZFlashcardPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 AUCUN rendu propre : `ZFlashcardReviewCard` (su-2) est la SEULE surface
+    // AUCUN rendu propre : `ZFlashcardReviewCard` (su-2) est la SEULE surface
     // de rendu d'une carte. Ce widget ne décide QUE des callbacks.
     return ZFlashcardReviewCard(
       card: card,

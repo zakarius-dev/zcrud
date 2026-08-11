@@ -298,7 +298,7 @@ class ZDefaultMindmapCard extends StatelessWidget {
 
   // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
   //
-  // 🔴 NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
+  // NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
   // valeurs POMPÉES depuis v0.43.0. Les paramètres de chrome restent
   // NON-inertes (AD-4) : fournis, ils s'appliquent ; nuls, rendu littéral.
 
@@ -370,7 +370,7 @@ class ZDefaultMindmapCard extends StatelessWidget {
   ) =>
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // 🔴 `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
+        // `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
         // facteur REMPLIT la hauteur disponible (carte gonflée à 854 dp).
         heightFactor: 1,
         child: DecoratedBox(

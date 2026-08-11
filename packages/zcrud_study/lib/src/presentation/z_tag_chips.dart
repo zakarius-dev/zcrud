@@ -164,7 +164,7 @@ class ZTagChips extends StatelessWidget {
             SizedBox(width: theme.gapS),
             // AC6 — TITRE TEXTUEL TOUJOURS rendu (couleur jamais seul canal).
             //
-            // 🔴 **CR-IFFD-47 — `Flexible` MESURÉ, pas décoratif.** La `Row` a
+            // **CR-IFFD-47 — `Flexible` MESURÉ, pas décoratif.** La `Row` a
             // `mainAxisSize.min` et ce `Text` n'avait **aucune borne** : dans
             // une colonne ÉTROITE (rail de 300 dp), un titre de balise un peu
             // long faisait déborder la puce — `RenderFlex overflowed by 21

@@ -1,25 +1,24 @@
-/// `ZStudyToolsPage` — page réelle « study tools » (AD-25) qui ASSEMBLE une
-/// `List<ZStudyToolsSectionSpec>` via `ZSectionedStudyLayout` (COMPOSITION, AD-4 —
+/// `ZStudyToolsPage` — page « study tools » qui assemble une
+/// `List<ZStudyToolsSectionSpec>` via `ZSectionedStudyLayout` (composition,
 /// jamais une réimplémentation inline du layout).
 ///
-/// OBJECTIF PRODUIT N°1 / SM-1 (NON-NÉGOCIABLE) : taper dans un champ scopé ne
-/// reconstruit QUE le champ courant (rebuild ciblé via `ZFieldListenableBuilder`
-/// sur la tranche `ValueListenable` du champ), zéro rebuild des autres sections
-/// ni de la page, zéro perte de focus. La page corrige PAR CONCEPTION le bug
-/// historique de rafraîchissement GLOBAL du monolithe IFFD `folder_study_tools_
-/// page.dart` (`build` unique 350→~1739 l., édition inline `setState` ×18).
+/// Rebuilds granulaires (invariant AD-2, objectif produit n°1) : taper dans
+/// un champ scopé ne reconstruit que le champ courant (rebuild ciblé via
+/// `ZFieldListenableBuilder` sur la tranche `ValueListenable` du champ),
+/// zéro rebuild des autres sections ni de la page, zéro perte de focus.
 ///
-/// Invariants (AD-2/AD-15) NON-NÉGOCIABLES appliqués ici :
-/// - Le [ZFormController] est **STABLE** : créé une fois (`initState`) s'il n'est
-///   pas injecté, jamais recréé au rebuild, disposé au `dispose` UNIQUEMENT s'il
-///   est possédé (un controller injecté par l'appelant N'EST PAS disposé).
-/// - **AUCUN** `setState` pour une valeur de champ ; **AUCUN**
-///   `ListenableBuilder(listenable: controller)` enveloppant les sections
-///   (ré-introduirait le rebuild global — cf. injection R3-I1). Seuls les
+/// Invariants appliqués ici :
+/// - le [ZFormController] est stable : créé une fois (`initState`) s'il
+///   n'est pas injecté, jamais recréé au rebuild, disposé au `dispose`
+///   uniquement s'il est possédé (un controller injecté par l'appelant
+///   n'est pas disposé) ;
+/// - aucun `setState` pour une valeur de champ ; aucun
+///   `ListenableBuilder(listenable: controller)` enveloppant les sections,
+///   ce qui réintroduirait un rebuild global. Seuls les
 ///   `ZFieldListenableBuilder` par champ (dans les `itemBuilder` fournis par
-///   l'appelant) écoutent leur tranche.
-/// - Aucun gestionnaire d'état (`flutter_riverpod`/`get`/`provider`) : réactivité
-///   Flutter-native pure ; injection via `ZcrudScope`/l'`InheritedWidget` interne.
+///   l'appelant) écoutent leur tranche ;
+/// - aucun gestionnaire d'état (invariant AD-15) : réactivité Flutter-native
+///   pure ; injection via `ZcrudScope` ou l'`InheritedWidget` interne.
 library;
 
 import 'package:flutter/widgets.dart';

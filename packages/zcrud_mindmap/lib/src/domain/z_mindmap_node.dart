@@ -1,13 +1,13 @@
-/// Nœud canonique de carte mentale `ZMindmapNode` (Story E10-1, FR-19).
+/// Nœud canonique de carte mentale `ZMindmapNode`.
 ///
-/// origine: lex_core (module « Étude ») — `MindmapNode`
-/// (`lexia_mindmap.dart:22-41`). Arbre récursif par **NESTING** (jamais par
-/// adjacency) + cache de profondeur dénormalisé `level`. Immuable par
-/// convention : **aucun `copyWith` public**, la mutation passe EXCLUSIVEMENT
-/// par `ZMindmapTreeOps` (canonique §2.2).
+/// Arbre récursif par **NESTING** (jamais par adjacency) + cache de
+/// profondeur dénormalisé `level`. Immuable par convention : **aucun
+/// `copyWith` public**, la mutation passe EXCLUSIVEMENT par
+/// `ZMindmapTreeOps`.
 ///
-/// Réutilise les contrats du cœur (AD-1) : étend `ZNode` (clé `id` non-null de
-/// réconciliation) et mixe `ZExtensible` (slots AD-4 : `extension`/`extra`).
+/// Réutilise les contrats du cœur (invariant AD-1) : étend `ZNode` (clé `id`
+/// non-null de réconciliation) et mixe `ZExtensible` (slots invariant AD-4 :
+/// `extension`/`extra`).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -28,8 +28,8 @@ typedef ZExtensionDecoder = ZExtension? Function(Map<String, dynamic> json);
 ///   systématiquement** par `ZMindmapTreeOps` à chaque reparentage (ne jamais
 ///   faire confiance au `level` d'un nœud déplacé) ;
 /// - [content] = texte **brut** multiligne (PAS markdown — le rendu riche est
-///   une extension pluggable, hors E10-1) ;
-/// - slots d'extension AD-4 via `ZExtensible` ([extension] versionnée + [extra]
+///   une extension pluggable) ;
+/// - slots d'extension invariant AD-4 via `ZExtensible` ([extension] versionnée + [extra]
 ///   échappatoire non typée, round-trip des clés inconnues du cœur).
 class ZMindmapNode extends ZNode with ZExtensible {
   /// Construit un nœud immuable. [children] est **copié défensivement** en liste
@@ -43,9 +43,9 @@ class ZMindmapNode extends ZNode with ZExtensible {
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
   })  : children = List<ZMindmapNode>.unmodifiable(children),
-        // 🔴 DW-ES22-3 (ES-2.2b) : la garde partagée, dès la CONSTRUCTION
-        // (constructeur **non-`const`** ⇒ il PEUT filtrer). Dépouillement
-        // SILENCIEUX, jamais un `assert` (AD-10).
+        // La garde partagée s'applique dès la CONSTRUCTION (constructeur
+        // **non-`const`** ⇒ il PEUT filtrer). Dépouillement SILENCIEUX,
+        // jamais un `assert` (invariant AD-10).
         extra = _sanitizeExtra(extra);
 
   /// Clé de réconciliation opaque (non-null, contrat `ZNode`).
@@ -84,19 +84,18 @@ class ZMindmapNode extends ZNode with ZExtensible {
   };
 
   /// Clés de sync **réservées** (`ZSyncMeta`, hors-entité) : JAMAIS capturées
-  /// dans [extra] ni ré-émises par [toJson]. Garantit l'invariant AD-16 sur le
+  /// dans [extra] ni ré-émises par [toJson]. Garantit l'invariant AD-9 sur le
   /// chemin `fromJson→toJson`, même si une map d'entrée mêle des métadonnées de
-  /// sync (le store est seul responsable de ces clés, hors périmètre E10-1).
+  /// sync (le store est seul responsable de ces clés).
   ///
-  /// **AD-19 (ES-1.3)** — alias de la **définition machine unique**
-  /// `ZSyncMeta.reservedKeys` (`zcrud_core`) : plus aucun littéral redéclaré ici
-  /// (solde la dette DW-ES13-1).
+  /// Alias de la **définition machine unique**
+  /// `ZSyncMeta.reservedKeys` (`zcrud_core`) : plus aucun littéral redéclaré ici.
   static const Set<String> _reservedSyncKeys = ZSyncMeta.reservedKeys;
 
   /// Ensemble **RÉSERVÉ** complet de l'entité = clés **connues** ∪ clés de
   /// **sync** — l'argument de la garde partagée [_sanitizeExtra].
   ///
-  /// ⚠️ Cette entité n'a **ni `$Z…FieldSpecs`** (pas de `@ZcrudModel`) **ni**
+  /// Cette entité n'a **ni `$Z…FieldSpecs`** (pas de `@ZcrudModel`) **ni**
   /// `_reservedKeys` : son ensemble réservé se **compose** de [_knownKeys] et de
   /// [_reservedSyncKeys]. Patron **adapté**, pas recopié.
   static const Set<String> _reservedKeys = <String>{
@@ -104,10 +103,10 @@ class ZMindmapNode extends ZNode with ZExtensible {
     ..._reservedSyncKeys,
   };
 
-  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par
+  /// **LA GARDE PARTAGÉE DE `extra`** — appelée par
   /// [fromJson] (via l'initializer du constructeur) **ET** par [toJson].
   ///
-  /// ⚠️ **DEUX sites, et pas de `copyWith`** : cette entité n'expose **aucun**
+  /// **DEUX sites, et pas de `copyWith`** : cette entité n'expose **aucun**
   /// `copyWith` public (la mutation passe EXCLUSIVEMENT par `ZMindmapTreeOps`).
   /// Sa voie d'écriture publique de `extra` est donc le **CONSTRUCTEUR NOMINAL**
   /// — qui, lui, est **non-`const`** et **PEUT** filtrer dans son initializer.
@@ -118,7 +117,7 @@ class ZMindmapNode extends ZNode with ZExtensible {
   /// réémettait les DEUX clés — en **contradiction directe** avec sa propre
   /// dartdoc (« INVARIANT AD-16 : n'écrit NI `updated_at` NI `is_deleted` »).
   ///
-  /// 🔴 **Aggravant, propre à cette entité** : son [toJson] étale `...extra` **EN
+  /// **Aggravant, propre à cette entité** : son [toJson] étale `...extra` **EN
   /// DERNIER** (l'inverse des entités codegen) ⇒ un `extra` pollué **ÉCRASAIT**
   /// jusqu'aux clés connues. La garde couvre les deux (`_knownKeys` ∪ sync).
   static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
@@ -166,10 +165,10 @@ class ZMindmapNode extends ZNode with ZExtensible {
       content: json['content'] is String ? json['content'] as String : null,
       level: json['level'] is int ? json['level'] as int : 0,
       children: children,
-      // CR-LEX-33 : ce ternaire rendait `null` dès qu'aucun décodeur n'était
-      // fourni. Comme `extension` est une clé CONNUE (donc exclue d'`extra`),
-      // le payload d'un AUTRE hôte était DÉTRUIT au décodage. Le cœur préserve
-      // désormais verbatim ce que personne n'a su typer.
+      // Un ternaire naïf rendrait `null` dès qu'aucun décodeur n'est fourni.
+      // Comme `extension` est une clé CONNUE (donc exclue d'`extra`), le
+      // payload d'un AUTRE hôte serait alors DÉTRUIT au décodage. Le cœur
+      // préserve donc verbatim ce que personne n'a su typer.
       extension: zDecodeExtension(json['extension'], extensionDecoder),
       extra: extra,
     );
@@ -178,8 +177,8 @@ class ZMindmapNode extends ZNode with ZExtensible {
   /// Sérialise en clés **snake_case** (uniformisation canonique §5). `content`
   /// omis si `null` ; [extra] réinjecté tel quel (round-trip des clés inconnues).
   ///
-  /// **INVARIANT AD-16** : n'écrit NI `updated_at` NI `is_deleted` (sync
-  /// hors-entité `ZSyncMeta`, hors périmètre E10-1).
+  /// **Invariant AD-9** : n'écrit NI `updated_at` NI `is_deleted` (sync
+  /// hors-entité `ZSyncMeta`).
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'label': label,
@@ -187,13 +186,11 @@ class ZMindmapNode extends ZNode with ZExtensible {
         'level': level,
         'children': children.map((c) => c.toJson()).toList(),
         if (extension != null) 'extension': extension!.toJson(),
-        // 🔴 ES-2.2b (remédiation HIGH-1) — étale [extra] **tel quel** : le
-        // constructeur (NON-`const`) l'a déjà dépouillé, et c'est la SEULE voie
-        // d'écriture publique de cette entité (aucun `copyWith` : la mutation
-        // passe par TreeOps). Un `_sanitizeExtra(extra)` ICI serait **DÉCORATIF**
-        // — MESURÉ (code-review ES-2.2b, INJ-B) : le retirer laissait le gate
-        // **VERT**. La garde vit dans l'initializer du constructeur ; l'en retirer
-        // rend (i.1a)/(i.1c) ROUGES.
+        // Étale [extra] **tel quel** : le constructeur (NON-`const`) l'a déjà
+        // dépouillé, et c'est la SEULE voie d'écriture publique de cette
+        // entité (aucun `copyWith` : la mutation passe par TreeOps). Un
+        // second `_sanitizeExtra(extra)` ICI serait purement décoratif — la
+        // garde vit dans l'initializer du constructeur, pas ici.
         ...extra,
       };
 }

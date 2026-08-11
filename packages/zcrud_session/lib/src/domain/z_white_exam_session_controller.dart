@@ -13,7 +13,9 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'z_session_item.dart';
 import 'z_white_exam_session_engine.dart';
 
-/// Phase de vue, projection totale de la phase du moteur.
+/// Phase de vue, projection totale de la phase du moteur : [setup] avant le
+/// démarrage, [running] tant que des questions restent à répondre,
+/// [submitted] une fois l'examen soumis et son résultat disponible.
 enum ZWhiteExamSessionViewPhase { setup, running, submitted }
 
 /// Projection de lecture de l'état réel du moteur pour la présentation.

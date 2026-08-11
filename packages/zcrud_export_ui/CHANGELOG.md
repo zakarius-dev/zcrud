@@ -1,13 +1,27 @@
 # Changelog
 
-All notable changes to `zcrud_export_ui` are documented in this file.
+Toutes les modifications notables de `zcrud_export_ui` sont documentées dans
+ce fichier. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## 0.2.1
+## [0.86.0] — Chantier documentation
 
-Initial release (su-11, epic E-STUDY-UI).
+### Ajouté
 
-- Platform export satellite for zcrud (AD-42): keeps `zcrud_export` pure (bytes in/out) while hosting the platform-bound pieces.
-- `ZFlutterMathLatexRasterizer`: concrete implementation of the pure `ZLatexRasterizer` port (offscreen `flutter_math_fork` render → PNG).
-- `ZPdfShareService` + `ZPdfPreview`: PDF preview / print / share of `Uint8List` bytes via `printing` — neutral `Uint8List` API, `PdfPageFormat` absorbed internally.
-- Leaf of the AD-1 graph; only zcrud edges are `zcrud_export` and `zcrud_core`.
-- Published under the MIT license.
+- `README.md` du paquet en français au gabarit de la charte documentaire
+  (remplace le README anglais initial) : aperçu, installation, démarrage
+  rapide, concepts clés, API principale, cas limites et invariants.
+- Fiche `docs/site/paquets/zcrud_export_ui.md` (rôle, quand l'utiliser, types
+  clés).
+- `public_member_api_docs` activé dans `analysis_options.yaml` : l'exhaustivité
+  de la documentation de l'API publique devient un invariant vérifié par
+  l'analyse statique.
+
+### Modifié
+
+- Normalisation de la dartdoc de l'ensemble de l'API publique exportée par le
+  barrel : purge des références de story/epic (`su-11`, `E-STUDY-UI`,
+  `FR-SU16`, `AC4`, `AC6`, `AC9`) et des mentions `origine:`/emoji de journal,
+  conservation des invariants citables (`AD-1`, `AD-8`, `AD-10`, `AD-13`).
+  Aucun changement de code — la revue ne porte que sur des commentaires.
+
+Historique antérieur : voir `git log` sur `packages/zcrud_export_ui/`.

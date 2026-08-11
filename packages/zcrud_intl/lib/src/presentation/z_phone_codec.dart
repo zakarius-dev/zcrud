@@ -1,14 +1,15 @@
-/// `ZPhoneCodec` — **pont interne** entre la lib `phone_numbers_parser` et le
-/// modèle neutre [ZPhoneNumber] (E11a-2, AD-1).
+/// `ZPhoneCodec` — **pont interne** entre la lib `phone_numbers_parser` et
+/// le modèle neutre [ZPhoneNumber] (invariant AD-1).
 ///
-/// **CONFINEMENT (AD-1)** : c'est le **SEUL** fichier de `zcrud_intl` qui importe
-/// `phone_numbers_parser`. Aucun type de la lib (`PhoneNumber`, `IsoCode`) ne
-/// franchit cette frontière : l'API ne prend/rend que des `String`/[ZPhoneNumber]
-/// neutres. Ce fichier n'est **jamais** exporté par le barrel `lib/zcrud_intl.dart`.
+/// **Confinement (invariant AD-1)** : c'est le **seul** fichier de
+/// `zcrud_intl` qui importe `phone_numbers_parser`. Aucun type de la lib
+/// (`PhoneNumber`, `IsoCode`) ne franchit cette frontière : l'API ne
+/// prend/rend que des `String`/[ZPhoneNumber] neutres. Ce fichier n'est
+/// **jamais** exporté par le barrel `lib/zcrud_intl.dart`.
 ///
-/// **Défensif (AD-10)** : [parse] ne throw jamais — un numéro non parsable rend
-/// un [ZPhoneNumber] « brut » (national tel quel, sans E.164), jamais une
-/// exception.
+/// **Défensif (invariant AD-10)** : [parse] ne throw jamais — un numéro
+/// non parsable rend un [ZPhoneNumber] « brut » (national tel quel, sans
+/// E.164), jamais une exception.
 library;
 
 import 'package:phone_numbers_parser/phone_numbers_parser.dart' as pnp;
@@ -19,12 +20,12 @@ import '../domain/z_phone_number.dart';
 abstract final class ZPhoneCodec {
   const ZPhoneCodec._();
 
-  /// Index `nom alpha-2 → IsoCode` construit **une seule fois** (LOW-2 :
-  /// remplace le scan linéaire de `IsoCode.values` à chaque appel).
+  /// Index `nom alpha-2 → IsoCode` construit **une seule fois** (remplace
+  /// le scan linéaire de `IsoCode.values` à chaque appel).
   static Map<String, pnp.IsoCode>? _isoByName;
 
-  /// Résout l'`IsoCode` de la lib pour un code alpha-2 [iso] (insensible à la
-  /// casse) ; `null` si inconnu (AD-10, jamais de throw).
+  /// Résout l'`IsoCode` de la lib pour un code alpha-2 [iso] (insensible à
+  /// la casse) ; `null` si inconnu (invariant AD-10, jamais de throw).
   static pnp.IsoCode? _isoOf(String? iso) {
     if (iso == null || iso.isEmpty) return null;
     final index = _isoByName ??= <String, pnp.IsoCode>{
@@ -48,7 +49,7 @@ abstract final class ZPhoneCodec {
 
   /// Parse [raw] (saisie utilisateur) pour le pays [iso] et retourne un
   /// [ZPhoneNumber] **neutre**. Si le numéro est valide, [ZPhoneNumber.e164] est
-  /// renseigné ; sinon on retourne un modèle « brut » (national = saisie
+  /// renseigné; sinon on retourne un modèle « brut » (national = saisie
   /// nettoyée, dialCode/iso du pays) **sans** E.164 — jamais de throw (AD-10).
   static ZPhoneNumber parse(String raw, {String? iso}) {
     final trimmed = raw.trim();
@@ -91,31 +92,31 @@ abstract final class ZPhoneCodec {
   static String _digits(String? s) =>
       s == null ? '' : s.replaceAll(RegExp(r'[^0-9]'), '');
 
-  /// **CONTRAT DE LA VALEUR EXPOSÉE** (CR-DODLP-PHONE-NATIF, 2026-08-10).
+  /// **CONTRAT DE LA VALEUR EXPOSÉE**.
   ///
   /// Canonise ce que le paquet de rendu produit en la chaîne **persistée** par le
-  /// champ `phoneNumber`. Invariant, vérifié par garde :
+  /// champ `phoneNumber`. Invariant, vérifié par garde:
   ///
   /// > la valeur, quand elle est non `null`, correspond TOUJOURS à `^\+[0-9]+$` —
   /// > **forme internationale complète**, indicatif pays inclus, chiffres seuls
   /// > après le `+`. Elle vaut l'**E.164 canonique** dès que le numéro est valide
-  /// > pour le pays sélectionné ; sinon la **même forme internationale**,
+  /// > pour le pays sélectionné; sinon la **même forme internationale**,
   /// > simplement incomplète.
   ///
   /// **Pourquoi pas `value.phoneNumber` brut** (ce que demandait littéralement la
-  /// CR) : mesuré sur `intl_phone_number_input 0.7.5`, ce champ vaut l'E.164
+  /// CR): mesuré sur `intl_phone_number_input 0.7.5`, ce champ vaut l'E.164
   /// quand le numéro est valide, mais sinon `dialCode` **concaténé à la saisie
   /// non nettoyée** — la sonde a produit `'+228+++++'` pour une saisie `'+++++'`
   /// et `'+228901'` pour une saisie partielle. Persister cela donnerait une
   /// donnée qu'on ne peut plus interpréter (ni E.164, ni national, ni même
   /// « chiffres »). On persiste donc une forme **toujours** interprétable.
   ///
-  /// **Repli (AD-10)** : `null` si aucun chiffre n'est saisi, ou si aucun
+  /// **Repli (AD-10)**: `null` si aucun chiffre n'est saisi, ou si aucun
   /// indicatif pays n'est déterminable — sans indicatif la chaîne ne serait pas
-  /// internationale, donc pas interprétable ; on préfère l'absence de valeur à
+  /// internationale, donc pas interprétable; on préfère l'absence de valeur à
   /// une valeur ambiguë. Ne throw jamais.
   ///
-  /// [raw] = chaîne du paquet ; [dialCode] / [iso] = pays sélectionné.
+  /// [raw] = chaîne du paquet; [dialCode] / [iso] = pays sélectionné.
   static String? toInternationalString(
     String? raw, {
     String? dialCode,
@@ -126,17 +127,17 @@ abstract final class ZPhoneCodec {
         : (iso == null ? null : dialCodeOf(iso));
     final cc = _digits(dial);
     var rest = raw?.trim() ?? '';
-    // Le paquet préfixe sa sortie par l'indicatif du pays SÉLECTIONNÉ : on le
+    // Le paquet préfixe sa sortie par l'indicatif du pays SÉLECTIONNÉ: on le
     // retire UNE fois pour ne pas le compter deux fois (`'+228' + '+22890…'`).
     if (dial != null && dial.isNotEmpty && rest.startsWith(dial)) {
       rest = rest.substring(dial.length);
     }
-    // Ce qui reste porte-t-il DÉJÀ son propre indicatif ? Deux chemins mesurés :
+    // Ce qui reste porte-t-il DÉJÀ son propre indicatif ? Deux chemins mesurés:
     //  - la saisie d'un numéro international d'un AUTRE pays que le pays
-    //    sélectionné : le paquet rend son E.164 réel (`'+33612345678'` alors que
-    //    le sélecteur est sur TG). Le re-préfixer donnerait `'+22833612345678'` ;
+    //    sélectionné: le paquet rend son E.164 réel (`'+33612345678'` alors que
+    //    le sélecteur est sur TG). Le re-préfixer donnerait `'+22833612345678'`;
     //  - un indicatif doublé sur une saisie absurde (`'+228' + '+++++'`).
-    // Dans les deux cas le pays est porté par la chaîne : on ne re-préfixe pas,
+    // Dans les deux cas le pays est porté par la chaîne: on ne re-préfixe pas,
     // et on laisse le préfixe décider du pays (aucun indice `iso` imposé).
     final alreadyInternational = rest.startsWith('+');
     final String candidate;
@@ -158,11 +159,11 @@ abstract final class ZPhoneCodec {
         callerCountry: hint,
       );
       // `phone_numbers_parser` reste le moteur de VALIDATION/normalisation
-      // canonique (pur-Dart, synchrone) ; le paquet de rendu, lui, ne sert que
+      // canonique (pur-Dart, synchrone); le paquet de rendu, lui, ne sert que
       // l'affichage. Les deux servent — aucun n'est mort.
       if (parsed.isValid()) return parsed.international;
     } catch (_) {
-      // AD-10 : numéro absurde → on garde la forme internationale brute.
+      // AD-10: numéro absurde → on garde la forme internationale brute.
     }
     return candidate;
   }

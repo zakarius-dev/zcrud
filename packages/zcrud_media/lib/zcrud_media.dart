@@ -1,10 +1,10 @@
-/// Barrel d'API publique de `zcrud_media` — satellite MÉDIA (fp-4-2, AD-51).
+/// Barrel d'API publique de `zcrud_media` — satellite MÉDIA.
 ///
 /// Câble le contrat cœur EXISTANT `ZFilePicker`/`ZFileSource` derrière une **API
-/// neutre** (`AppFile`/chemins/`Uint8List` — aucun type plateforme en signature,
-/// AD-40) et fournit des affordances riches via `ZWidgetRegistry`.
+/// neutre** (`AppFile`/chemins/`Uint8List` — aucun type plateforme en
+/// signature) et fournit des affordances riches via `ZWidgetRegistry`.
 ///
-/// ## Séquence de câblage attendue (côté binding/app — AC6/AR-4, ET-3)
+/// ## Séquence de câblage attendue
 ///
 /// L'enrôlement est **EXPLICITE au bootstrap**, jamais un side-effect d'import :
 ///
@@ -22,15 +22,14 @@
 ///   `ZAppFileField`.
 /// - [registerZMediaFieldWidgets] : enrôle les widgets riches (drop-zone /
 ///   ouverture / vignette vidéo) sous les `kind` **custom**
-///   [mediaImageFieldKind]/[mediaFileFieldKind]/[mediaVideoFieldKind] (ET-2 : le
+///   [mediaImageFieldKind]/[mediaFileFieldKind]/[mediaVideoFieldKind] (le
 ///   cœur route les types natifs avant le registre ; ces kinds custom sont
 ///   l'unique voie sans écriture cœur).
 ///
-/// 🔴 **Isolation (AD-1/AD-40)** : ce barrel n'exporte **aucun** symbole de
+/// **Isolation (invariant AD-1)** : ce barrel n'exporte **aucun** symbole de
 /// plugin (`image_picker`/`file_picker`/`image_cropper`/`video_thumbnail`/
 /// `open_file`/`dotted_border`/`camera`) — uniquement des types neutres. Les
-/// deps média sont confinées à `lib/src/` (garde
-/// `test/z_media_confinement_test.dart`).
+/// deps média sont confinées à `lib/src/` (garde de confinement dédiée).
 library;
 
 export 'src/data/z_media_file_picker.dart' show ZMediaFilePicker;

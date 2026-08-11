@@ -1,18 +1,18 @@
-/// `ZSessionQualityBreakdown` — répartition fidèle des **qualités d'une session**
-/// (présentation PURE, ES-4.5, AC2).
+/// `ZSessionQualityBreakdown` — répartition fidèle des qualités d'une
+/// session (présentation pure).
 ///
-/// Rend le `byQuality` d'un `ZStudySessionResult` INJECTÉ : **un et un seul
-/// segment par clé présente**, valeur = compte EXACT, **ordonné par qualité
-/// croissante** (ordre de l'échelle, jamais l'ordre d'insertion de la map).
-/// AUCUNE catégorie omise, AUCUNE inversée (AC2 discriminant). Une clé HORS
-/// échelle (corpus corrompu, ex. `"9"`) est **rendue à part / signalée**, jamais
-/// silencieusement fusionnée dans un cran connu (R6 — jamais de dégradation
-/// silencieuse).
+/// Rend le `byQuality` d'un `ZStudySessionResult` injecté : un et un seul
+/// segment par clé présente, valeur = compte exact, ordonné par qualité
+/// croissante (ordre de l'échelle, jamais l'ordre d'insertion de la map).
+/// Aucune catégorie omise, aucune inversée. Une clé hors échelle (corpus
+/// corrompu, par exemple `"9"`) est rendue à part et signalée, jamais
+/// silencieusement fusionnée dans un cran connu.
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatelessWidget`, aucun gestionnaire d'état.
-/// Couleurs via `ZColorKeyResolver` (repli `Theme.of`), labels via l10n
-/// `zcrud_core`, **compte affiché en texte** (couleur jamais seul canal, AD-13),
-/// directionnel, `Semantics` par segment. Jamais `ListView(children: [...])`.
+/// Widget pur (invariants AD-2/AD-15) : `StatelessWidget`, aucun
+/// gestionnaire d'état. Couleurs via `ZColorKeyResolver` (repli
+/// `Theme.of`), labels via l10n `zcrud_core`, compte affiché en texte
+/// (couleur jamais seul canal, invariant AD-13), directionnel, `Semantics`
+/// par segment. Jamais `ListView(children: [...])`.
 library;
 
 import 'package:flutter/material.dart';
@@ -20,41 +20,32 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_srs_quality_buttons.dart';
 
-/// **Couverture** des crans rendus par [ZSessionQualityBreakdown] — **enum**,
-/// jamais un booléen (SUF-4, paire 2 : une variante est un choix nommé).
+/// Couverture des crans rendus par [ZSessionQualityBreakdown] — un enum
+/// plutôt qu'un booléen, chaque variante étant un choix nommé explicite.
 enum ZQualityBreakdownCoverage {
-  /// **Un segment par clé PRÉSENTE** dans `byQuality` (comportement historique,
-  /// **défaut**). Un cran jamais utilisé n'apparaît pas ⇒ la répartition change
-  /// de longueur d'une session à l'autre.
+  /// Un segment par clé présente dans `byQuality` (comportement historique,
+  /// défaut). Un cran jamais utilisé n'apparaît pas, donc la répartition
+  /// change de longueur d'une session à l'autre.
   presentKeysOnly,
 
-  /// **Un segment par cran de l'ÉCHELLE**, y compris ceux absents de
-  /// `byQuality` (rendus à `0`) — répartition de **longueur STABLE**.
+  /// Un segment par cran de l'échelle, y compris ceux absents de
+  /// `byQuality` (rendus à `0`) — répartition de longueur stable.
   ///
-  /// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
-  /// packages/lex_ui/lib/presentation/widgets/study/session_quality_breakdown.dart:71,78`) :
-  /// lex parcourt `Sm2QualityLevel.values` et rend `histogram[level] ?? 0` —
-  /// « un niveau à 0 reste affiché pour une répartition stable » (sa dartdoc,
-  /// `:24`). zcrud ne rendait que les clés présentes (`byQuality.containsKey`,
-  /// `:77`) : une session où personne n'a répondu « Difficile » affichait 4
-  /// pilules chez zcrud contre 5 chez lex. Fermeture ADDITIVE — le défaut
-  /// [presentKeysOnly] laisse l'existant strictement inchangé.
-  ///
-  /// 🔒 N'affecte **que** les crans de l'échelle : les clés **hors échelle**
-  /// (corpus corrompu) restent rendues à part et signalées, jamais fusionnées
-  /// ni inventées (R6).
+  /// N'affecte que les crans de l'échelle : les clés hors échelle (corpus
+  /// corrompu) restent rendues à part et signalées, jamais fusionnées ni
+  /// inventées.
   wholeScale,
 }
 
-/// Répartition des qualités d'une session (présentation PURE).
+/// Répartition des qualités d'une session (présentation pure).
 class ZSessionQualityBreakdown extends StatelessWidget {
   /// Construit le breakdown.
   ///
-  /// - [byQuality] : répartition INJECTÉE (typiquement `result.byQuality`) —
-  ///   clés qualité opaques `"0".."5"`, valeur = compte (AC7 : consommé tel
-  ///   quel, aucun recomptage) ;
+  /// - [byQuality] : répartition injectée (typiquement `result.byQuality`) —
+  ///   clés qualité opaques `"0".."5"`, valeur = compte (consommé tel quel,
+  ///   aucun recomptage) ;
   /// - [scale] : échelle de référence (ordre + appartenance) ;
-  /// - [passThreshold] : frontière réussite/lapse INJECTÉE (D5/AC6) ;
+  /// - [passThreshold] : frontière réussite/lapse injectée ;
   /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés).
   const ZSessionQualityBreakdown({
     required this.byQuality,
@@ -66,13 +57,13 @@ class ZSessionQualityBreakdown extends StatelessWidget {
     super.key,
   });
 
-  /// Répartition `qualité "0".."5" → compte` INJECTÉE (consommée verbatim).
+  /// Répartition `qualité "0".."5" → compte` injectée (consommée verbatim).
   final Map<String, int> byQuality;
 
   /// Échelle de référence (ordre croissant + appartenance).
   final ZQualityScale scale;
 
-  /// Frontière réussite/lapse INJECTÉE (`quality >= passThreshold`).
+  /// Frontière réussite/lapse injectée (`quality >= passThreshold`).
   final int passThreshold;
 
   /// Seam de clé de libellé l10n (défaut [zDefaultQualityLabelKey]).
@@ -81,14 +72,14 @@ class ZSessionQualityBreakdown extends StatelessWidget {
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
 
-  /// Couverture des crans rendus (SUF-4) — défaut **historique**
+  /// Couverture des crans rendus — défaut historique
   /// [ZQualityBreakdownCoverage.presentKeysOnly].
   final ZQualityBreakdownCoverage coverage;
 
-  /// Préfixe de [ValueKey] d'un segment **dans** l'échelle (testabilité, AC2).
+  /// Préfixe de [ValueKey] d'un segment dans l'échelle, pour la testabilité.
   static const String segmentKeyPrefix = 'zBreakdownSegment_';
 
-  /// Préfixe de [ValueKey] d'un segment **hors** échelle (R6, AC2).
+  /// Préfixe de [ValueKey] d'un segment hors échelle.
   static const String unknownKeyPrefix = 'zBreakdownUnknown_';
 
   String _colorKeyOf(int quality) {
@@ -101,13 +92,13 @@ class ZSessionQualityBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
 
-    // Segments DANS l'échelle : parcours de l'échelle en ordre CROISSANT, ne
+    // Segments dans l'échelle : parcours de l'échelle en ordre croissant, ne
     // gardant que les clés réellement présentes (un segment par clé présente).
     //
-    // SUF-4 — la COUVERTURE est injectée : `presentKeysOnly` (défaut) conserve
-    // le filtre historique `containsKey`, `wholeScale` rend TOUT cran de
-    // l'échelle (absent ⇒ `0`), pour une répartition de longueur stable comme
-    // le natif lex. Le compte reste consommé VERBATIM (aucun recomptage).
+    // La couverture est injectée : `presentKeysOnly` (défaut) conserve le
+    // filtre historique `containsKey`, `wholeScale` rend tout cran de
+    // l'échelle (absent => `0`), pour une répartition de longueur stable. Le
+    // compte reste consommé verbatim (aucun recomptage).
     final wholeScale = coverage == ZQualityBreakdownCoverage.wholeScale;
     final inScale = <Widget>[
       for (final quality in scale.qualities)
@@ -123,7 +114,7 @@ class ZSessionQualityBreakdown extends StatelessWidget {
           ),
     ];
 
-    // Clés HORS échelle : jamais fusionnées — rendues À PART, signalées (R6).
+    // Clés hors échelle : jamais fusionnées, rendues à part et signalées.
     // Tri déterministe par clé pour un rendu stable.
     final unknownKeys = byQuality.keys
         .where((k) => !_isInScale(k))
@@ -163,16 +154,16 @@ class ZSessionQualityBreakdown extends StatelessWidget {
     );
   }
 
-  /// Vrai si [rawKey] est la représentation CANONIQUE d'un cran de l'échelle.
+  /// Vrai si [rawKey] est la représentation canonique d'un cran de l'échelle.
   ///
-  /// Comparaison de STRING EXACTE (jamais `int.tryParse`) : une clé « connue »
-  /// est *exactement* `'$p'` pour un `p` de l'échelle. Ainsi une clé
-  /// non-canonique mais parsant en-échelle (`"03"`, `"+3"`, `" 3"`, `"005"`)
-  /// est jugée HORS échelle ⇒ rendue dans la section hors-échelle (signalée),
-  /// JAMAIS droppée silencieusement (R6/D3). Le rendu in-scale teste lui aussi
-  /// `byQuality.containsKey('$quality')` (string exacte) : les deux faces
-  /// partagent le MÊME critère canonique, donc aucune clé ne peut tomber entre
-  /// les deux sections.
+  /// Comparaison de chaîne exacte (jamais `int.tryParse`) : une clé
+  /// « connue » est exactement `'$p'` pour un `p` de l'échelle. Ainsi une
+  /// clé non-canonique mais qui parserait dans l'échelle (`"03"`, `"+3"`,
+  /// `" 3"`, `"005"`) est jugée hors échelle et rendue dans la section
+  /// hors-échelle (signalée), jamais droppée silencieusement. Le rendu
+  /// in-scale teste lui aussi `byQuality.containsKey('$quality')` (chaîne
+  /// exacte) : les deux faces partagent le même critère canonique, donc
+  /// aucune clé ne peut tomber entre les deux sections.
   bool _isInScale(String rawKey) {
     for (final quality in scale.qualities) {
       if (rawKey == '$quality') return true;

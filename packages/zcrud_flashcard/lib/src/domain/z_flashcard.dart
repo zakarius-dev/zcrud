@@ -1,35 +1,32 @@
-/// Entité canonique `ZFlashcard` (Story E9-1, AC3/AC4/AC5/AC7).
+/// Entité canonique `ZFlashcard` — le contenu d'une carte de révision.
 ///
-/// origine: lex_core (module « Étude ») — `flashcard.dart:37`, modèle le plus
-/// abouti, schéma canonique zéro-perte partagé chat LexIA ↔ éducation
-/// (canonique §2.1).
+/// Généré par `@ZcrudModel` (invariant AD-3) : le codegen émet
+/// `z_flashcard.g.dart` portant le décodeur, l'extension `ZFlashcardZcrud`
+/// (`toMap`/`copyWith`), les spécifications de champs et l'enregistrement au
+/// registre.
 ///
-/// **Généré par `@ZcrudModel` (AD-3)** : `melos run generate` émet
-/// `z_flashcard.g.dart` (`part`, gitignoré, régénéré) portant `_$…FromMap`,
-/// l'extension `ZFlashcardZcrud` (`toMap`/`copyWith`), `$ZFlashcardFieldSpecs`
-/// et `registerZFlashcard(ZcrudRegistry)`.
+/// ## L'état SRS vit hors de la carte
 ///
-/// **État SRS HORS carte (AD-9)** : `ZFlashcard` ne porte AUCUN champ SRS
-/// (`interval`/`repetitions`/`easeFactor`/`nextReviewDate`/`learnedAt`/
-/// `lastQuality`/`ZRepetitionInfo`). L'état SRS vit dans une entité séparée
-/// (E9-2), persistée top-level (E9-4). Le partage/duplication d'une carte
-/// n'emporte donc **jamais** l'historique d'autrui.
+/// `ZFlashcard` ne porte **aucun** champ de répétition espacée (intervalle,
+/// nombre de répétitions, facteur de facilité, prochaine échéance, dernière
+/// qualité). Cet état vit dans une entité séparée, persistée dans son propre
+/// canal (voir `ZRepetitionInfo`, invariant AD-9). Le partage ou la
+/// duplication d'une carte n'emporte donc jamais l'historique de révision.
 ///
-/// **Slots d'extension AD-4** : mixe `ZExtensible` (cœur) → `extra`
-/// (échappatoire non typée, round-trip des clés inconnues) + `extension`
-/// (slot type additif versionné, parsé défensivement). Ces trois canaux
-/// (`source`, `extension`, `extra`) NE sont PAS gérés par le générateur (types
-/// non (dé)sérialisables par codegen) : ils sont **câblés manuellement** autour
-/// du code généré dans [ZFlashcard.fromMap]/[toMap]/[copyWith].
+/// ## Slots d'extension
 ///
-/// **Éphémère (AD-14)** : `isEphemeral` provient de `ZEntity` (dérivé de
-/// `id == null`). L'entité n'attribue jamais d'`id` ; la matérialisation
-/// (attribution avant écriture) est portée par le repository (E9-4), hors
-/// périmètre ici.
+/// Mixe `ZExtensible` (invariant AD-4) : `extra` (échappatoire non typée,
+/// préserve les clés inconnues au round-trip) et `extension` (emplacement
+/// typé et versionné, décodé défensivement). Ces deux canaux, ainsi que
+/// [source], ne sont pas gérés par le codegen (types non sérialisables par le
+/// générateur) : ils sont câblés explicitement autour du code généré dans
+/// [ZFlashcard.fromMap], [toMap] et [copyWith].
 ///
-/// Réutilise le cœur via `package:zcrud_core/domain.dart` (`ZEntity`,
-/// `ZExtensible`, `ZExtension`, `ZSourceRegistry`, `ZFieldSpec`, `ZcrudRegistry`)
-/// — même convention d'import que `zcrud_mindmap` ; testé via `flutter test`.
+/// ## Éphémère
+///
+/// `isEphemeral` (hérité de `ZEntity`) est dérivé de `id == null` (invariant
+/// AD-14). L'entité n'attribue jamais elle-même d'`id` ; la matérialisation
+/// (attribution avant écriture) est portée par le repository.
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -46,22 +43,23 @@ export 'z_flashcard_type.dart';
 
 part 'z_flashcard.g.dart';
 
-/// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou `null`.
+/// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou rend `null`.
 ///
-/// Fourni par l'app/le satellite (convention `X.fromJsonSafe`) et injecté dans
-/// [ZFlashcard.fromMap] : le cœur ne connaît pas les sous-classes concrètes
-/// (AD-4). Toute exception est absorbée en `null` par [ZExtension.guard]
-/// (AD-10), le parent survivant toujours.
+/// Fourni par l'application ou le satellite appelant, et injecté dans
+/// [ZFlashcard.fromMap] : le domaine ne connaît pas les sous-classes
+/// concrètes (invariant AD-4). Toute exception levée par le parseur est
+/// absorbée en `null` par [ZExtension.guard] (invariant AD-10), le parent
+/// survivant toujours.
 typedef ZFlashcardExtensionParser = ZExtension? Function(
     Map<String, dynamic> json);
 
-/// Flashcard canonique immuable (données + `copyWith` ; invariants au repo).
+/// Flashcard canonique immuable (données et `copyWith` ; les invariants
+/// métier vivent au repository).
 ///
-/// **Implémente [ZSessionCandidate]** (ES-1.1, AC6) : `ZFlashcard` est un
-/// candidat filtrable par [ZStudySessionSelector] (remonté au noyau) via ses
-/// clés neutres `folderId`/`subFolderId`/`tagIds` (déjà présentes) et
-/// `typeKey => type.name` (clé de type opaque). Le noyau reste ainsi ignorant de
-/// `ZFlashcardType` (AD-17).
+/// Implémente [ZSessionCandidate] : `ZFlashcard` est un candidat filtrable
+/// par un sélecteur de session via ses clés neutres `folderId`/`subFolderId`/
+/// `tagIds` et `typeKey` (le `name` du type, exposé comme une clé opaque
+/// String) — le noyau d'étude reste ainsi ignorant de [ZFlashcardType].
 @ZcrudModel(kind: 'flashcard')
 class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   /// Construit une flashcard (constructeur nommé — source du `copyWith`).
@@ -83,21 +81,23 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     this.source,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
-    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
-    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
-    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // Un paramètre nommé ne peut pas être privé en Dart
+    // (PRIVATE_OPTIONAL_PARAMETER) — le slot brut doit pourtant rester privé,
+    // c'est l'accesseur `extra` qui porte la garde.
     // ignore: prefer_initializing_formals
   }) : _extra = extra;
 
-  /// Reconstruit **défensivement** depuis une map persistée (AD-10).
+  /// Reconstruit défensivement une flashcard depuis une map persistée
+  /// (invariant AD-10).
   ///
-  /// Délègue au `_$ZFlashcardFromMap` **généré** (champs scalaires/enum/sous-
-  /// modèles : défauts sûrs, `type` inconnu → `openQuestion`, `choices`
-  /// malformés décodés élément par élément), puis **câble manuellement** les
-  /// trois canaux hors-codegen :
+  /// Délègue au décodeur généré pour les champs scalaires/enum/sous-modèles
+  /// (défauts sûrs : un `type` inconnu retombe sur `openQuestion`, un choix
+  /// malformé de la liste `choices` est décodé élément par élément), puis
+  /// câble explicitement les trois canaux hors schéma :
   /// - [source] via [ZFlashcardSource.fromJson] (consulte [sourceRegistry]) ;
-  /// - [extension] via [extensionParser] (repli `null`, `ZExtension.guard`) ;
-  /// - [extra] = clés **non réservées** de la map (round-trip préservé).
+  /// - [extension] via [extensionParser] (repli `null`,
+  ///   [ZExtension.guard]) ;
+  /// - [extra] = les clés non réservées de la map (round-trip préservé).
   ///
   /// Aucun cas ne fait échouer le parent (map vide, `source`/`extension`
   /// corrompus, `tag_ids` absent…).
@@ -128,59 +128,64 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     );
   }
 
-  /// Identité opaque (nullable pour l'éphémère — AC5).
+  /// Identité opaque (`null` pour l'éphémère).
   @override
   @ZcrudId()
   final String? id;
 
-  /// Dossier d'appartenance (clé de partitionnement ; port [ZSessionCandidate]).
+  /// Dossier d'appartenance (clé de partitionnement ; exposée au port
+  /// [ZSessionCandidate]).
   @override
   @ZcrudField()
   final String? folderId;
 
-  /// Sous-dossier (hiérarchie 2 niveaux ; port [ZSessionCandidate]).
+  /// Sous-dossier (hiérarchie à deux niveaux ; exposé au port
+  /// [ZSessionCandidate]).
   @override
   @ZcrudField()
   final String? subFolderId;
 
-  /// Type canonique (défaut/repli défensif `openQuestion` — AC1).
+  /// Type canonique de la carte (défaut et repli défensif
+  /// [ZFlashcardType.openQuestion]).
   @ZcrudField(defaultValue: ZFlashcardType.openQuestion)
   final ZFlashcardType type;
 
-  /// Énoncé (recto) — **seul champ texte requis** (validateur éditeur).
+  /// Énoncé (recto) — seul champ texte requis par le validateur d'édition.
   @ZcrudField(
     label: 'Question',
     validators: <ZValidatorSpec>[ZValidatorSpec.required()],
   )
   final String question;
 
-  /// Réponse libre (openQuestion/exercise/fillBlank/shortAnswer).
+  /// Réponse libre — pertinente pour les types question ouverte, exercice,
+  /// texte à trous et réponse courte.
   @ZcrudField()
   final String? answer;
 
-  /// Réponse de type vrai/faux.
+  /// Réponse attendue pour une carte de type vrai/faux.
   @ZcrudField()
   final bool? isTrue;
 
-  /// Options QCM (validation min 2 + 1 correct **déférée** à E9-5).
+  /// Options d'un QCM. La validation métier (au moins deux choix, au moins un
+  /// correct) est appliquée par la couche d'édition, pas par l'entité.
   @ZcrudField()
   final List<ZChoice>? choices;
 
-  /// Explication pédagogique post-réponse.
+  /// Explication pédagogique affichée après la réponse.
   @ZcrudField()
   final String? explanation;
 
-  /// Indice.
+  /// Indice affiché à la demande.
   @ZcrudField()
   final String? hint;
 
-  /// Étiquettes (défaut `const []` ; filtrage de session ; port
-  /// [ZSessionCandidate]).
+  /// Étiquettes (défaut `const []` ; utilisées pour le filtrage de session ;
+  /// exposées au port [ZSessionCandidate]).
   @override
   @ZcrudField()
   final List<String> tagIds;
 
-  /// Carte issue d'un partage (lecture seule), défaut `false`.
+  /// Carte issue d'un partage, en lecture seule (défaut `false`).
   @ZcrudField()
   final bool isReadOnly;
 
@@ -188,76 +193,64 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
   @ZcrudField()
   final DateTime? createdAt;
 
-  /// Date de mise à jour (ISO-8601) — **MIROIR DE COMPATIBILITÉ**, jamais
-  /// l'autorité de merge (AD-19).
+  /// Date de mise à jour (ISO-8601) — miroir de compatibilité, jamais
+  /// l'autorité de fusion.
   ///
-  /// L'autorité Last-Write-Wins est **exclusivement** `ZSyncMeta.updatedAt`
-  /// (**hors-entité**, `zcrud_core`) : `ZFlashcardRepository` délègue à
-  /// `ZSyncableRepository<ZFlashcard>.sync()`, dont le merge passe par
-  /// `ZLwwResolver` sur `ZSyncEntry.meta`. Ce champ est **maintenu par
-  /// l'adapter** (collision de clé `updated_at`) pour les lectures legacy.
-  /// **Ne jamais** l'utiliser pour décider d'un merge, d'un tri de sync ou d'une
-  /// résolution de conflit.
-  ///
-  /// Non déprécié en ES-1.3 (contrairement à `ZStudyFolder.updatedAt`) : sa
-  /// surface E9 est consommée par la migration DODLP en cours — dépréciation
-  /// formelle à re-statuer (dette **DW-ES13-2**).
+  /// L'autorité Last-Write-Wins est exclusivement portée par
+  /// `ZSyncMeta.updatedAt`, hors entité (invariant AD-9) : le repository
+  /// délègue le merge à un résolveur qui l'utilise. Ce champ est maintenu par
+  /// l'adaptateur (pour partager la même clé persistée `updated_at`) au
+  /// bénéfice des lectures anciennes. Ne l'utilisez jamais pour décider d'un
+  /// merge, d'un tri de synchronisation ou d'une résolution de conflit.
   @ZcrudField()
   final DateTime? updatedAt;
 
-  /// Provenance polymorphe **ouverte** (variant « article » via registre — AC6).
+  /// Provenance polymorphe ouverte (un variant applicatif se branche via un
+  /// registre).
   ///
-  /// Hors-codegen : (dé)sérialisée manuellement via [ZFlashcardSource].
+  /// Hors schéma généré : (dé)sérialisée explicitement via
+  /// [ZFlashcardSource].
   final ZFlashcardSource? source;
 
-  /// Slot type additif **versionné** (AD-4 pt.1), `null` si absent. Hors-codegen.
+  /// Emplacement d'extension typée et versionnée (invariant AD-4), `null` si
+  /// absente. Hors schéma généré.
   @override
   final ZExtension? extension;
 
-  /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`),
-  /// préservant les clés inconnues du cœur au round-trip. Hors-codegen.
+  /// Échappatoire non typée (invariant AD-4), défaut `const {}` (jamais
+  /// `null`), qui préserve au round-trip les clés inconnues du domaine. Hors
+  /// schéma généré.
   @override
   Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
 
-  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
-  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  /// Emplacement `extra` brut tel que reçu par le constructeur — lu nulle
+  /// part ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni
+  /// `hashCode`).
   ///
-  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
-  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
-  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
-  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  /// Il peut être pollué : le constructeur nominal est `const`, il ne peut
+  /// appeler aucune fonction dans son initialiseur, et l'invariant AD-10
+  /// interdit d'y placer un `assert`. C'est l'accesseur [extra] qui porte la
+  /// garde — le seul point que toutes les voies traversent.
   final Map<String, dynamic> _extra;
 
-  /// Clé de type **opaque** exposée au port [ZSessionCandidate] (ES-1.1, AC6) :
-  /// le `name` camelCase du [type] (ex. `"multipleChoice"`), comparé tel quel au
-  /// filtre `types` (`List<String>`) de [ZStudySessionConfig]. Le noyau reste
-  /// ignorant de [ZFlashcardType].
+  /// Clé de type opaque exposée au port [ZSessionCandidate] : le nom
+  /// camelCase du [type] (par exemple `"multipleChoice"`), comparé tel quel
+  /// au filtre de types d'une configuration de session. Le noyau d'étude
+  /// reste ainsi ignorant de [ZFlashcardType].
   @override
   String get typeKey => type.name;
 
-  /// Sérialise vers la map persistée **complète** (snake_case).
+  /// Sérialise vers la map persistée complète (snake_case).
   ///
-  /// Réutilise le `toMap()` **généré** (champs scalaires/enum/sous-modèles) puis
-  /// ajoute les trois canaux hors-codegen : [extra] (clés inconnues préservées),
-  /// [source] (via [sourceRegistry]) et [extension]. Le `registerZFlashcard`
-  /// généré appelle ce `toMap()` (il masque l'extension générée).
+  /// Réutilise le `toMap()` généré (champs scalaires/enum/sous-modèles) puis
+  /// ajoute les trois canaux hors schéma : [extra] (clés inconnues
+  /// préservées), [source] (via [sourceRegistry]) et [extension].
   Map<String, dynamic> toMap({ZSourceRegistry? sourceRegistry}) {
     final map = <String, dynamic>{
-      // 🔴 DW-ES22-3 (ES-2.2b) — MÊME garde nommée qu'en `fromMap`/`copyWith`.
-      // `toMap()` est la **frontière de SORTIE** : la seule que TOUTES les voies
-      // d'écriture traversent ⇒ promesse INCONDITIONNELLE (constructeur nominal
-      // compris — il ne peut RIEN filtrer).
-      //
-      // ⚠️ **L'ORDRE DU SPREAD RESTE `{...extra, ...généré}`** : le généré écrase
-      // l'`extra`, ce qui PROTÈGE les champs du schéma. Ne pas l'inverser. C'est
-      // aussi ce qui rendait le défaut INVISIBLE sur cette entité : le champ
-      // métier `updatedAt` écrasait la pollution `updated_at` (MESURÉ : `val=null`)
-      // — seul `is_deleted`, qu'aucun champ n'écrase, la révélait.
-      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
-      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
-      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
-      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
-      // (i.1a)/(i.1b)/(i.1c) ROUGES.
+      // Frontière de sortie que toutes les voies d'écriture traversent :
+      // l'ordre du spread importe — le contenu généré écrase `extra`, ce qui
+      // protège les champs de schéma d'une pollution de clé identique.
+      // Étale l'accesseur (qui normalise), jamais le champ brut `_extra`.
       ...extra,
       ...ZFlashcardZcrud(this).toMap(),
     };
@@ -270,10 +263,11 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     return map;
   }
 
-  /// Copie avec sentinelle (un argument omis préserve la valeur, `null` explicite
-  /// la remet à `null`). Couvre **tous** les champs, y compris [source],
-  /// [extension] et [extra] (que le `copyWith` généré ignore, faute
-  /// d'annotation) — évite toute perte silencieuse.
+  /// Copie à sentinelle (un argument omis préserve la valeur, `null`
+  /// explicite la remet à `null`). Couvre tous les champs, y compris
+  /// [source], [extension] et [extra], que le `copyWith` généré par le
+  /// codegen ignore faute d'annotation — ce qui évite toute perte
+  /// silencieuse.
   ZFlashcard copyWith({
     Object? id = _$undefined,
     Object? folderId = _$undefined,
@@ -331,12 +325,11 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
         extension: identical(extension, _$undefined)
             ? this.extension
             : extension as ZExtension?,
-        // 🔴 DW-ES22-3 (ES-2.2b) : MÊME FONCTION NOMMÉE qu'en `fromMap` —
-        // `copyWith` ne peut plus ROUVRIR le filtre des clés réservées.
-        // ⚠️ Surface publique INCHANGÉE (migration DODLP) : même signature, même
-        // sémantique de sentinelle — seule la VALEUR écrite est désormais
-        // dépouillée de `updated_at`/`is_deleted` (qui n'ont jamais eu le droit
-        // d'y être : AD-16).
+        // La garde de `extra` est la même fonction nommée qu'en `fromMap` —
+        // `copyWith` ne peut pas rouvrir le filtre des clés réservées. La
+        // valeur écrite est toujours dépouillée des clés de synchronisation
+        // (`updated_at`/`is_deleted`), qui n'ont jamais eu le droit d'y être
+        // (invariant AD-9).
         extra: identical(extra, _$undefined)
             ? this.extra
             : _sanitizeExtra(extra as Map<String, dynamic>),
@@ -347,24 +340,23 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     Object? raw,
     ZFlashcardExtensionParser? parser,
   ) {
-    // CR-LEX-33 : le corps de cette méthode était `if (parser == null) return
-    // null;` — un hôte SANS parser lisait `null`, et comme `extension` est une
-    // clé CONNUE (donc exclue d'`extra`), le payload d'un AUTRE hôte était
-    // DÉTRUIT au décodage, avant toute ligne de code applicatif. Le cœur
-    // préserve désormais verbatim ce que personne n'a su typer.
+    // Un hôte sans parseur ne détruit pas le payload : comme `extension` est
+    // une clé connue (donc exclue d'`extra`), le contenu d'un autre hôte est
+    // préservé verbatim, quel que soit le résultat du parseur.
     return zDecodeExtension(raw, parser);
   }
 
-  /// Clés persistées **réservées** (champs générés + `source` + `extension` +
-  /// **clés de sync hors-entité AD-19**) — dérivées de `$ZFlashcardFieldSpecs`
-  /// pour rester synchrones avec le codegen.
+  /// Clés persistées réservées (champs générés, `source`, `extension` et les
+  /// clés de synchronisation hors entité) — dérivées des spécifications de
+  /// champs générées pour rester synchrones avec le codegen.
   ///
-  /// `...ZSyncMeta.reservedKeys` (`updated_at`, `is_deleted`) est **essentiel** :
-  /// les stores écrivent ces clés **dans le corps** du document puis passent la
-  /// map **complète** à [ZFlashcard.fromMap]. Sans cette réserve, `is_deleted`
-  /// (qui n'est **pas** un champ déclaré) atterrirait dans [extra] et serait
-  /// **réémis** par [toMap] — fuite d'une préoccupation de store dans le domaine
-  /// (AD-16), cassant l'`==` entre une carte en mémoire et la même relue.
+  /// Inclure les clés réservées de `ZSyncMeta` (`updated_at`, `is_deleted`)
+  /// est essentiel : les stores écrivent ces clés dans le corps du document
+  /// puis passent la map complète à [ZFlashcard.fromMap]. Sans cette
+  /// réserve, `is_deleted` (qui n'est pas un champ déclaré) atterrirait dans
+  /// [extra] et serait réémis par [toMap] — une fuite d'une préoccupation de
+  /// store dans le domaine, cassant l'égalité entre une carte en mémoire et
+  /// la même relue.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZFlashcardFieldSpecs) spec.name,
     'source',
@@ -372,14 +364,14 @@ class ZFlashcard extends ZEntity with ZExtensible implements ZSessionCandidate {
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
-  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
+  /// Extrait `extra` = les clés non réservées de [map] (round-trip préservé)
+  /// — frontière d'entrée. Délègue à [_sanitizeExtra], la garde partagée.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
       _sanitizeExtra(map);
 
-  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par les
-  /// **TROIS** voies : [fromMap], [copyWith] **et** [toMap]. Délègue à
-  /// [zSanitizeExtra] (`zcrud_core`, implémentation UNIQUE du repo).
+  /// La garde partagée de `extra`, appelée par les trois voies : [fromMap],
+  /// [copyWith] et [toMap]. Délègue à [zSanitizeExtra] (`zcrud_core`),
+  /// l'implémentation unique du dépôt.
   static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
       zSanitizeExtra(raw, _reservedKeys);
 

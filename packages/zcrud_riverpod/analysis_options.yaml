@@ -1,2 +1,9 @@
 # Hérite de la baseline de lint partagée du monorepo (E1-3).
 include: ../../analysis_options.yaml
+
+# Chantier documentation : exige un dartdoc sur chaque membre public exporté
+# par le barrel — l'exhaustivité dartdoc devient un invariant vérifié par
+# l'analyse (cf. docs/site/charte.md).
+linter:
+  rules:
+    - public_member_api_docs

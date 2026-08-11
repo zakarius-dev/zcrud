@@ -1,35 +1,32 @@
 /// `ZGeoFieldWidget` — **champ d'édition géo** (`point`/`polygone`/`cercle`),
-/// servi via `ZWidgetRegistry` (E11a-1 + E11b-1, AD-2/AD-4/AD-13).
+/// servi via `ZWidgetRegistry`.
 ///
-/// origine: le dispatcher du cœur (`ZFieldWidget`) route `location`/`geoArea`
-/// vers le `ZWidgetRegistry` injecté et appelle le builder **dans** la frontière
-/// de rebuild de la tranche (`ZFieldListenableBuilder`, value-in-slice). Ce
-/// widget respecte AD-2 **en interne** : `TextEditingController`(s) et
-/// `FocusNode`(s) créés **1×** (`initState`), jamais recréés ni ré-injectés dans
-/// la voie de frappe ; sync guardée hors focus ; écriture via `ctx.onChanged`
-/// uniquement (branché sur `setValue`). La frontière de rebuild n'est **jamais**
-/// élargie.
+/// Le dispatcher du cœur (`ZFieldWidget`) route `location`/`geoArea` vers le
+/// `ZWidgetRegistry` injecté et appelle le builder **dans** la frontière de
+/// rebuild de la tranche. Ce widget respecte l'invariant AD-2 en interne :
+/// `TextEditingController`(s) et `FocusNode`(s) créés **une fois**
+/// (`initState`), jamais recréés ni ré-injectés dans la voie de frappe ;
+/// synchronisation guardée hors focus ; écriture via `ctx.onChanged`
+/// uniquement. La frontière de rebuild n'est **jamais** élargie.
 ///
-/// **Géométrie résolue par config (E11b-1 + G2, AD-4)** : la géométrie du champ
+/// **Géométrie résolue par config (invariant AD-4)** : la géométrie du champ
 /// est résolue dans l'ordre — valeur initiale (champs **multi-géométries**
-/// seulement, G2) → `ZGeoFieldConfig.geometry` → `allowedGeometries.first` →
+/// seulement) → `ZGeoFieldConfig.geometry` → `allowedGeometries.first` →
 /// [ZGeoFieldWidget.geometry] (défaut du builder) → inférence par nom de type
 /// (`location`→point, `geoArea`→polygon). Un champ multi-géométries expose un
-/// **sélecteur de mode** dans la barre d'outils (G2).
+/// **sélecteur de mode** dans la barre d'outils.
 ///
-/// **G15 (changement de défaut, décision pilote)** : sans `toolbarConfig`, le
-/// champ rend désormais la barre d'outils **`standard`** (parité legacy
-/// `es:2337`) — l'opt-out est `ZGeoEditorToolbarConfig.none`. Le reste du
-/// comportement E11a-1 (saisie, carte, valeur) est inchangé sans config.
+/// Sans `toolbarConfig`, le champ rend la barre d'outils **`standard`** —
+/// l'opt-out est `ZGeoEditorToolbarConfig.none`.
 ///
-/// **Valeur de tranche = modèle NEUTRE** : `ZGeoPoint` (point) / `ZGeoShape`
-/// (polygone) / `ZGeoCircle` (cercle) — jamais un type SDK carte (AD-1). La carte
-/// est rendue via un [ZMapAdapter] créé par une **fabrique** ([ZMapAdapterFactory])
-/// injectée par closure de factory ([builder]) ; le champ appelle la fabrique
-/// **1× en `initState`** pour créer SON instance possédée (MAJEUR-1 : une instance
-/// par montage, jamais aliasée) et la dispose en fin de vie. Si aucune fabrique
-/// n'est fournie, le champ dégrade proprement (saisie coordonnées seule), sans
-/// crash.
+/// **Valeur de tranche = modèle neutre** : `ZGeoPoint` (point) / `ZGeoShape`
+/// (polygone) / `ZGeoCircle` (cercle) — jamais un type SDK carte (invariant
+/// AD-1). La carte est rendue via un [ZMapAdapter] créé par une **fabrique**
+/// ([ZMapAdapterFactory]) injectée par closure ([builder]) ; le champ appelle
+/// la fabrique **une fois en `initState`** pour créer son instance possédée
+/// (jamais aliasée entre deux champs) et la dispose en fin de vie. Si aucune
+/// fabrique n'est fournie, le champ dégrade proprement (saisie coordonnées
+/// seule), sans crash.
 library;
 
 import 'package:flutter/material.dart';
@@ -49,14 +46,14 @@ import '../domain/z_geo_value.dart';
 import 'z_geo_shape_style_picker.dart';
 import 'z_map_adapter.dart';
 
-/// Champ d'édition géo (patron AD-2 : contrôleurs stables, rebuild ciblé).
+/// Champ d'édition géo (invariant AD-2 : contrôleurs stables, rebuild ciblé).
 class ZGeoFieldWidget extends StatefulWidget {
   /// Construit le champ pour [ctx] (spec + valeur de tranche + `onChanged`).
   /// [adapterFactory] optionnelle : fabrique de carte via le port neutre ;
-  /// `null` → repli coordonnées-seules. [geometry] : géométrie **par défaut du
-  /// builder** (E11b-1), utilisée si `ZGeoFieldConfig.geometry` est absent ;
-  /// `null` → inférence par nom de type. [mapHeight] : hauteur de la surface
-  /// carte (injectable ; défaut [_defaultMapHeight] ; surchargée par
+  /// `null` → repli coordonnées-seules. [geometry] : géométrie **par défaut
+  /// du builder**, utilisée si `ZGeoFieldConfig.geometry` est absent ; `null`
+  /// → inférence par nom de type. [mapHeight] : hauteur de la surface carte
+  /// (injectable ; défaut [_defaultMapHeight] ; surchargée par
   /// `ZGeoFieldConfig.mapHeight`).
   const ZGeoFieldWidget({
     required this.ctx,
@@ -75,53 +72,53 @@ class ZGeoFieldWidget extends StatefulWidget {
   final ZFieldWidgetContext ctx;
 
   /// Fabrique d'adaptateur carte **optionnelle**, capturée par la closure de
-  /// [builder]. Appelée **1× en `initState`** pour créer l'instance **possédée**
-  /// par ce champ (MAJEUR-1 : une instance par montage, jamais partagée), disposée
-  /// en fin de vie (learning E5).
+  /// [builder]. Appelée **une fois en `initState`** pour créer l'instance
+  /// **possédée** par ce champ (une instance par montage, jamais partagée),
+  /// disposée en fin de vie.
   final ZMapAdapterFactory? adapterFactory;
 
-  /// Registre de fabriques d'adaptateur **nommées** (G4, parité legacy
-  /// `gfc:25` `mapsProvider`) : la clé est choisie **par champ** via
-  /// `ZGeoFieldConfig.adapterKey`. `null`, clé absente de la config ou clé
-  /// inconnue du registre → repli sur [adapterFactory] (l'hôte mono-factory
-  /// existant est **strictement inchangé** ; jamais de crash — AD-10).
+  /// Registre de fabriques d'adaptateur **nommées** : la clé est choisie
+  /// **par champ** via `ZGeoFieldConfig.adapterKey`. `null`, clé absente de
+  /// la config ou clé inconnue du registre → repli sur [adapterFactory]
+  /// (l'hôte mono-factory existant est inchangé ; jamais de crash — invariant
+  /// AD-10).
   final Map<String, ZMapAdapterFactory>? adapterFactories;
 
-  /// Géométrie **par défaut du builder** (E11b-1) : sert de repli quand la config
-  /// `ZGeoFieldConfig.geometry` est absente, avant l'inférence par nom de type.
-  /// `null` → résolution par config puis inférence type-name (rétro-compat).
+  /// Géométrie **par défaut du builder** : sert de repli quand la config
+  /// `ZGeoFieldConfig.geometry` est absente, avant l'inférence par nom de
+  /// type. `null` → résolution par config puis inférence type-name.
   final ZGeoGeometry? geometry;
 
-  /// Hauteur de la surface carte (dimension injectable, LOW-4). Surchargée par
+  /// Hauteur de la surface carte (dimension injectable). Surchargée par
   /// `ZGeoFieldConfig.mapHeight` quand présente.
   final double mapHeight;
 
-  /// Seam **neutre** « ma position » (DP-7, gap B9), capturé par la closure de
-  /// [builder]. `null` → le bouton « ma position » de la barre d'outils est
-  /// **masqué** même si `showMyLocationButton == true`. **Aucun** SDK de
-  /// géolocalisation n'est embarqué : l'app hôte injecte son implémentation.
+  /// Seam **neutre** « ma position », capturé par la closure de [builder].
+  /// `null` → le bouton « ma position » de la barre d'outils est **masqué**
+  /// même si `showMyLocationButton == true`. **Aucun** SDK de
+  /// géolocalisation n'est embarqué : l'application hôte injecte son
+  /// implémentation (voir le paquet compagnon `zcrud_geo_location`).
   final ZGeoLocationResolver? locationResolver;
 
   /// Hauteur de carte par défaut (injectable via [mapHeight]).
   static const double _defaultMapHeight = 200;
 
-  /// Hook de test : appelé UNE FOIS en [State.initState] (preuve SM-1
-  /// « contrôleur/State non recréés » via compteur == 1).
+  /// Hook de test : appelé une seule fois en [State.initState].
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur de build ciblé SM-1).
+  /// Hook de test : appelé à chaque (re)build.
   @visibleForTesting
   final VoidCallback? onBuild;
 
   /// Fabrique un [ZFieldWidgetBuilder] enregistrable dans un `ZWidgetRegistry`
   /// sous le `kind` `"location"` et/ou `"geoArea"`. L'[adapterFactory] est
   /// **capturée par closure** → aucun nouveau slot dans `zcrud_core`, aucun
-  /// `ZcrudScope` étendu (AD-4). [geometry] permet d'imposer une géométrie
-  /// (ex. `circle`) même pour un type `location`, sans config par-champ. Chaque
-  /// **montage** de champ appelle la fabrique une fois → **une instance
-  /// d'adaptateur par champ** (MAJEUR-1 : jamais aliasée entre deux champs,
-  /// jamais réutilisée après dispose). Exemple :
+  /// `ZcrudScope` étendu (invariant AD-4). [geometry] permet d'imposer une
+  /// géométrie (ex. `circle`) même pour un type `location`, sans config
+  /// par-champ. Chaque **montage** de champ appelle la fabrique une fois →
+  /// **une instance d'adaptateur par champ** (jamais aliasée entre deux
+  /// champs, jamais réutilisée après dispose). Exemple :
   /// `registry.register('location', ZGeoFieldWidget.builder(adapterFactory: ZOsmMapAdapter.new))`.
   static ZFieldWidgetBuilder builder({
     ZMapAdapterFactory? adapterFactory,
@@ -991,7 +988,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   }
 
   /// G19 — couleur d'accent du chrome : **paramètre > référence** (exception
-  /// FR-26 encadrée : le dégradé violet legacy n'est pas dérivable du
+  /// le dégradé violet de référence n'est pas dérivable du
   /// `ColorScheme` ; ses ARGB vivent UNIQUEMENT dans `ZGeoChromeReference`).
   List<Color> get _chromeGradient => const <Color>[
         Color(ZGeoChromeReference.headerGradientStartArgb),
@@ -1164,7 +1161,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   /// G12 — barre de métriques opt-in (parité legacy `gff:1363-1391` :
   /// compteur de points en gras + chip « aire | périmètre » quand l'aire est
   /// > 0). Couleurs par rôles de thème (le legacy codait un bleu en dur —
-  /// FR-26 : jamais ici). Calculs = extensions PURES de `z_geo_metrics.dart`
+  /// jamais ici). Calculs = extensions pures de `z_geo_metrics.dart`
   /// (aire sphérique legacy pour le polygone, π·r² planaire pour le cercle —
   /// nature documentée dans la bibliothèque de métriques).
   Widget _metricsBar(BuildContext context, ZcrudTheme theme) {
@@ -1235,7 +1232,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
   }
 
   /// G5 — bouton d'en-tête « plein écran » (≥48dp, `Semantics`, l10n injectée —
-  /// AD-13/FR-26 : aucune couleur ni libellé en dur).
+  /// invariant AD-13 : aucune couleur ni libellé en dur).
   Widget _fullscreenButton(BuildContext context) {
     final String text =
         label(context, 'geo.fullscreen', fallback: 'Plein écran');
@@ -1461,7 +1458,7 @@ class _ZGeoFieldWidgetState extends State<ZGeoFieldWidget> {
     ZGeoCircle? circle = _isCircle ? _circleOf(widget.ctx.value) : null;
     // G11 : aperçu 10 m entre le 1er tap (centre) et le 2e (rayon), parité
     // legacy `gff:589-600` (`geofence_circle_preview`, `radius: 10`). Rendu
-    // avec les couleurs de repli du thème injecté (FR-26 — le legacy éteint
+    // avec les couleurs de repli du thème injecté (le rendu historique éteint
     // ses alphas en dur ; zcrud ne code aucune couleur).
     if (_isCircle && _awaitingRadiusTap && circle == null) {
       final double? lat = _parse(_latController.text);

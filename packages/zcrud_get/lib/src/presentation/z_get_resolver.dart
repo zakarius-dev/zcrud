@@ -1,10 +1,11 @@
-/// `ZGetResolver` — implémentation `get_it` du seam de résolution (AD-6).
+/// `ZGetResolver` — implémentation `get_it` du seam de résolution (invariant
+/// AD-6).
 ///
-/// origine: matérialise, pour le binding DODLP (E7), le contrat
-/// `ZDependencyResolver` du cœur en déléguant la résolution des dépendances
-/// applicatives au **service locator** `get_it` (idiome DODLP `getIt<T>()`). Le
-/// cœur n'appelle QUE `ZcrudScope.of(context).resolver.resolve<T>()` : il ignore
-/// totalement que GetX/get_it sont derrière (AD-15).
+/// Matérialise le contrat `ZDependencyResolver` du cœur en déléguant la
+/// résolution des dépendances applicatives au **service locator** `get_it`
+/// (idiome `getIt<T>()`). Le cœur n'appelle QUE
+/// `ZcrudScope.of(context).resolver.resolve<T>()` : il ignore totalement que
+/// GetX/get_it sont derrière (invariant AD-15).
 ///
 /// Note de conception (bound) : `ZDependencyResolver.resolve<T>()` a un `T`
 /// **non borné** (nullable possible), alors que get_it exige `T extends Object`.
@@ -19,7 +20,8 @@ import 'package:zcrud_core/zcrud_core.dart';
 ///
 /// `resolve<T>()` interroge le [GetIt] fourni par le [ZcrudGetScope]. Si `T`
 /// n'y est pas enregistré, lève [ZScopeError] avec un message actionnable —
-/// jamais une résolution silencieuse (« seams throw par défaut », AD-6).
+/// jamais une résolution silencieuse (seams throw par défaut, invariant
+/// AD-6).
 class ZGetResolver extends ZDependencyResolver {
   /// Construit le resolver autour d'un [locator] `get_it`.
   const ZGetResolver(this._locator);

@@ -1,17 +1,16 @@
-/// [ZMenuTrigger] — le DÉCLENCHEUR déclaré en données (CHAT-4).
+/// [ZMenuTrigger] — le DÉCLENCHEUR déclaré en données.
 ///
 /// Le déclencheur est décrit, jamais construit, par l'appelant : c'est ce qui
 /// permet à un [ZMenuRenderer] injecté de le rendre autrement (appui long,
 /// clic droit, poignée de feuille modale…) sans que l'appelant change d'un
 /// caractère.
 ///
-/// 🔴 [semanticLabel] est **REQUIS** — jamais nul, jamais vide (assert).
-/// `ZItemActionsMenu.tooltip` est optionnel et s'en remet au repli localisé de
-/// `PopupMenuButton` (`MaterialLocalizations.showMenuTooltip`) ; ce repli
-/// n'existe QUE dans Material. Dès qu'un renderer injecté prend la main, un
-/// déclencheur sans nom accessible devient **MUET** pour un lecteur d'écran —
-/// récidive `su-9`, documentée deux fois dans ce dépôt. Le contrat est donc
-/// resserré, jamais relâché.
+/// [semanticLabel] est **REQUIS** — jamais nul, jamais vide (assert). Un repli
+/// localisé de plateforme (comme celui d'un `PopupMenuButton` Material)
+/// n'existe que sous ce framework de rendu précis : dès qu'un renderer
+/// injecté prend la main, un déclencheur sans nom accessible devient
+/// **MUET** pour un lecteur d'écran. Le contrat est donc resserré, jamais
+/// relâché.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -35,10 +34,8 @@ class ZMenuTrigger {
           'un lecteur d\'écran est proscrit (AD-13, récidive su-9).',
         );
 
-  /// Déclencheur porté par un WIDGET (avatar, puce, bulle de message…).
-  ///
-  /// Le pendant de `ZAppBarAction.widget` (`zcrud_ui_kit`), que
-  /// `ZItemActionsMenu` n'offre pas : son déclencheur est toujours un glyphe.
+  /// Déclencheur porté par un WIDGET (avatar, puce, bulle de message…), pour
+  /// les cas où un simple glyphe ne suffit pas à représenter la cible.
   const ZMenuTrigger.widget({
     required Widget this.child,
     required this.semanticLabel,

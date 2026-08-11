@@ -1,24 +1,25 @@
-/// `ZPhoneNumber` — **numéro de téléphone neutre** (E11a-2, AD-1/AD-14/AD-10).
+/// `ZPhoneNumber` — **numéro de téléphone neutre** (invariants AD-1, AD-14,
+/// AD-10).
 ///
-/// origine: valeur de tranche du champ `phoneNumber` du `ZFormController`. Modèle
-/// **pur-Dart** : uniquement des `String`. **Aucun** type d'une lib téléphone
-/// (`PhoneNumber`/`IsoCode` de `phone_numbers_parser`) n'apparaît dans sa
-/// signature publique — la (dé)normalisation E.164 vit EXCLUSIVEMENT dans la
-/// couche presentation (widget), jamais ici (AD-1 : le domaine ne dépend d'aucune
-/// lib intl/téléphone).
+/// Valeur de tranche du champ `phoneNumber` du `ZFormController`. Modèle
+/// **pur-Dart** : uniquement des `String`. **Aucun** type d'une lib
+/// téléphone (`PhoneNumber`/`IsoCode` de `phone_numbers_parser`) n'apparaît
+/// dans sa signature publique — la (dé)normalisation E.164 vit
+/// exclusivement dans la couche presentation (widget), jamais ici
+/// (invariant AD-1 : le domaine ne dépend d'aucune lib intl/téléphone).
 ///
 /// **Représentation canonique persistée = [e164]** (chaîne opaque, ex.
 /// `"+22790000000"`). Les autres champs ([isoCode]/[dialCode]/[nationalNumber])
 /// facilitent l'édition/affichage mais restent secondaires.
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map`,
+/// **Défensif (AD-10)**: [fromMapSafe] ne **throw jamais**. `raw` non-`Map`,
 /// champs absents ou non-`String` → `null`/ignorés (état neutre). L'évolution de
 /// schéma reste additive.
 library;
 
-/// Numéro de téléphone neutre : E.164 canonique + métadonnées d'édition.
+/// Numéro de téléphone neutre: E.164 canonique + métadonnées d'édition.
 class ZPhoneNumber {
-  /// Construit un numéro neutre. Tous les champs sont optionnels : un numéro en
+  /// Construit un numéro neutre. Tous les champs sont optionnels: un numéro en
   /// cours de saisie peut n'avoir que [dialCode]/[isoCode] renseignés.
   const ZPhoneNumber({
     this.e164,
@@ -53,7 +54,7 @@ class ZPhoneNumber {
         if (_notEmpty(nationalNumber)) 'nationalNumber': nationalNumber,
       };
 
-  /// Parse **défensif** (AD-10) : `null` sans jamais throw si [raw] n'est pas une
+  /// Parse **défensif** (AD-10): `null` sans jamais throw si [raw] n'est pas une
   /// `Map`. Les champs non-`String` sont dégradés à `null`. Une map sans aucun
   /// champ significatif donne un [ZPhoneNumber] neutre (non-`null`, mais
   /// [isEmpty]).

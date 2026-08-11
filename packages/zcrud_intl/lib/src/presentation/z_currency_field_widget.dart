@@ -1,42 +1,44 @@
-/// `ZCurrencyField` — **champ d'édition devise** (E11b-2, AD-2/AD-4/AD-13/AD-10).
+/// `ZCurrencyField` — **champ d'édition devise** (invariants AD-2, AD-4,
+/// AD-13, AD-10).
 ///
-/// origine: FR-21 demande un champ **devise**. Comme il n'existe **aucune** valeur
-/// `EditionFieldType.currency` (cœur figé, AD-1), ce champ est **composable** :
-/// une app le fournit dans ses formulaires via [ZCurrencyField.builder]
-/// (`ZFieldWidgetBuilder`), enregistrable sous un `kind` de son choix. Il émet
-/// soit le **code devise ISO 4217 `String`** (mode par défaut), soit un [ZMoney]
-/// (couple montant+devise) quand un montant est saisi ([showAmount]).
+/// Il n'existe **aucune** valeur `EditionFieldType.currency` (cœur figé,
+/// invariant AD-1), donc ce champ est **composable** : une app le fournit
+/// dans ses formulaires via [ZCurrencyField.builder]
+/// (`ZFieldWidgetBuilder`), enregistrable sous un `kind` de son choix. Il
+/// émet soit le **code devise ISO 4217 `String`** (mode par défaut), soit
+/// un [ZMoney] (couple montant+devise) quand un montant est saisi
+/// ([showAmount]).
 ///
 /// *Le montant **seul** reste servi par le champ `number` du cœur +
-/// `ZNumberConfig(isCurrency: true)` ; ce champ fournit le **sélecteur de code
-/// devise** qui le complète.*
+/// `ZNumberConfig(isCurrency: true)` ; ce champ fournit le **sélecteur de
+/// code devise** qui le complète.*
 ///
-/// **AD-2** : le contrôleur de montant est créé **1×** (`initState`), disposé,
-/// jamais recréé ni ré-injecté pendant la frappe (sync guardée hors focus). Le
-/// sélecteur de code réutilise le picker inline générique (a11y/RTL factorisés).
+/// **Invariant AD-2** : le contrôleur de montant est créé **1×**
+/// (`initState`), disposé, jamais recréé ni ré-injecté pendant la frappe
+/// (sync guardée hors focus). Le sélecteur de code réutilise le picker
+/// inline générique (a11y/RTL factorisés).
 ///
-/// **AD-4** : catalogue capturé par closure ; défaut de devise lu **par champ**
-/// via `ctx.field.config` ([ZIntlFieldConfig.defaultCurrencyCode]).
+/// **Invariant AD-4** : catalogue capturé par closure ; défaut de devise
+/// lu **par champ** via `ctx.field.config`
+/// ([ZIntlFieldConfig.defaultCurrencyCode]).
 ///
-/// **CR-DODLP-INTL-DECORATION-2 (2026-08-10) — DÉCORATION THÉMÉE DU CŒUR.**
-///
-/// Ce champ portait encore, après le lot v0.76.0, le défaut corrigé sur
-/// `phoneNumber`/`country`/`address` : décoration nue, libellé en double, et un
-/// `Padding` qu'aucun champ du cœur ne pose. Il reçoit **le même** traitement,
-/// choisi selon sa forme réelle — les deux conventions du lot précédent, pas
-/// une troisième :
-///  * **[showAmount] == false** (défaut) : le champ ne rend qu'**une** commande
+/// **Décoration thémée du cœur.** Ce champ suit la même convention de
+/// décoration que `phoneNumber`/`country`/`address` : pas de décoration
+/// nue, pas de libellé en double, pas de `Padding` qu'aucun champ du cœur
+/// ne pose. Le traitement est **choisi selon sa forme réelle** — deux
+/// conventions possibles, jamais une troisième :
+///  * **[showAmount] == false** (défaut): le champ ne rend qu'**une** commande
 ///    ⇒ convention `country`. Le sélecteur est décoré par [zFieldDecoration] et
 ///    porte le libellé du champ, **flottant**, une seule fois. Le
 ///    `Text(resolvedLabel)` externe, le `Semantics(container:)` et le
-///    `Padding(ZcrudTheme.fieldPadding)` sont retirés ;
-///  * **[showAmount] == true** : le champ est un **groupe** (code + montant)
+///    `Padding(ZcrudTheme.fieldPadding)` sont retirés;
+///  * **[showAmount] == true**: le champ est un **groupe** (code + montant)
 ///    ⇒ convention `address`. Le libellé du champ reste un **en-tête**, rendu
 ///    par le `ZFieldLabel` du cœur et **décoratif** (`ExcludeSemantics`, le
-///    nœud conteneur l'annonce déjà) ; les deux sous-champs gardent leur
+///    nœud conteneur l'annonce déjà); les deux sous-champs gardent leur
 ///    libellé propre (« Devise », « Montant ») et ne sont **jamais** `bare`.
 ///
-/// `fieldSize == large` ⇒ mode `bare` : le libellé du champ est porté par
+/// `fieldSize == large` ⇒ mode `bare`: le libellé du champ est porté par
 /// `ZLargeFieldCard` et n'est **ni rendu ni annoncé** ici.
 library;
 
@@ -74,30 +76,31 @@ class ZCurrencyField extends StatefulWidget {
   /// Affiche un champ montant → émet un [ZMoney] (sinon code `String` seul).
   final bool showAmount;
 
-  /// Hook de test : appelé UNE FOIS en `initState` (preuve SM-1).
+  /// Hook de test: appelé UNE FOIS en `initState`.
   @visibleForTesting
   final VoidCallback? onInit;
 
-  /// Hook de test : appelé à chaque (re)build (compteur ciblé SM-1).
+  /// Hook de test: appelé à chaque (re)build (compteur ciblé).
   @visibleForTesting
   final VoidCallback? onBuild;
 
   /// Commande **optionnelle** du déploiement du sélecteur depuis l'hôte (AD-4).
   ///
   /// `null` ⇒ comportement **strictement inchangé**. Fourni ⇒ il devient la
-  /// **source de vérité** de l'ouverture : l'hôte peut déplier le sélecteur
+  /// **source de vérité** de l'ouverture: l'hôte peut déplier le sélecteur
   /// (retour de validation pointant ce champ, bouton « choisir » placé ailleurs,
   /// restauration d'état) **et** le replier (navigation).
   ///
-  /// ⚠️ Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`) et
-  /// **propre à ce montage** : c'est pourquoi il n'est PAS exposé par
+  /// Doit être possédé **hors `build`** (`ZDisplayStateOwnerMixin`) et
+  /// **propre à ce montage**: c'est pourquoi il n'est PAS exposé par
   /// `builder()`, qui sert *toutes* les instances du même `kind` et partagerait
   /// donc un unique contrôleur entre plusieurs champs.
   final ZToggleController? openController;
 
-  /// Fabrique un [ZFieldWidgetBuilder] enregistrable sous un `kind` au choix de
-  /// l'app. Le [catalog] est capturé par closure (immuable, partageable) ; chaque
-  /// montage crée SON contrôleur de montant (par-montage, MAJEUR-1).
+  /// Fabrique un [ZFieldWidgetBuilder] enregistrable sous un `kind` au
+  /// choix de l'app. Le [catalog] est capturé par closure (immuable,
+  /// partageable) ; chaque montage crée SON contrôleur de montant
+  /// (par-montage).
   static ZFieldWidgetBuilder builder({
     ZCurrencyCatalog? catalog,
     bool showAmount = false,
@@ -139,7 +142,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
     _code = _codeOf(widget.ctx.value) ?? cfg?.defaultCurrencyCode;
     final amount = _amountOf(widget.ctx.value);
     if (amount != null) _amountController.text = _fmt(amount);
-    // Chargement paresseux du catalogue : rebuild LOCAL une fois résolu (SM-1).
+    // Chargement paresseux du catalogue: rebuild LOCAL une fois résolu.
     if (!widget.catalog.isLoaded) {
       widget.catalog.load().then((_) {
         if (mounted) setState(() {});
@@ -151,7 +154,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
   @override
   void didUpdateWidget(covariant ZCurrencyField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // SYNC GUARDÉE (AD-2) : reflet d'une valeur EXTERNE hors focus uniquement.
+    // SYNC GUARDÉE (AD-2): reflet d'une valeur EXTERNE hors focus uniquement.
     if (_hasAmountFocus) return;
     final code = _codeOf(widget.ctx.value);
     if (code != null && code != _code) _code = code;
@@ -175,7 +178,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
     return c is ZIntlFieldConfig ? c : null;
   }
 
-  /// Lecture défensive (AD-10) : code depuis un `String`, un [ZMoney] ou une map.
+  /// Lecture défensive (AD-10): code depuis un `String`, un [ZMoney] ou une map.
   String? _codeOf(Object? value) {
     if (value is String) return value.isEmpty ? null : value;
     if (value is ZMoney) return value.currencyCode;
@@ -191,7 +194,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
       ? v.toInt().toString()
       : v.toString();
 
-  /// Voie unique (AD-2) : émet le code devise (ou un [ZMoney] si [showAmount]).
+  /// Voie unique (AD-2): émet le code devise (ou un [ZMoney] si [showAmount]).
   void _emit() {
     final code = _code;
     if (widget.showAmount) {
@@ -224,17 +227,17 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
       fallback: field.label ?? field.name,
     );
     final bare = _bare;
-    // CR-DODLP-INTL-DECORATION-2, champ SIMPLE : parité `country`. La seule
-    // commande rendue porte le libellé du champ, flottant, une seule fois.
+    // Champ simple : parité avec `country`. La seule commande rendue porte
+    // le libellé du champ, flottant, une seule fois.
     if (!widget.showAmount) {
       return _picker(
         resolvedLabel,
         zFieldDecoration(context, field, bare: bare),
       );
     }
-    // CR-DODLP-INTL-DECORATION-2, GROUPE (code + montant) : parité `address`.
-    // Aucune saisie unique à qui accrocher le libellé du groupe ⇒ en-tête
-    // `ZFieldLabel` du cœur, DÉCORATIF (le nœud conteneur l'annonce déjà : sans
+    // Groupe (code + montant) : parité avec `address`. Aucune saisie
+    // unique à qui accrocher le libellé du groupe ⇒ en-tête
+    // `ZFieldLabel` du cœur, DÉCORATIF (le nœud conteneur l'annonce déjà: sans
     // `ExcludeSemantics` il se fondrait dedans et serait annoncé deux fois).
     final currencyLabel = label(context, 'intl.currency', fallback: 'Devise');
     return Semantics(
@@ -248,7 +251,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
             ExcludeSemantics(child: ZFieldLabel(field: field)),
             SizedBox(height: theme.gapS),
           ],
-          // 🔴 Les sous-champs ne sont JAMAIS `bare` : « Devise »/« Montant »
+          // Les sous-champs ne sont JAMAIS `bare`: « Devise »/« Montant »
           // ne sont portés par personne d'autre.
           _picker(currencyLabel, _subDecoration(theme, currencyLabel)),
           SizedBox(height: theme.gapS),
@@ -290,7 +293,7 @@ class _ZCurrencyFieldState extends State<ZCurrencyField> {
   }
 
   Widget _amountField(bool readOnly, ZcrudTheme theme) => ConstrainedBox(
-        // 🔴 AD-13 : contrainte liante NOMMÉE (jamais `getSize()`, jamais le max
+        // AD-13: contrainte liante NOMMÉE (jamais `getSize()`, jamais le max
         // des `ConstrainedBox` descendants — motif daté 2026-08-10).
         key: const Key('z-currency-amount-tap-target'),
         constraints: const BoxConstraints(minHeight: 48),

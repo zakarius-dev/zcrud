@@ -1,18 +1,17 @@
-/// Filtres test/examen **PURS** (SU-6, FR-SU12 — AC10/AC11/AC12, décisions
-/// D1/D5).
+/// Filtres test/examen purs.
 ///
-/// Vit dans `zcrud_flashcard` (D1) : les filtres exigent **à la fois**
-/// `ZStudySessionSelector` (kernel, amont) **et** `ZSrsConfig`/`ZRepetitionInfo`
-/// (ce package) — c'est le **premier** point du graphe qui voit les deux.
+/// Vit dans `zcrud_flashcard` : les filtres exigent à la fois
+/// `ZStudySessionSelector` (noyau d'étude, amont) et `ZSrsConfig`/
+/// `ZRepetitionInfo` (ce paquet) — c'est le premier point du graphe qui voit
+/// les deux.
 ///
-/// **PURS** (AD-14) : aucune I/O, **aucune horloge capturée**, **aucun `Random()`
-/// capturé** — la source d'aléa est un **PARAMÈTRE** (D5 : `DateTime.now()` et
-/// `Random()` sont la **même faute**, une source non déterministe capturée rend le
-/// test soit flaky, soit tautologique). `Random` vient de `dart:math` : pur-Dart,
-/// légal ici.
+/// Purs (invariant AD-14) : aucune E/S, aucune horloge capturée, aucun
+/// générateur aléatoire capturé — la source d'aléa est un paramètre (une
+/// source non déterministe capturée rend le test soit instable, soit
+/// tautologique). `Random` vient de `dart:math` : pur-Dart, légal ici.
 ///
-/// **AD-33 — sélection AMONT, runtime AVAL** : ces fonctions **produisent une
-/// file**. Aucun moteur ne filtre, et su-6 n'en câble aucun (D7/AD-34).
+/// Sélection en amont, exécution en aval : ces fonctions produisent une
+/// file. Aucun moteur n'est filtré ici, et ce fichier n'en câble aucun.
 library;
 
 import 'dart:math';
@@ -20,77 +19,68 @@ import 'dart:math';
 import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
     show ZStudySessionSelector;
 
-// `ZChoice` vient de `z_flashcard.dart` (qui l'exporte via son propre import) —
-// l'importer en plus est redondant (`unnecessary_import`).
+// `ZChoice` vient de `z_flashcard.dart` (qui l'exporte via son propre
+// import) — l'importer en plus est redondant (`unnecessary_import`).
 import 'z_flashcard.dart';
 import 'z_flashcard_search_text.dart';
 import 'z_repetition_info.dart';
 import 'z_srs_config.dart';
 
-/// Niveau de maîtrise d'une carte — **enum**, jamais un `bool isMastered`
-/// (AC15 : convention du spine « enums > booléens » ; un booléen ne saurait pas
-/// dire *quel* seau).
+/// Niveau de maîtrise d'une carte — enum, jamais un `bool isMastered` (un
+/// booléen ne saurait pas dire quel seau).
 ///
-/// **NON persisté** (valeur de retour **runtime**) ⇒ pas de
-/// `@JsonKey(unknownEnumValue:)` à déclarer — consigné (AC15).
+/// Non persisté (valeur de retour runtime) ⇒ pas d'annotation de valeur
+/// d'enum inconnue à déclarer.
 enum ZMasteryLevel {
-  /// 🔴 **q0-2** (`[minQuality .. passThreshold - 1]`) **∪ jamais vue** (AD-46).
+  /// Qualité `[minQuality .. passThreshold - 1]`, y compris jamais vue.
   ///
-  /// ⚠️ **q0 EST dans ce seau.** Le PRD FR-SU12 porte un résidu « q1-2 » de
-  /// l'échelle 1-5 ; AD-46 impose **q0-2** (« **aucune note n'est hors seau** »).
-  /// Un `q0` (blackout total) hors seau, c'est l'apprenant le plus en difficulté
-  /// qui disparaît des filtres.
+  /// La borne basse `q0` fait partie de ce seau : aucune note n'est hors
+  /// seau. Exclure `q0` en ferait disparaître des filtres l'apprenant le
+  /// plus en difficulté.
   bad,
 
-  /// **q3** (`passThreshold`) — réussie, pas encore maîtrisée.
+  /// Qualité au seuil de passage — réussie, pas encore maîtrisée.
   good,
 
-  /// **q4-5** (`>= ZSrsConfig.masteredThreshold`) — maîtrisée.
+  /// Qualité au-delà du seuil de maîtrise — maîtrisée.
   mastered,
 }
 
-/// Classe une carte par niveau de maîtrise — **fonction PURE** (AC10).
+/// Classe une carte par niveau de maîtrise — fonction pure.
 ///
-/// - [info] : état SRS de la carte, ou `null` si **aucun** (⇒ jamais vue) ;
-/// - [config] : **propriétaire AD-46** de toutes les bornes.
+/// - [info] : état SRS de la carte, ou `null` si aucun (⇒ jamais vue) ;
+/// - [config] : propriétaire de toutes les bornes.
 ///
-/// ## Les bornes viennent TOUTES de [config] — aucun littéral
+/// ## Les bornes viennent toutes de [config] — aucun littéral
 ///
-/// `minQuality`, `passThreshold` et `masteredThreshold` sont **lus** sur
-/// [config] : **aucun `0`/`2`/`3`/`4`/`5` en dur** n'apparaît ici (AD-46 ; gardé
-/// par `test/z_mastered_threshold_single_source_test.dart`, qui rougit si la
-/// dérivation du seuil est recopiée hors de `z_srs_config.dart`).
+/// `minQuality`, `passThreshold` et `masteredThreshold` sont lus sur
+/// [config] : aucune borne numérique n'apparaît en dur ici.
 ///
-/// ## `config.clampQuality` est l'UNIQUE voie de clamp (AD-46)
+/// ## `config.clampQuality` est l'unique voie de clamp
 ///
-/// Une qualité **hors échelle** (`9`, `-2` — corruption, port d'évaluation
-/// aberrant) est **clampée** par [ZSrsConfig.clampQuality], jamais rejetée par une
-/// exception (AD-10) et jamais laissée « hors seau ».
+/// Une qualité hors échelle (corruption, port d'évaluation aberrant) est
+/// clampée par [ZSrsConfig.clampQuality], jamais rejetée par une exception
+/// (invariant AD-10) et jamais laissée hors seau.
 ///
-/// ## 🔴 `good` (q3) n'est PAS `mastered` (q4-5)
+/// ## `good` n'est pas `mastered`
 ///
-/// C'est l'écart n°1 de su-5 : `correct` (= `q >= passThreshold`, soit **q3+**)
-/// et `mastered` (**q4-5**) sont **deux concepts différents**. Une carte tout
-/// juste réussie n'est pas maîtrisée.
+/// `correct` (qualité au moins égale au seuil de passage) et `mastered`
+/// (au-delà du seuil de maîtrise) sont deux concepts différents. Une carte
+/// tout juste réussie n'est pas maîtrisée.
 ///
-/// ⚠️ **Lecture assumée du tableau AC10** : le tableau écrit `good` = «
-/// `lastQuality == passThreshold` ». La forme retenue est l'**intervalle**
-/// `[passThreshold .. masteredThreshold - 1]`, **strictement équivalente** pour la
-/// config canonique (`passThreshold=3`, `masteredThreshold=4` ⇒ seul q3 est
-/// `good`) mais qui, pour une config non canonique (ex. `minQuality: 1` ⇒
-/// `passThreshold=2`, `masteredThreshold=4`), ne laisse **aucune note hors seau**
-/// — ce qu'AD-46 exige explicitement. L'égalité stricte y ouvrirait un **trou**
-/// sur q3.
+/// La forme retenue pour `good` est l'intervalle
+/// `[passThreshold .. masteredThreshold - 1]` : pour une configuration non
+/// canonique, elle ne laisse aucune note hors seau, ce qu'exige la
+/// discipline de classification — une égalité stricte y ouvrirait un trou.
 ZMasteryLevel zMasteryLevelOf(ZRepetitionInfo? info, ZSrsConfig config) {
   // Jamais vue : aucun état SRS, jamais révisée, ou aucune note enregistrée.
-  // Les trois disent la même chose — et AD-46 range « jamais vue » dans `bad`
-  // (les deux prédicats coexistent : écart E3).
+  // Les trois disent la même chose, et « jamais vue » est rangée dans `bad`.
   if (info == null) return ZMasteryLevel.bad;
   if (info.repetitions == 0) return ZMasteryLevel.bad;
   final raw = info.lastQuality;
   if (raw == null) return ZMasteryLevel.bad;
 
-  // 🔴 UNIQUE voie de clamp (AD-46) — jamais un `clamp(0, 5)` réécrit ici.
+  // Unique voie de clamp — jamais un clamp réécrit ici.
   final quality = config.clampQuality(raw);
 
   if (quality >= config.masteredThreshold) return ZMasteryLevel.mastered;
@@ -98,50 +88,45 @@ ZMasteryLevel zMasteryLevelOf(ZRepetitionInfo? info, ZSrsConfig config) {
   return ZMasteryLevel.bad;
 }
 
-/// Filtres de session test/examen — value object **immuable** (FR-SU12).
+/// Filtres de session test/examen — value object immuable.
 ///
-/// ## 🔴 Ce que cette classe NE porte PAS — et pourquoi (AC10)
+/// ## Ce que cette classe ne porte pas — et pourquoi
 ///
-/// **Ni `questionTypes`, ni `tagIds`.** Le tableau de spécifications de la story
-/// les listait, mais AC10 tranche plus fort : « elle **CONSOMME**
-/// `ZStudySessionSelector` pour dossier ∧ tags ∧ types — **jamais réécrits** ;
-/// elle **délègue** à `matches()`, et n'ajoute que ce que le kernel ne sait pas
-/// faire ». Or `ZStudySessionConfig` porte **déjà** `folderId`/`tagIds`/`types`, et
-/// `ZStudySessionSelector.matches` les applique (dossier ∧ tags ∧ types).
+/// Ni `questionTypes`, ni `tagIds`. Ces filtres consomment
+/// `ZStudySessionSelector` pour dossier, tags et types — jamais réécrits ;
+/// ils délèguent à `matches()`, et n'ajoutent que ce que le noyau ne sait pas
+/// faire. Or `ZStudySessionConfig` porte déjà `folderId`/`tagIds`/`types`, et
+/// `ZStudySessionSelector.matches` les applique.
 ///
-/// Les porter **aussi** ici créerait **deux sources** du même filtre, avec une
-/// question sans réponse (« lequel gagne ? ») : exactement la lecture *conforme
-/// mais incompatible* que la revue adversariale traque. Et les laisser en
-/// **champs morts** serait pire encore (une fonctionnalité morte sur son chemin
-/// documenté — un défaut déjà démasqué dans cet epic).
+/// Les porter aussi ici créerait deux sources du même filtre, avec une
+/// question sans réponse (« lequel gagne ? »).
 ///
-/// ⇒ **Un filtre, une source** : dossier/tags/types → `selector` ; maîtrise,
-/// sources et taille du tirage → ici (le kernel ignore `ZSrsConfig` et
+/// Un filtre, une source : dossier/tags/types → `selector` ; maîtrise,
+/// sources et taille du tirage → ici (le noyau ignore `ZSrsConfig` et
 /// `ZFlashcardSource`).
 class ZFlashcardTestFilters {
   /// Construit des filtres de test.
   ///
-  /// - [questionCount] : nombre de questions — **défaut 10** (FR-SU12) ;
-  ///   excédent ⇒ **tirage aléatoire** (cf. [zDrawQuestions]) ;
-  /// - [masteryLevels] : seaux retenus — **vide = tous** (aucun filtre) ;
-  /// - [sources] : `kind` de provenance retenus (registre **ouvert** AD-4) —
-  ///   **vide = toutes**.
+  /// - [questionCount] : nombre de questions — défaut 10 ; excédent ⇒ tirage
+  ///   aléatoire (voir [zDrawQuestions]) ;
+  /// - [masteryLevels] : seaux retenus — vide = tous (aucun filtre) ;
+  /// - [sources] : `kind` de provenance retenus (registre ouvert, invariant
+  ///   AD-4) — vide = toutes.
   const ZFlashcardTestFilters({
     this.questionCount = 10,
     this.masteryLevels = const <ZMasteryLevel>{},
     this.sources = const <String>{},
   });
 
-  /// Nombre de questions voulu (défaut **10**). `<= 0` ⇒ sélection **vide**
+  /// Nombre de questions voulu (défaut 10). `<= 0` ⇒ sélection vide
   /// (cohérent avec `ZStudySessionSelector`, `count <= 0` ⇒ vide).
   final int questionCount;
 
-  /// Seaux de maîtrise retenus — **vide = tous** (patron `ZStudySessionSelector` :
-  /// `null`/vide ⇒ pas de filtre).
+  /// Seaux de maîtrise retenus — vide = tous (`null`/vide ⇒ pas de filtre).
   final Set<ZMasteryLevel> masteryLevels;
 
-  /// `kind` de source retenus — **vide = toutes**. Les `kind` viennent du
-  /// **registre** ouvert (AD-4) : jamais une enum fermée ici.
+  /// `kind` de source retenus — vide = toutes. Les `kind` viennent du
+  /// registre ouvert (invariant AD-4) : jamais une enum fermée ici.
   final Set<String> sources;
 
   @override
@@ -164,27 +149,28 @@ class ZFlashcardTestFilters {
 bool _setEquals<T>(Set<T> a, Set<T> b) =>
     a.length == b.length && a.containsAll(b);
 
-/// Prédicat de `kind` de source — **IMPLÉMENTATION UNIQUE** (SU-8, AC6).
+/// Prédicat de `kind` de source — implémentation unique.
 ///
 /// ## Pourquoi il est extrait
 ///
-/// Le filtre « provenance » est exigé **par deux surfaces** : le **tirage** de
-/// session ([zApplyTestFilters], su-6) et la **consultation** de la liste
-/// ([zApplyBrowseFilters], su-8). Le recopier serait **deux sources du même
-/// filtre** — la faute que ce fichier condamne lui-même en tête (« un filtre, une
-/// source ») et qu'il a déjà évitée pour dossier/tags/types en déléguant au
-/// kernel. Ici le kernel ne peut rien : il ignore `ZFlashcardSource` (AD-17).
-/// L'extraction est donc la **seule** façon de tenir la règle.
+/// Le filtre « provenance » est exigé par deux surfaces : le tirage de
+/// session ([zApplyTestFilters]) et la consultation de la liste
+/// ([zApplyBrowseFilters]). Le recopier serait deux sources du même filtre —
+/// exactement ce que ce fichier condamne pour dossier/tags/types en
+/// déléguant au noyau. Ici le noyau ne peut rien : il ignore
+/// `ZFlashcardSource`. L'extraction est donc la seule façon de tenir la
+/// règle « un filtre, une source ».
 ///
-/// Sémantique (patron `ZStudySessionSelector` : vide ⇒ pas de filtre) :
-/// - [sources] **vide** ⇒ `true` (toutes les provenances) ;
-/// - sinon : la carte doit porter une source dont le `kind` est dans [sources] ;
-///   une carte **sans source** (`null`) est **exclue** dès qu'un filtre est posé
-///   (elle n'a pas la provenance demandée).
+/// Sémantique (vide ⇒ pas de filtre, patron de `ZStudySessionSelector`) :
+/// - [sources] vide ⇒ `true` (toutes les provenances) ;
+/// - sinon : la carte doit porter une source dont le `kind` est dans
+///   [sources] ; une carte sans source (`null`) est exclue dès qu'un filtre
+///   est posé.
 ///
-/// Les `kind` viennent du **registre ouvert** (AD-4) — jamais une enum fermée.
+/// Les `kind` viennent du registre ouvert (invariant AD-4) — jamais une enum
+/// fermée.
 ///
-/// **PURE** et **totale** (AD-10) : aucun cas ne lève.
+/// Pure et totale (invariant AD-10) : aucun cas ne lève.
 bool zMatchesSourceKind(ZFlashcard card, Set<String> sources) {
   if (sources.isEmpty) return true;
   final kind = card.source?.kind;
@@ -192,31 +178,31 @@ bool zMatchesSourceKind(ZFlashcard card, Set<String> sources) {
   return sources.contains(kind);
 }
 
-/// Applique les filtres test/examen — **fonction PURE** (AC10/AC11).
+/// Applique les filtres test/examen — fonction pure.
 ///
-/// - [srsById] : état SRS **indexé** par `flashcardId` ⇒ **lookup O(1)** par
-///   carte (AC8), jamais un `firstWhere` ;
+/// - [srsById] : état SRS indexé par `flashcardId` ⇒ lookup O(1) par carte,
+///   jamais un `firstWhere` ;
 /// - [filters] : maîtrise / sources / taille du tirage ;
-/// - [config] : **propriétaire AD-46** des bornes ;
-/// - [selector] : **CONSOMMÉ** pour dossier ∧ tags ∧ types — jamais réécrits ;
-/// - [random] : source d'aléa **INJECTÉE** (D5) — jamais `Random()` capturé.
+/// - [config] : propriétaire des bornes ;
+/// - [selector] : consommé pour dossier, tags et types — jamais réécrits ;
+/// - [random] : source d'aléa injectée — jamais un générateur capturé.
 ///
 /// ## Ordre des opérations
 ///
-/// 1. `selector.matches(card)` — dossier ∧ tags ∧ types (**délégué** au kernel) ;
-/// 2. seau de maîtrise (`zMasteryLevelOf`) — ce que le kernel ne sait pas faire ;
+/// 1. `selector.matches(card)` — dossier, tags et types (délégué au noyau) ;
+/// 2. seau de maîtrise (`zMasteryLevelOf`) — ce que le noyau ne sait pas
+///    faire ;
 /// 3. `kind` de source ;
-/// 4. **tirage** à `filters.questionCount` (aléatoire si excédent).
+/// 4. tirage à `filters.questionCount` (aléatoire si excédent).
 ///
-/// ⚠️ On appelle `selector.matches` (le **prédicat**) et **non** `selectFrom` :
-/// `selectFrom` appliquerait **en plus** son propre plafond `config.count`, qui
-/// **doublonnerait** `filters.questionCount` — deux troncatures concurrentes, et
-/// la première (par ordre d'entrée, non aléatoire) viderait le tirage de son sens.
-/// `matches` est **exactement** la surface que le kernel expose « filtres seuls,
-/// hors plafond » (dartdoc `z_study_session_selector.dart:41-49`).
+/// On appelle `selector.matches` (le prédicat) et non `selectFrom` :
+/// `selectFrom` appliquerait en plus son propre plafond, qui doublonnerait
+/// `filters.questionCount` — deux troncatures concurrentes, et la première
+/// (par ordre d'entrée, non aléatoire) viderait le tirage de son sens.
 ///
-/// **Robustesse (AD-10)** : aucun filtre ne retenant rien ⇒ **liste vide**, jamais
-/// de throw. Une carte sans état SRS ⇒ traitée « jamais vue » (`bad`).
+/// Robustesse (invariant AD-10) : aucun filtre ne retenant rien ⇒ liste
+/// vide, jamais d'exception. Une carte sans état SRS ⇒ traitée « jamais
+/// vue » (`bad`).
 List<ZFlashcard> zApplyTestFilters(
   Iterable<ZFlashcard> cards, {
   required Map<String, ZRepetitionInfo> srsById,
@@ -228,10 +214,10 @@ List<ZFlashcard> zApplyTestFilters(
   final eligible = <ZFlashcard>[];
 
   for (final card in cards) {
-    // 1. Dossier ∧ tags ∧ types — DÉLÉGUÉ au kernel (jamais réécrit).
+    // 1. Dossier, tags et types — délégué au noyau (jamais réécrit).
     if (!selector.matches(card)) continue;
 
-    // 2. Seau de maîtrise — lookup O(1) (AC8).
+    // 2. Seau de maîtrise — lookup O(1).
     if (filters.masteryLevels.isNotEmpty) {
       final id = card.id;
       final info = id == null ? null : srsById[id];
@@ -240,98 +226,98 @@ List<ZFlashcard> zApplyTestFilters(
       }
     }
 
-    // 3. `kind` de source (registre ouvert — AD-4). DÉLÉGUÉ à l'implémentation
-    //    UNIQUE `zMatchesSourceKind`, partagée avec `zApplyBrowseFilters`
-    //    (su-8/AC6) : le prédicat n'est écrit qu'une fois.
+    // 3. `kind` de source (registre ouvert). Délégué à l'implémentation
+    //    unique `zMatchesSourceKind`, partagée avec `zApplyBrowseFilters`.
     if (!zMatchesSourceKind(card, filters.sources)) continue;
 
     eligible.add(card);
   }
 
-  // 4. Tirage — aléa INJECTÉ (AC11).
+  // 4. Tirage — aléa injecté.
   return zDrawQuestions(eligible, count: filters.questionCount, random: random);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SU-8 — Filtres de CONSULTATION (FR-SU14, AC5/AC6/AC7).
+// Filtres de consultation.
 //
-// 🔴 Pourquoi une fonction DISTINCTE de `zApplyTestFilters` — et non un
+// Pourquoi une fonction distincte de `zApplyTestFilters` — et non un
 // paramètre de plus
 //
-// `zApplyTestFilters` est un **TIRAGE de session** : `questionCount` (défaut
-// **10**) + `Random` requis + `srsById` requis. L'appliquer à une liste de
-// gestion afficherait **10 cartes** d'un dossier qui en compte 2 000, dans un
-// ordre **non déterministe**, et imposerait le SRS à une surface de simple
-// consultation. Ce serait un défaut fonctionnel majeur, et **muet**.
+// `zApplyTestFilters` est un tirage de session : `questionCount` (défaut 10)
+// et un `Random` requis. L'appliquer à une liste de gestion afficherait 10
+// cartes d'un dossier qui en compte 2 000, dans un ordre non déterministe, et
+// imposerait le SRS à une surface de simple consultation.
 //
-// Les deux fonctions partagent donc ce qui DOIT l'être — `selector.matches`
-// (dossier ∧ tags ∧ types) et `zMatchesSourceKind` (provenance) — et rien
-// d'autre. « Un filtre, une source » est tenu **sans** confondre deux intentions.
+// Les deux fonctions partagent donc ce qui doit l'être — `selector.matches`
+// (dossier, tags et types) et `zMatchesSourceKind` (provenance) — et rien
+// d'autre. « Un filtre, une source » est tenu sans confondre deux intentions.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Champ de flashcard sur lequel porte la **recherche texte** (SU-8, AC5).
+/// Champ de flashcard sur lequel porte la recherche texte.
 ///
-/// **Enum, jamais des booléens** (`searchQuestion`/`searchAnswer`/… ne sauraient
-/// pas dire *quel* champ, et rendraient toute extension breaking). Un
+/// Enum, jamais des booléens (des champs booléens séparés ne sauraient pas
+/// dire quel champ, et rendraient toute extension incompatible). Un
 /// `Set<ZFlashcardSearchField>` compose librement.
 ///
-/// **NON persisté** (réglage d'UI runtime) ⇒ pas de `@JsonKey(unknownEnumValue:)`.
+/// Non persisté (réglage d'interface runtime) ⇒ pas d'annotation de valeur
+/// d'enum inconnue.
 enum ZFlashcardSearchField {
   /// L'énoncé ([ZFlashcard.question]) — seul champ texte requis.
   question,
 
-  /// La réponse : [ZFlashcard.answer] **ou** le contenu des [ZFlashcard.choices]
+  /// La réponse : [ZFlashcard.answer] ou le contenu des [ZFlashcard.choices]
   /// (QCM) — les deux portent « la réponse » selon le type de carte.
   answer,
 
   /// Les étiquettes ([ZFlashcard.tagIds]).
   ///
-  /// ⚠️ Recherche sur les **ids** de tags : le libellé d'un tag vit dans
-  /// `ZFlashcardTag`, entité **séparée** que ce package ne joint pas. L'appelant
-  /// qui veut chercher par libellé résout ses tags en amont (`tagLabels`).
+  /// Recherche sur les identifiants de tags : le libellé d'un tag vit dans
+  /// une entité séparée que ce paquet ne joint pas. L'appelant qui veut
+  /// chercher par libellé résout ses tags en amont.
   tags,
 }
 
-/// L'ensemble **par défaut** des champs cherchés : les trois (AC5).
+/// L'ensemble par défaut des champs cherchés : les trois.
 const Set<ZFlashcardSearchField> _kDefaultSearchFields = <ZFlashcardSearchField>{
   ZFlashcardSearchField.question,
   ZFlashcardSearchField.answer,
   ZFlashcardSearchField.tags,
 };
 
-/// Filtres de **consultation** de la liste — value object **immuable** (AC5/AC6).
+/// Filtres de consultation de la liste — value object immuable.
 ///
-/// Ne porte **NI** `questionCount`, **NI** `Random`, **NI** `masteryLevels` :
-/// une liste de gestion ne tire pas, ne mélange pas et ne juge pas la maîtrise
-/// (AC7). Ne porte pas non plus dossier/tags/types — **délégués** au
-/// [ZStudySessionSelector] (AC6, « un filtre, une source »).
+/// Ne porte ni `questionCount`, ni `Random`, ni `masteryLevels` : une liste
+/// de gestion ne tire pas, ne mélange pas et ne juge pas la maîtrise. Ne
+/// porte pas non plus dossier/tags/types — délégués au
+/// [ZStudySessionSelector] (« un filtre, une source »).
 class ZFlashcardBrowseFilters {
   /// Construit des filtres de consultation.
   ///
-  /// - [query] : recherche texte **brute** (normalisée à l'application) —
-  ///   vide/espaces seuls ⇒ **aucun** filtre texte ;
-  /// - [searchFields] : champs cherchés — défaut **les trois** ;
-  /// - [sources] : `kind` de provenance retenus (registre **ouvert** AD-4) —
-  ///   **vide = toutes**.
+  /// - [query] : recherche texte brute (normalisée à l'application) —
+  ///   vide/espaces seuls ⇒ aucun filtre texte ;
+  /// - [searchFields] : champs cherchés — défaut les trois ;
+  /// - [sources] : `kind` de provenance retenus (registre ouvert, invariant
+  ///   AD-4) — vide = toutes.
   const ZFlashcardBrowseFilters({
     this.query = '',
     this.searchFields = _kDefaultSearchFields,
     this.sources = const <String>{},
   });
 
-  /// Recherche texte brute. Normalisée par [zFlashcardSearchText] au moment de
-  /// l'application — jamais stockée normalisée (le VO reflète la saisie).
+  /// Recherche texte brute. Normalisée par [zFlashcardSearchText] au moment
+  /// de l'application — jamais stockée normalisée (ce value-object reflète
+  /// la saisie).
   final String query;
 
-  /// Champs sur lesquels porte [query] — défaut : les trois (AC5).
+  /// Champs sur lesquels porte [query] — défaut : les trois.
   ///
-  /// **Vide ⇒ aucun champ cherché** ⇒ une [query] non vide ne retient **rien**
-  /// (cohérent : on a explicitement demandé à ne chercher nulle part). Ce n'est
-  /// **pas** le patron « vide = tout » des ensembles de filtres, car ce set
-  /// désigne une **surface de recherche**, pas un filtre de sélection.
+  /// Vide ⇒ aucun champ cherché ⇒ une [query] non vide ne retient rien
+  /// (cohérent : on a explicitement demandé à ne chercher nulle part). Ce
+  /// n'est pas le patron « vide = tout » des ensembles de filtres, car ce
+  /// jeu désigne une surface de recherche, pas un filtre de sélection.
   final Set<ZFlashcardSearchField> searchFields;
 
-  /// `kind` de source retenus — **vide = toutes** (patron des autres filtres).
+  /// `kind` de source retenus — vide = toutes (patron des autres filtres).
   final Set<String> sources;
 
   @override
@@ -350,54 +336,52 @@ class ZFlashcardBrowseFilters {
       );
 }
 
-/// Applique les filtres de **consultation** — **fonction PURE et DÉTERMINISTE**
-/// (AC6/AC7).
+/// Applique les filtres de consultation — fonction pure et déterministe.
 ///
-/// - [selector] : **CONSOMMÉ** pour dossier ∧ tags ∧ types — jamais réécrits.
-///   On appelle `matches` (le **prédicat**) et **JAMAIS** `selectFrom` : ce
-///   dernier applique le plafond `config.count`, qui **tronquerait la liste de
-///   gestion en silence** (un dossier de 2 000 cartes n'en montrerait que
-///   `count`). C'est le piège exact de `selectFrom` sur une surface de
-///   consultation ;
-/// - [filters] : recherche texte + `kind` de source — **tout** ce que le kernel
-///   ignore, et **rien** de plus ;
-/// - [tagLabels] : résolution **optionnelle** `tagId → libellé` pour la recherche
-///   sur les tags. Absente ⇒ la recherche porte sur les **ids** (le libellé vit
-///   dans `ZFlashcardTag`, entité séparée — ce package ne la joint pas).
+/// - [selector] : consommé pour dossier, tags et types — jamais réécrits. On
+///   appelle `matches` (le prédicat) et jamais `selectFrom` : ce dernier
+///   applique un plafond qui tronquerait la liste de gestion en silence (un
+///   dossier de 2 000 cartes n'en montrerait qu'une fraction) ;
+/// - [filters] : recherche texte et `kind` de source — tout ce que le noyau
+///   ignore, et rien de plus ;
+/// - [tagLabels] : résolution optionnelle identifiant → libellé pour la
+///   recherche sur les tags. Absente ⇒ la recherche porte sur les
+///   identifiants (le libellé vit dans une entité séparée que ce paquet ne
+///   joint pas).
 ///
-/// ## Aucun tirage, aucun aléa, aucune troncature (AC7)
+/// ## Aucun tirage, aucun aléa, aucune troncature
 ///
-/// La signature ne porte **ni `Random`, ni `questionCount`** : deux appels sur la
-/// même entrée rendent **exactement** la même liste, dans **l'ordre d'entrée**
-/// (le tri est la responsabilité de l'appelant — `ZFlashcardSortMode`, AC8).
-/// Gardé par `test/z_flashcard_browse_filters_test.dart` (garde de **signature**).
+/// La signature ne porte ni `Random`, ni `questionCount` : deux appels sur
+/// la même entrée rendent exactement la même liste, dans l'ordre d'entrée
+/// (le tri est la responsabilité de l'appelant — `ZFlashcardSortMode`).
 ///
-/// **Robustesse (AD-10)** : aucun filtre ne retenant rien ⇒ **liste vide**,
-/// jamais de throw. `query` vide/espaces ⇒ aucun filtre texte. `searchFields`
-/// vide + `query` non vide ⇒ **rien** (cf. [ZFlashcardBrowseFilters.searchFields]).
-/// L'entrée n'est jamais mutée.
+/// Robustesse (invariant AD-10) : aucun filtre ne retenant rien ⇒ liste
+/// vide, jamais d'exception. `query` vide/espaces ⇒ aucun filtre texte.
+/// `searchFields` vide avec `query` non vide ⇒ rien (voir
+/// [ZFlashcardBrowseFilters.searchFields]). L'entrée n'est jamais mutée.
 List<ZFlashcard> zApplyBrowseFilters(
   Iterable<ZFlashcard> cards, {
   required ZStudySessionSelector selector,
   required ZFlashcardBrowseFilters filters,
   Map<String, String>? tagLabels,
 }) {
-  // Normalisation faite UNE FOIS pour toute la liste (jamais par carte) : sur
-  // des milliers de cartes, replier la requête à chaque itération serait un coût
-  // pur. Vide après normalisation (espaces seuls) ⇒ aucun filtre texte.
+  // Normalisation faite une fois pour toute la liste (jamais par carte) :
+  // sur des milliers de cartes, replier la requête à chaque itération
+  // serait un coût pur. Vide après normalisation (espaces seuls) ⇒ aucun
+  // filtre texte.
   final needle = zFlashcardSearchText(filters.query);
   final hasQuery = needle.isNotEmpty;
 
   final result = <ZFlashcard>[];
   for (final card in cards) {
-    // 1. Dossier ∧ tags ∧ types — DÉLÉGUÉ au kernel (jamais réécrit, jamais
-    //    `selectFrom` : son plafond `count` tronquerait la liste).
+    // 1. Dossier, tags et types — délégué au noyau (jamais réécrit, jamais
+    //    `selectFrom` : son plafond tronquerait la liste).
     if (!selector.matches(card)) continue;
 
-    // 2. `kind` de source — implémentation UNIQUE partagée avec le tirage.
+    // 2. `kind` de source — implémentation unique partagée avec le tirage.
     if (!zMatchesSourceKind(card, filters.sources)) continue;
 
-    // 3. Recherche texte normalisée (le seul ajout de su-8 avec la source).
+    // 3. Recherche texte normalisée.
     if (hasQuery &&
         !_matchesQuery(card, needle, filters.searchFields, tagLabels)) {
       continue;
@@ -408,12 +392,12 @@ List<ZFlashcard> zApplyBrowseFilters(
   return result;
 }
 
-/// `true` si [needle] (**déjà normalisé**) apparaît dans l'un des [fields] de
+/// `true` si [needle] (déjà normalisé) apparaît dans l'un des [fields] de
 /// [card].
 ///
-/// Chaque champ est normalisé par [zFlashcardSearchText] **avant** comparaison :
-/// « eleve » trouve « Élève » (NFC **et** NFD), et « a b » trouve « a b »
-/// (insécable) — des deux côtés de la comparaison.
+/// Chaque champ est normalisé par [zFlashcardSearchText] avant comparaison :
+/// « eleve » trouve « Élève » (formes composées et décomposées), et « a b »
+/// trouve « a b » (insécable) — des deux côtés de la comparaison.
 bool _matchesQuery(
   ZFlashcard card,
   String needle,
@@ -425,10 +409,10 @@ bool _matchesQuery(
       case ZFlashcardSearchField.question:
         if (zFlashcardSearchText(card.question).contains(needle)) return true;
       case ZFlashcardSearchField.answer:
-        // « la réponse » selon le type : texte libre ET/OU contenu des choix.
-        // Les deux sont consultés — une carte QCM n'a pas d'`answer`, et une
-        // carte ouverte n'a pas de `choices` : n'en lire qu'un rendrait la
-        // recherche muette sur la moitié des types.
+        // « la réponse » selon le type : texte libre et/ou contenu des
+        // choix. Les deux sont consultés — une carte QCM n'a pas
+        // d'`answer`, et une carte ouverte n'a pas de `choices` : n'en lire
+        // qu'un rendrait la recherche muette sur la moitié des types.
         final answer = card.answer;
         if (answer != null &&
             zFlashcardSearchText(answer).contains(needle)) {
@@ -453,27 +437,27 @@ bool _matchesQuery(
   return false;
 }
 
-/// Tire [count] éléments de [eligible] — **aléa INJECTÉ** (AC11).
+/// Tire [count] éléments de [eligible] — aléa injecté.
 ///
-/// - `count <= 0` ⇒ **vide** (cohérent avec `ZStudySessionSelector`) ;
-/// - `count >= eligible.length` ⇒ **tout** est rendu, **sans tirage** et sans
-///   throw (l'ordre d'entrée est préservé : rien à départager) ;
-/// - sinon : **exactement** [count] éléments, **tous** ⊆ [eligible], **sans
-///   doublon**.
+/// - `count <= 0` ⇒ vide (cohérent avec `ZStudySessionSelector`) ;
+/// - `count >= eligible.length` ⇒ tout est rendu, sans tirage et sans
+///   exception (l'ordre d'entrée est préservé : rien à départager) ;
+/// - sinon : exactement [count] éléments, tous inclus dans [eligible], sans
+///   doublon.
 ///
-/// ## 🔴 L'aléa est RÉELLEMENT consulté
+/// ## L'aléa est réellement consulté
 ///
-/// Le tirage est un **Fisher-Yates partiel** sur une copie : `random.nextInt` est
-/// appelé pour **chaque** élément tiré. Une implémentation « prendre les [count]
-/// premières » (`eligible.take(count)`) passerait *tous* les autres tests —
-/// longueur, inclusion, absence de doublon, déterminisme à graine égale — et
-/// **échouerait uniquement** sur « deux graines ⇒ deux sous-ensembles ». C'est
-/// **LE** test qui prouve que l'aléa n'est pas décoratif.
+/// Le tirage est un Fisher-Yates partiel sur une copie : `random.nextInt`
+/// est appelé pour chaque élément tiré. Une implémentation « prendre les
+/// [count] premières » passerait tous les autres tests — longueur,
+/// inclusion, absence de doublon, déterminisme à graine égale — et
+/// échouerait uniquement sur « deux graines ⇒ deux sous-ensembles » : c'est
+/// le test qui prouve que l'aléa n'est pas décoratif.
 ///
-/// À graine égale, le résultat est **strictement déterministe** (aucune source
+/// À graine égale, le résultat est strictement déterministe (aucune source
 /// d'aléa capturée).
 ///
-/// L'entrée n'est **jamais mutée** (copie défensive).
+/// L'entrée n'est jamais mutée (copie défensive).
 List<T> zDrawQuestions<T>(
   List<T> eligible, {
   required int count,
@@ -485,7 +469,7 @@ List<T> zDrawQuestions<T>(
   final pool = List<T>.of(eligible);
   final drawn = <T>[];
   for (var i = 0; i < count; i++) {
-    // Fisher-Yates partiel : chaque tirage consulte RÉELLEMENT `random`.
+    // Fisher-Yates partiel : chaque tirage consulte réellement `random`.
     final pick = random.nextInt(pool.length);
     drawn.add(pool[pick]);
     // Échange avec la fin puis retrait : O(1), et aucun doublon possible.
@@ -495,49 +479,35 @@ List<T> zDrawQuestions<T>(
   return drawn;
 }
 
-/// Mélange les choix d'un QCM — **aléa INJECTÉ** (AC12).
+/// Mélange les choix d'un QCM — aléa injecté.
 ///
-/// ## 🔴 Ce sont les OBJETS qui permutent, jamais les libellés seuls
+/// ## Ce sont les objets qui permutent, jamais les libellés seuls
 ///
-/// `ZChoice` porte `isCorrect` **SUR l'objet** (`{content, isCorrect}` — lu :
-/// `z_choice.dart:25-40`). Le mélange permute donc les **`ZChoice` entiers** : le
-/// multiset des **PAIRES `(content, isCorrect)`** est **strictement préservé**.
+/// `ZChoice` porte `isCorrect` sur l'objet lui-même (`{content, isCorrect}`).
+/// Le mélange permute donc les `ZChoice` entiers : le multiset des paires
+/// `(content, isCorrect)` est strictement préservé. Mélanger les `content`
+/// en laissant `isCorrect` à sa position produirait le même ensemble de
+/// libellés — un test qui n'assert que les `content` resterait vert en
+/// désignant la mauvaise bonne réponse.
 ///
-/// C'est **exactement** le défaut de su-2 (« marqueur attribué au **mauvais**
-/// choix ») : mélanger les `content` en laissant `isCorrect` à sa position
-/// produirait le **même ensemble de libellés** — un test qui n'assert que les
-/// `content` resterait **VERT** en désignant la mauvaise bonne réponse.
+/// Robustesse (invariant AD-10) : `null`, liste vide ou un seul choix ⇒
+/// jamais d'exception (rendus tels quels, en liste neuve).
 ///
-/// **Robustesse (AD-10)** : `null`, liste **vide** ou **un seul** choix ⇒ jamais
-/// de throw (rendus tels quels, en liste neuve).
+/// L'original n'est jamais muté : une nouvelle liste est rendue.
 ///
-/// L'original n'est **jamais muté** : une **nouvelle** liste est rendue.
-///
-/// ## 🔴 Le CONTRAT de couture que l'hôte doit respecter (su-6, LOW-4bis)
-///
-/// Cette fonction n'a **aucun appelant de production**, et c'est **conforme au
-/// périmètre** : D7 interdit à su-6 de câbler un moteur, AD-33 place la sélection
-/// **en amont** et le parcours assemblé est **su-10**. Mais le contrat, lui,
-/// n'était écrit **nulle part** (`grep -rq "copyWith(choices" packages/` → RC=1).
-/// Il l'est ici :
+/// ## Le contrat de couture que l'hôte doit respecter
 ///
 /// ```dart
-/// // ✅ La carte ENTIÈRE est reconstruite avec les choix mélangés…
+/// // La carte ENTIÈRE est reconstruite avec les choix mélangés…
 /// final shuffled = card.copyWith(choices: zShuffleChoices(card.choices, random: r));
 /// // …et c'est CETTE carte qui part à l'affichage ET à la correction.
 /// ```
 ///
-/// 🚫 Mélanger **pour l'affichage** tout en notant la carte **d'origine**
-/// désynchroniserait les deux côtés — le défaut su-2, par la couture au lieu de
-/// la fonction. Le typage **ferme** aujourd'hui cette voie (le widget n'accepte
+/// Mélanger pour l'affichage tout en notant la carte d'origine
+/// désynchroniserait les deux côtés : c'est le défaut que ce contrat
+/// prévient. Le typage ferme aujourd'hui cette voie (le widget n'accepte
 /// qu'un `ZFlashcard`, jamais une `List<ZChoice>` séparée : affichage et
-/// correction lisent donc **la même liste**) ; ce paragraphe est là pour que la
-/// fermeture reste **délibérée** le jour où quelqu'un ajoutera ce paramètre.
-///
-/// ⚠️ **À porter au ledger de su-10** : si le mélange n'est **jamais** câblé,
-/// **aucun test existant ne rougira** — le QCM présentera éternellement la bonne
-/// réponse à la **même position**. Le défaut su-2 réapparaîtrait alors *par
-/// omission* au lieu de *par erreur*.
+/// correction lisent donc la même liste).
 List<ZChoice> zShuffleChoices(
   List<ZChoice>? choices, {
   required Random random,
@@ -546,7 +516,7 @@ List<ZChoice> zShuffleChoices(
     return List<ZChoice>.of(choices ?? const <ZChoice>[]);
   }
   final shuffled = List<ZChoice>.of(choices);
-  // Fisher-Yates complet — permute les OBJETS (la paire reste soudée).
+  // Fisher-Yates complet — permute les objets (la paire reste soudée).
   for (var i = shuffled.length - 1; i > 0; i--) {
     final j = random.nextInt(i + 1);
     final tmp = shuffled[i];

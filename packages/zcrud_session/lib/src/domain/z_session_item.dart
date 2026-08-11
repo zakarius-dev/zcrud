@@ -1,14 +1,15 @@
-/// Élément NEUTRE d'une file de session (`ZSessionItem`) — ES-4.2, D7.
+/// Élément neutre d'une file de session.
 ///
-/// Le moteur de session (`ZStudySessionEngine`) est **générique sur l'identité
-/// de carte** (anti-inertie AD-1) : il ne tire **aucun** widget flashcard et ne
-/// connaît le « type » d'une carte qu'au travers d'un [typeKey] **opaque**. Un
-/// item ne porte que ce qu'il faut pour (1) invoquer le seam d'écriture SRS
-/// (`reviewCard(flashcardId, folderId, …)`) et (2) ordonner la file.
+/// Le moteur de session (`ZStudySessionEngine`) est générique sur l'identité
+/// de carte (invariant AD-1) : il ne tire aucun widget flashcard et ne
+/// connaît le « type » d'une carte qu'au travers d'un [ZSessionItem.typeKey]
+/// opaque. Un item ne porte que ce qu'il faut pour (1) invoquer le seam
+/// d'écriture SRS (`reviewCard(flashcardId, folderId, …)`) et (2) ordonner la
+/// file.
 ///
 /// Pur-Dart, immuable, value-object (`==`/`hashCode`). Aucune I/O, aucune
-/// horloge, aucune (dé)sérialisation (état de session runtime NON persisté —
-/// pas de `@ZcrudModel`, AC10).
+/// horloge, aucune (dé)sérialisation : l'état de session runtime n'est pas
+/// persisté et ne porte donc pas d'annotation `@ZcrudModel`.
 library;
 
 /// Un candidat de la file de session : couple d'identité neutre

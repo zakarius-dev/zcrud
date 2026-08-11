@@ -20,7 +20,7 @@
 /// Priorité, partout : **paramètre > jeton `studyCard*` > défaut-référence**
 /// (résolution centralisée dans [zStudyCardChromeOf]).
 ///
-/// ## 🔴 Pourquoi cette carte ne prend AUCUN type de domaine
+/// ## Pourquoi cette carte ne prend AUCUN type de domaine
 ///
 /// Le modèle de note (`ZSmartNote`) vit dans `zcrud_note`, qui n'est **pas**
 /// une dépendance de `zcrud_study` (pubspec : « AUCUN autre satellite lourd
@@ -280,7 +280,7 @@ class ZDefaultNoteCard extends StatelessWidget {
 
   // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
   //
-  // 🔴 NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
+  // NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
   // valeurs POMPÉES depuis v0.43.0. Les paramètres de chrome restent
   // NON-inertes (AD-4) : fournis, ils s'appliquent ; nuls, rendu littéral.
 
@@ -339,7 +339,7 @@ class ZDefaultNoteCard extends StatelessWidget {
         ZTagChips(key: tagsKey, tags: tags, palette: palette),
     ];
     if (children.length == 1) return children.single;
-    // 🔴 MESURÉ (leçon CR-IFFD-37, rejouée ici) : avec des enfants INFLEXIBLES,
+    // MESURÉ (leçon CR-IFFD-37, rejouée ici) : avec des enfants INFLEXIBLES,
     // cette colonne débordait de 156 px dans une cellule de rail 300 × 80 dp —
     // le slot `belowSubtitle` est prêté en fit LOOSE par la carte de base, et
     // un contenu rigide s'AJOUTE à la hauteur au lieu d'y PARTICIPER. Chaque

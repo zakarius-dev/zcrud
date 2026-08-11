@@ -1,9 +1,10 @@
 /// Résultat **neutre** d'une sauvegarde de fichier (`ZFileSaver`).
 ///
-/// origine: E11b-3 (Axe B). Type partagé par la façade et les implémentations
-/// conditionnelles (io/web/stub) — extrait dans son propre fichier pour éviter
-/// tout cycle d'import facade↔impl. Purement local : AUCUN symbole `dart:io`/
-/// `package:web`/Syncfusion, aucun secret, aucune requête réseau (AD-12).
+/// Type partagé par la façade et les implémentations conditionnelles
+/// (io/web/stub) — extrait dans son propre fichier pour éviter tout cycle
+/// d'import facade↔impl. Purement local : AUCUN symbole `dart:io`/
+/// `package:web`/Syncfusion, aucun secret, aucune requête réseau (invariant
+/// AD-12).
 library;
 
 /// Résultat immuable d'un `ZFileSaver.save` : nom du fichier, chemin écrit (io)

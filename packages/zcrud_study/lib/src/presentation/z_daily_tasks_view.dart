@@ -23,7 +23,7 @@
 /// **`dueCount: 0`** (`z_exam_reminders.dart:131`) et ne rendent **que** les
 /// examens : la ligne « cartes dues », elle, n'était rendue **nulle part**.
 ///
-/// ## 🔴 Le `default` est OBLIGATOIRE — c'est le kernel qui l'exige
+/// ## Le `default` est OBLIGATOIRE — c'est le kernel qui l'exige
 ///
 /// `ZDailyStudyTask` est une **famille OUVERTE** (`abstract interface class` +
 /// discriminant `String kind`), délibérément **jamais `sealed`** : « un satellite
@@ -37,7 +37,7 @@
 /// | **toute autre** | [ZDailyTasksView.unknownTaskBuilder] |
 /// | autre **sans** `unknownTaskBuilder` | **ABSENTE de la liste** (AD-4) |
 ///
-/// 🔴 Une variante inconnue n'est **jamais** un throw, **jamais** un placeholder
+/// Une variante inconnue n'est **jamais** un throw, **jamais** un placeholder
 /// inerte : elle n'occupe **aucune** ligne. Une garde monte une variante forgée
 /// (`kind: 'podcast'`) et vérifie les deux branches.
 ///
@@ -46,7 +46,7 @@
 /// **re-vérifie le type** et retombe sur `unknownTaskBuilder` sinon (AD-10 —
 /// aucun cast qui puisse lever).
 ///
-/// ## 🔴 Horloge INJECTÉE
+/// ## Horloge INJECTÉE
 ///
 /// [ZDailyTasksView.now] est le **SEUL** référentiel temporel : aucun
 /// `DateTime.now()`, aucun `DateTime()` sans argument, aucun `.toLocal()` dans
@@ -58,7 +58,7 @@
 /// ([zStudyWeekDays]) : aucune dérive DST, exactement la discipline D4 du
 /// kernel.
 ///
-/// ⚠️ **Comment cette propriété est RÉELLEMENT gardée, et pourquoi.** Le test
+/// **Comment cette propriété est RÉELLEMENT gardée, et pourquoi.** Le test
 /// comportemental ne peut **pas** distinguer une arithmétique locale d'une
 /// arithmétique UTC lorsque l'hôte de test est lui-même en UTC — mesuré :
 /// remplacer `DateTime.utc(...)` par `DateTime(...)` laissait la garde de
@@ -68,7 +68,7 @@
 /// comportemental garde la **forme** (7 jours UTC, 24 h d'écart, aucun trou) et
 /// **déclare sa limite** — une garde qui ne peut pas rougir n'est pas gardée.
 ///
-/// ## 🔴 `dueCount` vient de l'HÔTE
+/// ## `dueCount` vient de l'HÔTE
 ///
 /// Le kernel le dit : `dueCount` est la « source unique, jamais recalculée ». La
 /// vue ne compte **rien**, ne filtre **rien**, ne consulte **aucun** store. Elle
@@ -147,7 +147,7 @@ DateTime zStudyDayOf(DateTime moment) =>
 /// [weekStart] est un `DateTime.monday`…`DateTime.sunday`. Le résultat est
 /// toujours de longueur 7, croissant, normalisé à la date en UTC.
 ///
-/// 🔴 **Aucune horloge interne** : la semaine est une fonction de son seul
+/// **Aucune horloge interne** : la semaine est une fonction de son seul
 /// argument. C'est ce qui rend le bandeau testable sans figer le temps.
 List<DateTime> zStudyWeekDays(
   DateTime around, {
@@ -184,7 +184,7 @@ bool zStudyIsSameDay(DateTime a, DateTime b) =>
 /// * la construction se fait sous le `BuildContext` de l'item, pas sous celui
 ///   de la vue.
 ///
-/// 🔴 **PURE, TOTALE, DÉTERMINISTE — ne lève JAMAIS.** Le `kind` est déclaratif :
+/// **PURE, TOTALE, DÉTERMINISTE — ne lève JAMAIS.** Le `kind` est déclaratif :
 /// une variante tierce peut annoncer `'exam'` sans être un [ZExamTask]. Chaque
 /// branche **re-vérifie le type** et retombe sur [unknownTaskBuilder] sinon
 /// (AD-10 — aucun `as` qui puisse échouer).
@@ -216,7 +216,7 @@ Widget? Function(BuildContext)? zDailyTaskTileBuilder(
       if (builder == null) return null;
       return (BuildContext context) => builder(context, task);
     default:
-      // 🔴 OBLIGATOIRE — une variante ajoutée par un satellite futur passe ICI,
+      // OBLIGATOIRE — une variante ajoutée par un satellite futur passe ICI,
       // jamais par une exception, jamais par le régime d'une variante voisine.
       return unknown();
   }
@@ -278,7 +278,7 @@ class ZDailyTasksView extends StatelessWidget {
 
   /// Discriminant de la variante « cartes dues » de la famille ouverte.
   ///
-  /// 🔴 Constante **liée au kernel par garde** (`ZDueCardsTask(1).kind` doit lui
+  /// Constante **liée au kernel par garde** (`ZDueCardsTask(1).kind` doit lui
   /// être égal) : sans cette garde, un renommage côté kernel laisserait ce
   /// dispatch tomber silencieusement dans le `default`, et la ligne dues
   /// disparaîtrait sans qu'aucun test ne rougisse.
@@ -453,7 +453,7 @@ class _ZResolvedTask {
 
 /// Le bandeau de 7 jours.
 ///
-/// 🔴 **Cible ≥ 48 dp en GÉOMÉTRIE RENDUE.** Sept cellules au plancher ne
+/// **Cible ≥ 48 dp en GÉOMÉTRIE RENDUE.** Sept cellules au plancher ne
 /// tiennent pas côte à côte sous ~380 dp de large ; le legacy les comprime
 /// silencieusement (`Expanded` sans contrainte de hauteur ni de largeur,
 /// `daily_tasks_page.dart:158`). Ici, dès que la largeur disponible ne permet
@@ -570,7 +570,7 @@ class _ZDayBand extends StatelessWidget {
       ],
     );
 
-    // 🔴 **La marge est HORS de la cible**, et c'est load-bearing (démasqué par
+    // **La marge est HORS de la cible**, et c'est load-bearing (démasqué par
     // l'injection R3 « pas de défilement en étroit »). Première rédaction : la
     // marge vivait DANS le `Container`, donc DANS l'`InkWell` — la cible tactile
     // englobait 4 dp de vide et mesurait 49.1 dp là où la cellule VISIBLE n'en

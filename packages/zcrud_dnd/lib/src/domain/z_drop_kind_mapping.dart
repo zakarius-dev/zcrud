@@ -21,8 +21,8 @@ import 'z_drop_read_failure.dart';
 /// C'est la couture (« seam ») qui confine le paquet tiers : l'adaptateur
 /// `super_drag_and_drop` implémente cette interface dans la couche
 /// présentation, et [zBuildDroppedItems] ne connaît qu'elle. Aucun type tiers
-/// n'apparaît donc dans les règles métier — condition 2 d'AD-57 — et un double
-/// de test suffit à prouver ces règles.
+/// n'apparaît donc dans les règles métier, et un double de test suffit à
+/// prouver ces règles.
 abstract class ZDropItemSource {
   /// Constructeur `const` pour permettre des sources immuables.
   const ZDropItemSource();

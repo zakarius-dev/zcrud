@@ -1,75 +1,75 @@
 /// Barrel d'API publique de `zcrud_firestore`.
 ///
-/// Adapters Firestore + Hive (offline-first).
+/// Adaptateurs Firestore + Hive, offline-first.
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 ///
-/// **Isolation AD-5** : ce barrel n'exporte AUCUN type `cloud_firestore` ni
-/// `hive`. Les signatures publiques de [FirebaseZRepositoryImpl] /
-/// [HiveZLocalStore] / [FirestoreZRemoteStore] restent `ZResult<…>` /
-/// `Stream<List<T>>` **nues** ; l'injection d'une instance `FirebaseFirestore`
-/// (repo/remote) ou d'une `Box` Hive (local) est la SEULE couture (voulue) vers
-/// le backend.
+/// **Isolation (invariant AD-5)** : ce barrel n'exporte AUCUN type
+/// `cloud_firestore` ni `hive`. Les signatures publiques de
+/// [FirebaseZRepositoryImpl] / [HiveZLocalStore] / [FirestoreZRemoteStore]
+/// restent `ZResult<…>` / `Stream<List<T>>` **nues** ; l'injection d'une
+/// instance `FirebaseFirestore` (repo/remote) ou d'une `Box` Hive (local) est
+/// la SEULE couture (voulue) vers le backend.
 ///
-/// **E5-2** ajoute les DEUX stores offline-first : [HiveZLocalStore] (local,
-/// source de vérité) et [FirestoreZRemoteStore] (distant, fire-and-forget). Le
-/// merge LWW/orchestrateur (E5-3/E5-4) n'est PAS ici.
+/// Ce barrel réunit les DEUX stores offline-first — [HiveZLocalStore] (local,
+/// source de vérité) et [FirestoreZRemoteStore] (distant, fire-and-forget) —
+/// ainsi que le dépôt composite qui les fusionne
+/// ([ZOfflineFirstRepository]/[ZOfflineFirstBoxRepository]), un batcher de
+/// cascade borné, un résolveur de chemins bi-topologie, et les fabriques
+/// study (résolveur, codec legacy, migrateur, orchestrateur de sync).
 library;
 
 export 'src/data/firebase_z_repository_impl.dart';
 export 'src/data/firestore_z_remote_store.dart';
 export 'src/data/hive_z_local_store.dart';
 export 'src/data/z_firestore_api.dart';
-// ES-3.3 (FR-S14, AD-21) : exécuteur borné de cascade `ZFirestoreCascadeBatcher`
-// + rapport observable `ZCascadeReport`. `deleteCascade → ZResult<ZCascadeReport>`
-// (soft-delete hors-entité en lots ≤ 450, panne remontée en `Left`). Compose le
-// registre kernel (quoi) + `ZFirestorePathResolver` (où). Signatures publiques
-// NUES — aucun type `cloud_firestore` exporté (AD-5/AD-11).
+// Exécuteur borné de cascade `ZFirestoreCascadeBatcher` + rapport observable
+// `ZCascadeReport`. `deleteCascade → ZResult<ZCascadeReport>` (soft-delete
+// hors-entité en lots ≤ 450, panne remontée en `Left`). Compose le registre
+// kernel (quoi) + `ZFirestorePathResolver` (où). Signatures publiques NUES —
+// aucun type `cloud_firestore` exporté (invariants AD-5/AD-11).
 export 'src/data/z_firestore_app_file_resolver.dart';
 export 'src/data/z_firestore_cascade_batcher.dart';
-// ES-3.2 (FR-S13) : résolveur de chemins `ZFirestorePathResolver` bi-topologie
-// (flat IFFD / nested lex / global share-links). Entrée NEUTRE → chemin `String` ;
-// aucun type hive/cloud_firestore n'est exporté (AD-5).
+// Résolveur de chemins `ZFirestorePathResolver` bi-topologie (flat / nested /
+// liens de partage globaux). Entrée NEUTRE → chemin `String` ; aucun type
+// hive/cloud_firestore n'est exporté (invariant AD-5).
 export 'src/data/z_firestore_path_resolver.dart';
-// ES-10.2 (AC3, AD-5/AD-10) : fabrique d'adapter folder-scopé CONCRÈTE
-// `buildFolderScopedStudyRepository<T>` — compose `ZFirestorePathRule.
-// nestedUnderParent` + `ZFirestorePathResolver` + `ZOfflineFirstBoxRepository<T>`
-// pour la topologie `users/{uid}/{parent}/{folderId}/{collection}`. Générique-par-
-// topologie (aucun nom consommateur en dur, aucune arête d'entité). Retour NEUTRE
-// `ZStudyRepository<T>` ; seul `FirebaseFirestore` (paramètre) est une couture
-// backend. `buildFolderScopedResolver` (`@visibleForTesting`) n'est PAS réexporté.
-// CR-LEX-30 : la fabrique `flatTopLevel(userScoped:)` — jumelle de la
-// folder-scopée — est publiée. Sa composition n'a plus à être ré-assemblée à la
-// main par chaque hôte dont la collection est RACINE.
+// Fabriques d'adaptateur folder-scopé et user-scopé CONCRÈTES
+// (`buildFolderScopedStudyRepository<T>` / `buildUserScopedStudyRepository<T>`)
+// — composent `ZFirestorePathRule.nestedUnderParent` + `ZFirestorePathResolver`
+// + `ZOfflineFirstBoxRepository<T>`. Générique-par-topologie (aucun nom
+// consommateur en dur, aucune arête d'entité). Retour NEUTRE
+// `ZStudyRepository<T>` ; seul `FirebaseFirestore` (paramètre) est une
+// couture backend. `buildFolderScopedResolver` (`@visibleForTesting`) n'est
+// PAS réexporté.
 export 'src/data/z_folder_scoped_study_repository.dart'
     show buildFolderScopedStudyRepository, buildUserScopedStudyRepository;
-// ES-3.2 (FR-S13) : base offline-first `ZOfflineFirstBoxRepository<T>` — implémente
-// le point d'extension `persist` du Template Method `ZStudyRepository<T>` (ES-3.1) ;
-// merge LWW hors-entité, `hasPendingWrites`, listener temps réel, rattrapage
+// Base offline-first `ZOfflineFirstBoxRepository<T>` — implémente le point
+// d'extension `persist` du gabarit `ZStudyRepository<T>` ; merge LWW
+// hors-entité, `hasPendingWrites`, listener temps réel, rattrapage
 // local-only. Signatures publiques NUES (aucun type hive/cloud_firestore).
 export 'src/data/z_offline_first_box_repository.dart';
-// E5-3 : dépôt offline-first `ZOfflineFirstRepository<T>` (compose local+distant,
-// merge Last-Write-Wins, soft-delete propagé, lot ≤ 450, `Right(unit)` si offline).
-// Signatures publiques NUES (aucun type hive/cloud_firestore).
+// Dépôt offline-first `ZOfflineFirstRepository<T>` (compose local+distant,
+// merge Last-Write-Wins, soft-delete propagé, lot ≤ 450, `Right(unit)` si
+// offline). Signatures publiques NUES (aucun type hive/cloud_firestore).
 export 'src/data/z_offline_first_repository.dart';
-// ES-3.5 (FR-S16, AD-27/AD-10) : codec/normaliseur d'adaptateur `ZStudyLegacyCodec`
-// — camelCase↔snake_case, mapping legacy IFFD 6→4 statuts (DW-ES21-1), `ZSyncMeta`
-// additif rétro-compatible, interop dates `int` millis (DW-ES32-1). Normaliseur PUR
-// de `Map` DÉFENSIF (jamais throw) ; signature NUE `Map<String,dynamic>` (aucun type
-// cloud_firestore — AD-5). Le mapping de casse/valeur vit EXCLUSIVEMENT ici (AD-27).
+// Codec/normaliseur d'adaptateur `ZStudyLegacyCodec` — camelCase↔snake_case,
+// mapping de statuts legacy, `ZSyncMeta` additif rétro-compatible, interop
+// dates `int` millis. Normaliseur PUR de `Map` DÉFENSIF (jamais throw) ;
+// signature NUE `Map<String,dynamic>` (aucun type cloud_firestore —
+// invariant AD-5). Le mapping de casse/valeur vit EXCLUSIVEMENT ici.
 export 'src/data/z_study_codec.dart';
-// ES-11.2 (FR-S34, AD-27/AD-19/AD-10/AD-5) : migrateur de CORPUS legacy IFFD
-// flat→canonique `ZLegacyStudyMigrator` (+ `ZDocumentMigrationOutcome`/
-// `ZLegacyMigrationReport`). COMPOSE `ZStudyLegacyCodec` (par-document) et ajoute
-// la garde d'IDEMPOTENCE (franchit le TRAP `status` : `ready`↛`uploading` au 2e
-// passage), le census R26 de préservation métier, un rapport auditable et un
-// DRY-RUN. Signature NUE `Map<String,dynamic>` (aucun type cloud_firestore/hive —
-// AD-5) ; générique par `Map` (aucune arête d'entité — R28). Write-back sur
-// données IFFD RÉELLES DÉFÉRÉ (DW-ES112-1).
+// Migrateur de corpus legacy flat→canonique `ZLegacyStudyMigrator` (+
+// `ZDocumentMigrationOutcome`/`ZLegacyMigrationReport`). Compose
+// `ZStudyLegacyCodec` (par document) et ajoute une garde d'idempotence, un
+// recensement de préservation métier, un rapport auditable et un mode
+// simulation (dry-run). Signature NUE `Map<String,dynamic>` (aucun type
+// cloud_firestore/hive — invariant AD-5) ; générique par `Map` (aucune arête
+// d'entité).
 export 'src/data/z_study_migrator.dart';
-// ES-3.4 (FR-S15, AD-20) : fabrique de câblage `assembleZStudySyncOrchestrator`
-// — remplaçant neutre de `study_sync_manager.dart` (liste de repos INJECTÉE, aucun
-// import/liste codés en dur). Compose `ZSyncOrchestrator` (E5-4) : best-effort +
-// débounce ~400 ms hérités (AD-4). Signature NUE (aucun type backend exporté ;
-// aucun Riverpod/firebase_auth/connectivity_plus — AD-15).
+// Fabrique de câblage `assembleZStudySyncOrchestrator` — liste de dépôts
+// INJECTÉE, aucun import/liste codés en dur. Compose `ZSyncOrchestrator` :
+// best-effort + débounce hérité. Signature NUE (aucun type backend exporté ;
+// aucun gestionnaire d'état/`firebase_auth`/`connectivity_plus` — invariant
+// AD-15).
 export 'src/data/z_study_sync_orchestrator.dart';

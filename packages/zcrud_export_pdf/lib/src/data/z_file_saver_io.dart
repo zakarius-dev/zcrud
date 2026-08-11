@@ -1,12 +1,13 @@
 /// Implémentation **io** de `ZFileSaver` (mobile/desktop/VM) — arête `dart:io`
 /// CONFINÉE à ce fichier conditionnel.
 ///
-/// origine: E11b-3 (Axe B, AC7). Écrit [bytes] sur disque : sous
+/// Écrit [bytes] sur disque : sous
 /// `<directoryPath>/<fileName>` si [directoryPath] (absolu) est fourni, sinon
 /// dans `Directory.systemTemp` (la sélection d'un dossier applicatif reste HORS
 /// package — pas de `path_provider`). Répertoire créé récursivement si absent.
-/// Purement LOCAL : aucune requête réseau, aucun secret, aucun `badCert` (AD-12).
-/// `dart:io` ne fuit jamais dans la façade neutre `ZFileSaver`.
+/// Purement LOCAL : aucune requête réseau, aucun secret, aucun `badCert`
+/// (invariant AD-12). `dart:io` ne fuit jamais dans la façade neutre
+/// `ZFileSaver`.
 library;
 
 import 'dart:io';

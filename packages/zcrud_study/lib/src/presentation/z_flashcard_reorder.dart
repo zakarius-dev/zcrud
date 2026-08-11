@@ -37,7 +37,7 @@ import 'z_reorder_ids.dart';
 
 /// `contentType` **canonique** des flashcards (AD-38 — **RISQUE DE DONNÉES**).
 ///
-/// 🔴 **VERBATIM `'flashcards'`, à ne JAMAIS modifier.** C'est la clé **déjà en
+/// **VERBATIM `'flashcards'`, à ne JAMAIS modifier.** C'est la clé **déjà en
 /// base** chez les consommateurs (IFFD, lex_douane) : la forme nue produite par
 /// `zSectionKey(contentType: 'flashcards')` — **jamais** `'flashcards/'`, jamais
 /// `'section:flashcards'`, jamais `'flashcard'` au singulier.

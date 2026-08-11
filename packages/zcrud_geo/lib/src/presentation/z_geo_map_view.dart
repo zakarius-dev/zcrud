@@ -1,36 +1,27 @@
-/// `ZGeoMapView` — **vue de lecture multi-formes** hors formulaire (G6, parité
-/// `GeofenceView` legacy `gfv:16-188` ; AD-1/AD-4/AD-10/AD-13/FR-26).
+/// `ZGeoMapView` — **vue de lecture multi-formes** hors formulaire, pour
+/// afficher plusieurs valeurs géo sur une même carte (liste de résultats,
+/// tableau de bord…) sans passer par un champ d'édition.
 ///
-/// ## Ce que fait réellement le legacy (mesuré, pas cru)
-///
-/// `GeofenceView` (`gfv`) : reçoit `Map<DynamicModel, List<GeoShape>>`,
-/// pose un libellé par forme via `geoShapeLabelBuilder` (repris en
-/// `style.infoWindowTitle`, `gfv:111-114`), **sélectionne par TAP MARQUEUR**
-/// (`_onMarkerTap`, `gfv:132-139` — jamais par le corps de la forme), centre
-/// initialement sur la **moyenne arithmétique** de tous les points
-/// (`gfv:52-76`), zoom initial 14 (`gfv:31`), et bascule `normal ↔ hybrid`
-/// via un FAB (`gfv:141-147, 167-185`). Consommé par `berths_screen.dart:131`
-/// et `depotages_carte_screen.dart:177`.
-///
-/// ## Portage zcrud
-///
-/// - **AUCUN moteur nouveau** : le rendu passe par le port existant
-///   ([ZMapAdapter.buildMap]) via son paramètre additif `overlays`
-///   ([ZGeoMapOverlay]) — chaque entrée est une valeur NEUTRE
-///   ([ZGeoPoint]/[ZGeoCircle]/[ZGeoShape]) rendue avec son style porté
-///   (G9/G14) et un marqueur d'ancrage tappable.
-/// - [labelBuilder] → `style.infoWindowTitle` (même canal que le legacy) ;
-/// - [onShapeSelected] → tap du marqueur d'ancrage (parité mesurée) ;
-/// - centrage : moyenne arithmétique (parité `gfv:52-76`) **puis**
+/// - Le rendu passe par le port [ZMapAdapter.buildMap] via son paramètre
+///   `overlays` ([ZGeoMapOverlay]) — chaque entrée est une valeur **neutre**
+///   ([ZGeoPoint]/[ZGeoCircle]/[ZGeoShape]) rendue avec son style porté et un
+///   marqueur d'ancrage tappable ;
+/// - [labelBuilder] pose un libellé par forme, repris en
+///   `style.infoWindowTitle` ;
+/// - [onShapeSelected] est notifié au tap du marqueur d'ancrage d'une
+///   entrée — jamais au tap du corps de la forme ;
+/// - centrage initial : moyenne arithmétique de tous les points, puis
 ///   `fitBounds` sur la boîte englobante globale après le premier frame si
-///   l'adaptateur est [ZMapCameraCapable] (G7, honoré-si-supporté) ;
-/// - toggle de type de carte : bouton thémé ≥48dp (`Semantics`, l10n injectée,
-///   `PositionedDirectional` — AD-13/FR-26 ; le FAB legacy codait blanc/noir).
+///   l'adaptateur est [ZMapCameraCapable] (honoré-si-supporté) ;
+/// - toggle de type de carte : bouton thémé ≥48dp (`Semantics`, l10n
+///   injectée, `PositionedDirectional` — invariant AD-13, couleurs dérivées
+///   du thème).
 ///
-/// **Cycle de vie (MAJEUR-1)** : la vue POSSÈDE son instance d'adaptateur
-/// (fabrique appelée 1× en `initState`, disposée en `dispose`) — jamais
-/// d'instance partagée. **AD-10** : entrée invalide ignorée, jamais de crash ;
-/// sans fabrique, la vue rend un espace vide (pas de carte, pas de throw).
+/// **Cycle de vie** : la vue possède son instance d'adaptateur (fabrique
+/// appelée une fois en `initState`, disposée en `dispose`) — jamais
+/// d'instance partagée. **Défensif (invariant AD-10)** : entrée invalide
+/// ignorée, jamais de crash ; sans fabrique, la vue rend un espace vide (pas
+/// de carte, pas de throw).
 library;
 
 import 'package:flutter/material.dart';
@@ -47,9 +38,10 @@ import 'z_map_adapter.dart';
 /// Entrée de [ZGeoMapView] : une valeur géo neutre + libellé/rappel optionnels.
 class ZGeoMapViewEntry {
   /// Construit l'entrée `const`. [value] : [ZGeoPoint]/[ZGeoCircle]/[ZGeoShape]
-  /// (tout autre type est ignoré au rendu — AD-10). [id] : identité stable
-  /// optionnelle (défaut : index de la liste). [renderAsPolyline] : `true` →
-  /// une [ZGeoShape] est rendue en tracé ouvert.
+  /// (tout autre type est ignoré au rendu — invariant AD-10). [id] :
+  /// identité stable optionnelle (défaut : index de la liste).
+  /// [renderAsPolyline] : `true` → une [ZGeoShape] est rendue en tracé
+  /// ouvert.
   const ZGeoMapViewEntry({
     required this.value,
     this.id,
@@ -66,20 +58,19 @@ class ZGeoMapViewEntry {
   final bool renderAsPolyline;
 }
 
-/// Libellé d'une entrée (repris en `style.infoWindowTitle` — canal legacy).
+/// Libellé d'une entrée, repris en `style.infoWindowTitle`.
 typedef ZGeoMapViewLabelBuilder = String? Function(ZGeoMapViewEntry entry);
 
-/// Vue carte multi-formes en lecture seule (G6, parité `GeofenceView`).
+/// Vue carte multi-formes en lecture seule.
 class ZGeoMapView extends StatefulWidget {
   /// Construit la vue. [adapterFactory] : fabrique du port carte (`null` →
   /// espace vide, aucun crash). [entries] : formes à afficher.
-  /// [labelBuilder] : libellé par entrée (marqueur labellisé G14).
+  /// [labelBuilder] : libellé par entrée (marqueur labellisé).
   /// [onShapeSelected] : tap du marqueur d'ancrage d'une entrée.
-  /// [initialZoom] : parité legacy 14 (`gfv:31`). [showMapTypeToggle] :
-  /// bouton de bascule `normal ↔ hybrid` (parité `gfv:141-147`).
-  /// [initialMapType] : type de carte de départ (parité legacy `normal`,
-  /// `gfv:42`). [autoFitBounds] : cadrage auto sur la boîte englobante après
-  /// le premier frame (si l'adaptateur est [ZMapCameraCapable]).
+  /// [initialZoom] : zoom initial de la carte. [showMapTypeToggle] : bouton
+  /// de bascule `normal ↔ hybrid`. [initialMapType] : type de carte de
+  /// départ. [autoFitBounds] : cadrage auto sur la boîte englobante après le
+  /// premier frame (si l'adaptateur est [ZMapCameraCapable]).
   const ZGeoMapView({
     required this.entries,
     this.adapterFactory,
@@ -92,29 +83,29 @@ class ZGeoMapView extends StatefulWidget {
     super.key,
   });
 
-  /// Formes à afficher (entrée invalide ignorée — AD-10).
+  /// Formes à afficher (entrée invalide ignorée — invariant AD-10).
   final List<ZGeoMapViewEntry> entries;
 
-  /// Fabrique d'adaptateur carte (instance possédée par la vue — MAJEUR-1).
+  /// Fabrique d'adaptateur carte (instance possédée par la vue).
   final ZMapAdapterFactory? adapterFactory;
 
-  /// Libellé par entrée → `style.infoWindowTitle` (parité `gfv:111-114`).
+  /// Libellé par entrée → `style.infoWindowTitle`.
   final ZGeoMapViewLabelBuilder? labelBuilder;
 
-  /// Sélection par tap du marqueur d'ancrage (parité `gfv:132-139`).
+  /// Sélection par tap du marqueur d'ancrage.
   final ValueChanged<ZGeoMapViewEntry>? onShapeSelected;
 
-  /// Zoom initial (parité legacy 14).
+  /// Zoom initial.
   final double initialZoom;
 
-  /// Affiche le bouton de bascule de type de carte (parité `gfv:141-147`).
+  /// Affiche le bouton de bascule de type de carte.
   final bool showMapTypeToggle;
 
-  /// Type de carte initial (parité legacy `normal`).
+  /// Type de carte initial.
   final ZGeoMapType initialMapType;
 
   /// Cadre la caméra sur la boîte englobante globale au premier frame
-  /// (honoré-si-supporté — G7).
+  /// (honoré-si-supporté).
   final bool autoFitBounds;
 
   @override
@@ -307,7 +298,7 @@ class _ZGeoMapViewState extends State<ZGeoMapView> {
               button: true,
               label: toggleText,
               child: ExcludeSemantics(
-                // Couleurs par rôles de thème (FR-26 — le FAB legacy codait
+                // Couleurs par rôles de thème (le bouton flottant historique codait
                 // blanc/noir en dur, `gfv:175-180`).
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,

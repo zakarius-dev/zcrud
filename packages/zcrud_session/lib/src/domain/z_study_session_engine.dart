@@ -1,24 +1,25 @@
-/// Runtime de session SRS en CYCLE (`ZStudySessionEngine`) — ES-4.2.
+/// Runtime de session SRS en cycle (`ZStudySessionEngine`).
 ///
-/// **Classe PURE, zéro gestionnaire d'état (AD-2, objectif produit n°1)** : le
-/// moteur `extends ChangeNotifier` (`package:flutter/foundation.dart` SEULE,
-/// **aucun** widget), détient un [ZSessionState] **immuable**, et mute via un
-/// **reducer PUR** ([reduceGrade]) suivi d'un `notifyListeners()` **granulaire**
-/// (uniquement si l'état change réellement, AC8). **Aucun** `flutter_riverpod`/
-/// `get`/`provider` — leur câblage vit dans les bindings (ES-9).
+/// Classe pure, zéro gestionnaire d'état (invariant AD-2) : le moteur
+/// `extends ChangeNotifier` (`package:flutter/foundation.dart` seule, aucun
+/// widget), détient un [ZSessionState] immuable, et mute via un reducer pur
+/// ([reduceGrade]) suivi d'un `notifyListeners()` granulaire, uniquement si
+/// l'état change réellement. Aucun `flutter_riverpod`/`get`/`provider` —
+/// leur câblage vit dans les packages de binding.
 ///
-/// **Écriture SRS = SEAM injecté, JAMAIS un scheduler/store en champ (AD-9/
-/// AD-23, D4)** : le moteur reçoit un [ZSessionReviewer] (= `reviewCard` en
-/// prod) ; il n'a **aucun** `ZSrsScheduler`/`ZRepetitionStore` et n'appelle
-/// **jamais** `apply`/`initial`/`put`. À chaque `grade`, le seam est invoqué
-/// **exactement une fois** ⇒ voie d'écriture SRS **unique par construction**.
+/// Écriture SRS = seam injecté, jamais un scheduler/store détenu en champ
+/// (invariant AD-9) : le moteur reçoit un [ZSessionReviewer] (= `reviewCard`
+/// en production) ; il n'a aucun `ZSrsScheduler`/`ZRepetitionStore` et
+/// n'appelle jamais `apply`/`initial`/`put` directement. À chaque [grade],
+/// le seam est invoqué exactement une fois, ce qui rend la voie d'écriture
+/// SRS unique par construction.
 ///
-/// **Cycle + offsets (D2/D3)** : sur lapse (`quality < passThreshold`, le SEUIL
-/// RÉUTILISÉ de `ZSrsConfig` — jamais un `3` littéral), la carte ratée est
-/// retirée puis **réinsérée parmi les cartes à venir** à l'offset **+2** (q ∈
-/// {0,1}) ou **+4** (q ≥ 2), clampé en fin de file. Sur réussite, la carte est
-/// **consommée**. Le reducer est **déterministe** (aucune horloge : `now` est
-/// relayé au seam, D6).
+/// Cycle et offsets : sur lapse (`quality < passThreshold`, le seuil
+/// réutilisé de `ZSrsConfig` — jamais un littéral en dur), la carte ratée
+/// est retirée puis réinsérée parmi les cartes à venir à l'offset +2
+/// (`quality` 0 ou 1) ou +4 (`quality` 2 ou plus), clampé en fin de file.
+/// Sur réussite, la carte est consommée. Le reducer est déterministe
+/// (aucune horloge : `now` est simplement relayé au seam).
 library;
 
 import 'dart:math' as math;
@@ -34,36 +35,36 @@ import 'z_session_item.dart';
 import 'z_session_reviewer.dart';
 import 'z_session_state.dart';
 
-/// Offset de réinsertion d'un lapse **léger** (`quality ∈ {0, 1}`) : la carte
-/// ratée réapparaît comme la **2ᵉ** carte à venir (offset utilisateur **+2**,
-/// D2). Propre à la file de SESSION — **jamais** une constante SM-2 recopiée.
+/// Offset de réinsertion d'un lapse léger (`quality` 0 ou 1) : la carte
+/// ratée réapparaît comme la 2ᵉ carte à venir. Propre à la file de session —
+/// jamais une constante SM-2 recopiée.
 const int kLapseOffsetSoft = 2;
 
-/// Offset de réinsertion d'un lapse **dur** (`quality ≥ 2`, en-deçà du seuil) :
-/// la carte ratée réapparaît comme la **4ᵉ** carte à venir (offset utilisateur
-/// **+4**, D2).
+/// Offset de réinsertion d'un lapse dur (`quality` 2 ou plus, en-deçà du
+/// seuil) : la carte ratée réapparaît comme la 4ᵉ carte à venir.
 const int kLapseOffsetHard = 4;
 
 /// Frontière léger/dur : un lapse de `quality ≤ kLapseSoftMaxQuality` utilise
-/// [kLapseOffsetSoft], au-delà [kLapseOffsetHard]. Garantit que `q=0` et `q=1`
-/// produisent **le même** offset (+2) et que `q=2` bascule sur +4 (AC5).
+/// [kLapseOffsetSoft], au-delà [kLapseOffsetHard]. Garantit que `q=0` et
+/// `q=1` produisent le même offset (+2) et que `q=2` bascule sur +4.
 const int kLapseSoftMaxQuality = 1;
 
-/// Reducer **PUR** de la file de session : applique un grade de [quality] à
-/// [state] et **retourne un nouvel état** (aucun effet de bord, aucune horloge,
-/// aucune I/O). Le [passThreshold] est **injecté** (lu de `ZSrsConfig`, jamais
-/// codé en dur — D3/AC4) : re-queue ssi `quality < passThreshold`.
+/// Reducer pur de la file de session : applique un grade de [quality] à
+/// [state] et retourne un nouvel état (aucun effet de bord, aucune horloge,
+/// aucune I/O). Le [passThreshold] est injecté (lu de `ZSrsConfig`, jamais
+/// codé en dur) : la carte re-boucle si et seulement si
+/// `quality < passThreshold`.
 ///
-/// - **Lapse** (`quality < passThreshold`) : la carte courante est retirée de sa
-///   position puis réinsérée **parmi les cartes à venir** à l'index
-///   `cursor + offset - 1` (0-based dans la file post-retrait), **clampé** à la
-///   fin de file ⇒ la carte réapparaît comme la Nᵉ carte à venir (N = 2 si
-///   `quality ≤ kLapseSoftMaxQuality`, sinon 4). `lapses += 1`.
-/// - **Réussite** (`quality ≥ passThreshold`) : la carte est **consommée**
-///   (retirée, jamais réinsérée). `reviewed += 1`.
+/// - Lapse (`quality < passThreshold`) : la carte courante est retirée de sa
+///   position puis réinsérée parmi les cartes à venir à l'index
+///   `cursor + offset - 1` (0-based dans la file post-retrait), clampé à la
+///   fin de file — la carte réapparaît comme la Nᵉ carte à venir (N = 2 si
+///   `quality ≤ kLapseSoftMaxQuality`, sinon 4). `lapses` est incrémenté.
+/// - Réussite (`quality ≥ passThreshold`) : la carte est consommée (retirée,
+///   jamais réinsérée). `reviewed` est incrémenté.
 ///
-/// Une file déjà complète (aucune carte courante) est renvoyée **telle quelle**
-/// (no-op défensif). L'erreur éventuelle de l'état précédent est **effacée** (la
+/// Une file déjà complète (aucune carte courante) est renvoyée telle quelle
+/// (no-op défensif). L'erreur éventuelle de l'état précédent est effacée (la
 /// transition a abouti).
 ZSessionState reduceGrade(
   ZSessionState state,
@@ -86,7 +87,7 @@ ZSessionState reduceGrade(
     final offset =
         quality <= kLapseSoftMaxQuality ? kLapseOffsetSoft : kLapseOffsetHard;
     // Index de réinsertion parmi les cartes à venir (post-retrait), clampé à la
-    // fin de file si moins de `offset` cartes restent à venir (D2).
+    // fin de file si moins de `offset` cartes restent à venir.
     final insertIndex = math.min(cursor + offset - 1, queue.length);
     queue.insert(insertIndex, current);
     lapses += 1;
@@ -109,31 +110,30 @@ ZSessionState reduceGrade(
   );
 }
 
-/// Moteur de session SRS en cycle. Consomme une file **déjà sélectionnée** et la
-/// fait progresser via [grade], en écrivant l'état SRS **uniquement** par le
-/// seam [ZSessionReviewer] injecté (voie unique, AD-9/AD-23).
+/// Moteur de session SRS en cycle. Consomme une file déjà sélectionnée et la
+/// fait progresser via [grade], en écrivant l'état SRS uniquement par le
+/// seam [ZSessionReviewer] injecté (voie unique, invariant AD-9).
 class ZStudySessionEngine extends ChangeNotifier {
-  /// Construit le moteur à partir d'une file **déjà sélectionnée** [queue] et
-  /// d'un seam de review [reviewer] (= `reviewCard` en prod). Le [config]
-  /// fournit le **seuil de lapse** `passThreshold` (RÉUTILISÉ, jamais recopié —
-  /// D3) ; [mode] est le mode de session (défaut `spaced`).
+  /// Construit le moteur à partir d'une file déjà sélectionnée [queue] et
+  /// d'un seam de review [reviewer] (= `reviewCard` en production). Le
+  /// [config] fournit le seuil de lapse `passThreshold` (réutilisé, jamais
+  /// recopié) ; [mode] est le mode de session (défaut `spaced`).
   ///
-  /// Le moteur **NE détient AUCUN** `ZSrsScheduler`/`ZRepetitionStore` : seul le
-  /// [reviewer] écrit du SRS (par construction, AD-23).
+  /// Le moteur ne détient aucun `ZSrsScheduler`/`ZRepetitionStore` : seul le
+  /// [reviewer] écrit du SRS, par construction.
   ///
-  /// **Garde de mode (SU-1, AD-34)** — ce moteur **écrit** du SRS via son
-  /// [reviewer] : n'accepter que les modes dont c'est le régime légitime,
-  /// `spaced` et `learn`. Un mode non-SRS (`cramming`/`list`/`test`/`whiteExam`)
-  /// combiné à un vrai [reviewer] était **constructible** avant SU-1 et aurait
-  /// écrit du SRS là où le régime l'interdit — **seul trou résiduel** identifié
-  /// par le spine, désormais fermé. Le régime d'écriture est une propriété **du
-  /// TYPE** (`ZStudySessionEngine` = SRS, `ZLinearSessionState` = linéaire,
-  /// `ZWhiteExamSessionEngine` = examen), jamais du [mode] passé en paramètre.
-  /// Garde **strictement symétrique** à celle de `ZLinearSessionState`.
+  /// Garde de mode — ce moteur écrit du SRS via son [reviewer] : il n'accepte
+  /// que les modes dont c'est le régime légitime, `spaced` et `learn`. Un
+  /// mode non-SRS (`cramming`/`list`/`test`/`whiteExam`) combiné à un vrai
+  /// [reviewer] écrirait du SRS là où le régime l'interdit. Le régime
+  /// d'écriture est une propriété du type (`ZStudySessionEngine` = SRS,
+  /// `ZLinearSessionState` = linéaire, `ZWhiteExamSessionEngine` = examen),
+  /// jamais du [mode] passé en paramètre. Garde strictement symétrique à
+  /// celle de `ZLinearSessionState`.
   ///
-  /// ⚠️ **Aucun `ZSessionReviewer` no-op n'est fourni** pour contourner cette
-  /// garde : ce serait la **porte dérobée** qu'AD-34 interdit explicitement
-  /// (un mode non-SRS servi par ce moteur, sous couvert d'un reviewer inerte).
+  /// Aucun `ZSessionReviewer` no-op n'est fourni pour contourner cette
+  /// garde : ce serait la porte dérobée qu'elle interdit explicitement — un
+  /// mode non-SRS servi par ce moteur, sous couvert d'un reviewer inerte.
   ZStudySessionEngine({
     required List<ZSessionItem> queue,
     required ZSessionReviewer reviewer,
@@ -179,41 +179,42 @@ class ZStudySessionEngine extends ChangeNotifier {
   int get remaining => _state.remaining;
 
   /// Applique un grade de [quality] (échelle SuperMemo-2 `0..5`) à la carte
-  /// **courante**, de façon **atomique et ordonnée** (D5, AC6) :
+  /// courante, de façon atomique et ordonnée :
   ///
-  /// 1. invoque le seam [ZSessionReviewer] **exactement une fois** (écrit la
-  ///    lapse/réussite via la voie unique `reviewCard`, AD-9) ;
-  /// 2. **sur `Right`** : mute la file via le reducer PUR [reduceGrade] puis
-  ///    `notifyListeners()` (une seule fois si l'état change, AC8) ;
-  /// 3. **sur `Left`** : la file **n'est PAS** mutée, l'échec est **exposé**
-  ///    (état `error` + valeur de retour `Left`), **jamais avalé** (AD-5/R6).
+  /// 1. invoque le seam [ZSessionReviewer] exactement une fois (écrit la
+  ///    lapse/réussite via la voie unique `reviewCard`) ;
+  /// 2. sur succès : mute la file via le reducer pur [reduceGrade] puis
+  ///    notifie une seule fois si l'état change ;
+  /// 3. sur échec : la file n'est pas mutée, l'échec est exposé (état
+  ///    `error` et valeur de retour), jamais avalé silencieusement.
   ///
-  /// Sur une session **complète** (aucune carte courante) : **no-op** — le seam
-  /// n'est **pas** invoqué, aucune notification n'est émise, un
-  /// `Left(ZDomainFailure)` signale l'absence de carte.
+  /// Sur une session complète (aucune carte courante) : no-op — le seam
+  /// n'est pas invoqué, aucune notification n'est émise, un échec de type
+  /// domaine signale l'absence de carte.
   ///
-  /// 🔒 **SU-4 (AC5, AD-46) — `clampQuality` est l'UNIQUE voie de clamp.** La
-  /// [quality] est ramenée dans l'échelle **possédée par `ZSrsConfig`** AVANT
-  /// d'atteindre le seam ET avant le reducer : c'est ici, et nulle part ailleurs,
-  /// que passe la notation d'une session SRS (`ZSrsQualityButtons` → hôte →
-  /// `grade`). Jamais un `.clamp(0, 5)` littéral : une app qui tronque son
-  /// échelle (`ZSrsConfig(minQuality: 1)`) verrait sinon une note `0` — hors de
-  /// SON échelle — écrite par la voie légitime. **Défensif** (AD-10) : une note
-  /// aberrante venue d'un port d'évaluation est clampée, jamais rejetée.
+  /// `clampQuality` est l'unique voie de clamp. La [quality] est ramenée
+  /// dans l'échelle possédée par `ZSrsConfig` avant d'atteindre le seam et
+  /// avant le reducer : c'est ici, et nulle part ailleurs, que passe la
+  /// notation d'une session SRS. Jamais un `.clamp(0, 5)` littéral : une
+  /// application qui tronque son échelle (`ZSrsConfig(minQuality: 1)`)
+  /// verrait sinon une note hors de son échelle écrite par la voie légitime.
+  /// Défensif (invariant AD-10) : une note aberrante venue d'un port
+  /// d'évaluation est clampée, jamais rejetée.
   Future<ZResult<ZRepetitionInfo>> grade(int quality, {DateTime? now}) async {
     final card = _state.current;
     if (card == null) {
-      // No-op : aucune carte courante ⇒ pas de seam, pas de notification (AC8).
+      // No-op : aucune carte courante, donc pas de seam, pas de notification.
       return const Left<ZDomainFailure, ZRepetitionInfo>(
         ZDomainFailure('ZStudySessionEngine.grade: aucune carte courante '
             '(session complète)'),
       );
     }
 
-    // 🔒 AD-46 — clamp par le propriétaire de l'échelle, AVANT toute écriture.
+    // Clamp par le propriétaire de l'échelle, avant toute écriture.
     final clamped = _config.clampQuality(quality);
 
-    // (1) SEAM D'ABORD — voie d'écriture SRS unique, exactement 1× par grade.
+    // Seam d'abord — voie d'écriture SRS unique, exactement une fois par
+    // appel à `grade`.
     final result = await _review(
       flashcardId: card.flashcardId,
       folderId: card.folderId,
@@ -223,26 +224,28 @@ class ZStudySessionEngine extends ChangeNotifier {
 
     return result.fold(
       (failure) {
-        // (3) Échec exposé, file INCHANGÉE (jamais de réinsertion « fantôme »).
+        // Échec exposé, file inchangée (jamais de réinsertion fantôme).
         _setState(_state.withError(failure));
         return Left<ZFailure, ZRepetitionInfo>(failure);
       },
       (info) {
-        // (2) File mutée par le reducer PUR, puis notification granulaire.
-        // 🔒 La MÊME valeur clampée que celle écrite par le seam : sinon la file
-        // pourrait juger « lapse » une note que le SRS a, lui, reçue en réussite.
+        // File mutée par le reducer pur, puis notification granulaire. La
+        // même valeur clampée que celle écrite par le seam : sinon la file
+        // pourrait juger « lapse » une note que le SRS a, lui, reçue en
+        // réussite.
         _setState(reduceGrade(_state, clamped, passThreshold: _passThreshold));
         return Right<ZFailure, ZRepetitionInfo>(info);
       },
     );
   }
 
-  /// Seuil de lapse **RÉUTILISÉ** depuis la config SRS (jamais un `3` littéral,
-  /// D3/AC4) : un grade est un lapse ssi `quality < _passThreshold`.
+  /// Seuil de lapse réutilisé depuis la config SRS (jamais un littéral en
+  /// dur) : un grade est un lapse si et seulement si
+  /// `quality < _passThreshold`.
   int get _passThreshold => _config.passThreshold;
 
-  /// Remplace l'état et notifie **uniquement** si l'état a réellement changé
-  /// (value-object `==` profond) ⇒ zéro notification fantôme sur no-op (AC8).
+  /// Remplace l'état et notifie uniquement si l'état a réellement changé
+  /// (value-object `==` profond) — zéro notification fantôme sur no-op.
   void _setState(ZSessionState next) {
     if (next == _state) return;
     _state = next;

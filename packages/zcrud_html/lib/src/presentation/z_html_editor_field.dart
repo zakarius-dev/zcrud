@@ -3,12 +3,12 @@
 ///
 /// La WebView est à HTML ce que le [flutter_quill].QuillController de
 /// `zcrud_markdown` est au Delta : une **2ᵉ voie d'état** qui, mal isolée,
-/// casserait SM-1. L'isolation est rendue FALSIFIABLE (cf. AD-50) par :
+/// casserait. L'isolation est rendue FALSIFIABLE (cf. AD-50) par :
 ///
 /// 1. **Controller unique** — `late final HtmlEditorController` créé UNE SEULE
 ///    fois en [initState], jamais recréé au rebuild de tranche ; la place stable
 ///    (`key: ValueKey('z-html-<field.name>')`, posée par l'enrôlement) fait
-///    survivre le `State` aux rebuilds voisins (SM-1).
+/// survivre le `State` aux rebuilds voisins.
 /// 2. **Commit débouncé hors-frappe** — toute la mécanique temporelle vit dans
 ///    [ZHtmlCommitDebouncer] (pur Dart, testable au caractère) : `onChangeContent`
 ///    ⇒ débounce ⇒ `ctx.onChanged` ; jamais synchrone à la frappe.
@@ -20,8 +20,8 @@
 /// **AD-40** : le type `HtmlEditorController` reste PRIVÉ (le
 /// constructeur public ne prend qu'un [ZFieldWidgetContext]).
 ///
-/// ⚠️ **ET-5** : le `State` de cette WebView n'est PAS montable en VM
-/// `flutter_test` (pas de moteur WebView) — sa mécanique SM-1 est prouvée par la
+/// **ET-5** : le `State` de cette WebView n'est PAS montable en VM
+/// `flutter_test` (pas de moteur WebView) — sa mécanique est prouvée par la
 /// classe extraite [ZHtmlCommitDebouncer] + la conception (`late final` +
 /// `ValueKey`), jamais par un test tautologique qui « monte » la WebView.
 library;
@@ -72,7 +72,7 @@ class _ZHtmlEditorFieldState extends State<ZHtmlEditorField> {
   /// toute tentative de réassignation lèverait à l'exécution (garde du langage).
   late final HtmlEditorController _controller;
 
-  /// Débouncer + garde de focus (mécanique SM-1 extraite, testable — ET-5).
+  /// Débouncer + garde de focus (mécanique extraite, testable — ET-5).
   late final ZHtmlCommitDebouncer _debouncer;
 
   /// Coerce défensivement `ctx.value` en HTML `String` (AD-10 : non-`String`/
@@ -134,7 +134,7 @@ class _ZHtmlEditorFieldState extends State<ZHtmlEditorField> {
           // HTML malformé `String` est chargé best-effort (jamais de throw).
           initialText: _incoming.isEmpty ? null : _incoming,
         ),
-        // FR-26 : couleurs dérivées du thème injecté (repli `Theme.of`).
+        // couleurs dérivées du thème injecté (repli `Theme.of`).
         otherOptions: OtherOptions(
           decoration: BoxDecoration(
             border: Border.all(color: theme.colorScheme.outline),
@@ -144,7 +144,7 @@ class _ZHtmlEditorFieldState extends State<ZHtmlEditorField> {
         ),
         callbacks: Callbacks(
           // Chemin CHAUD de frappe : jamais de commit synchrone — le débouncer
-          // (pur Dart, testable) programme un commit différé (SM-1/AD-2).
+          // (pur Dart, testable) programme un commit différé (AD-2).
           onChangeContent: (String? content) =>
               _debouncer.onContentChanged(content ?? ''),
           onFocus: () => _debouncer.onFocusChanged(hasFocus: true),

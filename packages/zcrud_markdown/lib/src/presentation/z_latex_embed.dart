@@ -1,4 +1,4 @@
-/// Embed **LaTeX** (E6-3 + MIN-1) de `zcrud_markdown` : embeds Quill CUSTOM
+/// Embed **LaTeX** (+) de `zcrud_markdown` : embeds Quill CUSTOM
 /// **inline** (`latex`, `MathStyle.text`) ET **bloc/display** (`latexBlock`,
 /// `MathStyle.display` centré), leurs `EmbedBuilder`s de rendu DÉFENSIF
 /// (`flutter_math_fork`), et le dialogue de saisie/édition de formule (aperçu
@@ -12,7 +12,7 @@
 /// `{"insert": {"latexBlock": "<source>"}}` (bloc) — `Map` opaque JSON-safe,
 /// jamais un type Quill/math.
 ///
-/// RÉTRO-COMPAT (MIN-1) : le type `latex` (inline, `MathStyle.text`) est
+/// RÉTRO-COMPAT : le type `latex` (inline, `MathStyle.text`) est
 /// INCHANGÉ. Le mode display n'est qu'un type d'embed ADDITIF (`latexBlock`) —
 /// les documents existants (ops `latex`) ne sont pas touchés.
 ///
@@ -36,14 +36,14 @@ import 'z_rich_text_style_set.dart';
 ///
 /// C'est aussi le `type` capté GÉNÉRIQUEMENT par `DeltaNeutralOps._embedPlaceholder`
 /// (1re clé de la `Map` `insert`) → `ZMarkdownCodec` produit `[embed:latex]` SANS
-/// modification (cohérence E6-2, HIGH-1 perte bornée).
+/// modification (cohérence, perte bornée).
 const String kLatexEmbedType = 'latex';
 
-/// Clé/type Delta de l'embed LaTeX **bloc/display** (MIN-1) — op
+/// Clé/type Delta de l'embed LaTeX **bloc/display** — op
 /// `{"insert": {"latexBlock": "<src>"}}`. ADDITIF : ne remplace jamais `latex`.
 const String kLatexBlockEmbedType = 'latexBlock';
 
-/// Clé Delta de l'embed formule **LEGACY DODLP bloc/display** (GAP-1, CR parité
+/// Clé Delta de l'embed formule **LEGACY bloc/display** (CR parité
 /// 2026-08-11) — op `{"insert": {"formula": "<latex nu>"}}`.
 ///
 /// MESURÉ sur le legacy (`formula_embed.dart:250` + `:323`) : la clé est
@@ -54,7 +54,7 @@ const String kLatexBlockEmbedType = 'latexBlock';
 /// SENS UNIQUE (le legacy ne relit pas le contenu réécrit par zcrud).
 const String kLegacyFormulaEmbedType = 'formula';
 
-/// Clé Delta de l'embed formule **LEGACY DODLP inline** (GAP-1) — op
+/// Clé Delta de l'embed formule **LEGACY inline** — op
 /// `{"insert": {"formula_inline": "<latex nu>"}}` (`formula_embed.dart:266` +
 /// `:377`, `MathStyle.text`). Même contrat de lecture seule que
 /// [kLegacyFormulaEmbedType].
@@ -64,7 +64,7 @@ const String kLegacyFormulaInlineEmbedType = 'formula_inline';
 @visibleForTesting
 const String kLatexInvalidLabel = 'formule invalide';
 
-/// Exemples de formules proposés dans le dialogue (MIN-1) — aucun texte codé en
+/// Exemples de formules proposés dans le dialogue — aucun texte codé en
 /// dur dans le rendu, juste des raccourcis de saisie.
 @visibleForTesting
 const List<String> kLatexExamples = <String>[
@@ -80,20 +80,20 @@ const List<String> kLatexExamples = <String>[
 /// `data` = la `String` source LaTeX. `toJson()` (hérité d'[Embeddable]) produit
 /// exactement `{"latex": "<source>"}`, d'où l'op Delta
 /// `{"insert": {"latex": "<source>"}}` (JSON-safe, opaque — traverse le round-trip
-/// d'E6-2 à l'identique via `ZDeltaCodec`).
+/// à l'identique via `ZDeltaCodec`).
 class ZLatexEmbed extends Embeddable {
   /// Construit l'embed LaTeX inline portant la [source] (chaîne LaTeX brute).
   const ZLatexEmbed(String source) : super(kLatexEmbedType, source);
 }
 
 /// Embed Quill CUSTOM **bloc/display** de type `latexBlock` (`MathStyle.display`,
-/// rendu centré). MIN-1 : parité DODLP `FormulaBlockEmbed`.
+/// rendu centré). : parité legacy `FormulaBlockEmbed`.
 class ZLatexBlockEmbed extends Embeddable {
   /// Construit l'embed LaTeX bloc portant la [source] (chaîne LaTeX brute).
   const ZLatexBlockEmbed(String source) : super(kLatexBlockEmbedType, source);
 }
 
-/// Placeholder d'erreur INLINE thémé (AD-13/FR-26) : icône `error_outline`
+/// Placeholder d'erreur INLINE thémé (AD-13) : icône `error_outline`
 /// colorée par `ZcrudTheme.errorColor` (repli `Theme.colorScheme.error`),
 /// enveloppée d'un [Semantics] lisible ([kLatexInvalidLabel]). Insets
 /// DIRECTIONNELS. Zéro couleur codée en dur. PARTAGÉ par les deux builders.
@@ -110,7 +110,7 @@ Widget _latexErrorPlaceholder(BuildContext context) {
 }
 
 /// `InheritedWidget` INTERNE fournissant la [ZRichTextFormulaSpec] par champ
-/// (GAP-7, CR parité 2026-08-11) aux builders de formule — qui sont `const` et
+/// (CR parité 2026-08-11) aux builders de formule — qui sont `const` et
 /// PARTAGÉS ([kZEmbedBuilders]) : la personnalisation PAR CHAMP ne peut donc
 /// passer que par le contexte, jamais par le builder.
 ///
@@ -137,7 +137,7 @@ class ZFormulaSpecScope extends InheritedWidget {
 /// Donnée absente / non-`String` / vide → placeholder ; formule malformée →
 /// `onErrorFallback` (jamais de throw).
 ///
-/// GAP-7 : honore la [ZRichTextFormulaSpec] ambiante ([ZFormulaSpecScope]) —
+/// honore la [ZRichTextFormulaSpec] ambiante ([ZFormulaSpecScope]) —
 /// `textStyle` remplace le style du point d'insertion ; le facteur d'échelle
 /// (`blockScaleFactor` pour `MathStyle.display`, `inlineScaleFactor` sinon)
 /// multiplie la taille de police EFFECTIVE (repli défensif 14 si aucune taille
@@ -175,7 +175,7 @@ Widget _buildMath(
 ///
 /// `expanded == false` : la formule est rendue **inline** (dans le flux du
 /// paragraphe) via `buildWidgetSpan`. Sans état ⇒ instance `const` STABLE
-/// (SM-1/AD-2 : aucune allocation par (re)build de tranche).
+/// (AD-2 : aucune allocation par (re)build de tranche).
 class ZLatexEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état, aucune ressource à disposer).
   const ZLatexEmbedBuilder();
@@ -196,8 +196,8 @@ class ZLatexEmbedBuilder extends EmbedBuilder {
 /// **bloc/display** (`MathStyle.display`), rendu **centré** sur sa propre ligne.
 ///
 /// `expanded == true` : occupe sa ligne (bloc). Le rendu est enveloppé d'un
-/// [Center] directionnel (parité DODLP `_CenteredMathWidget`). Sans état ⇒
-/// instance `const` STABLE (SM-1/AD-2).
+/// [Center] directionnel (parité legacy `_CenteredMathWidget`). Sans état ⇒
+/// instance `const` STABLE (AD-2).
 class ZLatexBlockEmbedBuilder extends EmbedBuilder {
   /// Builder `const` (sans état).
   const ZLatexBlockEmbedBuilder();
@@ -221,7 +221,7 @@ class ZLatexBlockEmbedBuilder extends EmbedBuilder {
   }
 }
 
-/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula`** (GAP-1) : rendu
+/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula`** : rendu
 /// DÉFENSIF (AD-10) `MathStyle.display` via le MÊME [_buildMath] que nos
 /// builders. `expanded == false` : parité EXACTE avec le legacy
 /// (`FormulaEmbedBuilder.expanded => false`, la formule vit dans le flux du
@@ -242,7 +242,7 @@ class ZLegacyFormulaEmbedBuilder extends EmbedBuilder {
       _buildMath(context, embedContext, MathStyle.display);
 }
 
-/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula_inline`** (GAP-1) :
+/// `EmbedBuilder` de LECTURE de l'embed **legacy `formula_inline`** :
 /// rendu DÉFENSIF (AD-10) `MathStyle.text`, `expanded == false` (parité
 /// `FormulaInlineEmbedBuilder`). LECTURE SEULE (cf. [kLegacyFormulaEmbedType]).
 class ZLegacyFormulaInlineEmbedBuilder extends EmbedBuilder {
@@ -261,7 +261,7 @@ class ZLegacyFormulaInlineEmbedBuilder extends EmbedBuilder {
       _buildMath(context, embedContext, MathStyle.text);
 }
 
-/// Saisie validée du dialogue LaTeX (MIN-1) : la [source] et le mode [block]
+/// Saisie validée du dialogue LaTeX : la [source] et le mode [block]
 /// (display centré) vs inline. NEUTRE (aucun type Quill/math).
 @immutable
 class ZLatexInput {
@@ -276,7 +276,7 @@ class ZLatexInput {
   final bool block;
 }
 
-/// Ouvre le dialogue de saisie/édition d'une formule LaTeX (AC3, AD-13, MIN-1).
+/// Ouvre le dialogue de saisie/édition d'une formule LaTeX (AD-13).
 ///
 /// Retourne la [ZLatexInput] saisie (source non-blanche + mode), ou `null` si
 /// l'utilisateur annule (y compris OK sur une source vide/blanche). [initial]
@@ -317,7 +317,7 @@ class _ZLatexDialogState extends State<_ZLatexDialog> {
     _text = TextEditingController(text: widget.initial);
     _block = widget.initialBlock;
     // Aperçu live : re-rend à chaque frappe (hors chemin chaud de l'éditeur —
-    // ce dialog est éphémère, AD-2/SM-1 non concernés).
+    // ce dialog est éphémère, AD-2/ non concernés).
     _text.addListener(_onTextChanged);
   }
 
@@ -330,7 +330,7 @@ class _ZLatexDialogState extends State<_ZLatexDialog> {
     super.dispose();
   }
 
-  /// Valide la saisie (AC3). Une entrée VIDE ou BLANCHE est traitée comme une
+  /// Valide la saisie. Une entrée VIDE ou BLANCHE est traitée comme une
   /// ANNULATION (`pop(null)`) : on n'insère JAMAIS un embed vide (qui ne rendrait
   /// qu'un placeholder d'erreur persistant — F2).
   void _submit() {
@@ -414,7 +414,7 @@ class _ZLatexDialogState extends State<_ZLatexDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Exemples cliquables (MIN-1) — pré-remplissent le champ.
+              // Exemples cliquables — pré-remplissent le champ.
               Semantics(
                 container: true,
                 label: 'Exemples de formules',
@@ -437,7 +437,7 @@ class _ZLatexDialogState extends State<_ZLatexDialog> {
                 ),
               ),
               const SizedBox(height: 4),
-              // Bascule inline / bloc (MIN-1, parité display DODLP).
+              // Bascule inline bloc (parité display l'éditeur historique).
               SwitchListTile(
                 key: const Key('zlatex-block-toggle'),
                 contentPadding: EdgeInsetsDirectional.zero,

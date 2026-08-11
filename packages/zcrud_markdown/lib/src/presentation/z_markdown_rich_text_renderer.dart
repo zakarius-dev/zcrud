@@ -18,11 +18,11 @@
 ///     `QuillEditor` readOnly, controller créé une seule fois (AD-2), mêmes
 ///     `EmbedBuilder`s qu'en édition, repli d'embed inconnu (AD-10).
 ///
-/// `gpt_markdown` — le paquet que DODLP importe aujourd'hui dans
+/// `gpt_markdown` — le paquet que l'éditeur historique importe aujourd'hui dans
 /// `dynamic_stepper.dart` — n'entre PAS au pubspec, et n'avait pas à y entrer :
 /// tout ce qu'il rend d'utile ici, le couple codec+lecteur le rendait déjà.
 ///
-/// ## Ce que DODLP met VRAIMENT dans un sous-titre d'étape (mesuré)
+/// ## Ce que l'éditeur historique met VRAIMENT dans un sous-titre d'étape (mesuré)
 ///
 /// Relevé en lecture seule sur `dodlp-otr` (`stepSubtitle`, ~40 sites) :
 /// l'écrasante majorité est du **texte pur** ; le balisage réel se réduit à
@@ -78,11 +78,11 @@ class ZMarkdownRichTextRenderer implements ZRichTextRenderer {
   ///     (tableau, LaTeX, image, vidéo, filet). Ces ops réclament une place de
   ///     bloc et un `EmbedBuilder` ; les rendre dans un libellé — un sous-titre
   ///     d'étape — donnerait une boîte dans une ligne. Mesuré à zéro occurrence
-  ///     chez DODLP : on décline plutôt qu'on approxime.
+  ///     chez l'éditeur historique : on décline plutôt qu'on approxime.
   ///  4. **Aucun balisage du tout** : la source est du texte pur. Le repli de
   ///     l'appelant est alors **strictement équivalent**, et bien moins cher
   ///     qu'un `QuillEditor`. C'est le cas de la grande majorité des
-  ///     `stepSubtitle` DODLP : décliner y est la bonne réponse, pas un renoncement.
+  ///     `stepSubtitle` l'éditeur historique : décliner y est la bonne réponse, pas un renoncement.
   ///
   /// [baseStyle] est pris pour BASE du corps (paragraphe, listes, citation) ; les
   /// rôles matérialisés (gras, code inline, titres) en dévient délibérément.

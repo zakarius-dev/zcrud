@@ -1,8 +1,8 @@
 /// Fichier exporté **neutre** : le triplet `{bytes, fileName, mimeType}` rendu
-/// par `ZFlashcardPdfTemplate` (su-11, AC1).
+/// par `ZFlashcardPdfTemplate`.
 ///
-/// origine: su-11 (FR-SU16). Type de transport **pur** (aucun type Syncfusion,
-/// aucun `zcrud_core`, aucune plateforme) : les bytes sont le PDF déjà rendu,
+/// Type de transport **pur** (aucun type Syncfusion, aucun `zcrud_core`,
+/// aucune plateforme) : les bytes sont le PDF déjà rendu,
 /// prêts à être prévisualisés / imprimés / partagés par le satellite
 /// `zcrud_export_ui` (`printing`) ou sauvegardés par [ZFileSaver]. Immuable.
 library;

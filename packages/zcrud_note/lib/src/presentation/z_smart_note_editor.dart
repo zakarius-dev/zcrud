@@ -1,24 +1,22 @@
-/// `ZSmartNoteEditor` — **éditeur** du corps riche d'une [ZSmartNote] (ES-6.1,
-/// FR-S25).
+/// `ZSmartNoteEditor` — **éditeur** du corps riche d'une [ZSmartNote].
 ///
-/// C'est un **MINCE ADAPTATEUR** (D2) : il compose le [ZMarkdownField] de
+/// C'est un **MINCE ADAPTATEUR** : il compose le [ZMarkdownField] de
 /// `zcrud_markdown` **TEL QUEL** (voie `controller`), sans aucun nouveau codec ni
-/// aucune réimplémentation d'éditeur rich-text (SM-S4/AD-28). Le pont domaine ↔
+/// aucune réimplémentation d'éditeur rich-text (AD-28). Le pont domaine ↔
 /// éditeur est une **IDENTITÉ** : [ZSmartNote.content] est déjà la « valeur
 /// neutre » que consomme `ZMarkdownField`/`ZCodec` (`List<Map<String, dynamic>>`
 /// d'ops Delta) ⇒ le codec applicable est [ZDeltaCodec] (identité).
 ///
-/// ## 🔴 DW-ES22-1 RÉCONCILIÉE PAR CONSTRUCTION (D4)
+/// ## RÉCONCILIÉE PAR CONSTRUCTION
 ///
 /// Le contenu injecté dans [ZMarkdownField] est **TOUJOURS** [ZSmartNote.content]
 /// — c.-à-d. des ops `List<Map>` déjà canoniques (le domaine a déjà exécuté
 /// `normalizeNoteContentOps`). La branche destructrice de `zcrud_markdown`
 /// (`asDeltaOps(String) → null → []`, qui EFFACE un corps markdown legacy) n'est
-/// **JAMAIS atteinte** : on ne passe **jamais** une `String` brute au champ.
-/// Preuve exécutable = round-trip d'un corps `'# Titre markdown legacy'` sans
-/// perte (test `z_smart_note_editor_test.dart` › AC5).
+/// **JAMAIS atteinte** : on ne passe **jamais** une `String` brute au champ —
+/// un corps markdown legacy fait un round-trip sans perte.
 ///
-/// ## 🔴 CR-IFFD-66 — le CANAL DE FOI (défaut MESURÉ, corrigé de façon ADDITIVE)
+/// ## Le canal de foi
 ///
 /// Un hôte migré double son corps de note : le champ TYPÉ [ZSmartNote.content]
 /// **et** une clé d'[ZSmartNote.extra] qui **fait FOI** à la relecture. L'éditeur
@@ -34,7 +32,7 @@
 /// (AD-10) — c'est le cas qui rendait le défaut invisible en test, et il porte
 /// désormais sa garde dédiée.
 ///
-/// INVARIANTS (AD-2/AD-7, OBJECTIF PRODUIT N°1 / SM-1) :
+/// INVARIANTS (AD-2/AD-7, OBJECTIF PRODUIT N°1) :
 /// - **Controller ISOLÉ + place stable** : le [ZFormController] est créé UNE FOIS
 ///   en [State.initState] (seed `{content: note.content}`), disposé en
 ///   [State.dispose] ; **jamais** recréé au rebuild. Le [ZMarkdownField] porte une
@@ -45,7 +43,7 @@
 ///   dans le champ pendant l'édition (la sync guardée de `ZMarkdownField` s'en
 ///   charge hors focus, et nous ne réécrivons JAMAIS la tranche).
 /// - **AD-1/AD-7** : entrée/sortie NEUTRES ; **aucun** type Quill dans la surface
-///   publique (AC8) — [onChanged] reçoit une [ZSmartNote] (`content` en
+/// publique — [onChanged] reçoit une [ZSmartNote] (`content` en
 ///   `List<Map<String, dynamic>>`).
 library;
 
@@ -66,7 +64,7 @@ class ZSmartNoteEditor extends StatefulWidget {
   /// [onChanged] reçoit `note.copyWith(content: <ops neutres>)` à chaque mutation
   /// du corps (sens unique). Titre/dossier/extension/extra sont **préservés** —
   /// **sauf** la clé déclarée par [faithChannel], **RE-SYNCHRONISÉE** sur les
-  /// mêmes ops (CR-IFFD-66).
+  /// mêmes ops.
   const ZSmartNoteEditor({
     required this.note,
     required this.onChanged,
@@ -80,7 +78,7 @@ class ZSmartNoteEditor extends StatefulWidget {
   /// Remontée à SENS UNIQUE de la note mise à jour (corps neutre).
   final ValueChanged<ZSmartNote> onChanged;
 
-  /// 🔴 **CR-IFFD-66** — canal d'[ZSmartNote.extra] qui **fait FOI** pour le corps
+  /// Canal optionnel d'[ZSmartNote.extra] qui **fait FOI** pour le corps
   /// chez l'hôte, à tenir en cohérence avec le champ typé.
   ///
   /// **`null` par défaut** ⇒ comportement **strictement identique** à avant
@@ -89,7 +87,7 @@ class ZSmartNoteEditor extends StatefulWidget {
   /// peuvent plus diverger, et une édition ne peut plus être perdue au
   /// rechargement.
   ///
-  /// ⚠️ Son `encode` est appelé **à chaque frappe** — cf.
+  /// Son `encode` est appelé **à chaque frappe** — cf.
   /// [ZNoteContentFaithChannel.encode].
   final ZNoteContentFaithChannel? faithChannel;
 
@@ -114,13 +112,13 @@ class _ZSmartNoteEditorState extends State<ZSmartNoteEditor> {
   @override
   void initState() {
     super.initState();
-    // 🔴 D4 — on seed avec `note.content` : des ops `List<Map>` DÉJÀ canoniques
+    // on seed avec `note.content` : des ops `List<Map>` DÉJÀ canoniques
     // (jamais une `String`). La tranche porte donc la valeur neutre que
     // `ZMarkdownField` consomme sans conversion (codec IDENTITÉ).
     _form = ZFormController(
       initialValues: <String, Object?>{_contentSpec.name: widget.note.content},
     );
-    // Écoute CIBLÉE de la tranche `content` (SM-1 : aucune écoute globale).
+    // Écoute CIBLÉE de la tranche `content` (aucune écoute globale).
     _form.fieldListenable(_contentSpec.name).addListener(_onContentChanged);
   }
 
@@ -131,7 +129,7 @@ class _ZSmartNoteEditorState extends State<ZSmartNoteEditor> {
   /// titre/dossier/extension/extra, et `normalizeNoteContentOps` (dans `copyWith`)
   /// garde les ops neutres verbatim.
   ///
-  /// 🔴 **CR-IFFD-66** — quand un [ZSmartNoteEditor.faithChannel] est déclaré, la
+  /// — quand un [ZSmartNoteEditor.faithChannel] est déclaré, la
   /// clé de foi est **RE-SYNCHRONISÉE dans la MÊME remontée**, depuis les
   /// **MÊMES** ops que le champ typé. C'est ce qui rend la divergence
   /// **structurellement impossible** : il n'existe pas d'instant où l'un est écrit

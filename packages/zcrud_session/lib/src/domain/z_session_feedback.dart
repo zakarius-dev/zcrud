@@ -1,66 +1,57 @@
-/// Sélection PURE du **feedback pédagogique** d'une soumission (SU-5, AC4 —
-/// FR-SU9).
+/// Sélection pure du feedback pédagogique d'une soumission.
 ///
-/// La règle de seau vit **ICI et nulle part ailleurs**, en **pur-Dart** : aucune
-/// `BuildContext`, aucun widget, aucune l10n — la fonction rend une **clé**
-/// ([zFeedbackKeyFor]), jamais un texte. C'est ce qui la rend testable **hors
-/// widget** (exigence explicite de FR-SU9) : `test`, pas `testWidgets`.
+/// La règle de seau vit ici et nulle part ailleurs, en pur-Dart : aucune
+/// `BuildContext`, aucun widget, aucune l10n — la fonction rend une clé
+/// ([zFeedbackKeyFor]), jamais un texte directement affichable. C'est ce qui
+/// la rend testable hors widget, en test unitaire pur.
 ///
-/// ## AD-46 — aucune note n'est hors seau, et l'échelle n'est PAS redéclarée
+/// ## Aucune note n'est hors seau, et l'échelle n'est pas redéclarée
 ///
-/// La qualité entrante est **CLAMPÉE par `config.clampQuality`** — **voie
-/// UNIQUE** du repo (AD-46/AD-10) : une note aberrante venue d'un port
-/// d'évaluation (`-3`, `9`) est ramenée dans l'échelle, **jamais** rejetée par
-/// une exception. Les bornes ne sont **jamais** réécrites ici : `min`/`max`
-/// appartiennent à `ZSrsConfig`, et `masteredThreshold` est **injecté** (son
-/// défaut est **CONSOMMÉ** depuis son propriétaire AD-46 —
-/// `ZSrsConfig.masteredThreshold` — côté widget, jamais le littéral `4` et jamais
-/// redérivé ; su-6/D2. `z_quality_scale_single_source_test.dart` rougit sur un
-/// littéral de borne ou un `masteredThreshold ?? <littéral>` dans ce fichier).
+/// La qualité entrante est clampée par `config.clampQuality` — voie unique
+/// du dépôt (invariant AD-10) : une note aberrante venue d'un port
+/// d'évaluation (`-3`, `9`) est ramenée dans l'échelle, jamais rejetée par
+/// une exception. Les bornes ne sont jamais réécrites ici : `min`/`max`
+/// appartiennent à `ZSrsConfig`, et `masteredThreshold` est injecté (son
+/// défaut est consommé depuis son propriétaire, `ZSrsConfig.masteredThreshold`,
+/// côté appelant — jamais un littéral en dur ni redérivé).
 ///
-/// ## 🔴 Le seau « mauvais » est **q0-2**, jamais « 1-2 »
+/// ## Le seau « mauvais » couvre q0 à q2, jamais seulement q1-q2
 ///
-/// Écart PRD **tranché** (cf. story, § « Écart PRD tranché ») : §FR-SU9 porte un
-/// **résidu** de l'échelle 1-5, déjà **explicitement amendée** par le spine
-/// (AD-46, échelle canonique **0..5**). Le glossaire PRD, les ACs des epics et
-/// l'AD-46 (« **aucune note n'est hors seau** ») imposent **0-2**. Une note `q0`
-/// (blackout total) ne doit tomber dans **aucun trou** : c'est l'apprenant le
-/// plus en difficulté qui, sinon, ne recevrait **aucun** encouragement.
+/// L'échelle canonique de qualité va de 0 à 5. Une note `q0` (blackout
+/// total) ne doit tomber dans aucun trou entre les seaux : c'est
+/// l'apprenant le plus en difficulté qui, sinon, ne recevrait aucun
+/// encouragement — d'où un seau « mauvais » couvrant explicitement `q0-2`.
 ///
-/// Pur-Dart, Flutter-free : `test/z_purity_test.dart` bannit
-/// `flutter/material|widgets|cupertino` dans `lib/src/domain/`.
+/// Pur-Dart, Flutter-free.
 library;
 
-// AD-46 : les bornes ET le clamp sont possédés par le domaine `ZSrsConfig`
-// (`zcrud_flashcard`). Arête PRÉEXISTANTE (`zcrud_session → zcrud_flashcard`,
-// déjà importée par les 3 runtimes) : aucune arête nouvelle.
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZSrsConfig;
 
-/// Seau de feedback — dérivé de la qualité **CLAMPÉE** (AD-46 : aucune note
-/// hors seau).
+/// Seau de feedback, dérivé de la qualité clampée — aucune note n'est hors
+/// seau.
 enum ZFeedbackTier {
-  /// Note **mauvaise** (`q0-2` en échelle canonique) — message de motivation.
+  /// Note mauvaise (`q0-2` en échelle canonique) — message de motivation.
   motivation,
 
-  /// Note **bonne sans être maîtrisée** (`q3`) — message neutre.
+  /// Note bonne sans être maîtrisée (`q3`) — message neutre.
   neutral,
 
-  /// Note **maîtrisée** (`q4-5`) — message d'encouragement.
+  /// Note maîtrisée (`q4-5`) — message d'encouragement.
   encouragement,
 
-  /// Maîtrisée **vite et sans indice** — palier « exceptionnel ».
+  /// Maîtrisée vite et sans indice — palier « exceptionnel ».
   exceptional,
 }
 
-/// Seuils du palier « **exceptionnel** » — **configurables** (FR-SU9 : « palier
-/// `< 10 s` sans indice »), jamais un `10` en dur dans un `build()`.
+/// Seuils du palier « exceptionnel » — configurables, jamais une durée en
+/// dur dans un `build()`.
 class ZFeedbackThresholds {
   /// Construit les seuils du palier exceptionnel.
   ///
-  /// - [exceptionalUnder] : temps de réponse **STRICTEMENT** inférieur exigé
-  ///   (défaut `10 s` — FR-SU9) ;
-  /// - [exceptionalMaxHints] : nombre d'indices **maximal** toléré (défaut `0` :
-  ///   *l'indice tue le palier*).
+  /// - [exceptionalUnder] : temps de réponse strictement inférieur exigé
+  ///   (défaut 10 secondes) ;
+  /// - [exceptionalMaxHints] : nombre d'indices maximal toléré (défaut `0` :
+  ///   le moindre indice fait perdre le palier).
   const ZFeedbackThresholds({
     this.exceptionalUnder = const Duration(seconds: 10),
     this.exceptionalMaxHints = 0,
@@ -74,46 +65,42 @@ class ZFeedbackThresholds {
   final int exceptionalMaxHints;
 }
 
-/// Sélectionne le seau de feedback d'une soumission — **fonction PURE** (AC4).
+/// Sélectionne le seau de feedback d'une soumission — fonction pure.
 ///
-/// - [quality] est **CLAMPÉE** par `config.clampQuality` (voie UNIQUE, AD-46/
-///   AD-10) ⇒ `-3` → `min`, `9` → `max`, **jamais** d'exception ;
-/// - [timeTaken] et [hintsUsed] **aberrants (négatifs)** sont ramenés à **zéro
-///   puis REFUSENT le palier** (AD-10 — code-review su-5, D7) : voir plus bas ;
-/// - `q >= masteredThreshold` → [ZFeedbackTier.encouragement], **promu** en
+/// - [quality] est clampée par `config.clampQuality` (voie unique,
+///   invariant AD-10) : `-3` devient `min`, `9` devient `max`, jamais
+///   d'exception ;
+/// - [timeTaken] et [hintsUsed] aberrants (négatifs) sont refusés pour le
+///   palier exceptionnel plutôt que ramenés à zéro (voir plus bas) ;
+/// - `q >= masteredThreshold` → [ZFeedbackTier.encouragement], promu en
 ///   [ZFeedbackTier.exceptional] si `timeTaken < thresholds.exceptionalUnder`
-///   **ET** `hintsUsed <= thresholds.exceptionalMaxHints` ;
+///   et `hintsUsed <= thresholds.exceptionalMaxHints` ;
 /// - `q >= config.passThreshold` (mais non maîtrisée) → [ZFeedbackTier.neutral] ;
-/// - **sinon** → [ZFeedbackTier.motivation] (**q0-2** : aucune note hors seau).
+/// - sinon → [ZFeedbackTier.motivation] (`q0-2` : aucune note hors seau).
 ///
-/// 🔴 **Écart consigné, assumé** — la spec de la story écrivait
-/// `== passThreshold → neutral`. Le `>=` retenu ici est **identique** sur toute
-/// config par défaut (`passThreshold=3`, `masteredThreshold=4` ⇒ `3` est la
-/// SEULE note entre les deux seuils), mais il reste **total et correct** sur une
-/// échelle tronquée : avec `passThreshold=1`, un `q2` est une **réussite** et
-/// doit recevoir « bon », pas « mauvais ». Le `==` l'aurait envoyé en
-/// `motivation` — silencieusement. Le `>=` colle en outre au **glossaire**
-/// (« bon » = *réussi mais non maîtrisé*), qui est la définition normative des
-/// seaux (AD-46).
+/// Le seuil de comparaison est `>=` plutôt que `==` sur `passThreshold` : les
+/// deux formulations coïncident sur une configuration par défaut
+/// (`passThreshold=3`, `masteredThreshold=4`, où `3` est la seule note entre
+/// les deux seuils), mais seul le `>=` reste correct sur une échelle
+/// tronquée — avec `passThreshold=1`, un `q2` est une réussite et doit
+/// recevoir « bon », pas « mauvais » ; un `==` l'enverrait silencieusement en
+/// `motivation`. Le `>=` colle par ailleurs à la définition normative des
+/// seaux : « bon » signifie réussi mais non maîtrisé.
 ///
-/// ## 🔴 AD-10 — une mesure ABERRANTE ne peut pas MÉRITER le palier (D7)
+/// ## Une mesure aberrante ne peut pas mériter le palier exceptionnel
 ///
-/// [timeTaken] et [hintsUsed] sont **fournis par l'hôte** (D1 : la clé est
-/// calculée par l'appelant, et su-5 force déjà l'hôte à mesurer le temps au mur
-/// — le patron naturel étant `end.difference(start)`). Sur une correction NTP ou
-/// un changement d'heure système entre les deux relevés, `timeTaken` est
-/// **NÉGATIF** — et un apprenant qui a peiné 5 minutes recevrait « Exceptionnel
-/// — juste, sans indice et **en un éclair** ! ».
+/// [timeTaken] et [hintsUsed] sont fournis par l'hôte, typiquement mesurés
+/// par différence entre deux horodatages. Sur une correction NTP ou un
+/// changement d'heure système entre les deux relevés, `timeTaken` peut
+/// devenir négatif — et un apprenant ayant peiné cinq minutes recevrait à
+/// tort le message « exceptionnel, en un éclair ! ».
 ///
-/// 🔒 **On ne les clampe PAS à zéro** — ce serait exactement le bug : `0`
-/// signifie *« instantané »*, soit la valeur la plus **flatteuse** de l'échelle.
-/// Une entrée aberrante refuse donc le **palier** (repli sur
-/// [ZFeedbackTier.encouragement] — la carte EST maîtrisée, le message reste
-/// juste et positif), **jamais** une exception, **jamais** une perte de
-/// fonction. C'est la symétrie qui manquait : la fonction clampait déjà
-/// [quality] et le fichier frère gardait déjà la durée négative côté
-/// présentation (`_formatDuration` ⇒ `00:00`) — les deux **autres** entrées
-/// aberrantes de cette même signature ne recevaient aucun traitement.
+/// Ces valeurs négatives ne sont pas clampées à zéro : ce serait exactement
+/// le bug, `0` signifiant « instantané », la valeur la plus flatteuse de
+/// l'échelle. Une entrée aberrante refuse donc le palier exceptionnel
+/// (repli sur [ZFeedbackTier.encouragement] — la carte est maîtrisée, le
+/// message reste juste et positif), jamais une exception, jamais une perte
+/// de fonction.
 ZFeedbackTier zFeedbackTierFor({
   required int quality,
   required Duration timeTaken,
@@ -122,19 +109,19 @@ ZFeedbackTier zFeedbackTierFor({
   required int masteredThreshold,
   ZFeedbackThresholds thresholds = const ZFeedbackThresholds(),
 }) {
-  // AD-46/AD-10 — VOIE UNIQUE de clamp : jamais de bornes réécrites ici, jamais
+  // Voie unique de clamp : jamais de bornes réécrites ici, jamais
   // d'exception sur une note aberrante.
   final q = config.clampQuality(quality);
 
   if (q >= masteredThreshold) {
-    // AD-10 (D7) — une mesure ABERRANTE refuse le palier : la ramener à zéro la
-    // rendrait au contraire MAXIMALEMENT flatteuse (`0 s` = « en un éclair »,
-    // `-1` indice = « sans aide »).
+    // Une mesure aberrante refuse le palier : la ramener à zéro la rendrait
+    // au contraire maximalement flatteuse (`0 s` = « en un éclair », `-1`
+    // indice = « sans aide »).
     final fastEnough =
         !timeTaken.isNegative && timeTaken < thresholds.exceptionalUnder;
     final unaided = hintsUsed >= 0 && hintsUsed <= thresholds.exceptionalMaxHints;
-    // 🔒 Les DEUX conditions sont exigées : un indice tue le palier, même sur
-    // une réponse fulgurante (FR-SU9 : « < 10 s **sans indice** »).
+    // Les deux conditions sont exigées : un indice fait perdre le palier,
+    // même sur une réponse fulgurante.
     if (fastEnough && unaided) return ZFeedbackTier.exceptional;
     return ZFeedbackTier.encouragement;
   }
@@ -144,8 +131,7 @@ ZFeedbackTier zFeedbackTierFor({
 
 /// Clé l10n du message d'un seau (`zcrud.session.feedback.<tier>`).
 ///
-/// Espace de clés **libre** : `grep "zcrud\.session\." packages/zcrud_core/lib`
-/// → **RC=1** (aucune collision avec les tables du cœur, qui sont fermées et
-/// hors périmètre de cette story — cf. D5).
+/// Cet espace de clés est propre à `zcrud_session` : il ne recoupe pas les
+/// tables de libellés du cœur.
 String zFeedbackKeyFor(ZFeedbackTier tier) =>
     'zcrud.session.feedback.${tier.name}';

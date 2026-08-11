@@ -1,22 +1,18 @@
-/// Type canonique d'une flashcard (Story E9-1, AC1).
+/// Type canonique d'une flashcard.
 ///
-/// origine: lex_core (module « Étude ») — `flashcard_type.dart:13` : superset
-/// union chat ∪ admin, `jsonValue = name` (camelCase), désérialisation
-/// **défensive** vers `openQuestion` (AD-4/AD-10).
-///
-/// Les 6 valeurs sont **toutes génériques**. Persistées en **camelCase** (= le
-/// `name` Dart de chaque valeur). Une valeur inconnue/absente à la
-/// désérialisation retombe sur [openQuestion] via le `defaultValue` déclaré sur
-/// le champ `ZFlashcard.type` (le générateur émet un `fromMap` défensif :
-/// `_$enumFromName(...) ?? ZFlashcardType.openQuestion`, **jamais** de throw).
+/// Les six valeurs sont toutes génériques. Persistées en camelCase (le `name`
+/// Dart de chaque valeur). Une valeur inconnue ou absente à la
+/// désérialisation retombe sur [ZFlashcardType.openQuestion] via le
+/// `defaultValue` déclaré sur le champ `ZFlashcard.type` (le générateur émet
+/// un décodeur défensif — jamais d'exception, invariant AD-10).
 library;
 
-/// Types de flashcard supportés (6 valeurs génériques — AC1).
+/// Types de flashcard supportés (six valeurs génériques).
 ///
-/// **Point d'extension recommandé (non implémenté ici, AD-4/AD-10)** : pour un
-/// besoin de type ouvert futur, ajouter une valeur `custom`/`unknown` en
-/// conservant le repli défensif vers [openQuestion]. L'ouverture par type de
-/// champ passe sinon par `ZTypeRegistry` (cœur), hors périmètre E9-1.
+/// Point d'extension recommandé pour un besoin de type ouvert futur : ajouter
+/// une valeur dédiée en conservant le repli défensif vers [openQuestion]
+/// (invariants AD-4/AD-10). L'ouverture par type de champ, si nécessaire,
+/// passe par le registre de type du cœur, hors périmètre de ce paquet.
 enum ZFlashcardType {
   /// Question à choix multiples (QCM) : voir `ZChoice`.
   multipleChoice,
@@ -24,7 +20,7 @@ enum ZFlashcardType {
   /// Vrai/Faux : réponse portée par `ZFlashcard.isTrue`.
   trueOrFalse,
 
-  /// Question ouverte (réponse libre) — **valeur de repli défensive**.
+  /// Question ouverte (réponse libre) — valeur de repli défensive.
   openQuestion,
 
   /// Exercice (réponse libre évaluée).

@@ -2,12 +2,12 @@
 ///
 /// Le rendu riche passe par `ZMarkdownReader`, qui monte un `QuillEditor`
 /// complet. Un par cellule sur un tableau 10×5 ferait **50 éditeurs Quill** :
-/// frontalement contraire à SM-1. Le coût est donc rendu proportionnel à la
+/// coûteux et évitable. Le coût est donc rendu proportionnel à la
 /// RICHESSE RÉELLE, pas à la taille du tableau — une cellule qui décode en un
 /// seul insert sans attribut (l'immense majorité) reste un `Text`.
 ///
 /// Le décodage a lieu dans `initState`/`didUpdateWidget`, **jamais pendant
-/// `build`** (AD-2/SM-1) : reconstruire la cellule ne redécode rien.
+/// `build`** (AD-2) : reconstruire la cellule ne redécode rien.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -21,6 +21,7 @@ import 'z_table_cell_scope.dart';
 /// Cellule de tableau, rendue en texte brut ou en Markdown selon le
 /// [ZTableCellScope] hérité.
 class ZTableCell extends StatefulWidget {
+  /// Construit la cellule pour [text], stylée par [style].
   const ZTableCell({
     required this.text,
     required this.style,

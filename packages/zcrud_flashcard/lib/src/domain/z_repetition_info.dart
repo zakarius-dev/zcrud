@@ -1,55 +1,59 @@
-/// État SRS canonique `ZRepetitionInfo` — SÉPARÉ de la carte (Story E9-2,
-/// AC1/AC2/AC7/AC8/AC9).
+/// État SRS canonique `ZRepetitionInfo` — séparé de la carte.
 ///
-/// origine: lex_core (module « Étude ») — `repetition_info.dart` (canonique
-/// §2.1, l.62-73) : l'état de répétition espacée d'une carte, **hors carte**,
-/// persisté dans un canal SÉPARÉ (E9-4) — jamais dans le sous-arbre partageable.
-/// Le partage/duplication d'une carte n'emporte donc jamais l'historique SRS
-/// **avec le corps de la carte** (AD-9).
+/// L'état de répétition espacée d'une carte vit hors de la carte, persisté
+/// dans un canal séparé — jamais dans le sous-arbre partageable de la carte.
+/// Le partage ou la duplication d'une carte n'emporte donc jamais
+/// l'historique SRS avec le corps de la carte (invariant AD-9).
 ///
-/// ⚠️ **Portée exacte de cet invariant (CR-IFFD-4, 2026-07-20)** — la formulation
-/// antérieure (« n'emporte jamais l'historique SRS **d'autrui** ») était FAUSSE :
-/// la séparation joue vis-à-vis du **corps de la carte**, pas entre
-/// **utilisateurs**. `ZRepetitionInfo` ne porte volontairement **aucun champ
-/// d'appartenance** — le scope par propriétaire est porté par le **chemin de
-/// persistance** de l'adaptateur, une instance de `ZRepetitionStore` étant liée à
-/// exactement un propriétaire. Voir le contrat détaillé sur `ZRepetitionStore`.
+/// Cette séparation joue vis-à-vis du **corps de la carte**, pas entre
+/// utilisateurs : `ZRepetitionInfo` ne porte volontairement aucun champ
+/// d'appartenance — le périmètre par propriétaire est porté par le chemin de
+/// persistance de l'adaptateur, une instance de `ZRepetitionStore` étant liée
+/// à exactement un propriétaire. Voir le contrat détaillé sur
+/// `ZRepetitionStore`.
 ///
-/// **Généré par `@ZcrudModel` (AD-3)** : `melos run generate` émet
-/// `z_repetition_info.g.dart` (`part`, gitignoré, régénéré) portant
-/// `_$ZRepetitionInfoFromMap`, l'extension `ZRepetitionInfoZcrud`
-/// (`toMap`/`copyWith`), `$ZRepetitionInfoFieldSpecs` et
-/// `registerZRepetitionInfo(ZcrudRegistry)`.
+/// Généré par `@ZcrudModel` (invariant AD-3) : le codegen émet le décodeur,
+/// l'extension `ZRepetitionInfoZcrud` (`toMap`/`copyWith`), les
+/// spécifications de champs et l'enregistrement au registre.
 ///
-/// **Contenant PUR, AUCUNE formule (AD-9)** : l'algorithme (SuperMemo-2) vit
-/// **uniquement** dans `ZSrsScheduler`/`ZSm2Scheduler`. Ce modèle ne fait que
-/// **transporter** l'état (`interval`/`repetitions`/`easeFactor`/…).
+/// ## Contenant pur, aucune formule
 ///
-/// **VOIE D'ÉCRITURE UNIQUE (AD-9, AC7)** : cette classe n'expose **AUCUN**
-/// `copyWith` public ni setter sur les champs SRS (l'extension générée
-/// `ZRepetitionInfoZcrud` — qui porte un `copyWith` — est **masquée** du barrel
-/// public via `hide`). L'**unique** transformation produisant un état avancé
-/// est `ZSrsScheduler.apply()` ; l'**unique** création d'un état neuf est
-/// `ZSrsScheduler.initial()`. Le constructeur `const` public est un **primitif
-/// de reconstruction de bas niveau**, réservé à l'algorithme (`apply`/`initial`)
-/// et à la désérialisation (`fromMap`) — il ne **calcule** aucune progression
-/// SRS (aucune formule), donc n'est PAS une API d'avancement concurrente.
+/// L'algorithme (SuperMemo-2 par défaut) vit uniquement dans
+/// `ZSrsScheduler`/`ZSm2Scheduler`. Ce modèle ne fait que transporter l'état
+/// (intervalle, nombre de répétitions, facteur de facilité…).
 ///
-/// **Slots d'extension AD-4** : mixe `ZExtensible` (cœur) → `extra`
-/// (échappatoire non typée, round-trip des clés inconnues) + `extension` (slot
-/// type additif versionné, parsé défensivement). Ces deux canaux NE sont PAS
-/// gérés par le générateur : ils sont **câblés manuellement** autour du code
-/// généré dans [ZRepetitionInfo.fromMap]/[toMap] (même patron que `ZFlashcard`,
-/// E9-1).
+/// ## Voie d'écriture unique
 ///
-/// **Sans `id`/`ZEntity` (AC1)** : la clé d'identité est [flashcardId]
-/// (jointure 1↔1 avec la carte) — diffère de `ZFlashcard`. L'état n'est pas
-/// « éphémère » au sens carte ; il est adressé par sa carte.
+/// Cette classe n'expose aucun `copyWith` public ni setter sur les champs
+/// SRS (l'extension générée, qui porte un `copyWith`, est masquée du barrel
+/// public). L'unique transformation produisant un état avancé est
+/// `ZSrsScheduler.apply()` ; l'unique création d'un état neuf est
+/// `ZSrsScheduler.initial()` (invariant AD-9). Le constructeur `const`
+/// public est un primitif de reconstruction de bas niveau, réservé à
+/// l'algorithme et à la désérialisation — il ne calcule aucune progression
+/// SRS, donc n'est pas une voie d'avancement concurrente.
 ///
-/// **Sync « map telle quelle » (AD-9/AD-10, canonique §7)** : [fromMap]/[toMap]
-/// (dé)sérialisent l'état **complet zéro-perte** SANS jamais invoquer un
-/// scheduler — la synchro (E9-4) merge la map par LWW sur `updatedAt` sans
-/// dériver l'état (aucun recalcul d'`interval`/`easeFactor`/échéance).
+/// ## Slots d'extension
+///
+/// Mixe `ZExtensible` (invariant AD-4) : `extra` (échappatoire non typée,
+/// round-trip des clés inconnues) et `extension` (emplacement typé et
+/// versionné, décodé défensivement). Ces deux canaux ne sont pas gérés par le
+/// codegen : ils sont câblés explicitement autour du code généré dans
+/// [ZRepetitionInfo.fromMap]/[toMap] (même patron que `ZFlashcard`).
+///
+/// ## Sans `id`
+///
+/// La clé d'identité est [flashcardId] (jointure un-à-un avec la carte) —
+/// diffère de `ZFlashcard`. L'état n'est pas « éphémère » au sens carte ; il
+/// est adressé par sa carte.
+///
+/// ## Synchronisation « map telle quelle »
+///
+/// [fromMap]/[toMap] (dé)sérialisent l'état complet sans perte, sans jamais
+/// invoquer un scheduler — la synchronisation fusionne la map par
+/// Last-Write-Wins sur `updatedAt` sans dériver l'état (aucun recalcul
+/// d'intervalle, de facteur de facilité ou d'échéance ; invariants AD-9 et
+/// AD-10).
 library;
 
 import 'package:zcrud_annotations/zcrud_annotations.dart';
@@ -59,25 +63,26 @@ import 'z_srs_config.dart';
 
 part 'z_repetition_info.g.dart';
 
-/// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou `null`.
+/// Reconstruit une [ZExtension] concrète depuis sa map JSON, ou rend `null`.
 ///
-/// Fourni par l'app/le satellite (convention `X.fromJsonSafe`) et injecté dans
-/// [ZRepetitionInfo.fromMap] : le cœur ne connaît pas les sous-classes concrètes
-/// (AD-4). Toute exception est absorbée en `null` par [ZExtension.guard]
-/// (AD-10), le parent survivant toujours.
+/// Fourni par l'application ou le satellite appelant, et injecté dans
+/// [ZRepetitionInfo.fromMap] : le domaine ne connaît pas les sous-classes
+/// concrètes (invariant AD-4). Toute exception levée par le parseur est
+/// absorbée en `null` par [ZExtension.guard] (invariant AD-10), le parent
+/// survivant toujours.
 typedef ZRepetitionInfoExtensionParser = ZExtension? Function(
     Map<String, dynamic> json);
 
-/// État de répétition espacée d'une carte (contenant pur ; invariants au
-/// scheduler/repo).
+/// État de répétition espacée d'une carte (contenant pur ; les invariants
+/// vivent au scheduler et au repository).
 @ZcrudModel(kind: 'repetition_info')
 class ZRepetitionInfo with ZExtensible {
-  /// Primitif de reconstruction de bas niveau (`const`) — **réservé** à
+  /// Primitif de reconstruction de bas niveau (`const`) — réservé à
   /// `ZSrsScheduler.apply`/`initial` et à la désérialisation [fromMap].
   ///
-  /// N'exécute **aucune** formule SRS : il assemble un état déjà calculé. Ce
-  /// n'est **pas** une voie d'avancement (cf. AD-9/AC7 : la progression passe
-  /// exclusivement par `ZSrsScheduler.apply`).
+  /// N'exécute aucune formule SRS : il assemble un état déjà calculé. Ce
+  /// n'est pas une voie d'avancement (la progression passe exclusivement par
+  /// `ZSrsScheduler.apply`, invariant AD-9).
   const ZRepetitionInfo({
     required this.flashcardId,
     required this.folderId,
@@ -89,24 +94,25 @@ class ZRepetitionInfo with ZExtensible {
     this.lastQuality,
     this.extension,
     Map<String, dynamic> extra = const <String, dynamic>{},
-    // ⚠️ Le « fix » du lint (`this._extra`) est **ILLÉGAL** en Dart : un paramètre
-    // NOMMÉ ne peut pas être privé (PRIVATE_OPTIONAL_PARAMETER). Or le slot brut
-    // DOIT rester privé — c'est l'ACCESSEUR `extra` qui porte la garde (ES-2.2b).
+    // Un paramètre nommé ne peut pas être privé en Dart
+    // (PRIVATE_OPTIONAL_PARAMETER) — le slot brut doit pourtant rester privé,
+    // c'est l'accesseur `extra` qui porte la garde.
     // ignore: prefer_initializing_formals
   }) : _extra = extra;
 
-  /// Reconstruit **défensivement** depuis une map persistée (AD-10, AC8/AC9).
+  /// Reconstruit défensivement un état SRS depuis une map persistée
+  /// (invariant AD-10).
   ///
-  /// Délègue au `_$ZRepetitionInfoFromMap` **généré** (défauts sûrs :
-  /// `flashcard_id`/`folder_id` absents → `''`, `interval`/`repetitions`
-  /// non-int → `0`, `ease_factor` non-numérique → `defaultEaseFactor`, dates
-  /// illisibles → `null`), **sans jamais invoquer un scheduler** (aucun
-  /// recalcul — l'état persisté est reconstruit TEL QUEL, y compris des valeurs
-  /// « impossibles »), puis :
-  /// - **sanitise** `interval`/`repetitions` négatifs → `0` (défaut sûr, AC9) ;
+  /// Délègue au décodeur généré (défauts sûrs : `flashcard_id`/`folder_id`
+  /// absents → `''`, `interval`/`repetitions` non-int → `0`, `ease_factor`
+  /// non numérique → la valeur par défaut, dates illisibles → `null`), sans
+  /// jamais invoquer un scheduler (aucun recalcul — l'état persisté est
+  /// reconstruit tel quel, y compris des valeurs incohérentes), puis :
+  /// - sanitise `interval`/`repetitions` négatifs → `0` (défaut sûr) ;
   /// - câble [extension] via [extensionParser] (repli `null`,
-  ///   `ZExtension.guard`) ;
-  /// - câble [extra] = clés **non réservées** de la map (round-trip préservé).
+  ///   [ZExtension.guard]) ;
+  /// - câble [extra] = les clés non réservées de la map (round-trip
+  ///   préservé).
   ///
   /// Aucun cas ne fait échouer le parent (map vide, `ease_factor` corrompu,
   /// `extension` corrompue…).
@@ -119,7 +125,7 @@ class ZRepetitionInfo with ZExtensible {
       flashcardId: base.flashcardId,
       folderId: base.folderId,
       // Sanitisation défensive : un compteur négatif persisté (corruption)
-      // retombe sur `0` (AC9) — sans jamais throw.
+      // retombe sur `0`, sans jamais lever d'exception.
       interval: base.interval < 0 ? 0 : base.interval,
       repetitions: base.repetitions < 0 ? 0 : base.repetitions,
       easeFactor: base.easeFactor,
@@ -131,35 +137,39 @@ class ZRepetitionInfo with ZExtensible {
     );
   }
 
-  /// Clé de jointure 1↔1 avec la carte (identité de l'état SRS ; requis, AC1).
+  /// Clé de jointure un-à-un avec la carte (identité de l'état SRS ;
+  /// requis).
   @ZcrudField()
   final String flashcardId;
 
-  /// Dossier dénormalisé (requêtes de session sans jointure ; requis, AC1).
+  /// Dossier dénormalisé (pour les requêtes de session sans jointure ;
+  /// requis).
   @ZcrudField()
   final String folderId;
 
-  /// Intervalle courant en **jours** avant la prochaine révision (défaut `0`).
+  /// Intervalle courant en jours avant la prochaine révision (défaut `0`).
   @ZcrudField()
   final int interval;
 
-  /// Nombre de révisions **réussies consécutives** (défaut `0` ; remis à `0`
-  /// sur lapse par l'algorithme).
+  /// Nombre de révisions réussies consécutives (défaut `0` ; remis à `0` sur
+  /// lapse par l'algorithme).
   @ZcrudField()
   final int repetitions;
 
-  /// Facteur de facilité SuperMemo-2, borné `[minEaseFactor;maxEaseFactor]` par
-  /// l'algorithme (défaut [ZSrsConfig.defaultEaseFactor], càd `2.5`).
+  /// Facteur de facilité SuperMemo-2, borné par l'algorithme selon les bornes
+  /// min/max de la configuration (défaut [ZSrsConfig.defaultEaseFactor],
+  /// c'est-à-dire `2.5`).
   @ZcrudField(defaultValue: ZSrsConfig.kDefaultEaseFactor)
   final double easeFactor;
 
-  /// Date de la prochaine révision due (`now + interval jours`), ou `null` si
-  /// jamais révisée.
+  /// Date de la prochaine révision due (`maintenant + interval jours`), ou
+  /// `null` si jamais révisée.
   @ZcrudField()
   final DateTime? nextReviewDate;
 
-  /// Date de la **première** réussite (`quality >= passThreshold`), **jamais**
-  /// remise à `null` sur lapse ultérieur (AC4). `null` tant qu'aucune réussite.
+  /// Date de la première réussite (qualité au moins égale au seuil de
+  /// passage), jamais remise à `null` sur un lapse ultérieur. `null` tant
+  /// qu'aucune réussite.
   @ZcrudField()
   final DateTime? learnedAt;
 
@@ -168,37 +178,40 @@ class ZRepetitionInfo with ZExtensible {
   @ZcrudField()
   final int? lastQuality;
 
-  /// Slot type additif **versionné** (AD-4 pt.1), `null` si absent. Hors-codegen.
+  /// Emplacement d'extension typée et versionnée (invariant AD-4), `null` si
+  /// absente. Hors schéma généré.
   @override
   final ZExtension? extension;
 
-  /// Échappatoire non typée (AD-4 pt.2), défaut `const {}` (jamais `null`),
-  /// préservant les clés inconnues du cœur au round-trip. Hors-codegen.
+  /// Échappatoire non typée (invariant AD-4), défaut `const {}` (jamais
+  /// `null`), qui préserve au round-trip les clés inconnues du domaine. Hors
+  /// schéma généré.
   @override
   Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
 
-  /// Slot `extra` **BRUT tel que reçu par le constructeur** — lu **NULLE PART**
-  /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
+  /// Emplacement `extra` brut tel que reçu par le constructeur — lu nulle
+  /// part ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni
+  /// `hashCode`).
   ///
-  /// Il peut être **POLLUÉ** : le constructeur nominal est `const`, il ne peut
-  /// appeler **aucune** fonction dans son initializer, et **AD-10 INTERDIT** d'y
-  /// mettre un `assert`. C'est l'**ACCESSEUR** [extra] qui porte la garde
-  /// (`zNormalizeExtra`) — **le seul point que TOUTES les voies traversent**.
+  /// Il peut être pollué : le constructeur nominal est `const`, il ne peut
+  /// appeler aucune fonction dans son initialiseur, et l'invariant AD-10
+  /// interdit d'y placer un `assert`. C'est l'accesseur [extra] qui porte la
+  /// garde — le seul point que toutes les voies traversent.
   final Map<String, dynamic> _extra;
 
-  /// Copie **folder-only** (M1 d'E9-4, tranchée E9-5) : relocalise le seul
-  /// [folderId] dénormalisé (routage de session) en **préservant à l'identique**
-  /// TOUS les champs d'ordonnancement SRS (`interval`/`repetitions`/`easeFactor`/
-  /// `nextReviewDate`/`learnedAt`/`lastQuality`) ainsi que les canaux
-  /// hors-codegen ([extension]/[extra]).
+  /// Copie relocalisant uniquement le [folderId] dénormalisé (routage de
+  /// session) en préservant à l'identique tous les champs d'ordonnancement
+  /// SRS (intervalle, répétitions, facteur de facilité, prochaine échéance,
+  /// date d'apprentissage, dernière qualité) ainsi que les canaux hors
+  /// schéma (extension/extra).
   ///
-  /// **AD-9 (voie d'avancement UNIQUE)** : cette copie **ne peut pas** faire
-  /// progresser l'état — elle n'expose **aucun** paramètre d'ordonnancement et
-  /// n'invoque **aucun** scheduler. Ce n'est donc **pas** une voie d'avancement
-  /// concurrente de `ZSrsScheduler.apply` : c'est une pure **relocalisation de
-  /// routage** (déplacement d'une carte entre dossiers, cf.
-  /// `ZFlashcardRepository.moveCard`). Additif minimal au modèle E9-2, il
-  /// **ne réintroduit AUCUN** `copyWith` SRS d'avancement.
+  /// Cette copie ne peut pas faire progresser l'état — elle n'expose aucun
+  /// paramètre d'ordonnancement et n'invoque aucun scheduler. Ce n'est donc
+  /// pas une voie d'avancement concurrente de `ZSrsScheduler.apply`
+  /// (invariant AD-9) : c'est une pure relocalisation de routage (par
+  /// exemple le déplacement d'une carte entre dossiers, voir
+  /// `ZFlashcardRepository.moveCard`). Additif minimal au modèle SRS, elle
+  /// ne réintroduit aucun `copyWith` d'avancement.
   ZRepetitionInfo withFolder(String folderId) => ZRepetitionInfo(
         flashcardId: flashcardId,
         folderId: folderId,
@@ -212,33 +225,18 @@ class ZRepetitionInfo with ZExtensible {
         extra: extra,
       );
 
-  /// Sérialise vers la map persistée **complète** (snake_case), zéro-perte.
+  /// Sérialise vers la map persistée complète (snake_case), sans perte.
   ///
-  /// Réutilise le `toMap()` **généré** (champs scalaires/dates) puis superpose
-  /// les deux canaux hors-codegen : [extra] (clés inconnues préservées) et
-  /// [extension]. **Jamais** de recalcul SRS (AC8) : sérialise l'état tel quel.
+  /// Réutilise le `toMap()` généré (champs scalaires/dates) puis superpose
+  /// les deux canaux hors schéma : [extra] (clés inconnues préservées) et
+  /// [extension]. Jamais de recalcul SRS : sérialise l'état tel quel.
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
-      // 🔴 DW-ES22-3 (ES-2.2b) — **C'EST ICI, ET NULLE PART AILLEURS, QUE LA
-      // PROMESSE TIENT SUR CETTE ENTITÉ.**
-      //
-      // `ZRepetitionInfo` n'a **AUCUN `copyWith`** (voie SRS unique, AC8) : la
-      // seule voie d'écriture publique de `extra` est le **CONSTRUCTEUR
-      // NOMINAL** — qui est **`const`** et ne peut donc appeler **aucune**
-      // fonction de filtrage. Et **AD-10 INTERDIT** d'y mettre un `assert` : le
-      // décodeur généré l'appelle avec des valeurs **BRUTES**, un `assert` ferait
-      // **throw la désérialisation d'une donnée corrompue**.
-      //
-      // ⇒ `toMap()`, **frontière de SORTIE**, est la seule frontière que la voie
-      // constructeur traverse. **MESURÉ** avant correctif :
-      // `ZRepetitionInfo(…, extra: {updated_at: …, is_deleted: true}).toMap()`
-      // réémettait les DEUX clés ⇒ collision frontale avec l'autorité de sync
-      // (le store écrit `ZSyncMeta` APRÈS le corps — AD-9/AD-16/AD-19).
-      // 🔴 ES-2.2b (remédiation HIGH-1) — étale l'**ACCESSEUR** (qui NORMALISE),
-      // jamais le champ brut `_extra`. Un `_sanitizeExtra(extra)` ICI serait
-      // **DÉCORATIF** — MESURÉ (INJ-A/INJ-B) : le retirer laissait le gate VERT
-      // sur 8 entités sur 9. La garde vit à l'accesseur ; l'en retirer rend
-      // (i.1a)/(i.1b)/(i.1c) ROUGES.
+      // Cette entité n'a aucun `copyWith` (voie SRS unique) : la seule voie
+      // d'écriture publique de `extra` est le constructeur nominal, `const`,
+      // qui ne peut appeler aucune fonction de filtrage. `toMap()`, frontière
+      // de sortie, est donc la seule frontière que cette voie traverse —
+      // étale l'accesseur (qui normalise), jamais le champ brut `_extra`.
       ...extra,
       ...ZRepetitionInfoZcrud(this).toMap(),
     };
@@ -253,51 +251,46 @@ class ZRepetitionInfo with ZExtensible {
     Object? raw,
     ZRepetitionInfoExtensionParser? parser,
   ) {
-    // CR-LEX-33 : le corps de cette méthode était `if (parser == null) return
-    // null;` — un hôte SANS parser lisait `null`, et comme `extension` est une
-    // clé CONNUE (donc exclue d'`extra`), le payload d'un AUTRE hôte était
-    // DÉTRUIT au décodage, avant toute ligne de code applicatif. Le cœur
-    // préserve désormais verbatim ce que personne n'a su typer.
+    // Un hôte sans parseur ne détruit pas le payload : comme `extension` est
+    // une clé connue (donc exclue d'`extra`), le contenu d'un autre hôte est
+    // préservé verbatim, quel que soit le résultat du parseur.
     return zDecodeExtension(raw, parser);
   }
 
-  /// Clés persistées **réservées** (champs générés + `extension` + **clés de
-  /// sync `ZSyncMeta`**) — dérivées de `$ZRepetitionInfoFieldSpecs` pour rester
-  /// synchrones avec le codegen.
+  /// Clés persistées réservées (champs générés, `extension` et les clés de
+  /// synchronisation) — dérivées des spécifications de champs générées pour
+  /// rester synchrones avec le codegen.
   ///
-  /// **AD-19 (ES-1.3)** — le spread `...ZSyncMeta.reservedKeys` (`updated_at`,
-  /// `is_deleted`) est **essentiel** : `ZRepetitionInfo` est persistée top-level
-  /// (`study_repetitions/{cardId}`) et le store écrit ses métadonnées de sync
-  /// **dans le corps du document** (`hive_z_local_store.dart` `_encode` ;
-  /// `firebase_z_repository_impl.dart` `_encode`) puis passe la map **complète**
-  /// à [fromMap]. Sans ce spread, ces clés — qui appartiennent au **store**, pas
-  /// au domaine — atterriraient dans [extra] (AD-4 violé : `extra` = clés
-  /// *inconnues du domaine*) et seraient **réémises** par [toMap] (AD-16 violé :
-  /// le soft-delete doit rester hors-entité), cassant au passage `==` entre un
-  /// état SRS construit en mémoire et le même relu du store.
+  /// `ZRepetitionInfo` est persistée dans un canal séparé, top-level, et le
+  /// store écrit ses métadonnées de synchronisation dans le corps du document
+  /// avant de passer la map complète à [fromMap]. Sans les clés réservées de
+  /// `ZSyncMeta`, ces clés — qui appartiennent au store, pas au domaine —
+  /// atterriraient dans [extra] (violant l'invariant AD-4 : `extra` désigne
+  /// les clés inconnues du domaine) et seraient réémises par [toMap]
+  /// (violant l'invariant AD-9 : le soft-delete doit rester hors entité),
+  /// cassant au passage l'égalité entre un état SRS construit en mémoire et
+  /// le même relu du store.
   ///
-  /// `ZRepetitionInfo` ne déclarant **aucun** champ `updatedAt`/`isDeleted`,
-  /// c'est bien `ZSyncMeta.reservedKeys` — et lui seul — qui protège les **deux**
-  /// clés. C'est l'**exemplaire de référence** d'AD-19.1 : aucune clé LWW
-  /// in-entité, aucune capture des clés de sync.
+  /// `ZRepetitionInfo` ne déclarant aucun champ `updatedAt`/`isDeleted`,
+  /// c'est bien la réserve de `ZSyncMeta` — et elle seule — qui protège ces
+  /// deux clés.
   static final Set<String> _reservedKeys = <String>{
     for (final spec in $ZRepetitionInfoFieldSpecs) spec.name,
     'extension',
     ...ZSyncMeta.reservedKeys,
   };
 
-  /// Extrait `extra` = clés non réservées de [map] (round-trip préservé) —
-  /// **frontière d'ENTRÉE**. C'est [_sanitizeExtra], la garde **partagée**.
+  /// Extrait `extra` = les clés non réservées de [map] (round-trip préservé)
+  /// — frontière d'entrée. Délègue à [_sanitizeExtra], la garde partagée.
   static Map<String, dynamic> _extraFrom(Map<String, dynamic> map) =>
       _sanitizeExtra(map);
 
-  /// 🔴 **LA GARDE PARTAGÉE DE `extra`** (DW-ES22-3, ES-2.2b) — appelée par
-  /// [fromMap] **et** [toMap].
+  /// La garde partagée de `extra`, appelée par [fromMap] et [toMap].
   ///
-  /// ⚠️ **DEUX sites seulement, et ce n'est PAS un oubli** : cette entité n'offre
-  /// **aucun `copyWith`** (voie SRS unique). La voie d'écriture publique de
-  /// `extra` y est le **constructeur nominal**, `const`, qui ne peut rien
-  /// filtrer — c'est [toMap] qui porte la promesse (cf. sa dartdoc).
+  /// Deux sites seulement, et ce n'est pas un oubli : cette entité n'offre
+  /// aucun `copyWith` (voie SRS unique). La voie d'écriture publique de
+  /// `extra` y est le constructeur nominal, `const`, qui ne peut rien
+  /// filtrer — c'est [toMap] qui porte la promesse (voir sa dartdoc).
   static Map<String, dynamic> _sanitizeExtra(Map<String, dynamic> raw) =>
       zSanitizeExtra(raw, _reservedKeys);
 

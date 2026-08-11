@@ -1,66 +1,65 @@
-/// `ZSrsQualityButtons` — rangée de boutons de **notation qualité SM-2**
-/// (présentation PURE, ES-4.5, AC1).
+/// `ZSrsQualityButtons` — rangée de boutons de notation qualité SM-2
+/// (présentation pure).
 ///
-/// Le **mapping bouton→qualité vit ICI** (ES-4.1 D6) : chaque bouton rend un
-/// cran de l'échelle [ZQualityScale] et, au tap, invoque
-/// [ZSrsQualityButtons.onQualitySelected] avec la **qualité EXACTE du cran**.
-/// Aucun calcul SM-2, aucune écriture SRS : l'intervalle prévisionnel éventuel
-/// vient d'un **seam** [ZSrsQualityButtons.previewLabelFor] injecté par
-/// l'appelant (= `ZSm2Scheduler.simulate` en prod — projection PURE, AD-23).
+/// Le mapping bouton → qualité vit ici : chaque bouton rend un cran de
+/// l'échelle [ZQualityScale] et, au tap, invoque
+/// [ZSrsQualityButtons.onQualitySelected] avec la qualité exacte du cran.
+/// Aucun calcul SM-2, aucune écriture SRS : l'intervalle prévisionnel
+/// éventuel vient d'un seam [ZSrsQualityButtons.previewLabelFor] injecté
+/// par l'appelant (typiquement une projection pure de type `simulate`, sans
+/// écriture).
 ///
-/// **Widget PUR** (AD-2/AD-15) : `StatelessWidget`, AUCUN gestionnaire d'état,
-/// AUCUN `setState`, AUCUN `ChangeNotifier` détenu. Thème/labels/couleurs
-/// INJECTÉS (FR-26/AD-6/AD-13) : couleur via `ZColorKeyResolver`/`ZcrudTheme`
-/// (repli `Theme.of`), label via l10n `zcrud_core` (`label(context, key)`),
-/// jamais de `Colors.*`/`Color(0x…)`/string utilisateur en dur. Directionnel
-/// (AD-13), `Semantics` explicites, cibles tap ≥ 48 dp.
+/// Widget pur (invariants AD-2/AD-15) : `StatelessWidget`, aucun
+/// gestionnaire d'état, aucun `setState`, aucun `ChangeNotifier` détenu.
+/// Thème/labels/couleurs injectés (invariants AD-6/AD-13) : couleur via
+/// `ZColorKeyResolver`/`ZcrudTheme` (repli `Theme.of`), label via l10n
+/// `zcrud_core` (`label(context, key)`), jamais de
+/// `Colors.*`/`Color(0x…)`/chaîne utilisateur en dur. Directionnel,
+/// `Semantics` explicites, cibles tap ≥ 48 dp.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart';
-// AD-46 : les bornes d'échelle sont possédées par le domaine `ZSrsConfig`
-// (`zcrud_flashcard`). Arête PRÉEXISTANTE (`zcrud_session → zcrud_flashcard`,
-// déjà importée par les 3 runtimes) : la dérivation n'ajoute AUCUNE arête.
 import 'package:zcrud_flashcard/zcrud_flashcard.dart';
 
-/// Échelle de qualité **DÉRIVÉE** du domaine (value-object PUR).
+/// Échelle de qualité dérivée du domaine (value-object pur).
 ///
-/// AD-46 : les bornes sont **possédées par `ZSrsConfig`** (`minQuality` /
-/// `maxQuality`) ; cette classe en **dérive** via [ZQualityScale.fromConfig],
-/// **unique voie de construction publique**. Aucune borne n'est redéclarée ici :
-/// une seconde source d'échelle divergerait silencieusement du domaine (l'UI
-/// afficherait des crans que le scheduler ne reconnaîtrait pas). La garde de
-/// source `z_quality_scale_single_source_test.dart` ROUGIT si un littéral de
-/// borne réapparaît dans ce fichier.
+/// Les bornes sont possédées par `ZSrsConfig` (`minQuality` / `maxQuality`) ;
+/// cette classe en dérive via [ZQualityScale.fromConfig], unique voie de
+/// construction publique. Aucune borne n'est redéclarée ici : une seconde
+/// source d'échelle divergerait silencieusement du domaine (l'UI
+/// afficherait des crans que le scheduler ne reconnaîtrait pas).
 ///
-/// Produit la **liste ordonnée croissante** des qualités ([qualities]). Le
-/// mapping cran→qualité de [ZSrsQualityButtons] parcourt cette liste : l'indice
-/// visuel `i` rend la qualité `qualities[i]` (jamais une constante en dur).
+/// Produit la liste ordonnée croissante des qualités ([qualities]). Le
+/// mapping cran → qualité de [ZSrsQualityButtons] parcourt cette liste :
+/// l'indice visuel `i` rend la qualité `qualities[i]` (jamais une constante
+/// en dur).
 @immutable
 class ZQualityScale {
-  /// Dérive l'échelle des bornes **possédées par le domaine** (AD-46).
+  /// Dérive l'échelle des bornes possédées par le domaine.
   ///
   /// Unique voie de construction publique : lit `config.minQuality` /
-  /// `config.maxQuality`. Une app qui tronque l'échelle le fait **une seule
-  /// fois**, dans sa `ZSrsConfig` — l'UI suit par construction.
+  /// `config.maxQuality`. Une application qui tronque l'échelle le fait une
+  /// seule fois, dans sa `ZSrsConfig` — l'UI suit par construction.
   ///
-  /// **Non-`const` par nécessité du langage**, pas par choix : un constructeur
+  /// Non-`const` par nécessité du langage, pas par choix : un constructeur
   /// `const` ne peut pas lire un champ d'instance de son paramètre
-  /// (`config.minQuality` n'est pas une expression constante), et l'alternative
-  /// — recopier `0`/`5` en défauts littéraux — serait précisément la SECONDE
-  /// SOURCE que l'AD-46 interdit. La dérivation prime sur la constance : le VO
-  /// reste `@immutable`, trivial à construire, et l'échelle demeure UNIQUE.
+  /// (`config.minQuality` n'est pas une expression constante), et
+  /// l'alternative — recopier des bornes en défauts littéraux — serait
+  /// précisément la seconde source d'échelle à éviter. La dérivation prime
+  /// donc sur la constance : le value-object reste `@immutable`, trivial à
+  /// construire, et l'échelle demeure unique.
   ZQualityScale.fromConfig(ZSrsConfig config)
       : min = config.minQuality,
         max = config.maxQuality;
 
-  /// Borne basse de l'échelle — **dérivée** de `ZSrsConfig.minQuality`.
+  /// Borne basse de l'échelle — dérivée de `ZSrsConfig.minQuality`.
   final int min;
 
-  /// Borne haute de l'échelle — **dérivée** de `ZSrsConfig.maxQuality`.
+  /// Borne haute de l'échelle — dérivée de `ZSrsConfig.maxQuality`.
   final int max;
 
-  /// Liste **ordonnée croissante** des qualités de l'échelle (`[min..max]`).
+  /// Liste ordonnée croissante des qualités de l'échelle (`[min..max]`).
   List<int> get qualities =>
       <int>[for (var q = min; q <= max; q++) q];
 
@@ -79,53 +78,45 @@ class ZQualityScale {
   String toString() => 'ZQualityScale($min..$max)';
 }
 
-/// Résout la **clé de libellé** l10n d'un cran de qualité (seam injecté).
+/// Résout la clé de libellé l10n d'un cran de qualité (seam injecté).
 ///
-/// Retourne une **clé** (jamais un libellé utilisateur littéral) résolue par
+/// Retourne une clé (jamais un libellé utilisateur littéral) résolue par
 /// `label(context, key)` côté widget. Défaut : [zDefaultQualityLabelKey].
 typedef ZQualityLabelKeyResolver = String Function(int quality);
 
-/// Résout la **clé de couleur** (`colorKey`) d'un cran de qualité (seam injecté).
+/// Résout la clé de couleur (`colorKey`) d'un cran de qualité (seam injecté).
 ///
 /// Retourne une clé neutre résolue par `zResolveColorKeyOrSlot` (jamais un
-/// `Color` en dur). Défaut : [ZSrsQualityButtons] dérive réussite/lapse depuis
-/// `passThreshold` injecté (`quality >= passThreshold`).
+/// `Color` en dur). Défaut : [ZSrsQualityButtons] dérive réussite/lapse
+/// depuis `passThreshold` injecté (`quality >= passThreshold`).
 typedef ZQualityColorKeyResolver = String Function(int quality);
 
-/// **Affordance d'emphase** d'un cran de qualité — INJECTÉE (SUF-4, paire 1).
+/// Affordance d'emphase d'un cran de qualité — injectée par l'appelant.
 ///
-/// 🔴 **Écart RÉEL mesuré face au natif lex** (`/home/zakarius/DEV/lex_douane/
-/// packages/lex_ui/lib/presentation/widgets/study/srs_quality_buttons.dart:214,227`) :
-/// lex peint chaque cran en **fond teinté** (`color.withValues(alpha: 0.12)`) +
-/// **bord 1 px**, et exprime le cran *suggéré par l'IA* en **montant** ces deux
-/// dimensions (`alpha: 0.24`, `width: 2`). [ZSrsQualityButtons] rendait, lui,
-/// un fond **plein** et **aucun bord** — deux dimensions **figées dans le
-/// widget**, donc inatteignables par un appelant. Une app bridgée perdait le
-/// bord et la teinte de son design : c'est la « perte visuelle » que SUF-4
-/// interdit.
+/// Cette classe ne porte aucune couleur, seulement des dimensions (opacité,
+/// épaisseur de bord) appliquées à la couleur déjà résolue par les seams
+/// (`colorKeyFor`/`ZColorKeyResolver`). Elle permet à une application de
+/// peindre chaque cran en fond teinté avec un bord, et d'exprimer un cran
+/// mis en avant en accentuant ces deux dimensions, sans que ce widget code
+/// une couleur en dur.
 ///
-/// 🔒 **Ce n'est PAS un look codé en dur** : cette classe ne porte **aucune
-/// couleur** — seulement des **dimensions** (opacité, épaisseur) appliquées à la
-/// couleur déjà résolue par les seams (`colorKeyFor`/`ZColorKeyResolver`). Les
-/// valeurs de lex (`0.12`/`0.24`/`1`/`2`) vivent **côté app**, jamais ici.
+/// Défaut = [none] = rendu historique strictement inchangé (fond plein,
+/// zéro bord) : aucun appelant existant ne change de rendu.
 ///
-/// 🔒 **Défaut = [none] = rendu HISTORIQUE STRICTEMENT inchangé** (fond plein,
-/// zéro bord) : aucun appelant existant ne bouge.
-///
-/// 🔒 **Le canal couleur n'est jamais seul** (AD-13) : l'emphase du cran
+/// Le canal couleur n'est jamais seul (invariant AD-13) : l'emphase du cran
 /// sélectionné reste portée, indépendamment de cette classe, par
 /// `Semantics(selected:)`, l'annonce en toutes lettres et l'icône de coche.
-/// Cette affordance **s'ajoute** à ces canaux, elle ne les remplace pas.
+/// Cette affordance s'ajoute à ces canaux, elle ne les remplace pas.
 @immutable
 class ZSrsQualityEmphasis {
-  /// Construit une affordance. Tous les paramètres sont des **dimensions**.
+  /// Construit une affordance. Tous les paramètres sont des dimensions.
   ///
-  /// - [fillOpacity] : opacité du fond d'un cran ordinaire — `null` ⇒ couleur
-  ///   **inchangée** (fond plein, comportement historique) ;
-  /// - [selectedFillOpacity] : opacité du fond du cran sélectionné — `null` ⇒
+  /// - [fillOpacity] : opacité du fond d'un cran ordinaire — `null` : couleur
+  ///   inchangée (fond plein, comportement historique) ;
+  /// - [selectedFillOpacity] : opacité du fond du cran sélectionné — `null` :
   ///   retombe sur [fillOpacity] ;
-  /// - [borderWidth] / [selectedBorderWidth] : épaisseur du bord (`<= 0` ⇒
-  ///   **aucun bord**, comportement historique).
+  /// - [borderWidth] / [selectedBorderWidth] : épaisseur du bord (`<= 0` :
+  ///   aucun bord, comportement historique).
   const ZSrsQualityEmphasis({
     this.fillOpacity,
     this.selectedFillOpacity,
@@ -133,34 +124,35 @@ class ZSrsQualityEmphasis {
     this.selectedBorderWidth = 0,
   });
 
-  /// Affordance **neutre** : rendu historique exact (fond plein, aucun bord).
+  /// Affordance neutre : rendu historique exact (fond plein, aucun bord).
   static const ZSrsQualityEmphasis none = ZSrsQualityEmphasis();
 
-  /// Opacité du fond d'un cran ordinaire (`null` ⇒ couleur inchangée).
+  /// Opacité du fond d'un cran ordinaire (`null` : couleur inchangée).
   final double? fillOpacity;
 
-  /// Opacité du fond du cran sélectionné (`null` ⇒ [fillOpacity]).
+  /// Opacité du fond du cran sélectionné (`null` : retombe sur [fillOpacity]).
   final double? selectedFillOpacity;
 
-  /// Épaisseur du bord d'un cran ordinaire (`<= 0` ⇒ aucun bord).
+  /// Épaisseur du bord d'un cran ordinaire (`<= 0` : aucun bord).
   final double borderWidth;
 
-  /// Épaisseur du bord du cran sélectionné (`<= 0` ⇒ aucun bord).
+  /// Épaisseur du bord du cran sélectionné (`<= 0` : aucun bord).
   final double selectedBorderWidth;
 
-  /// Opacité **résolue** pour l'état [selected], ou `null` (couleur inchangée).
+  /// Opacité résolue pour l'état [selected], ou `null` (couleur inchangée).
   ///
-  /// Défensif (AD-10) : une valeur non finie ou hors `[0, 1]` est **bornée**,
-  /// jamais propagée telle quelle (`Color.withValues` asserte sur `0..1`).
+  /// Défensif (invariant AD-10) : une valeur non finie ou hors `[0, 1]` est
+  /// bornée, jamais propagée telle quelle (`Color.withValues` asserte sur
+  /// `0..1`).
   double? opacityFor({required bool selected}) {
     final raw = selected ? (selectedFillOpacity ?? fillOpacity) : fillOpacity;
     if (raw == null || !raw.isFinite) return null;
     return raw.clamp(0.0, 1.0).toDouble();
   }
 
-  /// Épaisseur **résolue** du bord pour l'état [selected] (`0` ⇒ aucun bord).
+  /// Épaisseur résolue du bord pour l'état [selected] (`0` : aucun bord).
   ///
-  /// Défensif (AD-10) : une valeur négative ou non finie vaut `0`.
+  /// Défensif (invariant AD-10) : une valeur négative ou non finie vaut `0`.
   double borderWidthFor({required bool selected}) {
     final raw = selected ? selectedBorderWidth : borderWidth;
     if (!raw.isFinite || raw <= 0) return 0;
@@ -191,19 +183,19 @@ class ZSrsQualityEmphasis {
 /// le cran affiche son numéro de qualité — **jamais** un libellé en dur.
 String zDefaultQualityLabelKey(int quality) => 'zcrud.srs.quality.$quality';
 
-/// Boutons de notation qualité SM-2 (présentation PURE).
+/// Boutons de notation qualité SM-2 (présentation pure).
 class ZSrsQualityButtons extends StatelessWidget {
   /// Construit la rangée de boutons.
   ///
-  /// - [scale] : échelle de qualité (mapping cran→qualité) ;
-  /// - [onQualitySelected] : callback invoqué avec la **qualité exacte** du cran
-  ///   tapé (voie de notation, découplée du moteur — AD-2/D8) ;
-  /// - [passThreshold] : frontière réussite/lapse INJECTÉE (`ZSrsConfig`,
-  ///   jamais `3` en dur — D5/AC6) ;
-  /// - [previewLabelFor] : seam d'intervalle prévisionnel (= `simulate` en prod ;
-  ///   `null` → aucun aperçu affiché — AC1) ;
+  /// - [scale] : échelle de qualité (mapping cran → qualité) ;
+  /// - [onQualitySelected] : callback invoqué avec la qualité exacte du cran
+  ///   tapé (voie de notation, découplée du moteur) ;
+  /// - [passThreshold] : frontière réussite/lapse injectée (`ZSrsConfig`,
+  ///   jamais un littéral en dur) ;
+  /// - [previewLabelFor] : seam d'intervalle prévisionnel (typiquement une
+  ///   projection pure du planificateur) ; `null` : aucun aperçu affiché ;
   /// - [labelKeyFor]/[colorKeyFor] : seams de libellé/couleur (défauts injectés) ;
-  /// - [selectedQuality] : cran **PRÉ-SÉLECTIONNÉ** (SU-3/AC2), ou `null`.
+  /// - [selectedQuality] : cran pré-sélectionné, ou `null`.
   const ZSrsQualityButtons({
     required this.scale,
     required this.onQualitySelected,
@@ -219,13 +211,13 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// Échelle de qualité (mapping cran→qualité, ordre croissant).
   final ZQualityScale scale;
 
-  /// Callback de notation : reçoit la qualité EXACTE du cran tapé.
+  /// Callback de notation : reçoit la qualité exacte du cran tapé.
   final ValueChanged<int> onQualitySelected;
 
-  /// Frontière réussite/lapse INJECTÉE (`quality >= passThreshold`).
+  /// Frontière réussite/lapse injectée (`quality >= passThreshold`).
   final int passThreshold;
 
-  /// Seam d'intervalle prévisionnel (= `simulate` en prod), ou `null`.
+  /// Seam d'intervalle prévisionnel, ou `null`.
   final String Function(int quality)? previewLabelFor;
 
   /// Seam de clé de libellé l10n (défaut [zDefaultQualityLabelKey]).
@@ -234,30 +226,29 @@ class ZSrsQualityButtons extends StatelessWidget {
   /// Seam de clé de couleur (défaut : réussite/lapse via [passThreshold]).
   final ZQualityColorKeyResolver? colorKeyFor;
 
-  /// Cran **PRÉ-SÉLECTIONNÉ** (SU-3, AC2 — AD-35 « évaluation ADVISORY »), ou
-  /// `null`.
+  /// Cran pré-sélectionné, ou `null`.
   ///
-  /// **Retouche ADDITIVE** : le défaut `null` rend le comportement historique
-  /// **strictement inchangé** (aucun cran marqué) — zéro régression pour les
-  /// appelants existants (`ZSessionQualityBreakdown`, runtimes ES-4).
+  /// Retouche additive : le défaut `null` rend le comportement historique
+  /// strictement inchangé (aucun cran marqué) — zéro régression pour les
+  /// appelants existants.
   ///
-  /// 🔒 **Pré-sélectionner n'est PAS noter** : un port d'évaluation *suggère*
-  /// une qualité, la rangée la **montre** ; seul le **tap** de l'utilisateur
-  /// ([onQualitySelected]) vaut notation. [onQualitySelected] reste l'**UNIQUE**
-  /// voie de notation — su-3 n'en ouvre pas une seconde, et n'écrit RIEN
-  /// (AD-33 : l'écriture SRS passe par le seam `ZSessionReviewer`, branché en
-  /// su-4).
+  /// Pré-sélectionner n'est pas noter : un port d'évaluation suggère une
+  /// qualité, la rangée la montre ; seul le tap de l'utilisateur
+  /// ([onQualitySelected]) vaut notation. [onQualitySelected] reste l'unique
+  /// voie de notation, et cette pré-sélection n'écrit rien : l'écriture SRS
+  /// passe exclusivement par le seam `ZSessionReviewer` du moteur.
   ///
-  /// 🔒 **Canal NON-COLORÉ obligatoire** (AD-13) : la sélection est portée par
-  /// `Semantics(selected: true)` **et** une affordance thématisée — jamais par
-  /// la seule couleur. Un cran hors échelle est simplement ignoré (AD-10).
+  /// Canal non-coloré obligatoire (invariant AD-13) : la sélection est
+  /// portée par `Semantics(selected: true)` et une affordance thématisée —
+  /// jamais par la seule couleur. Un cran hors échelle est simplement
+  /// ignoré (invariant AD-10).
   final int? selectedQuality;
 
-  /// Affordance d'emphase **INJECTÉE** (SUF-4, paire 1) — défaut
-  /// [ZSrsQualityEmphasis.none] ⇒ rendu historique STRICTEMENT inchangé.
+  /// Affordance d'emphase injectée — défaut [ZSrsQualityEmphasis.none],
+  /// rendu historique strictement inchangé.
   final ZSrsQualityEmphasis emphasis;
 
-  /// Préfixe de [ValueKey] d'un bouton de cran (testabilité, AC1).
+  /// Préfixe de [ValueKey] d'un bouton de cran, pour la testabilité.
   static const String buttonKeyPrefix = 'zSrsQuality_';
 
   /// Clé de couleur par défaut d'un cran : réussite vs lapse via [passThreshold].
@@ -284,8 +275,8 @@ class ZSrsQualityButtons extends StatelessWidget {
             labelKey: labelKeyFor(quality),
             colorKey: _colorKeyOf(quality),
             passed: quality >= passThreshold,
-            // SU-3/AC2 — pré-sélection ADVISORY. `null` ⇒ aucun cran marqué
-            // (comportement historique STRICTEMENT inchangé).
+            // Pré-sélection advisory. `null` : aucun cran marqué
+            // (comportement historique strictement inchangé).
             selected: selectedQuality == quality,
             emphasis: emphasis,
             previewLabel: previewLabelFor?.call(quality),
@@ -316,30 +307,27 @@ class _QualityButton extends StatelessWidget {
   final String colorKey;
   final bool passed;
 
-  /// Cran **PRÉ-SÉLECTIONNÉ** (SU-3/AC2) — signalé par un canal NON-COLORÉ.
+  /// Cran pré-sélectionné — signalé par un canal non-coloré.
   final bool selected;
 
-  /// Affordance d'emphase INJECTÉE (SUF-4) — dimensions seules, aucune couleur.
+  /// Affordance d'emphase injectée — dimensions seules, aucune couleur.
   final ZSrsQualityEmphasis emphasis;
   final String? previewLabel;
   final VoidCallback onTap;
 
-  /// Cible tap minimale Material/AD-13 (dp).
+  /// Cible tap minimale (dp), invariant AD-13.
   static const double minTarget = 48;
 
-  /// Clé l10n de l'état **réussite** d'un cran (`Semantics.value`).
+  /// Clé l10n de l'état réussite d'un cran (`Semantics.value`).
   ///
-  /// 🔴 **Dette du ledger su-1 soldée** (`code-review-su-1.md`, LOW) : les
-  /// libellés `'ok'`/`'lapse'` étaient **codés en dur** dans `Semantics.value` —
-  /// un lecteur d'écran les annonçait **en anglais** quelle que soit la locale,
-  /// alors même que le libellé visible du cran, lui, était traduit. AD-13 exige
-  /// l'inverse : c'est **précisément** le canal non-visuel qui doit être lisible.
+  /// C'est précisément le canal non-visuel qui doit rester lisible dans la
+  /// locale de l'utilisateur, au même titre que le libellé visible du cran.
   static const String passedLabelKey = 'zcrud.srs.quality.passed';
 
-  /// Clé l10n de l'état **lapse** d'un cran (`Semantics.value`).
+  /// Clé l10n de l'état lapse d'un cran (`Semantics.value`).
   static const String lapsedLabelKey = 'zcrud.srs.quality.lapsed';
 
-  /// Clé l10n de l'état **pré-sélectionné** (SU-3/AC2), annoncé en plus de
+  /// Clé l10n de l'état pré-sélectionné, annoncé en plus de
   /// `Semantics(selected: true)`.
   static const String selectedLabelKey = 'zcrud.srs.quality.selected';
 
@@ -347,30 +335,30 @@ class _QualityButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ZcrudTheme.of(context);
     final pair = zResolveColorKeyOrSlot(context, colorKey, slotIndex: quality);
-    // SUF-4 — dimensions d'emphase RÉSOLUES (déjà bornées, AD-10).
+    // Dimensions d'emphase résolues (déjà bornées, invariant AD-10).
     final fillOpacity = emphasis.opacityFor(selected: selected);
     final borderWidth = emphasis.borderWidthFor(selected: selected);
     final text = label(context, labelKey, fallback: '$quality');
-    // Couleur JAMAIS seul canal (AD-13) : le texte du cran est toujours présent,
-    // et l'état réussite/lapse est aussi porté par le `Semantics.value`.
+    // Couleur jamais seul canal (invariant AD-13) : le texte du cran est
+    // toujours présent, et l'état réussite/lapse est aussi porté par le
+    // `Semantics.value`.
     final preview = previewLabel;
-    // 🔴 Dette du ledger su-1 soldée : état réussite/lapse LOCALISÉ (le
-    // `fallback` préserve à l'identique l'ancien texte `'ok'`/`'lapse'` — aucune
-    // régression pour une app sans table de traduction).
+    // État réussite/lapse localisé ; le `fallback` préserve un texte lisible
+    // même sans table de traduction fournie par l'hôte.
     final passedText = passed
         ? label(context, passedLabelKey, fallback: 'ok')
         : label(context, lapsedLabelKey, fallback: 'lapse');
     final semanticsValue = <String>[
       passedText,
-      // SU-3/AC2 — la pré-sélection est annoncée EN TOUTES LETTRES en plus du
-      // flag `selected:` : les lecteurs d'écran ne l'exposent pas tous.
+      // La pré-sélection est annoncée en toutes lettres en plus du flag
+      // `selected:` : les lecteurs d'écran ne l'exposent pas tous.
       if (selected) label(context, selectedLabelKey, fallback: 'sélectionné'),
       if (preview != null && preview.isNotEmpty) preview,
     ].join(' · ');
 
     return Semantics(
       button: true,
-      // SU-3/AC2 — canal NON-COLORÉ n°1 : le flag d'accessibilité natif.
+      // Premier canal non-coloré : le flag d'accessibilité natif.
       selected: selected,
       label: text,
       value: semanticsValue,
@@ -380,15 +368,15 @@ class _QualityButton extends StatelessWidget {
           minHeight: minTarget,
         ),
         child: Material(
-          // SUF-4 — l'opacité vient de l'affordance INJECTÉE ; `null` (défaut)
-          // ⇒ la couleur résolue est utilisée TELLE QUELLE (aucun
-          // `withValues`, donc aucune dérive de rendu pour l'existant).
+          // L'opacité vient de l'affordance injectée ; `null` (défaut) donne
+          // la couleur résolue telle quelle (aucun `withValues`, donc aucune
+          // dérive de rendu pour l'existant).
           color: fillOpacity == null
               ? pair.color
               : pair.color.withValues(alpha: fillOpacity),
-          // SUF-4 — `shape` remplace `borderRadius` (Material interdit les
-          // deux) : MÊME rayon, et un bord dont l'épaisseur est INJECTÉE.
-          // `borderWidth == 0` ⇒ `BorderSide.none` ⇒ rendu historique exact.
+          // `shape` remplace `borderRadius` (Material interdit les deux) :
+          // même rayon, et un bord dont l'épaisseur est injectée.
+          // `borderWidth == 0` donne `BorderSide.none`, le rendu historique.
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(theme.radiusM),
             side: borderWidth <= 0
@@ -404,10 +392,10 @@ class _QualityButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  // SU-3/AC2 — canal NON-COLORÉ n°2 : une FORME (coche), lisible
-                  // sans percevoir la couleur (AD-13 : « jamais la seule
-                  // couleur »). Le cran pré-sélectionné reste identifiable en
-                  // niveaux de gris comme en daltonisme.
+                  // Second canal non-coloré : une forme (coche), lisible sans
+                  // percevoir la couleur (invariant AD-13). Le cran
+                  // pré-sélectionné reste identifiable en niveaux de gris
+                  // comme en daltonisme.
                   if (selected) ...<Widget>[
                     Icon(Icons.check, size: theme.gapL, color: pair.onColor),
                     SizedBox(height: theme.gapS),
@@ -422,11 +410,10 @@ class _QualityButton extends StatelessWidget {
                     Text(
                       preview,
                       textAlign: TextAlign.center,
-                      // 🔴 Dette du ledger su-1 soldée : `fontSize: 12` était
-                      // codé en dur — il ignorait le `textScaler` du thème et
-                      // l'échelle typographique de l'app. La taille vient
-                      // désormais du thème (repli : couleur seule, jamais une
-                      // taille inventée).
+                      // La taille vient du thème plutôt que d'un littéral en
+                      // dur, pour respecter le `textScaler` et l'échelle
+                      // typographique de l'application (repli : couleur
+                      // seule, jamais une taille inventée).
                       style: Theme.of(context)
                               .textTheme
                               .labelSmall

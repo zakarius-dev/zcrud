@@ -1,29 +1,30 @@
-/// Port neutre de **modération** `ZStudyModerationPort` (Story ES-9.4, AC1/AC7).
+/// Contrat de modération communautaire d'un dossier d'étude partagé.
 ///
-/// origine: seam de modération communautaire OPTIONNEL du domaine `zcrud_study`
-/// (FR-S32, AD-5/AD-11/AD-26). Contrat **pur** (`abstract interface class`,
-/// **jamais** `sealed` — AD-4). L'app hôte le branche sur son backend : **aucun**
-/// SDK, endpoint, clé, token, nom de collection en dur ni crypto (AD-11/AD-12).
+/// Seam optionnelle du domaine `zcrud_study` : contrat pur
+/// (`abstract interface class`, jamais `sealed`, invariant AD-4 — extension
+/// par composition) que l'application hôte implémente en le branchant sur son
+/// propre backend. Aucun SDK, endpoint, clé, jeton, nom de collection ni
+/// primitive de chiffrement ne fuit dans ce port (invariant AD-12).
 ///
-/// ## Surface AD-5
+/// Toute opération retourne `Future<ZResult<T>>` (invariant AD-11,
+/// `Either<ZFailure, T>`) ou `Future<ZResult<Unit>>` pour un effet sans
+/// valeur ; le flux de signalements est un `Stream<List<ZStudyFolderReport>>`
+/// nu — jamais enveloppé dans [ZResult].
 ///
-/// Toute opération retourne `Future<ZResult<T>>` / `Future<ZResult<Unit>>` ; le
-/// flux de signalements est un `Stream<List<ZStudyFolderReport>>` **NU** — jamais
-/// enveloppé dans `ZResult`.
-///
-/// ## Autorité (renvoi vers `ZStudySharingAcl`)
-///
-/// `resolveReport`/`takedown` sont des **actions de modération** owner/modérateur :
-/// leur autorisation suit la même logique owner-only que
-/// `ZStudySharingAcl.canMutateControl` ; l'enforcement **serveur** reste HORS
-/// domaine (**DW-ES94-1**). `report` est ouvert à tout utilisateur signalant.
+/// `resolveReport` et `takedown` sont des actions de modération réservées au
+/// propriétaire ou à un modérateur : leur autorisation suit la même logique
+/// owner-only que le contrôle d'accès de partage (voir `ZStudySharingAcl`).
+/// L'application hôte doit répliquer cette même règle côté serveur — ce
+/// contrat neutre ne l'impose pas lui-même. `report`, en revanche, reste
+/// ouvert à tout utilisateur qui signale.
 library;
 
 import 'package:zcrud_core/domain.dart';
 
 import 'z_study_folder_report.dart';
 
-/// Contrat neutre de modération d'un dossier partagé (AD-5 : `Either<ZFailure,·>`).
+/// Contrat neutre de modération d'un dossier partagé (invariant AD-5 :
+/// domaine backend-agnostique, `Either<ZFailure, T>`).
 abstract interface class ZStudyModerationPort {
   /// Enregistre un signalement. `Right(Unit)` en succès ; `Left(ZFailure)` en
   /// cas d'échec (réseau, quota, validation).

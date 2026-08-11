@@ -1,27 +1,28 @@
-/// `ZGeoPoint` — **point géographique neutre** (E11a-1, AD-1/AD-14/AD-10).
+/// `ZGeoPoint` — modèle de valeur **point géographique neutre**.
 ///
-/// origine: valeur de tranche du champ `location` du `ZFormController`. Modèle
-/// **pur-Dart** (aucun Flutter, aucun SDK carte) : uniquement `double`/`String`.
-/// **Aucun** `LatLng` (google/osm) n'apparaît dans sa signature publique — la
-/// conversion vers/depuis un type SDK vit EXCLUSIVEMENT dans l'adaptateur carte
-/// concret (`src/presentation/adapters/`), jamais ici (AD-1 : le domaine ne
-/// dépend d'aucun SDK).
+/// Valeur de tranche du type de champ `location`. Modèle **pur-Dart** (aucun
+/// Flutter, aucun SDK carte) : uniquement `double`/`String`. Aucun type SDK
+/// (`LatLng` Google/OSM) n'apparaît dans sa signature publique — la conversion
+/// vers/depuis un type SDK vit exclusivement dans l'adaptateur carte concret
+/// (invariant [AD-1](../../../../../docs/site/concepts/invariants.md#ad-1) :
+/// le domaine ne dépend d'aucun SDK).
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. Coordonnée absente,
-/// non numérique, non finie (NaN/Inf) ou hors-bornes (lat ∉ [-90,90], lng ∉
-/// [-180,180]) → `null` (état neutre). L'évolution de schéma reste additive.
+/// **Désérialisation défensive (invariant
+/// [AD-10](../../../../../docs/site/concepts/invariants.md#ad-10))** :
+/// [fromMapSafe] ne throw jamais. Coordonnée absente, non numérique, non finie
+/// (NaN/Inf) ou hors-bornes (lat ∉ [-90,90], lng ∉ [-180,180]) → `null` (état
+/// neutre).
 ///
-/// **Lecture legacy DODLP (G1)** : [fromMapSafe] accepte aussi (a) une
-/// **chaîne JSON** (enveloppe legacy `toJson()`, décodée défensivement), (b)
-/// les clés `latitude`/`longitude` (variante acceptée par le lecteur legacy)
-/// quand `lat`/`lng` sont absentes, (c) une **forme legacy typée `point`**
+/// **Compatibilité de lecture avec un format hérité** : [fromMapSafe] accepte
+/// aussi (a) une chaîne JSON encodée (enveloppe historique décodée
+/// défensivement), (b) les clés `latitude`/`longitude` quand `lat`/`lng` sont
+/// absentes, (c) une forme historique typée `point`
 /// (`{type: 'point', points: [{lat,lng}], label}` → `points[0]` + `label`).
-/// LECTURE seulement : [toMap] est strictement inchangé.
+/// Lecture seulement : [toMap] écrit toujours le format zcrud. Détails de
+/// correspondance champ à champ : `doc/migration-legacy-dodlp-geo.md`.
 ///
-/// **G9 (additif, AD-4)** : le point porte un [style] de rendu **nullable**
-/// ([ZGeoShapeStyle]) — `null` ⇒ comportement/rendu strictement inchangés.
-/// [fromMapSafe] lit la clé `style` (zcrud comme legacy — le legacy la porte
-/// sur les 4 géométries) ; [toMap] ne l'émet que non-`null` (schéma additif).
+/// Le point porte un [style] de rendu nullable ([ZGeoShapeStyle]) — `null`
+/// signifie un rendu inchangé, dérivé du thème injecté.
 library;
 
 import 'dart:math' as math;
@@ -55,8 +56,8 @@ class ZGeoPoint {
   /// Adresse postale optionnelle (texte libre).
   final String? address;
 
-  /// Style de rendu neutre optionnel (G9, additif — `null` ⇒ rendu inchangé :
-  /// l'adaptateur retombe sur le thème injecté, FR-26).
+  /// Style de rendu neutre optionnel. `null` ⇒ rendu inchangé : l'adaptateur
+  /// retombe sur le thème injecté.
   final ZGeoShapeStyle? style;
 
   /// Borne inférieure de latitude.
@@ -74,14 +75,13 @@ class ZGeoPoint {
   /// `true` si [lat]/[lng] sont finis ET dans les bornes géographiques.
   bool get isValid => _inBounds(lat, lng);
 
-  /// Rayon terrestre moyen en mètres (G11 — parité legacy `gff:87`,
-  /// `_earthRadius = 6371000`).
+  /// Rayon terrestre moyen en mètres, utilisé par [distanceMetersTo] et par
+  /// les calculs de métriques ([ZGeoShapeMetrics], [ZGeoCircleMetrics]).
   static const double earthRadiusMeters = 6371000;
 
-  /// Distance **haversine** en mètres vers [other] (G11 — parité legacy
-  /// `gff:113-127`, `_calculateDistance` : même formule, même rayon terrestre).
-  /// Pur-Dart (AD-14), aucun SDK. Sert au cercle « 2 taps » (rayon = distance
-  /// centre→2e tap) et aux poignées de rayon des adaptateurs.
+  /// Distance **haversine** en mètres vers [other]. Pur-Dart, aucun SDK. Sert
+  /// notamment au cercle « deux taps » (rayon = distance centre→second tap)
+  /// et aux poignées de rayon des adaptateurs.
   double distanceMetersTo(ZGeoPoint other) {
     final double lat1 = lat * math.pi / 180;
     final double lat2 = other.lat * math.pi / 180;
@@ -114,16 +114,16 @@ class ZGeoPoint {
         if (style != null) 'style': style!.toMap(),
       };
 
-  /// Parse **défensif** (AD-10) : retourne `null` sans jamais throw si [raw]
-  /// n'est pas une `Map` (ou une `String` JSON legacy en contenant une), si
+  /// Parse **défensif** : retourne `null` sans jamais throw si [raw] n'est
+  /// pas une `Map` (ou une `String` JSON encodée en contenant une), si
   /// lat/lng sont absents/non numériques/non finis, ou hors-bornes.
   /// `label`/`address` non-`String` → ignorés (dégradés à `null`).
   ///
-  /// **Alias de LECTURE legacy (G1)** — la lecture stricte prime toujours :
+  /// Alias de lecture compatibilité — la lecture stricte prime toujours :
   /// `latitude`/`longitude` ne sont consultées que si `lat`/`lng` manquent ;
-  /// une forme legacy `{type:'point', points:[…]}` n'est routée que si aucune
-  /// coordonnée directe n'est présente ET que `type == 'point'` (un `type`
-  /// legacy non-point n'est PAS un point : `null`, jamais `points[0]` volé à
+  /// une forme historique `{type:'point', points:[…]}` n'est routée que si
+  /// aucune coordonnée directe n'est présente ET que `type == 'point'` (un
+  /// `type` non-point n'est pas un point : `null`, jamais `points[0]` volé à
   /// un polygone).
   static ZGeoPoint? fromMapSafe(Object? raw) {
     final decoded = zGeoDecodeLegacyEnvelope(raw);

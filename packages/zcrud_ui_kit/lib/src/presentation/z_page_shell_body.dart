@@ -1,37 +1,37 @@
 part of 'z_page_shell.dart';
 
-/// Corps de page-shell **sans `Scaffold`** (CR-52, option « ne pas posséder le
-/// `Scaffold` ») : app-bar repliable (`SliverAppBar`) recherchable + onglets +
-/// contenu, à poser **dans le `Scaffold` de l'hôte**.
+/// Corps de page-shell **sans `Scaffold`** : app-bar repliable
+/// (`SliverAppBar`) recherchable + onglets + contenu, à poser **dans le
+/// `Scaffold` de l'hôte**.
 ///
 /// ```dart
 /// Scaffold(
-///   drawer: const AppDrawer(),                 // slots de l'hôte : TOUS,
-///   floatingActionButton: const MyFab(),       // présents ET futurs
-///   body: ZPageShellBody(title: 'Titre', mode: ZPageAppBarMode.pinned, ...),
+///   drawer: const AppDrawer(), // slots de l'hôte: TOUS,
+///   floatingActionButton: const MyFab(), // présents ET futurs
+///   body: ZPageShellBody(title: 'Titre', mode: ZPageAppBarMode.pinned,...),
 /// )
 /// ```
 ///
-/// **Pourquoi en plus de [ZPageScaffold]** : [ZPageScaffold] construit le
+/// **Pourquoi en plus de [ZPageScaffold]**: [ZPageScaffold] construit le
 /// `Scaffold` et en expose les slots en pass-through (voir sa doc) — pratique
 /// pour un écran simple, mais la liste des slots est **finie** et l'hôte qui
 /// enveloppe son `Scaffold` (`PopScope`, `Banner`, `Stack`…) ou qui aiguille
 /// plusieurs `Scaffold` selon l'état (chargement/erreur/succès) ne peut pas
-/// l'utiliser. [ZPageShellBody] retire la question : le `Scaffold` reste à
+/// l'utiliser. [ZPageShellBody] retire la question: le `Scaffold` reste à
 /// l'hôte, le shell n'apporte que sa valeur propre (app-bar morphante +
 /// onglets). Les deux voies partagent **le même code** (`_zTabBar`,
-/// `_zTabBarView`, `_zWrapTabs`, `_ZSearchController`) : [ZPageScaffold] en
+/// `_zTabBarView`, `_zWrapTabs`, `_ZSearchController`): [ZPageScaffold] en
 /// modes sliver **délègue** son corps à ce widget — aucun rendu dupliqué.
 ///
-/// **Mode fixe** : un app-bar FIXE n'appartient pas au corps mais à
+/// **Mode fixe**: un app-bar FIXE n'appartient pas au corps mais à
 /// `Scaffold(appBar:)` — utiliser directement [ZSearchableAppBar], qui est
 /// publique et détient elle aussi son état. Si [ZPageAppBarMode.fixed] est
-/// néanmoins passé ici, ce widget **ne lève pas** (AD-10) : il se replie sur
+/// néanmoins passé ici, ce widget **ne lève pas** (AD-10): il se replie sur
 /// [ZPageAppBarMode.pinned], visuellement équivalent (app-bar toujours visible
 /// en tête) dans un contexte défilant.
 ///
-/// **AD-2/AD-15** : l'état de recherche est détenu par ce widget (aucun
-/// gestionnaire d'état, aucun contrôleur externe) ; la frappe ne reconstruit
+/// **AD-2/AD-15**: l'état de recherche est détenu par ce widget (aucun
+/// gestionnaire d'état, aucun contrôleur externe); la frappe ne reconstruit
 /// que la tranche app-bar (`ValueListenableBuilder`), jamais le corps.
 class ZPageShellBody extends StatefulWidget {
   /// Construit le corps de shell. [title] est un `Widget` ou un `String`.
@@ -90,43 +90,43 @@ class ZPageShellBody extends StatefulWidget {
          'title doit être un Widget ou un String',
        );
 
-  /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
+  /// Titre: `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
 
-  /// Sous-titre optionnel (CR-IFFD-34). Voir [ZSearchableAppBar.subtitle] :
+  /// Sous-titre optionnel. Voir [ZSearchableAppBar.subtitle]:
   /// `null` ⇒ absent de l'arbre, rendu strictement inchangé.
   final Widget? subtitle;
 
-  /// Clé d'identité du dégradé d'app-bar (CR-IFFD-34). Voir
-  /// [ZSearchableAppBar.gradientKey] : sans resolver hôte injecté, rendu
+  /// Clé d'identité du dégradé d'app-bar. Voir
+  /// [ZSearchableAppBar.gradientKey]: sans resolver hôte injecté, rendu
   /// strictement inchangé.
   final String? gradientKey;
 
-  /// Leading optionnel (rendu si et seulement si fourni — AC1).
+  /// Leading optionnel, rendu si et seulement si fourni.
   final Widget? leading;
 
-  /// Actions déclarées en données (absentes si non fournies — AC2).
+  /// Actions déclarées en données (absentes si non fournies).
   final List<ZAppBarAction> actions;
 
-  /// Configuration de recherche (nulle ⇒ pas de recherche — AC8).
+  /// Configuration de recherche (nulle ⇒ pas de recherche).
   final ZAppBarSearchConfig? search;
 
-  /// Onglets déclaratifs (nul/vide ⇒ aucun `TabBar` — AC10).
+  /// Onglets déclaratifs (nul/vide ⇒ aucun `TabBar`).
   final List<ZPageTab>? tabs;
 
   /// Contenu affiché quand il n'y a **pas** d'onglets (nul ⇒ absent).
   final Widget? body;
 
   /// Créneau de **contexte de page** posé entre l'app-bar et le `TabBar`
-  /// (CR-IFFD-45), dans le `bottom:` de la `SliverAppBar` — **même endroit
+  ///, dans le `bottom:` de la `SliverAppBar` — **même endroit
   /// logique** que dans [ZPageScaffold.aboveTabBar], dont il partage la doc et
   /// le code (`_zAppBarBottom`).
   ///
-  /// `null` (défaut) ⇒ arbre strictement inchangé. Mode `pinned` : la surface
+  /// `null` (défaut) ⇒ arbre strictement inchangé. Mode `pinned`: la surface
   /// reste **visible** au défilement (le `bottom:` d'une `SliverAppBar` épinglée
-  /// l'est aussi) ; mode `floating` : elle se replie avec l'app-bar.
+  /// l'est aussi); mode `floating`: elle se replie avec l'app-bar.
   ///
-  /// 🔴 Ne pas router cet usage vers [subtitle] : voir
+  /// Ne pas router cet usage vers [subtitle]: voir
   /// [ZPageScaffold.aboveTabBar] pour les mesures (chevauchement **silencieux**
   /// de 10 dp du `TabBar` avec un `subtitle` de 48 dp).
   final Widget? aboveTabBar;
@@ -140,7 +140,7 @@ class ZPageShellBody extends StatefulWidget {
   final Widget? aboveTabViews;
 
   /// Mode d'app-bar. [ZPageAppBarMode.fixed] se replie sur `pinned` (cf. doc de
-  /// classe) : un app-bar fixe se pose dans `Scaffold(appBar:)`.
+  /// classe): un app-bar fixe se pose dans `Scaffold(appBar:)`.
   final ZPageAppBarMode mode;
 
   /// `TabController` injecté optionnel (sinon `DefaultTabController` interne).
@@ -149,21 +149,21 @@ class ZPageShellBody extends StatefulWidget {
   /// Alignement optionnel des onglets (`null` ⇒ défaut Flutter).
   final TabAlignment? tabAlignment;
 
-  /// Typographie du TITRE (**CR-IFFD-63**). Voir
-  /// [ZSearchableAppBar.titleTextStyle] : priorité **paramètre > jeton
+  /// Typographie du TITRE. Voir
+  /// [ZSearchableAppBar.titleTextStyle]: priorité **paramètre > jeton
   /// `ZcrudTheme.pageHeaderTitleStyle` > défaut**, **métriques seules** (la
   /// couleur reste héritée du `foregroundColor` du sliver).
   final TextStyle? titleTextStyle;
 
-  /// Typographie du SOUS-TITRE (**CR-IFFD-63**). Voir
+  /// Typographie du SOUS-TITRE. Voir
   /// [ZSearchableAppBar.subtitleTextStyle].
   final TextStyle? subtitleTextStyle;
 
-  /// Typographie du libellé d'onglet **SÉLECTIONNÉ** (**CR-IFFD-63**). Voir
+  /// Typographie du libellé d'onglet **SÉLECTIONNÉ**. Voir
   /// [ZPageScaffold.tabLabelStyle].
   final TextStyle? tabLabelStyle;
 
-  /// Typographie du libellé d'onglet **NON SÉLECTIONNÉ** (**CR-IFFD-63**). Voir
+  /// Typographie du libellé d'onglet **NON SÉLECTIONNÉ**. Voir
   /// [ZPageScaffold.tabUnselectedLabelStyle].
   final TextStyle? tabUnselectedLabelStyle;
 
@@ -174,14 +174,14 @@ class ZPageShellBody extends StatefulWidget {
 }
 
 class _ZPageShellBodyState extends State<ZPageShellBody> {
-  /// Contrôleur de recherche **détenu** (propriétaire unique, AD-2) : créé une
+  /// Contrôleur de recherche **détenu** (propriétaire unique, AD-2): créé une
   /// fois, `dispose`é une fois, jamais recréé au rebuild.
   late final _ZSearchController _controller;
   late final bool _ownsController;
 
   bool get _hasTabs => widget.tabs != null && widget.tabs!.isNotEmpty;
 
-  /// Mode effectif : `fixed` n'a pas de sens dans un corps défilant ⇒ `pinned`
+  /// Mode effectif: `fixed` n'a pas de sens dans un corps défilant ⇒ `pinned`
   /// (repli documenté, jamais un throw — AD-10).
   ZPageAppBarMode get _mode => widget.mode == ZPageAppBarMode.fixed
       ? ZPageAppBarMode.pinned
@@ -221,7 +221,7 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
       valueListenable: _controller.isSearching,
       builder: (context, searching, _) {
         // Resolver hôte appelé UNE seule fois par build (jamais deux fois pour
-        // la même clé) ; `null` ⇒ slots absents ⇒ sliver strictement inchangé.
+        // la même clé); `null` ⇒ slots absents ⇒ sliver strictement inchangé.
         final ZGradientSpec? gradient = _zAppBarGradient(
           context,
           widget.gradientKey,
@@ -264,7 +264,7 @@ class _ZPageShellBodyState extends State<ZPageShellBody> {
 
   @override
   Widget build(BuildContext context) {
-    // Composition UNIQUE du `bottom:` (partagée avec le mode fixe) : sans
+    // Composition UNIQUE du `bottom:` (partagée avec le mode fixe): sans
     // `aboveTabBar`, `_zAppBarBottom` rend le `TabBar` tel quel — ou `null`.
     final PreferredSizeWidget? bottom = _zAppBarBottom(
       aboveTabBar: widget.aboveTabBar,

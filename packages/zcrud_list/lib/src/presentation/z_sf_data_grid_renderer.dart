@@ -1,53 +1,53 @@
 /// Backend `SfDataGrid` du port [ZListRenderer] — **SEULE arête Syncfusion** du
-/// graphe zcrud (E4-1 → E4-4, AD-8/SM-5).
+/// graphe zcrud (invariant AD-8).
 ///
-/// origine: E4-1. `zcrud_core` n'expose que l'abstraction `ZListRenderer` + les
-/// modèles neutres Material-free ; le rendu concret Syncfusion vit
-/// **exclusivement** ici, dans `zcrud_list`. Un consommateur qui n'importe pas
-/// `zcrud_list` (ex. `zcrud_markdown` seul) ne tire donc AUCUNE dépendance
-/// Syncfusion (SM-5, prouvé par les tests de graphe).
+/// `zcrud_core` n'expose que l'abstraction `ZListRenderer` + les modèles
+/// neutres Material-free ; le rendu concret Syncfusion vit **exclusivement**
+/// ici, dans `zcrud_list`. Un consommateur qui n'importe pas `zcrud_list`
+/// (ex. `zcrud_markdown` seul) ne tire donc AUCUNE dépendance Syncfusion.
 ///
-/// **Consomme les colonnes dérivées** (E4-2) : une `GridColumn` par `ZListColumn`
-/// du `ZListRenderRequest`, en-tête résolu au rendu (`label(context, col.header)`),
-/// largeur `col.width` (si non nulle), cellule via le **format neutre partagé**
-/// `col.format(row.cells[col.name])`.
+/// **Consomme les colonnes dérivées** du cœur : une `GridColumn` par
+/// `ZListColumn` du `ZListRenderRequest`, en-tête résolu au rendu
+/// (`label(context, col.header)`), largeur `col.width` (si non nulle),
+/// cellule via le **format neutre partagé** `col.format(row.cells[col.name])`.
 ///
-/// **L2 CORRIGÉ (E4-4, AC5)** : le renderer délègue à un `StatefulWidget`
-/// (`_ZSfDataGrid`) qui **mémoïse** la `DataGridSource` (construite une fois,
-/// **mise à jour en place** via `didUpdateWidget` — plus jamais recréée par
-/// `build`) et détient un `DataGridController` **persistant**. La sélection
-/// Syncfusion est liée **bidirectionnellement** à `ZListInteraction`
-/// (init/sync depuis `selectedIds`, remontée via `onSelectionChanged`) et keyée
-/// par l'`id` STABLE de `ZListRow`. Résultat : scroll & sélection **persistants**
-/// au rebuild/scroll/pagination (bug historique des 3 apps corrigé). Les actions
-/// de ligne **déjà résolues** (`interaction.actionsFor`) sont rendues dans une
-/// colonne dédiée (le renderer ne voit ni `T` ni `ZAcl`).
+/// **Persistance de scroll et de sélection** : le renderer délègue à un
+/// `StatefulWidget` (`_ZSfDataGrid`) qui **mémoïse** la `DataGridSource`
+/// (construite une fois, **mise à jour en place** via `didUpdateWidget` —
+/// plus jamais recréée par `build`) et détient un `DataGridController`
+/// **persistant**. La sélection Syncfusion est liée **bidirectionnellement**
+/// à `ZListInteraction` (init/sync depuis `selectedIds`, remontée via
+/// `onSelectionChanged`) et keyée par l'`id` STABLE de `ZListRow`. Résultat :
+/// scroll & sélection **persistants** au rebuild/scroll/pagination. Les
+/// actions de ligne **déjà résolues** (`interaction.actionsFor`) sont rendues
+/// dans une colonne dédiée (le renderer ne voit ni `T` ni `ZAcl`).
 ///
-/// **CR-LIST-PARITY (Lot 5 + réserves §2, 2026-08-11)** — additif, opt-in,
-/// **zéro changement de défaut** (AD-10) :
+/// **Réglages additifs, opt-in, zéro changement de défaut** (invariant
+/// AD-10) :
 /// - [ZSfDataGridRenderer.onLoadMore] : auto-`loadMore` au scroll (infinite
 ///   scrolling natif Syncfusion, `SfDataGrid.loadMoreViewBuilder` — déclenché
 ///   quand le scroll vertical atteint la fin). `null` (défaut) ⇒ AUCUN
-///   `loadMoreViewBuilder` posé, widget-tree strictement identique à avant. Le
-///   câblage à `ZListController.loadMore()` (chemin `backendCursor`) est
-///   **hôte** : ce package ne connaît pas le contrôleur (SM-5, `DynamicList` ne
-///   le porte pas non plus jusqu'au renderer).
+///   `loadMoreViewBuilder` posé, widget-tree strictement identique à avant.
+///   Le câblage à `ZListController.loadMore()` (chemin `backendCursor`) est
+///   **hôte** : ce package ne connaît pas le contrôleur (`DynamicList` ne le
+///   porte pas non plus jusqu'au renderer).
 /// - [ZSfDataGridRenderer.headerRowHeight] / [ZSfDataGridRenderer.columnWidthMode]
 ///   / [ZSfDataGridRenderer.withOrderNumber] / [ZSfDataGridRenderer.orderColumnHeader]
-///   / [ZSfDataGridRenderer.cellColorBuilder] : réglages Syncfusion aujourd'hui
-///   figés (§2 du CR), désormais des paramètres nommés **optionnels** à défaut
-///   strictement identique au rendu actuel (48 dp / `fill` / pas de colonne
-///   d'ordre / pas de couleur de cellule).
+///   / [ZSfDataGridRenderer.cellColorBuilder] : réglages Syncfusion, exposés
+///   comme paramètres nommés **optionnels** à défaut strictement identique au
+///   rendu historique (48 dp / `fill` / pas de colonne d'ordre / pas de
+///   couleur de cellule).
 ///
-/// `setCellColor`/`withOrderNumber` légataires opèrent sur des types Syncfusion
-/// bruts (`DataGridRow`/`DataGridCell`) ; ici, [cellColorBuilder] est reçu sur les
-/// types **neutres** [ZListRow]/[ZListColumn] déjà publics de `zcrud_core` — AUCUN
-/// nouveau champ ni AUCUNE nouvelle arête n'est ajoutée à `zcrud_core` (ce
-/// package les consomme tels quels).
+/// Une implémentation legacy de coloration/numérotation opérerait sur des
+/// types Syncfusion bruts (`DataGridRow`/`DataGridCell`) ; ici,
+/// [cellColorBuilder] est reçu sur les types **neutres**
+/// [ZListRow]/[ZListColumn] déjà publics de `zcrud_core` — AUCUN nouveau
+/// champ ni AUCUNE nouvelle arête n'est ajoutée à `zcrud_core` (ce package
+/// les consomme tels quels).
 ///
 /// **Aucune clé/licence Syncfusion committée** : l'enregistrement de licence
 /// (`SyncfusionLicense.registerLicense`) est une **config plateforme de l'app**
-/// hôte, jamais du package (Key Don'ts « never de secret dans un package »).
+/// hôte, jamais du package.
 library;
 
 import 'package:flutter/material.dart';
@@ -68,9 +68,9 @@ const String _kOrderColumnName = '__zOrder';
 /// `const`-constructible : injectable tel quel via
 /// `ZcrudScope(listRenderer: const ZSfDataGridRenderer(), child: ...)`.
 ///
-/// Tous les paramètres sont **additifs et opt-in** (CR-LIST-PARITY, Lot 5 + §2) :
-/// omis, le rendu produit est **strictement identique** à la version antérieure
-/// (mêmes valeurs Syncfusion codées en dur qu'avant ce correctif).
+/// Tous les paramètres sont **additifs et opt-in** : omis, le rendu produit
+/// est **strictement identique** à la version historique (mêmes valeurs
+/// Syncfusion par défaut).
 class ZSfDataGridRenderer implements ZListRenderer {
   /// Construit le renderer (sans état ; immuable).
   const ZSfDataGridRenderer({
@@ -82,9 +82,9 @@ class ZSfDataGridRenderer implements ZListRenderer {
     this.cellColorBuilder,
   });
 
-  /// Auto-`loadMore` au scroll (Lot 5, MINEUR). `null` (défaut) : AUCUN
-  /// `loadMoreViewBuilder` n'est posé sur le `SfDataGrid` — comportement
-  /// STRICTEMENT identique à avant (aucun chemin n'appelait `loadMore()`).
+  /// Auto-`loadMore` au scroll. `null` (défaut) : AUCUN `loadMoreViewBuilder`
+  /// n'est posé sur le `SfDataGrid` — comportement STRICTEMENT identique au
+  /// rendu sans pagination automatique.
   ///
   /// Non-`null` : Syncfusion déclenche ce callback quand le scroll vertical
   /// atteint la fin de la grille (infinite scrolling natif, pas de bouton) ; un
@@ -94,38 +94,37 @@ class ZSfDataGridRenderer implements ZListRenderer {
   /// lui-même est un no-op sûr si aucune page suivante n'existe).
   final Future<void> Function()? onLoadMore;
 
-  /// Hauteur de la ligne d'en-tête (§2 du CR : figée à 48 dp jusqu'ici).
-  /// Défaut [_kMinRowHeight] (48 dp, AD-13) : valeur strictement inchangée.
+  /// Hauteur de la ligne d'en-tête. Défaut [_kMinRowHeight] (48 dp, invariant
+  /// AD-13) : valeur strictement inchangée par rapport au rendu historique.
   /// L'en-tête n'étant pas une cible tactile dans ce renderer (aucun tri par
-  /// tap câblé), l'appelant reste libre d'y descendre sous 48 dp (parité
-  /// legacy, ex. `headerRowHeight: 40`) sous sa propre responsabilité.
+  /// tap câblé), l'appelant reste libre d'y descendre sous 48 dp sous sa
+  /// propre responsabilité.
   final double headerRowHeight;
 
-  /// Mode de répartition des largeurs de colonnes (§2 du CR : figé à `fill`
-  /// jusqu'ici). Défaut [ColumnWidthMode.fill] : valeur strictement inchangée.
+  /// Mode de répartition des largeurs de colonnes. Défaut
+  /// [ColumnWidthMode.fill] : valeur strictement inchangée par rapport au
+  /// rendu historique.
   final ColumnWidthMode columnWidthMode;
 
-  /// Ajoute une colonne de numéro d'ordre (`#`) en tête de grille, parité
-  /// `withOrderNumber` legacy (§2 du CR). Défaut `false` : aucune colonne
-  /// ajoutée, comportement inchangé. Le numéro est le rang **d'affichage**
-  /// (1-based, position dans `request.rows`) — identique à la sémantique
-  /// legacy (`ids.indexOf(item) + 1`, elle aussi purement positionnelle).
+  /// Ajoute une colonne de numéro d'ordre (`#`) en tête de grille. Défaut
+  /// `false` : aucune colonne ajoutée, comportement inchangé. Le numéro est
+  /// le rang **d'affichage** (1-based, position dans `request.rows`) —
+  /// purement positionnel.
   final bool withOrderNumber;
 
   /// En-tête de la colonne de numéro d'ordre quand [withOrderNumber] est actif.
-  /// Défaut `'#'` (symbole ordinal universel, non language-dependent — parité
-  /// littérale du legacy). Personnalisable par l'hôte (sa propre l10n) sans
-  /// toucher `zcrud_core`.
+  /// Défaut `'#'` (symbole ordinal universel, non dépendant de la langue).
+  /// Personnalisable par l'hôte (sa propre l10n) sans toucher `zcrud_core`.
   final String orderColumnHeader;
 
   /// Couleur de fond par cellule, résolue depuis les types **neutres** déjà
   /// publics de `zcrud_core` ([ZListRow] complet de la ligne + [ZListColumn]
-  /// courante) — parité `setCellColor(DataGridRow, DataGridCell)` legacy (§2 du
-  /// CR), SANS exposer de type Syncfusion à l'appelant ni ajouter de champ à
-  /// `ZListColumn`/`ZListRow` (`zcrud_core` intact). Défaut `null` : aucune
-  /// coloration, comportement inchangé. Ne doit jamais lever (AD-10) ; une
-  /// exception de l'appelant est **propagée telle quelle** (pas de `try/catch`
-  /// silencieux ici — l'appelant reste responsable de son builder).
+  /// courante), SANS exposer de type Syncfusion à l'appelant ni ajouter de
+  /// champ à `ZListColumn`/`ZListRow` (`zcrud_core` intact). Défaut `null` :
+  /// aucune coloration, comportement inchangé. Ne doit jamais lever (invariant
+  /// AD-10) ; une exception de l'appelant est **propagée telle quelle** (pas
+  /// de `try/catch` silencieux ici — l'appelant reste responsable de son
+  /// builder).
   final Color? Function(ZListRow row, ZListColumn column)? cellColorBuilder;
 
   @override
@@ -148,7 +147,7 @@ class ZSfDataGridRenderer implements ZListRenderer {
 }
 
 /// Widget stateful portant la source **mémoïsée** + le `DataGridController`
-/// **persistant** (L2, AC5). C'est lui qui immunise scroll/sélection contre les
+/// **persistant**. C'est lui qui immunise scroll/sélection contre les
 /// rebuilds.
 class _ZSfDataGrid extends StatefulWidget {
   const _ZSfDataGrid({
@@ -213,7 +212,7 @@ class _ZSfDataGridState extends State<_ZSfDataGrid> {
         orderNumberChanged) {
       // MISE À JOUR EN PLACE de la source mémoïsée (jamais recréée) quand les
       // DONNÉES (lignes/colonnes) — ou la présence d'actions/colonne d'ordre —
-      // changent : reconstruit les `DataGridRow` puis notifie la grille (AC5).
+      // changent : reconstruit les `DataGridRow` puis notifie la grille.
       _source.update(
         widget.request.columns,
         widget.request.rows,
@@ -221,17 +220,17 @@ class _ZSfDataGridState extends State<_ZSfDataGrid> {
         withOrderNumber: widget.withOrderNumber,
       );
     } else if (!identical(newActionsFor, oldActionsFor)) {
-      // MEDIUM-1 (perf) : SEULE la closure `actionsFor` a changé d'identité
+      // Performance : SEULE la closure `actionsFor` a changé d'identité
       // (recréée à chaque `build` de `DynamicList._buildInteraction`, ex. à
       // chaque changement de sélection) alors que les DONNÉES sont inchangées.
       // On RAFRAÎCHIT uniquement la référence de résolution SANS effacer /
       // reconstruire les `DataGridRow` (l'actions-cell est résolue
       // paresseusement dans `buildRow`) : cocher une case ne reconstruit plus
-      // toute la source de grille (mémoïsation L2 préservée).
+      // toute la source de grille (mémoïsation préservée).
       _source.refreshActions(newActionsFor);
     }
     // `cellColorBuilder`/`onLoadMore` ne touchent ni le nombre ni l'identité des
-    // `DataGridRow` : rafraîchi paresseusement, comme `actionsFor` (MEDIUM-1).
+    // `DataGridRow` : rafraîchi paresseusement, comme `actionsFor`.
     if (!identical(widget.cellColorBuilder, old.cellColorBuilder)) {
       _source.refreshCellColorBuilder(widget.cellColorBuilder);
     }
@@ -347,22 +346,22 @@ class _ZSfDataGridState extends State<_ZSfDataGrid> {
     );
   }
 
-  /// `SfDataGrid.loadMoreViewBuilder` (Lot 5) : rendu quand le scroll vertical
-  /// atteint la fin ET que [ZSfDataGridRenderer.onLoadMore] est fourni. Ne
-  /// posé sur `SfDataGrid` QUE dans ce cas (`build`, ci-dessus) — un renderer
-  /// par défaut (`onLoadMore == null`) ne voit jamais ce builder appelé.
+  /// `SfDataGrid.loadMoreViewBuilder` : rendu quand le scroll vertical
+  /// atteint la fin ET que [ZSfDataGridRenderer.onLoadMore] est fourni. Posé
+  /// sur `SfDataGrid` QUE dans ce cas (`build`, ci-dessus) — un renderer par
+  /// défaut (`onLoadMore == null`) ne voit jamais ce builder appelé.
   Widget? _buildLoadMoreView(BuildContext context, LoadMoreRows loadMoreRows) {
     return _ZAutoLoadMoreView(loadMoreRows: loadMoreRows);
   }
 }
 
-/// Vue "infinite scrolling" (Lot 5, CR-LIST-PARITY) : déclenche IMMÉDIATEMENT
-/// [loadMoreRows] (pas de bouton — auto-`loadMore`, parité "seuil proche de
-/// fin" via le seuil natif Syncfusion = fin de l'extent de scroll) et affiche un
-/// indicateur de progression accessible pendant l'attente ; se réduit à une
-/// hauteur nulle une fois la page intégrée. Réutilise la clé l10n `list.loading`
-/// déjà enregistrée dans `zcrud_core` (AUCUNE nouvelle clé, ce package n'écrit
-/// pas dans `zcrud_core`).
+/// Vue "infinite scrolling" : déclenche IMMÉDIATEMENT [loadMoreRows] (pas de
+/// bouton — auto-`loadMore` dès que le scroll vertical atteint la fin de
+/// l'extent, seuil natif Syncfusion) et affiche un indicateur de progression
+/// accessible pendant l'attente ; se réduit à une hauteur nulle une fois la
+/// page intégrée. Réutilise la clé l10n `list.loading` déjà enregistrée dans
+/// `zcrud_core` (AUCUNE nouvelle clé, ce package n'écrit pas dans
+/// `zcrud_core`).
 class _ZAutoLoadMoreView extends StatefulWidget {
   const _ZAutoLoadMoreView({required this.loadMoreRows});
 
@@ -401,11 +400,11 @@ class _ZAutoLoadMoreViewState extends State<_ZAutoLoadMoreView> {
   }
 }
 
-/// Source de données `SfDataGrid` **mémoïsée** (E4-4) mappant chaque [ZListRow]
-/// vers une `DataGridRow` de cellules texte via le **format neutre partagé**
+/// Source de données `SfDataGrid` **mémoïsée** mappant chaque [ZListRow] vers
+/// une `DataGridRow` de cellules texte via le **format neutre partagé**
 /// `col.format(row.cells[col.name])`. Une cellule d'actions (widgets déjà
-/// résolus) est ajoutée si [_actionsFor] est fourni. Mise à jour **en place** via
-/// [update] (jamais recréée par `build`, AC5).
+/// résolus) est ajoutée si [_actionsFor] est fourni. Mise à jour **en place**
+/// via [update] (jamais recréée par `build`).
 class _ZListDataGridSource extends DataGridSource {
   _ZListDataGridSource(
     List<ZListColumn> columns,
@@ -445,10 +444,10 @@ class _ZListDataGridSource extends DataGridSource {
   String? idOf(DataGridRow row) => _rowByData[row]?.id;
 
   /// **Met à jour en place** la source (jamais recréée) : reconstruit les
-  /// `DataGridRow` puis notifie la grille. Préserve l'instance (L2/AC5).
+  /// `DataGridRow` puis notifie la grille. Préserve l'instance.
   ///
   /// [withOrderNumber] `null` conserve la valeur courante (appel interne depuis
-  /// le constructeur) ; non-`null` la remplace (Lot 5, colonne d'ordre).
+  /// le constructeur) ; non-`null` la remplace (colonne d'ordre).
   void update(
     List<ZListColumn> columns,
     List<ZListRow> rows,
@@ -488,7 +487,7 @@ class _ZListDataGridSource extends DataGridSource {
     notifyListeners();
   }
 
-  /// MEDIUM-1 (perf) : met à jour SEULEMENT la closure de résolution d'actions,
+  /// Performance : met à jour SEULEMENT la closure de résolution d'actions,
   /// SANS reconstruire les `DataGridRow` ni notifier la grille. L'actions-cell
   /// est résolue paresseusement dans [buildRow] via [_actionsFor] : rafraîchir
   /// la référence suffit à ce que le prochain rendu naturel de ligne utilise la
@@ -503,8 +502,8 @@ class _ZListDataGridSource extends DataGridSource {
     _actionsFor = actionsFor;
   }
 
-  /// Rafraîchit SEULEMENT la référence du résolveur de couleur de cellule (Lot
-  /// 5/§2, même discipline que [refreshActions]) : la couleur est résolue
+  /// Rafraîchit SEULEMENT la référence du résolveur de couleur de cellule
+  /// (même discipline que [refreshActions]) : la couleur est résolue
   /// paresseusement dans [buildRow], aucune reconstruction requise (elle
   /// n'affecte ni le nombre ni l'identité des `DataGridRow`).
   void refreshCellColorBuilder(
@@ -513,7 +512,7 @@ class _ZListDataGridSource extends DataGridSource {
     _cellColorBuilder = cellColorBuilder;
   }
 
-  /// Rafraîchit SEULEMENT la référence du callback `loadMore` (Lot 5) : appelé
+  /// Rafraîchit SEULEMENT la référence du callback `loadMore` : appelé
   /// paresseusement par [handleLoadMoreRows], aucune reconstruction requise.
   void refreshOnLoadMore(Future<void> Function()? onLoadMore) {
     _onLoadMore = onLoadMore;
@@ -521,8 +520,8 @@ class _ZListDataGridSource extends DataGridSource {
 
   /// Override du hook Syncfusion invoqué par `LoadMoreRows` (le callback passé
   /// à `loadMoreViewBuilder`) : délègue à [_onLoadMore] s'il est fourni ; no-op
-  /// sinon (défaut `DataGridSource.handleLoadMoreRows`, AD-10 — hôte passif
-  /// strictement immobile).
+  /// sinon (défaut `DataGridSource.handleLoadMoreRows`, invariant AD-10 — hôte
+  /// passif strictement immobile).
   @override
   Future<void> handleLoadMoreRows() async {
     await _onLoadMore?.call();
@@ -574,7 +573,7 @@ class _ZListDataGridSource extends DataGridSource {
   }
 }
 
-/// Bouton d'action accessible (AC9) rendu dans la colonne d'actions de la grille.
+/// Bouton d'action accessible rendu dans la colonne d'actions de la grille.
 class _ZSfRowActionButton extends StatelessWidget {
   const _ZSfRowActionButton({required this.action});
 

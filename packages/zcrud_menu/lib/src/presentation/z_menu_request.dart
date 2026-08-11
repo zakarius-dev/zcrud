@@ -1,4 +1,4 @@
-/// [ZMenuRequest] — requête de rendu NEUTRE d'un menu (CHAT-4).
+/// [ZMenuRequest] — requête de rendu NEUTRE d'un menu.
 ///
 /// Patron strict de `ZListRenderRequest` / `ZReorderRenderRequest`
 /// (`zcrud_core`) : tout ce dont un renderer a besoin, et RIEN qui trahisse une
@@ -14,15 +14,14 @@ import '../domain/z_menu_trigger.dart';
 
 /// Présentation INJECTÉE du CONTENU du menu.
 ///
-/// Pendant exact de `ZItemActionsMenuBuilder` (`zcrud_study`), conservé à
-/// l'identique pour qu'un hôte qui l'utilise déjà migre sans réécrire :
 /// * [context] — contexte de la SURFACE ouverte (pas du déclencheur) ;
-/// * `entries` — liste **DÉJÀ FILTRÉE** par la règle d'absence (AD-4) ;
+/// * `entries` — liste **DÉJÀ FILTRÉE** par la règle d'absence (invariant
+///   AD-4) ;
 /// * `select` — invoque l'entrée ET ferme la surface, par le **MÊME chemin** que
 ///   le rendu par défaut. L'hôte n'a ni à fermer, ni à appeler `onSelected` :
 ///   une présentation alternative ne peut pas diverger du défaut.
 ///
-/// ⚠️ Les entrées DÉSACTIVÉES ([ZMenuEntry.isEnabled] `false`) sont présentes
+/// Les entrées DÉSACTIVÉES ([ZMenuEntry.isEnabled] `false`) sont présentes
 /// dans `entries` : une présentation injectée doit les rendre inertes et
 /// annoncer [ZMenuEntry.disabledReason]. Appeler `select` sur une entrée
 /// désactivée est **sans effet** (garanti par [ZMenuRequest.select], pas par la
@@ -53,10 +52,9 @@ class ZMenuRequest {
 
   /// **UNIQUE** site d'invocation de l'effet d'une entrée.
   ///
-  /// Un renderer ne doit JAMAIS appeler `entry.onSelected` lui-même : il appelle
-  /// [select]. Même discipline que « un verbe = un seul site d'appel »
-  /// (`ZChatActionDispatcher`, CHAT-0b) — c'est ce qui empêche un second chemin
-  /// d'exécution divergent d'apparaître dans un adaptateur tiers.
+  /// Un renderer ne doit JAMAIS appeler `entry.onSelected` lui-même : il
+  /// appelle [select]. C'est ce qui empêche un second chemin d'exécution
+  /// divergent d'apparaître dans un adaptateur tiers.
   ///
   /// Sans effet sur une entrée désactivée ou absente de [entries].
   final void Function(ZMenuEntry entry) select;

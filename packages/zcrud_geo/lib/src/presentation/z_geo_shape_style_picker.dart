@@ -1,28 +1,27 @@
 /// `ZGeoShapeStylePicker` — **toolbar de style fill/stroke** d'une forme géo
-/// (`geoArea` polygone/cercle), FR-28/AD-8/AD-52 (story 5.3).
+/// (`geoArea` polygone/cercle).
 ///
-/// origine: DODLP stylise ses geofences via `flex_color_picker`. Ce picker en
-/// est le **portage neutre** : il laisse l'utilisateur choisir couleur de
-/// remplissage, couleur de trait et épaisseur de trait, et notifie un
-/// [ZGeoShapeStyle] pur-données. **Aucune dépendance couleur lourde n'est tirée
-/// dans `zcrud_geo`** (CORE OUT=0, AD-1) : la sélection de couleur **réutilise le
-/// seam couleur du cœur** (`ZcrudScope.colorPicker`), avec repli sur le picker
-/// built-in neutre du cœur [ZColorPickerDialog] — exactement le chemin du champ
-/// `color` (`z_color_field_widget.dart`).
+/// Laisse l'utilisateur choisir couleur de remplissage, couleur de trait et
+/// épaisseur de trait, et notifie un [ZGeoShapeStyle] pur-données. **Aucune
+/// dépendance couleur lourde n'est tirée dans `zcrud_geo`** (invariant AD-1) :
+/// la sélection de couleur **réutilise le seam couleur du cœur**
+/// (`ZcrudScope.colorPicker`), avec repli sur le picker built-in neutre du
+/// cœur [ZColorPickerDialog].
 ///
-/// **AD-2 / SM-1** : `StatelessWidget` piloté par `style + onChanged` (aucun état
-/// de formulaire interne, aucun `TextEditingController` — la couleur est une
-/// **donnée ARGB**). Le parent porte la tranche et rebuild granulaire.
+/// **Invariant AD-2** : `StatelessWidget` piloté par `style + onChanged`
+/// (aucun état de formulaire interne, aucun `TextEditingController` — la
+/// couleur est une **donnée ARGB**). Le parent porte la tranche et rebuild
+/// granulaire.
 ///
-/// **Défensif (AD-10)** : un `style` `null`/incohérent part de
-/// `const ZGeoShapeStyle()` sans throw ; un seam couleur qui lève une exception
-/// n'écrit **rien** (`catch (_) → picked = null`), jamais de crash du formulaire ;
-/// l'épaisseur est bornée avant d'atteindre le modèle.
+/// **Désérialisation défensive (invariant AD-10)** : un `style`
+/// `null`/incohérent part de `const ZGeoShapeStyle()` sans throw ; un seam
+/// couleur qui lève une exception n'écrit **rien**, jamais de crash du
+/// formulaire ; l'épaisseur est bornée avant d'atteindre le modèle.
 ///
-/// **FR-26 (aucun style codé en dur)** : les couleurs affichées dérivent des
-/// données ARGB (`Color(argb)` local à la couche presentation, comme
-/// l'adaptateur OSM) ; bordures/accents/défauts proviennent du `ZcrudTheme`/
-/// `Theme.of(context)`, jamais d'un littéral de couleur.
+/// **Aucun style codé en dur** : les couleurs affichées dérivent des données
+/// ARGB (`Color(argb)` local à la couche presentation) ; bordures/accents/
+/// défauts proviennent du `ZcrudTheme`/`Theme.of(context)`, jamais d'un
+/// littéral de couleur.
 library;
 
 import 'package:flutter/material.dart';
@@ -126,7 +125,7 @@ class ZGeoShapeStylePicker extends StatelessWidget {
     final effective = _effective;
     final scheme = Theme.of(context).colorScheme;
     final zTheme = ZcrudTheme.of(context);
-    // Défauts NEUTRES issus du thème (FR-26), jamais un littéral de couleur.
+    // Défauts NEUTRES issus du thème jamais un littéral de couleur.
     final Color borderColor = zTheme.fieldBorderColor ?? scheme.outline;
     final Color fillPreview = effective.fillColorArgb != null
         ? Color(effective.fillColorArgb!)
@@ -198,7 +197,7 @@ class ZGeoShapeStylePicker extends StatelessWidget {
   }
 }
 
-/// Aperçu de style piloté **données** (FR-26) : remplissage + trait + épaisseur.
+/// Aperçu de style piloté **données** : remplissage + trait + épaisseur.
 ///
 /// **AC5** — délimitation garantie de la vignette : un **cadre EXTÉRIEUR neutre**
 /// issu du thème ([borderColor], toujours visible) sépare la vignette du fond,
@@ -223,7 +222,7 @@ class _StylePreview extends StatelessWidget {
   final Color stroke;
   final int strokeWidth;
 
-  /// Couleur du **cadre extérieur neutre** (thème, FR-26) — délimite la vignette
+  /// Couleur du **cadre extérieur neutre** (thème) — délimite la vignette
   /// du fond indépendamment de la couleur de [stroke] (AC5).
   final Color borderColor;
 
@@ -267,7 +266,7 @@ class _StylePreview extends StatelessWidget {
 
 /// Bouton de sélection couleur (≥ 48 dp, un seul `Semantics` porteur — AD-13).
 ///
-/// Le [swatch] est une **donnée ARGB** rendue localement (FR-26). `onTap == null`
+/// Le [swatch] est une **donnée ARGB** rendue localement. `onTap == null`
 /// ⇒ désactivé (lecture seule).
 class _ColorButton extends StatelessWidget {
   const _ColorButton({

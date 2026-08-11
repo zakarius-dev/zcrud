@@ -1,20 +1,19 @@
 /// Lecture de la **couverture réelle** d'une police TrueType/OpenType, par sa
-/// table `cmap` (CR-LEX-43).
+/// table `cmap`.
 ///
 /// ## Pourquoi ce code existe
 ///
-/// 🔴 **`PdfTrueTypeFont.measureString` ne lève JAMAIS.** Mesuré côté hôte sur
-/// l'arabe, le grec, le CJK et les emoji. Or tout le filet défensif du gabarit
-/// reposait sur ce `throw` : dès qu'une police TrueType est injectée (CR-LEX-38),
-/// la substitution en `?` devient un **no-op silencieux**, et ce qui n'est pas
-/// couvert n'est plus un `?` — c'est un `.notdef`, une case vide qui passe pour
-/// une mise en page. La garantie annoncée par CR-LEX-38 s'évaporait donc
-/// exactement quand on l'activait.
+/// **`PdfTrueTypeFont.measureString` ne lève JAMAIS** sur un caractère non
+/// couvert (vérifié sur l'arabe, le grec, le CJK et les emoji). Or tout filet
+/// défensif fondé sur ce `throw` deviendrait un **no-op silencieux** dès
+/// qu'une police TrueType est injectée : ce qui n'est pas couvert ne
+/// redeviendrait plus un `?` explicite, mais un `.notdef`, une case vide qui
+/// passe pour une mise en page.
 ///
 /// Il n'existe aucun autre oracle :
 /// - `measureString` ne discrimine pas (ci-dessus) ;
-/// - une heuristique de largeur serait une **paraphrase** — mesuré côté hôte,
-///   sur `NotoSansArabic` un `A` absent vaut `2.860`, exactement la chasse d'un
+/// - une heuristique de largeur serait une **paraphrase** — vérifié : sur
+///   `NotoSansArabic` un `A` absent vaut `2.860`, exactement la chasse d'un
 ///   glyphe réel ;
 /// - `TtfReader` de Syncfusion n'est pas exporté par `pdf.dart`.
 ///
@@ -22,10 +21,10 @@
 ///
 /// ## Ce que ce lecteur N'EST PAS
 ///
-/// ⚠️ « Couvert par le `cmap` » ≠ « écrit dans le PDF ». Mesuré côté hôte sur
-/// les 2626 points de code déclarés par `NotoSans-Regular` : **`U+FFFD` est
-/// EFFACÉ** par `syncfusion_flutter_pdf` lui-même (propriété du moteur, vérifiée
-/// sans aucun code zcrud). Un appelant qui refuse sur la seule foi du `cmap`
+/// « Couvert par le `cmap` » ≠ « écrit dans le PDF ». Vérifié sur les 2626
+/// points de code déclarés par `NotoSans-Regular` : **`U+FFFD` est EFFACÉ**
+/// par `syncfusion_flutter_pdf` lui-même (propriété du moteur, vérifiée sans
+/// aucun code zcrud). Un appelant qui refuse sur la seule foi du `cmap`
 /// acceptera `U+FFFD` puis le verra disparaître.
 library;
 

@@ -1,62 +1,59 @@
-/// Port neutre `ZStudyNoteRef` — référence MINIMALE d'une note d'étude
-/// consommable par le socle de présentation **sans arête `zcrud_study →
-/// zcrud_note`** (option C, arbitrage owner ; AD-1/AD-4/AD-17).
+/// Port neutre `ZStudyNoteRef` — référence minimale d'une note d'étude
+/// consommable par le socle de présentation sans arête directe vers le
+/// paquet de notes (invariant AD-1/AD-4).
 ///
-/// Pendant exact de `ZStudyDocumentRef` : la motivation, le patron
-/// (`ZSessionCandidate` / `ZApproachingExam` — port au kernel, implémenté côté
-/// satellite) et la garde qui gèle l'absence de l'arête sont **communs** ; voir
-/// la dartdoc de `z_study_document_ref.dart` pour l'exposé complet.
+/// Pendant exact de `ZStudyDocumentRef` : la motivation et le patron (port au
+/// kernel, implémenté côté satellite, sur le modèle de `ZSessionCandidate`)
+/// sont communs — voir la dartdoc de `z_study_document_ref.dart` pour
+/// l'exposé complet.
 ///
-/// ## Surface MINIMALE — chaque membre est justifié par un usage RÉEL
+/// ## Surface minimale — chaque membre est justifié par un usage réel
 ///
 /// | Membre | Usage réel qui le motive |
 /// |---|---|
-/// | [id] | clé de widget STABLE (`ValueKey('zDefaultNoteCard-${…}')`) et identité de réordonnancement (`_zDeriveReorderIds`/`_zGuardReorder`) — patron littéral de `.flashcards`/`.mindmaps`/`.exams` |
-/// | [title] | `ZDefaultNoteCard.title`, **seule** entrée `required` de la carte |
+/// | [id] | clé de widget stable et identité de réordonnancement |
+/// | [title] | seule entrée obligatoire d'une carte de note affichée par défaut |
 ///
-/// ### Membres délibérément ABSENTS (et pourquoi)
+/// ### Membres délibérément absents (et pourquoi)
 ///
-/// - **`updatedAt`** — `ZDefaultNoteCard` ne consomme pas un `DateTime` mais un
-///   `subtitle` **déjà localisé** (« la méta-information, déjà localisée »). Le
-///   socle ne formate jamais une date (FR-26 ; précédent `.exams(dateLabelOf:)`).
-///   Et `ZSmartNote` **n'a pas** d'`updatedAt` : AD-19/D2 l'a retiré
-///   volontairement (« la clé LWW est hors-entité — `ZSyncMeta.updatedAt` »).
-///   L'exiger rendrait le port **non implémentable**.
-/// - **`excerpt`** — `ZDefaultNoteCard.excerpt` existe bel et bien, mais c'est
-///   une **OPTION** dont la source est un **texte brut fourni par l'hôte** (« le
-///   socle ne parse aucun rich-text ici »). `ZSmartNote` ne porte aucun aperçu :
-///   son contenu est une liste d'opérations Delta
-///   (`List<Map<String, dynamic>> content`). Le `note.plainTextPreview` cité en
-///   exemple dans la carte est une **expression d'hôte**, pas un membre du
-///   modèle. Il entrera donc par un rappel `excerptOf` de la voie typée —
-///   précédent littéral `dateLabelOf`/`semanticLabelOf`/`tagsOf`.
-/// - **`tagIds`** — `ZDefaultNoteCard.tags` reçoit des balises **déjà résolues**
-///   (`List<ZFlashcardTag>`), fournies par le rappel `tagsOf` de la voie typée
-///   (patron `.flashcards`). Rien à porter dans le modèle neutre.
+/// - **une date de mise à jour** — le rendu par défaut consomme un sous-titre
+///   déjà localisé, jamais un `DateTime` brut à formater : le socle ne
+///   formate jamais une date. Une entité de note réelle peut d'ailleurs ne
+///   pas exposer de date de mise à jour du tout : cette clé appartient à la
+///   métadonnée de synchronisation hors-entité (invariant AD-9), pas à
+///   l'entité. L'exiger rendrait le port non implémentable.
+/// - **un extrait de contenu** — un extrait textuel existe côté rendu, mais
+///   c'est une option dont la source est un texte brut fourni par l'hôte :
+///   le socle ne parse aucun rich-text ici. Le contenu d'une note réelle est
+///   typiquement une liste d'opérations de rich-text structurées, pas un
+///   texte brut ; l'extrait entre donc par un rappel fourni par la voie
+///   typée, jamais par le modèle neutre.
+/// - **des identifiants de tag** — les balises affichées sont déjà résolues
+///   (objets tag complets), fournies par un rappel de la voie typée. Rien à
+///   porter dans le modèle neutre.
 ///
-/// ## AD-10 — rien ne peut lever
+/// ## Rien ne peut lever (invariant AD-10)
 ///
 /// Deux accesseurs, aucune méthode, aucune horloge, aucune validation.
 library;
 
-/// Référence NEUTRE d'une note d'étude (implémentée côté satellite —
-/// `ZSmartNote`, un adaptateur d'hôte, ou tout autre porteur).
+/// Référence neutre d'une note d'étude (implémentée côté satellite — par
+/// exemple une entité de note, un adaptateur d'hôte, ou tout autre porteur).
 ///
-/// Pur-Dart, zéro import : le kernel reste ignorant de `zcrud_note`
-/// (AD-1/AD-17).
+/// Pur-Dart, zéro import : le kernel reste ignorant du paquet de notes
+/// (invariant AD-1).
 abstract interface class ZStudyNoteRef {
-  /// Identité **opaque**, `null` si la note est éphémère (non matérialisée).
+  /// Identité opaque, `null` si la note est éphémère (non matérialisée).
   ///
-  /// Nullable **par contrat du dépôt** : `ZEntity.id` est `String?` et
-  /// `ZSmartNote.id` l'est aussi. Un port `String get id` serait
-  /// **non implémentable** par l'entité réelle.
+  /// Nullable par contrat du dépôt : l'identité d'une entité est `String?`
+  /// dans tout le kernel — un port `String get id` serait non implémentable
+  /// par l'entité réelle.
   String? get id;
 
-  /// Titre de la note, **déjà résolu par le porteur** — alimente
-  /// `ZDefaultNoteCard.title`.
+  /// Titre de la note, déjà résolu par le porteur.
   ///
-  /// Non nullable : c'est le contenu principal de la carte, et la carte l'exige
-  /// (`required this.title`). Le repli visible (« sans titre ») est un libellé
-  /// localisé, donc l'affaire de l'hôte (FR-26), jamais du port.
+  /// Non nullable : c'est le contenu principal de la carte, et le rendu par
+  /// défaut l'exige. Le repli visible pour une note sans titre est un
+  /// libellé localisé, donc l'affaire de l'hôte, jamais du port.
   String get title;
 }

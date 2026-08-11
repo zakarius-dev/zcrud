@@ -1,14 +1,13 @@
-/// Moteur d'opérations d'arbre **pur** `ZMindmapTreeOps` (Story E10-1, FR-19).
+/// Moteur d'opérations d'arbre **pur** `ZMindmapTreeOps`.
 ///
-/// origine: lex_core (module « Étude ») — `MindmapTreeOps`
-/// (`mindmap_tree_ops.dart:16-178`). **Pur, immuable, structural sharing via
-/// `identical()`** : tout sous-arbre non modifié est renvoyé PAR RÉFÉRENCE ;
-/// toute opération no-op renvoie la forêt d'entrée par référence.
+/// **Pur, immuable, structural sharing via `identical()`** : tout sous-arbre
+/// non modifié est renvoyé PAR RÉFÉRENCE ; toute opération no-op renvoie la
+/// forêt d'entrée par référence.
 ///
-/// **Extension zcrud au-delà de lex** (dette n°5, OQ-5/OQ-10/OQ-11) :
-/// `moveNode`/`indentNode`/`outdentNode`/`reorderChild` — annoncés au docstring
-/// de lex mais **jamais codés** — sont ajoutés ici avec **recalcul systématique
-/// de `level`** du sous-arbre reparenté (le `level` est un cache fragile).
+/// Au-delà des opérations élémentaires (ajout/mise à jour/suppression/
+/// recherche), ce moteur fournit aussi `moveNode`/`indentNode`/
+/// `outdentNode`/`reorderChild`, avec **recalcul systématique de `level`**
+/// du sous-arbre reparenté (le `level` est un cache fragile).
 ///
 /// Toutes les opérations opèrent sur une **forêt** `List<ZMindmapNode>` (racines)
 /// et renvoient une **nouvelle forêt** (ou l'entrée `identical` si no-op).
@@ -52,7 +51,7 @@ abstract final class ZMindmapTreeOps {
   }
 
   // ---------------------------------------------------------------------------
-  // Opérations portées de lex (AC4)
+  // Opérations d'édition élémentaires
   // ---------------------------------------------------------------------------
 
   /// Met à jour [label] et/ou [content] du nœud [nodeId].
@@ -86,8 +85,8 @@ abstract final class ZMindmapTreeOps {
   /// (l'appelant compose la map complète : c'est une **voie d'écriture de slot**,
   /// pas un merge). `label`/`content`/`level`/`children`/`extension` **inchangés**.
   /// No-op `identical` si [nodeId] introuvable. Le constructeur `ZMindmapNode`
-  /// **dépouille** [extra] des clés réservées de sync (AD-19.1) — jamais un
-  /// `assert`. Voie de l'édition riche SU-12 (`extra[slotKey]` = ops Delta).
+  /// **dépouille** [extra] des clés réservées de sync — jamais un
+  /// `assert`. Voie de l'édition riche (`extra[slotKey]` = ops Delta).
   static List<ZMindmapNode> updateExtra(
     List<ZMindmapNode> roots,
     String nodeId,
@@ -135,7 +134,7 @@ abstract final class ZMindmapTreeOps {
   }
 
   // ---------------------------------------------------------------------------
-  // Opérations ajoutées zcrud + recalcul de level (AC5)
+  // Opérations ajoutées zcrud + recalcul de level
   // ---------------------------------------------------------------------------
 
   /// Reparente [nodeId] (et son sous-arbre) sous [newParentId] (ou en **racine**

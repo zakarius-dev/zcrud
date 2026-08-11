@@ -1,25 +1,21 @@
-/// Le **FAB d'envoi** pixel-perfect lex — lot K3.
+/// Le bouton d'envoi, en Material pixel-perfect : un disque plat qui
+/// s'anime selon la vacuité de la saisie.
 ///
-/// lex rend son envoi comme un disque `CircleBorder` de 48 dp, élévation 0,
-/// mis à l'échelle 0.7 → 1.0 en 150 ms selon la vacuité de la saisie
-/// (`chat_input.dart:651-697`). Ici :
+/// La géométrie et le geste (cible tactile, échelle d'animation, durées,
+/// sémantique, respect de la réduction des animations) viennent de
+/// [ZChatComposerSendTarget], la primitive du socle — jamais contournée : ce
+/// fichier ne pose aucune dimension en dur, il lit le chrome résolu via
+/// [zChatComposerChromeOf]. Le disque et le glyphe sont le Material que le
+/// socle ne rend pas lui-même : rôles `ColorScheme.primary`/`onPrimary` et
+/// `Icons.send`.
 ///
-/// * la **géométrie et le geste** (cible, échelle, durées, Semantics, Reduce
-///   Motion) viennent de [ZChatComposerSendTarget] — la primitive K2 du socle,
-///   jamais contournée : ce fichier ne pose AUCUNE dimension en dur, il lit le
-///   chrome résolu ([zChatComposerChromeOf]) ;
-/// * le **disque et le glyphe** sont le Material vrai que le socle ne peut pas
-///   rendre : `ColorScheme.primary`/`onPrimary` + `Icons.send`.
+/// Il n'existe aucun second site d'envoi : le tap appartient à
+/// [ZChatComposerSendTarget], qui invoque [ZChatComposerSlot.submit]. Le
+/// disque rendu ici est un glyphe — sans `onPressed` ni `InkWell` propre —
+/// pour ne jamais créer un second chemin d'envoi parallèle à celui du socle.
 ///
-/// 🔴 **Aucun second site d'envoi** : le tap est celui de
-/// [ZChatComposerSendTarget], qui appelle [ZChatComposerSlot.submit]. Le disque
-/// rendu ici est un GLYPHE — aucun `onPressed`, aucun `InkWell` : un vrai
-/// `FloatingActionButton` porterait son propre handler et créerait le second
-/// chemin que G-CH1/G-U1 interdisent.
-///
-/// 🔴 **Miroir RTL** : `Icons.send` n'est pas auto-miroité — lex le corrige par
-/// `_DirectionalSendIcon` (`chat_input.dart:1219-1231`). Même correction ici,
-/// par retournement horizontal sous `TextDirection.rtl` (AD-13).
+/// `Icons.send` n'est pas automatiquement miroité par le framework ; ce
+/// widget le retourne horizontalement sous direction RTL (invariant AD-13).
 library;
 
 import 'package:flutter/material.dart';
@@ -51,7 +47,7 @@ class ZChatMaterialSendFab extends StatelessWidget {
   /// Le contexte du créneau, fourni par `ZChatComposer`.
   final ZChatComposerSlot slot;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// {@macro zcrud.chat_material.chrome_param}
   final ZChatComposerChrome? chrome;
 
   /// Glyphe de remplacement. `null` ⇒ `Icons.send`, miroité en RTL.
@@ -64,9 +60,9 @@ class ZChatMaterialSendFab extends StatelessWidget {
       chrome: chrome,
     );
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    // 🔴 CHAQUE dimension vient du chrome résolu : le côté du disque est la
-    // cible d'envoi (48 chez lex, écrêtée ≥ 48 par le résolveur quoi qu'il
-    // arrive), le glyphe en est la moitié (24 chez lex, `:651-697`).
+    // Chaque dimension vient du chrome résolu : le côté du disque est la
+    // cible tactile d'envoi (écrêtée à la taille minimale par le résolveur
+    // quoi qu'il arrive), le glyphe en est la moitié.
     final double side = style.sendTargetSize;
     final Widget glyph =
         icon ??
@@ -81,10 +77,10 @@ class ZChatMaterialSendFab extends StatelessWidget {
     return ZChatComposerSendTarget(
       slot: slot,
       chrome: chrome,
-      // Un GLYPHE, pas un bouton : le tap, la sémantique, l'échelle et le
-      // Reduce-Motion appartiennent à la primitive K2 — jamais contournés.
+      // Un glyphe, pas un bouton : le tap, la sémantique, l'échelle et la
+      // réduction d'animation appartiennent à la primitive du socle — jamais
+      // contournés.
       child: Material(
-        // Élévations 0/0/0 chez lex (`:658-661`) : un disque plat.
         elevation: _kFlat,
         color: scheme.primary,
         shape: const CircleBorder(),
@@ -97,10 +93,10 @@ class ZChatMaterialSendFab extends StatelessWidget {
   }
 }
 
-/// Rapport côté-de-cible / côté-de-glyphe de lex (48 → 24).
+/// Rapport entre le côté de la cible et le côté du glyphe.
 const double _kGlyphRatio = 2;
 
-/// Élévation nulle du disque lex.
+/// Élévation nulle : un disque plat.
 const double _kFlat = 0;
 
 /// `Icons.send` pointe vers la FIN de la ligne : sous RTL il doit être

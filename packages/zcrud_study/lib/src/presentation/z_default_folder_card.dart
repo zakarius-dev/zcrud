@@ -11,7 +11,7 @@
 /// de zcrud »* — une carte qui vit dans chaque application est **gelée** au
 /// jour de sa copie.
 ///
-/// 🔴 **La primitive n'est PAS remplacée** : cette carte est **bâtie sur**
+/// **La primitive n'est PAS remplacée** : cette carte est **bâtie sur**
 /// `ZFolderCard` et n'en réécrit aucun comportement. Un hôte qui emploie
 /// `ZFolderCard` telle quelle rend **exactement** le même pixel qu'avant
 /// CR-IFFD-64 (garde dédiée) : tout le nouveau rendu est **opt-in**, ici.
@@ -28,7 +28,7 @@
 /// Priorité, partout : **paramètre > jeton `ZcrudTheme.folderCard*` >
 /// défaut-référence**.
 ///
-/// ## 🔴 Le contraste, pour une couleur ARBITRAIRE
+/// ## Le contraste, pour une couleur ARBITRAIRE
 ///
 /// Une couleur de dossier est **choisie par l'utilisateur**. Le legacy peignait
 /// la bande, la tuile, le glyphe et le texte de badge dans cette couleur
@@ -83,7 +83,7 @@ import 'z_readable_tint.dart';
 /// Le socle ne compte rien et ne traduit rien (AD-2/FR-26) : il **rend** ce que
 /// l'hôte lui donne, à la mesure de [ZFolderCardReference].
 ///
-/// ⚠️ **Pourquoi PAS `ZCountBadgeSpec`** (le type de la famille « déclencheur
+/// **Pourquoi PAS `ZCountBadgeSpec`** (le type de la famille « déclencheur
 /// de sous-dossier ») : celui-ci porte un **entier** et une icône déjà
 /// construite en `Widget`, et sa rangée filtre les comptes nuls. Le badge de
 /// carte de dossier porte, lui, un **libellé déjà composé et localisé**
@@ -211,7 +211,7 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// Slot de pied rendu **verbatim** (ligne de créateur, méta…). `null` ⇒
   /// **absent**.
   ///
-  /// 🔴 **Il n'AMPUTE plus les compteurs** (**CR-IFFD-68**) : voir
+  /// **Il n'AMPUTE plus les compteurs** (**CR-IFFD-68**) : voir
   /// [footerPlacement].
   final Widget? footer;
 
@@ -222,7 +222,7 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// compteurs, à toute largeur ; voir cette constante pour les mesures qui ont
   /// écarté un défaut adaptatif, et pour ce qui change à l'écran).
   ///
-  /// 🔴 **Ce que la CR a mesuré** : avec [counts] **et** [footer], la primitive
+  /// **Ce que la CR a mesuré** : avec [counts] **et** [footer], la primitive
   /// donnait la MOITIÉ de la largeur à chacun — une carte à quatre badges n'en
   /// montrait plus que deux, et le pied s'accolait au dernier badge visible. Le
   /// seul contournement, recomposer le créneau compteur via [countsSlot], rend
@@ -241,7 +241,7 @@ class ZDefaultFolderCard extends StatelessWidget {
   /// `null` ⇒ la bande de référence, unie, dérivée de la couleur du dossier et
   /// **corrigée en contraste**.
   ///
-  /// ⚠️ Un accent injecté est rendu **tel quel** : le plancher de contraste ne
+  /// Un accent injecté est rendu **tel quel** : le plancher de contraste ne
   /// s'applique alors plus (c'est l'hôte qui l'a peint).
   final Widget? accent;
 
@@ -251,7 +251,7 @@ class ZDefaultFolderCard extends StatelessWidget {
 
   /// Dossier archivé.
   ///
-  /// ⚠️ **MESURÉ (CR-IFFD-64, « non mesuré » n°1)** : le socle n'applique
+  /// **MESURÉ (CR-IFFD-64, « non mesuré » n°1)** : le socle n'applique
   /// **aucune atténuation** à une carte archivée — ni opacité, ni
   /// désaturation — et le legacy IFFD n'en a aucune non plus (recherche
   /// négative sur `folders_page.dart` et son portage). L'état archivé ajoute
@@ -357,7 +357,7 @@ class ZDefaultFolderCard extends StatelessWidget {
         ZFolderCardReference.minContrast;
 
     // ── La surface RÉELLEMENT peinte sous les accents ────────────────────────
-    // ⚠️ CR-IFFD-64 (« non mesuré » n°2) : mesurer le contraste contre la
+    // CR-IFFD-64 (« non mesuré » n°2) : mesurer le contraste contre la
     // surface NUE serait faux dès que la carte est teintée — le fond est alors
     // `couleur du dossier @ tintAlpha` composée sur la surface, donc DÉJÀ
     // proche de la teinte. C'est la composition qui est mesurée, pas la

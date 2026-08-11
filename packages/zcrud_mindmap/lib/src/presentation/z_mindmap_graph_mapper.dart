@@ -1,4 +1,4 @@
-/// Dérivation de la forêt `ZMindmap` vers la structure `graphite` (Story E10-2).
+/// Dérivation de la forêt `ZMindmap` vers la structure `graphite`.
 ///
 /// **Lecture seule** : la topologie par NESTING (`children`) est projetée à la
 /// volée en liste plate de `NodeInput`/`EdgeInput` (adjacency `parent.id →

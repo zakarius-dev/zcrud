@@ -31,7 +31,7 @@
 /// (`remapColorKey(seedTitle: formatKey)`) — mais elle teinte désormais le
 /// GLYPHE, plus la tuile.
 ///
-/// ## 🔴 Pourquoi cette carte ne prend AUCUN type de domaine
+/// ## Pourquoi cette carte ne prend AUCUN type de domaine
 ///
 /// Le modèle `ZStudyDocument` vit dans `zcrud_document`, qui n'est **pas** une
 /// dépendance de `zcrud_study` (pubspec : « AUCUN autre satellite lourd
@@ -501,7 +501,7 @@ class ZDefaultDocumentCard extends StatelessWidget {
 
   // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
   //
-  // 🔴 NE PAS « moderniser » ce chemin : il est gardé par un test de
+  // NE PAS « moderniser » ce chemin : il est gardé par un test de
   // restitution aux valeurs POMPÉES depuis v0.43.0 (géométrie et couleurs
   // mesurées) — un hôte qui a adopté ce rendu le retrouve à l'identique.
   // Les paramètres de chrome restent NON-inertes (AD-4) : fournis, ils

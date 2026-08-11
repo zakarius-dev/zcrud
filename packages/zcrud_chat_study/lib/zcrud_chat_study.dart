@@ -1,29 +1,28 @@
-/// Barrel d'API publique de `zcrud_chat_study` — le **pont** conversation → SRS.
+/// Barrel d'API publique de `zcrud_chat_study` — le pont entre une
+/// conversation et le domaine d'étude par répétition espacée (SRS).
 ///
-/// ## Ce paquet est délibérément MINCE
+/// ## Un paquet délibérément mince
 ///
-/// Le lot CHAT-8 était planifié comme un portage complet du parcours d'étude.
-/// Mesure faite sur disque **avant** d'écrire une ligne : `zcrud_flashcard` et
-/// `zcrud_session` portent DÉJÀ l'entité de carte, l'ordonnanceur SM-2, le
-/// moteur de session, la file, les modes et le runtime d'examen blanc ;
-/// `zcrud_study` porte DÉJÀ le port de génération IA et ses normaliseurs ;
-/// `zcrud_study_kernel` porte DÉJÀ le sélecteur de session. Il ne manquait que
-/// **le pont** — un mapper et un pool. C'est tout ce qu'on trouve ici.
+/// L'entité de carte, l'ordonnanceur de répétition, le moteur de session et
+/// le port de génération IA existent déjà, respectivement dans
+/// `zcrud_flashcard`, `zcrud_session`, `zcrud_study` et `zcrud_study_kernel`.
+/// Ce paquet ne redéclare aucun de ces symboles : il câble une conversation
+/// sur les contrats existants.
 ///
 /// | Fichier | Rôle |
 /// |---|---|
-/// | `z_chat_flashcard_mapper.dart` | conversation/message → `ZFlashcardGenerationRequest` + provenance `ZConversationSource` |
-/// | `z_chat_flashcard_generator.dart` | **câblage** du `ZFlashcardGenerationPort` existant + estampillage défensif |
-/// | `z_chat_study_pool.dart` | pool de session : cartes du dossier ∪ cartes de la conversation, **dédoublonnées** |
-/// | `z_chat_study_launch.dart` | les 3 modes offerts par « Commencer à apprendre » + ce qui n'est PAS porté |
+/// | `z_chat_flashcard_mapper.dart` | conversation/message → requête de génération + provenance conversationnelle |
+/// | `z_chat_flashcard_generator.dart` | câblage du port de génération existant, avec estampillage défensif de la provenance |
+/// | `z_chat_study_pool.dart` | pool de session : cartes du dossier union cartes de la conversation, dédoublonnées |
+/// | `z_chat_study_launch.dart` | les modes offerts pour démarrer une session d'étude depuis une conversation |
 ///
-/// ## Pourquoi un paquet séparé (AD-1)
+/// ## Pourquoi un paquet séparé (invariant AD-1)
 ///
-/// `zcrud_chat`/`zcrud_chat_kernel` ne doivent **jamais** dépendre de
-/// `zcrud_flashcard` : DODLP et DLCFTI utilisent le chat sans le domaine
-/// d'étude et en porteraient le poids sans usage. Symétriquement,
-/// `zcrud_flashcard` ne doit pas connaître le chat. Le pont vit donc dans son
-/// propre satellite, qui dépend des deux et dont **rien ne dépend**.
+/// `zcrud_chat`/`zcrud_chat_kernel` ne dépendent jamais de `zcrud_flashcard` :
+/// un consommateur qui utilise le chat sans le domaine d'étude n'en porte pas
+/// le poids. Symétriquement, `zcrud_flashcard` ne connaît pas le chat. Le
+/// pont vit donc dans son propre satellite, qui dépend des deux et dont rien
+/// ne dépend.
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/`.
 library;

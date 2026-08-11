@@ -1,23 +1,25 @@
-/// `ZCountryCatalog` — **catalogue pays chargé paresseusement** (E11a-2, FR-21,
-/// AD-1/AD-10/AD-12).
+/// `ZCountryCatalog` — **catalogue pays chargé paresseusement** (invariants
+/// AD-1, AD-10, AD-12).
 ///
-/// origine: le picker pays et la liaison indicatif du champ téléphone ont besoin
-/// de la liste des pays (code ISO, nom, indicatif, drapeau). Cette liste vit dans
-/// un **asset JSON bundlé** dans `zcrud_intl` (`lib/assets/countries.json`),
-/// chargé **à la première demande** ([load]) via `rootBundle`, puis **mis en
-/// cache** (lecture seule, immuable → cache partageable légitime : ce n'est PAS
-/// une ressource disposable — learning MAJEUR-1 E11a-1).
+/// Le picker pays et la liaison indicatif du champ téléphone ont besoin de
+/// la liste des pays (code ISO, nom, indicatif, drapeau). Cette liste vit
+/// dans un **asset JSON bundlé** dans `zcrud_intl`
+/// (`lib/assets/countries.json`), chargé **à la première demande** ([load])
+/// via `rootBundle`, puis **mis en cache** — lecture seule, immuable, donc
+/// un cache partageable légitime : ce n'est pas une ressource disposable.
 ///
 /// **Injectable/surchargeable** : un [ZCountryCatalog.fromList] pré-chargé
-/// (tests, défaut national surchargeable) évite tout accès disque et tout défaut
-/// codé en dur non surchargeable. Un [AssetBundle] alternatif peut aussi être
-/// injecté (preuve de paresse/cache en test sans disque réel).
+/// (tests, défaut national surchargeable) évite tout accès disque et tout
+/// défaut codé en dur non surchargeable. Un [AssetBundle] alternatif peut
+/// aussi être injecté (preuve de paresse/cache en test sans disque réel).
 ///
-/// **Défensif (AD-10)** : [load] ne **throw jamais**. Asset absent, JSON
-/// malformé, entrée non conforme → catalogue **vide** (jamais d'exception).
+/// **Défensif (invariant AD-10)** : [load] ne **throw jamais**. Asset
+/// absent, JSON malformé, entrée non conforme → catalogue **vide** (jamais
+/// d'exception).
 ///
-/// **Isolation (AD-1)** : aucune lib intl/téléphone ici ; uniquement des
-/// [ZCountryInfo] neutres. **Zéro secret / zéro réseau** (AD-12).
+/// **Isolation (invariant AD-1)** : aucune lib intl/téléphone ici,
+/// uniquement des [ZCountryInfo] neutres. **Zéro secret / zéro réseau**
+/// (invariant AD-12).
 library;
 
 import 'dart:convert';
@@ -29,10 +31,10 @@ import '../domain/z_country_info.dart';
 /// Chemin **package** de l'asset bundlé (résolu au runtime par `rootBundle`).
 const String kDefaultCountriesAsset = 'packages/zcrud_intl/assets/countries.json';
 
-/// Instance PARTAGÉE lazy du catalogue par défaut (LOW-1 E11a-2).
+/// Instance PARTAGÉE lazy du catalogue par défaut.
 ZCountryCatalog? _sharedDefaultCatalog;
 
-/// Catalogue par défaut **partagé** (paresseux) : si plusieurs champs intl
+/// Catalogue par défaut **partagé** (paresseux): si plusieurs champs intl
 /// (`phoneNumber`/`country`/`address`) sont enregistrés sans injecter de
 /// `catalog`, ils partagent CETTE instance → **une seule** lecture d'asset (au
 /// lieu d'une par kind). Surchargeable en injectant explicitement un catalogue
@@ -40,10 +42,10 @@ ZCountryCatalog? _sharedDefaultCatalog;
 ZCountryCatalog sharedDefaultCountryCatalog() =>
     _sharedDefaultCatalog ??= ZCountryCatalog();
 
-/// Catalogue pays paresseux + caché, injectable (AD-1/AD-10/FR-21).
+/// Catalogue pays paresseux + caché, injectable (invariants AD-1, AD-10).
 class ZCountryCatalog {
   /// Catalogue **chargé depuis un asset** (paresseux). [assetPath] par défaut
-  /// pointe l'asset bundlé ; [bundle] permet d'injecter un `AssetBundle` de test
+  /// pointe l'asset bundlé; [bundle] permet d'injecter un `AssetBundle` de test
   /// (défaut `rootBundle`).
   ZCountryCatalog({
     String assetPath = kDefaultCountriesAsset,
@@ -69,17 +71,17 @@ class ZCountryCatalog {
   /// Index ISO→pays dérivé du cache (construit à la résolution).
   Map<String, ZCountryInfo> _byIso = const <String, ZCountryInfo>{};
 
-  /// Chargement **en vol** mémoïsé (MEDIUM-1) : tant que la première lecture
-  /// d'asset n'est pas résolue, tout appel concurrent de [load] reçoit CE même
+  /// Chargement **en vol** mémoïsé : tant que la première lecture d'asset
+  /// n'est pas résolue, tout appel concurrent de [load] reçoit CE même
   /// `Future` → l'asset n'est lu/parsé qu'**une seule fois**. Effacé à la
   /// résolution.
   Future<List<ZCountryInfo>>? _loading;
 
   /// Nombre de lectures d'asset réellement effectuées (oracle de test « cache »
-  /// et « paresse » ; incrémenté seulement quand `bundle.loadString` est appelé).
+  /// et « paresse »; incrémenté seulement quand `bundle.loadString` est appelé).
   int _assetReads = 0;
 
-  /// Lectures d'asset effectuées (test-only : prouve paresse + cache).
+  /// Lectures d'asset effectuées (test-only: prouve paresse + cache).
   int get assetReads => _assetReads;
 
   /// `true` si [load] a déjà résolu (cache présent).
@@ -93,20 +95,20 @@ class ZCountryCatalog {
   Future<List<ZCountryInfo>> load() {
     final cached = _cache;
     if (cached != null) return Future<List<ZCountryInfo>>.value(cached);
-    // Catalogue pré-chargé : commit synchrone, aucun `Future` en vol à mémoïser.
+    // Catalogue pré-chargé: commit synchrone, aucun `Future` en vol à mémoïser.
     final preloaded = _preloaded;
     if (preloaded != null) {
       _commit(preloaded);
       return Future<List<ZCountryInfo>>.value(_cache!);
     }
-    // Dé-duplication de la charge en vol (MEDIUM-1) : deux pickers montés dans la
-    // même frame et partageant CE catalogue reçoivent le MÊME `Future` → asset lu
+    // Dé-duplication de la charge en vol : deux pickers montés dans la même
+    // frame et partageant CE catalogue reçoivent le MÊME `Future` → asset lu
     // et parsé une seule fois. Effacé à la résolution (via [_loadFromAsset]).
     return _loading ??= _loadFromAsset();
   }
 
   /// Lecture+parse de l'asset (une seule fois par catalogue, mémoïsée par
-  /// [load]). Ne throw jamais (AD-10) : asset absent / JSON malformé → vide.
+  /// [load]). Ne throw jamais (AD-10): asset absent / JSON malformé → vide.
   Future<List<ZCountryInfo>> _loadFromAsset() async {
     List<ZCountryInfo> parsed;
     try {
@@ -129,7 +131,7 @@ class ZCountryCatalog {
     };
   }
 
-  /// Parse **défensif** du JSON (AD-10) : non-liste → vide ; entrées non
+  /// Parse **défensif** du JSON (AD-10): non-liste → vide; entrées non
   /// conformes ignorées ([ZCountryInfo.fromMapSafe] → `null`).
   static List<ZCountryInfo> _parse(String raw) {
     Object? decoded;
@@ -146,10 +148,10 @@ class ZCountryCatalog {
   }
 
   /// Recherche l'entrée du code ISO [isoCode] dans le cache (insensible à la
-  /// casse) ; `null` si absent ou catalogue non chargé (AD-10).
+  /// casse); `null` si absent ou catalogue non chargé (AD-10).
   ZCountryInfo? byIso(String isoCode) => _byIso[isoCode.toUpperCase()];
 
-  /// Filtre le cache par [query] (nom, code ISO ou indicatif ; insensible à la
+  /// Filtre le cache par [query] (nom, code ISO ou indicatif; insensible à la
   /// casse). Catalogue non chargé → liste vide. Requête vide → tout le cache.
   List<ZCountryInfo> search(String query) {
     final list = _cache;

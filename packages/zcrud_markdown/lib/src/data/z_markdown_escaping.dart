@@ -1,5 +1,5 @@
 /// Échappement Markdown **contextuel** et normalisation des marqueurs
-/// d'emphase — réponse à CR-IFFD-23 §2 et CR-IFFD-24 §3.
+/// d'emphase.
 ///
 /// Interne à `zcrud_markdown` (aucun symbole exporté par le barrel).
 library;
@@ -13,7 +13,7 @@ import '../domain/z_markdown_bridge.dart';
 /// ligne. `~` en fait partie depuis que le décodeur sait lire `~~` (GFM) : sans
 /// lui, un texte contenant littéralement `~~mot~~` ressortirait BARRÉ.
 ///
-/// ⚠️ **`]` en est ABSENT, et ce n'est pas un oubli — c'est CR-LEX-50.**
+/// **`]` en est ABSENT, et ce n'est pas un oubli — c'est délibéré.**
 /// L'encodeur écrivait `[1]` → `\[1\]`, or `\[…\]` est le délimiteur de **bloc
 /// LaTeX** déclaré par `ZMarkdownBridges.latexBlock` : le décodeur du MÊME codec
 /// relisait donc `\[1\]` en formule, puis le cycle suivant écrivait `$$1$$`. Une
@@ -24,15 +24,15 @@ import '../domain/z_markdown_bridge.dart';
 ///
 /// `]` seul n'ouvre RIEN en Markdown : un lien, une image ou une référence
 /// exigent un `[` ouvrant — et celui-là reste échappé. Ne plus échapper `]` est
-/// donc l'échappement **juste** (moins de bruit, cf. CR-IFFD-23 §2) ET la
+/// donc l'échappement **juste** (moins de bruit, cf.) ET la
 /// garantie que l'encodeur ne peut plus fabriquer de `\[…\]`. La garde
 /// symétrique côté motifs (`(?<!\\)` sur les délimiteurs `\[`/`\]`/`\(`/`\)` de
 /// `ZMarkdownBridges`) couvre le seul `\]` résiduel possible, celui né d'un
 /// backslash littéral doublé (`a\]` → `a\\]`).
 const String _kInlineDangerous = r'\\`*_[<~';
 
-/// Ouvreurs de **bloc**. Ils ne sont ambigus qu'en **tête de ligne** — c'est
-/// tout le grief de CR-IFFD-23 §2.
+/// Ouvreurs de **bloc**. Ils ne sont ambigus qu'en **tête de ligne** : les
+/// échapper ailleurs serait du bruit inutile.
 ///
 /// Deux formes distinctes, et la distinction compte :
 /// - `<chiffres>.` ou `<chiffres>)` — liste ordonnée. CommonMark accepte les
@@ -58,7 +58,7 @@ final RegExp _kBlockOpener =
 
 /// Échappement **contextuel** : remplace `DeltaToMarkdown.escapeSpecialCharacters`
 /// (qui échappe 18 caractères sans regarder leur position, d'où le
-/// `Qu'est\-ce que` dénoncé par IFFD).
+/// `Qu'est\-ce que` dénoncé par un consommateur legacy).
 ///
 /// Règle : les caractères ambigus *inline* sont échappés partout ; les ouvreurs
 /// de **bloc** ne le sont qu'en tête de ligne (`text.offset == 0`, position
@@ -72,7 +72,7 @@ final RegExp _kBlockOpener =
 /// ponts — les deux corrections avaient été conçues séparément.
 ///
 /// [latexShield] — ponts dont les régions reconnues (et acceptées par leur
-/// garde) sont écrites **verbatim**, sans aucun échappement (CR-IFFD-69).
+/// garde) sont écrites **verbatim**, sans aucun échappement.
 /// C'est la moitié ENCODAGE du bouclier littéral du chemin sans pont : sans
 /// elle, `$$\int_0^1 x\,dx$$` devenait `$$\\int\_0^1 x\\,dx$$` au premier
 /// enregistrement. Vide par défaut — et DOIT rester vide quand des ponts sont
@@ -140,7 +140,7 @@ void Function(QuillText, StringSink) zMarkdownContentEscaper({
 }
 
 /// Région `[start, end)` d'un contenu textuel reconnue comme LaTeX par le
-/// bouclier littéral (CR-IFFD-69).
+/// bouclier littéral.
 final class _ZShieldSpan {
   const _ZShieldSpan(this.start, this.end);
 
@@ -175,7 +175,7 @@ List<_ZShieldSpan> _zLatexShieldSpans(
 /// Attributs dont le marqueur Markdown **encadre** le contenu et n'admet donc
 /// pas d'espace collé au marqueur (`** gras **` n'est pas du gras ; pire,
 /// `a_ ital _b` n'est pas de l'italique du tout — un `_` intra-mot n'ouvre
-/// aucune emphase). CR-IFFD-24 §3.
+/// aucune emphase)..
 ///
 /// `underline` est ABSENT à dessein : il est porté par `<u>…</u>`, où l'espace
 /// interne est parfaitement licite.
@@ -187,7 +187,7 @@ const Set<String> _kSpaceSensitiveAttrs = <String>{
 };
 
 /// Sort les espaces de **bord** hors des marqueurs d'emphase, en les reportant
-/// dans des ops non stylées adjacentes (CR-IFFD-24 §3).
+/// dans des ops non stylées adjacentes.
 ///
 /// `[{' gras ', bold}]` devient `[{' '}, {'gras', bold}, {' '}]`, ce qui encode
 /// en `** gras **` → ` **gras** `. Une op entièrement blanche perd simplement

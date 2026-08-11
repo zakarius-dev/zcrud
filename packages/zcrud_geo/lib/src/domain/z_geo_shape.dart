@@ -1,35 +1,33 @@
-/// `ZGeoShape` — **aire/tracé géographique neutre** (E11a-1 + DP-21/M13,
-/// AD-1/AD-14/AD-10).
+/// `ZGeoShape` — modèle de valeur **aire ou tracé géographique neutre**.
 ///
-/// origine: valeur de tranche du champ `geoArea` (polygone) ou d'un champ en
-/// géométrie `polyline` (tracé ouvert) du `ZFormController`. Forme = suite
-/// ordonnée de [ZGeoPoint] (`vertices`). Un **point unique** est un cas dégénéré
-/// exploitable (1 sommet). Modèle **pur-Dart**, agnostique SDK carte.
+/// Valeur de tranche du champ `geoArea` (polygone) ou d'un champ en géométrie
+/// `polyline` (tracé ouvert). Une forme est une suite ordonnée de [ZGeoPoint]
+/// (`vertices`) ; un point unique est un cas dégénéré exploitable (un seul
+/// sommet). Modèle **pur-Dart**, agnostique de tout SDK carte.
 ///
-/// **DP-21/M13 (additif rétro-compatible)** : la forme porte désormais, en plus
-/// de `vertices`/`label`, des attributs **optionnels** neutres : [id] (identité
-/// stable), [style] ([ZGeoShapeStyle], couleurs ARGB neutres — AUCUN `Color`
-/// SDK), [holes] (trous intérieurs d'un polygone : liste de listes de sommets)
-/// et [metadata] (`Map` libre). Une forme construite/sérialisée sans ces
-/// attributs (E11a-1) reste **strictement inchangée** (toutes ces clés `null` →
-/// omises du `Map`).
+/// Au-delà de `vertices`/`label`, la forme porte des attributs **optionnels**
+/// additifs et rétro-compatibles : [id] (identité stable), [style]
+/// ([ZGeoShapeStyle], couleurs ARGB neutres — aucun `Color` SDK), [holes]
+/// (trous intérieurs d'un polygone : liste de listes de sommets) et
+/// [metadata] (`Map` libre). Une forme construite ou sérialisée sans ces
+/// attributs reste strictement inchangée (toutes ces clés `null` → omises du
+/// `Map`).
 ///
-/// **Défensif (AD-10)** : [fromMapSafe] ne **throw jamais**. `raw` non-`Map` →
-/// `null`. Un sommet invalide (absent/non numérique/hors-bornes) est **ignoré**
-/// (jamais fatal) ; un trou corrompu voit ses sommets invalides filtrés (jamais
-/// throw) ; un `style`/`metadata` corrompu retombe à `null`. Une aire dont tous
-/// les sommets sont invalides devient une aire **vide** (état neutre), pas
-/// `null`.
+/// **Désérialisation défensive (invariant AD-10)** : [fromMapSafe] ne throw
+/// jamais. `raw` non-`Map` → `null`. Un sommet invalide (absent/non
+/// numérique/hors-bornes) est **ignoré** (jamais fatal) ; un trou corrompu
+/// voit ses sommets invalides filtrés (jamais de throw) ; un `style`/
+/// `metadata` corrompu retombe à `null`. Une aire dont tous les sommets sont
+/// invalides devient une aire **vide** (état neutre), pas `null`.
 ///
-/// **Lecture legacy DODLP (G1)** : [fromMapSafe] accepte aussi (a) une
-/// **chaîne JSON** (enveloppe legacy `toJson()`, décodée défensivement), (b)
-/// l'alias de LECTURE `points` → `vertices` (uniquement quand `vertices` est
-/// absente — une Map legacy ne rend plus une forme vide non-null), (c) une
-/// **liste nue** de points (variante acceptée par le lecteur legacy
-/// `fromDynamic`). Piège routé : une Map legacy **typée `circle`** (sans
-/// `vertices`) rend `null` — la parser comme forme perdrait silencieusement le
-/// rayon ; le routage inter-géométries appartient à `ZGeoValue.fromMapSafe`.
-/// LECTURE seulement : [toMap] est strictement inchangé.
+/// **Compatibilité de lecture avec un format hérité** : [fromMapSafe] accepte
+/// aussi (a) une chaîne JSON encodée (décodée défensivement), (b) l'alias de
+/// lecture `points` → `vertices` (uniquement quand `vertices` est absente),
+/// (c) une liste nue de points. Une `Map` typée `circle` (sans `vertices`)
+/// rend `null` plutôt que d'être parsée comme une forme — cela perdrait
+/// silencieusement le rayon ; le routage inter-géométries appartient à
+/// `ZGeoValue.fromMapSafe`. Lecture seulement : [toMap] écrit toujours le
+/// format zcrud. Détails : `doc/migration-legacy-dodlp-geo.md`.
 library;
 
 import 'z_geo_legacy_codec.dart';
@@ -67,19 +65,19 @@ class ZGeoShape {
   /// Libellé lisible optionnel de la forme.
   final String? label;
 
-  /// Identité stable optionnelle de la forme (DP-21 ; opaque, `String`).
+  /// Identité stable optionnelle de la forme (opaque, `String`).
   final String? id;
 
-  /// Style de rendu neutre optionnel (DP-21 ; couleurs ARGB, aucun `Color` SDK).
+  /// Style de rendu neutre optionnel (couleurs ARGB, aucun `Color` SDK).
   final ZGeoShapeStyle? style;
 
-  /// Trous intérieurs optionnels d'un polygone (DP-21) : liste **non
-  /// modifiable** de trous, chaque trou étant une liste ordonnée de sommets.
-  /// `null` → aucun trou (rétro-compat stricte).
+  /// Trous intérieurs optionnels d'un polygone : liste **non modifiable** de
+  /// trous, chaque trou étant une liste ordonnée de sommets. `null` → aucun
+  /// trou.
   final List<List<ZGeoPoint>>? holes;
 
-  /// Métadonnées libres optionnelles (DP-21) : `Map` **non modifiable**. `null`
-  /// → aucune métadonnée (rétro-compat stricte).
+  /// Métadonnées libres optionnelles : `Map` **non modifiable**. `null` →
+  /// aucune métadonnée.
   final Map<String, Object?>? metadata;
 
   /// `true` si la forme n'a aucun sommet (état neutre).
@@ -88,9 +86,9 @@ class ZGeoShape {
   /// `true` si la forme a au moins un sommet.
   bool get isNotEmpty => vertices.isNotEmpty;
 
-  /// Sérialise en `Map` neutre. `vertices` via [ZGeoPoint.toMap] ; les attributs
-  /// optionnels `null` sont **omis** (schéma additif : une forme E11a-1 sans
-  /// id/style/holes/metadata produit exactement l'ancien `Map`).
+  /// Sérialise en `Map` neutre. `vertices` via [ZGeoPoint.toMap] ; les
+  /// attributs optionnels `null` sont **omis** (schéma additif : une forme
+  /// sans id/style/holes/metadata produit exactement le `Map` minimal).
   Map<String, Object?> toMap() => <String, Object?>{
         'vertices':
             vertices.map((ZGeoPoint v) => v.toMap()).toList(growable: false),

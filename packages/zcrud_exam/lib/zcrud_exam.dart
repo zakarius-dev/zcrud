@@ -1,41 +1,43 @@
-/// Barrel d'API publique de `zcrud_exam` (ES-2.6, **FR-S9**).
+/// Barrel d'API publique de `zcrud_exam`.
 ///
-/// Examen daté rattaché à un dossier avec rappels :
-/// - `ZExam` : l'entité (`ZEntity` + `ZExtensible`) — dossier, intitulé, `date`
-///   ISO-8601, seuils de rappel `reminderDaysBefore`, et `reminderTime` **TYPÉ**
-///   (canal hors-codegen `'HH:mm'`). Ses méthodes de proximité (`daysUntil` /
-///   `isPast` / `isApproaching`) prennent l'horloge `now` en **PARAMÈTRE** —
-///   pures, totales, déterministes, **jamais** `DateTime.now()` (D5, prouvé par
-///   machine : `no_datetime_now_test.dart`) ;
-/// - `ZReminderTime` : le value-object d'heure `'HH:mm'` (défensif, TOTAL) — le
-///   TYPE dit le format, jamais une `String` ambiguë (AD-28) ;
-/// - `kReminderTimeKey` : la clé persistée du canal hors-codegen `reminder_time`.
+/// Domaine d'un examen daté rattaché à un dossier, avec rappels :
+/// - `ZExam` : l'entité (`ZEntity` + `ZExtensible`) — dossier, intitulé,
+///   `date` ISO-8601, seuils de rappel `reminderDaysBefore`, et
+///   `reminderTime` **typé** (canal hors schéma `'HH:mm'`). Ses méthodes de
+///   proximité (`daysUntil` / `isPast` / `isApproaching`) prennent l'horloge
+///   `now` en **paramètre** — pures, totales, déterministes, jamais
+///   `DateTime.now()` ;
+/// - `ZReminderTime` : le value-object d'heure `'HH:mm'` (défensif, total) —
+///   le type porte le format, jamais une `String` ambiguë ;
+/// - `kReminderTimeKey` : la clé persistée du canal hors schéma
+///   `reminder_time`.
 ///
-/// **AD-19** : `ZExam` ne déclare **NI `updated_at` NI `is_deleted`** — l'autorité
-/// Last-Write-Wins et le soft-delete vivent **hors-entité** (`ZSyncMeta`). La date
-/// d'examen (`date`) est une clé MÉTIER DISTINCTE de toute clé de sync.
+/// `ZExam` ne déclare **ni `updated_at` ni `is_deleted`** — l'autorité
+/// Last-Write-Wins et la suppression logique vivent hors de l'entité
+/// (invariant AD-9). La date d'examen (`date`) est une clé métier distincte
+/// de toute clé de synchronisation.
 ///
-/// Dépend **UNIQUEMENT** de `zcrud_core` (surface **pur-Dart** `domain.dart`) et
-/// `zcrud_annotations` (AD-1/AD-17) — **zéro** dép lourde, **zéro** gestionnaire
-/// d'état, **zéro** `cloud_firestore`, **zéro** SDK Flutter (NFR-S3/SM-S5/NFR-S10).
-/// Tests sous **`dart test`** (et `dart test -p node` — `gate:web` default-ON).
+/// Dépend uniquement de `zcrud_core` (surface pur-Dart `domain.dart`) et de
+/// `zcrud_annotations` (invariant AD-1) — aucune dépendance lourde, aucun
+/// gestionnaire d'état, aucun `cloud_firestore`, aucun SDK Flutter. Tests
+/// exécutés sous `dart test` (et `dart test -p node`, ce paquet étant
+/// pur-Dart).
 ///
-/// ## 🔴 Extension générée masquée (`hide`) — règle **(h)**, tenue par machine
+/// ## Extension générée masquée
 ///
-/// `ZExamZcrud` porte un `copyWith` **GÉNÉRÉ** qui ne connaît que les champs
-/// `@ZcrudField` : il IGNORE `extra`, `extension` **et le canal hors-codegen
-/// `reminderTime`**, et les remet à leurs **DÉFAUTS** ⇒ destruction silencieuse.
-/// ⇒ **Politique UNIFORME : aucune extension générée n'est exportée** (finding H3
-/// d'ES-2.1). La (dé)sérialisation et la copie passent par l'API d'instance
-/// (`fromMap` / `toMap` / `copyWith` à sentinelle). Tenu par
-/// `scripts/ci/gate_reserved_keys.dart` (règle (h)).
+/// `ZExamZcrud` porte un `copyWith` **généré** qui ne connaît que les champs
+/// annotés : il ignore `extra`, `extension` **et le canal hors schéma
+/// `reminderTime`**, et les remet à leurs **défauts** — perte silencieuse. La
+/// politique est donc uniforme : aucune extension générée n'est exportée. La
+/// (dé)sérialisation et la copie passent par l'API d'instance (`fromMap` /
+/// `toMap` / `copyWith` à sentinelle).
 ///
 /// API publique = ce barrel ; implémentation sous `lib/src/domain/`.
 library;
 
 export 'src/domain/z_exam.dart' hide ZExamZcrud;
-// CR-IFFD-17 — recurrence de rappel GENERALISEE : le canonique portait le seul
-// modele relatif (« N jours avant ») ; le modele hebdomadaire, non convertible,
-// etait invisible a la logique temporelle du socle.
+// Le modèle de récurrence hebdomadaire complète le modèle relatif
+// (`reminderDaysBefore`) : les deux modèles ne sont pas inter-convertibles,
+// donc coexistent plutôt que de se remplacer — voir `ZReminderRecurrence`.
 export 'src/domain/z_reminder_recurrence.dart';
 export 'src/domain/z_reminder_time.dart';

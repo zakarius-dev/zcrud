@@ -1,7 +1,7 @@
 /// Barrel d'API publique de `zcrud_provider`.
 ///
-/// Binding état/injection <-> provider (E2-9, AD-15) — matrice AD-15.
-/// Fournit `ZProviderResolver` (seam de résolution via `context.read`) et
+/// Binding état/injection <-> `provider` (invariant AD-15). Fournit
+/// `ZProviderResolver` (seam de résolution via `context.read`) et
 /// `ZcrudProviderScope` (scope de binding : `ChangeNotifierProvider<ZFormController>`
 /// + enveloppe `ZcrudScope`). Réutilise la réactivité du cœur sans la réimplémenter.
 ///

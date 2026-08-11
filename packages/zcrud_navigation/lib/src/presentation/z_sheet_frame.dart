@@ -1,105 +1,74 @@
-/// **Feuille contrainte et encadrée** (CR-IFFD-SHEET, 2026-08-09) — la
-/// bottom-sheet du socle n'occupe plus toute la largeur de l'écran et porte un
-/// **cadre** hérité du thème.
+/// **Feuille contrainte et encadrée** — la bottom-sheet du socle n'occupe pas
+/// toute la largeur de l'écran et porte un **cadre** hérité du thème.
 ///
-/// ## Ce que fait réellement IFFD (mesuré, pas cru)
+/// ## Le plafond de largeur restaure un défaut du SDK, il ne l'invente pas
 ///
-/// `iffd/lib/src/utils/functions/forms_utils.dart` (~l. 655-720),
-/// `showPushedDialog` :
+/// `flutter/lib/src/material/bottom_sheet.dart` fixe par défaut
+/// `_BottomSheetDefaultsM3.constraints => BoxConstraints(maxWidth: 640.0)`.
+/// Un présenter qui poserait ses propres `constraints` (par exemple
+/// `maxWidth: double.infinity`) écraserait ce plafond : sur un écran de
+/// 1600 dp, la feuille ferait alors 1600 dp de large, là où une bottom-sheet
+/// Material nue en ferait 640. La combinaison `min(largeur * widthRatio,
+/// maxWidth)` restaure ce plafond au lieu de le contredire, tout en gardant
+/// une marge visible sur les petits écrans (le plafond seul, sans ratio, ne
+/// laisserait aucune marge sous 640 dp).
 ///
-/// ```dart
-/// Get.bottomSheet<T>(
-///   elevation: 8,
-///   Container(
-///     constraints: BoxConstraints(
-///       maxHeight: maxHeight ?? screenHeight * 0.9 * ratio,
-///       maxWidth:  maxWidth  ?? screenWidth * 0.9,        // ← la « marge »
-///     ),
-///     child: isEditionScreen ? builder : Card.outlined(child: builder), // ← le « gris »
-///   ),
-///   ignoreSafeArea: false,
-///   isScrollControlled: ...,
-/// );
-/// ```
+/// La teinte du cadre est le **rôle** `ColorScheme.outlineVariant`, celui que
+/// `Card.outlined` (`_OutlinedCardDefaultsM3`) utilise en Material 3 — jamais
+/// une couleur littérale, surchargeable par jeton comme par paramètre.
 ///
-/// * Ce n'est **PAS** dans leur thème : `iffd/lib/src/config/themes/app_theme.dart`
-///   l. 67-85, `kBottomSheetTheme` / `kBottomSheetThemeDark` ne portent **qu'une**
-///   `shape` (`RoundedRectangleBorder`, rayon 50 en haut). **Aucune** marge,
-///   **aucune** bordure, **aucune** contrainte.
-/// * La « marge » est donc un **ratio de largeur (0,9)**, pas une marge fixe.
-/// * Le « gris » est celui de `Card.outlined`, c'est-à-dire — lu dans le SDK,
-///   `flutter/lib/src/material/card.dart`, `_OutlinedCardDefaultsM3` — un
-///   `BorderSide(color: ColorScheme.outlineVariant)` sur un
-///   `RoundedRectangleBorder(radius: 12)`, `elevation: 0`,
-///   `margin: EdgeInsets.all(4)`, `color: ColorScheme.surface`.
-///   ⇒ **une couleur de RÔLE, jamais un littéral** (FR-26 respecté par
-///   construction : ce fichier ne contient aucune couleur).
+/// ## Pas d'exception « écran d'édition » par heuristique de type
 ///
-/// ## 🔴 Écart DÉLIBÉRÉ avec la source : pas d'exception « écran d'édition »
+/// Un socle pourrait retirer le cadre en détectant que le contenu est un
+/// écran d'édition par une heuristique de nom de classe
+/// (`runtimeType.toString().endsWith(...)`). Ce paquet ne le fait délibérément
+/// pas :
 ///
-/// IFFD retire le cadre quand le contenu est un écran d'édition, et le
-/// détermine par `builder.runtimeType.toString().endsWith("EditionScreen")` —
-/// une **heuristique de chaîne**. Le socle ne la reproduit pas :
-///
-/// 1. elle est **fragile** (renommer la classe change le rendu, silencieusement) ;
+/// 1. une telle heuristique est **fragile** (renommer la classe change le
+///    rendu, silencieusement) ;
 /// 2. elle est **indéboguable** côté hôte (rien ne dit pourquoi le cadre a
 ///    disparu) ;
 /// 3. elle fait **deviner** au socle une propriété du contenu, alors que
 ///    l'hôte la connaît.
 ///
 /// À la place, [ZSheetFrameMode] rend la décision **explicite et déclarée par
-/// l'hôte** — et [ZSheetFrameMode.unlessChrome] restitue exactement l'intention
-/// d'IFFD (« encadre, sauf quand c'est un formulaire d'édition ») sans aucune
-/// reconnaissance de type : « c'est une édition » y signifie « l'appelant a
-/// fourni un `ZEditionChrome` », donc *l'hôte a déclaré*.
+/// l'hôte** — [ZSheetFrameMode.unlessChrome] encadre sauf quand l'appelant a
+/// fourni un `ZEditionChrome`, sans aucune reconnaissance de type : « c'est
+/// une édition » y signifie « l'appelant a déclaré un chrome ».
 ///
 /// ## Chaîne de résolution (patron du dépôt)
 ///
 /// **paramètre ([ZSheetFrameSpec]) > jeton `ZcrudTheme.editionSheet*` >
-/// référence auditée ([ZSheetFrameReference])**.
-///
-/// ### 🔴 `ZSheetFrameTheme` a été SUPPRIMÉE (CR-TOKENS, 2026-08-09)
-///
-/// La version du 2026-08-09 portait le maillon « jeton » par une
-/// `ThemeExtension` **locale** `ZSheetFrameTheme`, faute de pouvoir écrire dans
-/// `zcrud_core` ce jour-là. Les jetons `ZcrudTheme.editionSheet*` existent
-/// désormais, et la `ThemeExtension` locale a été **retirée** plutôt que
-/// conservée en second canal :
-///
-/// * **deux canaux pour la même propriété est le motif de divergence** que ce
-///   dépôt s'interdit (CR-LEX-78, « pas de vue parallèle ») : un hôte qui pose
-///   les deux obtient un gagnant silencieux, et chaque évolution doit être
-///   écrite deux fois (deux `copyWith`, deux `lerp`, deux dartdocs) ;
-/// * **mesuré** : `grep -rn "extends ThemeExtension<" packages --include="*.dart"`
-///   rend exactement **deux** classes dans tout le dépôt — `ZcrudTheme` et
-///   `ZSheetFrameTheme`. Sur quatorze paquets, `ZcrudTheme` est le canal de
-///   thème **unique** ; l'exception datait de la veille ;
-/// * le seul avantage propre de la version locale était le **typage** du mode
-///   (`ZSheetFrameMode` au lieu d'un `String`, imposé par AD-1). Il est restitué
-///   **sans second canal** : l'hôte écrit
-///   `ZcrudTheme(editionSheetFrameMode: ZSheetFrameMode.never.name)` — l'enum
-///   reste la source du nom, donc un renommage reste une erreur de compilation
-///   au call-site ;
-/// * rien n'était publié : `grep -rn "ZSheetFrameTheme" packages` hors de ce
-///   fichier ne rendait que du code de ce même paquet.
+/// référence auditée ([ZSheetFrameReference])**. Poser la même propriété sur
+/// deux canaux distincts (une `ThemeExtension` locale en plus du jeton
+/// canonique, par exemple) créerait un gagnant silencieux et doublerait toute
+/// évolution future (deux `copyWith`, deux `lerp`, deux dartdocs) : ce paquet
+/// s'y refuse, `ZcrudTheme` restant le canal de thème unique du dépôt. Le
+/// typage du mode (`ZSheetFrameMode` plutôt qu'un `String` libre, imposé par
+/// l'invariant AD-1 côté cœur) est préservé sans second canal : l'hôte écrit
+/// `ZcrudTheme(editionSheetFrameMode: ZSheetFrameMode.never.name)`, l'enum
+/// restant la source du nom — un renommage reste une erreur de compilation au
+/// site d'appel.
 ///
 /// Un jeton de mode **inconnu** (chaîne libre, thème sérialisé par une version
-/// plus récente) retombe sur la référence — **jamais** d'exception (AD-10).
+/// plus récente) retombe sur la référence — **jamais** d'exception (invariant
+/// AD-10).
 ///
 /// ## Invariants
 ///
-/// * **FR-26 / NFR-S7** : aucune couleur littérale ici — la teinte du cadre est
-///   le **rôle** `ColorScheme.outlineVariant`, surchargeable par jeton et par
-///   paramètre. La référence auditée ne porte que des **dimensions**.
-/// * **AD-13** : le cadre n'est **jamais le seul canal** d'une information — il
-///   est purement décoratif (aucune sémantique n'en dépend), et la contrainte de
-///   largeur ne réduit aucune cible sous 48 dp.
-/// * **AD-10** : aucune exception ; une `shape` ambiante non-[OutlinedBorder]
-///   retombe sur la forme de référence.
-/// * **AD-4** : `null` ⇒ **absent de l'arbre** — cadre désactivé ⇒ aucune
-///   `shape` n'est imposée, `showModalBottomSheet` retrouve exactement la
-///   résolution du SDK (`thème > défauts M3`).
-/// * **AD-1** : aucune arête de paquet ajoutée (Flutter vanilla uniquement).
+/// * **Aucune couleur littérale** ici — la teinte du cadre est le **rôle**
+///   `ColorScheme.outlineVariant`, surchargeable par jeton et par paramètre.
+///   La référence auditée ne porte que des **dimensions**.
+/// * **Invariant AD-13** : le cadre n'est **jamais le seul canal** d'une
+///   information — il est purement décoratif (aucune sémantique n'en
+///   dépend), et la contrainte de largeur ne réduit aucune cible sous 48 dp.
+/// * **Invariant AD-10** : aucune exception ; une `shape` ambiante
+///   non-[OutlinedBorder] retombe sur la forme de référence.
+/// * **Invariant AD-4** : `null` ⇒ **absent de l'arbre** — cadre désactivé ⇒
+///   aucune `shape` n'est imposée, `showModalBottomSheet` retrouve exactement
+///   la résolution du SDK (`thème > défauts M3`).
+/// * **Invariant AD-1** : aucune arête de paquet ajoutée (Flutter vanilla
+///   uniquement).
 library;
 
 import 'dart:math' as math;
@@ -109,56 +78,54 @@ import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 
 /// **Quand** encadrer une bottom-sheet — déclaré par l'hôte, jamais deviné.
 enum ZSheetFrameMode {
-  /// Toujours encadrer. **Défaut du socle** (décision propriétaire, 2026-08-09).
+  /// Toujours encadrer. **Défaut du socle** (décision propriétaire).
   always,
 
-  /// Ne jamais encadrer — restitue le rendu d'avant la CR (aucune `shape`
+  /// Ne jamais encadrer — restitue un rendu sans cadre (aucune `shape`
   /// imposée), **sans** rendre pour autant la feuille pleine largeur : la
   /// contrainte de largeur est un réglage **indépendant**.
   never,
 
   /// Encadrer **sauf** quand l'appelant a fourni un `ZEditionChrome`.
   ///
-  /// C'est l'intention d'IFFD (« pas de cadre sur les écrans d'édition »),
-  /// obtenue **sans** heuristique de type : la présence d'un chrome est une
-  /// déclaration explicite du call-site.
+  /// Retire le cadre sur les écrans d'édition, obtenu **sans** heuristique de
+  /// type : la présence d'un chrome est une déclaration explicite du
+  /// call-site.
   unlessChrome,
 }
 
 /// Les **valeurs de référence** de la feuille contrainte — point d'audit unique.
 ///
-/// 🔴 **AUCUNE COULEUR ici** : uniquement des dimensions et un mode. La teinte
+/// **AUCUNE COULEUR ici** : uniquement des dimensions et un mode. La teinte
 /// du cadre est résolue au rendu sur un **rôle** du `ColorScheme`.
 abstract final class ZSheetFrameReference {
   /// Mode par défaut : **encadrer partout** (décision propriétaire).
   static const ZSheetFrameMode mode = ZSheetFrameMode.always;
 
-  /// Fraction de la largeur d'écran allouée à la feuille — **0,9, la valeur
-  /// mesurée dans IFFD** (`screenWidth * 0.9`).
+  /// Fraction de la largeur d'écran allouée à la feuille (`screenWidth * 0.9`).
   static const double widthRatio = 0.9;
 
   /// Plafond **absolu** de largeur (dp).
   ///
-  /// 🔴 Ce n'est pas un choix de goût : c'est **le défaut de Flutter lui-même**.
+  /// Ce n'est pas un choix de goût : c'est **le défaut de Flutter lui-même**.
   /// `flutter/lib/src/material/bottom_sheet.dart`, `_BottomSheetDefaultsM3` :
-  /// `constraints => const BoxConstraints(maxWidth: 640.0)`. Or le presenter
-  /// **passait déjà** un `constraints` non-`null` (`maxWidth: double.infinity`),
-  /// ce qui **écrasait ce plafond** : sur un écran de 1600 dp la feuille du
-  /// socle faisait 1600 dp de large, alors qu'une `showModalBottomSheet` nue en
-  /// aurait fait 640. Le plafond restaure le défaut M3 au lieu de le contredire.
+  /// `constraints => const BoxConstraints(maxWidth: 640.0)`. Un presenter qui
+  /// poserait ses propres `constraints` non-`null` (`maxWidth:
+  /// double.infinity`) écraserait ce plafond : sur un écran de 1600 dp la
+  /// feuille ferait 1600 dp de large, alors qu'une `showModalBottomSheet` nue
+  /// en ferait 640. Le plafond restaure le défaut M3 au lieu de le contredire.
   ///
-  /// Effet mesuré de `min(largeur * 0,9, 640)` :
+  /// Effet de `min(largeur * 0,9, 640)` :
   ///
   /// | Écran | Ratio seul | Retenu | Commentaire                     |
   /// |-------|-----------|--------|----------------------------------|
-  /// | 360   | 324       | 324    | parité IFFD (18 dp de part et d'autre) |
-  /// | 400   | 360       | 360    | parité IFFD                      |
+  /// | 360   | 324       | 324    | marge visible (18 dp de part et d'autre) |
+  /// | 400   | 360       | 360    | marge visible                    |
   /// | 700   | 630       | 630    | ratio encore actif               |
   /// | 1600  | 1440      | **640**| plafond M3 — 1440 dp serait illisible |
   static const double maxWidth = 640;
 
-  /// Épaisseur du cadre (dp) — celle d'un `BorderSide` par défaut, donc celle
-  /// que `Card.outlined` peint dans IFFD.
+  /// Épaisseur du cadre (dp) — celle d'un `BorderSide` par défaut.
   static const double borderWidth = 1;
 
   /// Rayon **de repli** du haut de feuille (dp) quand la `shape` ambiante n'est
@@ -171,7 +138,7 @@ abstract final class ZSheetFrameReference {
 ///
 /// Chaque champ `null` ⇒ « je ne me prononce pas », et le maillon suivant de la
 /// chaîne décide (jeton, puis référence). Un `ZSheetFrameSpec()` vide est donc
-/// rigoureusement équivalent à `null` (AD-4).
+/// rigoureusement équivalent à `null` (invariant AD-4).
 @immutable
 class ZSheetFrameSpec {
   /// Construit une surcharge partielle.
@@ -198,7 +165,7 @@ class ZSheetFrameSpec {
   /// Épaisseur du cadre (dp). `null` ⇒ jeton, puis référence (1).
   final double? borderWidth;
 
-  /// Copie modifiée (AD-4 : extension par composition).
+  /// Copie modifiée (invariant AD-4 : extension par composition).
   ZSheetFrameSpec copyWith({
     ZSheetFrameMode? mode,
     double? widthRatio,
@@ -218,13 +185,13 @@ class ZSheetFrameSpec {
 /// Traduit le jeton **`String`** `ZcrudTheme.editionSheetFrameMode` en
 /// [ZSheetFrameMode] — **le seul** point de traduction du paquet.
 ///
-/// 🔴 Pourquoi une chaîne du côté du cœur : `ZSheetFrameMode` vit ici, et
-/// **AD-1 interdit à `zcrud_core` de dépendre d'un satellite**. Le jeton porte
-/// donc le **nom** du palier (`ZSheetFrameMode.always.name` == `'always'`),
-/// exactement comme `ZcrudTheme.chatResponseLengthAccents` est indexé par le
-/// nom d'un palier du kernel du chat.
+/// Pourquoi une chaîne du côté du cœur : `ZSheetFrameMode` vit ici, et
+/// l'**invariant AD-1 interdit à `zcrud_core` de dépendre d'un satellite**.
+/// Le jeton porte donc le **nom** du palier
+/// (`ZSheetFrameMode.always.name` == `'always'`), le même patron que d'autres
+/// jetons `ZcrudTheme` indexés par le nom d'un palier d'un satellite.
 ///
-/// 🔴 **AD-10 — jamais d'exception.** `null`, chaîne vide, casse différente,
+/// **Invariant AD-10 — jamais d'exception.** `null`, chaîne vide, casse différente,
 /// palier inventé, palier d'une version **future** du socle : tous rendent
 /// `null`, c'est-à-dire « le jeton ne se prononce pas », et le maillon suivant
 /// de la chaîne décide. Un thème est une donnée que l'hôte écrit à la main (ou
@@ -290,13 +257,13 @@ class ZSheetFrameMetrics {
 
   /// La `shape` à imposer à la bottom-sheet, ou **`null` si aucun cadre** —
   /// auquel cas `showModalBottomSheet` retrouve *exactement* sa résolution
-  /// native (`shape` du thème, puis défauts M3), donc l'arbre d'avant la CR.
+  /// native (`shape` du thème, puis défauts M3).
   ///
-  /// La forme ambiante est **conservée** : seul un côté lui est ajouté. Un hôte
-  /// qui a réglé un rayon de 50 dp en haut (cas d'IFFD) le garde ; il gagne son
-  /// contour, il ne perd pas son arrondi. Si la forme ambiante n'est pas un
-  /// [OutlinedBorder] (pas de `copyWith(side:)` possible), repli sur la forme de
-  /// référence (AD-10 — jamais d'exception).
+  /// La forme ambiante est **conservée** : seul un côté lui est ajouté. Un
+  /// hôte qui a réglé un rayon personnalisé en haut de sa feuille le garde ;
+  /// il gagne son contour, il ne perd pas son arrondi. Si la forme ambiante
+  /// n'est pas un [OutlinedBorder] (pas de `copyWith(side:)` possible), repli
+  /// sur la forme de référence (invariant AD-10 — jamais d'exception).
   ShapeBorder? resolveShape(ShapeBorder? ambient) {
     if (!framed) {
       return null;
@@ -343,10 +310,10 @@ ZSheetFrameMetrics zSheetFrameMetricsOf(
     maxWidth: spec?.maxWidth ??
         token.editionSheetMaxWidth ??
         ZSheetFrameReference.maxWidth,
-    // 🔴 Dernier maillon = un **RÔLE** du `ColorScheme`, jamais un littéral :
-    // la teinte reste héritée du thème de l'hôte (FR-26). C'est le rôle que
-    // `Card.outlined` utilise (`_OutlinedCardDefaultsM3`), donc le « gris »
-    // exact d'IFFD, en clair comme en sombre.
+    // Dernier maillon = un **RÔLE** du `ColorScheme`, jamais un littéral :
+    // la teinte reste héritée du thème de l'hôte. C'est le rôle que
+    // `Card.outlined` utilise (`_OutlinedCardDefaultsM3`), correct en clair
+    // comme en sombre.
     borderColor: spec?.borderColor ??
         token.editionSheetBorderColor ??
         Theme.of(context).colorScheme.outlineVariant,

@@ -12,17 +12,17 @@ const double _kDraggingOpacity = 0.3;
 const double _kFeedbackOpacity = 0.9;
 
 /// Réduction d'échelle de la cellule SURVOLÉE (cible de dépôt candidate).
-/// Affordance PUREMENT géométrique — aucune couleur codée en dur (FR-26/AD-13).
+/// Affordance purement géométrique — aucune couleur codée en dur.
 const double _kCandidateScale = 0.94;
 
 /// Grille **adaptative RÉORDONNABLE** — multi-colonnes ET drag-and-drop, sans
-/// aucun paquet tiers (CR-IFFD-15, voie A/C).
+/// aucun paquet tiers.
 ///
 /// ## Pourquoi une primitive maison (AD-1)
 ///
 /// `ReorderableListView` (SDK) ne dispose **pas** en grille, et
 /// `reorderable_grid_view` (paquet tiers) est **refusé par AD-1**. Cette grille
-/// est donc bâtie **uniquement** sur le SDK : [LongPressDraggable] +
+/// est donc bâtie **uniquement** sur le SDK: [LongPressDraggable] +
 /// [DragTarget] pour le geste, [Scrollable] pour l'autoscroll.
 ///
 /// ## Ce qu'elle NE réimplémente PAS
@@ -30,27 +30,27 @@ const double _kCandidateScale = 0.94;
 /// Le nombre de colonnes, la gouttière, la largeur d'item, le ratio et les replis
 /// AD-10 sont **délégués à [ZAdaptiveGrid]** (elle-même bâtie sur
 /// `computeCrossAxisCount`). Il n'existe **aucun second calcul de colonnes** dans
-/// ce fichier : cette grille est [ZAdaptiveGrid] **plus** une couche de geste.
+/// ce fichier: cette grille est [ZAdaptiveGrid] **plus** une couche de geste.
 ///
-/// ## Modèle d'ordre : LINÉAIRE, la grille n'est qu'une projection
+/// ## Modèle d'ordre: LINÉAIRE, la grille n'est qu'une projection
 ///
-/// L'ordre est une permutation linéaire `0..n-1` de [itemIds] ; la disposition en
+/// L'ordre est une permutation linéaire `0..n-1` de [itemIds]; la disposition en
 /// `n` colonnes n'en est qu'une **projection**. Déposer sur la cellule de
 /// position `k` signifie donc « **index `k`** », **quelle que soit la ligne** —
 /// le déplacement franchit librement les lignes. La transformation appliquée est
-/// exactement `removeAt(oldIndex)` puis `insert(newIndex)` : la **même
+/// exactement `removeAt(oldIndex)` puis `insert(newIndex)`: la **même
 /// convention** que `onReorderItem` du SDK et que `zReorderIds` côté
 /// `zcrud_study` (symétrie hôte/primitive). Cette convention est ré-implémentée
 /// ici en privé ([_moveId]) car `zcrud_study` **ne peut pas** être une dépendance
-/// de `zcrud_responsive` (AD-1 : l'arête irait dans le mauvais sens) — la
+/// de `zcrud_responsive` (AD-1: l'arête irait dans le mauvais sens) — la
 /// duplication est de **7 lignes**, imposée par la frontière de paquets, et
 /// verrouillée par un test de symétrie.
 ///
 /// ## Geste + alternative accessible (AD-13)
 ///
-/// * **Appui long** sur la cellule ENTIÈRE (pas de poignée : les cartes d'items
-///   sont déjà denses) ;
-/// * **Alternative obligatoire au lecteur d'écran** : un appui long n'est pas
+/// * **Appui long** sur la cellule ENTIÈRE (pas de poignée: les cartes d'items
+///   sont déjà denses);
+/// * **Alternative obligatoire au lecteur d'écran**: un appui long n'est pas
 ///   atteignable en navigation assistée, donc chaque cellule expose deux
 ///   **actions sémantiques** ([CustomSemanticsAction]) « déplacer avant » /
 ///   « déplacer après », dont les libellés sont **INJECTÉS**
@@ -65,10 +65,10 @@ const double _kCandidateScale = 0.94;
 /// `min/maxScrollExtent`. Sans `Scrollable` vertical englobant, l'autoscroll est
 /// simplement inactif (jamais de throw — AD-10).
 ///
-/// ## SM-1 / AD-2 — ordre optimiste LOCAL
+/// ## Invariant AD-2 — ordre optimiste LOCAL
 ///
 /// L'ordre optimiste vit dans un `ValueNotifier` **local** à cette grille et
-/// n'est consommé que par un [ValueListenableBuilder] : réordonner ne
+/// n'est consommé que par un [ValueListenableBuilder]: réordonner ne
 /// reconstruit **ni** le parent **ni** la page. Aucun gestionnaire d'état.
 /// L'ordre est resynchronisé sur [itemIds] dans `didUpdateWidget` dès que
 /// l'hôte repousse un ordre persisté.
@@ -77,13 +77,13 @@ const double _kCandidateScale = 0.94;
 ///
 /// Si [onReorder] lève **de façon synchrone**, l'ordre affiché est **restauré**
 /// à l'identique et l'exception est **absorbée** (jamais de crash de rendu,
-/// jamais d'état incohérent). ⚠️ Un échec **asynchrone** (persistance) est hors
-/// de portée d'un callback `void` : l'hôte le signale en repoussant l'ancien
+/// jamais d'état incohérent). Un échec **asynchrone** (persistance) est hors
+/// de portée d'un callback `void`: l'hôte le signale en repoussant l'ancien
 /// [itemIds], ce qui resynchronise la grille par `didUpdateWidget`.
 ///
 /// ## Non combiné avec la virtualisation
 ///
-/// Cette grille est **eager** (comme le ctor historique de [ZAdaptiveGrid]) :
+/// Cette grille est **eager** (comme le ctor historique de [ZAdaptiveGrid]):
 /// une cellule non construite ne peut pas être une cible de dépôt. Réordonner et
 /// virtualiser sont donc exclusifs — documenté, jamais dégradé en silence.
 class ZReorderableAdaptiveGrid extends StatefulWidget {
@@ -112,13 +112,13 @@ class ZReorderableAdaptiveGrid extends StatefulWidget {
   final List<String> itemIds;
 
   /// Construit l'item d'**index SOURCE** (index dans [itemIds], jamais la
-  /// position visuelle courante) : l'ordre optimiste local peut avoir permuté
+  /// position visuelle courante): l'ordre optimiste local peut avoir permuté
   /// l'affichage sans que l'hôte ait encore repoussé un nouvel [itemIds].
   final Widget Function(BuildContext context, int index) itemBuilder;
 
   /// Notifié après un dépôt, en convention `removeAt(oldIndex)` /
   /// `insert(newIndex)` — **indices linéaires**, jamais des coordonnées de
-  /// grille. Peut lever : l'ordre affiché est alors restauré (AD-10).
+  /// grille. Peut lever: l'ordre affiché est alors restauré (AD-10).
   final void Function(int oldIndex, int newIndex) onReorder;
 
   /// Largeur minimale d'un item (dp) — pilote le nombre de colonnes via
@@ -168,13 +168,13 @@ class ZReorderableAdaptiveGrid extends StatefulWidget {
 class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
   /// Ordre OPTIMISTE local (permutation de `widget.itemIds`). `ValueNotifier`
   /// et non `setState` : le rebuild reste confiné au [ValueListenableBuilder]
-  /// de cette grille (SM-1/AD-2).
+  /// de cette grille (invariant AD-2).
   late final ValueNotifier<List<String>> _order;
 
   /// Minuterie d'autoscroll (active UNIQUEMENT pendant un glissement de bord).
   Timer? _autoScrollTimer;
 
-  /// Pas signé courant de l'autoscroll (dp/frame ; `< 0` = vers le haut).
+  /// Pas signé courant de l'autoscroll (dp/frame; `< 0` = vers le haut).
   double _autoScrollDelta = 0;
 
   @override
@@ -186,7 +186,7 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
   @override
   void didUpdateWidget(covariant ZReorderableAdaptiveGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // L'hôte a persisté puis repoussé un ordre (ou les items ont changé) :
+    // L'hôte a persisté puis repoussé un ordre (ou les items ont changé):
     // réaligner l'ordre local sur la source de vérité. Si l'hôte ne repousse
     // rien, l'ordre optimiste local est PRÉSERVÉ (retour visuel immédiat).
     if (!_listEquals(widget.itemIds, oldWidget.itemIds)) {
@@ -211,15 +211,15 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
     try {
       widget.onReorder(from, to);
     } catch (_) {
-      // AD-10 : jamais d'état incohérent — l'affichage revient à l'ordre
+      // AD-10: jamais d'état incohérent — l'affichage revient à l'ordre
       // d'avant le dépôt. L'exception est ABSORBÉE par conception (une grille
       // ne doit pas casser le rendu de la page parce qu'une persistance a
-      // échoué) ; c'est à l'hôte de remonter son erreur dans `onReorder`.
+      // échoué); c'est à l'hôte de remonter son erreur dans `onReorder`.
       _order.value = previous;
     }
   }
 
-  // ── Autoscroll (SDK pur : `Scrollable.maybeOf` + `ScrollPosition.jumpTo`) ──
+  // ── Autoscroll (SDK pur: `Scrollable.maybeOf` + `ScrollPosition.jumpTo`) ──
 
   void _handleDragUpdate(DragUpdateDetails details) {
     final scrollable = Scrollable.maybeOf(context);
@@ -265,7 +265,7 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
     final double target = (position.pixels + _autoScrollDelta)
         .clamp(position.minScrollExtent, position.maxScrollExtent);
     if (target == position.pixels) {
-      // Butée atteinte : inutile de continuer à battre.
+      // Butée atteinte: inutile de continuer à battre.
       _stopAutoScroll();
       return;
     }
@@ -283,7 +283,7 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
     return ValueListenableBuilder<List<String>>(
       valueListenable: _order,
       builder: (context, ids, _) {
-        // Garde vide AD-10 (ZAdaptiveGrid la porte aussi ; on évite en plus de
+        // Garde vide AD-10 (ZAdaptiveGrid la porte aussi; on évite en plus de
         // construire des cellules pour rien).
         if (ids.isEmpty) return const SizedBox.shrink();
         return ZAdaptiveGrid(
@@ -306,7 +306,7 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
 
   Widget _cell(BuildContext context, List<String> ids, int position) {
     final String id = ids[position];
-    // Index SOURCE : l'ordre local a pu permuter l'affichage sans que l'hôte
+    // Index SOURCE: l'ordre local a pu permuter l'affichage sans que l'hôte
     // ait repoussé un nouvel `itemIds` (même mapping que le mode liste).
     final int sourceIndex = widget.itemIds.indexOf(id);
     return _ZReorderableCell(
@@ -325,7 +325,7 @@ class _ZReorderableAdaptiveGridState extends State<ZReorderableAdaptiveGrid> {
   }
 }
 
-/// Une cellule réordonnable : appui long pour glisser, cible de dépôt, et deux
+/// Une cellule réordonnable: appui long pour glisser, cible de dépôt, et deux
 /// actions sémantiques (alternative a11y obligatoire à l'appui long, AD-13).
 class _ZReorderableCell extends StatelessWidget {
   const _ZReorderableCell({
@@ -351,9 +351,9 @@ class _ZReorderableCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Actions sémantiques : le lecteur d'écran ne peut pas faire d'appui long,
-    // donc le déplacement DOIT être atteignable autrement (AD-13). Libellés
-    // INJECTÉS (jamais de littéral ici — FR-26).
+    // Actions sémantiques : le lecteur d'écran ne peut pas faire d'appui
+    // long, donc le déplacement DOIT être atteignable autrement (invariant
+    // AD-13). Libellés injectés, jamais de littéral ici.
     final semanticChild = Semantics(
       container: true,
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
@@ -373,7 +373,7 @@ class _ZReorderableCell extends StatelessWidget {
           // Une cellule n'est jamais sa propre cible.
           onWillAcceptWithDetails: (details) => details.data != position,
           // Dépôt sur la position `position` ⇒ index LINÉAIRE `position`,
-          // quelle que soit la ligne d'origine (inter-lignes, CR-IFFD-15).
+          // quelle que soit la ligne d'origine (inter-lignes).
           onAcceptWithDetails: (details) => onMove(details.data, position),
           builder: (context, candidateData, rejectedData) {
             final bool isCandidate = candidateData.isNotEmpty;
@@ -383,7 +383,7 @@ class _ZReorderableCell extends StatelessWidget {
               onDragEnd: (_) => onDragStopped(),
               onDraggableCanceled: (_, _) => onDragStopped(),
               onDragCompleted: onDragStopped,
-              // Aperçu à la TAILLE RÉELLE de la cellule (mesurée localement) :
+              // Aperçu à la TAILLE RÉELLE de la cellule (mesurée localement):
               // un aperçu non contraint prendrait une taille intrinsèque et
               // sauterait visuellement.
               feedback: SizedBox(
@@ -395,8 +395,8 @@ class _ZReorderableCell extends StatelessWidget {
               childWhenDragging:
                   Opacity(opacity: _kDraggingOpacity, child: semanticChild),
               child: isCandidate
-                  // Affordance de survol PUREMENT géométrique et RTL-neutre :
-                  // aucune couleur codée en dur (FR-26/AD-13).
+                  // Affordance de survol purement géométrique et RTL-neutre :
+                  // aucune couleur codée en dur.
                   ? Transform.scale(
                       scale: _kCandidateScale,
                       alignment: AlignmentDirectional.center
@@ -412,11 +412,11 @@ class _ZReorderableCell extends StatelessWidget {
   }
 }
 
-/// Déplacement LINÉAIRE pur : `removeAt(from)` puis `insert(to)`. Total (indices
+/// Déplacement LINÉAIRE pur: `removeAt(from)` puis `insert(to)`. Total (indices
 /// clampés, jamais de throw — AD-10), ne mute pas [ids].
 ///
 /// Même convention que `onReorderItem` (SDK) et `zReorderIds` (`zcrud_study`) —
-/// duplication imposée par la frontière de paquets (AD-1 : `zcrud_responsive`
+/// duplication imposée par la frontière de paquets (AD-1: `zcrud_responsive`
 /// ne peut pas dépendre de `zcrud_study`).
 List<String> _moveId(List<String> ids, int from, int to) {
   final list = List<String>.of(ids);

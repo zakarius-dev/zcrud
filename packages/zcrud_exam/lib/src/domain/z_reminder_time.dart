@@ -1,54 +1,58 @@
-/// `ZReminderTime` — value-object PUR d'une heure de rappel (ES-2.6, **FR-S9**),
-/// persisté en chaîne **`'HH:mm'`** (convention canonique §Dates, alignée
-/// `ZTimeCodec`).
+/// `ZReminderTime` — value-object pur d'une heure de rappel, persisté sous
+/// forme de chaîne **`'HH:mm'`**.
 ///
-/// ## 🔴 D2 — pourquoi un value-object PUR, et NON un `@ZcrudModel`
+/// ## Pourquoi un value-object pur, et non un type généré par le codegen
 ///
-/// Un `@ZcrudModel` utilisé comme champ (`subModel`) serait sérialisé par le
-/// générateur en **map imbriquée `{hour, minute}`** — jamais en `'HH:mm'`. Or la
-/// FR-S9 exige la forme persistée `'HH:mm'` (compat migration lex/IFFD, où l'heure
-/// de rappel est une `String`). ⇒ `ZReminderTime` est un **VO pur** (couple
-/// `{hour, minute}`), et `ZExam.reminderTime` est un **CANAL HORS-CODEGEN** décodé
-/// et réémis À LA MAIN en `'HH:mm'` (patron `ZSmartNote.content`). Le TYPE dit le
-/// format ⇒ **aucune `String` `'HH:mm'` ambiguë ne flotte dans l'UI** (AD-28).
+/// Un type utilisé comme sous-modèle du codegen serait sérialisé par le
+/// générateur en **map imbriquée `{hour, minute}`** — jamais en `'HH:mm'`.
+/// Or la forme persistée `'HH:mm'` est requise pour rester compatible avec
+/// les corpus existants, où l'heure de rappel est une chaîne. `ZReminderTime`
+/// est donc un value-object pur (couple `{hour, minute}`), et le champ qui le
+/// porte sur une entité est un canal hors schéma décodé et réémis
+/// explicitement en `'HH:mm'`. Le type porte le format, ce qui évite qu'une
+/// chaîne `'HH:mm'` ambiguë ne circule dans l'interface.
 ///
-/// ## Défensif et TOTAL (AD-10)
+/// ## Défensif et total
 ///
-/// [ZReminderTime.parse] ne **throw JAMAIS** : `null`, chaîne non parsable ou
-/// heure/minute hors bornes retombent sur `null` (repli déterministe), laissant
-/// l'appelant décider. Même défensivité que `ZTimeCodec.hhmmToMap` — dont ce VO
-/// **réutilise la mécanique** (`package:zcrud_core/domain.dart`), sans la dupliquer.
+/// [ZReminderTime.parse] ne lève **jamais** : `null`, une chaîne non
+/// analysable ou une heure/minute hors bornes retombent sur `null` (repli
+/// déterministe), laissant l'appelant décider (invariant AD-10). Réutilise la
+/// mécanique de [ZTimeCodec] (`package:zcrud_core/domain.dart`) plutôt que de
+/// la dupliquer.
 ///
-/// **Pur-Dart, Flutter-free** : aucun `TimeOfDay`, aucune dépendance Material.
-/// **NON `ZExtensible`** : ce n'est pas un point d'extension (AD-4) ⇒ **aucun
-/// câblage de gate** (ni registrar, ni kind, ni writer `extra`).
+/// Pur-Dart, sans dépendance Flutter : aucun `TimeOfDay`, aucune dépendance
+/// Material. Ce type n'est pas un point d'extension au sens de l'invariant
+/// AD-4 — il n'a donc aucun câblage de registre à porter.
 library;
 
 import 'package:zcrud_core/domain.dart';
 
 /// Heure de rappel `{hour, minute}` — immuable, persistée `'HH:mm'` (24 h).
 class ZReminderTime {
-  /// Construit une heure de rappel (primitif `const`).
+  /// Construit une heure de rappel.
   ///
-  /// ⛔ **AUCUN `assert` de bornes ici** (AD-10, patron des entités `const` du
-  /// repo) : la garde de bornes vit **exclusivement** à la frontière [parse], la
-  /// seule qui reçoit des valeurs BRUTES du corpus persisté. Un appelant qui
-  /// construit `ZReminderTime(hour: 99, minute: 0)` en mémoire obtient un VO
-  /// `'99:00'` — c'est **son** invariant à tenir, pas celui de la désérialisation.
+  /// Ce constructeur ne porte volontairement aucun `assert` de bornes
+  /// (invariant AD-10) : la garde de bornes vit exclusivement à la frontière
+  /// [parse], la seule qui reçoit des valeurs brutes du corpus persisté. Un
+  /// appelant qui construit `ZReminderTime(hour: 99, minute: 0)` en mémoire
+  /// obtient un value-object `'99:00'` — c'est son propre invariant à tenir,
+  /// pas celui de la désérialisation.
   const ZReminderTime({required this.hour, required this.minute});
 
-  /// Décode **défensivement** une chaîne `'HH:mm'` (ou `'HH:mm:ss'`, secondes
-  /// tronquées — parité `ZTimeCodec`/`TimeOfDay`) en [ZReminderTime].
+  /// Décode défensivement une chaîne `'HH:mm'` (ou `'HH:mm:ss'`, secondes
+  /// tronquées) en [ZReminderTime].
   ///
-  /// Rend **`null`** — **jamais un throw** (AD-10) — si [hhmm] est `null`, non
-  /// parsable, ou hors bornes (`hour ∉ [0,23]` **ou** `minute ∉ [0,59]`).
-  /// Tolérant sur le zéro-padding : `'8:5'` ⇒ `hour == 8, minute == 5`.
+  /// Rend **`null`** — jamais une exception (invariant AD-10) — si [hhmm]
+  /// est `null`, non analysable, ou hors bornes (`hour` hors `[0,23]` ou
+  /// `minute` hors `[0,59]`). Tolérant sur le zéro-padding : `'8:5'` ⇒
+  /// `hour == 8, minute == 5`.
   ///
   /// Round-trip : `ZReminderTime.parse(t.toHhmm()) == t` pour tout `t` valide
-  /// (`hour ∈ [0,23]`, `minute ∈ [0,59]`).
+  /// (`hour` dans `[0,23]`, `minute` dans `[0,59]`).
   static ZReminderTime? parse(String? hhmm) {
     // Réutilise la mécanique défensive canonique (`zcrud_core`) : split `:`,
-    // coercition `int` tolérante, bornes `0..23` / `0..59`, secondes ignorées.
+    // coercition `int` tolérante, bornes `0..23` / `0..59`, secondes
+    // ignorées.
     final map = ZTimeCodec.hhmmToMap(hhmm);
     if (map == null) return null;
     return ZReminderTime(
@@ -57,13 +61,14 @@ class ZReminderTime {
     );
   }
 
-  /// Heure (0..23 pour un VO valide).
+  /// Heure (0..23 pour un value-object valide).
   final int hour;
 
-  /// Minute (0..59 pour un VO valide).
+  /// Minute (0..59 pour un value-object valide).
   final int minute;
 
-  /// Rend la chaîne zéro-paddée `'HH:mm'` (24 h) — la forme PERSISTÉE canonique.
+  /// Rend la chaîne zéro-paddée `'HH:mm'` (24 h) — la forme persistée
+  /// canonique.
   String toHhmm() => '${_pad2(hour)}:${_pad2(minute)}';
 
   static String _pad2(int v) => v.toString().padLeft(2, '0');

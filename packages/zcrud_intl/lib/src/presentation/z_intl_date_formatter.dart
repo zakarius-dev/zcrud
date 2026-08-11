@@ -1,37 +1,37 @@
 /// `ZIntlDateDisplayFormatter` — implémentation **`intl`** du port
-/// [ZDateDisplayFormatter] de `zcrud_core` (CR-DODLP-GAP3BIS).
+/// [ZDateDisplayFormatter] de `zcrud_core`.
 ///
 /// ## Le défaut fermé ici
 ///
-/// Une valeur de date est stockée en ISO-8601 ; toutes les voies de LECTURE du
-/// socle la rendent telle quelle tant qu'aucun port n'est injecté —
-/// `2026-08-09T00:00:00.000` là où le legacy DODLP affiche `dim. 9 août 2026`.
-/// Le cœur pose le seam (AD-1 lui interdit `intl`) ; **cette classe est le seul
-/// endroit du graphe qui connaît `package:intl`**.
+/// Une valeur de date est stockée en ISO-8601 ; toutes les voies de LECTURE
+/// du socle la rendent telle quelle tant qu'aucun port n'est injecté —
+/// `2026-08-09T00:00:00.000` là où ce formateur affiche `dim. 9 août 2026`.
+/// Le cœur pose le seam (invariant AD-1 lui interdit `intl`) ; **cette
+/// classe est le seul endroit du graphe qui connaît `package:intl`**.
 ///
-/// ## FR-26 — aucun libellé n'est écrit ici
+/// ## Aucun libellé n'est écrit ici
 ///
 /// Les noms de mois et de jours, l'ordre des composantes et les séparateurs
 /// viennent **des données de locale CLDR embarquées par `intl`**. Ce fichier ne
-/// contient aucun nom de mois, aucun nom de jour, aucune casse localisée : que
+/// contient aucun nom de mois, aucun nom de jour, aucune casse localisée: que
 /// des **squelettes de patron** (`EEE`, `d`, `MMM`, `y`, `Hm`), qui sont des
 /// codes CLDR, pas du texte affichable.
 ///
-/// ## AD-10 — DÉCLINER, jamais lever
+/// ## Invariant AD-10 — décliner, jamais lever
 ///
-/// Le contrat du port est explicite : `null` (ou chaîne vide) ⇒ **repli défini
+/// Le contrat du port est explicite: `null` (ou chaîne vide) ⇒ **repli défini
 /// du socle** (la chaîne brute). Cette impl ne laisse donc **aucune** rupture
-/// s'échapper. Mesuré sur `intl` 0.20.2 :
+/// s'échapper. Mesuré sur `intl` 0.20.2:
 ///
 /// | Entrée | Ce que `intl` fait | Ce que cette impl rend |
 /// |---|---|---|
-/// | données de locale non initialisées | lève `LocaleDataException` (une **`Exception`**) | initialisées paresseusement ⇒ n'arrive plus ; sinon `null` |
+/// | données de locale non initialisées | lève `LocaleDataException` (une **`Exception`**) | initialisées paresseusement ⇒ n'arrive plus; sinon `null` |
 /// | étiquette inconnue (`zz`, `zz-ZZ`, `''`) | lève `ArgumentError` (une **`Error`**) | `null` |
 /// | étiquette à tirets (`fr-FR`, `fr-Latn-FR`, `FR`) | canonicalise elle-même | rendu localisé |
 /// | patron invalide | ne lève pas — rend une bouillie | rendu tel quel (hors de notre pouvoir) |
 /// | patron vide | rend `''` | `null` (⇒ repli du socle) |
 ///
-/// 🔴 Le `catch` est un `catch (_)` **nu** : il rattrape `Object`, donc les
+/// Le `catch` est un `catch (_)` **nu**: il rattrape `Object`, donc les
 /// `Error` **et** les `Exception`. Rattraper la seule famille `Error` laisserait
 /// remonter `LocaleDataException` — c'est-à-dire l'échec le plus NORMAL des
 /// deux.
@@ -39,7 +39,7 @@
 /// ## Coût, et pourquoi le cache est obligatoire
 ///
 /// Le socle appelle [ZDateDisplayFormatter.format] **une fois par cellule et
-/// par build**. Mesuré ici (20 000 itérations, `intl` 0.20.2) :
+/// par build**. Mesuré ici (20 000 itérations, `intl` 0.20.2):
 /// construire+formater = **8,33 µs/appel**, formater seul = **0,32 µs/appel**,
 /// soit un facteur **26×**. Les `DateFormat` sont donc mémoïsés par
 /// (mode, patron, étiquette de locale) dans un cache de bibliothèque partagé
@@ -51,7 +51,7 @@
 /// atteignable la table CLDR **complète** (`date_symbol_data_local`, plusieurs
 /// centaines de Ko de données Dart pour ~700 locales). Un hôte qui ne veut que
 /// les champs téléphone/pays de `zcrud_intl` n'a pas à la payer. Ce formateur
-/// est donc servi par un **point d'entrée séparé** :
+/// est donc servi par un **point d'entrée séparé**:
 ///
 /// ```dart
 /// import 'package:zcrud_intl/date_formatter.dart';
@@ -61,7 +61,7 @@
 ///   child: …,
 /// );
 ///
-/// // Parité legacy DODLP (`dim. 9 août 2026`) :
+/// // Format court personnalisé (`dim. 9 août 2026`) :
 /// const ZIntlDateDisplayFormatter(
 ///   datePattern: 'EEE d MMM y',
 ///   dateTimePattern: 'EEE d MMM y HH:mm',
@@ -83,7 +83,7 @@ final Map<String, DateFormat> _formatters = <String, DateFormat>{};
 /// Nombre de `DateFormat` réellement CONSTRUITS (mesure de morsure du cache).
 int _creations = 0;
 
-/// Plafond de sûreté : les clés sont bornées en pratique (modes × patrons ×
+/// Plafond de sûreté: les clés sont bornées en pratique (modes × patrons ×
 /// locales de l'app), mais un hôte qui fabriquerait des patrons dynamiques ne
 /// doit pas faire fuir la mémoire.
 const int _cacheCap = 64;
@@ -91,7 +91,7 @@ const int _cacheCap = 64;
 /// Charge les données de locale si besoin.
 ///
 /// `initializeDateFormatting` de `date_symbol_data_local` est **synchrone en
-/// pratique** (elle installe les tables puis rend un `Future` déjà complété) :
+/// pratique** (elle installe les tables puis rend un `Future` déjà complété):
 /// c'est ce qui permet de l'appeler depuis un `format` synchrone. Vérifié sur
 /// `intl` 0.20.2.
 void _ensureLocaleData() {
@@ -100,7 +100,7 @@ void _ensureLocaleData() {
   _localeDataReady = true;
 }
 
-/// Sépare les composantes de la clé de cache : un caractère de CONTRÔLE, qui
+/// Sépare les composantes de la clé de cache: un caractère de CONTRÔLE, qui
 /// ne peut apparaître ni dans un patron CLDR ni dans une étiquette BCP-47.
 /// Écrit en **séquence d'échappement** — jamais un octet de contrôle BRUT dans
 /// la source, qui rendrait le fichier « binaire » pour `grep` et pour les
@@ -117,7 +117,7 @@ String _cacheKey(ZDateMode mode, String? pattern, String? localeTag) =>
 
 /// Implémentation `intl` du port d'affichage des dates.
 ///
-/// **`const`-constructible** (AD-2) : l'hôte l'injecte en `const` dans
+/// **`const`-constructible** (AD-2): l'hôte l'injecte en `const` dans
 /// `ZcrudScope`, jamais reconstruite dans un `build`.
 ///
 /// Voir le dartdoc de bibliothèque pour le contrat de repli, le coût mesuré et
@@ -133,7 +133,7 @@ class ZIntlDateDisplayFormatter implements ZDateDisplayFormatter {
     this.dateTimePattern,
   });
 
-  /// Patron du mode [ZDateMode.date] (ex. `'EEE d MMM y'` pour la parité DODLP).
+  /// Patron du mode [ZDateMode.date] (ex. `'EEE d MMM y'` pour un format court).
   final String? datePattern;
 
   /// Patron du mode [ZDateMode.dateTime] (ex. `'EEE d MMM y HH:mm'`).
@@ -146,7 +146,7 @@ class ZIntlDateDisplayFormatter implements ZDateDisplayFormatter {
     String? localeTag,
   }) {
     // Le socle ne route JAMAIS `time` vers le port (sa valeur canonique est
-    // déjà `HH:mm`, non portable dans un `DateTime`). Défense en profondeur :
+    // déjà `HH:mm`, non portable dans un `DateTime`). Défense en profondeur:
     // on DÉCLINE explicitement plutôt que d'inventer une heure à partir d'une
     // date reconstruite.
     if (mode == ZDateMode.time) return null;
@@ -165,8 +165,8 @@ class ZIntlDateDisplayFormatter implements ZDateDisplayFormatter {
       // Chaîne vide ⇒ canal « je ne sais pas rendre » du port.
       return out.isEmpty ? null : out;
     } catch (_) {
-      // `catch (_)` NU : rattrape `Error` (locale inconnue → `ArgumentError`)
-      // ET `Exception` (données absentes → `LocaleDataException`). AD-10 :
+      // `catch (_)` NU: rattrape `Error` (locale inconnue → `ArgumentError`)
+      // ET `Exception` (données absentes → `LocaleDataException`). AD-10:
       // aucune rupture ne remonte dans un `build`.
       return null;
     }
@@ -182,12 +182,12 @@ class ZIntlDateDisplayFormatter implements ZDateDisplayFormatter {
 /// Nombre de `DateFormat` réellement CONSTRUITS depuis le dernier
 /// [zDebugResetIntlDateFormatterCache].
 ///
-/// Réservé aux **gardes** : une garde de cache qui ne compare que les *sorties*
+/// Réservé aux **gardes**: une garde de cache qui ne compare que les *sorties*
 /// est vacante (deux formateurs distincts rendent la même chaîne). Ce compteur,
 /// couplé à [zDebugIntlDateFormatterCacheEntries], mesure l'**instance**.
 int get zDebugIntlDateFormatterCreations => _creations;
 
-/// Les formateurs actuellement mémoïsés, en type **opaque** `Object` : aucun
+/// Les formateurs actuellement mémoïsés, en type **opaque** `Object`: aucun
 /// type `intl` ne fuit dans une signature publique (AD-1). Une garde compare
 /// les entrées avec `same(...)` / `identical(...)`.
 List<Object> get zDebugIntlDateFormatterCacheEntries =>

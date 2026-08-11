@@ -61,7 +61,7 @@ const double _kHeaderAccentSize = 12.0;
 
 /// Hauteur **mesurée** de la bande `ZSubfolderNarrowNav` du socle — CR-IFFD-45.
 ///
-/// 🔴 Ce n'est pas un littéral choisi : c'est le résultat d'une mesure sur
+/// Ce n'est pas un littéral choisi : c'est le résultat d'une mesure sur
 /// disque des **deux** variantes, à 360 / 500 / 800 dp de large et avec le
 /// bouton d'ajout présent :
 ///
@@ -187,7 +187,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// page comme `ZFolderCardGradientAccent` teinte sa carte — **même couture**
   /// (`zResolveGradient`), même clé.
   ///
-  /// 🔴 Sans `ZcrudScope.gradientResolver` injecté par l'hôte, **aucun** dégradé
+  /// Sans `ZcrudScope.gradientResolver` injecté par l'hôte, **aucun** dégradé
   /// n'apparaît (chaîne `seam hôte → null`, aucun repli dérivé) : le rendu par
   /// défaut reste inchangé.
   final String? gradientKey;
@@ -234,17 +234,40 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Mode d'app-bar (fixe vs sliver repliable) — délégué à SUF-1.
   final ZPageAppBarMode mode;
 
-  /// Slots de `Scaffold` relayés au shell (CR-56). Tous restent optionnels.
+  /// Bouton d'action flottant relayé au `Scaffold` du shell, ou `null`.
   final Widget? floatingActionButton;
+
+  /// Position du bouton d'action flottant, ou `null` pour la position par
+  /// défaut du `Scaffold`.
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+
+  /// Boutons de pied persistants relayés au `Scaffold`, ou `null`.
   final List<Widget>? persistentFooterButtons;
+
+  /// Tiroir de navigation relayé au `Scaffold`, ou `null`.
   final Widget? drawer;
+
+  /// Tiroir de navigation de fin relayé au `Scaffold`, ou `null`.
   final Widget? endDrawer;
+
+  /// Barre de navigation basse relayée au `Scaffold`, ou `null`.
   final Widget? bottomNavigationBar;
+
+  /// Feuille basse persistante relayée au `Scaffold`, ou `null`.
   final Widget? bottomSheet;
+
+  /// Couleur de fond relayée au `Scaffold`, ou `null` pour la couleur de
+  /// thème par défaut.
   final Color? backgroundColor;
+
+  /// Redimensionnement au clavier relayé au `Scaffold`, ou `null` pour le
+  /// comportement par défaut.
   final bool? resizeToAvoidBottomInset;
+
+  /// Étend le corps derrière la navigation basse, relayé au `Scaffold`.
   final bool extendBody;
+
+  /// Étend le corps derrière l'app-bar, relayé au `Scaffold`.
   final bool extendBodyBehindAppBar;
 
   /// Constructeur des sections Matériel selon le sous-dossier sélectionné.
@@ -276,7 +299,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// nécessairement la forme d'un ratio global (des barres linéaires par
   /// catégorie, par exemple, ne se réduisent pas à un anneau).
   ///
-  /// 🔴 **Pourquoi pas [progressEmptyState]** : ce slot signifie « aucune
+  /// **Pourquoi pas [progressEmptyState]** : ce slot signifie « aucune
   /// donnée » ; y injecter un onglet PLEIN inverserait le sens du paramètre et
   /// piégerait le prochain lecteur. [progressEmptyState] conserve donc son sens
   /// exact — il n'est rendu que lorsque [progressData] est `null` **et** qu'aucun
@@ -296,7 +319,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// CR-IFFD-43 — créneau persistant rendu **sous le `TabBar` et au-dessus du
   /// `TabBarView`**, donc commun à tous les onglets.
   ///
-  /// 🔴 **Chaînon CÂBLÉ, pas créé** : le créneau existait déjà côté socle
+  /// **Chaînon CÂBLÉ, pas créé** : le créneau existait déjà côté socle
   /// (`ZPageScaffold.aboveTabViews`, lui-même délégué à `ZPageShellBody` en mode
   /// sliver) ; seule sa relève par cette façade manquait — comme
   /// [persistentFooterButtons] et [bottomNavigationBar], déjà relayés.
@@ -304,7 +327,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// `null` (défaut) ⇒ slot ABSENT côté shell : aucun wrapper ajouté, rendu
   /// strictement inchangé.
   ///
-  /// ⚠️ **Conflit avec [ZSubfolderNavPlacement.aboveTabs] — résolu par
+  /// **Conflit avec [ZSubfolderNavPlacement.aboveTabs] — résolu par
   /// COMPOSITION, jamais par priorité ni par `assert`.** Si l'hôte fournit ce
   /// slot *et* demande `aboveTabs`, les deux sont rendus dans une `Column` :
   /// **la navigation d'abord** (directement sous le `TabBar`), puis ce slot.
@@ -322,7 +345,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// (`ZPageScaffold.aboveTabBar`), donc **dans** l'app-bar, qui grandit
   /// réellement de la hauteur déclarée.
   ///
-  /// 🔴 **Chaînon CÂBLÉ, pas créé** : le créneau vient d'être ouvert côté socle
+  /// **Chaînon CÂBLÉ, pas créé** : le créneau vient d'être ouvert côté socle
   /// (site unique `_zAppBarBottom`, partagé par le mode fixe et les modes
   /// sliver) ; cette façade ne fait que le relever, comme [aboveTabViews].
   ///
@@ -330,7 +353,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// : sans créneau, le socle rend le `TabBar` **tel quel**, sans `PreferredSize`
   /// interposée. Rendu strictement inchangé.
   ///
-  /// ⚠️ **Conflit avec [ZSubfolderNavPlacement.aboveTabBar] — résolu par
+  /// **Conflit avec [ZSubfolderNavPlacement.aboveTabBar] — résolu par
   /// COMPOSITION**, exactement comme [aboveTabViews] vs `aboveTabs` : si l'hôte
   /// fournit ce slot *et* demande `aboveTabBar`, les deux sont rendus dans une
   /// `Column` — **la navigation d'abord** (au plus près du titre, dont elle
@@ -344,7 +367,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// `null` (défaut) ⇒ repli du socle : `preferredSize` du slot s'il est un
   /// `PreferredSizeWidget`, sinon `kToolbarHeight`.
   ///
-  /// ⚠️ **Elle décrit le slot de l'hôte, PAS la bande de navigation** : sous
+  /// **Elle décrit le slot de l'hôte, PAS la bande de navigation** : sous
   /// [ZSubfolderNavPlacement.aboveTabBar] avec un slot d'hôte, la hauteur
   /// transmise au socle est la **somme** `bande + slot` (cf.
   /// [subfolderNavBandHeight]). Les deux réglages restent donc indépendants :
@@ -359,7 +382,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// `ZcrudTheme.subfolderBarPadding` quand elle s'applique (barre de sélection
   /// uniquement — la rangée de puces n'en pose pas).
   ///
-  /// 🔴 **Pourquoi une hauteur DÉCLARÉE et non mesurée** : le créneau vit dans
+  /// **Pourquoi une hauteur DÉCLARÉE et non mesurée** : le créneau vit dans
   /// le `bottom:` de l'app-bar, dont la `preferredSize` doit être connue
   /// **avant** la mise en page — le `Scaffold` a déjà réservé la hauteur de
   /// l'app-bar quand une mesure a posteriori arriverait. C'est la contrainte du
@@ -400,13 +423,13 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// 2. si (et seulement si) [addAction] est fournie **avec un `onPressed`
   ///    nul**, sa commande est complétée par l'ouverture du hub.
   ///
-  /// 🔴 **Le paramètre de l'hôte PRIME, toujours.** Une [addAction] qui porte
+  /// **Le paramètre de l'hôte PRIME, toujours.** Une [addAction] qui porte
   /// déjà un `onPressed` n'est **jamais** réécrite : le hub ne peut pas
   /// détourner silencieusement une commande que l'hôte a explicitement câblée.
   /// C'est la même priorité que partout ailleurs dans ce package (paramètre >
   /// jeton > référence), appliquée ici au comportement.
   ///
-  /// 🔴 **Le socle n'invente ni glyphe ni libellé** : sans [addAction], aucun
+  /// **Le socle n'invente ni glyphe ni libellé** : sans [addAction], aucun
   /// bouton n'apparaît — `ZAppBarAction` exige un `icon` **et** un
   /// `semanticLabel`, que seul l'hôte peut fournir (FR-26/AD-13). Le launcher
   /// apporte la *commande*, jamais l'*apparence*.
@@ -414,7 +437,7 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Sélection initiale (`null` = item racine « Tous les sous-dossiers »).
   ///
-  /// 🔴 **IGNORÉ quand `nav.selectionController` est fourni** (CR-IFFD-45) : le
+  /// **IGNORÉ quand `nav.selectionController` est fourni** (CR-IFFD-45) : le
   /// contrôleur est alors le **propriétaire** de l'état, donc de son amorce
   /// (`initialValue`). Recopier cette valeur dedans au montage ferait écrire le
   /// socle dans l'état de l'hôte — et écraserait une sélection que l'hôte a pu
@@ -456,7 +479,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       // lue (précédence documentée : le contrôleur prime).
       initialValue: widget.initialSelectedSubfolderId,
     )..bind(widget.nav.selectionController);
-    // ⚠️ `bind(null)` au montage est un NO-OP (early-return sur `identical`) —
+    // `bind(null)` au montage est un NO-OP (early-return sur `identical`) —
     // vérifié dans `ZDisplayStateBinding.bind`. C'est exactement ce qu'il faut
     // ici : la liaison naît déjà repliée sur son état interne, amorcé
     // ci-dessus. Aucune notification ne part donc au montage.
@@ -489,7 +512,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   @override
   void dispose() {
     _selection.listenable.removeListener(_emitSelection);
-    // ⚠️ Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas
+    // Ne dispose JAMAIS le contrôleur de l'hôte : il ne nous appartient pas
     // (son propriétaire est un `State` de l'hôte, via `ZDisplayStateOwnerMixin`).
     _selection.dispose();
     _collapsed.dispose();
@@ -572,7 +595,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       ],
     );
 
-    // 🔴 AD-4 — sans hub, AUCUN nœud n'est ajouté au-dessus du shell : l'arbre
+    // AD-4 — sans hub, AUCUN nœud n'est ajouté au-dessus du shell : l'arbre
     // rendu est celui d'avant le lot 2, à l'identique (garde de comparaison
     // d'arbre, pas une simple absence d'exception).
     if (hub == null) return scaffold;
@@ -582,7 +605,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// Complète la commande d'une action d'ajout par l'ouverture du hub — **et
   /// seulement si l'hôte ne l'a pas câblée lui-même**.
   ///
-  /// 🔴 Priorité **paramètre de l'hôte > hub** : une action qui porte déjà un
+  /// Priorité **paramètre de l'hôte > hub** : une action qui porte déjà un
   /// `onPressed` est rendue TELLE QUELLE (`identical`, aucun `ZAppBarAction`
   /// neuf). Réécrire une commande explicite serait un détournement silencieux —
   /// le pire mode d'échec pour un hôte qui a fourni son propre callback.
@@ -670,13 +693,13 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       return hostSlot;
     }
     final Widget nav = _navBand();
-    // 🔴 **Aucun étirement explicite** : un `SizedBox(width: double.infinity)`
+    // **Aucun étirement explicite** : un `SizedBox(width: double.infinity)`
     // a été écrit, puis MESURÉ INERTE (les deux surfaces du socle rendent déjà
     // 500 dp sur 500 dp de large sans lui — leur `Row` interne est en
     // `mainAxisSize.max`) et retiré. Une garde le confirmait verte avec ET sans
     // le wrapper : c'était une boîte vide, pas une propriété.
     if (hostSlot == null) return nav;
-    // 🔴 **Aucun `crossAxisAlignment` non plus** — et c'est LOAD-BEARING :
+    // **Aucun `crossAxisAlignment` non plus** — et c'est LOAD-BEARING :
     // `ZPageScaffold` pose déjà son créneau dans une `Column` en alignement
     // transversal PAR DÉFAUT. En étirant ici, le slot de l'hôte serait mis en
     // page **différemment** selon qu'il demande ou non `aboveTabs` — un widget
@@ -718,7 +741,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     }
     final Widget nav = _navBand();
     if (hostSlot == null) return nav;
-    // 🔴 `crossAxisAlignment: stretch` — et c'est LOAD-BEARING, **à l'inverse**
+    // `crossAxisAlignment: stretch` — et c'est LOAD-BEARING, **à l'inverse**
     // du site `aboveTabViews` juste au-dessus. La règle est la même (« composer
     // ne doit pas changer la mise en page du slot de l'hôte »), la réponse est
     // opposée parce que le socle n'aligne pas pareil des deux côtés :

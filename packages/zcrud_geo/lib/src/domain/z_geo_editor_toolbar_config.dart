@@ -1,30 +1,25 @@
-/// `ZGeoEditorToolbarConfig` — **config de barre d'outils d'éditeur géo** (parité
-/// DODLP `GeoEditorToolbarConfig`, gap B9, DP-7 ; AD-4/AD-14).
+/// `ZGeoEditorToolbarConfig` — **config de barre d'outils d'éditeur géo**.
 ///
-/// origine: DODLP (`data_crud/models/geo_editor_config.dart`) porte un
-/// `GeoEditorToolbarConfig` (const, `copyWith`) exposant **18 toggles booléens**
-/// + `disabled` + `mapOptionsLabel`, plus **5 presets** (`none`/`minimal`/
-/// `standard`/`full`/`professional`). Cette classe réplique cette **surface de
-/// config 1:1** côté zcrud pour que les champs géo authored sous DODLP migrent
-/// leur barre d'outils sans réécriture. C'est un **point de branchement additif**
-/// posé sur [ZGeoFieldConfig.toolbarConfig] (défaut `null` → aucune barre →
-/// rétro-compat E11a-1/E11b-1 stricte).
+/// Expose 18 toggles booléens, un flag `disabled` et un libellé de menu, plus
+/// cinq presets (`none`/`minimal`/`standard`/`full`/`professional`). Point de
+/// branchement additif posé sur [ZGeoFieldConfig.toolbarConfig] (défaut
+/// `null` → barre `standard`, cf. le champ correspondant).
 ///
-/// **Pur-données `const`** (couche `domain`, pur-Dart — AD-14) : aucun widget,
-/// aucun `IconData`, aucune dépendance lourde, aucune closure. Les seuls types
-/// sont des `bool`/`String`. Le rendu (icônes/boutons) vit dans la couche
-/// `presentation` (`ZGeoFieldWidget`).
+/// **Pur-données `const`** (couche `domain`, pur-Dart — invariant AD-14) :
+/// aucun widget, aucun `IconData`, aucune dépendance lourde, aucune closure.
+/// Les seuls types sont des `bool`/`String`. Le rendu (icônes/boutons) vit
+/// dans la couche `presentation` (`ZGeoFieldWidget`).
 ///
-/// **AD-12** : [mapOptionsLabel] est un simple libellé surchargeable ; aucun
-/// défaut national/endpoint/clé. Les libellés effectifs de l'UI passent par la
-/// l10n injectée (`label(context, 'geo.*', fallback:)`).
+/// **Invariant AD-12** : [mapOptionsLabel] est un simple libellé
+/// surchargeable ; aucun défaut national/endpoint/clé. Les libellés
+/// effectifs de l'UI passent par la l10n injectée
+/// (`label(context, 'geo.*', fallback:)`).
 library;
 
-/// Config `const` de la barre d'outils d'éditeur géo (parité DODLP, B9). Portée
-/// par [ZGeoFieldConfig.toolbarConfig] ; `null` côté config → aucune barre.
+/// Config `const` de la barre d'outils d'éditeur géo. Portée par
+/// [ZGeoFieldConfig.toolbarConfig] ; `null` côté config → barre `standard`.
 class ZGeoEditorToolbarConfig {
-  /// Construit une config de barre d'outils `const`. Les **valeurs par défaut
-  /// sont identiques** à `GeoEditorToolbarConfig` de DODLP (parité 1:1).
+  /// Construit une config de barre d'outils `const`.
   const ZGeoEditorToolbarConfig({
     this.disabled = false,
     // Drawing Tools
@@ -62,11 +57,11 @@ class ZGeoEditorToolbarConfig {
 
   // =========== Drawing Tools ============
 
-  /// Affiche le sélecteur de mode (point/cercle/polygone/polyligne). **G2** :
-  /// fonctionnel — rendu quand le champ est **multi-géométries**
-  /// (`ZGeoFieldConfig.allowedGeometries` non-`null`, ≥2 entrées) ; la bascule
-  /// est une action discrète (`setState`), la politique d'effacement est
-  /// documentée sur `_setGeometry` (parité legacy `gff:205-216`).
+  /// Affiche le sélecteur de mode (point/cercle/polygone/polyligne). Rendu
+  /// quand le champ est **multi-géométries**
+  /// (`ZGeoFieldConfig.allowedGeometries` non-`null`, ≥2 entrées) ; la
+  /// bascule est une action discrète, jamais sur la voie de frappe (invariant
+  /// AD-2). Changer de mode efface les sommets/le rayon en cours de saisie.
   final bool showModeSelector;
 
   /// Affiche le bouton « centrer sur ma position ».
@@ -78,8 +73,8 @@ class ZGeoEditorToolbarConfig {
   /// Affiche le bouton clear (tout effacer).
   final bool showClearButton;
 
-  /// Affiche le bouton d'optimisation de polygone. **Note DP-7** : flag conservé
-  /// pour la parité ; le rendu/effet est optionnel (LOW, hors B9).
+  /// Affiche le bouton d'optimisation de polygone (réordonne les sommets par
+  /// angle autour du centroïde pour prévenir l'auto-intersection).
   final bool showOptimizeButton;
 
   // ============ Map Type ============
@@ -134,15 +129,14 @@ class ZGeoEditorToolbarConfig {
   /// Mode compact (icônes seules).
   final bool compactMode;
 
-  /// G20 — seuil (dp) de **compaction responsive** : sous cette largeur
-  /// d'écran, la barre passe en mode compact même si [compactMode] est
-  /// `false` (parité legacy `gff:776,880` : `MediaQuery.width < 600`).
-  /// `null` (défaut) → seuil de référence audité
+  /// Seuil (dp) de **compaction responsive** : sous cette largeur d'écran, la
+  /// barre passe en mode compact même si [compactMode] est `false`. `null`
+  /// (défaut) → seuil de référence audité
   /// (`ZGeoChromeReference.compactBreakpointDp` = 600). `0` → jamais de
   /// compaction automatique (opt-out).
   final double? compactBreakpointDp;
 
-  // ============ Presets (flags exacts DODLP, parité 1:1) ============
+  // ============ Presets ============
 
   /// Barre désactivée (masque tous les outils et options).
   static const ZGeoEditorToolbarConfig none = ZGeoEditorToolbarConfig(
@@ -211,8 +205,8 @@ class ZGeoEditorToolbarConfig {
     compactMode: false,
   );
 
-  /// Barre complète — tous les outils/options (GIS avancé). **Parité DODLP** :
-  /// tous les toggles à `true` **sauf** [compactMode] (`false`).
+  /// Barre complète — tous les outils/options (GIS avancé) : tous les
+  /// toggles à `true` **sauf** [compactMode] (`false`).
   static const ZGeoEditorToolbarConfig full = ZGeoEditorToolbarConfig(
     showModeSelector: true,
     showMyLocationButton: true,
@@ -257,7 +251,7 @@ class ZGeoEditorToolbarConfig {
     compactMode: false,
   );
 
-  /// Copie avec modifications ponctuelles (parité DODLP).
+  /// Copie avec modifications ponctuelles.
   ZGeoEditorToolbarConfig copyWith({
     bool? disabled,
     bool? showModeSelector,

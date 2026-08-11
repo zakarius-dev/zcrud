@@ -1,55 +1,58 @@
 /// `ZIntlPhoneInputBridge` — **pont interne** entre le paquet de rendu
 /// `intl_phone_number_input` et l'API neutre de `zcrud_intl`
-/// (CR-DODLP-PHONE-NATIF, 2026-08-10 — AD-1/AD-7/AD-10).
+/// (invariants AD-1, AD-7, AD-10).
 ///
-/// **CONFINEMENT (AD-1)** : c'est le **SEUL** fichier du dépôt qui importe
-/// `intl_phone_number_input`. Aucun type du paquet (`InternationalPhoneNumberInput`,
-/// `PhoneNumber`, `SelectorConfig`, `PhoneInputSelectorType`, `Country`) ne
-/// franchit cette frontière : l'API ci-dessous ne prend/rend que des `String`,
-/// des types Flutter et [ZPhoneInputChange]/[ZPhoneInputSeed], définis ici. Ce
-/// fichier n'est **jamais** exporté par le barrel `lib/zcrud_intl.dart`. C'est
-/// exactement le patron `flutter_quill` ⊂ `zcrud_markdown` et
-/// `phone_numbers_parser` ⊂ `z_phone_codec.dart`.
+/// **Confinement (invariant AD-1)** : c'est le **seul** fichier du dépôt
+/// qui importe `intl_phone_number_input`. Aucun type du paquet
+/// (`InternationalPhoneNumberInput`, `PhoneNumber`, `SelectorConfig`,
+/// `PhoneInputSelectorType`, `Country`) ne franchit cette frontière : l'API
+/// ci-dessous ne prend/rend que des `String`, des types Flutter et
+/// [ZPhoneInputChange]/[ZPhoneInputSeed], définis ici. Ce fichier n'est
+/// **jamais** exporté par le barrel `lib/zcrud_intl.dart`. C'est le même
+/// patron de confinement que celui appliqué à `flutter_quill` dans
+/// `zcrud_markdown` et à `phone_numbers_parser` dans `z_phone_codec.dart`.
 ///
-/// **DÉFENSIF (AD-10)** — le paquet est un TIERS, et trois de ses chemins ont été
-/// **mesurés crashants** (sonde du 2026-08-10, `intl_phone_number_input 0.7.5`) :
+/// **Défensif (invariant AD-10)** — le paquet de rendu tiers a des chemins
+/// connus pour lever plutôt que décliner :
 ///
-///  1. `initialValue` porteur d'un `phoneNumber` **sans** `isoCode` ⇒
-///     `_TypeError` (« Null check operator used on a null value ») levé
-///     **synchronement dans `initState`** (`input_widget.dart:438`, `isoCode!`).
-///     C'est une `Error`, pas une `Exception` : aucun `catch (Exception)` du
-///     paquet ne la rattrape. ⇒ [ZPhoneInputSeed.of] n'attache **jamais** un
-///     numéro sans code pays résolu.
-///  2. `countries: ['XX']` (ISO inconnu du paquet) ⇒ liste filtrée vide, puis
-///     `RangeError` sur `countries[0]` (`Utils.getInitialSelectedCountry`).
-///     Là encore une `Error`. ⇒ [sanitizeCountries] **intersecte** la demande
-///     avec le catalogue RÉEL du paquet et retourne `null` (= tous les pays)
-///     si l'intersection est vide.
-///  3. Repasser au paquet un `initialValue` porteur d'un numéro **trop court**
-///     fait remonter une `NumberParseException` **non rattrapée** :
-///     `didUpdateWidget` → `initialiseWidget()` → `PhoneNumberUtil.isValidNumber`,
-///     qui appelle `phoneUtil.parse` **hors de tout `try`**. Découvert par
-///     campagne R3 (injection « graine reconstruite à chaque build ») : le champ
-///     ne rend alors plus une frappe sur deux, il **plante**. ⇒ deux gardes :
-///     la graine est créée 1× ([ZPhoneInputSeed]), et un numéro n'y est attaché
-///     que si `phone_numbers_parser` l'a d'abord déclaré **valide**.
+///  1. `initialValue` porteur d'un `phoneNumber` **sans** `isoCode` peut
+///     lever un `_TypeError` (« Null check operator used on a null value »)
+///     **synchronement dans `initState`**, via un `isoCode!` interne au
+///     paquet. C'est une `Error`, pas une `Exception` : aucun
+///     `catch (Exception)` du paquet ne la rattrape. ⇒ [ZPhoneInputSeed.of]
+///     n'attache **jamais** un numéro sans code pays résolu.
+///  2. `countries: ['XX']` (ISO inconnu du paquet) ⇒ liste filtrée vide,
+///     puis `RangeError` sur `countries[0]` côté paquet. Là encore une
+///     `Error`. ⇒ [sanitizeCountries] **intersecte** la demande avec le
+///     catalogue RÉEL du paquet et retourne `null` (= tous les pays) si
+///     l'intersection est vide.
+///  3. Repasser au paquet un `initialValue` porteur d'un numéro **trop
+///     court** peut faire remonter une `NumberParseException` **non
+///     rattrapée** lors d'une mise à jour du widget, parce que le paquet
+///     appelle son parseur **hors de tout `try`**. Une graine
+///     ([ZPhoneInputSeed]) reconstruite à chaque build exposerait donc ce
+///     chemin à chaque frappe sur deux. ⇒ deux gardes : la graine est créée
+///     1× ([ZPhoneInputSeed]), et un numéro n'y est attaché que si
+///     `phone_numbers_parser` l'a d'abord déclaré **valide**.
 ///  4. Le message d'erreur et le libellé d'invite du paquet sont des
 ///     **littéraux anglais codés en dur** (`'Invalid phone number'`,
-///     `'Phone number'`) — FR-26. ⇒ le pont neutralise le validateur interne
-///     (`validator: (_) => null`, `errorMessage: null`) et impose toujours une
-///     `InputDecoration` injectée par l'appelant.
+///     `'Phone number'`), ce qui contredit l'injection systématique de
+///     libellés du reste du package. ⇒ le pont neutralise le validateur
+///     interne (`validator: (_) => null`, `errorMessage: null`) et impose
+///     toujours une `InputDecoration` injectée par l'appelant.
 ///
-/// ⚠️ L'intersection de (2) lit `Countries.countryList`, qui n'est pas ré-exporté
-/// par le barrel du paquet : c'est un import d'implémentation, **délibéré et
-/// épinglé** (`intl_phone_number_input: ^0.7.5`). Une garde
-/// (`z_intl_phone_input_bridge_test.dart`) affirme que [supportedIsoCodes] reste
-/// non vide et contient `TG`/`FR` : si le paquet déplace ce fichier, la garde
-/// rougit au lieu de laisser passer un `RangeError` en production.
+/// L'intersection de (2) lit `Countries.countryList`, qui n'est pas
+/// ré-exporté par le barrel du paquet : c'est un import d'implémentation,
+/// **délibéré et épinglé** (`intl_phone_number_input: ^0.7.5`). Une garde
+/// (`z_intl_phone_input_bridge_test.dart`) affirme que [supportedIsoCodes]
+/// reste non vide et contient `TG`/`FR` : si le paquet déplace ce fichier,
+/// la garde rougit au lieu de laisser passer un `RangeError` en
+/// production.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart' as ipni;
-// Import d'implémentation DÉLIBÉRÉ et épinglé (`^0.7.5`) : le catalogue pays du
+// Import d'implémentation DÉLIBÉRÉ et épinglé (`^0.7.5`): le catalogue pays du
 // paquet n'est PAS ré-exporté par son barrel, et sans lui on ne peut pas
 // assainir la restriction `countries:` — ce qui laisserait passer le `RangeError`
 // mesuré (cas 2 ci-dessus). Une garde affirme que ce catalogue reste lisible.
@@ -60,8 +63,8 @@ import 'package:intl_phone_number_input/src/models/country_list.dart'
 /// Changement émis par le champ de rendu, en termes **neutres** (aucun type du
 /// paquet). [number] est la chaîne telle que le paquet la produit — E.164
 /// **seulement si le numéro est valide**, sinon `dialCode` concaténé à la saisie
-/// brute (mesuré : `'+228+++++'`). Elle n'est donc **jamais** persistée telle
-/// quelle : `ZPhoneCodec.toInternationalString` la canonise.
+/// brute (mesuré: `'+228+++++'`). Elle n'est donc **jamais** persistée telle
+/// quelle: `ZPhoneCodec.toInternationalString` la canonise.
 @immutable
 class ZPhoneInputChange {
   /// Construit un changement neutre.
@@ -79,7 +82,7 @@ class ZPhoneInputChange {
 
 /// Valeur d'amorçage **opaque et STABLE** du champ de rendu.
 ///
-/// **Pourquoi une graine et pas des paramètres** : le paquet compare
+/// **Pourquoi une graine et pas des paramètres**: le paquet compare
 /// `oldWidget.initialValue?.hash != widget.initialValue?.hash`, où `hash` est un
 /// **entier aléatoire tiré à la construction**. Reconstruire un `PhoneNumber` à
 /// chaque `build` rendrait donc cette comparaison **toujours vraie** et
@@ -90,14 +93,14 @@ class ZPhoneInputChange {
 class ZPhoneInputSeed {
   const ZPhoneInputSeed._(this._value);
 
-  /// Instance du paquet, **privée** : le type ne fuit pas hors de ce fichier.
+  /// Instance du paquet, **privée**: le type ne fuit pas hors de ce fichier.
   final ipni.PhoneNumber _value;
 
   /// Fabrique la graine.
   ///
-  /// [isoCode] : pays d'amorçage (peut être inconnu — le paquet retombe alors
+  /// [isoCode]: pays d'amorçage (peut être inconnu — le paquet retombe alors
   /// sur le premier pays de son catalogue, sans lever).
-  /// [e164] : numéro d'amorçage. **Ignoré si [isoCode] est `null`/vide** — c'est
+  /// [e164]: numéro d'amorçage. **Ignoré si [isoCode] est `null`/vide** — c'est
   /// la garde contre le `_TypeError` mesuré (cf. doc de bibliothèque, cas 1).
   factory ZPhoneInputSeed.of({String? isoCode, String? e164}) {
     final iso = (isoCode == null || isoCode.isEmpty) ? null : isoCode;
@@ -116,7 +119,7 @@ abstract final class ZIntlPhoneInputBridge {
   ///
   /// Ré-exposée en `Key` NEUTRE pour que les gardes de `zcrud_intl` puissent
   /// piloter le sélecteur sans importer le paquet (le confinement vaut aussi
-  /// pour les tests). La valeur littérale vient du paquet ; si celui-ci la
+  /// pour les tests). La valeur littérale vient du paquet; si celui-ci la
   /// change, les gardes qui l'utilisent rougissent — c'est voulu.
   static const Key countrySelectorKey = Key('intl_dropdown_key');
 
@@ -131,7 +134,7 @@ abstract final class ZIntlPhoneInputBridge {
 
   /// Codes ISO alpha-2 **réellement** connus du paquet de rendu.
   ///
-  /// Défensif (AD-10) : toute anomalie de lecture du catalogue du tiers rend un
+  /// Défensif (AD-10): toute anomalie de lecture du catalogue du tiers rend un
   /// ensemble vide plutôt que de lever — [sanitizeCountries] retombe alors sur
   /// « tous les pays », qui est le comportement sûr du paquet.
   static Set<String> get supportedIsoCodes => _supported ??= _readSupported();
@@ -144,7 +147,7 @@ abstract final class ZIntlPhoneInputBridge {
             (c['alpha_2_code'] as String).toUpperCase(),
       };
     } on Object {
-      // AD-10 : on rattrape `Object` (et donc AUSSI les `Error`) — le précédent
+      // AD-10: on rattrape `Object` (et donc AUSSI les `Error`) — le précédent
       // mesuré deux fois cette semaine est un tiers qui ne rattrapait que les
       // `Exception` et laissait remonter l'échec normal.
       return const <String>{};
@@ -182,8 +185,8 @@ abstract final class ZIntlPhoneInputBridge {
   /// + saisie formatée « as-you-type »), en ne recevant QUE des types neutres.
   ///
   /// [seed] doit être créée **une seule fois** par montage (cf. [ZPhoneInputSeed]).
-  /// [decoration] est **obligatoire** : elle porte le libellé, l'erreur et le
-  /// style, tous injectés par l'appelant (FR-26 — aucun littéral du paquet).
+  /// [decoration] est **obligatoire** : elle porte le libellé, l'erreur et
+  /// le style, tous injectés par l'appelant — aucun littéral du paquet.
   static Widget build({
     required ZPhoneInputSeed seed,
     required TextEditingController controller,
@@ -210,13 +213,13 @@ abstract final class ZIntlPhoneInputBridge {
         inputDecoration: decoration,
         textStyle: textStyle,
         selectorTextStyle: selectorTextStyle,
-        // FR-26 : neutralise les littéraux anglais du paquet. Le message
-        // d'erreur affiché vient de `decoration.errorText` (l10n injectée).
+        // Neutralise les littéraux anglais du paquet. Le message d'erreur
+        // affiché vient de `decoration.errorText` (l10n injectée).
         errorMessage: null,
         validator: (_) => null,
         autoValidateMode: AutovalidateMode.disabled,
-        // Parité legacy DODLP (`edition_screen.dart:2387`) : dialogue
-        // recherchable, bouton sélecteur en préfixe, drapeaux emoji.
+        // Dialogue recherchable, bouton sélecteur en préfixe, drapeaux
+        // emoji.
         selectorConfig: ipni.SelectorConfig(
           selectorType: searchable
               ? ipni.PhoneInputSelectorType.DIALOG
@@ -224,18 +227,18 @@ abstract final class ZIntlPhoneInputBridge {
           setSelectorButtonAsPrefixIcon: true,
           useEmoji: true,
           showFlags: true,
-          // CR-DODLP-PHONE-INDENT (2026-08-10) — retrait de TÊTE du contenu du
-          // bouton sélecteur. Mesuré : `Item` reçoit `leadingPadding:
-          // selectorConfig.leadingPadding`, `null` par défaut au niveau de
-          // `SelectorConfig` ⇒ `SizedBox(width: null)` ⇒ **0 dp**, alors que le
-          // défaut de `Item` lui-même est 12. Le drapeau se collait donc au bord
-          // du cadre (x = bord de la carte, mesuré). C'est le SEUL levier du
-          // tiers sur ce retrait : son `copyWith(prefixIcon: SelectorButton(…))`
-          // écrase tout `prefixIcon` injecté, donc l'envelopper est impossible.
-          // La valeur vient de l'appelant (jeton de thème), jamais d'ici (FR-26).
+          // Retrait de TÊTE du contenu du bouton sélecteur. `Item` reçoit
+          // `leadingPadding: selectorConfig.leadingPadding`, `null` par
+          // défaut au niveau de `SelectorConfig` ⇒ `SizedBox(width: null)`
+          // ⇒ **0 dp**, alors que le défaut de `Item` lui-même est 12. Le
+          // drapeau se collerait donc au bord du cadre. C'est le seul
+          // levier du paquet sur ce retrait : son
+          // `copyWith(prefixIcon: SelectorButton(…))` écrase tout
+          // `prefixIcon` injecté, donc l'envelopper est impossible. La
+          // valeur vient de l'appelant (jeton de thème), jamais d'ici.
           leadingPadding: selectorLeadingPadding,
-          // Le paquet complète sinon l'indicatif par `padRight(5, ' ')` : le
-          // texte rendu deviendrait `'+33  '`, une chaîne d'affichage AMBIGUË
+          // Le paquet complète sinon l'indicatif par `padRight(5, ' ')`: le
+          // texte rendu deviendrait `'+33 '`, une chaîne d'affichage AMBIGUË
           // pour toute garde (et pour la copie utilisateur).
           trailingSpace: false,
         ),

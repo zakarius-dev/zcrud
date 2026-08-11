@@ -1,20 +1,17 @@
-/// Repli **zéro-dépendance** du port `ZReorderRenderer` (AD-57).
+/// Repli **zéro-dépendance** du port `ZReorderRenderer`.
 ///
 /// Bâti sur le seul SDK Flutter (`LongPressDraggable`/`DragTarget`/`Scrollable`)
 /// via [ZReorderableAdaptiveGrid], et délégant le calcul de colonnes à
 /// `ZAdaptiveGrid`/`computeCrossAxisCount`.
 ///
-/// **Son rôle est d'être le plancher, pas l'idéal.** AD-57 exige qu'un
-/// consommateur qui n'installe aucun satellite garde une capacité
+/// **Son rôle est d'être le plancher, pas l'idéal.** Un consommateur qui
+/// n'installe aucun satellite garde une capacité de réordonnancement
 /// *fonctionnelle* : c'est ce renderer qui l'assure. Un hôte qui veut une
 /// ergonomie plus riche (aperçu de dépôt, animations inter-lignes, glisser
 /// multi-sélection) injecte un satellite adossé à un paquet de l'écosystème,
-/// ou sa propre implémentation — sans que le socle change.
-///
-/// Historique, parce qu'il explique la forme du code : cette grille a d'abord
-/// été écrite à la main au motif — **erroné** — qu'un paquet tiers serait
-/// « refusé par AD-1 ». AD-1 ne contraint que `zcrud_core`. Le travail n'est
-/// pas perdu : il devient le repli garanti.
+/// ou sa propre implémentation — sans que le socle change. L'invariant AD-1
+/// ne contraint que `zcrud_core` : rien n'empêche un satellite comme celui-ci
+/// de s'appuyer uniquement sur le SDK Flutter par choix de conception.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -25,7 +22,7 @@ import 'z_reorderable_adaptive_grid.dart';
 /// Implémentation de repli de [ZReorderRenderer], sans aucune dépendance
 /// au-delà du SDK Flutter.
 class ZDefaultReorderRenderer extends ZReorderRenderer {
-  /// Construit le renderer de repli. `const` : il peut être injecté tel quel.
+  /// Construit le renderer de repli. `const`: il peut être injecté tel quel.
   const ZDefaultReorderRenderer({
     this.autoScrollEdgeExtent = 64.0,
     this.autoScrollStep = 24.0,
@@ -45,7 +42,7 @@ class ZDefaultReorderRenderer extends ZReorderRenderer {
       itemBuilder: request.itemBuilder,
       onReorder: request.onReorder,
       minItemWidth: request.minItemWidth,
-      // AD-13 — la voie non-gestuelle est OBLIGATOIRE (cf. le contrat du port) :
+      // AD-13 — la voie non-gestuelle est OBLIGATOIRE (cf. le contrat du port):
       // un repli localisé s'applique si l'hôte n'a pas fourni de libellé, plutôt
       // que de laisser l'action sémantique sans nom, donc inutilisable.
       moveBeforeSemanticLabel:

@@ -1,4 +1,4 @@
-/// `ZHtmlView` — rendu HTML **natif en lecture** (fp-4-3, FR-23/AD-10) via
+/// `ZHtmlView` — rendu HTML **natif en lecture** (fp-4-3,AD-10) via
 /// `flutter_html`, widget PUR Flutter (montable en `flutter_test`, contrairement
 /// à la WebView d'édition — cf. ET-5).
 ///
@@ -6,9 +6,9 @@
 /// - **AD-10 (défensif)** : une entrée non-`String` / `null` ⇒ **rendu vide** ;
 ///   un HTML malformé (`String`) est rendu **best-effort** (`flutter_html` rend
 ///   les fragments) — JAMAIS de `throw`. Le format porté est **HTML `String`**.
-/// - **AD-40 / NFR-2** : aucun type `flutter_html` n'apparaît en signature
+/// - **AD-40** : aucun type `flutter_html` n'apparaît en signature
 ///   publique ([ZHtmlView] ne prend qu'un `String?` + un `label`).
-/// - **FR-26 / NFR-4** : couleur de texte dérivée du thème injecté
+/// - Couleur de texte dérivée du thème injecté
 ///   (`Theme.of(context)`), ZÉRO couleur codée en dur.
 /// - **AD-13** : conteneur `Semantics` explicite ; directionnel (aucun
 ///   `EdgeInsets.only(left:/right:)`).
@@ -23,7 +23,7 @@
 /// | Code inline `<code>` / `<pre>`        | texte brut (pas de coloration)  |
 /// | `<div>` / classes / CSS inline exotiques | best-effort, styles partiels |
 /// | Embeds Summernote (widgets JS)        | ignorés (non rendus)            |
-/// | LaTeX/MathJax (CDN runtime DODLP)     | HORS périmètre offline (AD-12) — |
+/// | LaTeX/MathJax (CDN runtime l'éditeur historique)     | HORS périmètre offline (AD-12) — |
 /// |                                       | jamais réintroduit ici          |
 library;
 
@@ -55,7 +55,7 @@ class ZHtmlView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String data = _sanitize(html);
-    // FR-26 : couleur de texte issue du thème injecté (repli `Theme.of`), zéro
+    // couleur de texte issue du thème injecté (repli `Theme.of`), zéro
     // couleur codée en dur ; le rendu `flutter_html` en hérite via `body`.
     final Color onSurface = Theme.of(context).colorScheme.onSurface;
     return Semantics(
