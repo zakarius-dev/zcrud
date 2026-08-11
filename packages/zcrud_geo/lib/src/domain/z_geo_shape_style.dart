@@ -17,7 +17,17 @@
 /// `null` ; toute clé absente/corrompue retombe sur son **défaut neutre** (une
 /// couleur non entière → `null`, une opacité hors [0,1]/non finie → bornée ou
 /// défaut). L'évolution de schéma reste **additive**.
+///
+/// **G17** : [iconSize]/[iconAnchor]/[iconRotation] (parité `gs:109-116`) sont
+/// désormais portés ET LUS par [fromMapSafe] (les données legacy posées par G1
+/// ne sont plus jetées). **G18** : les presets [defaultPoint]/[defaultCircle]/
+/// [defaultPolygon]/[defaultPolyline] rendent les valeurs legacy auditées de
+/// `ZGeoStyleReference` (fichier de référence unique — exception FR-26
+/// encadrée) ; ils restent **opt-in** (aucun preset n'est appliqué d'office).
 library;
+
+import 'z_geo_point.dart';
+import 'z_geo_style_reference.dart';
 
 /// Style de rendu neutre d'une [ZGeoShape] : couleurs ARGB, contour, opacité,
 /// icône de marqueur, draggable, info-window. Aucun type SDK/`Color` exposé.
@@ -37,6 +47,9 @@ class ZGeoShapeStyle {
     this.consumeTapEvents = true,
     this.iconAsset,
     this.iconColorArgb,
+    this.iconSize,
+    this.iconAnchor,
+    this.iconRotation = 0.0,
     this.showInfoWindow = false,
     this.infoWindowTitle,
     this.infoWindowSnippet,
@@ -77,6 +90,18 @@ class ZGeoShapeStyle {
   /// Marqueur : teinte d'icône **ARGB 32 bits** (`null` → aucune teinte imposée).
   final int? iconColorArgb;
 
+  /// Marqueur : taille d'icône en dp (G17, parité `gs:110` ; `null` → défaut
+  /// adaptateur).
+  final double? iconSize;
+
+  /// Marqueur : point d'ancrage normalisé `(0.0-1.0, 0.0-1.0)` (G17, parité
+  /// `gs:112-113` — le legacy le sérialise en `GeoPoint {lat,lng}`, repris tel
+  /// quel en [ZGeoPoint] pour la compat de lecture ; `null` → défaut adaptateur).
+  final ZGeoPoint? iconAnchor;
+
+  /// Marqueur : rotation en degrés (G17, parité `gs:116` ; défaut `0.0`).
+  final double iconRotation;
+
   /// Marqueur : afficher l'info-window (défaut `false`).
   final bool showInfoWindow;
 
@@ -92,6 +117,22 @@ class ZGeoShapeStyle {
   /// Borne supérieure d'opacité.
   static const double maxOpacity = 1.0;
 
+  // ===== Presets legacy audités (G18, opt-in — valeurs : ZGeoStyleReference) ==
+
+  /// Preset point/marqueur legacy (`gs:154-157`, référence auditée — opt-in).
+  static const ZGeoShapeStyle defaultPoint = ZGeoStyleReference.defaultPoint;
+
+  /// Preset cercle legacy (`gs:159-164`, référence auditée — opt-in).
+  static const ZGeoShapeStyle defaultCircle = ZGeoStyleReference.defaultCircle;
+
+  /// Preset polygone legacy (`gs:166-171`, référence auditée — opt-in).
+  static const ZGeoShapeStyle defaultPolygon =
+      ZGeoStyleReference.defaultPolygon;
+
+  /// Preset polyligne legacy (`gs:173-177`, référence auditée — opt-in).
+  static const ZGeoShapeStyle defaultPolyline =
+      ZGeoStyleReference.defaultPolyline;
+
   /// Sérialise en `Map` neutre. Les scalaires sont toujours émis ; les couleurs
   /// ARGB et les libellés d'info-window `null` sont **omis** (schéma additif).
   Map<String, Object?> toMap() => <String, Object?>{
@@ -106,6 +147,9 @@ class ZGeoShapeStyle {
         'consumeTapEvents': consumeTapEvents,
         if (iconAsset != null) 'iconAsset': iconAsset,
         if (iconColorArgb != null) 'iconColorArgb': iconColorArgb,
+        if (iconSize != null) 'iconSize': iconSize,
+        if (iconAnchor != null) 'iconAnchor': iconAnchor!.toMap(),
+        'iconRotation': iconRotation,
         'showInfoWindow': showInfoWindow,
         if (infoWindowTitle != null) 'infoWindowTitle': infoWindowTitle,
         if (infoWindowSnippet != null) 'infoWindowSnippet': infoWindowSnippet,
@@ -118,9 +162,9 @@ class ZGeoShapeStyle {
   /// **Alias de LECTURE legacy DODLP (G1)** : `fillColor`/`strokeColor`/
   /// `iconColor` (int ARGB `Color.value`, mesuré dans le JSON legacy) sont lues
   /// quand la clé zcrud `*Argb` est absente — la lecture stricte prime
-  /// toujours. Les clés legacy inconnues (`iconSize`/`iconAnchor`/
-  /// `iconRotation`) sont ignorées sans throw (G17 hors périmètre). LECTURE
-  /// seulement : [toMap] est strictement inchangé.
+  /// toujours. **G17** : `iconSize`/`iconAnchor`/`iconRotation` (mêmes clés des
+  /// deux côtés) sont désormais LUES au lieu d'être jetées — un `iconAnchor`
+  /// corrompu retombe à `null`, une rotation non numérique au défaut `0.0`.
   static ZGeoShapeStyle? fromMapSafe(Object? raw) {
     if (raw is! Map) return null;
     return ZGeoShapeStyle(
@@ -135,6 +179,9 @@ class ZGeoShapeStyle {
       consumeTapEvents: _asBool(raw['consumeTapEvents'], true),
       iconAsset: raw['iconAsset'] is String ? raw['iconAsset'] as String : null,
       iconColorArgb: _asArgb(raw['iconColorArgb'] ?? raw['iconColor']),
+      iconSize: _asFiniteDouble(raw['iconSize']),
+      iconAnchor: ZGeoPoint.fromMapSafe(raw['iconAnchor']),
+      iconRotation: _asFiniteDouble(raw['iconRotation']) ?? 0.0,
       showInfoWindow: _asBool(raw['showInfoWindow'], false),
       infoWindowTitle: raw['infoWindowTitle'] is String
           ? raw['infoWindowTitle'] as String
@@ -174,6 +221,17 @@ class ZGeoShapeStyle {
 
   static bool _asBool(Object? v, bool fallback) => v is bool ? v : fallback;
 
+  /// `double` **fini** ou `null` (défensif — G17).
+  static double? _asFiniteDouble(Object? v) {
+    double? d;
+    if (v is num) {
+      d = v.toDouble();
+    } else if (v is String) {
+      d = double.tryParse(v.trim());
+    }
+    return (d != null && d.isFinite) ? d : null;
+  }
+
   /// Opacité bornée `[0,1]` ; absente/non numérique/non finie → défaut `1.0`.
   static double _asOpacity(Object? v) {
     double? d;
@@ -200,6 +258,9 @@ class ZGeoShapeStyle {
     bool? consumeTapEvents,
     String? iconAsset,
     int? iconColorArgb,
+    double? iconSize,
+    ZGeoPoint? iconAnchor,
+    double? iconRotation,
     bool? showInfoWindow,
     String? infoWindowTitle,
     String? infoWindowSnippet,
@@ -216,6 +277,9 @@ class ZGeoShapeStyle {
         consumeTapEvents: consumeTapEvents ?? this.consumeTapEvents,
         iconAsset: iconAsset ?? this.iconAsset,
         iconColorArgb: iconColorArgb ?? this.iconColorArgb,
+        iconSize: iconSize ?? this.iconSize,
+        iconAnchor: iconAnchor ?? this.iconAnchor,
+        iconRotation: iconRotation ?? this.iconRotation,
         showInfoWindow: showInfoWindow ?? this.showInfoWindow,
         infoWindowTitle: infoWindowTitle ?? this.infoWindowTitle,
         infoWindowSnippet: infoWindowSnippet ?? this.infoWindowSnippet,
@@ -236,6 +300,9 @@ class ZGeoShapeStyle {
           other.consumeTapEvents == consumeTapEvents &&
           other.iconAsset == iconAsset &&
           other.iconColorArgb == iconColorArgb &&
+          other.iconSize == iconSize &&
+          other.iconAnchor == iconAnchor &&
+          other.iconRotation == iconRotation &&
           other.showInfoWindow == showInfoWindow &&
           other.infoWindowTitle == infoWindowTitle &&
           other.infoWindowSnippet == infoWindowSnippet;
@@ -253,6 +320,9 @@ class ZGeoShapeStyle {
         consumeTapEvents,
         iconAsset,
         iconColorArgb,
+        iconSize,
+        iconAnchor,
+        iconRotation,
         showInfoWindow,
         infoWindowTitle,
         infoWindowSnippet,

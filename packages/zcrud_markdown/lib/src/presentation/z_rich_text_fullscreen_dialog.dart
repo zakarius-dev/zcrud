@@ -28,6 +28,8 @@ import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
 import 'z_rich_text_core.dart';
+import 'z_rich_text_style_set.dart';
+import 'z_rich_text_toolbar_config.dart';
 
 /// Seuil de largeur (dp) sous lequel le dialog bascule en `Scaffold`
 /// plein-écran (petit écran / mobile). Au-dessus : dialog centré 80 %×70 %.
@@ -45,6 +47,10 @@ Future<Object?> showZRichTextFullscreenDialog(
   String? title,
   ZCodec? codec,
   String? placeholder,
+  ZRichTextStyleSet? styleSet,
+  double? textScaleFactor,
+  ZRichTextFormulaSpec? formulaSpec,
+  ZRichTextToolbarConfig? toolbarConfig,
 }) {
   final size = MediaQuery.sizeOf(context);
   final bool fullscreen = size.width < _kFullscreenBreakpoint;
@@ -58,6 +64,10 @@ Future<Object?> showZRichTextFullscreenDialog(
       title: title,
       codec: codec,
       placeholder: placeholder,
+      styleSet: styleSet,
+      textScaleFactor: textScaleFactor,
+      formulaSpec: formulaSpec,
+      toolbarConfig: toolbarConfig,
       fullscreen: fullscreen,
     ),
   );
@@ -72,6 +82,10 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
     this.title,
     this.codec,
     this.placeholder,
+    this.styleSet,
+    this.textScaleFactor,
+    this.formulaSpec,
+    this.toolbarConfig,
     this.fullscreen = false,
     super.key,
   });
@@ -89,6 +103,19 @@ class ZRichTextFullscreenDialog extends StatefulWidget {
   /// l'appelant (déjà résolu l10n par `ZMarkdownField`) ; `null` ⇒ aucun
   /// placeholder. JAMAIS de libellé codé en dur ici (FR-26).
   final String? placeholder;
+
+  /// Jeu de styles NEUTRE par champ (GAP-5) — MÊME rendu que le champ appelant.
+  final ZRichTextStyleSet? styleSet;
+
+  /// Facteur d'échelle ABSOLU du texte (GAP-7). `null` ⇒ échelle ambiante.
+  final double? textScaleFactor;
+
+  /// Rendu des formules par champ (GAP-7). `null` ⇒ rendu historique.
+  final ZRichTextFormulaSpec? formulaSpec;
+
+  /// Config de barre NEUTRE transmise par le champ appelant (GAP-9).
+  /// `null` ⇒ défaut historique du dialog ([ZRichTextToolbarConfig.full]).
+  final ZRichTextToolbarConfig? toolbarConfig;
 
   /// Présentation plein-écran (`Scaffold`) vs dialog dimensionné.
   final bool fullscreen;
@@ -122,6 +149,9 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
           insertZLatex(context, _quill, isMounted: () => mounted),
       onInsertTable: () =>
           insertZTable(context, _quill, isMounted: () => mounted),
+      // GAP-9 : config transmise par le champ appelant ; `null` ⇒ full
+      // (défaut historique du dialog, inchangé).
+      config: widget.toolbarConfig ?? ZRichTextToolbarConfig.full,
     );
   }
 
@@ -153,9 +183,15 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
         Semantics(
           container: true,
           label: 'Barre d\'outils',
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: kZMinTapTarget),
-            child: QuillSimpleToolbar(controller: _quill, config: _toolbarConfig),
+          // GAP-9 : fond thémé OPT-IN — `false`/`null` ⇒ aucun wrapper.
+          child: zDecorateToolbar(
+            context,
+            widget.toolbarConfig ?? ZRichTextToolbarConfig.full,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: kZMinTapTarget),
+              child:
+                  QuillSimpleToolbar(controller: _quill, config: _toolbarConfig),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -167,23 +203,31 @@ class _ZRichTextFullscreenDialogState extends State<ZRichTextFullscreenDialog> {
             ),
             child: Padding(
               padding: zTheme.fieldPadding,
-              child: QuillEditor(
-                controller: _quill,
-                focusNode: _focus,
-                scrollController: _scroll,
-                config: QuillEditorConfig(
-                  padding: EdgeInsetsDirectional.zero,
-                  embedBuilders: kZEmbedBuilders,
-                  // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
-                  // d'embed inconnu — d'un hôte, d'une version future, ou né
-                  // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
-                  // BUILD, donc irrattrapable : écran rouge, puis cascade de
-                  // `RenderErrorBox`. Mesuré sur `divider`.
-                  unknownEmbedBuilder: kZUnknownEmbedBuilder,
-                  // MIN-1 : styles de titres dérivés du thème (FR-26).
-                  customStyles: zQuillThemedStyles(context),
-                  // GAP-3 : même placeholder que le champ appelant.
-                  placeholder: widget.placeholder,
+              // GAP-7 : mêmes échelle/formules que le champ appelant.
+              child: zWrapRichTextContent(
+                context,
+                textScaleFactor: widget.textScaleFactor,
+                formulaSpec: widget.formulaSpec,
+                QuillEditor(
+                  controller: _quill,
+                  focusNode: _focus,
+                  scrollController: _scroll,
+                  config: QuillEditorConfig(
+                    padding: EdgeInsetsDirectional.zero,
+                    embedBuilders: kZEmbedBuilders,
+                    // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
+                    // d'embed inconnu — d'un hôte, d'une version future, ou né
+                    // d'une op corrompue — lève un `UnimplementedError` EN PLEIN
+                    // BUILD, donc irrattrapable : écran rouge, puis cascade de
+                    // `RenderErrorBox`. Mesuré sur `divider`.
+                    unknownEmbedBuilder: kZUnknownEmbedBuilder,
+                    // MIN-1 : styles de titres dérivés du thème (FR-26).
+                    // GAP-5 : jeu de styles par champ fusionné par-dessus.
+                    customStyles:
+                        zQuillThemedStyles(context, styleSet: widget.styleSet),
+                    // GAP-3 : même placeholder que le champ appelant.
+                    placeholder: widget.placeholder,
+                  ),
                 ),
               ),
             ),

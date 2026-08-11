@@ -30,6 +30,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
+import 'z_rich_text_style_set.dart';
+
 /// Clé/type Delta de l'embed LaTeX **inline** — op `{"insert": {"latex": "<src>"}}`.
 ///
 /// C'est aussi le `type` capté GÉNÉRIQUEMENT par `DeltaNeutralOps._embedPlaceholder`
@@ -107,9 +109,39 @@ Widget _latexErrorPlaceholder(BuildContext context) {
   );
 }
 
+/// `InheritedWidget` INTERNE fournissant la [ZRichTextFormulaSpec] par champ
+/// (GAP-7, CR parité 2026-08-11) aux builders de formule — qui sont `const` et
+/// PARTAGÉS ([kZEmbedBuilders]) : la personnalisation PAR CHAMP ne peut donc
+/// passer que par le contexte, jamais par le builder.
+///
+/// ABSENT ⇒ rendu historique STRICTEMENT inchangé (AD-57). Posé par
+/// `ZMarkdownField`/`ZMarkdownReader`/le dialog plein-écran quand l'hôte
+/// fournit une spec.
+class ZFormulaSpecScope extends InheritedWidget {
+  /// Fournit [spec] au sous-arbre [child].
+  const ZFormulaSpecScope({required this.spec, required super.child, super.key});
+
+  /// Spec de rendu des formules du champ courant.
+  final ZRichTextFormulaSpec spec;
+
+  /// Spec ambiante, ou `null` (⇒ rendu historique).
+  static ZRichTextFormulaSpec? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<ZFormulaSpecScope>()
+      ?.spec;
+
+  @override
+  bool updateShouldNotify(ZFormulaSpecScope oldWidget) => spec != oldWidget.spec;
+}
+
 /// Rendu DÉFENSIF (AD-10) commun d'une formule LaTeX avec un [mathStyle] donné.
 /// Donnée absente / non-`String` / vide → placeholder ; formule malformée →
 /// `onErrorFallback` (jamais de throw).
+///
+/// GAP-7 : honore la [ZRichTextFormulaSpec] ambiante ([ZFormulaSpecScope]) —
+/// `textStyle` remplace le style du point d'insertion ; le facteur d'échelle
+/// (`blockScaleFactor` pour `MathStyle.display`, `inlineScaleFactor` sinon)
+/// multiplie la taille de police EFFECTIVE (repli défensif 14 si aucune taille
+/// n'est résoluble — jamais de throw). Scope absent ⇒ rendu historique.
 Widget _buildMath(
   BuildContext context,
   EmbedContext embedContext,
@@ -119,10 +151,21 @@ Widget _buildMath(
   if (data is! String || data.trim().isEmpty) {
     return _latexErrorPlaceholder(context);
   }
+  final ZRichTextFormulaSpec? spec = ZFormulaSpecScope.maybeOf(context);
+  TextStyle style = spec?.textStyle ?? embedContext.textStyle;
+  final double? factor = mathStyle == MathStyle.display
+      ? spec?.blockScaleFactor
+      : spec?.inlineScaleFactor;
+  if (factor != null) {
+    final double size = style.fontSize ??
+        DefaultTextStyle.of(context).style.fontSize ??
+        14;
+    style = style.copyWith(fontSize: size * factor);
+  }
   return Math.tex(
     data,
     mathStyle: mathStyle,
-    textStyle: embedContext.textStyle,
+    textStyle: style,
     onErrorFallback: (FlutterMathException _) => _latexErrorPlaceholder(context),
   );
 }

@@ -28,7 +28,10 @@ import 'package:flutter/foundation.dart';
 @immutable
 class ZRichTextToolbarConfig {
   /// Construit une config granulaire. Tous les groupes sont activés par DÉFAUT
-  /// (équivaut au préset [full]) ; passez `false` pour masquer un groupe.
+  /// (équivaut au préset [full]) — SAUF [showStrikethrough] (GAP-8, cf. son
+  /// doc) et les options d'HABILLAGE de barre ([roundedIcons], [multiRow],
+  /// [themedBarBackground], GAP-9) qui sont opt-in ; passez `false` pour
+  /// masquer un groupe.
   const ZRichTextToolbarConfig({
     this.showUndoRedo = true,
     this.showFontFamily = true,
@@ -36,7 +39,7 @@ class ZRichTextToolbarConfig {
     this.showBold = true,
     this.showItalic = true,
     this.showUnderline = true,
-    this.showStrikethrough = true,
+    this.showStrikethrough = false,
     this.showInlineCode = true,
     this.showColor = true,
     this.showBackgroundColor = true,
@@ -57,6 +60,9 @@ class ZRichTextToolbarConfig {
     this.showTableButton = true,
     this.showImageButton = true,
     this.showVideoButton = true,
+    this.roundedIcons = false,
+    this.multiRow = false,
+    this.themedBarBackground = false,
   });
 
   /// Boutons Annuler/Rétablir.
@@ -78,6 +84,15 @@ class ZRichTextToolbarConfig {
   final bool showUnderline;
 
   /// Bouton barré.
+  ///
+  /// GAP-8 (CR parité 2026-08-11) : défaut `false` — ALIGNÉ sur le legacy
+  /// DODLP, qui désactive le barré sur TOUS ses éditeurs
+  /// (`showStrikeThrough: false`, `qmew:85`, hors de portée des presets
+  /// legacy). MESURÉ avant le changement : AUCUN hôte (DODLP / lex_douane /
+  /// IFFD / DLCFTI) ne référence `ZRichTextToolbarConfig` ni ne passe
+  /// `toolbarConfig` — le seul consommateur du défaut est le pilote DODLP via
+  /// le registre, qui demande précisément ce retrait. Un hôte qui VEUT le
+  /// bouton opte : `copyWith(showStrikethrough: true)`.
   final bool showStrikethrough;
 
   /// Bouton code inline.
@@ -145,7 +160,26 @@ class ZRichTextToolbarConfig {
   /// Bouton custom « Insérer une vidéo » (embed vidéo, DP-22).
   final bool showVideoButton;
 
+  /// GAP-9 (opt-in) : icônes **`*_rounded`** sur les boutons de la barre
+  /// (jeu MESURÉ du legacy DODLP, `qmew:118-208` + boutons custom). Seule
+  /// l'icône (`iconData`) est remplacée — les **tooltips restent ceux de
+  /// Quill, déjà localisés** (aucun libellé posé ici, FR-26/l10n). Défaut
+  /// `false` ⇒ icônes Quill historiques inchangées (AD-4).
+  final bool roundedIcons;
+
+  /// GAP-9 (opt-in) : barre **multi-rangées** (`multiRowsDisplay` Quill,
+  /// parité `qmew:229`). Défaut `false` ⇒ mono-rangée défilante historique.
+  final bool multiRow;
+
+  /// GAP-9 (opt-in) : **fond de barre thémé** — surface + liseré bas dérivés
+  /// des RÔLES du thème (`surfaceContainerLow` / `outlineVariant`, FR-26 :
+  /// zéro couleur en dur ; le legacy posait des gris figés, non repris).
+  /// Défaut `false` ⇒ aucune décoration (rendu historique).
+  final bool themedBarBackground;
+
   /// Préset **complet** : tous les boutons (défaut de la voie `controller`).
+  /// GAP-8 : le barré n'en fait plus partie (parité legacy — cf.
+  /// [showStrikethrough]) ; l'habillage GAP-9 reste opt-in.
   static const ZRichTextToolbarConfig full = ZRichTextToolbarConfig();
 
   /// Préset **minimal** (parité DODLP `minimal`) : style inline de base + listes,
@@ -186,7 +220,9 @@ class ZRichTextToolbarConfig {
     showFontFamily: false,
     showFontSize: false,
     showUnderline: true,
-    showStrikethrough: true,
+    // GAP-8 : barré retiré du préset (parité legacy `qmew:85` — le legacy le
+    // désactive sur l'éditeur markdown lui-même, quel que soit le preset).
+    showStrikethrough: false,
     showInlineCode: true,
     showColor: false,
     showBackgroundColor: false,
@@ -239,6 +275,9 @@ class ZRichTextToolbarConfig {
     bool? showTableButton,
     bool? showImageButton,
     bool? showVideoButton,
+    bool? roundedIcons,
+    bool? multiRow,
+    bool? themedBarBackground,
   }) {
     return ZRichTextToolbarConfig(
       showUndoRedo: showUndoRedo ?? this.showUndoRedo,
@@ -268,6 +307,9 @@ class ZRichTextToolbarConfig {
       showTableButton: showTableButton ?? this.showTableButton,
       showImageButton: showImageButton ?? this.showImageButton,
       showVideoButton: showVideoButton ?? this.showVideoButton,
+      roundedIcons: roundedIcons ?? this.roundedIcons,
+      multiRow: multiRow ?? this.multiRow,
+      themedBarBackground: themedBarBackground ?? this.themedBarBackground,
     );
   }
 
@@ -302,7 +344,10 @@ class ZRichTextToolbarConfig {
           showLatexButton == other.showLatexButton &&
           showTableButton == other.showTableButton &&
           showImageButton == other.showImageButton &&
-          showVideoButton == other.showVideoButton;
+          showVideoButton == other.showVideoButton &&
+          roundedIcons == other.roundedIcons &&
+          multiRow == other.multiRow &&
+          themedBarBackground == other.themedBarBackground;
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -333,5 +378,8 @@ class ZRichTextToolbarConfig {
         showTableButton,
         showImageButton,
         showVideoButton,
+        roundedIcons,
+        multiRow,
+        themedBarBackground,
       ]);
 }

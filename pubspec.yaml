@@ -144,6 +144,7 @@ workspace:
   - packages/zcrud_flashcard
   - packages/zcrud_firestore
   - packages/zcrud_geo
+  - packages/zcrud_geo_location
   - packages/zcrud_intl
   - packages/zcrud_export
   # CR-LEX-40 : export PDF SEUL (sans arete tableur) —  en depend

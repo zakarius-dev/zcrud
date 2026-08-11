@@ -17,9 +17,17 @@
 /// quand `lat`/`lng` sont absentes, (c) une **forme legacy typée `point`**
 /// (`{type: 'point', points: [{lat,lng}], label}` → `points[0]` + `label`).
 /// LECTURE seulement : [toMap] est strictement inchangé.
+///
+/// **G9 (additif, AD-4)** : le point porte un [style] de rendu **nullable**
+/// ([ZGeoShapeStyle]) — `null` ⇒ comportement/rendu strictement inchangés.
+/// [fromMapSafe] lit la clé `style` (zcrud comme legacy — le legacy la porte
+/// sur les 4 géométries) ; [toMap] ne l'émet que non-`null` (schéma additif).
 library;
 
+import 'dart:math' as math;
+
 import 'z_geo_legacy_codec.dart';
+import 'z_geo_shape_style.dart';
 
 /// Point géographique neutre : latitude/longitude + libellé/adresse optionnels.
 class ZGeoPoint {
@@ -32,6 +40,7 @@ class ZGeoPoint {
     required this.lng,
     this.label,
     this.address,
+    this.style,
   });
 
   /// Latitude en degrés décimaux (plage valide [-90, 90]).
@@ -45,6 +54,10 @@ class ZGeoPoint {
 
   /// Adresse postale optionnelle (texte libre).
   final String? address;
+
+  /// Style de rendu neutre optionnel (G9, additif — `null` ⇒ rendu inchangé :
+  /// l'adaptateur retombe sur le thème injecté, FR-26).
+  final ZGeoShapeStyle? style;
 
   /// Borne inférieure de latitude.
   static const double minLat = -90;
@@ -61,6 +74,28 @@ class ZGeoPoint {
   /// `true` si [lat]/[lng] sont finis ET dans les bornes géographiques.
   bool get isValid => _inBounds(lat, lng);
 
+  /// Rayon terrestre moyen en mètres (G11 — parité legacy `gff:87`,
+  /// `_earthRadius = 6371000`).
+  static const double earthRadiusMeters = 6371000;
+
+  /// Distance **haversine** en mètres vers [other] (G11 — parité legacy
+  /// `gff:113-127`, `_calculateDistance` : même formule, même rayon terrestre).
+  /// Pur-Dart (AD-14), aucun SDK. Sert au cercle « 2 taps » (rayon = distance
+  /// centre→2e tap) et aux poignées de rayon des adaptateurs.
+  double distanceMetersTo(ZGeoPoint other) {
+    final double lat1 = lat * math.pi / 180;
+    final double lat2 = other.lat * math.pi / 180;
+    final double dLat = (other.lat - lat) * math.pi / 180;
+    final double dLon = (other.lng - lng) * math.pi / 180;
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusMeters * c;
+  }
+
   static bool _inBounds(double lat, double lng) =>
       lat.isFinite &&
       lng.isFinite &&
@@ -76,6 +111,7 @@ class ZGeoPoint {
         'lng': lng,
         if (label != null) 'label': label,
         if (address != null) 'address': address,
+        if (style != null) 'style': style!.toMap(),
       };
 
   /// Parse **défensif** (AD-10) : retourne `null` sans jamais throw si [raw]
@@ -105,6 +141,8 @@ class ZGeoPoint {
       lng: lng,
       label: label is String ? label : null,
       address: address is String ? address : null,
+      // G9 : style optionnel (zcrud comme legacy) ; corrompu → null (AD-10).
+      style: ZGeoShapeStyle.fromMapSafe(decoded['style']),
     );
   }
 
@@ -116,12 +154,19 @@ class ZGeoPoint {
     if (map['type'] != 'point') return null;
     final points = map['points'];
     if (points is! List || points.isEmpty) return null;
-    final first = fromMapSafe(points.first);
+    var first = fromMapSafe(points.first);
     if (first == null) return null;
     final label = map['label'];
-    return (first.label == null && label is String)
-        ? first.copyWith(label: label)
-        : first;
+    if (first.label == null && label is String) {
+      first = first.copyWith(label: label);
+    }
+    // G9 : le style legacy est porté par la FORME (`{type:'point', style:…}`),
+    // pas par l'entrée de `points` — le reprendre s'il manque au point.
+    final style = ZGeoShapeStyle.fromMapSafe(map['style']);
+    if (first.style == null && style != null) {
+      first = first.copyWith(style: style);
+    }
+    return first;
   }
 
   /// Alias défensif de [fromMapSafe] (nullable) — cohérence de nommage
@@ -141,19 +186,21 @@ class ZGeoPoint {
     return null;
   }
 
-  /// Copie avec substitutions. `label`/`address` ne peuvent pas être remis à
-  /// `null` via cette API (sémantique de copie partielle).
+  /// Copie avec substitutions. `label`/`address`/`style` ne peuvent pas être
+  /// remis à `null` via cette API (sémantique de copie partielle).
   ZGeoPoint copyWith({
     double? lat,
     double? lng,
     String? label,
     String? address,
+    ZGeoShapeStyle? style,
   }) =>
       ZGeoPoint(
         lat: lat ?? this.lat,
         lng: lng ?? this.lng,
         label: label ?? this.label,
         address: address ?? this.address,
+        style: style ?? this.style,
       );
 
   @override
@@ -163,10 +210,11 @@ class ZGeoPoint {
           other.lat == lat &&
           other.lng == lng &&
           other.label == label &&
-          other.address == address;
+          other.address == address &&
+          other.style == style;
 
   @override
-  int get hashCode => Object.hash(lat, lng, label, address);
+  int get hashCode => Object.hash(lat, lng, label, address, style);
 
   @override
   String toString() =>

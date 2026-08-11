@@ -25,6 +25,7 @@ library;
 import 'package:zcrud_core/zcrud_core.dart';
 
 import 'z_geo_editor_toolbar_config.dart';
+import 'z_geo_map_options.dart';
 import 'z_geo_point.dart';
 
 /// Géométrie d'un champ géo (FR-20). Valeurs **camelCase** (canonique §5).
@@ -62,10 +63,24 @@ class ZGeoFieldConfig extends ZFieldConfig {
   ///   un endpoint privé en dur — AD-12) ;
   /// - [mapStyleJson] : style de carte Google **surchargeable** ;
   /// - [interactive] : `false` pour un aperçu non manipulable ;
-  /// - [toolbarConfig] : config **additive** de la barre d'outils d'éditeur géo
-  ///   (DP-7, gap B9) ; `null` (défaut) → **aucune barre d'outils** rendue →
-  ///   rétro-compat E11a-1/E11b-1 **stricte** (un champ sans `toolbarConfig`
-  ///   rend exactement l'UI d'origine).
+  /// - [toolbarConfig] : config de la barre d'outils d'éditeur géo (DP-7,
+  ///   gap B9). **G15 (changement de défaut, décision pilote)** : `null`
+  ///   (défaut) → barre **`standard`** (parité legacy `es:2337` :
+  ///   `geoConfig?.toolbarConfig ?? GeoEditorToolbarConfig.standard`). Pour ne
+  ///   rendre **aucune** barre, poser explicitement
+  ///   `ZGeoEditorToolbarConfig.none` ;
+  /// - [allowedGeometries] : géométries proposées par le **sélecteur de mode**
+  ///   (G2, parité legacy `gff:46-50`/`es:2326-2332`) ; `null` (défaut) →
+  ///   champ mono-géométrie (comportement antérieur strict) ;
+  /// - [adapterKey] : clé de fabrique d'adaptateur carte **par champ** (G4,
+  ///   parité legacy `gfc:25` `mapsProvider`) résolue dans le registre
+  ///   `ZGeoFieldWidget.builder(adapterFactories: {...})` ; `null` (défaut) ou
+  ///   clé absente du registre → repli sur l'`adapterFactory` unique
+  ///   (hôte mono-factory strictement inchangé) ;
+  /// - [tileUrlTemplates] : gabarits de tuiles OSM **par type de carte** (G3) ;
+  ///   `null` → défauts audités `ZGeoTileReference.defaults` (ESRI World
+  ///   Imagery pour satellite/hybride, OpenTopoMap pour terrain — mesurés
+  ///   `oma:53-110`).
   const ZGeoFieldConfig({
     this.geometry,
     this.defaultCenter,
@@ -75,6 +90,16 @@ class ZGeoFieldConfig extends ZFieldConfig {
     this.mapStyleJson,
     this.interactive = true,
     this.toolbarConfig,
+    this.allowedGeometries,
+    this.adapterKey,
+    this.tileUrlTemplates,
+    this.allowFullscreen = true,
+    this.showStylePicker = false,
+    this.showMetrics = false,
+    this.showChrome = false,
+    this.minZoom,
+    this.maxZoom,
+    this.zoomStep,
   });
 
   /// Géométrie du champ (`null` → repli inférence par nom de type — E11a-1).
@@ -100,11 +125,77 @@ class ZGeoFieldConfig extends ZFieldConfig {
   /// Carte manipulable (`false` = aperçu lecture seule).
   final bool interactive;
 
-  /// Config **additive** de la barre d'outils d'éditeur géo (DP-7, gap B9).
-  /// `null` (défaut) → aucune barre d'outils → rétro-compat E11a-1/E11b-1
-  /// stricte. Portée par `ZGeoFieldConfig` (point d'extension AD-4), jamais par
-  /// `zcrud_core`.
+  /// Config de la barre d'outils d'éditeur géo (DP-7, gap B9). **G15** :
+  /// `null` (défaut) → barre **`standard`** (parité legacy `es:2337`) ;
+  /// `ZGeoEditorToolbarConfig.none` → aucune barre. Portée par
+  /// `ZGeoFieldConfig` (point d'extension AD-4), jamais par `zcrud_core`.
   final ZGeoEditorToolbarConfig? toolbarConfig;
+
+  /// Géométries proposées par le sélecteur de mode (G2). `null` → champ
+  /// mono-géométrie (aucun sélecteur, comportement antérieur strict). La
+  /// **géométrie portée par la valeur initiale prime** sur cette liste
+  /// (parité legacy `gff:272`).
+  final List<ZGeoGeometry>? allowedGeometries;
+
+  /// Clé de fabrique d'adaptateur carte par champ (G4). `null` ou clé
+  /// inconnue → repli sur l'`adapterFactory` unique du builder (AD-10, jamais
+  /// de crash).
+  final String? adapterKey;
+
+  /// Gabarits de tuiles OSM par type de carte (G3, surchargeables — AD-12).
+  /// `null` → défauts audités `ZGeoTileReference.defaults`. Un type absent de
+  /// la `Map` retombe sur le défaut audité de ce type.
+  final Map<ZGeoMapType, String>? tileUrlTemplates;
+
+  /// Mode **plein écran** (G5, parité legacy `gff:971-1177` `_openFullscreen`).
+  /// `true` (défaut — parité : le legacy expose TOUJOURS ce bouton, et c'est
+  /// son SEUL mode d'édition carte) → le champ rend un bouton d'en-tête qui
+  /// ouvre une route immersive rendant LE MÊME champ (`mapHeight` infini) avec
+  /// AppBar (fermeture + « Enregistrer » validé par géométrie). Le bouton
+  /// n'apparaît que si une carte existe (adaptateur injecté) ; `false` →
+  /// aucun bouton, comportement antérieur strict.
+  final bool allowFullscreen;
+
+  /// G8 — câblage du **picker de style** (`ZGeoShapeStylePicker`, existant et
+  /// testé mais jusqu'ici jamais référencé en production). `true` → le champ
+  /// rend le picker et **persiste le style dans la valeur** (parité legacy
+  /// `gff:299-307` : `GeoShape.style` porté par la valeur). `false` (défaut)
+  /// → rendu strictement inchangé (AD-4).
+  final bool showStylePicker;
+
+  /// G12 — affichage du **chip de métriques** « aire | périmètre » + compteur
+  /// de points (parité legacy `gff:1363-1391`). Les calculs sont les
+  /// extensions pures de `z_geo_metrics.dart` (formules legacy reproduites,
+  /// nature documentée) ; les unités passent par la l10n injectée
+  /// (`geo.unit.*` — jamais « m² » figé hors repli). `false` (défaut) → aucun
+  /// chip (AD-4).
+  final bool showMetrics;
+
+  /// G19 — **chrome legacy opt-in** : encart carte (rayon/bordure/ombre —
+  /// rôles de thème, valeurs non dérivables en référence auditée
+  /// `ZGeoChromeReference`), en-tête dégradé + icône, pied de carte
+  /// **localisé** (`geo.pointsDefined` — jamais le texte anglais legacy en
+  /// dur). En mode chrome, la hauteur de carte par défaut est la valeur
+  /// legacy **300** (`ZGeoChromeReference.chromeMapHeight` ; [mapHeight] prime
+  /// — décision G19 documentée dans la référence). `false` (défaut) → rendu
+  /// antérieur strictement inchangé (AD-4).
+  final bool showChrome;
+
+  /// G23 — zoom minimal de la carte (honoré-si-supporté par l'adaptateur).
+  /// `null` → défaut de l'adaptateur (référence legacy OSM :
+  /// `ZGeoChromeReference.osmMinZoom` = 3).
+  final double? minZoom;
+
+  /// G23 — zoom maximal (honoré-si-supporté). `null` → défaut adaptateur
+  /// (référence legacy OSM : `ZGeoChromeReference.osmMaxZoom` = 19).
+  final double? maxZoom;
+
+  /// G23 — pas de zoom (référence legacy OSM :
+  /// `ZGeoChromeReference.osmZoomStep` = 1.0). **Donnée exposée, sans
+  /// consommateur actuel** : ni `flutter_map` ni Google Maps n'offrent de pas
+  /// de zoom natif (le legacy le passait à `flutter_osm_plugin`, SDK non
+  /// retenu) — honnêteté documentée plutôt qu'une simulation.
+  final double? zoomStep;
 
   /// Copie avec modifications ponctuelles (propage tous les champs, dont le
   /// [toolbarConfig] additif).
@@ -117,6 +208,16 @@ class ZGeoFieldConfig extends ZFieldConfig {
     String? mapStyleJson,
     bool? interactive,
     ZGeoEditorToolbarConfig? toolbarConfig,
+    List<ZGeoGeometry>? allowedGeometries,
+    String? adapterKey,
+    Map<ZGeoMapType, String>? tileUrlTemplates,
+    bool? allowFullscreen,
+    bool? showStylePicker,
+    bool? showMetrics,
+    bool? showChrome,
+    double? minZoom,
+    double? maxZoom,
+    double? zoomStep,
   }) =>
       ZGeoFieldConfig(
         geometry: geometry ?? this.geometry,
@@ -127,6 +228,16 @@ class ZGeoFieldConfig extends ZFieldConfig {
         mapStyleJson: mapStyleJson ?? this.mapStyleJson,
         interactive: interactive ?? this.interactive,
         toolbarConfig: toolbarConfig ?? this.toolbarConfig,
+        allowedGeometries: allowedGeometries ?? this.allowedGeometries,
+        adapterKey: adapterKey ?? this.adapterKey,
+        tileUrlTemplates: tileUrlTemplates ?? this.tileUrlTemplates,
+        allowFullscreen: allowFullscreen ?? this.allowFullscreen,
+        showStylePicker: showStylePicker ?? this.showStylePicker,
+        showMetrics: showMetrics ?? this.showMetrics,
+        showChrome: showChrome ?? this.showChrome,
+        minZoom: minZoom ?? this.minZoom,
+        maxZoom: maxZoom ?? this.maxZoom,
+        zoomStep: zoomStep ?? this.zoomStep,
       );
 
   @override
@@ -141,7 +252,17 @@ class ZGeoFieldConfig extends ZFieldConfig {
           tileUrlTemplate == other.tileUrlTemplate &&
           mapStyleJson == other.mapStyleJson &&
           interactive == other.interactive &&
-          toolbarConfig == other.toolbarConfig;
+          toolbarConfig == other.toolbarConfig &&
+          _listEquals(other.allowedGeometries, allowedGeometries) &&
+          adapterKey == other.adapterKey &&
+          _mapEquals(other.tileUrlTemplates, tileUrlTemplates) &&
+          allowFullscreen == other.allowFullscreen &&
+          showStylePicker == other.showStylePicker &&
+          showMetrics == other.showMetrics &&
+          showChrome == other.showChrome &&
+          minZoom == other.minZoom &&
+          maxZoom == other.maxZoom &&
+          zoomStep == other.zoomStep;
 
   @override
   int get hashCode => Object.hash(
@@ -154,5 +275,40 @@ class ZGeoFieldConfig extends ZFieldConfig {
         mapStyleJson,
         interactive,
         toolbarConfig,
+        allowedGeometries == null
+            ? null
+            : Object.hashAll(allowedGeometries!),
+        adapterKey,
+        tileUrlTemplates == null
+            ? null
+            : Object.hashAll(tileUrlTemplates!.entries
+                .map((MapEntry<ZGeoMapType, String> e) =>
+                    Object.hash(e.key, e.value))),
+        allowFullscreen,
+        showStylePicker,
+        showMetrics,
+        showChrome,
+        minZoom,
+        maxZoom,
+        zoomStep,
       );
+
+  static bool _listEquals(List<ZGeoGeometry>? a, List<ZGeoGeometry>? b) {
+    if (a == null || b == null) return a == b;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _mapEquals(
+      Map<ZGeoMapType, String>? a, Map<ZGeoMapType, String>? b) {
+    if (a == null || b == null) return a == b;
+    if (a.length != b.length) return false;
+    for (final MapEntry<ZGeoMapType, String> e in a.entries) {
+      if (b[e.key] != e.value) return false;
+    }
+    return true;
+  }
 }

@@ -24,6 +24,7 @@ library;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
@@ -31,6 +32,7 @@ import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
 import 'z_rich_text_core.dart';
+import 'z_rich_text_style_set.dart';
 
 /// Habillage du [ZMarkdownReader] — CR-IFFD-73.
 ///
@@ -66,6 +68,15 @@ class ZMarkdownReader extends StatefulWidget {
     this.chrome = ZMarkdownReaderChrome.bordered,
     this.semanticsEnabled = true,
     this.baseStyle,
+    this.styleSet,
+    this.textScaleFactor,
+    this.formulaSpec,
+    this.copyOnLongPress = false,
+    this.copiedFeedbackText,
+    this.copySemanticsLabel,
+    this.emptyBuilder,
+    this.emptyIcon,
+    this.emptySubtitle,
     super.key,
   });
 
@@ -105,6 +116,52 @@ class ZMarkdownReader extends StatefulWidget {
   /// du port `ZRichTextRenderer` — et il alimente AUSSI le placeholder, pour que
   /// le vide ne change pas de taille en cours de route.
   final TextStyle? baseStyle;
+
+  /// Jeu de styles NEUTRE par champ (GAP-5) — mêmes slots qu'en édition,
+  /// appliqué PAR-DESSUS thème + [baseStyle]. `null` ⇒ rendu historique (AD-57).
+  final ZRichTextStyleSet? styleSet;
+
+  /// Facteur d'échelle ABSOLU du texte rendu (GAP-7). `null` ⇒ échelle ambiante.
+  final double? textScaleFactor;
+
+  /// Rendu des formules par champ (GAP-7). `null` ⇒ rendu historique.
+  final ZRichTextFormulaSpec? formulaSpec;
+
+  /// GAP-11 (opt-in) : un **appui long** sur le contenu copie la valeur au
+  /// presse-papier (parité legacy `edition_screen:1293-1300`).
+  ///
+  /// Charge copiée : la valeur ENCODÉE par le codec du lecteur — un
+  /// `ZMarkdownCodec` copie donc le **string Markdown** (comportement legacy) ;
+  /// un codec dont l'encodage n'est pas un `String` (ex. `ZDeltaCodec`) copie
+  /// le Delta JSON sérialisé. ⚠️ Mesuré : le long-press de SÉLECTION de
+  /// l'éditeur (enfant) gagne l'arène gestuelle sur un `GestureDetector`
+  /// parent — l'opt-in **désactive donc la sélection interactive** du lecteur,
+  /// exactement l'articulation legacy (lecteur non sélectionnable, appui long
+  /// = tout copier). Défaut `false` ⇒ rendu ET gestes historiques inchangés.
+  final bool copyOnLongPress;
+
+  /// GAP-11 : libellé du retour (SnackBar via `ScaffoldMessenger.maybeOf`)
+  /// après copie — INJECTÉ par l'hôte (l10n chez lui, aucun libellé en dur
+  /// ici). `null` OU messenger absent ⇒ copie **silencieuse** (aucun crash).
+  final String? copiedFeedbackText;
+
+  /// GAP-11 : libellé `Semantics` du geste de copie (hint annoncé au lecteur
+  /// d'écran). `null` ⇒ l'action long-press reste exposée, annoncée par le
+  /// système (localisé), sans hint supplémentaire.
+  final String? copySemanticsLabel;
+
+  /// GAP-12 (opt-in) : constructeur d'état vide ENTIÈREMENT custom — prioritaire
+  /// sur [emptyIcon]/[emptySubtitle]. `null` (et icône/sous-titre `null`) ⇒
+  /// état vide historique STRICTEMENT inchangé ([placeholder] seul).
+  final WidgetBuilder? emptyBuilder;
+
+  /// GAP-12 (opt-in) : icône de l'état vide enrichi (parité legacy
+  /// `notes_rounded`, `mef:386` — l'ICÔNE est choisie par l'hôte, rien d'imposé).
+  final IconData? emptyIcon;
+
+  /// GAP-12 (opt-in) : seconde ligne de l'état vide enrichi (sous le
+  /// [placeholder]) — libellé INJECTÉ par l'hôte (aucun texte en dur ici).
+  final String? emptySubtitle;
 
   @override
   State<ZMarkdownReader> createState() => _ZMarkdownReaderState();
@@ -174,6 +231,80 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
     return plain.isEmpty;
   }
 
+  /// GAP-11 : copie la valeur ENCODÉE (codec du lecteur) au presse-papier,
+  /// puis retour opt-in — SnackBar seulement si un libellé est INJECTÉ **et**
+  /// qu'un `ScaffoldMessenger` est monté ; sinon copie silencieuse (AD-10 :
+  /// jamais de crash faute de canal de notification).
+  Future<void> _copyAll() async {
+    final Object? encoded =
+        _codec.encode(DeltaNeutralOps.encodeNeutral(_quill.document));
+    final String payload = encoded is String ? encoded : jsonEncode(encoded);
+    await Clipboard.setData(ClipboardData(text: payload));
+    if (!mounted) return;
+    final String? feedback = widget.copiedFeedbackText;
+    if (feedback == null) return;
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(feedback)));
+  }
+
+  /// GAP-12 : état vide — historique STRICT quand aucun paramètre d'état vide
+  /// n'est fourni ; enrichi (icône + deux lignes) ou builder custom sinon.
+  Widget _buildEmptyState(BuildContext context, EdgeInsetsGeometry pad) {
+    final WidgetBuilder? builder = widget.emptyBuilder;
+    if (builder != null) {
+      return Padding(padding: pad, child: builder(context));
+    }
+    final TextStyle? placeholderStyle =
+        widget.baseStyle ?? Theme.of(context).textTheme.bodySmall;
+    if (widget.emptyIcon == null && widget.emptySubtitle == null) {
+      // Défaut HISTORIQUE inchangé (gardé) : le placeholder seul, aligné début.
+      return Padding(
+        padding: pad,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            widget.placeholder,
+            textAlign: TextAlign.start,
+            style: placeholderStyle,
+          ),
+        ),
+      );
+    }
+    // Enrichi (opt-in) : icône + [placeholder] + sous-titre, centrés —
+    // couleurs issues des RÔLES du thème (FR-26, zéro couleur en dur).
+    final Color muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: pad,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (widget.emptyIcon != null) ...<Widget>[
+              Icon(widget.emptyIcon, color: muted, size: 32),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              widget.placeholder,
+              textAlign: TextAlign.center,
+              style: placeholderStyle,
+            ),
+            if (widget.emptySubtitle != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                widget.emptySubtitle!,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final zTheme = ZcrudTheme.of(context);
@@ -187,21 +318,16 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
         : zTheme.fieldPadding;
 
     final Widget content = _isEmpty
-        ? Padding(
-            padding: pad,
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                widget.placeholder,
-                textAlign: TextAlign.start,
-                style: widget.baseStyle ??
-                    Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          )
+        // GAP-12 : historique STRICT sans paramètre ; enrichi/builder opt-in.
+        ? _buildEmptyState(context, pad)
         : Padding(
             padding: pad,
-            child: QuillEditor(
+            child: zWrapRichTextContent(
+              context,
+              // GAP-7 : échelle/formules par champ — `null` ⇒ aucun wrapper.
+              textScaleFactor: widget.textScaleFactor,
+              formulaSpec: widget.formulaSpec,
+              QuillEditor(
               controller: _quill,
               focusNode: _focus,
               scrollController: _scroll,
@@ -211,6 +337,10 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 padding: EdgeInsetsDirectional.zero,
                 // Autorise la sélection/copie (lecture) mais AUCUNE saisie
                 // (controller readOnly). MÊMES embed builders qu'en édition.
+                // GAP-11 : l'opt-in `copyOnLongPress` DÉSACTIVE la sélection
+                // interactive — mesuré, le recognizer long-press de sélection
+                // (enfant) gagnerait sinon l'arène sur le geste de copie.
+                enableInteractiveSelection: !widget.copyOnLongPress,
                 showCursor: false,
                 embedBuilders: kZEmbedBuilders,
                 // 🔴 CR-IFFD-73 (AD-10) : repli TOTAL. Sans lui, un type
@@ -219,21 +349,43 @@ class _ZMarkdownReaderState extends State<ZMarkdownReader> {
                 // BUILD, donc irrattrapable : écran rouge, puis cascade de
                 // `RenderErrorBox`. Mesuré sur `divider`.
                 unknownEmbedBuilder: kZUnknownEmbedBuilder,
-                // MIN-1 : styles de titres dérivés du thème (FR-26).
-                customStyles:
-                    zQuillThemedStyles(context, baseStyle: widget.baseStyle),
+                  // MIN-1 : styles de titres dérivés du thème (FR-26).
+                  // GAP-5 : jeu de styles par champ fusionné par-dessus.
+                  customStyles: zQuillThemedStyles(
+                    context,
+                    baseStyle: widget.baseStyle,
+                    styleSet: widget.styleSet,
+                  ),
+                ),
               ),
             ),
           );
 
+    // GAP-11 (opt-in) : appui long = copie du contenu + retour. Jamais sur
+    // l'état vide (parité legacy : le geste n'existe que s'il y a un contenu).
+    Widget gestured = content;
+    if (widget.copyOnLongPress && !_isEmpty) {
+      gestured = Semantics(
+        // Action exposée au lecteur d'écran (AD-13) ; hint INJECTÉ optionnel.
+        onLongPress: _copyAll,
+        hint: widget.copySemanticsLabel,
+        child: GestureDetector(
+          key: const Key('z-markdown-reader-copy-gesture'),
+          behavior: HitTestBehavior.opaque,
+          onLongPress: _copyAll,
+          child: content,
+        ),
+      );
+    }
+
     final Widget framed = chromeless
-        ? content
+        ? gestured
         : DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(color: borderColor),
               borderRadius: BorderRadius.all(zTheme.radiusM),
             ),
-            child: content,
+            child: gestured,
           );
 
     final Widget reader = widget.semanticsEnabled

@@ -26,11 +26,22 @@ void main() {
       expect(o.trafficEnabled, isFalse);
       expect(o.buildingsEnabled, isTrue);
       expect(o.indoorViewEnabled, isFalse);
-      expect(o.rotateGesturesEnabled, isTrue);
-      expect(o.tiltGesturesEnabled, isTrue);
+      // G22 — GARDE DE CHANGEMENT DE DÉFAUT (parité legacy gec:293-294) :
+      // rotation/tilt désormais INACTIFS par défaut. Un hôte qui comptait sur
+      // `true` doit opter explicitement (cf. note handoff du constructeur).
+      expect(o.rotateGesturesEnabled, isFalse,
+          reason: 'G22 : défaut legacy rotateGesturesEnabled=false');
+      expect(o.tiltGesturesEnabled, isFalse,
+          reason: 'G22 : défaut legacy tiltGesturesEnabled=false');
       expect(o.zoomControlsEnabled, isTrue);
       expect(o.compassEnabled, isTrue);
       expect(o.mapToolbarEnabled, isTrue);
+      // G21 — point bleu natif : opt-in (`false` — la permission appartient à
+      // l'hôte, divergence documentée vs legacy gec:298) ; bouton natif au
+      // défaut SDK (`true`, inerte tant que myLocationEnabled est false).
+      expect(o.myLocationEnabled, isFalse,
+          reason: 'G21 : opt-in, jamais un défaut qui exige une permission');
+      expect(o.myLocationButtonEnabled, isTrue);
     });
 
     test('copyWith couvre tous les champs', () {
@@ -45,6 +56,8 @@ void main() {
         zoomControlsEnabled: true,
         compassEnabled: true,
         mapToolbarEnabled: true,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
       );
       expect(o.mapType, ZGeoMapType.satellite);
       expect(o.trafficEnabled, isTrue);
@@ -55,6 +68,8 @@ void main() {
       expect(o.zoomControlsEnabled, isTrue);
       expect(o.compassEnabled, isTrue);
       expect(o.mapToolbarEnabled, isTrue);
+      expect(o.myLocationEnabled, isTrue);
+      expect(o.myLocationButtonEnabled, isFalse);
       expect(base.copyWith(), equals(base));
     });
 

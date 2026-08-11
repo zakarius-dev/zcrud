@@ -237,4 +237,154 @@ void main() {
       expect(poly.holes, isEmpty);
     });
   });
+
+  group('G7 — caméra ZGoogleMapAdapter (ZMapCameraCapable)', () {
+    test('l\'adaptateur opte pour caméra + gestes', () {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      expect(adapter, isA<ZMapCameraCapable>());
+      expect(adapter, isA<ZMapGesturesCapable>());
+    });
+
+    test(
+        'moveCamera/fitBounds AVANT création du contrôleur natif → no-op '
+        'IMMÉDIAT (ne suspend jamais sur un Completer incomplet — AD-10)',
+        () async {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      // Si l\'implémentation attendait le Completer jamais complété, ces
+      // futures ne complèteraient JAMAIS → timeout du test.
+      await adapter
+          .moveCamera(const ZGeoPoint(lat: 6, lng: 1), zoom: 16)
+          .timeout(const Duration(seconds: 1));
+      await adapter
+          .fitBounds(
+            const ZGeoPoint(lat: 5, lng: 0),
+            const ZGeoPoint(lat: 7, lng: 2),
+          )
+          .timeout(const Duration(seconds: 1));
+    });
+
+    test('moveCamera APRÈS dispose → no-op sans throw', () async {
+      final adapter = ZGoogleMapAdapter();
+      adapter.dispose();
+      await adapter.moveCamera(const ZGeoPoint(lat: 6, lng: 1));
+    });
+  });
+
+  group('G11/G13 — marqueurs draggables natifs Google (si handler posé)', () {
+    final ZGeoShape triShape = ZGeoShape(
+      vertices: const <ZGeoPoint>[
+        ZGeoPoint(lat: 0, lng: 0),
+        ZGeoPoint(lat: 1, lng: 1),
+        ZGeoPoint(lat: 2, lng: 0),
+      ],
+    );
+
+    /// Construit le graphe via buildMap et CAPTURE le widget `GoogleMap` pour
+    /// inspecter ses marqueurs (aucune PlatformView montée).
+    Future<GoogleMap> capture(
+      WidgetTester tester,
+      ZGoogleMapAdapter adapter, {
+      ZGeoShape? shape,
+      ZGeoCircle? circle,
+    }) async {
+      late final Widget built;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              built = adapter.buildMap(context, shape: shape, circle: circle);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      return built as GoogleMap;
+    }
+
+    testWidgets('sans handler → AUCUN marqueur de sommet (rendu antérieur, AD-4)',
+        (tester) async {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      final GoogleMap map = await capture(tester, adapter, shape: triShape);
+      expect(
+        map.markers.where(
+          (Marker m) => m.markerId.value.startsWith('z-geo-vertex-'),
+        ),
+        isEmpty,
+      );
+      expect(
+        map.markers.where((Marker m) => m.markerId.value == 'z-geo-move-handle'),
+        isEmpty,
+      );
+    });
+
+    testWidgets(
+        'onVertexDragEnd posé → un marqueur draggable PAR SOMMET ; onDragEnd '
+        'remonte (index, point neutre)', (tester) async {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      final List<(int, ZGeoPoint)> dragged = <(int, ZGeoPoint)>[];
+      adapter.onVertexDragEnd = (int i, ZGeoPoint p) => dragged.add((i, p));
+      final GoogleMap map = await capture(tester, adapter, shape: triShape);
+      final List<Marker> vertexMarkers = map.markers
+          .where((Marker m) => m.markerId.value.startsWith('z-geo-vertex-'))
+          .toList();
+      expect(vertexMarkers, hasLength(3));
+      expect(vertexMarkers.every((Marker m) => m.draggable), isTrue);
+      // Simule la fin de drag native du sommet 1.
+      final Marker m1 = vertexMarkers
+          .singleWhere((Marker m) => m.markerId.value == 'z-geo-vertex-1');
+      m1.onDragEnd!(const LatLng(1.5, 1.5));
+      expect(dragged.single, equals((1, const ZGeoPoint(lat: 1.5, lng: 1.5))));
+    });
+
+    testWidgets('onShapeDragEnd posé → marqueur draggable au centroïde ; '
+        'onDragEnd remonte le DELTA', (tester) async {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      final List<(double, double)> deltas = <(double, double)>[];
+      adapter.onShapeDragEnd =
+          (double dLat, double dLng) => deltas.add((dLat, dLng));
+      final GoogleMap map = await capture(tester, adapter, shape: triShape);
+      final Marker handle = map.markers
+          .singleWhere((Marker m) => m.markerId.value == 'z-geo-move-handle');
+      expect(handle.draggable, isTrue);
+      // Centroïde du triangle = (1, 1/3) ; fin de drag à (1.5, 0.5).
+      handle.onDragEnd!(const LatLng(1.5, 0.5));
+      expect(deltas.single.$1, closeTo(0.5, 1e-9));
+      expect(deltas.single.$2, closeTo(0.5 - 1 / 3, 1e-9));
+    });
+
+    testWidgets('onCircleRadiusDragEnd posé → poignée draggable au périmètre '
+        'EST ; onDragEnd remonte le rayon haversine', (tester) async {
+      final adapter = ZGoogleMapAdapter();
+      addTearDown(adapter.dispose);
+      final List<double> radii = <double>[];
+      adapter.onCircleRadiusDragEnd = radii.add;
+      const circle = ZGeoCircle(
+        center: ZGeoPoint(lat: 0, lng: 0),
+        radiusMeters: 500,
+      );
+      final GoogleMap map =
+          await capture(tester, adapter, circle: circle);
+      final Marker handle = map.markers
+          .singleWhere((Marker m) => m.markerId.value == 'z-geo-radius-handle');
+      expect(handle.draggable, isTrue);
+      // La poignée est posée ~500 m à l\'EST du centre.
+      expect(
+        const ZGeoPoint(lat: 0, lng: 0).distanceMetersTo(
+          ZGeoPoint(
+            lat: handle.position.latitude,
+            lng: handle.position.longitude,
+          ),
+        ),
+        closeTo(500, 1),
+      );
+      // Fin de drag à ~0.01° est (≈ 1112 m).
+      handle.onDragEnd!(const LatLng(0, 0.01));
+      expect(radii.single, closeTo(1111.95, 1));
+    });
+  });
 }

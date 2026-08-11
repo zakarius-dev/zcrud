@@ -27,6 +27,7 @@ import '../data/z_table_ops.dart';
 import 'z_divider_embed.dart';
 import 'z_latex_embed.dart';
 import 'z_media_embed.dart';
+import 'z_rich_text_style_set.dart';
 import 'z_rich_text_toolbar_config.dart';
 import 'z_table_embed.dart';
 
@@ -94,7 +95,27 @@ const List<EmbedBuilder> kZEmbedBuilders = <EmbedBuilder>[
 /// donc sa taille en silence. Les **rôles matérialisés** (titres H1..H6, code
 /// inline) en dévient délibérément et restent dérivés du thème (FR-26).
 /// `null` ⇒ comportement historique strictement inchangé.
-DefaultStyles zQuillThemedStyles(BuildContext context, {TextStyle? baseStyle}) {
+///
+/// [styleSet] (optionnel, GAP-5 — CR parité 2026-08-11) : jeu de styles NEUTRE
+/// injecté PAR CHAMP par l'hôte ([ZRichTextStyleSet]) — la voie « signature
+/// DODLP » SANS faire entrer les valeurs legacy dans le paquet (polices Google
+/// et palette restent chez l'hôte, cf. `z_rich_text_style_set.dart`). Appliqué
+/// EN DERNIER (par-dessus thème + [baseStyle]) : chaque slot fusionne sur le
+/// style courant, les slots absents ne changent RIEN. `null` ⇒ inchangé
+/// (AD-57) — le choix AD-13 (défauts dérivés du seul thème) reste le défaut.
+DefaultStyles zQuillThemedStyles(
+  BuildContext context, {
+  TextStyle? baseStyle,
+  ZRichTextStyleSet? styleSet,
+}) {
+  final DefaultStyles themed =
+      _zQuillThemedBase(context, baseStyle: baseStyle);
+  if (styleSet == null) return themed;
+  return _applyZStyleSet(themed, styleSet);
+}
+
+/// Dérivation thème + [baseStyle] HISTORIQUE (MIN-1/DP-RT) — inchangée.
+DefaultStyles _zQuillThemedBase(BuildContext context, {TextStyle? baseStyle}) {
   final DefaultStyles base = DefaultStyles.getInstance(context);
   final TextTheme tt = Theme.of(context).textTheme;
   DefaultTextBlockStyle? merge(DefaultTextBlockStyle? proto, TextStyle? role) {
@@ -132,6 +153,164 @@ DefaultStyles zQuillThemedStyles(BuildContext context, {TextStyle? baseStyle}) {
   );
 }
 
+/// Traduction INTERNE (AD-7 : le type Quill [DefaultStyles] ne fuit jamais) du
+/// jeu de styles NEUTRE [ZRichTextStyleSet] par-dessus les styles courants.
+///
+/// Sémantique par slot : hauteur de ligne appliquée d'abord (`copyWith(height:)`),
+/// puis FUSION du [TextStyle] du slot (un slot portant `height` l'emporte) ;
+/// espacement/décoration remplacés seulement si fournis ([ZRichTextSpacing] →
+/// `VerticalSpacing` Quill). Les protos absents chez Quill restent absents
+/// (dégradation sûre, AD-10 : on n'invente pas un bloc).
+DefaultStyles _applyZStyleSet(DefaultStyles base, ZRichTextStyleSet s) {
+  TextStyle? inline(TextStyle? proto, TextStyle? slot) =>
+      slot == null ? null : (proto?.merge(slot) ?? slot);
+
+  DefaultTextBlockStyle? block(
+    DefaultTextBlockStyle? proto, {
+    TextStyle? slot,
+    double? height,
+    ZRichTextSpacing? spacing,
+    BoxDecoration? decoration,
+  }) {
+    if (proto == null) return null;
+    if (slot == null && height == null && spacing == null && decoration == null) {
+      // Rien à changer sur ce slot : `null` ⇒ `merge` conserve le proto.
+      return null;
+    }
+    TextStyle style = proto.style;
+    if (height != null) style = style.copyWith(height: height);
+    if (slot != null) style = style.merge(slot);
+    return proto.copyWith(
+      style: style,
+      verticalSpacing:
+          spacing != null ? VerticalSpacing(spacing.top, spacing.bottom) : null,
+      decoration: decoration,
+    );
+  }
+
+  // Code inline : style + fond + rayon (structure `InlineCodeStyle` dédiée).
+  InlineCodeStyle? inlineCode;
+  if (s.inlineCode != null ||
+      s.inlineCodeBackgroundColor != null ||
+      s.inlineCodeRadius != null) {
+    final InlineCodeStyle? proto = base.inlineCode;
+    inlineCode = InlineCodeStyle(
+      style: (proto?.style ?? const TextStyle()).merge(s.inlineCode),
+      header1: proto?.header1,
+      header2: proto?.header2,
+      header3: proto?.header3,
+      header4: proto?.header4,
+      header5: proto?.header5,
+      header6: proto?.header6,
+      backgroundColor: s.inlineCodeBackgroundColor ?? proto?.backgroundColor,
+      radius: s.inlineCodeRadius ?? proto?.radius,
+    );
+  }
+
+  // Listes : sous-type `DefaultListBlockStyle` (copyWith dédié conserve la
+  // mécanique checkbox/indent de Quill).
+  DefaultListBlockStyle? lists;
+  final DefaultListBlockStyle? listsProto = base.lists;
+  if (listsProto != null &&
+      (s.lists != null || s.lineHeight != null || s.listSpacing != null)) {
+    TextStyle listStyle = listsProto.style;
+    final double? lh = s.lineHeight;
+    if (lh != null) listStyle = listStyle.copyWith(height: lh);
+    final TextStyle? listSlot = s.lists;
+    if (listSlot != null) listStyle = listStyle.merge(listSlot);
+    final ZRichTextSpacing? lsp = s.listSpacing;
+    lists = listsProto.copyWith(
+      style: listStyle,
+      verticalSpacing: lsp != null ? VerticalSpacing(lsp.top, lsp.bottom) : null,
+    );
+  }
+
+  return base.merge(
+    DefaultStyles(
+      paragraph: block(
+        base.paragraph,
+        slot: s.paragraph,
+        height: s.lineHeight,
+        spacing: s.paragraphSpacing,
+      ),
+      h1: block(base.h1,
+          slot: s.h1, height: s.headingLineHeight, spacing: s.headingSpacing),
+      h2: block(base.h2,
+          slot: s.h2, height: s.headingLineHeight, spacing: s.headingSpacing),
+      h3: block(base.h3,
+          slot: s.h3, height: s.headingLineHeight, spacing: s.headingSpacing),
+      h4: block(base.h4,
+          slot: s.h4, height: s.headingLineHeight, spacing: s.headingSpacing),
+      h5: block(base.h5,
+          slot: s.h5, height: s.headingLineHeight, spacing: s.headingSpacing),
+      h6: block(base.h6,
+          slot: s.h6, height: s.headingLineHeight, spacing: s.headingSpacing),
+      bold: inline(base.bold, s.bold),
+      italic: inline(base.italic, s.italic),
+      underline: inline(base.underline, s.underline),
+      strikeThrough: inline(base.strikeThrough, s.strikeThrough),
+      subscript: inline(base.subscript, s.subscript),
+      superscript: inline(base.superscript, s.superscript),
+      inlineCode: inlineCode,
+      code: block(
+        base.code,
+        slot: s.codeBlock,
+        height: s.lineHeight,
+        spacing: s.codeBlockSpacing,
+        decoration: s.codeBlockDecoration,
+      ),
+      quote: block(
+        base.quote,
+        slot: s.quote,
+        height: s.lineHeight,
+        spacing: s.quoteSpacing,
+        decoration: s.quoteDecoration,
+      ),
+      lists: lists,
+      link: inline(base.link, s.link),
+      sizeSmall: inline(base.sizeSmall, s.sizeSmall),
+      sizeLarge: inline(base.sizeLarge, s.sizeLarge),
+      sizeHuge: inline(base.sizeHuge, s.sizeHuge),
+      placeHolder: block(base.placeHolder, slot: s.placeholder),
+    ),
+  );
+}
+
+/// Enveloppe PARTAGÉE du contenu rich-text (GAP-7, CR parité 2026-08-11) —
+/// consommée par l'éditeur, le lecteur ET le dialog plein-écran :
+///
+/// * [textScaleFactor] ⇒ `MediaQuery` LOCAL portant un [TextScaler.linear] —
+///   MESURÉ : Quill peint via `MediaQuery.textScalerOf(context)`
+///   (`text_line.dart:182`), l'échelle s'applique donc à TOUT le contenu sans
+///   toucher les styles (et sans dériver du chemin chaud) ;
+/// * [formulaSpec] ⇒ [ZFormulaSpecScope] lu par les builders de formule
+///   (`const` partagés — la personnalisation PAR CHAMP passe par le contexte).
+///
+/// Les deux `null` ⇒ [child] retourné TEL QUEL (aucun wrapper, rendu
+/// historique inchangé — AD-57).
+Widget zWrapRichTextContent(
+  BuildContext context,
+  Widget child, {
+  double? textScaleFactor,
+  ZRichTextFormulaSpec? formulaSpec,
+}) {
+  Widget wrapped = child;
+  if (formulaSpec != null) {
+    wrapped = ZFormulaSpecScope(spec: formulaSpec, child: wrapped);
+  }
+  if (textScaleFactor != null) {
+    // Facteur ABSOLU par champ (parité legacy, qui multipliait les tailles en
+    // ignorant l'échelle ambiante) : un hôte qui veut composer avec l'échelle
+    // d'accessibilité ambiante multiplie lui-même avant d'appeler.
+    wrapped = MediaQuery(
+      data: MediaQuery.of(context)
+          .copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+      child: wrapped,
+    );
+  }
+  return wrapped;
+}
+
 /// Construit une [QuillSimpleToolbarConfig] STABLE (SM-1/AD-2) branchée sur les
 /// callbacks d'insertion d'embed, PILOTÉE par une [ZRichTextToolbarConfig]
 /// granulaire (DP-22, M20) — chaque bouton (natif Quill ET custom
@@ -150,7 +329,14 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
 }) =>
     QuillSimpleToolbarConfig(
       toolbarSize: kZMinTapTarget,
-      multiRowsDisplay: false,
+      // GAP-9 : multi-rangées OPT-IN (parité legacy `qmew:229`) ; défaut
+      // `false` = mono-rangée historique.
+      multiRowsDisplay: config.multiRow,
+      // GAP-9 : icônes rounded OPT-IN — SEUL `iconData` est posé, jamais de
+      // `tooltip` : les tooltips restent ceux de Quill, DÉJÀ localisés.
+      buttonOptions: config.roundedIcons
+          ? _kZRoundedButtonOptions
+          : const QuillSimpleToolbarButtonOptions(),
       showUndo: config.showUndoRedo,
       showRedo: config.showUndoRedo,
       showFontFamily: config.showFontFamily,
@@ -187,13 +373,17 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
       customButtons: <QuillToolbarCustomButtonOptions>[
         if (config.showLatexButton)
           QuillToolbarCustomButtonOptions(
-            icon: const Icon(Icons.functions),
+            // GAP-9 : variante rounded opt-in (parité legacy `qmew:244`).
+            icon: Icon(
+                config.roundedIcons ? Icons.functions_rounded : Icons.functions),
             tooltip: 'Insérer une formule',
             onPressed: onInsertLatex,
           ),
         if (config.showTableButton)
           QuillToolbarCustomButtonOptions(
-            icon: const Icon(Icons.grid_on),
+            // GAP-10 (CR parité 2026-08-11) : icône alignée sur le legacy
+            // (`table_chart_rounded`, `qmew:249`) — remplace `grid_on`.
+            icon: const Icon(Icons.table_chart_rounded),
             tooltip: 'Insérer un tableau',
             onPressed: onInsertTable,
           ),
@@ -211,6 +401,74 @@ QuillSimpleToolbarConfig buildZToolbarConfig({
           ),
       ],
     );
+
+/// GAP-9 — jeu d'icônes **`*_rounded`** (opt-in [ZRichTextToolbarConfig.roundedIcons]).
+///
+/// Jeu MESURÉ sur le legacy DODLP (`qmew:118-208`) : seuls les boutons que le
+/// legacy re-skinnait sont couverts — on n'INVENTE pas d'icône pour les autres
+/// (search, couleur, police… gardent l'icône Quill). 🔴 AUCUN `tooltip` posé :
+/// Quill fournit les siens, déjà localisés (FR-26/l10n) — poser un libellé ici
+/// serait un libellé en dur.
+const QuillSimpleToolbarButtonOptions _kZRoundedButtonOptions =
+    QuillSimpleToolbarButtonOptions(
+  bold: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_bold_rounded),
+  italic: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_italic_rounded),
+  underLine: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_underlined_rounded),
+  strikeThrough: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_strikethrough_rounded),
+  inlineCode:
+      QuillToolbarToggleStyleButtonOptions(iconData: Icons.code_rounded),
+  codeBlock: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.integration_instructions_rounded),
+  quote: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_quote_rounded),
+  listNumbers: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_list_numbered_rounded),
+  listBullets: QuillToolbarToggleStyleButtonOptions(
+      iconData: Icons.format_list_bulleted_rounded),
+  toggleCheckList: QuillToolbarToggleCheckListButtonOptions(
+      iconData: Icons.checklist_rounded),
+  indentIncrease: QuillToolbarIndentButtonOptions(
+      iconData: Icons.format_indent_increase_rounded),
+  indentDecrease: QuillToolbarIndentButtonOptions(
+      iconData: Icons.format_indent_decrease_rounded),
+  linkStyle:
+      QuillToolbarLinkStyleButtonOptions(iconData: Icons.link_rounded),
+  undoHistory:
+      QuillToolbarHistoryButtonOptions(iconData: Icons.undo_rounded),
+  redoHistory:
+      QuillToolbarHistoryButtonOptions(iconData: Icons.redo_rounded),
+  clearFormat: QuillToolbarClearFormatButtonOptions(
+      iconData: Icons.format_clear_rounded),
+  // ignore: experimental_member_use
+  clipboardCopy: QuillToolbarClipboardButtonOptions(iconData: Icons.copy_rounded),
+  // ignore: experimental_member_use
+  clipboardPaste: QuillToolbarClipboardButtonOptions(iconData: Icons.paste_rounded),
+);
+
+/// GAP-9 — habillage OPT-IN de la barre d'outils
+/// ([ZRichTextToolbarConfig.themedBarBackground]) : surface + liseré bas
+/// dérivés des RÔLES du thème (FR-26 : zéro couleur en dur — les gris figés du
+/// legacy `qmew:70-74` ne sont PAS repris, c'est le thème de l'hôte qui parle).
+/// Drapeau `false` ⇒ [child] retourné TEL QUEL (rendu historique, AD-4).
+Widget zDecorateToolbar(
+  BuildContext context,
+  ZRichTextToolbarConfig config,
+  Widget child,
+) {
+  if (!config.themedBarBackground) return child;
+  final ColorScheme scheme = Theme.of(context).colorScheme;
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      color: scheme.surfaceContainerLow,
+      border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+    ),
+    child: child,
+  );
+}
 
 // ─────────────────────────────── Embed LaTeX (E6-3) ──────────────────────────
 

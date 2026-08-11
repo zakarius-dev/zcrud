@@ -76,13 +76,20 @@ const Key _mapType = Key('z-geo-map-type');
 
 void main() {
   group('AC3/AC4 — rendu conditionnel de la barre', () {
-    testWidgets('toolbarConfig null → aucune barre (rétro-compat stricte)',
+    testWidgets(
+        'G15 — toolbarConfig null → barre STANDARD par défaut '
+        '(changement de défaut, décision pilote — parité legacy es:2337)',
         (tester) async {
       final c = _controller('geo');
       await tester.pumpWidget(
         _app(c, _field('geo'), registry: _registry()),
       );
-      expect(find.byKey(_toolbar), findsNothing);
+      expect(find.byKey(_toolbar), findsOneWidget);
+      // Preuve que le défaut est bien `standard` (undo/clear/type de carte
+      // rendus), pas une barre vide.
+      expect(find.byKey(const Key('z-geo-undo')), findsOneWidget);
+      expect(find.byKey(const Key('z-geo-clear')), findsOneWidget);
+      expect(find.byKey(const Key('z-geo-map-type')), findsOneWidget);
     });
 
     testWidgets('preset none (disabled) → aucune barre', (tester) async {
@@ -308,13 +315,16 @@ void main() {
   });
 
   group('AC6 — mapOptions plombé à l\'adaptateur', () {
-    testWidgets('sans toolbarConfig → mapOptions null', (tester) async {
+    testWidgets(
+        'G15 — sans toolbarConfig → mapOptions AMORCÉ (défaut DODLP hybrid, '
+        'la barre standard existant désormais par défaut)', (tester) async {
       final c = _controller('geo');
       final fake = FakeMapAdapter();
       await tester.pumpWidget(
         _app(c, _field('geo'), registry: _registry(adapter: fake)),
       );
-      expect(fake.lastMapOptions, isNull);
+      expect(fake.lastMapOptions, isNotNull);
+      expect(fake.lastMapOptions!.mapType, ZGeoMapType.hybrid);
     });
 
     testWidgets('avec toolbarConfig → mapOptions non-null (neutre)',

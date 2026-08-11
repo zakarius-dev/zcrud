@@ -17,10 +17,16 @@
 /// `radius` → `radius_m` (quand `radius_m` est absente) et centre repris de
 /// `points[0]` (quand `center` est absente). LECTURE seulement : [toMap] est
 /// strictement inchangé (`center`/`radius_m`).
+///
+/// **G9 (additif, AD-4)** : le cercle porte un [style] de rendu **nullable**
+/// ([ZGeoShapeStyle]) — `null` ⇒ comportement/rendu strictement inchangés.
+/// [fromMapSafe] lit la clé `style` (zcrud comme legacy) ; [toMap] ne l'émet
+/// que non-`null` (schéma additif).
 library;
 
 import 'z_geo_legacy_codec.dart';
 import 'z_geo_point.dart';
+import 'z_geo_shape_style.dart';
 
 /// Cercle géographique neutre : centre ([ZGeoPoint]) + rayon en mètres.
 class ZGeoCircle {
@@ -32,6 +38,7 @@ class ZGeoCircle {
     required this.center,
     required this.radiusMeters,
     this.label,
+    this.style,
   });
 
   /// Centre du cercle (point neutre).
@@ -43,6 +50,10 @@ class ZGeoCircle {
   /// Libellé lisible optionnel.
   final String? label;
 
+  /// Style de rendu neutre optionnel (G9, additif — `null` ⇒ rendu inchangé :
+  /// l'adaptateur retombe sur le thème injecté, FR-26).
+  final ZGeoShapeStyle? style;
+
   /// `true` si le [center] est dans les bornes ET le rayon est fini > 0.
   bool get isValid =>
       center.isValid && radiusMeters.isFinite && radiusMeters > 0;
@@ -53,6 +64,7 @@ class ZGeoCircle {
         'center': center.toMap(),
         'radius_m': radiusMeters,
         if (label != null) 'label': label,
+        if (style != null) 'style': style!.toMap(),
       };
 
   /// Parse **défensif** (AD-10) : retourne `null` sans jamais throw si [raw]
@@ -82,6 +94,8 @@ class ZGeoCircle {
       center: center,
       radiusMeters: radius,
       label: label is String ? label : null,
+      // G9 : style optionnel (zcrud comme legacy) ; corrompu → null (AD-10).
+      style: ZGeoShapeStyle.fromMapSafe(decoded['style']),
     );
   }
 
@@ -102,17 +116,19 @@ class ZGeoCircle {
     return d;
   }
 
-  /// Copie avec substitutions. `label` ne peut pas être remis à `null` via cette
-  /// API (sémantique de copie partielle).
+  /// Copie avec substitutions. `label`/`style` ne peuvent pas être remis à
+  /// `null` via cette API (sémantique de copie partielle).
   ZGeoCircle copyWith({
     ZGeoPoint? center,
     double? radiusMeters,
     String? label,
+    ZGeoShapeStyle? style,
   }) =>
       ZGeoCircle(
         center: center ?? this.center,
         radiusMeters: radiusMeters ?? this.radiusMeters,
         label: label ?? this.label,
+        style: style ?? this.style,
       );
 
   @override
@@ -121,10 +137,11 @@ class ZGeoCircle {
       other is ZGeoCircle &&
           other.center == center &&
           other.radiusMeters == radiusMeters &&
-          other.label == label;
+          other.label == label &&
+          other.style == style;
 
   @override
-  int get hashCode => Object.hash(center, radiusMeters, label);
+  int get hashCode => Object.hash(center, radiusMeters, label, style);
 
   @override
   String toString() =>

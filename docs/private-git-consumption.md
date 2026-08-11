@@ -168,6 +168,8 @@ dependency_overrides:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_generator }
   zcrud_geo:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_geo }
+  zcrud_geo_location:
+    git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_geo_location }
   zcrud_get:
     git: { url: git@github.com:zakarius-dev/zcrud.git, ref: v0.18.0, path: packages/zcrud_get }
   zcrud_html:

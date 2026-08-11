@@ -182,7 +182,7 @@ void main() {
       )));
       await tester.pump(const Duration(milliseconds: 50));
 
-      expect(find.byIcon(Icons.grid_on), findsOneWidget,
+      expect(find.byIcon(Icons.table_chart_rounded), findsOneWidget, // GAP-10
           reason: 'bouton « Tableau » absent de la toolbar');
       _pressTableButton(tester);
       await tester.pumpAndSettle();
@@ -554,7 +554,7 @@ void main() {
       )));
       await tester.pump(const Duration(milliseconds: 50));
 
-      expect(find.byIcon(Icons.grid_on), findsOneWidget);
+      expect(find.byIcon(Icons.table_chart_rounded), findsOneWidget); // GAP-10
       final toolbarSize = tester.getSize(find.byType(QuillSimpleToolbar));
       expect(toolbarSize.height, greaterThanOrEqualTo(48));
       await _settle(tester);

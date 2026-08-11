@@ -52,6 +52,7 @@ class ZGeoEditorToolbarConfig {
     this.mapOptionsLabel = 'Options',
     this.showButtonLabels = true,
     this.compactMode = false,
+    this.compactBreakpointDp,
   });
 
   // =========== Disable Toolbar ============
@@ -61,10 +62,11 @@ class ZGeoEditorToolbarConfig {
 
   // =========== Drawing Tools ============
 
-  /// Affiche le sélecteur de mode (point/cercle/polygone). **Note DP-7** : le
-  /// flag est **conservé pour la parité de config**, mais la bascule de
-  /// géométrie à chaud est **déférée** (la géométrie zcrud est résolue 1× par
-  /// montage et immuable — invariant AD-2 ; cf. Dev Notes « HORS-story »).
+  /// Affiche le sélecteur de mode (point/cercle/polygone/polyligne). **G2** :
+  /// fonctionnel — rendu quand le champ est **multi-géométries**
+  /// (`ZGeoFieldConfig.allowedGeometries` non-`null`, ≥2 entrées) ; la bascule
+  /// est une action discrète (`setState`), la politique d'effacement est
+  /// documentée sur `_setGeometry` (parité legacy `gff:205-216`).
   final bool showModeSelector;
 
   /// Affiche le bouton « centrer sur ma position ».
@@ -131,6 +133,14 @@ class ZGeoEditorToolbarConfig {
 
   /// Mode compact (icônes seules).
   final bool compactMode;
+
+  /// G20 — seuil (dp) de **compaction responsive** : sous cette largeur
+  /// d'écran, la barre passe en mode compact même si [compactMode] est
+  /// `false` (parité legacy `gff:776,880` : `MediaQuery.width < 600`).
+  /// `null` (défaut) → seuil de référence audité
+  /// (`ZGeoChromeReference.compactBreakpointDp` = 600). `0` → jamais de
+  /// compaction automatique (opt-out).
+  final double? compactBreakpointDp;
 
   // ============ Presets (flags exacts DODLP, parité 1:1) ============
 
@@ -269,6 +279,7 @@ class ZGeoEditorToolbarConfig {
     String? mapOptionsLabel,
     bool? showButtonLabels,
     bool? compactMode,
+    double? compactBreakpointDp,
   }) =>
       ZGeoEditorToolbarConfig(
         disabled: disabled ?? this.disabled,
@@ -293,6 +304,7 @@ class ZGeoEditorToolbarConfig {
         mapOptionsLabel: mapOptionsLabel ?? this.mapOptionsLabel,
         showButtonLabels: showButtonLabels ?? this.showButtonLabels,
         compactMode: compactMode ?? this.compactMode,
+        compactBreakpointDp: compactBreakpointDp ?? this.compactBreakpointDp,
       );
 
   @override
@@ -319,7 +331,8 @@ class ZGeoEditorToolbarConfig {
           useMapOptionsDropdown == other.useMapOptionsDropdown &&
           mapOptionsLabel == other.mapOptionsLabel &&
           showButtonLabels == other.showButtonLabels &&
-          compactMode == other.compactMode;
+          compactMode == other.compactMode &&
+          compactBreakpointDp == other.compactBreakpointDp;
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -344,5 +357,6 @@ class ZGeoEditorToolbarConfig {
         mapOptionsLabel,
         showButtonLabels,
         compactMode,
+        compactBreakpointDp,
       ]);
 }

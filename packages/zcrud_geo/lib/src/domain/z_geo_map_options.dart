@@ -36,23 +36,41 @@ enum ZGeoMapType {
 /// paramètre additif `mapOptions` ; défauts = comportement de base inchangé.
 class ZGeoMapOptions {
   /// Construit des options de carte `const`. Les défauts reproduisent le
-  /// **`defaultState` de DODLP** (MEDIUM-1 DP-7) : `hybrid` + bâtiments, gestes
-  /// (rotation/tilt), contrôles de zoom, boussole et map-toolbar **actifs** ;
-  /// trafic et vue intérieure **inactifs**. Ainsi une carte munie d'une barre
-  /// d'outils (même un preset `minimal`/`standard` n'exposant pas ces toggles)
-  /// conserve le rendu natif attendu au lieu de tout désactiver. Le rendu SANS
-  /// barre reste inchangé (`mapOptions == null` → défauts du widget natif,
-  /// rétro-compat E11a-1/E11b-1).
+  /// **`defaultState` de DODLP** (MEDIUM-1 DP-7) : `hybrid` + bâtiments,
+  /// contrôles de zoom, boussole et map-toolbar **actifs** ; trafic et vue
+  /// intérieure **inactifs**. Ainsi une carte munie d'une barre d'outils (même
+  /// un preset `minimal`/`standard` n'exposant pas ces toggles) conserve le
+  /// rendu natif attendu au lieu de tout désactiver. Le rendu SANS barre reste
+  /// inchangé (`mapOptions == null` → défauts du widget natif, rétro-compat
+  /// E11a-1/E11b-1).
+  ///
+  /// **G22 (CHANGEMENT DE DÉFAUT, parité legacy `gec:293-294`)** : les gestes
+  /// de **rotation** et d'**inclinaison** sont désormais **inactifs par
+  /// défaut** (`false`, comme le `GeoEditorMapState.defaultState` legacy —
+  /// l'ancien défaut zcrud `true` divergeait). ⚠️ Handoff : un hôte qui
+  /// comptait sur rotation/tilt actifs doit les réactiver explicitement
+  /// (`ZGeoMapOptions(rotateGesturesEnabled: true, tiltGesturesEnabled: true)`
+  /// ou via les toggles `showRotationToggle`/`showTiltToggle` de la barre).
+  ///
+  /// **G21 (additif)** : [myLocationEnabled]/[myLocationButtonEnabled]
+  /// (point bleu natif Google + bouton associé). **Divergence documentée vs
+  /// legacy** (`gec:298` : `myLocationEnabled: true`) : le défaut zcrud est
+  /// **`false`** — activer le point bleu exige la permission de localisation
+  /// de l'app hôte (que `zcrud_geo` ne déclare ni ne demande, AD-1/G10) ; un
+  /// `true` par défaut ferait échouer le rendu chez tout hôte sans permission
+  /// (AD-10 : jamais un défaut qui casse). Opt-in explicite côté hôte.
   const ZGeoMapOptions({
     this.mapType = ZGeoMapType.hybrid,
     this.trafficEnabled = false,
     this.buildingsEnabled = true,
     this.indoorViewEnabled = false,
-    this.rotateGesturesEnabled = true,
-    this.tiltGesturesEnabled = true,
+    this.rotateGesturesEnabled = false,
+    this.tiltGesturesEnabled = false,
     this.zoomControlsEnabled = true,
     this.compassEnabled = true,
     this.mapToolbarEnabled = true,
+    this.myLocationEnabled = false,
+    this.myLocationButtonEnabled = true,
   });
 
   /// Type de carte courant (neutre).
@@ -82,6 +100,18 @@ class ZGeoMapOptions {
   /// Barre d'outils native de la carte active (Android).
   final bool mapToolbarEnabled;
 
+  /// G21 — point bleu « ma position » natif (honoré par Google ; OSM
+  /// `flutter_map` n'a **aucun** équivalent natif → ignoré, contrat
+  /// honoré-si-supporté, écart documenté). Défaut `false` (permission de
+  /// localisation requise côté hôte — divergence legacy documentée au
+  /// constructeur).
+  final bool myLocationEnabled;
+
+  /// G21 — bouton natif de recentrage « ma position » (Google ; sans effet
+  /// tant que [myLocationEnabled] est `false`, comportement SDK). OSM : ignoré
+  /// (aucun équivalent natif).
+  final bool myLocationButtonEnabled;
+
   /// Copie avec modifications ponctuelles.
   ZGeoMapOptions copyWith({
     ZGeoMapType? mapType,
@@ -93,6 +123,8 @@ class ZGeoMapOptions {
     bool? zoomControlsEnabled,
     bool? compassEnabled,
     bool? mapToolbarEnabled,
+    bool? myLocationEnabled,
+    bool? myLocationButtonEnabled,
   }) =>
       ZGeoMapOptions(
         mapType: mapType ?? this.mapType,
@@ -105,6 +137,9 @@ class ZGeoMapOptions {
         zoomControlsEnabled: zoomControlsEnabled ?? this.zoomControlsEnabled,
         compassEnabled: compassEnabled ?? this.compassEnabled,
         mapToolbarEnabled: mapToolbarEnabled ?? this.mapToolbarEnabled,
+        myLocationEnabled: myLocationEnabled ?? this.myLocationEnabled,
+        myLocationButtonEnabled:
+            myLocationButtonEnabled ?? this.myLocationButtonEnabled,
       );
 
   @override
@@ -120,7 +155,9 @@ class ZGeoMapOptions {
           tiltGesturesEnabled == other.tiltGesturesEnabled &&
           zoomControlsEnabled == other.zoomControlsEnabled &&
           compassEnabled == other.compassEnabled &&
-          mapToolbarEnabled == other.mapToolbarEnabled;
+          mapToolbarEnabled == other.mapToolbarEnabled &&
+          myLocationEnabled == other.myLocationEnabled &&
+          myLocationButtonEnabled == other.myLocationButtonEnabled;
 
   @override
   int get hashCode => Object.hash(
@@ -134,5 +171,7 @@ class ZGeoMapOptions {
         zoomControlsEnabled,
         compassEnabled,
         mapToolbarEnabled,
+        myLocationEnabled,
+        myLocationButtonEnabled,
       );
 }

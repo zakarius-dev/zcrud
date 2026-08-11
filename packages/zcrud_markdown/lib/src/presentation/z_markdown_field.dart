@@ -54,11 +54,13 @@ import 'package:zcrud_core/zcrud_core.dart';
 import '../data/delta_neutral_ops.dart';
 import '../data/z_delta_codec.dart';
 import '../domain/z_codec.dart';
+import 'z_markdown_chrome.dart';
 import 'z_markdown_codec_scope.dart';
 import 'z_markdown_reader.dart';
 import 'z_media_embed.dart';
 import 'z_rich_text_core.dart';
 import 'z_rich_text_fullscreen_dialog.dart';
+import 'z_rich_text_style_set.dart';
 import 'z_rich_text_toolbar_config.dart';
 
 /// Mode de présentation d'un champ rich-text servi par le registre (DP-3, B6).
@@ -120,6 +122,10 @@ class ZMarkdownField extends StatefulWidget {
     this.minLines,
     this.maxLines,
     this.characterLimit,
+    this.styleSet,
+    this.chrome,
+    this.textScaleFactor,
+    this.formulaSpec,
     this.onInit,
     this.onBuild,
     super.key,
@@ -144,6 +150,10 @@ class ZMarkdownField extends StatefulWidget {
     this.minLines,
     this.maxLines,
     this.characterLimit,
+    this.styleSet,
+    this.chrome,
+    this.textScaleFactor,
+    this.formulaSpec,
     this.onInit,
     this.onBuild,
     super.key,
@@ -213,6 +223,31 @@ class ZMarkdownField extends StatefulWidget {
   /// pour les champs sans limite).
   final int? characterLimit;
 
+  /// Jeu de styles NEUTRE par champ (GAP-5, CR parité 2026-08-11) — la voie
+  /// « signature DODLP » par INJECTION DE L'HÔTE (polices Google et palette
+  /// legacy restent chez lui, cf. `z_rich_text_style_set.dart`). `null` ⇒
+  /// styles historiques (thème seul) STRICTEMENT inchangés (AD-57). Propagé à
+  /// l'éditeur, au lecteur ET au dialog plein-écran.
+  final ZRichTextStyleSet? styleSet;
+
+  /// Habillage « carte » OPT-IN (GAP-6) : en-tête icône+libellé, bordure/ombre
+  /// teintées, pilule d'action (« Rédiger / Modifier / Valider »). `null`
+  /// (défaut) ⇒ rendu historique STRICTEMENT inchangé. Voir
+  /// [ZMarkdownFieldChrome] (chaîne de couleurs FR-26, articulation
+  /// `deferWrites`).
+  final ZMarkdownFieldChrome? chrome;
+
+  /// Facteur d'échelle du TEXTE de l'éditeur/lecteur (GAP-7, parité
+  /// `textScaleFactor` legacy). Appliqué par [TextScaler.linear] via
+  /// `MediaQuery` LOCAL au contenu (mesuré : Quill lit
+  /// `MediaQuery.textScalerOf`, `text_line.dart:182`) — la toolbar et le
+  /// libellé ne changent pas. `null` ⇒ échelle ambiante inchangée.
+  final double? textScaleFactor;
+
+  /// Rendu des formules par champ (GAP-7) : style + facteurs d'échelle
+  /// bloc/inline ([ZRichTextFormulaSpec]). `null` ⇒ rendu historique.
+  final ZRichTextFormulaSpec? formulaSpec;
+
   /// Hook d'instrumentation : appelé UNE FOIS en [State.initState].
   @visibleForTesting
   final VoidCallback? onInit;
@@ -255,6 +290,18 @@ enum _RenderMode {
   blockPreview,
 }
 
+/// Action portée par la pilule d'en-tête du chrome carte (GAP-6).
+enum _ChromeAction {
+  /// Lecture seule : aucune pilule.
+  none,
+
+  /// Modes éditeur : « Valider » (commit explicite + blur).
+  commit,
+
+  /// Mode block : « Rédiger »/« Modifier » (ouvre le plein-écran).
+  fullscreen,
+}
+
 class _ZMarkdownFieldState extends State<ZMarkdownField>
     implements ZMarkdownFieldDebug {
   /// Controller Quill **isolé** — créé UNE FOIS, jamais recréé (AD-2). `null`
@@ -294,6 +341,10 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
   /// Garde de ré-entrance de l'application de la limite de caractères (MIN-1).
   bool _enforcingLimit = false;
+
+  /// Longueur de texte brut VIVANTE — n'existe que si [ZMarkdownField.characterLimit]
+  /// est posé. Le compteur s'y abonne ([ValueListenableBuilder]) : granulaire (SM-1).
+  ValueNotifier<int>? _plainLength;
 
   @override
   int get debugDocChangeCount => _documentChangeCount;
@@ -384,8 +435,15 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     super.didChangeDependencies();
     // MIN-1 : (re)calcule les styles thémés quand le thème ambiant change —
     // hors chemin chaud de frappe (le thème ne change pas à chaque caractère).
-    _themedStyles = zQuillThemedStyles(context);
+    // GAP-5 : le jeu de styles par champ est fusionné ICI (même cadence que le
+    // thème — jamais dans le chemin chaud de frappe).
+    _themedStyles = zQuillThemedStyles(context, styleSet: widget.styleSet);
   }
+
+  /// GAP-6 : l'écriture est-elle DIFFÉRÉE (articulation legacy opt-in) ?
+  /// Seulement quand un chrome le demande ET qu'une voie d'édition existe.
+  bool get _deferWrites =>
+      (widget.chrome?.deferWrites ?? false) && _needsEditingController;
 
   /// Crée la voie d'édition (QuillController + focus + scroll + abonnement +
   /// toolbar). Appelé UNIQUEMENT pour `fullEditor`/`inlineEditor`.
@@ -400,6 +458,19 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _quill = quill;
     _focus = FocusNode();
     _scroll = ScrollController();
+    if (widget.characterLimit != null) {
+      // Compteur GRANULAIRE (SM-1) : un ValueNotifier dédié — la frappe ne
+      // rebâtit que le compteur, jamais le champ (indispensable en écriture
+      // différée GAP-6, où la tranche ne bouge plus à chaque caractère).
+      _plainLength = ValueNotifier<int>(_plainTextLength);
+    }
+    if (_deferWrites) {
+      // GAP-6 (articulation legacy MESURÉE, `mef:97-101`) : commit sur PERTE
+      // DE FOCUS — la frappe n'écrit plus la tranche, « Valider » ou le blur
+      // le font. Sans ce commit au blur, la sync guardée hors focus
+      // ré-injecterait la valeur EXTERNE périmée par-dessus la saisie.
+      _focus!.addListener(_onFocusChangedDeferred);
+    }
     final neutralSeed = DeltaNeutralOps.encodeNeutral(document);
     _lastValueJson = jsonEncode(neutralSeed);
     _subscribeToDocumentChanges();
@@ -442,6 +513,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     _quill?.dispose();
     _focus?.dispose();
     _scroll?.dispose();
+    _plainLength?.dispose();
     super.dispose();
   }
 
@@ -457,17 +529,43 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// la tranche (sens unique).
   void _onQuillChanged() {
     _documentChangeCount++;
-    if (_applyingExternal) return;
+    if (_applyingExternal) {
+      _plainLength?.value = _plainTextLength;
+      return;
+    }
     final q = _quill;
     if (q == null) return;
     // MIN-1 : borne SOUPLE de caractères (best-effort, opt-in). La troncature
     // émet une mutation imbriquée qui persistera la valeur bornée.
     _enforceCharacterLimit();
+    _plainLength?.value = _plainTextLength;
+    // GAP-6 : écriture DIFFÉRÉE (opt-in chrome) — la tranche n'est écrite que
+    // par [_commitDeferred] (« Valider » / perte de focus), parité `mef:93-101`.
+    if (_deferWrites) return;
     final neutral = DeltaNeutralOps.encodeNeutral(q.document);
     final neutralJson = jsonEncode(neutral);
     if (neutralJson == _lastValueJson) return;
     _lastValueJson = neutralJson;
     _write(neutral);
+  }
+
+  /// GAP-6 : commit EXPLICITE de la valeur neutre courante (pilule « Valider »
+  /// ou perte de focus en écriture différée). Idempotent (dédup JSON).
+  void _commitDeferred() {
+    final q = _quill;
+    if (q == null) return;
+    final neutral = DeltaNeutralOps.encodeNeutral(q.document);
+    final neutralJson = jsonEncode(neutral);
+    if (neutralJson == _lastValueJson) return;
+    _lastValueJson = neutralJson;
+    _write(neutral);
+  }
+
+  /// GAP-6 : listener de focus posé UNIQUEMENT en écriture différée — commit au
+  /// blur (parité legacy `mef:97-101`).
+  void _onFocusChangedDeferred() {
+    final f = _focus;
+    if (f != null && !f.hasFocus) _commitDeferred();
   }
 
   /// Longueur du texte BRUT (hors `\n` terminal Delta) du document courant.
@@ -508,6 +606,7 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
 
   @override
   Widget build(BuildContext context) {
+    final bool chromed = widget.chrome != null;
     switch (_renderMode) {
       case _RenderMode.reader:
         // Lecture seule : lecteur exclusif (aucune voie d'édition).
@@ -517,12 +616,22 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
             name: _name,
             builder: (context, value, child) {
               widget.onBuild?.call();
-              return _buildReader(value);
+              return _maybeChrome(
+                context,
+                _buildReader(value, chromeless: chromed),
+                value: value,
+                action: _ChromeAction.none,
+              );
             },
           );
         }
         widget.onBuild?.call();
-        return _buildReader(widget.ctx!.value);
+        return _maybeChrome(
+          context,
+          _buildReader(widget.ctx!.value, chromeless: chromed),
+          value: widget.ctx!.value,
+          action: _ChromeAction.none,
+        );
       case _RenderMode.fullEditor:
         // Voie `controller` (E6-1) : frontière de rebuild value-in-slice.
         return ZFieldListenableBuilder(
@@ -531,7 +640,12 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           builder: (context, value, child) {
             widget.onBuild?.call();
             _syncFromExternal(value);
-            return _buildEditor(context, withFullscreenToggle: false);
+            return _maybeChrome(
+              context,
+              _buildEditor(context, withFullscreenToggle: false),
+              value: value,
+              action: _ChromeAction.commit,
+            );
           },
         );
       case _RenderMode.inlineEditor:
@@ -539,10 +653,24 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         // dispatcher ⇒ on lit `ctx.value` directement.
         widget.onBuild?.call();
         _syncFromExternal(widget.ctx!.value);
-        return _buildEditor(context, withFullscreenToggle: true);
+        return _maybeChrome(
+          context,
+          _buildEditor(context, withFullscreenToggle: true),
+          value: widget.ctx!.value,
+          action: _ChromeAction.commit,
+        );
       case _RenderMode.blockPreview:
         widget.onBuild?.call();
-        return _buildBlockPreview(widget.ctx!.value);
+        if (!chromed) return _buildBlockPreview(widget.ctx!.value);
+        // GAP-6 : sous chrome, l'affordance d'édition MONTE dans la pilule
+        // d'en-tête (« Rédiger »/« Modifier », parité `mef`) — le bouton bas
+        // du rendu par défaut disparaît (une seule affordance).
+        return _maybeChrome(
+          context,
+          _buildReader(widget.ctx!.value, chromeless: true),
+          value: widget.ctx!.value,
+          action: _ChromeAction.fullscreen,
+        );
     }
   }
 
@@ -598,6 +726,13 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
       codec: _codec,
       // GAP-3 : le plein-écran porte le MÊME placeholder que le champ.
       placeholder: _effectivePlaceholder(context),
+      // GAP-5/GAP-7 : le plein-écran rend avec les MÊMES styles par champ.
+      styleSet: widget.styleSet,
+      textScaleFactor: widget.textScaleFactor,
+      formulaSpec: widget.formulaSpec,
+      // GAP-9 : la config de barre FOURNIE par l'hôte suit en plein-écran
+      // (habillage compris). `null` ⇒ défaut historique du dialog (full).
+      toolbarConfig: widget.toolbarConfig,
     );
     if (result == null || !mounted) return;
     _write(result);
@@ -615,10 +750,20 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
     return label(context, hint, fallback: hint);
   }
 
-  Widget _buildReader(Object? value) => ZMarkdownReader(
+  Widget _buildReader(Object? value, {bool chromeless = false}) =>
+      ZMarkdownReader(
         value: value,
         codec: _codec,
         label: _field.label ?? _field.name,
+        // GAP-6 : sous chrome carte, le lecteur perd son propre cadre (la carte
+        // habille) — sinon boîte dans une boîte (précédent CR-IFFD-73).
+        chrome: chromeless
+            ? ZMarkdownReaderChrome.none
+            : ZMarkdownReaderChrome.bordered,
+        // GAP-5/GAP-7 : mêmes styles/échelle/formules qu'en édition.
+        styleSet: widget.styleSet,
+        textScaleFactor: widget.textScaleFactor,
+        formulaSpec: widget.formulaSpec,
       );
 
   Widget _buildEditor(
@@ -681,6 +826,15 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
         child: quill,
       );
     }
+    // GAP-7 : échelle de texte par champ (MediaQuery LOCAL au contenu — Quill
+    // lit `MediaQuery.textScalerOf`) + spec de formules ambiante. `null` ⇒
+    // aucun wrapper (rendu historique inchangé, AD-57).
+    quill = zWrapRichTextContent(
+      context,
+      quill,
+      textScaleFactor: widget.textScaleFactor,
+      formulaSpec: widget.formulaSpec,
+    );
 
     final editor = Semantics(
       textField: true,
@@ -733,12 +887,18 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(minHeight: kZMinTapTarget),
-                    child: QuillSimpleToolbar(
-                      controller: _quill!,
-                      config: _toolbarConfig!,
+                  // GAP-9 : fond de barre thémé OPT-IN — drapeau `false` ⇒
+                  // aucun wrapper (rendu historique inchangé).
+                  child: zDecorateToolbar(
+                    context,
+                    _effectiveToolbarConfig,
+                    ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(minHeight: kZMinTapTarget),
+                      child: QuillSimpleToolbar(
+                        controller: _quill!,
+                        config: _toolbarConfig!,
+                      ),
                     ),
                   ),
                 ),
@@ -764,8 +924,11 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   ///
   /// Non quand l'hôte l'a explicitement désactivé, ni quand le champ n'a aucun
   /// libellé propre (`label` retombe alors sur `name`, un identifiant technique
-  /// qu'il vaut mieux ne pas afficher).
-  bool get _showLabel => widget.showLabel && _field.label != null;
+  /// qu'il vaut mieux ne pas afficher), ni sous chrome carte (GAP-6 : le
+  /// libellé vit dans l'EN-TÊTE de la carte — le doubler serait le défaut
+  /// d'annonce corrigé par CR-IFFD-25).
+  bool get _showLabel =>
+      widget.showLabel && _field.label != null && widget.chrome == null;
 
   /// Style du libellé — aligné sur celui d'un `InputDecoration.labelText`, pour
   /// que le champ riche s'accorde visuellement à ses voisins (FR-26 : aucune
@@ -781,31 +944,42 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
   /// Compteur vivant de caractères (MIN-1) — affiché sous l'éditeur quand une
   /// [characterLimit] est fournie. Couleur d'alerte issue du thème (FR-26) à
   /// l'approche/au dépassement, `Semantics` lisible. Directionnel.
+  ///
+  /// GRANULAIRE (SM-1) : abonné au [ValueNotifier] de longueur — la frappe ne
+  /// rebâtit QUE ce compteur (indispensable en écriture différée GAP-6, où la
+  /// tranche — donc la frontière value-in-slice — ne bouge plus à la frappe).
   Widget _characterCounter(BuildContext context) {
     final int limit = widget.characterLimit!;
-    final int len = _plainTextLength;
-    final bool atLimit = len >= limit;
-    final Color color = atLimit
-        ? (ZcrudTheme.of(context).errorColor ??
-            Theme.of(context).colorScheme.error)
-        : Theme.of(context).colorScheme.onSurfaceVariant;
-    final String text = '$len / $limit';
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(top: 4, end: 4),
-      child: Align(
-        alignment: AlignmentDirectional.centerEnd,
-        child: Semantics(
-          label: 'Nombre de caractères : $len sur $limit',
-          child: Text(
-            text,
-            textAlign: TextAlign.end,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: color),
+    // Toujours non-nul ici : le compteur n'est rendu que par [_buildEditor]
+    // (voie d'édition ⇒ [_initEditingController] a créé le notifier).
+    final ValueNotifier<int> lengthListenable = _plainLength!;
+    return ValueListenableBuilder<int>(
+      valueListenable: lengthListenable,
+      builder: (context, len, _) {
+        final bool atLimit = len >= limit;
+        final Color color = atLimit
+            ? (ZcrudTheme.of(context).errorColor ??
+                Theme.of(context).colorScheme.error)
+            : Theme.of(context).colorScheme.onSurfaceVariant;
+        final String text = '$len / $limit';
+        return Padding(
+          padding: const EdgeInsetsDirectional.only(top: 4, end: 4),
+          child: Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Semantics(
+              label: 'Nombre de caractères : $len sur $limit',
+              child: Text(
+                text,
+                textAlign: TextAlign.end,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: color),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -826,6 +1000,241 @@ class _ZMarkdownFieldState extends State<ZMarkdownField>
           ),
         ),
       );
+
+  // ───────────────────────── Chrome carte (GAP-6) ─────────────────────────
+
+  /// Dégradé EFFECTIF du chrome — chaîne FR-26 : paramètre hôte > seam
+  /// `zResolveGradient` ([ZMarkdownFieldChrome.gradientKey], défaut = nom du
+  /// champ) > rôles `primaryContainer → tertiaireContainer` (même paire mesurée
+  /// que `zDerivedGradientResolver`). AUCUNE couleur legacy dans le paquet.
+  (List<Color>, Color) _chromeColors(BuildContext context) {
+    final ZMarkdownFieldChrome chrome = widget.chrome!;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final List<Color>? fromParam = chrome.gradient;
+    if (fromParam != null && fromParam.isNotEmpty) {
+      return (fromParam, chrome.onGradient ?? scheme.onPrimaryContainer);
+    }
+    final ZGradientSpec? spec =
+        zResolveGradient(context, chrome.gradientKey ?? _name);
+    final Gradient? g = spec?.gradient;
+    if (spec != null && g != null && g.colors.isNotEmpty) {
+      return (g.colors, chrome.onGradient ?? spec.onGradient);
+    }
+    return (
+      <Color>[scheme.primaryContainer, scheme.tertiaryContainer],
+      chrome.onGradient ?? scheme.onPrimaryContainer,
+    );
+  }
+
+  /// Enveloppe [content] dans la carte chrome (GAP-6) si un
+  /// [ZMarkdownFieldChrome] est fourni — sinon retourne [content] TEL QUEL
+  /// (rendu historique STRICTEMENT inchangé, AD-57).
+  Widget _maybeChrome(
+    BuildContext context,
+    Widget content, {
+    required Object? value,
+    required _ChromeAction action,
+  }) {
+    final ZMarkdownFieldChrome? chrome = widget.chrome;
+    if (chrome == null) return content;
+    final ThemeData theme = Theme.of(context);
+    final zTheme = ZcrudTheme.of(context);
+    final (List<Color> gradient, Color onGradient) = _chromeColors(context);
+    final Color first = gradient.first;
+    final bool hasContent = !_isValueEmpty(
+      _quill != null ? DeltaNeutralOps.encodeNeutral(_quill!.document) : value,
+    );
+    final String label = _field.label ?? _field.name;
+
+    // En-tête : puce d'icône dégradée + libellé (+ pilule d'action).
+    final Widget header = Container(
+      padding: ZMarkdownChromeReference.headerPadding,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.centerStart,
+          end: AlignmentDirectional.centerEnd,
+          colors: gradient
+              .map((c) => c.withValues(
+                  alpha: ZMarkdownChromeReference.headerGradientOpacity))
+              .toList(),
+        ),
+        borderRadius: const BorderRadiusDirectional.only(
+          topStart: ZMarkdownChromeReference.headerRadius,
+          topEnd: ZMarkdownChromeReference.headerRadius,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            padding: ZMarkdownChromeReference.iconChipPadding,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.centerStart,
+                end: AlignmentDirectional.centerEnd,
+                colors: gradient
+                    .map((c) => c.withValues(
+                        alpha:
+                            ZMarkdownChromeReference.iconChipGradientOpacity))
+                    .toList(),
+              ),
+              borderRadius: const BorderRadius.all(
+                ZMarkdownChromeReference.chipRadius,
+              ),
+            ),
+            child: Icon(
+              chrome.icon ?? Icons.article_rounded,
+              size: ZMarkdownChromeReference.headerIconSize,
+              // Puce quasi-transparente (opacité 40/255) : le fond effectif
+              // est la surface — la couleur du thème y reste lisible (FR-26).
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            // Libellé DÉJÀ porté par la sémantique du contenu (éditeur
+            // `Semantics(textField:, label:)` / lecteur `Semantics(label:)`) —
+            // même exclusion que le libellé texte historique (CR-IFFD-25).
+            child: ExcludeSemantics(
+              child: chrome.labelBuilder?.call(context, label) ??
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+            ),
+          ),
+          if (chrome.showActionButton && action != _ChromeAction.none)
+            _chromeActionPill(
+              context,
+              action: action,
+              hasContent: hasContent,
+              gradient: gradient,
+              onGradient: onGradient,
+            ),
+        ],
+      ),
+    );
+
+    final Color borderColor = hasContent
+        ? first.withValues(alpha: ZMarkdownChromeReference.borderOpacity)
+        : (zTheme.fieldBorderColor ?? theme.colorScheme.outlineVariant);
+    final Widget card = DecoratedBox(
+      decoration: BoxDecoration(
+        color: zTheme.surfaceColor ?? theme.colorScheme.surface,
+        borderRadius:
+            const BorderRadius.all(ZMarkdownChromeReference.cardRadius),
+        border: Border.all(
+          color: borderColor,
+          width: hasContent
+              ? ZMarkdownChromeReference.borderWidthFilled
+              : ZMarkdownChromeReference.borderWidthEmpty,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: (hasContent ? first : theme.colorScheme.shadow)
+                .withValues(alpha: ZMarkdownChromeReference.shadowOpacity),
+            blurRadius: ZMarkdownChromeReference.shadowBlurRadius,
+            offset: ZMarkdownChromeReference.shadowOffset,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          header,
+          Padding(
+            padding: zTheme.fieldPadding,
+            child: content,
+          ),
+        ],
+      ),
+    );
+    return card;
+  }
+
+  /// Pilule d'action de l'en-tête (GAP-6) — « Valider » (commit, modes
+  /// éditeur) ou « Rédiger »/« Modifier » (plein-écran, mode block). Cible
+  /// ≥ 48 dp (AD-13), `Semantics` bouton, dégradé paramétré (FR-26).
+  Widget _chromeActionPill(
+    BuildContext context, {
+    required _ChromeAction action,
+    required bool hasContent,
+    required List<Color> gradient,
+    required Color onGradient,
+  }) {
+    final bool commit = action == _ChromeAction.commit;
+    final String label =
+        commit ? 'Valider' : (hasContent ? 'Modifier' : 'Rédiger');
+    final IconData icon = commit
+        ? Icons.save_rounded
+        : (hasContent ? Icons.edit_rounded : Icons.edit_note);
+    void onTap() {
+      if (commit) {
+        // Commit EXPLICITE : écrit la valeur courante (idempotent si
+        // l'auto-save a déjà tout écrit) puis rend le focus (parité save/edit
+        // legacy — c'est le blur qui clôt la saisie).
+        _commitDeferred();
+        _focus?.unfocus();
+      } else {
+        unawaited(_openFullscreen());
+      }
+    }
+
+    return Semantics(
+      button: true,
+      label: label,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: kZMinTapTarget,
+          minHeight: kZMinTapTarget,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const Key('z-markdown-chrome-action'),
+            borderRadius:
+                const BorderRadius.all(ZMarkdownChromeReference.chipRadius),
+            onTap: onTap,
+            child: Center(
+              child: Container(
+                padding: ZMarkdownChromeReference.actionPillPadding,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: AlignmentDirectional.centerStart,
+                    end: AlignmentDirectional.centerEnd,
+                    colors: gradient,
+                  ),
+                  borderRadius: const BorderRadius.all(
+                    ZMarkdownChromeReference.chipRadius,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(icon, size: 16, color: onGradient),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(
+                            color: onGradient,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   /// Mode block : aperçu lecteur + bouton « Rédiger »/« Modifier ».
   Widget _buildBlockPreview(Object? value) {

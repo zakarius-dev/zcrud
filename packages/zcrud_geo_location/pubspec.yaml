@@ -1,0 +1,41 @@
+# zcrud_geo_location — membre du workspace zcrud (resolution: workspace).
+# G10 (CR geo parité legacy 2026-08-11) : satellite OPTIONNEL « ma position »
+# clé en main. Fournit un `ZGeoLocationResolver` (port de `zcrud_geo`) adossé à
+# `geolocator` — l'hôte injecte `zcrudGeolocatorResolver()` sans importer
+# `geolocator` lui-même. AD-1 : `geolocator` vit EXCLUSIVEMENT ici (jamais dans
+# `zcrud_geo` ni `zcrud_core`) et AUCUN de ses types ne fuit dans l'API
+# publique (barrel = types `zcrud_geo` + types neutres de ce paquet).
+# AD-1 : arêtes sortantes zcrud_* = zcrud_geo UNIQUEMENT (graphe acyclique).
+# Aucune permission plateforme n'est déclarée ICI : AndroidManifest/Info.plist
+# restent à la charge de l'app hôte (cf. README).
+name: zcrud_geo_location
+description: "Ready-made ZGeoLocationResolver for zcrud_geo backed by geolocator: my-position resolution with distinct failure causes, no geolocator type in the public API."
+version: 0.82.0
+publish_to: none
+resolution: workspace
+
+homepage: https://github.com/zakarius-dev/zcrud
+repository: https://github.com/zakarius-dev/zcrud/tree/main/packages/zcrud_geo_location
+issue_tracker: https://github.com/zakarius-dev/zcrud/issues
+topics:
+  - geolocation
+  - location
+  - permissions
+  - forms
+
+environment:
+  sdk: ^3.12.2
+
+# Arêtes inter-packages zcrud_* (AD-1, graphe acyclique) : zcrud_geo UNIQUEMENT.
+# Siblings du workspace résolus par contrainte de version (pas de path:).
+dependencies:
+  flutter:
+    sdk: flutter
+  # SDK de géolocalisation (parité legacy DODLP `geolocator: ^14.0.2`) —
+  # CONFINÉ à `lib/src/geolocator_gateway_impl.dart` (jamais exporté).
+  geolocator: ^14.0.2
+  zcrud_geo: ^0.82.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

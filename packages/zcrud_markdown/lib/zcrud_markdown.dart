@@ -25,6 +25,11 @@ export 'src/domain/z_markdown_api.dart';
 // conversion n'y transite, c'est ce qui autorise l'export par le barrel.
 export 'src/domain/z_markdown_bridge.dart';
 export 'src/presentation/z_html_registration.dart' show registerZHtmlFields;
+// GAP-6 (CR parité 2026-08-11) : habillage carte OPT-IN du champ rich-text
+// (config PURE Flutter — aucun type Quill) + référence auditée de DIMENSIONS
+// (patron `ZStudyCardReference`, aucune couleur).
+export 'src/presentation/z_markdown_chrome.dart'
+    show ZMarkdownFieldChrome, ZMarkdownChromeReference;
 export 'src/presentation/z_markdown_codec_scope.dart';
 export 'src/presentation/z_markdown_field.dart'
     show ZMarkdownField, ZMarkdownFieldMode, ZMarkdownFieldDebug;
@@ -48,6 +53,11 @@ export 'src/presentation/z_rich_text_fullscreen_dialog.dart'
 // DP-22 (M20) : config granulaire par bouton de la toolbar rich-text (donnée
 // pure, aucun type Quill) — présets full/minimal/markdown, consommée par
 // `ZMarkdownField.toolbarConfig`.
+// GAP-5/GAP-7 (CR parité 2026-08-11) : jeu de styles rich-text NEUTRE par
+// champ + spec de formules (PUR Flutter — `TextStyle`/`BoxDecoration`, aucun
+// type Quill/math ; la traduction Quill vit sous `lib/src/`, interne).
+export 'src/presentation/z_rich_text_style_set.dart'
+    show ZRichTextStyleSet, ZRichTextSpacing, ZRichTextFormulaSpec;
 export 'src/presentation/z_rich_text_toolbar_config.dart'
     show ZRichTextToolbarConfig;
 // Mode d'interprétation du contenu d'une cellule de tableau, OPT-IN (AD-57) :
