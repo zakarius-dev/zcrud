@@ -1,9 +1,7 @@
 /// Instantané de quota d'usage — `ZChatQuotaSnapshot`.
 ///
-/// origine: lex_core (module « Assistant ») — `chat_quota_snapshot.dart:8-87`.
-///
-/// **Ce qui n'est PAS porté** : le vocabulaire d'abonnement de lex
-/// (`SubscriptionTier`, packs régionaux). Ce value object ne porte qu'une forme
+/// **Ce qui n'est pas porté** : le vocabulaire d'abonnement propre à un hôte
+/// (paliers d'offre, packs régionaux). Ce value object ne porte qu'une forme
 /// de **rate-limit générique** — limite, reste, réinitialisation, solde prépayé.
 library;
 

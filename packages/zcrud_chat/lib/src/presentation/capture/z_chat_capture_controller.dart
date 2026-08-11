@@ -1,35 +1,26 @@
-/// Saisie **assistée** — l'état réactif de la dictée et de l'OCR (CHAT-10).
+/// Saisie assistée — l'état réactif de la dictée et de la reconnaissance de
+/// texte.
 ///
-/// origine **MESURÉE sur disque** (lecture seule) :
-/// `lex_douane/packages/lex_ui/lib/presentation/widgets/chat/chat_input.dart`
-/// — `_startDictation` (`:297-348`), `_runOcr` (`:213-266`),
-/// `_insertDictation` (`:376-388`), `_insertOcrContext` (`:271-284`).
+/// ## Ce que ce contrôleur garantit
 ///
-/// ## 🔴 Ce que lex tient bien, et qu'on porte tel quel
+/// L'insertion d'une capture concatène toujours : elle ne remplace jamais ce
+/// que l'utilisateur avait déjà tapé. C'est la propriété la plus importante
+/// de ce fichier après la relecture elle-même : [acceptInto] préserve,
+/// [cancelReview] ne touche à rien d'autre que le brouillon de capture.
 ///
-/// `_insertDictation` et `_insertOcrContext` **concatènent** : ils ne remplacent
-/// jamais ce que l'utilisateur avait déjà tapé. C'est exactement le contraire du
-/// défaut d'IFFD (`chatbot_conversation_screen.dart:3618-3672`, l'annulation qui
-/// supprime la question tapée) et c'est la propriété la plus importante de ce
-/// fichier après la relecture : [acceptInto] **préserve**, [cancelReview] ne
-/// touche RIEN.
+/// * l'état d'écoute est une tranche granulaire ([activity]), et rien
+///   d'autre ne s'y abonne (invariant AD-2) — un cycle de dictée ne
+///   reconstruit jamais le composer entier ;
+/// * l'écoute est annoncée, pas seulement visible : un utilisateur
+///   non-voyant doit savoir que le micro écoute. Le rendu ([ZChatCaptureBar])
+///   porte une région live (invariant AD-13) ;
+/// * la transcription n'est jamais un `String` nu accessible à l'appelant :
+///   elle est un [ZUnreviewedText] (cf. l'en-tête de
+///   `z_chat_capture_port.dart`) — l'envoi direct sans relecture n'est pas
+///   seulement déconseillé, il est inexprimable dans ce contrat.
 ///
-/// ## 🔴 Ce que lex ne tient pas, et qu'on corrige
-///
-/// * l'état d'écoute est un `setState(() => _isListening = true)` sur un
-///   composer entier (`:311`) — chaque cycle de dictée reconstruit tout le
-///   composer, pièces jointes comprises. Ici c'est une **tranche**
-///   ([activity]), et rien d'autre ne s'y abonne (SM-1) ;
-/// * l'écoute est **visible** (une icône change) mais jamais **annoncée** : un
-///   utilisateur non-voyant ne sait pas que le micro écoute. Le rendu
-///   ([ZChatCaptureBar]) porte une région live (AD-13) ;
-/// * la transcription est un `String` que la discipline de l'appelant fait
-///   passer par une feuille de relecture. Ici elle est un [ZUnreviewedText] —
-///   voir l'en-tête de `z_chat_capture_port.dart` : l'envoi direct n'est pas
-///   déconseillé, il est **inexprimable**.
-///
-/// ⛔ Aucune dépendance tierce (AD-57) : ni `speech_to_text`, ni
-/// `google_mlkit_text_recognition`, ni `image_picker`. Les moteurs entrent par
+/// Aucune dépendance tierce : ni moteur de reconnaissance vocale, ni moteur
+/// d'OCR, ni sélecteur de fichier. Les moteurs entrent par
 /// [ZChatDictationPort] / [ZChatOcrPort], que l'hôte implémente.
 library;
 
@@ -39,7 +30,7 @@ import 'package:zcrud_core/domain.dart';
 
 import '../z_chat_controller.dart';
 
-/// Ce que la capture est en train de faire — tranche **grossière**, volontairement
+/// Ce que la capture est en train de faire — tranche grossière, volontairement
 /// séparée du texte relu (qui, lui, change à chaque frappe).
 enum ZChatCaptureActivity {
   /// Rien en cours.
@@ -52,8 +43,8 @@ enum ZChatCaptureActivity {
   recognizing,
 }
 
-/// 🔴 La **surface de relecture** : le seul puits d'un [ZUnreviewedText], et la
-/// seule chose de ce lot qui expose un texte lisible.
+/// La surface de relecture : le seul puits d'un [ZUnreviewedText], et la
+/// seule chose de ce contrôleur qui expose un texte lisible.
 ///
 /// C'est assumé et c'est le point : une relecture qu'on ne peut pas afficher
 /// n'est pas une relecture. Ce qui est structurel, c'est que le texte capturé
@@ -65,15 +56,15 @@ class ZChatCaptureReviewBuffer extends ValueNotifier<String>
   /// Construit un tampon vide.
   ZChatCaptureReviewBuffer() : super('');
 
-  /// Appelé à chaque mutation — **hors** mécanisme de `ChangeNotifier`.
+  /// Appelé à chaque mutation — hors mécanisme de `ChangeNotifier`.
   ///
-  /// 🔴 Le contrôleur propriétaire NE s'abonne PAS à ce tampon. S'il le faisait,
-  /// [isObserved] serait vrai en permanence et la garde de relecture
-  /// ci-dessous ([ZChatCaptureController.acceptInto]) deviendrait VACUELLE —
-  /// une garde toujours verte, c'est-à-dire pire que pas de garde.
+  /// Le contrôleur propriétaire ne s'abonne pas à ce tampon. S'il le faisait,
+  /// [isObserved] serait vrai en permanence et la garantie de
+  /// [ZChatCaptureController.acceptInto] deviendrait vide de sens — une
+  /// vérification toujours vraie, c'est-à-dire pire que pas de vérification.
   void Function()? onMutated;
 
-  /// Dépose une capture — **remplace** le brouillon de relecture.
+  /// Dépose une capture — remplace le brouillon de relecture.
   ///
   /// Le composer, lui, n'est jamais remplacé ([ZChatCaptureController.acceptInto]).
   @override
@@ -94,28 +85,30 @@ class ZChatCaptureReviewBuffer extends ValueNotifier<String>
     onMutated?.call();
   }
 
-  /// 🔴 `true` si **quelque chose affiche** ce tampon.
+  /// `true` si quelque chose affiche ce tampon.
   ///
   /// Proxy mesurable de « une surface de relecture est montée » : un
-  /// `ValueListenableBuilder` qui rend le champ s'y abonne, un appelant qui lit
-  /// `value` en douce ne s'y abonne pas. Ce n'est PAS une preuve qu'un humain a
-  /// lu — aucune API ne peut le prouver — mais c'en est le plus proche
-  /// substitut vérifiable, et il fait échouer le raccourci le plus probable :
-  /// « dicter puis insérer sans jamais rien montrer ».
+  /// `ValueListenableBuilder` qui rend le champ s'y abonne, un appelant qui
+  /// lit `value` en douce ne s'y abonne pas. Ce n'est pas une preuve qu'un
+  /// humain a lu — aucune API ne peut le prouver — mais c'en est le plus
+  /// proche substitut vérifiable, et il fait échouer le raccourci le plus
+  /// probable : « dicter puis insérer sans jamais rien montrer ».
   bool get isObserved => hasListeners;
 }
 
-/// L'état réactif de la saisie assistée — `ChangeNotifier` **Flutter-native**
-/// (AD-2/AD-15 : aucun gestionnaire d'état).
+/// L'état réactif de la saisie assistée — `ChangeNotifier` Flutter-native
+/// (invariants AD-2/AD-15 : aucun gestionnaire d'état).
 ///
-/// Les deux ports sont **optionnels** : sans eux, le chat fonctionne — on ne
-/// peut simplement pas dicter ni scanner (sémantique de `ZChatRenderer`).
+/// Les deux ports sont optionnels : sans eux, le chat fonctionne — on ne
+/// peut simplement pas dicter ni scanner (même sémantique que
+/// `ZChatRenderer`).
 class ZChatCaptureController extends ChangeNotifier {
   /// Construit le contrôleur.
   ///
   /// [normalizer] est la couture où un hôte branche sa normalisation métier
-  /// (chez lex : `DictationNumberNormalizer`, « huit cent cinq » → `0805` avec
-  /// padding de position SH — du douanier pur, qui reste chez lui).
+  /// (par exemple convertir un nombre énoncé en toutes lettres vers sa forme
+  /// chiffrée dans un domaine particulier) — une logique propre à l'hôte, qui
+  /// reste chez lui.
   ZChatCaptureController({this.dictation, this.ocr, this.normalizer}) {
     review.onMutated = _syncPending;
   }
@@ -140,7 +133,7 @@ class ZChatCaptureController extends ChangeNotifier {
   /// Ce que la capture fait **maintenant** — la tranche que la barre écoute.
   ValueListenable<ZChatCaptureActivity> get activity => _activity;
 
-  /// Le dernier échec **typé**, ou `null`. Jamais une exception (AD-10).
+  /// Le dernier échec typé, ou `null`. Jamais une exception (invariant AD-10).
   ValueListenable<ZFailure?> get lastFailure => _lastFailure;
 
   /// `true` s'il y a quelque chose à relire.
@@ -151,7 +144,7 @@ class ZChatCaptureController extends ChangeNotifier {
   /// Lance un cycle de dictée et **dépose** la transcription dans [review].
   ///
   /// [localeId] est transmis tel quel, `null` compris : le socle ne choisit
-  /// jamais la langue à la place de l'hôte (AD-10).
+  /// jamais la langue à la place de l'hôte (invariant AD-10).
   ///
   /// * `Right(unit)` — le cycle s'est terminé ; il y a peut-être quelque chose
   ///   à relire ([hasPendingReview]) ;
@@ -169,9 +162,9 @@ class ZChatCaptureController extends ChangeNotifier {
         final ZFailure? failure = event.fold(
           (ZFailure f) => f,
           (ZChatDictationEvent e) {
-            // Chaque événement REMPLACE le brouillon : c'est la sémantique de
-            // `_dictationBuffer = result.text` de lex (`chat_input.dart:334`),
-            // le moteur émettant des transcriptions CUMULATIVES.
+            // Chaque événement remplace le brouillon : le moteur émet des
+            // transcriptions cumulatives, chacune plus complète que la
+            // précédente.
             e.text.depositInto(review);
             return null;
           },
@@ -183,8 +176,8 @@ class ZChatCaptureController extends ChangeNotifier {
         }
       }
     } catch (error) {
-      // AD-10 : un port d'hôte qui LÈVE ne fait pas tomber la conversation, et
-      // ne coûte pas la frappe de l'utilisateur.
+      // Invariant AD-10 : un port d'hôte qui lève ne fait pas tomber la
+      // conversation, et ne coûte pas la frappe de l'utilisateur.
       _activity.value = ZChatCaptureActivity.idle;
       return _fail(ZChatCaptureRejection.engineError, '$error');
     }
@@ -199,8 +192,8 @@ class ZChatCaptureController extends ChangeNotifier {
     try {
       await port.stop();
     } catch (_) {
-      // AD-10 : `stop` est best-effort. Un moteur qui lève à l'arrêt ne doit
-      // pas laisser l'interface bloquée sur « à l'écoute ».
+      // Invariant AD-10 : `stop` est best-effort. Un moteur qui lève à
+      // l'arrêt ne doit pas laisser l'interface bloquée sur « à l'écoute ».
     }
     _activity.value = ZChatCaptureActivity.idle;
   }
@@ -241,31 +234,30 @@ class ZChatCaptureController extends ChangeNotifier {
 
   /// Abandonne la relecture en cours.
   ///
-  /// 🔴 **Le défaut d'IFFD à ne pas rejouer.** Chez lui, l'annulation détruit la
-  /// saisie de l'utilisateur. Ici elle ne touche QUE le brouillon de capture :
-  /// le composer n'est même pas atteignable depuis cette méthode.
+  /// Ceci ne touche que le brouillon de capture : le composer n'est même pas
+  /// atteignable depuis cette méthode, donc la saisie déjà tapée par
+  /// l'utilisateur n'est jamais détruite par une annulation de capture.
   void cancelReview() {
     review.clear();
     _lastFailure.value = null;
     _activity.value = ZChatCaptureActivity.idle;
   }
 
-  /// 🔴 **L'UNIQUE sortie de la capture** — insère le texte **relu** dans le
-  /// composer de [chat].
+  /// L'unique sortie de la capture — insère le texte relu dans le composer de
+  /// [chat].
   ///
-  /// Rend `ZResult<Unit>` : **aucune `String` ne s'échappe**. Le seul chemin
-  /// possible pour un texte capturé est donc « tampon éditable → composer », et
-  /// depuis le composer c'est l'utilisateur qui décide d'envoyer.
+  /// Rend `ZResult<Unit>` : aucune `String` ne s'échappe. Le seul chemin
+  /// possible pour un texte capturé est donc « tampon éditable → composer »,
+  /// et depuis le composer c'est l'utilisateur qui décide d'envoyer.
   ///
-  /// * la saisie existante est **PRÉSERVÉE** : le texte relu lui est *ajouté*
-  ///   (patron `_insertDictation` / `_insertOcrContext` de lex), jamais
-  ///   substitué ;
-  /// * `Left(ZDomainFailure)` si rien n'a été relu, ou si **rien n'affiche** le
+  /// * la saisie existante est préservée : le texte relu lui est ajouté,
+  ///   jamais substitué ;
+  /// * `Left(ZDomainFailure)` si rien n'a été relu, ou si rien n'affiche le
   ///   tampon ([ZChatCaptureReviewBuffer.isObserved]) — le raccourci « dicter
   ///   puis insérer sans jamais rien montrer » échoue au lieu de réussir en
-  ///   silence. Type **EXISTANT** du cœur : ce n'est pas un motif de capture,
-  ///   donc ça n'entre pas dans [ZChatCaptureRejection], dont l'ensemble est
-  ///   celui MESURÉ chez lex.
+  ///   silence. C'est un type d'échec existant du cœur, pas un motif de
+  ///   capture propre à ce contrôleur : il n'entre donc pas dans
+  ///   [ZChatCaptureRejection].
   ZResult<Unit> acceptInto(ZChatController chat) {
     final String reviewed = review.value.trim();
     if (reviewed.isEmpty) {

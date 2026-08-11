@@ -1,65 +1,54 @@
-/// **CR-IFFD-76 — les PIÈCES de la bande d'accessoires du composer**, en
-/// widgets purs (lot « composer assemblé »).
+/// Les pièces de la bande d'accessoires du composer, en widgets purs.
 ///
-/// ## Ce que la CR a mesuré
+/// Le socle offre le composer en pièces assemblables (conteneur, `+`
+/// pickers, bascule « réfléchir », bascule « internet », déclencheur
+/// « outils », STOP, bandeau d'édition, déclencheur de dictée) ; l'assemblage
+/// par défaut qui les réunit est `ZDefaultChatComposer` (fichier voisin).
+/// Chaque pièce reste montable seule par un hôte qui compose sa propre
+/// bande.
 ///
-/// Le socle offrait le composer en **pièces** ; l'assemblage restait à la
-/// charge de l'hôte — et IFFD, en l'écrivant (64 lignes), a introduit QUATRE
-/// défauts, tous trouvés par la QA à l'écran. Les six pièces absentes de
-/// l'inventaire §③ sont livrées ici (conteneur, `+` pickers, bascule
-/// « réfléchir », bascule « internet », déclencheur « outils », STOP +
-/// bandeau d'édition) ; l'assemblage par défaut est `ZDefaultChatComposer`
-/// (fichier voisin).
-///
-/// ## 🔴 UN état, DEUX surfaces (arbitrage owner n°3)
+/// ## Un état, deux surfaces
 ///
 /// Les bascules « réfléchir » et « internet » de la bande lisent et écrivent
 /// le **même** [ZChatSettingsController] que les tuiles de
 /// `ZChatSettingsSheet` — jamais un second état. Basculer dans la bande se
-/// reflète dans la feuille, et inversement (garde mesurée). La **présence** en
-/// bande est un paramètre d'hôte ; le socle ne retire pas la tuile.
+/// reflète dans la feuille, et inversement. La **présence** d'une pièce en
+/// bande est un paramètre d'hôte ; le socle ne retire jamais la tuile
+/// correspondante de la feuille.
 ///
-/// ## 🔴 G-CH1 — le STOP câble un verbe EXISTANT
+/// ## Le bouton d'arrêt câble un verbe existant
 ///
 /// `ZChatController` porte déjà l'annulation :
-/// `runAction(ZChatCancelAction(requestId:))` (grep `cancel` positif —
-/// `z_chat_controller.dart`, arrêt local du jeton + protocole du répartiteur).
-/// [ZChatComposerStopTarget] appelle **ce** verbe — aucun membre nouveau,
-/// aucun raccourci `stop()` (le raccourci serait un second site d'appel, le
-/// défaut IFFD que `runAction` ferme). Le bandeau d'édition rend, lui, les
-/// verbes K2 existants (`editing` / `cancelEditing`).
+/// `runAction(ZChatCancelAction(requestId:))`. [ZChatComposerStopTarget]
+/// appelle **ce** verbe — aucun membre nouveau, aucun raccourci `stop()` qui
+/// ouvrirait un second site d'appel. Le bandeau d'édition rend, lui, les
+/// verbes déjà exposés par le contrôleur (`editing` / `cancelEditing`).
 ///
-/// ## FR-26 / AD-13 / SM-1
+/// ## Accessibilité et thème (invariants AD-13, AD-2)
 ///
-/// Aucune couleur, aucun libellé en dur (tout passe par [zChatLabel]) ; toutes
-/// les cibles ≥ 48 dp en géométrie rendue, tout est directionnel ; chaque
-/// pièce n'écoute que **sa** tranche (`settings` pour les bascules,
+/// Aucune couleur, aucun libellé en dur (tout passe par [zChatLabel]) ;
+/// toutes les cibles ≥ 48 dp en géométrie rendue, tout est directionnel ;
+/// chaque pièce n'écoute que **sa** tranche (`settings` pour les bascules,
 /// `activeRequests` pour le STOP, `editing` pour le bandeau) — jamais les
 /// messages, jamais la frappe.
 ///
-/// ## Mode compact (« < mobileBreakpoint ») — 🔴 corrigé par CR-IFFD-77 ①
+/// ## Mode compact (« < mobileBreakpoint »)
 ///
-/// lex masque les libellés sous 400 dp et garde les badges (lex/f011). Chaque
-/// pièce accepte `showLabel: false` — mais **refuse de perdre son seul canal
-/// visible** (CR-74 : un état, et une affordance, doivent rester perceptibles
-/// par un canal visible).
+/// Chaque pièce accepte `showLabel: false` — mais **refuse de perdre son
+/// seul canal visible** : un état actif ou une valeur choisie doit rester
+/// perceptible par au moins un canal visible, même avec le libellé masqué.
+/// La règle est tenue par [_labelVisible] : le compact masque le libellé des
+/// pièces qui n'ont **rien à dire**, et le garde sur toute pièce dont l'état
+/// est actif ou dont une valeur est choisie — avec un glyphe seul, un état
+/// actif serait sinon rendu à l'identique d'un état au repos.
 ///
-/// La rédaction CR-76 ne tenait cette promesse que **sans glyphe**
-/// (`showLabel || face == null`) : avec un glyphe — le cas de tout téléphone —
-/// une bascule active était rendue à l'identique d'une bascule au repos. Le
-/// défaut de CR-74, rouvert par le mode compact. La règle est désormais tenue
-/// par [_labelVisible] : le compact masque le libellé des pièces qui n'ont
-/// **rien à dire**, et le garde sur toute pièce dont l'état est actif ou dont
-/// une valeur est choisie.
+/// ## Le filet du conteneur et le déclencheur de dictée
 ///
-/// ## Deux pièces ajoutées par CR-IFFD-77
-///
-/// * le **filet** de [ZChatComposerSurface] (③) — le point de câblage qui
-///   manquait au rôle `dividerColor` ;
-/// * le **déclencheur de dictée** compact (④,
-///   [ZChatComposerDictationTrigger]) : la pièce que CR-76 comptait parmi ses
-///   six sans qu'elle y soit. Le socle livre le bouton, l'hôte garde le geste
-///   ET le moteur.
+/// [ZChatComposerSurface] expose un canal de bordure (rôle `dividerColor`)
+/// que l'hôte peut câbler sans envelopper la surface d'un second conteneur.
+/// [ZChatComposerDictationTrigger] est le déclencheur de dictée compact : le
+/// socle livre le bouton, l'hôte garde le geste et le moteur de
+/// reconnaissance.
 library;
 
 import 'dart:async';
@@ -83,11 +72,11 @@ import 'z_chat_settings_sheet.dart'
         kZChatSettingsReferenceSelectedWeight,
         zChatSelectedEmphasisStyles;
 
-/// La paire de styles emphase CR-74 — même chaîne que la feuille de réglages
+/// La paire de styles d'emphase — même chaîne que la feuille de réglages
 /// (jetons `chatSelectedEmphasis*`, puis références) **et la même
-/// implémentation** ([zChatSelectedEmphasisStyles], CR-IFFD-77 ①) : la bande et
-/// la feuille disent « choisi » de la MÊME façon, y compris l'anti-annulation
-/// AD-10 sous un style ambiant déjà gras/souligné.
+/// implémentation** ([zChatSelectedEmphasisStyles]) : la bande et la feuille
+/// disent « choisi » de la MÊME façon, y compris l'anti-annulation
+/// (invariant AD-10) sous un style ambiant déjà gras/souligné.
 ({TextStyle plain, TextStyle chosen}) _emphasisStyles(BuildContext context) {
   final ZcrudTheme? theme = ZcrudScope.maybeOf(context)?.theme;
   return zChatSelectedEmphasisStyles(
@@ -101,26 +90,25 @@ import 'z_chat_settings_sheet.dart'
   );
 }
 
-/// 🔴 **CR-IFFD-77 ① — la règle du canal visible en mode COMPACT.**
+/// **La règle du canal visible en mode compact.**
 ///
-/// CR-74 pose qu'un état doit rester perceptible par au moins un canal
-/// **visible**. La rédaction CR-76 ne la tenait que sans glyphe :
-/// `showLabel || face == null`. Avec un glyphe d'hôte (le cas de tout
-/// téléphone : `ZChatMaterialComposer` en fournit toujours un) et
-/// `showLabel: false` (< 400 dp), le libellé — **seul porteur de l'emphase** —
-/// disparaissait, et le glyphe, opaque, était rendu à l'identique actif ou non.
+/// Un état doit rester perceptible par au moins un canal **visible**. Avec
+/// un glyphe d'hôte et `showLabel: false` (mode compact), masquer
+/// systématiquement le libellé — **seul porteur de l'emphase** — rendrait un
+/// état actif à l'identique d'un état au repos, puisque le glyphe, opaque,
+/// ne change pas de lui-même.
 ///
 /// ⇒ Le compact masque le libellé des pièces qui n'ont **rien à dire** ; une
-/// pièce dont l'état est ACTIF (ou dont une valeur est CHOISIE) garde le sien.
+/// pièce dont l'état est ACTIF (ou dont une valeur est CHOISIE) garde le
+/// sien.
 ///
-/// **Pourquoi ce canal-là**, et pas une pastille/un fond/un contour : le socle
-/// n'invente aucune couleur (FR-26) et ne peut pas re-styler un glyphe d'hôte
-/// (widget opaque). Une décoration exigerait une couleur d'hôte — donc un canal
-/// **conditionné** au câblage, c'est-à-dire zéro canal chez l'hôte qui n'a rien
-/// câblé : exactement le défaut qu'on ferme. Le libellé emphasé est le seul
-/// canal que le socle peut peindre **inconditionnellement**, et c'est déjà
-/// celui que la feuille de réglages utilise (un état, deux surfaces, une seule
-/// grammaire).
+/// **Pourquoi ce canal-là**, et pas une pastille/un fond/un contour : le
+/// socle n'invente aucune couleur et ne peut pas re-styler un glyphe d'hôte
+/// (widget opaque). Une décoration exigerait une couleur d'hôte — donc un
+/// canal **conditionné** au câblage, c'est-à-dire zéro canal chez l'hôte qui
+/// n'a rien câblé. Le libellé emphasé est le seul canal que le socle peut
+/// peindre **inconditionnellement**, et c'est déjà celui que la feuille de
+/// réglages utilise (un état, deux surfaces, une seule grammaire).
 bool _labelVisible({
   required bool showLabel,
   required bool hasGlyph,
@@ -130,42 +118,39 @@ bool _labelVisible({
 double _gapOf(BuildContext context) =>
     ZcrudScope.maybeOf(context)?.theme?.gapS ?? kZChatSettingsReferenceGap;
 
-/// Le CONTENEUR du composer (CR-IFFD-76, pièce 1) — le fond arrondi que les
-/// deux relevés (`ZChatNotebookReference.composerRadius` = 12,
-/// `ZChatComposerReference.containerRadius` = 12) publient déjà et que
-/// personne ne dessinait.
+/// Le CONTENEUR du composer — le fond arrondi que
+/// `ZChatNotebookReference.composerRadius` et
+/// `ZChatComposerReference.containerRadius` publient déjà (tous deux à 12).
 ///
-/// * **rayon** : chaîne du chrome K2 (paramètre > jeton `radiusM` > référence
+/// * **rayon** : chaîne du chrome (paramètre > jeton `radiusM` > référence
 ///   12) ;
-/// * **fond** : [backgroundColor] > jeton `surfaceColor` > **rien** — le socle
-///   n'invente aucune couleur (FR-26) : sans fond résolu, l'enfant est rendu
-///   tel quel, jamais une décoration inerte (AD-4).
+/// * **fond** : [backgroundColor] > jeton `surfaceColor` > **rien** — le
+///   socle n'invente aucune couleur : sans fond résolu, l'enfant est rendu
+///   tel quel, jamais une décoration inerte (invariant AD-4).
 ///
-/// ## 🔴 CR-IFFD-77 ③ — le canal de BORDURE
+/// ## Le canal de BORDURE
 ///
-/// La rédaction CR-76 ne prenait que `child`/`chrome`/`backgroundColor`.
-/// L'arbitrage « les rôles Material sont à câbler par l'hôte » est juste, mais
-/// **le point de câblage n'existait pas** : poser un filet obligeait l'hôte à
-/// envelopper la surface d'un second conteneur et à faire coïncider deux rayons
-/// à la main — le montage manuel que CR-76 venait de supprimer.
+/// Poser un filet sans point de câblage dédié obligerait l'hôte à envelopper
+/// la surface d'un second conteneur et à faire coïncider deux rayons à la
+/// main. Ce conteneur expose donc son propre canal :
 ///
-/// * **couleur du filet** : [borderColor] > jeton **demandé**
-///   `chatComposerBorderColor` > **rien** (même doctrine que le fond) ;
+/// * **couleur du filet** : [borderColor] > jeton `chatComposerBorderColor`
+///   > **rien** (même doctrine que le fond) ;
 /// * **épaisseur** : chaîne du chrome ([ZChatComposerChromeStyle.borderWidth],
-///   référence 1 — la largeur du `Border.all` de lex) ;
-/// * **rayon** : celui du conteneur, **par construction** — les deux rayons ne
-///   peuvent plus diverger.
+///   référence 1) ;
+/// * **rayon** : celui du conteneur, **par construction** — les deux rayons
+///   ne peuvent pas diverger.
 ///
 /// ## `clipBehavior` — porté, et par défaut INERTE
 ///
-/// lex pose `Clip.antiAlias` sur son conteneur (`chat_input.dart:474-482`).
-/// Mesuré ici : sans fond ni filet, la surface ne pose **aucune** couche de
-/// rendu, et son enfant par défaut (bandeau d'édition = un `Padding`, bande =
-/// une rangée) ne peint jamais jusqu'au bord ⇒ le clip serait aujourd'hui une
-/// couche de composition pour rien. Il est donc **offert** ([clipBehavior]) et
+/// Sans fond ni filet, la surface ne pose **aucune** couche de rendu, et son
+/// enfant par défaut (bandeau d'édition = un `Padding`, bande = une rangée)
+/// ne peint jamais jusqu'au bord ⇒ un clip serait dans ce cas une couche de
+/// composition pour rien. Il est donc **offert** ([clipBehavior]) et
 /// **`Clip.none` par défaut** : l'hôte dont un enfant peint jusqu'au bord (un
 /// bandeau à fond, une vignette pleine largeur) l'active, et le clip épouse
-/// alors EXACTEMENT le rayon du conteneur — jamais un second rayon à accorder.
+/// alors EXACTEMENT le rayon du conteneur — jamais un second rayon à
+/// accorder.
 class ZChatComposerSurface extends StatelessWidget {
   /// Construit le conteneur.
   const ZChatComposerSurface({
@@ -180,15 +165,14 @@ class ZChatComposerSurface extends StatelessWidget {
   /// Le contenu (champ + bande).
   final Widget child;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// Réglage de chrome — `null` ⇒ jeton puis référence.
   final ZChatComposerChrome? chrome;
 
   /// Fond du conteneur. `null` ⇒ jeton `surfaceColor`, sinon aucun fond.
   final Color? backgroundColor;
 
-  /// Couleur du FILET (CR-IFFD-77 ③) — le `theme.dividerColor` de lex, qui est
-  /// un **rôle** : l'hôte le fournit. `null` ⇒ jeton demandé
-  /// `chatComposerBorderColor`, sinon **aucun filet** (FR-26/AD-4).
+  /// Couleur du FILET — un **rôle** de bordure que l'hôte fournit. `null` ⇒
+  /// jeton `chatComposerBorderColor`, sinon **aucun filet** (invariant AD-4).
   final Color? borderColor;
 
   /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut —
@@ -203,8 +187,8 @@ class ZChatComposerSurface extends StatelessWidget {
     );
     final Color? fill =
         backgroundColor ?? ZcrudScope.maybeOf(context)?.theme?.surfaceColor;
-    // 🔴 Le jeton `chatComposerBorderColor` est DEMANDÉ à `zcrud_core` (hors
-    // périmètre) et s'insérera ici, entre le paramètre et le « rien ».
+    // Le jeton `chatComposerBorderColor` de `zcrud_core`, quand il existera,
+    // s'insérera ici, entre le paramètre et le « rien ».
     final Color? line = borderColor;
     // Symétrique : un rayon uniforme n'a pas de côté (AD-13). UN seul rayon
     // pour le fond, le filet et le rognage — ils ne peuvent pas diverger.
@@ -241,9 +225,9 @@ class ZChatComposerSurface extends StatelessWidget {
   }
 }
 
-/// Une action du menu `+` (CR-IFFD-76, pièce 2) — **contrat opaque** : le
-/// socle ne connaît ni galerie, ni photo, ni fichier. Libellé par clé de
-/// registre ou déjà localisé par l'hôte, glyphe d'hôte, geste d'hôte.
+/// Une action du menu `+` — **contrat opaque** : le socle ne connaît ni
+/// galerie, ni photo, ni fichier. Libellé par clé de registre ou déjà
+/// localisé par l'hôte, glyphe d'hôte, geste d'hôte.
 @immutable
 class ZChatComposerPickerAction {
   /// Action à libellé **déjà localisé par l'hôte**.
@@ -317,8 +301,8 @@ class ZChatComposerPickerTrigger extends StatefulWidget {
 
 class _ZChatComposerPickerTriggerState
     extends State<ZChatComposerPickerTrigger> {
-  /// Créés UNE fois — jamais au rebuild (AD-2) ; l'état « ouvert » est une
-  /// tranche, jamais un `setState` (G-CH5).
+  /// Créés UNE fois — jamais au rebuild (invariant AD-2) ; l'état « ouvert »
+  /// est une tranche, jamais un `setState`.
   final OverlayPortalController _portal = OverlayPortalController();
   final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
   final LayerLink _link = LayerLink();
@@ -407,15 +391,15 @@ class _ZChatComposerPickerTriggerState
           child: CompositedTransformFollower(
             link: _link,
             // Le menu s'ouvre AU-DESSUS du déclencheur, ancré côté DÉBUT
-            // (le `+` vit en tête de bande — lex/f003).
+            // (le `+` vit en tête de bande).
             targetAnchor: AlignmentDirectional.topStart.resolve(direction),
             followerAnchor: AlignmentDirectional.bottomStart.resolve(
               direction,
             ),
-            // 🔴 Le menu est posé au COIN ANCRÉ de la boîte suiveuse (elle
+            // Le menu est posé au COIN ANCRÉ de la boîte suiveuse (elle
             // s'étend en amont de l'ancre) : il apparaît DIRECTEMENT
             // au-dessus du déclencheur — un `topStart` le poserait à l'autre
-            // bout de la boîte, hors écran (mesuré, DC-I1).
+            // bout de la boîte, hors écran.
             child: Align(
               alignment: AlignmentDirectional.bottomStart.resolve(direction),
               child: Semantics(
@@ -494,12 +478,12 @@ class _ZChatComposerBandTarget extends StatelessWidget {
   final String semanticsLabel;
   final VoidCallback onTap;
 
-  /// `true` ⇒ le changement d'étiquette est **annoncé** (doctrine CHAT-10 :
-  /// une capture en cours ne doit pas être seulement visible).
+  /// `true` ⇒ le changement d'étiquette est **annoncé** : une capture en
+  /// cours ne doit pas être seulement visible.
   final bool liveRegion;
 
   /// `null` ⇒ simple bouton ; sinon l'état est porté par `Semantics(toggled:)`
-  /// — le canal lecteur d'écran, qui s'AJOUTE au canal visible (CR-74).
+  /// — le canal lecteur d'écran, qui s'ajoute au canal visible.
   final bool? toggled;
 
   final List<Widget> children;
@@ -534,34 +518,28 @@ class _ZChatComposerBandTarget extends StatelessWidget {
   }
 }
 
-/// Bascule « RÉFLÉCHIR » de la bande (CR-IFFD-76, pièce 3) + badge d'effort.
+/// Bascule « RÉFLÉCHIR » de la bande + badge d'effort optionnel.
 ///
-/// 🔴 **Deux surfaces, UN état** : elle lit et écrit
+/// **Deux surfaces, UN état** : elle lit et écrit
 /// `ZChatSettingsController.settings.revealThinkingSteps` — la MÊME tranche
 /// que la tuile de la feuille.
 ///
-/// ## 🔴 CR-IFFD-77 ② — **une pièce n'affiche que la donnée qu'elle pilote**
+/// ## Une pièce n'affiche que la donnée qu'elle pilote
 ///
-/// La rédaction CR-76 lisait `settings.computeEffort?.level` pour son badge et
-/// écrivait `setRevealThinkingSteps(!active)` au tap : **deux champs, un seul
-/// widget**. Le badge ne pouvait donc jamais suivre le geste — et, `computeEffort`
-/// étant `null` au défaut, il n'était jamais rendu : un canal mort posé sur un
-/// contrôle vivant. L'origine était une différence de MODÈLE — chez lex
-/// « réfléchir » est un cycle dont le badge est la valeur ; le socle l'a modélisé
-/// (lot K1) en **booléen** + un budget séparé. Le badge avait suivi lex, le
-/// contrôle avait suivi le kernel.
+/// Le modèle du kernel exprime « réfléchir » en **booléen** (activé ou non),
+/// avec un budget séparé. Un badge qui afficherait ce budget sur une bascule
+/// qui ne pilote que le booléen créerait un décalage : le badge ne suivrait
+/// jamais le geste de tap, et resterait un canal mort quand le budget est
+/// absent. C'est pourquoi [badgeBuilder] reçoit l'**état booléen** — la
+/// donnée que le tap change — et rien d'autre. Piloter aussi le budget
+/// ferait de la bascule un déclencheur à menu, c'est-à-dire une autre pièce
+/// ([ZChatComposerEffortSelector] en est déjà une).
 ///
-/// L'arbitrage retenu : **la pièce n'affiche que ce qu'elle pilote**. Elle reste
-/// une bascule (le modèle K1 n'est pas rouvert), et son [badgeBuilder] reçoit
-/// désormais l'**état booléen** — la donnée que le tap change. Piloter aussi le
-/// budget aurait fait de la bascule un déclencheur à menu, c'est-à-dire une
-/// autre pièce ([ZChatComposerEffortSelector] en est déjà une).
-///
-/// 🔴 **La règle est générale**, du même ordre que celles de CR-74/75 : *un
-/// widget ne rend que la donnée que son propre geste écrit ; afficher un champ
-/// voisin fait de l'affichage un commentaire — vrai par hasard, faux dès que le
-/// modèle bouge.* Le budget se règle et s'affiche là où il se pilote : la
-/// feuille de réglages (`ZChatSettingsSheet`) et le sélecteur d'effort.
+/// **La règle est générale** : un widget ne rend que la donnée que son
+/// propre geste écrit ; afficher un champ voisin fait de l'affichage un
+/// commentaire — vrai par hasard, faux dès que le modèle bouge. Le budget se
+/// règle et s'affiche là où il se pilote : la feuille de réglages
+/// (`ZChatSettingsSheet`) et le sélecteur d'effort.
 class ZChatComposerThinkingToggle extends StatelessWidget {
   /// Construit la bascule.
   const ZChatComposerThinkingToggle({
@@ -575,26 +553,25 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
   /// Le contrôleur de réglages PARTAGÉ avec la feuille — jamais un second.
   final ZChatSettingsController controller;
 
-  /// Glyphe d'HÔTE (le cerveau de lex). `null` ⇒ libellé seul.
+  /// Glyphe d'HÔTE. `null` ⇒ libellé seul.
   final Widget? glyph;
 
-  /// `false` ⇒ mode compact (lex < 400 dp) : le libellé est masqué **si un
-  /// glyphe existe ET que la bascule est au repos**. Active, elle garde son
-  /// libellé emphasé — son seul canal visible (CR-IFFD-77 ①, cf.
-  /// [_labelVisible]).
+  /// `false` ⇒ mode compact : le libellé est masqué **si un glyphe existe ET
+  /// que la bascule est au repos**. Active, elle garde son libellé emphasé —
+  /// son seul canal visible (cf. [_labelVisible]).
   final bool showLabel;
 
-  /// Rend un badge à partir de l'**état que cette pièce pilote**
-  /// (CR-IFFD-77 ②) — jamais d'un champ voisin. Non fourni ⇒ **aucun** badge :
-  /// le socle n'a rien à badger sur un booléen déjà porté par l'emphase et par
+  /// Rend un badge à partir de l'**état que cette pièce pilote** — jamais
+  /// d'un champ voisin. Non fourni ⇒ **aucun** badge : le socle n'a rien à
+  /// badger sur un booléen déjà porté par l'emphase et par
   /// `Semantics(toggled:)`.
   final Widget? Function(BuildContext context, bool active)? badgeBuilder;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ZChatGenerationSettings>(
-      // 🔴 LA tranche des réglages, et elle seule (SM-1) — la même que la
-      // feuille : un état, deux surfaces.
+      // LA tranche des réglages, et elle seule — la même que la feuille :
+      // un état, deux surfaces.
       valueListenable: controller.settings,
       builder:
           (
@@ -609,9 +586,8 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
             );
             final ({TextStyle plain, TextStyle chosen}) styles =
                 _emphasisStyles(context);
-            // 🔴 CR-IFFD-77 ② : le badge reçoit `active` — CE que le tap
-            // change. Aucun défaut du socle : un booléen n'a pas de nombre à
-            // montrer.
+            // Le badge reçoit `active` — CE que le tap change. Un booléen
+            // n'a pas de nombre à montrer.
             final Widget? badge = badgeBuilder?.call(context, active);
             final Widget? face = glyph;
             final bool labelVisible = _labelVisible(
@@ -630,9 +606,8 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
                 if (labelVisible)
                   Text(
                     resolved,
-                    // 🔴 Le canal VISIBLE de l'état (CR-74) : emphase quand
-                    // actif — jamais la seule couleur, jamais la seule
-                    // sémantique.
+                    // Le canal VISIBLE de l'état : emphase quand actif —
+                    // jamais la seule couleur, jamais la seule sémantique.
                     style: active ? styles.chosen : styles.plain,
                     textAlign: TextAlign.start,
                   ),
@@ -649,9 +624,9 @@ class ZChatComposerThinkingToggle extends StatelessWidget {
   }
 }
 
-/// Bascule « INTERNET » de la bande (CR-IFFD-76, pièce 4) — l'état est la
-/// capacité TYPÉE du kernel ([kZChatCapabilityWebSearch], lot K1), lue et
-/// écrite par le MÊME contrôleur que la tuile de capacités de la feuille.
+/// Bascule « INTERNET » de la bande — l'état est la capacité TYPÉE du
+/// kernel ([kZChatCapabilityWebSearch]), lue et écrite par le MÊME
+/// contrôleur que la tuile de capacités de la feuille.
 class ZChatComposerWebSearchToggle extends StatelessWidget {
   /// Construit la bascule.
   const ZChatComposerWebSearchToggle({
@@ -668,13 +643,13 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
   final Widget? glyph;
 
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que la
-  /// bascule est au repos** (CR-IFFD-77 ①).
+  /// bascule est au repos**.
   final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ZChatGenerationSettings>(
-      // 🔴 La même tranche que la feuille — un état, deux surfaces.
+      // La même tranche que la feuille — un état, deux surfaces.
       valueListenable: controller.settings,
       builder:
           (
@@ -699,8 +674,7 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
             return _ZChatComposerBandTarget(
               semanticsLabel: resolved,
               toggled: active,
-              // 🔴 Le geste EXISTANT du contrôleur — demandé ⇔ non exprimé,
-              // le couple de la chip lex.
+              // Le geste EXISTANT du contrôleur — demandé ⇔ non exprimé.
               onTap: () =>
                   controller.toggleCapability(kZChatCapabilityWebSearch),
               children: <Widget>[
@@ -720,11 +694,11 @@ class ZChatComposerWebSearchToggle extends StatelessWidget {
   }
 }
 
-/// Le bouton « OUTILS » + compteur (CR-IFFD-76, pièce 5) — le DÉCLENCHEUR qui
-/// **ouvre** la feuille de réglages ([onOpen] : le conteneur appartient à
-/// l'hôte, F11). Le badge (`ZChatMaterialToolsBadge`, ou tout widget d'hôte)
-/// vit **dans la cible** : le tap sur le badge atteint le bouton — le défaut ③
-/// d'IFFD (badge posé sur un `Stack`, volant le tap) est inexprimable ici.
+/// Le bouton « OUTILS » + compteur — le DÉCLENCHEUR qui **ouvre** la feuille
+/// de réglages ([onOpen] : le conteneur appartient à l'hôte). Le badge
+/// (`ZChatMaterialToolsBadge`, ou tout widget d'hôte) vit **dans la cible** :
+/// le tap sur le badge atteint le bouton, il ne peut pas être volé par un
+/// `Stack` posé par-dessus.
 class ZChatComposerToolsTrigger extends StatelessWidget {
   /// Construit le déclencheur.
   const ZChatComposerToolsTrigger({
@@ -736,8 +710,8 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   });
 
   /// OUVRE la feuille — modale, page, panneau : l'hôte décide. Le créneau
-  /// `tools` du composer est une **bande** ; la feuille n'y est jamais montée
-  /// inline (défaut ① d'IFFD : débordement de 149 px).
+  /// `tools` du composer est une **bande** ; la feuille n'y est jamais
+  /// montée inline (sous peine de débordement visuel).
   final VoidCallback onOpen;
 
   /// Badge compteur (réglages actifs). Rendu DANS la cible — décoratif pour
@@ -748,11 +722,12 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   final Widget? glyph;
 
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe** — le badge,
-  /// lui, reste (lex/f011 : libellés masqués, badges gardés).
+  /// lui, reste.
   ///
-  /// ⚠️ CR-IFFD-77 ① ne s'applique pas ici : ce déclencheur n'a **pas d'état**
-  /// (il ouvre une feuille). Ce qu'il a à dire — le nombre de réglages actifs —
-  /// est porté par son [badge], que le compact garde justement.
+  /// La règle du canal visible en compact ne s'applique pas ici : ce
+  /// déclencheur n'a **pas d'état** (il ouvre une feuille). Ce qu'il a à
+  /// dire — le nombre de réglages actifs — est porté par son [badge], que le
+  /// compact garde justement.
   final bool showLabel;
 
   @override
@@ -775,7 +750,7 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
         if (labelVisible) Text(resolved, textAlign: TextAlign.start),
         if (counter != null) ...<Widget>[
           SizedBox(width: ZChatComposerReference.badgeStartGap),
-          // 🔴 DANS la cible, donc DANS le hit-test du bouton — et hors de
+          // DANS la cible, donc DANS le hit-test du bouton — et hors de
           // l'arbre sémantique (le nombre est un rappel visuel).
           ExcludeSemantics(child: counter),
         ],
@@ -784,11 +759,11 @@ class ZChatComposerToolsTrigger extends StatelessWidget {
   }
 }
 
-/// Le déclencheur d'EFFORT à menu (CR-IFFD-76, défaut ④) — la forme lex
-/// (« ✦ Plus » ouvrant Mini/Plus/Pro, lex/f011) : **un déclencheur unique à
-/// menu**, jamais trois chips. L'axe est celui du kernel
-/// ([ZChatResponseLength]) ; l'état vit dans le MÊME [ZChatSettingsController]
-/// que la tuile de verbosité de la feuille (un état, deux surfaces).
+/// Le déclencheur d'EFFORT à menu — **un déclencheur unique à menu**,
+/// jamais trois chips côte à côte. L'axe est celui du kernel
+/// ([ZChatResponseLength]) ; l'état vit dans le MÊME
+/// [ZChatSettingsController] que la tuile de verbosité de la feuille (un
+/// état, deux surfaces).
 class ZChatComposerEffortSelector extends StatefulWidget {
   /// Construit le déclencheur.
   const ZChatComposerEffortSelector({
@@ -803,11 +778,11 @@ class ZChatComposerEffortSelector extends StatefulWidget {
   /// Le contrôleur de réglages PARTAGÉ avec la feuille.
   final ZChatSettingsController controller;
 
-  /// Glyphe du déclencheur (le « ✦ » de lex, stylé par l'hôte).
+  /// Glyphe du déclencheur, stylé par l'hôte.
   final Widget? glyph;
 
-  /// Glyphe posé devant le palier ACTIF du menu (la coche lex/f011).
-  /// `null` ⇒ l'emphase CR-74 seule.
+  /// Glyphe posé devant le palier ACTIF du menu (une coche, typiquement).
+  /// `null` ⇒ l'emphase de style seule.
   final Widget? selectionMark;
 
   /// `false` ⇒ compact : le libellé du déclencheur est masqué **si un glyphe
@@ -847,7 +822,7 @@ class _ZChatComposerEffortSelectorState
   }
 
   void _select(ZChatResponseLength? length) {
-    // 🔴 Le verbe EXISTANT du contrôleur partagé — la feuille reflète le choix
+    // Le verbe EXISTANT du contrôleur partagé — la feuille reflète le choix
     // (un état, deux surfaces).
     widget.controller.setResponseLength(length);
     _close();
@@ -868,7 +843,7 @@ class _ZChatComposerEffortSelectorState
       child: CompositedTransformTarget(
         link: _link,
         child: ValueListenableBuilder<ZChatGenerationSettings>(
-          // 🔴 La tranche des réglages, et elle seule (SM-1).
+          // La tranche des réglages, et elle seule.
           valueListenable: widget.controller.settings,
           builder:
               (
@@ -895,9 +870,9 @@ class _ZChatComposerEffortSelectorState
         ? group
         : zChatLabel(context, _labels[active]!);
     final Widget? face = widget.glyph;
-    // 🔴 CR-IFFD-77 ① : le déclencheur d'effort porte une VALEUR ; un palier
-    // explicitement choisi reste lisible en compact — « Automatique » (le
-    // défaut, `active == null`) n'a rien à dire et cède la place.
+    // Le déclencheur d'effort porte une VALEUR ; un palier explicitement
+    // choisi reste lisible en compact — « Automatique » (le défaut,
+    // `active == null`) n'a rien à dire et cède la place.
     final bool labelVisible = _labelVisible(
       showLabel: widget.showLabel,
       hasGlyph: face != null,
@@ -959,12 +934,12 @@ class _ZChatComposerEffortSelectorState
         Positioned.fill(
           child: CompositedTransformFollower(
             link: _link,
-            // Au-dessus du déclencheur, ancré côté FIN (lex/f011).
+            // Au-dessus du déclencheur, ancré côté FIN.
             targetAnchor: AlignmentDirectional.topEnd.resolve(direction),
             followerAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
-            // 🔴 Même règle que le menu du `+` : le menu vit au COIN ANCRÉ de
+            // Même règle que le menu du `+` : le menu vit au COIN ANCRÉ de
             // la boîte suiveuse (au-dessus du déclencheur), jamais à son
-            // `topStart` — qui est hors écran (mesuré, DC-E1).
+            // `topStart` — qui serait hors écran.
             child: Align(
               alignment: AlignmentDirectional.bottomEnd.resolve(direction),
               child: Semantics(
@@ -1036,7 +1011,7 @@ class _ZChatComposerEffortSelectorState
               children: <Widget>[
                 Text(
                   resolved,
-                  // L'état par le STYLE (CR-74) — jamais la seule couleur.
+                  // L'état par le STYLE — jamais la seule couleur.
                   style: selected ? styles.chosen : styles.plain,
                   textAlign: TextAlign.start,
                 ),
@@ -1053,15 +1028,15 @@ class _ZChatComposerEffortSelectorState
   }
 }
 
-/// Le bouton STOP pendant le flux (CR-IFFD-76, pièce 6) — visible SEULEMENT
-/// quand une génération est en vol, câblé sur le verbe **EXISTANT**
-/// `runAction(ZChatCancelAction(requestId:))` (G-CH1 : aucun membre ajouté,
-/// aucun raccourci `stop()` — le raccourci serait un second site d'appel).
+/// Le bouton STOP pendant le flux — visible SEULEMENT quand une génération
+/// est en vol, câblé sur le verbe **EXISTANT**
+/// `runAction(ZChatCancelAction(requestId:))` : aucun membre ajouté, aucun
+/// raccourci `stop()` qui ouvrirait un second site d'appel.
 ///
-/// 🔴 SM-1 : c'est la SEULE pièce de la bande abonnée à une tranche de flux
+/// C'est la SEULE pièce de la bande abonnée à une tranche de flux
 /// (`activeRequests` — qui ne signale qu'aux départs/arrivées de requêtes,
 /// jamais aux tokens). La saisie est restituée intacte par le protocole
-/// d'annulation (G-A1/G-A2 du kernel : annuler ≠ supprimer la question).
+/// d'annulation du kernel : annuler ne supprime jamais la question.
 class ZChatComposerStopTarget extends StatelessWidget {
   /// Construit le bouton.
   const ZChatComposerStopTarget({
@@ -1079,14 +1054,15 @@ class ZChatComposerStopTarget extends StatelessWidget {
 
   /// `false` ⇒ compact : libellé masqué **si un glyphe existe**.
   ///
-  /// ⚠️ CR-IFFD-77 ① ne s'applique pas ici : le STOP n'a pas d'état à montrer
-  /// — sa **présence** EST son état (il n'existe que pendant le flux).
+  /// La règle du canal visible en compact ne s'applique pas ici : le STOP
+  /// n'a pas d'état à montrer — sa **présence** EST son état (il n'existe
+  /// que pendant le flux).
   final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<List<String>>(
-      // 🔴 LA tranche des requêtes EN VOL, et elle seule.
+      // LA tranche des requêtes EN VOL, et elle seule.
       valueListenable: controller.activeRequests,
       builder: (BuildContext context, List<String> ids, Widget? _) {
         if (ids.isEmpty) return const SizedBox.shrink();
@@ -1103,7 +1079,7 @@ class ZChatComposerStopTarget extends StatelessWidget {
         return _ZChatComposerBandTarget(
           semanticsLabel: resolved,
           onTap: () => unawaited(
-            // 🔴 L'UNIQUE point d'entrée des verbes : l'annulation est
+            // L'UNIQUE point d'entrée des verbes : l'annulation est
             // adressée par identité de requête (la plus récente), et le
             // brouillon est restitué INTACT par le protocole.
             controller.runAction(
@@ -1125,13 +1101,13 @@ class ZChatComposerStopTarget extends StatelessWidget {
   }
 }
 
-/// Le bandeau de MODE ÉDITION (CR-IFFD-76, pièce 6 bis) — il REND les verbes
-/// K2 existants : visible quand [ZChatController.editing] porte une session,
-/// sortie par `cancelEditing` (la saisie d'avant l'édition est restituée par
-/// le contrôleur — jamais détruite).
+/// Le bandeau de MODE ÉDITION — il REND les verbes existants du contrôleur :
+/// visible quand [ZChatController.editing] porte une session, sortie par
+/// `cancelEditing` (la saisie d'avant l'édition est restituée par le
+/// contrôleur — jamais détruite).
 ///
-/// ⚠️ Le bouton « fermer » de 28 dp du bandeau lex (`chat_input.dart:516-519`)
-/// n'est PAS reproduit : la cible de sortie fait ≥ 48 dp en géométrie rendue.
+/// La cible de sortie fait ≥ 48 dp en géométrie rendue (invariant AD-13) —
+/// jamais une cible tactile réduite pour des raisons de compacité visuelle.
 class ZChatComposerEditingBanner extends StatelessWidget {
   /// Construit le bandeau.
   const ZChatComposerEditingBanner({
@@ -1153,7 +1129,7 @@ class ZChatComposerEditingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ZChatEditingSession?>(
-      // 🔴 LA tranche du mode édition, et elle seule (SM-1).
+      // LA tranche du mode édition, et elle seule.
       valueListenable: controller.editing,
       builder:
           (BuildContext context, ZChatEditingSession? session, Widget? _) {
@@ -1187,8 +1163,8 @@ class ZChatComposerEditingBanner extends StatelessWidget {
                   ),
                   _ZChatComposerBandTarget(
                     semanticsLabel: cancel,
-                    // 🔴 Le verbe K2 EXISTANT — la saisie d'avant l'édition
-                    // est restituée par le contrôleur.
+                    // Le verbe EXISTANT du contrôleur — la saisie d'avant
+                    // l'édition est restituée par lui.
                     onTap: controller.cancelEditing,
                     children: <Widget>[
                       cancelGlyph == null
@@ -1205,41 +1181,35 @@ class ZChatComposerEditingBanner extends StatelessWidget {
 }
 
 /// « Jamais à l'écoute » — l'état de repli quand l'hôte ne fournit AUCUNE
-/// tranche d'écoute (CR-IFFD-77 ④).
+/// tranche d'écoute.
 ///
-/// 🔴 Constante de fait : jamais notifiée, jamais disposée, partagée par toutes
-/// les instances. Elle existe pour qu'il n'y ait qu'**UN SEUL chemin de rendu**
-/// dans [ZChatComposerDictationTrigger] — la leçon de
-/// `ZChatComposerAnimatedHint` : une seconde branche « statique » laisse une
-/// garde verte pendant que le vrai mécanisme est cassé.
+/// Constante de fait : jamais notifiée, jamais disposée, partagée par toutes
+/// les instances. Elle existe pour qu'il n'y ait qu'**UN SEUL chemin de
+/// rendu** dans [ZChatComposerDictationTrigger] — une seconde branche
+/// « statique » séparée du chemin réactif laisserait une régression du
+/// mécanisme d'écoute passer inaperçue.
 final ValueNotifier<bool> _kZChatNeverListening = ValueNotifier<bool>(false);
 
-/// Le DÉCLENCHEUR DE DICTÉE compact (CR-IFFD-77 ④) — la forme lex : un bouton
-/// dans la rangée, qui change de glyphe et d'étiquette pendant l'écoute.
+/// Le DÉCLENCHEUR DE DICTÉE compact — un bouton dans la rangée, qui change
+/// de glyphe et d'étiquette pendant l'écoute.
 ///
-/// ## 🔴 Le socle livre la pièce, l'hôte garde le geste — et le moteur
+/// ## Le socle livre la pièce, l'hôte garde le geste — et le moteur
 ///
 /// Exactement le patron du `+` des pickers. Ce widget **n'écoute rien** : il
 /// n'ouvre aucun micro, ne connaît aucun `ZChatDictationPort` et ne détient
 /// aucun état. L'état d'écoute est **injecté** ([listening]) et le geste
 /// ([onTap]) appartient à l'hôte — qui branchera, s'il le veut,
 /// `ZChatCaptureController.listening` / `startDictation()`, ou son propre
-/// moteur. Un port de dictée est un choix d'application (CR-IFFD-77 ④, et le
-/// socle est d'accord) ; le déclencheur, lui, n'en était pas un.
-///
-/// ⚠️ CR-IFFD-76 comptait cette pièce parmi ses six — elle n'y était pas : le
-/// créneau `dictation` de `ZDefaultChatComposer` n'était qu'un builder nu, et
-/// `ZChatCaptureBar` est une **bande**, pas un déclencheur compact.
+/// moteur.
 ///
 /// ## Canaux de l'état d'écoute — trois, dont deux non chromatiques
 ///
 /// 1. l'**étiquette** change (`Dicter` ⇄ `Arrêter la dictée`) ;
 /// 2. `Semantics(toggled:)` **et** une région **live** — l'écoute est
-///    *annoncée*, pas seulement affichée (doctrine CHAT-10 : chez lex,
-///    `_isListening` ne pilote qu'une icône) ;
-/// 3. le **glyphe** bascule sur [listeningGlyph] si l'hôte en fournit un — et,
-///    en mode compact, le libellé reste rendu pendant l'écoute (CR-IFFD-77 ①,
-///    cf. [_labelVisible]) : jamais zéro canal visible.
+///    *annoncée*, pas seulement affichée, pas laissée au seul canal visuel ;
+/// 3. le **glyphe** bascule sur [listeningGlyph] si l'hôte en fournit un —
+///    et, en mode compact, le libellé reste rendu pendant l'écoute (cf.
+///    [_labelVisible]) : jamais zéro canal visible.
 class ZChatComposerDictationTrigger extends StatelessWidget {
   /// Construit le déclencheur.
   const ZChatComposerDictationTrigger({
@@ -1258,8 +1228,8 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
   /// La tranche d'écoute, **injectée** par l'hôte (typiquement
   /// `ZChatCaptureController.listening`). `null` ⇒ toujours au repos.
   ///
-  /// 🔴 SM-1 : une `ValueListenable`, donc l'écoute ne reconstruit QUE ce
-  /// bouton — jamais la bande, jamais le champ.
+  /// Une `ValueListenable`, donc l'écoute ne reconstruit QUE ce bouton —
+  /// jamais la bande, jamais le champ.
   final ValueListenable<bool>? listening;
 
   /// Glyphe d'HÔTE au repos (le micro). `null` ⇒ libellé seul.
@@ -1269,14 +1239,14 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
   /// reste porté par l'étiquette, la sémantique et le libellé compact).
   final Widget? listeningGlyph;
 
-  /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que le micro
-  /// est au repos** (CR-IFFD-77 ①).
+  /// `false` ⇒ compact : libellé masqué **si un glyphe existe ET que le
+  /// micro est au repos**.
   final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
-      // 🔴 UN SEUL chemin de rendu — le repli est une tranche inerte, pas une
+      // UN SEUL chemin de rendu — le repli est une tranche inerte, pas une
       // seconde branche.
       valueListenable: listening ?? _kZChatNeverListening,
       builder: (BuildContext context, bool active, Widget? _) {
@@ -1296,8 +1266,8 @@ class ZChatComposerDictationTrigger extends StatelessWidget {
         return _ZChatComposerBandTarget(
           semanticsLabel: resolved,
           toggled: active,
-          // 🔴 L'écoute est ANNONCÉE (CHAT-10) : ce que dit l'utilisateur part
-          // dans un moteur — il doit le savoir sans regarder l'écran.
+          // L'écoute est ANNONCÉE : ce que dit l'utilisateur part dans un
+          // moteur — il doit le savoir sans regarder l'écran.
           liveRegion: active,
           onTap: onTap,
           children: <Widget>[

@@ -1,33 +1,27 @@
 /// Énumérations **neutres** du modèle de conversation IA (AD-3, AD-10, AD-13).
 ///
-/// origine: lex_core (module « Assistant ») — `domain/enums/chat_enums.dart`,
-/// `response_confidence.dart:22-35`, `source_freshness.dart:15-24`,
-/// `chat_source.dart:6-15`.
-///
 /// **Trois règles tiennent tout ce fichier :**
 ///
 /// 1. **Valeurs persistées en camelCase** (convention `Naming & Consistency`
-///    du dépôt) — lex persiste `off_topic`/`as_is`/`general_knowledge` en
-///    snake_case ; ces formes restent **acceptées EN LECTURE** (alias), jamais
-///    réémises. C'est le principe de Postel, et c'est la condition du « portable
-///    rapidement » : un document lex existant se relit **typé**, pas en repli.
+///    du dépôt) — les formes snake_case historiquement rencontrées côté
+///    intégrations restent **acceptées EN LECTURE** (alias), jamais réémises.
+///    C'est le principe de Postel : un document déjà persisté se relit
+///    **typé**, pas en repli.
 /// 2. **Aucun parse ne lève** (AD-10) : chaque `fromJson` est un `switch`
-///    **total** avec repli documenté. ⛔ Ne JAMAIS remplacer par
+///    **total** avec repli documenté. Ne JAMAIS remplacer par
 ///    `values.byName(raw)` — qui lève `ArgumentError` sur une valeur inconnue
-///    et détruirait le message parent (garde **G3**).
-/// 3. **Zéro présentation** (AD-13/FR-26) : pas de `label`, pas de `colorValue`,
-///    pas de `iconName`. lex en porte (`chat_enums.dart:34-53`) ; ce sont des
-///    préoccupations d'affichage, elles restent **app-side** — un socle partagé
-///    ne peut ni traduire ni thématiser à la place de ses hôtes.
+///    et détruirait le message parent.
+/// 3. **Zéro présentation** (invariant AD-13) : pas de `label`, pas de `colorValue`,
+///    pas de `iconName`. Ce sont des préoccupations d'affichage, elles restent
+///    **app-side** — un socle partagé ne peut ni traduire ni thématiser à la
+///    place de ses hôtes.
 library;
 
 /// Rôle de l'auteur d'un message.
 ///
-/// lex ne connaît que `user`/`assistant` et **coerce tout le reste en `user`**
-/// (`chat_message.dart:92-93`) : un message `system` relu devient un message
-/// utilisateur, silencieusement. zcrud ajoute donc `system` **et** un repli
-/// explicite [ZChatRole.unknown] — un rôle non reconnu reste *reconnaissable
-/// comme non reconnu*, au lieu d'être maquillé en rôle légitime.
+/// Un rôle absent ou non reconnu retombe explicitement sur
+/// [ZChatRole.unknown] plutôt que d'être maquillé en [ZChatRole.user] : un
+/// message dont le rôle est illisible reste *reconnaissable comme tel*.
 enum ZChatRole {
   /// Message rédigé par l'utilisateur.
   user,
@@ -61,26 +55,22 @@ enum ZChatRole {
 
 /// **LONGUEUR** attendue de la réponse de l'assistant.
 ///
-/// ## 🔴 FAUX-AMI `WorkflowEffort` — deux concepts, jamais fusionnés (D2)
+/// ## Deux concepts nommés « effort », jamais fusionnés
 ///
-/// | Dépôt | Symbole | Valeurs | Sens **réel** |
-/// |---|---|---|---|
-/// | lex_douane | `WorkflowEffort` — `packages/lex_core/lib/domain/enums/chat_enums.dart:20-26` | `concis`/`standard`/`detaille` | **LONGUEUR de la réponse** (labels UI Mini/Plus/Pro) |
-/// | IFFD | `WorkflowEffort` — `lib/src/domain/models/ai/ai_models.dart:119-122` | `low`/`medium`/`high` | **EFFORT DE CALCUL** du routeur de modèles |
+/// La verbosité d'une réponse (ce type, dont l'origine est
+/// `domain/enums/chat_enums.dart:20-26`) et le budget de calcul demandé au
+/// fournisseur ([ZChatComputeEffort], dont l'origine est
+/// `lib/src/domain/models/ai/ai_models.dart:119-122`) sont deux intégrations
+/// vues sous le même nom générique « effort » ailleurs dans l'écosystème,
+/// avec des valeurs incompatibles (`concis`/`standard`/`detaille` d'un côté,
+/// `low`/`medium`/`high` de l'autre). Les fusionner produirait un enum vide de
+/// sens : `standard` (longueur) n'a aucune correspondance dans un budget de
+/// calcul, et un hôte qui migrerait de l'un vers l'autre écrirait des
+/// documents que l'autre relirait de travers **sans aucun signal**.
 ///
-/// **Même nom, deux concepts.** Les fusionner produirait un enum vide de sens :
-/// `standard` (longueur) n'a aucune correspondance dans `low`/`medium`/`high`
-/// (budget de calcul), et un hôte qui migrerait de l'un vers l'autre écrirait
-/// des documents que l'autre relirait de travers **sans aucun signal**.
-///
-/// ⛔ **Le symbole `WorkflowEffort` — et tout symbole `*Effort*` du chat — est
-/// INTERDIT dans `packages/*/lib`.** Une garde par **grep négatif**
-/// (`z_chat_naming_guard_test.dart`, **G16**) échoue s'il réapparaît par
-/// copier-coller depuis l'un ou l'autre dépôt.
-///
-/// Le concept IFFD (effort de calcul) n'est **pas** un champ de message mais un
-/// **paramètre d'appel** : s'il est retenu, il naîtra en CHAT-1 sous un nom
-/// distinct (`ZChatComputeEffort`), **jamais** sous `Effort` seul.
+/// Tout symbole `*Effort*` ambigu du chat est donc **interdit** dans ce
+/// paquet : le budget de calcul porte le nom explicite [ZChatComputeEffort],
+/// jamais `Effort` seul.
 enum ZChatResponseLength {
   /// Réponse courte.
   concise,
@@ -96,8 +86,8 @@ enum ZChatResponseLength {
 
   /// Parse **total** — repli [ZChatResponseLength.standard].
   ///
-  /// **Alias de lecture lex** : `'concis'` → [concise], `'detaille'` →
-  /// [detailed] (`chat_enums.dart:56-61`).
+  /// Alias de lecture francophones acceptés : `'concis'` → [concise],
+  /// `'detaille'` → [detailed].
   static ZChatResponseLength fromJson(Object? raw) {
     switch (raw) {
       case 'concise':
@@ -115,8 +105,6 @@ enum ZChatResponseLength {
 
 /// Biais de longueur d'une **régénération** (« plus court / tel quel / plus
 /// long »), orthogonal à [ZChatResponseLength].
-///
-/// origine: `RegenerateLengthBias` (`chat_enums.dart:69-96`).
 enum ZChatLengthBias {
   /// Régénérer plus court.
   shorter,
@@ -171,8 +159,8 @@ enum ZChatFeedbackRating {
 
 /// Motif catégorisé d'un feedback négatif.
 ///
-/// origine: `FeedbackCategory` (`chat_enums.dart:120-150`) — lex a déjà fait le
-/// choix **label-in-l10n** (aucun libellé dans l'enum) : on le conserve.
+/// Comme les autres enums de ce fichier, aucun libellé n'est porté ici : la
+/// traduction reste app-side.
 enum ZChatFeedbackCategory {
   /// Réponse inexacte.
   inaccurate,
@@ -192,7 +180,7 @@ enum ZChatFeedbackCategory {
   /// Valeur persistée (camelCase).
   String get jsonValue => name;
 
-  /// Parse **total** — repli `null` ; alias de lecture snake_case de lex
+  /// Parse **total** — repli `null` ; alias de lecture snake_case
   /// (`off_topic`, `wrong_citation`, `inappropriate_tone`).
   static ZChatFeedbackCategory? fromJson(Object? raw) {
     switch (raw) {
@@ -216,8 +204,6 @@ enum ZChatFeedbackCategory {
 }
 
 /// Nature d'une suggestion de relance.
-///
-/// origine: `SuggestionType` (`chat_enums.dart:152-181`).
 enum ZChatSuggestionType {
   /// Question de suivi.
   followUp,
@@ -231,7 +217,7 @@ enum ZChatSuggestionType {
   /// Valeur persistée (camelCase).
   String get jsonValue => name;
 
-  /// Parse **total** — repli `null` ; alias snake_case de lex.
+  /// Parse **total** — repli `null` ; alias de lecture snake_case.
   static ZChatSuggestionType? fromJson(Object? raw) {
     switch (raw) {
       case 'followUp':
@@ -250,8 +236,6 @@ enum ZChatSuggestionType {
 }
 
 /// Nature de l'action portée par une suggestion.
-///
-/// origine: `SuggestionActionType` (`chat_enums.dart:183-206`).
 enum ZChatSuggestionActionType {
   /// Envoyer un message.
   sendMessage,
@@ -265,7 +249,7 @@ enum ZChatSuggestionActionType {
   /// Valeur persistée (camelCase).
   String get jsonValue => name;
 
-  /// Parse **total** — repli `null` ; alias snake_case de lex.
+  /// Parse **total** — repli `null` ; alias de lecture snake_case.
   static ZChatSuggestionActionType? fromJson(Object? raw) {
     switch (raw) {
       case 'sendMessage':
@@ -282,8 +266,6 @@ enum ZChatSuggestionActionType {
 }
 
 /// Statut d'usage d'une source dans la réponse.
-///
-/// origine: `SourceUsageStatus` (`chat_source.dart:6-15`).
 enum ZChatSourceUsageStatus {
   /// Source effectivement citée.
   cited,
@@ -318,8 +300,6 @@ enum ZChatSourceUsageStatus {
 }
 
 /// Fraîcheur d'un jeu de données cité.
-///
-/// origine: `DatasetFreshness` (`source_freshness.dart:15-24`).
 enum ZChatDatasetFreshness {
   /// Catalogue et contenu concordent.
   fresh,
@@ -349,8 +329,6 @@ enum ZChatDatasetFreshness {
 /// Palier de confiance **dérivé** d'une réponse (jamais persisté seul : il se
 /// recalcule depuis `ZChatResponseConfidence`).
 ///
-/// origine: `ConfidenceLevel` (`response_confidence.dart:22-31`) —
-/// `eleve`/`modere`/`aVerifier` renommés en anglais neutre.
 enum ZChatConfidenceLevel {
   /// Signaux fortement positifs et concordants.
   high,
@@ -366,7 +344,7 @@ enum ZChatConfidenceLevel {
 
   /// Parse **total** — repli [ZChatConfidenceLevel.toVerify].
   ///
-  /// 🔴 Le repli est **`toVerify`, jamais `high`** : en l'absence de signal
+  /// Le repli est **`toVerify`, jamais `high`** : en l'absence de signal
   /// lisible, un socle ne doit **jamais** sur-affirmer.
   static ZChatConfidenceLevel fromJson(Object? raw) {
     switch (raw) {
@@ -382,7 +360,6 @@ enum ZChatConfidenceLevel {
 
 /// Sens explicable d'un facteur de confiance.
 ///
-/// origine: `ConfidenceFactorSense` (`response_confidence.dart:35`).
 enum ZChatConfidenceFactorSense {
   /// Le facteur soutient la confiance.
   positive,

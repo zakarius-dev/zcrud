@@ -1,37 +1,35 @@
 /// Intentions d'action sur un message de conversation — `ZChatAction`.
 ///
-/// CHAT-0b, décision **D1**. Domaine PUR (aucun Flutter, aucun `BuildContext`,
-/// aucun gestionnaire d'état, aucun libellé, aucune icône, aucune couleur).
+/// Domaine PUR (aucun Flutter, aucun `BuildContext`, aucun gestionnaire
+/// d'état, aucun libellé, aucune icône, aucune couleur).
 ///
-/// ## 🔴 La règle que ce contrat rend structurelle
+/// ## La règle que ce contrat rend structurelle
 ///
 /// > **UN VERBE = UN SEUL SITE D'APPEL DANS LE CONTRÔLEUR.**
 ///
-/// IFFD porte **deux** implémentations parallèles de la même barre d'actions
-/// dans un fichier de 5153 lignes (`chatbot_conversation_screen.dart`) : barre
-/// de bulle (≈ l.1650-2170) et en-tête compact (≈ l.3600-4120). Elles ne se
-/// comportent **pas** pareil : supprimer est confirmé l.2134 et **silencieux**
-/// l.3886 ; régénérer a **trois** comportements (l.1979, l.2000, l.2026) ;
-/// annuler **supprime la question tapée** (l.3618-3672) ; copier est **mort**
-/// (`onTap: () {}`, l.1513 / l.4208). Une checklist ne corrige pas cela : la
-/// **structure** doit rendre le second chemin inexprimable.
+/// Une même barre d'actions dupliquée en deux implémentations parallèles
+/// (barre de bulle, en-tête compact) dérive vite : supprimer confirmé d'un
+/// côté et silencieux de l'autre, régénérer avec des comportements
+/// divergents, annuler qui supprime la saisie en cours, une action « morte »
+/// jamais câblée. Une checklist ne corrige pas cela durablement : la
+/// **structure** doit rendre le second chemin d'exécution inexprimable.
 ///
-/// ## Les trois formes pesées (D1)
+/// ## Les trois formes pesées
 ///
 /// | Forme | Verdict |
 /// |---|---|
-/// | (a) `abstract interface class` à un membre par verbe | 🔴 REJETÉE — 5 membres publics = 5 points d'entrée ; c'est **exactement** la forme d'IFFD, et aucune garde ne peut dire quel site est légitime. |
-/// | (b) un `typedef` par verbe (`void Function(String)`) | 🔴 REJETÉE (la pire) — un callback est libre en nombre de sites, invisible au typage et **peut être vide** : littéralement le défaut « Copier » d'IFFD. |
-/// | (c) intentions **scellées** + répartiteur **unique** | ✅ RETENUE — le verbe devient une **donnée** ; l'effet vit derrière un répartiteur à **deux** membres publics, et les identifiants d'effet ne sont invocables que depuis un seul fichier (garde **G-U1**). |
+/// | (a) `abstract interface class` à un membre par verbe | REJETÉE — 5 membres publics = 5 points d'entrée, et aucune garde ne peut dire quel site est légitime. |
+/// | (b) un `typedef` par verbe (`void Function(String)`) | REJETÉE (la pire) — un callback est libre en nombre de sites, invisible au typage et **peut être vide**. |
+/// | (c) intentions **scellées** + répartiteur **unique** | RETENUE — le verbe devient une **donnée** ; l'effet vit derrière un répartiteur à **deux** membres publics, et les identifiants d'effet ne sont invocables que depuis un seul fichier. |
 ///
-/// ## Patron `sealed` INTERNE + variant OUVERT (AD-4)
+/// ## Patron `sealed` interne + variant ouvert (invariant AD-4)
 ///
-/// Décalqué de [ZContentBlock] (CHAT-0) : `sealed` donne l'**exhaustivité au
+/// Décalqué de [ZContentBlock] : `sealed` donne l'**exhaustivité au
 /// socle** (un verbe non traité par le répartiteur **ne compile pas**), et
 /// l'extension inter-package passe par le variant ouvert
 /// [ZChatCustomAction] — **jamais** par l'héritage externe.
 ///
-/// ## 🔴 Règle de projection vers la couche de rendu (D8 / D8.1) — NORMATIVE
+/// ## Règle de projection vers la couche de rendu — NORMATIVE
 ///
 /// Ce type déclare **ce que le geste fait**, jamais **comment il s'affiche**.
 /// Les types de rendu existent déjà et sont **réutilisés, pas dupliqués** :
@@ -57,18 +55,18 @@
 /// );
 /// ```
 ///
-/// La règle AD-4 « `onSelected == null` ⇒ action **ABSENTE** » reste celle de
-/// `ZItemAction` : elle est **réutilisée**, jamais réimplémentée ici.
+/// La règle « `onSelected == null` ⇒ action **absente** » reste celle de
+/// `ZItemAction` (invariant AD-4) : elle est **réutilisée**, jamais
+/// réimplémentée ici.
 ///
-/// 🔴 **Pourquoi `ZChatAction` n'hérite PAS de `ZItemAction`** (D8.1) : (1)
+/// **Pourquoi `ZChatAction` n'hérite PAS de `ZItemAction`** : (1)
 /// `ZItemAction` vit dans un **satellite** ⇒ l'arête `zcrud_core → zcrud_study`
-/// serait un **cycle AD-1** (`graph_proof` CORE OUT ≠ 0) ; (2) il porte
-/// `IconData`/`String label` ⇒ présentation dans le domaine (AD-2/AD-13/FR-26) ;
-/// (3) AD-4 rejette l'héritage comme mécanisme d'extension inter-package ;
-/// (4) **raison fatale** — il porte `VoidCallback? onSelected` : tout héritier
-/// gagnerait un **second chemin d'exécution** à côté du répartiteur, et la garde
-/// **G-U1** deviendrait incapable de mordre. C'est le défaut que cette story
-/// corrige, réintroduit par la porte de service.
+/// serait un cycle (invariant AD-1) ; (2) il porte `IconData`/`String label`
+/// ⇒ présentation dans le domaine (invariants AD-2, AD-13) ; (3) l'invariant
+/// AD-4 rejette l'héritage comme mécanisme d'extension inter-package ; (4)
+/// **raison fatale** — il porte `VoidCallback? onSelected` : tout héritier
+/// gagnerait un **second chemin d'exécution** à côté du répartiteur, rouvrant
+/// exactement le défaut que ce contrat existe pour fermer.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -78,12 +76,11 @@ import '../ai/z_chat_generation_settings.dart';
 
 /// Saisie en cours de l'utilisateur (« composer ») transportée par une action.
 ///
-/// 🔴 D3 : l'annulation **porte** la saisie pour que le contrat puisse imposer
-/// qu'elle soit **rendue intacte** ([ZChatActionOutcome.preservedDraft]).
-/// Défaut IFFD interdit : `chatbot_conversation_screen.dart:3618-3672` —
-/// la poubelle de « Réflexion en cours » appelle `stopSubjectExplaningOnError()`
-/// **puis** `delete(requestedMessage.id)` : la question tapée disparaît, sans
-/// confirmation ni toast.
+/// L'annulation **porte** la saisie pour que le contrat puisse imposer
+/// qu'elle soit **rendue intacte** ([ZChatActionOutcome.preservedDraft]) —
+/// c'est le garde-fou structurel contre un enchaînement « arrêter la
+/// génération » puis « supprimer le message » qui ferait disparaître la
+/// question tapée, sans confirmation ni avertissement.
 class ZChatDraft {
   /// Construit un brouillon.
   const ZChatDraft({
@@ -124,11 +121,11 @@ enum ZChatCopyFormat {
   markdown,
 }
 
-/// Intention d'action sur un message — **scellée** (D1).
+/// Intention d'action sur un message — **scellée**.
 ///
 /// Chaque variant **doit** se prononcer sur les quatre membres abstraits :
 /// l'oubli **ne compile pas**. C'est ce qui empêche un futur verbe d'arriver
-/// « sans avis » sur sa destructivité, comme l'a fait chaque surface d'IFFD.
+/// sans avis explicite sur sa destructivité.
 sealed class ZChatAction {
   /// Constructeur `const` de base.
   const ZChatAction();
@@ -144,10 +141,10 @@ sealed class ZChatAction {
   /// `true` si l'action **entraîne** d'autres messages que sa cible directe
   /// (paire question/réponse, messages postérieurs).
   ///
-  /// Défaut IFFD n°1 : le pied de requête supprime question **et** réponse en
-  /// cascade — la surface A le confirme, la surface B non, et **aucune** ne dit
-  /// combien. Ici la cascade est une **donnée du plan**, chiffrée avant toute
-  /// destruction (D6).
+  /// Une cascade non annoncée (retirer une question supprime aussi sa
+  /// réponse, sans que l'appelant sache combien de messages sont touchés) est
+  /// le défaut que ce champ ferme : la cascade est ici une **donnée du
+  /// plan**, chiffrée avant toute destruction.
   bool get cascades;
 
   /// `true` si l'action **garantit** que la saisie soumise est rendue intacte.
@@ -157,7 +154,7 @@ sealed class ZChatAction {
 /// Éditer un message puis relancer la génération.
 ///
 /// Destructif : la reprise **entraîne** les messages postérieurs. Le brouillon
-/// est transporté pour qu'un échec ne fasse **jamais** perdre la saisie (D3).
+/// est transporté pour qu'un échec ne fasse **jamais** perdre la saisie.
 class ZChatEditAction extends ZChatAction {
   /// Construit une édition.
   const ZChatEditAction({
@@ -201,23 +198,23 @@ class ZChatEditAction extends ZChatAction {
 
 /// Régénérer la réponse d'un message.
 ///
-/// ⚠️ lex ne confirme pas ce verbe, IFFD en a **trois** variantes divergentes
-/// (`:1979` delete+resend, `:2000` `refresh:true`, `:2026` `create` additif).
-/// Ici la règle est **uniforme** : c'est le **plan** qui décide de la
-/// confirmation, jamais le verbe pris isolément (D6).
+/// La règle de confirmation est **uniforme** quel que soit le contexte
+/// d'appel : c'est le **plan** qui décide, jamais le verbe pris isolément —
+/// ce qui évite que des chemins de régénération distincts (reprise complète,
+/// rafraîchissement, ajout) divergent silencieusement sur ce point.
 ///
-/// ## 🔴 Lot β — le défaut STRUCTUREL que ce variant portait
+/// ## Le défaut structurel que ce variant portait
 ///
-/// L'étude CR-IFFD-72 (§ 4.3) l'a mesuré : ce variant ne portait que
-/// `{messageId}`, alors que `ZChatLengthBias` est défini — dans
-/// `z_chat_enums.dart:116` — comme le « biais d'une **régénération** ». Le seul
-/// réglage dont le cas d'usage EST ce verbe lui était donc **structurellement
-/// inatteignable** : régénérer « plus court » n'était pas exprimable.
+/// Ce variant ne portait à l'origine que `{messageId}`, alors que
+/// `ZChatLengthBias` est défini comme le « biais d'une **régénération** » :
+/// le seul réglage dont le cas d'usage EST ce verbe lui était donc
+/// **structurellement inatteignable** — régénérer « plus court » n'était pas
+/// exprimable.
 ///
 /// [settings] et [corpusScope] ferment ce défaut, **par champs optionnels** —
 /// jamais par un nouveau variant (qui aurait exigé un `case` de plus au
-/// répartiteur, garde G-SEAL). Les deux valent `null` par défaut : une
-/// régénération écrite avant ce lot se comporte **exactement** comme avant, et
+/// répartiteur). Les deux valent `null` par défaut : une régénération écrite
+/// avant l'ajout de ces champs se comporte **exactement** comme avant, et
 /// emprunte le même chemin d'exécution.
 class ZChatRegenerateAction extends ZChatAction {
   /// Construit une régénération.
@@ -231,23 +228,24 @@ class ZChatRegenerateAction extends ZChatAction {
   final String messageId;
 
   /// Réglages demandés pour **cette** régénération, ou `null` (« comme la
-  /// requête d'origine ») — lot β.
+  /// requête d'origine »).
   ///
   /// C'est ici que `ZChatLengthBias` redevient atteignable sur son propre cas
   /// d'usage.
   final ZChatGenerationSettings? settings;
 
   /// Portée documentaire demandée pour **cette** régénération, ou `null`
-  /// (aucune restriction) — lot β.
+  /// (aucune restriction).
   final ZChatCorpusScope? corpusScope;
 
   /// `true` si la régénération demande autre chose que « refais pareil ».
   ///
-  /// 🔴 C'est ce prédicat qui rend l'oubli **détectable** : le répartiteur
+  /// C'est ce prédicat qui rend l'oubli **détectable** : le répartiteur
   /// refuse explicitement (`ZUnsupportedOperationFailure`) plutôt que de
-  /// laisser tomber en silence des réglages que l'appelant a demandés — le
-  /// défaut IFFD mesuré au § 1.1 de l'étude (six drapeaux de corpus transmis
-  /// par le contrôleur puis **jetés** par le repository, sans aucun signal).
+  /// laisser tomber en silence des réglages que l'appelant a demandés — un
+  /// réglage transmis à la couche d'appel puis silencieusement ignoré par
+  /// l'implémentation est exactement le repli muet que ce prédicat rend
+  /// détectable.
   bool get overridesRequest => settings != null || corpusScope != null;
 
   @override
@@ -274,12 +272,12 @@ class ZChatRegenerateAction extends ZChatAction {
   int get hashCode => Object.hash(verb, messageId, settings, corpusScope);
 }
 
-/// Retirer un message — **soft-delete uniquement** (D7, AD-9).
+/// Retirer un message — **soft-delete uniquement** (invariant AD-9).
 ///
-/// ⚠️ **zcrud prime sur ses deux sources** : lex fait un *hard delete*
-/// (`chat_repository_impl.dart:408-424, 247-254`, aucun drapeau posé) et IFFD
-/// aussi (`FirebaseCrudRepositoryImpl.delete()`, alors qu'un `softDelete()`
-/// existe l.365 et n'est **jamais** appelé). Les deux divergent d'AD-9.
+/// Un retrait physique du document violerait AD-9 même si le code compile :
+/// c'est `ZSyncMeta.isDeleted`/`updatedAt` qui porte le retrait, jamais une
+/// suppression matérielle — sans quoi le merge offline-first ne peut plus
+/// propager le retrait aux autres appareils.
 class ZChatDeleteAction extends ZChatAction {
   /// Construit un retrait.
   const ZChatDeleteAction({
@@ -316,17 +314,17 @@ class ZChatDeleteAction extends ZChatAction {
   int get hashCode => Object.hash(verb, messageId, cascadeToPair);
 }
 
-/// Annuler une génération **en cours** — verbe NON destructif (D3, D4).
+/// Annuler une génération **en cours** — verbe non destructif.
 ///
-/// 🔴 Deux garanties, toutes deux vérifiées par assertion :
+/// Deux garanties, toutes deux vérifiées par assertion :
 /// * **la saisie survit** — [draft] est rendu intact dans l'issue, y compris
-///   sur le chemin d'échec (gardes **G-A1**/**G-A2**) ; le défaut interdit est
-///   IFFD `chatbot_conversation_screen.dart:3618-3672` (annuler = supprimer la
-///   question) ;
+///   sur le chemin d'échec ; le comportement rejeté est celui d'une
+///   annulation qui effacerait la question en cours de saisie ;
 /// * **l'adressage se fait par [requestId]** — jamais par un jeton d'instance
-///   partagé (défaut IFFD : annuler un flux annulait le mauvais). Le
-///   `CancelToken`/`StreamSubscription` **réel** appartient à CHAT-1 : ici on
-///   fixe l'adressage, pas le transport.
+///   partagé, ce qui empêcherait d'annuler le mauvais flux quand plusieurs
+///   requêtes sont en vol. Le transport concret
+///   (`CancelToken`/`StreamSubscription`) reste un détail d'implémentation
+///   du port de génération ; ce type fixe seulement l'adressage.
 class ZChatCancelAction extends ZChatAction {
   /// Construit une annulation.
   const ZChatCancelAction({
@@ -365,11 +363,10 @@ class ZChatCancelAction extends ZChatAction {
 
 /// Copier le rendu d'un message — lecture seule.
 ///
-/// Défaut IFFD : le verbe existe dans l'UI mais **n'est câblé nulle part**
-/// (`onTap: () {}` l.1513, callback jamais invoqué l.4208 — 3 sites morts).
-/// Ici il passe par le **même** répartiteur que les autres : un verbe non
-/// implémenté par l'hôte rend `Left(ZUnsupportedOperationFailure)`, jamais un
-/// silence.
+/// Ce verbe passe par le **même** répartiteur que les autres, ce qui ferme un
+/// défaut classique d'UI de chat : un bouton « copier » câblé nulle part
+/// (callback vide, site mort). Ici, un verbe non implémenté par l'hôte rend
+/// `Left(ZUnsupportedOperationFailure)`, jamais un silence.
 class ZChatCopyAction extends ZChatAction {
   /// Construit une copie.
   const ZChatCopyAction({
@@ -406,11 +403,12 @@ class ZChatCopyAction extends ZChatAction {
   int get hashCode => Object.hash(verb, messageId, format);
 }
 
-/// **Variant OUVERT** (AD-4) — verbe propre à un hôte, sans forker le cœur.
+/// **Variant ouvert** (invariant AD-4) — verbe propre à un hôte, sans forker
+/// le cœur.
 ///
-/// Patron `ZCustomContentBlock` de CHAT-0. [isDestructive] et [cascades] sont
-/// **requis** : aucun défaut permissif, l'hôte doit se prononcer — sans quoi
-/// une cascade non annoncée redeviendrait exprimable.
+/// Même patron que `ZCustomContentBlock` dans [ZContentBlock]. [isDestructive]
+/// et [cascades] sont **requis** : aucun défaut permissif, l'hôte doit se
+/// prononcer — sans quoi une cascade non annoncée redeviendrait exprimable.
 class ZChatCustomAction extends ZChatAction {
   /// Construit un verbe d'hôte.
   const ZChatCustomAction({

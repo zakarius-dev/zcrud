@@ -1,39 +1,38 @@
 /// Ports IA de la conversation — `ZChatGenerationPort` / `ZChatStreamPort`
-/// (CHAT-1, AD-5/AD-10/AD-11/AD-12).
+/// (invariants AD-5, AD-10, AD-11, AD-12).
 ///
-/// ## Un port de génération UNIQUE, paramétré par style
+/// ## Un port de génération unique, paramétré par style
 ///
-/// IFFD écrit **sept** variantes de reformulation comme sept fonctions et sept
-/// endpoints (`iffd/lib/src/domain/repositories/ai_repository.dart:36-47` et
-/// `:253-286`), qui ne diffèrent **que par le prompt**. Un seul contrat
-/// `generate(request)` les couvre : le style est une **donnée**
-/// ([ZChatGenerationStyle], ouverte par [ZTypeRegistry] — AD-4), pas une
-/// signature.
+/// Une application de chat qui grandit organiquement tend à écrire chaque
+/// variante de reformulation comme une fonction et un point d'entrée
+/// distincts, qui ne diffèrent souvent **que par le prompt**. Un seul
+/// contrat `generate(request)` les couvre ici : le style est une **donnée**
+/// ([ZChatGenerationStyle], ouverte par [ZTypeRegistry] — invariant AD-4),
+/// pas une signature.
 ///
-/// ## 🔴 CE QUE CES PORTS NE COUVRENT PAS — ports EXISTANTS à câbler
+/// ## Ce que ces ports ne couvrent pas — ports existants à câbler
 ///
-/// La génération d'**artefacts structurés** depuis des notes a **déjà** ses
-/// ports dans ce dépôt, et ils n'ont **aucun consommateur** :
+/// La génération d'**artefacts structurés** depuis des notes a ses propres
+/// ports dans ce dépôt :
 ///
-/// | Besoin IFFD | Port **EXISTANT** | Chemin |
+/// | Besoin | Port existant | Chemin |
 /// |---|---|---|
-/// | `generateFlashcardsFromNotes` | `ZFlashcardGenerationPort` | `packages/zcrud_study/lib/src/domain/z_flashcard_generation_port.dart` |
-/// | `generateMindmapFromNotes` | `ZMindmapGenerationPort` | `packages/zcrud_study/lib/src/domain/z_mindmap_generation_port.dart` |
+/// | Générer des flashcards depuis des notes | `ZFlashcardGenerationPort` | `packages/zcrud_study/lib/src/domain/z_flashcard_generation_port.dart` |
+/// | Générer une carte mentale depuis des notes | `ZMindmapGenerationPort` | `packages/zcrud_study/lib/src/domain/z_mindmap_generation_port.dart` |
 ///
-/// ⛔ **Aucun style `flashcards`/`mindmap` n'est déclaré ici**, et aucun membre
-/// de ce fichier ne génère de carte : ce serait un doublon **plus pauvre** que
+/// **Aucun style `flashcards`/`mindmap` n'est déclaré ici**, et aucun membre
+/// de ce fichier ne génère de carte : ce serait un doublon plus pauvre que
 /// l'existant (les ports d'étude portent `typesDistribution`, `maxDepth`,
-/// `provenance`, `ZFlashcardSource`), c'est-à-dire le motif CR-LEX-78 à la
-/// lettre. Un hôte branche **les deux** : ces ports-ci pour le texte, ceux de
-/// `zcrud_study` pour les artefacts. Le noyau de chat ne peut de toute façon
-/// pas en dépendre (AD-1 : une seule arête sortante, `zcrud_core`) — garde
-/// **G17**. Garde **G-C7** : ni style ni membre de génération d'artefact ici.
+/// `provenance`, `ZFlashcardSource`). Un hôte branche **les deux** : ces
+/// ports-ci pour le texte, ceux de `zcrud_study` pour les artefacts. Le
+/// noyau de chat ne peut de toute façon pas en dépendre (une seule arête
+/// sortante, `zcrud_core` — invariant AD-1).
 ///
 /// ## Annulation
 ///
 /// Le [ZChatRequestToken] est un **paramètre requis de l'appel**, jamais un
 /// champ d'implémentation : voir `z_chat_request_token.dart` pour le défaut
-/// IFFD (jeton d'instance unique) que cette forme rend inexprimable.
+/// (jeton d'instance unique) que cette forme rend inexprimable.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -53,12 +52,12 @@ import 'z_chat_stream_event.dart';
 ///
 /// Une seule requête pour les deux ports : la différence entre « je veux la
 /// réponse » et « je veux la réponse au fil de l'eau » est un **choix de
-/// transport**, pas une différence de demande. lex, qui a trois signatures
-/// (`sendMessage`, `regenerateMessage`, `transformMessage`) portant chacune
-/// une copie dérivée des mêmes huit paramètres, montre ce que coûte l'inverse.
+/// transport**, pas une différence de demande. Trois signatures distinctes
+/// portant chacune une copie dérivée des mêmes paramètres serait le coût de
+/// l'inverse.
 ///
-/// Ne porte **aucune** mécanique de transport ni de prompt (AD-12) : ni
-/// endpoint, ni clé, ni instruction système assemblée.
+/// Ne porte **aucune** mécanique de transport ni de prompt (invariant
+/// AD-12) : ni endpoint, ni clé, ni instruction système assemblée.
 class ZChatGenerationRequest {
   /// Construit une requête.
   ZChatGenerationRequest({
@@ -84,7 +83,7 @@ class ZChatGenerationRequest {
          ZChatContextFragment.ordered(context),
        ),
        attachmentIds = List<String>.unmodifiable(attachmentIds),
-       // Canonicalisation EAGER (lot K1) : la clé réservée du canal ouvert est
+       // Canonicalisation EAGER : la clé réservée du canal ouvert est
        // hissée dans le champ typé (champ typé prioritaire), le reste est
        // rogné/dédupliqué/trié — une requête n'a qu'UNE écriture possible.
        webSearch =
@@ -96,7 +95,7 @@ class ZChatGenerationRequest {
          zSanitizeExtra(extra, _reservedKeys),
        );
 
-  /// Style demandé — **ouvert** (AD-4).
+  /// Style demandé — **ouvert** (invariant AD-4).
   final ZChatGenerationStyle style;
 
   /// Sujet/thème de la demande (`''` si sans objet).
@@ -123,61 +122,59 @@ class ZChatGenerationRequest {
   /// Identités opaques des pièces jointes.
   final List<String> attachmentIds;
 
-  /// Longueur attendue — enum **EXISTANT** `ZChatResponseLength` (CHAT-0),
+  /// Longueur attendue — enum **EXISTANT** `ZChatResponseLength`,
   /// jamais redéclaré. `null` ⇒ l'hôte décide.
   final ZChatResponseLength? responseLength;
 
   /// Biais de longueur d'une régénération — enum **EXISTANT**
-  /// `ZChatLengthBias` (CHAT-0). `null` ⇒ sans objet.
+  /// `ZChatLengthBias`. `null` ⇒ sans objet.
   final ZChatLengthBias? lengthBias;
 
   /// Budget de **calcul** demandé (`1..5`), ou `null` (l'hôte décide).
   ///
-  /// 🔴 **Axe ORTHOGONAL** à [responseLength] : la verbosité de la réponse et
+  /// **Axe orthogonal** à [responseLength] : la verbosité de la réponse et
   /// le budget de raisonnement sont deux demandes indépendantes. Les fusionner
-  /// produirait un réglage qui ne veut rien dire — cf. le faux-ami
-  /// `WorkflowEffort`, documenté dans `z_chat_compute_effort.dart`. C'est
-  /// l'entier `1..5` commun aux DEUX backends (lex `chat.py:261`, IFFD
-  /// `base_request.py:104`) ; l'enum `low/medium/high` d'IFFD s'y projette.
+  /// produirait un réglage qui ne veut rien dire — voir la mise en garde sur
+  /// les deux sens d'« effort » dans `z_chat_compute_effort.dart`. C'est
+  /// l'entier `1..5` commun aux fournisseurs rencontrés ; un préréglage
+  /// `low/medium/high` s'y projette.
   final ZChatComputeEffort? computeEffort;
 
   /// Demande d'exposer les **étapes de raisonnement** (`ZChatThinkingStep`),
-  /// ou `null` (l'hôte décide) — lot β.
+  /// ou `null` (l'hôte décide).
   ///
-  /// Pendant, côté DEMANDE, d'un type qui n'existait que côté réponse. C'est
-  /// le quatrième réglage du porteur [ZChatGenerationSettings] ; il est déclaré
-  /// ici, comme les trois autres, pour que la projection soit une **bijection**
-  /// et non une perte.
+  /// Pendant, côté demande, d'un type qui n'existait que côté réponse. C'est
+  /// l'un des réglages du porteur [ZChatGenerationSettings] ; il est déclaré
+  /// ici, comme les autres, pour que la projection soit une **bijection** et
+  /// non une perte.
   final bool? revealThinkingSteps;
 
   /// Demande d'activer/couper la **recherche web**, ou `null` (l'hôte
-  /// décide) — lot K1. Champ typé parce que les DEUX backends le lisent
-  /// (preuves dans `z_chat_generation_settings.dart`) ; cinquième réglage du
-  /// porteur [ZChatGenerationSettings], déclaré ici, comme les quatre autres,
-  /// pour que la projection reste une **bijection**.
+  /// décide). Champ typé parce que c'est une capacité largement répandue
+  /// chez les fournisseurs ; réglage du porteur [ZChatGenerationSettings],
+  /// déclaré ici, comme les autres, pour que la projection reste une
+  /// **bijection**.
   final bool? webSearch;
 
-  /// Capacités booléennes **OUVERTES** demandées à l'exécuteur (AD-4) —
-  /// lot K1. Clés opaques d'hôte, **canonicalisées à la construction** (la
+  /// Capacités booléennes **ouvertes** demandées à l'exécuteur (invariant
+  /// AD-4). Clés opaques d'hôte, **canonicalisées à la construction** (la
   /// clé réservée `web_search` vit dans [webSearch], jamais ici).
   ///
-  /// 🔴 Exprimée ≠ honorée : le bouclage est
+  /// Exprimée ≠ honorée : le bouclage est
   /// `ZChatGenerationSettings.auditCapabilities` — un hôte confronte l'écho
   /// des clés comprises par son port à `settings.expressedCapabilityKeys`
-  /// pour DÉTECTER un repli muet.
+  /// pour détecter un repli muet.
   final Map<String, bool> capabilities;
 
-  /// 🔴 **Portée documentaire** de la génération, ou `null` — lot β.
+  /// **Portée documentaire** de la génération, ou `null`.
   ///
-  /// `null` ⇒ **aucune restriction**, c'est-à-dire exactement le comportement
-  /// d'avant ce champ (garde de rétro-compatibilité du lot). Renseignée, elle
-  /// s'exprime en **clés stables** ([ZChatCorpusScope]) et se confronte aux
-  /// sources rendues par `ZChatCorpusScope.audit` : c'est ce bouclage — et non
-  /// la seule présence du champ — qui fait qu'une restriction **vaut quelque
-  /// chose**.
+  /// `null` ⇒ **aucune restriction**. Renseignée, elle s'exprime en **clés
+  /// stables** ([ZChatCorpusScope]) et se confronte aux sources rendues par
+  /// `ZChatCorpusScope.audit` : c'est ce bouclage — et non la seule présence
+  /// du champ — qui fait qu'une restriction **vaut quelque chose**.
   ///
-  /// ⚠️ Le socle ne connaît **aucune** valeur de corpus : les clés sont celles
-  /// de l'hôte (AD-12/FR-26).
+  /// Le socle ne connaît **aucune** valeur de corpus : les clés sont celles
+  /// de l'hôte (invariant AD-12).
   final ZChatCorpusScope? corpusScope;
 
   /// Étiquette de langue BCP-47 (`'fr'`), ou `null`.
@@ -187,29 +184,29 @@ class ZChatGenerationRequest {
   /// `null`. **Jamais** un prompt système (AD-12).
   final String? instructions;
 
-  /// Identifiant de modèle **OPAQUE**, transporté VERBATIM et **jamais
+  /// Identifiant de modèle **opaque**, transporté verbatim et **jamais
   /// interprété** : aucun catalogue, aucun `switch`, aucun libellé. Le
-  /// catalogue de modèles (et son routage) vit entièrement côté app
-  /// (AD-15/AD-35), comme sur `ZFlashcardGenerationRequest.modelId`.
+  /// catalogue de modèles (et son routage) vit entièrement côté app,
+  /// comme sur `ZFlashcardGenerationRequest.modelId`.
   final String? modelId;
 
-  /// Échappatoire non typée, **normalisée EAGER à la construction** (AD-19.1 :
-  /// les clés de sync réservées sont écartées et ne peuvent jamais être
-  /// réémises).
+  /// Échappatoire non typée, **normalisée dès la construction** : les clés
+  /// de synchronisation réservées sont écartées et ne peuvent jamais être
+  /// réémises.
   final Map<String, dynamic> extra;
 
   static final Set<String> _reservedKeys = <String>{...ZSyncMeta.reservedKeys};
 
-  /// **Vue** des réglages portés par cette requête — lot β.
+  /// **Vue** des réglages portés par cette requête.
   ///
-  /// 🔴 Une **projection**, jamais un second stockage : les quatre réglages
-  /// restent des champs de premier niveau (la garde G16/CHAT-1b l'exige, pour
-  /// que verbosité et budget de calcul demeurent non confondables). Un porteur
-  /// stocké EN PLUS aurait créé deux sources de vérité — « deux lectures
-  /// conformes mais incompatibles ».
+  /// Une **projection**, jamais un second stockage : les réglages restent
+  /// des champs de premier niveau, pour que verbosité et budget de calcul
+  /// demeurent non confondables. Un porteur stocké en plus aurait créé deux
+  /// sources de vérité — deux lectures conformes mais incompatibles d'une
+  /// même donnée.
   ///
   /// `settings` et [withSettings] forment un aller-retour **fidèle** :
-  /// `r.withSettings(r.settings) == r` (garde du lot).
+  /// `r.withSettings(r.settings) == r`.
   ZChatGenerationSettings get settings => ZChatGenerationSettings(
     responseLength: responseLength,
     lengthBias: lengthBias,
@@ -220,7 +217,7 @@ class ZChatGenerationRequest {
   );
 
   /// Rend une requête **identique**, sauf les réglages, remplacés par ceux de
-  /// [settings] — lot β.
+  /// [settings].
   ///
   /// * `null` ⇒ la requête est rendue **telle quelle** (`identical`) : un hôte
   ///   qui ne règle rien ne paie rien, et le chemin d'exécution est inchangé ;
@@ -254,7 +251,7 @@ class ZChatGenerationRequest {
     );
   }
 
-  /// Rend une requête **identique**, sauf la portée documentaire — lot β.
+  /// Rend une requête **identique**, sauf la portée documentaire.
   ///
   /// `null` ⇒ portée **retirée** (aucune restriction). Séparé de
   /// [withSettings] parce que ce sont deux axes distincts : régler la verbosité
@@ -341,9 +338,10 @@ class ZChatGenerationRequest {
 /// changement d'API. Le socle n'a pas à trancher aujourd'hui ce que le
 /// fournisseur d'un hôte saura produire demain.
 ///
-/// AD-5 : `Either<ZFailure, ·>`. AD-10 : aucune exception ne s'échappe — les
-/// échecs typés sont ceux de `z_chat_ai_failure.dart` (dont
-/// `ZQuotaExceededFailure`, type EXISTANT du cœur).
+/// Invariant AD-5 : `Either<ZFailure, ·>`. Invariant AD-10 : aucune
+/// exception ne s'échappe — les échecs typés sont ceux de
+/// `z_chat_ai_failure.dart` (dont `ZQuotaExceededFailure`, type existant du
+/// cœur).
 abstract interface class ZChatGenerationPort {
   /// Génère la réponse pour [request], annulable par [token] — **ce** jeton, et
   /// lui seul.
@@ -353,26 +351,27 @@ abstract interface class ZChatGenerationPort {
   });
 }
 
-/// Port de **streaming** — forme de lex, portée au socle **telle quelle**.
+/// Port de **streaming**.
 ///
-/// `Stream<Either<ZFailure, ZChatStreamEvent>>` est exactement la signature de
-/// `lex_core/lib/domain/repositories/chat_repository.dart:24` (`sendMessage`),
-/// `:94` (`regenerateMessage`) et `:110` (`transformMessage`) — un dépôt qui
-/// porte 16 `Either<Failure, T>`. Elle est conforme AD-5 et n'a pas à être
-/// réinventée. Ce qui change : **trois** signatures deviennent **une**, et
-/// l'annulation devient explicite et par requête.
+/// `Stream<Either<ZFailure, ZChatStreamEvent>>` est une forme conforme à
+/// l'invariant AD-5, cohérente avec le reste des contrats repository du
+/// dépôt — et avec la signature d'un backend de référence
+/// (`lex_core/lib/domain/repositories/chat_repository.dart`). Ce qui unifie
+/// ici trois usages distincts (envoi, régénération, transformation) en une
+/// seule signature : l'annulation devient explicite et par requête.
 ///
-/// ⚠️ Le flux **n'émet jamais** d'événement d'erreur : un échec est un `Left`
-/// (cf. `z_chat_stream_event.dart`, garde **G-C2**). Un flux coupé avant son
+/// Le flux **n'émet jamais** d'événement d'erreur : un échec est un `Left`
+/// (cf. `z_chat_stream_event.dart`). Un flux coupé avant son
 /// [ZChatDoneEvent] se signale par
 /// `Left(ZChatStreamInterruptedFailure(requestId: token.requestId, …))`.
 ///
-/// ## 🔴 REPRISE — l'obligation active du client
+/// ## Reprise — l'obligation active du client
 ///
-/// Le protocole de lex est **reprenable** : chaque événement porte une
-/// [ZChatStreamEvent.sequenceId] monotone, et une reconnexion doit repartir de
-/// la dernière position reçue **sous la même identité de requête**, sans quoi
-/// le serveur rejoue le tour (message dupliqué, quota consommé deux fois).
+/// Un backend de streaming reprenable expose un protocole où chaque
+/// événement porte une [ZChatStreamEvent.sequenceId] monotone, et une
+/// reconnexion doit repartir de la dernière position reçue **sous la même
+/// identité de requête**, sans quoi le serveur rejoue le tour (message
+/// dupliqué, quota consommé deux fois).
 ///
 /// Aucune signature supplémentaire n'est nécessaire : la reprise **est** le
 /// jeton.

@@ -1,7 +1,7 @@
 /// **Portée documentaire VÉRIFIABLE** d'une requête — `ZChatCorpusScope`
 /// (lot β, AD-4/AD-10/AD-11).
 ///
-/// ## 🔴 Le vrai sujet n'est pas « restreindre », c'est « pouvoir le VÉRIFIER »
+/// ## Le vrai sujet n'est pas « restreindre », c'est « pouvoir le VÉRIFIER »
 ///
 /// L'étude CR-IFFD-72 (§ 4.2) a mesuré que `ZChatGenerationRequest` n'a aucun
 /// champ de portée documentaire, et que les 8 occurrences de `corpus` du
@@ -16,7 +16,7 @@
 /// * l'**écriture** — [ZChatCorpusScope] sur la requête, en **clés stables** ;
 /// * la **lecture** — [ZChatCorpusScope.audit], qui confronte des
 ///   [ZChatSource] à la portée et **nomme** celles qui la violent. La clé lue
-///   est `ZChatSource.corpusKey` (lot β), **jamais** le libellé `corpus`.
+///   est `ZChatSource.corpusKey`, **jamais** le libellé `corpus`.
 ///
 /// ## Ce qui est porté de lex — et ce qui est écarté
 ///
@@ -27,15 +27,15 @@
 ///
 /// | De lex | Verdict |
 /// |---|---|
-/// | Deux NIVEAUX : famille activée, puis filtre d'identités dans la famille | ✅ **PORTÉ** — [ZChatCorpusSelector.sourceType] puis [ZChatCorpusSelector.corpusKeys] |
-/// | « filtre vide ⇒ toute la famille » | ✅ **PORTÉ** (sémantique identique) |
-/// | Piloté par DONNÉES (catalogue d'entrées à `id` stable) | ✅ **PORTÉ** — la portée ne porte que des clés opaques |
-/// | Familles **codées en dur** (`enableCodesDouanes`, `enableTec`, `enableValuation`) | ⛔ **ÉCARTÉ** — imposerait la douane à IFFD et à DODLP. La famille est ici `ZChatSource.sourceType`, discriminant **ouvert** qui existait déjà. |
-/// | Un booléen `enable*` **par** famille | ⛔ **ÉCARTÉ** — non extensible : une famille de plus = un champ de plus, donc un changement de contrat. |
-/// | `@JsonSerializable` / codegen | ⛔ **ÉCARTÉ** — D1 : aucun codegen dans le kernel. |
-/// | *(absent de lex)* confrontation des sources rendues à la portée | ➕ **AJOUTÉ** — c'est la propriété centrale du lot. |
+/// | Deux NIVEAUX : famille activée, puis filtre d'identités dans la famille | **PORTÉ** — [ZChatCorpusSelector.sourceType] puis [ZChatCorpusSelector.corpusKeys] |
+/// | « filtre vide ⇒ toute la famille » | **PORTÉ** (sémantique identique) |
+/// | Piloté par DONNÉES (catalogue d'entrées à `id` stable) | **PORTÉ** — la portée ne porte que des clés opaques |
+/// | Familles **codées en dur** (`enableCodesDouanes`, `enableTec`, `enableValuation`) | **ÉCARTÉ** — imposerait la douane à IFFD et à DODLP. La famille est ici `ZChatSource.sourceType`, discriminant **ouvert** qui existait déjà. |
+/// | Un booléen `enable*` **par** famille | **ÉCARTÉ** — non extensible : une famille de plus = un champ de plus, donc un changement de contrat. |
+/// | `@JsonSerializable` / codegen | **ÉCARTÉ** — D1 : aucun codegen dans le kernel. |
+/// | *(absent de lex)* confrontation des sources rendues à la portée | **AJOUTÉ** — c'est la propriété centrale du lot. |
 ///
-/// ## ⚠️ Le socle ne porte AUCUNE valeur métier
+/// ## Le socle ne porte AUCUNE valeur métier
 ///
 /// Aucun code douanier, aucune famille nommée, aucun libellé : les **valeurs**
 /// appartiennent aux hôtes (FR-26). Ce fichier ne porte que le **mécanisme**.
@@ -76,7 +76,7 @@ class ZChatCorpusSelector {
 
   /// Clés de corpus admises **dans** cette famille, ordonnées et dédupliquées.
   ///
-  /// 🔴 Ce sont des **clés stables**, jamais des libellés : elles se comparent
+  /// Ce sont des **clés stables**, jamais des libellés : elles se comparent
   /// à `ZChatSource.corpusKey`, et jamais à `ZChatSource.corpus` (qui est un
   /// texte d'affichage, traduisible, donc incomparable).
   final List<String> corpusKeys;
@@ -89,7 +89,7 @@ class ZChatCorpusSelector {
 
   /// `true` si [source] est admise par **ce** sélecteur.
   ///
-  /// 🔴 **Fail-safe, décalqué de `ZChatSource.isVerified`** : quand le
+  /// **Fail-safe, décalqué de `ZChatSource.isVerified`** : quand le
   /// sélecteur restreint au niveau 2 et que la source ne porte **aucune clé**,
   /// la réponse est `false`. En l'absence de signal on ne présume **jamais**
   /// « dans la portée » — sans quoi il suffirait à un fournisseur d'omettre la
@@ -183,7 +183,7 @@ class ZChatCorpusScope {
       isUnrestricted ||
       selectors.any((ZChatCorpusSelector s) => s.admits(source));
 
-  /// 🔴 **Le bouclage** : confronte les sources RENDUES à la portée DEMANDÉE.
+  /// **Le bouclage** : confronte les sources RENDUES à la portée DEMANDÉE.
   ///
   /// C'est le membre qui rend la restriction vérifiable — sans lui, la portée
   /// ne serait qu'un vœu écrit sur la requête. Un hôte l'appelle sur les

@@ -1,62 +1,39 @@
-/// **Lot K2 (chantier composer-lex)** — la chaîne de résolution du chrome du
-/// composer, **paramètre > jeton > référence**, et les créneaux par défaut en
-/// widgets **purs** (aucun `material`, aucune couleur inventée).
+/// La chaîne de résolution du chrome du composer, paramètre > jeton >
+/// référence, et les créneaux par défaut en widgets purs (aucun `material`,
+/// aucune couleur inventée).
 ///
-/// ## 🔴 Trois niveaux, champ par champ — jamais deux
+/// ## Trois niveaux, champ par champ — jamais deux
 ///
 /// ```
-/// paramètre  ZChatComposerChrome.<champ>     ← l'hôte, ici et maintenant
-///     ▼ (si null)
-/// jeton      ZcrudScope.theme.<…>            ← l'hôte, pour toute sa surface
-///     ▼ (si null / scope absent)
-/// référence  ZChatComposerReference.<…>      ← lex_douane, mesuré
+/// parametre  ZChatComposerChrome.<champ>     <- l'hote, ici et maintenant
+///     v (si null)
+/// jeton      ZcrudScope.theme.<...>          <- l'hote, pour toute sa surface
+///     v (si null / scope absent)
+/// reference  ZChatComposerReference.<...>     <- valeur de reference auditee
 /// ```
 ///
-/// ⚠️ Le niveau 2 lit `ZcrudScope.maybeOf(context)?.theme` et **non**
-/// `ZcrudTheme.of(context)` — la leçon de `ZChatSettingsSheet` : `of()` ne rend
-/// jamais `null` (repli Material), ce qui rendrait le niveau 3 inatteignable, et
-/// une référence que rien ne peut atteindre est une garde vacante déguisée.
+/// Le niveau 2 lit `ZcrudScope.maybeOf(context)?.theme` et non
+/// `ZcrudTheme.of(context)` : `of()` ne rend jamais `null` (repli neutre du
+/// cœur), ce qui rendrait le niveau 3 inatteignable, et une référence que
+/// rien ne peut atteindre serait une couche morte.
 ///
-/// ## 🔴 Jetons consommés — la chaîne est COMPLÈTE depuis le lot K4
-///
-/// Les jetons demandés au lot K2 ont été posés dans `zcrud_core` (lot K4) :
-/// chaque champ se résout désormais **paramètre > jeton > référence**.
-///
-/// | Champ | Jeton niveau 2 | Statut |
-/// |---|---|---|
-/// | [ZChatComposerChromeStyle.padding] | `formPadding` | existant |
-/// | [ZChatComposerChromeStyle.containerRadius] | `radiusM` | existant |
-/// | [ZChatComposerChromeStyle.fieldContentPadding] | `inputContentPadding` | existant |
-/// | [ZChatComposerChromeStyle.badgeRadius] | `badgeRadius` | existant (nullable) |
-/// | [ZChatComposerChromeStyle.borderWidth] | `chatComposerBorderWidth` | **DEMANDÉ** (CR-IFFD-77 ③) |
-/// | `ZChatComposerSurface.borderColor` | `chatComposerBorderColor` | **DEMANDÉ** (CR-IFFD-77 ③) |
-/// | `ZDefaultChatComposer.bandDividerColor` | `chatComposerBandDividerColor` | **DEMANDÉ** (CR-IFFD-77 ③) |
-/// | [ZChatComposerChromeStyle.sendTargetSize] | `chatComposerSendTargetSize` | posé (K4) |
-/// | échelles/durées d'envoi | `chatComposerSendScaleIdle/Active/Duration` | posés (K4) |
-/// | [ZChatComposerChromeStyle.mobileBreakpoint] | `chatComposerMobileBreakpoint` | posé (K4) |
-/// | durées du placeholder | `chatComposerHintRotationPeriod/SwitchDuration` | posés (K4) |
-/// | accents de verbosité | `chatResponseLengthAccents` | posé (K4) |
-///
-/// ⚠️ `chatResponseLengthAccents` côté thème est indexé par le **nom** du
-/// palier (`ZChatResponseLength.name` — `zcrud_core` ne peut pas importer
-/// l'enum, AD-1) ; la consultation reste **clé par clé** à travers les trois
+/// `chatResponseLengthAccents` côté thème est indexé par le nom du palier
+/// (`ZChatResponseLength.name` — `zcrud_core` ne peut pas importer l'enum,
+/// invariant AD-1) ; la consultation reste clé par clé à travers les trois
 /// niveaux.
 ///
-/// ## 🔴 AD-13 — le plancher n'est pas négociable
+/// ## Invariant AD-13 — le plancher n'est pas négociable
 ///
-/// [ZChatComposerChromeStyle.sendTargetSize] est **écrêté** à
-/// `kZChatMinTapTarget` : un paramètre (ou, demain, un jeton) qui demanderait
-/// les 40 dp du legacy rend quand même 48. La valeur basse est inexprimable,
-/// comme dans `_ZChatComposerTarget`.
+/// [ZChatComposerChromeStyle.sendTargetSize] est écrêté à
+/// `kZChatMinTapTarget` : un paramètre (ou un jeton) qui demanderait une
+/// cible plus petite rend quand même 48 dp. La valeur basse est
+/// inexprimable, comme dans `_ZChatComposerTarget`.
 ///
-/// ## 🔴 Reduce Motion (AD-13) — mesuré, pas affirmé
+/// ## Invariant AD-13 — Reduce Motion
 ///
-/// lex anime son placeholder **sans** garde Reduce-Motion (`chat_input.dart:
-/// 1162-1198`) — c'est l'un des défauts relevés à l'étude, et il n'est pas
-/// reproduit : [ZChatComposerAnimatedHint] est **inerte** sous
-/// `MediaQuery.disableAnimations` (aucun `Timer` créé, premier libellé figé) et
-/// [ZChatComposerSendTarget] y transitionne en `Duration.zero`. Les deux sont
-/// mesurés par `test/z_chat_composer_chrome_test.dart`.
+/// [ZChatComposerAnimatedHint] est inerte sous
+/// `MediaQuery.disableAnimations` (aucun `Timer` créé, premier libellé figé)
+/// et [ZChatComposerSendTarget] y transitionne en `Duration.zero`.
 library;
 
 import 'dart:async';
@@ -70,14 +47,14 @@ import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_message_tile.dart' show kZChatMinTapTarget;
 
-/// Réglage **partiel** du chrome du composer : tout champ `null` délègue au
-/// niveau suivant (jeton s'il existe, puis référence lex).
+/// Réglage partiel du chrome du composer : tout champ `null` délègue au
+/// niveau suivant (jeton s'il existe, puis référence).
 ///
-/// Strictement additif et **immuable** — patron `ZChatNotebookSkin`.
+/// Strictement additif et immuable — même patron que `ZChatNotebookSkin`.
 @immutable
 class ZChatComposerChrome {
-  /// Construit un réglage. `const ZChatComposerChrome()` = « la référence lex,
-  /// telle que mesurée » (aux jetons de l'hôte près).
+  /// Construit un réglage. `const ZChatComposerChrome()` signifie « la
+  /// référence, telle que mesurée » (aux jetons de l'hôte près).
   const ZChatComposerChrome({
     this.padding,
     this.containerRadius,
@@ -107,11 +84,11 @@ class ZChatComposerChrome {
   /// Rayon des badges. `null` ⇒ jeton `badgeRadius`, puis référence (8).
   final Radius? badgeRadius;
 
-  /// Épaisseur du filet du conteneur (CR-IFFD-77 ③). `null` ⇒ jeton
-  /// **demandé** `chatComposerBorderWidth`, puis référence (1).
+  /// Épaisseur du filet du conteneur. `null` signifie jeton
+  /// `chatComposerBorderWidth`, puis référence (1).
   ///
-  /// ⚠️ L'épaisseur ne peint rien à elle seule : sans couleur résolue
-  /// (`ZChatComposerSurface.borderColor`), il n'y a **pas** de filet.
+  /// L'épaisseur ne peint rien à elle seule : sans couleur résolue
+  /// (`ZChatComposerSurface.borderColor`), il n'y a pas de filet.
   final double? borderWidth;
 
   /// Côté de la cible d'envoi. `null` ⇒ jeton `chatComposerSendTargetSize`,
@@ -142,11 +119,10 @@ class ZChatComposerChrome {
   /// `chatComposerHintSwitchDuration`, puis référence (350 ms).
   final Duration? hintSwitchDuration;
 
-  /// Accents des paliers de verbosité, consultés **clé par clé** : renseigner
+  /// Accents des paliers de verbosité, consultés clé par clé : renseigner
   /// `concise` seul ne fait pas disparaître les deux autres accents de
-  /// référence. `null`/clé absente ⇒ jeton `chatResponseLengthAccents` (posé
-  /// au lot K4, indexé par `ZChatResponseLength.name`), puis référence —
-  /// exception FR-26 encadrée, cf.
+  /// référence. `null`/clé absente signifie jeton `chatResponseLengthAccents`
+  /// (indexé par `ZChatResponseLength.name`), puis référence — cf.
   /// `ZChatComposerReference.responseLengthAccents`.
   final Map<ZChatResponseLength, Color>? responseLengthAccents;
 }
@@ -185,7 +161,7 @@ class ZChatComposerChromeStyle {
   /// Rayon des badges.
   final Radius badgeRadius;
 
-  /// Épaisseur du filet du conteneur (CR-IFFD-77 ③) — jamais négative.
+  /// Épaisseur du filet du conteneur — jamais négative.
   final double borderWidth;
 
   /// Côté de la cible d'envoi — **jamais** sous `kZChatMinTapTarget`.
@@ -212,9 +188,9 @@ class ZChatComposerChromeStyle {
   /// Accents fournis en paramètre (niveau 1), ou `null`.
   final Map<ZChatResponseLength, Color>? responseLengthAccentOverrides;
 
-  /// Accents du **jeton** `chatResponseLengthAccents` (niveau 2, lot K4),
-  /// indexés par `ZChatResponseLength.name` — la seule clé que `zcrud_core`
-  /// peut porter sans importer l'enum (AD-1). `null` si l'hôte n'a rien réglé.
+  /// Accents du jeton `chatResponseLengthAccents` (niveau 2), indexés par
+  /// `ZChatResponseLength.name` — la seule clé que `zcrud_core` peut porter
+  /// sans importer l'enum (invariant AD-1). `null` si l'hôte n'a rien réglé.
   final Map<String, Color>? responseLengthAccentTokens;
 
   /// Accent d'un palier — paramètre, **jeton**, puis référence (clé par clé :
@@ -229,9 +205,9 @@ class ZChatComposerChromeStyle {
       ZChatComposerReference.responseLengthAccents[length]!;
 }
 
-/// Résout le chrome du composer contre le contexte — **paramètre > jeton >
-/// référence**, champ par champ. **Ne lève jamais** (AD-10) : sans `ZcrudScope`
-/// ni paramètre, tout retombe sur la référence lex.
+/// Résout le chrome du composer contre le contexte — paramètre > jeton >
+/// référence, champ par champ. Ne lève jamais (invariant AD-10) : sans
+/// `ZcrudScope` ni paramètre, tout retombe sur la référence.
 ZChatComposerChromeStyle zChatComposerChromeOf(
   BuildContext context, {
   ZChatComposerChrome? chrome,
@@ -259,15 +235,12 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
         chrome?.badgeRadius ??
         theme?.badgeRadius ??
         ZChatComposerReference.badgeRadius,
-    // 🔴 CR-IFFD-77 ③ : le jeton `chatComposerBorderWidth` est DEMANDÉ à
-    // `zcrud_core` (hors périmètre de ce lot) et s'insérera ici, entre le
-    // paramètre et la référence — comme `chatComposerMobileBreakpoint` l'a
-    // été au lot K4. Une épaisseur négative est écrêtée à 0 (AD-10 : un
+    // Une épaisseur négative est écrêtée à 0 (invariant AD-10 : un
     // paramètre absurde ne fait pas lever le rendu).
     borderWidth: (chrome?.borderWidth ?? ZChatComposerReference.borderWidth)
         .clamp(0.0, double.infinity),
-    // 🔴 AD-13 : écrêté au plancher — les 40 dp du legacy sont inexprimables,
-    // par paramètre aujourd'hui comme par jeton demain.
+    // Invariant AD-13 : écrêté au plancher — une cible tactile trop petite
+    // est inexprimable, par paramètre comme par jeton.
     sendTargetSize: requestedSend < floor ? floor : requestedSend,
     sendScaleIdle:
         chrome?.sendScaleIdle ??
@@ -298,11 +271,11 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
   );
 }
 
-/// Le créneau d'ENVOI par défaut — la géométrie et le geste de lex, en widget
-/// **pur** : la cible 48 dp, l'échelle 0.7 → 1.0 en 150 ms, la sémantique de
-/// bouton. Le **glyphe** vient de l'hôte ([child]) : ce paquet ne peut rendre
-/// ni `Icons.send` (material banni) ni une couleur (FR-26). Le pixel-perfect
-/// Material est l'affaire du satellite (lot suivant).
+/// Le créneau d'envoi par défaut — la géométrie et le geste de référence, en
+/// widget pur : la cible 48 dp, l'échelle 0.7 → 1.0 en 150 ms, la sémantique
+/// de bouton. Le glyphe vient de l'hôte ([child]) : ce paquet ne peut rendre
+/// ni une icône ni une couleur. Le rendu pixel-perfect d'un design system
+/// particulier est l'affaire du satellite qui le porte.
 ///
 /// À monter dans le créneau `trailing` de `ZChatComposer` :
 ///
@@ -311,9 +284,9 @@ ZChatComposerChromeStyle zChatComposerChromeOf(
 ///     ZChatComposerSendTarget(slot: slot, child: monGlyphe),
 /// ```
 ///
-/// 🔴 Il n'introduit **aucun** chemin d'envoi : le tap appelle
-/// [ZChatComposerSlot.submit] — la fermeture que le composer fournit, donc le
-/// MÊME site que la touche « valider » du clavier (G-CH1/G-U1 intacts).
+/// Il n'introduit aucun chemin d'envoi : le tap appelle
+/// [ZChatComposerSlot.submit] — la fermeture que le composer fournit, donc
+/// le même site que la touche « valider » du clavier.
 class ZChatComposerSendTarget extends StatelessWidget {
   /// Construit la cible d'envoi.
   const ZChatComposerSendTarget({
@@ -329,7 +302,7 @@ class ZChatComposerSendTarget extends StatelessWidget {
   /// Le glyphe de l'hôte.
   final Widget child;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex.
+  /// Réglage de chrome — `null` signifie jetons puis référence.
   final ZChatComposerChrome? chrome;
 
   @override
@@ -338,13 +311,13 @@ class ZChatComposerSendTarget extends StatelessWidget {
       context,
       chrome: chrome,
     );
-    // 🔴 Reduce Motion : la transition devient INSTANTANÉE — l'état final est
-    // identique, seule l'animation disparaît (AD-13).
+    // Reduce Motion : la transition devient instantanée — l'état final est
+    // identique, seule l'animation disparaît (invariant AD-13).
     final bool reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return ValueListenableBuilder<bool>(
-      // 🔴 LA tranche granulaire : elle ne signale qu'aux transitions
-      // vide ↔ non vide — jamais à chaque frappe (SM-1, AD-2).
+      // La tranche granulaire : elle ne signale qu'aux transitions
+      // vide ↔ non vide — jamais à chaque frappe (invariant AD-2).
       valueListenable: slot.controller.canSend,
       builder: (BuildContext context, bool canSend, Widget? glyph) => Semantics(
         button: true,
@@ -363,7 +336,7 @@ class ZChatComposerSendTarget extends StatelessWidget {
               minHeight: style.sendTargetSize,
             ),
             child: Align(
-              // AD-13 : alignement DIRECTIONNEL.
+              // Invariant AD-13 : alignement directionnel.
               alignment: AlignmentDirectional.center,
               widthFactor: 1,
               heightFactor: 1,
@@ -388,24 +361,21 @@ class ZChatComposerSendTarget extends StatelessWidget {
   }
 }
 
-/// Le PLACEHOLDER ANIMÉ de lex (`_AnimatedPlaceholder`,
-/// `chat_input.dart:1113-1211`), porté en widget pur — à monter dans le créneau
+/// Le placeholder animé, porté en widget pur — à monter dans le créneau
 /// `hint` de `ZChatComposer` (visible seulement quand la saisie est vide, la
 /// visibilité restant l'affaire du composer).
 ///
-/// Les [hints] sont des textes **déjà localisés par l'hôte** (chez lex ce sont
-/// des suggestions par expert — une donnée métier que le socle ne connaît pas).
+/// Les [hints] sont des textes déjà localisés par l'hôte — typiquement des
+/// suggestions de saisie, une donnée métier que le socle ne connaît pas.
 ///
-/// ## 🔴 Le défaut lex NON reproduit : Reduce Motion
+/// ## Reduce Motion
 ///
-/// lex fait tourner ses `Timer.periodic` sans aucune garde. Ici, sous
-/// `MediaQuery.disableAnimations` : **aucun** minuteur n'est créé, le premier
-/// libellé est figé — mesuré (deux volets, avec et sans, dans la garde du lot).
+/// Sous `MediaQuery.disableAnimations` : aucun minuteur n'est créé, le
+/// premier libellé reste figé.
 ///
-/// ## AD-14
+/// ## Rotation déterministe
 ///
-/// Aucun `Random` : la rotation est **séquentielle** (`(i + 1) % n`), comme
-/// chez lex.
+/// Aucun `Random` : la rotation est séquentielle (`(i + 1) % n`).
 class ZChatComposerAnimatedHint extends StatefulWidget {
   /// Construit le placeholder animé.
   const ZChatComposerAnimatedHint({
@@ -415,13 +385,14 @@ class ZChatComposerAnimatedHint extends StatefulWidget {
     super.key,
   });
 
-  /// Les libellés à faire tourner, localisés par l'hôte. Vide ⇒ rien (AD-4).
+  /// Les libellés à faire tourner, localisés par l'hôte. Vide signifie rien
+  /// rendu (invariant AD-4).
   final List<String> hints;
 
-  /// Glyphe de tête optionnel (l'« étincelle » de lex). `null` ⇒ absent.
+  /// Glyphe de tête optionnel. `null` signifie absent.
   final Widget? leading;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex.
+  /// Réglage de chrome — `null` signifie jetons puis référence.
   final ZChatComposerChrome? chrome;
 
   @override
@@ -430,8 +401,7 @@ class ZChatComposerAnimatedHint extends StatefulWidget {
 }
 
 class _ZChatComposerAnimatedHintState extends State<ZChatComposerAnimatedHint> {
-  /// Index courant — une TRANCHE, jamais un `setState` (G-CH5 interdit
-  /// `setState` dans tout `lib/`).
+  /// Index courant — une tranche, jamais un `setState`.
   final ValueNotifier<int> _index = ValueNotifier<int>(0);
 
   Timer? _rotation;
@@ -445,7 +415,7 @@ class _ZChatComposerAnimatedHintState extends State<ZChatComposerAnimatedHint> {
     _reduceMotion = reduce;
     _rotation?.cancel();
     _rotation = null;
-    // 🔴 Reduce Motion : AUCUN minuteur — l'inertie est structurelle, pas une
+    // Reduce Motion : aucun minuteur — l'inertie est structurelle, pas une
     // animation de durée nulle qui continuerait de battre.
     if (reduce || widget.hints.length < 2) return;
     _rotation = Timer.periodic(
@@ -469,12 +439,9 @@ class _ZChatComposerAnimatedHintState extends State<ZChatComposerAnimatedHint> {
       chrome: widget.chrome,
     );
     final Widget? leading = widget.leading;
-    // 🔴 UN SEUL chemin de rendu — l'inertie sous Reduce Motion vient
-    // UNIQUEMENT de l'absence de minuteur (`didChangeDependencies`), jamais
-    // d'une seconde branche statique. La première rédaction portait les deux :
-    // l'injection R3 « retirer la garde du minuteur » est restée VERTE, le
-    // texte étant figé par l'autre mécanisme pendant qu'un minuteur vivant
-    // battait pour rien. Une garde ne mord que si le défaut n'a qu'une porte.
+    // Un seul chemin de rendu — l'inertie sous Reduce Motion vient
+    // uniquement de l'absence de minuteur (`didChangeDependencies`), jamais
+    // d'une seconde branche statique redondante.
     final Widget text = ValueListenableBuilder<int>(
       valueListenable: _index,
       builder: (BuildContext context, int i, Widget? _) => AnimatedSwitcher(
@@ -485,7 +452,7 @@ class _ZChatComposerAnimatedHintState extends State<ZChatComposerAnimatedHint> {
           // d'enfant : sans elle, `AnimatedSwitcher` ne fondrait
           // jamais (même type, même widget).
           key: ValueKey<int>(i),
-          // AD-13 : jamais `TextAlign.left`.
+          // Invariant AD-13 : jamais `TextAlign.left`.
           textAlign: TextAlign.start,
         ),
       ),

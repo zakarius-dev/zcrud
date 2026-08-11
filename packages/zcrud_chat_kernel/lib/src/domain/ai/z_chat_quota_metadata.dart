@@ -1,27 +1,27 @@
 /// Lecture du quota depuis une **carte de métadonnées neutre au transport**
-/// (CHAT-1).
+///.
 ///
-/// ## 🔴 Le quota n'arrive PAS dans le corps de la réponse
+/// ## Le quota n'arrive pas nécessairement dans le corps de la réponse
 ///
-/// Vérifié sur le backend de lex : le quota voyage dans les **en-têtes de
-/// réponse HTTP** (famille `X-Chat-Quota-*`, solde prépayé, délai de réessai) et
-/// **jamais** dans le corps SSE — le client de lex synthétise lui-même son
-/// `ChatQuotaEvent` à partir de ces en-têtes. Un `fromJson` qui supposerait un
-/// corps JSON serait donc **structurellement incapable** de lire le quota réel.
+/// Un backend courant fait voyager le quota dans les **en-têtes de réponse
+/// HTTP** (solde prépayé, délai de réessai) et **jamais** dans le corps du
+/// flux — le client synthétise alors lui-même son événement de quota à
+/// partir de ces en-têtes. Un `fromJson` qui supposerait un corps JSON
+/// serait donc **structurellement incapable** de lire le quota réel.
 ///
 /// ⇒ Ce fichier n'assume **aucun emplacement** : il lit une
 /// `Map<String, Object?>` que l'adaptateur de l'hôte remplit depuis là où le
 /// quota se trouve **chez lui** (en-têtes HTTP, métadonnées gRPC, champ de
-/// corps, en-tête SSE). Le socle ne connaît pas HTTP (AD-12) ; il connaît une
-/// carte clé→valeur.
+/// corps, en-tête d'événement). Le socle ne connaît pas HTTP (invariant
+/// AD-12) ; il connaît une carte clé→valeur.
 ///
-/// ## 🔴 Absence POSSIBLE, jamais garantie (AD-10)
+/// ## Absence possible, jamais garantie (invariant AD-10)
 ///
-/// Une douzaine de kill-switches sont à `False` par défaut chez lex
-/// (`CHAT_QUOTA_ENABLED`, `TRIAL_ENABLED`, `PREPAID_ENABLED`, `ENABLE_WEB_SEARCH`,
-/// `ENABLE_RERANKING`…). Le code de quota y est **intégralement écrit et
-/// inerte** : quand le drapeau est faux, **les en-têtes ne sortent pas du
-/// tout**. C'est le piège « une mesure exacte et sans objet ».
+/// Un backend peut désactiver le quota par un simple drapeau de
+/// configuration, laissé à faux par défaut. Le code de quota y reste
+/// **intégralement écrit et inerte** : quand le drapeau est faux, **les
+/// en-têtes ne sortent pas du tout**. C'est le piège « une mesure exacte et
+/// sans objet ».
 ///
 /// ⇒ [zChatQuotaFromMetadata] rend **`null`** quand aucune clé de quota n'est
 /// présente — jamais un instantané à zéro, qui se lirait comme « quota épuisé »
@@ -29,7 +29,7 @@
 /// déploiement où le quota est simplement désactivé**. Chaque champ manquant
 /// reste à son défaut neutre.
 ///
-/// Aucun type nouveau : `ZChatQuotaSnapshot` (CHAT-0) est **réutilisé tel
+/// Aucun type nouveau : `ZChatQuotaSnapshot` est **réutilisé tel
 /// quel**, il porte déjà exactement `limit`/`remaining`/`resetEpoch`/
 /// `prepaidBalance`.
 library;
@@ -40,19 +40,21 @@ import '../z_chat_quota_snapshot.dart';
 
 /// Noms de clés de quota — **injectables**, jamais figés.
 ///
-/// ## 🔴 Aucun nom d'en-tête HTTP dans le domaine (AD-11/AD-12, garde G-C9b)
+/// ## Aucun nom d'en-tête HTTP dans le domaine (invariants AD-11, AD-12)
 ///
 /// Les défauts sont des clés **logiques neutres** (`limit`, `remaining`, …),
 /// pas les en-têtes d'un transport particulier : `zcrud_chat_kernel` ne connaît
-/// ni HTTP ni SSE. L'adaptateur de l'hôte **projette** ses en-têtes sur ces
-/// clés — ou, s'il préfère les garder tels quels, passe les siens ici. Écrire
-/// `'x-chat-quota-limit'` dans le domaine ferait entrer un détail de transport
-/// dans le socle et le rendrait faux pour tout hôte qui n'est pas lex.
+/// ni HTTP ni flux d'événements. L'adaptateur de l'hôte **projette** ses
+/// en-têtes sur ces clés — ou, s'il préfère les garder tels quels, passe les
+/// siens ici. Écrire un nom d'en-tête littéral dans le domaine ferait entrer
+/// un détail de transport dans le socle et le rendrait faux pour tout hôte
+/// dont le transport diffère.
 ///
 /// La comparaison est **insensible à la casse** : les en-têtes le sont, et une
 /// carte recopiée à la main ne l'est jamais tout à fait.
 class ZChatQuotaKeys {
-  /// Construit un jeu de clés (les défauts couvrent le transport de lex).
+  /// Construit un jeu de clés (les défauts couvrent un transport HTTP
+  /// courant).
   const ZChatQuotaKeys({
     this.limit = 'limit',
     this.remaining = 'remaining',
@@ -75,7 +77,7 @@ class ZChatQuotaKeys {
 
   /// Clé du délai avant réessai (**secondes**) — alimente
   /// `ZQuotaExceededFailure.retryAfter`. Même nom que celui lu par
-  /// `zChatFailureFromWire` : une seule convention dans tout le lot.
+  /// `zChatFailureFromWire` : une seule convention dans tout ce paquet.
   final String retryAfter;
 
   /// Toutes les clés, en minuscules.
@@ -95,7 +97,7 @@ const ZChatQuotaKeys kZChatQuotaKeys = ZChatQuotaKeys();
 /// provenance**.
 ///
 /// Rend `null` si **aucune** clé de quota n'est présente — cas normal quand le
-/// backend a le quota désactivé (kill-switch). Ne lève jamais (AD-10) : une
+/// backend a le quota désactivé. Ne lève jamais (invariant AD-10) : une
 /// valeur non numérique est traitée comme absente.
 ZChatQuotaSnapshot? zChatQuotaFromMetadata(
   Map<String, Object?>? metadata, {
@@ -119,7 +121,7 @@ ZChatQuotaSnapshot? zChatQuotaFromMetadata(
 
 /// Lit le délai `Retry-After` (secondes) de [metadata] — `null` si absent.
 ///
-/// C'est ce qui alimente `ZQuotaExceededFailure.retryAfter` (type EXISTANT du
+/// C'est ce qui alimente `ZQuotaExceededFailure.retryAfter` (type existant du
 /// cœur). `null` ne veut **jamais** dire « réessayable tout de suite ».
 Duration? zChatRetryAfterFromMetadata(
   Map<String, Object?>? metadata, {

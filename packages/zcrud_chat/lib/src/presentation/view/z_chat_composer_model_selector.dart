@@ -1,39 +1,35 @@
-/// Le **sélecteur de modèle d'IA** du composer — lot « mode Tile + sélecteur
-/// de modèle » (arbitrage owner 2026-08-07 sur vidéos, arbitrage 2).
+/// Le sélecteur de modèle d'IA du composer.
 ///
-/// ## 🔴 Contrat OPAQUE — zéro nom de modèle au socle
+/// ## Contrat opaque — zéro nom de modèle au socle
 ///
-/// Les options ([ZChatModelOption]) sont **injectées par l'hôte** : id opaque,
-/// libellé par clé de registre ou déjà localisé, icône optionnelle. Le socle ne
-/// connaît ni « Mini » ni « Polaris » ni aucun autre nom — une garde de source
-/// l'atteste par grep négatif. La sélection **remonte par callback**
-/// ([ZChatComposerModelSelector.onSelect]) : le socle ne décide pas où elle vit
-/// (chez IFFD c'est l'`aiRouterId`, persisté côté hôte). Aucun membre n'est
-/// ajouté à `ZChatController` — G-CH1 intacte.
+/// Les options ([ZChatModelOption]) sont injectées par l'hôte : id opaque,
+/// libellé par clé de registre ou déjà localisé, icône optionnelle. Le socle
+/// ne connaît aucun nom de modèle particulier. La sélection remonte par
+/// callback ([ZChatComposerModelSelector.onSelect]) : le socle ne décide pas
+/// où elle est persistée, c'est l'affaire de l'hôte. Aucun membre n'est
+/// ajouté à `ZChatController`.
 ///
-/// ## Le rendu par défaut = celui des vidéos
+/// ## Le rendu par défaut
 ///
-/// lex/f011 : un déclencheur dans la **rangée d'accessoires** du composer
-/// (l'hôte le monte dans son créneau `tools` — ou `trailing` —, à droite,
-/// avant le FAB), qui ouvre un menu au-dessus de lui, **coche sur l'actif**.
-/// En widgets **purs** : l'état actif est porté par `Semantics(selected:)` ET
-/// par l'emphase CR-74 (graisse + soulignement) ; la coche picturale est un
-/// glyphe d'HÔTE ([ZChatComposerModelSelector.selectionMark]) — le socle
-/// n'invente ni `Icons.check` (`material` banni) ni couleur (FR-26). Le
-/// pixel-perfect Material (fond, ombre, coche) est l'affaire du satellite.
+/// Un déclencheur dans la rangée d'accessoires du composer (l'hôte le monte
+/// dans son créneau `tools` — ou `trailing` —, à droite, avant le bouton
+/// d'envoi), qui ouvre un menu au-dessus de lui, coche sur l'actif. En
+/// widgets purs : l'état actif est porté par `Semantics(selected:)` et par
+/// l'emphase du thème (graisse + soulignement) ; la coche picturale est un
+/// glyphe d'hôte ([ZChatComposerModelSelector.selectionMark]) — le socle
+/// n'invente ni glyphe ni couleur. Le rendu pixel-perfect d'un design system
+/// particulier est l'affaire du satellite qui le porte.
 ///
-/// ## AD-4 — pas d'options, pas de menu
+/// ## Invariant AD-4 — pas d'options, pas de menu
 ///
 /// Le point de montage recommandé est [ZChatComposerModelSelector.slot] : un
-/// `ZChatComposerSlotBuilder` qui rend **`null`** quand l'hôte n'a fourni
-/// aucune option — le créneau est alors **absent de l'arbre**, jamais un
-/// bouton inerte.
+/// `ZChatComposerSlotBuilder` qui rend `null` quand l'hôte n'a fourni aucune
+/// option — le créneau est alors absent de l'arbre, jamais un bouton inerte.
 ///
-/// ## AD-2 / SM-1 — ouvrir le menu ne reconstruit rien d'autre
+/// ## Invariant AD-2 — ouvrir le menu ne reconstruit rien d'autre
 ///
 /// L'état « ouvert » est un `OverlayPortalController` local : ni la liste des
-/// messages, ni le champ, ni les autres créneaux ne sont abonnés. Mesuré par
-/// la garde SM-1 du lot (compteur de builds d'un frère sous le même arbre).
+/// messages, ni le champ, ni les autres créneaux ne sont abonnés.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -49,12 +45,12 @@ import 'z_chat_settings_sheet.dart'
         kZChatSettingsReferenceSelectedDecoration,
         kZChatSettingsReferenceSelectedWeight;
 
-/// Une option de modèle d'IA, **entièrement fournie par l'hôte**.
+/// Une option de modèle d'IA, entièrement fournie par l'hôte.
 ///
-/// 🔴 [id] est opaque (l'`aiRouterId` d'IFFD, la clé backend de lex — le socle
-/// n'en lit jamais le contenu) ; le libellé vient d'une **clé** de registre
-/// ([labelKey]) ou d'un texte **déjà localisé** ([label]) — exactement l'un
-/// des deux.
+/// [id] est opaque — un identifiant de routage propre à l'hôte, le socle
+/// n'en lit jamais le contenu ; le libellé vient d'une clé de registre
+/// ([labelKey]) ou d'un texte déjà localisé ([label]) — exactement l'un des
+/// deux.
 @immutable
 class ZChatModelOption {
   /// Option à libellé **déjà localisé par l'hôte**.
@@ -80,8 +76,8 @@ class ZChatModelOption {
   /// Clé de libellé. Exclusive de [label].
   final String? labelKey;
 
-  /// Glyphe d'HÔTE (le « ✦ » de lex, déjà stylé par lui). `null` ⇒ absent
-  /// (AD-4).
+  /// Glyphe d'hôte, déjà stylé par lui. `null` signifie absent (invariant
+  /// AD-4).
   final Widget? icon;
 
   @override
@@ -96,9 +92,9 @@ class ZChatModelOption {
   int get hashCode => Object.hash(id, label, labelKey);
 }
 
-/// Construit — ou retire — le déclencheur du sélecteur. Rendre `null` ⇒
-/// affordance absente (AD-4). [toggle] ouvre/ferme le menu ; [open] est l'état
-/// courant.
+/// Construit — ou retire — le déclencheur du sélecteur. Rendre `null`
+/// signifie affordance absente (invariant AD-4). [toggle] ouvre/ferme le
+/// menu ; [open] est l'état courant.
 typedef ZChatModelTriggerBuilder =
     Widget? Function(
       BuildContext context,
@@ -133,12 +129,12 @@ class ZChatComposerModelSelector extends StatefulWidget {
     this.spacing,
     super.key,
        // Sans option, pas de sélecteur : passer par [slot], qui rend `null`
-       // (AD-4) — l'assert tient la promesse côté montage direct.
+       // (invariant AD-4) — l'assert tient la promesse côté montage direct.
   }) : assert(options.length > 0);
 
-  /// Le point de montage RECOMMANDÉ : un builder de créneau qui rend **`null`
-  /// quand [options] est vide** — le sélecteur est alors absent de l'arbre
-  /// (AD-4), jamais un bouton inerte.
+  /// Le point de montage recommandé : un builder de créneau qui rend `null`
+  /// quand [options] est vide — le sélecteur est alors absent de l'arbre
+  /// (invariant AD-4), jamais un bouton inerte.
   static ZChatComposerSlotBuilder slot({
     required List<ZChatModelOption> options,
     required ValueChanged<String> onSelect,
@@ -159,30 +155,29 @@ class ZChatComposerModelSelector extends StatefulWidget {
           spacing: spacing,
         );
 
-  /// Le catalogue d'HÔTE — jamais une donnée du socle.
+  /// Le catalogue d'hôte — jamais une donnée du socle.
   final List<ZChatModelOption> options;
 
-  /// Id de l'option ACTIVE, ou `null` (aucune coche — l'état vit chez
-  /// l'hôte, le socle ne présume rien, AD-10).
+  /// Id de l'option active, ou `null` (aucune coche — l'état vit chez
+  /// l'hôte, le socle ne présume rien, invariant AD-10).
   final String? activeId;
 
-  /// La sélection REMONTE ici — l'hôte la range où il veut (`aiRouterId`…).
-  /// Le socle ne la stocke pas.
+  /// La sélection remonte ici — l'hôte la range où il veut. Le socle ne la
+  /// stocke pas.
   final ValueChanged<String> onSelect;
 
-  /// Glyphe d'HÔTE posé devant l'option active du menu (la coche de
-  /// lex/f011). `null` ⇒ l'emphase CR-74 seule — le socle n'invente aucun
-  /// glyphe.
+  /// Glyphe d'hôte posé devant l'option active du menu. `null` signifie
+  /// l'emphase du thème seule — le socle n'invente aucun glyphe.
   final Widget? selectionMark;
 
-  /// Remplace le DÉCLENCHEUR (règle des trois cas : absent ⇒ défaut du
-  /// socle ; rend un widget ⇒ le remplace ; rend `null` ⇒ affordance absente).
+  /// Remplace le déclencheur (règle des trois cas : absent, défaut du
+  /// socle ; rend un widget, le remplace ; rend `null`, affordance absente).
   final ZChatModelTriggerBuilder? triggerBuilder;
 
-  /// Remplace le MENU entier. `null` ⇒ le menu par défaut du socle.
+  /// Remplace le menu entier. `null` signifie le menu par défaut du socle.
   final ZChatModelMenuBuilder? menuBuilder;
 
-  /// Interligne du menu. `null` ⇒ jeton `gapS`, puis référence.
+  /// Interligne du menu. `null` signifie jeton `gapS`, puis référence.
   final double? spacing;
 
   @override
@@ -192,11 +187,11 @@ class ZChatComposerModelSelector extends StatefulWidget {
 
 class _ZChatComposerModelSelectorState
     extends State<ZChatComposerModelSelector> {
-  /// Créés UNE fois — jamais au rebuild (AD-2).
+  /// Créés une fois — jamais au rebuild (invariant AD-2).
   final OverlayPortalController _portal = OverlayPortalController();
 
   /// Tranche locale « menu ouvert » — pilote uniquement le drapeau
-  /// `expanded` du déclencheur (jamais un `setState`, G-CH5).
+  /// `expanded` du déclencheur, jamais un `setState`.
   final ValueNotifier<bool> _open = ValueNotifier<bool>(false);
 
   final LayerLink _link = LayerLink();
@@ -220,7 +215,7 @@ class _ZChatComposerModelSelectorState
   }
 
   void _select(String id) {
-    // 🔴 La sélection remonte, PUIS le menu se ferme — jamais l'inverse : un
+    // La sélection remonte, puis le menu se ferme — jamais l'inverse : un
     // hôte qui reconstruit sur `onSelect` ne doit pas retrouver un portail
     // ouvert sur un arbre disparu.
     widget.onSelect(id);
@@ -233,8 +228,8 @@ class _ZChatComposerModelSelectorState
     for (final ZChatModelOption o in widget.options) {
       if (o.id == id) return o;
     }
-    // Id actif inconnu du catalogue : aucune présomption (AD-10) — le
-    // déclencheur retombe sur son libellé générique.
+    // Id actif inconnu du catalogue : aucune présomption (invariant AD-10)
+    // — le déclencheur retombe sur son libellé générique.
     return null;
   }
 
@@ -306,7 +301,7 @@ class _ZChatComposerModelSelectorState
             minHeight: kZChatMinTapTarget,
           ),
           child: Align(
-            // AD-13 : alignement DIRECTIONNEL.
+            // Invariant AD-13 : alignement directionnel.
             alignment: AlignmentDirectional.center,
             widthFactor: 1,
             heightFactor: 1,
@@ -331,8 +326,8 @@ class _ZChatComposerModelSelectorState
     final Widget menu = override != null
         ? override(context, widget.options, widget.activeId, _select, _close)
         : _defaultMenu(context);
-    // AD-13 : ancres RÉSOLUES contre la direction du texte — le menu s'ouvre
-    // AU-DESSUS du déclencheur, aligné sur son bord de FIN (lex/f011).
+    // Invariant AD-13 : ancres résolues contre la direction du texte — le
+    // menu s'ouvre au-dessus du déclencheur, aligné sur son bord de fin.
     final TextDirection direction = Directionality.of(context);
     return Stack(
       children: <Widget>[
@@ -362,9 +357,9 @@ class _ZChatComposerModelSelectorState
     );
   }
 
-  /// Le menu PAR DÉFAUT : une option par ligne, **coche sur l'actif** —
-  /// `Semantics(selected:)` + emphase CR-74 + glyphe d'hôte éventuel. Cibles
-  /// ≥ 48 dp en géométrie rendue.
+  /// Le menu par défaut : une option par ligne, coche sur l'actif —
+  /// `Semantics(selected:)` + emphase du thème + glyphe d'hôte éventuel.
+  /// Cibles ≥ 48 dp en géométrie rendue.
   Widget _defaultMenu(BuildContext context) {
     final double gap = _gap(context);
     final ({TextStyle plain, TextStyle chosen}) styles = _styles(context);
@@ -389,8 +384,8 @@ class _ZChatComposerModelSelectorState
     double gap,
     ({TextStyle plain, TextStyle chosen}) styles,
   ) {
-    // 🔴 La coche SUIT l'actif — elle n'est jamais figée : c'est l'id, et lui
-    // seul, qui décide (garde MS-R2, injection R3 jumelle).
+    // La coche suit l'actif — elle n'est jamais figée : c'est l'id, et lui
+    // seul, qui décide.
     final bool selected = option.id == widget.activeId;
     final String resolved = _optionLabel(context, option);
     final Widget? icon = option.icon;
@@ -410,7 +405,7 @@ class _ZChatComposerModelSelectorState
             minHeight: kZChatMinTapTarget,
           ),
           child: Align(
-            // AD-13 : alignement DIRECTIONNEL.
+            // Invariant AD-13 : alignement directionnel.
             alignment: AlignmentDirectional.centerStart,
             widthFactor: 1,
             heightFactor: 1,
@@ -423,8 +418,9 @@ class _ZChatComposerModelSelectorState
                 ],
                 Text(
                   resolved,
-                  // L'état par le STYLE, mesurable sur le RenderParagraph —
-                  // jamais par la seule couleur (CR-74/AD-13).
+                  // L'état passe par le style, mesurable sur le
+                  // RenderParagraph — jamais par la seule couleur (invariant
+                  // AD-13).
                   style: selected ? styles.chosen : styles.plain,
                   textAlign: TextAlign.start,
                 ),

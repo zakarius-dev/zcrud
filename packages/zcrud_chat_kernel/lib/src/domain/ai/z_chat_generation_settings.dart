@@ -1,69 +1,64 @@
-/// **Porteur de réglages** neutre — `ZChatGenerationSettings` (lot β,
-/// AD-4/AD-10).
+/// **Porteur de réglages** neutre — `ZChatGenerationSettings` (invariants
+/// AD-4, AD-10).
 ///
-/// ## Le manque mesuré : le porteur, pas le widget
+/// ## Le manque : le porteur, pas le widget
 ///
-/// L'étude CR-IFFD-72 (§ 4.3) a établi que les réglages du chat sont **déjà
-/// modélisés** dans ce paquet mais atteignables par **un seul canal étroit** —
-/// la capture de closure de l'hôte, `send()` n'ayant aucun paramètre. Et un
-/// défaut structurel : `ZChatRegenerateAction` ne portait que `{messageId}`
-/// alors que [ZChatLengthBias] est défini comme « biais d'une **régénération** »
-/// — donc **inatteignable sur son propre cas d'usage**.
+/// Les réglages du chat sont déjà modélisés dans ce paquet, mais peuvent
+/// rester atteignables par **un seul canal étroit** si `send()` n'a aucun
+/// paramètre dédié. Un défaut structurel voisin : si `ZChatRegenerateAction`
+/// ne porte que `{messageId}`, alors que [ZChatLengthBias] est défini comme
+/// « biais d'une **régénération** », ce réglage devient **inatteignable sur
+/// son propre cas d'usage**.
 ///
 /// Ce porteur regroupe les réglages en **une valeur transportable**, la même
-/// sur la requête et sur la régénération. C'est ce qui ferme le défaut ③.
+/// sur la requête et sur la régénération. C'est ce qui ferme ce défaut.
 ///
-/// ## 🔴 Aucun enum réinventé — RÉFÉRENCE, jamais redéclaration
+/// ## Aucun enum réinventé — RÉFÉRENCE, jamais redéclaration
 ///
 /// | Réglage | Type porté | Déclaré où |
 /// |---|---|---|
-/// | Verbosité | `ZChatResponseLength` | `z_chat_enums.dart` (CHAT-0) |
-/// | Biais de régénération | `ZChatLengthBias` | `z_chat_enums.dart` (CHAT-0) |
-/// | Budget de calcul `1..5` | `ZChatComputeEffort` | `z_chat_compute_effort.dart` (CHAT-1) |
-/// | Étapes de raisonnement | `bool?` [revealThinkingSteps] | pendant, côté DEMANDE, de `ZChatThinkingStep` (côté réponse) |
-/// | Recherche web | `bool?` [webSearch] | ce fichier (lot K1) — cf. « typé vs clé ouverte » |
-/// | Capacités d'hôte | `Map<String, bool>` [capabilities] | ce fichier (lot K1) — canal OUVERT (AD-4) |
+/// | Verbosité | `ZChatResponseLength` | `z_chat_enums.dart` |
+/// | Biais de régénération | `ZChatLengthBias` | `z_chat_enums.dart` |
+/// | Budget de calcul `1..5` | `ZChatComputeEffort` | `z_chat_compute_effort.dart` |
+/// | Étapes de raisonnement | `bool?` [revealThinkingSteps] | pendant, côté demande, de `ZChatThinkingStep` (côté réponse) |
+/// | Recherche web | `bool?` [webSearch] | ce fichier — cf. « typé vs clé ouverte » |
+/// | Capacités d'hôte | `Map<String, bool>` [capabilities] | ce fichier — canal ouvert (invariant AD-4) |
 ///
-/// ## Typé vs clé ouverte — le critère est MESURÉ, pas décrété (lot K1)
+/// ## Typé vs clé ouverte
 ///
 /// [webSearch] est **typé** pour la même raison que `computeEffort` l'a été :
-/// c'est la capacité booléenne que les DEUX backends lisent réellement —
-/// lex l'envoie en `enable_web_search`
-/// (`lex_data/lib/data/datasources/remote/chat_remote_data_source.dart:333`,
-/// `:369`, `:429`) et IFFD en `enableWebSearch`
-/// (`iffd/lib/src/data/repositories/iffd_ai_repository_impl.dart:701`, `:756`).
-/// Une capacité partagée et vivante mérite un nom que le compilateur vérifie.
+/// c'est une capacité booléenne largement répandue chez les fournisseurs de
+/// chat. Une capacité partagée et vivante mérite un nom que le compilateur
+/// vérifie.
 ///
-/// Tout le reste — « résumé » (IFFD seul, couplé au flux documents), scraping,
-/// génération d'images, interpréteur (code MORT commenté chez IFFD) — passe par
-/// [capabilities], le canal **ouvert** : des clés opaques `String`, jamais un
-/// enum fermé (AD-4). Une app future ajoute « brouillon long » sans toucher le
-/// kernel ; le socle n'en connaît **aucune valeur** (FR-26).
+/// Tout le reste — styles de reformulation spécifiques à un hôte, scraping,
+/// génération d'images, interpréteur de code — passe par [capabilities], le
+/// canal **ouvert** : des clés opaques `String`, jamais un enum fermé
+/// (invariant AD-4). Une app future ajoute « brouillon long » sans toucher le
+/// kernel ; le socle n'en connaît **aucune valeur**.
 ///
-/// ## 🔴 Jamais de repli muet — la capacité non honorée est DÉTECTABLE
+/// ## Jamais de repli muet — la capacité non honorée est détectable
 ///
 /// Une clé ouverte qu'un port ne comprend pas ne doit pas mourir en silence :
 /// [auditCapabilities] confronte l'**écho** des clés honorées par l'exécuteur
 /// aux clés exprimées ici, et **nomme** les muettes — le pendant exact de
 /// `ZChatCorpusScope.audit` (cf. `z_chat_capability_audit.dart`).
 ///
-/// Le risque n°1 nommé par la revue était « reconstruire la moitié du kernel » :
-/// ce fichier ne déclare **aucun** type de réglage, il les compose.
+/// Ce fichier ne déclare **aucun** type de réglage, il les compose.
 ///
-/// ## Pourquoi une PROJECTION, et non un second jeu de champs
+/// ## Pourquoi une projection, et non un second jeu de champs
 ///
 /// `ZChatGenerationRequest` porte **déjà** `responseLength`, `lengthBias` et
-/// `computeEffort` en champs de premier niveau — et la garde **G16/CHAT-1b**
-/// exige qu'ils y restent, littéralement, pour que les deux axes (verbosité vs
-/// calcul) demeurent non confondables sur la requête. Y ajouter un porteur
-/// **redondant** aurait créé deux sources de vérité et « deux lectures
-/// conformes mais incompatibles » — exactement ce que la lentille adversariale
-/// traque.
+/// `computeEffort` en champs de premier niveau, et ils doivent y rester,
+/// littéralement, pour que les deux axes (verbosité vs calcul) demeurent non
+/// confondables sur la requête. Y ajouter un porteur **redondant** créerait
+/// deux sources de vérité — deux lectures conformes mais incompatibles d'une
+/// même donnée.
 ///
 /// ⇒ Sur la requête, le porteur est une **vue** : `request.settings` le
 /// projette, `request.withSettings(…)` l'injecte, et le tour est une
-/// **bijection** (garde du lot). Sur `ZChatRegenerateAction`, où il n'existait
-/// rien, il est **stocké**.
+/// **bijection**. Sur `ZChatRegenerateAction`, où il n'existait rien, il est
+/// **stocké**.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -91,7 +86,7 @@ const String kZChatCapabilityWebSearch = 'web_search';
 class ZChatGenerationSettings {
   /// Construit un porteur de réglages (immuable, `const`).
   ///
-  /// ⚠️ Constructeur `const` ⇒ [capabilities] est stockée **verbatim** (aucune
+  /// Constructeur `const` ⇒ [capabilities] est stockée **verbatim** (aucune
   /// normalisation possible ici). L'écriture **canonique** de la recherche web
   /// est le champ typé [webSearch] ; une entrée [kZChatCapabilityWebSearch]
   /// dans le canal ouvert reste néanmoins comprise partout ([capability],
@@ -124,21 +119,20 @@ class ZChatGenerationSettings {
   final bool? revealThinkingSteps;
 
   /// Demande d'activer (`true`) ou de **couper** (`false`) la recherche web,
-  /// ou `null` (l'hôte décide) — lot K1.
+  /// ou `null` (l'hôte décide).
   ///
-  /// Champ **typé** parce que mesuré vivant chez les DEUX hôtes (cf. l'entête,
-  /// « typé vs clé ouverte ») ; clé canonique [kZChatCapabilityWebSearch] en
-  /// persistance et dans l'audit.
+  /// Champ **typé** (cf. l'entête, « typé vs clé ouverte ») ; clé canonique
+  /// [kZChatCapabilityWebSearch] en persistance et dans l'audit.
   final bool? webSearch;
 
-  /// Canal **OUVERT** de capacités booléennes d'hôte (AD-4) — lot K1.
+  /// Canal **ouvert** de capacités booléennes d'hôte (invariant AD-4).
   ///
   /// Clés opaques `String`, choisies par l'hôte (« résumé », « brouillon
   /// long »…), **jamais** un enum fermé : une app future étend sans toucher le
   /// kernel. `true` demande la capacité, `false` demande son **absence**
   /// (les deux exigent d'être honorées), clé absente ⇒ l'hôte décide.
   ///
-  /// 🔴 Une clé exprimée ici n'est **pas** une garantie : c'est
+  /// Une clé exprimée ici n'est **pas** une garantie : c'est
   /// [auditCapabilities] qui rend son honneur vérifiable — sans ce bouclage le
   /// canal ne serait qu'un vœu (même règle que la portée de corpus).
   final Map<String, bool> capabilities;
@@ -175,7 +169,7 @@ class ZChatGenerationSettings {
         _canonicalCapabilities(this).keys,
       );
 
-  /// 🔴 **Le bouclage anti-repli-muet** : confronte l'écho des clés
+  /// **Le bouclage anti-repli-muet** : confronte l'écho des clés
   /// [honored] — celles que l'exécuteur déclare avoir comprises et
   /// appliquées — aux capacités exprimées par CE porteur, et **nomme** les
   /// muettes ([ZChatCapabilityAudit.unhonored]).
@@ -183,7 +177,7 @@ class ZChatGenerationSettings {
   /// Fail-safe : une clé exprimée absente de l'écho est **non honorée** —
   /// en l'absence de signal on ne présume jamais « honoré » (pendant exact de
   /// `ZChatCorpusScope.audit`, cf. `z_chat_capability_audit.dart` pour la
-  /// provenance de l'écho). Ne filtre rien, ne lève rien (AD-10).
+  /// provenance de l'écho). Ne filtre rien, ne lève rien (invariant AD-10).
   ZChatCapabilityAudit auditCapabilities(Iterable<String> honored) {
     final List<String> requested = expressedCapabilityKeys;
     final Set<String> echo = <String>{
@@ -215,17 +209,15 @@ class ZChatGenerationSettings {
   /// Copie modifiée — les paramètres omis sont **conservés** (même forme que
   /// `ZChatThinkingStep.copyWith`).
   ///
-  /// ⚠️ **Ce membre ne peut pas RETIRER un réglage** : passer `null` est
+  /// **Ce membre ne peut pas RETIRER un réglage** : passer `null` est
   /// indistinguable d'un paramètre omis. Pour revenir à « l'hôte décide », on
-  /// **construit** la valeur — les quatre champs sont optionnels, donc
+  /// **construit** la valeur — les champs sont optionnels, donc
   /// `ZChatGenerationSettings(responseLength: s.responseLength)` suffit.
   ///
-  /// 🔴 Les drapeaux `clear*` de lex (`ToolsContext.copyWith`) ne sont pas
-  /// portés : `clearComputeEffort` heurterait la garde **G16**, qui n'autorise
-  /// pour `Effort` que les deux orthographes exactes `ZChatComputeEffort` et
-  /// `computeEffort` — précisément pour qu'aucune famille d'orthographes
-  /// voisines ne se glisse à côté de l'axe qu'elle protège. Le contournement
-  /// aurait été de la renommer ; on préfère un membre plus étroit.
+  /// Des drapeaux `clear*` dédiés (par exemple `clearComputeEffort`) ne sont
+  /// pas portés, pour qu'aucune famille de noms voisins de `computeEffort` ne
+  /// se glisse à côté de l'axe qu'elle protège (voir la mise en garde dans
+  /// `z_chat_compute_effort.dart`).
   ZChatGenerationSettings copyWith({
     ZChatResponseLength? responseLength,
     ZChatLengthBias? lengthBias,
@@ -243,11 +235,11 @@ class ZChatGenerationSettings {
         capabilities: capabilities ?? this.capabilities,
       );
 
-  /// Décode **défensivement** (AD-10) — ne lève jamais ; `raw` non-`Map` ⇒
+  /// Décode **défensivement** (invariant AD-10) — ne lève jamais ; `raw` non-`Map` ⇒
   /// `null`, valeur illisible ⇒ réglage absent (« l'hôte décide »), **jamais**
   /// un palier inventé.
   ///
-  /// ⚠️ [responseLength] et [lengthBias] ont des `fromJson` **totaux** (repli
+  /// [responseLength] et [lengthBias] ont des `fromJson` **totaux** (repli
   /// `standard` / `asIs`) : appliquer ce repli à une clé **absente**
   /// transformerait « non réglé » en « réglé au défaut ». La clé est donc
   /// testée avant d'être décodée.
@@ -272,11 +264,14 @@ class ZChatGenerationSettings {
     return canonical;
   }
 
+  /// Décode **défensivement** (invariant AD-10) — `raw` non-`Map` ⇒ `null`,
+  /// chaque réglage absent ou illisible retombe individuellement sur
+  /// « non réglé » plutôt que d'entraîner l'échec de tout le décodage.
   static ZChatGenerationSettings? fromJson(Object? raw) {
     final Map<String, dynamic>? map = zJsonMap(raw);
     if (map == null) return null;
     // Canal ouvert : seules les valeurs strictement booléennes sont retenues ;
-    // une entrée illisible est SAUTÉE (AD-10 : capacité absente, jamais un
+    // une entrée illisible est SAUTÉE (invariant AD-10 : capacité absente, jamais un
     // `false` inventé — `false` est une DEMANDE, pas une absence). La clé
     // réservée est re-canonicalisée vers le champ typé (une seule lecture).
     final Map<String, bool> decoded = _decodeCapabilities(map['capabilities']);
@@ -319,7 +314,7 @@ class ZChatGenerationSettings {
   /// `==` par valeur, sur la forme **canonique** des capacités : deux porteurs
   /// qui expriment la même demande sont égaux quel que soit le canal
   /// d'écriture de la recherche web et l'ordre des clés du canal ouvert. Un
-  /// porteur ancien (sans les champs du lot K1) compare **à l'identique**.
+  /// porteur qui ne les exprime pas compare **à l'identique**.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -384,7 +379,7 @@ Map<String, bool> _canonicalCapabilities(ZChatGenerationSettings settings) {
   return <String, bool>{for (final String key in keys) key: out[key]!};
 }
 
-/// Décode le canal ouvert **défensivement** (AD-10) : non-`Map` ⇒ vide ; une
+/// Décode le canal ouvert **défensivement** (invariant AD-10) : non-`Map` ⇒ vide ; une
 /// valeur non booléenne est sautée (jamais convertie) ; clés rognées,
 /// dédupliquées (première occurrence gagne), triées.
 Map<String, bool> _decodeCapabilities(Object? raw) {

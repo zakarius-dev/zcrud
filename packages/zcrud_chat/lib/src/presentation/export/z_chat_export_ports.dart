@@ -1,37 +1,24 @@
-/// Coutures d'export — mise en page PDF et destination système (CHAT-5, AD-57).
+/// Coutures d'export — mise en page PDF et destination système.
 ///
-/// ## 🔴 Pourquoi `zcrud_export` / `zcrud_export_ui` ne sont PAS des dépendances
+/// ## Pourquoi un moteur PDF et un service de partage ne sont pas des dépendances
 ///
-/// La cible fonctionnelle d'IFFD est un export **agrégé** de la conversation
-/// (Notes + Flashcards de TOUS les messages) mis en PDF puis remis au partage
-/// ou à l'impression du système
-/// (`chatbot_conversation_screen.dart:4441`, `exportExplanationToPdf` /
-/// `exportFlashcardToPdf`). Les deux maillons existent déjà dans ce dépôt :
+/// Un export agrégé d'une conversation entière, mis en PDF puis remis au
+/// partage ou à l'impression du système, suppose deux maillons : une mise en
+/// page PDF (qui tire typiquement un moteur de rendu de document) et un
+/// service de partage/impression (qui tire un plugin d'impression système).
 ///
-/// | Maillon | Où il vit DÉJÀ | Ce qu'il tire |
-/// |---|---|---|
-/// | mise en page PDF | `zcrud_export` | **Syncfusion** (`syncfusion_flutter_pdf`) |
-/// | partage / impression | `zcrud_export_ui` — **`ZPdfShareService`** | `printing` (+ sa transitive `pdf`) |
+/// Dépendre de ces paquets en dur ferait entrer ces dépendances lourdes dans
+/// `zcrud_chat`, en violation de l'invariant AD-1 : un hôte qui n'exporte
+/// jamais rien tirerait quand même un moteur PDF complet. La forme employée
+/// est donc celle que ce paquet a déjà retenue pour le rendu : une couture,
+/// avec un défaut fonctionnel à zéro dépendance. Aucun service de partage
+/// n'est réimplémenté ici — l'implémentation d'hôte de [ZChatExportSink]
+/// délègue à celui déjà disponible dans l'écosystème zcrud (`zcrud_export_ui`).
 ///
-/// 🔴 **Aucun second service de partage n'est écrit ici.** `ZPdfShareService`
-/// (`zcrud_export_ui/lib/src/data/z_pdf_share_service.dart`) fait déjà
-/// exactement cela — `Printing.sharePdf` et `Printing.layoutPdf`, API 100 %
-/// `Uint8List`. En écrire un deuxième serait la duplication que ce lot doit
-/// précisément éviter ; il est **CÂBLÉ** par [ZChatExportSink], dont
-/// l'implémentation d'hôte tient en deux lignes de délégation.
-///
-/// Dépendre de ces packages **en dur** ferait entrer Syncfusion **et**
-/// `printing` dans `zcrud_chat` — AD-1/AD-57 rouges, et le grep négatif
-/// `G-R8` (`z_chat_render_guard_test.dart`) rougirait en nommant ce fichier.
-/// Un hôte qui n'exporte jamais rien tirerait un moteur PDF complet. La forme
-/// employée est donc celle que ce package a **déjà** retenue deux fois — pour
-/// Quill (`ZChatRenderer`) et, avant lui, pour Syncfusion (`ZListRenderer`) :
-/// une couture, avec un défaut fonctionnel à zéro dépendance.
-///
-/// **Défaut sans couture** : les quatre formats **textuels** (Markdown, texte
-/// brut, HTML, références) sont produits ici, intégralement, sans aucune
-/// dépendance. Seuls le PDF et la destination système exigent un branchement —
-/// et leur absence se signale par un `Left` explicite, jamais par une exception.
+/// Les quatre formats textuels (Markdown, texte brut, HTML, références) sont
+/// produits sans couture ni dépendance. Seuls le PDF et la destination
+/// système exigent un branchement — et leur absence se signale par un `Left`
+/// explicite, jamais par une exception.
 library;
 
 import 'dart:typed_data';
@@ -58,15 +45,16 @@ abstract class ZChatPdfComposer {
   Future<ZResult<Uint8List>> compose(ZChatTextExport document);
 }
 
-/// Couture de **destination** : partage et impression système.
+/// Couture de destination : partage et impression système.
 ///
-/// 🔴 L'implémentation attendue **délègue à `ZPdfShareService`**
-/// (`zcrud_export_ui`), elle ne réimplémente rien :
+/// L'implémentation attendue délègue à un service de partage PDF déjà
+/// disponible dans l'écosystème zcrud (`zcrud_export_ui`), elle ne
+/// réimplémente rien :
 ///
 /// ```dart
 /// class MyChatExportSink implements ZChatExportSink {
 ///   const MyChatExportSink(this._pdf);
-///   final ZPdfShareService _pdf; // zcrud_export_ui — DÉJÀ dans le dépôt
+///   final ZPdfShareService _pdf; // zcrud_export_ui
 ///
 ///   @override
 ///   Future<ZResult<bool>> share(ZChatExportResult result) async =>

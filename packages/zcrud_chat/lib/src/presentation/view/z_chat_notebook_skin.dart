@@ -1,44 +1,38 @@
-/// **Lot γ (CR-IFFD-72)** — la chaîne de résolution du rendu Notebook :
-/// **paramètre > jeton > référence**.
+/// Chaîne de résolution du rendu notebook : paramètre > jeton > référence.
 ///
-/// ## Pourquoi ce fichier vit dans `zcrud_chat` et non dans le satellite
+/// ## Pourquoi ce fichier vit dans `zcrud_chat` et non dans un satellite
 ///
-/// Le « skin » du notebook doit être **pur** : `zcrud_chat` n'a aucune arête
-/// Syncfusion (garde `z_chat_purity_test`), et l'arbitrage de priorité — la
-/// seule chose qui puisse se tromper — doit pouvoir être **prouvé sans monter
-/// Syncfusion**. [ZChatNotebookSkin] ne connaît donc aucun type de coquille : il
-/// résout des valeurs neutres, et `zcrud_chat_syncfusion` se contente de les
-/// **mapper** sur `AssistMessageSettings`.
+/// Le rendu de référence du notebook doit rester pur : `zcrud_chat` n'a
+/// aucune arête vers un moteur de rendu tiers, et l'arbitrage de priorité —
+/// la seule chose qui puisse se tromper — doit pouvoir être prouvé sans
+/// monter de dépendance de rendu. [ZChatNotebookSkin] ne connaît donc aucun
+/// type de coquille : il résout des valeurs neutres, qu'un satellite de rendu
+/// se contente de mapper sur son propre modèle.
 ///
-/// ## 🔴 Trois niveaux, jamais deux
+/// ## Trois niveaux, jamais deux
 ///
 /// ```
-/// paramètre  ZChatNotebookSkin.<champ>          ← l'hôte, ici et maintenant
-///     ▼ (si null)
-/// jeton      ZcrudTheme.chat<…>                 ← l'hôte, pour toute sa surface
-///     ▼ (si null)
-/// référence  ZChatNotebookReference.<…>         ← IFFD legacy, mesuré
+/// parametre  ZChatNotebookSkin.<champ>          <- l'hote, ici et maintenant
+///     v (si null)
+/// jeton      ZcrudTheme.chat<...>               <- l'hote, pour toute sa surface
+///     v (si null)
+/// reference  ZChatNotebookReference.<...>        <- valeurs de reference auditees
 /// ```
 ///
-/// Les trois niveaux sont atteints **séparément** par
-/// `test/z_chat_notebook_skin_test.dart` : un test qui ne prouverait que
-/// « paramètre gagne » serait vert sur une implémentation qui ignore le jeton.
+/// ## Ce que le thème ne peut pas écraser
 ///
-/// ## 🔴 Ce que le thème ne peut PAS écraser
-///
-/// Les canaux **non chromatiques** des capacités
+/// Les canaux non chromatiques des capacités
 /// ([ZChatNotebookCapabilityStyle.generatedLabelKey] et
-/// [ZChatNotebookCapabilityStyle.generatedMarkSize]) n'ont **aucun** jeton et
-/// **aucun** paramètre. Seul l'accent — le canal décoratif — est remplaçable.
-/// Un jeton qui pourrait effacer le canal textuel rouvrirait exactement le
-/// défaut « information portée par la seule couleur » que ce lot ferme.
+/// [ZChatNotebookCapabilityStyle.generatedMarkSize]) n'ont aucun jeton et
+/// aucun paramètre. Seul l'accent — le canal décoratif — est remplaçable :
+/// une information ne repose ainsi jamais sur la seule couleur.
 ///
 /// ## Hôte passif
 ///
-/// Ce fichier n'est monté par **aucune** vue : `ZChatConversationView` et
-/// `ZChatNotebookView` ne le lisent pas et leur arbre est inchangé. Le skin est
-/// **opt-in**, consommé uniquement par le backend de coquille auquel l'hôte le
-/// passe explicitement.
+/// Ce fichier n'est monté par aucune vue : `ZChatConversationView` et
+/// `ZChatNotebookView` ne le lisent pas, et leur arbre reste inchangé. Le
+/// skin est opt-in, consommé uniquement par le backend de coquille auquel
+/// l'hôte le passe explicitement.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -53,7 +47,7 @@ import 'z_chat_notebook_reference.dart';
 @immutable
 class ZChatNotebookSkin {
   /// Construit un réglage. Aucun champ n'est requis : `const
-  /// ZChatNotebookSkin()` signifie « le rendu de référence IFFD, tel quel ».
+  /// ZChatNotebookSkin()` signifie « le rendu de référence, tel quel ».
   const ZChatNotebookSkin({
     this.bubbleWidthFactor,
     this.requestBubbleRadius,
@@ -73,11 +67,12 @@ class ZChatNotebookSkin {
   /// Rayon de la bulle de **requête**. `null` ⇒ jeton, puis référence.
   final Radius? requestBubbleRadius;
 
-  /// Rayon de la bulle de **réponse**.
+  /// Rayon de la bulle de réponse.
   ///
-  /// 🔴 Le legacy n'en pose **aucun** ([ZChatNotebookReference.responseBubbleRadius]
-  /// vaut `null`) : laissé nul, la coquille garde son propre défaut. Le renseigner
-  /// est un choix de l'hôte, pas une valeur de référence.
+  /// La référence n'en pose aucun
+  /// ([ZChatNotebookReference.responseBubbleRadius] vaut `null`) : laissé
+  /// nul, la coquille garde son propre défaut. Le renseigner est un choix de
+  /// l'hôte, pas une valeur de référence.
   final Radius? responseBubbleRadius;
 
   /// Afficher l'avatar d'auteur ? `null` ⇒ jeton, puis référence (`false`).
@@ -89,7 +84,7 @@ class ZChatNotebookSkin {
   /// Afficher l'horodatage ? `null` ⇒ jeton, puis référence (`true`).
   final bool? showTimestamp;
 
-  /// Teinte d'identité des affordances d'outils (exception FR-26 encadrée).
+  /// Teinte d'identité des affordances d'outils.
   final Color? toolAccentColor;
 
   /// Accents **par capacité**, indexés par clé (`mindmap`, `flashcards`, …).
@@ -98,12 +93,12 @@ class ZChatNotebookSkin {
   /// pas disparaître les quatre autres accents de référence.
   final Map<String, Color>? capabilityAccents;
 
-  /// Séquence de teintes de l'indicateur d'occupation (exception FR-26).
+  /// Séquence de teintes de l'indicateur d'occupation.
   final List<Color>? busyPalette;
 
   /// Résout les trois niveaux contre le thème ambiant.
   ///
-  /// **Ne lève jamais** (AD-10) : un thème absent retombe sur
+  /// Ne lève jamais (invariant AD-10) : un thème absent retombe sur
   /// `ZcrudTheme.fallback`, et une table de jetons vide sur la référence.
   ZChatNotebookStyle resolve(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
@@ -201,8 +196,9 @@ class ZChatNotebookStyle {
   /// chromatiques **toujours** ceux de la référence.
   ///
   /// Rend `null` pour une clé que la référence ne connaît pas : une capacité
-  /// future n'obtient pas un style inventé (AD-10). Un accent fourni pour une
-  /// clé inconnue est donc **ignoré**, jamais promu en style incomplet.
+  /// future n'obtient pas un style inventé (invariant AD-10). Un accent
+  /// fourni pour une clé inconnue est donc ignoré, jamais promu en style
+  /// incomplet.
   ZChatNotebookCapabilityStyle? capability(String key) {
     final ZChatNotebookCapabilityStyle? base =
         ZChatNotebookReference.capabilities[key];

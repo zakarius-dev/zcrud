@@ -1,30 +1,27 @@
-/// Requête de rendu **neutre** d'une COQUILLE de conversation — CHAT-3b.
+/// Requête de rendu neutre d'une coquille de conversation.
 ///
-/// ## 🔴 Le défaut que ce fichier corrige, mesuré par le lot C6
+/// ## Pourquoi ce port existe séparément du rendu par bloc
 ///
-/// La couture de rendu de CHAT-3 est **par BLOC** ([ZChatBlockRenderRequest]).
-/// Or `SfAIAssistView` de Syncfusion n'est pas un rendu de bloc : c'est une
-/// **coquille de liste**. Faute de couture à ce niveau, l'adaptateur C6 a livré
-/// un **widget parallèle** à `ZChatConversationView` — et un hôte qui choisissait
-/// Syncfusion **perdait** la région live (`liveAnnouncement`), le dépli inline et
-/// `ZChatMessageTile`. Deux vues destinées à diverger : c'est le motif
-/// **CR-LEX-78**, un doublon né d'une couture placée au mauvais niveau.
+/// La couture de rendu par bloc ([ZChatBlockRenderRequest]) ne couvre pas le
+/// cas d'une coquille de liste tierce (un widget qui remplace le conteneur
+/// défilant entier, pas seulement un message). Sans couture à ce niveau, un
+/// adaptateur qui remplace la liste perdrait la région live d'accessibilité,
+/// le dépli inline et `ZChatMessageTile` — deux vues indépendantes destinées
+/// à diverger. Cette requête ferme ce niveau.
 ///
-/// ## Ce qui traverse la requête, et ce qui n'y entre PAS
+/// ## Ce qui traverse la requête, et ce qui n'y entre pas
 ///
-/// Patron strict de `ZListRenderRequest`
-/// (`zcrud_core/lib/src/presentation/list/z_list_render_request.dart`) : un value
-/// object **immuable**, sans dépendance lourde, sans widget **déjà construit**.
+/// Suit le patron strict de `ZListRenderRequest` (`zcrud_core`) : un value
+/// object immuable, sans dépendance lourde, sans widget déjà construit.
 ///
-/// 🔴 **Pourquoi [itemBuilder] n'est PAS une entorse à « sans widget ».** Ce
-/// n'est pas un widget, c'est une **fabrique paresseuse** — exactement ce que
-/// `SliverChildBuilderDelegate` échange avec `ListView.builder`. Porter des
-/// widgets **construits** obligerait le socle à matérialiser les N tuiles avant
-/// de connaître le viewport (la dette d'IFFD : 0 `ListView.builder` sur
-/// 5153 lignes) ; ne rien porter du tout obligerait la coquille à **reconstruire
-/// la tuile elle-même**, donc à réimplémenter le dépli inline et la tuile — le
-/// doublon qu'on retire. La fabrique est le seul point fixe qui autorise à la
-/// fois la virtualisation ET la non-perte.
+/// [itemBuilder] n'est pas une entorse à « sans widget » : c'est une fabrique
+/// paresseuse, exactement ce que `SliverChildBuilderDelegate` échange avec
+/// `ListView.builder`. Porter des widgets déjà construits obligerait le socle
+/// à matérialiser toutes les tuiles avant de connaître le viewport ; ne rien
+/// porter du tout obligerait la coquille à reconstruire la tuile elle-même,
+/// donc à réimplémenter le dépli inline. La fabrique est le seul point fixe
+/// qui autorise à la fois la virtualisation et la non-perte de
+/// fonctionnalité.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -68,8 +65,8 @@ class ZChatShellRenderRequest {
   /// Fabrique de l'élément à l'index donné — cf. [ZChatShellItemBuilder].
   final ZChatShellItemBuilder itemBuilder;
 
-  /// Marge **directionnelle** demandée par l'hôte (AD-13). `null` ⇒ la coquille
-  /// applique la sienne.
+  /// Marge directionnelle demandée par l'hôte (invariant AD-13). `null`
+  /// signifie que la coquille applique la sienne.
   final EdgeInsetsDirectional? padding;
 
   /// Liste inversée (dernier message en bas, ancrage naturel d'un chat).
@@ -83,14 +80,14 @@ class ZChatShellRenderRequest {
       index >= messages.length && index < itemCount;
 
   /// Le message établi à [index], ou `null` si l'index désigne une réponse en
-  /// cours (ou sort des bornes). **Ne lève jamais** (AD-10) : une coquille
-  /// tierce indexe comme elle veut, et un hors-bornes ne doit pas faire tomber
-  /// la conversation.
+  /// cours (ou sort des bornes). Ne lève jamais (invariant AD-10) : une
+  /// coquille tierce indexe comme elle veut, et un hors-bornes ne doit pas
+  /// faire tomber la conversation.
   ZChatMessage? messageAt(int index) =>
       index >= 0 && index < messages.length ? messages[index] : null;
 
-  /// L'identité de requête à [index], ou `null` si l'index n'est pas celui d'une
-  /// réponse en cours. **Ne lève jamais** (AD-10).
+  /// L'identité de requête à [index], ou `null` si l'index n'est pas celui
+  /// d'une réponse en cours. Ne lève jamais (invariant AD-10).
   String? requestIdAt(int index) => isStreamingAt(index)
       ? activeRequestIds[index - messages.length]
       : null;

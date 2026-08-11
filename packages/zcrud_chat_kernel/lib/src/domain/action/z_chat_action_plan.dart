@@ -1,26 +1,24 @@
 /// Plan d'action, impact chiffré et **jeton de confirmation infalsifiable**.
 ///
-/// CHAT-0b, décisions **D2** et **D6**.
-///
-/// ## 🔴 Pourquoi les trois types vivent dans CE fichier
+/// ## Pourquoi les trois types vivent dans CE fichier
 ///
 /// Le constructeur de [ZChatConfirmedAction] est **privé** (`._`). En Dart, le
 /// privé est à portée de **bibliothèque** : séparer ces types casserait la
 /// garantie — [ZChatActionPlan] ne pourrait plus fabriquer le jeton, ou bien il
 /// faudrait un constructeur public, ce qui rendrait le jeton **forgeable par
 /// n'importe quel package hôte**. Le voisinage est donc **structurel**, pas
-/// esthétique (garde **G-C2**).
+/// esthétique.
 ///
 /// ## Le protocole en deux temps
 ///
-/// `isDestructive` **seul** est un drapeau consultatif : IFFD *savait* que
-/// supprimer était destructeur, sa surface B (`:3886-3908`) ne le consultait
-/// simplement pas. Le contrat n'expose donc pas un drapeau, il impose un
+/// `isDestructive` **seul** est un drapeau consultatif : une surface d'UI
+/// peut parfaitement connaître la valeur du drapeau sans jamais la consulter
+/// avant d'agir. Le contrat n'expose donc pas un drapeau, il impose un
 /// **protocole** :
 ///
-/// 1. `dispatcher.prepare(action)` chiffre l'impact **AVANT** toute destruction
-///    (patron `deleteMessagesAfter` de lex, qui **retourne le compte**) et rend
-///    un [ZChatActionPlan] ;
+/// 1. `dispatcher.prepare(action)` chiffre l'impact **AVANT** toute
+///    destruction (en rendant le compte de messages touchés) et rend un
+///    [ZChatActionPlan] ;
 /// 2. le **seul** moyen d'obtenir un [ZChatConfirmedAction] est une méthode du
 ///    plan : [ZChatActionPlan.proceedWithoutConfirmation] rend **`null`** quand
 ///    la confirmation est requise, [ZChatActionPlan.confirmedByUser] ne doit
@@ -28,37 +26,35 @@
 /// 3. `dispatcher.execute(jeton)` **refuse** un plan exigeant confirmation dont
 ///    le jeton n'est pas confirmé, **sans jamais toucher l'executor**.
 ///
-/// ⚠️ **Limite assumée** : un hôte qui appelle [ZChatActionPlan.confirmedByUser]
+/// **Limite assumée** : un hôte qui appelle [ZChatActionPlan.confirmedByUser]
 /// **sans** avoir montré de dialogue **ment au contrat** — le socle ne peut pas
 /// l'en empêcher. Ce qu'il garantit : (1) le raccourci sûr
 /// ([ZChatActionPlan.proceedWithoutConfirmation]) est **refusé** sur une action
 /// destructrice ; (2) le mensonge est **localisé et greppable** en un seul appel
 /// nommé.
 ///
-/// Ce qui reste **app-side** (AD-2/AD-13/FR-26) : le rendu du dialogue, ses
-/// libellés, ses icônes, ses couleurs, et la **décision** de l'afficher. Le
-/// domaine ne connaît aucun widget, aucun `BuildContext`.
-/// ## 🔴 Le répartiteur est un `part` de CETTE bibliothèque, et c'est structurel
+/// Ce qui reste **app-side** (invariants AD-2, AD-13) : le rendu du
+/// dialogue, ses libellés, ses icônes, ses couleurs, et la **décision** de
+/// l'afficher. Le domaine ne connaît aucun widget, aucun `BuildContext`.
 ///
-/// **Correction de fin d'epic (MAJEUR).** [ZChatActionPlan] avait un
-/// constructeur **PUBLIC** : un hôte fabriquait `ZChatActionPlan(action: …,
-/// impact: ZChatActionImpact())` de toutes pièces, obtenait un jeton par
-/// [ZChatActionPlan.proceedWithoutConfirmation] et **exécutait sans qu'aucun
+/// ## Le répartiteur est un `part` de CETTE bibliothèque, et c'est structurel
+///
+/// Le constructeur de [ZChatActionPlan] est **privé** (`._`) : sans cela, un
+/// hôte pourrait fabriquer `ZChatActionPlan(action: …, impact:
+/// ZChatActionImpact())` de toutes pièces, obtenir un jeton par
+/// [ZChatActionPlan.proceedWithoutConfirmation] et **exécuter sans qu'aucun
 /// `estimateImpact` n'ait jamais été appelé** — un contournement complet du
 /// protocole en deux temps, sur une action déclarée non destructrice par un
-/// impact que personne n'avait chiffré. La dartdoc de [ZChatActionImpact]
-/// (« aucun chemin d'exécution ne contourne un impact chiffré ») était donc
-/// **fausse**.
+/// impact que personne n'avait chiffré.
 ///
-/// Le constructeur est maintenant **privé** (`._`). En Dart le privé est à
-/// portée de **bibliothèque** : pour que `ZChatActionDispatcher.prepare` — le
-/// seul producteur légitime, celui qui `await` `estimateImpact` — puisse encore
-/// le nommer, `z_chat_action_dispatcher.dart` est déclaré `part` d'ici. C'est
-/// exactement l'argument qui colocalise déjà [ZChatConfirmedAction] avec sa
-/// fabrique, étendu à la fabrique du plan lui-même. Le fichier du répartiteur
-/// reste distinct sur disque, donc la garde **G-U1** (« les membres d'effet ne
-/// sont invoqués que depuis `z_chat_action_dispatcher.dart` ») continue de
-/// mordre à l'identique.
+/// En Dart le privé est à portée de **bibliothèque** : pour que
+/// `ZChatActionDispatcher.prepare` — le seul producteur légitime, celui qui
+/// `await` `estimateImpact` — puisse encore le nommer,
+/// `z_chat_action_dispatcher.dart` est déclaré `part` d'ici. C'est le même
+/// argument qui colocalise déjà [ZChatConfirmedAction] avec sa fabrique,
+/// étendu à la fabrique du plan lui-même. Le fichier du répartiteur reste
+/// distinct sur disque, ce qui garde localisable et testable la règle « les
+/// membres d'effet de l'executor ne sont invoqués que depuis ce fichier ».
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -70,11 +66,11 @@ import 'z_chat_action_outcome.dart';
 
 part 'z_chat_action_dispatcher.dart';
 
-/// Impact **chiffré avant destruction** d'une action (D6).
+/// Impact **chiffré avant destruction** d'une action.
 ///
-/// Défaut IFFD n°1 : le pied de requête supprime question **et** réponse en
-/// cascade ; la surface A confirme, la surface B non, et **aucune** ne dit
-/// combien. Ici, aucun chemin d'exécution ne contourne un impact chiffré.
+/// Un retrait de message peut supprimer question **et** réponse en cascade
+/// sans que l'appelant sache combien de messages sont touchés. Ici, aucun
+/// chemin d'exécution ne contourne un impact chiffré.
 class ZChatActionImpact {
   /// Construit un impact.
   const ZChatActionImpact({
@@ -116,15 +112,15 @@ class ZChatActionImpact {
 /// Plan d'une action : l'intention, son impact chiffré, son exigence de
 /// confirmation **DÉRIVÉE**.
 ///
-/// 🔴 `final class` : le plan n'est **pas** sous-classable. Un héritier pourrait
+/// `final class` : le plan n'est **pas** sous-classable. Un héritier pourrait
 /// surcharger [requiresConfirmation] pour rendre `false` sur une suppression en
 /// cascade et obtenir un jeton non confirmé — exactement le contournement que
-/// D2 existe pour fermer.
+/// ce type ferme.
 final class ZChatActionPlan {
-  /// 🔴 Constructeur **PRIVÉ** — la **seule** fabrique est
+  /// Constructeur **PRIVÉ** — la **seule** fabrique est
   /// `ZChatActionDispatcher.prepare`, qui `await` `estimateImpact` avant de
   /// l'appeler. Un plan ne peut donc pas exister sans un impact **réellement
-  /// chiffré par l'executor de l'hôte** (D6). Le rendre public rouvrirait le
+  /// chiffré par l'executor de l'hôte**. Le rendre public rouvrirait le
   /// contournement décrit dans l'en-tête de bibliothèque.
   ///
   /// [requiresConfirmation] n'est **jamais** un paramètre : il est dérivé, pour
@@ -137,12 +133,12 @@ final class ZChatActionPlan {
   /// Impact chiffré **avant** exécution.
   final ZChatActionImpact impact;
 
-  /// Exigence de confirmation — **dérivée**, jamais renseignée (D6).
+  /// Exigence de confirmation — **dérivée**, jamais renseignée.
   ///
   /// Vraie dès que l'action est destructrice, **ou** qu'elle cascade, **ou**
   /// qu'elle touche plus d'un message. Les trois branches sont nécessaires :
   /// ne garder que `isDestructive` laisserait passer une cascade Q+R non
-  /// annoncée (garde **G-D1**).
+  /// annoncée.
   bool get requiresConfirmation =>
       action.isDestructive ||
       action.cascades ||
@@ -178,7 +174,7 @@ final class ZChatActionPlan {
 
 /// Jeton **infalsifiable** autorisant l'exécution d'une action.
 ///
-/// 🔴 Constructeur **PRIVÉ** : aucun package hôte ne peut en fabriquer un. La
+/// Constructeur **PRIVÉ** : aucun package hôte ne peut en fabriquer un. La
 /// seule fabrique est [ZChatActionPlan] — donc on ne peut pas exécuter une
 /// action destructrice sans être passé par `prepare` et par un impact chiffré.
 final class ZChatConfirmedAction {

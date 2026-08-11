@@ -1,35 +1,33 @@
-/// Surface de **relecture** d'une capture — dictée ou OCR (CHAT-10).
+/// Surface de relecture d'une capture — dictée ou reconnaissance de texte.
 ///
-/// origine **MESURÉE** : les deux feuilles de lex
-/// (`chat_dictation_review_sheet.dart`, `chat_ocr_review_sheet.dart`) — un
-/// champ éditable pré-rempli, un « annuler », un « insérer ». Elles sont
-/// **fusionnées** ici : leurs corps ne diffèrent que par l'icône et le titre,
-/// et deux surfaces jumelles finissent toujours par diverger (c'est le défaut
-/// des deux barres d'actions parallèles d'IFFD).
+/// Un champ éditable pré-rempli, un geste d'annulation, un geste
+/// d'insertion : les deux origines de capture (dictée, reconnaissance de
+/// texte) partagent une seule surface plutôt que deux copies presque
+/// identiques qui ne diffèrent que par l'icône et le titre — deux surfaces
+/// jumelles finissent toujours par diverger.
 ///
-/// ## 🔴 Pourquoi ce widget EXISTE, structurellement
+/// ## Pourquoi ce widget existe, structurellement
 ///
 /// Ce n'est pas un confort d'affichage : c'est la seule chose du socle qui
-/// **observe** le tampon de relecture. `ZChatCaptureController.acceptInto`
+/// observe le tampon de relecture. `ZChatCaptureController.acceptInto`
 /// refuse d'insérer quand rien n'observe le tampon — donc sans surface de
-/// relecture montée, une capture ne peut pas atteindre le composer, et *a
-/// fortiori* pas l'envoi.
+/// relecture montée, une capture ne peut pas atteindre le composer, et a
+/// fortiori pas l'envoi.
 ///
-/// ## 🔴 Le `TextEditingController` est STABLE (AD-2)
+/// ## Le `TextEditingController` est stable
 ///
 /// Il est créé une fois et disposé une fois. Le recréer au rebuild est
-/// l'interdit AD-2 le plus visible — perte de focus, curseur qui saute — et
-/// c'est exactement ce qu'on ne peut pas se permettre sur une surface dont la
-/// raison d'être est la **correction**.
+/// l'interdit le plus visible de l'invariant AD-2 — perte de focus, curseur
+/// qui saute — et c'est précisément ce qu'on ne peut pas se permettre sur une
+/// surface dont la raison d'être est la correction.
 ///
-/// ## 🔴 Pourquoi [ZChatCaptureReviewField.cursorColor] est REQUISE
+/// ## Pourquoi [ZChatCaptureReviewField.cursorColor] est requise
 ///
-/// `EditableText` exige une couleur de curseur non nulle, et ce package n'a le
-/// droit d'en inventer **aucune** (FR-26 : `ZcrudTheme.fieldBorderColor` est
-/// nullable précisément pour que le socle ne tranche jamais à la place de
-/// l'hôte, et `material.dart` est banni ici). Entre « inventer un noir » et
-/// « demander », on demande : c'est un paramètre de plus à l'appel, pas une
-/// décision de design prise à la place du consommateur.
+/// `EditableText` exige une couleur de curseur non nulle, et ce paquet n'a le
+/// droit d'en inventer aucune : le socle ne tranche jamais un choix de
+/// couleur à la place de l'hôte. Entre inventer une couleur et la demander en
+/// paramètre, ce paquet demande — c'est un paramètre de plus à l'appel, pas
+/// une décision de design prise à la place du consommateur.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -52,7 +50,7 @@ class ZChatCaptureReviewField extends StatefulWidget {
     super.key,
   });
 
-  /// Le contrôleur de capture observé — **ni créé ni disposé** ici.
+  /// Le contrôleur de capture observé — ni créé ni disposé ici.
   final ZChatCaptureController capture;
 
   /// Le contrôleur de conversation dont le composer recevra le texte relu.
@@ -73,14 +71,14 @@ class ZChatCaptureReviewField extends StatefulWidget {
 }
 
 class _ZChatCaptureReviewFieldState extends State<ZChatCaptureReviewField> {
-  /// Créés UNE fois — jamais au rebuild (AD-2).
+  /// Créés une fois — jamais au rebuild (invariant AD-2).
   final TextEditingController _field = TextEditingController();
   final FocusNode _focus = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // 🔴 C'est CET abonnement qui rend le tampon « observé » : sans surface de
+    // C'est cet abonnement qui rend le tampon « observé » : sans surface de
     // relecture montée, `acceptInto` refuse.
     widget.capture.review.addListener(_pullFromBuffer);
     _field.addListener(_pushToBuffer);
@@ -101,7 +99,7 @@ class _ZChatCaptureReviewFieldState extends State<ZChatCaptureReviewField> {
     final String next = widget.capture.review.value;
     // Égalité d'abord : sans elle, les deux abonnements se relanceraient l'un
     // l'autre indéfiniment — et une ré-injection de valeur écraserait la
-    // sélection de l'utilisateur en pleine correction (interdit AD-2).
+    // sélection de l'utilisateur en pleine correction (invariant AD-2).
     if (_field.text == next) return;
     _field.text = next;
     _field.selection = _field.selection.copyWith(
@@ -116,7 +114,7 @@ class _ZChatCaptureReviewFieldState extends State<ZChatCaptureReviewField> {
     widget.capture.review.edit(_field.text);
   }
 
-  /// 🔴 Le geste d'insertion ne rend RIEN à l'appelant : il passe par
+  /// Le geste d'insertion ne rend rien à l'appelant : il passe par
   /// `acceptInto`, dont le résultat est `ZResult<Unit>`. Aucune `String` ne
   /// transite par cette couche.
   void _accept() => widget.capture.acceptInto(widget.chat);
@@ -143,7 +141,7 @@ class _ZChatCaptureReviewFieldState extends State<ZChatCaptureReviewField> {
                 EditableText(
                   controller: _field,
                   focusNode: _focus,
-                  // AD-13 : jamais `TextAlign.left`.
+                  // Invariant AD-13 : jamais `TextAlign.left`.
                   textAlign: TextAlign.start,
                   maxLines: widget.maxLines,
                   minLines: widget.minLines,

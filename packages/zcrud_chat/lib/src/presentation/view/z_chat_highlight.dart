@@ -1,27 +1,20 @@
-/// Surlignage de recherche **partagé** — `ZChatHighlightedText` (CR-IFFD-39).
+/// Surlignage de recherche partagé.
 ///
-/// ## 🔴 Pourquoi ceci est UN SEUL fichier
+/// ## Pourquoi ceci est un seul fichier
 ///
-/// Mesuré chez lex : **trois** implémentations différentes du même surlignage
-/// cohabitent — l'utilitaire partagé
-/// `presentation/utils/search_highlight.dart:38-103`, la boucle `indexOf`
-/// recopiée dans `widgets/chat/search_result_tile.dart:95-116` (qui **n'utilise
-/// pas** l'utilitaire), et une troisième dans `widgets/search_content.dart:325`.
-/// Elles ont déjà divergé : celle de la tuile de recherche ne surligne que le
-/// **snippet**, jamais le titre (`search_result_tile.dart:39-46`) — alors que la
-/// moitié des résultats vient d'un filtre client-side **sur le titre**
-/// (`conversations_screen.dart:159-168`), qui ne produit aucun `matching_messages`
-/// et donc **aucun surlignage du tout**.
+/// Une implémentation de surlignage dupliquée entre le titre et le
+/// sous-titre d'une conversation diverge tôt ou tard — typiquement, l'une des
+/// deux copies finit par ne surligner que l'une des deux surfaces, laissant
+/// l'autre sans retour visuel alors qu'elle correspond bien à la recherche.
+/// Le socle n'expose donc pas « un widget qui surligne » : il expose le
+/// calcul des plages ([zChatHighlightRanges], pur et testable) et le seul
+/// widget qui les rend. Titre et sous-titre passent tous les deux par lui.
 ///
-/// Le socle n'expose donc pas « un widget qui surligne » : il expose **le calcul
-/// des plages** ([zChatHighlightRanges], pur et testable) et **le seul widget qui
-/// les rend**. Titre et sous-titre passent tous les deux par lui.
+/// ## Aucun style codé en dur
 ///
-/// ## Aucun style codé en dur (FR-26)
-///
-/// La portion surlignée n'est pas « en jaune » ni « en gras 700 » : elle prend
-/// la graisse d'emphase du thème injecté (`ZcrudTheme.floatingLabelWeight`),
-/// appliquée par `copyWith` sur le style **hérité**. Le socle ne fabrique aucun
+/// La portion surlignée ne prend ni couleur ni graisse fixe : elle prend la
+/// graisse d'emphase du thème injecté (`ZcrudTheme.floatingLabelWeight`),
+/// appliquée par `copyWith` sur le style hérité. Le socle ne fabrique aucun
 /// `TextStyle`, donc aucune couleur.
 library;
 
@@ -53,12 +46,12 @@ class ZChatHighlightRange {
   String toString() => 'ZChatHighlightRange($start, $end)';
 }
 
-/// Plages de [text] correspondant à [term] — **insensible à la casse**, sans
+/// Plages de [text] correspondant à [term] — insensible à la casse, sans
 /// chevauchement, dans l'ordre.
 ///
-/// Défensif (AD-10) : [term] vide ou plus long que [text] ⇒ liste vide ; jamais
-/// d'exception, jamais de boucle infinie (le curseur avance **toujours** d'au
-/// moins la longueur du terme).
+/// Défensif (invariant AD-10) : un [term] vide ou plus long que [text] donne
+/// une liste vide ; jamais d'exception, jamais de boucle infinie (le curseur
+/// avance toujours d'au moins la longueur du terme).
 List<ZChatHighlightRange> zChatHighlightRanges(String text, String term) {
   final String needle = term.trim().toLowerCase();
   if (needle.isEmpty || needle.length > text.length) {
@@ -142,8 +135,8 @@ class ZChatHighlightedText extends StatelessWidget {
       maxLines: maxLines,
       overflow: maxLines == null ? null : TextOverflow.ellipsis,
       textAlign: TextAlign.start,
-      // 🔴 Le lecteur d'écran doit entendre la phrase ENTIÈRE, pas une suite de
-      // fragments découpés par le surlignage : le découpage est VISUEL.
+      // Le lecteur d'écran doit entendre la phrase entière, pas une suite de
+      // fragments découpés par le surlignage : le découpage est visuel.
       semanticsLabel: text,
     );
   }

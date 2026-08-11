@@ -1,69 +1,63 @@
-/// Le **modèle d'entrées déclaratif** de la feuille de réglages —
-/// `ZChatSettingsEntry` (lot « mode Tile + sélecteur de modèle », arbitrage
-/// owner 2026-08-07 sur vidéos, arbitrage 1 : HYBRIDE).
+/// Le modèle d'entrées déclaratif de la feuille de réglages.
 ///
 /// ## Ce que ce fichier est — et n'est pas
 ///
-/// C'est le **modèle de données** : une entrée = un `id` opaque, un `kind`
-/// **ouvert** (String — AD-4, jamais un enum fermé), une icône d'hôte
-/// optionnelle, un titre et un sous-titre (clé de libellé du socle **ou**
+/// C'est le modèle de données : une entrée est un `id` opaque, un `kind`
+/// ouvert (`String` — invariant AD-4, jamais un enum fermé), une icône
+/// d'hôte optionnelle, un titre et un sous-titre (clé de libellé du socle ou
 /// texte déjà localisé par l'hôte), une section d'appartenance, et un
-/// **contrôle typé** selon le kind. Le RENDU vit dans
-/// `z_chat_settings_sheet.dart` — une seule voie de rendu (CR-LEX-78), celle
-/// que les cinq familles standard empruntent aussi depuis leur re-expression.
+/// contrôle typé selon le kind. Le rendu vit dans `z_chat_settings_sheet.dart`
+/// — une seule voie de rendu, celle que les familles standard empruntent
+/// aussi depuis leur re-expression.
 ///
-/// ## 🔴 Le `kind` est OUVERT (AD-4)
+/// ## Le `kind` est ouvert
 ///
-/// Les cinq kinds que le socle sait rendre sont des **constantes String**
+/// Les kinds que le socle sait rendre sont des constantes `String`
 /// ([kZChatSettingsKindToggle]…), jamais un enum : un hôte déclare son propre
 /// kind en implémentant [ZChatSettingsControl] et en fournissant son builder
-/// (`kindBuilders`). Un kind que personne ne sait rendre ⇒ l'entrée est
-/// **absente** de l'arbre, ou rendue par `unknownEntryBuilder` — **jamais un
-/// throw** (AD-10).
+/// (`kindBuilders`). Un kind que personne ne sait rendre laisse l'entrée
+/// absente de l'arbre, ou rendue par `unknownEntryBuilder` — jamais un
+/// `throw` (invariant AD-10).
 ///
-/// ## 🔴 Aucune valeur métier
+/// ## Aucune valeur métier
 ///
-/// Comme le catalogue de corpus : les libellés d'hôte arrivent **déjà
-/// localisés**, les clés du socle passent par le registre + repli
-/// (`kZChatLabelFallbacks`, convention du paquet). Le socle ne connaît ni un
-/// nom de domaine, ni un nom de document, ni un nom de modèle d'IA.
+/// Comme le catalogue de corpus : les libellés d'hôte arrivent déjà
+/// localisés, les clés du socle passent par le registre et son repli
+/// (`kZChatLabelFallbacks`). Le socle ne connaît ni un nom de domaine, ni un
+/// nom de document, ni un nom de modèle d'IA.
 library;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
-// ── Kinds que le socle sait rendre (constantes OUVERTES, jamais un enum) ────
+// ── Kinds que le socle sait rendre (constantes ouvertes, jamais un enum) ──
 
-/// Interrupteur booléen — la `ToolTile` d'IFFD (coche ronde), rendue au canal
-/// non chromatique du socle.
+/// Interrupteur booléen, rendu au canal non chromatique du socle.
 const String kZChatSettingsKindToggle = 'toggle';
 
-/// Échelle **discrète** ordonnée (labels) — le « Niveau actuel » d'IFFD, rendu
-/// aux **segments à coche** de lex (`lex/f007`).
+/// Échelle discrète ordonnée (labels), rendue en segments à coche.
 const String kZChatSettingsKindScale = 'scale';
 
-/// Choix parmi des options — la `ToolSelectTile` d'IFFD, rendue en segments.
+/// Choix parmi des options, rendu en segments.
 const String kZChatSettingsKindSelect = 'select';
 
-/// Ligne de **navigation** (chevron) — le « Domaine d'expertise » d'IFFD :
-/// l'hôte possède la destination, le socle rend l'affordance.
+/// Ligne de navigation (chevron) : l'hôte possède la destination, le socle
+/// rend l'affordance.
 const String kZChatSettingsKindNavigation = 'navigation';
 
-/// Nombre **borné** — la `ToolNumberInputTile` d'IFFD (dont le
-/// `MinMaxFormatter` legacy au corps commenté n'est PAS porté : les bornes
-/// sont appliquées ici, réellement).
+/// Nombre borné : les bornes sont réellement appliquées au rendu.
 const String kZChatSettingsKindNumberBounded = 'numberBounded';
 
-/// Un libellé à **double source** : clé du socle (registre + repli
-/// `kZChatLabelFallbacks`) **ou** texte déjà localisé par l'hôte — exactement
-/// l'une des deux, propriété du TYPE (patron `_ZChatSettingsOption`).
+/// Un libellé à double source : clé du socle (registre + repli
+/// `kZChatLabelFallbacks`) ou texte déjà localisé par l'hôte — exactement
+/// l'une des deux, propriété du type.
 @immutable
 class ZChatSettingsLabel {
-  /// Libellé par **clé** du registre (convention du paquet : toute clé a un
+  /// Libellé par clé du registre (convention du paquet : toute clé a un
   /// repli).
   const ZChatSettingsLabel.key(String this.labelKey) : text = null;
 
-  /// Libellé **déjà résolu par l'hôte**, dans sa langue.
+  /// Libellé déjà résolu par l'hôte, dans sa langue.
   const ZChatSettingsLabel.text(String this.text) : labelKey = null;
 
   /// Clé de libellé, exclusive de [text].
@@ -83,10 +77,10 @@ class ZChatSettingsLabel {
   int get hashCode => Object.hash(labelKey, text);
 }
 
-/// Un **segment** d'un contrôle à options (scale/select) : libellé à double
-/// source, état, geste. C'est la projection déclarative exacte de la primitive
-/// d'option de la feuille — donc l'emphase CR-74 et la sémantique `selected`
-/// s'appliquent au rendu de **chaque** choix.
+/// Un segment d'un contrôle à options (scale/select) : libellé à double
+/// source, état, geste. C'est la projection déclarative exacte de la
+/// primitive d'option de la feuille — donc l'emphase et la sémantique
+/// `selected` s'appliquent au rendu de chaque choix.
 @immutable
 class ZChatSettingsChoice {
   /// Construit un segment.
@@ -101,8 +95,8 @@ class ZChatSettingsChoice {
   /// Libellé du segment.
   final ZChatSettingsLabel label;
 
-  /// `true` ⇒ segment CHOISI — annoncé (`Semantics.selected`) ET visible
-  /// (emphase CR-74), jamais l'un sans l'autre.
+  /// `true` pour un segment choisi — annoncé (`Semantics.selected`) et
+  /// visible (emphase du thème), jamais l'un sans l'autre.
   final bool selected;
 
   /// Geste du segment.
@@ -111,15 +105,15 @@ class ZChatSettingsChoice {
   /// Substitué à `{n}` quand la clé en porte un.
   final int? count;
 
-  /// `false` ⇒ présent mais non sélectionnable (deux canaux, aucun
-  /// chromatique).
+  /// `false` pour un segment présent mais non sélectionnable (deux canaux,
+  /// aucun chromatique).
   final bool enabled;
 }
 
-/// Le **contrôle typé** d'une entrée — interface **ouverte** : un hôte
-/// implémente la sienne avec son propre [kind] et la rend par `kindBuilders`.
+/// Le contrôle typé d'une entrée — interface ouverte : un hôte implémente
+/// la sienne avec son propre [kind] et la rend par `kindBuilders`.
 abstract class ZChatSettingsControl {
-  /// Kind du contrôle — String **ouvert**, jamais un enum (AD-4).
+  /// Kind du contrôle — `String` ouverte, jamais un enum (invariant AD-4).
   String get kind;
 }
 
@@ -129,7 +123,7 @@ class ZChatToggleControl implements ZChatSettingsControl {
   /// Construit l'interrupteur.
   const ZChatToggleControl({required this.value, required this.onChanged});
 
-  /// État courant — l'état VIT chez l'hôte, jamais ici.
+  /// État courant — l'état vit chez l'hôte, jamais ici.
   final bool value;
 
   /// Bascule — l'hôte range la valeur chez lui.
@@ -140,10 +134,9 @@ class ZChatToggleControl implements ZChatSettingsControl {
 }
 
 /// Contrôle « échelle discrète » ([kZChatSettingsKindScale]) — segments à
-/// coche de lex : l'état choisi est porté par la sémantique + l'emphase CR-74,
+/// coche : l'état choisi est porté par la sémantique et l'emphase du thème,
 /// et par [selectionMark] si l'hôte fournit un glyphe (le socle n'invente ni
-/// glyphe ni couleur — le rendu Material pixel-perfect est l'affaire du
-/// satellite).
+/// glyphe ni couleur).
 @immutable
 class ZChatScaleControl implements ZChatSettingsControl {
   /// Construit l'échelle.
@@ -156,12 +149,12 @@ class ZChatScaleControl implements ZChatSettingsControl {
   /// Les échelons, dans l'ordre de l'échelle.
   final List<ZChatSettingsChoice> choices;
 
-  /// Glyphe d'hôte posé DEVANT le segment choisi (la coche de lex/f007).
-  /// `null` ⇒ l'emphase CR-74 seule — jamais un glyphe inventé par le socle.
+  /// Glyphe d'hôte posé devant le segment choisi. `null` signifie l'emphase
+  /// du thème seule — jamais un glyphe inventé par le socle.
   final Widget? selectionMark;
 
-  /// Rangée sous les segments (échelle labellisée, filtres…). `null` ⇒ absent
-  /// (AD-4).
+  /// Rangée sous les segments (échelle labellisée, filtres…). `null`
+  /// signifie absent (invariant AD-4).
   final Widget? footer;
 
   @override
@@ -169,7 +162,7 @@ class ZChatScaleControl implements ZChatSettingsControl {
 }
 
 /// Contrôle « choix parmi des options » ([kZChatSettingsKindSelect]) — même
-/// forme rendue que l'échelle ; la distinction est **sémantique** (une échelle
+/// forme rendue que l'échelle ; la distinction est sémantique (une échelle
 /// est ordonnée, un choix ne l'est pas) et reste disponible aux builders
 /// d'hôte qui veulent des rendus différents par kind.
 @immutable
@@ -184,10 +177,11 @@ class ZChatSelectControl implements ZChatSettingsControl {
   /// Les options.
   final List<ZChatSettingsChoice> choices;
 
-  /// Glyphe d'hôte du segment choisi. `null` ⇒ emphase CR-74 seule.
+  /// Glyphe d'hôte du segment choisi. `null` signifie l'emphase du thème
+  /// seule.
   final Widget? selectionMark;
 
-  /// Rangée sous les options. `null` ⇒ absent (AD-4).
+  /// Rangée sous les options. `null` signifie absent (invariant AD-4).
   final Widget? footer;
 
   @override
@@ -205,26 +199,26 @@ class ZChatNavigationControl implements ZChatSettingsControl {
   /// Geste d'ouverture — l'hôte navigue, le socle ne connaît aucune route.
   final VoidCallback onTap;
 
-  /// Valeur COURANTE affichée sous le titre (le « Aucun domaine sélectionné »
-  /// d'IFFD/f007) — déjà localisée par l'hôte. `null` ⇒ absente (AD-4).
+  /// Valeur courante affichée sous le titre, déjà localisée par l'hôte.
+  /// `null` signifie absente (invariant AD-4).
   final ZChatSettingsLabel? value;
 
-  /// Glyphe de fin d'hôte (le chevron). `null` ⇒ absent — le socle n'invente
-  /// aucun glyphe (le chevron Material vit au satellite).
+  /// Glyphe de fin d'hôte (le chevron). `null` signifie absent — le socle
+  /// n'invente aucun glyphe.
   final Widget? trailing;
 
   @override
   String get kind => kZChatSettingsKindNavigation;
 }
 
-/// Contrôle « nombre borné » ([kZChatSettingsKindNumberBounded]) — les bornes
-/// sont **appliquées** (jamais le `MinMaxFormatter` mort d'IFFD) : le geste
-/// hors bornes n'est pas émis, l'affordance correspondante est désactivée.
+/// Contrôle « nombre borné » ([kZChatSettingsKindNumberBounded]) — les
+/// bornes sont réellement appliquées : le geste hors bornes n'est pas émis,
+/// l'affordance correspondante est désactivée.
 @immutable
 class ZChatNumberControl implements ZChatSettingsControl {
   /// Construit le nombre borné. [min] ≤ [value] ≤ [max] exigé de l'hôte ;
-  /// hors de cet intervalle la valeur est écrêtée au rendu (AD-10, jamais un
-  /// throw).
+  /// hors de cet intervalle la valeur est écrêtée au rendu (invariant AD-10,
+  /// jamais un `throw`).
   const ZChatNumberControl({
     required this.value,
     required this.min,
@@ -244,26 +238,26 @@ class ZChatNumberControl implements ZChatSettingsControl {
   /// Borne haute, incluse.
   final int max;
 
-  /// Nouvelle valeur — **toujours** dans `[min, max]`.
+  /// Nouvelle valeur — toujours dans `[min, max]`.
   final ValueChanged<int> onChanged;
 
   /// Pas d'un geste.
   final int step;
 
-  /// Glyphe d'hôte du bouton « diminuer ». `null` ⇒ le libellé résolu
-  /// (`zchat.decrease`).
+  /// Glyphe d'hôte du bouton « diminuer ». `null` signifie le libellé
+  /// résolu (`zchat.decrease`).
   final Widget? decrementGlyph;
 
-  /// Glyphe d'hôte du bouton « augmenter ». `null` ⇒ le libellé résolu
-  /// (`zchat.increase`).
+  /// Glyphe d'hôte du bouton « augmenter ». `null` signifie le libellé
+  /// résolu (`zchat.increase`).
   final Widget? incrementGlyph;
 
   @override
   String get kind => kZChatSettingsKindNumberBounded;
 }
 
-/// Une **entrée déclarative** de la feuille de réglages — le mode Tile IFFD
-/// (icône + titre + sous-titre + contrôle) sur les contrôles au rendu lex.
+/// Une entrée déclarative de la feuille de réglages (icône + titre +
+/// sous-titre + contrôle typé).
 @immutable
 class ZChatSettingsEntry {
   /// Construit une entrée.
@@ -276,7 +270,7 @@ class ZChatSettingsEntry {
     this.subtitle,
   });
 
-  /// Identifiant **opaque et stable** — cible des `entryBuilders`.
+  /// Identifiant opaque et stable — cible des `entryBuilders`.
   final String id;
 
   /// Titre de la tuile.
@@ -285,27 +279,26 @@ class ZChatSettingsEntry {
   /// Le contrôle typé — son [ZChatSettingsControl.kind] choisit le rendu.
   final ZChatSettingsControl control;
 
-  /// Section d'appartenance. `null` ⇒ la section de génération du socle
-  /// (`kZChatSettingsSectionGeneration`) — les entrées d'hôte s'injectent
-  /// dans les MÊMES sections que les familles standard.
+  /// Section d'appartenance. `null` signifie la section de génération du
+  /// socle (`kZChatSettingsSectionGeneration`) — les entrées d'hôte
+  /// s'injectent dans les mêmes sections que les familles standard.
   final String? sectionId;
 
-  /// Icône d'HÔTE (glyphe déjà stylé par lui). `null` ⇒ absente (AD-4) — le
-  /// socle n'importe aucune banque d'icônes (`material` banni).
+  /// Icône d'hôte (glyphe déjà stylé par lui). `null` signifie absente
+  /// (invariant AD-4) — le socle n'importe aucune banque d'icônes.
   final Widget? icon;
 
-  /// Sous-titre. `null` ⇒ absent (AD-4).
+  /// Sous-titre. `null` signifie absent (invariant AD-4).
   final ZChatSettingsLabel? subtitle;
 
   /// Kind de l'entrée — celui de son contrôle.
   String get kind => control.kind;
 }
 
-/// Une **section titrée** de la feuille — les sections d'IFFD (« Resources et
-/// outils », « Documents fiscaux et douaniers »), déclarées par l'hôte.
+/// Une section titrée de la feuille, déclarée par l'hôte.
 ///
-/// Les deux sections du SOCLE ([kZChatSettingsSectionGeneration],
-/// [kZChatSettingsSectionCorpus]) existent **sans titre par défaut** — l'arbre
+/// Les deux sections du socle ([kZChatSettingsSectionGeneration],
+/// [kZChatSettingsSectionCorpus]) existent sans titre par défaut — l'arbre
 /// d'un hôte passif ne bouge pas ; un hôte qui déclare la section avec un
 /// [title] la voit titrée.
 @immutable
@@ -313,11 +306,12 @@ class ZChatSettingsSection {
   /// Construit une section.
   const ZChatSettingsSection({required this.id, this.title});
 
-  /// Identifiant **opaque et stable** — cible des `sectionBuilders` et des
+  /// Identifiant opaque et stable — cible des `sectionBuilders` et des
   /// [ZChatSettingsEntry.sectionId].
   final String id;
 
-  /// Titre de la section. `null` ⇒ aucun en-tête rendu (AD-4).
+  /// Titre de la section. `null` signifie aucun en-tête rendu (invariant
+  /// AD-4).
   final ZChatSettingsLabel? title;
 
   @override
@@ -329,12 +323,12 @@ class ZChatSettingsSection {
   int get hashCode => Object.hash(id, title);
 }
 
-/// Section du socle portant les familles standard de GÉNÉRATION (verbosité,
-/// biais, budget, raisonnement) — les entrées d'hôte sans [ZChatSettingsEntry
-/// .sectionId] s'y injectent, après les familles standard.
+/// Section du socle portant les familles standard de génération (verbosité,
+/// biais, budget, raisonnement) — les entrées d'hôte sans
+/// [ZChatSettingsEntry.sectionId] s'y injectent, après les familles standard.
 const String kZChatSettingsSectionGeneration = 'zchat.section.generation';
 
-/// Section du socle portant la PORTÉE DOCUMENTAIRE.
+/// Section du socle portant la portée documentaire.
 const String kZChatSettingsSectionCorpus = 'zchat.section.corpus';
 
 /// Id d'entrée de la famille standard « verbosité » — cible d'`entryBuilders`.

@@ -1,18 +1,16 @@
 /// Suggestions de relance — `ZChatSuggestion` / `ZChatSuggestionAction`.
 ///
-/// origine: lex_core (module « Assistant ») — `lexia_suggestion.dart:6-44`
-/// (`LexiaSuggestion` + `SuggestionAction`, `@JsonSerializable` **non porté** :
-/// aucun codegen dans `zcrud_core` — D1).
+/// (dé)sérialisation écrite à la main : aucun codegen dans ce paquet.
 ///
-/// ## Une amélioration sur lex, assumée : brut **ET** typé
+/// ## Brut **et** typé, ensemble
 ///
-/// lex porte `type`/`action_type` en **`String` brute** dans les entités
-/// (`lexia_suggestion.dart:8,30`) et n'expose la version typée que par des
-/// factories séparées (`SuggestionType.fromString`) — l'appelant doit convertir
-/// lui-même, et une valeur inconnue est soit perdue, soit non typée.
-/// Ici les **deux** coexistent : le champ brut garantit le **round-trip sans
-/// perte** d'une valeur que le cœur ne connaît pas, et un **getter dérivé**
-/// donne la valeur typée quand elle est reconnue (`null` sinon).
+/// Une entité qui porte `type`/`action_type` en **`String` brute** et
+/// n'expose la version typée que par une factory séparée force l'appelant à
+/// convertir lui-même, et une valeur inconnue finit soit perdue, soit non
+/// typée. Ici les **deux** coexistent : le champ brut garantit le
+/// **round-trip sans perte** d'une valeur que le cœur ne connaît pas, et un
+/// **getter dérivé** donne la valeur typée quand elle est reconnue (`null`
+/// sinon).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -125,7 +123,7 @@ class ZChatSuggestion {
   ZChatSuggestionType? get typedType => ZChatSuggestionType.fromJson(type);
 
   /// Décode **défensivement** (AD-10) — `raw` non-`Map` ⇒ `null` ; une action
-  /// illisible est **ignorée**, elle n'annule pas la liste (**G10**).
+  /// illisible est **ignorée**, elle n'annule pas la liste.
   static ZChatSuggestion? fromJson(Object? raw) {
     final Map<String, dynamic>? map = zJsonMap(raw);
     if (map == null) return null;

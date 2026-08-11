@@ -1,121 +1,99 @@
-/// Contrôleur de conversation IA — `ZChatController` (CHAT-2).
+/// Contrôleur de conversation IA.
 ///
-/// ## 🔴 Le défaut de STRUCTURE que ce fichier rend inexprimable
+/// ## Le défaut de structure que ce fichier rend inexprimable
 ///
-/// Une exploration de 36 agents sur l'assistant d'IFFD a établi une **cause
-/// racine unique** derrière **neuf** défauts distincts :
+/// Deux implémentations parallèles d'une même barre d'actions (une pour une
+/// vue compacte, une pour une vue détaillée, par exemple) divergent tôt ou
+/// tard : supprimer se comporte différemment ici et là, régénérer a
+/// plusieurs comportements distincts, annuler peut supprimer la saisie en
+/// cours ailleurs que prévu, un jeton d'annulation partagé en champ
+/// d'instance fait qu'arrêter une génération coupe la dernière lancée,
+/// jamais celle qu'on désigne.
 ///
-/// > **un verbe = un seul site d'appel dans le contrôleur.**
+/// Ici, le contrôleur expose un seul point d'entrée pour tous les verbes —
+/// [ZChatController.runAction] — et c'est le seul site du paquet qui invoque
+/// `ZChatActionDispatcher`. Une seconde surface ne peut pas exister : il n'y
+/// a pas de `deleteMessage()`, pas de `regenerateAnswer()`, pas de callback
+/// par verbe. Le verbe est une donnée (`ZChatAction`, famille scellée du
+/// kernel), pas une méthode.
 ///
-/// IFFD porte **deux** implémentations parallèles de la même barre d'actions
-/// dans `chatbot_conversation_screen.dart` (5153 lignes) : barre de bulle
-/// (≈ l.1650-2170) et en-tête compact (≈ l.3600-4120). Elles divergent —
-/// supprimer est confirmé l.2134 et **silencieux** l.3886 ; régénérer a
-/// **trois** comportements (l.1979, l.2000, l.2026) ; annuler **supprime la
-/// question tapée** (l.3618-3672) ; le `CancelToken` est un champ d'**instance**
-/// partagé (`iffd_ai_repository_impl.dart:29`, `:375-377`), si bien qu'arrêter
-/// une génération coupe *la dernière lancée*, pas celle qu'on désigne.
+/// ## Invariant AD-2 — objectif produit n°1 du dépôt
 ///
-/// Ici, le contrôleur expose **UN SEUL** point d'entrée pour **TOUS** les
-/// verbes — [ZChatController.runAction] — et c'est le **seul** site du package
-/// qui invoque `ZChatActionDispatcher`. Une « surface B » ne peut pas exister :
-/// il n'y a pas de `deleteMessage()`, pas de `regenerateAnswer()`, pas de
-/// callback par verbe. Le verbe est une **donnée** (`ZChatAction`, famille
-/// scellée de CHAT-0b), pas une méthode.
-///
-/// Gardes : **G-CH1** (surface publique en ÉGALITÉ d'ensemble) et **G-CH2**
-/// (unicité des appels au répartiteur), toutes deux dans
-/// `test/z_chat_structure_guard_test.dart` ; plus **G-U1** du kernel
-/// (`z_chat_action_contract_guard_test.dart`), qui balaie **tous** les
-/// `packages/*/lib` et rougirait en nommant ce fichier s'il court-circuitait le
-/// répartiteur.
-///
-/// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
-/// `test/z_chat_single_call_site_test.dart`, **qui n'existe nulle part** dans le
-/// dépôt (`find packages -name '*single_call_site*'` → vide). La propriété était
-/// bien gardée — mais sous un autre nom, et un lecteur qui aurait ouvert le
-/// fichier cité aurait conclu à une garde absente. Une référence pendante ment
-/// exactement comme une garde vacante.
-///
-/// ## 🔴 SM-1 — objectif produit n°1 du dépôt
-///
-/// La réactivité est **Flutter-native** (AD-2/AD-15) : aucun gestionnaire
-/// d'état n'est importé, ni ici ni jamais (garde `z_chat_purity_test.dart`,
-/// grep NÉGATIF outillé). L'état est découpé en **tranches
-/// `ValueListenable` indépendantes**, dimensionnées sur leur **fréquence** :
+/// La réactivité est Flutter-native (invariants AD-2/AD-15) : aucun
+/// gestionnaire d'état n'est importé, ni ici ni jamais. L'état est découpé
+/// en tranches `ValueListenable` indépendantes, dimensionnées sur leur
+/// fréquence :
 ///
 /// | Tranche | Signale quand | Coût si on la fusionnait |
 /// |---|---|---|
-/// | [composer] (`TextEditingController`) | à chaque frappe | la liste des messages se reconstruirait à chaque touche — **le bug historique** |
+/// | [composer] (`TextEditingController`) | à chaque frappe | la liste des messages se reconstruirait à chaque touche — le bug historique que zcrud existe pour corriger |
 /// | [attachmentIds] | ajout/retrait de pièce jointe | idem |
-/// | [canSend] | passage vide ↔ non vide **seulement** | un `bool` égal ne notifie pas (`ValueNotifier`) |
+/// | [canSend] | passage vide ↔ non vide seulement | un `bool` égal ne notifie pas (`ValueNotifier`) |
 /// | [messages] | message ajouté/retiré | reconstruction de toute la liste à chaque jeton |
 /// | [activeRequests] | début/fin d'une requête | idem |
-/// | [streamText] (**par requestId**) | **à chaque jeton** | le composer se reconstruirait sous les doigts de l'utilisateur |
-/// | [progress] (**par requestId**) | réflexion, sources, quota | l'indicateur clignoterait à chaque jeton |
+/// | [streamText] (par requestId) | à chaque jeton | le composer se reconstruirait sous les doigts de l'utilisateur |
+/// | [progress] (par requestId) | réflexion, sources, quota | l'indicateur clignoterait à chaque jeton |
 /// | [lastFailure] | échec typé | — |
-/// | [liveAnnouncement] | **fin** d'un tour | une région live qui parle à chaque jeton est inutilisable |
+/// | [liveAnnouncement] | fin d'un tour | une région live qui parle à chaque jeton est inutilisable |
 ///
-/// Les tranches par requête sont **stables par identité** (même instance pour
-/// un même `requestId`), sur le patron de `ZFormController.fieldListenable` :
+/// Les tranches par requête sont stables par identité (même instance pour un
+/// même `requestId`), sur le patron de `ZFormController.fieldListenable` :
 /// un `ValueListenableBuilder` ne se ré-abonne jamais.
 ///
-/// 🔴 `notifyListeners()` (le canal **global** de `ChangeNotifier`) est
-/// **réservé aux changements STRUCTURELS** — le seul est [attach], qui change
-/// de conversation. Ni une frappe, ni un jeton, ni un échec ne le déclenche :
-/// c'est mesuré par `test/z_chat_sm1_test.dart` (compteur de notifications
-/// globales à **zéro** sur 100 frappes puis 100 jetons).
+/// `notifyListeners()` (le canal global de `ChangeNotifier`) est réservé aux
+/// changements structurels — le seul est [attach], qui change de
+/// conversation. Ni une frappe, ni un jeton, ni un échec ne le déclenche.
 ///
-/// ## 🔴 Un jeton par requête, et la reprise sous la MÊME identité
+/// ## Un jeton par requête, et la reprise sous la même identité
 ///
-/// [send] fabrique **un** `ZChatRequestToken` par appel et l'indexe **par
-/// `requestId`**. Il n'existe **aucun** champ « jeton courant » : deux flux
-/// concurrents s'annulent indépendamment (garde
-/// `test/z_chat_token_lifecycle_test.dart`, volets source *et* comportement).
+/// [send] fabrique un `ZChatRequestToken` par appel et l'indexe par
+/// `requestId`. Il n'existe aucun champ « jeton courant » : deux flux
+/// concurrents s'annulent indépendamment.
 ///
-/// Sur `ZChatStreamInterruptedFailure` **subie** (`cancelledByUser == false`),
-/// le contrôleur reprend via `token.resumeFrom(lastSequenceId)` : **même**
-/// `requestId`, **même** `ZChatGenerationRequest`, texte accumulé **conservé**,
-/// message utilisateur **non ré-émis**. Le tour n'est pas rejoué — c'est la
-/// seule obligation ACTIVE du client dans le protocole reprenable de lex.
+/// Sur `ZChatStreamInterruptedFailure` subie (`cancelledByUser == false`),
+/// le contrôleur reprend via `token.resumeFrom(lastSequenceId)` : même
+/// `requestId`, même `ZChatGenerationRequest`, texte accumulé conservé,
+/// message utilisateur non ré-émis. Le tour n'est pas rejoué — c'est la
+/// seule obligation active du client dans un protocole de reprise de flux.
 library;
 
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-// 🔴 IMPORT CONFINÉ PAR `show`, et c'est structurel (garde
-// `z_chat_purity_test.dart`). `TextEditingController` est la SEULE chose dont
-// ce package ait besoin hors de `foundation` : c'est un objet d'ÉTAT, mais il
-// vit dans `widgets` (`editable_text.dart`). L'importer sans `show` ouvrirait
-// tout `flutter/widgets` — donc `StatefulWidget`, `setState`, `Padding`,
-// `Alignment`… — dans un package qui ne doit RENDRE aucun pixel. Le `show`
-// rend l'ouverture impossible sans modifier cette ligne, que la garde lit.
-// ⛔ `flutter/material.dart` et `flutter/cupertino.dart` restent BANNIS (FR-26 :
-// c'est par eux qu'entrent `Colors.*` et les `TextStyle` en dur).
+// Import confiné par `show`, et c'est structurel. `TextEditingController`
+// est la seule chose dont ce paquet ait besoin hors de `foundation` : c'est
+// un objet d'état, mais il vit dans `widgets` (`editable_text.dart`).
+// L'importer sans `show` ouvrirait tout `flutter/widgets` — donc
+// `StatefulWidget`, `setState`, `Padding`, `Alignment`… — dans un paquet qui
+// ne doit rendre aucun pixel.
+// `flutter/material.dart` et `flutter/cupertino.dart` restent bannis : c'est
+// par eux qu'entrent les couleurs et les styles de texte codés en dur.
 import 'package:flutter/widgets.dart' show TextEditingController;
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
 import 'z_chat_stream_progress.dart';
 
-/// Demande de **confirmation** à l'utilisateur — seam d'HÔTE.
+/// Demande de confirmation à l'utilisateur — seam d'hôte.
 ///
-/// 🔴 Le dialogue, ses libellés, ses icônes et ses couleurs appartiennent à
-/// l'app (AD-2/AD-13/FR-26) : ce package ne connaît ni `BuildContext`, ni
-/// widget, ni chaîne traduisible. Il impose seulement que la question **soit
-/// posée** avant tout effet destructeur.
+/// Le dialogue, ses libellés, ses icônes et ses couleurs appartiennent à
+/// l'application (invariants AD-2/AD-13) : ce paquet ne connaît ni
+/// `BuildContext`, ni widget, ni chaîne traduisible. Il impose seulement
+/// que la question soit posée avant tout effet destructeur.
 typedef ZChatConfirm = Future<bool> Function(ZChatActionPlan plan);
 
-/// Fabrique d'identité de requête — fournie par l'hôte (un UUID v4 chez lex).
+/// Fabrique d'identité de requête — fournie par l'hôte (typiquement un
+/// UUID v4).
 ///
-/// Le domaine ne **génère** aucune identité (aucune dépendance, AD-1) : il la
-/// transporte **verbatim** sans jamais l'interpréter.
+/// Le domaine ne génère aucune identité (aucune dépendance, invariant AD-1) :
+/// il la transporte verbatim sans jamais l'interpréter.
 typedef ZChatRequestIdFactory = String Function();
 
 /// Construit la requête de génération à partir de la saisie soumise.
 ///
-/// 🔴 Les prompts, le modèle, le style et les instructions système restent
-/// **côté app** (AD-11/AD-12) : le contrôleur ne compose aucun prompt.
+/// Les prompts, le modèle, le style et les instructions système restent
+/// côté application (invariants AD-11/AD-12) : le contrôleur ne compose
+/// aucun prompt.
 typedef ZChatRequestBuilder =
     ZChatGenerationRequest Function(ZChatDraft draft);
 
@@ -128,11 +106,12 @@ typedef ZChatRequestBuilder =
 /// elle n'est donc pas injectable.
 const int _kRetainedSlices = 8;
 
-/// État PRIVÉ d'une requête en vol — **sans canal réactif**.
+/// État privé d'une requête en vol — sans canal réactif.
 ///
-/// 🔴 `lastSequenceId` et `eventsReceived` changent à **chaque jeton**. Les
-/// publier en tranche ferait de `progress` un canal à haute fréquence : tout
-/// écoutant de la progression se reconstruirait des centaines de fois par tour.
+/// `lastSequenceId` et `eventsReceived` changent à chaque jeton. Les publier
+/// en tranche ferait de `progress` un canal à haute fréquence : tout
+/// écoutant de la progression se reconstruirait des centaines de fois par
+/// tour.
 class _ZRequestState {
   _ZRequestState(this.request);
 
@@ -156,13 +135,11 @@ class _ZRequestState {
   String? conversationId;
 }
 
-/// Session d'ÉDITION d'un message déjà envoyé — lot K2 (chantier composer-lex,
-/// arbitrage owner 2026-08-07).
+/// Session d'édition d'un message déjà envoyé.
 ///
-/// C'est l'état `editingMessageId`/`editingOriginalText` du
-/// `ChatInputController` de lex (`chat_input_controller.dart:31-35`), porté en
-/// **valeur immuable d'une tranche** : le mode édition n'est pas un booléen
-/// éparpillé, c'est une donnée qu'on lit d'un coup ou pas du tout.
+/// Le mode édition n'est pas un booléen éparpillé sur plusieurs champs :
+/// c'est une valeur immuable d'une tranche, qu'on lit d'un coup ou pas du
+/// tout.
 @immutable
 class ZChatEditingSession {
   /// Construit une session d'édition.
@@ -209,11 +186,11 @@ class ZChatController extends ChangeNotifier {
     this.maxResumeAttempts = 2,
     String conversationId = '',
     List<ZChatMessage> initialMessages = const <ZChatMessage>[],
-    // 🔴 `prefer_initializing_formals` est INAPPLICABLE ici : un paramètre
-    // NOMMÉ ne peut pas s'appeler `_streamPort` (les formels privés sont
+    // `prefer_initializing_formals` est inapplicable ici : un paramètre
+    // nommé ne peut pas s'appeler `_streamPort` (les formels privés sont
     // interdits en Dart). Rendre ces champs publics pour satisfaire le lint
-    // élargirait la surface publique du contrôleur — l'inverse de l'invariant
-    // « un seul point d'entrée » que la garde d'égalité d'ensemble asserte.
+    // élargirait la surface publique du contrôleur — l'inverse de
+    // l'invariant « un seul point d'entrée ».
     // ignore: prefer_initializing_formals
   }) : _streamPort = streamPort,
        _dispatcher = ZChatActionDispatcher(actionExecutor),
@@ -233,8 +210,8 @@ class ZChatController extends ChangeNotifier {
 
   final ZChatStreamPort _streamPort;
 
-  /// 🔴 Le **répartiteur UNIQUE** de CHAT-0b. Aucun membre de
-  /// `ZChatActionExecutor` n'est joignable autrement (garde **G-U1**).
+  /// Le répartiteur **unique** des verbes de conversation : aucun membre de
+  /// `ZChatActionExecutor` n'est joignable autrement que par lui.
   final ZChatActionDispatcher _dispatcher;
 
   final ZChatConfirm _confirm;
@@ -250,10 +227,10 @@ class ZChatController extends ChangeNotifier {
 
   /// Saisie en cours — **instance STABLE**, créée une fois, jamais recréée.
   ///
-  /// 🔴 C'est l'interdit AD-2 le plus coûteux : un `TextEditingController`
-  /// reconstruit dans un `build()` fait perdre le curseur et la sélection à
-  /// chaque frappe. Ici il appartient au contrôleur et vit aussi longtemps que
-  /// lui ([dispose] s'en charge).
+  /// Un `TextEditingController` reconstruit dans un `build()` fait perdre le
+  /// curseur et la sélection à chaque frappe (invariant AD-2). Ici il
+  /// appartient au contrôleur et vit aussi longtemps que lui ([dispose] s'en
+  /// charge).
   final TextEditingController composer = TextEditingController();
 
   final ValueNotifier<List<String>> _attachmentIds =
@@ -270,17 +247,17 @@ class ZChatController extends ChangeNotifier {
 
   /// Saisie en cours AVANT l'entrée en mode édition — restituée à la sortie.
   ///
-  /// 🔴 Amélioration MESURÉE sur lex : là-bas, entrer en édition **écrase** le
-  /// brouillon en cours (`chat_input.dart:433-436`) et l'annuler **vide** le
-  /// champ (`:438-440`) — le texte que l'utilisateur composait est perdu deux
-  /// fois. Ici il est restitué, dans les deux cas.
+  /// Sans cette sauvegarde, entrer en édition écraserait le brouillon en
+  /// cours et l'annuler viderait le champ : le texte que l'utilisateur
+  /// composait serait perdu deux fois. Ici il est restitué, dans les deux
+  /// cas.
   ZChatDraft? _preEditingDraft;
 
-  /// 🔴 Jetons indexés **PAR `requestId`** — jamais un champ « jeton courant ».
+  /// Jetons indexés **par `requestId`** — jamais un champ « jeton courant ».
   ///
-  /// C'est la forme exacte du défaut IFFD (`CancelToken cancel = CancelToken();`
-  /// en champ d'instance d'un dépôt singleton) : arrêter une génération y coupe
-  /// la **dernière lancée**. Ici, annuler s'adresse à une identité.
+  /// Un champ d'instance unique partagé par toutes les requêtes ferait
+  /// qu'arrêter une génération couperait la **dernière lancée**, jamais
+  /// celle qu'on désigne. Ici, annuler s'adresse toujours à une identité.
   final Map<String, ZChatRequestToken> _tokens = <String, ZChatRequestToken>{};
 
   final Map<String, ValueNotifier<String>> _streamTexts =
@@ -308,9 +285,8 @@ class ZChatController extends ChangeNotifier {
   /// Messages **établis** de la conversation (jamais le texte en cours de
   /// rédaction — il vit dans [streamText]).
   ///
-  /// ⚠️ Cette tranche est une **liste**, pas un widget : rien ici n'empêche la
-  /// virtualisation. Le rendu doit rester un `ListView.builder` — les 5153
-  /// lignes du chat d'IFFD n'en contiennent **aucun** (0 occurrence).
+  /// Cette tranche est une **liste**, pas un widget : rien ici n'empêche la
+  /// virtualisation. Le rendu doit rester un `ListView.builder`.
   ValueListenable<List<ZChatMessage>> get messages => _messages;
 
   /// Identités des requêtes **en vol**, dans l'ordre de lancement.
@@ -318,43 +294,40 @@ class ZChatController extends ChangeNotifier {
 
   /// Dernier échec **typé** rencontré, ou `null`.
   ///
-  /// 🔴 Un échec n'est **jamais** un message : le défaut IFFD n°4 est le texte
-  /// brut d'une exception poussé dans le corps d'une bulle et affiché comme la
-  /// réponse de l'assistant. Ici il vit dans sa propre tranche, hors de
-  /// [messages], et porte un type — jamais une chaîne à parser.
+  /// Un échec n'est **jamais** un message : pousser le texte brut d'une
+  /// exception dans le corps d'une bulle, affiché comme si c'était la
+  /// réponse de l'assistant, est le piège que cette séparation évite. Ici il
+  /// vit dans sa propre tranche, hors de [messages], et porte un type —
+  /// jamais une chaîne à parser.
   ValueListenable<ZFailure?> get lastFailure => _lastFailure;
 
-  /// Texte à annoncer dans une **région live** (a11y, AD-13).
+  /// Texte à annoncer dans une **région live** (invariant AD-13).
   ///
-  /// ⚠️ IFFD n'a **aucun** `Semantics` sur son chat (0 occurrence, vérifié) :
-  /// une réponse qui arrive en streaming y est muette pour un lecteur d'écran.
-  /// Cette tranche est la contribution du contrôleur à la dette : elle ne
-  /// change qu'aux **jalons** (fin de tour, interruption), jamais à chaque
-  /// jeton — une région live qui parle 300 fois par tour est inutilisable. Le
-  /// `Semantics(liveRegion: true)` qui la consomme appartient au rendu (C3).
+  /// Une réponse qui arrive en streaming resterait muette pour un lecteur
+  /// d'écran sans cette tranche : elle ne change qu'aux **jalons** (fin de
+  /// tour, interruption), jamais à chaque jeton — une région live qui parle
+  /// des centaines de fois par tour est inutilisable. Le
+  /// `Semantics(liveRegion: true)` qui la consomme appartient au rendu.
   ///
-  /// Son contenu est **celui de l'assistant**, jamais une phrase écrite par le
-  /// socle : aucune chaîne traduisible n'est codée en dur ici (FR-26).
+  /// Son contenu est **celui de l'assistant**, jamais une phrase écrite par
+  /// le socle : aucune chaîne traduisible n'est codée en dur ici.
   ValueListenable<String> get liveAnnouncement => _liveAnnouncement;
 
-  /// Session d'ÉDITION en cours, ou `null` — lot K2 (G-CH1 étendue, arbitrage
-  /// owner 2026-08-07).
+  /// Session d'ÉDITION en cours, ou `null`.
   ///
-  /// Tranche **granulaire** (AD-2/SM-1) : elle ne signale qu'à l'entrée et à
-  /// la sortie du mode — jamais à la frappe. C'est elle que l'hôte lit dans son
-  /// créneau `trailing` pour troquer l'icône d'envoi contre l'icône de
-  /// validation (lex `chat_input.dart:695-697`) et monter son bandeau
-  /// (`:488-526` — les valeurs de rendu sont dans `ZChatComposerReference`).
+  /// Tranche **granulaire** (invariants AD-2/AD-13) : elle ne signale qu'à
+  /// l'entrée et à la sortie du mode — jamais à la frappe. C'est elle que
+  /// l'hôte lit dans son créneau `trailing` pour troquer l'icône d'envoi
+  /// contre l'icône de validation et monter son bandeau (les valeurs de
+  /// rendu sont dans `ZChatComposerReference`).
   ValueListenable<ZChatEditingSession?> get editing => _editing;
 
-  /// Compteur MONOTONE des brouillons acceptés par [seedDraft] — lot K2.
+  /// Compteur **monotone** des brouillons acceptés par [seedDraft].
   ///
-  /// 🔴 C'est le `draftSuggestionSeq` de lex (`chat_input_controller.dart:
-  /// 45-48`), et il existe pour la même raison ici que là-bas : re-semer un
-  /// texte **identique** ne change pas la valeur du `TextEditingController`,
-  /// donc ne notifie personne. Un hôte qui veut réagir au geste (donner le
-  /// focus, dérouler la vue) écoute CETTE tranche — elle signale chaque semis,
-  /// même à texte égal.
+  /// Re-semer un texte **identique** ne change pas la valeur du
+  /// `TextEditingController`, donc ne notifie personne. Un hôte qui veut
+  /// réagir au geste (donner le focus, dérouler la vue) écoute cette
+  /// tranche — elle signale chaque semis, même à texte égal.
   ValueListenable<int> get draftSeeds => _draftSeeds;
 
   /// Saisie courante, telle qu'un verbe la transporte (`ZChatDraft`).
@@ -389,20 +362,19 @@ class ZChatController extends ChangeNotifier {
   void setAttachments(List<String> ids) =>
       _setComposer(ZChatDraft(text: composer.text, attachmentIds: ids));
 
-  /// Entre en mode ÉDITION du message [messageId] — lot K2 (mécanisme lex
-  /// 68.3, `chat_input_controller.dart:357-364`).
+  /// Entre en mode ÉDITION du message [messageId].
   ///
-  /// La saisie est pré-remplie avec [originalText] (via [_setComposer], le seul
-  /// écrivain — G-CH4), et le brouillon que l'utilisateur composait est
-  /// **sauvegardé** pour être restitué à la sortie (cf. [_preEditingDraft] :
-  /// lex le perd, le socle non). Ré-appeler pendant une édition change de
-  /// cible sans écraser cette sauvegarde — le patron `preExpertToolsContext`.
+  /// La saisie est pré-remplie avec [originalText] (via [_setComposer], le
+  /// seul écrivain), et le brouillon que l'utilisateur composait est
+  /// **sauvegardé** pour être restitué à la sortie (cf. [_preEditingDraft]).
+  /// Ré-appeler pendant une édition change de cible sans écraser cette
+  /// sauvegarde.
   ///
   /// La **soumission** de l'édition reste [runAction] avec `ZChatEditAction`
   /// (impact chiffré, confirmation, exécution par l'hôte) : ce verbe-ci ne
-  /// fait qu'installer l'état. [send] est REFUSÉ tant que le mode est actif —
-  /// c'est ce qui rend le doublon « Entrée poste un nouveau message pendant
-  /// l'édition » inexprimable.
+  /// fait qu'installer l'état. [send] est **refusé** tant que le mode est
+  /// actif — cela évite qu'une frappe sur Entrée poste un nouveau message
+  /// pendant une édition en cours.
   void startEditing({required String messageId, required String originalText}) {
     _preEditingDraft ??= currentDraft;
     _editing.value = ZChatEditingSession(
@@ -414,13 +386,11 @@ class ZChatController extends ChangeNotifier {
     );
   }
 
-  /// Sort du mode édition SANS soumettre — lot K2 (lex `cancelEditing`,
-  /// `chat_input_controller.dart:366-370`).
+  /// Sort du mode édition **sans soumettre**.
   ///
-  /// 🔴 La saisie d'avant l'édition est **restituée**, jamais simplement
-  /// vidée : le geste d'annuler ne coûte aucun texte (AD-10 ; lex, lui, fait
-  /// `_controller.clear()` — `chat_input.dart:438-440`). Sans session active,
-  /// l'appel est sans effet.
+  /// La saisie d'avant l'édition est **restituée**, jamais simplement
+  /// vidée : le geste d'annuler ne coûte aucun texte (invariant AD-10). Sans
+  /// session active, l'appel est sans effet.
   void cancelEditing() {
     if (_editing.value == null) return;
     final ZChatDraft restored = _preEditingDraft ?? const ZChatDraft();
@@ -429,15 +399,13 @@ class ZChatController extends ChangeNotifier {
     _setComposer(restored);
   }
 
-  /// Sème un BROUILLON dans la saisie, sans envoyer — lot K2 (mécanisme lex
-  /// 103.5, `seedDraftSuggestion`, `chat_input_controller.dart:381-392`).
+  /// Sème un BROUILLON dans la saisie, sans envoyer.
   ///
-  /// Passe par [_setComposer] (G-CH4/G10-P2 : le seed d'un widget qui poserait
-  /// `composer.text` lui-même est resté inexprimable). **Refusé pendant une
-  /// édition** — la règle de priorité de lex (`chat_input.dart:447-451` : « on
-  /// ne touche pas au champ pendant un mode édition actif ») — et le compteur
-  /// [draftSeeds] n'est alors PAS incrémenté : il ne compte que les semis
-  /// appliqués.
+  /// Passe par [_setComposer] — un widget qui poserait `composer.text`
+  /// lui-même contournerait l'écrivain unique de la saisie. **Refusé pendant
+  /// une édition** — on ne touche pas au champ pendant un mode édition actif
+  /// — et le compteur [draftSeeds] n'est alors **pas** incrémenté : il ne
+  /// compte que les semis appliqués.
   void seedDraft(String text) {
     if (_editing.value != null) return;
     _setComposer(
@@ -446,33 +414,24 @@ class ZChatController extends ChangeNotifier {
     _draftSeeds.value = _draftSeeds.value + 1;
   }
 
-  /// 🔴 **L'UNIQUE écrivain de la saisie de l'utilisateur.**
+  /// **L'unique écrivain de la saisie de l'utilisateur.**
   ///
-  /// Le défaut IFFD `chatbot_conversation_screen.dart:3618-3672` — la poubelle
-  /// de « Réflexion en cours » appelle l'arrêt **puis** supprime la question
-  /// tapée — n'est pas une erreur d'inattention : c'est ce qui arrive quand
-  /// cinq chemins peuvent écrire dans le champ de saisie. Ici il y en a **un**,
-  /// et **deux** gardes en font une propriété **structurelle** :
-  /// * **G-CH4** (`test/z_chat_structure_guard_test.dart`) — dans ce fichier,
-  ///   la seule écriture est celle de [_setComposer], et le chemin
-  ///   d'annulation ne l'appelle pas ;
-  /// * **G10-P2** (`test/z_chat_capture_guard_test.dart`) — dans tout le reste
-  ///   de `lib/`, la seule écriture est `ZChatCaptureController.acceptInto`.
-  ///
-  /// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
-  /// `z_chat_composer_write_site_test.dart`, **qui n'existe nulle part** dans le
-  /// dépôt (`find packages -name '*composer_write_site*'` → vide). La propriété
-  /// était bien gardée, mais par les deux fichiers ci-dessus.
+  /// Si plusieurs chemins pouvaient écrire dans le champ de saisie, un
+  /// verbe déclenché pendant un état transitoire (par exemple arrêter une
+  /// génération) pourrait accidentellement effacer le texte que
+  /// l'utilisateur vient de taper. Ici il n'y a qu'un seul point d'écriture,
+  /// et des tests de garde vérifient cette propriété structurellement :
+  /// aucun autre site de `lib/` n'écrit `composer.text` en dehors de cette
+  /// méthode et de `ZChatCaptureController.acceptInto`.
   void _setComposer(ZChatDraft draft) {
     if (composer.text != draft.text) composer.text = draft.text;
     _attachmentIds.value = List<String>.unmodifiable(draft.attachmentIds);
-    // 🔴 DÉFAUT TROUVÉ PAR CHAT-5, et corrigé ici. `_canSend` n'était recalculé
-    // que par le listener du `TextEditingController` : joindre un fichier SANS
-    // rien taper ne changeait pas `composer.text`, donc ne notifiait rien, donc
-    // laissait `canSend` à `false`. [send] acceptait pourtant ce cas
-    // (`draft.text.trim().isEmpty && draft.attachmentIds.isEmpty` est le SEUL
-    // refus) : la garde de l'UI et celle du domaine se contredisaient, et le
-    // bouton d'envoi restait éteint sur une pièce jointe seule.
+    // Sans cet appel explicite, `_canSend` ne serait recalculé que par le
+    // listener du `TextEditingController` : joindre un fichier sans rien
+    // taper ne changerait pas `composer.text`, donc ne notifierait rien, et
+    // laisserait `canSend` à `false` alors même que [send] accepte une pièce
+    // jointe seule (`draft.text.trim().isEmpty && draft.attachmentIds.isEmpty`
+    // est le seul refus).
     _onComposerChanged();
   }
 
@@ -528,42 +487,39 @@ class ZChatController extends ChangeNotifier {
   /// produit**, elle est **restituée** et le message optimiste est retiré
   /// (AD-10 : une panne ne coûte jamais la frappe de l'utilisateur).
   ///
-  /// ## 🔴 Lot γ0 — les réglages arrivent APRÈS le builder, et c'est le point
+  /// ## Les réglages sont appliqués APRÈS le builder, et c'est le point
   ///
   /// [settings] et [corpusScope] sont les porteurs neutres du kernel
-  /// (`ZChatGenerationSettings`, `ZChatCorpusScope` — lot β). Ils sont
+  /// (`ZChatGenerationSettings`, `ZChatCorpusScope`). Ils sont
   /// **optionnels** : omis, ils laissent le chemin d'exécution *strictement*
   /// inchangé — `withSettings(null)` rend `identical(this)`, si bien que le
   /// port reçoit **l'objet même** que le builder de l'hôte a construit.
   ///
   /// Ils sont appliqués **après** [_buildRequest], jamais passés dedans. Ce
-  /// n'est pas un détail d'ordre : c'est ce qui rend le défaut mesuré chez IFFD
-  /// **inexprimable**. Là-bas, six drapeaux de corpus sont transmis par le
-  /// contrôleur puis **jetés** par `IffdAiRepositoryImpl` (le payload `explain`
-  /// ne porte que `message`, `model`, `enableWebSearch`) : l'utilisateur croit
-  /// avoir restreint sa recherche, et rien ne le détrompe. Un hôte qui
-  /// recevrait les réglages dans son builder pourrait faire exactement cela ;
-  /// ici il n'a pas la main sur ce site — le socle écrit les réglages sur la
-  /// requête, et le port les lit sur les champs du contrat.
+  /// n'est pas un détail d'ordre : un hôte qui recevrait les réglages
+  /// directement dans son builder pourrait les transmettre en amont puis les
+  /// laisser être ignorés plus loin dans sa propre chaîne, sans que rien ne
+  /// détrompe l'utilisateur qui croit avoir restreint sa recherche. Ici
+  /// l'application n'a pas la main sur ce site : le socle écrit les réglages
+  /// sur la requête, et le port les lit sur les champs du contrat.
   ///
-  /// ⚠️ [settings] est un **remplacement**, pas une fusion (règle du kernel) :
-  /// un porteur *vide* remet les quatre réglages à « l'hôte décide », y compris
-  /// ceux que le builder avait posés. C'est délibéré — une feuille de réglages
-  /// qui **retire** un réglage doit pouvoir le retirer. [corpusScope] `null`,
-  /// lui, ne retire **rien** : la portée éventuellement posée par le builder est
-  /// conservée (l'absence d'argument n'est pas une demande d'élargissement).
+  /// [settings] est un **remplacement**, pas une fusion (règle du kernel) :
+  /// un porteur *vide* remet les quatre réglages à « l'hôte décide », y
+  /// compris ceux que le builder avait posés. C'est délibéré — une feuille
+  /// de réglages qui **retire** un réglage doit pouvoir le retirer.
+  /// [corpusScope] `null`, lui, ne retire **rien** : la portée éventuellement
+  /// posée par le builder est conservée (l'absence d'argument n'est pas une
+  /// demande d'élargissement).
   Future<ZResult<ZChatRequestToken>> send({
     ZChatGenerationSettings? settings,
     ZChatCorpusScope? corpusScope,
   }) async {
-    // 🔴 Lot K2 — pendant une ÉDITION, l'envoi « nouveau message » est REFUSÉ,
-    // par un échec typé. Chez lex, la touche Entrée pendant l'édition est
-    // interceptée par l'écran (`chat_screen.dart:1088-1090`) et route vers le
-    // flux confirmé d'édition ; ici la soumission d'une édition est
-    // `runAction(ZChatEditAction(...))` — le point d'entrée UNIQUE des verbes,
-    // avec son impact chiffré et sa confirmation. Laisser `send()` passer
-    // créerait la fourche exacte que ce refus rend inexprimable : le même
-    // texte tantôt nouveau message, tantôt ré-exécution, selon la surface.
+    // Pendant une ÉDITION, l'envoi « nouveau message » est REFUSÉ, par un
+    // échec typé. La soumission d'une édition passe par
+    // `runAction(ZChatEditAction(...))` — le point d'entrée unique des
+    // verbes, avec son impact chiffré et sa confirmation. Laisser `send()`
+    // passer ouvrirait une seconde voie : le même texte tantôt nouveau
+    // message, tantôt ré-exécution, selon la surface qui l'a déclenché.
     if (_editing.value != null) {
       const ZFailure failure = ZDomainFailure(
         'chat send is unavailable while editing a message: submit the edit '
@@ -591,8 +547,8 @@ class ZChatController extends ChangeNotifier {
     } catch (e) {
       return _abort(requestId, 'chat request builder threw ${e.runtimeType}');
     }
-    // 🔴 UN SEUL site d'application des réglages, et il est HORS d'atteinte de
-    // l'hôte. `withSettings(null)` rend `identical(built)` : sans argument, la
+    // UN SEUL site d'application des réglages, hors d'atteinte de l'hôte.
+    // `withSettings(null)` rend `identical(built)` : sans argument, la
     // requête envoyée est l'objet même du builder — aucun défaut n'a bougé.
     final ZChatGenerationRequest request = corpusScope == null
         ? built.withSettings(settings)
@@ -652,7 +608,7 @@ class ZChatController extends ChangeNotifier {
       }
 
       resumes++;
-      // 🔴 MÊME identité, position de reprise, requête d'origine INCHANGÉE :
+      // MÊME identité, position de reprise, requête d'origine INCHANGÉE :
       // le serveur reconnaît le tour et ne le rejoue pas. Le texte déjà
       // accumulé n'est PAS remis à zéro, le message utilisateur n'est PAS
       // ré-émis — sans quoi la reprise serait un second tour déguisé.
@@ -698,8 +654,8 @@ class ZChatController extends ChangeNotifier {
             (ZResult<ZChatStreamEvent> event) {
               if (finished) return;
               event.fold(
-                // 🔴 Un `Left` est un ÉCHEC, jamais un contenu : il ne rejoint
-                // aucune bulle (défaut IFFD n°4).
+                // Un `Left` est un ÉCHEC, jamais un contenu : il ne rejoint
+                // jamais une bulle de message.
                 (ZFailure failure) => finish(failure),
                 (ZChatStreamEvent e) {
                   _apply(requestId, state, e);
@@ -719,13 +675,13 @@ class ZChatController extends ChangeNotifier {
     }
     if (finished) unawaited(sub.cancel());
 
-    // 🔴 L'arrêt vise CE jeton : un autre flux en vol n'est pas concerné.
+    // L'arrêt vise CE jeton : un autre flux en vol n'est pas concerné.
     unawaited(token.whenCancelled.then((_) => finish(interrupted(byUser: true))));
 
     return settled.future;
   }
 
-  /// Applique **un** événement. 🔴 Un `ZChatTokenEvent` ne touche **que** la
+  /// Applique **un** événement. Un `ZChatTokenEvent` ne touche **que** la
   /// tranche de texte : ni `progress`, ni `messages`, ni le composer.
   void _apply(String key, _ZRequestState state, ZChatStreamEvent event) {
     state.eventsReceived++;
@@ -794,9 +750,9 @@ class ZChatController extends ChangeNotifier {
     _release(requestId);
   }
 
-  /// Termine un tour échoué. 🔴 **Ne touche JAMAIS la saisie** quand l'arrêt est
-  /// volontaire : c'est la garantie que le défaut IFFD (annuler = supprimer la
-  /// question tapée) ne peut pas revenir.
+  /// Termine un tour échoué. **Ne touche jamais la saisie** quand l'arrêt est
+  /// volontaire : annuler une génération ne doit jamais supprimer la question
+  /// que l'utilisateur a tapée.
   void _fail(String requestId, ZFailure failure, ZChatDraft draft) {
     final _ZRequestState? state = _states[requestId];
     final String text = _textOf(requestId).value;
@@ -839,19 +795,18 @@ class ZChatController extends ChangeNotifier {
     _release(requestId);
   }
 
-  /// 🔴 **Correction de fin d'epic (MAJEUR).** L'annonce valait auparavant le
-  /// **texte streamé seul** : une réponse faite uniquement de blocs — un
-  /// tableau de taxation, un bloc de sources, ce que produit exactement la
-  /// chaîne de lex — donnait `ANNONCES=[]`. C'est la dette d'IFFD (0 `Semantics`
-  /// sur 5153 lignes de son chat) reproduite sur notre rendu neutre, alors même
-  /// que `zChatAccessibleTextOf` existait déjà et qu'il est **exhaustif par
-  /// construction** (`switch` sur l'union scellée).
+  /// Sans cette annonce, une réponse faite uniquement de blocs structurés
+  /// (un tableau de taxation, un bloc de sources) laisserait un lecteur
+  /// d'écran sans rien à annoncer : le texte streamé n'est pas la seule
+  /// forme que peut prendre une réponse. `zChatAccessibleTextOf` est
+  /// **exhaustif par construction** (`switch` sur l'union scellée des blocs).
   ///
   /// Aucun résolveur d'hôte ici : le contrôleur n'a ni `BuildContext` ni
-  /// vocabulaire de rendu (AD-2). La localisation d'un bloc ouvert appartient à
-  /// `ZChatAccessibleTextScope`, côté vue — et la vue **remplace** ce texte par
-  /// le sien quand elle le résout. Cette annonce-ci est le plancher : elle ne
-  /// doit jamais être **vide** quand du contenu a été produit.
+  /// vocabulaire de rendu (invariant AD-2). La localisation d'un bloc ouvert
+  /// appartient à `ZChatAccessibleTextScope`, côté vue — et la vue
+  /// **remplace** ce texte par le sien quand elle le résout. Cette
+  /// annonce-ci est le plancher : elle ne doit jamais être **vide** quand du
+  /// contenu a été produit.
   static String _announce(List<ZContentBlock> blocks) =>
       zChatAccessibleTextOf(blocks);
 
@@ -865,20 +820,18 @@ class ZChatController extends ChangeNotifier {
     );
   }
 
-  /// Retire une requête des tables **sans** disposer immédiatement ses tranches :
-  /// un widget peut encore les écouter le temps d'une transition.
+  /// Retire une requête des tables **sans** disposer immédiatement ses
+  /// tranches : un widget peut encore les écouter le temps d'une transition.
   ///
-  /// 🔴 **Correction de fin d'epic (MEDIUM — fuite bornée).** L'intention
-  /// ci-dessus est légitime ; son **absence de borne** ne l'était pas. Les
-  /// tranches n'étaient libérées que par [attach] ou [dispose] : sur une
-  /// conversation longue de 200 tours, le contrôleur retenait **400
-  /// `ValueNotifier`**, dont chacun garde le **texte intégral** d'une réponse
-  /// déjà recopiée dans [messages] — la même donnée payée deux fois, sans
-  /// plafond. La rétention est désormais une **fenêtre glissante** de
-  /// [_kRetainedSlices] requêtes terminées : la transition reste couverte, la
-  /// mémoire est bornée par construction. Garde : au-delà de la fenêtre, la
-  /// tranche d'une requête ancienne est **disposée** (un `addListener` y lève)
-  /// et [streamText] rend une **nouvelle** instance.
+  /// Cette rétention doit rester **bornée** : sans plafond, une conversation
+  /// longue accumulerait un `ValueNotifier` par requête terminée, chacun
+  /// gardant le **texte intégral** d'une réponse déjà recopiée dans
+  /// [messages] — la même donnée payée deux fois, sans limite. La rétention
+  /// est donc une **fenêtre glissante** de [_kRetainedSlices] requêtes
+  /// terminées : la transition reste couverte, la mémoire est bornée par
+  /// construction. Au-delà de la fenêtre, la tranche d'une requête ancienne
+  /// est **disposée** (un `addListener` y lève) et [streamText] rend une
+  /// **nouvelle** instance.
   void _release(String requestId) {
     _tokens.remove(requestId);
     _states.remove(requestId);
@@ -903,17 +856,18 @@ class ZChatController extends ChangeNotifier {
 
   /// Exécute **n'importe quel** verbe de conversation.
   ///
-  /// 🔴 **C'est l'UNIQUE point d'entrée des actions**, et le seul site du
-  /// package qui invoque `ZChatActionDispatcher`. Éditer, régénérer, retirer,
-  /// arrêter, copier et les verbes d'hôte passent **tous** ici — donc par le
-  /// même protocole : impact **chiffré avant** l'effet, confirmation
-  /// **systématique** dès que le plan l'exige, jeton infalsifiable, échec typé.
+  /// **L'unique point d'entrée des actions**, et le seul site du paquet qui
+  /// invoque `ZChatActionDispatcher`. Éditer, régénérer, retirer, arrêter,
+  /// copier et les verbes d'hôte passent **tous** ici — donc par le même
+  /// protocole : impact **chiffré avant** l'effet, confirmation
+  /// **systématique** dès que le plan l'exige, jeton infalsifiable, échec
+  /// typé.
   ///
   /// Un raccourci de confort (`delete(id)`, `stop()`, …) serait un **second
-  /// site d'appel**, donc la possibilité d'une divergence entre deux surfaces
-  /// d'UI : c'est exactement ce qu'IFFD a produit. La garde **G-CH1**
-  /// (`test/z_chat_structure_guard_test.dart`) asserte l'**égalité d'ensemble**
-  /// de la surface publique — « contient runAction » ne mordrait pas.
+  /// site d'appel**, donc la possibilité d'une divergence de comportement
+  /// entre deux surfaces d'UI. Un test de garde asserte l'**égalité
+  /// d'ensemble** de la surface publique — « contient `runAction` » ne
+  /// mordrait pas.
   Future<ZResult<ZChatActionOutcome>> runAction(ZChatAction action) async {
     final ZResult<ZChatActionPlan> planned = await _dispatcher.prepare(action);
     final ZChatActionPlan? plan = planned.fold(
@@ -932,8 +886,9 @@ class ZChatController extends ChangeNotifier {
 
     final ZChatConfirmedAction? ticket;
     if (plan.requiresConfirmation) {
-      // 🔴 La question EST posée. IFFD confirmait sur une surface (l.2134) et
-      // pas sur l'autre (l.3886) ; ici il n'existe pas d'autre surface.
+      // La question EST posée : il n'existe qu'un seul point d'entrée pour
+      // les verbes, donc pas de seconde surface où la confirmation pourrait
+      // manquer.
       if (!await _ask(plan)) {
         final ZFailure failure = ZChatActionNotConfirmedFailure(
           verb: action.verb,
@@ -977,16 +932,15 @@ class ZChatController extends ChangeNotifier {
     }
   }
 
-  /// Applique l'issue d'une action. 🔴 **La saisie n'y est écrite que pour être
-  /// RESTITUÉE** : `preservedDraft` est une restitution (la saisie n'a jamais
-  /// été touchée, rien à restaurer), et la sortie d'édition ci-dessous REND le
-  /// brouillon sauvegardé — elle ne détruit jamais un texte tapé. Le chemin
-  /// d'ANNULATION, lui, reste incapable d'atteindre la saisie (G-CH4).
+  /// Applique l'issue d'une action. **La saisie n'y est écrite que pour être
+  /// restituée** : la sortie d'édition ci-dessous rend le brouillon
+  /// sauvegardé — elle ne détruit jamais un texte tapé. Le chemin
+  /// d'annulation, lui, ne touche jamais la saisie.
   void _applyOutcome(ZChatAction action, ZChatActionOutcome outcome) {
-    // Lot K2 — une ÉDITION exécutée avec succès clôt sa session : l'exécuteur
-    // de l'hôte a consommé le texte édité (`editAndResend` régénère côté hôte,
-    // contrat CHAT-0b — le socle ne double-stream pas). La saisie d'AVANT
-    // l'édition est restituée, comme à `cancelEditing`.
+    // Une ÉDITION exécutée avec succès clôt sa session : l'exécuteur de
+    // l'hôte a consommé le texte édité et régénère côté hôte, le socle ne
+    // double-stream pas. La saisie d'AVANT l'édition est restituée, comme à
+    // `cancelEditing`.
     final ZChatEditingSession? session = _editing.value;
     if (action is ZChatEditAction &&
         session != null &&

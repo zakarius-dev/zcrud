@@ -1,26 +1,27 @@
-/// Bande des pièces jointes en attente — `ZChatAttachmentStrip` (CHAT-5).
+/// Bande des pièces jointes en attente.
 ///
-/// Rendu **neutre, zéro dépendance tierce** de `ZChatAttachmentController.pending`
-/// (patron strict de `ZChatConversationView` : `ListView.builder`, `Semantics`,
-/// tokens de `ZcrudTheme`, libellés résolus par `zChatLabel(context, clé)`).
+/// Rendu neutre, zéro dépendance tierce, de
+/// `ZChatAttachmentController.pending` — suit le même patron que
+/// `ZChatConversationView` : `ListView.builder`, `Semantics`, jetons de
+/// `ZcrudTheme`, libellés résolus par `zChatLabel(context, clé)`.
 ///
-/// ## 🔴 Trois contraintes AD-13 que la bande d'IFFD ne tient pas
+/// ## Invariant AD-13, en pratique
 ///
-/// * **cible tactile** : le retrait est un `ConstrainedBox` à
-///   [kZChatMinTapTarget] (48 dp), jamais une icône de 16 dp posée en coin ;
-/// * **directionnalité** : `EdgeInsetsDirectional` / `AlignmentDirectional` /
+/// * cible tactile : le retrait est un `ConstrainedBox` à
+///   [kZChatMinTapTarget] (48 dp), jamais une icône minuscule posée en coin ;
+/// * directionnalité : `EdgeInsetsDirectional` / `AlignmentDirectional` /
 ///   `TextAlign.start` — jamais `left`/`right`, sans quoi la bande est à
 ///   l'envers en RTL ;
-/// * **sémantique** : chaque vignette est un nœud annoncé, chaque retrait est un
-///   `Semantics(button: true)`. IFFD : 0 `Semantics` sur 5153 lignes.
+/// * sémantique : chaque vignette est un nœud annoncé, chaque retrait est un
+///   `Semantics(button: true)`.
 ///
-/// ## 🔴 Aucune image n'est décodée ici
+/// ## Aucune image n'est décodée ici
 ///
-/// `ZPendingAttachment.thumbnailBytes` porte les octets, mais cette bande ne les
-/// rend pas : `Image.memory` décoderait un bitmap de 10 Mio **dans le composer**,
-/// à chaque rebuild, pour une vignette de 48 dp — l'exact opposé de SM-1. Le
-/// nom du fichier est rendu ; l'aperçu riche appartient à l'hôte, qui a le
-/// budget et le cache pour le faire (et peut le brancher par [thumbnailBuilder]).
+/// `ZPendingAttachment.thumbnailBytes` porte les octets, mais cette bande ne
+/// les rend pas : décoder un bitmap volumineux dans le composer, à chaque
+/// rebuild, pour une vignette de 48 dp, contredirait l'invariant AD-2. Le nom
+/// du fichier est rendu ; l'aperçu riche appartient à l'hôte, qui a le budget
+/// et le cache pour le faire (et peut le brancher par [thumbnailBuilder]).
 library;
 
 import 'dart:math' as math;
@@ -50,21 +51,20 @@ class ZChatAttachmentStrip extends StatelessWidget {
     super.key,
   });
 
-  /// Le contrôleur écouté. Il n'est **ni créé ni disposé** ici : son cycle de
-  /// vie appartient à l'hôte (AD-2).
+  /// Le contrôleur écouté. Il n'est ni créé ni disposé ici : son cycle de vie
+  /// appartient à l'hôte (invariant AD-2).
   final ZChatAttachmentController controller;
 
   /// Couture d'aperçu, ou `null` (aucune vignette).
   final ZChatAttachmentThumbnailBuilder? thumbnailBuilder;
 
-  /// Hauteur de la bande **demandée** par l'hôte.
+  /// Hauteur de la bande demandée par l'hôte.
   ///
-  /// 🔴 Lire [effectiveHeight], jamais ce champ, pour dimensionner : une
-  /// hauteur inférieure à `kZChatMinTapTarget` **écraserait la cible tactile**
-  /// (AD-13). Le `ConstrainedBox` du bouton ne protège de rien ici : sous une
-  /// contrainte de hauteur **serrée** venue du parent, il est écrasé en
-  /// silence — mesuré, `height: 30` rendait une cible de **30 dp** sans
-  /// exception ni avertissement.
+  /// Lire [effectiveHeight], jamais ce champ, pour dimensionner : une hauteur
+  /// inférieure à `kZChatMinTapTarget` écraserait la cible tactile (invariant
+  /// AD-13). Le `ConstrainedBox` du bouton ne protège pas contre cela : sous
+  /// une contrainte de hauteur serrée venue du parent, il peut être écrasé
+  /// en silence, sans exception ni avertissement.
   final double height;
 
   /// Hauteur réellement appliquée : jamais sous le plancher tactile.
@@ -94,14 +94,11 @@ class ZChatAttachmentStrip extends StatelessWidget {
               child: SizedBox(
                 height: effectiveHeight,
                 child: ListView.builder(
-                  // 🔴 `.builder` — JAMAIS `ListView(children: [...])`.
+                  // `.builder` — jamais `ListView(children: [...])`.
                   scrollDirection: Axis.horizontal,
-                  // 🔴 DÉFAUT TROUVÉ PAR LA GARDE ≥ 48 dp, et corrigé ici. Avec
-                  // `theme.formPadding` (12 dp sur les QUATRE côtés), la hauteur
-                  // utile tombait à 64 − 24 = **40 dp** : la contrainte
-                  // `minHeight: 48` du bouton était écrasée par le parent, et la
-                  // cible AD-13 violée alors que le code la déclarait. Une marge
-                  // de bande est HORIZONTALE — la verticale, ici, ne sépare rien.
+                  // Une marge verticale réduirait la hauteur utile disponible
+                  // pour la cible tactile de 48 dp en dessous du plancher :
+                  // la marge de bande reste donc strictement horizontale.
                   padding: EdgeInsetsDirectional.symmetric(
                     horizontal: theme.gapM,
                   ),
@@ -109,7 +106,7 @@ class ZChatAttachmentStrip extends StatelessWidget {
                   itemBuilder: (BuildContext context, int index) {
                     final ZPendingAttachment attachment = pending[index];
                     return Padding(
-                      // AD-13 : marge DIRECTIONNELLE.
+                      // Invariant AD-13 : marge directionnelle.
                       padding: EdgeInsetsDirectional.only(end: theme.gapS),
                       child: _ZAttachmentChip(
                         key: ValueKey<String>(
@@ -149,23 +146,19 @@ class _ZAttachmentChip extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Flexible(
-          // 🔴 **Correction de fin d'epic (MAJEUR — double annonce).** Ce nœud
-          // portait `label: fileName` **sans** `excludeSemantics`, et son enfant
-          // `Text` porte le même nom : mesuré `<rapport.pdf\nrapport.pdf>` sur
-          // l'arbre fusionné — le lecteur d'écran énonçait le fichier DEUX fois.
-          // Le correctif jumeau est documenté dans
-          // `zcrud_menu/lib/src/presentation/z_menu_entry_tile.dart:73-76`, et
-          // il rappelle l'erreur à ne PAS commettre : retirer le `label:` à la
-          // place rend le nœud **muet**.
+          // Ce nœud porte `label: fileName` avec `excludeSemantics`, alors
+          // que son enfant `Text` porte le même nom : sans cette exclusion,
+          // l'arbre fusionné ferait énoncer le fichier deux fois par un
+          // lecteur d'écran. Retirer le `label:` à la place rendrait le nœud
+          // muet — ce n'est pas non plus la bonne correction.
           //
-          // 🔴 Le bouton de retrait est passé **HORS** de ce nœud. Le sortir
-          // n'est pas cosmétique : `excludeSemantics: true` aurait sinon
-          // supprimé sa sémantique de bouton — on aurait échangé un doublon
-          // contre une action inatteignable au lecteur d'écran.
+          // Le bouton de retrait est rendu hors de ce nœud : `excludeSemantics:
+          // true` aurait sinon supprimé sa sémantique de bouton, échangeant un
+          // doublon contre une action inatteignable au lecteur d'écran.
           child: Semantics(
             container: true,
-            // Le nom du fichier est une DONNÉE de l'utilisateur, pas un libellé
-            // d'interface : il n'a rien à faire dans `ZcrudLabels`.
+            // Le nom du fichier est une donnée de l'utilisateur, pas un
+            // libellé d'interface : il n'a rien à faire dans `ZcrudLabels`.
             label: attachment.fileName,
             excludeSemantics: true,
             child: Row(
@@ -180,7 +173,7 @@ class _ZAttachmentChip extends StatelessWidget {
                     attachment.fileName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    // AD-13 : jamais `TextAlign.left`.
+                    // Invariant AD-13 : jamais `TextAlign.left`.
                     textAlign: TextAlign.start,
                   ),
                 ),
@@ -214,7 +207,7 @@ class _ZRemoveButton extends StatelessWidget {
             minWidth: kZChatMinTapTarget,
           ),
           child: Align(
-            // AD-13 : alignement DIRECTIONNEL.
+            // Invariant AD-13 : alignement directionnel.
             alignment: AlignmentDirectional.center,
             child: Text(
               zChatLabel(context, kZChatLabelRemoveAttachment),

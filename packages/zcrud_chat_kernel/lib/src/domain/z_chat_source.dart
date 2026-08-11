@@ -1,6 +1,5 @@
-/// Provenance d'une réponse d'assistant — `ZChatSource` (AD-4, AD-10).
-///
-/// origine: lex_core (module « Assistant ») — `chat_source.dart:17-115`.
+/// Provenance d'une réponse d'assistant — `ZChatSource` (invariants AD-4,
+/// AD-10).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -27,25 +26,26 @@ const Set<String> _kCommonKeys = <String>{
 
 /// Une source citée/consultée par l'assistant — **une seule classe concrète**.
 ///
-/// ## Pourquoi une classe, là où lex a une `sealed` à 14 sous-types
+/// ## Pourquoi une classe, là où un domaine métier voudrait des sous-types
 ///
-/// lex décline `ChatSource` en 14 variantes **douanières**
-/// (`CodeDesDouanesSource`, `TecSource`, `ShSource`, `ValuationToolSource`,
-/// `ConventionSource`, `RegulationSource`…). Ce vocabulaire n'a rien de
-/// générique : le figer dans un socle éducatif partagé imposerait la douane à
-/// IFFD et à DODLP. Ce qui **est** générique, c'est la **forme commune** —
-/// exactement les 10 champs que lex déclare sur la base (`chat_source.dart:18-65`).
+/// Un domaine spécialisé (juridique, douanier, médical…) décline volontiers
+/// sa provenance en une famille fermée de variantes propres à son métier.
+/// Ce vocabulaire n'a rien de générique : le figer dans un socle partagé
+/// imposerait ce métier à tous les hôtes. Ce qui **est** générique, c'est la
+/// **forme commune** — les quelques champs stables qu'une source cite quel
+/// que soit le domaine.
 ///
-/// ⇒ Les 14 sous-types restent **atteignables**, branchés par l'app via
-/// `ZSourceRegistry.register('tec', fromJson: …, toJson: …)` (AD-4 pt.3) :
-/// leurs champs propres transitent par [payload], et le codec de l'hôte les
-/// reconstruit. **Aucun second registre n'est créé** — `ZSourceRegistry` existe
-/// déjà et sert le même axe (la provenance).
+/// ⇒ Les variantes propres à un métier restent **atteignables**, branchées
+/// par l'app via `ZSourceRegistry.register('tec', fromJson: …, toJson: …)`
+/// (invariant AD-4, mécanisme 3) : leurs champs propres transitent par
+/// [payload], et le codec de l'hôte les reconstruit. **Aucun second registre
+/// n'est créé** — `ZSourceRegistry` existe déjà et sert le même axe (la
+/// provenance).
 ///
-/// ## Fail-safe (porté à l'identique)
+/// ## Fail-safe
 ///
-/// [isVerified] et [usageStatus] reproduisent les règles de lex, **y compris
-/// leur prudence** : en l'absence de signal, on ne présume **jamais** « vérifié ».
+/// [isVerified] et [usageStatus] adoptent la posture la plus prudente : en
+/// l'absence de signal, on ne présume **jamais** « vérifié ».
 class ZChatSource {
   /// Construit une source (immuable, `const`).
   const ZChatSource({
@@ -95,21 +95,20 @@ class ZChatSource {
 
   /// **Libellé** du corpus d'origine — texte d'affichage, traduisible.
   ///
-  /// ⛔ **Jamais une clé.** Confronter ce champ à une portée demandée
+  /// **Jamais une clé.** Confronter ce champ à une portée demandée
   /// (`ZChatCorpusScope`) reviendrait à comparer un libellé à un identifiant :
   /// la comparaison passerait quand les deux se ressemblent et échouerait dès
   /// qu'un hôte traduit son interface. Utiliser [corpusKey].
   final String? corpus;
 
-  /// 🔴 **Clé stable** du corpus d'origine (lot β) — l'autre moitié du
+  /// **Clé stable** du corpus d'origine — l'autre moitié du
   /// bouclage lecture/écriture.
   ///
-  /// L'étude CR-IFFD-72 (§ 4.2) a mesuré que `ZChatGenerationRequest` n'avait
-  /// aucune portée documentaire **et** que ce type ne portait qu'un libellé :
-  /// même en ajoutant un champ de restriction, aucune restriction n'aurait été
-  /// **vérifiable**, faute de pouvoir confronter les sources rendues à la
-  /// portée demandée. Ce champ est ce qui rend `ZChatCorpusScope.audit`
-  /// possible.
+  /// Une requête de génération sans portée documentaire **et** une source
+  /// qui ne porte qu'un libellé partagent le même défaut : même en ajoutant
+  /// un champ de restriction, aucune restriction n'aurait été **vérifiable**,
+  /// faute de pouvoir confronter les sources rendues à la portée demandée.
+  /// Ce champ est ce qui rend `ZChatCorpusScope.audit` possible.
   ///
   /// Opaque et **ouvert** : le socle ne connaît aucune valeur (les codes
   /// documentaires appartiennent aux hôtes). `null` ⇒ source non attribuée —
@@ -130,28 +129,27 @@ class ZChatSource {
   /// le cœur ait à les connaître**.
   final Map<String, dynamic> payload;
 
-  /// 🔴 **Fail-safe** : `true` **uniquement** si [verificationStatus] vaut
+  /// **Fail-safe** : `true` **uniquement** si [verificationStatus] vaut
   /// exactement `'verified'`.
   ///
   /// `null` / `'not_applicable'` / `'pass-through'` ⇒ `false`. Le drapeau
-  /// [verified] n'est **PAS** consulté : porté de `chat_source.dart:70`, où le
-  /// choix est explicite (« ne jamais présumer vérifié en l'absence de
-  /// signal »). ⛔ Le remplacer par `verified == true` ferait passer pour
-  /// ancrée une source qui ne l'est pas — garde **G9**.
+  /// [verified] n'est **pas** consulté : le choix est délibéré (« ne jamais
+  /// présumer vérifié en l'absence de signal »). Le remplacer par
+  /// `verified == true` ferait passer pour ancrée une source qui ne l'est pas.
   bool get isVerified => verificationStatus == 'verified';
 
   /// Statut d'usage typé — défaut [ZChatSourceUsageStatus.cited] quand
-  /// [usageStatusRaw] est absent ou illisible (porté de `chat_source.dart:76-89`).
+  /// [usageStatusRaw] est absent ou illisible.
   ///
-  /// ⚠️ La règle douanière de lex (`sourceType == lexiaKnowledge` ⇒
-  /// `generalKnowledge`) n'est **pas** portée : elle repose sur une valeur de
-  /// `SourceType` propre à ce domaine. Un hôte l'obtient en persistant
-  /// explicitement `usage_status: 'generalKnowledge'`.
+  /// Une règle métier qui déduirait automatiquement « connaissance générale »
+  /// d'une valeur de [sourceType] propre à un domaine n'est **pas** portée :
+  /// elle reposerait sur un vocabulaire que le socle ne connaît pas. Un hôte
+  /// l'obtient en persistant explicitement `usage_status: 'generalKnowledge'`.
   ZChatSourceUsageStatus get usageStatus =>
       ZChatSourceUsageStatus.fromJson(usageStatusRaw) ??
       ZChatSourceUsageStatus.cited;
 
-  /// Décode **défensivement** une source (AD-10) — ne lève jamais.
+  /// Décode **défensivement** une source (invariant AD-10) — ne lève jamais.
   ///
   /// - [raw] non-`Map` ⇒ `null` ;
   /// - champs absents/mal typés ⇒ défauts sûrs ;
@@ -167,7 +165,7 @@ class ZChatSource {
       for (final MapEntry<String, dynamic> e in map.entries)
         if (!_kCommonKeys.contains(e.key)) e.key: e.value,
     };
-    // 🔴 `tryCodecFor`, jamais `codecFor` (qui lève sur un kind non enregistré).
+    // `tryCodecFor`, jamais `codecFor` (qui lève sur un kind non enregistré).
     final ZValueCodec? codec =
         sourceType.isEmpty ? null : registry?.tryCodecFor(sourceType);
     final Map<String, dynamic> payload = codec == null

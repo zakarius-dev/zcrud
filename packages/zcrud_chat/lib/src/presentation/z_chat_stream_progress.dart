@@ -1,19 +1,19 @@
-/// Phase et progression **grossière** d'une requête de conversation.
+/// Phase et progression grossière d'une requête de conversation.
 ///
-/// CHAT-2. 🔴 **Ce type ne porte AUCUN texte de réponse.** C'est la raison
-/// d'être de sa séparation d'avec la tranche `ZChatController.streamText` :
+/// Ce type ne porte aucun texte de réponse — c'est la raison d'être de sa
+/// séparation d'avec la tranche `ZChatController.streamText` :
 ///
 /// | Tranche | Fréquence | Qui l'écoute |
 /// |---|---|---|
-/// | `streamText(requestId)` | **un signal par jeton** (des centaines) | la bulle en cours de rédaction, **elle seule** |
+/// | `streamText(requestId)` | un signal par jeton (des centaines) | la bulle en cours de rédaction, elle seule |
 /// | `progress(requestId)` | quelques signaux par tour | l'indicateur « réflexion », la pastille de sources, le quota |
 ///
 /// Les fusionner ferait reconstruire l'indicateur de réflexion, la liste des
-/// sources et la jauge de quota **à chaque jeton reçu** — le bug historique
-/// (SM-1) que zcrud existe pour corriger, transposé du formulaire au chat.
+/// sources et la jauge de quota à chaque jeton reçu — exactement le défaut de
+/// rebuild global que l'invariant AD-2 interdit.
 ///
-/// 🔴 `lastSequenceId` et le compteur d'événements **ne sont PAS ici** : ils
-/// changent à chaque jeton. Ils vivent dans l'état PRIVÉ du contrôleur, sans
+/// `lastSequenceId` et le compteur d'événements ne sont pas exposés ici : ils
+/// changent à chaque jeton et vivent dans l'état privé du contrôleur, sans
 /// canal réactif — les publier ferait de `progress` une tranche à haute
 /// fréquence sous un nom qui promet l'inverse.
 library;
@@ -21,9 +21,9 @@ library;
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 import 'package:zcrud_core/domain.dart';
 
-/// Où en est **une** requête de conversation.
+/// Où en est une requête de conversation.
 ///
-/// ⚠️ [cancelled] et [failed] sont **distincts** : un arrêt voulu n'est pas une
+/// [cancelled] et [failed] sont distincts : un arrêt voulu n'est pas une
 /// erreur. Les aplatir forcerait l'hôte à afficher un message d'échec sur un
 /// geste volontaire de l'utilisateur (`ZChatStreamInterruptedFailure`
 /// distingue déjà les deux par `cancelledByUser`).
@@ -107,9 +107,9 @@ class ZChatStreamProgress {
     resumeAttempts: resumeAttempts ?? this.resumeAttempts,
   );
 
-  /// 🔴 `==` de VALEUR : un `ValueNotifier` qui reçoit une valeur **égale** ne
+  /// Égalité de valeur : un `ValueNotifier` qui reçoit une valeur égale ne
   /// notifie pas. Sans cet opérateur, republier une progression identique
-  /// reconstruirait ses écoutants pour rien (SM-1).
+  /// reconstruirait ses écoutants pour rien.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

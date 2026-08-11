@@ -1,11 +1,10 @@
 /// Fraîcheur/versionnage d'un jeu de données cité — `ZChatSourceFreshness`.
 ///
-/// origine: lex_core (module « Assistant ») — `source_freshness.dart:38-117`.
-///
-/// **Dé-juridicisation** : `pendingAmendments` (« amendements » — vocabulaire
-/// législatif) devient [ZChatSourceFreshness.pendingUpdates], persisté
-/// `pending_updates`. L'ancienne clé `pending_amendments` reste **lue en alias**
-/// (interop directe avec les documents lex existants), jamais réémise.
+/// Un vocabulaire législatif (« amendements en attente ») devient ici
+/// [ZChatSourceFreshness.pendingUpdates], persisté `pending_updates` — un nom
+/// neutre pour un socle qui n'est pas propre au droit. L'ancienne clé
+/// `pending_amendments` reste **lue en alias** (interop directe avec des
+/// documents existants), jamais réémise.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -50,20 +49,19 @@ class ZChatSourceFreshness {
   /// `true` si des mises à jour candidates non ingérées sont signalées.
   final bool pendingUpdates;
 
-  /// 🔴 **Fail-safe** : `true` **uniquement** sur [ZChatDatasetFreshness.stale]
+  /// **Fail-safe** : `true` **uniquement** sur [ZChatDatasetFreshness.stale]
   /// **ou** [pendingUpdates].
   ///
-  /// [ZChatDatasetFreshness.unknown] reste **NEUTRE** : un checksum non
+  /// [ZChatDatasetFreshness.unknown] reste **neutre** : un checksum non
   /// comparable n'est pas une preuve de péremption, et marquer « périmé » ce
-  /// qu'on ne sait pas évaluer est une sur-affirmation (porté de
-  /// `source_freshness.dart:77-78`). Garde **G9**.
+  /// qu'on ne sait pas évaluer est une sur-affirmation.
   bool get isPotentiallyOutdated =>
       freshness == ZChatDatasetFreshness.stale || pendingUpdates;
 
-  /// Décode **défensivement** (AD-10) — `raw` non-`Map` ⇒ `null`.
+  /// Décode **défensivement** (invariant AD-10) — `raw` non-`Map` ⇒ `null`.
   ///
   /// [pendingUpdates] tolère les trois formes rencontrées : un `bool`, une
-  /// **liste** non vide (forme de lex, `source_freshness.dart:88-89`) sous
+  /// **liste** non vide (une forme rencontrée en pratique) sous
   /// `pending_updates` **ou** sous l'alias legacy `pending_amendments`.
   /// [lastIndexedAt] tolère l'alias `generated_at`.
   static ZChatSourceFreshness? fromJson(Object? raw) {
@@ -89,10 +87,10 @@ class ZChatSourceFreshness {
 
   /// Sérialise en clés snake_case.
   ///
-  /// ⚠️ Le drapeau **dérivé** `is_potentially_outdated` de lex
-  /// (`source_freshness.dart:115`) n'est **pas** réémis : une valeur dérivée
-  /// persistée peut diverger de la règle qui la calcule, et lex lui-même déclare
-  /// se fier « à la règle métier locale (source de vérité) ».
+  /// Un drapeau **dérivé** `is_potentially_outdated` n'est **pas** réémis :
+  /// une valeur dérivée persistée peut diverger de la règle qui la calcule —
+  /// la source de vérité reste la règle métier locale, jamais une valeur
+  /// figée.
   Map<String, dynamic> toJson() => <String, dynamic>{
         'dataset_id': datasetId,
         if (domain != null) 'domain': domain,

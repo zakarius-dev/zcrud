@@ -1,50 +1,44 @@
-/// **CR-IFFD-76 — `ZDefaultChatComposer`, l'ASSEMBLAGE par défaut** du
-/// composer — le pendant exact de ce que `ZDefaultFolderCard` a été pour les
-/// cartes de dossier : le socle ne livre plus seulement les pièces, il livre
-/// **la barre**, personnalisable pièce par pièce.
+/// L'assemblage par défaut du composer : le socle ne livre plus seulement
+/// les pièces, il livre la barre, personnalisable pièce par pièce.
 ///
-/// ## 🔴 Pourquoi un widget NOUVEAU, pas un défaut de `ZChatComposer`
+/// ## Pourquoi un widget nouveau, pas un défaut de `ZChatComposer`
 ///
-/// La CR laissait le choix ; la doctrine du dépôt tranche : l'arbre de
-/// `ZChatComposer` est protégé par étalon sérialisé et par la règle « hôte
-/// passif inchangé ». Un composer existant ne bouge pas d'un widget ;
-/// l'assemblé est **opt-in** — strictement additif.
+/// L'arbre de `ZChatComposer` reste inchangé pour tout hôte qui l'utilise
+/// déjà tel quel : un composer existant ne bouge pas d'un widget ;
+/// l'assemblé est opt-in — strictement additif.
 ///
-/// ## 🔴 Les quatre défauts d'assemblage d'IFFD, rendus INEXPRIMABLES ou
-/// DÉTECTABLES
+/// ## Quatre défauts d'assemblage rendus inexprimables ou détectables
 ///
-/// | # | le défaut mesuré chez IFFD | ici |
+/// | # | Le défaut évité | Ici |
 /// |---|---|---|
-/// | ① | la feuille de réglages montée dans le créneau `tools` (débordement 149 px) | le créneau `tools` de l'assemblé est **une bande** ; le déclencheur « outils » **OUVRE** la feuille ([onOpenTools]) — et un override qui rendrait une `ZChatSettingsSheet` est **détecté** (assertion en debug + garde d'arbre) |
-/// | ② | `settings:` oublié sur `ZChatComposer` — la portée documentaire ne partait pas (B-58) | [settings] est **requis et non nullable** : l'oubli ne compile pas |
-/// | ③ | badge posé en `PositionedDirectional` sur un `Stack` — détaché, volant le tap | le badge vit **dans la cible** du bouton « outils » ([ZChatComposerToolsTrigger]) : le tap passe (garde de hit-test) |
-/// | ④ | trois chips d'effort (`zChatMaterialEffortChips`) | la pièce par défaut est le **déclencheur unique à menu** ([ZChatComposerEffortSelector], la forme lex/f011) |
+/// | ① | une feuille de réglages montée inline dans une bande d'accessoires — débordement visuel | le créneau `tools` de l'assemblé est une bande ; le déclencheur « outils » ouvre la feuille ([onOpenTools]) — et un override qui rendrait une `ZChatSettingsSheet` inline est détecté (assertion en debug + garde d'arbre) |
+/// | ② | un paramètre de réglages oublié à l'appel, silencieusement | [settings] est requis et non nullable : l'oubli ne compile pas |
+/// | ③ | un badge positionné en dehors de la cible tactile du bouton, volant le tap | le badge vit dans la cible du bouton « outils » ([ZChatComposerToolsTrigger]) : le tap passe |
+/// | ④ | plusieurs puces distinctes pour un même axe de réglage | la pièce par défaut est le déclencheur unique à menu ([ZChatComposerEffortSelector]) |
 ///
-/// ## Ce que l'assemblé monte (relevé lex f003/f011)
+/// ## Ce que l'assemblé monte
 ///
 /// ```
-/// [ bandeau d'édition — quand `editing` porte une session ]
-/// ╭──────────────────────────────────────────────╮
-/// │ champ (1..5 lignes, placeholder animé) [stop|envoi] │
-/// │ [+] [réfléchir·n] [internet] [outils·n]  [✦ effort] [modèle] │
-/// ╰──────────────────────────────────────────────╯ radius 12
+/// [ bandeau d'edition -- quand 'editing' porte une session ]
+/// +------------------------------------------------+
+/// | champ (1..5 lignes, placeholder anime) [stop|envoi] |
+/// | [+] [reflechir.n] [internet] [outils.n]  [effort] [modele] |
+/// +------------------------------------------------+ radius 12
 /// ```
 ///
-/// Conteneur : les constantes que les DEUX relevés publient déjà et qui
-/// convergent (radius 12, 1..5 lignes — le fait §① de la CR) ; sous
-/// [ZChatComposerChromeStyle.mobileBreakpoint] (< 400 dp, lex/f011), les
-/// libellés des pièces sont masqués, les badges gardés.
+/// Sous [ZChatComposerChromeStyle.mobileBreakpoint], les libellés des pièces
+/// sont masqués, les badges gardés.
 ///
-/// ## Règle des trois cas — un slot PAR pièce
+/// ## Règle des trois cas — un slot par pièce
 ///
-/// Chaque pièce a son builder nullable ([ZChatComposerSlotBuilder]) : absent ⇒
-/// défaut du socle ; fourni et rend un widget ⇒ remplace ; fourni et rend
-/// `null` ⇒ pièce ABSENTE (AD-4). Chrome : paramètre > jeton > référence
-/// partout (chaîne K2).
+/// Chaque pièce a son builder nullable ([ZChatComposerSlotBuilder]) : absent
+/// donne le défaut du socle ; fourni et rend un widget, il remplace ; fourni
+/// et rend `null`, la pièce est absente (invariant AD-4). Chrome : paramètre
+/// > jeton > référence partout.
 ///
-/// ## SM-1
+/// ## Invariant AD-2
 ///
-/// La bande ne s'abonne à AUCUNE tranche de flux — sauf le STOP
+/// La bande ne s'abonne à aucune tranche de flux — sauf le bouton d'arrêt
 /// (`activeRequests`), qui est précisément la pièce dont c'est l'état. Les
 /// bascules n'écoutent que `settings`, le bandeau n'écoute que `editing`.
 library;
@@ -63,14 +57,14 @@ import 'z_chat_composer_reference.dart';
 import 'z_chat_labels.dart';
 import 'z_chat_settings_sheet.dart' show ZChatSettingsSheet;
 
-/// L'assemblage PAR DÉFAUT du composer (CR-IFFD-76) — opt-in, surchargeable
-/// pièce par pièce, chrome **paramètre > jeton > référence** partout.
+/// L'assemblage par défaut du composer — opt-in, surchargeable pièce par
+/// pièce, chrome paramètre > jeton > référence partout.
 class ZDefaultChatComposer extends StatelessWidget {
   /// Construit l'assemblé.
   ///
-  /// 🔴 [settings] est **requis** : c'est le défaut ② d'IFFD (réglages réglés
-  /// puis jetés) rendu inexprimable — l'assemblé câble d'office le contrôleur
-  /// de réglages sur le `send()` du composer.
+  /// [settings] est requis : ce qui rend inexprimable le défaut de réglages
+  /// réglés puis jetés avant l'envoi — l'assemblé câble d'office le
+  /// contrôleur de réglages sur le `send()` du composer.
   const ZDefaultChatComposer({
     required this.controller,
     required this.settings,
@@ -121,29 +115,29 @@ class ZDefaultChatComposer extends StatelessWidget {
     super.key,
   });
 
-  /// Le contrôleur de conversation — ni créé ni disposé ici (AD-2).
+  /// Le contrôleur de conversation — ni créé ni disposé ici (invariant AD-2).
   final ZChatController controller;
 
-  /// 🔴 Le contrôleur de réglages, **câblé d'office** sur le composer : la
-  /// feuille (ouverte par [onOpenTools]) et la bande écrivent dedans, et
-  /// `send()` le lit — l'oubli d'IFFD (défaut ②/B-58) ne compile pas ici.
+  /// Le contrôleur de réglages, câblé d'office sur le composer : la feuille
+  /// (ouverte par [onOpenTools]) et la bande écrivent dedans, et `send()` le
+  /// lit — un réglage oublié à l'appel ne compile pas ici.
   final ZChatSettingsController settings;
 
-  /// Couleur du curseur — fournie par l'hôte (FR-26, même arbitrage que
-  /// `ZChatComposer.cursorColor`).
+  /// Couleur du curseur — fournie par l'hôte, même arbitrage que
+  /// `ZChatComposer.cursorColor`.
   final Color cursorColor;
 
-  /// Réglage de chrome — `null` ⇒ jetons puis référence lex (chaîne K2).
+  /// Réglage de chrome — `null` signifie jetons puis référence.
   final ZChatComposerChrome? chrome;
 
-  /// Fond du conteneur. `null` ⇒ jeton `surfaceColor`, sinon aucun fond
-  /// (le socle n'invente aucune couleur).
+  /// Fond du conteneur. `null` signifie jeton `surfaceColor`, sinon aucun
+  /// fond (le socle n'invente aucune couleur).
   final Color? backgroundColor;
 
-  /// Couleur du FILET du conteneur (CR-IFFD-77 ③) — le `dividerColor` de lex,
-  /// un **rôle** que l'hôte fournit. `null` ⇒ jeton demandé
-  /// `chatComposerBorderColor`, sinon aucun filet (FR-26/AD-4). L'épaisseur
-  /// vient de la chaîne du chrome (référence 1).
+  /// Couleur du filet du conteneur — un rôle de thème que l'hôte fournit.
+  /// `null` signifie jeton `chatComposerBorderColor`, sinon aucun filet
+  /// (invariant AD-4). L'épaisseur vient de la chaîne du chrome (référence
+  /// 1).
   final Color? borderColor;
 
   /// Rognage du contenu au rayon du conteneur. `Clip.none` par défaut — cf.
@@ -151,42 +145,42 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// nécessaire dès qu'un enfant d'hôte peint jusqu'au bord).
   final Clip clipBehavior;
 
-  /// Nœud de focus de l'hôte. `null` ⇒ celui du composer.
+  /// Nœud de focus de l'hôte. `null` signifie celui du composer.
   final FocusNode? focusNode;
 
-  /// Suggestions du placeholder animé, déjà localisées par l'hôte. Vide ⇒
-  /// l'invite par défaut du composer (pas d'animation).
+  /// Suggestions du placeholder animé, déjà localisées par l'hôte. Vide
+  /// signifie l'invite par défaut du composer (pas d'animation).
   final List<String> hints;
 
-  /// Glyphe de tête du placeholder animé (l'« étincelle » de lex).
+  /// Glyphe de tête du placeholder animé.
   final Widget? hintLeading;
 
-  /// Le catalogue du menu `+` (pièce 2) — contrat OPAQUE : libellés, icônes
-  /// et gestes d'hôte. Vide ⇒ le `+` est absent (AD-4).
+  /// Le catalogue du menu `+` — contrat opaque : libellés, icônes et gestes
+  /// d'hôte. Vide signifie le `+` absent (invariant AD-4).
   final List<ZChatComposerPickerAction> pickers;
 
-  /// OUVRE la feuille de réglages (pièce 5) — modale, page, panneau : l'hôte
-  /// décide (F11). `null` ⇒ le bouton « outils » est absent (AD-4). Le
-  /// créneau `tools` de l'assemblé est une **bande** : la feuille n'y est
-  /// jamais montée inline (défaut ① d'IFFD).
+  /// Ouvre la feuille de réglages — modale, page, panneau : l'hôte décide.
+  /// `null` signifie le bouton « outils » absent (invariant AD-4). Le
+  /// créneau `tools` de l'assemblé est une bande : la feuille n'y est
+  /// jamais montée inline.
   final VoidCallback? onOpenTools;
 
-  /// Badge compteur du bouton « outils » (`ZChatMaterialToolsBadge` ou tout
-  /// widget d'hôte) — rendu DANS la cible (défaut ③ inexprimable).
+  /// Badge compteur du bouton « outils » — rendu dans la cible tactile.
   final Widget? toolsBadge;
 
-  /// Catalogue du sélecteur de modèle (arbitrage « créneau + tuile par
-  /// défaut »). Vide ⇒ sélecteur absent (AD-4).
+  /// Catalogue du sélecteur de modèle. Vide signifie sélecteur absent
+  /// (invariant AD-4).
   final List<ZChatModelOption> modelOptions;
 
   /// Id du modèle actif, ou `null`.
   final String? modelActiveId;
 
-  /// La sélection de modèle REMONTE ici — l'hôte la range où il veut.
+  /// La sélection de modèle remonte ici — l'hôte la range où il veut.
   final ValueChanged<String>? onSelectModel;
 
-  /// Présence de la bascule « réfléchir » en bande (arbitrage 3 : la présence
-  /// est un paramètre d'hôte ; la TUILE de la feuille, elle, reste).
+  /// Présence de la bascule « réfléchir » en bande — la présence est un
+  /// paramètre d'hôte ; la tuile de la feuille, elle, reste toujours
+  /// disponible.
   final bool showThinkingToggle;
 
   /// Présence de la bascule « internet » en bande — même régime.
@@ -195,8 +189,8 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Présence du déclencheur d'effort à menu — même régime.
   final bool showEffortSelector;
 
-  /// Glyphes d'HÔTE des pièces — `null` ⇒ libellé résolu (le socle n'invente
-  /// aucun glyphe : `material` banni, FR-26).
+  /// Glyphes d'hôte des pièces — `null` signifie libellé résolu (le socle
+  /// n'invente aucun glyphe).
   final Widget? pickerGlyph;
 
   /// Glyphe de la bascule « réfléchir ».
@@ -208,7 +202,7 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Glyphe du bouton « outils ».
   final Widget? toolsGlyph;
 
-  /// Glyphe du déclencheur d'effort (le « ✦ »).
+  /// Glyphe du déclencheur d'effort.
   final Widget? effortGlyph;
 
   /// Coche du palier actif du menu d'effort.
@@ -217,11 +211,12 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Coche du modèle actif du menu de modèle.
   final Widget? modelSelectionMark;
 
-  /// Glyphe du bouton STOP.
+  /// Glyphe du bouton d'arrêt.
   final Widget? stopGlyph;
 
-  /// Glyphe du bouton d'envoi. `null` ⇒ le libellé résolu (le disque Material
-  /// est l'affaire du satellite : `zChatMaterialSendFab`).
+  /// Glyphe du bouton d'envoi. `null` signifie le libellé résolu (le rendu
+  /// pixel-perfect d'un design system particulier est l'affaire du
+  /// satellite qui le porte).
   final Widget? sendGlyph;
 
   /// Glyphe du bandeau d'édition (le crayon).
@@ -230,35 +225,35 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Glyphe de la sortie d'édition.
   final Widget? editingCancelGlyph;
 
-  /// Créneau LIBRE au-dessus du champ (une bande de capture d'hôte, par
-  /// exemple `ZChatCaptureBar`). `null` ⇒ absent (AD-4).
+  /// Créneau libre au-dessus du champ (une bande de capture d'hôte, par
+  /// exemple `ZChatCaptureBar`). `null` signifie absent (invariant AD-4).
   ///
-  /// ⚠️ Ce n'est **pas** le déclencheur compact : CR-IFFD-76 comptait celui-ci
-  /// parmi ses six pièces alors qu'il n'existait pas — c'est [onDictate] qui
-  /// le monte, dans la BANDE (CR-IFFD-77 ④). Ce créneau reste inchangé pour
-  /// l'hôte qui s'en sert déjà.
+  /// Ce n'est pas le déclencheur compact de dictée : c'est [onDictate] qui
+  /// le monte, dans la bande. Ce créneau reste inchangé pour l'hôte qui s'en
+  /// sert déjà.
   final ZChatComposerSlotBuilder? dictation;
 
-  /// 🔴 Le GESTE de dictée (CR-IFFD-77 ④) — démarrer/arrêter : le socle ne
-  /// sait pas lequel, il n'a pas le moteur. `null` ⇒ le déclencheur compact
-  /// est **absent** de la bande (AD-4), jamais un micro inerte.
+  /// Le geste de dictée — démarrer/arrêter : le socle ne sait pas lequel, il
+  /// n'a pas le moteur. `null` signifie le déclencheur compact absent de la
+  /// bande (invariant AD-4), jamais un micro inerte.
   final VoidCallback? onDictate;
 
-  /// La tranche d'écoute **injectée** par l'hôte (typiquement
-  /// `ZChatCaptureController.listening`). `null` ⇒ toujours au repos.
+  /// La tranche d'écoute injectée par l'hôte (typiquement
+  /// `ZChatCaptureController.listening`). `null` signifie toujours au repos.
   final ValueListenable<bool>? dictationListening;
 
-  /// Glyphe d'HÔTE du déclencheur au repos (le micro).
+  /// Glyphe d'hôte du déclencheur au repos (le micro).
   final Widget? dictationGlyph;
 
-  /// Glyphe d'HÔTE du déclencheur **pendant l'écoute**.
+  /// Glyphe d'hôte du déclencheur pendant l'écoute.
   final Widget? dictationListeningGlyph;
 
   /// Remplace le déclencheur de dictée (règle des trois cas).
   final ZChatComposerSlotBuilder? dictationBuilder;
 
-  /// Overrides pièce par pièce — règle des trois cas (absent ⇒ défaut ;
-  /// widget ⇒ remplace ; `null` rendu ⇒ pièce absente, AD-4).
+  /// Overrides pièce par pièce — règle des trois cas (absent donne le
+  /// défaut ; widget rendu remplace ; `null` rendu donne une pièce absente,
+  /// invariant AD-4).
   final ZChatComposerSlotBuilder? editingBannerBuilder;
 
   /// Remplace le `+` des pickers.
@@ -270,8 +265,8 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Remplace la bascule « internet ».
   final ZChatComposerSlotBuilder? webSearchBuilder;
 
-  /// Remplace le bouton « outils » (le déclencheur — JAMAIS la feuille :
-  /// rendre une `ZChatSettingsSheet` ici est détecté, cf. défaut ①).
+  /// Remplace le bouton « outils » (le déclencheur — jamais la feuille :
+  /// rendre une `ZChatSettingsSheet` ici est détecté).
   final ZChatComposerSlotBuilder? toolsBuilder;
 
   /// Remplace le déclencheur d'effort.
@@ -280,7 +275,7 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Remplace le sélecteur de modèle.
   final ZChatComposerSlotBuilder? modelBuilder;
 
-  /// Remplace le bouton STOP.
+  /// Remplace le bouton d'arrêt.
   final ZChatComposerSlotBuilder? stopBuilder;
 
   /// Remplace la cible d'envoi.
@@ -289,9 +284,9 @@ class ZDefaultChatComposer extends StatelessWidget {
   /// Remplace le placeholder (créneau `hint` du composer).
   final ZChatComposerSlotBuilder? hintBuilder;
 
-  /// Applique la règle des trois cas à une pièce — et DÉTECTE le défaut ① en
-  /// debug : une `ZChatSettingsSheet` rendue dans la bande est l'erreur
-  /// d'assemblage d'IFFD (le créneau est une bande, la feuille une page).
+  /// Applique la règle des trois cas à une pièce — et détecte en debug
+  /// l'erreur d'assemblage où une `ZChatSettingsSheet` serait rendue dans la
+  /// bande (le créneau est une bande, la feuille une page).
   Widget? _piece(
     BuildContext context,
     ZChatComposerSlot slot,
@@ -301,8 +296,8 @@ class ZDefaultChatComposer extends StatelessWidget {
     final Widget? built = override == null
         ? fallback()
         : override(context, slot);
-    // Le message vit HORS des fichiers de rendu (G-R10 : aucun littéral
-    // porteur de mot ici — cf. `z_chat_assembly_contract.dart`).
+    // Le message vit hors des fichiers de rendu (aucun littéral porteur de
+    // mot ici — cf. `z_chat_assembly_contract.dart`).
     assert(built is! ZChatSettingsSheet, kZChatBandSheetAssertMessage);
     return built;
   }
@@ -321,11 +316,10 @@ class ZDefaultChatComposer extends StatelessWidget {
       child: ZChatComposer(
         controller: controller,
         cursorColor: cursorColor,
-        // 🔴 Défaut ② : le contrôleur de réglages est câblé D'OFFICE — la
-        // feuille et la bande écrivent dans CE contrôleur, `send()` le lit.
+        // Le contrôleur de réglages est câblé d'office — la feuille et la
+        // bande écrivent dans ce contrôleur, `send()` le lit.
         settings: settings,
         focusNode: focusNode,
-        // Le fait §① de la CR : les deux relevés convergent (1..5 lignes).
         minLines: ZChatComposerReference.fieldMinLines,
         maxLines: ZChatComposerReference.fieldMaxLines,
         padding: style.fieldContentPadding,
@@ -337,7 +331,7 @@ class ZDefaultChatComposer extends StatelessWidget {
     );
   }
 
-  /// Créneau `hint` : le placeholder animé de lex quand l'hôte fournit des
+  /// Créneau `hint` : le placeholder animé quand l'hôte fournit des
   /// suggestions — sinon l'invite par défaut du composer.
   ZChatComposerSlotBuilder? _hintSlot() {
     if (hintBuilder != null) return hintBuilder;
@@ -350,8 +344,9 @@ class ZDefaultChatComposer extends StatelessWidget {
         );
   }
 
-  /// Créneau `capture` (au-dessus du champ) : le bandeau d'édition — qui rend
-  /// les verbes K2 existants — puis l'éventuel slot de dictée d'hôte.
+  /// Créneau `capture` (au-dessus du champ) : le bandeau d'édition — qui
+  /// rend les verbes existants du contrôleur — puis l'éventuel slot de
+  /// dictée d'hôte.
   ZChatComposerSlotBuilder _captureSlot() {
     return (BuildContext context, ZChatComposerSlot slot) {
       final Widget? banner = _piece(
@@ -374,9 +369,9 @@ class ZDefaultChatComposer extends StatelessWidget {
     };
   }
 
-  /// Créneau `trailing` : STOP (pendant le flux — la pièce se masque seule)
-  /// puis l'envoi. Le tap d'envoi reste [ZChatComposerSlot.submit] — le site
-  /// unique du composer.
+  /// Créneau `trailing` : le bouton d'arrêt (pendant le flux — la pièce se
+  /// masque seule) puis l'envoi. Le tap d'envoi reste
+  /// [ZChatComposerSlot.submit] — le site unique du composer.
   ZChatComposerSlotBuilder _trailingSlot() {
     return (BuildContext context, ZChatComposerSlot slot) {
       final Widget? stop = _piece(
@@ -408,11 +403,12 @@ class ZDefaultChatComposer extends StatelessWidget {
     };
   }
 
-  /// La BANDE d'accessoires (créneau `tools`) — `+`, bascules, outils,
+  /// La bande d'accessoires (créneau `tools`) — `+`, bascules, outils,
   /// effort, modèle. Sous [ZChatComposerChromeStyle.mobileBreakpoint], les
-  /// libellés sont masqués et les badges gardés (lex/f011).
-  /// `true` si, sans aucun override, la bande n'aurait AUCUNE pièce — le
-  /// créneau est alors absent de l'arbre (AD-4), jamais une rangée vide.
+  /// libellés sont masqués et les badges gardés.
+  /// `true` si, sans aucun override, la bande n'aurait aucune pièce — le
+  /// créneau est alors absent de l'arbre (invariant AD-4), jamais une
+  /// rangée vide.
   bool get _bandStructurallyEmpty =>
       pickers.isEmpty &&
       onDictate == null &&
@@ -435,8 +431,8 @@ class ZDefaultChatComposer extends StatelessWidget {
   ZChatComposerSlotBuilder _bandSlot(ZChatComposerChromeStyle style) {
     return (BuildContext context, ZChatComposerSlot slot) => LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        // 🔴 La référence `mobileBreakpoint` est CONSOMMÉE (le « non
-        // mesuré » de la CR) — par la chaîne du chrome, donc réglable.
+        // La référence `mobileBreakpoint` est consommée par la chaîne du
+        // chrome, donc réglable par l'hôte.
         final bool compact =
             constraints.hasBoundedWidth &&
             constraints.maxWidth < style.mobileBreakpoint;
@@ -542,13 +538,13 @@ class ZDefaultChatComposer extends StatelessWidget {
         final List<Widget> trailing = <Widget>[?effort, ?model];
         // Les overrides peuvent avoir tout retiré (règle des trois cas) : la
         // bande rend alors le vide le plus discret possible — le retrait
-        // STRUCTUREL, lui, est décidé en amont (`_bandStructurallyEmpty`).
+        // structurel, lui, est décidé en amont (`_bandStructurallyEmpty`).
         if (leading.isEmpty && trailing.isEmpty) {
           return const SizedBox.shrink();
         }
-        // 🔴 La bande DÉFILE horizontalement plutôt que de déborder : c'est
-        // une rangée d'affordances, pas une page (défaut ① : rien de haut ne
-        // s'y monte ; et rien de large ne la casse — AD-10).
+        // La bande défile horizontalement plutôt que de déborder : c'est
+        // une rangée d'affordances, pas une page (invariant AD-10 : rien de
+        // large ne la casse).
         final Widget row = SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(

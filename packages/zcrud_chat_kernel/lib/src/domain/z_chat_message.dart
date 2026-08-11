@@ -1,28 +1,38 @@
-/// Message de conversation IA — `ZChatMessage` (AD-4, AD-10, AD-16, AD-19).
+/// Message de conversation IA — `ZChatMessage` (invariants AD-4, AD-9,
+/// AD-10).
 ///
-/// origine: lex_core (module « Assistant ») — `chat_message.dart:13-242`
-/// (champs, getter `content`, `copyWith` à sentinelle, lecture manuelle).
+/// ## Trois choix de robustesse assumés
 ///
-/// ## Trois écarts assumés vis-à-vis de lex — tous des corrections
-///
-/// 1. **[ZChatMessage.createdAt] est `DateTime?`** (D6). lex fait
-///    `DateTime.parse(json['created_at'] as String)` (`chat_message.dart:157`) :
-///    un document sans `created_at`, ou avec une date corrompue, **lève** et
-///    **détruit tout le message**. AD-10 l'interdit. Garde **G11**.
+/// 1. **[ZChatMessage.createdAt] est `DateTime?`**. Parser une date sans
+///    tolérance (`DateTime.parse` direct sur le champ brut) fait qu'un
+///    document sans `created_at`, ou avec une date corrompue, **lève** et
+///    **détruit tout le message**. L'invariant AD-10 l'interdit.
 /// 2. **[ZChatMessage.id] est `String?`** — l'entité éphémère (message en cours
 ///    de streaming, non encore matérialisé) est un état de premier ordre du
 ///    domaine (`ZEntity.isEphemeral`), pas un `''` déguisé.
-/// 3. **Aucun `freshnessForSource`** : la résolution de lex passe par un
-///    `switch` sur ses sous-types **douaniers** de source
-///    (`chat_message.dart:78-83`) — un socle générique n'a pas ces types. Un
-///    hôte croise `sourceFreshness` et `sources` lui-même, sur la clé de son
-///    choix.
+/// 3. **Aucun `freshnessForSource` dédié** : une résolution qui passerait par
+///    un `switch` sur des sous-types métier de source n'a pas sa place dans
+///    un socle générique dépourvu de ces types. Un hôte croise
+///    `sourceFreshness` et `sources` lui-même, sur la clé de son choix.
 ///
-/// ## 🔴 `updated_at` / `is_deleted` n'existent PAS ici (AD-16/AD-19)
+/// ## `updated_at` / `is_deleted` n'existent pas ici (invariant AD-9)
 ///
 /// Ces deux clés appartiennent à `ZSyncMeta` — **hors-entité**. [toMap] ne les
 /// émet **jamais**, et [extra] ne peut **jamais** les porter, sur **aucune**
-/// voie d'écriture (ctor `const`, `copyWith`, `fromMap`). Garde **G12**.
+/// voie d'écriture (ctor `const`, `copyWith`, `fromMap`).
+///
+/// ```dart
+/// import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+///
+/// final message = ZChatMessage(
+///   conversationId: 'conv-1',
+///   role: ZChatRole.assistant,
+///   contentBlocks: const [ZTextBlock(text: 'Bonjour !')],
+///   createdAt: DateTime.now(),
+/// );
+/// final Map<String, dynamic> persisted = message.toMap();
+/// final ZChatMessage relu = ZChatMessage.fromMap(persisted);
+/// ```
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -44,14 +54,15 @@ const Object _unset = Object();
 class ZChatMessage extends ZEntity with ZExtensible {
   /// Construit un message (primitif `const`).
   ///
-  /// ⛔ **Aucun `assert` ici, volontairement** (AD-10) : ce constructeur est la
-  /// cible de [fromMap], appelé avec des valeurs **brutes** issues du store. Un
-  /// `assert` y ferait **échouer la désérialisation d'une donnée corrompue**.
+  /// **Aucun `assert` ici, volontairement** (invariant AD-10) : ce
+  /// constructeur est la cible de [fromMap], appelé avec des valeurs
+  /// **brutes** issues du store. Un `assert` y ferait **échouer la
+  /// désérialisation d'une donnée corrompue**.
   ///
-  /// ⚠️ Étant `const`, il ne peut appeler **aucune** fonction dans son
+  /// Étant `const`, il ne peut appeler **aucune** fonction dans son
   /// initializer : il ne filtre donc **rien**. C'est l'**accesseur** [extra] qui
-  /// porte la garde (`zNormalizeExtra`) — le seul point que **toutes** les voies
-  /// traversent (`z_extensible.dart:86-121`).
+  /// porte la garde (`zNormalizeExtra`) — le seul point que **toutes** les
+  /// voies traversent.
   const ZChatMessage({
     this.id,
     this.conversationId = '',
@@ -74,16 +85,18 @@ class ZChatMessage extends ZEntity with ZExtensible {
     // ignore: prefer_initializing_formals
   }) : _extra = extra;
 
-  /// Reconstruit **défensivement** un message depuis une map persistée (AD-10).
+  /// Reconstruit **défensivement** un message depuis une map persistée
+  /// (invariant AD-10).
   ///
   /// **Aucun cas ne lève** — pas même `ZChatMessage.fromMap(const {})` : `role`
   /// inconnu ⇒ [ZChatRole.unknown] ; bloc de type inconnu ⇒
   /// [ZCustomContentBlock] ; élément de liste illisible ⇒ **ignoré** (la liste
-  /// survit, **G10**) ; `created_at` absent/corrompu ⇒ `null` (**G11**) ;
-  /// `extension` illisible ⇒ payload préservé opaque (**G14**).
+  /// survit) ; `created_at` absent/corrompu ⇒ `null` ;
+  /// `extension` illisible ⇒ payload préservé opaque.
   ///
   /// [typeRegistry] / [sourceRegistry] ouvrent les blocs et provenances que le
-  /// cœur ne type pas (AD-4 pt.3) ; [extensionParser] type le slot `extension`.
+  /// cœur ne type pas (invariant AD-4, mécanisme 3) ; [extensionParser] type
+  /// le slot `extension`.
   factory ZChatMessage.fromMap(
     Map<String, dynamic> map, {
     ZTypeRegistry? typeRegistry,
@@ -132,9 +145,8 @@ class ZChatMessage extends ZEntity with ZExtensible {
       ),
       versionKey: zJsonStringOrNull(map['version_key']),
       extension: zDecodeExtension(map['extension'], extensionParser),
-      // 🔴 NORMALISATION **EAGER** à la frontière d'ENTRÉE : le slot STOCKÉ est
-      // déjà propre ⇒ la lecture d'`extra` est SANS COPIE (assertion (i.3b) du
-      // gate `reserved-keys`).
+      // Normalisation EAGER à la frontière d'entrée : le slot stocké est
+      // déjà propre ⇒ la lecture d'`extra` est sans copie.
       extra: zSanitizeExtra(map, _reservedKeys),
     );
   }
@@ -159,10 +171,10 @@ class ZChatMessage extends ZEntity with ZExtensible {
   /// Pièces jointes, ou `null` si la clé est absente.
   final List<ZChatAttachment>? attachments;
 
-  /// Date de création (ISO-8601), `null` si absente ou illisible (**D6**).
+  /// Date de création (ISO-8601), `null` si absente ou illisible.
   ///
-  /// ⛔ Il n'y a **volontairement aucun** `updatedAt` : la clé Last-Write-Wins
-  /// est **hors-entité** (`ZSyncMeta.updatedAt`, AD-16/AD-19).
+  /// Il n'y a **volontairement aucun** `updatedAt` : la clé Last-Write-Wins
+  /// est **hors-entité** (`ZSyncMeta.updatedAt`, invariant AD-9).
   final DateTime? createdAt;
 
   /// Étapes de raisonnement exposées, ou `null`.
@@ -193,17 +205,17 @@ class ZChatMessage extends ZEntity with ZExtensible {
   /// Tag de version composable de la réponse, ou `null`.
   final String? versionKey;
 
-  /// Slot type additif **versionné** (AD-4 pt.1).
+  /// Slot type additif **versionné** (invariant AD-4, mécanisme 1).
   ///
   /// Vaut un `ZOpaqueExtension` quand aucun [ZChatExtensionParser] n'a su typer
-  /// le payload : la donnée **survit** même si le type ne revient pas
-  /// (CR-LEX-33).
+  /// le payload : la donnée **survit** même si le type ne revient pas.
   @override
   final ZExtension? extension;
 
-  /// Échappatoire non typée (AD-4 pt.2) — clés inconnues du cœur, préservées.
+  /// Échappatoire non typée (invariant AD-4, mécanisme 2) — clés inconnues
+  /// du cœur, préservées.
   ///
-  /// 🔴 L'accesseur **NORMALISE** : il ne rend **jamais** une clé réservée, quelle
+  /// L'accesseur **NORMALISE** : il ne rend **jamais** une clé réservée, quelle
   /// que soit la voie d'écriture empruntée (le ctor `const` ne peut rien
   /// filtrer). Zéro copie quand le slot stocké est déjà propre.
   @override
@@ -213,20 +225,20 @@ class ZChatMessage extends ZEntity with ZExtensible {
   /// ailleurs que dans l'accesseur [extra] (ni `toMap`, ni `==`, ni `hashCode`).
   final Map<String, dynamic> _extra;
 
-  /// Texte concaténé des seuls [ZTextBlock] (porté de `chat_message.dart:69-70`).
+  /// Texte concaténé des seuls [ZTextBlock].
   String get content => contentBlocks
       .whereType<ZTextBlock>()
       .map((ZTextBlock b) => b.text)
       .join();
 
-  /// Clés persistées **RÉSERVÉES** : schéma du message ∪ `extension` ∪
-  /// **`ZSyncMeta.reservedKeys`** (AD-19 — définition machine unique).
+  /// Clés persistées **réservées** : schéma du message ∪ `extension` ∪
+  /// **`ZSyncMeta.reservedKeys`**.
   ///
-  /// Sans le spread `ZSyncMeta.reservedKeys`, le store — qui écrit
-  /// `updated_at`/`is_deleted` **dans le corps** du document avant de passer la
-  /// map complète à [fromMap] — verrait ses clés atterrir dans [extra] puis être
-  /// **réémises** par [toMap] : le merge Last-Write-Wins serait faussé
-  /// **silencieusement** (AD-9/AD-16).
+  /// Sans le spread `ZSyncMeta.reservedKeys`, un store qui écrit
+  /// `updated_at`/`is_deleted` **dans le corps** du document avant de passer
+  /// la map complète à [fromMap] verrait ses clés atterrir dans [extra] puis
+  /// être **réémises** par [toMap] : le merge Last-Write-Wins serait faussé
+  /// **silencieusement** (invariant AD-9).
   static const Set<String> _reservedKeys = <String>{
     'id',
     'conversation_id',
@@ -251,11 +263,11 @@ class ZChatMessage extends ZEntity with ZExtensible {
   /// Sérialise vers la map persistée **complète** (clés snake_case), zéro-perte.
   ///
   /// [extra] est étalé **en premier** (via l'**accesseur**, donc via la garde),
-  /// puis les champs du schéma : une clé inconnue survit au round-trip (AD-4) et
-  /// ne peut jamais écraser un champ connu.
+  /// puis les champs du schéma : une clé inconnue survit au round-trip
+  /// (invariant AD-4) et ne peut jamais écraser un champ connu.
   ///
-  /// ⛔ **N'émet NI `updated_at` NI `is_deleted`, dans aucun cas de figure** —
-  /// y compris quand ces clés étaient présentes dans la map source (**G12**).
+  /// **N'émet NI `updated_at` NI `is_deleted`, dans aucun cas de figure** —
+  /// y compris quand ces clés étaient présentes dans la map source.
   Map<String, dynamic> toMap({
     ZTypeRegistry? typeRegistry,
     ZSourceRegistry? sourceRegistry,
@@ -305,13 +317,12 @@ class ZChatMessage extends ZEntity with ZExtensible {
       };
 
   /// Copie **à sentinelle** : un argument omis conserve la valeur courante, un
-  /// `null` **explicite** la remet à `null` (porté de `chat_message.dart:196-241`,
-  /// étendu à **tous** les champs nullables — lex n'y met la sentinelle que sur
-  /// six d'entre eux, les autres ne peuvent donc pas être remis à `null`).
+  /// `null` **explicite** la remet à `null`, étendu à **tous** les champs
+  /// nullables — une sentinelle partielle ne couvrant qu'une partie des champs
+  /// laisserait les autres impossibles à remettre à `null`.
   ///
-  /// 🔴 `extra` est **sanitisé EAGER** ici : une voie d'écriture qui ne
-  /// filtrerait pas laisserait la garde **rouvrable** (DW-ES22-3). Garde
-  /// **G13(b)**.
+  /// `extra` est **sanitisé eager** ici : une voie d'écriture qui ne
+  /// filtrerait pas laisserait la garde d'invariant rouvrable.
   ZChatMessage copyWith({
     Object? id = _unset,
     Object? conversationId = _unset,
@@ -406,10 +417,9 @@ class ZChatMessage extends ZEntity with ZExtensible {
           zListEquals(sourceFreshness, other.sourceFreshness) &&
           versionKey == other.versionKey &&
           extension == other.extension &&
-          // 🔴 Égalité PROFONDE du slot `extra` (DW-ES22-4) : `extra` porte du
-          // JSON IMBRIQUÉ par construction, et l'`==` d'une `Map` est une
-          // égalité d'IDENTITÉ en Dart. `zJsonEquals` est l'implémentation
-          // UNIQUE du dépôt — la recopier serait un finding.
+          // Égalité profonde du slot `extra` : `extra` porte du JSON imbriqué
+          // par construction, et l'`==` d'une `Map` est une égalité d'identité
+          // en Dart. `zJsonEquals` est l'implémentation unique du dépôt.
           zJsonEquals(extra, other.extra);
 
   @override

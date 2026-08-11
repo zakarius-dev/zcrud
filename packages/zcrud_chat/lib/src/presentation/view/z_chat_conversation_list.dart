@@ -1,40 +1,30 @@
-/// Liste neutre de conversations — `ZChatConversationList` (CR-IFFD-39).
+/// Liste neutre de conversations.
 ///
-/// ## Cinq dettes MESURÉES que cette liste ne reproduit pas
+/// ## Cinq défauts fréquents qu'une liste de conversations doit éviter
 ///
-/// 1. **Liste eager.** `grep -rn "ListView.builder\|ListView("` sur
-///    `iffd/lib/ai_assistant/` rend **un seul** hit :
-///    `conversation_list_widget.dart:207`, un `ListView(children: […])` monté
-///    d'un coup (spread `…rootConversations.map` `:211`, boucle sur les dossiers
-///    `:240`), aggravé par `folder_conversations_widget.dart:145`
-///    (`Column(children: conversations.map(...).toList())`). **Zéro
-///    `ListView.builder`.** Ici : `.builder`, et les groupes sont **aplatis** en
-///    lignes avant d'être construits — un groupe replié ne coûte pas ses lignes.
-/// 2. **L'état vide s'affiche au premier frame.** `conversation_list_widget.dart`
-///    passe `initialData: const []` (`:164`) et son `builder` ne teste **ni
-///    `connectionState` ni `hasError`** (grep négatif : aucun hit dans ce
-///    fichier). Toute erreur Firestore y donne « aucune conversation ». Ici,
-///    **trois états distincts**.
-/// 3. 🔵 **`hasError` AVANT le chargement** — l'idée de lex, reprise. Un flux en
-///    échec **pendant un rechargement** reste « en chargement » : tester le
-///    chargement d'abord bloquerait l'écran sur le squelette **pour toujours**.
-/// 4. **Le tri s'applique à la mauvaise liste.**
-///    `conversation_list_widget.dart:176-180` extrait `rootConversations` par
-///    `.where(...).toList()` (une **copie**), `:189-192` trie `conversations`
-///    (la source), et `:211` rend `rootConversations` — **non triée**. Ici le tri
-///    est un **paramètre**, appliqué à la liste qui est ensuite rendue, une
-///    seule fois.
-/// 5. **Pagination morte.** Chez lex, `getConversations` (limit/offset/cursor) a
-///    **trois définitions et un seul appelant** — l'implémentation appelant sa
-///    propre source (`chat_repository_impl.dart:200`) ; **aucun appelant d'UI**
-///    (l'écran lit `watchConversations()`). Ici, [onLoadMore]/[hasMore] posent le
-///    déclencheur qui manquait.
+/// 1. Une liste construite d'un coup (`ListView(children: [...])`) monte
+///    toutes ses lignes, groupes repliés compris. Ici : `.builder`, et les
+///    groupes sont aplatis en lignes avant d'être construits — un groupe
+///    replié ne coûte pas ses lignes.
+/// 2. Un état initial qui ne distingue ni le chargement ni l'erreur affiche
+///    « aucune conversation » avant que la moindre donnée soit arrivée, et
+///    sur tout échec de chargement. Ici, trois états distincts.
+/// 3. L'erreur doit être testée avant le chargement : un flux en échec
+///    pendant un rechargement doit rester signalé comme échec, pas comme
+///    « en chargement » — sans quoi l'écran resterait bloqué sur le
+///    squelette pour toujours.
+/// 4. Un tri appliqué à une copie de la liste plutôt qu'à la liste
+///    effectivement rendue laisse l'écran non trié. Ici le tri est un
+///    paramètre, appliqué à la liste qui est ensuite rendue, une seule fois.
+/// 5. Une pagination déclarée côté données mais jamais déclenchée côté
+///    interface reste morte. Ici, [ZChatConversationList.onLoadMore] et
+///    [ZChatConversationList.hasMore] posent le déclencheur.
 ///
-/// ## Ce qui reste DEHORS
+/// ## Ce qui reste hors de ce widget
 ///
 /// Aucune navigation (des callbacks, jamais une route) ; aucune hiérarchie à
-/// trois champs (la clé de groupe est **opaque**) ; aucun drapeau de déploiement
-/// (ne pas passer le callback **est** le drapeau) ; aucune canonicalisation
+/// champs fixes (la clé de groupe est opaque) ; aucun drapeau de déploiement
+/// (ne pas passer le callback est le drapeau) ; aucune canonicalisation
 /// d'URL de partage.
 library;
 
@@ -58,13 +48,12 @@ enum ZChatConversationListStatus {
   ready,
 }
 
-/// Prédicat de recherche **injectable**.
+/// Prédicat de recherche injectable.
 ///
-/// 🔴 Le filtre client de lex ne cherche que le titre
-/// (`conversations_screen.dart:159-168`), ce qui laisse la moitié des résultats
-/// sans `matching_messages` — donc sans surlignage du tout. Le socle ne peut pas
-/// faire mieux **par défaut** (il n'a pas les corps de messages sous la main),
-/// mais il ne fige pas le défaut : un hôte qui indexe autre chose passe le sien.
+/// Un filtre client qui ne cherche que le titre laisse tout résultat obtenu
+/// par le contenu des messages sans surlignage. Le socle ne peut pas faire
+/// mieux par défaut (il n'a pas les corps de messages sous la main), mais il
+/// ne fige pas le défaut : un hôte qui indexe autre chose passe le sien.
 typedef ZChatConversationMatcher = bool Function(
   ZChatConversation conversation,
   String term,
@@ -74,12 +63,11 @@ typedef ZChatConversationMatcher = bool Function(
 bool zChatDefaultConversationMatcher(ZChatConversation c, String term) =>
     c.title.toLowerCase().contains(term.trim().toLowerCase());
 
-/// Enveloppe une ligne — **le slot qui évite la réécriture de la tuile**.
+/// Enveloppe une ligne — le créneau qui évite la réécriture de la tuile.
 ///
-/// 🔴 Chez IFFD, chaque ligne **pulse** tant que sa génération IA n'est pas
-/// finie, avec **un contrôleur d'animation par ligne**. Ce n'est ni portable
-/// (le socle n'a pas d'animation) ni exprimable en champ. Sans ce slot, ils
-/// réécrivent la tuile entière pour pouvoir l'entourer.
+/// Un hôte qui veut décorer une ligne selon un état qui lui est propre (par
+/// exemple une animation tant qu'une génération est en cours) n'a pas à
+/// réécrire la tuile entière pour l'entourer.
 typedef ZChatConversationItemWrapper = Widget Function(
   BuildContext context,
   ZChatConversation conversation,
@@ -94,10 +82,10 @@ typedef ZChatGroupHeaderBuilder = Widget? Function(
   int count,
 );
 
-/// Extrait la clé de groupe **OPAQUE** d'une conversation.
+/// Extrait la clé de groupe opaque d'une conversation.
 ///
-/// 🔴 `Object?`, pas `String` : la hiérarchie à trois champs d'IFFD
-/// (`folderId`/`subFolderId`/`documentId`) est **app-side**, et la modéliser
+/// `Object?`, pas `String` : une hiérarchie de groupement appartient
+/// toujours à des spécificités d'hôte, et la modéliser en champs fixes
 /// interdirait toute autre hiérarchie (par date, par sujet, par état).
 typedef ZChatGroupKey = Object? Function(ZChatConversation conversation);
 
@@ -173,11 +161,9 @@ class ZChatConversationList extends StatelessWidget {
   /// En-tête de groupe, ou `null`.
   final ZChatGroupHeaderBuilder? groupHeaderBuilder;
 
-  /// 🔴 Contrôleur de repliement **EXTERNE**. `null` ⇒ groupes toujours
-  /// dépliés. Le socle n'en crée **jamais** : chez IFFD,
-  /// `folder_conversations_widget.dart:200-203` instancie son
-  /// `ExpandableController` **dans `build`** — l'état est donc perdu à chaque
-  /// rebuild, et les listeners fuient.
+  /// Contrôleur de repliement externe. `null` signifie groupes toujours
+  /// dépliés. Le socle n'en crée jamais : un contrôleur créé dans `build`
+  /// perdrait son état à chaque rebuild, et ses listeners fuiraient.
   final ZChatGroupExpansion? groupExpansion;
 
   /// Sélection multiple **externe**, ou `null` (aucune sélection multiple).
@@ -222,12 +208,10 @@ class ZChatConversationList extends StatelessWidget {
   /// Configuration passée à chaque tuile par défaut.
   final ZChatConversationTileConfig tileConfig;
 
-  /// La liste **réellement rendue** : filtrée, puis triée.
+  /// La liste réellement rendue : filtrée, puis triée.
   ///
-  /// 🔴 Exposée pour que la garde puisse comparer l'ordre rendu à l'ordre
-  /// attendu **sans** avoir à recopier la logique — c'est ce qui rend le défaut
-  /// « le tri s'applique à une autre liste » impossible à réintroduire en
-  /// silence.
+  /// Exposée publiquement pour qu'un test puisse comparer l'ordre rendu à
+  /// l'ordre attendu sans avoir à recopier la logique.
   List<ZChatConversation> get renderedItems {
     final String term = searchTerm.trim();
     final ZChatConversationMatcher? m = matcher;
@@ -244,9 +228,9 @@ class ZChatConversationList extends StatelessWidget {
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final EdgeInsetsDirectional pad = padding ?? theme.formPadding;
-    // 🔴 Les DEUX contrôleurs externes changent les lignes RENDUES (le
+    // Les deux contrôleurs externes changent les lignes rendues (le
     // repliement retire des lignes, la sélection change l'état de chacune) :
-    // ils sont donc écoutés AU-DESSUS de l'aplatissement, jamais dedans. Un
+    // ils sont donc écoutés au-dessus de l'aplatissement, jamais dedans. Un
     // abonnement pris sous `_flatten` verrait l'ancienne liste.
     final List<Listenable> sources = <Listenable>[
       ?selection,
@@ -287,7 +271,7 @@ class ZChatConversationList extends StatelessWidget {
     ZcrudTheme theme,
     EdgeInsetsDirectional pad,
   ) {
-    // 🔵 ORDRE NON NÉGOCIABLE : l'échec d'abord. Un flux qui échoue PENDANT un
+    // Ordre non négociable : l'échec d'abord. Un flux qui échoue pendant un
     // rechargement resterait « en chargement » et bloquerait l'écran sur le
     // squelette pour toujours.
     final ZFailure? f = failure;
@@ -304,7 +288,7 @@ class ZChatConversationList extends StatelessWidget {
       return emptyBuilder?.call(context, searching) ??
           _ZEmptyState(
             searching: searching,
-            // 🔴 L'action de création est MASQUÉE en recherche.
+            // L'action de création est masquée en recherche.
             onCreate: searching ? null : onCreate,
           );
     }
@@ -452,7 +436,7 @@ class _ZRows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView.builder(
-    // 🔴 `.builder` — JAMAIS `ListView(children: [...])`. Les lignes sont déjà
+    // `.builder` — jamais `ListView(children: [...])`. Les lignes sont déjà
     // aplaties : un groupe replié ne coûte pas ses éléments.
     padding: padding,
     itemCount: rows.length,
@@ -460,7 +444,7 @@ class _ZRows extends StatelessWidget {
   );
 
   Widget _row(BuildContext context, int index) {
-    // AD-10 : un index hors-bornes ne fait pas tomber la liste.
+    // Invariant AD-10 : un index hors-bornes ne fait pas tomber la liste.
     if (index < 0 || index >= rows.length) return const SizedBox.shrink();
     final _ZRow row = rows[index];
     if (row.isLoadMore) {
@@ -656,8 +640,8 @@ class _ZLoadMoreRowState extends State<_ZLoadMoreRow> {
   void initState() {
     super.initState();
     if (!widget.auto || widget.onLoadMore == null) return;
-    // 🔴 Différé : déclencher pendant la construction relancerait un build dans
-    // la même frame. Et **une seule fois par montage** — sans quoi un hôte dont
+    // Différé : déclencher pendant la construction relancerait un build dans
+    // la même frame. Et une seule fois par montage — sans quoi un hôte dont
     // `hasMore` reste `true` boucle à l'infini.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_fired || !mounted) return;
@@ -691,8 +675,7 @@ class _ZLoadMoreRowState extends State<_ZLoadMoreRow> {
   }
 }
 
-/// Le squelette de chargement — **structuré** et **annoncé** (l'idée portable de
-/// lex, `conversations_skeleton.dart:21-23`).
+/// Le squelette de chargement — structuré et annoncé.
 class _ZSkeleton extends StatelessWidget {
   const _ZSkeleton({required this.rowCount, required this.padding});
 
@@ -716,10 +699,8 @@ class _ZSkeleton extends StatelessWidget {
               height: kZChatMinTapTarget,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  // FR-26 : la teinte du squelette est DÉRIVÉE du `ColorScheme`
-                  // (slot neutre), jamais un gris littéral. `Theme.of` n'est pas
-                  // appelé ici : `material` est interdit dans ce package, et la
-                  // chaîne du cœur le fait pour nous.
+                  // La teinte du squelette est dérivée du `ColorScheme`
+                  // (slot neutre), jamais un gris littéral.
                   color: zResolveColorKeyOrSlot(
                     context,
                     '',
@@ -736,8 +717,7 @@ class _ZSkeleton extends StatelessWidget {
   }
 }
 
-/// L'état d'erreur — **inexistant chez IFFD**, où une erreur donne un écran
-/// vide indistinguable de « aucune conversation ».
+/// L'état d'erreur — distinct de l'état vide.
 class _ZErrorState extends StatelessWidget {
   const _ZErrorState({required this.onRetry});
 

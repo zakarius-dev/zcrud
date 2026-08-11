@@ -1,30 +1,24 @@
-/// La **feuille de réglages par défaut** — `ZChatSettingsSheet` (lot γ0/δ du
-/// chantier Notebook/Chat, suite de l'étude CR-IFFD-72).
+/// La **feuille de réglages par défaut** — `ZChatSettingsSheet`.
 ///
-/// ## 🔴 Le manque mesuré était le PORTEUR, puis la SURFACE — jamais les enums
+/// ## Ce fichier ne réinvente aucun enum
 ///
-/// L'étude (§ 3, § 4.3) a établi que les réglages du chat existent « **en
-/// donnée mais sans aucune surface** » : `ZChatResponseLength`,
-/// `ZChatLengthBias`, `ZChatComputeEffort` et les étapes de raisonnement sont
-/// modélisés depuis CHAT-0/CHAT-1, le porteur et la portée depuis le lot β. Il
-/// ne manquait que de quoi les **régler**.
+/// Les réglages du chat existent dans le kernel comme données
+/// (`ZChatResponseLength`, `ZChatLengthBias`, `ZChatComputeEffort`, les
+/// étapes de raisonnement) : il ne leur manquait qu'une surface pour les
+/// **régler**. Ce fichier ne déclare donc **aucun** enum, aucun palier,
+/// aucun équivalent : il rend ceux du kernel. Une garde de source
+/// (`z_chat_settings_guard_test.dart`, groupe ANTI-RÉINVENTION) l'atteste.
 ///
-/// ⇒ Ce fichier ne déclare **aucun** enum, aucun palier, aucun équivalent : il
-/// rend ceux du kernel. C'est le risque n°1 nommé par CR-IFFD-72 —
-/// « reconstruire la moitié de `zcrud_chat_kernel` » — et une garde de source
-/// l'atteste (`z_chat_settings_guard_test.dart`, groupe ANTI-RÉINVENTION).
+/// ## Le catalogue de corpus est une donnée d'HÔTE
 ///
-/// ## 🔴 Le catalogue de corpus est une donnée d'HÔTE
-///
-/// Le socle ne porte **aucune** valeur métier : ni code douanier, ni libellé de
-/// corpus, ni famille nommée. C'est ce qui a fait écarter, au lot β, les
-/// booléens `enableCodesDouanes`/`enableTec`/`enableValuation` de lex — ils
-/// imposeraient la douane à IFFD et à DODLP. L'hôte fournit ses
+/// Le socle ne porte **aucune** valeur métier : ni code douanier, ni libellé
+/// de corpus, ni famille nommée — un domaine métier imposerait le
+/// vocabulaire d'une application à toutes les autres. L'hôte fournit ses
 /// [ZChatCorpusOption] (clé stable + libellé **déjà traduit par lui**) ; le
-/// socle rend le mécanisme, confronte les clés à `ZChatCorpusScope` et rien de
-/// plus. Une garde de source vérifie qu'aucun terme métier n'entre ici.
+/// socle rend le mécanisme, confronte les clés à `ZChatCorpusScope` et rien
+/// de plus. Une garde de source vérifie qu'aucun terme métier n'entre ici.
 ///
-/// ## Composabilité — un builder par tuile, et l'AD-4 préservée
+/// ## Composabilité — un builder par tuile, et l'invariant AD-4 préservé
 ///
 /// Chaque tuile a son builder **nullable**, et la règle est unique :
 ///
@@ -38,50 +32,48 @@
 /// lieu d'un drapeau `showX` par tuile, qui aurait fait grossir la signature à
 /// chaque réglage ajouté. Même arbitrage que les créneaux de `ZChatComposer`.
 ///
-/// ## 🔴 Priorité **paramètre > jeton > référence** (FR-26)
+/// ## Priorité **paramètre > jeton > référence**
 ///
 /// Les deux seules valeurs de rendu que cette feuille pose — sa marge et son
 /// interligne — se résolvent dans cet ordre, et les **trois** niveaux sont
-/// atteignables (mesuré : `SET-T1`/`SET-T2`/`SET-T3`) :
+/// atteignables :
 ///
 /// 1. le **paramètre** ([padding], [spacing]) ;
 /// 2. le **jeton** injecté par l'hôte — `ZcrudScope.theme` ;
 /// 3. la **référence** du socle — [kZChatSettingsReferencePadding],
 ///    [kZChatSettingsReferenceGap].
 ///
-/// ⚠️ Le niveau 2 lit `ZcrudScope.maybeOf(context)?.theme` et **non**
-/// `ZcrudTheme.of(context)`, contrairement au reste du paquet. Ce n'est pas une
-/// inattention : `ZcrudTheme.of` **ne rend jamais `null`** (il retombe sur
-/// `ZcrudTheme.fallback(Theme.of(context))`, c'est-à-dire sur une échelle
-/// dérivée de *Material*). Le lire ici rendrait le niveau 3 **inatteignable** —
-/// une « référence » que rien ne peut atteindre est une garde vacante déguisée
-/// en gouvernance. Aucune couleur n'est concernée : ces deux constantes sont des
-/// espacements, pas une exception FR-26.
+/// Le niveau 2 lit `ZcrudScope.maybeOf(context)?.theme` et **non**
+/// `ZcrudTheme.of(context)`, contrairement au reste du paquet. Ce n'est pas
+/// une inattention : `ZcrudTheme.of` **ne rend jamais `null`** (il retombe
+/// sur `ZcrudTheme.fallback(Theme.of(context))`, c'est-à-dire sur une échelle
+/// dérivée de *Material*). Le lire ici rendrait le niveau 3
+/// **inatteignable** — une « référence » que rien ne peut atteindre est une
+/// garde vacante déguisée en gouvernance. Aucune couleur n'est concernée :
+/// ces deux constantes sont des espacements.
 ///
-/// ## AD-13
+/// ## Invariant AD-13
 ///
-/// Chaque option est un `Semantics(button: true, selected: …)` dans une boîte de
-/// [kZChatMinTapTarget] mesurée **en géométrie rendue** ; tout est directionnel
-/// (`EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlign.start`) ; l'état
-/// choisi est porté par le **drapeau sémantique `selected`**, jamais par la
-/// seule couleur — c'est l'un des 18 défauts structurants que l'étude a relevés
-/// dans le legacy (§ 2.3, « information portée par la seule couleur »).
+/// Chaque option est un `Semantics(button: true, selected: …)` dans une
+/// boîte de [kZChatMinTapTarget] mesurée **en géométrie rendue** ; tout est
+/// directionnel (`EdgeInsetsDirectional`, `AlignmentDirectional`,
+/// `TextAlign.start`) ; l'état choisi est porté par le **drapeau sémantique
+/// `selected`**, jamais par la seule couleur.
 ///
-/// ## 🔴 AD-13, son SYMÉTRIQUE — et pourquoi il manquait (CR-IFFD-74)
+/// ## L'invariant AD-13 a un symétrique
 ///
-/// AD-13 énonce qu'une information ne doit **jamais** être portée par la seule
-/// **couleur**. Son symétrique n'était écrit nulle part, et son absence a coûté
-/// exactement un défaut :
+/// AD-13 énonce qu'une information ne doit **jamais** être portée par la
+/// seule **couleur**. Son symétrique n'était écrit nulle part, et son
+/// absence a coûté exactement un défaut :
 ///
-/// > 🔴 **Un état doit être perceptible par au moins un canal VISIBLE** — le
+/// > **Un état doit être perceptible par au moins un canal VISIBLE** — le
 /// > drapeau sémantique n'en est pas un.
 ///
-/// Mesuré sur appareil le 2026-08-07 : on touchait une option, **rien ne
-/// changeait à l'écran** (deux captures identiques au pixel). La correction
-/// d'origine — porter l'état dans l'arbre sémantique — était juste, et elle est
-/// **conservée intacte** ; le tort était de l'avoir substituée au canal visible
-/// au lieu de l'ajouter à côté. On était passé de « un seul canal, visuel » à
-/// « un seul canal, sémantique ».
+/// Porter l'état uniquement dans l'arbre sémantique laisse un utilisateur
+/// voyant sans rien voir changer à l'écran quand il touche une option — deux
+/// captures identiques au pixel. La correction — porter l'état dans l'arbre
+/// sémantique — reste **nécessaire** ; le piège est de la substituer au
+/// canal visible au lieu de l'ajouter à côté.
 ///
 /// ⇒ Les deux canaux coexistent désormais, et **aucun ne remplace l'autre** :
 ///
@@ -93,74 +85,72 @@
 ///
 /// ### Pourquoi ni couleur, ni forme, mais graisse + soulignement
 ///
-/// * **Aucune couleur** — mesuré : sur un `ZcrudTheme` sans réglage d'hôte,
-///   **tous** les jetons de couleur sont `null` (`labelColor`, `surfaceColor`,
+/// * **Aucune couleur** — sur un `ZcrudTheme` sans réglage d'hôte, **tous**
+///   les jetons de couleur sont `null` (`labelColor`, `surfaceColor`,
 ///   `fieldBorderColor`, `chatToolAccentColor`…). Un canal de couleur serait
-///   donc *absent par défaut*, c'est-à-dire le défaut même que CR-IFFD-74
-///   corrige, et le socle n'a pas le droit d'en inventer une (FR-26). Peindre
-///   « en primaire » supposerait de plus un `ColorScheme`, que ce package
-///   n'importe pas (AD-57 : `material` est banni de `lib/`).
-/// * **Deux canaux, pas un** — mesuré : une graisse *seule* s'ANNULE sous un
+///   donc *absent par défaut*, exactement le défaut que ce mécanisme évite,
+///   et le socle n'a pas le droit d'en inventer une. Peindre « en primaire »
+///   supposerait de plus un `ColorScheme`, que ce paquet n'importe pas
+///   (`material` est banni de `lib/`).
+/// * **Deux canaux, pas un** — une graisse *seule* s'ANNULE sous un
 ///   `DefaultTextStyle` ambiant déjà gras (l'option choisie et les autres
 ///   redeviennent identiques). Le soulignement survit à ce cas ; et le cas
-///   symétrique (ambiant déjà souligné) est fermé par la règle de non-annulation
-///   ci-dessous.
-/// * **Invariant de luminosité** — graisse et soulignement ne dépendent d'aucune
-///   couleur : ils rendent la **même** différence en clair et en sombre
-///   (mesuré), là où un canal coloré doit être re-décidé par thème.
+///   symétrique (ambiant déjà souligné) est fermé par la règle de
+///   non-annulation ci-dessous.
+/// * **Invariant de luminosité** — graisse et soulignement ne dépendent
+///   d'aucune couleur : ils rendent la **même** différence en clair et en
+///   sombre, là où un canal coloré doit être re-décidé par thème.
 ///
-/// ### 🔴 Le canal ne peut pas s'ANNULER (AD-10)
+/// ### Le canal ne peut pas s'ANNULER (invariant AD-10)
 ///
-/// Si le style hérité porte **déjà** la graisse ET le soulignement d'emphase, la
-/// paire s'effondrerait — une option choisie redeviendrait indiscernable. Dans
-/// ce seul cas, le socle **retire** le soulignement des options NON choisies :
-/// la différence est alors garantie, sans jamais dépendre de ce que l'hôte a
-/// posé au-dessus. Hors de ce cas, le rendu des options non choisies est
-/// **strictement inchangé**.
+/// Si le style hérité porte **déjà** la graisse ET le soulignement
+/// d'emphase, la paire s'effondrerait — une option choisie redeviendrait
+/// indiscernable. Dans ce seul cas, le socle **retire** le soulignement des
+/// options NON choisies : la différence est alors garantie, sans jamais
+/// dépendre de ce que l'hôte a posé au-dessus. Hors de ce cas, le rendu des
+/// options non choisies est **strictement inchangé**.
 ///
-/// ### Remplaçabilité (FR-26)
+/// ### Remplaçabilité
 ///
 /// Les deux canaux se règlent par **paramètre** ([selectedWeight],
 /// [selectedDecoration]), puis par les **jetons** `chatSelectedEmphasisWeight`
-/// (`FontWeight?`) et `chatSelectedEmphasisDecoration` (`TextDecoration?`) —
-/// demandés par CR-IFFD-74, **posés au lot K4** —, et retombent sinon sur la
-/// **référence** du socle. Les jetons sont lus sur
+/// (`FontWeight?`) et `chatSelectedEmphasisDecoration` (`TextDecoration?`), et
+/// retombent sinon sur la **référence** du socle. Les jetons sont lus sur
 /// `ZcrudScope.maybeOf(context)?.theme` — jamais sur `ZcrudTheme.of`, pour la
-/// raison écrite plus haut. `floatingLabelWeight` n'a **pas** été détourné pour
-/// tenir ce rôle : c'est le jeton du *label flottant d'un formulaire*, et un
-/// hôte qui le règle ne demande pas de changer l'emphase d'un choix de chat.
+/// raison écrite plus haut. `floatingLabelWeight` n'a **pas** été détourné
+/// pour tenir ce rôle : c'est le jeton du *label flottant d'un formulaire*,
+/// et un hôte qui le règle ne demande pas de changer l'emphase d'un choix de
+/// chat.
 ///
-/// ## 🔴 CR-IFFD-75 — deux cibles adjacentes restent DISTINCTES quel que soit
-/// leur libellé
+/// ## Deux cibles adjacentes restent DISTINCTES quel que soit leur libellé
 ///
 /// Le plancher de 48 dp ([kZChatMinTapTarget]) est une borne **basse** : il
 /// garantit qu'une cible est *atteignable*, pas qu'elle est *lisible*. Un
 /// libellé plus large que 48 dp fait grandir la boîte au-delà du plancher, et
-/// deux boîtes voisines finissent bord à bord — mesuré sur appareil en
-/// français (« RéinitialiserFermer »), invisible en anglais (Reset/Close
-/// < 48 dp, donc dans la langue de développement).
+/// deux boîtes voisines peuvent finir bord à bord (par exemple deux libellés
+/// longs accolés dans une langue verbeuse, quand des équivalents plus courts
+/// resteraient sous le plancher).
 ///
-/// > 🔴 **Deux cibles adjacentes doivent rester visuellement distinctes
-/// > indépendamment de la longueur de leur libellé** — le pendant GÉOMÉTRIQUE
-/// > de la règle CR-74 ci-dessus (« un état perceptible par au moins un canal
-/// > visible ») : là-bas un état sans canal visible, ici deux affordances sans
-/// > frontière visible.
+/// > **Deux cibles adjacentes doivent rester visuellement distinctes
+/// > indépendamment de la longueur de leur libellé** — le pendant
+/// > GÉOMÉTRIQUE de la règle ci-dessus (« un état perceptible par au moins un
+/// > canal visible ») : là-bas un état sans canal visible, ici deux
+/// > affordances sans frontière visible.
 ///
-/// Le correctif vit dans la **PRIMITIVE** (`_ZChatSettingsAction`), pas dans le
-/// seul en-tête — la CR le pressentait : la primitive « pourrait servir
-/// ailleurs et porter le même risque ». Chaque action réserve un dégagement
-/// horizontal autour de son libellé (la moitié de
-/// [kZChatSettingsReferenceActionGap] de chaque côté, réglable par
-/// [actionSpacing] ; le jeton de niveau 2, `chatSettingsActionGap`, est
-/// **demandé** à `zcrud_core` — hors périmètre de ce lot), si bien que deux
-/// actions posées bord à bord gardent leurs libellés écartés d'au moins cet
-/// écart :
+/// Le correctif vit dans la **PRIMITIVE** (`_ZChatSettingsAction`), pas dans
+/// le seul en-tête, pour pouvoir servir partout où la même primitive est
+/// réutilisée. Chaque action réserve un dégagement horizontal autour de son
+/// libellé (la moitié de [kZChatSettingsReferenceActionGap] de chaque côté,
+/// réglable par [actionSpacing] ; le jeton de niveau 2,
+/// `chatSettingsActionGap`, viendra s'y insérer quand `zcrud_core`
+/// l'exposera), si bien que deux actions posées bord à bord gardent leurs
+/// libellés écartés d'au moins cet écart :
 ///
 /// * en **RTL** — l'ordre des actions s'inverse ; le dégagement étant
-///   symétrique, l'écart tient (mesuré) ;
+///   symétrique, l'écart tient ;
 /// * sous un **petit écran** — les actions sont `Flexible` : un libellé plus
-///   large que la place restante passe à la ligne au lieu de faire déborder la
-///   `Row` (mesuré, l'`Expanded` du titre comprimé à quelques dp).
+///   large que la place restante passe à la ligne au lieu de faire déborder
+///   la `Row` (l'`Expanded` du titre se comprime).
 library;
 
 import 'package:flutter/foundation.dart' show listEquals;
@@ -183,32 +173,30 @@ const EdgeInsetsDirectional kZChatSettingsReferencePadding =
 const double kZChatSettingsReferenceGap = 8;
 
 /// Graisse **de référence** de l'option CHOISIE — le premier des deux canaux
-/// visibles exigés par CR-IFFD-74.
+/// visibles requis pour qu'un état reste perceptible sans lecteur d'écran.
 ///
-/// 🔴 Une graisse, pas une couleur : le socle n'a le droit d'en inventer aucune
-/// (FR-26), et tous les jetons de couleur d'un `ZcrudTheme` non réglé sont
-/// `null` — un canal coloré serait donc *absent par défaut*, c'est-à-dire le
-/// défaut même que cette CR corrige.
+/// Une graisse, pas une couleur : le socle n'a le droit d'en inventer aucune,
+/// et tous les jetons de couleur d'un `ZcrudTheme` non réglé sont `null` — un
+/// canal coloré serait donc *absent par défaut*.
 const FontWeight kZChatSettingsReferenceSelectedWeight = FontWeight.w700;
 
 /// Soulignement **de référence** de l'option CHOISIE — le second canal visible.
 ///
-/// 🔴 Il existe parce qu'une graisse SEULE s'annule sous un `DefaultTextStyle`
-/// ambiant déjà gras (mesuré). Deux canaux indépendants, aucun coloré : la
-/// différence survit au style de l'hôte **et** aux deux luminosités.
+/// Il existe parce qu'une graisse SEULE s'annule sous un `DefaultTextStyle`
+/// ambiant déjà gras. Deux canaux indépendants, aucun coloré : la différence
+/// survit au style de l'hôte **et** aux deux luminosités.
 const TextDecoration kZChatSettingsReferenceSelectedDecoration =
     TextDecoration.underline;
 
 /// Écart de **référence** GARANTI entre les libellés de deux actions
-/// adjacentes de l'en-tête (CR-IFFD-75) — chaque [_ZChatSettingsAction]
-/// réserve la **moitié** de cet écart de chaque côté de son libellé, si bien
-/// que deux actions posées bord à bord restent visuellement distinctes quel
-/// que soit leur libellé (le plancher 48 dp, borne basse, ne le garantit pas).
+/// adjacentes de l'en-tête — chaque [_ZChatSettingsAction] réserve la
+/// **moitié** de cet écart de chaque côté de son libellé, si bien que deux
+/// actions posées bord à bord restent visuellement distinctes quel que soit
+/// leur libellé (le plancher 48 dp, borne basse, ne le garantit pas).
 ///
 /// Réglable par le paramètre [ZChatSettingsSheet.actionSpacing] ; le jeton de
-/// niveau 2 (`chatSettingsActionGap`) est **demandé** à `zcrud_core` et
-/// s'insérera entre les deux, comme `chatSelectedEmphasisWeight` l'a été pour
-/// CR-74.
+/// niveau 2 (`chatSettingsActionGap`) s'insérera entre les deux quand
+/// `zcrud_core` l'exposera.
 const double kZChatSettingsReferenceActionGap = 16;
 
 /// Écart de **référence** entre la coche d'hôte ([ZChatScaleControl
@@ -218,7 +206,7 @@ const double kZChatSettingsReferenceMarkGap = 4;
 
 /// Une entrée du **catalogue de corpus de l'hôte**.
 ///
-/// 🔴 [key] est la **clé stable** confrontée à `ZChatCorpusScope` (et, en bout
+/// [key] est la **clé stable** confrontée à `ZChatCorpusScope` (et, en bout
 /// de chaîne, à `ZChatSource.corpusKey`) ; [label] est le texte **déjà résolu
 /// par l'hôte**, dans sa langue. Le socle ne traduit pas un corpus : il n'en
 /// connaît aucun.
@@ -241,17 +229,14 @@ class ZChatCorpusOption {
   /// Libellé affiché, **fourni et localisé par l'hôte**.
   final String label;
 
-  /// **Second niveau** de filtre — lot K2 (T1, le filtre par entrée de lex :
-  /// chip « Tous » + `FilterChip` par document du catalogue,
-  /// `tools_sheet.dart:571-645`). Vide ⇒ l'entrée est plate, comme avant ce
-  /// lot. Les enfants ne sont rendus que lorsque l'entrée parente est
-  /// sélectionnée — le mécanisme lex (switch actif ⇒ rangée de filtres).
+  /// **Second niveau** de filtre : chip « Tous » + une option par enfant du
+  /// catalogue. Vide ⇒ l'entrée est plate. Les enfants ne sont rendus que
+  /// lorsque l'entrée parente est sélectionnée.
   final List<ZChatCorpusOption> children;
 
-  /// `false` ⇒ entrée présente mais NON sélectionnable — l'« entrée non
-  /// indexée » de lex (grisée alpha 0.38, `tools_sheet.dart:598-617`). Le
-  /// socle la rend **sans couleur** : sémantique `enabled: false` + style
-  /// italique — deux canaux, aucun chromatique (leçon CR-74).
+  /// `false` ⇒ entrée présente mais NON sélectionnable. Le socle la rend
+  /// **sans couleur** : sémantique `enabled: false` + style italique — deux
+  /// canaux, aucun chromatique.
   final bool enabled;
 
   @override
@@ -270,10 +255,10 @@ class ZChatCorpusOption {
 
 /// Ce que le socle offre au builder d'une tuile de réglage.
 ///
-/// 🔴 **Un objet, pas une liste d'arguments** — même arbitrage que
-/// `ZChatComposerSlot` : un réglage de plus deviendra un **champ de plus ici**,
-/// jamais un paramètre de plus dans la signature du builder, donc jamais un
-/// hôte cassé.
+/// **Un objet, pas une liste d'arguments** — même arbitrage que
+/// `ZChatComposerSlot` : un réglage de plus deviendra un **champ de plus
+/// ici**, jamais un paramètre de plus dans la signature du builder, donc
+/// jamais un hôte cassé.
 @immutable
 class ZChatSettingsSlot {
   /// Construit le contexte d'une tuile.
@@ -301,12 +286,12 @@ class ZChatSettingsSlot {
   /// Le catalogue tel que l'hôte l'a fourni (jamais une donnée du socle).
   final List<ZChatCorpusOption> corpusCatalog;
 
-  /// Les préréglages de l'hôte — lot K2 (T2). Vide ⇒ tuile absente (AD-4).
+  /// Les préréglages de l'hôte. Vide ⇒ tuile absente (invariant AD-4).
   final List<ZChatSettingsPreset> presetCatalog;
 
-  /// Les capacités SUPPLÉMENTAIRES de l'hôte — lot K4 (raccord kernel K1).
-  /// La recherche web n'a pas besoin d'y figurer : c'est l'entrée par défaut
-  /// du socle (`kZChatCapabilityWebSearch`, la seule qu'il nomme).
+  /// Les capacités SUPPLÉMENTAIRES de l'hôte. La recherche web n'a pas
+  /// besoin d'y figurer : c'est l'entrée par défaut du socle
+  /// (`kZChatCapabilityWebSearch`, la seule qu'il nomme).
   final List<ZChatSettingsHostOption> capabilityCatalog;
 }
 
@@ -372,21 +357,20 @@ class ZChatSettingsSheet extends StatelessWidget {
   /// laisserait croire l'inverse.
   final List<ZChatCorpusOption> corpusCatalog;
 
-  /// Les préréglages de l'HÔTE — lot K2 (T2, l'« expert » de lex rendu
-  /// neutre). Vide ⇒ la tuile de préréglages est **absente** (AD-4).
+  /// Les préréglages de l'HÔTE. Vide ⇒ la tuile de préréglages est
+  /// **absente** (invariant AD-4).
   final List<ZChatSettingsPreset> presetCatalog;
 
-  /// Remplace l'EN-TÊTE de la feuille (titre + réinitialiser + fermer — la
-  /// forme lex, `tools_sheet.dart:44-61`). Règle des trois cas, comme les
-  /// tuiles. Lot K2 (T1).
+  /// Remplace l'EN-TÊTE de la feuille (titre + réinitialiser + fermer).
+  /// Règle des trois cas, comme les tuiles.
   final ZChatSettingsTileBuilder? headerBuilder;
 
-  /// Ferme la feuille — le conteneur appartient à l'hôte (F11), donc la
-  /// fermeture aussi. `null` ⇒ l'affordance « fermer » de l'en-tête par défaut
-  /// est **absente** (AD-4 : jamais un bouton inerte).
+  /// Ferme la feuille — le conteneur appartient à l'hôte, donc la fermeture
+  /// aussi. `null` ⇒ l'affordance « fermer » de l'en-tête par défaut est
+  /// **absente** (invariant AD-4 : jamais un bouton inerte).
   final VoidCallback? onClose;
 
-  /// Remplace la tuile de préréglages. Lot K2 (T2).
+  /// Remplace la tuile de préréglages.
   final ZChatSettingsTileBuilder? presetsBuilder;
 
   /// Remplace la tuile de verbosité (`ZChatResponseLength`). Cf. le tableau du
@@ -402,27 +386,27 @@ class ZChatSettingsSheet extends StatelessWidget {
   /// Remplace la tuile « exposer le raisonnement ».
   final ZChatSettingsTileBuilder? revealThinkingBuilder;
 
-  /// Capacités SUPPLÉMENTAIRES de l'hôte (clé opaque + libellé **déjà localisé
-  /// par lui**) — lot K4. Elles s'ajoutent à l'entrée par défaut du socle, la
+  /// Capacités SUPPLÉMENTAIRES de l'hôte (clé opaque + libellé **déjà
+  /// localisé par lui**). Elles s'ajoutent à l'entrée par défaut du socle, la
   /// recherche web (`kZChatCapabilityWebSearch` — la seule capacité que le
   /// socle nomme, parce que le kernel la type). Un hôte qui fournit sa propre
-  /// entrée pour la clé réservée remplace celle du socle (jamais deux entrées
-  /// pour une même clé).
+  /// entrée pour la clé réservée remplace celle du socle (jamais deux
+  /// entrées pour une même clé).
   final List<ZChatSettingsHostOption> capabilityCatalog;
 
-  /// Remplace la tuile de capacités (`ZChatGenerationSettings.capabilities`,
-  /// kernel K1) — lot K4. Règle des trois cas ; rendre `null` la retire.
+  /// Remplace la tuile de capacités (`ZChatGenerationSettings.capabilities`).
+  /// Règle des trois cas ; rendre `null` la retire.
   final ZChatSettingsTileBuilder? capabilitiesBuilder;
 
   /// Remplace la tuile de portée documentaire (`ZChatCorpusScope`).
   final ZChatSettingsTileBuilder? corpusBuilder;
 
-  /// Les **entrées déclaratives** de l'HÔTE (lot Tile, arbitrage 1) — elles
-  /// s'injectent dans les MÊMES sections que les familles standard :
-  /// `sectionId` nul ⇒ section de génération, après les familles ;
-  /// `kZChatSettingsSectionCorpus` ⇒ après la portée documentaire ; tout autre
-  /// id ⇒ section d'hôte (déclarée dans [sections], ou anonyme en fin de
-  /// feuille — une entrée n'est **jamais** silencieusement perdue, AD-10).
+  /// Les **entrées déclaratives** de l'HÔTE — elles s'injectent dans les
+  /// MÊMES sections que les familles standard : `sectionId` nul ⇒ section de
+  /// génération, après les familles ; `kZChatSettingsSectionCorpus` ⇒ après
+  /// la portée documentaire ; tout autre id ⇒ section d'hôte (déclarée dans
+  /// [sections], ou anonyme en fin de feuille — une entrée n'est **jamais**
+  /// silencieusement perdue, invariant AD-10).
   final List<ZChatSettingsEntry> entries;
 
   /// Les **sections** déclarées par l'hôte : ordre des sections d'hôte, et
@@ -459,20 +443,19 @@ class ZChatSettingsSheet extends StatelessWidget {
   final double? spacing;
 
   /// Écart minimal GARANTI entre les libellés de deux actions adjacentes de
-  /// l'en-tête (CR-IFFD-75). `null` ⇒ jeton demandé (`chatSettingsActionGap`,
-  /// pas encore posé dans `zcrud_core` — listé au rapport de lot), puis
-  /// [kZChatSettingsReferenceActionGap].
+  /// l'en-tête. `null` ⇒ jeton (`chatSettingsActionGap`, pas encore exposé
+  /// par `zcrud_core`), puis [kZChatSettingsReferenceActionGap].
   final double? actionSpacing;
 
-  /// Graisse de l'option **choisie** — canal visible n°1 (CR-IFFD-74).
+  /// Graisse de l'option **choisie** — canal visible n°1.
   ///
-  /// `null` ⇒ jeton `chatSelectedEmphasisWeight` (lot K4), puis
+  /// `null` ⇒ jeton `chatSelectedEmphasisWeight`, puis
   /// [kZChatSettingsReferenceSelectedWeight].
   final FontWeight? selectedWeight;
 
-  /// Décoration de l'option **choisie** — canal visible n°2 (CR-IFFD-74).
+  /// Décoration de l'option **choisie** — canal visible n°2.
   ///
-  /// `null` ⇒ jeton `chatSelectedEmphasisDecoration` (lot K4), puis
+  /// `null` ⇒ jeton `chatSelectedEmphasisDecoration`, puis
   /// [kZChatSettingsReferenceSelectedDecoration]. Un hôte qui ne veut
   /// que la graisse passe `TextDecoration.none` ; un hôte qui veut tout autre
   /// chose remplace la tuile par son builder.
@@ -490,23 +473,23 @@ class ZChatSettingsSheet extends StatelessWidget {
       ZcrudScope.maybeOf(context)?.theme?.gapS ??
       kZChatSettingsReferenceGap;
 
-  /// Résout l'écart entre actions adjacentes (CR-IFFD-75) — **paramètre >
-  /// référence** aujourd'hui ; le jeton `chatSettingsActionGap` (demandé à
-  /// `zcrud_core`, hors périmètre de ce lot) s'insérera entre les deux.
+  /// Résout l'écart entre actions adjacentes — **paramètre > référence**
+  /// aujourd'hui ; le jeton `chatSettingsActionGap` s'insérera entre les
+  /// deux quand `zcrud_core` l'exposera.
   double resolveActionGap(BuildContext context) =>
       actionSpacing ?? kZChatSettingsReferenceActionGap;
 
   /// Résout la graisse d'emphase selon **paramètre > jeton > référence** — le
-  /// jeton `chatSelectedEmphasisWeight` demandé par CR-IFFD-74 a été posé au
-  /// lot K4, et il est lu sur `ZcrudScope.maybeOf` (jamais `ZcrudTheme.of`,
-  /// cf. le dartdoc de bibliothèque : la référence doit rester atteignable).
+  /// jeton `chatSelectedEmphasisWeight` est lu sur `ZcrudScope.maybeOf`
+  /// (jamais `ZcrudTheme.of`, cf. le dartdoc de bibliothèque : la référence
+  /// doit rester atteignable).
   FontWeight resolveSelectedWeight(BuildContext context) =>
       selectedWeight ??
       ZcrudScope.maybeOf(context)?.theme?.chatSelectedEmphasisWeight ??
       kZChatSettingsReferenceSelectedWeight;
 
   /// Résout la décoration d'emphase selon **paramètre > jeton > référence**
-  /// (jeton `chatSelectedEmphasisDecoration`, lot K4 — même régime).
+  /// (jeton `chatSelectedEmphasisDecoration` — même régime).
   TextDecoration resolveSelectedDecoration(BuildContext context) =>
       selectedDecoration ??
       ZcrudScope.maybeOf(context)?.theme?.chatSelectedEmphasisDecoration ??
@@ -519,21 +502,20 @@ class ZChatSettingsSheet extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       label: zChatLabel(context, kZChatLabelSettings),
-      // 🔴 L'emphase visible est posée UNE fois, au-dessus des deux
-      // `ValueListenableBuilder` : les CINQ familles de tuiles la lisent au même
-      // endroit, donc aucune ne peut diverger — et la poser ici ne provoque
-      // aucun rebuild supplémentaire (elle ne change qu'à une reconfiguration
-      // de la feuille, AD-2/SM-1).
+      // L'emphase visible est posée UNE fois, au-dessus des deux
+      // `ValueListenableBuilder` : les CINQ familles de tuiles la lisent au
+      // même endroit, donc aucune ne peut diverger — et la poser ici ne
+      // provoque aucun rebuild supplémentaire (elle ne change qu'à une
+      // reconfiguration de la feuille, invariant AD-2).
       child: _ZChatSettingsEmphasis(
         weight: resolveSelectedWeight(context),
         decoration: resolveSelectedDecoration(context),
         child: Padding(
           padding: resolvePadding(context),
-        // 🔴 Les DEUX tranches sont écoutées SÉPARÉMENT et au plus bas :
-        // cocher un corpus ne reconstruit pas les tuiles de verbosité. Rien
-        // ici n'écoute `ZChatController.messages` — c'est ce qui fait qu'ouvrir
-        // ou fermer la feuille ne reconstruit aucune tuile de conversation
-        // (SM-1, mesuré).
+        // Les DEUX tranches sont écoutées SÉPARÉMENT et au plus bas : cocher
+        // un corpus ne reconstruit pas les tuiles de verbosité. Rien ici
+        // n'écoute `ZChatController.messages` — c'est ce qui fait qu'ouvrir
+        // ou fermer la feuille ne reconstruit aucune tuile de conversation.
         child: ValueListenableBuilder<ZChatGenerationSettings>(
           valueListenable: controller.settings,
           builder:
@@ -573,11 +555,11 @@ class ZChatSettingsSheet extends StatelessWidget {
     final List<Widget> tiles = <Widget>[
       ?_tile(context, slot, headerBuilder, _header),
       ?_tile(context, slot, presetsBuilder, _presets),
-      // 🔴 RE-EXPRESSION (CR-LEX-78, arbitrage 1) : les familles standard ne
-      // sont plus des tuiles ad hoc — ce sont des [ZChatSettingsEntry] rendues
-      // par la MÊME voie que les entrées d'hôte (`_renderEntry`). La feuille
-      // par défaut rend un arbre STRICTEMENT identique à l'avant-re-expression
-      // (garde RX-1, étalon versionné).
+      // Les familles standard ne sont pas des tuiles ad hoc — ce sont des
+      // [ZChatSettingsEntry] rendues par la MÊME voie que les entrées d'hôte
+      // (`_renderEntry`). La feuille par défaut rend un arbre STRICTEMENT
+      // identique à celui d'une expression ad hoc équivalente (garde de
+      // non-régression, étalon versionné).
       ..._sectionBlock(context, slot, kZChatSettingsSectionGeneration, <Widget>[
         ?_tile(context, slot, responseLengthBuilder, _responseLength),
         ?_tile(context, slot, lengthBiasBuilder, _lengthBias),
@@ -616,7 +598,7 @@ class ZChatSettingsSheet extends StatelessWidget {
       ? fallback(context, slot)
       : override(context, slot);
 
-  // ── Le pipeline d'ENTRÉES — l'unique voie de rendu (CR-LEX-78) ────────────
+  // ── Le pipeline d'ENTRÉES — l'unique voie de rendu ──────────────────────
 
   /// Section d'appartenance d'une entrée — `null` ⇒ génération.
   String _entrySection(ZChatSettingsEntry e) =>
@@ -668,7 +650,7 @@ class ZChatSettingsSheet extends StatelessWidget {
   /// L'EN-TÊTE d'une section — rendu **seulement** si l'hôte a déclaré la
   /// section avec un titre ([ZChatSettingsSection.title] non nul). Les deux
   /// sections du socle n'en ont pas par défaut : l'arbre d'un hôte passif ne
-  /// bouge pas (garde RX-1).
+  /// bouge pas.
   Widget? _sectionHeader(BuildContext context, String id) {
     ZChatSettingsSection? declared;
     for (final ZChatSettingsSection s in sections) {
@@ -717,10 +699,10 @@ class ZChatSettingsSheet extends StatelessWidget {
     return _defaultEntryTile(context, slot, entry);
   }
 
-  /// Le rendu PAR DÉFAUT d'une entrée — le mode Tile IFFD (icône + titre +
-  /// sous-titre + contrôle) sur les contrôles au rendu lex (segments à
-  /// emphase CR-74, échelle labellisée). Un kind que le socle ne sait pas
-  /// rendre retombe sur [unknownEntryBuilder], sinon l'entrée est absente.
+  /// Le rendu PAR DÉFAUT d'une entrée — icône + titre + sous-titre + contrôle,
+  /// sur des contrôles à segments avec emphase et échelle labellisée. Un kind
+  /// que le socle ne sait pas rendre retombe sur [unknownEntryBuilder], sinon
+  /// l'entrée est absente.
   Widget? _defaultEntryTile(
     BuildContext context,
     ZChatSettingsSlot slot,
@@ -780,7 +762,7 @@ class ZChatSettingsSheet extends StatelessWidget {
         gap: gap,
       );
     } else {
-      // 🔴 Kind INCONNU : jamais un throw — le repli de l'hôte, sinon rien.
+      // Kind INCONNU : jamais un throw — le repli de l'hôte, sinon rien.
       return unknownEntryBuilder?.call(context, slot, entry);
     }
     final Widget? icon = entry.icon;
@@ -789,8 +771,8 @@ class ZChatSettingsSheet extends StatelessWidget {
   }
 
   /// Le rendu commun des kinds à SEGMENTS (`select`/`scale`) — la primitive
-  /// exacte des familles standard : même groupe, mêmes options, même emphase
-  /// CR-74 (c'est ce qui rend la re-expression indolore, garde RX-1).
+  /// exacte des familles standard : même groupe, mêmes options, même
+  /// emphase.
   Widget _choicesGroup(
     BuildContext context,
     ZChatSettingsEntry entry,
@@ -827,17 +809,15 @@ class ZChatSettingsSheet extends StatelessWidget {
     footer: footer,
   );
 
-  // ── Les CINQ familles standard, RE-EXPRIMÉES en entrées (arbitrage 1) ─────
+  // ── Les CINQ familles standard, exprimées comme entrées déclaratives ────
 
-  /// L'EN-TÊTE par défaut — la forme lex (`tools_sheet.dart:44-61`) : le titre,
-  /// « réinitialiser » (le `reset()` déjà corrigé du contrôleur), et
-  /// « fermer ».
+  /// L'EN-TÊTE par défaut : le titre, « réinitialiser » (`reset()` du
+  /// contrôleur), et « fermer ».
   ///
-  /// 🔴 **Hôte passif inchangé** : sans [onClose] ni [headerBuilder], aucun
-  /// en-tête n'est monté — l'arbre d'avant ce lot, à l'identique. L'en-tête
-  /// par défaut n'apparaît que lorsque l'hôte fournit le geste de fermeture
-  /// (c'est lui qui possède le conteneur, F11) ; un hôte qui veut l'en-tête
-  /// sans « fermer » passe son [headerBuilder].
+  /// **Hôte passif inchangé** : sans [onClose] ni [headerBuilder], aucun
+  /// en-tête n'est monté. L'en-tête par défaut n'apparaît que lorsque l'hôte
+  /// fournit le geste de fermeture (c'est lui qui possède le conteneur) ; un
+  /// hôte qui veut l'en-tête sans « fermer » passe son [headerBuilder].
   Widget? _header(BuildContext context, ZChatSettingsSlot slot) {
     final VoidCallback? close = onClose;
     if (close == null) return null;
@@ -855,11 +835,11 @@ class ZChatSettingsSheet extends StatelessWidget {
               ),
             ),
           ),
-          // 🔴 CR-IFFD-75 : chaque action réserve la moitié de l'écart résolu
-          // de chaque côté de son libellé — deux actions bord à bord restent
-          // distinctes quel que soit leur libellé. `Flexible` (loose) : sous
-          // un petit écran, un libellé trop large passe à la ligne au lieu de
-          // faire déborder la Row (l'`Expanded` du titre se comprime déjà).
+          // Chaque action réserve la moitié de l'écart résolu de chaque côté
+          // de son libellé — deux actions bord à bord restent distinctes
+          // quel que soit leur libellé. `Flexible` (loose) : sous un petit
+          // écran, un libellé trop large passe à la ligne au lieu de faire
+          // déborder la Row (l'`Expanded` du titre se comprime déjà).
           Flexible(
             child: _ZChatSettingsAction(
               labelKey: kZChatLabelSettingsReset,
@@ -879,14 +859,14 @@ class ZChatSettingsSheet extends StatelessWidget {
     );
   }
 
-  /// La tuile de PRÉRÉGLAGES — absente sans catalogue d'hôte (AD-4). Lot K2
-  /// (T2) : « Aucun » restitue l'état d'avant le premier préréglage
+  /// La tuile de PRÉRÉGLAGES — absente sans catalogue d'hôte (invariant
+  /// AD-4). « Aucun » restitue l'état d'avant le premier préréglage
   /// (`clearPreset`), un préréglage l'applique avec mémoire (`applyPreset`).
   Widget? _presets(BuildContext context, ZChatSettingsSlot slot) {
     if (slot.presetCatalog.isEmpty) return null;
-    // 🔴 Tranche dédiée, écoutée AU PLUS BAS : appliquer un préréglage change
-    // aussi les tranches settings/scope (qui reconstruisent le corps), mais un
-    // simple retrait/retour n'abonne rien d'autre que cette tuile (SM-1).
+    // Tranche dédiée, écoutée AU PLUS BAS : appliquer un préréglage change
+    // aussi les tranches settings/scope (qui reconstruisent le corps), mais
+    // un simple retrait/retour n'abonne rien d'autre que cette tuile.
     return ValueListenableBuilder<String?>(
       valueListenable: slot.controller.activePresetId,
       builder: (BuildContext context, String? active, Widget? _) =>
@@ -915,8 +895,7 @@ class ZChatSettingsSheet extends StatelessWidget {
   }
 
   /// La famille « verbosité » — une [ZChatSettingsEntry] de kind `select`,
-  /// rendue par la voie commune. Rendu STRICTEMENT identique à l'ancienne
-  /// tuile (garde RX-1) ; les gestes restent ceux du contrôleur.
+  /// rendue par la voie commune ; les gestes restent ceux du contrôleur.
   Widget? _responseLength(BuildContext context, ZChatSettingsSlot slot) =>
       _renderEntry(
         context,
@@ -1002,16 +981,14 @@ class ZChatSettingsSheet extends StatelessWidget {
                   ),
                 ),
             ],
-            // 🔴 Lot K2 (T1) — l'ÉCHELLE LABELLISÉE de lex (`tools_sheet.dart:
-            // 322-392`) : trois repères qualitatifs SOUS les paliers. Hors de
-            // l'arbre sémantique — l'état est déjà annoncé par les options ;
-            // les dupliquer ferait annoncer chaque palier deux fois (leçon
-            // MAJEUR-doublon).
-            // 🔴 Chaque repère est `Flexible` : mesuré au volet petit écran de
-            // CR-75 (280 dp), la rangée fixe débordait de 58 px — le même
-            // genre de défaut que l'en-tête (une largeur supposée, jamais
-            // bornée). Un repère trop large passe à la ligne au lieu de faire
-            // déborder la Row.
+            // L'ÉCHELLE LABELLISÉE : trois repères qualitatifs SOUS les
+            // paliers. Hors de l'arbre sémantique — l'état est déjà annoncé
+            // par les options ; les dupliquer ferait annoncer chaque palier
+            // deux fois.
+            // Chaque repère est `Flexible` : sous un petit écran, une rangée
+            // fixe déborderait — le même genre de défaut que l'en-tête (une
+            // largeur supposée, jamais bornée). Un repère trop large passe à
+            // la ligne au lieu de faire déborder la Row.
             footer: ExcludeSemantics(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1048,10 +1025,10 @@ class ZChatSettingsSheet extends StatelessWidget {
         ZChatSettingsEntry(
           id: kZChatSettingsEntryRevealThinking,
           title: const ZChatSettingsLabel.key(kZChatLabelRevealThinking),
-          // ⚠️ PAS un kind `toggle` : l'axe du kernel est TERNAIRE
+          // PAS un kind `toggle` : l'axe du kernel est TERNAIRE
           // (`null`/`true`/`false` — « l'hôte décide » est un état rendu,
-          // cf. kZChatLabelSettingAuto). Deux options, comme avant la
-          // re-expression — et c'est ce que RX-1 fige.
+          // cf. kZChatLabelSettingAuto). Deux options sont donc rendues,
+          // jamais un simple booléen.
           control: ZChatSelectControl(
             choices: <ZChatSettingsChoice>[
               ZChatSettingsChoice(
@@ -1071,22 +1048,20 @@ class ZChatSettingsSheet extends StatelessWidget {
         ),
       );
 
-  /// La famille « CAPACITÉS » par défaut — lot K4, le raccord de la tuile
-  /// générique [ZChatSettingsCapabilityTile] sur le kernel K1
+  /// La famille « CAPACITÉS » par défaut — le raccord de la tuile générique
+  /// [ZChatSettingsCapabilityTile] sur le kernel
   /// (`ZChatGenerationSettings.capabilities` + `webSearch`).
   ///
-  /// 🔴 L'entrée par défaut est la recherche web — la SEULE capacité que le
-  /// socle nomme (`kZChatCapabilityWebSearch`), parce que le kernel la type
-  /// (mesurée vivante chez les DEUX hôtes). Toute autre entrée vient du
-  /// [capabilityCatalog] de l'hôte, clé opaque + libellé déjà localisé par
-  /// lui : zéro libellé métier en dur (FR-26). Un hôte qui fournit sa propre
-  /// entrée pour la clé réservée remplace celle du socle.
+  /// L'entrée par défaut est la recherche web — la SEULE capacité que le
+  /// socle nomme (`kZChatCapabilityWebSearch`), parce que le kernel la type.
+  /// Toute autre entrée vient du [capabilityCatalog] de l'hôte, clé opaque +
+  /// libellé déjà localisé par lui : zéro libellé métier en dur. Un hôte qui
+  /// fournit sa propre entrée pour la clé réservée remplace celle du socle.
   ///
   /// La sélection lit `settings.capability(key)` — la lecture CANONIQUE du
   /// kernel (champ typé prioritaire) — et le geste est
-  /// `ZChatSettingsController.toggleCapability` : demandé ⇔ non exprimé (le
-  /// couple de la chip lex ; exprimer `false` reste possible par
-  /// `setCapability`).
+  /// `ZChatSettingsController.toggleCapability` : demandé ⇔ non exprimé
+  /// (exprimer `false` reste possible par `setCapability`).
   Widget? _capabilities(BuildContext context, ZChatSettingsSlot slot) {
     final bool hostOverridesWebSearch = slot.capabilityCatalog.any(
       (ZChatSettingsHostOption o) =>
@@ -1113,13 +1088,12 @@ class ZChatSettingsSheet extends StatelessWidget {
   }
 
   /// La portée documentaire — **absente** tant que l'hôte n'a fourni aucun
-  /// corpus (AD-4). Le socle n'en invente pas.
+  /// corpus (invariant AD-4). Le socle n'en invente pas.
   ///
-  /// Lot K2 (T1) : **filtres à deux niveaux** — une entrée sélectionnée dont
-  /// le catalogue porte des [ZChatCorpusOption.children] déroule sa rangée de
-  /// filtres (« Tous » + une option par enfant), le mécanisme lex
-  /// (`tools_sheet.dart:571-645`). Désélectionner l'entrée retire aussi ses
-  /// clés d'enfants : une portée ne garde jamais de clé orpheline.
+  /// **Filtres à deux niveaux** : une entrée sélectionnée dont le catalogue
+  /// porte des [ZChatCorpusOption.children] déroule sa rangée de filtres
+  /// (« Tous » + une option par enfant). Désélectionner l'entrée retire
+  /// aussi ses clés d'enfants : une portée ne garde jamais de clé orpheline.
   Widget? _corpus(BuildContext context, ZChatSettingsSlot slot) {
     if (slot.corpusCatalog.isEmpty) return null;
     final double gap = resolveGap(context);
@@ -1172,7 +1146,7 @@ class ZChatSettingsSheet extends StatelessWidget {
             ),
             for (final ZChatCorpusOption option in slot.corpusCatalog)
               ZChatSettingsChoice(
-                // 🔴 Le libellé vient de l'HÔTE : pas de clé, pas de
+                // Le libellé vient de l'HÔTE : pas de clé, pas de
                 // traduction du socle. C'est ce qui tient « aucune valeur
                 // métier ici ».
                 label: ZChatSettingsLabel.text(option.label),
@@ -1234,11 +1208,10 @@ const Map<ZChatLengthBias, String> _kLengthBiasLabels = <ZChatLengthBias, String
 /// Porte l'**emphase visible** de l'option choisie jusqu'aux CINQ familles de
 /// tuiles, sans la faire transiter par six sites de construction.
 ///
-/// 🔴 Un seul porteur ⇒ **une seule** définition de « ce qu'on voit quand c'est
-/// choisi ». Le défaut d'origine (CR-IFFD-74) était partagé par les cinq
-/// familles précisément parce qu'elles partagent une primitive : le correctif
-/// doit se partager par la même arête, sinon il se corrigerait quatre fois et
-/// divergerait une cinquième.
+/// Un seul porteur ⇒ **une seule** définition de « ce qu'on voit quand c'est
+/// choisi ». Les cinq familles de tuiles partagent une primitive : la
+/// définition de l'emphase doit donc se partager par la même arête, sinon
+/// elle divergerait entre familles.
 class _ZChatSettingsEmphasis extends InheritedWidget {
   const _ZChatSettingsEmphasis({
     required this.weight,
@@ -1266,15 +1239,16 @@ TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
     ? add
     : TextDecoration.combine(<TextDecoration>[base, add]);
 
-/// La paire de styles d'une option : ce que rend une option **non choisie**, et
-/// ce que rend une option **choisie**. Fonction PURE, donc mesurable seule.
+/// La paire de styles d'une option : ce que rend une option **non choisie**,
+/// et ce que rend une option **choisie**. Fonction PURE, donc testable
+/// seule.
 ///
-/// 🔴 Elle porte l'invariant de CR-IFFD-74 : sous les références du socle, les
-/// deux styles **diffèrent toujours**. Si le style hérité portait déjà la
-/// graisse ET la décoration d'emphase, les deux canaux s'annuleraient — le socle
-/// retire alors la décoration des options NON choisies, plutôt que de laisser
-/// l'état redevenir invisible (AD-10). Hors de ce cas, l'option non choisie rend
-/// **exactement** le style hérité : le correctif est strictement additif.
+/// Sous les références du socle, les deux styles **diffèrent toujours**. Si
+/// le style hérité portait déjà la graisse ET la décoration d'emphase, les
+/// deux canaux s'annuleraient — le socle retire alors la décoration des
+/// options NON choisies, plutôt que de laisser l'état redevenir invisible
+/// (invariant AD-10). Hors de ce cas, l'option non choisie rend **exactement**
+/// le style hérité : le correctif est strictement additif.
 ({TextStyle plain, TextStyle chosen}) _optionStyles(
   TextStyle base, {
   required FontWeight weight,
@@ -1285,14 +1259,15 @@ TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
   decoration: decoration,
 );
 
-/// 🔴 **L'UNIQUE implémentation** de la paire de styles CR-IFFD-74 — la feuille
+/// **L'unique implémentation** de la paire de styles d'emphase — la feuille
 /// (par `_optionStyles`) **et** la bande du composer
 /// (`z_chat_composer_band.dart`) y passent.
 ///
-/// Elle est devenue partagée avec CR-IFFD-77 ① : sous le seuil compact, le
-/// libellé de la pièce ACTIVE est le seul canal visible, donc l'anti-annulation
-/// AD-10 ci-dessus y devient **porteuse** — deux copies auraient divergé
-/// exactement là où la garde ne regardait pas.
+/// Elle est partagée entre les deux : sous le seuil compact du composer, le
+/// libellé de la pièce ACTIVE est le seul canal visible, donc
+/// l'anti-annulation ci-dessus (invariant AD-10) y devient **porteuse** —
+/// deux copies auraient pu diverger exactement là où une garde locale ne
+/// regardait pas.
 ({TextStyle plain, TextStyle chosen}) zChatSelectedEmphasisStyles(
   TextStyle base, {
   required FontWeight weight,
@@ -1315,9 +1290,9 @@ TextDecoration _mergeDecoration(TextDecoration? base, TextDecoration add) =>
   );
 }
 
-/// Un groupe de réglage : un intitulé, puis ses options — et, depuis le lot
-/// K2, un [footer] optionnel (échelle labellisée du budget, second niveau de
-/// filtres du corpus). `null` ⇒ absent (AD-4).
+/// Un groupe de réglage : un intitulé, puis ses options — et un [footer]
+/// optionnel (échelle labellisée du budget, second niveau de filtres du
+/// corpus). `null` ⇒ absent (invariant AD-4).
 class _ZChatSettingsGroup extends StatelessWidget {
   const _ZChatSettingsGroup({
     required this.options,
@@ -1336,8 +1311,7 @@ class _ZChatSettingsGroup extends StatelessWidget {
   /// Titre d'HÔTE, déjà résolu. Exclusif de [labelKey].
   final String? text;
 
-  /// Sous-titre déjà résolu (mode Tile, arbitrage 1). `null` ⇒ absent (AD-4)
-  /// — et l'arbre redevient EXACTEMENT celui d'avant la re-expression.
+  /// Sous-titre déjà résolu. `null` ⇒ absent (invariant AD-4).
   final String? subtitle;
 
   final List<_ZChatSettingsOption> options;
@@ -1384,14 +1358,13 @@ class _ZChatSettingsGroup extends StatelessWidget {
 }
 
 /// Une ACTION de l'en-tête (réinitialiser, fermer) : cible ≥ 48 dp en
-/// géométrie rendue, `Semantics(button:)` — jamais `selected`, ce n'est pas un
-/// choix. Lot K2 (T1).
+/// géométrie rendue, `Semantics(button:)` — jamais `selected`, ce n'est pas
+/// un choix.
 ///
-/// 🔴 **CR-IFFD-75 — le dégagement vit ICI, dans la primitive.** Le plancher
-/// 48 dp est une borne *basse* : un libellé plus large fait grandir la boîte
-/// et deux actions voisines finissent bord à bord (« RéinitialiserFermer »,
-/// mesuré sur appareil en français — invisible en anglais). Chaque action
-/// réserve donc [inset] de chaque côté de son libellé, en
+/// **Le dégagement vit ICI, dans la primitive.** Le plancher 48 dp est une
+/// borne *basse* : un libellé plus large fait grandir la boîte, et deux
+/// actions voisines peuvent finir bord à bord dans une langue verbeuse.
+/// Chaque action réserve donc [inset] de chaque côté de son libellé, en
 /// `EdgeInsetsDirectional` : la garantie tient en LTR comme en RTL, et pour
 /// toute surface future qui poserait cette primitive ailleurs que dans
 /// l'en-tête.
@@ -1406,7 +1379,7 @@ class _ZChatSettingsAction extends StatelessWidget {
   final VoidCallback onTap;
 
   /// Dégagement horizontal réservé de CHAQUE côté du libellé — la moitié de
-  /// l'écart garanti entre deux actions adjacentes (CR-IFFD-75).
+  /// l'écart garanti entre deux actions adjacentes.
   final double inset;
 
   @override
@@ -1431,7 +1404,7 @@ class _ZChatSettingsAction extends StatelessWidget {
             widthFactor: 1,
             heightFactor: 1,
             child: Padding(
-              // 🔴 CR-IFFD-75 : le dégagement, directionnellement symétrique.
+              // Le dégagement, directionnellement symétrique.
               padding: EdgeInsetsDirectional.symmetric(horizontal: inset),
               child: Text(resolved, textAlign: TextAlign.start),
             ),
@@ -1442,15 +1415,15 @@ class _ZChatSettingsAction extends StatelessWidget {
   }
 }
 
-/// Tuile GÉNÉRIQUE « échelle discrète » — lot K2 (T1, fusion F4 de l'étude) :
-/// un axe d'HÔTE (niveau de connaissance, sévérité, …) rendu avec la même
-/// primitive que les cinq familles — donc la même emphase CR-74, la même
-/// sémantique, les mêmes cibles 48 dp.
+/// Tuile GÉNÉRIQUE « échelle discrète » : un axe d'HÔTE (niveau de
+/// connaissance, sévérité, …) rendu avec la même primitive que les cinq
+/// familles — donc la même emphase, la même sémantique, les mêmes cibles
+/// 48 dp.
 ///
 /// L'état de l'axe appartient à l'HÔTE ([selectedKey]/[onSelect]) : le socle
-/// n'a nulle part où ranger un « niveau utilisateur » (`UserKnowledgeLevel` lex
-/// et `NiveauIFFD` sont des valeurs métier). Chips plutôt que slider : le
-/// verdict F4 de l'étude (cibles 48 dp, aucun Syncfusion).
+/// n'a nulle part où ranger une valeur métier de « niveau utilisateur ».
+/// Chips plutôt que slider : cibles ≥ 48 dp, aucune dépendance de rendu
+/// tierce.
 class ZChatSettingsScaleTile extends StatelessWidget {
   /// Construit la tuile.
   const ZChatSettingsScaleTile({
@@ -1514,11 +1487,10 @@ class ZChatSettingsScaleTile extends StatelessWidget {
   }
 }
 
-/// Tuile GÉNÉRIQUE « capacités booléennes » — lot K2 (T1, fusion F6) : des
-/// interrupteurs d'HÔTE (recherche web, résumé, …) rendus par la primitive
-/// commune. Le socle ne code AUCUNE capacité en dur — quand le kernel portera
-/// ses capacités (`ZChatGenerationSettings`, lot K1 en vol), la feuille
-/// gagnera une famille par défaut qui s'appuiera sur cette même tuile.
+/// Tuile GÉNÉRIQUE « capacités booléennes » : des interrupteurs d'HÔTE
+/// (recherche web, résumé, …) rendus par la primitive commune. Le socle ne
+/// code AUCUNE capacité en dur au-delà de ce que le kernel type
+/// (`ZChatGenerationSettings.capabilities`).
 class ZChatSettingsCapabilityTile extends StatelessWidget {
   /// Construit la tuile.
   const ZChatSettingsCapabilityTile({
@@ -1582,8 +1554,8 @@ class ZChatSettingsCapabilityTile extends StatelessWidget {
   }
 }
 
-/// Une option d'HÔTE des tuiles génériques : clé stable, libellé localisé par
-/// l'hôte, disponibilité. Lot K2 (T1).
+/// Une option d'HÔTE des tuiles génériques : clé stable, libellé localisé
+/// par l'hôte, disponibilité.
 @immutable
 class ZChatSettingsHostOption {
   /// Construit une option.
@@ -1615,10 +1587,10 @@ class ZChatSettingsHostOption {
   int get hashCode => Object.hash(key, label, enabled);
 }
 
-/// Une option : cible **≥ 48 dp en géométrie rendue**, état porté par **deux**
-/// canaux — le drapeau sémantique `selected` (lecteur d'écran) ET l'emphase
-/// typographique (vue). Jamais par la seule couleur, et jamais par le seul
-/// drapeau sémantique (AD-13 et son symétrique, CR-IFFD-74).
+/// Une option : cible **≥ 48 dp en géométrie rendue**, état porté par
+/// **deux** canaux — le drapeau sémantique `selected` (lecteur d'écran) ET
+/// l'emphase typographique (vue). Jamais par la seule couleur, et jamais par
+/// le seul drapeau sémantique (invariant AD-13 et son symétrique).
 class _ZChatSettingsOption extends StatelessWidget {
   /// Option dont le libellé est une **clé du socle**.
   const _ZChatSettingsOption.key({
@@ -1632,9 +1604,10 @@ class _ZChatSettingsOption extends StatelessWidget {
 
   /// Option dont le libellé est **fourni par l'hôte** (catalogue de corpus).
   ///
-  /// 🔴 Deux constructeurs plutôt qu'un couple de champs nullables : « exactement
-  /// l'une des deux sources » devient une propriété du TYPE, pas une convention
-  /// qu'un appel futur pourrait enfreindre en passant les deux — ou aucune.
+  /// Deux constructeurs plutôt qu'un couple de champs nullables : « exactement
+  /// l'une des deux sources » devient une propriété du TYPE, pas une
+  /// convention qu'un appel futur pourrait enfreindre en passant les deux —
+  /// ou aucune.
   const _ZChatSettingsOption.host({
     required String this.text,
     required this.selected,
@@ -1657,15 +1630,14 @@ class _ZChatSettingsOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// `false` ⇒ NON sélectionnable — l'« entrée non indexée » de lex, rendue
-  /// SANS couleur : sémantique `enabled: false` + italique (lot K2). Le geste
-  /// est retiré, jamais silencieusement ignoré.
+  /// `false` ⇒ NON sélectionnable, rendue SANS couleur : sémantique
+  /// `enabled: false` + italique. Le geste est retiré, jamais silencieusement
+  /// ignoré.
   final bool enabled;
 
-  /// Glyphe d'HÔTE posé DEVANT le libellé de l'option **choisie** — la coche
-  /// des segments lex (lot Tile). `null` ⇒ l'emphase CR-74 seule, et l'arbre
-  /// redevient EXACTEMENT celui d'avant ce lot (garde RX-1). Décoratif :
-  /// hors de l'arbre sémantique — l'état est déjà annoncé par `selected`.
+  /// Glyphe d'HÔTE posé DEVANT le libellé de l'option **choisie** — une
+  /// coche, typiquement. `null` ⇒ l'emphase de style seule. Décoratif : hors
+  /// de l'arbre sémantique — l'état est déjà annoncé par `selected`.
   final Widget? mark;
 
   @override
@@ -1675,9 +1647,9 @@ class _ZChatSettingsOption extends StatelessWidget {
         (count == null
             ? zChatLabel(context, labelKey!)
             : zChatCountLabel(context, labelKey!, count!));
-    // 🔴 LE CANAL VISIBLE (CR-IFFD-74). Il s'AJOUTE au drapeau sémantique
-    // ci-dessous ; il ne le remplace pas — c'est exactement l'erreur que cette
-    // CR corrige, dans l'autre sens.
+    // LE CANAL VISIBLE. Il s'AJOUTE au drapeau sémantique ci-dessous ; il ne
+    // le remplace pas — un canal qui remplacerait l'autre laisserait l'un
+    // des deux publics sans rien percevoir.
     final _ZChatSettingsEmphasis? emphasis = _ZChatSettingsEmphasis.maybeOf(
       context,
     );
@@ -1688,10 +1660,10 @@ class _ZChatSettingsOption extends StatelessWidget {
           emphasis?.decoration ?? kZChatSettingsReferenceSelectedDecoration,
     );
     if (!enabled) {
-      // 🔴 Entrée NON disponible (lot K2) — deux canaux, aucun chromatique :
-      // la sémantique `enabled: false` (lecteur d'écran) ET l'italique (vue).
-      // lex la grise en alpha 0.38 — une information portée par la seule
-      // couleur, le défaut que CR-74 a déjà fermé ici.
+      // Entrée NON disponible — deux canaux, aucun chromatique : la
+      // sémantique `enabled: false` (lecteur d'écran) ET l'italique (vue).
+      // Griser en alpha réduit serait une information portée par la seule
+      // couleur — le défaut que ces deux canaux évitent.
       return Semantics(
         button: true,
         enabled: false,
@@ -1717,18 +1689,17 @@ class _ZChatSettingsOption extends StatelessWidget {
     }
     return Semantics(
       button: true,
-      // 🔴 L'ÉTAT, dans l'arbre sémantique. Le legacy porte le choix par la
-      // seule couleur : un lecteur d'écran y annonce quatre boutons identiques.
+      // L'ÉTAT, dans l'arbre sémantique — jamais porté par la seule couleur,
+      // qui ferait annoncer à un lecteur d'écran des boutons indiscernables.
       selected: selected,
-      // 🔴 Le libellé est porté ICI, et les descendants sont exclus.
+      // Le libellé est porté ICI, et les descendants sont exclus.
       //
-      // Mesuré : sans cela, le groupe parent étant en `explicitChildNodes`, le
-      // `Text` devenait un nœud SÉPARÉ — si bien que le nœud portant
-      // `selected` n'avait aucun libellé et que le nœud portant le libellé
-      // n'avait aucun état. Un lecteur d'écran annonçait donc quatre boutons
-      // indiscernables **et** quatre textes muets : la garde SET-R1 l'a
-      // attrapé (0 nœud satisfaisant « libellé ∧ choisi »). Regrouper les deux
-      // sur un seul nœud est la seule forme qui annonce « Concise, choisie ».
+      // Sans cela, le groupe parent étant en `explicitChildNodes`, le `Text`
+      // deviendrait un nœud SÉPARÉ — si bien que le nœud portant `selected`
+      // n'aurait aucun libellé et que le nœud portant le libellé n'aurait
+      // aucun état. Un lecteur d'écran annoncerait donc des boutons
+      // indiscernables **et** des textes muets. Regrouper les deux sur un
+      // seul nœud est la seule forme qui annonce « Concise, choisie ».
       label: resolved,
       excludeSemantics: true,
       onTap: onTap,
@@ -1743,20 +1714,18 @@ class _ZChatSettingsOption extends StatelessWidget {
           child: Align(
             // AD-13 : alignement DIRECTIONNEL.
             alignment: AlignmentDirectional.center,
-            // 🔴 Ici les facteurs ne sont PAS inertes — contrairement à ceux de
-            // `_ZChatComposerTarget`, mesurés inertes sous une `Row`. Le parent
-            // est un `Wrap` : ses enfants reçoivent la contrainte de LARGEUR de
-            // la ligne. Sans `widthFactor`, `Align` l'occuperait entièrement et
-            // la garde « ≥ 48 dp » passerait pour la mauvaise raison — le
-            // précédent exact de `z_chat_diffusion_bar.dart`. L'injection R3
-            // jumelle le vérifie.
+            // Ici les facteurs ne sont PAS inertes : le parent est un `Wrap`,
+            // ses enfants reçoivent la contrainte de LARGEUR de la ligne.
+            // Sans `widthFactor`, `Align` l'occuperait entièrement et une
+            // garde « ≥ 48 dp » passerait pour la mauvaise raison — la boîte
+            // mesurerait la largeur de la ligne, pas celle du contenu.
             widthFactor: 1,
             heightFactor: 1,
             child: _withMark(
               Text(
                 resolved,
-                // 🔴 Le style est posé EXPLICITEMENT sur les deux états :
-                // c'est ce qui rend la différence mesurable sur le
+                // Le style est posé EXPLICITEMENT sur les deux états : c'est
+                // ce qui rend la différence vérifiable sur le
                 // `RenderParagraph`, et non « présente quelque part dans
                 // l'arbre ».
                 style: selected ? styles.chosen : styles.plain,
@@ -1770,9 +1739,8 @@ class _ZChatSettingsOption extends StatelessWidget {
     );
   }
 
-  /// Pose le glyphe d'hôte devant le libellé de l'option CHOISIE — et rend le
-  /// libellé SEUL partout ailleurs : sans [mark], l'arbre est celui d'avant ce
-  /// lot, au widget près (garde RX-1).
+  /// Pose le glyphe d'hôte devant le libellé de l'option CHOISIE — et rend
+  /// le libellé SEUL partout ailleurs.
   Widget _withMark(Widget label) {
     final Widget? m = mark;
     if (m == null || !selected) return label;
@@ -1788,9 +1756,8 @@ class _ZChatSettingsOption extends StatelessWidget {
   }
 }
 
-/// La rangée « icône + tuile » du mode Tile (IFFD/f007) — l'icône est un
-/// glyphe d'HÔTE, décoratif (hors arbre sémantique : le titre est déjà
-/// annoncé par la tuile).
+/// La rangée « icône + tuile » : l'icône est un glyphe d'HÔTE, décoratif
+/// (hors arbre sémantique : le titre est déjà annoncé par la tuile).
 class _ZChatSettingsIconRow extends StatelessWidget {
   const _ZChatSettingsIconRow({
     required this.icon,
@@ -1838,10 +1805,10 @@ class _ZChatSettingsTileBody extends StatelessWidget {
   }
 }
 
-/// Tuile par défaut du kind `toggle` — la `ToolTile` d'IFFD sans sa coche
-/// orange en dur : l'état est porté par la sémantique (`toggled:`) ET par un
-/// canal visible non chromatique (libellé Activé/Désactivé + emphase CR-74
-/// quand actif). Toute la tuile est la cible (≥ 48 dp en géométrie rendue).
+/// Tuile par défaut du kind `toggle` — sans couleur codée en dur : l'état
+/// est porté par la sémantique (`toggled:`) ET par un canal visible non
+/// chromatique (libellé Activé/Désactivé + emphase quand actif). Toute la
+/// tuile est la cible (≥ 48 dp en géométrie rendue).
 class _ZChatSettingsToggleTile extends StatelessWidget {
   const _ZChatSettingsToggleTile({
     required this.title,
@@ -1873,8 +1840,8 @@ class _ZChatSettingsToggleTile extends StatelessWidget {
     );
     void toggle() => onChanged(!value);
     return Semantics(
-      // 🔴 L'état par le drapeau `toggled` (lecteur d'écran) ET par le texte
-      // d'état stylé (vue) — deux canaux, aucun chromatique (leçon CR-74).
+      // L'état par le drapeau `toggled` (lecteur d'écran) ET par le texte
+      // d'état stylé (vue) — deux canaux, aucun chromatique.
       button: true,
       toggled: value,
       label: subtitle == null ? title : '$title\n$subtitle',
@@ -1905,10 +1872,9 @@ class _ZChatSettingsToggleTile extends StatelessWidget {
   }
 }
 
-/// Tuile par défaut du kind `navigation` — le « Domaine d'expertise » d'IFFD :
-/// titre, valeur courante d'hôte, glyphe de fin d'hôte. La destination
-/// appartient à l'hôte ; le socle rend l'affordance (`Semantics(button:)`,
-/// cible ≥ 48 dp).
+/// Tuile par défaut du kind `navigation` — titre, valeur courante d'hôte,
+/// glyphe de fin d'hôte. La destination appartient à l'hôte ; le socle rend
+/// l'affordance (`Semantics(button:)`, cible ≥ 48 dp).
 class _ZChatSettingsNavigationTile extends StatelessWidget {
   const _ZChatSettingsNavigationTile({
     required this.title,
@@ -1964,9 +1930,8 @@ class _ZChatSettingsNavigationTile extends StatelessWidget {
 
 /// Tuile par défaut du kind `numberBounded` — les bornes sont APPLIQUÉES :
 /// l'affordance hors borne est désactivée (sémantique `enabled: false`) et le
-/// geste n'émet jamais une valeur hors `[min, max]` (AD-10). Le
-/// `MinMaxFormatter` mort d'IFFD n'est pas porté ; la saisie texte
-/// pixel-perfect est l'affaire du satellite Material.
+/// geste n'émet jamais une valeur hors `[min, max]` (invariant AD-10). La
+/// saisie texte pixel-perfect est l'affaire du satellite Material.
 class _ZChatSettingsNumberTile extends StatelessWidget {
   const _ZChatSettingsNumberTile({
     required this.title,
@@ -2067,8 +2032,8 @@ class _ZChatSettingsStepTarget extends StatelessWidget {
           child: Align(
             // AD-13 : alignement DIRECTIONNEL. Facteurs posés : sous un `Row`
             // parent la boîte épouse déjà son enfant, mais la défense vaut si
-            // cette cible est un jour posée sous des contraintes bornées
-            // (précédent `_ZChatComposerTarget`, mesuré).
+            // cette cible est un jour posée sous des contraintes de largeur
+            // héritées d'un autre parent (`Wrap`, notamment).
             alignment: AlignmentDirectional.center,
             widthFactor: 1,
             heightFactor: 1,

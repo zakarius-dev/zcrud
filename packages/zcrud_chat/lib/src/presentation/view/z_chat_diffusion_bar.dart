@@ -1,29 +1,27 @@
-/// Barre de **diffusion** — `ZChatDiffusionBar` (CHAT-9 ; AD-2, AD-13, FR-26).
+/// Barre de diffusion d'une conversation.
 ///
-/// Le rendu neutre des deux gestes de sortie d'une conversation : **lire à voix
-/// haute** et **partager**. Zéro dépendance tierce (AD-57), aucune icône
-/// imposée, aucune couleur en dur.
+/// Le rendu neutre des deux gestes de sortie d'une conversation : lire à voix
+/// haute et partager. Zéro dépendance tierce, aucune icône imposée, aucune
+/// couleur en dur.
 ///
-/// ## 🔴 AD-13 — les trois contraintes, tenues et gardées
+/// ## Invariant AD-13, en pratique
 ///
-/// * **cible tactile** : chaque action est un `ConstrainedBox` à
-///   [kZChatMinTapTarget] (48 dp) — la garde **G9-A1** mesure la taille
-///   **rendue**, pas la contrainte déclarée (c'est la différence qui avait
-///   fait tomber `ZChatAttachmentStrip` : un `padding` de parent écrasait un
-///   `minHeight: 48` parfaitement écrit) ;
-/// * **directionnalité** : `EdgeInsetsDirectional` / `AlignmentDirectional` /
+/// * cible tactile : chaque action est un `ConstrainedBox` à
+///   [kZChatMinTapTarget] (48 dp) — mesurée sur la taille rendue, pas
+///   seulement sur la contrainte déclarée ;
+/// * directionnalité : `EdgeInsetsDirectional` / `AlignmentDirectional` /
 ///   `TextAlign.start` — jamais `left`/`right` ;
-/// * **sémantique** : chaque action est un `Semantics(button: true)` avec un
-///   libellé **résolu**, jamais une chaîne en dur.
+/// * sémantique : chaque action est un `Semantics(button: true)` avec un
+///   libellé résolu, jamais une chaîne en dur.
 ///
-/// ## 🔴 Le bouton de lecture est un BASCULEUR, pas deux boutons
+/// ## Le bouton de lecture est un bascule, pas deux boutons
 ///
-/// Un bouton « lire » et un bouton « arrêter » côte à côte laissent, à l'arrêt,
-/// une cible active qui ne fait rien — et un lecteur d'écran annonce deux
-/// actions dont une est inopérante. Ici l'action **unique** change de libellé
-/// selon [ZChatDiffusionService.speaking], la tranche `ValueListenable` que le
-/// service expose : seul ce bouton se reconstruit quand la lecture démarre
-/// (SM-1), pas la conversation.
+/// Un bouton « lire » et un bouton « arrêter » côte à côte laissent, à
+/// l'arrêt, une cible active qui ne fait rien — et un lecteur d'écran annonce
+/// deux actions dont une est inopérante. Ici l'action unique change de
+/// libellé selon [ZChatDiffusionService.speaking], la tranche
+/// `ValueListenable` que le service expose : seul ce bouton se reconstruit
+/// quand la lecture démarre (invariant AD-2), pas la conversation.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -43,15 +41,16 @@ class ZChatDiffusionBar extends StatelessWidget {
     super.key,
   });
 
-  /// Le service écouté. Il n'est **ni créé ni disposé** ici : son cycle de vie
-  /// appartient à l'hôte (AD-2).
+  /// Le service écouté. Il n'est ni créé ni disposé ici : son cycle de vie
+  /// appartient à l'hôte (invariant AD-2).
   final ZChatDiffusionService service;
 
-  /// Déclenche la lecture. L'**arrêt** n'est pas un second rappel : la barre
-  /// appelle `service.stopNarration()`, qui est déjà le site unique de l'arrêt.
+  /// Déclenche la lecture. L'arrêt n'est pas un second rappel : la barre
+  /// appelle `service.stopNarration()`, qui est déjà le site unique de
+  /// l'arrêt.
   final VoidCallback onSpeak;
 
-  /// Déclenche le partage, ou `null` ⇒ **l'action n'est pas rendue**.
+  /// Déclenche le partage, ou `null` : l'action n'est alors pas rendue.
   ///
   /// `null` retire le bouton plutôt que de le désactiver : une cible visible et
   /// inerte est annoncée par un lecteur d'écran comme une action disponible.
@@ -115,21 +114,18 @@ class _ZDiffusionAction extends StatelessWidget {
             minWidth: kZChatMinTapTarget,
           ),
           child: Align(
-            // AD-13 : alignement DIRECTIONNEL.
+            // Invariant AD-13 : alignement directionnel.
             alignment: AlignmentDirectional.center,
-            // 🔴 `widthFactor`/`heightFactor` — DÉFAUT TROUVÉ PAR L'INJECTION
-            // R3 de la garde « ≥ 48 dp ». Sans eux, `Align` **occupe toute la
-            // contrainte** : la cible mesurait 600 dp de haut (la hauteur de
-            // l'écran), et la garde passait pour cette raison — pas grâce au
-            // `minHeight`. Mesuré : avec `minHeight: 24` injecté, la taille
-            // rendue restait 600 et la garde restait VERTE. Les facteurs font
-            // que la boîte ÉPOUSE son libellé, et que le plancher de 48 dp
-            // devient la contrainte réellement active.
+            // Sans `widthFactor`/`heightFactor`, `Align` occuperait toute la
+            // contrainte disponible plutôt que d'épouser son libellé — la
+            // cible mesurerait alors la hauteur de son parent au lieu de sa
+            // taille réelle, et le plancher de 48 dp ne serait plus la
+            // contrainte réellement active.
             widthFactor: 1,
             heightFactor: 1,
             child: Text(
               zChatLabel(context, labelKey),
-              // AD-13 : jamais `TextAlign.left`.
+              // Invariant AD-13 : jamais `TextAlign.left`.
               textAlign: TextAlign.start,
             ),
           ),

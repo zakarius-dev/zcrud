@@ -1,14 +1,12 @@
-/// **Constat de capacités** — `ZChatCapabilityAudit` (lot K1, AD-4/AD-10).
+/// **Constat de capacités** — `ZChatCapabilityAudit` (invariants AD-4, AD-10).
 ///
-/// ## 🔴 Le pendant exact de `ZChatCorpusScope.audit`, côté capacités
+/// ## Le pendant exact de `ZChatCorpusScope.audit`, côté capacités
 ///
 /// Le canal ouvert de `ZChatGenerationSettings.capabilities` (clés opaques,
-/// AD-4) a le même risque structurel que la portée documentaire avant le
-/// lot β : une demande **inaudible**. Un hôte coche « résumé » ; le port d'un
-/// autre hôte ne connaît pas cette clé, l'ignore, et génère quand même —
-/// l'appelant **croit** avoir demandé un résumé. C'est le REPLI MUET mesuré
-/// chez IFFD (étude CR-IFFD-72 § 1.1 : six drapeaux transmis par le contrôleur
-/// puis jetés par le repository, sans aucun signal), et la règle v0.52.0 :
+/// invariant AD-4) porte un risque structurel : une demande **inaudible**. Un
+/// hôte coche « résumé » ; le port d'un autre hôte ne connaît pas cette clé,
+/// l'ignore, et génère quand même — l'appelant **croit** avoir demandé un
+/// résumé. Ce constat rend ce repli **détectable** : la règle du socle est
 /// **jamais de repli muet**.
 ///
 /// ⇒ Ce fichier livre la moitié « lecture » du bouclage :
@@ -67,7 +65,7 @@ class ZChatCapabilityAudit {
   /// Clés exprimées **et** présentes dans l'écho : la demande a été comprise.
   final List<String> honored;
 
-  /// 🔴 Clés exprimées **absentes** de l'écho — le repli muet, rendu VISIBLE.
+  /// Clés exprimées **absentes** de l'écho — le repli muet, rendu VISIBLE.
   ///
   /// Fail-safe : une clé dont l'exécuteur ne dit rien n'est pas « probablement
   /// passée », elle est **non honorée**. C'est la liste qu'une garde assertive

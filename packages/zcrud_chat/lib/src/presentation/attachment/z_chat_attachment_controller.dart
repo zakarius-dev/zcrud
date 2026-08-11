@@ -1,56 +1,50 @@
-/// Contrôleur de pièces jointes — `ZChatAttachmentController` (CHAT-5).
+/// Contrôleur de pièces jointes.
 ///
-/// origine: lex_ui — `chat_attachment_controller.dart` (`ChatAttachmentController`,
-/// Story 104.1). **PORTÉ, pas réinventé.** Le contrôleur de lex est portable à
-/// l'identique — vérifié sur disque : aucune occurrence de `ref.`, aucune
-/// dépendance à Riverpod dans son corps, seule l'annotation `@riverpod` et le
-/// `extends _$…` l'y attachaient. Sont conservés tels quels : les trois bornes
-/// (`maxFiles = 5`, `maxFileSize = 10 Mio`, la table de types MIME), l'ordre des
-/// vérifications (plafond → type → taille), la vignette égale aux octets pour
-/// une image, et `remove(index)` borné aux deux extrémités.
+/// ## Quatre choix structurants
 ///
-/// Quatre écarts, tous motivés :
-/// 1. **État Flutter-native** (AD-2/AD-15) — `ChangeNotifier` + tranches
-///    `ValueListenable`, jamais un `@riverpod` : aucun gestionnaire d'état
-///    n'entre dans ce socle.
-/// 2. **`ZResult` partout** (AD-5/AD-11) — lex renvoyait `AttachmentError?`, où
-///    `null` signifiait à la fois « ajouté » et « annulé ». Ici l'annulation est
-///    `Right(null)`, l'ajout est `Right(pièce)`, l'échec est `Left`.
-/// 3. **Sélecteurs derrière une couture** — `image_picker`/`file_picker` ne
-///    peuvent pas entrer (AD-57), cf. `z_chat_attachment_ports.dart`.
-/// 4. **`ZChatAttachment` du kernel CÂBLÉ** — lex n'avait pas d'étape « pièce
-///    téléversée » dans ce contrôleur ; ici [upload] produit l'entité du kernel,
-///    ce qui referme la boucle jusqu'à `ZChatController.setAttachments`.
+/// 1. État Flutter-native (invariants AD-2/AD-15) — `ChangeNotifier` +
+///    tranches `ValueListenable` : aucun gestionnaire d'état n'entre dans ce
+///    socle.
+/// 2. `ZResult` partout (invariants AD-5/AD-11) — l'annulation par
+///    l'utilisateur est `Right(null)`, l'ajout est `Right(pièce)`, l'échec
+///    est `Left` : les trois issues restent distinctes, jamais confondues
+///    sous une même valeur `null`.
+/// 3. Sélecteurs derrière une couture — un sélecteur de fichier ou de caméra
+///    ne peut pas entrer directement dans ce paquet, cf.
+///    `z_chat_attachment_ports.dart`.
+/// 4. `ZChatAttachment` du kernel câblé — [upload] produit directement
+///    l'entité du kernel, ce qui referme la boucle jusqu'à
+///    `ZChatController.setAttachments`.
 ///
-/// ## 🔴 Pourquoi un contrôleur SÉPARÉ de `ZChatController`
+/// ## Pourquoi un contrôleur séparé de `ZChatController`
 ///
-/// La surface publique de `ZChatController` est gardée en **ÉGALITÉ d'ensemble**
-/// (G-CH1, `z_chat_structure_guard_test.dart`) : chaque membre public ajouté est
-/// un site d'appel de plus, donc une divergence possible entre deux surfaces
-/// d'UI — le défaut exact d'IFFD. Faire entrer six gestes de pièce jointe dans
-/// ce contrôleur aurait exigé de **relâcher** cette garde. Le cycle de vie d'une
-/// pièce jointe (sélection → validation → téléversement) est d'ailleurs
-/// indépendant du tour de conversation : c'est un autre objet.
+/// La surface publique de `ZChatController` est gardée en égalité
+/// d'ensemble : chaque membre public ajouté est un site d'appel de plus,
+/// donc une divergence possible entre deux surfaces d'interface. Faire
+/// entrer les gestes de pièce jointe dans ce contrôleur aurait exigé de
+/// relâcher cette garantie. Le cycle de vie d'une pièce jointe (sélection →
+/// validation → téléversement) est d'ailleurs indépendant du tour de
+/// conversation : c'est un autre objet.
 ///
-/// Les deux se rejoignent par un **seul** point, explicite et sous le contrôle
+/// Les deux se rejoignent par un seul point, explicite et sous le contrôle
 /// de l'hôte : `ZChatController.setAttachments(controller.attachmentIdsOf(...))`
 /// — ou plus simplement les `id` de [uploaded].
 ///
-/// ## 🔴 AD-10 — une pièce jointe ne fait JAMAIS tomber la conversation
+/// ## Invariant AD-10 — une pièce jointe ne fait jamais tomber la conversation
 ///
-/// Aucune méthode de ce fichier ne lève, ne relance, ni ne laisse échapper une
-/// exception : tout chemin d'échec produit un `Left(ZChatAttachmentFailure)` et
-/// laisse la liste des pièces **inchangée**. Y compris quand c'est
-/// l'implémentation de l'HÔTE qui lève — un picker qui explose est un défaut de
-/// l'hôte, pas une raison de perdre la conversation en cours.
+/// Aucune méthode de ce fichier ne lève, ne relance, ni ne laisse échapper
+/// une exception : tout chemin d'échec produit un
+/// `Left(ZChatAttachmentFailure)` et laisse la liste des pièces inchangée.
+/// Y compris quand c'est l'implémentation de l'hôte qui lève — un sélecteur
+/// qui échoue est un défaut de l'hôte, pas une raison de perdre la
+/// conversation en cours.
 ///
-/// ⚠️ Écart ASSUMÉ avec `zResolveChatBlock`, qui laisse au contraire remonter
-/// l'exception d'un renderer d'hôte. La différence n'est pas d'humeur : là-bas
-/// on est dans un `build()`, où avaler l'erreur rendrait le défaut indébogable
-/// et invisible ; ici on est sur un chemin asynchrone dont le résultat est
-/// **déjà** un canal d'erreur typé — la `ZFailure` produite PORTE la cause
-/// ([ZChatAttachmentFailure.message]), donc rien n'est perdu, et l'alternative
-/// serait une exception non capturée dans un `Future` de gestionnaire de tap.
+/// C'est un écart assumé avec `zResolveChatBlock`, qui laisse au contraire
+/// remonter l'exception d'un renderer d'hôte : là-bas on est dans un
+/// `build()`, où avaler l'erreur rendrait le défaut indébogable et
+/// invisible ; ici on est sur un chemin asynchrone dont le résultat est déjà
+/// un canal d'erreur typé — la `ZFailure` produite porte la cause
+/// ([ZChatAttachmentFailure.message]), donc rien n'est perdu.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -63,17 +57,17 @@ import 'z_pending_attachment.dart';
 
 /// État réactif des pièces jointes du composer.
 ///
-/// Tranches **granulaires** (SM-1) : la liste des pièces en attente, celle des
-/// pièces téléversées et le dernier échec changent indépendamment. Le canal
-/// global de `ChangeNotifier` reste réservé aux changements **structurels** —
-/// ici [reset], qui change de composer.
+/// Tranches granulaires (invariant AD-2) : la liste des pièces en attente,
+/// celle des pièces téléversées et le dernier échec changent indépendamment.
+/// Le canal global de `ChangeNotifier` reste réservé aux changements
+/// structurels — ici [reset], qui change de composer.
 class ZChatAttachmentController extends ChangeNotifier {
   /// Construit le contrôleur.
   ///
-  /// [picker] et [uploader] sont **optionnels** : sans eux le contrôleur est
+  /// [picker] et [uploader] sont optionnels : sans eux le contrôleur est
   /// fonctionnel en lecture et en retrait, et [pick]/[upload] renvoient un
-  /// `Left` explicite plutôt que de lever. C'est le « défaut zéro-dépendance
-  /// fonctionnel » exigé d'une couture (AD-57).
+  /// `Left` explicite plutôt que de lever — le défaut zéro-dépendance
+  /// fonctionnel exigé d'une couture.
   ZChatAttachmentController({
     this.picker,
     this.uploader,
@@ -162,7 +156,8 @@ class ZChatAttachmentController extends ChangeNotifier {
     try {
       picked = await p.pick(source);
     } catch (error) {
-      // AD-10 : un picker d'hôte qui LÈVE ne fait pas tomber la conversation.
+      // Invariant AD-10 : un picker d'hôte qui lève ne fait pas tomber la
+      // conversation.
       return Left<ZFailure, ZPendingAttachment?>(
         _fail(ZChatAttachmentRejection.pickFailed, '$error'),
       );
@@ -188,8 +183,8 @@ class ZChatAttachmentController extends ChangeNotifier {
     );
   }
 
-  /// Valide et ajoute [candidate] — l'ordre de vérification de lex, conservé :
-  /// plafond, puis type, puis taille.
+  /// Valide et ajoute [candidate] — ordre de vérification fixe : plafond,
+  /// puis type, puis taille.
   ZResult<ZPendingAttachment> add(ZPendingAttachment candidate) {
     if (_disposed) {
       return Left<ZFailure, ZPendingAttachment>(
@@ -233,9 +228,9 @@ class ZChatAttachmentController extends ChangeNotifier {
 
   /// Téléverse [pending] et le déplace vers [uploaded].
   ///
-  /// 🔴 Le verdict du **serveur** (antivirus, gate vision, quota multimodal) est
-  /// relayé tel quel dans [ZChatAttachmentFailure.cause] : le socle n'en
-  /// reproduit aucun et ne les paraphrase pas.
+  /// Le verdict du serveur (antivirus, contrôle d'accès, quota) est relayé
+  /// tel quel dans [ZChatAttachmentFailure.cause] : le socle n'en reproduit
+  /// aucun et ne le paraphrase pas.
   Future<ZResult<ZChatAttachment>> upload(ZPendingAttachment attachment) async {
     if (_disposed) {
       return Left<ZFailure, ZChatAttachment>(
@@ -293,8 +288,8 @@ class ZChatAttachmentController extends ChangeNotifier {
     );
   }
 
-  /// Retire la pièce en attente à [index]. Un index hors bornes est **ignoré**
-  /// (forme de lex, conservée : un retrait ne peut pas casser la saisie).
+  /// Retire la pièce en attente à [index]. Un index hors bornes est ignoré :
+  /// un retrait ne peut pas casser la saisie.
   void remove(int index) {
     if (_disposed) return;
     final List<ZPendingAttachment> current = _pending.value;
@@ -316,8 +311,9 @@ class ZChatAttachmentController extends ChangeNotifier {
     );
   }
 
-  /// Changement **structurel** : on repart d'un composer vierge. Seul geste de
-  /// ce fichier qui notifie le canal global (patron de `ZChatController.attach`).
+  /// Changement structurel : on repart d'un composer vierge. Seul geste de
+  /// ce fichier qui notifie le canal global (même patron que
+  /// `ZChatController.attach`).
   void reset() {
     if (_disposed) return;
     clearAll();
@@ -352,17 +348,17 @@ class ZChatAttachmentController extends ChangeNotifier {
   }
 }
 
-/// Plafond par défaut du nombre de pièces jointes (valeur de lex).
+/// Plafond par défaut du nombre de pièces jointes.
 const int kZChatDefaultMaxAttachments = 5;
 
-/// Plafond par défaut de taille d'une pièce jointe — 10 Mio (valeur de lex).
+/// Plafond par défaut de taille d'une pièce jointe — 10 Mio.
 const int kZChatDefaultMaxAttachmentBytes = 10 * 1024 * 1024;
 
-/// Types MIME admis par défaut (table de lex, à l'identique).
+/// Types MIME admis par défaut.
 ///
-/// ⚠️ Borne d'**ergonomie**, jamais de sécurité : le contrôle qui compte
-/// (antivirus, gate vision, quota) est appliqué par le SERVEUR, et ce socle ne
-/// le refait pas.
+/// Borne d'ergonomie, jamais de sécurité : le contrôle qui compte (antivirus,
+/// contrôle d'accès, quota) est appliqué par le serveur, et ce socle ne le
+/// refait pas.
 const Set<String> kZChatDefaultAllowedAttachmentMimeTypes = <String>{
   'image/png',
   'image/jpeg',

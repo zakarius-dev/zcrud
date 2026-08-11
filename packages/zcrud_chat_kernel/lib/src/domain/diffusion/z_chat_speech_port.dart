@@ -1,44 +1,33 @@
-/// Diffusion **vocale** d'une réponse — port + chaîne de repli (CHAT-9 ;
-/// AD-5, AD-10, AD-11, AD-57).
+/// Diffusion **vocale** d'une réponse — port + chaîne de repli (invariants
+/// AD-5, AD-10, AD-11).
 ///
-/// origine **MESURÉE sur disque** (lecture seule) :
-/// * `lex_douane/packages/lex_core/lib/domain/services/on_device_tts_service.dart`
-///   — le contrat neutre (`isAvailable` / `speak` / `stop`), déjà en `Either`,
-///   déjà « ne lève jamais » ;
-/// * `lex_douane/packages/lex_data/lib/data/services/audio_streaming_service.dart`
-///   — la **chaîne de repli réelle**, dans l'ordre où elle est écrite :
-///   `_tryLocalCache` (`:95-121`) → backend streaming sous **circuit breaker**
-///   (`:151-176`) → `fallbackToRepository` (Cloud Storage / Functions, `:207+`)
-///   → TTS sur l'appareil, servi à part parce qu'il ne produit pas
-///   d'`AudioSource`.
+/// ## Le défaut qu'une chaîne de repli écrite en dur produit
 ///
-/// ## 🔴 Ce qui manque à lex, et que ce fichier corrige
-///
-/// Chez lex, la chaîne de repli est **écrite dans le corps d'une méthode**
-/// (`getAudioSource`), mêlée au circuit breaker, au préchargement et à
-/// `just_audio`. Trois conséquences mesurables :
+/// Une chaîne de repli (cache local, puis streaming distant, puis stockage
+/// de secours, puis synthèse vocale sur l'appareil) **écrite dans le corps
+/// d'une méthode**, mêlée au circuit breaker et au préchargement audio, porte
+/// trois défauts mesurables :
 ///
 /// 1. l'ordre des replis n'est **pas une donnée** — on ne peut ni le réordonner
 ///    ni en retirer un maillon sans réécrire la méthode ;
-/// 2. le dernier maillon (TTS local) est **hors chaîne** : l'appelant doit
-///    savoir l'appeler lui-même (`speakOnDevice`), donc un appelant qui
+/// 2. le dernier maillon (synthèse locale) peut se retrouver **hors chaîne** :
+///    l'appelant doit savoir l'invoquer lui-même, donc un appelant qui
 ///    l'oublie perd le repli le plus important — celui du hors-ligne ;
-/// 3. les échecs des maillons intermédiaires sont **perdus** (`debugPrint`),
-///    donc un support qui reçoit « ça ne lit pas » n'apprend rien.
+/// 3. les échecs des maillons intermédiaires sont **perdus** dans un simple
+///    journal, donc un support qui reçoit « ça ne lit pas » n'apprend rien.
 ///
 /// ⇒ Ici la chaîne est **un objet** ([ZChatSpeechChain]) : une liste ordonnée
 /// de [ZChatSpeechPort], un **site unique** de repli, et les échecs des
 /// maillons **conservés** dans [ZChatSpeechDelivery.attempts]. Zéro
-/// dépendance : ni `just_audio`, ni `flutter_tts`, ni HTTP n'entrent (AD-57) —
-/// chaque maillon est une implémentation d'hôte.
+/// dépendance : ni bibliothèque audio, ni bibliothèque de synthèse vocale, ni
+/// HTTP n'entrent ici — chaque maillon est une implémentation d'hôte.
 ///
-/// ## 🔴 AD-10 — ce qui reste ABSENT plutôt que faux
+/// ## Ce qui reste absent plutôt que faux (invariant AD-10)
 ///
-/// [ZChatSpeechRequest.languageTag] est **nullable**. lex exige
-/// `required String language` et son appelant passe `'fr'` en dur : un socle
-/// multi-consommateurs qui ferait de même choisirait la langue de lecture à la
-/// place de l'hôte. `null` signifie « laisse le moteur décider » — jamais
-/// « français ».
+/// [ZChatSpeechRequest.languageTag] est **nullable**. Un appelant qui passe
+/// une langue codée en dur dans un socle multi-consommateurs choisirait la
+/// langue de lecture à la place de l'hôte. `null` signifie « laisse le moteur
+/// décider » — jamais une langue par défaut devinée.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -46,17 +35,16 @@ import 'package:zcrud_core/domain.dart';
 import '../z_chat_message.dart';
 import '../z_content_block.dart';
 
-/// Vitesse de lecture **par défaut** — celle de lex (`double speed = 1.0`).
+/// Vitesse de lecture **par défaut**.
 const double kZChatSpeechDefaultRate = 1.0;
 
 /// Ce qu'on demande à lire.
 ///
-/// 🔴 **Aucun second résumé de message n'est écrit ici.** [ZChatSpeechRequest.ofMessage]
+/// **Aucun second résumé de message n'est écrit ici.** [ZChatSpeechRequest.ofMessage]
 /// délègue à `zChatAccessibleTextOf` — la fonction qui produit déjà le texte
 /// annonçable d'une suite de blocs, `switch` exhaustif compris. En écrire un
-/// deuxième rouvrirait exactement le trou que CHAT-3b avait fermé : un résumé
-/// local ne connaissant que `ZTextBlock`, donc un tableau **jamais lu à voix
-/// haute**. Garde **G9-D1** (grep négatif).
+/// second rouvrirait un trou classique : un résumé local ne connaissant que
+/// `ZTextBlock`, donc un tableau **jamais lu à voix haute**.
 class ZChatSpeechRequest {
   /// Construit une demande de lecture.
   const ZChatSpeechRequest({
@@ -85,7 +73,7 @@ class ZChatSpeechRequest {
   final String text;
 
   /// Étiquette de langue BCP-47 (`'fr'`, `'pt-BR'`), ou **`null`** pour laisser
-  /// le moteur choisir (AD-10 : jamais un défaut inventé).
+  /// le moteur choisir (invariant AD-10 : jamais un défaut inventé).
   final String? languageTag;
 
   /// Vitesse de lecture.
@@ -118,10 +106,10 @@ class ZChatSpeechRequest {
 
 /// Ce qui a **effectivement** lu, et ce qui a échoué avant.
 ///
-/// [sourceKind] est un discriminant **OUVERT** (`String`), pas un enum : les
-/// maillons de lex (`localCache`, `backendStream`, `cloudStorage`,
-/// `onDeviceTts`) sont **ses** maillons ; un hôte qui en a deux, ou cinq, ou
-/// d'autres, ne doit pas avoir à forker le socle (AD-4).
+/// [sourceKind] est un discriminant **ouvert** (`String`), pas un enum : un
+/// hôte a ses propres maillons (cache local, flux distant, stockage de
+/// secours, synthèse sur l'appareil…) ; qu'il en ait deux, cinq, ou d'autres,
+/// il ne doit pas avoir à forker le socle (invariant AD-4).
 class ZChatSpeechDelivery {
   /// Construit un compte-rendu de lecture.
   ZChatSpeechDelivery({
@@ -132,9 +120,9 @@ class ZChatSpeechDelivery {
   /// Le maillon qui a servi.
   final String sourceKind;
 
-  /// 🔴 Les échecs des maillons **essayés avant**, dans l'ordre — jamais
-  /// perdus. C'est le renseignement que lex jette dans un `debugPrint` et qui
-  /// manque à tout diagnostic « ça ne lit pas ».
+  /// Les échecs des maillons **essayés avant**, dans l'ordre — jamais
+  /// perdus. C'est le renseignement qu'une chaîne écrite en dur jette dans un
+  /// simple journal, et qui manque à tout diagnostic « ça ne lit pas ».
   ///
   /// Liste **vide** = le premier maillon a servi. Elle n'est jamais `null` :
   /// contrairement à `matchingMessages` d'une recherche, « aucun échec » et
@@ -147,22 +135,21 @@ class ZChatSpeechDelivery {
       'ZChatSpeechDelivery($sourceKind, ${attempts.length} failed attempts)';
 }
 
-/// Un **maillon** de diffusion vocale — port d'hôte (AD-11 : aucun transport
-/// ici ; AD-57 : aucune dépendance).
+/// Un **maillon** de diffusion vocale — port d'hôte (invariant AD-11 : aucun
+/// transport ici ; aucune dépendance tierce).
 ///
-/// Porté de `OnDeviceTtsService` (lex_core), avec deux écarts :
-/// * `speak` rend `ZResult<ZChatSpeechDelivery>` plutôt que `Either<_, void>` :
-///   la chaîne doit pouvoir dire **quel** maillon a servi ;
-/// * la langue est optionnelle (cf. l'en-tête).
+/// `speak` rend `ZResult<ZChatSpeechDelivery>` plutôt qu'un simple
+/// `Either<_, void>` : la chaîne doit pouvoir dire **quel** maillon a servi.
+/// La langue est optionnelle (cf. l'en-tête).
 abstract interface class ZChatSpeechPort {
   /// Discriminant **ouvert** de ce maillon (`'onDeviceTts'`, `'localCache'`…).
   String get sourceKind;
 
   /// `true` si ce maillon est utilisable **maintenant**, sur cette plateforme.
   ///
-  /// Ne lève jamais (contrat de lex, conservé). Sur le web ou sans moteur, un
-  /// maillon TTS rend `false` — et la chaîne passe au suivant **sans** produire
-  /// d'échec, parce qu'un maillon indisponible n'est pas une panne.
+  /// Ne lève jamais. Sur le web ou sans moteur, un maillon de synthèse rend
+  /// `false` — et la chaîne passe au suivant **sans** produire d'échec, parce
+  /// qu'un maillon indisponible n'est pas une panne.
   Future<bool> isAvailable();
 
   /// Lit [request].
@@ -174,12 +161,12 @@ abstract interface class ZChatSpeechPort {
   Future<void> stop();
 }
 
-/// 🔴 La chaîne de repli, **en tant que donnée** — site UNIQUE du repli.
+/// La chaîne de repli, **en tant que donnée** — site unique du repli.
 ///
-/// Reproduit la sémantique mesurée d'`AudioStreamingService` (essayer chaque
-/// source dans l'ordre, retomber sur la suivante à l'échec), en corrigeant ses
-/// trois défauts : l'ordre est une liste, le dernier maillon est **dans** la
-/// chaîne, et les échecs sont conservés.
+/// Reproduit la sémantique habituelle d'un service de streaming audio
+/// (essayer chaque source dans l'ordre, retomber sur la suivante à l'échec),
+/// en corrigeant ses trois défauts habituels : l'ordre est une liste, le
+/// dernier maillon est **dans** la chaîne, et les échecs sont conservés.
 ///
 /// Implémente elle-même [ZChatSpeechPort] : une chaîne est un maillon. Un hôte
 /// peut donc en imbriquer une (« cache local, puis \[réseau : A ou B\], puis
@@ -199,7 +186,7 @@ class ZChatSpeechChain implements ZChatSpeechPort {
 
   /// `true` dès qu'**un** maillon est disponible.
   ///
-  /// AD-10 : un maillon dont l'`isAvailable` **lève** — cas réel, un plugin qui
+  /// Invariant AD-10 : un maillon dont l'`isAvailable` **lève** — cas réel, un plugin qui
   /// n'est pas enregistré sur la plateforme lève au premier appel — est traité
   /// comme indisponible, jamais propagé.
   @override
@@ -217,7 +204,7 @@ class ZChatSpeechChain implements ZChatSpeechPort {
   ///   le silence n'est pas un service rendu, et trois appels plateforme pour
   ///   rien coûtent au démarrage ;
   /// * aucun maillon disponible ⇒ `Left(ZUnsupportedOperationFailure)` — type
-  ///   **EXISTANT** du cœur, pas une nouvelle famille ;
+  ///   **existant** du cœur, pas une nouvelle famille ;
   /// * tous les maillons ont échoué ⇒ le **dernier** échec, enrichi de rien :
   ///   c'est celui du repli ultime, le plus proche de la cause réelle.
   @override
@@ -269,7 +256,7 @@ class ZChatSpeechChain implements ZChatSpeechPort {
       try {
         await link.stop();
       } catch (_) {
-        // AD-10 : `stop` est best-effort — un maillon qui lève n'empêche PAS
+        // Invariant AD-10 : `stop` est best-effort — un maillon qui lève n'empêche PAS
         // les suivants de s'arrêter. C'est la raison d'être du `try` par tour.
       }
     }
@@ -290,7 +277,7 @@ class ZChatSpeechChain implements ZChatSpeechPort {
     try {
       return await link.speak(request);
     } catch (error) {
-      // AD-10 : un maillon d'hôte qui lève ne casse PAS la chaîne — il devient
+      // Invariant AD-10 : un maillon d'hôte qui lève ne casse PAS la chaîne — il devient
       // un échec ordinaire, et le maillon suivant est essayé.
       return Left<ZFailure, ZChatSpeechDelivery>(ZDomainFailure('$error'));
     }

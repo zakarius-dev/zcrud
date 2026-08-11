@@ -1,28 +1,22 @@
-/// Export **agrégé** d'une conversation — `ZChatExportService` (CHAT-5, AD-5).
+/// Export agrégé d'une conversation.
 ///
-/// origine: lex_data — `chat_export_service_impl.dart` (`ChatExportServiceImpl`).
-/// **PORTÉ, pas réinventé** : le service de lex est déjà conforme AD-5
-/// (`Future<Either<Failure, ExportResult>>`, `try`/`catch` unique au sommet de
-/// chaque opération, aucun `throw`). Sont repris à l'identique : l'ossature
-/// `switch (format)`, la mise en forme Markdown / texte brut / HTML par bloc,
-/// la dédup des références, `_markdownToPlainText` (son `_markdownToWhatsApp`),
-/// l'échappement HTML, et la fabrique de nom de fichier.
+/// Conforme à l'invariant AD-5 : `Future<ZResult<ZChatExportResult>>`,
+/// `try`/`catch` unique au sommet de chaque opération, aucun `throw` qui
+/// s'échappe.
 ///
-/// Trois écarts, tous motivés :
-/// 1. **PDF par couture** — lex met en page avec `pdf`/`pw` DANS le service.
-///    Ici, `ZChatPdfComposer` (AD-57) : cf. `z_chat_export_ports.dart`.
-/// 2. **Libellés INJECTÉS** — lex écrit `'Utilisateur'`, `'Lexia'`,
-///    `'Références'` en dur. Dans un socle multi-consommateurs c'est une
-///    régression de localisation silencieuse (FR-26), et « Lexia » est le nom
-///    d'un produit. [ZChatExportVocabulary] les porte, et son défaut est un
-///    **jeton neutre** (`user`, `assistant`) — une donnée, pas une traduction.
-/// 3. **Agrégation explicite** — la cible d'IFFD
-///    (`chatbot_conversation_screen.dart:2443-2467`, `:4441`) agrège Notes ET
-///    Flashcards de TOUTE la conversation avant d'exporter. Chez lex l'appelant
-///    passait déjà une liste ; ici [ZChatExportSelection] rend l'agrégat
-///    explicite et testable, et son défaut est « toute la conversation ».
+/// Trois choix structurants :
+/// 1. PDF par couture — la mise en page passe par `ZChatPdfComposer` plutôt
+///    que par un moteur de rendu de document intégré directement au
+///    service : cf. `z_chat_export_ports.dart`.
+/// 2. Libellés injectés — aucun mot n'est écrit en dur dans une langue
+///    donnée. [ZChatExportVocabulary] les porte, et son défaut est un jeton
+///    neutre (`user`, `assistant`) — une donnée, pas une traduction.
+/// 3. Agrégation explicite — un export de conversation complète (tous les
+///    messages, toutes les notes, tout le matériau transformé) est une
+///    demande fréquente. [ZChatExportSelection] rend cet agrégat explicite
+///    et testable, et son défaut est « toute la conversation ».
 ///
-/// ## 🔴 AD-10 — aucune exception ne s'échappe
+/// ## Invariant AD-10 — aucune exception ne s'échappe
 ///
 /// Chaque opération publique est enveloppée : un bloc malformé, un `ZExtension`
 /// corrompu ou une couture d'hôte qui lève produisent un
@@ -41,35 +35,31 @@ import 'z_chat_export_result.dart';
 
 /// Ce qu'on agrège avant d'exporter.
 ///
-/// La cible d'IFFD n'est pas « exporter un message » mais « exporter **toute**
-/// la conversation » : son menu de partage n'apparaît que si
-/// `allExplanations.isNotEmpty || allFlashcards.isNotEmpty` — deux agrégats
-/// bâtis sur l'intégralité des messages.
+/// L'export cible typiquement toute une conversation plutôt qu'un seul
+/// message : c'est le défaut de [ZChatExportSelection.all].
 class ZChatExportSelection {
   /// Construit une sélection.
   const ZChatExportSelection({this.blockFilter, this.roleFilter});
 
   /// Ne retient que les blocs pour lesquels ce prédicat rend `true`.
-  /// `null` ⇒ **tous** les blocs (le défaut : l'agrégat complet).
+  /// `null` signifie tous les blocs (le défaut : l'agrégat complet).
   final bool Function(ZContentBlock block)? blockFilter;
 
-  /// Ne retient que les messages de ces rôles. `null` ⇒ tous.
+  /// Ne retient que les messages de ces rôles. `null` signifie tous.
   final Set<ZChatRole>? roleFilter;
 
-  /// L'agrégat complet — le défaut, et la cible d'IFFD.
+  /// L'agrégat complet — le défaut.
   static const ZChatExportSelection all = ZChatExportSelection();
 
-  /// Les seules **notes** de l'assistant : le pendant neutre de
-  /// `allExplanations` d'IFFD (`chatbot_conversation_screen.dart:2429-2432`).
+  /// Les seules notes de l'assistant.
   static final ZChatExportSelection notes = ZChatExportSelection(
     roleFilter: const <ZChatRole>{ZChatRole.assistant},
     blockFilter: (ZContentBlock block) => block is ZTextBlock,
   );
 
-  /// Les blocs custom d'un [kind] donné — le pendant neutre de
-  /// `allFlashcards` (`:2434-2442`), sans que le socle n'ait à connaître ce
-  /// qu'est une flashcard : `ZCustomContentBlock` est la famille OUVERTE prévue
-  /// pour exactement cela (AD-4).
+  /// Les blocs personnalisés d'un [kind] donné, sans que le socle n'ait à
+  /// connaître ce qu'ils représentent : `ZCustomContentBlock` est la famille
+  /// ouverte prévue pour exactement cela (invariant AD-4).
   static ZChatExportSelection ofCustomKind(String kind) => ZChatExportSelection(
     blockFilter: (ZContentBlock block) =>
         block is ZCustomContentBlock && block.kind == kind,
@@ -86,11 +76,12 @@ class ZChatExportSelection {
 
 /// Les mots que l'export écrit et que le socle ne doit pas décider.
 ///
-/// 🔴 Les défauts sont des **jetons neutres** (`user`, `assistant`, `sources`,
-/// `references`, `exported`), pas des libellés français. Un hôte localisé les
-/// remplace ; un hôte qui ne le fait pas produit un document en jetons —
-/// bruyant, donc corrigé. Un faux libellé dans la mauvaise langue serait, lui,
-/// silencieux : c'est l'arbitrage déjà retenu par `z_chat_labels.dart`.
+/// Les défauts sont des jetons neutres (`user`, `assistant`, `sources`,
+/// `references`, `exported`), pas des libellés dans une langue particulière.
+/// Un hôte localisé les remplace ; un hôte qui ne le fait pas produit un
+/// document en jetons — bruyant, donc corrigé. Un faux libellé dans la
+/// mauvaise langue serait, lui, silencieux : c'est le même arbitrage que
+/// `z_chat_labels.dart`.
 class ZChatExportVocabulary {
   /// Construit un vocabulaire d'export.
   const ZChatExportVocabulary({
@@ -131,10 +122,10 @@ class ZChatExportVocabulary {
 
 /// Produit un document exportable à partir d'une conversation.
 ///
-/// Sans couture, les **quatre formats textuels** sont pleinement fonctionnels :
-/// c'est le défaut zéro-dépendance qu'AD-57 exige. Le PDF exige
-/// [ZChatPdfComposer], le partage exige [ZChatExportSink] — et leur absence est
-/// un `Left` explicite.
+/// Sans couture, les quatre formats textuels sont pleinement fonctionnels :
+/// c'est le défaut zéro-dépendance de ce paquet. Le PDF exige
+/// [ZChatPdfComposer], le partage exige [ZChatExportSink] — et leur absence
+/// est un `Left` explicite.
 class ZChatExportService {
   /// Construit le service.
   const ZChatExportService({
@@ -216,16 +207,16 @@ class ZChatExportService {
         ),
       );
     } catch (error) {
-      // AD-10 : un bloc malformé n'emporte JAMAIS la conversation.
+      // Invariant AD-10 : un bloc malformé n'emporte jamais la conversation.
       return Left<ZFailure, ZChatExportResult>(ZDomainFailure('$error'));
     }
   }
 
-  /// Exporte puis remet le document à la feuille de **partage** du système.
+  /// Exporte puis remet le document à la feuille de partage du système.
   ///
-  /// 🔴 Le partage lui-même n'est pas réimplémenté : il passe par
-  /// [ZChatExportSink], dont l'implémentation d'hôte délègue à
-  /// `ZPdfShareService` (`zcrud_export_ui`), qui existe déjà.
+  /// Le partage lui-même n'est pas réimplémenté : il passe par
+  /// [ZChatExportSink], dont l'implémentation d'hôte délègue à un service de
+  /// partage déjà disponible dans l'écosystème zcrud.
   Future<ZResult<bool>> shareConversation({
     required String title,
     required List<ZChatMessage> messages,
@@ -258,14 +249,14 @@ class ZChatExportService {
             ? await destination.printDocument(result)
             : await destination.share(result);
       } catch (error) {
-        // AD-10 : une destination d'hôte qui lève ne remonte pas.
+        // Invariant AD-10 : une destination d'hôte qui lève ne remonte pas.
         return Left<ZFailure, bool>(ZDomainFailure('$error'));
       }
     });
   }
 
-  /// Nom de fichier suggéré — forme de lex (`_suggestedFileName`), y compris sa
-  /// normalisation : minuscules, non-alphanumériques en `_`.
+  /// Nom de fichier suggéré, normalisé en minuscules avec les caractères
+  /// non-alphanumériques remplacés par `_`.
   String suggestedFileName(String title, ZChatExportFormat format) {
     final String slug = title
         .toLowerCase()
@@ -431,7 +422,7 @@ class ZChatExportService {
     return buffer.toString().trimRight();
   }
 
-  /// `_markdownToWhatsApp` de lex, porté à l'identique : `**gras**` → `*gras*`,
+  /// Aplatit le Markdown en texte brut allégé : `**gras**` devient `*gras*`,
   /// code inline dénudé, en-têtes retirés, liens aplatis.
   String _markdownToPlainText(String md) {
     String result = md;
@@ -489,9 +480,9 @@ class ZChatExportService {
     return buffer.toString().trimRight();
   }
 
-  /// `_escapeHtml` de lex, porté à l'identique. 🔴 L'ordre compte : `&` D'ABORD,
-  /// sans quoi les entités produites par les remplacements suivants seraient
-  /// ré-échappées (`&lt;` → `&amp;lt;`).
+  /// L'ordre compte : `&` d'abord, sans quoi les entités produites par les
+  /// remplacements suivants seraient ré-échappées (`&lt;` deviendrait
+  /// `&amp;lt;`).
   String _escapeHtml(String text) => text
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
@@ -503,8 +494,7 @@ class ZChatExportService {
   // Références
   // ---------------------------------------------------------------------------
 
-  /// Références **dédupliquées** en préservant l'ordre de première apparition —
-  /// `_collectUniqueApaReferences` de lex.
+  /// Références dédupliquées en préservant l'ordre de première apparition.
   List<String> _uniqueReferences(List<ZChatMessage> messages) {
     final Set<String> seen = <String>{};
     final List<String> out = <String>[];
@@ -527,13 +517,13 @@ class ZChatExportService {
 
   /// Date en ISO-8601 (convention de nommage du dépôt).
   ///
-  /// 🔴 lex formate avec `DateFormat('dd/MM/yyyy HH:mm')` (`intl`). `intl` est
-  /// une dépendance TIERCE : AD-57 l'interdit ici, et un format jj/mm/aaaa est
-  /// de toute façon un choix de LOCALE que le socle n'a pas à faire.
+  /// Un format localisé (jour/mois/année ou l'inverse) est un choix de
+  /// locale que le socle n'a pas à faire, et formater une date exige
+  /// généralement une dépendance tierce que ce paquet n'importe pas.
   String _iso(DateTime date) => date.toIso8601String();
 
   /// Assemble les lignes d'un tableau comparatif, colonnes de longueurs
-  /// inégales comprises — `_renderComparisonRows*` de lex, factorisé.
+  /// inégales comprises.
   String _comparisonRows(
     List<ZComparisonColumn> columns,
     String Function(String header, String value) cell,

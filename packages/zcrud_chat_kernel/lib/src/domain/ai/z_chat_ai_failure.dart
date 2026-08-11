@@ -1,39 +1,37 @@
-/// Familles d'échec propres à l'IA — CHAT-1 (AD-5, AD-10, AD-11).
+/// Familles d'échec propres à l'IA (invariants AD-5, AD-10, AD-11).
 ///
-/// ## 🔴 Le défaut que ce fichier ferme
+/// ## Le défaut que ce fichier ferme
 ///
-/// IFFD n'a **aucune** gestion d'erreur typée sur son chemin IA : le texte brut
-/// de l'exception est poussé dans le corps du message et **affiché comme s'il
-/// s'agissait de la réponse de l'assistant**. Un quota épuisé, une modération,
-/// une fenêtre de contexte dépassée et une panne réseau y sont donc **le même
+/// Sans gestion d'erreur typée sur le chemin IA, le texte brut d'une exception
+/// finit poussé dans le corps du message et **affiché comme s'il s'agissait
+/// de la réponse de l'assistant**. Un quota épuisé, une modération, une
+/// fenêtre de contexte dépassée et une panne réseau deviennent alors **le même
 /// événement** — une chaîne. L'hôte ne peut ni réessayer à bon escient, ni
 /// informer correctement, ni masquer une capacité absente.
 ///
-/// ## 🔴 Ce qui est CÂBLÉ, pas recréé
+/// ## Ce qui est câblé, pas recréé
 ///
-/// | Besoin | Type **EXISTANT** réutilisé | Chemin |
+/// | Besoin | Type **existant** réutilisé | Chemin |
 /// |---|---|---|
 /// | Quota IA dépassé (+ `retryAfter`) | `ZQuotaExceededFailure` | `zcrud_core/lib/src/domain/failures/z_failure.dart` |
 /// | Capacité non implémentée par l'hôte | `ZUnsupportedOperationFailure` | idem |
 /// | Panne backend | `ZServerFailure` | idem |
 /// | Règle métier violée | `ZDomainFailure` | idem |
-/// | Confirmation refusée | `ZChatActionNotConfirmedFailure` (CHAT-0b) | `action/z_chat_action_failure.dart` |
+/// | Confirmation refusée | `ZChatActionNotConfirmedFailure` | `action/z_chat_action_failure.dart` |
 ///
-/// `ZQuotaExceededFailure` **existait déjà et n'avait aucun consommateur** :
-/// [zChatFailureFromWire] est son premier câblage réel. La garde **G-C4** le
-/// prouve dans les deux sens — grep NÉGATIF (aucune failure de quota
-/// redéclarée ailleurs que dans le cœur) et grep POSITIF (ce fichier la
-/// construit vraiment).
+/// [zChatFailureFromWire] est le point de câblage réel de
+/// `ZQuotaExceededFailure` sur le chemin IA.
 ///
 /// Ne sont créées ici que les **trois** familles qui manquaient réellement :
 /// modération, limite de contexte, flux interrompu.
 ///
-/// ## Hiérarchie PLATE
+/// ## Hiérarchie plate
 ///
 /// Les trois nouveaux types étendent `ZFailure` **directement** — comme
 /// `ZDomainFailure`, `ZQuotaExceededFailure` et `ZUnsupportedOperationFailure`,
 /// qui sont des **frères**. Aucun n'étend l'autre : le triage se fait par `is`,
-/// jamais par un `switch` exhaustif (AD-4 : `ZFailure` n'est pas `sealed`).
+/// jamais par un `switch` exhaustif (`ZFailure` n'est pas `sealed`, invariant
+/// AD-4).
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -43,7 +41,7 @@ import 'package:zcrud_core/domain.dart';
 ///
 /// La distinction change ce que l'hôte doit faire : réessayer à l'identique est
 /// **garanti inutile**, et le texte du fournisseur ne doit **jamais** être
-/// rendu comme une réponse d'assistant (défaut IFFD). [category] est un motif
+/// rendu comme une réponse d'assistant. [category] est un motif
 /// **opaque** (`'violence'`, `'self_harm'`, …), transporté verbatim et jamais
 /// interprété par zcrud : aucun catalogue, aucun libellé, aucun `switch`.
 /// [onInput] distingue « votre demande a été refusée » de « la réponse produite
@@ -133,11 +131,12 @@ class ZChatContextLimitFailure extends ZFailure {
 ///
 /// Porte [requestId] — l'identité du [ZChatRequestToken] de la requête coupée,
 /// pour que l'hôte sache **laquelle** de ses requêtes concurrentes s'est
-/// arrêtée (le défaut IFFD étant justement de ne pas pouvoir le dire).
-/// [cancelledByUser] sépare l'arrêt **voulu** (aucune erreur à afficher) de la
-/// coupure **subie** (réseau, timeout) : les aplatir forcerait l'hôte à
-/// afficher une erreur sur un geste volontaire. [eventsReceived] dit si un
-/// contenu partiel a été rendu et mérite d'être conservé.
+/// arrêtée, plutôt que de devoir supposer qu'il s'agit de « la dernière
+/// lancée ». [cancelledByUser] sépare l'arrêt **voulu** (aucune erreur à
+/// afficher) de la coupure **subie** (réseau, timeout) : les aplatir
+/// forcerait l'hôte à afficher une erreur sur un geste volontaire.
+/// [eventsReceived] dit si un contenu partiel a été rendu et mérite d'être
+/// conservé.
 class ZChatStreamInterruptedFailure extends ZFailure {
   /// Construit une interruption de flux.
   const ZChatStreamInterruptedFailure(
@@ -190,16 +189,13 @@ class ZChatStreamInterruptedFailure extends ZFailure {
 /// Échec **du fournisseur**, dont le seul renseignement exploitable est son
 /// **code**.
 ///
-/// ## 🔴 L'amélioration réelle sur la référence
+/// ## Pourquoi le code est toujours conservé
 ///
-/// Le serveur de lex émet un code d'erreur **typé** dans le flux SSE
-/// (`{"type":"error","code":…}`, 14 codes, dont 4 propres au streaming :
-/// `AGENT_TIMEOUT`, `LLM_ERROR`, `STREAM_INTERRUPTED`, `GRAPH_ERROR`) — et
-/// **son propre client Dart le JETTE** : `ChatErrorEvent`
-/// (`lex_core/lib/domain/entities/chat_stream_event.dart`) ne porte qu'un
-/// `message`. L'information la plus actionnable du protocole est détruite au
-/// franchissement de la frontière, et l'hôte se retrouve à distinguer un
-/// timeout d'agent d'une erreur de graphe **en comparant des phrases**.
+/// Un flux d'erreurs serveur typé (par exemple un événement SSE
+/// `{"type":"error","code":…}`) perd toute sa valeur diagnostique si le
+/// client jette le code en ne conservant que le message : l'hôte se retrouve
+/// alors à distinguer un timeout d'agent d'une erreur de graphe **en
+/// comparant des phrases**.
 ///
 /// ⇒ zcrud **conserve le code**, toujours : soit dans la famille typée qui lui
 /// correspond ([ZChatModerationFailure.code], [ZChatContextLimitFailure.code],
@@ -208,8 +204,8 @@ class ZChatStreamInterruptedFailure extends ZFailure {
 /// exhaustif, aucun libellé — un backend qui en ajoute un demain traverse
 /// intact.
 ///
-/// ⚠️ Seul `ZQuotaExceededFailure` ne porte pas de code : c'est un type
-/// **EXISTANT du cœur** qu'on réutilise sans le modifier (le type lui-même dit
+/// Seul `ZQuotaExceededFailure` ne porte pas de code : c'est un type
+/// **existant du cœur** qu'on réutilise sans le modifier (le type lui-même dit
 /// déjà ce que le code disait).
 class ZChatProviderFailure extends ZFailure {
   /// Construit un échec fournisseur en conservant son [code].
@@ -240,9 +236,10 @@ class ZChatProviderFailure extends ZFailure {
 /// émet depuis son adaptateur (mapping status-code → code) ; zcrud les traduit
 /// en `ZFailure` typée par [zChatFailureFromWire].
 ///
-/// 🔴 Les **alias de lecture** `SCREAMING_SNAKE` du fil SSE de lex sont
-/// acceptés à l'entrée (cf. [zChatFailureFromWire]) et **jamais réémis** —
-/// principe de Postel, déjà appliqué aux enums de CHAT-0.
+/// Les **alias de lecture** `SCREAMING_SNAKE` d'un flux d'événements distant
+/// sont acceptés à l'entrée (cf. [zChatFailureFromWire]) et **jamais
+/// réémis** — principe de Postel, appliqué de façon cohérente aux enums de ce
+/// paquet.
 abstract final class ZChatFailureCodes {
   /// Quota d'usage épuisé ⇒ `ZQuotaExceededFailure` (type EXISTANT).
   static const String quotaExceeded = 'quotaExceeded';
@@ -284,22 +281,21 @@ String _canonicalCode(String raw) {
   }
 }
 
-/// Traduit une **enveloppe d'erreur neutre** en `ZFailure` typée (AD-10 : ne
-/// lève jamais, quelle que soit la forme reçue).
+/// Traduit une **enveloppe d'erreur neutre** en `ZFailure` typée (invariant
+/// AD-10 : ne lève jamais, quelle que soit la forme reçue).
 ///
 /// Forme attendue (clés snake_case, toutes optionnelles sauf `code`) :
 /// `{'code': …, 'message': …, 'retry_after_seconds': …, 'category': …,
 /// 'on_input': …, 'token_count': …, 'token_limit': …, 'request_id': …,
 /// 'events_received': …, 'cancelled_by_user': …, 'operation': …}`.
 ///
-/// 🔴 **Le code est TOUJOURS conservé** — dans la famille typée quand elle
-/// existe, dans [ZChatProviderFailure] sinon. Aucun code n'est jeté (contraste
-/// avec le client de lex). Le repli `ZServerFailure` n'est atteint que
-/// lorsqu'il **n'y a aucun code** : c'est le contraire du défaut IFFD, où
-/// l'inconnu devient une réponse d'assistant.
+/// **Le code est toujours conservé** — dans la famille typée quand elle
+/// existe, dans [ZChatProviderFailure] sinon. Aucun code n'est jeté. Le repli
+/// `ZServerFailure` n'est atteint que lorsqu'il **n'y a aucun code** —
+/// jamais parce que le code reçu était inconnu.
 ///
 /// [fallbackMessage] est un message **technique** de dernier recours, jamais un
-/// libellé d'interface — la traduction appartient à l'hôte (AD-13/FR-26).
+/// libellé d'interface — la traduction appartient à l'hôte (invariant AD-13).
 ZFailure zChatFailureFromWire(
   Object? raw, {
   String fallbackMessage = 'chat request failed',
@@ -310,8 +306,7 @@ ZFailure zChatFailureFromWire(
   switch (_canonicalCode(rawCode)) {
     case ZChatFailureCodes.quotaExceeded:
       final int? seconds = zJsonIntOrNull(map['retry_after_seconds']);
-      // 🔴 CÂBLAGE du type EXISTANT `ZQuotaExceededFailure` (zcrud_core) —
-      // premier consommateur réel depuis sa création (CR-LEX-23).
+      // Câblage du type existant `ZQuotaExceededFailure` (zcrud_core).
       return ZQuotaExceededFailure(
         message,
         retryAfter: seconds == null ? null : Duration(seconds: seconds),
@@ -339,14 +334,13 @@ ZFailure zChatFailureFromWire(
         code: rawCode,
       );
     case ZChatFailureCodes.unsupported:
-      // Type EXISTANT réutilisé (CHAT-0b/D9), jamais redéclaré.
+      // Type existant réutilisé, jamais redéclaré.
       return ZUnsupportedOperationFailure(
         message,
         operation: zJsonString(map['operation']),
       );
     default:
-      // 🔴 Un code non catalogué N'EST PAS JETÉ : `AGENT_TIMEOUT`,
-      // `LLM_ERROR`, `GRAPH_ERROR` traversent intacts.
+      // Un code non catalogué n'est pas jeté : il traverse intact.
       return rawCode.isEmpty
           ? ZServerFailure(message)
           : ZChatProviderFailure(message, code: rawCode);

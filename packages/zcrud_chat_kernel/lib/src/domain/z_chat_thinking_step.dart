@@ -1,16 +1,15 @@
 /// Étape de raisonnement exposée par l'assistant — `ZChatThinkingStep`.
 ///
-/// origine: lex_core (module « Assistant ») — `chat_thinking_step.dart:6-32`
-/// (`@JsonSerializable`, **non porté** : `zcrud_core` n'a aucun codegen — D1).
+/// (dé)sérialisation écrite à la main : aucun codegen dans ce paquet.
 library;
 
 import 'package:zcrud_core/domain.dart';
 
 /// Une étape de raisonnement (« quel agent a fait quoi »), immuable.
 ///
-/// ⚠️ [timestamp] est **nullable** là où lex le déclare `required DateTime` :
-/// son décodage généré lève sur une date absente/corrompue et emporte tout le
-/// message. AD-10 l'interdit (**D6**).
+/// [timestamp] est **nullable** plutôt que requis : un décodage généré qui
+/// exige une date lève sur une date absente ou corrompue et emporte tout le
+/// message. L'invariant AD-10 l'interdit.
 class ZChatThinkingStep {
   /// Construit une étape (immuable, `const`).
   const ZChatThinkingStep({

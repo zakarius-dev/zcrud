@@ -1,33 +1,31 @@
-/// Tuile neutre d'une conversation — `ZChatConversationTile` (CR-IFFD-39).
+/// Tuile neutre d'une conversation.
 ///
-/// Rendu **zéro dépendance tierce**, sur le patron strict de
+/// Rendu zéro dépendance tierce, sur le patron strict de
 /// `ZChatMessageTile` / `ZChatAttachmentStrip` : `Semantics`, cible ≥ 48 dp,
-/// variantes directionnelles, libellés résolus par `zChatLabel`, tokens de
+/// variantes directionnelles, libellés résolus par `zChatLabel`, jetons de
 /// `ZcrudTheme`.
 ///
-/// ## Le DÉFAUT, et rien de plus
+/// ## Le défaut, et rien de plus
 ///
-/// Une tuile construite sans aucun slot ni callback rend **exactement trois
-/// choses** : la pastille, le titre, l'horodatage relatif. Pas de sous-titre,
-/// pas de badge, pas d'action, pas de `trailing` — et surtout **ni `pinned`, ni
-/// `pinnedAt`, ni `messageCount`**, qui sont pourtant des champs de
-/// `ZChatConversation`. Ces trois-là sont **nôtres** et absents chez IFFD ; les
-/// rendre par défaut afficherait chez eux une décoration morte. Symétriquement,
-/// `isArchived` est **leur** champ (il vit dans `extra`) et le socle ne le
-/// connaît pas : il s'affiche par un [ZChatConversationBadge] dont le prédicat
-/// lit `extra`, jamais par un champ qu'on aurait porté.
+/// Une tuile construite sans aucun slot ni callback rend exactement trois
+/// choses : la pastille, le titre, l'horodatage relatif. Pas de sous-titre,
+/// pas de badge, pas d'action, pas de `trailing` — et aucun champ métier
+/// propre à un hôte particulier (par exemple un compteur de messages ou un
+/// épinglage) n'est rendu par défaut : ces informations, quand elles
+/// existent, s'affichent par un [ZChatConversationBadge] dont le prédicat
+/// lit ce qu'il veut (un champ du schéma ou une clé d'`extra`), jamais par
+/// un champ que le socle aurait porté lui-même.
 ///
-/// ## 🔴 Le champ de date est CHOISI, jamais deviné
+/// ## Le champ de date est choisi, jamais deviné
 ///
-/// IFFD affiche `createdAt` (`conversation_item_widget.dart:193,196`) alors que
-/// son modèle porte `updatedAt` (`chatbot_conversation.dart:24`) — une
-/// conversation active y reste datée de sa création. lex affiche `updatedAt`.
-/// Les deux ont raison pour leur produit ; le socle ne peut pas trancher. Il
-/// expose donc [ZChatConversationTile.timestampOf] et deux sélecteurs prêts à
-/// l'emploi ([zChatLastMessageTimestamp], [zChatCreatedTimestamp]).
+/// Différentes applications font des choix différents et légitimes entre
+/// afficher la date de création ou la date du dernier message : le socle ne
+/// peut pas trancher à leur place. Il expose donc
+/// [ZChatConversationTile.timestampOf] et deux sélecteurs prêts à l'emploi
+/// ([zChatLastMessageTimestamp], [zChatCreatedTimestamp]).
 ///
-/// Le **formateur** est lui aussi injectable, et son défaut ne code **aucune
-/// locale** (cf. `zChatDefaultRelativeTime`).
+/// Le formateur est lui aussi injectable, et son défaut ne code aucune
+/// locale (cf. `zChatDefaultRelativeTime`).
 library;
 
 import 'dart:async';
@@ -54,14 +52,14 @@ typedef ZChatConversationTimestamp = DateTime? Function(
 DateTime? zChatLastMessageTimestamp(ZChatConversation c) =>
     c.lastMessageAt ?? c.createdAt;
 
-/// Sélecteur « date de création » — le choix d'IFFD, disponible sans le figer.
+/// Sélecteur « date de création » — un choix disponible sans être imposé.
 DateTime? zChatCreatedTimestamp(ZChatConversation c) => c.createdAt;
 
 /// Construit le leading complet d'une tuile — remplace la pastille.
 ///
-/// 🔴 Ce slot existe parce que les deux hôtes superposent une icône et un badge
-/// dans un `Stack` : ce n'est pas exprimable en champ, et sans lui ils
-/// réécrivent la tuile.
+/// Ce créneau existe parce qu'un hôte peut vouloir superposer une icône et
+/// un badge dans un `Stack` : ce n'est pas exprimable en simple champ, et
+/// sans ce créneau il devrait réécrire la tuile entière.
 typedef ZChatConversationLeadingBuilder = Widget? Function(
   BuildContext context,
   ZChatConversation conversation,
@@ -70,18 +68,19 @@ typedef ZChatConversationLeadingBuilder = Widget? Function(
 /// Construit le sous-titre — typiquement l'extrait du dernier message, ou le
 /// `snippet` d'un `ZChatConversationHit`.
 ///
-/// **Ni lex ni IFFD ne l'ont** : leurs tuiles n'affichent que le titre. C'est
-/// pourtant la demande n°1 d'une liste de conversations, et c'est la raison pour
-/// laquelle le slot existe sans que le socle n'invente le champ.
+/// Une tuile minimale n'affiche que le titre. C'est pourtant une demande
+/// fréquente sur une liste de conversations, et c'est la raison pour
+/// laquelle ce créneau existe sans que le socle n'invente le champ
+/// correspondant.
 typedef ZChatConversationSubtitleBuilder = Widget? Function(
   BuildContext context,
   ZChatConversation conversation,
 );
 
-/// Un badge de statut **piloté par prédicat**.
+/// Un badge de statut piloté par prédicat.
 ///
-/// 🔴 Ni `pinned` ni `isArchived` ne sont câblés en dur : le prédicat lit ce
-/// qu'il veut (un champ du schéma, une clé d'`extra`, un préfixe de titre).
+/// Aucun champ métier n'est câblé en dur : le prédicat lit ce qu'il veut
+/// (un champ du schéma, une clé d'`extra`, un préfixe de titre).
 @immutable
 class ZChatConversationBadge {
   /// Construit un badge.
@@ -92,14 +91,14 @@ class ZChatConversationBadge {
     this.slotIndex = 0,
   });
 
-  /// Clé de libellé — **jamais** un libellé. Elle est **annoncée** : un badge
-  /// muet est une information réservée aux voyants (AD-13).
+  /// Clé de libellé — jamais un libellé. Elle est annoncée : un badge muet
+  /// est une information réservée aux voyants (invariant AD-13).
   final String labelKey;
 
   /// Prédicat d'affichage.
   final bool Function(ZChatConversation conversation) isVisible;
 
-  /// Clé de teinte, résolue par `zResolveColorKeyOrSlot` (FR-26).
+  /// Clé de teinte, résolue par `zResolveColorKeyOrSlot`.
   final String colorKey;
 
   /// Slot de repli, si [colorKey] reste inconnue du thème.
@@ -139,11 +138,12 @@ class ZChatConversationTile extends StatelessWidget {
   /// Nombre maximal de lignes du titre — **paramétrable**.
   final int titleMaxLines;
 
-  /// Prédicat de **graisse** du titre (« non lu », « nouveau »…), ou `null`.
+  /// Prédicat de graisse du titre (« non lu », « nouveau »…), ou `null`.
   ///
-  /// 🔴 Un prédicat, pas un champ : chez IFFD le « nouveau » se lit à un
-  /// **préfixe dans le titre**, chez lex à un `userId != null`. Aucune de ces
-  /// deux formes n'est un champ propre ; les modéliser les figerait.
+  /// Un prédicat, pas un champ : la condition qui rend un titre « nouveau »
+  /// varie d'un hôte à l'autre (un préfixe dans le titre, une propriété
+  /// calculée ailleurs) ; aucune de ces formes n'est un champ propre, et les
+  /// modéliser les figerait.
   final bool Function(ZChatConversation conversation)? isStrongTitle;
 
   /// Sélecteur de la date affichée.
@@ -152,11 +152,12 @@ class ZChatConversationTile extends StatelessWidget {
   /// Formateur d'horodatage relatif.
   final ZChatRelativeTimeFormatter timeFormatter;
 
-  /// Instant de référence. `null` ⇒ `DateTime.now()` lu **une seule fois** par
-  /// `build` : deux lignes d'une même frame se réfèrent au même instant.
+  /// Instant de référence. `null` signifie `DateTime.now()` lu une seule
+  /// fois par `build` : deux lignes d'une même frame se réfèrent au même
+  /// instant.
   final DateTime? now;
 
-  /// Clé de teinte de la pastille (FR-26 — aucune couleur en dur).
+  /// Clé de teinte de la pastille — aucune couleur en dur.
   final String iconColorKey;
 
   /// Slot de repli de la pastille.
@@ -195,15 +196,15 @@ class ZChatConversationTile extends StatelessWidget {
   /// Hauteur minimale **demandée**. Lire [effectiveMinHeight] pour dimensionner.
   final double minHeight;
 
-  /// Marge **directionnelle** (AD-13). `null` ⇒ marge horizontale du thème.
+  /// Marge directionnelle (invariant AD-13). `null` signifie marge
+  /// horizontale du thème.
   ///
-  /// 🔴 Le défaut est **horizontal seul** : une marge verticale posée ici
-  /// s'ajouterait à la cible tactile et empêcherait de la borner par le haut —
-  /// c'est le défaut exact corrigé sur `ZChatAttachmentStrip` (v0.31.1), où
-  /// `theme.formPadding` ramenait la hauteur utile à 40 dp.
+  /// Le défaut est horizontal seul : une marge verticale posée ici
+  /// s'ajouterait à la cible tactile et empêcherait de la borner par le haut.
   final EdgeInsetsDirectional? padding;
 
-  /// Hauteur réellement appliquée : jamais sous le plancher tactile (AD-13).
+  /// Hauteur réellement appliquée : jamais sous le plancher tactile
+  /// (invariant AD-13).
   ///
   /// Le plancher est porté par le CONTENEUR, pas par l'enfant : un enfant ne
   /// peut pas être plus grand que la place que son parent lui impose
@@ -274,11 +275,11 @@ class ZChatConversationTile extends StatelessWidget {
       ],
     );
 
-    // 🔴 UN SEUL nœud sémantique pour la ligne : titre + badges + date +
-    // sélection. `excludeSemantics` évite le doublon mesuré sur la bande de
-    // pièces jointes (`<rapport.pdf\nrapport.pdf>`) — mais il est posé sur le
-    // TEXTE seulement : la pastille (décorative) est exclue à part, et les
-    // actions sont des FRÈRES, donc leur sémantique de bouton reste intacte.
+    // Un seul nœud sémantique pour la ligne : titre + badges + date +
+    // sélection. `excludeSemantics` évite un doublon d'annonce — mais il est
+    // posé sur le texte seulement : la pastille (décorative) est exclue à
+    // part, et les actions sont des frères, donc leur sémantique de bouton
+    // reste intacte.
     final Widget announced = Semantics(
       container: true,
       selected: isSelected,
@@ -359,7 +360,7 @@ class ZChatConversationTile extends StatelessWidget {
           ),
         ),
         child: Align(
-          // AD-13 : alignement DIRECTIONNEL.
+          // Invariant AD-13 : alignement directionnel.
           alignment: AlignmentDirectional.center,
           child: iconBuilder?.call(context) ?? const SizedBox.shrink(),
         ),

@@ -1,9 +1,8 @@
 /// Pièce jointe d'un message — `ZChatAttachment`.
 ///
-/// origine: lex_core (module « Assistant ») — `chat_attachment.dart:6-24`.
-///
-/// ⚠️ **Modèle SEUL** : le téléversement, la prévisualisation et le cycle de vie
-/// des pièces jointes relèvent de CHAT-5, pas de cette story.
+/// **Modèle seul** : le téléversement, la prévisualisation et le cycle de vie
+/// des pièces jointes sont du ressort de la couche de présentation d'un
+/// satellite, pas de ce noyau de données.
 library;
 
 import 'package:zcrud_core/domain.dart';

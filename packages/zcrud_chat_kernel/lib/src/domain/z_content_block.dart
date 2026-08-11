@@ -1,19 +1,19 @@
 /// Blocs de contenu structuré d'un message d'assistant — `ZContentBlock`.
 ///
-/// origine: lex_core (module « Assistant ») — `content_block.dart:10-271`
 /// (enveloppe `{type, data}` + 12 variantes `sealed`).
 ///
-/// ## 9 variantes fermées + 1 variant ouvert + le registre (D4)
+/// ## 9 variantes fermées + 1 variant ouvert + le registre
 ///
-/// lex a **12** variantes. Neuf sont **génériques** et sont typées ici. Les
-/// trois autres ne peuvent PAS entrer dans le cœur, et le dire est la preuve
-/// que le registre n'est pas décoratif :
+/// Une application de chat enrichie tend à accumuler plus de variantes de
+/// blocs que ce qu'un socle générique peut porter. Neuf sont **génériques**
+/// et sont typées ici. D'autres ne peuvent **pas** entrer dans le cœur, et le
+/// dire est la preuve que le registre n'est pas décoratif :
 ///
-/// | Variante lex | Statut | Pourquoi | Clé de registre recommandée |
+/// | Variante | Statut | Pourquoi | Clé de registre recommandée |
 /// |---|---|---|---|
-/// | `LegalReference` | **app-side** | `{title, articles[], summary, source_type, source_id}` — « articles » est **juridique**, trop douanier pour un socle éducatif | `'legalReference'` |
-/// | `Flashcards` | **satellite/app-side** | porterait `List<ZFlashcard>` ⇒ arête `zcrud_core → zcrud_flashcard` = **AD-1 ROUGE** | `'flashcards'` |
-/// | `Mindmap` | **satellite/app-side** | porterait `ZMindmap` ⇒ arête `zcrud_core → zcrud_mindmap` = **AD-1 ROUGE** | `'mindmap'` |
+/// | Référence légale/juridique | **app-side** | vocabulaire (« articles »…) trop spécialisé pour un socle éducatif générique | `'legalReference'` |
+/// | Flashcards | **satellite/app-side** | porterait `List<ZFlashcard>` ⇒ arête `zcrud_core → zcrud_flashcard` = invariant AD-1 rouge | `'flashcards'` |
+/// | Carte mentale | **satellite/app-side** | porterait `ZMindmap` ⇒ arête `zcrud_core → zcrud_mindmap` = invariant AD-1 rouge | `'mindmap'` |
 ///
 /// L'hôte les rebranche **sans forker le cœur** :
 ///
@@ -31,29 +31,29 @@
 /// **payload verbatim, round-trip garanti** : la donnée n'est jamais perdue,
 /// seul le *type* n'est pas reconstruit.
 ///
-/// ## 🔴 Un type inconnu ne devient PAS du texte (D5)
+/// ## Un type inconnu ne devient pas du texte
 ///
-/// lex fait `_ => TextBlock(text: json.toString())` (`content_block.dart:30`) :
-/// un bloc inconnu devient une bulle de texte contenant le **dump Dart** de la
-/// map. C'est **destructeur** (round-trip perdu) **et visible par
-/// l'utilisateur**. Ici, le payload est **préservé tel quel**. Garde **G6**.
+/// Un mapping de secours naïf du genre `_ => TextBlock(text: json.toString())`
+/// transforme un bloc inconnu en une bulle de texte contenant le **dump
+/// Dart** de la map. C'est **destructeur** (round-trip perdu) **et visible
+/// par l'utilisateur**. Ici, le payload est **préservé tel quel**.
 ///
-/// ## Casse du discriminant — Postel
+/// ## Casse du discriminant — principe de Postel
 ///
-/// lex persiste `'Text'`, `'KeyDefinition'` (PascalCase) ; zcrud persiste ses
-/// discriminants en **camelCase** (convention `Naming & Consistency`).
-/// **Écriture** = camelCase canonique ; **lecture** = tolérante, les alias
-/// PascalCase de lex sont acceptés (garde **G5**) — c'est ce qui rend un
-/// document lex existant relisible **typé**, sans migration préalable.
+/// Un document existant peut persister ses discriminants en PascalCase
+/// (`'Text'`, `'KeyDefinition'`) ; zcrud persiste les siens en **camelCase**
+/// (convention `Naming & Consistency`). **Écriture** = camelCase canonique ;
+/// **lecture** = tolérante, les alias PascalCase historiquement rencontrés
+/// sont acceptés — c'est ce qui rend un document existant relisible
+/// **typé**, sans migration préalable.
 ///
-/// ## 🔴 [ZContentBlock.accessibleText] — le résumé annonçable, réglé UNE fois
-/// (CHAT-3b)
+/// ## [ZContentBlock.accessibleText] — le résumé annonçable, réglé une fois
 ///
-/// Constat du lot C6 : `AssistMessage.data` de Syncfusion **exige** un `String`,
-/// et l'adaptateur avait dû écrire son propre résumé — qui ne connaissait que
-/// `ZTextBlock`. Un **tableau**, un bloc de **sources** ou un diagramme
-/// n'étaient donc **pas annoncés du tout** à un lecteur d'écran. Le même trou
-/// se serait rouvert dans chaque adaptateur futur.
+/// Un composant de rendu tiers qui exige un `String` pour son résumé
+/// accessible pousse souvent l'adaptateur à écrire son propre résumé, qui ne
+/// connaît que `ZTextBlock`. Un **tableau**, un bloc de **sources** ou un
+/// diagramme ne sont alors **pas annoncés du tout** à un lecteur d'écran. Le
+/// même trou se rouvrirait dans chaque adaptateur futur.
 ///
 /// Le résumé est donc posé **ici**, sur la famille elle-même : un `switch`
 /// **exhaustif** sur l'union scellée, ce qui fait de l'oubli d'une variante une
@@ -86,7 +86,7 @@ const String kZContentBlockTypeKey = 'type';
 /// Clé de la charge utile de l'enveloppe.
 const String kZContentBlockDataKey = 'data';
 
-/// Alias de **lecture** PascalCase (lex) → discriminant canonique camelCase.
+/// Alias de **lecture** PascalCase → discriminant canonique camelCase.
 const Map<String, String> kZContentBlockReadAliases = <String, String>{
   'Text': 'text',
   'Table': 'table',
@@ -130,7 +130,7 @@ const String kZContentBlockUnknownKind = 'unknown';
 /// * **localise** ce qui doit l'être — il est appelé depuis la couche qui
 ///   possède un `BuildContext`.
 ///
-/// 🔴 AD-10 : un resolver qui **lève** est absorbé (repli sur le résumé du
+/// AD-10 : un resolver qui **lève** est absorbé (repli sur le résumé du
 /// kernel), et un resolver qui rend une chaîne **vide ou blanche** est ignoré —
 /// sans quoi le seam permettrait de rendre un bloc muet par accident.
 typedef ZAccessibleTextResolver = String? Function(ZContentBlock block);
@@ -256,7 +256,7 @@ sealed class ZContentBlock {
               const <ZChatSuggestion>[],
         );
       default:
-        // 🔴 `tryCodecFor`, jamais `codecFor` (qui lève — AD-10).
+        // `tryCodecFor`, jamais `codecFor` (qui lève — AD-10).
         final ZValueCodec? codec = typeRegistry?.tryCodecFor(rawType);
         if (codec != null) {
           final Map<String, dynamic>? decoded =
@@ -277,7 +277,7 @@ sealed class ZContentBlock {
     ];
   }
 
-  /// 🔴 Texte **annonçable** du bloc — total, jamais vide, jamais traduit ici.
+  /// Texte **annonçable** du bloc — total, jamais vide, jamais traduit ici.
   ///
   /// Contrat, en quatre points :
   /// 1. **Totalité** : ne lève jamais (AD-10), quelle que soit la donnée — y
@@ -370,11 +370,11 @@ sealed class ZContentBlock {
       case final ZSuggestionsBlock b:
         return <String>[for (final ZChatSuggestion s in b.suggestions) s.content];
       case final ZCustomContentBlock b:
-        // 🔴 Le payload n'est PAS dumpé : le kernel l'a délibérément préservé
-        // verbatim (D5), et l'annoncer reproduirait à l'oreille le défaut de lex
-        // (`TextBlock(text: json.toString())`) que D5 existe pour interdire.
-        // Sans [resolver], le bloc est annoncé par son `kind` — signalé, jamais
-        // muet.
+        // Le payload n'est PAS dumpé : le kernel l'a délibérément préservé
+        // verbatim, et l'annoncer reproduirait à l'oreille le défaut d'un
+        // mapping de secours naïf (`TextBlock(text: json.toString())`).
+        // Sans [resolver], le bloc est annoncé par son `kind` — signalé,
+        // jamais muet.
         return <String>[b.kind];
     }
   }
@@ -687,12 +687,11 @@ class ZAlertBlock extends ZContentBlock {
     this.message = '',
   });
 
-  /// Niveau d'alerte — **`String` OUVERTE, volontairement**.
+  /// Niveau d'alerte — **`String` ouverte, volontairement**.
   ///
-  /// lex ne ferme pas ce champ non plus (`AlertBlock.level` est une `String`,
-  /// `content_block.dart:187`, alors qu'un `AlertLevel` existe par ailleurs) :
-  /// fermer ici un ensemble que l'amont laisse ouvert transformerait un niveau
-  /// d'hôte (`'tip'`, `'deprecated'`) en donnée perdue.
+  /// Fermer cet ensemble en un enum transformerait un niveau propre à un
+  /// hôte (`'tip'`, `'deprecated'`) en donnée perdue à la première valeur non
+  /// prévue.
   final String level;
 
   /// Titre optionnel de l'encadré.
@@ -729,7 +728,7 @@ class ZAlertBlock extends ZContentBlock {
 
 /// Diagramme Mermaid (titre optionnel + code source).
 ///
-/// **Zéro dépendance** : deux chaînes. Le rendu est app-side (CHAT-3).
+/// **Zéro dépendance** : deux chaînes. Le rendu est app-side.
 class ZMermaidDiagramBlock extends ZContentBlock {
   /// Construit un diagramme.
   const ZMermaidDiagramBlock({this.title, this.code = ''});
@@ -828,13 +827,13 @@ class ZSuggestionsBlock extends ZContentBlock {
   int get hashCode => Object.hash(kind, zListHash(suggestions));
 }
 
-/// 🔴 Variant **OUVERT** : tout `type` que le cœur ne connaît pas, **payload
-/// préservé verbatim** (D5).
+/// Variant **OUVERT** : tout `type` que le cœur ne connaît pas, **payload
+/// préservé verbatim**.
 ///
-/// C'est ce qui rend les trois variantes non fermées de lex (`legalReference`,
-/// `flashcards`, `mindmap`) — et toute variante future d'un hôte — atteignables
-/// **sans forker le cœur** : avec un codec [ZTypeRegistry], le payload est
-/// reconstruit par l'app ; sans codec, il traverse intact.
+/// C'est ce qui rend atteignable toute variante propre à un hôte (une
+/// référence légale, un jeu de flashcards, une carte mentale…) **sans forker
+/// le cœur** : avec un codec [ZTypeRegistry], le payload est reconstruit par
+/// l'app ; sans codec, il traverse intact.
 class ZCustomContentBlock extends ZContentBlock {
   /// Construit un bloc ouvert pour [kind] portant [payload].
   ZCustomContentBlock(this.kind, Map<String, dynamic> payload)

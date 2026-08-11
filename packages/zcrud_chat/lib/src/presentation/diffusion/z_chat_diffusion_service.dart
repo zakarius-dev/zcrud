@@ -1,51 +1,42 @@
-/// Diffusion d'une conversation — `ZChatDiffusionService` (CHAT-9 ; AD-2, AD-5,
-/// AD-10, AD-57).
+/// Diffusion d'une conversation : export, partage, lecture à voix haute.
 ///
-/// « Diffuser » = **sortir** la conversation de l'application : l'exporter, la
-/// partager, ou la **lire à voix haute**.
+/// « Diffuser » signifie sortir la conversation de l'application : l'exporter,
+/// la partager, ou la lire à voix haute.
 ///
-/// ## 🔴 Ce fichier ÉTEND `ZChatExportService`. Il ne le double pas.
+/// ## Ce service étend `ZChatExportService`, il ne le double pas
 ///
-/// L'export textuel existe depuis CHAT-5, avec **quatre** formats
-/// (`markdown`, `plainText`, `html`, `references`) plus le PDF par couture. Ce
-/// service :
+/// L'export textuel couvre déjà quatre formats (`markdown`, `plainText`,
+/// `html`, `references`) plus le PDF par couture. Ce service :
 ///
-/// * n'ajoute **aucun format** — les cinq de lex (`pdf`, `markdown`,
-///   `whatsapp`→`plainText`, `html`, `apaReferences`) étaient déjà couverts,
-///   mesuré sur `lex_data/chat_export_service.dart` ;
-/// * n'écrit **aucun rendu** — le texte lu à voix haute est celui que
+/// * n'ajoute aucun format ;
+/// * n'écrit aucun rendu — le texte lu à voix haute est celui que
 ///   [ZChatExportService.exportConversation] produit déjà en
 ///   [ZChatExportFormat.plainText], y compris son aplatissement Markdown
-///   (`**gras**` → `*gras*`, en-têtes retirés, liens aplatis) qui est
-///   **exactement** ce qu'il faut à un moteur de synthèse ;
-/// * n'écrit **aucun partage** — [ZChatExportService.shareConversation] et sa
-///   couture `ZChatExportSink` existent, et l'hôte y délègue déjà à
-///   `ZPdfShareService`.
+///   (`**gras**` devient `*gras*`, en-têtes retirés, liens aplatis), qui est
+///   exactement ce qu'il faut à un moteur de synthèse ;
+/// * n'écrit aucun partage — [ZChatExportService.shareConversation] et sa
+///   couture `ZChatExportSink` existent déjà et sont réutilisées telles
+///   quelles.
 ///
-/// Le grep négatif **G9-D2** l'asserte : ce fichier ne contient ni second
-/// `StringBuffer` de rendu, ni second `_markdownTo…`, ni second `_escapeHtml`,
-/// et il **appelle** réellement `exportConversation`.
-///
-/// ## 🔴 Pourquoi la narration passe par l'export plutôt que par les blocs
+/// ## Pourquoi la narration passe par l'export plutôt que par les blocs
 ///
 /// Les deux voies existent et ne servent pas la même chose :
 ///
 /// | Voie | Ce qu'elle produit | Quand |
 /// |---|---|---|
-/// | [narrateMessage] → `ZChatSpeechRequest.ofMessage` → `zChatAccessibleTextOf` | le résumé **annonçable** d'un message | lecture d'**une** réponse |
-/// | [narrateConversation] → `exportConversation(plainText)` | le document **complet**, rôles compris | lecture de **toute** la conversation |
+/// | [narrateMessage] → `ZChatSpeechRequest.ofMessage` → `zChatAccessibleTextOf` | le résumé annonçable d'un message | lecture d'une réponse |
+/// | [narrateConversation] → `exportConversation(plainText)` | le document complet, rôles compris | lecture de toute la conversation |
 ///
 /// Aucune des deux n'aplatit les blocs pour son compte : la première réutilise
 /// le `switch` exhaustif du kernel, la seconde le rendu de l'export. C'est ce
-/// qui garantit qu'un **nouveau** variant de bloc devient audible sans qu'on ait
-/// à y penser — le trou que CHAT-3b avait mesuré côté a11y est le même trou
-/// côté voix.
+/// qui garantit qu'un nouveau variant de bloc devient audible sans intervention
+/// supplémentaire.
 ///
-/// ## AD-2 — Flutter-native, aucun gestionnaire d'état
+/// ## Invariant AD-2 — Flutter-native, aucun gestionnaire d'état
 ///
-/// [ZChatDiffusionService.speaking] est une `ValueListenable<bool>` : un bouton
-/// n'écoute que cette tranche, et rien d'autre du service ne reconstruit quoi
-/// que ce soit.
+/// [ZChatDiffusionService.speaking] est une `ValueListenable<bool>` : un
+/// bouton n'écoute que cette tranche, et rien d'autre du service ne
+/// reconstruit quoi que ce soit.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -60,13 +51,13 @@ import '../export/z_chat_export_service.dart';
 class ZChatDiffusionService {
   /// Construit le service.
   ///
-  /// [exportService] est **obligatoire et injecté** : en construire un ici en
+  /// [exportService] est obligatoire et injecté : en construire un en
   /// interne donnerait deux vocabulaires d'export dans une même application
-  /// (celui de l'hôte, celui du nôtre), et le document lu ne serait pas le
+  /// (celui de l'hôte, celui du service), et le document lu ne serait pas le
   /// document exporté.
   ZChatDiffusionService({required this.exportService, this.speech});
 
-  /// Le service d'export **existant** — jamais redéfini.
+  /// Le service d'export existant — jamais redéfini.
   final ZChatExportService exportService;
 
   /// La chaîne de diffusion vocale, ou `null` si l'hôte n'en branche aucune.
@@ -76,7 +67,8 @@ class ZChatDiffusionService {
   /// exception, jamais par un silence.
   final ZChatSpeechPort? speech;
 
-  /// `true` tant qu'une lecture est en cours — tranche **granulaire** (AD-2).
+  /// `true` tant qu'une lecture est en cours — tranche granulaire (invariant
+  /// AD-2).
   ValueListenable<bool> get speaking => _speaking;
   final ValueNotifier<bool> _speaking = ValueNotifier<bool>(false);
 
@@ -138,7 +130,7 @@ class ZChatDiffusionService {
     ),
   );
 
-  /// Arrête la lecture — best-effort, ne lève jamais (AD-10).
+  /// Arrête la lecture — best-effort, ne lève jamais (invariant AD-10).
   Future<void> stopNarration() async {
     final ZChatSpeechPort? port = speech;
     if (port != null) {
@@ -152,8 +144,8 @@ class ZChatDiffusionService {
     _speaking.value = false;
   }
 
-  /// Libère la tranche réactive. **L'hôte** appelle ceci — le service ne
-  /// possède ni l'export ni la chaîne vocale, qu'il ne dispose donc pas.
+  /// Libère la tranche réactive. C'est l'hôte qui appelle ceci — le service
+  /// ne possède ni l'export ni la chaîne vocale, qu'il ne dispose donc pas.
   void dispose() => _speaking.dispose();
 
   Future<ZResult<ZChatSpeechDelivery>> _speak(
@@ -174,8 +166,8 @@ class ZChatDiffusionService {
     } catch (error) {
       return Left<ZFailure, ZChatSpeechDelivery>(ZDomainFailure('$error'));
     } finally {
-      // 🔴 `finally` : un port qui lève laissait sinon le bouton figé sur
-      // « arrêter » pour une lecture qui n'a jamais commencé.
+      // Un port qui lève laisserait sinon le bouton figé sur « arrêter »
+      // pour une lecture qui n'a jamais commencé.
       _speaking.value = false;
     }
   }

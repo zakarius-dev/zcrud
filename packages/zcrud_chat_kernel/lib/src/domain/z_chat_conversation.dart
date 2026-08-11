@@ -1,28 +1,38 @@
-/// Conversation IA — `ZChatConversation` (AD-4, AD-10, AD-16, AD-19).
+/// Conversation IA — `ZChatConversation` (invariants AD-4, AD-9, AD-10).
 ///
-/// origine: lex_core (module « Assistant ») — `chat_conversation.dart:6-54`.
+/// ## Pourquoi `updated_at` devient `last_message_at`
 ///
-/// ## 🔴 D3 — pourquoi `updated_at` devient `last_message_at`
-///
-/// `ChatConversation` de lex persiste **`updated_at` dans le corps du document**
-/// (`chat_conversation.dart:11-12`) pour trier les conversations par récence.
-/// En zcrud, `updated_at` et `is_deleted` sont **réservés hors-entité** (AD-16 /
-/// AD-19, `ZSyncMeta.reservedKeys`). Un `updated_at` **métier** logé dans le
-/// corps entre en collision avec l'autorité de synchronisation : le store écrit
-/// `ZSyncMeta` **APRÈS** le corps ⇒ **le merge Last-Write-Wins est faussé,
-/// silencieusement, sans un seul test rouge**.
+/// Persister un horodatage métier **`updated_at` dans le corps du document**
+/// pour trier les conversations par récence est une tentation courante.
+/// En zcrud, `updated_at` et `is_deleted` sont **réservés hors-entité**
+/// (invariant AD-9, `ZSyncMeta.reservedKeys`). Un `updated_at` **métier** logé
+/// dans le corps entre en collision avec l'autorité de synchronisation : le
+/// store écrit `ZSyncMeta` **après** le corps ⇒ **le merge Last-Write-Wins
+/// est faussé, silencieusement, sans un seul test rouge**.
 ///
 /// Le besoin métier est donc conservé, mais **nommé par son sens** :
 /// [ZChatConversation.lastMessageAt], persisté **`last_message_at`**. [toMap]
 /// n'émet **ni** `updated_at` **ni** `is_deleted`, **jamais**, sans aucune
-/// exception « miroir legacy ». Garde **G12**.
+/// exception « miroir legacy ».
 ///
-/// ## Ce qui n'est PAS porté
+/// ## Ce qui n'est pas porté
 ///
-/// Le scoping d'IFFD (`folderId`/`subFolderId`/`documentId`) et ses
-/// `isArchived`/`isChatSession`/`conversationSummary` sont des **spécificités
+/// Un scoping applicatif (par dossier, par sous-dossier, par document) et
+/// des drapeaux d'archivage propres à un hôte sont des **spécificités
 /// d'hôte** : ils passent par [ZChatConversation.extra] ou par un `ZExtension`
-/// versionné (AD-4), pas par le schéma partagé.
+/// versionné (invariant AD-4), pas par le schéma partagé.
+///
+/// ```dart
+/// import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
+///
+/// final conversation = ZChatConversation(
+///   title: 'Discussion tarifaire',
+///   lastMessageAt: DateTime.now(),
+///   messageCount: 3,
+/// );
+/// final Map<String, dynamic> persisted = conversation.toMap();
+/// final ZChatConversation relue = ZChatConversation.fromMap(persisted);
+/// ```
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -36,7 +46,7 @@ const Object _unset = Object();
 class ZChatConversation extends ZEntity with ZExtensible {
   /// Construit une conversation (primitif `const`).
   ///
-  /// ⛔ **Aucun `assert`** (AD-10) et **aucun filtrage** possible : le
+  /// **Aucun `assert`** (AD-10) et **aucun filtrage** possible : le
   /// constructeur est `const`. C'est l'**accesseur** [extra] qui porte la garde.
   const ZChatConversation({
     this.id,
@@ -66,7 +76,7 @@ class ZChatConversation extends ZEntity with ZExtensible {
         pinned: zJsonBool(map['pinned'], false),
         pinnedAt: zJsonDate(map['pinned_at']),
         extension: zDecodeExtension(map['extension'], extensionParser),
-        // 🔴 NORMALISATION **EAGER** à l'ENTRÉE (assertion (i.3b) du gate).
+        // Normalisation EAGER à l'entrée.
         extra: zSanitizeExtra(map, _reservedKeys),
       );
 
@@ -80,11 +90,11 @@ class ZChatConversation extends ZEntity with ZExtensible {
   /// Date de création, ou `null` si absente/illisible.
   final DateTime? createdAt;
 
-  /// 🔴 Date du **dernier message** — le champ métier de tri par récence.
+  /// Date du **dernier message** — le champ métier de tri par récence.
   ///
   /// Persisté [kZChatLastMessageAtKey] (`last_message_at`), **jamais**
-  /// `updated_at` : cette dernière appartient à `ZSyncMeta` (AD-16/AD-19), et
-  /// la loger dans le corps fausserait le merge Last-Write-Wins (**D3**).
+  /// `updated_at` : cette dernière appartient à `ZSyncMeta` (invariant AD-9),
+  /// et la loger dans le corps fausserait le merge Last-Write-Wins.
   final DateTime? lastMessageAt;
 
   /// Nombre de messages (défaut `0`).
@@ -96,20 +106,22 @@ class ZChatConversation extends ZEntity with ZExtensible {
   /// Date d'épinglage, ou `null`.
   final DateTime? pinnedAt;
 
-  /// Slot type additif **versionné** (AD-4 pt.1) — porte notamment le scoping
-  /// d'un hôte (dossier, document…) sans polluer le schéma partagé.
+  /// Slot type additif **versionné** (invariant AD-4, mécanisme 1) — porte
+  /// notamment le scoping d'un hôte (dossier, document…) sans polluer le
+  /// schéma partagé.
   @override
   final ZExtension? extension;
 
-  /// Échappatoire non typée (AD-4 pt.2) — l'accesseur **NORMALISE**.
+  /// Échappatoire non typée (invariant AD-4, mécanisme 2) — l'accesseur
+  /// **normalise**.
   @override
   Map<String, dynamic> get extra => zNormalizeExtra(_extra, _reservedKeys);
 
   /// Slot `extra` **BRUT** tel que reçu par le constructeur.
   final Map<String, dynamic> _extra;
 
-  /// Clés persistées **RÉSERVÉES** : schéma ∪ `extension` ∪
-  /// **`ZSyncMeta.reservedKeys`** (AD-19).
+  /// Clés persistées **réservées** : schéma ∪ `extension` ∪
+  /// **`ZSyncMeta.reservedKeys`** (invariant AD-9).
   static const Set<String> _reservedKeys = <String>{
     'id',
     'title',
@@ -124,7 +136,7 @@ class ZChatConversation extends ZEntity with ZExtensible {
 
   /// Sérialise vers la map persistée (clés snake_case), [extra] étalé d'abord.
   ///
-  /// ⛔ **N'émet NI `updated_at` NI `is_deleted`** — sans exception (**G12**).
+  /// **N'émet NI `updated_at` NI `is_deleted`** — sans exception.
   Map<String, dynamic> toMap() => <String, dynamic>{
         ...extra,
         if (id != null) 'id': id,
@@ -139,7 +151,7 @@ class ZChatConversation extends ZEntity with ZExtensible {
       };
 
   /// Copie **à sentinelle** — un argument omis conserve la valeur, `null`
-  /// explicite la remet à `null`. `extra` est **sanitisé EAGER** (**G13(b)**).
+  /// explicite la remet à `null`. `extra` est **sanitisé eager**.
   ZChatConversation copyWith({
     Object? id = _unset,
     Object? title = _unset,
@@ -186,7 +198,7 @@ class ZChatConversation extends ZEntity with ZExtensible {
           pinned == other.pinned &&
           pinnedAt == other.pinnedAt &&
           extension == other.extension &&
-          // Égalité PROFONDE du slot `extra` (DW-ES22-4).
+          // Égalité profonde du slot `extra`.
           zJsonEquals(extra, other.extra);
 
   @override
@@ -206,7 +218,8 @@ class ZChatConversation extends ZEntity with ZExtensible {
   String toString() => 'ZChatConversation(id: $id, title: $title)';
 }
 
-/// Clé persistée du champ métier de récence — **jamais** `updated_at` (**D3**).
+/// Clé persistée du champ métier de récence — **jamais** `updated_at`
+/// (invariant AD-9).
 ///
 /// Déclarée **une seule fois** et consommée par `fromMap`, `toMap` **et** les
 /// clés réservées : zéro littéral dupliqué, donc aucune divergence possible

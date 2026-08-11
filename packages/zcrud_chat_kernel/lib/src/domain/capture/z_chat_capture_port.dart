@@ -1,51 +1,31 @@
-/// Saisie **assistée** — dictée vocale et OCR — en PORTS, avec la relecture
-/// obligatoire rendue STRUCTURELLE (CHAT-10 ; AD-5, AD-10, AD-11, AD-13,
-/// AD-57).
+/// Saisie **assistée** — dictée vocale et OCR — en ports, avec la relecture
+/// obligatoire rendue structurelle (invariants AD-5, AD-10, AD-11, AD-13).
 ///
-/// origine **MESURÉE sur disque** (lecture seule, `/home/zakarius/DEV/lex_douane`) :
-/// * `packages/lex_core/lib/domain/services/speech_recognition_service.dart`
-///   — `DictationStatus` (`listening`, `done`, `unavailable`,
-///   `permissionDenied`, `error`), le DTO `DictationResult` (`text`, `isFinal`,
-///   `status`) et le contrat `initialize` / `isAvailable` /
-///   `listen({localeId})` / `stop()` ;
-/// * `packages/lex_core/lib/domain/services/ocr_service.dart`
-///   — `OcrStatus` (`recognized`, `noText`, `cancelled`, `unavailable`,
-///   `permissionDenied`, `error`), le DTO `OcrResult` et le contrat
-///   `isAvailable` / `scanFromCamera()` / `recognizeFromBytes(bytes)` ;
-/// * `packages/lex_ui/lib/presentation/widgets/chat/chat_dictation_review_sheet.dart`
-///   et `chat_ocr_review_sheet.dart` — les DEUX feuilles de **relecture** ;
-/// * `packages/lex_ui/lib/presentation/widgets/chat/chat_input.dart:208-380`
-///   — le câblage réel dans le composer (`_runOcr`, `_startDictation`,
-///   `_insertDictation`, `_insertOcrContext`).
-///
-/// ## 🔴 La ligne de partage DOMAINE / ADAPTATEUR
+/// ## La ligne de partage domaine / adaptateur
 ///
 /// **Domaine (ici)** : les états d'un cycle de capture, le fait qu'une capture
 /// produise un texte **non relu**, le fait que ce texte n'ait **aucun** chemin
 /// vers l'envoi, et les deux contrats d'hôte.
 ///
-/// **Adaptateur (reste chez l'hôte)** : `speech_to_text`, `image_picker`,
-/// `google_mlkit_text_recognition`, `path_provider`, le `kIsWeb`, la table
-/// `languageCode → localeId` (`chat_input.dart:363-372`) — et surtout
-/// `DictationNumberNormalizer` (`lex_ui/.../utils/dictation_number_normalizer.dart`),
-/// qui convertit « huit cent cinq » en `0805` **avec padding de position SH**.
-/// Ce dernier est du métier DOUANIER pur : le porter ferait entrer la
-/// nomenclature tarifaire dans un socle générique. Il n'est pas porté, et la
-/// couture qui permettrait à un hôte de le brancher est
-/// [ZChatCaptureNormalizer].
+/// **Adaptateur (reste chez l'hôte)** : le moteur de reconnaissance vocale,
+/// le sélecteur d'image, le moteur OCR, la table de correspondance des
+/// paramètres régionaux — et toute normalisation métier propre à un hôte
+/// (par exemple convertir une expression orale en un code structuré), qui
+/// reste hors du socle générique. La couture qui permettrait à un hôte de
+/// brancher une telle normalisation est [ZChatCaptureNormalizer].
 ///
-/// ## 🔴 L'INVARIANT du lot : l'envoi direct est INEXPRIMABLE
+/// ## L'invariant central : l'envoi direct est inexprimable
 ///
 /// Une transcription vocale et une extraction OCR sont **faillibles par
-/// nature**. Chez lex, la relecture est tenue par la **discipline de
-/// l'appelant** : `chat_input.dart` ouvre bien une feuille de relecture, mais
-/// `DictationResult.text` est un `String` public — rien, dans le type, n'empêche
-/// un second appelant de l'envoyer tel quel. C'est exactement la forme de
-/// promesse que ce dépôt refuse.
+/// nature**. Si la relecture n'est tenue que par la **discipline de
+/// l'appelant** — un widget ouvre bien une feuille de relecture, mais le
+/// texte transcrit reste un `String` public — rien, dans le type, n'empêche
+/// un second appelant de l'envoyer tel quel. C'est exactement cette forme de
+/// promesse que ce contrat refuse.
 ///
 /// Ici, le texte capturé est [ZUnreviewedText] :
 /// * son contenu est un champ **privé** — la portée du privé en Dart est la
-///   BIBLIOTHÈQUE, donc aucun autre fichier, aucun autre paquet, ne peut le
+///   bibliothèque, donc aucun autre fichier, aucun autre paquet, ne peut le
 ///   lire ;
 /// * **aucun** membre public ne rend une `String` — ni getter, ni méthode, ni
 ///   `toString()` (qui n'expose que la longueur : un `debugPrint` puis un
@@ -57,20 +37,29 @@
 /// Il n'existe donc, dans le socle, **aucune arête** `capture → String →
 /// envoi`. Ce n'est pas « déconseillé » : ça ne compile pas.
 ///
-/// ## 🔴 Ce qui est modélisé, et ce qui est laissé OUVERT (piège n°1)
+/// ## Ce qui est modélisé, et ce qui est laissé ouvert
 ///
-/// [ZChatCaptureRejection] compte **quatre** motifs, et les quatre sont LUS
-/// chez lex. Rien de plus n'est deviné : pas de `retryable`, pas de
-/// « locale non supportée », pas de score de confiance de l'ASR, pas de
-/// « moteur en cours de téléchargement » — aucun de ces cas n'existe dans les
-/// deux services de lex, et un socle qui les modéliserait obligerait chaque
-/// hôte à répondre à des questions que son moteur ne pose pas.
+/// [ZChatCaptureRejection] compte **quatre** motifs, choisis pour correspondre
+/// à ce que les moteurs de dictée et d'OCR rapportent réellement. Rien de plus
+/// n'est deviné : pas de `retryable`, pas de « locale non supportée », pas de
+/// score de confiance, pas de « moteur en cours de téléchargement » — un
+/// socle qui les modéliserait par anticipation obligerait chaque hôte à
+/// répondre à des questions que son moteur ne pose pas.
 ///
-/// L'annulation par l'utilisateur (`OcrStatus.cancelled`) n'est **pas** un
-/// motif de rejet : c'est une **valeur** (`Right(null)`), exactement comme
-/// `ZChatAttachmentPicker.pick` de CHAT-5 traite l'annulation d'un sélecteur.
-/// lex la range dans le même `enum` que `error` — ce qui force chaque appelant
-/// à se souvenir qu'un de ses cas d'erreur n'en est pas un.
+/// L'annulation par l'utilisateur n'est **pas** un motif de rejet : c'est une
+/// **valeur** (`Right(null)`), exactement comme `ZChatAttachmentPicker.pick`
+/// traite l'annulation d'un sélecteur. La ranger dans le même `enum` que les
+/// pannes forcerait chaque appelant à se souvenir qu'un de ses cas d'erreur
+/// n'en est pas un.
+///
+/// ## Origine empirique
+///
+/// La forme de ces ports vient de deux services d'intégration observés
+/// (`speech_recognition_service.dart`, `ocr_service.dart`) et de leurs deux
+/// feuilles de relecture associées (`chat_dictation_review_sheet.dart`,
+/// `chat_ocr_review_sheet.dart`), dont la normalisation métier de la dictée
+/// (`dictation_number_normalizer.dart`) illustre précisément ce que
+/// [ZChatCaptureNormalizer] laisse à la charge de l'hôte.
 library;
 
 import 'dart:typed_data';
@@ -79,29 +68,21 @@ import 'package:zcrud_core/domain.dart';
 
 /// Longueur maximale d'un texte capturé retenue **sans** troncature.
 ///
-/// 🔴 Ce n'est PAS une limite de sécurité et ça ne prétend pas l'être (même
+/// Ce n'est PAS une limite de sécurité et ça ne prétend pas l'être (même
 /// partition que `ZChatAttachmentFailure`). C'est une borne d'ergonomie : une
 /// OCR de page dense produit couramment plusieurs dizaines de milliers de
-/// caractères, et les déverser dans un composer rend la relecture impossible —
-/// donc rend l'invariant du lot inopérant en pratique.
+/// caractères, et les déverser dans un composer rend la relecture
+/// impossible — donc rend l'invariant de relecture obligatoire inopérant en
+/// pratique.
 ///
-/// 🔴 Au-delà du seuil, la capture est **acceptée ENTIÈRE** : le socle ne
-/// tronque RIEN, il se contente de l'annoncer ([ZUnreviewedText.isLarge]) pour
+/// Au-delà du seuil, la capture est **acceptée entière** : le socle ne
+/// tronque rien, il se contente de l'annoncer ([ZUnreviewedText.isLarge]) pour
 /// que l'hôte avertisse. Tronquer à la place de l'utilisateur détruirait de la
-/// saisie — exactement le défaut que ce lot existe pour ne pas rejouer.
+/// saisie.
 const int kZChatCaptureLargeTextThreshold = 20000;
 
 /// Motif d'échec d'un cycle de capture — famille **fermée** (elle ne traverse
-/// aucune frontière de sérialisation : AD-4 ne s'y applique pas).
-///
-/// Correspondance **exacte** avec ce qui est lu chez lex :
-///
-/// | ici | lex `DictationStatus` | lex `OcrStatus` |
-/// |---|---|---|
-/// | [unavailable]      | `unavailable`      | `unavailable`      |
-/// | [permissionDenied] | `permissionDenied` | `permissionDenied` |
-/// | [nothingCaptured]  | (transcription vide) | `noText`         |
-/// | [engineError]      | `error`            | `error`            |
+/// aucune frontière de sérialisation : l'invariant AD-4 ne s'y applique pas).
 ///
 /// `listening` / `done` ne sont pas des échecs : ce sont les phases d'un cycle
 /// de dictée ([ZChatDictationPhase]). `cancelled` n'en est pas un non plus :
@@ -113,7 +94,7 @@ enum ZChatCaptureRejection {
   unavailable,
 
   /// L'utilisateur a refusé la permission (micro, caméra). Le clavier reste
-  /// utilisable : c'est **le** point où lex insiste, et il a raison.
+  /// utilisable : un refus de permission ne doit jamais bloquer la saisie.
   permissionDenied,
 
   /// Le cycle a réussi mais n'a **rien** produit : silence, image floue, page
@@ -125,7 +106,7 @@ enum ZChatCaptureRejection {
   engineError,
 }
 
-/// Échec **typé** d'un cycle de capture (AD-5).
+/// Échec **typé** d'un cycle de capture (invariant AD-5).
 ///
 /// Porte [reason] et, quand le refus vient d'ailleurs, la [cause] d'origine —
 /// **transportée**, jamais réinterprétée (même règle que
@@ -160,7 +141,7 @@ class ZChatCaptureFailure extends ZFailure {
   String toString() => 'ZChatCaptureFailure($reason, message: $message)';
 }
 
-/// 🔴 Une surface **éditable par l'utilisateur**, et le SEUL puits d'un
+/// Une surface **éditable par l'utilisateur**, et le SEUL puits d'un
 /// [ZUnreviewedText].
 ///
 /// Le contrat tient en une ligne parce que c'est tout ce qu'il doit garantir :
@@ -176,13 +157,14 @@ abstract interface class ZChatReviewSink {
 
 /// Transforme un texte capturé **avant** relecture — couture d'hôte, optionnelle.
 ///
-/// C'est ici que se branche `DictationNumberNormalizer` de lex (« huit cent
-/// cinq » → `0805`), qui reste CHEZ LUI : il connaît la nomenclature SH, ce
-/// socle non. `null` ⇒ le texte est déposé **verbatim**, ce qui est la seule
-/// valeur par défaut honnête (AD-10 : jamais un défaut inventé).
+/// C'est ici qu'un hôte branche sa propre normalisation métier (par exemple
+/// convertir une expression orale en un code structuré) : elle reste chez
+/// lui, ce socle générique ne la connaît pas. `null` ⇒ le texte est déposé
+/// **verbatim**, ce qui est la seule valeur par défaut honnête (invariant
+/// AD-10 : jamais un défaut inventé).
 typedef ZChatCaptureNormalizer = String Function(String raw);
 
-/// 🔴 Un texte capturé **qui n'a pas été relu** — le type qui rend l'envoi
+/// Un texte capturé **qui n'a pas été relu** — le type qui rend l'envoi
 /// direct inexprimable.
 ///
 /// Il n'expose **aucune** `String`. Son unique sortie est [depositInto], qui
@@ -194,13 +176,12 @@ final class ZUnreviewedText {
   /// Construit un texte non relu à partir de ce qu'a produit un moteur.
   ///
   /// [normalizer] est appliqué **une fois**, à la construction : la surface de
-  /// relecture reçoit le texte déjà normalisé, comme chez lex (la feuille
-  /// normalise `initState`), et l'utilisateur corrige la normalisation elle-même
-  /// s'il le faut.
+  /// relecture reçoit le texte déjà normalisé, et l'utilisateur corrige la
+  /// normalisation elle-même s'il le faut.
   ZUnreviewedText(String raw, {ZChatCaptureNormalizer? normalizer})
     : _raw = normalizer == null ? raw : normalizer(raw);
 
-  /// 🔴 Le contenu — **privé à la bibliothèque**. Aucun autre fichier ne peut
+  /// Le contenu — **privé à la bibliothèque**. Aucun autre fichier ne peut
   /// le lire, et aucun membre public ne le rend.
   final String _raw;
 
@@ -217,7 +198,7 @@ final class ZUnreviewedText {
   /// prévenir avant d'ouvrir la relecture ([kZChatCaptureLargeTextThreshold]).
   bool get isLarge => _raw.length > kZChatCaptureLargeTextThreshold;
 
-  /// 🔴 **L'UNIQUE sortie.** Dépose le texte dans une surface éditable.
+  /// **L'UNIQUE sortie.** Dépose le texte dans une surface éditable.
   ///
   /// Rend `void` : rien ne s'échappe vers l'appelant. Ne fait rien si la
   /// capture est vide — déposer du blanc dans une relecture ferait croire à
@@ -227,23 +208,21 @@ final class ZUnreviewedText {
     sink.seed(_raw);
   }
 
-  /// 🔴 N'expose **PAS** le contenu.
+  /// N'expose **PAS** le contenu.
   ///
   /// Un `toString()` qui rendrait le texte suffirait à contourner tout ce
-  /// fichier : `debugPrint('$unreviewed')`, puis copier-coller. C'est une fuite
-  /// mesurée ailleurs dans ce dépôt (les `debugPrint` de la chaîne audio de
-  /// lex), et elle est fermée ici plutôt que documentée.
+  /// fichier : `debugPrint('$unreviewed')`, puis copier-coller. Cette fuite
+  /// classique est fermée ici plutôt que documentée.
   @override
   String toString() => 'ZUnreviewedText(${_raw.length} chars, unreviewed)';
 }
 
-/// Phase d'un cycle de dictée — port **exact** de `DictationStatus.listening` /
-/// `.done` de lex. Les trois autres valeurs de son `enum` sont des ÉCHECS et
-/// vivent dans [ZChatCaptureRejection] : les mélanger, comme lex le fait, force
+/// Phase d'un cycle de dictée. Les motifs d'échec du moteur vivent séparément
+/// dans [ZChatCaptureRejection] : les mélanger avec les phases forcerait
 /// chaque `switch` d'appelant à trier lui-même l'état et la panne.
 enum ZChatDictationPhase {
-  /// Le moteur écoute — l'hôte DOIT l'annoncer (région live, AD-13), pas
-  /// seulement l'afficher.
+  /// Le moteur écoute — l'hôte DOIT l'annoncer (région live, invariant
+  /// AD-13), pas seulement l'afficher.
   listening,
 
   /// Le cycle s'est terminé normalement (silence, arrêt manuel).
@@ -274,9 +253,9 @@ class ZChatDictationEvent {
       'ZChatDictationEvent($phase, isFinal: $isFinal, ${text.length} chars)';
 }
 
-/// Couture de **dictée** (speech-to-text) — l'hôte fournit le moteur (AD-57).
+/// Couture de **dictée** (speech-to-text) — l'hôte fournit le moteur.
 ///
-/// 🔴 Aucun moteur ici, et aucune dépendance : `speech_to_text` reste chez
+/// Aucun moteur ici, et aucune dépendance : `speech_to_text` reste chez
 /// l'hôte, avec ses permissions de manifeste. Sans implémentation, le chat
 /// fonctionne — on ne peut simplement pas dicter (sémantique de
 /// `ZChatRenderer` : `null` est une réponse valide).
@@ -287,13 +266,13 @@ abstract interface class ZChatDictationPort {
   /// Écoute et émet les transcriptions partielles puis finale.
   ///
   /// [localeId] est **nullable** : `null` = « laisse le moteur décider »,
-  /// jamais « français ». lex passe `'fr_FR'` en repli codé en dur
-  /// (`chat_input.dart:371`) — acceptable dans une app francophone, jamais dans
-  /// un socle multi-consommateurs (même écart que `ZChatSpeechRequest.languageTag`).
+  /// jamais « français » en dur. Un repli codé en dur serait acceptable dans
+  /// une app monolingue, jamais dans un socle multi-consommateurs (même
+  /// écart à éviter que sur `ZChatSpeechRequest.languageTag`).
   ///
   /// Chaque élément est un `ZResult` : `Left(ZChatCaptureFailure)` pour un refus
   /// de permission, une indisponibilité ou une panne — **jamais** une exception
-  /// (AD-10).
+  /// (invariant AD-10).
   Stream<ZResult<ZChatDictationEvent>> listen({String? localeId});
 
   /// Arrête l'écoute — best-effort, ne lève jamais.
@@ -302,10 +281,9 @@ abstract interface class ZChatDictationPort {
 
 /// D'où vient l'image soumise à l'OCR.
 ///
-/// Les deux flux **vivants** de lex : `scanFromCamera()` (capture) et
-/// `recognizeFromBytes()` (une image déjà en mémoire, typiquement une pièce
-/// jointe de CHAT-5). Une valeur de plus ne se justifierait que si un flux de
-/// plus existait réellement.
+/// Deux flux couvrent les usages réels : une capture (caméra ou sélecteur)
+/// et une image déjà en mémoire (typiquement une pièce jointe). Une valeur
+/// de plus ne se justifierait que si un flux de plus existait réellement.
 enum ZChatOcrSource {
   /// L'hôte ouvre la caméra ou un sélecteur : l'utilisateur peut **annuler**.
   capture,
@@ -336,9 +314,9 @@ class ZChatOcrRequest {
       'ZChatOcrRequest($source, ${bytes?.length ?? 0} bytes)';
 }
 
-/// Couture d'**OCR** — l'hôte fournit le moteur (AD-57).
+/// Couture d'**OCR** — l'hôte fournit le moteur.
 ///
-/// 🔴 Ni `google_mlkit_text_recognition`, ni `image_picker`, ni
+/// Ni `google_mlkit_text_recognition`, ni `image_picker`, ni
 /// `path_provider` n'entrent ici. La reconnaissance est **on-device** ou non
 /// selon l'hôte : ce socle ne le sait pas et n'a pas à le savoir.
 abstract interface class ZChatOcrPort {
@@ -348,9 +326,9 @@ abstract interface class ZChatOcrPort {
   /// Extrait le texte de l'image décrite par [request].
   ///
   /// * `Right(ZUnreviewedText)` — du texte a été reconnu ;
-  /// * `Right(null)` — l'utilisateur a **annulé** (issue nominale : le
-  ///   `cancelled` de lex, sorti de l'`enum` d'erreurs) ;
+  /// * `Right(null)` — l'utilisateur a **annulé** (issue nominale, sortie de
+  ///   l'`enum` d'erreurs) ;
   /// * `Left(ZChatCaptureFailure)` — permission refusée, indisponible, aucun
-  ///   texte, panne. **Jamais** d'exception (AD-10).
+  ///   texte, panne. **Jamais** d'exception (invariant AD-10).
   Future<ZResult<ZUnreviewedText?>> recognize(ZChatOcrRequest request);
 }

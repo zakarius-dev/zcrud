@@ -1,227 +1,204 @@
-/// **Lot K2 (chantier composer-lex, arbitrage owner 2026-08-07)** — les valeurs
-/// de RENDU DE RÉFÉRENCE du composer, mesurées chez **lex_douane** (l'app la
-/// plus avancée, désignée référence du mode Chat par la décision du 2026-08-05)
-/// et centralisées en UN SEUL endroit — patron `ZChatNotebookReference`
-/// (lui-même hérité de `ZStudyCardReference`, CR-IFFD-56/57).
+/// Valeurs de rendu de référence du composer, centralisées en un seul
+/// endroit — même patron que `ZChatNotebookReference`.
 ///
-/// Toutes les lignes citées sont celles de
-/// `lex/packages/lex_ui/lib/presentation/widgets/chat/chat_input.dart`, sauf
-/// mention (`effort_chips.dart`, `chat_enums.dart` — même dossier lex).
+/// ## Exception encadrée sur les couleurs codées en dur
 ///
-/// ## ⚠️ Exception FR-26 ENCADRÉE (même gouvernance que le notebook)
+/// Ce fichier est l'un des deux seuls de `zcrud_chat` autorisés à porter des
+/// couleurs littérales, à trois conditions strictes :
 ///
-/// Ce fichier est le **second et dernier** de `zcrud_chat` autorisé à porter des
-/// couleurs littérales, aux trois conditions de l'arbitrage du 2026-08-04 :
+/// 1. Centralisation — les trois teintes d'identité des paliers de verbosité
+///    vivent ici et nulle part ailleurs ;
+/// 2. Remplaçabilité — remplaçables par paramètre
+///    (`ZChatComposerChrome.responseLengthAccents`) et, à terme, par un jeton
+///    de thème qui s'insérera entre les deux ; priorité paramètre > jeton >
+///    référence ;
+/// 3. Exemption nominative — la garde de source qui interdit les couleurs
+///    codées en dur exempte ce fichier par son nom exact, et seulement de sa
+///    règle de couleur : l'invariant AD-13 (directionnalité) et l'interdiction
+///    de `TextStyle(` y restent opposables.
 ///
-/// 1. **Centralisation** — les trois teintes d'identité des paliers de
-///    verbosité (`chat_enums.dart:42-46` chez lex) vivent ici et nulle part
-///    ailleurs ;
-/// 2. **Remplaçabilité** — remplaçables par **paramètre**
-///    (`ZChatComposerChrome.responseLengthAccents`) et par **jeton** — le jeton
-///    `ZcrudTheme.chatResponseLengthAccents` est **demandé** à `zcrud_core`
-///    (hors périmètre de ce lot) et s'insérera entre les deux, comme
-///    `chatSelectedEmphasisWeight` l'a été pour CR-74 ; priorité
-///    **paramètre > jeton > référence** ;
-/// 3. **Exemption nominative** — `test/z_chat_purity_test.dart` exempte CE
-///    fichier **par nom exact**, de ses deux règles de COULEUR seulement : les
-///    règles AD-13 (directionnalité) et `TextStyle(` y restent opposables.
+/// Ces trois teintes ne sont pas dérivables d'un `ColorScheme` : ce sont des
+/// teintes d'identité de palier (vert/bleu/violet), pas des rôles. Elles sont
+/// indexées par [ZChatResponseLength] — l'axe du kernel — jamais par une
+/// chaîne métier.
 ///
-/// Ces trois teintes sont **non dérivables** d'un `ColorScheme` : ce sont des
-/// teintes d'IDENTITÉ de palier (vert/bleu/violet), pas des rôles. Elles sont
-/// indexées par **`ZChatResponseLength`** — l'axe du kernel auquel les paliers
-/// lex correspondent déjà (alias de lecture, `z_chat_enums.dart:100-113`) —
-/// jamais par une chaîne métier.
+/// ## Ce que ce fichier ne déclare délibérément pas
 ///
-/// ## 🔴 Les défauts lex qui ne sont PAS reproduits (relevé §A.2 de l'étude)
-///
-/// | Défaut mesuré chez lex | Ce que ce fichier fait |
-/// |---|---|
-/// | bouton « fermer l'édition » **28 dp** (`:516-519`) | non déclaré — [sendTargetSize] est le SEUL côté de cible ici, et il vaut 48 |
-/// | bouton « retirer la PJ » **20 dp** (`:1032`), badge OCR ~22 dp (`:1054`), micro compact < 48 dp (`:896`) | non déclarés — la valeur qu'on ne peut pas lire ici ne peut pas être reproduite par inadvertance |
-/// | `Positioned(top: 0, right: 0)` non directionnel (`:1025-1026`) | aucune constante de décalage `Right` : tout est `EdgeInsetsDirectional` (AD-13) |
-/// | placeholder animé **sans garde Reduce-Motion** (`:1162-1198`) | les durées sont publiées, mais `ZChatComposerAnimatedHint` (le widget du socle) est NEUTRALISÉ par `MediaQuery.disableAnimations` — mesuré |
-/// | `theme.dividerColor` / `fillColor` Material | non portés : rôles de thème, à câbler par l'hôte — CR-IFFD-77 ③ a ouvert le **point de câblage** qui manquait (`ZChatComposerSurface.borderColor`), l'épaisseur restant une référence ([borderWidth]) |
+/// Une valeur qui ne peut pas être lue ici ne peut pas être reproduite par
+/// inadvertance : ce fichier ne déclare aucune cible tactile sous 48 dp,
+/// aucun décalage non directionnel, et publie les durées d'une animation de
+/// placeholder sans jamais dispenser le widget du socle de sa garde
+/// Reduce Motion. Les rôles de thème (couleur de filet, couleur de fond) ne
+/// sont pas portés ici : ils se câblent par paramètre ou par jeton, seule
+/// leur épaisseur ou leur forme relève de la référence.
 library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zcrud_chat_kernel/zcrud_chat_kernel.dart';
 
-/// Les valeurs de RÉFÉRENCE du composer — le point d'audit **unique** de la
+/// Les valeurs de référence du composer — le point d'audit unique de la
 /// famille « composer » (la famille « notebook » a le sien :
 /// `ZChatNotebookReference`).
 abstract final class ZChatComposerReference {
-  // ── Conteneur de la barre (`:474-482`) ────────────────────────────────────
+  // ── Conteneur de la barre ──────────────────────────────────────────────
 
-  /// Marge externe du conteneur (`:474`, `EdgeInsets.all(8)` — symétrique,
-  /// publiée directionnelle par principe AD-13).
+  /// Marge externe du conteneur — symétrique, publiée directionnelle par
+  /// principe (invariant AD-13).
   static const EdgeInsetsDirectional outerPadding = EdgeInsetsDirectional.all(
     8,
   );
 
-  /// Rayon du conteneur de la barre (`:482`).
+  /// Rayon du conteneur de la barre.
   static const Radius containerRadius = Radius.circular(12);
 
-  /// Épaisseur du FILET du conteneur (`:474-482`,
-  /// `Border.all(color: theme.dividerColor)` — largeur par défaut d'un
-  /// `BorderSide`, soit **1**).
+  /// Épaisseur du filet du conteneur — largeur par défaut d'un `BorderSide`,
+  /// soit 1.
   ///
-  /// 🔴 CR-IFFD-77 ③ : seule l'ÉPAISSEUR est une valeur de référence. La
-  /// **couleur** reste un rôle de thème (`dividerColor` chez lex) — non
-  /// portée ici (FR-26 : le socle n'invente aucune teinte), câblée par
-  /// `ZChatComposerSurface.borderColor` puis par le jeton demandé
-  /// `ZcrudTheme.chatComposerBorderColor`. Sans couleur résolue : **aucun
-  /// filet**, jamais une bordure inerte (AD-4).
+  /// Seule l'épaisseur est une valeur de référence. La couleur reste un rôle
+  /// de thème, non portée ici : le socle n'invente aucune teinte. Elle se
+  /// câble par `ZChatComposerSurface.borderColor` puis par un jeton de
+  /// thème. Sans couleur résolue, aucun filet n'est rendu, jamais une
+  /// bordure inerte (invariant AD-4).
   static const double borderWidth = 1;
 
-  // ── Champ de texte (`:585-609`) ───────────────────────────────────────────
+  // ── Champ de texte ─────────────────────────────────────────────────────
 
-  /// Nombre minimal de lignes du champ (`:588`).
+  /// Nombre minimal de lignes du champ.
   static const int fieldMinLines = 1;
 
-  /// Nombre maximal de lignes du champ (`:589`).
+  /// Nombre maximal de lignes du champ.
   static const int fieldMaxLines = 5;
 
-  /// Marge interne du champ (`:609`,
-  /// `EdgeInsetsDirectional.fromSTEB(16, 12, 4, 4)` — déjà directionnel chez
-  /// lex ✓).
+  /// Marge interne du champ.
   static const EdgeInsetsDirectional fieldContentPadding =
       EdgeInsetsDirectional.fromSTEB(16, 12, 4, 4);
 
-  /// Décalage HAUT du bloc champ (`:585`, `EdgeInsets.only(top: 4)` —
-  /// vertical, sans axe horizontal).
+  /// Décalage haut du bloc champ — vertical, sans axe horizontal.
   static const double fieldTopGap = 4;
 
-  // ── Bouton d'envoi (`:646-697`) ───────────────────────────────────────────
+  // ── Bouton d'envoi ─────────────────────────────────────────────────────
 
-  /// Côté de la cible d'envoi : **48** (`:651-657`, `SizedBox` 48×48 autour du
-  /// FAB + `Semantics(button:, label:)`) — lex est ici CONFORME AD-13, et
-  /// cette valeur est alignée sur `kZChatMinTapTarget`. Le résolveur écrête
-  /// toute demande plus basse à ce plancher.
+  /// Côté de la cible d'envoi, alignée sur `kZChatMinTapTarget`. Le
+  /// résolveur écrête toute demande plus basse à ce plancher.
   static const double sendTargetSize = 48;
 
-  /// Marge autour du bouton d'envoi (`:646`, `:677`).
+  /// Marge autour du bouton d'envoi.
   static const EdgeInsetsDirectional sendPadding = EdgeInsetsDirectional.all(4);
 
-  /// Échelle du bouton quand la saisie est **vide** (`:674-676`).
+  /// Échelle du bouton quand la saisie est vide.
   static const double sendScaleIdle = 0.7;
 
-  /// Échelle du bouton quand la saisie est **non vide** (`:674-676`).
+  /// Échelle du bouton quand la saisie est non vide.
   static const double sendScaleActive = 1;
 
-  /// Durée de la transition d'échelle (`:674-676`, 150 ms, courbe par défaut).
+  /// Durée de la transition d'échelle.
   static const Duration sendScaleDuration = Duration(milliseconds: 150);
 
-  /// Côté du spinner de téléversement (`:632-641`, boîte 48 avec spinner 24).
+  /// Côté du spinner de téléversement.
   static const double uploadSpinnerSize = 24;
 
-  /// Épaisseur du trait du spinner (`:632-641`).
+  /// Épaisseur du trait du spinner.
   static const double uploadSpinnerStrokeWidth = 2;
 
-  // ── Rangée d'outils : puces et badges (`:720-874`) ────────────────────────
+  // ── Rangée d'outils : puces et badges ──────────────────────────────────
 
-  /// Largeur d'écran sous laquelle la rangée passe en mode « icône seule »
-  /// (`:720`, `< 400`).
+  /// Largeur d'écran sous laquelle la rangée passe en mode « icône seule ».
   static const double mobileBreakpoint = 400;
 
-  /// Côté de l'avatar d'une puce (`:768-780`, `:816-833` — 24 dp).
+  /// Côté de l'avatar d'une puce.
   ///
-  /// ⚠️ Taille du **glyphe**, jamais de la cible : la cible reste
+  /// Taille du glyphe, jamais de la cible : la cible reste
   /// [sendTargetSize]/`kZChatMinTapTarget`.
   static const double chipAvatarSize = 24;
 
-  /// Rayon d'une puce de réglage (`:768-780`, radius 12).
+  /// Rayon d'une puce de réglage.
   static const Radius chipRadius = Radius.circular(12);
 
-  /// Rayon d'un badge compteur/effort (`:790-807`, `:856-874` — radius 8).
+  /// Rayon d'un badge compteur/effort.
   static const Radius badgeRadius = Radius.circular(8);
 
-  /// Marge interne d'un badge (`:790-807`, h4/v0 — rendue directionnelle).
+  /// Marge interne d'un badge — rendue directionnelle.
   static const EdgeInsetsDirectional badgePadding =
       EdgeInsetsDirectional.symmetric(horizontal: 4);
 
-  /// Écart de DÉBUT entre une puce et son badge (`:790-807`, `marge start 4` —
-  /// lex écrit déjà `EdgeInsetsDirectional.only(end:)` sur la puce ✓).
+  /// Écart de début entre une puce et son badge.
   static const double badgeStartGap = 4;
 
-  /// Côté du glyphe du bouton « outils » et du déclencheur de palier
-  /// (`:836-847` et `effort_chips.dart:94-95` — 18 dp).
+  /// Côté du glyphe du bouton « outils » et du déclencheur de palier.
   static const double toolsIconSize = 18;
 
-  /// Marge interne du déclencheur actif (`:836-847`, h6/v4).
+  /// Marge interne du déclencheur actif.
   static const EdgeInsetsDirectional toolsActivePadding =
       EdgeInsetsDirectional.symmetric(horizontal: 6, vertical: 4);
 
-  /// Durée d'un aller de l'animation de couleur du déclencheur de palier
-  /// (`effort_chips.dart:143-155`, 2 s easeInOut, `repeat(reverse: true)`).
+  /// Durée d'un aller de l'animation de couleur du déclencheur de palier.
   ///
-  /// ⚠️ Boucle infinie ⇒ tout widget qui l'applique DOIT l'arrêter sous
-  /// `MediaQuery.disableAnimations` — lex le fait ici même
-  /// (`effort_chips.dart:170-180`), c'est le patron à suivre.
+  /// Boucle infinie : tout widget qui l'applique doit l'arrêter sous
+  /// `MediaQuery.disableAnimations`.
   static const Duration accentCycleDuration = Duration(seconds: 2);
 
-  // ── Bandeau du mode édition (`:488-526`) ──────────────────────────────────
+  // ── Bandeau du mode édition ────────────────────────────────────────────
 
-  /// Marge du bandeau « modification en cours » (`:488-526`, h16/v8).
+  /// Marge du bandeau « modification en cours ».
   static const EdgeInsetsDirectional editingBannerPadding =
       EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 8);
 
-  /// Côté du glyphe d'édition du bandeau (`:488-526`, 16 dp).
+  /// Côté du glyphe d'édition du bandeau.
   ///
-  /// ⚠️ Le bouton « fermer » de 28 dp du même bandeau n'est PAS déclaré :
-  /// cible < 48 dp (cf. dartdoc de bibliothèque).
+  /// Le bouton « fermer » du même bandeau n'est pas déclaré ici : sa cible
+  /// est sous 48 dp (cf. dartdoc de bibliothèque).
   static const double editingIconSize = 16;
 
-  // ── Placeholder animé (`:1162-1198`) ──────────────────────────────────────
+  // ── Placeholder animé ──────────────────────────────────────────────────
 
-  /// Période de rotation des suggestions du placeholder (`:1162`, 4 s).
+  /// Période de rotation des suggestions du placeholder.
   static const Duration hintRotationPeriod = Duration(seconds: 4);
 
-  /// Période du pouls de l'icône du placeholder (`:1171`, 900 ms).
+  /// Période du pouls de l'icône du placeholder.
   static const Duration hintPulsePeriod = Duration(milliseconds: 900);
 
-  /// Durée du fondu du pouls (`:1188-1190`, 700 ms easeInOut).
+  /// Durée du fondu du pouls.
   static const Duration hintPulseFadeDuration = Duration(milliseconds: 700);
 
-  /// Durée du fondu de changement de texte (`:1195-1198`, 350 ms).
+  /// Durée du fondu de changement de texte.
   static const Duration hintSwitchDuration = Duration(milliseconds: 350);
 
-  /// Côté de l'icône du placeholder (`:597-600`, `:1191` — 18 dp).
+  /// Côté de l'icône du placeholder.
   static const double hintIconSize = 18;
 
-  // ── Bande de pièces jointes (`:946-1110`) ─────────────────────────────────
+  // ── Bande de pièces jointes ────────────────────────────────────────────
 
-  /// Hauteur de la bande d'aperçu (`:946-1110`, 80 dp).
+  /// Hauteur de la bande d'aperçu.
   static const double attachmentStripHeight = 80;
 
-  /// Côté d'une vignette (`:946-1110`, 72×72).
+  /// Côté d'une vignette.
   static const double attachmentThumbSize = 72;
 
-  /// Rayon d'une vignette (`:946-1110`, radius 8).
+  /// Rayon d'une vignette.
   static const Radius attachmentThumbRadius = Radius.circular(8);
 
-  /// Écart de FIN entre deux vignettes (`EdgeInsetsDirectional.only(end: 8)`,
-  /// déjà directionnel chez lex ✓).
+  /// Écart de fin entre deux vignettes.
   ///
-  /// ⚠️ Le bouton « retirer » de 20 dp et son `Positioned(top: 0, right: 0)`
-  /// ne sont PAS déclarés (cible < 48 dp + non directionnel) : la bande du
-  /// socle (`ZChatAttachmentStrip`) fait déjà mieux.
+  /// Le bouton « retirer » et son décalage ne sont pas déclarés ici : leur
+  /// cible est sous 48 dp et leur positionnement n'est pas directionnel ;
+  /// la bande du socle (`ZChatAttachmentStrip`) fait déjà mieux sur ces deux
+  /// points.
   static const double attachmentEndGap = 8;
 
-  // ── COULEURS — exception FR-26 encadrée (cf. dartdoc de bibliothèque) ─────
+  // ── Couleurs — exception encadrée (cf. dartdoc de bibliothèque) ────────
 
-  /// Teintes d'IDENTITÉ des paliers de verbosité — `chat_enums.dart:42-46`
-  /// chez lex : vert `#4CAF50` (concise/« Mini »), bleu `#2196F3`
-  /// (standard/« Plus »), violet `#9C27B0` (détaillée/« Pro »).
+  /// Teintes d'identité des paliers de verbosité : vert (concise), bleu
+  /// (standard), violet (détaillée).
   ///
-  /// Indexées par l'axe du **kernel** (`ZChatResponseLength`), jamais par un
+  /// Indexées par l'axe du kernel ([ZChatResponseLength]), jamais par un
   /// libellé. Non dérivables d'un `ColorScheme` : aucune séquence de rôles ne
-  /// porte une identité de palier. Décoratives, **jamais porteuses seules**
+  /// porte une identité de palier. Décoratives, jamais porteuses seules
   /// d'information : le palier choisi reste annoncé par la sémantique et par
-  /// l'emphase CR-74 de la feuille de réglages.
+  /// l'emphase de la feuille de réglages.
   ///
   /// Remplaçables par paramètre (`ZChatComposerChrome.responseLengthAccents`,
-  /// consultées **clé par clé**) et — dès que `zcrud_core` le portera — par le
-  /// jeton demandé `ZcrudTheme.chatResponseLengthAccents`.
+  /// consultées clé par clé) et, dès que `zcrud_core` le portera, par un
+  /// jeton de thème.
   static const Map<ZChatResponseLength, Color> responseLengthAccents =
       <ZChatResponseLength, Color>{
         ZChatResponseLength.concise: Color(0xFF4CAF50),

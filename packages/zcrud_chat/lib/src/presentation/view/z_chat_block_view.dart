@@ -1,23 +1,23 @@
-/// Rendu **neutre, zéro-dépendance** d'un `ZContentBlock` — CHAT-3.
+/// Rendu neutre, zéro dépendance, d'un `ZContentBlock`.
 ///
-/// ## L'ordre de résolution, et pourquoi il est dans CE widget
+/// ## L'ordre de résolution, et pourquoi il est dans ce widget
 ///
-/// `seam hôte (`zResolveChatBlock`) → rendu neutre`. Le seam est interrogé
-/// **bloc par bloc**, jamais message par message : c'est ce qui permet à un
-/// hôte de rendre son `kind` custom (`'legalReference'`, `'flashcards'`,
-/// `'mindmap'`) sans réimplémenter les neuf variantes fermées du kernel, et
-/// c'est ce qui rend la **neutralité** vérifiable — un renderer qui décline
-/// tout laisse un arbre strictement identique à l'absence de renderer.
+/// Seam de l'hôte (`zResolveChatBlock`) d'abord, rendu neutre ensuite. Le
+/// seam est interrogé bloc par bloc, jamais message par message : c'est ce
+/// qui permet à un hôte de rendre son `kind` personnalisé sans réimplémenter
+/// les variantes fermées du kernel, et c'est ce qui rend la neutralité
+/// vérifiable — un renderer qui décline tout laisse un arbre strictement
+/// identique à l'absence de renderer.
 ///
-/// ## Ce que ce fichier NE fait PAS, volontairement
+/// ## Ce que ce fichier ne fait pas, volontairement
 ///
-/// Il ne rend **ni Markdown, ni LaTeX, ni Mermaid**. `zcrud_markdown` porte
-/// déjà GFM, tables et LaTeX derrière `ZCodec` (AD-7) — mais il tire **Quill**,
-/// et AD-57 interdit d'imposer ce poids à tout consommateur du chat. Le rendu
-/// riche n'est donc pas réécrit ici : il est **atteignable** par
-/// [ZChatRenderer], et le défaut se contente d'un rendu *fonctionnel mais
-/// dégradé* (le texte source, lisible et sélectionnable), jamais absent — la
-/// définition même du défaut zéro-dépendance d'AD-57.
+/// Il ne rend ni Markdown, ni LaTeX, ni diagramme. Un rendu riche de ce type
+/// tire typiquement un éditeur riche complet, et l'invariant AD-1 interdit
+/// d'imposer ce poids à tout consommateur du chat. Le rendu riche n'est donc
+/// pas réécrit ici : il est atteignable par [ZChatRenderer], et le défaut se
+/// contente d'un rendu fonctionnel mais dégradé (le texte source, lisible et
+/// sélectionnable), jamais absent — la définition même d'un défaut
+/// zéro-dépendance.
 library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -39,9 +39,9 @@ class ZChatBlockView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 Chaîne TOTALE : `null` ⇒ rendu neutre — y compris quand le renderer de
-    // l'hôte LÈVE (arbitrage AD-10 tranché en fin d'epic ; l'exception est
-    // relayée à `FlutterError`, cf. `zResolveChatBlock`).
+    // Chaîne totale : `null` signifie rendu neutre — y compris quand le
+    // renderer de l'hôte lève (invariant AD-10 ; l'exception est relayée à
+    // `FlutterError`, cf. `zResolveChatBlock`).
     final Widget? fromHost = zResolveChatBlock(context, request);
     if (fromHost != null) return fromHost;
     return _ZNeutralBlock(request: request);
@@ -59,9 +59,9 @@ class _ZNeutralBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final ZContentBlock block = request.block;
-    // 🔴 CHAT-3b — le texte EN COURS DE RÉDACTION traverse la couture. Le
-    // rendu neutre prend l'abonnement ICI, au plus près du `Text` : un jeton ne
-    // reconstruit que ce `builder`, ni la tuile, ni la liste (SM-1).
+    // Le texte en cours de rédaction traverse la couture. Le rendu neutre
+    // prend l'abonnement ici, au plus près du `Text` : un jeton ne
+    // reconstruit que ce `builder`, ni la tuile, ni la liste (invariant AD-2).
     final ValueListenable<String>? live = request.streamingText;
     if (live != null && block is ZTextBlock) {
       return ValueListenableBuilder<String>(
@@ -149,10 +149,10 @@ class _ZNeutralBlock extends StatelessWidget {
             _text(context, s.content),
         ],
       ),
-      // 🔴 Un `kind` inconnu n'est PAS transformé en texte : le kernel a
-      // délibérément préservé son payload verbatim (D5), et le dumper à l'écran
-      // reproduirait le défaut de lex (`TextBlock(text: json.toString())`).
-      // Le socle signale sa présence — l'hôte le rend via `ZChatRenderer`.
+      // Un `kind` inconnu n'est pas transformé en texte brut affiché : le
+      // kernel a délibérément préservé son payload verbatim, et le dumper à
+      // l'écran perdrait cette distinction. Le socle signale sa présence —
+      // l'hôte le rend via `ZChatRenderer`.
       ZCustomContentBlock() => Semantics(
         label: zChatLabel(context, kZChatLabelUnsupportedBlock),
         child: _text(context, block.kind),
@@ -162,7 +162,7 @@ class _ZNeutralBlock extends StatelessWidget {
 
   /// Colonnes → lignes. Une colonne plus courte que la plus longue est
   /// complétée par des cellules vides : une comparaison déséquilibrée reste
-  /// affichable (AD-10), elle ne fait pas planter le tableau.
+  /// affichable (invariant AD-10), elle ne fait pas planter le tableau.
   static List<List<String>> _transpose(List<ZComparisonColumn> columns) {
     int height = 0;
     for (final ZComparisonColumn c in columns) {
@@ -218,8 +218,8 @@ class _ZNeutralStack extends StatelessWidget {
   }
 }
 
-/// Encadré neutre : bordure et rayon **issus du thème injecté**, aucune couleur
-/// littérale (FR-26).
+/// Encadré neutre : bordure et rayon issus du thème injecté, aucune couleur
+/// littérale.
 class _ZNeutralBox extends StatelessWidget {
   const _ZNeutralBox({required this.theme, required this.children});
 
@@ -228,9 +228,9 @@ class _ZNeutralBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔴 Aucune couleur de repli littérale (FR-26) : si le thème injecté ne
-    // fournit PAS de couleur de bordure, l'encadré n'en dessine pas — plutôt
-    // que d'inventer un noir ou un transparent codés en dur. Le contenu reste
+    // Aucune couleur de repli littérale : si le thème injecté ne fournit
+    // pas de couleur de bordure, l'encadré n'en dessine pas — plutôt que
+    // d'inventer un noir ou un transparent codés en dur. Le contenu reste
     // rendu dans tous les cas.
     final Color? border = theme.fieldBorderColor;
     return Container(
@@ -274,8 +274,8 @@ class _ZNeutralTable extends StatelessWidget {
       children: <Widget>[
         if (title != null) _ZNeutralBlock._strong(context, title!),
         Table(
-          // AD-13 : la direction du tableau SUIT celle du texte — un tableau
-          // figé en LTR est illisible en RTL.
+          // Invariant AD-13 : la direction du tableau suit celle du texte —
+          // un tableau figé en LTR est illisible en RTL.
           textDirection: Directionality.of(context),
           border: borderColor == null
               ? null
@@ -314,10 +314,10 @@ class _ZNeutralTable extends StatelessWidget {
     );
   }
 
-  /// Largeur = la plus grande des largeurs observées. `Table` **exige** des
+  /// Largeur = la plus grande des largeurs observées. `Table` exige des
   /// lignes de même longueur : une donnée irrégulière (fréquente en sortie de
-  /// LLM) ferait autrement lever une assertion du SDK au lieu de s'afficher
-  /// dégradée (AD-10).
+  /// modèle génératif) ferait autrement lever une assertion du SDK au lieu de
+  /// s'afficher dégradée (invariant AD-10).
   int _width() {
     int w = headers.length;
     for (final List<String> r in rows) {

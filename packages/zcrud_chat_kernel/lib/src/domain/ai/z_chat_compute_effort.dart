@@ -1,39 +1,40 @@
-/// **Effort de calcul** — `ZChatComputeEffort` (CHAT-1).
+/// **Effort de calcul** — `ZChatComputeEffort`.
 ///
-/// ## 🔴 Le faux-ami `WorkflowEffort` est RÉSOLU : ce sont DEUX AXES
+/// ## Deux axes distincts, jamais fusionnés
 ///
-/// CHAT-0 avait constaté que `WorkflowEffort` désigne deux choses
-/// incompatibles, et **réservé** le nom `ZChatComputeEffort` pour le concept
-/// d'IFFD (`z_chat_enums.dart`, dartdoc de `ZChatResponseLength`). La
-/// vérification des DEUX backends tranche : il n'y a pas un enum ambigu, il y a
-/// **deux axes orthogonaux**, dont l'un est **commun aux deux backends**.
+/// « Effort » désigne deux concepts orthogonaux dans les intégrations chat,
+/// dont un seul est commun aux fournisseurs :
 ///
-/// | Axe | lex | IFFD | Type zcrud |
-/// |---|---|---|---|
-/// | **Verbosité** (longueur de la réponse) | `workflowEffort` = `concis/standard/detaille` | — | `ZChatResponseLength` (EXISTANT, CHAT-0) |
-/// | **Calcul** (budget de raisonnement) | `thinkingEffort` **1..5** (`backend/app/models/chat.py:261`) | `thinkingEffort` **1..5** (`shared/schemas/base_request.py:104`) **+** `workflowEffort` = `low/medium/high`, qui choisit une topologie de pipeline | **`ZChatComputeEffort`** (ce fichier) |
+/// | Axe | Forme habituelle | Type zcrud |
+/// |---|---|---|
+/// | **Verbosité** (longueur de la réponse) | valeurs du type `concis/standard/detaille` | `ZChatResponseLength` |
+/// | **Calcul** (budget de raisonnement) | un entier `1..5`, parfois doublé d'un préréglage `low/medium/high` qui choisit une topologie de pipeline | **`ZChatComputeEffort`** (ce fichier) |
 ///
-/// ⛔ **Les deux axes ne sont JAMAIS fusionnés** : `standard` (verbosité) n'a
+/// **Les deux axes ne sont jamais fusionnés** : `standard` (verbosité) n'a
 /// aucune correspondance dans un budget de calcul, et un hôte qui migrerait de
 /// l'un vers l'autre écrirait des requêtes que l'autre lirait de travers, sans
-/// aucun signal. La garde **G16** (`z_chat_naming_guard_test.dart`) interdit
-/// toujours `WorkflowEffort` et n'autorise, pour `Effort`, que le nom
-/// **explicite** `ZChatComputeEffort`.
+/// aucun signal. Tout symbole `*Effort*` ambigu (notamment un `WorkflowEffort`
+/// qui mélangerait les deux axes) est donc évité dans ce paquet, au profit du
+/// nom explicite `ZChatComputeEffort`.
 ///
 /// ## Pourquoi un **entier 1..5** et pas un enum
 ///
-/// Parce que c'est la forme **réellement commune aux deux backends**. Un enum
-/// `low/medium/high` perdrait deux paliers sur cinq à l'aller-retour ; l'entier
-/// les porte tous, et l'enum d'IFFD s'y **projette** ([low]/[medium]/[high]).
-/// L'inverse — porter l'enum et deviner l'entier — ne serait pas réversible.
+/// Parce que c'est la forme **réellement commune aux fournisseurs
+/// rencontrés** : un entier `1..5` d'origine `backend/app/models/chat.py:261`
+/// d'un côté, `shared/schemas/base_request.py:104` de l'autre — le même axe,
+/// sous le même intervalle. Un enum `low/medium/high` perdrait deux paliers
+/// sur cinq à l'aller-retour ; l'entier les porte tous, et un préréglage à
+/// trois valeurs s'y **projette** ([low]/[medium]/[high]). L'inverse — porter
+/// l'enum et deviner l'entier — ne serait pas réversible.
 ///
-/// ⚠️ **Ce n'est pas un `int` nu** : l'intervalle est le contrat. Un `int`
+/// **Ce n'est pas un `int` nu** : l'intervalle est le contrat. Un `int`
 /// laisserait passer `0` ou `42`, qu'un backend rejetterait à l'exécution.
 library;
 
-/// Budget de calcul demandé au fournisseur, **borné à 1..5** (AD-10 : une
-/// valeur hors bornes est **ramenée** dans l'intervalle, jamais rejetée par une
-/// exception — un champ corrompu ne fait pas échouer le parent).
+/// Budget de calcul demandé au fournisseur, **borné à 1..5** (invariant
+/// AD-10 : une valeur hors bornes est **ramenée** dans l'intervalle, jamais
+/// rejetée par une exception — un champ corrompu ne fait pas échouer le
+/// parent).
 class ZChatComputeEffort {
   /// Construit un effort de calcul, [level] **écrêté** à `1..5`.
   ZChatComputeEffort(int level)
@@ -48,18 +49,18 @@ class ZChatComputeEffort {
   /// Palier effectif, garanti dans `1..5`.
   final int level;
 
-  /// Projection du palier `low` d'IFFD (`ai_models.dart:119-122`).
+  /// Projection du préréglage `low` à trois paliers.
   static ZChatComputeEffort get low => ZChatComputeEffort(1);
 
-  /// Projection du palier `medium` d'IFFD.
+  /// Projection du préréglage `medium` à trois paliers.
   static ZChatComputeEffort get medium => ZChatComputeEffort(3);
 
-  /// Projection du palier `high` d'IFFD.
+  /// Projection du préréglage `high` à trois paliers.
   static ZChatComputeEffort get high => ZChatComputeEffort(5);
 
-  /// Lecture **défensive** (AD-10) : `null` si la valeur est absente ou
-  /// illisible — **jamais** un palier inventé. L'absence d'un budget de calcul
-  /// n'est pas « le minimum » : c'est « l'hôte décide ».
+  /// Lecture **défensive** (invariant AD-10) : `null` si la valeur est
+  /// absente ou illisible — **jamais** un palier inventé. L'absence d'un
+  /// budget de calcul n'est pas « le minimum » : c'est « l'hôte décide ».
   static ZChatComputeEffort? fromJson(Object? raw) {
     if (raw is int) return ZChatComputeEffort(raw);
     if (raw is num) return ZChatComputeEffort(raw.toInt());

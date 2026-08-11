@@ -1,17 +1,17 @@
-/// L'**unique** failure créée par CHAT-0b (décision **D9**).
+/// L'**unique** failure propre au contrat d'action de message.
 ///
-/// 🚫 Aucune autre failure n'est déclarée dans ce dossier. Les besoins déjà
-/// couverts sont **réutilisés**, jamais redéclarés (garde **G-R2**) :
+/// Aucune autre failure n'est déclarée dans ce dossier. Les besoins déjà
+/// couverts sont **réutilisés**, jamais redéclarés :
 ///
-/// | Besoin | Type EXISTANT |
+/// | Besoin | Type existant |
 /// |---|---|
 /// | Quota IA dépassé | `ZQuotaExceededFailure` (+ `retryAfter`) |
 /// | Verbe non supporté par l'hôte | `ZUnsupportedOperationFailure(operation:)` |
 /// | Règle métier violée | `ZDomainFailure` |
 ///
 /// Les familles d'erreurs IA (modération, contexte trop long, réponse vide,
-/// modèle indisponible) et le mapping status-code → `ZFailure` appartiennent à
-/// **CHAT-1**.
+/// modèle indisponible) et le mapping status-code → `ZFailure` sont déclarées
+/// dans `z_chat_ai_failure.dart`.
 library;
 
 import 'package:zcrud_core/domain.dart';

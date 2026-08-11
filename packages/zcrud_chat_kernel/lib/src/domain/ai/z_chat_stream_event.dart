@@ -1,37 +1,31 @@
-/// Événements de **streaming** de l'assistant — `ZChatStreamEvent` (CHAT-1).
+/// Événements de **streaming** de l'assistant — `ZChatStreamEvent`.
 ///
-/// origine: lex_core (module « Assistant ») —
-/// `packages/lex_core/lib/domain/entities/chat_stream_event.dart` (`sealed
-/// class ChatStreamEvent`, 10 variants). lex est ici la **référence** : sa forme
-/// entre au socle, retypée sur les value objects que ce package porte déjà.
+/// ## Modèle SCELLÉ contre SENTINELLES TEXTUELLES
 ///
-/// ## 🔴 Modèle SCELLÉ contre SENTINELLES TEXTUELLES
-///
-/// IFFD n'a pas de modèle d'événement : il **insère des balises dans le corps
-/// du message** et les reconnaît par sous-chaîne —
-/// `iffd_ai_repository_impl.dart:140` `eventData.contains("<RAG_THINKING>")`,
-/// `:154` `contains("</RAG_THINKING>")` — puis les **retire à l'affichage** par
-/// une expression régulière recopiée dans **cinq** fichiers de présentation
-/// (`discovry_ai_page.dart:101` et `:117`, `explain_ai_page.dart:270`, `:338`,
-/// `:383`, `white_exam_question_card.dart:1005`, `chatbot_conversation_screen
-/// .dart:4250`). Conséquences directes : un utilisateur qui écrit littéralement
-/// `<RAG_THINKING>` déclenche le mode « réflexion » ; une balise non refermée
-/// laisse du raisonnement dans la réponse ; et les cinq nettoyages divergent.
+/// Une intégration qui n'a pas de modèle d'événement dédié tend à **insérer
+/// des balises dans le corps du message** (par exemple `<RAG_THINKING>` /
+/// `</RAG_THINKING>`) puis à les retirer à l'affichage par une expression
+/// régulière recopiée dans chaque écran de présentation. Conséquences
+/// directes : un utilisateur qui écrit littéralement la balise déclenche le
+/// mode « réflexion » de l'interface ; une balise non refermée laisse du
+/// raisonnement dans la réponse affichée ; et chaque nettoyage recopié risque
+/// de diverger des autres.
 ///
 /// ⇒ Ici, la réflexion est un **variant à part entière**
 /// ([ZChatThinkingEvent]), portant le [ZChatThinkingStep] **déjà existant** dans
-/// ce package. Aucune sentinelle n'existe, donc aucun nettoyage n'est requis.
-/// Garde **G-C3** : aucune sentinelle textuelle dans `lib/src/domain/`.
+/// ce package. Aucune sentinelle n'existe, donc aucun nettoyage n'est requis :
+/// aucune sentinelle textuelle n'a sa place dans le domaine de ce paquet.
 ///
-/// ## 🔴 Aucun variant d'ERREUR — divergence ASSUMÉE d'avec lex
+/// ## Aucun variant d'ERREUR
 ///
-/// lex porte **deux** canaux d'échec pour un seul flux : `ChatErrorEvent`
-/// (dans le `Right`) **et** le `Left(Failure)` de l'`Either`. Un appelant doit
-/// donc traiter l'erreur à deux endroits, et un `Right(ChatErrorEvent)` **passe
-/// pour un succès**. AD-5 tranche : l'échec est le `Left`, et lui seul. Garde
-/// **G-C2** : aucun variant `*Error*`/`*Failure*` dans cette famille.
+/// Porter à la fois un variant `*Error*`/`*Failure*` dans cette union **et**
+/// un canal d'échec séparé (le `Left` d'un `Either`) forcerait un appelant à
+/// traiter l'erreur à deux endroits — et un événement d'erreur non traité
+/// comme tel **passerait pour un succès**. L'invariant AD-5 tranche : l'échec
+/// est le `Left`, et lui seul. Cette famille ne déclare donc aucun variant
+/// d'erreur.
 ///
-/// ## Patron `sealed` INTERNE + variant OUVERT (AD-4)
+/// ## Patron `sealed` INTERNE + variant OUVERT (invariant AD-4)
 ///
 /// Décalqué de [ZContentBlock] et de `ZChatAction` : `sealed` donne
 /// l'exhaustivité **au socle** (un `switch` sur un événement non traité ne
@@ -59,9 +53,9 @@ sealed class ZChatStreamEvent {
   /// Position de l'événement dans le flux (`id:` SSE **monotone**), ou `null`
   /// quand le transport n'en expose pas.
   ///
-  /// 🔴 C'est la valeur que l'appelant renvoie en `Last-Event-ID` pour
-  /// **reprendre** après coupure (`ZChatRequestToken.resumeFrom`). Sans elle, le
-  /// port de streaming ne peut pas honorer le protocole reprenable de lex, et
+  /// C'est la valeur que l'appelant renvoie en `Last-Event-ID` pour
+  /// **reprendre** après coupure (`ZChatRequestToken.resumeFrom`). Sans elle,
+  /// le port de streaming ne peut pas honorer un protocole reprenable, et
   /// une reconnexion **rejoue ou perd** des événements.
   ///
   /// `null` ne veut **jamais** dire « position 0 » : un backend non reprenable
@@ -81,11 +75,11 @@ sealed class ZChatStreamEvent {
   ///
   /// - [raw] non-`Map`, ou `type` absent/vide ⇒ `null` (aucun événement
   ///   synthétique n'est fabriqué : l'appelant décide de sauter la trame) ;
-  /// - `type` inconnu ⇒ [ZChatCustomStreamEvent], **payload verbatim** — jamais
-  ///   une erreur (lex, lui, transforme l'inconnu en `ChatErrorEvent`, ce qui
-  ///   fait passer une extension backend pour une panne).
+  /// - `type` inconnu ⇒ [ZChatCustomStreamEvent], **payload verbatim** —
+  ///   jamais une erreur : transformer un discriminant inconnu en événement
+  ///   d'erreur ferait passer une extension backend légitime pour une panne.
   ///
-  /// Les alias de lecture **snake_case** du fil de lex (`retrieval_progress`,
+  /// Des alias de lecture **snake_case** courants (`retrieval_progress`,
   /// `sources_preview`, `content_block`) sont acceptés ; jamais réémis.
   static ZChatStreamEvent? fromJson(
     Object? raw, {
@@ -98,7 +92,8 @@ sealed class ZChatStreamEvent {
     if (rawType.isEmpty) return null;
     final String kind = kZChatStreamEventReadAliases[rawType] ?? rawType;
     // Position de reprise : `sequence_id` (forme canonique) ou `id` (champ SSE
-    // brut, tel que le transport de lex l'expose). Absente ⇒ `null`, jamais 0.
+    // brut, tel qu'un transport Server-Sent Events peut l'exposer). Absente
+    // ⇒ `null`, jamais 0.
     final String? seq =
         zJsonStringOrNull(map['sequence_id']) ?? zJsonStringOrNull(map['id']);
     switch (kind) {
@@ -186,7 +181,7 @@ sealed class ZChatStreamEvent {
   }
 }
 
-/// Alias de **lecture** snake_case (fil de lex) → discriminant canonique.
+/// Alias de **lecture** snake_case courants → discriminant canonique.
 const Map<String, String> kZChatStreamEventReadAliases = <String, String>{
   'retrieval_progress': 'retrievalProgress',
   'sources_preview': 'sourcesPreview',
@@ -194,7 +189,7 @@ const Map<String, String> kZChatStreamEventReadAliases = <String, String>{
 };
 
 /// Étape de raisonnement exposée **structurellement** (jamais une balise dans
-/// le corps du message — cf. le défaut IFFD documenté en tête de fichier).
+/// le corps du message — cf. le motif documenté en tête de fichier).
 class ZChatThinkingEvent extends ZChatStreamEvent {
   /// Construit l'événement de réflexion.
   const ZChatThinkingEvent({required this.step, super.sequenceId});
@@ -319,7 +314,7 @@ class ZChatTokenEvent extends ZChatStreamEvent {
   /// Construit le fragment.
   const ZChatTokenEvent({this.content = '', super.sequenceId});
 
-  /// Fragment textuel — **jamais** une sentinelle (G-C3).
+  /// Fragment textuel — **jamais** une sentinelle de contrôle déguisée.
   final String content;
 
   @override
@@ -435,7 +430,7 @@ class ZChatSuggestionsEvent extends ZChatStreamEvent {
 /// Instantané de quota **observationnel**, porté par le type **EXISTANT**
 /// `ZChatQuotaSnapshot`.
 ///
-/// ⚠️ Ce n'est **pas** un échec : un quota épuisé qui **refuse** l'appel est un
+/// Ce n'est **pas** un échec : un quota épuisé qui **refuse** l'appel est un
 /// `Left(ZQuotaExceededFailure)` (`z_chat_ai_failure.dart`). Cet événement
 /// n'informe que de l'état courant.
 class ZChatQuotaEvent extends ZChatStreamEvent {
@@ -490,18 +485,18 @@ class ZChatDoneEvent extends ZChatStreamEvent {
 
   /// Métadonnées libres du fournisseur, **verbatim**.
   ///
-  /// 🔴 Reste la **source de vérité brute** : rien n'est retiré ni normalisé à
+  /// Reste la **source de vérité brute** : rien n'est retiré ni normalisé à
   /// la réception. La lecture typée passe par [responseMetadata], qui **dérive**
   /// de cette carte au lieu de la doubler — deux représentations stockées
   /// pourraient diverger, et l'une afficherait alors un verdict que l'autre
   /// contredit.
   final Map<String, dynamic> metadata;
 
-  /// Lecture **typée et ouverte** de [metadata] (CHAT-7).
+  /// Lecture **typée et ouverte** de [metadata].
   ///
-  /// Ne lève jamais (AD-10) : une carte absente, vide ou mal typée rend
-  /// `ZChatResponseMetadata.empty`. Aucun champ n'est fabriqué — un backend
-  /// sans contrat de fin de réponse (IFFD) rend simplement une carte vide.
+  /// Ne lève jamais (invariant AD-10) : une carte absente, vide ou mal typée
+  /// rend `ZChatResponseMetadata.empty`. Aucun champ n'est fabriqué — un
+  /// backend sans contrat de fin de réponse rend simplement une carte vide.
   ///
   /// [verifiedSourceCount]/[totalSourceCount] sont les comptes de sources du
   /// message, connus de l'appelant seul : le serveur ne les émet pas dans
@@ -552,11 +547,12 @@ class ZChatDoneEvent extends ZChatStreamEvent {
   String toString() => 'ZChatDoneEvent(messageId: $messageId)';
 }
 
-/// Variant **OUVERT** (AD-4) : tout événement propre à un hôte, traversant
-/// intact ou reconstruit par le codec [ZTypeRegistry] qu'il a enregistré.
+/// Variant **OUVERT** (invariant AD-4) : tout événement propre à un hôte,
+/// traversant intact ou reconstruit par le codec [ZTypeRegistry] qu'il a
+/// enregistré.
 ///
-/// C'est ce qui rend atteignables les variants non portés de lex
-/// (`clarification`…) et tout événement futur d'un backend, **sans forker le
+/// C'est ce qui rend atteignable tout événement de backend non porté par le
+/// socle (une clarification, une étape propriétaire…), **sans forker le
 /// socle** et **sans sentinelle textuelle**.
 class ZChatCustomStreamEvent extends ZChatStreamEvent {
   /// Construit un événement ouvert de discriminant [kind].

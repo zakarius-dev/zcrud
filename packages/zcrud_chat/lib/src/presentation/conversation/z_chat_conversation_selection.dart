@@ -1,68 +1,54 @@
-/// Sélection multiple de conversations — `ZChatConversationSelection`
-/// (CR-IFFD-39 ; AD-2, AD-15).
+/// Sélection multiple de conversations.
 ///
-/// ## 🔴 Pourquoi un contrôleur EXTERNE, et pas un état interne à la liste
+/// ## Pourquoi un contrôleur externe, et pas un état interne à la liste
 ///
-/// Mesuré sur les deux hôtes : le **backend** de lex expose une suppression par
-/// **lot** (`batch_delete_conversations`, portée ici par
-/// `ZChatConversationLifecyclePort.retireAll`) et **aucun client ne l'appelle** ;
-/// IFFD n'a pas de sélection du tout. La sélection multiple est donc une
-/// capacité **neuve** — et la première erreur à ne pas commettre est celle que
-/// leur repliement de groupe commet déjà : créer le contrôleur **dans `build`**.
-/// Un contrôleur recréé au rebuild perd la sélection à chaque frame utile
-/// (arrivée d'une conversation, fin d'un flux, changement de recherche).
+/// Un contrôleur créé dans `build` perd la sélection à chaque frame utile
+/// (arrivée d'une conversation, fin d'un flux, changement de recherche) —
+/// c'est la même erreur structurelle que pour le repliement de groupe.
 ///
-/// Le cycle de vie appartient donc à l'**hôte** : il le crée, il le `dispose`.
+/// Le cycle de vie appartient donc à l'hôte : il le crée, il le `dispose`.
 /// `ZChatConversationList` ne fait que l'écouter. C'est la même règle que
-/// `ZChatController` et `ZChatAttachmentController` dans ce package.
+/// `ZChatController` et `ZChatAttachmentController` dans ce paquet.
 ///
-/// ## Entrée et sortie sont EXPLICITES
+/// ## Entrée et sortie sont explicites
 ///
-/// [begin] entre en mode sélection (appui **long** côté vue), [clear] en sort.
-/// Il n'existe **aucune** sortie implicite « quand la dernière case se
-/// décoche » : un mode qui disparaît sous le doigt fait toucher la ligne
-/// suivante à vide. [toggle] peut donc ramener le compte à zéro **sans** quitter
-/// le mode — et [active] reste `true`.
+/// [begin] entre en mode sélection (typiquement un appui long côté vue),
+/// [clear] en sort. Il n'existe aucune sortie implicite « quand la dernière
+/// case se décoche » : un mode qui disparaît sous le doigt ferait toucher la
+/// ligne suivante à vide. [toggle] peut donc ramener le compte à zéro sans
+/// quitter le mode — [active] reste `true`.
 ///
-/// ## 🔴 Le MODE est commandable de l'extérieur (patron `ZDisplayState`)
+/// ## Le mode est commandable de l'extérieur
 ///
-/// L'entrée se fait par appui long, **dans la liste**. La sortie, elle, n'avait
-/// qu'un chemin : le bouton « Quitter la sélection » de la barre du socle. Un
-/// hôte qui pose son propre « Annuler » dans sa barre d'app, ou qui veut sortir
-/// du mode quand l'utilisateur navigue ailleurs, devait donc soit dupliquer la
-/// barre, soit livrer un bouton mort.
-///
-/// [ZChatConversationSelection.activeController] ouvre ce second chemin. Le
-/// contrôleur commande **le MODE**, jamais le **contenu** de la sélection : les
-/// identités restent la propriété de cet objet ([toggle], [unselectAll]).
-/// Les deux ne se touchent qu'en **un** point, et c'est un invariant déjà
-/// existant : *sortir du mode vide la sélection*. Cet invariant vaut désormais
-/// sur **tous** les chemins de sortie — bouton du socle comme commande de
-/// l'hôte — parce qu'il est appliqué là où le mode change, et nulle part
-/// ailleurs.
+/// [ZChatConversationSelection.activeController] permet à l'hôte de piloter
+/// l'entrée et la sortie du mode sélection depuis sa propre interface (une
+/// barre d'application, une navigation), en plus du geste natif dans la
+/// liste. Le contrôleur externe commande le mode, jamais le contenu de la
+/// sélection : les identités restent la propriété de cet objet ([toggle],
+/// [unselectAll]). Les deux ne se touchent qu'en un point : sortir du mode
+/// vide toujours la sélection, quel que soit le chemin de sortie emprunté.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:zcrud_core/zcrud_core.dart';
 
-/// Sélection multiple **observable** de conversations, par identité.
+/// Sélection multiple observable de conversations, par identité.
 ///
-/// `ChangeNotifier` pur-Flutter (AD-2) : aucun gestionnaire d'état.
+/// `ChangeNotifier` pur-Flutter (invariant AD-2) : aucun gestionnaire d'état.
 class ZChatConversationSelection extends ChangeNotifier {
-  /// Construit une sélection **vide et inactive**.
+  /// Construit une sélection vide et inactive.
   ///
-  /// [activeController] : pilotage EXTERNE du **mode** — `null` ⇒ la sélection
-  /// se gouverne seule (comportement historique, **strictement inchangé**).
-  /// Fourni, il devient **LA SOURCE DE VÉRITÉ** de [active] : aucun miroir
-  /// n'est conservé ici (cf. [ZDisplayStateBinding]), donc les deux états ne
-  /// peuvent pas diverger. [begin] et [clear] écrivent **à travers** lui, et
+  /// [activeController] : pilotage externe du mode — `null` signifie que la
+  /// sélection se gouverne seule (comportement par défaut). Fourni, il
+  /// devient la source de vérité de [active] : aucun miroir n'est conservé
+  /// ici (cf. [ZDisplayStateBinding]), donc les deux états ne peuvent pas
+  /// diverger. [begin] et [clear] écrivent à travers lui, et
   /// [ChangeNotifier.notifyListeners] est émis dans les deux sens.
   ///
-  /// 🔒 Le contrôleur doit être **possédé hors `build`** ([ZDisplayStateOwnerMixin]).
-  /// C'est la même règle que pour cette sélection elle-même, et pour
-  /// `ZChatGroupExpansion` : chez IFFD, `folder_conversations_widget.dart:200`
-  /// crée son `ExpandableController` dans `build` — inerte dès le premier
-  /// rebuild.
+  /// Le contrôleur doit être possédé hors de `build`
+  /// ([ZDisplayStateOwnerMixin]) — la même règle que pour cette sélection
+  /// elle-même et pour `ZChatGroupExpansion` : un contrôleur créé dans
+  /// `build` est inerte dès le premier rebuild.
   ZChatConversationSelection({ZToggleController? activeController}) {
     _activeBinding = ZDisplayStateBinding<bool>(
       consumer: this,
@@ -78,15 +64,15 @@ class ZChatConversationSelection extends ChangeNotifier {
 
   /// `true` quand le mode sélection est engagé.
   ///
-  /// 🔴 Indépendant de [count] : le mode reste actif même à zéro élément
+  /// Indépendant de [count] : le mode reste actif même à zéro élément
   /// sélectionné (cf. la note de bibliothèque).
   ///
-  /// 🔴 Lu **à la source** : quand un `activeController` est fourni, c'est SA
+  /// Lu à la source : quand un `activeController` est fourni, c'est sa
   /// valeur, jamais une copie tenue à jour.
   bool get active => _activeBinding.value;
 
-  /// **VOIE UNIQUE** de réaction à un changement de mode, d'où qu'il vienne :
-  /// [begin], [clear], **ou** une commande de l'hôte sur son contrôleur.
+  /// Voie unique de réaction à un changement de mode, d'où qu'il vienne :
+  /// [begin], [clear], ou une commande de l'hôte sur son contrôleur.
   ///
   /// C'est ici — et seulement ici — que l'invariant « sortir du mode vide la
   /// sélection » est appliqué. Le placer dans [clear] l'aurait laissé
@@ -159,7 +145,7 @@ class ZChatConversationSelection extends ChangeNotifier {
 
   @override
   void dispose() {
-    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // La liaison ne dispose jamais le contrôleur de l'hôte : il ne nous
     // appartient pas (son propriétaire est un `State` de l'hôte).
     _activeBinding.listenable.removeListener(_onActiveChanged);
     _activeBinding.dispose();

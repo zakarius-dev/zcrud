@@ -1,23 +1,22 @@
-/// Requête de rendu **neutre** d'un bloc de conversation — CHAT-3.
+/// Requête de rendu neutre d'un bloc de conversation.
 ///
-/// origine: patron strict de `ZListRenderRequest`
-/// (`zcrud_core/lib/src/presentation/list/z_list_render_request.dart`) : un
-/// value object **immuable, sans widget, sans dépendance lourde**, qui est le
-/// SEUL vocabulaire échangé avec le port de rendu [ZChatRenderer].
+/// Suit le patron de `ZListRenderRequest` (`zcrud_core`) : un value object
+/// immuable, sans widget, sans dépendance lourde, qui est le seul vocabulaire
+/// échangé avec le port de rendu [ZChatRenderer].
 ///
-/// 🔴 **Pourquoi la requête ne porte AUCUN widget.** C'est ce qui rend deux
-/// backends interchangeables : le rendu neutre zéro-dépendance de ce package,
-/// et un adaptateur tiers (Syncfusion — lot C6 —, `zcrud_markdown`/Quill, ou
-/// l'hôte lui-même) s'implémentent sur le **même** contrat. Si la requête
-/// portait un `Widget` déjà construit, l'implémentation par défaut se trouverait
-/// dans la signature du port et le port ne serait plus qu'une décoration.
+/// La requête ne porte volontairement aucun widget : c'est ce qui rend
+/// interchangeables le rendu neutre zéro-dépendance de ce paquet et un
+/// adaptateur tiers (Markdown riche, grille de données, ou rendu propre à
+/// l'hôte), qui s'implémentent tous sur le même contrat. Si la requête
+/// portait un `Widget` déjà construit, l'implémentation par défaut se
+/// trouverait dans la signature du port, et le port ne serait plus qu'une
+/// décoration.
 ///
-/// 🔴 **CHAT-3b — le texte en cours de streaming passe désormais PAR la
-/// couture.** Constat du lot C6 : la requête portait `isStreaming` mais **aucun
-/// canal pour le texte en train d'arriver**. L'adaptateur a donc dû sortir ce
-/// texte de la couture et le passer en paramètre de sa propre vue — c'est-à-dire
-/// rouvrir un chemin parallèle pour la seule donnée qui bouge 300 fois par tour.
-/// [ZChatBlockRenderRequest.streamingText] ferme ce chemin.
+/// Le texte en cours de streaming passe par cette même requête plutôt que par
+/// un canal séparé, propre à chaque adaptateur — cf.
+/// [ZChatBlockRenderRequest.streamingText] : c'est la seule façon d'éviter
+/// qu'un adaptateur ré-ouvre un chemin parallèle pour la donnée qui change le
+/// plus fréquemment dans une conversation.
 library;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -58,19 +57,16 @@ class ZChatBlockRenderRequest {
   /// décision qui lui appartient, que le socle n'impose pas.
   final bool isStreaming;
 
-  /// 🔴 Le **canal à haute fréquence** du texte en cours de rédaction, ou `null`
+  /// Le canal à haute fréquence du texte en cours de rédaction, ou `null`
   /// quand le bloc n'est pas celui d'une réponse en vol.
   ///
-  /// **Une `ValueListenable`, JAMAIS un `String`** — et c'est structurel, pas
-  /// cosmétique (SM-1, objectif produit n°1) :
-  /// * un `String` changerait la **valeur de la requête** à chaque jeton, donc
-  ///   reconstruirait tout ce qui est au-dessus (la liste, puis la
-  ///   conversation) : le bug historique, réintroduit par la couture elle-même ;
-  /// * une `ValueListenable` est **stable par identité** (le contrôleur rend la
-  ///   même instance pour un `requestId` donné, patron
-  ///   `ZFormController.fieldListenable`). Le renderer prend l'abonnement
-  ///   **DANS son propre sous-arbre** : un jeton ne reconstruit que la tuile en
-  ///   cours.
+  /// Une `ValueListenable`, jamais un `String` — exigence structurelle de
+  /// l'invariant AD-2 : un `String` changerait la valeur de la requête à
+  /// chaque jeton, donc reconstruirait tout ce qui est au-dessus (la liste,
+  /// puis la conversation). Une `ValueListenable` est stable par identité (le
+  /// contrôleur rend la même instance pour un `requestId` donné) : le
+  /// renderer prend l'abonnement dans son propre sous-arbre, si bien qu'un
+  /// jeton ne reconstruit que la tuile en cours.
   ///
   /// Un renderer qui l'ignore reste correct : le rendu neutre s'en charge.
   final ValueListenable<String>? streamingText;

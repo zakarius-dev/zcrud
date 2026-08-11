@@ -1,6 +1,5 @@
 /// Confiance agrégée d'une réponse d'assistant — `ZChatResponseConfidence`.
 ///
-/// origine: lex_core (module « Assistant ») — `response_confidence.dart:40-293`
 /// (`ConfidenceFactor`, `ConfidenceThresholds`, `ResponseConfidence`).
 ///
 /// ## Principe fail-safe — porté **à l'identique**, seuils **nommés**
@@ -9,7 +8,7 @@
 /// elle n'invente aucun signal, elle agrège ceux que le backend a déjà calculés.
 /// Sa propriété centrale est la **prudence** : en l'absence de signal, ou sur
 /// un signal dégradé, elle descend à [ZChatConfidenceLevel.toVerify].
-/// **Jamais `high` par défaut.** Garde **G9**.
+/// **Jamais `high` par défaut.**.
 library;
 
 import 'package:zcrud_core/domain.dart';
@@ -18,7 +17,6 @@ import 'z_chat_enums.dart';
 
 /// Seuils **nommés** de la règle de confiance (aucun littéral épars).
 ///
-/// origine: `ConfidenceThresholds` (`response_confidence.dart:59-70`).
 class ZChatConfidenceThresholds {
   const ZChatConfidenceThresholds._();
 
@@ -35,7 +33,7 @@ class ZChatConfidenceThresholds {
 /// Un facteur contributif **explicable** de la confiance.
 ///
 /// [code] est un identifiant **stable** que l'hôte résout en libellé localisé —
-/// le domaine ne porte aucun texte traduisible (AD-13/FR-26). [humanValue] est
+/// le domaine ne porte aucun texte traduisible (invariant AD-13). [humanValue] est
 /// une valeur factuelle **déjà formatée** et non traduisible (« 85 % », « 3 / 3 »).
 class ZChatConfidenceFactor {
   /// Construit un facteur (immuable, `const`).
@@ -114,8 +112,8 @@ class ZChatResponseConfidence {
 
   /// Grade qualité brut (`'pass'`/`'fail'`/`'skipped'`/`null`).
   ///
-  /// Volontairement une `String` **ouverte** : lex ne ferme pas cet ensemble,
-  /// et fermer ici un vocabulaire de backend rendrait le socle cassant.
+  /// Volontairement une `String` **ouverte** : un backend peut faire évoluer
+  /// ce vocabulaire, et le fermer ici rendrait le socle cassant.
   final String? qualityGrade;
 
   /// Statut brut du garde-citations
@@ -151,8 +149,7 @@ class ZChatResponseConfidence {
   bool get hasUnverifiedSources =>
       totalSourceCount > 0 && verifiedSourceCount < totalSourceCount;
 
-  /// 🔴 Palier de confiance **dérivé** — règle déterministe **fail-safe**
-  /// (portée de `response_confidence.dart:148-190`).
+  /// Palier de confiance **dérivé** — règle déterministe **fail-safe**.
   ///
   /// **Dégradations dures ⇒ [ZChatConfidenceLevel.toVerify]** :
   /// 1. garde-citations `degraded` / `all_rejected` / `error` ;
@@ -167,9 +164,9 @@ class ZChatResponseConfidence {
   /// **et** fidélité ≥ [ZChatConfidenceThresholds.faithfulnessHigh] **et**
   /// complétude ≥ [ZChatConfidenceThresholds.completenessOk].
   ///
-  /// **[ZChatConfidenceLevel.moderate] sinon.** ⛔ Retirer l'une des
-  /// dégradations dures ferait passer une réponse non ancrée pour fiable :
-  /// c'est la régression exacte que la garde **G9** ré-injecte.
+  /// **[ZChatConfidenceLevel.moderate] sinon.** Retirer l'une des
+  /// dégradations dures ferait passer une réponse non ancrée pour fiable —
+  /// c'est exactement la régression que cette règle empêche.
   ZChatConfidenceLevel get level {
     final String? guard = citationGuardStatus;
     final String? coverage = coverageStatus;
@@ -296,7 +293,7 @@ class ZChatResponseConfidence {
 
   /// Sérialise en clés snake_case.
   ///
-  /// ⚠️ Ni [level] ni [factors] ne sont persistés : ce sont des **dérivés** de
+  /// Ni [level] ni [factors] ne sont persistés : ce sont des **dérivés** de
   /// la règle ci-dessus. Les figer permettrait à un document de contredire la
   /// règle — et donc d'afficher « confiance élevée » sur des signaux dégradés.
   Map<String, dynamic> toJson() => <String, dynamic>{

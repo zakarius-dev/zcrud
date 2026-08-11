@@ -1,28 +1,28 @@
-/// Repliement de groupes — `ZChatGroupExpansion` (CR-IFFD-39 ; AD-2).
+/// Repliement de groupes de conversations.
 ///
-/// ## 🔴 Le bug qu'on refuse de reproduire
+/// ## Pourquoi ce contrôleur vit hors du widget
 ///
-/// La hiérarchie de conversations d'IFFD est repliable, et son contrôleur
-/// d'expansion est **créé dans `build`**. Conséquence : chaque rebuild — donc
-/// chaque arrivée de message, chaque fin de génération, chaque frappe dans la
-/// recherche — **réinitialise le repliement**. Un groupe replié se rouvre tout
-/// seul, et l'utilisateur n'a aucun moyen de le savoir.
+/// Un contrôleur d'expansion créé dans `build` réinitialise le repliement à
+/// chaque reconstruction du widget — donc à chaque arrivée de message, chaque
+/// fin de génération, chaque frappe dans une recherche. Un groupe replié se
+/// rouvrirait alors tout seul, sans que l'utilisateur en ait le contrôle.
 ///
-/// Le correctif structurel n'est pas « mémoriser l'état ailleurs » : c'est que
-/// l'état de repliement **n'appartienne pas au widget**. Il est donc porté par
-/// ce `ChangeNotifier`, **créé et disposé par l'hôte**, exactement comme
-/// `ZChatConversationSelection`. `ZChatConversationList` ne fait que l'écouter ;
-/// elle n'en fabrique **jamais** un par défaut — sans contrôleur, les groupes
-/// sont simplement toujours dépliés (défaut fonctionnel, AD-57).
+/// Le correctif structurel n'est pas de mémoriser l'état ailleurs : c'est que
+/// l'état de repliement n'appartienne pas au widget. Il est donc porté par ce
+/// `ChangeNotifier`, créé et disposé par l'hôte, exactement comme
+/// `ZChatConversationSelection`. `ZChatConversationList` ne fait que
+/// l'écouter ; elle n'en fabrique jamais un par défaut — sans contrôleur, les
+/// groupes sont simplement toujours dépliés (défaut fonctionnel sans
+/// configuration requise).
 ///
-/// ## La clé de groupe est OPAQUE
+/// ## La clé de groupe est opaque
 ///
-/// La hiérarchie d'IFFD tient dans trois champs (`folderId`, `subFolderId`,
-/// `documentId`) qui sont des **spécificités d'hôte** : les modéliser ici
-/// interdirait toute autre hiérarchie. La clé est donc un `Object?` quelconque,
-/// produit par l'hôte (`Object? Function(ZChatConversation)`) — un `String`, un
-/// enregistrement, une date tronquée, ce qu'il veut. Le socle n'en fait que deux
-/// choses : l'égalité et le hachage.
+/// Une hiérarchie de conversation appartient toujours à des spécificités
+/// d'hôte : les modéliser ici interdirait toute autre hiérarchie. La clé est
+/// donc un `Object?` quelconque, produit par l'hôte
+/// (`Object? Function(ZChatConversation)`) — un `String`, un enregistrement,
+/// une date tronquée, ce qu'il veut. Le socle n'en fait que deux choses :
+/// l'égalité et le hachage.
 library;
 
 import 'package:flutter/foundation.dart';

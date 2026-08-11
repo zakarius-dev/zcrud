@@ -1,33 +1,19 @@
-/// Clés de libellé du rendu neutre — CHAT-3 (FR-26/FR-23).
+/// Clés de libellé du rendu neutre.
 ///
-/// 🔴 **CORRECTION DE FIN D'EPIC — HIGH-1.** Ce fichier documentait auparavant
-/// l'inverse : « aucune chaîne d'interface, pas même en repli », au motif
-/// qu'une clé brute affichée serait « bruyante et donc corrigée ». C'était une
-/// lecture **conforme mais incompatible** avec le reste du dépôt :
-/// `zcrud_session` et `zcrud_study` écrivent partout
-/// `label(context, 'cancel', fallback: 'Annuler')`. Mesuré avant correction :
-/// un hôte qui n'alimente pas son registre voyait littéralement
-/// `zchat.removeAttachment` sur le bouton de retrait, `zchat.showMore` sur le
-/// dépli — et un lecteur d'écran s'entendait annoncer `zchat.liveRegion`. Un
-/// libellé de secours dans la mauvaise langue est **lisible** ; un
-/// discriminant machine ne l'est pas, et il est annoncé à l'aveugle.
+/// Une clé brute affichée à l'écran (`zchat.removeAttachment` sur un bouton
+/// de retrait, par exemple) est un discriminant machine, illisible pour
+/// l'utilisateur et inaudible pour un lecteur d'écran. Ce fichier fournit
+/// donc un repli lisible pour chaque clé — jamais prioritaire sur une
+/// traduction fournie par l'hôte, mais toujours préférable à la clé brute.
 ///
-/// La chaîne de résolution reste **inchangée et prioritaire pour l'hôte** :
-/// `ZcrudScope.labels` → delegate `ZcrudLocalizations` → table `en` intégrée →
-/// **[kZChatLabelFallbacks]** (au lieu de la clé brute). Le repli n'écrase donc
-/// jamais une traduction : il n'est atteint que lorsqu'il n'y en a aucune.
+/// La chaîne de résolution est : `ZcrudScope.labels` → delegate
+/// `ZcrudLocalizations` → table intégrée → [kZChatLabelFallbacks] (au lieu
+/// de la clé brute). Le repli n'écrase donc jamais une traduction : il n'est
+/// atteint que lorsqu'il n'y en a aucune.
 ///
-/// 🔴 **Un seul site de résolution : [zChatLabel].** Aucun autre fichier du
-/// package n'appelle `label(` directement — c'est ce qui rend « aucune clé sans
-/// repli » **structurel** plutôt que promis, et c'est ce que vérifie
-/// `test/z_chat_epic_review_guard_test.dart`, groupe **HIGH-1** (volets CARTE,
-/// SOURCE et RENDU).
-///
-/// 🔴 **Référence corrigée (lot γ0).** Ce dartdoc citait
-/// `test/z_chat_label_fallback_guard_test.dart`, **qui n'existe nulle part**
-/// (`ls test | grep -i 'label\|fallback'` → vide). La propriété était bien
-/// gardée, mais sous un autre nom — une référence pendante ment exactement comme
-/// une garde vacante.
+/// Un seul site de résolution : [zChatLabel]. Aucun autre fichier du paquet
+/// n'appelle `label(` directement — c'est ce qui rend « aucune clé sans
+/// repli » structurel plutôt que promis.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -62,72 +48,73 @@ const String kZChatLabelLiveRegion = '${kZChatLabelPrefix}liveRegion';
 /// Étiquette sémantique de la réponse en cours de rédaction.
 const String kZChatLabelStreaming = '${kZChatLabelPrefix}streaming';
 
-/// Étiquette sémantique de la bande de pièces jointes en attente (CHAT-5).
+/// Étiquette sémantique de la bande de pièces jointes en attente.
 const String kZChatLabelAttachments = '${kZChatLabelPrefix}attachments';
 
-/// Action « retirer cette pièce jointe » (CHAT-5).
+/// Action « retirer cette pièce jointe ».
 const String kZChatLabelRemoveAttachment =
     '${kZChatLabelPrefix}removeAttachment';
 
-/// Action « lire à voix haute » (CHAT-9, diffusion vocale).
+/// Action « lire à voix haute ».
 const String kZChatLabelSpeak = '${kZChatLabelPrefix}speak';
 
-/// Action « arrêter la lecture » (CHAT-9).
+/// Action « arrêter la lecture ».
 const String kZChatLabelStopSpeaking = '${kZChatLabelPrefix}stopSpeaking';
 
-/// Action « partager la conversation » (CHAT-9).
+/// Action « partager la conversation ».
 const String kZChatLabelShare = '${kZChatLabelPrefix}share';
 
-/// Étiquette sémantique de la barre de diffusion (CHAT-9).
+/// Étiquette sémantique de la barre de diffusion.
 const String kZChatLabelDiffusion = '${kZChatLabelPrefix}diffusion';
 
-/// Étiquette sémantique de la barre de saisie assistée (CHAT-10) — l'état de
+/// Étiquette sémantique de la barre de saisie assistée — l'état de
 /// repos de sa région live.
 const String kZChatLabelAssistedInput = '${kZChatLabelPrefix}assistedInput';
 
-/// Action « dicter le message » (CHAT-10, saisie assistée).
+/// Action « dicter le message ».
 const String kZChatLabelDictate = '${kZChatLabelPrefix}dictate';
 
-/// Action « arrêter la dictée » (CHAT-10).
+/// Action « arrêter la dictée ».
 const String kZChatLabelStopDictation = '${kZChatLabelPrefix}stopDictation';
 
-/// 🔴 Annonce de la région live pendant l'écoute (CHAT-10, AD-13).
+/// Annonce de la région live pendant l'écoute (invariant AD-13).
 ///
-/// Chez lex, l'écoute est VISIBLE (une icône change) mais jamais ANNONCÉE : un
-/// utilisateur non-voyant ne sait pas que le micro écoute. Cette clé existe pour
-/// que ce ne soit plus le cas.
+/// Une écoute qui n'est que visible (une icône qui change) laisse un
+/// utilisateur non-voyant ignorer que le micro écoute. Cette clé porte
+/// l'annonce correspondante.
 const String kZChatLabelListening = '${kZChatLabelPrefix}listening';
 
-/// Action « extraire le texte d'une image » (CHAT-10, OCR).
+/// Action « extraire le texte d'une image ».
 const String kZChatLabelScanText = '${kZChatLabelPrefix}scanText';
 
-/// Annonce de la région live pendant l'analyse d'une image (CHAT-10).
+/// Annonce de la région live pendant l'analyse d'une image.
 const String kZChatLabelRecognizing = '${kZChatLabelPrefix}recognizing';
 
-/// Étiquette sémantique de la surface de RELECTURE (CHAT-10).
+/// Étiquette sémantique de la surface de RELECTURE.
 const String kZChatLabelReviewCapture = '${kZChatLabelPrefix}reviewCapture';
 
-/// Action « insérer le texte relu dans le message » (CHAT-10).
+/// Action « insérer le texte relu dans le message ».
 const String kZChatLabelAcceptCapture = '${kZChatLabelPrefix}acceptCapture';
 
-/// Action « abandonner la relecture » — n'efface JAMAIS la saisie (CHAT-10).
+/// Action « abandonner la relecture » — n'efface JAMAIS la saisie.
 const String kZChatLabelCancelCapture = '${kZChatLabelPrefix}cancelCapture';
 
-/// Étiquette sémantique de la **zone de saisie** partagée (lot α, CR-IFFD-72).
+/// Étiquette sémantique de la **zone de saisie** partagée.
 const String kZChatLabelComposer = '${kZChatLabelPrefix}composer';
 
 /// Invite du champ de saisie — elle sert de **placeholder visuel** ET de
-/// libellé du champ pour un lecteur d'écran (lot α, CR-IFFD-72).
+/// libellé du champ pour un lecteur d'écran.
 const String kZChatLabelComposerHint = '${kZChatLabelPrefix}composerHint';
 
-// ── Feuille de réglages de génération (lot γ0/δ, CR-IFFD-72) ───────────────
+// ── Feuille de réglages de génération ────────────────────────────────────
 //
-// 🔴 AUCUNE valeur métier ici : les paliers nommés ci-dessous sont ceux des
-// enums du KERNEL (`ZChatResponseLength`, `ZChatLengthBias`), jamais des corpus
-// ni des codes d'un hôte. Le catalogue de corpus est une **donnée d'hôte** —
-// ses libellés viennent de `ZChatCorpusOption.label`, pas d'une clé du socle.
+// Aucune valeur métier ici : les paliers nommés ci-dessous sont ceux des
+// enums du kernel (`ZChatResponseLength`, `ZChatLengthBias`), jamais des
+// corpus ni des codes d'un hôte. Le catalogue de corpus est une donnée
+// d'hôte — ses libellés viennent de `ZChatCorpusOption.label`, pas d'une clé
+// du socle.
 
-/// Étiquette sémantique de la **feuille de réglages** (lot γ0).
+/// Étiquette sémantique de la feuille de réglages.
 const String kZChatLabelSettings = '${kZChatLabelPrefix}settings';
 
 /// Groupe « verbosité de la réponse » — axe `ZChatResponseLength`.
@@ -142,8 +129,8 @@ const String kZChatLabelLengthStandard = '${kZChatLabelPrefix}lengthStandard';
 /// Palier `ZChatResponseLength.detailed`.
 const String kZChatLabelLengthDetailed = '${kZChatLabelPrefix}lengthDetailed';
 
-/// Groupe « biais de régénération » — axe `ZChatLengthBias`, **orthogonal** au
-/// précédent (le kernel refuse de les fusionner : cf. G16).
+/// Groupe « biais de régénération » — axe `ZChatLengthBias`, orthogonal au
+/// précédent (le kernel refuse de les fusionner).
 const String kZChatLabelLengthBias = '${kZChatLabelPrefix}lengthBias';
 
 /// Palier `ZChatLengthBias.shorter`.
@@ -155,19 +142,13 @@ const String kZChatLabelBiasAsIs = '${kZChatLabelPrefix}biasAsIs';
 /// Palier `ZChatLengthBias.longer`.
 const String kZChatLabelBiasLonger = '${kZChatLabelPrefix}biasLonger';
 
-/// 🔴 Groupe « budget de calcul » — l'axe porté par `ZChatComputeEffort`.
+/// Groupe « budget de calcul » — l'axe porté par `ZChatComputeEffort`.
 ///
-/// **Le nom de cette constante évite délibérément le mot `Effort`.** La garde
-/// **G16** (`zcrud_chat_kernel/test/z_chat_naming_guard_test.dart`) n'autorise,
-/// pour ce radical, que les DEUX orthographes exactes `ZChatComputeEffort` et
-/// `computeEffort`, **avec limites de mot** — précisément pour qu'aucune famille
-/// d'orthographes voisines (`computeEffortLevel`, `ZChatComputeEffortV2`) ne se
-/// glisse à côté de l'axe qu'elle protège. `kZChatLabelComputeEffort` en serait
-/// une : son `Effort` survit au retrait des deux formes autorisées. G16 ne
-/// balaie pas `zcrud_chat` **aujourd'hui** (son second volet lit
-/// `chatDartFiles()`, borné au kernel) — mais son premier volet, lui, balaie
-/// déjà `packages/*/lib`, et une garde jumelle qui s'élargirait trouverait ce
-/// paquet propre. Le concept, lui, est nommé sans ambiguïté par le kernel :
+/// Le nom de cette constante évite délibérément le mot `Effort` : une garde
+/// de nommage n'autorise, pour ce radical, que les deux orthographes exactes
+/// `ZChatComputeEffort` et `computeEffort`, avec limites de mot — pour
+/// qu'aucune famille d'orthographes voisines ne se glisse à côté de l'axe
+/// qu'elle protège. Le concept, lui, est nommé sans ambiguïté par le kernel :
 /// « budget de calcul ».
 const String kZChatLabelComputeBudget = '${kZChatLabelPrefix}computeBudget';
 
@@ -184,7 +165,7 @@ const String kZChatLabelRevealThinking =
 /// stables** d'hôte.
 const String kZChatLabelCorpusScope = '${kZChatLabelPrefix}corpusScope';
 
-/// 🔴 Option « aucune restriction » de la portée documentaire.
+/// Option « aucune restriction » de la portée documentaire.
 ///
 /// Elle est **rendue**, jamais implicite : une portée vide qui n'apparaît pas à
 /// l'écran est indiscernable d'une portée oubliée. C'est le pendant, côté UI,
@@ -199,73 +180,66 @@ const String kZChatLabelCorpusAll = '${kZChatLabelPrefix}corpusAll';
 /// atteignable une seule fois, avant le premier choix.
 const String kZChatLabelSettingAuto = '${kZChatLabelPrefix}settingAuto';
 
-/// 🔴 État « cette capacité a **déjà** produit un contenu » — le canal TEXTUEL
-/// des capacités du notebook (lot γ, CR-IFFD-72).
+/// État « cette capacité a déjà produit un contenu » — le canal textuel des
+/// capacités du notebook.
 ///
-/// Chez IFFD, cet état ne se signale que par la **couleur** d'une icône
-/// (`chatbot_conversation_screen.dart:1720-1889`) : un utilisateur daltonien, ou
-/// un thème qui écrase la teinte, perd l'information. Cette clé est le canal
-/// non chromatique que `ZChatNotebookCapabilityStyle` rend **obligatoire**.
+/// Un état qui ne se signale que par la couleur d'une icône est perdu pour
+/// un utilisateur daltonien, ou pour un thème qui écrase la teinte. Cette
+/// clé est le canal non chromatique que `ZChatNotebookCapabilityStyle` rend
+/// obligatoire.
 const String kZChatLabelGenerated = '${kZChatLabelPrefix}generated';
 
-// ── Chantier composer-lex, lot K2 (arbitrage owner 2026-08-07) ─────────────
+// ── Réglages du composer ──────────────────────────────────────────────────
 
 /// Action « envoyer le message » — libellé du créneau d'envoi par défaut
-/// (`ZChatComposerSendTarget`). Lex n'a qu'un tooltip Material ; ici la clé
-/// traverse le registre de l'hôte comme toutes les autres.
+/// (`ZChatComposerSendTarget`). La clé traverse le registre de l'hôte comme
+/// toutes les autres.
 const String kZChatLabelSend = '${kZChatLabelPrefix}send';
 
-/// Action « réinitialiser les réglages » — l'en-tête par défaut de la feuille
-/// (forme lex, `tools_sheet.dart:53-56`).
+/// Action « réinitialiser les réglages » — l'en-tête par défaut de la feuille.
 const String kZChatLabelSettingsReset = '${kZChatLabelPrefix}settingsReset';
 
-/// Action « fermer la feuille de réglages » — l'en-tête par défaut
-/// (forme lex, `tools_sheet.dart:57-60`). Rendue **seulement** si l'hôte a
-/// fourni un `onClose` (AD-4 : pas d'affordance inerte).
+/// Action « fermer la feuille de réglages » — l'en-tête par défaut. Rendue
+/// seulement si l'hôte a fourni un `onClose` (invariant AD-4 : pas
+/// d'affordance inerte).
 const String kZChatLabelSettingsClose = '${kZChatLabelPrefix}settingsClose';
 
-/// Borne BASSE de l'échelle du budget de calcul — le « Rapide » du slider
-/// labellisé de lex (`tools_sheet.dart:322-392`).
+/// Borne basse de l'échelle du budget de calcul.
 const String kZChatLabelComputeBudgetFast =
     '${kZChatLabelPrefix}computeBudgetFast';
 
-/// Point MÉDIAN de l'échelle — « Équilibré » (même source lex).
+/// Point médian de l'échelle.
 const String kZChatLabelComputeBudgetBalanced =
     '${kZChatLabelPrefix}computeBudgetBalanced';
 
-/// Borne HAUTE de l'échelle — « Profond » (même source lex).
+/// Borne haute de l'échelle.
 const String kZChatLabelComputeBudgetDeep =
     '${kZChatLabelPrefix}computeBudgetDeep';
 
-/// Groupe « préréglages » — le mécanisme expert-de-lex rendu neutre (T2).
-/// Les préréglages eux-mêmes (id, libellé, valeurs) viennent de l'HÔTE.
+/// Groupe « préréglages ». Les préréglages eux-mêmes (id, libellé, valeurs)
+/// viennent de l'hôte.
 const String kZChatLabelPresets = '${kZChatLabelPrefix}presets';
 
-// ── Chantier composer-lex, lot K4 (raccord kernel K1) ──────────────────────
-
 /// Groupe « capacités » — la famille par défaut câblée sur
-/// `ZChatGenerationSettings.capabilities` (kernel, lot K1).
+/// `ZChatGenerationSettings.capabilities`.
 const String kZChatLabelCapabilities = '${kZChatLabelPrefix}capabilities';
 
-/// 🔴 L'UNIQUE capacité que le socle nomme : la recherche web
-/// (`kZChatCapabilityWebSearch`), champ TYPÉ du kernel parce que mesuré vivant
-/// chez les DEUX hôtes (lex `enable_web_search`, IFFD `enableWebSearch`).
-/// Toute autre capacité vient du catalogue de l'hôte — clé opaque, libellé
-/// déjà localisé par lui : le socle n'en connaît aucune valeur (FR-26).
+/// L'unique capacité que le socle nomme : la recherche web
+/// (`kZChatCapabilityWebSearch`), champ typé du kernel parce que mesuré
+/// fréquent chez plusieurs hôtes. Toute autre capacité vient du catalogue
+/// de l'hôte — clé opaque, libellé déjà localisé par lui : le socle n'en
+/// connaît aucune valeur.
 const String kZChatLabelCapabilityWebSearch =
     '${kZChatLabelPrefix}capabilityWebSearch';
 
-/// Option « aucun préréglage » — restaure l'état d'avant le préréglage
-/// (le `preExpertToolsContext` de lex, généralisé).
+/// Option « aucun préréglage » — restaure l'état d'avant le préréglage.
 const String kZChatLabelPresetNone = '${kZChatLabelPrefix}presetNone';
 
-// ── Lot « mode Tile + sélecteur de modèle » (arbitrage owner 2026-08-07) ───
-
-/// État VISIBLE « interrupteur actif » du kind `toggle` — le canal textuel non
-/// chromatique (la coche orange d'IFFD portait l'état par la seule couleur).
+/// État visible « interrupteur actif » du kind `toggle` — le canal textuel
+/// non chromatique (une information ne repose jamais sur la seule couleur).
 const String kZChatLabelToggleOn = '${kZChatLabelPrefix}toggleOn';
 
-/// État VISIBLE « interrupteur inactif » du kind `toggle`.
+/// État visible « interrupteur inactif » du kind `toggle`.
 const String kZChatLabelToggleOff = '${kZChatLabelPrefix}toggleOff';
 
 /// Action « diminuer » du kind `numberBounded`.
@@ -274,60 +248,57 @@ const String kZChatLabelDecrease = '${kZChatLabelPrefix}decrease';
 /// Action « augmenter » du kind `numberBounded`.
 const String kZChatLabelIncrease = '${kZChatLabelPrefix}increase';
 
-/// Étiquette sémantique du **sélecteur de modèle d'IA** du composer
-/// (arbitrage 2). 🔴 GÉNÉRIQUE : aucun nom de modèle n'entre au socle — les
-/// options (`ZChatModelOption`) viennent de l'hôte, id opaque + libellé déjà
-/// localisé.
+/// Étiquette sémantique du sélecteur de modèle d'IA du composer. Générique :
+/// aucun nom de modèle n'entre au socle — les options (`ZChatModelOption`)
+/// viennent de l'hôte, id opaque + libellé déjà localisé.
 const String kZChatLabelModelSelector = '${kZChatLabelPrefix}modelSelector';
 
-// ── Lot « composer assemblé » (CR-IFFD-76) ─────────────────────────────────
-
-/// Étiquette du bandeau de **mode édition** du composer (K2 : `editing` /
-/// `startEditing` / `cancelEditing` existent — le bandeau les REND).
+/// Étiquette du bandeau de mode édition du composer (`editing` /
+/// `startEditing` / `cancelEditing` existent sur le contrôleur — le bandeau
+/// les rend).
 const String kZChatLabelEditing = '${kZChatLabelPrefix}editing';
 
-/// Action « sortir du mode édition sans soumettre » — le verbe EXISTANT
+/// Action « sortir du mode édition sans soumettre » — le verbe existant
 /// `cancelEditing` (jamais un second chemin).
 const String kZChatLabelEditingCancel = '${kZChatLabelPrefix}editingCancel';
 
-/// Action « arrêter la génération en cours » — câblée sur le verbe EXISTANT
-/// `runAction(ZChatCancelAction(requestId:))` (G-CH1 : aucun membre ajouté).
+/// Action « arrêter la génération en cours » — câblée sur le verbe existant
+/// `runAction(ZChatCancelAction(requestId:))`.
 const String kZChatLabelStopGeneration =
     '${kZChatLabelPrefix}stopGeneration';
 
-/// Déclencheur `+` des **pickers de pièces jointes** (CR-IFFD-76, pièce 2) —
-/// le socle rend le créneau ; galerie/photo/fichier restent des actions
-/// d'HÔTE (libellés, icônes et gestes injectés).
+/// Déclencheur `+` des pickers de pièces jointes — le socle rend le
+/// créneau ; galerie/photo/fichier restent des actions d'hôte (libellés,
+/// icônes et gestes injectés).
 const String kZChatLabelAttachmentPickers =
     '${kZChatLabelPrefix}attachmentPickers';
 
-/// Déclencheur « outils » de la bande d'accessoires — il OUVRE la feuille de
-/// réglages (le créneau `tools` est une bande, jamais une page — défaut ①
-/// d'IFFD, CR-IFFD-76).
+/// Déclencheur « outils » de la bande d'accessoires — il ouvre la feuille de
+/// réglages (le créneau `tools` est une bande, jamais une page montée
+/// inline).
 const String kZChatLabelTools = '${kZChatLabelPrefix}tools';
 
-/// Étiquette sémantique de la LISTE de conversations (CR-IFFD-39).
+/// Étiquette sémantique de la liste de conversations.
 const String kZChatLabelConversations = '${kZChatLabelPrefix}conversations';
 
-/// 🔴 Annonce de l'état de **CHARGEMENT** de la liste (CR-IFFD-39, AD-13).
+/// Annonce de l'état de chargement de la liste (invariant AD-13).
 ///
-/// Chez IFFD, `conversation_list_widget.dart:164` passe `initialData: const []`
-/// et le `builder` ne teste **ni `connectionState` ni `hasError`** : la première
-/// frame tombe dans `EmptyConversationsState` (`:198-205`). L'utilisateur lit
-/// « aucune conversation » **avant** que la moindre donnée soit arrivée. Le
-/// chargement doit donc avoir sa propre clé, et son propre état.
+/// Sans un état de chargement distinct, un lecteur d'écran ou un
+/// utilisateur peut lire « aucune conversation » avant que la moindre
+/// donnée soit arrivée. Le chargement doit donc avoir sa propre clé, et son
+/// propre état.
 const String kZChatLabelLoadingConversations =
     '${kZChatLabelPrefix}loadingConversations';
 
-/// 🔴 État d'**ERREUR** de la liste — inexistant chez IFFD (même mesure que
-/// ci-dessus : un échec Firestore y est indiscernable d'une liste vide).
+/// État d'erreur de la liste — distinct de l'état vide : un échec de
+/// chargement est indiscernable d'une liste réellement vide sans lui.
 const String kZChatLabelConversationsError =
     '${kZChatLabelPrefix}conversationsError';
 
-/// Action « réessayer » après une erreur de liste (CR-IFFD-39).
+/// Action « réessayer » après une erreur de liste.
 const String kZChatLabelRetry = '${kZChatLabelPrefix}retry';
 
-/// État vide — variante « **aucun élément** » (CR-IFFD-39).
+/// État vide — variante « **aucun élément** ».
 const String kZChatLabelNoConversations =
     '${kZChatLabelPrefix}noConversations';
 
@@ -338,11 +309,11 @@ const String kZChatLabelNoConversations =
 /// « votre recherche ne rend rien ».
 const String kZChatLabelNoResults = '${kZChatLabelPrefix}noResults';
 
-/// Action « nouvelle conversation » — **masquée en recherche** (CR-IFFD-39).
+/// Action « nouvelle conversation » — **masquée en recherche**.
 const String kZChatLabelNewConversation =
     '${kZChatLabelPrefix}newConversation';
 
-/// Action « charger la suite » — pagination par **curseur** (CR-IFFD-39).
+/// Action « charger la suite » — pagination par **curseur**.
 const String kZChatLabelLoadMore = '${kZChatLabelPrefix}loadMore';
 
 /// Compte des conversations sélectionnées — porte [kZChatCountPlaceholder].
@@ -364,13 +335,10 @@ const String kZChatLabelUnpin = '${kZChatLabelPrefix}unpin';
 /// Action « retirer » — `ZChatConversationLifecyclePort.retire` (**soft**).
 const String kZChatLabelRetire = '${kZChatLabelPrefix}retire';
 
-/// 🔴 Action « restaurer » — `ZChatConversationLifecyclePort.restore`.
+/// Action « restaurer » — `ZChatConversationLifecyclePort.restore`.
 ///
-/// **Aucun des deux hôtes n'a ce chemin** : lex soft-supprime en base et
-/// n'expose ni route ni UI de restauration (grep client négatif sur
-/// `restoreConversation|/restore`), IFFD n'a rien. C'est la capacité que le
-/// soft-delete rend possible, et c'est ce qui rend l'annulation **triviale**
-/// sans qu'on ait à l'imposer.
+/// C'est la capacité que le soft-delete rend possible, et c'est ce qui rend
+/// l'annulation triviale à implémenter sans qu'on ait à l'imposer à l'hôte.
 const String kZChatLabelRestore = '${kZChatLabelPrefix}restore';
 
 /// Action « reprendre à partir d'ici » — `trimAfter` (**soft**, jamais purge).
@@ -491,20 +459,16 @@ const List<String> kZChatLabelKeys = <String>[
   kZChatLabelTimeYears,
 ];
 
-/// Repli **lisible** de chaque clé — jamais prioritaire sur l'hôte (HIGH-1).
+/// Repli lisible de chaque clé — jamais prioritaire sur l'hôte.
 ///
-/// 🔴 La langue est le **français**, comme `ZDefaultReorderRenderer`
-/// (`'Déplacer avant'`) et `zcrud_session` (`'Annuler'`, `'Valider'`) : le
-/// dépôt a tranché, et deux conventions de repli dans un même socle
-/// multi-consommateurs coûteraient plus qu'une langue de secours unique.
-/// L'hôte qui traduit passe `ZcrudScope(labels:)` — le repli n'est **jamais**
-/// atteint dans ce cas (`label()` ne le consulte qu'en dernier ressort).
+/// La langue est le français, comme le reste des replis du dépôt : deux
+/// conventions de repli dans un même socle multi-consommateurs coûteraient
+/// plus qu'une langue de secours unique. L'hôte qui traduit passe
+/// `ZcrudScope(labels:)` — le repli n'est jamais atteint dans ce cas
+/// (`label()` ne le consulte qu'en dernier ressort).
 ///
-/// Une clé absente de cette carte ferait rougir
-/// `test/z_chat_epic_review_guard_test.dart`, groupe **HIGH-1**, volet
-/// **CARTE** (référence corrigée au lot γ0 — cf. le dartdoc de bibliothèque) :
-/// la carte et [kZChatLabelKeys] y sont assertées **égales en ensemble**,
-/// jamais « incluses ».
+/// Cette table couvre exactement l'ensemble de [kZChatLabelKeys] — jamais
+/// une inclusion partielle.
 const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelShowMore: 'Afficher plus',
   kZChatLabelShowLess: 'Afficher moins',
@@ -593,20 +557,20 @@ const Map<String, String> kZChatLabelFallbacks = <String, String>{
   kZChatLabelTimeYears: 'il y a $kZChatCountPlaceholder an(s)',
 };
 
-/// 🔴 Marqueur de substitution du **compte**, dans un repli comme dans une
+/// Marqueur de substitution du compte, dans un repli comme dans une
 /// traduction d'hôte.
 ///
-/// Il est déclaré ici, à côté des replis qui le portent, et **consommé par un
-/// seul site** ([zChatCountLabel]). Un hôte qui traduit `zchat.timeMinutes`
+/// Il est déclaré ici, à côté des replis qui le portent, et consommé par un
+/// seul site ([zChatCountLabel]). Un hôte qui traduit `zchat.timeMinutes`
 /// garde le marqueur dans sa chaîne ; s'il l'omet, le compte n'apparaît
-/// simplement pas — aucune exception, aucun texte cassé (AD-10).
+/// simplement pas — aucune exception, aucun texte cassé (invariant AD-10).
 const String kZChatCountPlaceholder = '{n}';
 
 /// Résout [key] et y substitue [count] à [kZChatCountPlaceholder].
 String zChatCountLabel(BuildContext context, String key, int count) =>
     zChatLabel(context, key).replaceAll(kZChatCountPlaceholder, '$count');
 
-/// Formate un horodatage **relatif** — couture d'hôte (CR-IFFD-39).
+/// Formate un horodatage **relatif** — couture d'hôte.
 ///
 /// [now] est passé explicitement : un formateur qui lit l'horloge lui-même
 /// n'est pas testable, et deux lignes d'une même liste peuvent alors se référer
@@ -614,29 +578,26 @@ String zChatCountLabel(BuildContext context, String key, int count) =>
 typedef ZChatRelativeTimeFormatter =
     String Function(BuildContext context, DateTime value, DateTime now);
 
-/// Formateur **par défaut** — buckets grossiers, entièrement résolus par clés.
+/// Formateur par défaut — buckets grossiers, entièrement résolus par clés.
 ///
-/// 🔴 **Aucune locale, aucun mot en dur.** Le défaut mesuré chez IFFD
-/// (`conversation_item_widget.dart:49-63`) écrit `'Hier'` en toutes lettres
-/// (`:57`) et fige `DateFormat.MMMd('fr_FR')` (`:61`) — la ligne reste en
-/// français quelle que soit la langue de l'application. Chez lex, la même faute
-/// existe à un endroit et pas à l'autre : `search_result_tile.dart:55` passe
-/// `locale: 'fr'` en dur alors que `conversations_screen.dart:249` passe bien
-/// `Localizations.localeOf(context).languageCode`. **La même conversation change
-/// donc de langue selon qu'on la regarde en recherche ou non.**
+/// Aucune locale, aucun mot en dur : un mot écrit en toutes lettres dans une
+/// langue fixe resterait dans cette langue quelle que soit celle de
+/// l'application — et deux points d'un même écran qui appliquent des
+/// conventions différentes feraient changer la langue d'un même contenu
+/// selon l'endroit où on le regarde.
 ///
-/// Ici, chaque bucket est une **clé** : un hôte qui alimente son registre
-/// obtient sa langue, et un hôte qui veut `timeago`/`intl` passe son propre
-/// [ZChatRelativeTimeFormatter]. Le socle, lui, ne dépend d'aucun paquet de
-/// dates (AD-57).
+/// Ici, chaque bucket est une clé : un hôte qui alimente son registre
+/// obtient sa langue, et un hôte qui veut un paquet de formatage de dates
+/// dédié passe son propre [ZChatRelativeTimeFormatter]. Le socle, lui, ne
+/// dépend d'aucun paquet de dates.
 String zChatDefaultRelativeTime(
   BuildContext context,
   DateTime value,
   DateTime now,
 ) {
   final Duration d = now.difference(value);
-  // Une date FUTURE (horloge décalée, écriture serveur en avance) ne devient
-  // jamais « il y a -3 min » : elle se lit « à l'instant » (AD-10).
+  // Une date future (horloge décalée, écriture serveur en avance) ne devient
+  // jamais « il y a -3 min » : elle se lit « à l'instant » (invariant AD-10).
   if (d.isNegative || d.inMinutes < 1) {
     return zChatLabel(context, kZChatLabelTimeNow);
   }
@@ -658,12 +619,10 @@ String zChatDefaultRelativeTime(
   return zChatCountLabel(context, kZChatLabelTimeYears, d.inDays ~/ 365);
 }
 
-/// Résout une clé du chat — **l'UNIQUE** site d'appel de `label()` du package.
+/// Résout une clé du chat — l'unique site d'appel de `label()` du paquet.
 ///
-/// 🔴 Passer par cette fonction plutôt que par `label(context, clé)` n'est pas
+/// Passer par cette fonction plutôt que par `label(context, clé)` n'est pas
 /// une préférence de style : c'est ce qui rend impossible d'ajouter une clé
-/// **sans repli**. La garde source asserte qu'aucun autre fichier de `lib/`
-/// n'écrit `label(` — un nouvel appel direct rougit, même si son auteur avait
-/// « pensé » au repli.
+/// sans repli.
 String zChatLabel(BuildContext context, String key) =>
     label(context, key, fallback: kZChatLabelFallbacks[key]);

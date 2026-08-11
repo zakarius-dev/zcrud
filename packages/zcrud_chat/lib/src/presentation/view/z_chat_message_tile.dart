@@ -1,27 +1,20 @@
-/// Tuile neutre d'un message, et le **dépli INLINE réel** — CHAT-3.
+/// Tuile neutre d'un message, et le dépli inline réel.
 ///
-/// ## 🔴 Le défaut d'IFFD que ce fichier rend inexprimable
+/// ## Le défaut structurel que ce fichier rend inexprimable
 ///
-/// `chatbot_conversation_screen.dart` déclare `showAll` **deux fois** :
-/// * `:3733` — `final showAll = explanationToggler.value;` (l'état réel du
-///   dépli, porté par un `ValueNotifier`) ;
-/// * `:4124` — `final showAll = isChatSession;` **dans le `builder` d'un
-///   `ResponsiveBuilder` imbriqué**, qui masque le précédent.
-///
-/// C'est la variable **masquante** qui pilote la contrainte de hauteur
-/// (`:4135 constraints: showAll ? null : BoxConstraints(maxHeight: …)`). Le
-/// bouton, lui, est **hors** de cette closure (`:4179`) et lit la variable
-/// **masquée**. Conséquence mesurable : basculer le toggler ne relâche **jamais**
-/// la contrainte — le dépli n'a pas lieu — et la branche « replié » du bouton
-/// part dans `exportExplanationToPdf(...)`, c'est-à-dire une **sortie hors de la
-/// conversation** là où l'utilisateur a lu « Afficher plus ».
+/// Un défaut classique de dépli inline : deux variables d'état homonymes
+/// coexistent, l'une portant l'état réel du dépli, l'autre — dans une
+/// closure imbriquée — le masquant silencieusement. La contrainte de hauteur
+/// lit l'une, le bouton de bascule l'autre. Conséquence : basculer le
+/// dépli ne relâche jamais la contrainte, et le bouton finit par déclencher
+/// un geste totalement différent de celui promis par son libellé.
 ///
 /// Le correctif structurel n'est pas « renommer une variable » : c'est que
-/// **l'état du dépli et la contrainte de hauteur soient lus au même endroit, sur
-/// la même source**. Ici, [_ZCollapsibleContent] reçoit `expanded` et applique
-/// la contrainte lui-même ; il n'existe aucun second chemin qui puisse diverger.
-/// Garde : le dépli **augmente la hauteur de la tuile** et **ne pousse aucune
-/// route**.
+/// l'état du dépli et la contrainte de hauteur soient lus au même endroit,
+/// sur la même source. Ici, [_ZCollapsibleContent] reçoit `expanded` et
+/// applique la contrainte lui-même ; il n'existe aucun second chemin qui
+/// puisse diverger. Le dépli augmente la hauteur de la tuile et ne pousse
+/// aucune route.
 library;
 
 import 'dart:math' as math;
@@ -38,25 +31,24 @@ import '../render/z_chat_seam_failure.dart';
 import 'z_chat_block_view.dart';
 import 'z_chat_labels.dart';
 
-/// Construit le contenu d'un **créneau par message** (CR-IFFD-71) — couture
-/// d'hôte, sur le modèle des builders de seam existants.
+/// Construit le contenu d'un créneau par message — couture d'hôte, sur le
+/// modèle des builders de seam existants.
 ///
-/// 🔴 **Un BUILDER, jamais un jeu de booléens.** Chez IFFD, l'identité de
-/// l'interlocuteur est réglée par `showAuthorAvatar`/`showAuthorName`
-/// (`AssistMessageSettings`, un type Syncfusion consommé à la carte par chaque
-/// écran hôte) : le socle refuse par construction de porter ces réglages
-/// d'apparence (FR-26 — il déciderait d'une icône, d'un libellé, d'une
-/// couleur). Il offre à la place un **emplacement structurel** : l'hôte
-/// construit ce qu'il veut y voir, le socle décide seulement OÙ cela se rend.
+/// Un builder, jamais un jeu de booléens. L'identité d'un interlocuteur
+/// (avatar, nom) est une décision d'apparence que le socle refuse par
+/// construction de porter. Il offre à la place un emplacement structurel :
+/// l'hôte construit ce qu'il veut y voir, le socle décide seulement où cela
+/// se rend.
 ///
-/// Rendre `null` ⇒ **aucun widget inséré** pour CE message (AD-4 : slot nul,
-/// absent de l'arbre) — c'est ce qui permet à un même builder de ne cibler que
-/// les réponses de l'assistant, par exemple.
+/// Rendre `null` signifie aucun widget inséré pour ce message (invariant
+/// AD-4 : slot nul, absent de l'arbre) — c'est ce qui permet à un même
+/// builder de ne cibler que les réponses de l'assistant, par exemple.
 typedef ZChatMessageSlotBuilder =
     Widget? Function(BuildContext context, ZChatMessage message);
 
-/// Hauteur de cible tactile minimale (AD-13). Ce n'est pas un style : c'est un
-/// **seuil d'accessibilité**, non négociable et donc non injectable.
+/// Hauteur de cible tactile minimale (invariant AD-13). Ce n'est pas un
+/// style : c'est un seuil d'accessibilité, non négociable et donc non
+/// injectable.
 const double kZChatMinTapTarget = 48.0;
 
 /// Tolérance de mesure du dépassement, en pixels logiques. Sans elle, un
@@ -81,69 +73,63 @@ class ZChatMessageTile extends StatefulWidget {
   /// Le message rendu.
   final ZChatMessage message;
 
-  /// Hauteur maximale à l'état **replié**. `null` ⇒ aucun repli, aucun bouton
-  /// (le comportement par défaut est le message ENTIER : on ne tronque pas un
-  /// contenu sans que l'hôte l'ait demandé).
+  /// Hauteur maximale à l'état replié. `null` signifie aucun repli, aucun
+  /// bouton (le comportement par défaut est le message entier : on ne
+  /// tronque pas un contenu sans que l'hôte l'ait demandé).
   final double? collapsedMaxHeight;
 
   /// `true` si ce message est une réponse encore en cours.
   final bool isStreaming;
 
-  /// Pilotage EXTERNE du dépli — `null` ⇒ la tuile se gouverne seule
-  /// (comportement historique, **strictement inchangé**).
+  /// Pilotage externe du dépli — `null` signifie que la tuile se gouverne
+  /// seule (comportement par défaut).
   ///
-  /// ## Pourquoi ce paramètre existe (patron `ZDisplayState`, CR-IFFD-38)
+  /// ## Pourquoi ce paramètre existe
   ///
-  /// Le dépli est le cas d'ORIGINE de ce chantier : chez IFFD, « Afficher
-  /// plus » était cassé par un bug de shadowing (cf. la note de bibliothèque)
-  /// et nous avons livré le vrai dépli inline. Mais il restait **commandable
-  /// depuis le seul bouton** : un hôte qui veut un « tout déplier » dans sa
-  /// barre d'outils, ou déplier le message qu'une recherche vient de cibler,
-  /// n'avait aucun second chemin de déclenchement. *Une commande absente est
-  /// moins coûteuse qu'une commande morte, mais elle reste une capacité
-  /// manquante.*
+  /// Sans lui, le dépli n'est commandable que depuis son propre bouton : un
+  /// hôte qui veut un « tout déplier » dans sa barre d'outils, ou déplier le
+  /// message qu'une recherche vient de cibler, n'a aucun second chemin de
+  /// déclenchement.
   ///
   /// ## Le contrat
   ///
-  /// Fourni, le contrôleur devient **LA SOURCE DE VÉRITÉ** : la tuile ne garde
-  /// aucun miroir du dépli (cf. [ZDisplayStateBinding]) ⇒ les deux états ne
-  /// peuvent pas diverger, parce qu'il n'y en a qu'un. Le tap sur « Afficher
-  /// plus » écrit **dans le contrôleur** — l'hôte lit donc le geste interne
-  /// sans qu'aucun callback ne soit nécessaire.
+  /// Fourni, le contrôleur devient la source de vérité : la tuile ne garde
+  /// aucun miroir du dépli (cf. [ZDisplayStateBinding]), donc les deux états
+  /// ne peuvent pas diverger, parce qu'il n'y en a qu'un. Le tap sur
+  /// « Afficher plus » écrit dans le contrôleur — l'hôte lit donc le geste
+  /// interne sans qu'aucun callback ne soit nécessaire.
   ///
-  /// ⚠️ Sans [collapsedMaxHeight], il n'y a **ni repli ni bouton** : le
-  /// contrôleur est alors accepté mais sans effet visible, exactement comme le
-  /// dépli interne l'était.
+  /// Sans [collapsedMaxHeight], il n'y a ni repli ni bouton : le contrôleur
+  /// est alors accepté mais sans effet visible.
   ///
-  /// 🔒 Le contrôleur doit être **possédé hors `build`** : c'est imposé par
+  /// Le contrôleur doit être possédé hors de `build` : c'est imposé par
   /// [ZDisplayStateOwnerMixin], qui refuse un enregistrement postérieur à la
   /// première frame de son `State`. Un contrôleur créé dans `build` serait
   /// remplacé à chaque rebuild — donc silencieusement inerte.
   final ZToggleController? expandController;
 
-  /// Créneau d'**identité** (CR-IFFD-71) — rendu **au-dessus** des blocs.
+  /// Créneau d'identité — rendu au-dessus des blocs.
   ///
-  /// C'est le manque n°2 mesuré par l'étude : `showAuthorAvatar`/
-  /// `showAuthorName` n'existent nulle part dans le socle (grep négatif
-  /// repo-wide), et `ZSfAssistShellRenderer` les laisse délibérément à l'hôte.
-  /// Ce builder comble la **présence structurelle** sans jamais décider de
-  /// l'apparence : avatar, nom, les deux, ou rien — c'est le widget de l'hôte.
+  /// Ce builder comble une présence structurelle sans jamais décider de
+  /// l'apparence : avatar, nom, les deux, ou rien — c'est le widget de
+  /// l'hôte.
   ///
-  /// `null` (défaut) ⇒ comportement actuel **strictement inchangé**. Un builder
-  /// qui rend `null` pour un message ⇒ aucun en-tête pour CE message (AD-4).
+  /// `null` (défaut) donne un comportement strictement inchangé. Un builder
+  /// qui rend `null` pour un message signifie aucun en-tête pour ce message
+  /// (invariant AD-4).
   final ZChatMessageSlotBuilder? identityBuilder;
 
-  /// Créneau d'**actions par message** (CR-IFFD-71) — rendu **sous** les blocs,
-  /// hors de la zone repliable (une action ne doit jamais être tronquée par le
-  /// repli, ni cliquable sous un clip).
+  /// Créneau d'actions par message — rendu sous les blocs, hors de la zone
+  /// repliable (une action ne doit jamais être tronquée par le repli, ni
+  /// cliquable sous un clip).
   ///
-  /// 🔴 Le socle ne connaît **aucun verbe** ici : les capacités notebook d'IFFD
+  /// Le socle ne connaît aucun verbe ici : les capacités de transformation
   /// (carte mentale, flashcards, variantes, export, enregistrer en note) se
   /// montent par ce conteneur, et leurs rappels transitent par
   /// `ZChatController.runAction(ZChatCustomAction(...))` — l'unique point
-  /// d'entrée des verbes (G-CH1/G-U1). Aucun nouveau chemin d'exécution.
+  /// d'entrée des verbes. Aucun nouveau chemin d'exécution.
   ///
-  /// `null` (défaut) ⇒ comportement actuel **strictement inchangé**.
+  /// `null` (défaut) donne un comportement strictement inchangé.
   final ZChatMessageSlotBuilder? actionsBuilder;
 
   @override
@@ -151,15 +137,15 @@ class ZChatMessageTile extends StatefulWidget {
 }
 
 class _ZChatMessageTileState extends State<ZChatMessageTile> {
-  /// 🔴 `ValueNotifier` et non `setState` (AD-2) : basculer le dépli d'UNE tuile
-  /// ne doit pas reconstruire la conversation. `setState` ici remonterait au
-  /// `build` de la tuile entière, blocs compris.
+  /// `ValueNotifier` et non `setState` (invariant AD-2) : basculer le dépli
+  /// d'une tuile ne doit pas reconstruire la conversation. `setState` ici
+  /// remonterait au `build` de la tuile entière, blocs compris.
   ///
-  /// 🔴 Ce n'est plus un `ValueNotifier` privé mais une **liaison** : état
-  /// interne par défaut, contrôleur de l'hôte quand il y en a un. La liaison ne
-  /// **copie** rien — quand l'hôte pilote, la valeur est lue et écrite chez
-  /// lui. `_expanded.listenable` reste **stable** au travers d'un changement de
-  /// contrôleur, ce qui évite un `setState` d'échelle tuile (AD-2).
+  /// C'est une liaison, pas un simple `ValueNotifier` privé : état interne
+  /// par défaut, contrôleur de l'hôte quand il y en a un. La liaison ne
+  /// copie rien — quand l'hôte pilote, la valeur est lue et écrite chez lui.
+  /// `_expanded.listenable` reste stable au travers d'un changement de
+  /// contrôleur, ce qui évite un `setState` d'échelle tuile.
   late final ZDisplayStateBinding<bool> _expanded;
 
   /// `true` quand le contenu **dépasse réellement** la hauteur repliée. Mesuré
@@ -184,7 +170,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
 
   @override
   void dispose() {
-    // ⚠️ La liaison ne dispose JAMAIS le contrôleur de l'hôte : il ne nous
+    // La liaison ne dispose jamais le contrôleur de l'hôte : il ne nous
     // appartient pas (son propriétaire est un `State` de l'hôte).
     _expanded.dispose();
     _overflowed.dispose();
@@ -208,10 +194,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
         ? content
         : _collapsible(content, maxHeight);
 
-    // CR-IFFD-71 — créneaux ADDITIFS. Construits ICI, dans `build`, donc HORS
-    // du `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
-    // ré-invoque AUCUN builder d'hôte (SM-1). Aucun créneau ⇒ l'arbre rendu est
-    // EXACTEMENT celui d'avant cette CR — pas même une `Column` de plus.
+    // Créneaux additifs. Construits ici, dans `build`, donc hors du
+    // `ValueListenableBuilder` du dépli : basculer « Afficher plus » ne
+    // ré-invoque aucun builder d'hôte (invariant AD-2). Aucun créneau
+    // signifie que l'arbre rendu reste exactement celui sans ces créneaux —
+    // pas même une `Column` de plus.
     final Widget? identity = _slot(
       context,
       widget.identityBuilder,
@@ -227,11 +214,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // L'identité PRÉCÈDE le contenu (ordre de lecture, AD-13) ; les actions
-        // le SUIVENT et restent des SŒURS du nœud annoncé (`_announced` exclut
-        // la sémantique de ses seuls enfants) : leurs boutons gardent leur
-        // sémantique propre. Aucun interligne imposé : l'espacement appartient
-        // au widget de l'hôte (le socle ne décide pas d'une apparence, FR-26).
+        // L'identité précède le contenu (ordre de lecture, invariant
+        // AD-13) ; les actions le suivent et restent des sœurs du nœud
+        // annoncé (`_announced` exclut la sémantique de ses seuls enfants) :
+        // leurs boutons gardent leur sémantique propre. Aucun interligne
+        // imposé : l'espacement appartient au widget de l'hôte.
         ?identity,
         core,
         ?actions,
@@ -239,9 +226,10 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     );
   }
 
-  /// Invoque un builder de créneau — chaîne TOTALE (AD-10) : un créneau d'hôte
-  /// qui lève perd LE CRÉNEAU, jamais le message. L'exception est relayée à
-  /// `FlutterError` avec le nom du seam, comme pour les coquilles.
+  /// Invoque un builder de créneau — chaîne totale (invariant AD-10) : un
+  /// créneau d'hôte qui lève perd le créneau, jamais le message. L'exception
+  /// est relayée à `FlutterError` avec le nom du seam, comme pour les
+  /// coquilles.
   Widget? _slot(
     BuildContext context,
     ZChatMessageSlotBuilder? builder,
@@ -256,11 +244,11 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     }
   }
 
-  /// Le cœur repliable — strictement le comportement historique (CHAT-3).
+  /// Le cœur repliable.
   Widget _collapsible(Widget content, double maxHeight) {
     return ValueListenableBuilder<bool>(
-      // 🔴 L'écoute STABLE de la liaison — pas la source courante : brancher le
-      // `ValueListenableBuilder` sur le contrôleur lui-même obligerait à
+      // L'écoute stable de la liaison — pas la source courante : brancher
+      // le `ValueListenableBuilder` sur le contrôleur lui-même obligerait à
       // reconstruire la tuile entière quand l'hôte change de pilote.
       valueListenable: _expanded.listenable,
       builder: (BuildContext context, bool expanded, Widget? child) {
@@ -282,7 +270,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
                 if (!overflowed && !expanded) return const SizedBox.shrink();
                 return _ZToggleButton(
                   expanded: expanded,
-                  // 🔴 Le geste INTERNE écrit **à la source** : quand l'hôte
+                  // Le geste interne écrit à la source : quand l'hôte
                   // pilote, le tap est écrit chez lui et lui reste donc
                   // lisible. Une écriture dans un miroir local aurait laissé
                   // sa barre d'outils annoncer « déplier » sur un message
@@ -294,32 +282,30 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
           ],
         );
       },
-      // 🔴 Les blocs sont passés en `child` : basculer le dépli ne les
-      // reconstruit PAS (SM-1). Seule la contrainte de hauteur change.
+      // Les blocs sont passés en `child` : basculer le dépli ne les
+      // reconstruit pas (invariant AD-2). Seule la contrainte de hauteur
+      // change.
       child: content,
     );
   }
 
-  /// 🔴 **HIGH-2 — le nœud d'annonce que NOUS contrôlons.**
+  /// Le nœud d'annonce d'accessibilité que ce paquet contrôle.
   ///
-  /// Le résumé du kernel (`zChatAccessibleTextOf`, `switch` exhaustif sur
-  /// l'union scellée) était jusqu'ici confié à `AssistMessage.data` de
-  /// Syncfusion, champ **inerte** dès que `messageContentBuilder` est fourni —
-  /// c'est-à-dire toujours, chez nous. Un message fait d'un **tableau** ou d'un
-  /// bloc de **sources** n'était donc annoncé nulle part. Il l'est ici, sur le
-  /// chemin **commun** aux deux branches de rendu : la coquille tierce rappelle
-  /// cette même fabrique de tuile, elle ne peut pas contourner ce nœud.
+  /// Un résumé exhaustif du kernel (`zChatAccessibleTextOf`, `switch`
+  /// exhaustif sur l'union scellée) est porté par un `Semantics` posé ici,
+  /// sur le chemin commun aux deux branches de rendu : une coquille tierce
+  /// rappelle cette même fabrique de tuile, elle ne peut pas contourner ce
+  /// nœud — un message fait d'un tableau ou d'un bloc de sources est ainsi
+  /// toujours annoncé.
   ///
-  /// 🔴 `excludeSemantics: true` — sans quoi le résumé **et** le texte de chaque
-  /// bloc sont énoncés (le doublon `<rapport.pdf\nrapport.pdf>` mesuré sur la
-  /// bande de pièces jointes ; correctif jumeau documenté dans
-  /// `zcrud_menu/lib/src/presentation/z_menu_entry_tile.dart:73-76`). Retirer le
-  /// `label:` à la place rendrait le nœud **muet**. Le bouton de dépli, lui,
-  /// est **hors** de ce nœud (il est un frère dans la `Column`) : sa sémantique
-  /// de bouton est intacte. Un hôte dont les blocs sont **interactifs** coupe
-  /// l'annonce par `ZChatAccessibleTextScope(announce: false)`.
+  /// `excludeSemantics: true` — sans quoi le résumé et le texte de chaque
+  /// bloc seraient énoncés en double. Retirer le `label:` à la place
+  /// rendrait le nœud muet. Le bouton de dépli, lui, est hors de ce nœud (il
+  /// est un frère dans la `Column`) : sa sémantique de bouton est intacte.
+  /// Un hôte dont les blocs sont interactifs coupe l'annonce par
+  /// `ZChatAccessibleTextScope(announce: false)`.
   ///
-  /// Un résumé vide ⇒ **aucun** nœud : on n'insère pas un conteneur muet.
+  /// Un résumé vide signifie aucun nœud : on n'insère pas un conteneur muet.
   Widget _announced(BuildContext context, Widget child) {
     if (!ZChatAccessibleTextScope.announceOf(context)) return child;
     final String summary = zChatAccessibleTextOf(
@@ -335,20 +321,19 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
     );
   }
 
-  /// Chaîne de résolution de l'annonce d'**un** bloc : hôte → socle → kernel.
+  /// Chaîne de résolution de l'annonce d'un bloc : hôte → socle → kernel.
   ///
-  /// 🔴 **Le maillon « socle » n'est pas décoratif** : `excludeSemantics`
-  /// remplace l'arbre sémantique des blocs par ce seul résumé, et le kernel —
-  /// pur-Dart, sans `BuildContext` — n'émet **aucune prose**. Sans ce maillon,
-  /// les quatre en-têtes que le rendu neutre annonce (« Sources »,
-  /// « Suggestions », « Diagramme », « Contenu non pris en charge ») seraient
-  /// **perdues** : un bloc de sources se serait mis à énoncer ses renvois sans
-  /// dire que ce sont des sources, et un `kind` inconnu aurait été annoncé par
-  /// son seul discriminant machine. C'est exactement la régression que la garde
-  /// G-R7 a fait rougir quand le maillon manquait.
+  /// Le maillon « socle » n'est pas décoratif : `excludeSemantics` remplace
+  /// l'arbre sémantique des blocs par ce seul résumé, et le kernel —
+  /// pur-Dart, sans `BuildContext` — n'émet aucune prose. Sans ce maillon,
+  /// les en-têtes que le rendu neutre annonce (« Sources », « Suggestions »,
+  /// « Diagramme », « Contenu non pris en charge ») seraient perdues : un
+  /// bloc de sources se serait mis à énoncer ses renvois sans dire que ce
+  /// sont des sources, et un `kind` inconnu aurait été annoncé par son seul
+  /// discriminant machine.
   ///
-  /// L'hôte reste **prioritaire** : c'est lui qui sait nommer *ses* blocs
-  /// ouverts, et lui qui les localise (le socle ne connaît que sa propre table).
+  /// L'hôte reste prioritaire : c'est lui qui sait nommer ses blocs ouverts,
+  /// et lui qui les localise (le socle ne connaît que sa propre table).
   String? _resolve(BuildContext context, ZContentBlock block) {
     final String? fromHost = ZChatAccessibleTextScope.resolverOf(
       context,
@@ -362,7 +347,7 @@ class _ZChatMessageTileState extends State<ZChatMessageTile> {
       _ => null,
     };
     if (header == null) return null;
-    // 🔴 `accessibleText()` SANS résolveur : le rappeler avec celui-ci
+    // `accessibleText()` sans résolveur : le rappeler avec celui-ci
     // bouclerait à l'infini. Le corps du bloc reste donc celui du kernel,
     // seulement précédé de son en-tête localisé.
     return '$header$kZContentBlockAccessibleSeparator'
@@ -430,7 +415,8 @@ class _ZToggleButton extends StatelessWidget {
             minWidth: kZChatMinTapTarget,
           ),
           child: Align(
-            // AD-13 : alignement DIRECTIONNEL — le bouton suit le sens du texte.
+            // Invariant AD-13 : alignement directionnel — le bouton suit le
+            // sens du texte.
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               zChatLabel(
@@ -485,16 +471,14 @@ class _ZCollapsibleContent extends SingleChildRenderObjectWidget {
 ///
 /// Pourquoi un `RenderObject` plutôt qu'un `ConstrainedBox` : la contrainte
 /// seule ne dit pas s'il y avait quelque chose à déplier. Un « Afficher plus »
-/// posé au jugé sur un message d'une ligne est un geste sans effet — la
-/// première marche vers le bouton d'IFFD, qui promettait un dépli et faisait
-/// autre chose.
+/// posé au jugé sur un message d'une ligne est un geste sans effet — une
+/// promesse de dépli qui ne se vérifie jamais.
 class _ZRenderCollapsible extends RenderProxyBox {
-  // 🔴 `prefer_initializing_formals` est INAPPLICABLE ici (même arbitrage que
-  // `ZChatController`) : un paramètre NOMMÉ ne peut pas s'appeler `_expanded`
+  // `prefer_initializing_formals` est inapplicable ici (même arbitrage que
+  // `ZChatController`) : un paramètre nommé ne peut pas s'appeler `_expanded`
   // — les formels privés sont interdits en Dart — et rendre ces champs publics
   // court-circuiterait leurs setters, qui portent le `markNeedsLayout`. Sans ce
-  // `markNeedsLayout`, basculer le dépli ne relaierait rien à la mise en page :
-  // le défaut d'IFFD, reconstitué une couche plus bas.
+  // `markNeedsLayout`, basculer le dépli ne relaierait rien à la mise en page.
   _ZRenderCollapsible({
     required bool expanded,
     required double collapsedMaxHeight,
@@ -548,7 +532,7 @@ class _ZRenderCollapsible extends RenderProxyBox {
 
     if (_lastOverflow != overflow) {
       _lastOverflow = overflow;
-      // 🔴 Notifier PENDANT la mise en page relancerait un build dans la même
+      // Notifier pendant la mise en page relancerait un build dans la même
       // frame (« setState during build »). Le rappel est différé.
       final ValueChanged<bool> notify = onOverflowChanged;
       SchedulerBinding.instance.addPostFrameCallback((_) => notify(overflow));

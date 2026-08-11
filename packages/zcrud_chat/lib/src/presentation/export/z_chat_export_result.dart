@@ -1,17 +1,16 @@
-/// Résultat d'un export — `ZChatExportResult` (CHAT-5).
+/// Résultat d'un export de conversation.
 ///
-/// origine: lex_data — `chat_export_service.dart` (`sealed class ExportResult`
-/// + `TextExportResult` / `BinaryExportResult`). Porté à l'identique dans sa
-/// forme : la distinction texte/binaire est réelle (on ne partage pas des
-/// octets comme on partage une chaîne), et la porter dans le TYPE évite le
-/// `String? text; Uint8List? bytes;` où l'un des deux est toujours `null`.
+/// La distinction texte/binaire est réelle — on ne partage pas des octets
+/// comme on partage une chaîne — et la porter dans le type plutôt que dans
+/// deux champs nullables (`String? text; Uint8List? bytes;`) élimine l'état
+/// où les deux seraient `null` ou renseignés à la fois.
 ///
-/// `sealed` est ici **correct** et ne heurte pas AD-4 : ce type ne franchit
-/// aucune frontière de sérialisation et n'est pas un point d'extension
-/// inter-package — un satellite n'a aucune raison d'inventer une troisième
-/// nature de fichier. C'est le même arbitrage que `ZContentBlock` du kernel…
-/// à l'inverse : celui-là est une famille OUVERTE parce qu'il est, lui,
-/// sérialisé et extensible.
+/// `sealed` est ici approprié et ne contredit pas l'invariant AD-4 : ce type
+/// ne franchit aucune frontière de sérialisation et n'est pas un point
+/// d'extension inter-paquet — un satellite n'a aucune raison d'inventer une
+/// troisième nature de fichier. C'est l'inverse de `ZContentBlock` (kernel),
+/// qui reste une famille ouverte parce qu'il est, lui, sérialisé et
+/// extensible.
 library;
 
 import 'dart:typed_data';

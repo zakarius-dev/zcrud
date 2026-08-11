@@ -1,26 +1,21 @@
-/// Actions de conversation **déclarées en descripteurs** — CR-IFFD-39.
+/// Actions de conversation déclarées en descripteurs.
 ///
-/// ## 🔴 Pourquoi aucune action n'est codée en dur dans la tuile
+/// ## Pourquoi aucune action n'est codée en dur dans la tuile
 ///
-/// `pinned` **n'existe pas chez IFFD** — grep négatif rejoué :
-/// `grep -rn "pinned" /home/zakarius/DEV/iffd/lib/ai_assistant/` rend **EXIT=1,
-/// aucun résultat** (les seuls `pinned` du dépôt sont des `SliverAppBar`). Une
-/// action « épingler » posée en dur dans la tuile serait donc **morte** chez eux :
-/// un bouton qui écrit un champ que leur backend ignore. Symétriquement,
-/// `isArchived` existe chez IFFD (`chatbot_conversation.dart:25`) et **pas** chez
-/// nous — et n'y est d'ailleurs jamais lu comme filtre (deux écritures
-/// `isArchived: false`, aucune requête).
+/// Les champs qu'une action manipule (épinglage, archivage…) varient d'un
+/// hôte à l'autre : en coder un en dur dans la tuile le rendrait mort chez un
+/// hôte dont le backend ne le connaît pas — un bouton qui écrit un champ que
+/// personne ne lit.
 ///
-/// La tuile ne connaît donc **aucune** action. Elle reçoit une liste de
+/// La tuile ne connaît donc aucune action. Elle reçoit une liste de
 /// [ZChatConversationAction], et n'en rend aucune par défaut.
 ///
-/// ## 🔴 « Absente si son callback est nul » — la fabrique, pas un drapeau
+/// ## « Absente si son callback est nul » — la fabrique, pas un drapeau
 ///
 /// [zChatConversationActions] n'émet un descripteur que si le callback
-/// correspondant est **non nul**. C'est la sémantique du drapeau de déploiement
-/// de lex, **sans le drapeau** : ne pas passer le callback EST le drapeau. Un
-/// hôte sans épinglage n'a rien à désactiver, rien à configurer, et ne peut pas
-/// se tromper de valeur par défaut.
+/// correspondant est non nul : ne pas passer le callback est le signal
+/// d'absence. Un hôte sans épinglage n'a rien à désactiver, rien à
+/// configurer, et ne peut pas se tromper de valeur par défaut.
 ///
 /// ## Les huit ports de conversation du kernel, et par où ils entrent
 ///
@@ -45,13 +40,13 @@ import 'z_chat_labels.dart';
 /// catalogue d'icônes : `material` lui est interdit).
 typedef ZChatActionIconBuilder = Widget? Function(BuildContext context);
 
-/// Un **descripteur** d'action de conversation. Immuable, sans widget.
+/// Un descripteur d'action de conversation. Immuable, sans widget.
 ///
-/// 🔴 Son **identité EST sa clé de libellé** ([labelKey]). Un champ `id`
-/// séparé aurait dupliqué la même information sous deux noms — et aurait exigé
-/// un littéral (`'unpin'`, `'restore'`…) dans un fichier de rendu, ce que la
-/// garde « aucun littéral porteur de mot » interdit à juste titre : c'est la
-/// porte par laquelle un libellé finit par entrer.
+/// Son identité est sa clé de libellé ([labelKey]). Un champ `id` séparé
+/// aurait dupliqué la même information sous deux noms — et aurait exigé un
+/// littéral porteur de mot dans un fichier de rendu, ce qu'une discipline
+/// stricte de source interdit : c'est la porte par laquelle un libellé
+/// finit par entrer codé en dur.
 @immutable
 class ZChatConversationAction {
   /// Construit un descripteur.
@@ -69,33 +64,31 @@ class ZChatConversationAction {
   final String labelKey;
 
   /// Ce que l'action fait. Le socle ne sait pas ce que c'est, et c'est voulu :
-  /// il n'y a **aucune navigation** ici, seulement un rappel (AD-11).
+  /// il n'y a aucune navigation ici, seulement un rappel (invariant AD-11).
   final void Function(ZChatConversation conversation) onInvoke;
 
-  /// Icône optionnelle. `null` ⇒ le libellé seul (défaut fonctionnel, AD-57).
+  /// Icône optionnelle. `null` signifie le libellé seul (défaut fonctionnel
+  /// sans configuration requise).
   final ZChatActionIconBuilder? iconBuilder;
 
-  /// Prédicat de visibilité **par conversation**, ou `null` (toujours visible).
+  /// Prédicat de visibilité par conversation, ou `null` (toujours visible).
   ///
-  /// 🔴 **Un prédicat, pas un champ.** Le « nouveau » d'un hôte peut venir d'un
-  /// préfixe dans le titre, sa permission d'un `userId != null` : ce ne sont pas
-  /// des champs propres, et les modéliser figerait dans le socle la forme sale
-  /// d'un hôte particulier.
+  /// Un prédicat, pas un champ : la condition de visibilité d'un hôte peut
+  /// venir d'un préfixe dans le titre, d'une permission calculée ailleurs —
+  /// ce ne sont pas des champs propres, et les modéliser figerait dans le
+  /// socle la forme particulière d'un hôte donné.
   final bool Function(ZChatConversation conversation)? isVisible;
 
-  /// `true` pour une action **destructive** — le socle ne la rend pas
-  /// différemment (aucune couleur en dur, FR-26) ; il l'expose pour que l'hôte
-  /// le fasse et pour que [confirm] ait un sens documenté.
+  /// `true` pour une action destructive — le socle ne la rend pas
+  /// différemment (aucune couleur en dur) ; il l'expose pour que l'hôte le
+  /// fasse et pour que [confirm] ait un sens documenté.
   final bool isDestructive;
 
-  /// Confirmation optionnelle. `null` ⇒ **aucune** confirmation, et c'est un
-  /// choix de l'hôte, pas un oubli du socle.
+  /// Confirmation optionnelle. `null` signifie aucune confirmation, et c'est
+  /// un choix de l'hôte, pas un oubli du socle.
   ///
-  /// 🔴 lex documente un *undo* qu'il n'a pas : `conversations_screen.dart:29`
-  /// promet « swipe-to-delete **with undo** », `:259` écrit `// Delete with undo`,
-  /// et `_handleDelete` (`:262-290`) affiche un `SnackBar` **sans action** —
-  /// `grep -n "SnackBarAction"` sur ce fichier rend **EXIT=1**. Le socle ne
-  /// promet donc rien : il rend l'annulation *triviale* (le retrait est **soft**,
+  /// Le socle ne promet aucune fonctionnalité d'annulation qu'il ne tient
+  /// pas : il rend l'annulation triviale à implémenter (le retrait est soft,
   /// et `onRestore` la ramène) sans la forcer.
   final Future<bool> Function(BuildContext context)? confirm;
 
@@ -130,10 +123,10 @@ List<ZChatConversationAction> zChatConversationActions({
 }) {
   final List<ZChatConversationAction> out = <ZChatConversationAction>[];
   if (onSetPinned != null) {
-    // 🔴 **Deux descripteurs, UN SEUL verbe** — le libellé varie, l'appel non.
-    // C'est l'invariant du port (`setPinned(id, pinned: …)`), qui existe parce
-    // que lex a deux routes et deux méthodes de service quasi identiques : deux
-    // endroits où oublier le filtre `deleted_at`.
+    // Deux descripteurs, un seul verbe : le libellé varie, l'appel non. Cela
+    // suit l'invariant du port (`setPinned(id, pinned: …)`) — une seule
+    // méthode de service plutôt que deux quasi identiques qui divergeraient
+    // tôt ou tard sur un détail de filtrage.
     out.add(
       ZChatConversationAction(
         labelKey: kZChatLabelPin,
@@ -177,7 +170,7 @@ List<ZChatConversationAction> zChatConversationActions({
         // Sans prédicat d'hôte, la restauration reste visible : le socle ne sait
         // pas lire l'état de retrait (il vit hors-entité, dans `ZSyncMeta`), et
         // masquer par défaut une action qu'on ne sait pas évaluer la rendrait
-        // inatteignable — exactement le trou que lex a côté client.
+        // inatteignable.
         isVisible: isRetired,
         onInvoke: onRestore,
       ),
