@@ -63,6 +63,15 @@
       
 <section class="desc markdown">
   <p>Identité opaque de la ligne (clé stable, non affichée par défaut).</p>
+<p>Volontairement <strong>non nullable</strong>, alors que <code>ZEntity.id</code> est nullable :
+une ligne de liste a besoin d'une clé stable (sélection, actions,
+virtualisation), là où une entité <strong>éphémère</strong> (<code>ZEntity.id == null</code>,
+pas encore persistée) n'a pas de clé naturelle. Dans ce cas, c'est au
+projecteur <code>T → ZListRow</code> de <strong>fabriquer</strong> une clé stable — recommandé :
+une clé positionnelle stable (par exemple préfixée, dérivée de l'index
+d'insertion) ou une identité locale générée à la création de l'objet —
+et de la conserver jusqu'à ce que la persistance attribue l'identité
+réelle.</p>
 </section>
 
       
@@ -97,7 +106,7 @@
 <footer>
   <span class="no-break">
     zcrud_core
-      0.88.0
+      0.90.0
   </span>
   
 </footer>

@@ -81,8 +81,13 @@ produisant déjà un <code>T &lt;: Object</code>). Collision → <code>throw</co
 <p><code>fieldSpecs</code> (défaut <code>const []</code>, <strong>rétro-compatible</strong> — AD-10 additif) est
 la projection <code>List&lt;ZFieldSpec&gt;</code> émise depuis <code>@ZcrudField</code> ; consommée
 par le moteur d'édition et le moteur de liste. Le codec est enregistré
-<strong>avant</strong> le schéma : une collision de <code>kind</code> laisse <code>_fieldSpecs</code>
-inchangé.</p>
+<strong>avant</strong> le schéma et la table <code>Type → kind</code> : une collision de <code>kind</code>
+laisse <code>_fieldSpecs</code> et l'association de <a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a> inchangés.</p>
+<p>L'association <code>T → kind</code> est <strong>retenue</strong> au passage (elle alimente
+<a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a>, <a href="../../zcrud_core/ZcrudRegistry/encodeOf.html">encodeOf</a> et <a href="../../zcrud_core/ZcrudRegistry/decodeOf.html">decodeOf</a>). Enregistrer le <strong>même type</strong> sous
+deux <code>kind</code> distincts reste permis (modèle partagé par deux
+collections) : l'ambiguïté est alors signalée à la <strong>lecture</strong> par
+<a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a>, jamais refusée ici.</p>
 <p><code>fromMapWithContext</code>/<code>toMapWithContext</code> (<strong>additifs</strong>, <code>null</code> par
 défaut — AD-10) portent les variantes conscientes du contexte. Émis par le
 générateur pour toute entité dont la factory de domaine accepte un
@@ -117,6 +122,7 @@ générateur pour toute entité dont la factory de domaine accepte un
     ),
   );
   _fieldSpecs[kind] = fieldSpecs;
+  _kindsByType.putIfAbsent(T, () =&gt; &lt;String&gt;{}).add(kind);
 }</code></pre>
 </section>
 
@@ -145,7 +151,7 @@ générateur pour toute entité dont la factory de domaine accepte un
 <footer>
   <span class="no-break">
     zcrud_core
-      0.88.0
+      0.90.0
   </span>
   
 </footer>

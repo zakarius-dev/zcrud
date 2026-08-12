@@ -139,6 +139,11 @@ un artefact généré <strong>neutre</strong> (<code>const Set&lt;String&gt; $Xx
 ensemble de clés persistées consommé par l'adaptateur Firestore pour encoder
 ces champs en <code>Timestamp</code> natif (invariant AD-5 : <code>Timestamp</code> reste confiné
 à <code>zcrud_firestore</code>).</p>
+<p><strong>Encodage des enums</strong> : la valeur persistée d'un champ enum est <code>.name</code>
+(le nom technique, en camelCase) ; un enum qui redéclare <code>name</code> comme
+membre d'instance (libellé d'affichage) changerait la valeur émise — ce
+cas est <strong>refusé au build</strong> ; renommer le membre (ex. <code>label</code>), ou
+<code>@ZcrudIgnore</code> + canal manuel.</p>
 <p><strong>N'entre PAS dans l'annotation</strong> (exige une closure/valeur runtime,
 illisible par <code>ConstantReader</code>) — attaché au runtime à la place :</p>
 <ul>
@@ -512,7 +517,7 @@ en E2-5</strong> (E2-4 ne fait que la documenter).
 <footer>
   <span class="no-break">
     zcrud_annotations
-      0.88.0
+      0.90.0
   </span>
   
 </footer>

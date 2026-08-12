@@ -57,7 +57,9 @@
   <p>Registre <strong>instanciable</strong> de modèles (PAS un singleton statique mutable :
 instances injectées via <code>ZcrudScope</code>/binding, pour l'isolation inter-app
 et la testabilité).</p>
-<p>Porte <code>fromMap</code>/<code>toMap</code>, et — additivement — l'association <code>kind → List&lt;ZFieldSpec&gt;</code> (paramètre optionnel <code>fieldSpecs</code> sur <a href="../zcrud_core/ZcrudRegistry/register.html">register</a>) sans
+<p>Porte <code>fromMap</code>/<code>toMap</code>, et — additivement — l'association
+<code>kind → List&lt;ZFieldSpec&gt;</code> (paramètre optionnel <code>fieldSpecs</code> sur
+<a href="../zcrud_core/ZcrudRegistry/register.html">register</a>) sans
 casser la signature de base (AD-10 additif). Aucun slot <code>Object?</code> non typé
 « en attendant » (fuite d'API évitée par construction).</p>
 </section>
@@ -155,6 +157,20 @@ non enregistré, AD-3).
 
 </dd>
 
+        <dt id="decodeOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudRegistry/decodeOf.html">decodeOf</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="decodeOf-param-map"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">map</span></span>)
+    <span class="returntype parameter">&#8594; T</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Décode <code>map</code> en <code>T</code> via le codec du <code>kind</code> <strong>résolu depuis <code>T</code></strong>
+(variante typée de <a href="../zcrud_core/ZcrudRegistry/decode.html">decode</a> pour un appelant générique sur <code>T</code>).
+  
+
+</dd>
+
         <dt id="encode" class="callable">
   <span class="name"><a href="../zcrud_core/ZcrudRegistry/encode.html">encode</a></span><span class="signature">(<wbr><span class="parameter" id="encode-param-kind"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">kind</span>, </span><span class="parameter" id="encode-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">value</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
@@ -165,6 +181,20 @@ non enregistré, AD-3).
 <dd>
   Encode <code>value</code> en map via le codec de <code>kind</code> (<strong>throw</strong> si <code>kind</code> non
 enregistré, AD-3).
+  
+
+</dd>
+
+        <dt id="encodeOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudRegistry/encodeOf.html">encodeOf</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="encodeOf-param-value"><span class="type-annotation">T</span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Encode <code>value</code> en map via le codec du <code>kind</code> <strong>résolu depuis <code>T</code></strong>
+(variante typée de <a href="../zcrud_core/ZcrudRegistry/encode.html">encode</a> pour un appelant générique sur <code>T</code>).
   
 
 </dd>
@@ -194,6 +224,20 @@ AD-3 — parallèle à <a href="../zcrud_core/ZcrudRegistry/codecFor.html">codec
 </dt>
 <dd>
   <code>true</code> si un modèle est enregistré pour <code>kind</code>.
+  
+
+</dd>
+
+        <dt id="kindOf" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a></span><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le <code>kind</code> sous lequel le type <code>T</code> a été enregistré, si l'association
+est <strong>univoque</strong>.
   
 
 </dd>
@@ -317,7 +361,7 @@ son schéma déclaratif <code>fieldSpecs</code> (projeté depuis <code>@ZcrudFie
 <footer>
   <span class="no-break">
     zcrud_core
-      0.88.0
+      0.90.0
   </span>
   
 </footer>

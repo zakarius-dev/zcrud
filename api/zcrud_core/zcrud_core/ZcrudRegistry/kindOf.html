@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the kindOf method from the ZcrudRegistry class, for the Dart programming language.">
+  <title>kindOf method - ZcrudRegistry class - zcrud_core library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core.dart</a></li>
+    <li><a href="../../zcrud_core/ZcrudRegistry-class.html">ZcrudRegistry</a></li>
+    <li class="self-crumb">kindOf&lt;<wbr><span class="type-parameter">T extends Object</span>&gt; method</li>
+  </ol>
+  <div class="self-name">kindOf</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="zcrud_core&#47;ZcrudRegistry-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">kindOf&lt;<wbr><span class="type-parameter">T extends Object</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+<span class="name ">kindOf</span>&lt;<wbr><span class="type-parameter">T extends Object</span>&gt;(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Le <code>kind</code> sous lequel le type <code>T</code> a été enregistré, si l'association
+est <strong>univoque</strong>.</p>
+<p>Contrat (trois cas, exhaustif) :</p>
+<ul>
+<li><code>T</code> enregistré sous <strong>exactement un</strong> <code>kind</code> → retourne ce <code>kind</code> ;</li>
+<li><code>T</code> <strong>jamais enregistré</strong> sur cette instance → retourne <code>null</code>
+(variante défensive, AD-10 — parallèle à <a href="../../zcrud_core/ZcrudRegistry/tryCodecFor.html">tryCodecFor</a>) ;</li>
+<li><code>T</code> enregistré sous <strong>plusieurs</strong> <code>kind</code> (modèle partagé par
+plusieurs collections) → <strong><code>throw</code> <a href="https://api.flutter.dev/flutter/dart-core/StateError-class.html">StateError</a></strong> au message nommant
+le type et les <code>kind</code> en jeu : l'association n'étant pas univoque,
+l'appelant doit passer par la voie <strong>par-kind</strong> (<a href="../../zcrud_core/ZcrudRegistry/encode.html">encode</a>/<a href="../../zcrud_core/ZcrudRegistry/decode.html">decode</a>
+avec le <code>kind</code> explicite) — jamais un choix silencieux.</li>
+</ul>
+<p><code>T</code> doit être le type <strong>exact</strong> passé à <a href="../../zcrud_core/ZcrudRegistry/register.html">register</a> (celui émis par le
+registrar généré) : la résolution se fait sur le paramètre de type
+statique, pas sur le type dynamique d'une instance.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">String? kindOf&lt;T extends Object&gt;() {
+  final kinds = _kindsByType[T];
+  if (kinds == null || kinds.isEmpty) return null;
+  if (kinds.length &gt; 1) {
+    throw StateError(
+      &#39;ZcrudRegistry.kindOf&lt;$T&gt;() : le type &quot;$T&quot; est enregistré sous &#39;
+      &#39;${kinds.length} kinds distincts &#39;
+      &#39;(${kinds.map((String k) =&gt; &#39;&quot;$k&quot;&#39;).join(&#39;, &#39;)}). &#39;
+      &#39;L\&#39;association Type → kind n\&#39;est pas univoque : passez par la voie &#39;
+      &#39;par-kind — encode(&quot;&lt;kind&gt;&quot;, valeur) &#47; decode(&quot;&lt;kind&gt;&quot;, map) — pour &#39;
+      &#39;désigner explicitement la collection visée.&#39;,
+    );
+  }
+  return kinds.first;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/">zcrud_core</a></li>
+    <li><a href="../../zcrud_core/ZcrudRegistry-class.html">ZcrudRegistry</a></li>
+    <li class="self-crumb">kindOf&lt;<wbr><span class="type-parameter">T extends Object</span>&gt; method</li>
+</ol>
+
+    <h5>ZcrudRegistry class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    zcrud_core
+      0.90.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
