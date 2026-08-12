@@ -16,10 +16,10 @@ melos run doc:deploy  # publie website/build/ sur la branche gh-pages (build loc
 Équivalents directs (depuis `website/`) :
 
 ```bash
-npm install
-npm run start   # serveur de dev local
-npm run build   # build de production dans build/
-npm run serve   # sert le build de production en local
+pnpm install
+pnpm run start   # serveur de dev local
+pnpm run build   # build de production dans build/
+pnpm run serve   # sert le build de production en local
 ```
 
 ## Versionnement des docs
@@ -35,7 +35,7 @@ stable de la documentation doit être gelée — typiquement en même temps qu'u
 release) :
 
 ```bash
-npm run docusaurus docs:version 0.87.0
+pnpm run docusaurus docs:version 0.87.0
 ```
 
 Remplacer `0.87.0` par le numéro de version réellement publié. Committer ensuite

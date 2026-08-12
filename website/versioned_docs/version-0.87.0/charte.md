@@ -137,7 +137,7 @@ nouvelle version depuis `website/` :
 
 ```bash
 cd website
-pnpm run docusaurus docs:version <version>   # ex. v0.87.0 — reprend le tag publié
+npm run docusaurus docs:version <version>   # ex. v0.87.0 — reprend le tag publié
 ```
 
 Cette commande fige l'état courant de `docs/site/` sous `website/versioned_docs/` et

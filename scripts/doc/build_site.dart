@@ -1,7 +1,7 @@
-// Construit le site Docusaurus (`website/`) : relaie `npm run build` tel
+// Construit le site Docusaurus (`website/`) : relaie `pnpm run build` tel
 // quel, sans jamais construire le site « à la main ». Le script se contente
 // de vérifier les préalables et de faire suivre le code de retour — la
-// substance de la build appartient entièrement à Docusaurus/npm.
+// substance de la build appartient entièrement à Docusaurus/pnpm.
 //
 // Usage :
 //   dart run scripts/doc/build_site.dart
@@ -10,9 +10,9 @@
 // (`melos run doc:api`) avant d'invoquer ce script — ce script n'appelle PAS
 // `doc:api` lui-même, il suppose `website/static/api/` déjà à jour.
 //
-// Préalables vérifiés AVANT de lancer `npm run build` :
+// Préalables vérifiés AVANT de lancer `pnpm run build` :
 //   (a) `website/` existe (site scaffoldé) ;
-//   (b) `website/node_modules` existe (dépendances npm installées).
+//   (b) `website/node_modules` existe (dépendances pnpm installées).
 // Un préalable manquant produit un message clair et un RC=1, sans tenter la
 // build.
 import 'dart:io';
@@ -48,15 +48,15 @@ Future<void> main(List<String> args) async {
   if (!nodeModules.existsSync()) {
     stderr.writeln(
       '[doc:site] ÉCHEC — website/node_modules est introuvable. '
-      'Lancez `npm install` depuis website/ avant `melos run doc:site`.',
+      'Lancez `pnpm install` depuis website/ avant `melos run doc:site`.',
     );
     exit(1);
   }
 
-  _info('construction du site (npm run build, dans ${websiteDir.path})…');
+  _info('construction du site (pnpm run build, dans ${websiteDir.path})…');
 
   final process = await Process.start(
-    'npm',
+    'pnpm',
     ['run', 'build'],
     workingDirectory: websiteDir.path,
     runInShell: true,
@@ -71,7 +71,7 @@ Future<void> main(List<String> args) async {
   if (exitCode == 0) {
     _info('build terminée avec succès (RC=0).');
   } else {
-    stderr.writeln('[doc:site] ÉCHEC — `npm run build` a rendu RC=$exitCode.');
+    stderr.writeln('[doc:site] ÉCHEC — `pnpm run build` a rendu RC=$exitCode.');
   }
   exit(exitCode);
 }
