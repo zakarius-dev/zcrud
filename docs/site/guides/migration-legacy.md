@@ -122,6 +122,29 @@ Un hôte passif n'a rien à faire ; un hôte qui pré-convertissait ces formats
 avant de les transmettre au paquet peut retirer cette étape (cf. section
 suivante).
 
+## Les repositories précèdent les listes
+
+Une migration par étapes est tentée de commencer par les écrans de liste — le
+gain visuel est immédiat — en alimentant `DynamicList` depuis les sources de
+données existantes, via une simple `List<T>` projetée en lignes. Cette coquille
+fonctionne pour l'affichage, la recherche et le tri, mais elle ne peut pas
+porter la **corbeille** : `ZRowAction.softDelete` et `restore` supposent un
+`ZRepository`, parce que le soft-delete est un contrat de **persistance**
+(métadonnée `is_deleted` hors-entité, restauration, purge), pas un état
+d'affichage. Ce couplage est voulu — une liste qui « supprimerait » sans
+repository ne ferait que masquer des lignes.
+
+L'ordre de migration recommandé en découle :
+
+1. **Migrez d'abord les repositories** des ressources concernées vers le port
+   `ZRepository` (ou ses adapters `zcrud_firestore`).
+2. **Puis branchez les listes** sur ces repositories : les actions de corbeille
+   deviennent disponibles sans travail supplémentaire.
+
+Une liste posée avant son repository reste possible pendant la cohabitation —
+mais assumez alors explicitement qu'elle n'offre ni suppression douce ni
+restauration tant que le repository n'a pas été migré.
+
 ## Stratégie de tripwire côté hôte
 
 Une compensation legacy qu'on retire « à l'aveugle » au moment d'une migration

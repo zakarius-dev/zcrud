@@ -32,6 +32,15 @@ import 'z_dependency_resolver.dart';
 import 'z_rich_text_renderer.dart';
 import 'z_scope_error.dart';
 
+/// Sentinelle interne « argument non fourni » de [ZcrudScope.copyWith] et
+/// [ZcrudScope.derive].
+///
+/// Même patron que le `copyWith` généré par `zcrud_generator` : elle permet de
+/// distinguer un paramètre **omis** (la valeur du scope courant est héritée)
+/// d'un `null` **explicite** (le seam nullable est remis à `null`, donc à son
+/// repli par défaut).
+const Object _zScopeUndefined = Object();
+
 /// Scope d'injection Flutter-natif du cœur `zcrud_core`.
 ///
 /// Porte un **bundle immuable de seams** résolus :
@@ -246,6 +255,198 @@ class ZcrudScope extends InheritedWidget {
   /// `zcrud_core` de dépendre d'`intl`. Fournir une instance `const` ou mémoïsée
   /// hors de `build` (AD-2 : aucun objet coûteux recréé par build).
   final ZDateDisplayFormatter? dateDisplayFormatter;
+
+  /// Dérive un nouveau scope à partir de celui-ci en ne remplaçant que les
+  /// seams nommés.
+  ///
+  /// Tout paramètre **omis** hérite de la valeur du scope courant — les seams
+  /// non nommés ne sont jamais recopiés à la main, donc jamais perdus quand le
+  /// paquet en ajoute un. Pour les seams **nullables** (par exemple [labels] ou
+  /// [theme]), un `null` **explicite** remet le seam à `null` (son repli par
+  /// défaut) : la distinction omis / `null` est portée par une sentinelle,
+  /// comme dans le `copyWith` généré par `zcrud_generator`.
+  ///
+  /// [child] est requis : un scope dérivé enveloppe toujours son propre
+  /// sous-arbre. [key] n'est jamais héritée du scope source (réutiliser une
+  /// clé d'un widget encore monté serait une erreur d'arbre) ; fournissez-en
+  /// une explicitement si nécessaire.
+  ///
+  /// Cas d'usage type : surcharger l'ACL d'un seul écran sans re-poser les
+  /// autres seams. Voir aussi [derive], qui lit le scope ambiant depuis un
+  /// `BuildContext`.
+  ///
+  /// ```dart
+  /// ZcrudScope.of(context).copyWith(
+  ///   acl: aclDeCetEcran,
+  ///   child: monEcran,
+  /// )
+  /// ```
+  ZcrudScope copyWith({
+    required Widget child,
+    Key? key,
+    ZDependencyResolver? resolver,
+    ZAcl? acl,
+    Object? labels = _zScopeUndefined,
+    Object? theme = _zScopeUndefined,
+    Object? widgetRegistry = _zScopeUndefined,
+    Object? relationSourceRegistry = _zScopeUndefined,
+    Object? choicesSourceRegistry = _zScopeUndefined,
+    Object? relationCrudRegistry = _zScopeUndefined,
+    Object? filePicker = _zScopeUndefined,
+    Object? cloudStorage = _zScopeUndefined,
+    Object? appFileResolver = _zScopeUndefined,
+    Object? listRenderer = _zScopeUndefined,
+    Object? reorderRenderer = _zScopeUndefined,
+    Object? dropRegionRenderer = _zScopeUndefined,
+    Object? selectPresenter = _zScopeUndefined,
+    Object? iconResolver = _zScopeUndefined,
+    Object? colorPicker = _zScopeUndefined,
+    Object? colorKeyResolver = _zScopeUndefined,
+    Object? gradientResolver = _zScopeUndefined,
+    Object? richTextRenderer = _zScopeUndefined,
+    Object? dateDisplayFormatter = _zScopeUndefined,
+  }) =>
+      ZcrudScope(
+        key: key,
+        resolver: resolver ?? this.resolver,
+        acl: acl ?? this.acl,
+        labels: identical(labels, _zScopeUndefined)
+            ? this.labels
+            : labels as ZcrudLabels?,
+        theme: identical(theme, _zScopeUndefined)
+            ? this.theme
+            : theme as ZcrudTheme?,
+        widgetRegistry: identical(widgetRegistry, _zScopeUndefined)
+            ? this.widgetRegistry
+            : widgetRegistry as ZWidgetRegistry?,
+        relationSourceRegistry:
+            identical(relationSourceRegistry, _zScopeUndefined)
+                ? this.relationSourceRegistry
+                : relationSourceRegistry as ZRelationSourceRegistry?,
+        choicesSourceRegistry:
+            identical(choicesSourceRegistry, _zScopeUndefined)
+                ? this.choicesSourceRegistry
+                : choicesSourceRegistry as ZChoicesSourceRegistry?,
+        relationCrudRegistry: identical(relationCrudRegistry, _zScopeUndefined)
+            ? this.relationCrudRegistry
+            : relationCrudRegistry as ZRelationCrudRegistry?,
+        filePicker: identical(filePicker, _zScopeUndefined)
+            ? this.filePicker
+            : filePicker as ZFilePicker?,
+        cloudStorage: identical(cloudStorage, _zScopeUndefined)
+            ? this.cloudStorage
+            : cloudStorage as CloudStorageRepository?,
+        appFileResolver: identical(appFileResolver, _zScopeUndefined)
+            ? this.appFileResolver
+            : appFileResolver as ZAppFileResolver?,
+        listRenderer: identical(listRenderer, _zScopeUndefined)
+            ? this.listRenderer
+            : listRenderer as ZListRenderer?,
+        reorderRenderer: identical(reorderRenderer, _zScopeUndefined)
+            ? this.reorderRenderer
+            : reorderRenderer as ZReorderRenderer?,
+        dropRegionRenderer: identical(dropRegionRenderer, _zScopeUndefined)
+            ? this.dropRegionRenderer
+            : dropRegionRenderer as ZDropRegionRenderer?,
+        selectPresenter: identical(selectPresenter, _zScopeUndefined)
+            ? this.selectPresenter
+            : selectPresenter as ZSelectPresenter?,
+        iconResolver: identical(iconResolver, _zScopeUndefined)
+            ? this.iconResolver
+            : iconResolver as ZAdornmentIconResolver?,
+        colorPicker: identical(colorPicker, _zScopeUndefined)
+            ? this.colorPicker
+            : colorPicker as ZColorPicker?,
+        colorKeyResolver: identical(colorKeyResolver, _zScopeUndefined)
+            ? this.colorKeyResolver
+            : colorKeyResolver as ZColorKeyResolver?,
+        gradientResolver: identical(gradientResolver, _zScopeUndefined)
+            ? this.gradientResolver
+            : gradientResolver as ZGradientResolver?,
+        richTextRenderer: identical(richTextRenderer, _zScopeUndefined)
+            ? this.richTextRenderer
+            : richTextRenderer as ZRichTextRenderer?,
+        dateDisplayFormatter: identical(dateDisplayFormatter, _zScopeUndefined)
+            ? this.dateDisplayFormatter
+            : dateDisplayFormatter as ZDateDisplayFormatter?,
+        child: child,
+      );
+
+  /// Dérive le scope **ambiant** en ne remplaçant que les seams nommés.
+  ///
+  /// Lit le [ZcrudScope] le plus proche via [maybeOf] — l'appelant devient
+  /// donc **dépendant** du scope parent : si celui-ci change, le widget qui a
+  /// appelé [derive] se reconstruit et le scope dérivé se recalcule. En
+  /// l'absence de scope ambiant, la dérivation part du scope **zéro-config**
+  /// (mêmes défauts que le constructeur).
+  ///
+  /// La sémantique des paramètres est celle de [copyWith] : un paramètre omis
+  /// hérite, un `null` explicite remet un seam nullable à son repli par
+  /// défaut.
+  ///
+  /// C'est la forme recommandée pour poser une surcharge **par écran** —
+  /// typiquement une ACL propre à la ressource affichée :
+  ///
+  /// ```dart
+  /// ZcrudScope.derive(
+  ///   context,
+  ///   acl: aclDeCetEcran,
+  ///   child: monEcran,
+  /// )
+  /// ```
+  static ZcrudScope derive(
+    BuildContext context, {
+    required Widget child,
+    Key? key,
+    ZDependencyResolver? resolver,
+    ZAcl? acl,
+    Object? labels = _zScopeUndefined,
+    Object? theme = _zScopeUndefined,
+    Object? widgetRegistry = _zScopeUndefined,
+    Object? relationSourceRegistry = _zScopeUndefined,
+    Object? choicesSourceRegistry = _zScopeUndefined,
+    Object? relationCrudRegistry = _zScopeUndefined,
+    Object? filePicker = _zScopeUndefined,
+    Object? cloudStorage = _zScopeUndefined,
+    Object? appFileResolver = _zScopeUndefined,
+    Object? listRenderer = _zScopeUndefined,
+    Object? reorderRenderer = _zScopeUndefined,
+    Object? dropRegionRenderer = _zScopeUndefined,
+    Object? selectPresenter = _zScopeUndefined,
+    Object? iconResolver = _zScopeUndefined,
+    Object? colorPicker = _zScopeUndefined,
+    Object? colorKeyResolver = _zScopeUndefined,
+    Object? gradientResolver = _zScopeUndefined,
+    Object? richTextRenderer = _zScopeUndefined,
+    Object? dateDisplayFormatter = _zScopeUndefined,
+  }) {
+    final ZcrudScope base = maybeOf(context) ?? ZcrudScope(child: child);
+    return base.copyWith(
+      key: key,
+      resolver: resolver,
+      acl: acl,
+      labels: labels,
+      theme: theme,
+      widgetRegistry: widgetRegistry,
+      relationSourceRegistry: relationSourceRegistry,
+      choicesSourceRegistry: choicesSourceRegistry,
+      relationCrudRegistry: relationCrudRegistry,
+      filePicker: filePicker,
+      cloudStorage: cloudStorage,
+      appFileResolver: appFileResolver,
+      listRenderer: listRenderer,
+      reorderRenderer: reorderRenderer,
+      dropRegionRenderer: dropRegionRenderer,
+      selectPresenter: selectPresenter,
+      iconResolver: iconResolver,
+      colorPicker: colorPicker,
+      colorKeyResolver: colorKeyResolver,
+      gradientResolver: gradientResolver,
+      richTextRenderer: richTextRenderer,
+      dateDisplayFormatter: dateDisplayFormatter,
+      child: child,
+    );
+  }
 
   /// Retourne le [ZcrudScope] le plus proche.
   ///

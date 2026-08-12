@@ -35,6 +35,16 @@ class ZListRow {
   const ZListRow({required this.id, required this.cells});
 
   /// Identité opaque de la ligne (clé stable, non affichée par défaut).
+  ///
+  /// Volontairement **non nullable**, alors que `ZEntity.id` est nullable :
+  /// une ligne de liste a besoin d'une clé stable (sélection, actions,
+  /// virtualisation), là où une entité **éphémère** (`ZEntity.id == null`,
+  /// pas encore persistée) n'a pas de clé naturelle. Dans ce cas, c'est au
+  /// projecteur `T → ZListRow` de **fabriquer** une clé stable — recommandé :
+  /// une clé positionnelle stable (par exemple préfixée, dérivée de l'index
+  /// d'insertion) ou une identité locale générée à la création de l'objet —
+  /// et de la conserver jusqu'à ce que la persistance attribue l'identité
+  /// réelle.
   final String id;
 
   /// Valeurs brutes de la ligne indexées par `field.name` (opaques).

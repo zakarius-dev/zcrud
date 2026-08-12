@@ -11,7 +11,7 @@
 # AD-1 : arête sortante zcrud_* = zcrud_core UNIQUEMENT (graphe acyclique).
 name: zcrud_intl
 description: "International fields for zcrud: phone, country and address with bundled, offline metadata and neutral values."
-version: 0.88.0
+version: 0.89.0
 publish_to: none
 resolution: workspace
 
@@ -60,7 +60,7 @@ dependencies:
   # Version alignée sur celle que `flutter_localizations` épingle déjà (0.20.2) :
   # aucune résolution nouvelle n'est introduite dans le workspace.
   intl: ^0.20.2
-  zcrud_core: ^0.88.0
+  zcrud_core: ^0.89.0
 
 dev_dependencies:
   flutter_test:

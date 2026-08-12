@@ -183,6 +183,99 @@ void main() {
     );
   });
 
+  test('copyWith : un seam omis hérite, un seam nommé remplace', () {
+    const child = SizedBox();
+    final labels = ZcrudLabels({'save': 'Valider'});
+    const theme = ZcrudTheme();
+    const aclParent = ZAllowAllAcl();
+    final parent = ZcrudScope(
+      resolver: const _FakeResolver('parent'),
+      acl: aclParent,
+      labels: labels,
+      theme: theme,
+      listRenderer: const _FakeListRenderer(),
+      child: child,
+    );
+
+    const aclEcran = _DenyAllAcl();
+    final derived = parent.copyWith(acl: aclEcran, child: const SizedBox());
+
+    // Le seam nommé est remplacé.
+    expect(identical(derived.acl, aclEcran), isTrue);
+    // Tout seam omis hérite — nullable (labels/theme/listRenderer) comme
+    // non nullable (resolver).
+    expect(identical(derived.resolver, parent.resolver), isTrue);
+    expect(identical(derived.labels, labels), isTrue);
+    expect(identical(derived.theme, theme), isTrue);
+    expect(identical(derived.listRenderer, parent.listRenderer), isTrue);
+  });
+
+  test('copyWith : `null` explicite remet un seam nullable à son repli', () {
+    final parent = ZcrudScope(
+      labels: ZcrudLabels({'save': 'Valider'}),
+      theme: const ZcrudTheme(),
+      child: const SizedBox(),
+    );
+
+    final reset = parent.copyWith(labels: null, child: const SizedBox());
+
+    expect(reset.labels, isNull, reason: '`null` explicite doit REMETTRE');
+    expect(reset.theme, isNotNull, reason: 'un seam omis doit HÉRITER');
+  });
+
+  testWidgets('derive : dérive le scope ambiant en ne remplaçant que les '
+      'seams nommés', (tester) async {
+    final labels = ZcrudLabels({'save': 'Valider'});
+    const aclEcran = _DenyAllAcl();
+    late ZcrudScope inner;
+    await tester.pumpWidget(
+      ZcrudScope(
+        resolver: const _FakeResolver('ambiant'),
+        labels: labels,
+        child: Builder(
+          builder: (context) => ZcrudScope.derive(
+            context,
+            acl: aclEcran,
+            child: Builder(
+              builder: (context) {
+                inner = ZcrudScope.of(context);
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(identical(inner.acl, aclEcran), isTrue);
+    expect(identical(inner.labels, labels), isTrue);
+    expect(inner.resolver.resolve<String>(), 'ambiant');
+  });
+
+  testWidgets('derive sans scope ambiant : part du scope zéro-config', (
+    tester,
+  ) async {
+    late ZcrudScope inner;
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) => ZcrudScope.derive(
+          context,
+          acl: const _DenyAllAcl(),
+          child: Builder(
+            builder: (context) {
+              inner = ZcrudScope.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(inner.acl, isA<_DenyAllAcl>());
+    expect(inner.labels, isNull);
+    expect(() => inner.resolver.resolve<String>(), throwsA(isA<ZScopeError>()));
+  });
+
   test(
     'G9 : les 18 seams, dont reorder/drop/gradient, notifient isolément',
     () {
@@ -226,6 +319,14 @@ void main() {
       );
     },
   );
+}
+
+/// ACL qui refuse tout — pour distinguer une surcharge du défaut permissif.
+class _DenyAllAcl implements ZAcl {
+  const _DenyAllAcl();
+  @override
+  bool can(ZCrudAction action, {ZEntity? target, String? collectionId}) =>
+      false;
 }
 
 class _FakeReorderRenderer extends ZReorderRenderer {
