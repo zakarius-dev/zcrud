@@ -1,0 +1,9 @@
+{
+  "label": "Concepts",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "slug": "/concepts",
+    "description": "Les modèles mentaux qui bornent zcrud : schéma de champs, réactivité granulaire, couches, offline-first, invariants d'architecture."
+  }
+}
