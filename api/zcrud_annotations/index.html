@@ -47,9 +47,9 @@
 <p>Annotations déclaratives consommées par <code>zcrud_generator</code> — le modèle annoté
 est la source unique de vérité du schéma (invariant AD-3).</p>
 <h2 id="aperu-apercu">Aperçu {#apercu}</h2>
-<p><code>zcrud_annotations</code> ne contient <strong>aucun comportement</strong> : trois annotations
-<code>const</code> pur-données (<code>@ZcrudModel</code>, <code>@ZcrudField</code>, <code>@ZcrudId</code>) et l'enum
-<code>ZPersistAs</code>. <code>zcrud_generator</code> les lit <strong>statiquement</strong> au moment du
+<p><code>zcrud_annotations</code> ne contient <strong>aucun comportement</strong> : quatre annotations
+<code>const</code> pur-données (<code>@ZcrudModel</code>, <code>@ZcrudField</code>, <code>@ZcrudId</code>, <code>@ZcrudIgnore</code>)
+et l'enum <code>ZPersistAs</code>. <code>zcrud_generator</code> les lit <strong>statiquement</strong> au moment du
 <code>build_runner</code> (<code>ConstantReader</code>, jamais d'exécution ni de réflexion) pour
 émettre <code>toMap</code>/<code>fromMap</code>/<code>copyWith</code>, le <code>ZFieldSpec[]</code> du champ et
 l'enregistrement au <code>ZcrudRegistry</code>.</p>
@@ -122,6 +122,10 @@ en <code>Timestamp</code> natif. Ce paquet ne référence jamais <code>cloud_fir
 <td>Marqueur du champ identifiant (<code>id</code>) d'un modèle.</td>
 </tr>
 <tr>
+<td><code>ZcrudIgnore</code></td>
+<td>Marqueur d'exclusion : le champ n'est <strong>pas</strong> écrit par le codegen. Requis sur un champ non annoté dont le type n'est pas sérialisable (sinon échec de build) ; la donnée qu'il porte relève alors d'un canal manuel (<code>fromMap</code>/<code>toMap</code> de domaine, slot <code>extra</code>).</td>
+</tr>
+<tr>
 <td><code>ZPersistAs</code></td>
 <td>Hint de format de persistance d'un champ date (<code>iso8601</code> par défaut, ou <code>timestamp</code> pour Firestore natif).</td>
 </tr>
@@ -145,6 +149,13 @@ métier hors schéma à chaque cycle lecture/écriture.</li>
 <li><strong><code>type</code> non déclaré ⇒ inféré, jamais absent</strong> — un <code>@ZcrudField</code> sans
 <code>type</code> explicite se voit attribuer un type déduit du type Dart statique du
 champ (<code>String</code>→<code>text</code>, <code>bool</code>→<code>boolean</code>, <code>enum</code>→<code>select</code>…).</li>
+<li><strong>Un champ non annoté n'est pas sérialisé — et le build refuse le silence
+qui coûterait des données</strong> — un champ non annoté de type sérialisable reste
+ignoré (contrat assumé) ; un champ non annoté dont le type n'est <strong>pas</strong>
+sérialisable est un échec de build, à lever par <code>@ZcrudField</code>, <code>@ZcrudModel</code>
+sur le type <strong>et</strong> <code>@ZcrudField</code> sur le champ, ou <code>@ZcrudIgnore</code>. Sont
+exemptés : les champs privés et, sur une classe <code>ZExtensible</code>, les slots
+AD-4 (<code>extension</code>, <code>extra</code>).</li>
 <li><strong>Rien ici n'accepte de closure</strong> — un builder de widget libre, un
 validateur dépendant de l'état ou une relation dynamique ne s'expriment pas
 dans l'annotation (illisible par <code>ConstantReader</code>) : ils se câblent au
@@ -198,7 +209,7 @@ runtime via <code>ZTypeRegistry</code> ou <code>ZFormController</code>.</li>
 <footer>
   <span class="no-break">
     zcrud_annotations
-      0.87.0
+      0.88.0
   </span>
   
 </footer>

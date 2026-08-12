@@ -68,6 +68,18 @@ la clé persistée du champ dans l'artefact neutre <code>$XxxTimestampFields</co
 (<code>Set&lt;String&gt;</code>) que <code>zcrud_firestore</code> consomme pour encoder le champ en
 <code>Timestamp</code> natif (invariant AD-5 préservé). Sans effet hors du chemin
 Firestore distant.</p>
+<h2 id="le-tomap-gnr-nest-pas-destin--une-criture-directe">Le <code>toMap()</code> généré n'est pas destiné à une écriture directe</h2>
+<p>Ce hint <strong>ne change pas</strong> ce que <code>toMap()</code> produit : le code émis écrit une
+<code>String</code> ISO-8601 pour <strong>tout</strong> champ date, quel que soit <a href="../../zcrud_annotations/ZcrudField/persistAs.html">persistAs</a>.
+C'est le <strong>repository</strong> qui applique le format natif, en relisant
+<code>$XxxTimestampFields</code> — le type <code>Timestamp</code> reste confiné à l'adaptateur
+Firestore (invariant AD-5), il ne peut donc pas apparaître dans une
+métadonnée pur-Dart.</p>
+<p>Conséquence à connaître en <strong>migration progressive</strong> : un moteur de
+persistance qui appelle <code>toMap()</code> <strong>directement</strong>, sans passer par le
+repository, écrira des <code>String</code> ISO là où le parc documentaire attend des
+<code>Timestamp</code>. Faire transiter les écritures par le repository, ou appliquer
+soi-même <code>$XxxTimestampFields</code> avant d'écrire.</p>
 </section>
 
       
@@ -102,7 +114,7 @@ Firestore distant.</p>
 <footer>
   <span class="no-break">
     zcrud_annotations
-      0.87.0
+      0.88.0
   </span>
   
 </footer>

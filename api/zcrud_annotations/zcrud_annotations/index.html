@@ -61,7 +61,8 @@
     
 <section class="desc markdown">
   <p>Barrel d'API publique de <code>zcrud_annotations</code>.</p>
-<p>Annotations <code>@ZcrudModel</code> / <code>@ZcrudField</code> / <code>@ZcrudId</code> (pur-Dart).</p>
+<p>Annotations <code>@ZcrudModel</code> / <code>@ZcrudField</code> / <code>@ZcrudId</code> / <code>@ZcrudIgnore</code>
+(pur-Dart).</p>
 <p>API publique = ce barrel ; implémentation sous <code>lib/src/</code>.</p>
 </section>
 
@@ -94,6 +95,15 @@ liste.
 <dd>
   Annotation <strong>marqueur</strong> désignant le champ identifiant (<code>id</code>) d'un modèle
 <code>@ZcrudModel</code>.
+</dd>
+
+          <dt id="ZcrudIgnore">
+  <span class="name "><a href="../zcrud_annotations/ZcrudIgnore-class.html">ZcrudIgnore</a></span> 
+
+</dt>
+<dd>
+  Annotation <strong>marqueur</strong> excluant explicitement un champ d'instance de la
+(dé)sérialisation générée.
 </dd>
 
           <dt id="ZcrudModel">
@@ -158,7 +168,7 @@ enregistrable (source unique de vérité — invariant AD-3).
 <footer>
   <span class="no-break">
     zcrud_annotations
-      0.87.0
+      0.88.0
   </span>
   
 </footer>
