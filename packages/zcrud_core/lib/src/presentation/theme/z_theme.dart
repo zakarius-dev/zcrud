@@ -31,21 +31,21 @@ enum ZSubfolderTriggerVariant {
   flat,
 
   /// Conteneur à **contour** (bordure `ColorScheme.outlineVariant`, fond
-  /// transparent) — l'habillage `Card.outlined` de la maquette IFFD.
+  /// transparent) — l'habillage `Card.outlined` de la référence de maquette.
   outlined,
 
   /// Conteneur **rempli** (`ColorScheme.surfaceContainerHighest`, sans bordure).
   filled,
 }
 
-/// RÔLE de **fond** du déclencheur de navigation de fratrie (CR-IFFD-60) —
+/// RÔLE de **fond** du déclencheur de navigation de fratrie —
 /// token de LOOK, attribut COMPOSABLE.
 ///
-/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un RÔLE de surface Material
-/// que le consommateur traduit depuis le `ColorScheme` courant (FR-26/NFR-S7)
+/// **Aucune couleur ici.** Chaque valeur nomme un RÔLE de surface Material
+/// que le consommateur traduit depuis le `ColorScheme` courant (invariant FR-26)
 /// — même patron que [ZStudySectionCountRole].
 ///
-/// **Précédence** (CR-IFFD-60) : fourni, ce token PRIME sur ce que
+/// **Précédence** : fourni, ce token PRIME sur ce que
 /// [ZSubfolderTriggerVariant] décide pour le FOND (et seulement pour lui) ;
 /// `null` ⇒ la variante décide. [none] est un choix EXPLICITE (« aucun fond »),
 /// distinct de `null` (« je ne dis rien ») : il retire le fond d'une variante
@@ -74,11 +74,11 @@ enum ZSubfolderTriggerFill {
   surfaceContainerHighest,
 }
 
-/// RÔLE de **bordure** du déclencheur de navigation de fratrie (CR-IFFD-60) —
+/// RÔLE de **bordure** du déclencheur de navigation de fratrie —
 /// token de LOOK, attribut COMPOSABLE.
 ///
-/// 🔴 **Aucune couleur ici** : chaque valeur nomme un rôle de contour du
-/// `ColorScheme` courant (FR-26/NFR-S7).
+/// **Aucune couleur ici** : chaque valeur nomme un rôle de contour du
+/// `ColorScheme` courant (invariant FR-26).
 ///
 /// **Précédence** : fourni, ce token PRIME sur ce que
 /// [ZSubfolderTriggerVariant] décide pour la BORDURE (et seulement pour elle) ;
@@ -99,7 +99,7 @@ enum ZSubfolderTriggerBorder {
 /// Manière dont l'élément COURANT se distingue dans une liste de navigation —
 /// token de LOOK.
 ///
-/// 🔴 **L'inversion n'est pas un surlignage plus foncé.** `highlight` teinte le
+/// **L'inversion n'est pas un surlignage plus foncé.** `highlight` teinte le
 /// fond en laissant le texte hériter de la couleur ambiante ; [inverted]
 /// **retourne le couple** : fond `ColorScheme.inverseSurface`, **texte ET icônes
 /// en `onInverseSurface`**. C'est ce couple de rôles — et non deux hex — qui
@@ -117,12 +117,12 @@ enum ZSubfolderSelectedEmphasis {
   inverted,
 }
 
-/// Forme du compteur d'items d'un en-tête de section d'étude (CR-IFFD-50 ②) —
+/// Forme du compteur d'items d'un en-tête de section d'étude —
 /// token de LOOK.
 ///
-/// 🔴 **Aucune couleur ici** : la forme est indépendante de la matière (le rôle
+/// **Aucune couleur ici** : la forme est indépendante de la matière (le rôle
 /// de couleur vit dans [ZStudySectionCountRole]) — même frontière que
-/// CR-IFFD-48 : la forme monte, la matière reste au thème.
+/// partout ailleurs : la forme monte, la matière reste au thème.
 enum ZStudySectionCountShape {
   /// Rectangle arrondi (`badgeRadius`, repli `radiusM`). **Rendu historique** —
   /// c'est ce que rend un thème qui ne déclare rien.
@@ -134,11 +134,11 @@ enum ZStudySectionCountShape {
   pill,
 }
 
-/// RÔLE de couleur du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+/// RÔLE de couleur du compteur d'en-tête de section d'étude.
 ///
-/// 🔴 **Aucune couleur ici.** Chaque valeur nomme un **couple de rôles**
+/// **Aucune couleur ici.** Chaque valeur nomme un **couple de rôles**
 /// Material (fond / premier plan) que le consommateur traduit depuis le
-/// `ColorScheme` courant : l'hôte choisit un rôle, jamais un hex (FR-26/NFR-S7)
+/// `ColorScheme` courant : l'hôte choisit un rôle, jamais un hex (invariant FR-26)
 /// — même patron que [ZSubfolderSelectedEmphasis].
 enum ZStudySectionCountRole {
   /// Fond `secondaryContainer`, texte `onSecondaryContainer`.
@@ -161,10 +161,10 @@ enum ZStudySectionCountRole {
   inverseSurface,
 }
 
-/// Placement de l'affordance de REPLI d'une section d'étude (CR-IFFD-50 ④) —
+/// Placement de l'affordance de REPLI d'une section d'étude —
 /// token de LOOK (structure d'en-tête).
 ///
-/// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : c'est une
+/// **Pourquoi un token de THÈME et non un champ de spec** : c'est une
 /// décision d'apparence **par application** (toutes les sections d'une app
 /// replient au même endroit), pas par descripteur — une spec par section
 /// inviterait des en-têtes incohérents entre sections voisines. Même arbitrage
@@ -181,10 +181,10 @@ enum ZStudySectionCollapsePlacement {
   inHeaderRow,
 }
 
-/// PLACEMENT du compteur d'en-tête d'une section d'étude (**CR-IFFD-61 ④**) —
+/// PLACEMENT du compteur d'en-tête d'une section d'étude —
 /// token de LOOK (structure d'en-tête).
 ///
-/// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : même arbitrage
+/// **Pourquoi un token de THÈME et non un champ de spec** : même arbitrage
 /// que [ZStudySectionCollapsePlacement] — toutes les sections d'une même app
 /// qualifient leur titre de la même façon ; un champ par section inviterait
 /// des en-têtes incohérents entre sections voisines.
@@ -204,28 +204,28 @@ enum ZStudySectionCountPlacement {
   adjacentToTitle,
 }
 
-/// Hiérarchie tuile/glyphe d'une **carte d'item d'étude par défaut**
-/// (CR-IFFD-55/56) — token de LOOK.
+/// Hiérarchie tuile/glyphe d'une **carte d'item d'étude par défaut** —
+/// token de LOOK.
 ///
-/// 🔴 **Aucune couleur ici** : la hiérarchie dit OÙ la couleur d'accent se
-/// pose, jamais laquelle (la couleur reste un rôle/une entrée injectable —
-/// CR-48). Même frontière que [ZStudySectionCountShape] : la forme monte, la
+/// **Aucune couleur ici** : la hiérarchie dit OÙ la couleur d'accent se
+/// pose, jamais laquelle (la couleur reste un rôle/une entrée injectable).
+/// Même frontière que [ZStudySectionCountShape] : la forme monte, la
 /// matière reste au thème.
 enum ZStudyCardHierarchy {
-  /// **Rendu de référence** (défaut CR-IFFD-56) : tuile NEUTRE (`surface`),
+  /// **Rendu de référence** : tuile NEUTRE (`surface`),
   /// glyphe teinté par l'accent résolu. C'est ce que rend un thème qui ne
   /// déclare rien.
   tintedGlyph,
 
-  /// Rendu **v0.43.0** : tuile colorée par l'accent, glyphe en `onColor`
-  /// apparié. Atteignable par réglage — plus un défaut (CR-IFFD-56).
+  /// Rendu alternatif : tuile colorée par l'accent, glyphe en `onColor`
+  /// apparié. Atteignable par réglage — plus un défaut.
   tintedTile,
 }
 
-/// Alignement VERTICAL du contenu d'une **carte d'item d'étude**
-/// (**CR-IFFD-62 ④**) — token de LOOK, aucune couleur, aucune dimension.
+/// Alignement VERTICAL du contenu d'une **carte d'item d'étude** —
+/// token de LOOK, aucune couleur, aucune dimension.
 ///
-/// 🔴 **N'a d'effet QUE sous une hauteur IMPOSÉE** (cadre reçu du parent :
+/// **N'a d'effet QUE sous une hauteur IMPOSÉE** (cadre reçu du parent :
 /// `SizedBox(height:)`, cellule de grille, `ZRailItem(height:)`). Sans cadre,
 /// la carte se dimensionne sur son contenu : il n'y a **aucun espace libre à
 /// répartir**, et les trois valeurs rendent alors STRICTEMENT la même chose —
@@ -235,10 +235,10 @@ enum ZStudyCardContentAlignment {
   /// Contenu collé en HAUT du cadre ; l'espace libre reste sous le pied.
   top,
 
-  /// **Rendu de référence** de la carte de flashcard (CR-IFFD-62 ⑤) :
+  /// **Rendu de référence** de la carte de flashcard :
   /// l'espace libre est absorbé par le **bloc de titre** (l'énoncé), ce qui
   /// pousse le pied (pastille de type) au **bas** du cadre. C'est la cascade
-  /// `Expanded` du legacy IFFD — en-tête fixe, énoncé extensible, pied en bas.
+  /// `Expanded` de référence — en-tête fixe, énoncé extensible, pied en bas.
   spread,
 
   /// Contenu collé en BAS du cadre ; l'espace libre reste au-dessus de
@@ -247,17 +247,17 @@ enum ZStudyCardContentAlignment {
 }
 
 /// DISPOSITION du bas de carte d'une carte de dossier d'étude
-/// (`ZFolderCard` / `ZDefaultFolderCard`, **CR-IFFD-68**) — token de LOOK :
+/// (`ZFolderCard` / `ZDefaultFolderCard`) — token de LOOK :
 /// il dit OÙ va le pied, jamais ce qu'il contient.
 ///
-/// 🔴 **Le défaut mesuré qui l'a fait exister** : la primitive assemblait le
+/// **Le défaut mesuré qui l'a fait exister** : la primitive assemblait le
 /// créneau compteur et le créneau pied dans la MÊME `Row`, chacun en
-/// `Expanded` — donc chacun à la MOITIÉ de la largeur. Mesuré chez IFFD : une
+/// `Expanded` — donc chacun à la MOITIÉ de la largeur. Mesuré : une
 /// carte à quatre badges de compteur n'en montrait plus que **deux**, et le
 /// pied (« Par toi ») venait s'accoler au dernier badge visible. Le seul
 /// contournement possible — recomposer soi-même le créneau compteur — **rend
 /// à l'hôte le rendu des badges**, donc lui fait perdre le plancher de
-/// contraste que `ZDefaultFolderCard` garantit (CR-IFFD-64).
+/// contraste que `ZDefaultFolderCard` garantit.
 ///
 /// Priorité, partout : paramètre de carte > ce jeton > défaut-référence.
 enum ZFolderCardFooterPlacement {
@@ -274,7 +274,7 @@ enum ZFolderCardFooterPlacement {
   /// dessous. Coût : une ligne de plus, donc la hauteur d'une ligne de texte
   /// plus `gapS`.
   ///
-  /// 🔴 **Le badge « Archivé » suit la DERNIÈRE ligne de la pile** : le poser
+  /// **Le badge « Archivé » suit la DERNIÈRE ligne de la pile** : le poser
   /// sur la ligne des compteurs recréerait exactement l'amputation corrigée
   /// ici. Quand il n'y a qu'une ligne (pied ou compteur absent), cette règle
   /// rend donc STRICTEMENT ce que rend [beside].
@@ -290,27 +290,26 @@ enum ZFolderCardFooterPlacement {
   adaptive,
 }
 
-/// Densité du **hub d'ajout de contenu** (`ZContentHubSheet`, **CR-IFFD-65**).
+/// Densité du **hub d'ajout de contenu** (`ZContentHubSheet`).
 ///
-/// 🔴 **Le défaut a CHANGÉ le 2026-08-05, sur décision du propriétaire du
-/// socle** : le rendu de RÉFÉRENCE (legacy IFFD — sections titrées, pastille
-/// d'identité, badge de mise en avant, entrées en cartes, chevron) devient le
-/// défaut, hauteur d'item de référence **assumée** et **défilement attendu**.
+/// **Le défaut est le rendu de RÉFÉRENCE** (sections titrées, pastille
+/// d'identité, badge de mise en avant, entrées en cartes, chevron), avec
+/// hauteur d'item de référence **assumée** et **défilement attendu**.
 ///
-/// ⚠️ **La densité d'avant ne disparaît pas — elle cesse d'être le défaut.**
-/// L'argument d'ÉCHELLE de CR-IFFD-65 reste vrai (« à douze types, la mise en
-/// page legacy demanderait trois ou quatre écrans ») : [compact] y répond, et
+/// **La densité compacte ne disparaît pas — elle cesse d'être le défaut.**
+/// L'argument d'ÉCHELLE reste vrai (« à douze types, la mise en
+/// page en cartes demanderait trois ou quatre écrans ») : [compact] y répond, et
 /// il est atteignable **par paramètre** (`ZContentHubSheet.density`) **ET par
 /// jeton** ([ZcrudTheme.contentHubDensity]) — priorité paramètre > jeton >
 /// référence.
 enum ZContentHubDensity {
-  /// **Rendu de référence** (défaut depuis CR-IFFD-65) : entrées en cartes à la
+  /// **Rendu de référence** (défaut) : entrées en cartes à la
   /// hauteur d'item de référence (112), pastille circulaire teintée, chevron
   /// d'affordance, intitulés de section, grille à deux colonnes au-delà du
   /// point de rupture.
   comfortable,
 
-  /// **La densité d'AVANT CR-IFFD-65**, restituée par réglage : une entrée =
+  /// **La densité compacte antérieure**, restituée par réglage : une entrée =
   /// une ligne au plancher de 48 dp, glyphe nu (aucune pastille), ni chevron ni
   /// carte, **une seule colonne** quelle que soit la largeur. Les intitulés de
   /// section restent rendus (ils sont une capacité, pas une décoration).
@@ -555,12 +554,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// détruire un). Le focus a son propre jeton, [fieldFocusedBorderColor].
   final Color? fieldBorderColor;
 
-  /// **Remplissage du CHAMP** (`InputDecoration.fillColor`) —
-  /// **CR-DODLP-THEME-TOKENS**. `null` (défaut, y compris au repli
+  /// **Remplissage du CHAMP** (`InputDecoration.fillColor`).
+  /// `null` (défaut, y compris au repli
   /// [ZcrudTheme.fallback]) ⇒ `ColorScheme.surfaceContainerHighest`, soit le
   /// comportement **strictement** antérieur.
   ///
-  /// 🔴 **Pourquoi un jeton DÉDIÉ et non [surfaceColor]** (la CR le proposait) —
+  /// **Pourquoi un jeton DÉDIÉ et non [surfaceColor]** —
   /// deux raisons MESURÉES :
   /// 1. **Ce ne serait pas une rétro-compat.** [ZcrudTheme.fallback] pose
   ///    `surfaceColor: ColorScheme.surface`, donc **non-null** sur le chemin de
@@ -575,27 +574,26 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   ///    les fusionner rendrait l'un inatteignable sans déplacer l'autre.
   ///
   /// C'est donc ce jeton — nullable, **absent du repli** — qui rend le fond de
-  /// champ atteignable par thème (fond blanc DODLP, etc.) sans toucher au
+  /// champ atteignable par thème sans toucher au
   /// `ColorScheme` global de l'app.
   final Color? fieldFillColor;
 
-  /// Couleur de bordure au **focus** (`InputDecoration.focusedBorder`) —
-  /// **CR-DODLP-THEME-TOKENS**. `null` (défaut, **absent du repli**) ⇒
+  /// Couleur de bordure au **focus** (`InputDecoration.focusedBorder`).
+  /// `null` (défaut, **absent du repli**) ⇒
   /// `ColorScheme.primary` : comportement strictement antérieur.
   ///
   /// Séparée de [fieldBorderColor] pour que le canal d'état « focus » reste
   /// pilotable **indépendamment** de la bordure de repos (AD-13).
   final Color? fieldFocusedBorderColor;
 
-  /// **CR-DODLP-DATE-FIELD** — bascule d'apparence des familles `date`/`time`/
+  /// Bascule d'apparence des familles `date`/`time`/
   /// `dateTime` **et** `dateRange` : `true`/`null` (défaut) ⇒ **champ décoré**
   /// (`InputDecorator` + `zFieldDecoration` : libellé flottant, astérisque
-  /// requis, `fieldFillColor`/`fieldBorderColor`) ; `false` ⇒ **rendu legacy**
+  /// requis, `fieldFillColor`/`fieldBorderColor`) ; `false` ⇒ **rendu historique**
   /// `OutlinedButton` « Libellé : valeur ».
   ///
-  /// 🔴 C'est une **échappatoire**, pas un défaut : la valeur nominale du paquet
-  /// est le champ décoré (cohérence avec `text`/`number`/`select`, demande
-  /// CR-DODLP-DATE-FIELD). Un hôte qui tenait au rendu bouton pose
+  /// C'est une **échappatoire**, pas un défaut : la valeur nominale du paquet
+  /// est le champ décoré (cohérence avec `text`/`number`/`select`). Un hôte qui tenait au rendu bouton pose
   /// `dateFieldDecorated: false` **globalement** par son thème ; un hôte qui ne
   /// veut basculer qu'un champ passe `ZDateFieldWidget.decorated` /
   /// `ZDateRangeFieldWidget.decorated` (le **paramètre l'emporte sur le jeton**,
@@ -611,7 +609,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Couleur de libellé (repli : `TextTheme.bodyMedium.color`).
   ///
-  /// 🔴 **DÉLIBÉRÉMENT NON consommée par [inputDecoration]** (CR-DODLP-THEME-TOKENS).
+  /// **DÉLIBÉRÉMENT NON consommée par [inputDecoration]**.
   /// La couleur du label d'un champ passe par [labelTextStyle] (`color` non
   /// null), jamais par ce jeton. Deux mesures le justifient :
   /// 1. **Le canal de focus serait détruit.** [inputDecoration] pose
@@ -621,7 +619,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   ///    label passe de `onSurfaceVariant` au repos à `primary` au focus ;
   ///    avec une couleur imposée, il reste à la couleur imposée **au focus
   ///    aussi** — la distinction repos/focus disparaît (même classe de défaut
-  ///    que `TabBar.labelStyle` coloré, cf. l'encadré CR-IFFD-63 plus haut).
+  ///    que `TabBar.labelStyle` coloré).
   /// 2. **Même en ne teignant que le label au repos** (`labelStyle` seul,
   ///    forme qui préserve bien le focus — mesuré : repos = couleur imposée,
   ///    focus = `primary`), le rendu de **tout hôte passif** changerait :
@@ -638,8 +636,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   ///
   /// Rôle : fond de **section/bande**. Ce n'est **pas** le fond d'un champ —
   /// celui-ci a son jeton dédié [fieldFillColor] (cf. son dartdoc).
-  /// Il peint AUSSI le **corps des cartes de champ markdown** (chrome GAP-6 de
-  /// `zcrud_markdown` — CR géo/markdown 2026-08-11, B1).
+  /// Il peint AUSSI le **corps des cartes de champ markdown** (chrome de
+  /// `zcrud_markdown`).
   final Color? surfaceColor;
 
   /// Échelle d'espacement — petit.
@@ -664,25 +662,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Padding de champ **directionnel** (RTL-safe, AD-13).
   final EdgeInsetsDirectional fieldPadding;
 
-  /// **Aération du formulaire** (AD-54, FR-26) : padding **directionnel** posé par
+  /// **Aération du formulaire** (invariant FR-26) : padding **directionnel** posé par
   /// `DynamicEdition` autour de la liste des champs **quand `padding == null`**
-  /// (défaut `all(12)` — parité DODLP). Token d'espacement injectable (aucune
+  /// (défaut `all(12)`). Token d'espacement injectable (aucune
   /// couleur ; exempté de la garde couleur). Un `padding` explicite passé à
   /// `DynamicEdition` prime toujours sur ce repli.
   final EdgeInsetsDirectional formPadding;
 
-  /// **Aération INTER-CHAMPS** (CR-DODLP-DEFAULTS, volet 2) : base d'espacement
+  /// **Aération INTER-CHAMPS** : base d'espacement
   /// consommée par `DynamicEdition` quand aucun `interFieldGap` n'est passé au
   /// widget. `null` (défaut, **absent de [ZcrudTheme.fallback]**) ⇒ la
-  /// référence `zFieldGapReference` (**12 dp**, arbitrage propriétaire du
-  /// 2026-08-09).
+  /// référence `zFieldGapReference` (**12 dp**).
   ///
   /// Chaîne de résolution : `DynamicEdition.interFieldGap` **>** [fieldGap]
   /// **>** `zFieldGapReference`. Ce jeton rend l'aération pilotable **par
   /// thème** ; jusqu'ici elle n'était atteignable que par paramètre, ce qui
   /// obligeait chaque hôte à la reposer sur **chaque** `DynamicEdition`.
   ///
-  /// 🔴 **CR-DODLP-AERATION (2026-08-09)** : l'espace est désormais **UNIFORME**
+  /// **L'espace est UNIFORME**
   /// — appliqué entre **deux champs consécutifs** quel que soit leur type, sur
   /// les DEUX voies de rendu (plate et groupée). La table type-dépendante
   /// `zFieldGapAfter` n'est plus consultée par `DynamicEdition` (elle reste
@@ -692,14 +689,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// totale d'aération.
   final double? fieldGap;
 
-  // ── Tokens de décoration d'`InputDecoration` (parité DODLP M2) ────────────
-  // Aucune couleur codée en dur (FR-26) : les couleurs de bordure/remplissage
+  // ── Tokens de décoration d'`InputDecoration` ────────────────────────────
+  // Aucune couleur codée en dur (invariant FR-26) : les couleurs de bordure/remplissage
   // sont dérivées du `ColorScheme` courant par [inputDecoration], sauf si un
   // jeton NULLABLE les vise ([fieldBorderColor], [fieldFillColor],
   // [fieldFocusedBorderColor]) — auquel cas la valeur vient du THÈME de l'hôte,
   // jamais d'un littéral du paquet.
 
-  /// Rayon de bordure des `InputDecoration` (défaut `12` — parité DODLP).
+  /// Rayon de bordure des `InputDecoration` (défaut `12`).
   final Radius inputRadius;
 
   /// Épaisseur de bordure enabled/normale (défaut `1`).
@@ -727,10 +724,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Style **non-couleur** du texte saisi (`color == null` → dérivé).
   final TextStyle? inputTextStyle;
 
-  /// Style **non-couleur** du hint (défaut : `overflow: clip` conforme DODLP).
+  /// Style **non-couleur** du hint (défaut : `overflow: clip`).
   final TextStyle? hintTextStyle;
 
-  // ── Tokens de la variante `large` (Card — parité DODLP `_buildLargeCard`) ──
+  // ── Tokens de la variante `large` (Card) ──────────────────────────────────
 
   /// Hauteur minimale de la Card `large` (défaut `64`).
   final double largeMinHeight;
@@ -751,9 +748,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Écart vertical entre le label et le champ en `large` (défaut `4`).
   final double largeLabelGap;
 
-  // ── Tokens du mode LECTURE (fiche `ZReadOnlyFieldCard` — DP-13, parité DODLP
+  // ── Tokens du mode LECTURE (fiche `ZReadOnlyFieldCard`,
   //    `readOnlyWidget`). Aucune couleur : fond/bordure DÉRIVÉS du `ColorScheme`
-  //    (FR-26). Réutilise `inputRadius`/`inputBorderWidth` pour la forme. ───────
+  //    (invariant FR-26). Réutilise `inputRadius`/`inputBorderWidth` pour la forme. ─
 
   /// Marge basse **directionnelle** entre deux fiches de lecture (défaut
   /// `only(bottom: 12)` — parité `margin: only(bottom:12)`).
@@ -821,17 +818,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Courbe de retournement. `null` conserve v0.19.3 inchangé.
   final Curve? flipCurve;
 
-  /// Habillage du déclencheur de navigation de fratrie (CR-IFFD-41, point 1).
+  /// Habillage du déclencheur de navigation de fratrie.
   /// `null` ⇒ [ZSubfolderTriggerVariant.flat], rendu **strictement inchangé**.
   ///
-  /// **CR-IFFD-60** : la variante reste l'API publiée (v0.36.0) et reste
+  /// La variante reste l'API publiée et reste
   /// fonctionnelle telle quelle. Les trois attributs composables
   /// ([subfolderTriggerFill], [subfolderTriggerBorder],
   /// [subfolderTriggerElevation]) la **raffinent** : fournis, ils priment
   /// **attribut par attribut** ; absents (`null`), la variante décide.
   final ZSubfolderTriggerVariant? subfolderTriggerVariant;
 
-  /// RÔLE de fond du déclencheur de fratrie (CR-IFFD-60) — composable.
+  /// RÔLE de fond du déclencheur de fratrie — composable.
   ///
   /// `null` ⇒ [subfolderTriggerVariant] décide du fond (rendu **strictement
   /// inchangé** pour tout thème existant). Fourni, il PRIME sur le fond de la
@@ -839,7 +836,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// retrait EXPLICITE du fond.
   final ZSubfolderTriggerFill? subfolderTriggerFill;
 
-  /// RÔLE de bordure du déclencheur de fratrie (CR-IFFD-60) — composable.
+  /// RÔLE de bordure du déclencheur de fratrie — composable.
   ///
   /// `null` ⇒ [subfolderTriggerVariant] décide de la bordure (rendu
   /// **strictement inchangé**). Fourni, il PRIME sur la bordure de la variante
@@ -847,7 +844,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// EXPLICITE de la bordure.
   final ZSubfolderTriggerBorder? subfolderTriggerBorder;
 
-  /// RELIEF du déclencheur de fratrie (CR-IFFD-60) — composable, en dp
+  /// RELIEF du déclencheur de fratrie — composable, en dp
   /// d'élévation Material.
   ///
   /// `null` ⇒ aucune variante n'a d'élévation : rendu **strictement
@@ -859,26 +856,26 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// projetterait. Cf. `_triggerChrome` (`z_subfolder_selector_bar.dart`).
   final double? subfolderTriggerElevation;
 
-  /// Glyphe du chevron quand la fratrie est **fermée** (CR-IFFD-41, point 2).
+  /// Glyphe du chevron quand la fratrie est **fermée**.
   /// `null` ⇒ repli conventionnel du consommateur (`Icons.expand_more`).
   ///
   /// Un `IconData` est un **glyphe**, jamais un libellé : il ne se traduit pas.
   /// Il reste néanmoins un choix de LOOK, donc injecté et non figé.
   final IconData? subfolderTriggerCollapsedIcon;
 
-  /// Glyphe du chevron quand la fratrie est **ouverte** (CR-IFFD-41, point 2).
+  /// Glyphe du chevron quand la fratrie est **ouverte**.
   /// `null` ⇒ repli conventionnel du consommateur (`Icons.expand_less`).
   final IconData? subfolderTriggerExpandedIcon;
 
-  /// Mise en évidence de l'élément courant (CR-IFFD-41, point 6).
+  /// Mise en évidence de l'élément courant.
   /// `null` ⇒ [ZSubfolderSelectedEmphasis.highlight], rendu **inchangé**.
   final ZSubfolderSelectedEmphasis? subfolderSelectedEmphasis;
 
-  /// Marge EXTÉRIEURE de la barre de fratrie (CR-IFFD-44, manque 2).
+  /// Marge EXTÉRIEURE de la barre de fratrie.
   /// `null` ⇒ **aucune enveloppe dans l'arbre**, rendu strictement inchangé
   /// (la barre reste bord à bord dans son parent).
   ///
-  /// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : les quatre
+  /// **Pourquoi un token de THÈME et non un champ de spec** : les quatre
   /// réglages déjà existants de cette surface (`subfolderTriggerVariant`,
   /// les deux glyphes de chevron, `subfolderSelectedEmphasis`) sont des tokens
   /// de thème, et une marge est une décision d'**apparence**, pas de structure.
@@ -891,19 +888,19 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// choix, jamais un défaut du socle.
   final EdgeInsetsGeometry? subfolderBarPadding;
 
-  /// Marge EXTÉRIEURE du contenu de la **feuille** de fratrie (CR-IFFD-46,
-  /// point 4) — **pendant exact** de [subfolderBarPadding], côté feuille.
+  /// Marge EXTÉRIEURE du contenu de la **feuille** de fratrie —
+  /// **pendant exact** de [subfolderBarPadding], côté feuille.
   ///
   /// `null` ⇒ **aucune enveloppe dans l'arbre**, rendu strictement inchangé (la
   /// feuille conserve sa seule gouttière interne `gapM`).
   ///
-  /// ⚠️ **S'ajoute à la gouttière interne, il ne la remplace pas** : la
-  /// neutralité littérale exige que `null` laisse l'arbre d'avant CR-IFFD-46.
+  /// **S'ajoute à la gouttière interne, il ne la remplace pas** : la
+  /// neutralité littérale exige que `null` laisse l'arbre historique intact.
   /// Remplacer la gouttière aurait fait de « je veux 4 dp de plus » un « je
   /// perds les 16 dp que j'avais ».
   ///
-  /// ⚠️ **Elle n'entame PAS le plafond de 80 % de hauteur d'écran** de la
-  /// feuille (v0.36.0) : ce plafond est posé en `constraints` sur la feuille
+  /// **Elle n'entame PAS le plafond de 80 % de hauteur d'écran** de la
+  /// feuille : ce plafond est posé en `constraints` sur la feuille
   /// ELLE-MÊME par `showModalBottomSheet`, donc au-DESSUS de cette marge. Une
   /// marge verticale généreuse réduit la hauteur du CONTENU, jamais celle de la
   /// feuille — et la liste, `Flexible`, absorbe la différence.
@@ -914,7 +911,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// socle (même arbitrage que [subfolderBarPadding]).
   final EdgeInsetsGeometry? subfolderSheetPadding;
 
-  /// Alignement du **titre** de la feuille de fratrie (CR-IFFD-46, point 2).
+  /// Alignement du **titre** de la feuille de fratrie.
   ///
   /// `null` ⇒ [TextAlign.start], rendu strictement inchangé.
   ///
@@ -926,16 +923,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// [subfolderBarPadding] vis-à-vis d'`EdgeInsets.only(left:)` : le socle ne
   /// borne pas ce que l'hôte demande, il documente ce qu'il recommande.
   ///
-  /// 🔵 **Pourquoi un token de THÈME et non un champ de spec** : c'est une
+  /// **Pourquoi un token de THÈME et non un champ de spec** : c'est une
   /// décision d'**apparence** pure — elle ne fait apparaître ni disparaître
   /// aucun contrôle, et n'altère aucune donnée de fratrie (critère posé par
   /// `ZSubfolderAddPlacement`, qui est resté dans la spec pour la raison
   /// inverse). Le titre lui-même, en revanche, est un LIBELLÉ : il reste dans
-  /// la spec (`sheetTitle`), car un paquet ne code aucune chaîne (FR-26).
+  /// la spec (`sheetTitle`), car un paquet ne code aucune chaîne (invariant FR-26).
   final TextAlign? subfolderSheetTitleAlign;
 
   /// Largeur d'un item de **rail horizontal** rendu PAR DÉFAUT par un
-  /// consommateur (CR-IFFD-49 — voies typées `ZStudyToolsSectionSpec` de
+  /// consommateur (voies typées `ZStudyToolsSectionSpec` de
   /// `zcrud_study`).
   ///
   /// `null` ⇒ le consommateur applique SON défaut documenté (280 dp côté
@@ -943,13 +940,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// La priorité chez le consommateur est : paramètre explicite de la voie
   /// typée > ce token > défaut du consommateur.
   ///
-  /// 🔵 **Pourquoi un token de THÈME** : une largeur d'item est une décision
+  /// **Pourquoi un token de THÈME** : une largeur d'item est une décision
   /// d'apparence (densité), pas de structure — même arbitrage que
-  /// [subfolderBarPadding]. La valeur mesurée chez un hôte (300 dp IFFD) reste
+  /// [subfolderBarPadding]. La valeur mesurée chez un hôte de référence reste
   /// SA valeur : il la pose ici, jamais dans le socle.
   final double? railItemWidth;
 
-  /// HAUTEUR d'un item de **rail horizontal** (**CR-IFFD-62 ①**) — pendant
+  /// HAUTEUR d'un item de **rail horizontal** — pendant
   /// exact de [railItemWidth].
   ///
   /// `null` ⇒ **aucune contrainte de hauteur** n'est posée : l'item garde la
@@ -957,7 +954,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// tout thème existant). Priorité chez le consommateur : paramètre explicite
   /// > ce token > absence de contrainte.
   ///
-  /// 🔴 **Pourquoi PAS de repli chiffré ici, contrairement à [railItemWidth]**
+  /// **Pourquoi PAS de repli chiffré ici, contrairement à [railItemWidth]**
   /// (asymétrie assumée, motivée) : une largeur NON BORNÉE dans un défileur
   /// horizontal est une **faute de layout** (« non-zero flex but incoming
   /// width constraints are unbounded »), d'où un repli obligatoire côté
@@ -969,19 +966,19 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// par défaut (`ZFlashcardCardReference.cardHeight`), là où elle a un sens.
   final double? railItemHeight;
 
-  /// ESPACEMENT entre deux items d'un **rail horizontal** (**CR-IFFD-62 ④**).
+  /// ESPACEMENT entre deux items d'un **rail horizontal**.
   ///
   /// `null` ⇒ le consommateur applique son repli documenté ([gapS] côté
   /// `zcrud_study`) — rendu **strictement inchangé**. Priorité : paramètre
   /// explicite de la voie typée > ce token > repli du consommateur.
   ///
-  /// Ce token existe pour la même raison que [studyCardLeadingGap]
-  /// (CR-IFFD-61 ③) : l'espacement du rail ridait [gapS], jeton que l'hôte
+  /// Ce token existe pour la même raison que [studyCardLeadingGap] :
+  /// l'espacement du rail ridait [gapS], jeton que l'hôte
   /// règle déjà pour ses écarts inter-slots — aucune valeur de [gapS] ne
   /// pouvait satisfaire à la fois l'un et le 12 de la référence.
   final double? railItemGap;
 
-  /// PADDING du défileur d'un **rail horizontal** (**CR-IFFD-62 ④**) — le
+  /// PADDING du défileur d'un **rail horizontal** — le
   /// retrait latéral du rail lui-même.
   ///
   /// `null` ⇒ le rail hérite du padding de section du consommateur (chez
@@ -989,13 +986,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Non-null ⇒ le retrait latéral du rail devient ABSOLU : le padding
   /// horizontal de section ne s'y AJOUTE plus (il reste appliqué à l'en-tête).
   ///
-  /// ⚠️ Le retrait mesuré au **bord de la première carte** vaut ce padding
+  /// Le retrait mesuré au **bord de la première carte** vaut ce padding
   /// **plus la marge externe de la carte** (`CardThemeData.margin` /
   /// `studyCardMargin`) : les deux s'additionnent, et c'est précisément le
-  /// cumul mesuré par CR-IFFD-62 (12 + 4 = 16 dp).
+  /// cumul mesuré (12 + 4 = 16 dp).
   final EdgeInsetsGeometry? railPadding;
 
-  /// Style du TITRE d'un en-tête de section d'étude (CR-IFFD-50 ①).
+  /// Style du TITRE d'un en-tête de section d'étude.
   ///
   /// `null` ⇒ le consommateur applique son repli documenté
   /// (`labelTextStyle`, puis `TextTheme.titleMedium`) — rendu **strictement
@@ -1004,33 +1001,33 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// sans qu'aucun rôle de texte ne soit figé dans un paquet.
   final TextStyle? studySectionTitleStyle;
 
-  /// FORME du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+  /// FORME du compteur d'en-tête de section d'étude.
   ///
   /// `null` ⇒ [ZStudySectionCountShape.rounded] (rectangle arrondi,
   /// `badgeRadius` repli `radiusM`) — rendu **strictement inchangé**.
   final ZStudySectionCountShape? studySectionCountShape;
 
-  /// RÔLE de couleur du compteur d'en-tête de section d'étude (CR-IFFD-50 ②).
+  /// RÔLE de couleur du compteur d'en-tête de section d'étude.
   ///
   /// `null` ⇒ [ZStudySectionCountRole.secondaryContainer] — rendu
   /// **strictement inchangé**. La couleur vient TOUJOURS du `ColorScheme`
-  /// courant : ce token nomme un rôle, jamais un hex (FR-26).
+  /// courant : ce token nomme un rôle, jamais un hex (invariant FR-26).
   final ZStudySectionCountRole? studySectionCountRole;
 
-  /// PLACEMENT de l'affordance de repli d'une section d'étude (CR-IFFD-50 ④).
+  /// PLACEMENT de l'affordance de repli d'une section d'étude.
   ///
   /// `null` ⇒ [ZStudySectionCollapsePlacement.belowTitle] (chevron sous le
   /// titre) — rendu **strictement inchangé**.
   final ZStudySectionCollapsePlacement? studySectionCollapsePlacement;
 
-  /// PLACEMENT du compteur d'en-tête d'une section d'étude (**CR-IFFD-61 ④**).
+  /// PLACEMENT du compteur d'en-tête d'une section d'étude.
   ///
   /// `null` ⇒ [ZStudySectionCountPlacement.lineEnd] (compteur à l'extrémité de
   /// la ligne) — rendu **strictement inchangé**.
   final ZStudySectionCountPlacement? studySectionCountPlacement;
 
-  /// ÉCART entre le titre d'en-tête de section et son compteur
-  /// (**CR-IFFD-61 ④**), dans les DEUX placements.
+  /// ÉCART entre le titre d'en-tête de section et son compteur,
+  /// dans les DEUX placements.
   ///
   /// `null` ⇒ [gapS] — le rendu historique. Ce token existe parce que l'écart
   /// titre↔compteur ridait [gapS], jeton générique partagé avec toutes les
@@ -1039,8 +1036,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// espacements inter-actions. Même arbitrage que [studyCardLeadingGap].
   final double? studySectionCountGap;
 
-  /// Padding STRUCTUREL **interne** de la feuille de fratrie
-  /// (**CR-IFFD-61 ③**) : gouttière de la feuille, padding de son titre,
+  /// Padding STRUCTUREL **interne** de la feuille de fratrie :
+  /// gouttière de la feuille, padding de son titre,
   /// padding de son pied « ajouter ».
   ///
   /// `null` ⇒ `EdgeInsetsDirectional.all(gapM)` — rendu **strictement
@@ -1048,30 +1045,30 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// [studyCardLeadingGap] : la feuille ridait [gapM], que l'hôte règle déjà
   /// pour le padding de ses cartes (12) alors que sa feuille en demande 8.
   ///
-  /// ⚠️ DISTINCT de [subfolderSheetPadding], qui est la marge **EXTÉRIEURE**
-  /// de la feuille (CR-IFFD-46) et qui s'AJOUTE à celle-ci.
+  /// DISTINCT de [subfolderSheetPadding], qui est la marge **EXTÉRIEURE**
+  /// de la feuille et qui s'AJOUTE à celle-ci.
   final EdgeInsetsGeometry? subfolderSheetContentPadding;
 
-  // ── Tokens des CARTES D'ITEM D'ÉTUDE par défaut (CR-IFFD-55/56) ───────────
+  // ── Tokens des CARTES D'ITEM D'ÉTUDE par défaut ───────────────────────────
   // Directive owner : les défauts du consommateur (`zcrud_study`) sont le
-  // RENDU DE RÉFÉRENCE IFFD, centralisé dans `ZStudyCardReference` côté
+  // RENDU DE RÉFÉRENCE, centralisé dans `ZStudyCardReference` côté
   // consommateur. Chaque token `null` ⇒ le consommateur applique la valeur de
   // référence documentée. Priorité, partout : paramètre de carte > token >
-  // défaut-référence. Aucune couleur figée ici (FR-26) : ce qui porte une
+  // défaut-référence. Aucune couleur figée ici (invariant FR-26) : ce qui porte une
   // couleur ([studyCardBorderSide], les styles) est INJECTÉ par l'hôte.
 
-  /// Hiérarchie tuile/glyphe des cartes d'étude par défaut (CR-IFFD-56).
+  /// Hiérarchie tuile/glyphe des cartes d'étude par défaut.
   /// `null` ⇒ [ZStudyCardHierarchy.tintedGlyph] — le rendu de RÉFÉRENCE.
-  /// [ZStudyCardHierarchy.tintedTile] restitue exactement le rendu v0.43.0.
+  /// [ZStudyCardHierarchy.tintedTile] restitue exactement le rendu antérieur.
   final ZStudyCardHierarchy? studyCardHierarchy;
 
   /// Rayon de la carte d'étude par défaut. `null` ⇒ 16 (référence).
   final Radius? studyCardRadius;
 
   /// ÉCART entre la tuile d'icône de tête et le titre, dans les cartes d'étude
-  /// **par défaut** (**CR-IFFD-61 ①**). `null` ⇒ 16 (référence legacy IFFD).
+  /// **par défaut**. `null` ⇒ 16 (référence historique).
   ///
-  /// ⚠️ Ne concerne QUE les cartes par défaut : la primitive de base
+  /// Ne concerne QUE les cartes par défaut : la primitive de base
   /// `ZStudyToolsItemCard` garde son écart historique [gapM] pour les hôtes qui
   /// la composent eux-mêmes (neutralité — cf. son slot `leadingGap`).
   ///
@@ -1080,15 +1077,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// valeur de [gapM] ne pouvait satisfaire les deux.
   final double? studyCardLeadingGap;
 
-  /// ÉLÉVATION Material de la carte d'étude par défaut (**CR-IFFD-61 ②**).
+  /// ÉLÉVATION Material de la carte d'étude par défaut.
   ///
-  /// `null` ⇒ **0** (référence legacy IFFD : `Card(elevation: 0)`, liseré seul,
+  /// `null` ⇒ **0** (référence historique : `Card(elevation: 0)`, liseré seul,
   /// AUCUNE ombre portée). Le défaut antérieur laissait l'élévation à `null`,
   /// donc au défaut Material 3 (**1.0**) — une ombre que la référence n'a pas.
   ///
-  /// ⚠️ Sans effet quand une ombre de jetons `cardShadow*` est active : deux
+  /// Sans effet quand une ombre de jetons `cardShadow*` est active : deux
   /// ombres ne se superposent jamais, l'élévation native cède alors la place
-  /// (invariant CR-IFFD-27/57, inchangé).
+  /// (invariant inchangé).
   final double? studyCardElevation;
 
   /// Padding INTERNE de la carte d'étude par défaut.
@@ -1098,15 +1095,15 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Marge EXTERNE de la carte d'étude par défaut.
   /// `null` ⇒ `CardThemeData.margin` de l'hôte s'il est fourni, sinon
   /// `EdgeInsetsDirectional.all(4)` (référence) — la marge du `CardTheme`
-  /// reste atteignable (leçon CR-LEX-73).
+  /// reste atteignable.
   final EdgeInsetsGeometry? studyCardMargin;
 
   /// Côté de la tuile d'icône de tête. `null` ⇒ 48 (référence).
   ///
-  /// ⚠️ Token DISTINCT de [iconContainerSize] : celui-là a déjà un
+  /// Token DISTINCT de [iconContainerSize] : celui-là a déjà un
   /// consommateur (`ZFolderCardGradientAccent`, repli `gapL`) — le détourner
   /// redimensionnerait la barre d'accent chez tout hôte l'ayant réglée (même
-  /// arbitrage que CR-IFFD-27 côté `ZFolderCard`).
+  /// arbitrage que côté `ZFolderCard`).
   final double? studyCardIconTileSize;
 
   /// Rayon de la tuile d'icône. `null` ⇒ 12 (référence). Distinct de
@@ -1131,36 +1128,36 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   final Radius? studyCardBadgeRadius;
 
   /// Taille du glyphe dans la tuile d'icône des cartes d'étude par défaut.
-  /// `null` ⇒ 28 dp (référence legacy IFFD, `kStudyToolsLeadingIconSize`) —
+  /// `null` ⇒ 28 dp (référence historique, `kStudyToolsLeadingIconSize`) —
   /// PAS la taille d'icône ambiante (24) : la référence est plus grande.
   final double? studyCardGlyphSize;
 
-  /// ALIGNEMENT VERTICAL du contenu des cartes d'étude **par défaut**
-  /// (**CR-IFFD-62 ④**), quand un cadre de hauteur leur est imposé.
+  /// ALIGNEMENT VERTICAL du contenu des cartes d'étude **par défaut**,
+  /// quand un cadre de hauteur leur est imposé.
   ///
   /// `null` ⇒ le consommateur applique sa valeur de RÉFÉRENCE
   /// ([ZStudyCardContentAlignment.spread] pour la carte de flashcard : énoncé
-  /// extensible, pied poussé en bas — la cascade du legacy IFFD).
+  /// extensible, pied poussé en bas — la cascade de référence).
   ///
-  /// ⚠️ **Sans hauteur imposée, ce jeton n'a AUCUN effet** : il n'y a pas
+  /// **Sans hauteur imposée, ce jeton n'a AUCUN effet** : il n'y a pas
   /// d'espace libre à répartir (cf. la dartdoc de l'énumération).
   final ZStudyCardContentAlignment? studyCardContentAlignment;
 
-  /// Dégradés **par TYPE de flashcard** de la carte de flashcard par défaut
-  /// (**CR-IFFD-57**) — clé = `ZFlashcardType.name` OPAQUE (`'multipleChoice'`,
+  /// Dégradés **par TYPE de flashcard** de la carte de flashcard par défaut —
+  /// clé = `ZFlashcardType.name` OPAQUE (`'multipleChoice'`,
   /// `'trueOrFalse'`, `'openQuestion'`, `'exercise'`, ou toute clé future).
   ///
   /// `null` (défaut) ⇒ le consommateur applique sa **RÉFÉRENCE** (patron
-  /// `studyCard*`/CR-IFFD-56 : priorité paramètre > ce jeton > seam
+  /// `studyCard*` : priorité paramètre > ce jeton > seam
   /// `ZcrudScope.gradientResolver` > défaut-référence). Chaque entrée est un
   /// [ZGradientSpec] : le premier plan [ZGradientSpec.onGradient] est **CHOISI**
   /// par l'hôte (contraste mesuré), jamais deviné depuis le dégradé.
   ///
-  /// ⚠️ Un dégradé n'est PAS un rôle de `ColorScheme` (CR-IFFD-57) : la matière
+  /// Un dégradé n'est PAS un rôle de `ColorScheme` : la matière
   /// reste REMPLAÇABLE (ce jeton) même quand elle ne peut pas être DÉRIVÉE.
   final Map<String, ZGradientSpec>? flashcardTypeGradients;
 
-  // ── Carte de DOSSIER d'étude par défaut (CR-IFFD-64) ──────────────────────
+  // ── Carte de DOSSIER d'étude par défaut ───────────────────────────────────
   // La carte de dossier était la SEULE des six de la famille à n'avoir aucun
   // rendu par défaut, et son liseré n'était atteignable NI par paramètre NI par
   // jeton : la forme était bâtie sans `side:`, et les seuls jetons de carte
@@ -1168,7 +1165,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   // famille « carte de dossier », le patron déjà en place pour la famille sœur
   // (`studyCard*`) — ils n'en inventent pas un second.
   //
-  // 🔴 Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
+  // Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
   // applique sa valeur de RÉFÉRENCE » (`ZFolderCardReference`) — jamais « rien
   // ne se rend ». Priorité, partout : paramètre de carte > ce jeton >
   // défaut-référence.
@@ -1178,8 +1175,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// primitive) — la carte PAR DÉFAUT, elle, applique sa référence (12).
   final Radius? folderCardRadius;
 
-  /// Liseré du pourtour de la carte de dossier — **le manque net de
-  /// CR-IFFD-64**. `null` ⇒ aucune bordure imposée (rendu historique) ; la
+  /// Liseré du pourtour de la carte de dossier — **le manque net corrigé**.
+  /// `null` ⇒ aucune bordure imposée (rendu historique) ; la
   /// carte PAR DÉFAUT dérive le sien de la couleur du dossier, avec un
   /// plancher de contraste MESURÉ ([folderCardMinContrast]).
   final BorderSide? folderCardBorderSide;
@@ -1187,9 +1184,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Padding interne de la carte de dossier. `null` ⇒ `gapM` (défaut
   /// historique de la primitive) ; référence de la carte par défaut : 12.
   ///
-  /// ⚠️ Ce jeton existe parce que `gapM` vaut 8 en thème nu : sans lui, la
+  /// Ce jeton existe parce que `gapM` vaut 8 en thème nu : sans lui, la
   /// carte par défaut ne pouvait atteindre sa référence qu'en ridant `gapM`
-  /// pour TOUT le sous-arbre (défaut corrigé par CR-IFFD-61 ① ailleurs).
+  /// pour TOUT le sous-arbre (défaut corrigé par ailleurs).
   final EdgeInsetsGeometry? folderCardContentPadding;
 
   /// Hauteur de la bande d'accent de tête de la carte de dossier. `null` ⇒
@@ -1219,7 +1216,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// graphiques dérivés de la couleur du dossier — bande d'accent, liseré,
   /// glyphe de tuile. `null` ⇒ référence (**3.0:1**, §1.4.11).
   ///
-  /// 🔴 **Ce jeton n'est pas un réglage cosmétique** : une couleur de dossier
+  /// **Ce jeton n'est pas un réglage cosmétique** : une couleur de dossier
   /// est choisie par l'utilisateur, donc ARBITRAIRE, et aucune fenêtre de
   /// clarté HSL ne borne son contraste (mesuré : `#FFFF00` rendait 2.13:1 sur
   /// thème clair, `#FFFFFE` 1.28:1). Le relever à 4.5 aligne la carte sur le
@@ -1227,13 +1224,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   final double? folderCardMinContrast;
 
   /// DISPOSITION du bas de carte — compteur et pied côte à côte, empilés, ou
-  /// adaptatif (**CR-IFFD-68**). `null` ⇒ le consommateur applique SA
+  /// adaptatif. `null` ⇒ le consommateur applique SA
   /// référence : la primitive `ZFolderCard` reste sur
   /// [ZFolderCardFooterPlacement.beside] (rendu historique, aucun hôte passif
   /// ne bouge), `ZDefaultFolderCard` applique
   /// `ZFolderCardReference.footerPlacement`.
   ///
-  /// 🔴 Ce jeton ne dit pas QUOI rendre, il dit OÙ : les deux créneaux restent
+  /// Ce jeton ne dit pas QUOI rendre, il dit OÙ : les deux créneaux restent
   /// rendus par la carte dans les trois valeurs, donc le plancher de contraste
   /// des badges de `ZDefaultFolderCard` tient dans toutes.
   final ZFolderCardFooterPlacement? folderCardFooterPlacement;
@@ -1242,25 +1239,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// bascule sur le côte-à-côte, mesuré sur la largeur RÉELLEMENT offerte au
   /// bas de carte (padding interne déjà retranché). `null` ⇒ référence.
   ///
-  /// 🔴 **DISCRET comme un plancher** : un point de rupture interpolé pendant
+  /// **DISCRET comme un plancher** : un point de rupture interpolé pendant
   /// une transition de thème est un point de rupture que personne n'a choisi —
   /// et il ferait basculer la mise en page au milieu de l'animation.
   final double? folderCardFooterBesideMinWidth;
 
-  // ── Écran de SESSION de révision (lot 1 « étude ») ────────────────────────
+  // ── Écran de SESSION de révision ───────────────────────────────────────────
   //
-  // 🔴 Ces sept jetons sont le **maillon du milieu** de la chaîne
+  // Ces sept jetons sont le **maillon du milieu** de la chaîne
   // `paramètre > jeton > référence` de `zStudySessionChromeOf`
   // (`zcrud_study/…/z_study_session_reference.dart`), qui n'avait jusqu'ici
-  // QUE deux maillons (MESURÉ : `grep -n "studySession" z_theme.dart` → vide).
-  // Sans eux, un hôte ne pouvait régler l'écran de session que site par site,
-  // en repassant chaque paramètre à chaque montage.
+  // QUE deux maillons. Sans eux, un hôte ne pouvait régler l'écran de session
+  // que site par site, en repassant chaque paramètre à chaque montage.
   //
-  // 🚫 **Aucun jeton GÉNÉRIQUE n'est monté en maillon** — ni `gapM` pour
-  // l'écart de section, ni `radiusM` pour un rayon. C'est le défaut exact que
-  // CR-IFFD-61 a corrigé : un jeton générique portait trois valeurs de
-  // référence différentes, donc aucune valeur ne pouvait les satisfaire toutes.
-  // Chaque jeton ci-dessous vise UNE propriété, d'UN écran.
+  // **Aucun jeton GÉNÉRIQUE n'est monté en maillon** — ni `gapM` pour
+  // l'écart de section, ni `radiusM` pour un rayon : un jeton générique
+  // portant plusieurs valeurs de référence différentes ne peut satisfaire
+  // aucune d'entre elles. Chaque jeton ci-dessous vise UNE propriété, d'UN
+  // écran.
   //
   // `null` (défaut) ⇒ le consommateur applique sa valeur de RÉFÉRENCE : le
   // rendu d'aujourd'hui est strictement inchangé tant qu'aucun n'est posé.
@@ -1268,7 +1264,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Part verticale de la **pile de cartes** de l'écran de session.
   /// `null` ⇒ référence (`ZStudySessionReference.stackFlex` = 3).
   ///
-  /// 🔴 **DISCRET** : un `flex` est un entier de contrainte, pas une dimension.
+  /// **DISCRET** : un `flex` est un entier de contrainte, pas une dimension.
   /// `lerp` le fait donc BASCULER à mi-course (jamais d'entier intermédiaire
   /// fabriqué), et un `null` ne se matérialise jamais en `0` — un `Expanded`
   /// de flex 0 s'effondrerait, faisant disparaître la pile en pleine
@@ -1297,7 +1293,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Cible tap minimale (dp) des affordances de l'écran de session.
   /// `null` ⇒ référence (48, plancher Material/AD-13).
   ///
-  /// 🔴 **PLANCHER, donc discret comme une contrainte, mais interpolable comme
+  /// **PLANCHER, donc discret comme une contrainte, mais interpolable comme
   /// une dimension** : il est ici interpolé (c'est une longueur en dp, et deux
   /// planchers valides encadrent une valeur valide). En revanche `null` ne se
   /// matérialise JAMAIS en `0` : un plancher nul est l'absence de plancher,
@@ -1309,20 +1305,19 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// (`TextTheme.labelLarge` du thème courant) — jamais une taille en dur.
   final TextStyle? studySessionCounterStyle;
 
-  // ── Vue des TÂCHES DU JOUR (lot 4 « étude ») ──────────────────────────────
+  // ── Vue des TÂCHES DU JOUR ─────────────────────────────────────────────────
   //
-  // 🔴 Ces sept jetons sont le **maillon du milieu** de la chaîne
+  // Ces sept jetons sont le **maillon du milieu** de la chaîne
   // `paramètre > jeton > référence` de `zDailyTasksChromeOf`
   // (`zcrud_study/…/z_daily_tasks_reference.dart`), qui n'en avait jusqu'ici
-  // QUE deux (MESURÉ : `grep -n "dailyTasks" z_theme.dart` → vide). Sans eux,
-  // un hôte ne pouvait régler la vue des tâches du jour qu'en repassant chaque
-  // paramètre à CHAQUE montage — donc jamais depuis son thème.
+  // QUE deux. Sans eux, un hôte ne pouvait régler la vue des tâches du jour
+  // qu'en repassant chaque paramètre à CHAQUE montage — donc jamais depuis
+  // son thème.
   //
-  // 🚫 **Aucun jeton GÉNÉRIQUE n'est monté en maillon** : ni `gapM` pour un
-  // écart, ni `radiusM` pour le rayon de cellule. C'est le défaut exact que
-  // CR-IFFD-61 a corrigé — un jeton générique portant plusieurs valeurs de
-  // référence ne peut en satisfaire aucune. Chaque jeton ci-dessous vise UNE
-  // propriété, d'UN écran.
+  // **Aucun jeton GÉNÉRIQUE n'est monté en maillon** : ni `gapM` pour un
+  // écart, ni `radiusM` pour le rayon de cellule — un jeton générique
+  // portant plusieurs valeurs de référence ne peut en satisfaire aucune.
+  // Chaque jeton ci-dessous vise UNE propriété, d'UN écran.
   //
   // `null` (défaut) ⇒ le consommateur applique sa valeur de RÉFÉRENCE
   // (`ZDailyTasksReference`) : le rendu d'aujourd'hui est strictement inchangé
@@ -1339,7 +1334,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Padding INTERNE d'une cellule de jour. `null` ⇒ référence
   /// (`EdgeInsetsDirectional.symmetric(vertical: 8)`).
   ///
-  /// ⚠️ Distinct de [dailyTasksDayCellMargin] : la marge écarte les cellules
+  /// Distinct de [dailyTasksDayCellMargin] : la marge écarte les cellules
   /// entre elles, le padding gonfle la cible tapable. Les confondre en un seul
   /// jeton rendrait l'un des deux réglages inatteignable.
   final EdgeInsetsGeometry? dailyTasksDayCellPadding;
@@ -1351,7 +1346,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Cible tap minimale (dp) d'une cellule de jour. `null` ⇒ référence
   /// (48, plancher Material/AD-13).
   ///
-  /// 🔴 **PLANCHER** : interpolable comme une longueur (deux planchers valides
+  /// **PLANCHER** : interpolable comme une longueur (deux planchers valides
   /// encadrent une valeur valide), mais `null` ne se matérialise JAMAIS en `0`
   /// — un plancher nul est l'ABSENCE de plancher, et une transition de thème
   /// n'a pas à ouvrir une fenêtre pendant laquelle les sept cibles du bandeau
@@ -1361,7 +1356,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Largeur (dp) en deçà de laquelle le libellé de mois n'est **pas** rendu.
   /// `null` ⇒ référence (600).
   ///
-  /// 🔴 **SEUIL, donc DISCRET** : un point de rupture interpolé est un point de
+  /// **SEUIL, donc DISCRET** : un point de rupture interpolé est un point de
   /// rupture qu'aucun des deux thèmes ne décrit — la mise en page basculerait
   /// au milieu de l'animation, à une largeur que personne n'a choisie. Il
   /// BASCULE donc à mi-course, comme [folderCardFooterBesideMinWidth].
@@ -1371,22 +1366,22 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// (`EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6)`).
   final EdgeInsetsGeometry? dailyTasksItemPadding;
 
-  // ── Hub d'ajout de CONTENU (CR-IFFD-65) ───────────────────────────────────
+  // ── Hub d'ajout de CONTENU ─────────────────────────────────────────────────
   // Aucun jeton `contentHub*` n'existait : la forme du hub n'était atteignable
-  // NI par paramètre NI par thème (grief ④ de la CR, MESURÉ). La seule voie
+  // NI par paramètre NI par thème. La seule voie
   // ouverte à un hôte était d'envelopper la feuille dans un `Theme` écrasant
   // `ListTileTheme` pour TOUT le sous-arbre — donc de changer l'ambiance d'un
   // écran pour atteindre une carte.
   //
-  // 🔴 Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
+  // Chacun est `null` par DÉFAUT, et `null` signifie « le consommateur
   // applique sa valeur de RÉFÉRENCE » (`ZContentHubReference`) — jamais « rien
   // ne se rend ». Priorité, partout : paramètre de feuille/entrée > ce jeton >
   // défaut-référence.
 
   /// Densité du hub. `null` ⇒ référence ([ZContentHubDensity.comfortable] —
-  /// le rendu legacy, défaut depuis CR-IFFD-65).
+  /// le rendu en cartes, défaut).
   ///
-  /// 🔴 C'est le jeton qui **restitue la densité d'avant CR-IFFD-65**
+  /// C'est le jeton qui **restitue la densité compacte antérieure**
   /// ([ZContentHubDensity.compact]) sans toucher au code de l'hôte : la densité
   /// n'a pas disparu, elle a cessé d'être le défaut.
   final ZContentHubDensity? contentHubDensity;
@@ -1403,8 +1398,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   final EdgeInsetsGeometry? contentHubItemPadding;
 
   /// Opacité de la teinte de FOND d'une carte d'entrée. `null` ⇒ référence
-  /// (**0** — carte NEUTRE : mesuré sur pièces, le legacy ne teinte PAS le fond
-  /// de la carte, seulement la pastille et le badge).
+  /// (**0** — carte NEUTRE : mesuré sur pièces, le rendu historique ne teinte
+  /// PAS le fond de la carte, seulement la pastille et le badge).
   final double? contentHubItemTintAlpha;
 
   /// Diamètre de la pastille circulaire d'identité. `null` ⇒ référence (40).
@@ -1426,11 +1421,11 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// échec de rendu).
   final List<Color>? contentHubAccents;
 
-  /// Teinte du badge de mise en avant. `null` ⇒ référence (le vert du legacy).
+  /// Teinte du badge de mise en avant. `null` ⇒ référence (le vert historique).
   final Color? contentHubBadgeColor;
 
   /// Largeur à partir de laquelle le hub passe en grille. `null` ⇒ référence
-  /// (**600** — mesuré dans le legacy, que la CR déclarait « non mesuré »).
+  /// (**600** — mesuré sur le rendu historique).
   final double? contentHubGridBreakpoint;
 
   /// Nombre de colonnes au-delà de [contentHubGridBreakpoint]. `null` ⇒
@@ -1440,16 +1435,16 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Plancher de contraste (WCAG 2.x) imposé aux teintes d'identité peintes —
   /// pastille, glyphe. `null` ⇒ référence (**3.0:1**, §1.4.11).
   ///
-  /// 🔴 Le legacy n'en a **aucun** : il peint la teinte brute et n'a **aucune**
-  /// branche de luminosité (recherche négative sur son fichier). Une teinte
-  /// d'entrée pouvant être injectée par l'hôte, elle est arbitraire.
+  /// Le rendu historique n'en a **aucun** : il peint la teinte brute et n'a
+  /// **aucune** branche de luminosité (recherche négative sur son fichier).
+  /// Une teinte d'entrée pouvant être injectée par l'hôte, elle est arbitraire.
   final double? contentHubMinContrast;
 
   /// Style des intitulés de SECTION du hub. `null` ⇒ `titleMedium` du thème,
   /// à la graisse de référence (`w600`) — jamais une taille en dur.
   final TextStyle? contentHubSectionTitleStyle;
 
-  // ── Typographie de l'EN-TÊTE DE PAGE (CR-IFFD-63) ─────────────────────────
+  // ── Typographie de l'EN-TÊTE DE PAGE ───────────────────────────────────────
   // L'en-tête de page était le seul endroit de l'écran dont la hiérarchie
   // typographique n'était atteignable NI par paramètre NI par thème : le titre
   // retombait sur `AppBarTheme.titleTextStyle` et les onglets sur le défaut M3,
@@ -1457,7 +1452,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   // la page dans un `Theme` réécrivant `AppBarTheme`/`TabBarTheme`, donc
   // changer l'ambiance de tout un sous-arbre pour atteindre deux textes.
   //
-  // 🔴 **Ces quatre jetons ne portent que des MÉTRIQUES.** Le consommateur
+  // **Ces quatre jetons ne portent que des MÉTRIQUES.** Le consommateur
   // (`zcrud_ui_kit`) en retient taille, graisse, style, famille, interlettrage,
   // interlignage — et **ignore délibérément la couleur**, pour deux raisons
   // MESURÉES :
@@ -1474,7 +1469,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   // `null` (défaut) ⇒ le consommateur ne pose **rien** : aucune enveloppe de
   // style n'entre dans l'arbre, le rendu est strictement celui d'avant.
 
-  /// Style du TITRE de l'en-tête de page (**CR-IFFD-63**), consommé par
+  /// Style du TITRE de l'en-tête de page, consommé par
   /// `ZPageScaffold`/`ZSearchableAppBar`/`ZPageShellBody` de `zcrud_ui_kit`.
   ///
   /// `null` ⇒ le titre garde le style de l'app-bar de l'hôte
@@ -1482,57 +1477,57 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// **strictement inchangé**. Non-null ⇒ ses **métriques** sont fusionnées
   /// par-dessus (la couleur est ignorée, cf. l'encadré ci-dessus).
   ///
-  /// ⚠️ Le paramètre `titleTextStyle` du widget **prime** sur ce jeton.
+  /// Le paramètre `titleTextStyle` du widget **prime** sur ce jeton.
   final TextStyle? pageHeaderTitleStyle;
 
-  /// Style du SOUS-TITRE de l'en-tête de page (**CR-IFFD-63**).
+  /// Style du SOUS-TITRE de l'en-tête de page.
   ///
   /// `null` ⇒ repli historique du consommateur (métriques de
   /// `TextTheme.titleSmall`) — rendu **strictement inchangé**. Sans objet quand
   /// aucun sous-titre n'est fourni (le slot reste absent de l'arbre).
   final TextStyle? pageHeaderSubtitleStyle;
 
-  /// Style du libellé d'onglet **SÉLECTIONNÉ** de l'en-tête de page
-  /// (**CR-IFFD-63**) — le troisième canal de distinction, à côté de la couleur
+  /// Style du libellé d'onglet **SÉLECTIONNÉ** de l'en-tête de page —
+  /// le troisième canal de distinction, à côté de la couleur
   /// et de l'indicateur.
   ///
   /// `null` ⇒ défaut Material 3 (`TextTheme.titleSmall`) — rendu **strictement
   /// inchangé**.
   ///
-  /// ⚠️ Régler CE jeton seul ne touche QUE l'onglet sélectionné : le
+  /// Régler CE jeton seul ne touche QUE l'onglet sélectionné : le
   /// consommateur neutralise explicitement la retombée de `TabBar`
   /// (`unselectedLabelStyle ?? labelStyle`) qui, sans cela, appliquerait le
   /// style sélectionné aux onglets non sélectionnés — donc annulerait la
   /// distinction qu'on vient de demander.
   final TextStyle? pageHeaderTabSelectedLabelStyle;
 
-  /// Style du libellé d'onglet **NON SÉLECTIONNÉ** de l'en-tête de page
-  /// (**CR-IFFD-63**). `null` ⇒ défaut Material 3 — rendu **strictement
+  /// Style du libellé d'onglet **NON SÉLECTIONNÉ** de l'en-tête de page.
+  /// `null` ⇒ défaut Material 3 — rendu **strictement
   /// inchangé**.
   final TextStyle? pageHeaderTabUnselectedLabelStyle;
 
-  // ── Rendu du CHAT — surface « notebook » (lot γ, CR-IFFD-72) ──────────────
+  // ── Rendu du CHAT — surface « notebook » ──────────────────────────────────
   //
-  // 🔴 Ces jetons sont le NIVEAU 2 de la chaîne `paramètre > jeton >
+  // Ces jetons sont le NIVEAU 2 de la chaîne `paramètre > jeton >
   // référence` de `ZChatNotebookSkin` (`zcrud_chat`). `null` des deux côtés
   // reste `null` à travers `lerp` : la valeur de RÉFÉRENCE du consommateur
   // n'est jamais matérialisée par une transition de thème (même invariant que
   // `studyCardBadgeRadius`).
   //
-  // ⚠️ Les trois jetons de COULEUR sont la contrepartie de l'exception FR-26
-  // encadrée accordée à `ZChatNotebookReference` : sans eux, la condition
-  // « remplaçable par jeton » ne serait pas tenue. Ils ne portent, eux, aucune
-  // valeur littérale.
+  // Les trois jetons de COULEUR sont la contrepartie de l'exception encadrée
+  // de l'invariant FR-26 accordée à `ZChatNotebookReference` : sans eux, la
+  // condition « remplaçable par jeton » ne serait pas tenue. Ils ne portent,
+  // eux, aucune valeur littérale.
 
-  /// Fraction de largeur d'une bulle de message (**CR-IFFD-72**).
-  /// `null` ⇒ référence IFFD (`0.95` en notebook).
+  /// Fraction de largeur d'une bulle de message.
+  /// `null` ⇒ référence (`0.95` en notebook).
   final double? chatBubbleWidthFactor;
 
   /// Rayon de la bulle de **requête**. `null` ⇒ référence (12).
   final Radius? chatRequestBubbleRadius;
 
   /// Rayon de la bulle de **réponse**. `null` ⇒ référence, qui vaut elle-même
-  /// `null` : le legacy ne pose aucun `shape` sur la réponse.
+  /// `null` : le rendu historique ne pose aucun `shape` sur la réponse.
   final Radius? chatResponseBubbleRadius;
 
   /// Avatar d'auteur affiché dans une bulle ? `null` ⇒ référence (`false`).
@@ -1549,7 +1544,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Accents **par capacité** du notebook (`mindmap`, `flashcards`, …).
   ///
-  /// 🔴 Ce jeton ne remplace que le canal **chromatique** : les canaux textuel
+  /// Ce jeton ne remplace que le canal **chromatique** : les canaux textuel
   /// et de forme de `ZChatNotebookCapabilityStyle` ne sont pas thémables, sans
   /// quoi un thème pourrait rétablir le défaut « information portée par la
   /// seule couleur ».
@@ -1558,18 +1553,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Séquence de teintes de l'indicateur d'occupation. `null` ⇒ référence.
   final List<Color>? chatBusyPalette;
 
-  // ── Chrome du COMPOSER de chat (chantier composer-lex, lot K4) ────────────
+  // ── Chrome du COMPOSER de chat ─────────────────────────────────────────────
   //
-  // 🔴 Niveau 2 de la chaîne `paramètre > jeton > référence` de
+  // Niveau 2 de la chaîne `paramètre > jeton > référence` de
   // `zChatComposerChromeOf` (`zcrud_chat`) — le régime exact des jetons
   // notebook ci-dessus : `null` des deux côtés reste `null` à travers `lerp`,
-  // la référence lex du consommateur n'est jamais matérialisée par une
+  // la référence du consommateur n'est jamais matérialisée par une
   // transition de thème.
 
   /// Côté de la cible d'ENVOI du composer. `null` ⇒ référence (48).
   ///
-  /// 🔴 Le consommateur l'ÉCRÊTE à son plancher AD-13 (48 dp) : un jeton qui
-  /// demanderait les 40 dp du legacy rend quand même 48. Et son `lerp` est un
+  /// Le consommateur l'ÉCRÊTE à son plancher AD-13 (48 dp) : un jeton qui
+  /// demanderait 40 dp rend quand même 48. Et son `lerp` est un
   /// lerp de PLANCHER ([_lerpNullableFloor]) : une transition de thème ne
   /// matérialise jamais `0` — une cible de 0 dp le temps d'une animation est
   /// une régression d'accessibilité, pas une dimension qui « grandit ».
@@ -1595,8 +1590,8 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Largeur sous laquelle le composer passe en mode « icône seule ».
   /// `null` ⇒ référence (400).
   ///
-  /// 🔴 SEUIL, donc `lerp` **DISCRET** à `t = 0.5` — le précédent exact de
-  /// [dailyTasksMonthBreakpoint] (v0.54.1) : un breakpoint interpolé
+  /// SEUIL, donc `lerp` **DISCRET** à `t = 0.5` — le précédent exact de
+  /// [dailyTasksMonthBreakpoint] : un breakpoint interpolé
   /// continûment ferait BASCULER la mise en page plusieurs fois pendant une
   /// transition de thème, au gré des largeurs intermédiaires. Un seuil n'a pas
   /// d'états intermédiaires légitimes.
@@ -1615,14 +1610,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `ZChatResponseLength.name`, AD-1 : ce package ne peut pas importer
   /// l'enum). `null`/clé absente ⇒ référence.
   ///
-  /// ⚠️ Contrepartie de l'exception FR-26 encadrée des 3 hex d'effort de
-  /// `ZChatComposerReference` : c'est ce jeton qui tient la condition
-  /// « remplaçable par thème ». TABLE, donc `lerp` **discret** à `t = 0.5` —
-  /// même règle que [chatCapabilityAccents] (pas de demi-palette).
+  /// Contrepartie de l'exception encadrée de l'invariant FR-26 pour les
+  /// couleurs d'effort de `ZChatComposerReference` : c'est ce jeton qui tient
+  /// la condition « remplaçable par thème ». TABLE, donc `lerp` **discret** à
+  /// `t = 0.5` — même règle que [chatCapabilityAccents] (pas de demi-palette).
   final Map<String, Color>? chatResponseLengthAccents;
 
   /// Graisse de l'option **choisie** des feuilles de réglages du chat
-  /// (CR-IFFD-74, canal visible n°1). `null` ⇒ référence (`w700`).
+  /// (canal visible n°1). `null` ⇒ référence (`w700`).
   ///
   /// `lerp` par [_lerpNullableFontWeight] : `FontWeight.lerp` avec un côté
   /// `null` substituerait `w400` — la transition matérialiserait une graisse
@@ -1630,14 +1625,14 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// ferait disparaître la sélection visible le temps de l'animation.
   final FontWeight? chatSelectedEmphasisWeight;
 
-  /// Décoration de l'option **choisie** (CR-IFFD-74, canal visible n°2).
+  /// Décoration de l'option **choisie** (canal visible n°2).
   /// `null` ⇒ référence (souligné).
   ///
   /// Une `TextDecoration` n'a pas d'états intermédiaires (pas de
   /// demi-soulignement) : `lerp` **discret** à `t = 0.5`, comme les booléens.
   final TextDecoration? chatSelectedEmphasisDecoration;
 
-  // ── Feuille d'édition (CR-IFFD-SHEET, 2026-08-09) ──────────────────────────
+  // ── Feuille d'édition ──────────────────────────────────────────────────────
   //
   // Maillon **jeton** de la chaîne `paramètre > jeton > référence` de la
   // bottom-sheet d'édition (`ZSheetFrameSpec` / `ZSheetFrameReference`,
@@ -1653,7 +1648,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// depuis une version plus récente du socle, ne doit pas faire planter le
   /// rendu).
   ///
-  /// 🔴 **`String` et NON l'énumération.** `ZSheetFrameMode` vit dans
+  /// **`String` et NON l'énumération.** `ZSheetFrameMode` vit dans
   /// `zcrud_navigation` et **AD-1 interdit à `zcrud_core` de l'importer** (le
   /// cœur ne dépend d'aucun satellite). C'est le patron déjà établi par
   /// [chatCapabilityAccents] / [chatResponseLengthAccents], indexés par le
@@ -1667,7 +1662,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   final String? editionSheetFrameMode;
 
   /// Fraction de la largeur d'écran allouée à la feuille d'édition.
-  /// `null` ⇒ référence (`0,9` — la valeur mesurée dans IFFD).
+  /// `null` ⇒ référence (`0,9` — la valeur mesurée sur la référence).
   ///
   /// `lerp` par [_lerpNullableFloor] et **non** [_lerpNullableDouble] : pour
   /// cette DIMENSION, un côté `null` signifie « la référence », jamais « zéro ».
@@ -1686,10 +1681,10 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Teinte du cadre de la feuille d'édition.
   /// `null` ⇒ **rôle** `ColorScheme.outlineVariant` côté consommateur (celui de
-  /// `Card.outlined`, donc le « gris » exact d'IFFD, en clair **comme** en
-  /// sombre) — jamais un littéral (FR-26).
+  /// `Card.outlined`, donc le « gris » exact de la référence, en clair **comme**
+  /// en sombre) — jamais un littéral (invariant FR-26).
   ///
-  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
   /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait un cadre
   /// **par-dessus** le rôle de repli du consommateur pendant la transition
   /// (précédent exact : [fieldFillColor], [fieldFocusedBorderColor]).
@@ -1700,13 +1695,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// pas une absence de réglage.
   final double? editionSheetBorderWidth;
 
-  // ── Chrome d'édition (CR chrome-presentation-aware, 2026-08-06) ────────────
+  // ── Chrome d'édition ────────────────────────────────────────────────────
   //
   // Maillon **jeton** de `zEditionChromeMetricsOf` (`zcrud_navigation`), dont
   // la référence auditée est `ZEditionChromeReference`. Mêmes règles : nullable,
   // **absents de [ZcrudTheme.fallback]**, `lerp` motivé.
   //
-  // 🔴 Ne sont PAS tokenisés, délibérément :
+  // Ne sont PAS tokenisés, délibérément :
   // * l'**écart entre deux actions** — il lit déjà [gapM], jeton générique
   //   existant. Un `editionChromeGap` serait un SECOND canal pour la même
   //   propriété, c'est-à-dire la « vue parallèle » que ce dépôt s'interdit ;
@@ -1720,7 +1715,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Cible tactile minimale (dp) du chrome d'édition — AD-13.
   /// `null` ⇒ référence (`48`).
   ///
-  /// 🔴 `lerp` par [_lerpNullableFloor], **jamais** [_lerpNullableDouble] :
+  /// `lerp` par [_lerpNullableFloor], **jamais** [_lerpNullableDouble] :
   /// exactement la leçon de [studySessionMinTarget]. Pour une CONTRAINTE de
   /// plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
   /// fenêtre (courte mais réelle) pendant laquelle les cibles du chrome
@@ -1750,18 +1745,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// deux thèmes ne décrit et que personne n'a choisi.
   final double? editionChromePageHeaderExpandedHeight;
 
-  // ── Déclencheur de sélection (CR-SELECT-SEAM, 2026-08-09) ─────────────────
+  // ── Déclencheur de sélection ───────────────────────────────────────────────
   //
   // Maillon **jeton** de la chaîne `paramètre (ZSelectTileSpec) > jeton >
   // référence (ZSelectTileReference)` réalisée par `zcrud_select`. Mêmes règles
   // que les familles `editionSheet*`/`editionChrome*` : nullables, **absents de
   // [ZcrudTheme.fallback]**, `lerp` motivé par famille.
   //
-  // 🔴 **CRITÈRE appliqué** : un jeton se justifie s'il porte une décision à
+  // **CRITÈRE appliqué** : un jeton se justifie s'il porte une décision à
   // l'échelle de l'APPLICATION. Une métrique qu'aucun hôte ne réglera
   // globalement reste atteignable **par paramètre** (`ZSelectTileSpec`) et n'a
   // pas besoin d'un jeton — c'est le précédent `editionChromeGap` /
-  // `actionPadding`. Sur les quinze candidats relevés par le lot de fidélité,
+  // `actionPadding`. Sur les quinze candidats relevés à l'audit de fidélité,
   // **huit** sont retenus ci-dessous et **sept** sont écartés :
   //
   // * `selectTileElevation` — le déclencheur est PLAT par conception (son relief
@@ -1787,21 +1782,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Teinte de la bordure du déclencheur de sélection, pour toute l'app.
   /// `null` ⇒ le consommateur applique **son rôle** (`ColorScheme.outlineVariant`,
-  /// celui de `Card.outlined`) — jamais un littéral (FR-26).
+  /// celui de `Card.outlined`) — jamais un littéral (invariant FR-26).
   ///
-  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
   /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait une
   /// bordure **par-dessus** le rôle de repli du consommateur pendant la
   /// transition de thème (précédent exact : [editionSheetBorderColor]).
   ///
-  /// ⚠️ Ce jeton existe parce que la référence DODLP **prime sur**
+  /// Ce jeton existe parce que la référence de l'hôte **prime sur**
   /// `CardThemeData` : le présentateur pose un `shape:` explicite pour tenir sa
   /// fidélité, donc `cardTheme.shape` ne peut PAS servir de canal. Le jeton est
   /// le seul chemin app-scale restant.
   final Color? selectTileBorderColor;
 
   /// Épaisseur (dp) de la bordure du déclencheur de sélection.
-  /// `null` ⇒ référence (`1` — le défaut de `BorderSide`, ce qu'écrit DODLP).
+  /// `null` ⇒ référence (`1` — le défaut de `BorderSide`, écrit par la référence).
   ///
   /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est une bordure
   /// **absente**, pas une absence de réglage (identique à
@@ -1820,12 +1815,12 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Plancher (dp) de hauteur du déclencheur de sélection — AD-13.
   /// `null` ⇒ référence (`48`).
   ///
-  /// 🔴 `lerp` par [_lerpNullableFloor], **jamais** `_lerpNullableDouble` :
+  /// `lerp` par [_lerpNullableFloor], **jamais** `_lerpNullableDouble` :
   /// exactement la leçon de [editionChromeMinTouchTarget]. Pour une CONTRAINTE
   /// de plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
   /// fenêtre pendant laquelle la cible n'a plus de minimum accessible.
   ///
-  /// ⚠️ Le consommateur ne descend **jamais** sous 48 dp quelle que soit la
+  /// Le consommateur ne descend **jamais** sous 48 dp quelle que soit la
   /// valeur posée ici : ce jeton ne peut que **rehausser** (AD-13).
   final double? selectTileMinHeight;
 
@@ -1848,7 +1843,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// sérialisé depuis une version plus récente du socle, ne doit pas faire
   /// planter le rendu).
   ///
-  /// 🔴 **`String` et NON l'énumération.** `ZSelectChoiceStyle` vit dans
+  /// **`String` et NON l'énumération.** `ZSelectChoiceStyle` vit dans
   /// `zcrud_select` et AD-1 interdit à `zcrud_core` de l'importer. C'est le
   /// patron déjà établi par [editionSheetFrameMode], indexé par le **nom** du
   /// palier pour exactement la même raison.
@@ -1859,7 +1854,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
   /// Forme des options d'une sélection **multi**, pour toute l'app.
   /// Valeurs reconnues et règles identiques à [selectMonoChoiceStyle] ;
-  /// référence : `'switches'` (le défaut **mesuré** de DODLP).
+  /// référence : `'switches'` (le défaut **mesuré**).
   final String? selectMultiChoiceStyle;
 
   /// Forme du **conteneur** de modal de sélection, pour toute l'app.
@@ -1870,24 +1865,24 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Même motivation `String` + `lerp` discret que [selectMonoChoiceStyle].
   final String? selectModalShape;
 
-  // ── Famille `stepper*` (CR-DODLP « Gap 0 » — rail numéroté « tout affiché »)
+  // ── Famille `stepper*` (rail numéroté « tout affiché ») ────────────────────
   // Ces cinq jetons sont NULLABLES et **absents de [ZcrudTheme.fallback]** :
   // l'absence de réglage doit rester distinguable d'un réglage neutre, sinon le
-  // consommateur ne peut plus appliquer son rôle de repli (FR-26). `lerp`
-  // motivé par jeton.
+  // consommateur ne peut plus appliquer son rôle de repli (invariant FR-26).
+  // `lerp` motivé par jeton.
 
   /// Teinte du **rail** vertical reliant les badges d'étape (mode « tout
   /// affiché »). `null` ⇒ le consommateur applique **son rôle**
   /// (`ColorScheme.outlineVariant`) — jamais un littéral.
   ///
-  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
   /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait un rail
   /// **par-dessus** le rôle de repli du consommateur pendant la transition de
   /// thème (précédent exact : [selectTileBorderColor]).
   final Color? stepperRailColor;
 
   /// Épaisseur (dp) du rail vertical. `null` ⇒ référence (`1`, la mesure du
-  /// legacy DODLP `_buildVerticalExpandedSteps`).
+  /// rendu historique `_buildVerticalExpandedSteps`).
   ///
   /// `lerp` par [_lerpNullableFloor] — une épaisseur `0` est un rail **absent**,
   /// pas une absence de réglage (identique à [selectTileBorderWidth]).
@@ -1896,17 +1891,17 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Teinte du **numéro** peint dans le badge circulaire d'étape. `null` ⇒ le
   /// consommateur DÉRIVE le contraste de la couleur du badge
   /// (`ThemeData.estimateBrightnessForColor` → `ColorScheme.surface` /
-  /// `onSurface`) — le legacy DODLP écrit un **blanc littéral** en dur, ce que
-  /// FR-26 interdit et qui casse dès que l'hôte personnalise `activeColor` en
-  /// clair.
+  /// `onSurface`) — le rendu historique écrit un **blanc littéral** en dur, ce
+  /// que l'invariant FR-26 interdit et qui casse dès que l'hôte personnalise
+  /// `activeColor` en clair.
   ///
-  /// 🔴 `lerp` par [_lerpNullableColor] : même raison que [stepperRailColor] —
+  /// `lerp` par [_lerpNullableColor] : même raison que [stepperRailColor] —
   /// matérialiser une teinte pendant la transition écraserait le contraste
   /// dérivé et rendrait le numéro illisible sur une fraction de l'animation.
   final Color? stepperBadgeForegroundColor;
 
   /// Écart vertical (dp) entre deux étapes dépliées du mode « tout affiché ».
-  /// `null` ⇒ référence (`24`, la mesure du legacy).
+  /// `null` ⇒ référence (`24`, la mesure historique).
   ///
   /// `lerp` par [_lerpNullableFloor] : un écart `0` est un empilement collé —
   /// un rendu qu'aucun des deux thèmes ne décrit.
@@ -1915,41 +1910,41 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Largeur maximale (dp) de la **bande latérale** d'indicateur quand
   /// `indicatorPosition: start`. `null` ⇒ référence (`220`).
   ///
-  /// 🔴 Ce jeton n'est pas cosmétique : c'est lui qui **BORNE** la bande. Sans
+  /// Ce jeton n'est pas cosmétique : c'est lui qui **BORNE** la bande. Sans
   /// borne, la `Row` de composition donne au `_StepIndicator` une largeur
   /// **non bornée** et le `Expanded` du rendu compact lève
   /// `RenderFlex children have non-zero flex but incoming width constraints are
-  /// unbounded` (CR-DODLP « Bug 1 »).
+  /// unbounded`.
   ///
   /// `lerp` par [_lerpNullableFloor] : une largeur `0` escamoterait la bande —
   /// pas une absence de réglage.
   final double? stepperSideBandMaxWidth;
 
-  // ── Famille `booleanPill*` (CR-DODLP-BOOL-PILL — pilule « Oui/Non ») ───────
+  // ── Famille `booleanPill*` (pilule « Oui/Non ») ─────────────────────────────
   // Ces neuf jetons sont NULLABLES et **absents de [ZcrudTheme.fallback]** :
   // l'absence de réglage doit rester distinguable d'un réglage neutre, sinon le
-  // consommateur ne peut plus appliquer son rôle / sa référence (FR-26). Ils ne
-  // sont lus QUE par `ZBooleanStyle.pill` : un hôte qui reste sur le style
-  // `switchTile` (défaut) ne les traverse jamais.
+  // consommateur ne peut plus appliquer son rôle / sa référence (invariant
+  // FR-26). Ils ne sont lus QUE par `ZBooleanStyle.pill` : un hôte qui reste
+  // sur le style `switchTile` (défaut) ne les traverse jamais.
 
   /// Teinte de la piste à l'état `true`. `null` ⇒ `ColorScheme.primary`.
   ///
-  /// 🔴 Le legacy DODLP peint un **vert** (`kSuccessColorLight`, `#2E7D32`) :
+  /// Le rendu historique peint un **vert** (`kSuccessColorLight`, `#2E7D32`) :
   /// Material 3 n'a **pas** de rôle « succès », et l'inventer exigerait un
-  /// littéral (interdit — FR-26). La voie exacte pour ce vert est donc la clé
-  /// sémantique `ZBooleanConfig.activeColorKey` résolue par
+  /// littéral (interdit par l'invariant FR-26). La voie exacte pour ce vert est
+  /// donc la clé sémantique `ZBooleanConfig.activeColorKey` résolue par
   /// `ZcrudScope.colorKeyResolver` — ce jeton n'en est que le repli d'échelle
   /// thème.
   ///
-  /// 🔴 `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
+  /// `lerp` par [_lerpNullableColor] et **non** `Color.lerp` :
   /// `Color.lerp(null, c, t)` matérialise `c` dès `t > 0` et peindrait la piste
   /// **par-dessus** le rôle de repli du consommateur pendant la transition
   /// (précédent exact : [stepperRailColor]).
   final Color? booleanPillActiveColor;
 
   /// Teinte de la piste à l'état `false`. `null` ⇒ `ColorScheme.outline` (le
-  /// legacy pose un gris `grey.shade400`). `lerp` par [_lerpNullableColor],
-  /// même raison que [booleanPillActiveColor].
+  /// rendu historique pose un gris `grey.shade400`). `lerp` par
+  /// [_lerpNullableColor], même raison que [booleanPillActiveColor].
   final Color? booleanPillInactiveColor;
 
   /// Teinte du **texte interne et du pouce** à l'état `true`. `null` ⇒ contraste
@@ -1957,18 +1952,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// `ColorScheme.surface` / `onSurface`), ou `onColor` de la paire quand la
   /// couleur vient d'une clé sémantique.
   ///
-  /// 🔴 Le legacy écrit un **blanc littéral** : illisible dès qu'un hôte choisit
-  /// une piste claire. Dériver est le précédent [stepperBadgeForegroundColor],
-  /// posé pour exactement ce défaut. `lerp` par [_lerpNullableColor] :
-  /// matérialiser une teinte pendant la transition écraserait le contraste
-  /// dérivé et rendrait le texte illisible sur une fraction de l'animation.
+  /// Le rendu historique écrit un **blanc littéral** : illisible dès qu'un hôte
+  /// choisit une piste claire. Dériver est le précédent
+  /// [stepperBadgeForegroundColor], posé pour exactement ce défaut. `lerp` par
+  /// [_lerpNullableColor] : matérialiser une teinte pendant la transition
+  /// écraserait le contraste dérivé et rendrait le texte illisible sur une
+  /// fraction de l'animation.
   final Color? booleanPillActiveForegroundColor;
 
   /// Idem à l'état `false`. `null` ⇒ même dérivation de contraste.
   final Color? booleanPillInactiveForegroundColor;
 
-  /// Largeur (dp) de la piste. `null` ⇒ référence (`65`, mesure du legacy
-  /// `edition_screen.dart:1629`).
+  /// Largeur (dp) de la piste. `null` ⇒ référence (`65`, mesure historique).
   ///
   /// `lerp` par [_lerpNullableFloor] : une largeur `0` escamoterait la pilule —
   /// pas une absence de réglage.
@@ -1977,7 +1972,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// Hauteur (dp) de la piste. `null` ⇒ référence (`30`). `lerp` par
   /// [_lerpNullableFloor], même raison que [booleanPillWidth].
   ///
-  /// ⚠️ Ce n'est **pas** la cible tactile : la pilule est centrée dans une
+  /// Ce n'est **pas** la cible tactile : la pilule est centrée dans une
   /// contrainte plancher de 48 dp (AD-13), que ce jeton ne peut pas abaisser.
   final double? booleanPillHeight;
 
@@ -1985,25 +1980,26 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// [_lerpNullableFloor] : un pouce `0` est un pouce **absent**.
   final double? booleanPillThumbSize;
 
-  /// Rayon des coins de la piste. `null` ⇒ référence (`20`, legacy). `lerp` par
-  /// [_lerpNullableRadius] (patron [countPillRadius]).
+  /// Rayon des coins de la piste. `null` ⇒ référence (`20`, rendu historique).
+  /// `lerp` par [_lerpNullableRadius] (patron [countPillRadius]).
   final Radius? booleanPillRadius;
 
   /// Style du texte interne. `null` ⇒ `TextTheme.labelMedium` (12 sp — la
-  /// mesure `valueFontSize: 12` du legacy, obtenue **sans** littéral de taille).
-  /// La **couleur** de ce style est toujours écrasée par le premier plan résolu
-  /// (jeton/dérivation) : un hôte ne peut pas casser le contraste par ce jeton.
+  /// mesure `valueFontSize: 12` historique, obtenue **sans** littéral de
+  /// taille). La **couleur** de ce style est toujours écrasée par le premier
+  /// plan résolu (jeton/dérivation) : un hôte ne peut pas casser le contraste
+  /// par ce jeton.
   ///
   /// `lerp` par `TextStyle.lerp`, qui rend déjà `null` quand les deux côtés le
   /// sont (patron [studySectionTitleStyle]).
   final TextStyle? booleanPillTextStyle;
 
-  /// Fabrique centrale d'`InputDecoration` (M2, AC10) : assemble la décoration à
+  /// Fabrique centrale d'`InputDecoration` : assemble la décoration à
   /// partir des tokens ci-dessus + des **couleurs dérivées** du `ColorScheme`
   /// courant (bordure `outline`, focus `primary`, erreur `error`, remplissage
-  /// dérivé de la surface). AUCUNE couleur codée en dur (FR-26).
+  /// dérivé de la surface). AUCUNE couleur codée en dur (invariant FR-26).
   ///
-  /// **CR-DODLP-THEME-TOKENS** — trois de ces couleurs sont désormais
+  /// Trois de ces couleurs sont désormais
   /// **surchargeables par thème**, chaîne `jeton ?? rôle du ColorScheme` :
   /// * `border`/`enabledBorder` ← [fieldBorderColor] (repli `outline`) ;
   /// * `fillColor` ← [fieldFillColor] (repli `surfaceContainerHighest`) ;
@@ -2015,21 +2011,21 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
   /// [labelTextStyle] — voir le dartdoc de [labelColor] pour les deux mesures
   /// qui l'imposent (canal de focus, et rendu de l'hôte passif).
   ///
-  /// En mode [bare] (usage interne à la Card `large`, AC4) : bordures `none`,
+  /// En mode [bare] (usage interne à la Card `large`) : bordures `none`,
   /// `isDense`, padding zéro, non rempli, **sans** label/floating-label (le label
   /// est porté par la Card).
-  /// Paramètres **additifs DP-12 (M1/M5/M6)** — défauts préservant DP-1 :
+  /// Paramètres **additifs** — défauts préservant la signature historique :
   /// - [labelWidget] : label **enrichi** (`ZFieldLabel`) ; s'il est fourni, il
   ///   prime sur [label] (String) — mutuellement exclusifs côté Flutter (`label`
   ///   Widget vs `labelText`). En `bare`, aucun label n'est posé (porté par la
   ///   Card), quelle que soit la valeur ;
   /// - [prefix]/[suffix] : ornements **texte** (`InputDecoration.prefix`/`suffix`)
   ///   résolus depuis `ZFieldAdornment.text` ;
-  /// - [prefixIcon]/[suffixIcon] : ornements **icône** (déjà présents DP-1) ;
+  /// - [prefixIcon]/[suffixIcon] : ornements **icône** (déjà présents) ;
   /// - [leadingIcon] : ornement de **tête** hors bordure (`InputDecoration.icon`)
   ///   résolu depuis `ZFieldSpec.leading`.
   ///
-  /// Aucune signature existante cassée ; aucune couleur en dur ajoutée (FR-26).
+  /// Aucune signature existante cassée ; aucune couleur en dur ajoutée (invariant FR-26).
   InputDecoration inputDecoration(
     BuildContext context, {
     String? label,
@@ -2048,7 +2044,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     final scheme = Theme.of(context).colorScheme;
     if (bare) {
       // `bare` (Card large) : jamais de label propre (porté par la Card) ; les
-      // ornements internes prefix/suffix/icon restent portés si fournis (AC9).
+      // ornements internes prefix/suffix/icon restent portés si fournis.
       return InputDecoration(
         isDense: true,
         contentPadding: EdgeInsets.zero,
@@ -2097,7 +2093,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         fontWeight: floatingLabelWeight,
       ),
       filled: inputFilled,
-      // CR-DODLP-THEME-TOKENS : jeton DÉDIÉ, absent du repli ⇒ hôte passif
+      // Jeton DÉDIÉ, absent du repli ⇒ hôte passif
       // strictement inchangé (`surfaceContainerHighest`). Voir [fieldFillColor]
       // pour les deux raisons mesurées de ne PAS réutiliser [surfaceColor].
       fillColor: fieldFillColor ?? scheme.surfaceContainerHighest,
@@ -2107,7 +2103,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       suffixText: suffixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
-      // CR-DODLP-THEME-TOKENS : bordure de REPOS pilotée par le jeton
+      // Bordure de REPOS pilotée par le jeton
       // (`fallback` la pose à `outline` ⇒ hôte passif inchangé au pixel).
       // `focusedBorder`/`errorBorder` gardent leurs rôles d'ÉTAT : le jeton de
       // repos ne les teint pas (sinon repos/focus/erreur deviendraient
@@ -2586,7 +2582,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
     if (other is! ZcrudTheme) return this;
     return ZcrudTheme(
       fieldBorderColor: Color.lerp(fieldBorderColor, other.fieldBorderColor, t),
-      // 🔴 `_lerpNullableColor` et NON `Color.lerp` : ces deux jetons sont
+      // `_lerpNullableColor` et NON `Color.lerp` : ces deux jetons sont
       // absents de [ZcrudTheme.fallback], donc `null` signifie « le
       // consommateur applique SON rôle de repli » (`surfaceContainerHighest`,
       // `primary`) — pas « transparent ». Or `Color.lerp(null, c, t)` rend `c`
@@ -2613,7 +2609,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       gapL: gapL + (other.gapL - gapL) * t,
       radiusS: Radius.lerp(radiusS, other.radiusS, t) ?? radiusS,
       radiusM: Radius.lerp(radiusM, other.radiusM, t) ?? radiusM,
-      // ⚠️ `null` des DEUX côtés doit RESTER `null` : c'est l'héritage déclaré
+      // `null` des DEUX côtés doit RESTER `null` : c'est l'héritage déclaré
       // (« badgeRadius nul ⇒ suit radiusM »). MESURÉ sans ce court-circuit :
       // `lerp` de deux thèmes par défaut rendait `Radius.circular(8.0)` au lieu
       // de `null` — l'héritage était donc GELÉ à la première transition de
@@ -2766,7 +2762,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       subfolderTriggerVariant: t < 0.5
           ? subfolderTriggerVariant
           : other.subfolderTriggerVariant,
-      // CR-IFFD-60 — fill/border DISCRETS (aucun rôle intermédiaire n'existe) :
+      // fill/border DISCRETS (aucun rôle intermédiaire n'existe) :
       // bascule au point milieu, `null` des DEUX côtés RESTE `null` (même
       // invariant que `subfolderTriggerVariant` : matérialiser une valeur
       // GÈLERAIT « la variante décide » à la première transition de thème).
@@ -2801,7 +2797,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.subfolderBarPadding,
         t,
       ),
-      // CR-IFFD-46, point 4 — même nature que `subfolderBarPadding` : marge
+      // Même nature que `subfolderBarPadding` : marge
       // CONTINUE qui s'interpole, `null` des DEUX côtés RESTE `null` (sans quoi
       // « aucune enveloppe dans l'arbre » serait GELÉ à la première transition
       // de thème).
@@ -2810,18 +2806,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.subfolderSheetPadding,
         t,
       ),
-      // CR-IFFD-46, point 2 — token DISCRET (aucun alignement intermédiaire
+      // Token DISCRET (aucun alignement intermédiaire
       // n'existe entre `start` et `center`) : bascule au point milieu, même
       // invariant de `null` que les tokens discrets ci-dessus.
       subfolderSheetTitleAlign: t < 0.5
           ? subfolderSheetTitleAlign
           : other.subfolderSheetTitleAlign,
-      // CR-IFFD-49 — largeur CONTINUE : elle s'interpole. `null` des DEUX
+      // Largeur CONTINUE : elle s'interpole. `null` des DEUX
       // côtés RESTE `null` (même invariant que `accentBarHeight`) —
       // matérialiser une valeur ici GÈLERAIT le défaut du consommateur à la
       // première transition de thème.
       railItemWidth: _lerpNullableDouble(railItemWidth, other.railItemWidth, t),
-      // CR-IFFD-62 ① — MÊME invariant : `null` des DEUX côtés reste `null`
+      // MÊME invariant : `null` des DEUX côtés reste `null`
       // (`_lerpNullableDouble` court-circuite le cas null-null), sans quoi la
       // première transition de thème matérialiserait une hauteur là où le
       // contrat dit « aucune contrainte ».
@@ -2833,7 +2829,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       railItemGap: _lerpNullableDouble(railItemGap, other.railItemGap, t),
       // Padding CONTINU et directionnel-préservant (AD-13) ; null-null ⇒ null.
       railPadding: _lerpNullableInsets(railPadding, other.railPadding, t),
-      // CR-IFFD-50 ① — style CONTINU : `TextStyle.lerp` rend déjà `null` quand
+      // Style CONTINU : `TextStyle.lerp` rend déjà `null` quand
       // les DEUX côtés sont `null` (même invariant que `labelTextStyle`) — le
       // repli du consommateur (`labelTextStyle` puis `titleMedium`) n'est
       // jamais GELÉ par une transition de thème.
@@ -2842,7 +2838,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.studySectionTitleStyle,
         t,
       ),
-      // CR-IFFD-50 ②/④ — tokens DISCRETS (aucune forme/rôle/placement
+      // Tokens DISCRETS (aucune forme/rôle/placement
       // intermédiaire n'existe) : bascule au point milieu, `null` des DEUX
       // côtés RESTE `null` (même invariant que `subfolderTriggerVariant`).
       studySectionCountShape: t < 0.5
@@ -2854,7 +2850,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       studySectionCollapsePlacement: t < 0.5
           ? studySectionCollapsePlacement
           : other.studySectionCollapsePlacement,
-      // CR-IFFD-61 ④ — discret ⇒ bascule au point milieu ; continu ⇒
+      // Discret ⇒ bascule au point milieu ; continu ⇒
       // interpolation null-préservante.
       studySectionCountPlacement: t < 0.5
           ? studySectionCountPlacement
@@ -2864,13 +2860,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.studySectionCountGap,
         t,
       ),
-      // CR-IFFD-61 ③ — gouttière interne de la feuille de fratrie.
+      // Gouttière interne de la feuille de fratrie.
       subfolderSheetContentPadding: _lerpNullableInsets(
         subfolderSheetContentPadding,
         other.subfolderSheetContentPadding,
         t,
       ),
-      // CR-IFFD-56 — tokens des cartes d'étude par défaut. Même invariant que
+      // Tokens des cartes d'étude par défaut. Même invariant que
       // TOUS les tokens nullables ci-dessus : `null` des DEUX côtés RESTE
       // `null` (matérialiser une valeur GÈLERAIT la référence du consommateur
       // à la première transition de thème). Discrets ⇒ bascule au point
@@ -2882,7 +2878,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.studyCardRadius,
         t,
       ),
-      // CR-IFFD-61 ①/② — écart tuile→titre et élévation des cartes par défaut.
+      // Écart tuile→titre et élévation des cartes par défaut.
       studyCardLeadingGap: _lerpNullableDouble(
         studyCardLeadingGap,
         other.studyCardLeadingGap,
@@ -2946,18 +2942,18 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
               other.studyCardGlyphSize,
               t,
             ),
-      // CR-IFFD-57 — DISCRET (une map de specs ne s'interpole pas) et
+      // DISCRET (une map de specs ne s'interpole pas) et
       // null-préservant PAR CONSTRUCTION : `null`↔`null` reste `null` — la
       // référence du consommateur n'est jamais matérialisée par une
       // transition de thème (leçon `studyCardBadgeRadius`).
-      // CR-IFFD-62 ④ — token DISCRET (un alignement ne s'interpole pas) et
+      // Token DISCRET (un alignement ne s'interpole pas) et
       // null-préservant PAR CONSTRUCTION : `null`↔`null` reste `null`.
       studyCardContentAlignment: t < 0.5
           ? studyCardContentAlignment
           : other.studyCardContentAlignment,
       flashcardTypeGradients:
           t < 0.5 ? flashcardTypeGradients : other.flashcardTypeGradients,
-      // CR-IFFD-64 — chaque jeton de carte de dossier est null-PRÉSERVANT :
+      // Chaque jeton de carte de dossier est null-PRÉSERVANT :
       // `null`↔`null` reste `null`, donc la valeur de RÉFÉRENCE du
       // consommateur n'est JAMAIS matérialisée par une transition de thème
       // (leçon `studyCardBadgeRadius`/`studyCardGlyphSize`).
@@ -3030,7 +3026,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       folderCardMinContrast: t < 0.5
           ? folderCardMinContrast
           : other.folderCardMinContrast,
-      // CR-IFFD-68 — une DISPOSITION et un POINT DE RUPTURE sont discrets : ni
+      // Une DISPOSITION et un POINT DE RUPTURE sont discrets : ni
       // demi-empilement, ni seuil intermédiaire (qui ferait basculer la mise en
       // page au milieu d'une transition de thème).
       folderCardFooterPlacement: t < 0.5
@@ -3039,7 +3035,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       folderCardFooterBesideMinWidth: t < 0.5
           ? folderCardFooterBesideMinWidth
           : other.folderCardFooterBesideMinWidth,
-      // ── Session de révision (lot 1 « étude ») ─────────────────────────────
+      // ── Session de révision ────────────────────────────────────────────────
       // Les deux FLEX sont DISCRETS : un `flex` est un entier de contrainte.
       // L'interpoler fabriquerait des entiers que personne n'a choisis (et,
       // arrondis, une pile 3/2 passerait par 2/2 — une répartition qu'aucun
@@ -3071,7 +3067,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.studySessionSectionGap,
         t,
       ),
-      // 🔴 Le PLANCHER de cible, lui, n'a PAS droit au traitement précédent :
+      // Le PLANCHER de cible, lui, n'a PAS droit au traitement précédent :
       // `_lerpNullableDouble(null, 48, 0)` rendrait **0**, c'est-à-dire une
       // fenêtre — courte mais réelle — pendant laquelle les cibles tapables de
       // la session n'ont plus AUCUN plancher (AD-13 violé au milieu d'une
@@ -3089,7 +3085,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.studySessionCounterStyle,
         t,
       ),
-      // ── Tâches du jour (lot 4 « étude ») ──────────────────────────────────
+      // ── Tâches du jour ───────────────────────────────────────────────────
       // Marges CONTINUES et directionnel-préservantes (AD-13) ; `null` des deux
       // côtés reste `null`, donc la référence du consommateur n'est jamais
       // matérialisée par une transition de thème.
@@ -3119,7 +3115,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.dailyTasksDayCellRadius,
         t,
       ),
-      // 🔴 Le PLANCHER de cible n'a PAS droit au traitement des dimensions :
+      // Le PLANCHER de cible n'a PAS droit au traitement des dimensions :
       // `_lerpNullableDouble(null, 48, 0)` rendrait **0**, c'est-à-dire une
       // fenêtre — courte mais réelle — pendant laquelle les sept cibles du
       // bandeau n'ont plus AUCUN plancher (AD-13 violé en pleine transition de
@@ -3130,7 +3126,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.dailyTasksMinTapTarget,
         t,
       ),
-      // 🔴 Le SEUIL de mois est DISCRET : interpolé, il ferait apparaître ou
+      // Le SEUIL de mois est DISCRET : interpolé, il ferait apparaître ou
       // disparaître le libellé de mois à une largeur qu'AUCUN des deux thèmes
       // ne décrit — une bascule de mise en page au milieu de l'animation, non
       // choisie. Il bascule à mi-course, comme `folderCardFooterBesideMinWidth`
@@ -3138,7 +3134,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       dailyTasksMonthBreakpoint: t < 0.5
           ? dailyTasksMonthBreakpoint
           : other.dailyTasksMonthBreakpoint,
-      // CR-IFFD-65 — chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
+      // Chaque jeton de hub est null-PRÉSERVANT : `null`↔`null`
       // reste `null`, donc la valeur de RÉFÉRENCE du consommateur n'est JAMAIS
       // matérialisée par une transition de thème (leçon `studyCardBadgeRadius`).
       // Les jetons DISCRETS (densité, palette, nombre de colonnes) ne
@@ -3224,7 +3220,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.contentHubSectionTitleStyle,
         t,
       ),
-      // CR-IFFD-63 — `TextStyle.lerp` est null-préservant : `null`↔`null` rend
+      // `TextStyle.lerp` est null-préservant : `null`↔`null` rend
       // `null`, donc le repli documenté du consommateur (« rien n'est posé »)
       // n'est JAMAIS matérialisé par une transition de thème (même invariant
       // que `studySectionTitleStyle`/`labelTextStyle`).
@@ -3248,7 +3244,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.pageHeaderTabUnselectedLabelStyle,
         t,
       ),
-      // CR-IFFD-72 — jetons du rendu de chat. Chaque helper est
+      // Jetons du rendu de chat. Chaque helper est
       // null-PRÉSERVANT : `null`↔`null` reste `null`, donc la valeur de
       // RÉFÉRENCE de `ZChatNotebookSkin` n'est jamais matérialisée par une
       // transition de thème.
@@ -3290,9 +3286,9 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
           ? chatCapabilityAccents
           : other.chatCapabilityAccents,
       chatBusyPalette: t < 0.5 ? chatBusyPalette : other.chatBusyPalette,
-      // Lot K4 (chantier composer-lex) — chrome du composer. Les arguments de
+      // Chrome du composer. Les arguments de
       // chaque choix de lerp sont sur les DÉCLARATIONS des jetons.
-      // 🔴 PLANCHER de cible et ÉCHELLES : jamais `0` matérialisé — une cible
+      // PLANCHER de cible et ÉCHELLES : jamais `0` matérialisé — une cible
       // de 0 dp est une régression AD-13, une échelle 0 un glyphe invisible.
       chatComposerSendTargetSize: _lerpNullableFloor(
         chatComposerSendTargetSize,
@@ -3314,7 +3310,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
         other.chatComposerSendScaleDuration,
         t,
       ),
-      // 🔴 SEUIL : DISCRET à t=.5 — le correctif v0.54.1
+      // SEUIL : DISCRET à t=.5 — le correctif v0.54.1
       // (`dailyTasksMonthBreakpoint`) est né d'un lerp continu tagué rouge.
       chatComposerMobileBreakpoint: t < 0.5
           ? chatComposerMobileBreakpoint
@@ -3342,7 +3338,7 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
       chatSelectedEmphasisDecoration: t < 0.5
           ? chatSelectedEmphasisDecoration
           : other.chatSelectedEmphasisDecoration,
-      // ── Feuille d'édition (CR-IFFD-SHEET) ────────────────────────────────
+      // ── Feuille d'édition ──────────────────────────────────────────────────
       // MODE : valeur DISCRÈTE (un nom de palier), donc bascule à mi-course —
       // il n'existe pas de demi-cadre, et interpoler une chaîne n'a aucun sens.
       // Même règle que `subfolderTriggerVariant`.
@@ -3527,13 +3523,13 @@ class ZcrudTheme extends ThemeExtension<ZcrudTheme> {
 
 /// Interpole deux graisses nullables — **sans jamais matérialiser `w400`**.
 ///
-/// 🔴 Même famille de raisons que [_lerpNullableDuration] et
+/// Même famille de raisons que [_lerpNullableDuration] et
 /// [_lerpNullableFloor] : `FontWeight.lerp` substitue `FontWeight.normal` à un
 /// côté `null`. Or `null` signifie ici « le consommateur applique SA graisse
-/// d'emphase de référence » (`w700` pour la sélection CR-IFFD-74) : interpoler
+/// d'emphase de référence » (`w700` pour la sélection) : interpoler
 /// depuis `w400` ferait passer l'option choisie par une graisse NORMALE — la
 /// sélection visible disparaîtrait le temps de la transition, exactement le
-/// défaut que CR-IFFD-74 corrige. Un côté `null` ⇒ on rend l'autre côté, seule
+/// défaut corrigé ici. Un côté `null` ⇒ on rend l'autre côté, seule
 /// valeur réellement connue.
 FontWeight? _lerpNullableFontWeight(FontWeight? a, FontWeight? b, double t) {
   if (a == null) return b;
@@ -3546,7 +3542,7 @@ double? _lerpNullableDouble(double? a, double? b, double t) =>
 
 /// Interpole deux **PLANCHERS** nullables — sans jamais matérialiser `0`.
 ///
-/// 🔴 Différence VOLONTAIRE avec [_lerpNullableDouble], pour la même raison que
+/// Différence VOLONTAIRE avec [_lerpNullableDouble], pour la même raison que
 /// [_lerpNullableDuration] : pour une DIMENSION, traiter un côté absent comme
 /// `0` est plausible (une barre qui grandit depuis rien) ; pour une CONTRAINTE
 /// de plancher, `0` n'est pas une absence — c'est « aucun plancher », donc une
@@ -3573,7 +3569,7 @@ Radius? _lerpNullableRadius(Radius? a, Radius? b, double t) =>
 
 /// Interpolation d'une marge NULLABLE **directionnelle-compatible**.
 ///
-/// ⚠️ `EdgeInsetsGeometry.lerp` préserve la nature des deux bornes (un
+/// `EdgeInsetsGeometry.lerp` préserve la nature des deux bornes (un
 /// `EdgeInsetsDirectional` interpolé avec `EdgeInsetsDirectional.zero` reste
 /// directionnel — AD-13). `null` des deux côtés reste `null`.
 EdgeInsetsGeometry? _lerpNullableInsets(
@@ -3618,8 +3614,8 @@ AlignmentGeometry? _lerpNullableAlignment(
 
 /// Interpole deux durées nullables — **sans jamais matérialiser `Duration.zero`**.
 ///
-/// 🔴 Différence VOLONTAIRE avec les autres helpers nullables (CR epic VIS,
-/// MAJEUR-1). Pour une dimension, traiter un côté absent comme `0` est
+/// Différence VOLONTAIRE avec les autres helpers nullables.
+/// Pour une dimension, traiter un côté absent comme `0` est
 /// acceptable : une barre d'accent qui « grandit depuis rien » est un rendu
 /// plausible. Pour une DURÉE, `0` n'est pas une absence, c'est une valeur
 /// **invalide** : une animation de durée nulle est dégénérée, et
@@ -3636,7 +3632,7 @@ AlignmentGeometry? _lerpNullableAlignment(
 /// `lerp` d'une couleur dont `null` **n'est pas** « transparent » mais « repli
 /// du consommateur » (jeton absent de [ZcrudTheme.fallback]).
 ///
-/// 🔴 Différence VOLONTAIRE avec `Color.lerp`, même famille de raisons que
+/// Différence VOLONTAIRE avec `Color.lerp`, même famille de raisons que
 /// [_lerpNullableFloor]/[_lerpNullableDuration] : `Color.lerp(null, b, t)` rend
 /// `b` avec l'alpha mis à l'échelle de `t` — à `t = 0` une couleur totalement
 /// TRANSPARENTE, c'est-à-dire une couleur fantôme substituée au rôle de repli.

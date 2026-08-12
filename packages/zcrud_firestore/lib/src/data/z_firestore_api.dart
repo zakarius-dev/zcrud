@@ -1,6 +1,6 @@
 import 'package:zcrud_core/zcrud_core.dart';
 
-/// Marqueur d'API publique de `zcrud_firestore` (placeholder E1-2).
+/// Marqueur d'API publique de `zcrud_firestore` (placeholder).
 ///
 /// Substance réelle posée dans la feature-story dédiée. Référence les
 /// marqueurs des dépendances `zcrud_*` pour rendre les arêtes AD-1

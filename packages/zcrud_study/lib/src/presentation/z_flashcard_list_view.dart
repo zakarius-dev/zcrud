@@ -167,31 +167,31 @@ class ZFlashcardListLabels {
   /// Libellé de l'action « générer avec l'IA » (**absente** sans port — AC16).
   final String generateWithAiAction;
 
-  /// Badge d'une carte en **lecture seule** (AD-45).
+  /// Badge d'une carte en **lecture seule** (invariant AD-4).
   final String readOnlyBadge;
 }
 
-/// Forme d'un item de la liste de flashcards (**CR-IFFD-58**).
+/// Forme d'un item de la liste de flashcards.
 ///
 /// « **Une carte, toutes les surfaces** » : la liste rend par défaut la MÊME
 /// carte que le rail et la grille des sections ([ZDefaultFlashcardCard],
-/// rendu de référence CR-IFFD-57) — la continuité visuelle ne se rompt plus au
-/// moment où l'utilisateur demande « plus de la même chose ».
+/// rendu de référence) — la continuité visuelle ne se rompt plus au moment
+/// où l'utilisateur demande « plus de la même chose ».
 ///
-/// La **tuile n'est PAS supprimée** (la CR le demande explicitement) : en
-/// densité contrainte — sélection par lot massive, réordonnancement long — une
-/// forme compacte reste un choix légitime. C'est un **mode explicite**, jamais
-/// un remplacement sec : l'hôte tranche, le socle offre les deux.
+/// La **tuile n'est PAS supprimée** : en densité contrainte — sélection par
+/// lot massive, réordonnancement long — une forme compacte reste un choix
+/// légitime. C'est un **mode explicite**, jamais un remplacement sec : l'hôte
+/// tranche, le socle offre les deux.
 enum ZFlashcardListItemStyle {
-  /// La carte de flashcard par défaut du socle (CR-IFFD-47/57) — **le défaut**.
+  /// La carte de flashcard par défaut du socle — **le défaut**.
   card,
 
-  /// La tuile compacte historique (su-8) : texte à plat, badge de type,
-  /// aperçu de réponse en grille, slot [ZFlashcardListView.contentBuilder].
+  /// La tuile compacte historique : texte à plat, badge de type, aperçu de
+  /// réponse en grille, slot [ZFlashcardListView.contentBuilder].
   tile,
 }
 
-/// Rend le **contenu** d'une carte dans une tuile — slot AD-40 (AC3).
+/// Rend le **contenu** d'une carte dans une tuile.
 ///
 /// `null` ⇒ **texte brut thématisé** (le défaut). L'app injecte son moteur riche
 /// (Markdown/LaTeX) sans que `zcrud_study` ne connaisse Quill.
@@ -460,51 +460,51 @@ class ZFlashcardListView extends StatefulWidget {
   /// [typeLabels] : `null` ⇒ la clé brute (`'pdf'`, `'book'`…) est affichée.
   final Map<String, String>? sourceLabels;
 
-  /// Slot de rendu de contenu **opt-in** (AD-40) — `null` ⇒ texte brut thématisé.
+  /// Slot de rendu de contenu **opt-in** — `null` ⇒ texte brut thématisé.
   ///
   /// Ne vit QUE sur la **tuile** : le fournir replie l'item sur
-  /// [ZFlashcardListItemStyle.tile] (**neutralité CR-IFFD-58** : un hôte qui
+  /// [ZFlashcardListItemStyle.tile] (**neutralité stricte** : un hôte qui
   /// passait `contentBuilder` obtient EXACTEMENT ce qu'il obtenait).
   final ZFlashcardTileContentBuilder? contentBuilder;
 
-  /// Forme des items (**CR-IFFD-58**). `null` (défaut) ⇒
-  /// [ZFlashcardListItemStyle.card] (« une carte, toutes les surfaces »),
-  /// SAUF si [contentBuilder] est fourni — la tuile est alors conservée
-  /// (neutralité stricte : le slot AD-40 reste le point d'extension).
-  /// Explicite ⇒ la valeur gouverne (assert : `card` + [contentBuilder] est
-  /// refusé — jamais un slot silencieusement inerte, AD-4).
+  /// Forme des items. `null` (défaut) ⇒ [ZFlashcardListItemStyle.card]
+  /// (« une carte, toutes les surfaces »), SAUF si [contentBuilder] est
+  /// fourni — la tuile est alors conservée (neutralité stricte : le slot
+  /// reste le point d'extension). Explicite ⇒ la valeur gouverne (assert :
+  /// `card` + [contentBuilder] est refusé — jamais un slot silencieusement
+  /// inerte, invariant AD-4).
   final ZFlashcardListItemStyle? itemStyle;
 
-  /// Dégradés par type relayés à la carte par défaut (**CR-IFFD-57/58** —
-  /// patron `ZDefaultFlashcardCard.typeColors`, même chaîne de priorité).
-  /// Sans effet en mode [ZFlashcardListItemStyle.tile].
+  /// Dégradés par type relayés à la carte par défaut (patron
+  /// `ZDefaultFlashcardCard.typeColors`, même chaîne de priorité). Sans
+  /// effet en mode [ZFlashcardListItemStyle.tile].
   final Map<String, ZGradientSpec>? typeColors;
 
   /// Libellés LOCALISÉS du tampon Vrai/Faux de l'**aperçu de réponse**
-  /// (**CR-IFFD-59** — patron `ZDefaultFlashcardCard.answerLabels`, clés
-  /// opaques `'true'`/`'false'`, repli sur la clé). En mode
+  /// (patron `ZDefaultFlashcardCard.answerLabels`, clés opaques
+  /// `'true'`/`'false'`, repli sur la clé). En mode
   /// [ZFlashcardListItemStyle.card], l'aperçu est ACTIF (« une carte, toutes
   /// les surfaces » — la liste est une surface de consultation, comme la
-  /// grille legacy `isInGrid`). Sans effet en mode tuile (la tuile porte son
+  /// grille en mode surface). Sans effet en mode tuile (la tuile porte son
   /// propre aperçu historique).
   final Map<String, String>? answerLabels;
 
-  /// Sélection multiple **opt-in** (me-3, FR-SU19). `null` ⇒ la liste est
-  /// **exactement** su-8 (zéro case, zéro barre — AC2, non-régression su-8).
+  /// Sélection multiple **opt-in**. `null` ⇒ la liste est **exactement** le
+  /// rendu historique (zéro case, zéro barre — non-régression garantie).
   final ZFlashcardListSelection? selection;
 
   /// Délai de débounce de la recherche (injectable pour les tests).
   final Duration searchDebounce;
 
-  // ── CR-IFFD-35 : mise en grille bornée, AU MÊME CONTRAT que le layout ───────
+  // ── Mise en grille bornée, AU MÊME CONTRAT que le layout sectionné ──────
   // Noms, types et défauts sont IDENTIQUES à `ZStudyToolsSectionSpec`
-  // (`crossAxisMaxColumns` / `crossAxisItemHeight`) — pas une variante : c'est
-  // précisément le reproche de la CR (« ne pas figer, sur un widget, une
-  // décision qu'un autre widget du même paquet expose déjà »). La primitive est
-  // la MÊME (`ZAdaptiveGrid` → `computeCrossAxisCount`) : aucune seconde
-  // mécanique de grille n'est écrite ici.
+  // (`crossAxisMaxColumns` / `crossAxisItemHeight`) — pas une variante : la
+  // règle est de ne pas figer, sur un widget, une décision qu'un autre
+  // widget du même paquet expose déjà. La primitive est la MÊME
+  // (`ZAdaptiveGrid` → `computeCrossAxisCount`) : aucune seconde mécanique
+  // de grille n'est écrite ici.
 
-  /// **Plafond** du nombre de colonnes de la grille (CR-IFFD-35).
+  /// **Plafond** du nombre de colonnes de la grille.
   ///
   /// `null` (défaut) ⇒ **illimité** : le nombre de colonnes reste dérivé de la
   /// seule largeur LOCALE (une colonne par tranche de [_kMinTileWidth]) —
@@ -514,22 +514,23 @@ class ZFlashcardListView extends StatefulWidget {
   /// qu'au-dessus de la largeur où la responsive donne déjà moins de colonnes ;
   /// sous ce seuil le rendu est identique avec ou sans plafond.
   ///
-  /// **AD-10 — repli défensif ALIGNÉ sur la primitive** : la valeur est
-  /// transmise TELLE QUELLE à `ZAdaptiveGrid`, donc à `computeCrossAxisCount`,
-  /// dont le contrat est déjà écrit : un plafond `< minColumns` (donc `0` ou
-  /// négatif) est **remonté au plancher** (≥ 1 colonne garantie) — jamais de
-  /// grille vide, jamais de `RangeError`. Aucun assainissement local : un
-  /// plafond qui se comporterait autrement ici que sur `ZSectionedStudyLayout`
-  /// serait exactement la « variante » que la CR refuse.
+  /// **Repli défensif ALIGNÉ sur la primitive (invariant AD-10)** : la
+  /// valeur est transmise TELLE QUELLE à `ZAdaptiveGrid`, donc à
+  /// `computeCrossAxisCount`, dont le contrat est déjà écrit : un plafond
+  /// `< minColumns` (donc `0` ou négatif) est **remonté au plancher** (≥ 1
+  /// colonne garantie) — jamais de grille vide, jamais de `RangeError`.
+  /// Aucun assainissement local : un plafond qui se comporterait autrement
+  /// ici que sur `ZSectionedStudyLayout` serait une variante non justifiée
+  /// de la même règle.
   ///
   /// **Ne s'applique PAS au mode réordonnable** (tri manuel + aucun filtre de
   /// contenu actif) : ce chemin est un `ReorderableListView.builder` mono-colonne
-  /// du SDK, où la notion de colonne n'existe pas. L'écart est le MÊME que sur
-  /// `ZStudyToolsSectionSpec` avant CR-IFFD-15, et il est **visible** (l'ordre
-  /// manuel est un mode explicitement choisi par l'utilisateur), jamais silencieux.
+  /// du SDK, où la notion de colonne n'existe pas. L'écart existe aussi sur
+  /// `ZStudyToolsSectionSpec`, et il est **visible** (l'ordre manuel est un
+  /// mode explicitement choisi par l'utilisateur), jamais silencieux.
   final int? crossAxisMaxColumns;
 
-  /// Hauteur fixe d'une cellule de grille (CR-IFFD-35), pendant de
+  /// Hauteur fixe d'une cellule de grille, pendant de
   /// [crossAxisMaxColumns] — MÊME nom et MÊME type que sur
   /// `ZStudyToolsSectionSpec`.
   ///
@@ -671,12 +672,11 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
     });
   }
 
-  /// Forme EFFECTIVE des items (**CR-IFFD-58**) — « une carte, toutes les
-  /// surfaces » : la CARTE est le défaut ; un [ZFlashcardListView.contentBuilder]
-  /// fourni replie sur la tuile (neutralité stricte — le slot AD-40 obtient
-  /// EXACTEMENT ce qu'il obtenait) ; un [ZFlashcardListView.itemStyle]
-  /// explicite gouverne (l'assert du constructeur exclut `card` +
-  /// contentBuilder).
+  /// Forme EFFECTIVE des items — « une carte, toutes les surfaces » : la
+  /// CARTE est le défaut ; un [ZFlashcardListView.contentBuilder] fourni
+  /// replie sur la tuile (neutralité stricte — le slot obtient EXACTEMENT
+  /// ce qu'il obtenait) ; un [ZFlashcardListView.itemStyle] explicite
+  /// gouverne (l'assert du constructeur exclut `card` + contentBuilder).
   ZFlashcardListItemStyle get _effectiveStyle =>
       widget.itemStyle ??
       (widget.contentBuilder != null
@@ -966,23 +966,22 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
       );
     }
 
-    // AC1/NFR-SU9 — grille responsive VIRTUALISÉE : `ZAdaptiveGrid.builder`
-    // (jamais `children:`, qui matérialiserait des MILLIERS de widgets à chaque
+    // Grille responsive VIRTUALISÉE : `ZAdaptiveGrid.builder` (jamais
+    // `children:`, qui matérialiserait des MILLIERS de widgets à chaque
     // frappe ; jamais une grille réécrite).
     return ZAdaptiveGrid.builder(
       key: ZFlashcardListView.gridKey,
       itemCount: visible.length,
       minItemWidth: _kMinTileWidth,
-      // CR-IFFD-35 — hauteur d'item INJECTABLE ; `null` ⇒ en mode CARTE la
-      // hauteur FIXE de référence (200, legacy — c'est elle qui rend la
-      // grille régulière et confortable, complément owner CR-IFFD-57/58), en
-      // mode TUILE la hauteur historique (180, non-régression su-8).
+      // Hauteur d'item INJECTABLE ; `null` ⇒ en mode CARTE la hauteur FIXE
+      // de référence (c'est elle qui rend la grille régulière et
+      // confortable), en mode TUILE la hauteur historique (non-régression).
       itemHeight: widget.crossAxisItemHeight ??
           (_effectiveStyle == ZFlashcardListItemStyle.card
               ? ZFlashcardCardReference.cardHeight
               : _kTileHeight),
-      // CR-IFFD-35 — plafond de colonnes transmis TEL QUEL à la primitive
-      // (`null` ⇒ illimité, rendu inchangé ; absurde ⇒ plancher, AD-10).
+      // Plafond de colonnes transmis TEL QUEL à la primitive (`null` ⇒
+      // illimité, rendu inchangé ; absurde ⇒ plancher, invariant AD-10).
       maxColumns: widget.crossAxisMaxColumns,
       itemBuilder: (context, i) =>
           _buildTile(context, visible[i], visible, i,
@@ -1020,9 +1019,9 @@ class _ZFlashcardListViewState extends State<ZFlashcardListView> {
         card: card,
         typeLabels: widget.typeLabels,
         typeColors: widget.typeColors,
-        // CR-IFFD-59 — le style `card` ACTIVE l'aperçu de réponse (CR-58 :
-        // « une carte, toutes les surfaces » — la liste est une surface de
-        // consultation, l'équivalent du `isInGrid` legacy).
+        // Le style `card` ACTIVE l'aperçu de réponse : « une carte, toutes
+        // les surfaces » — la liste est une surface de consultation, comme
+        // la grille en mode surface.
         showAnswerPreview: true,
         answerLabels: widget.answerLabels,
         // Balises SANS store (AD-2) : reconstruites depuis les ids + la table
@@ -1396,8 +1395,8 @@ class _FlashcardTile extends StatelessWidget {
                 ],
               ),
               SizedBox(height: theme.gapS),
-              // Question TRONQUÉE (AC3) — slot AD-40, défaut texte brut thématisé.
-              // 🔵 CR-IFFD-43 — le slot AD-40 est du contenu d'HÔTE. Un
+              // Question TRONQUÉE — slot de rendu de contenu, défaut texte
+              // brut thématisé. Ce slot est du contenu d'HÔTE. Un
               // `DefaultTextStyle.merge` n'atteint que le texte qui HÉRITE :
               // un slot stylé depuis `Theme.of(context).textTheme.*` gardait
               // la couleur AMBIANTE au lieu de `foreground`, parce que les
@@ -1406,10 +1405,11 @@ class _FlashcardTile extends StatelessWidget {
               Flexible(
                 child: ZForegroundOverride(
                   color: foreground,
-                  // `Builder` OBLIGATOIRE : le slot AD-40 est un *builder*.
-                  // L'invoquer avec le `context` de la tuile le ferait résoudre
-                  // `Theme.of` AU-DESSUS de l'enveloppe — la couleur imposée
-                  // n'atteindrait alors rien du tout. Mesuré, pas supposé.
+                  // `Builder` OBLIGATOIRE : le slot de contenu est un
+                  // *builder*. L'invoquer avec le `context` de la tuile le
+                  // ferait résoudre `Theme.of` AU-DESSUS de l'enveloppe — la
+                  // couleur imposée n'atteindrait alors rien du tout.
+                  // Mesuré, pas supposé.
                   child: Builder(
                     builder: (BuildContext inner) =>
                         _content(inner, card.question, maxLines: 2),
@@ -1418,7 +1418,7 @@ class _FlashcardTile extends StatelessWidget {
               ),
               if (showAnswerPreview && preview != null) ...<Widget>[
                 SizedBox(height: theme.gapS),
-                // 🔵 CR-IFFD-43 — même slot AD-40, même correctif (aperçu).
+                // Même slot de contenu, même correctif (aperçu).
                 Flexible(
                   child: ZForegroundOverride(
                     color: foreground,
@@ -1475,9 +1475,9 @@ class _FlashcardTile extends StatelessWidget {
   }
 }
 
-/// Pied d'actions d'un item en mode CARTE (**CR-IFFD-58**) : badge lecture
-/// seule (a11y — patron tuile) + le menu d'actions EXISTANT de la liste
-/// (mêmes actions, mêmes gardes AD-44/AD-45 — aucune seconde voie).
+/// Pied d'actions d'un item en mode CARTE : badge lecture seule (a11y —
+/// patron tuile) + le menu d'actions EXISTANT de la liste (mêmes actions,
+/// mêmes gardes — aucune seconde voie).
 class _CardTrailing extends StatelessWidget {
   const _CardTrailing({
     required this.card,

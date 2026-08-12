@@ -1,77 +1,75 @@
-/// Contrôleur de BROUILLON du multi-éditeur de flashcards (me-2, FR-SU20 —
-/// AD-43/AD-2/AD-15/AD-10/AD-39).
+/// Contrôleur de brouillon du multi-éditeur de flashcards (invariants AD-2,
+/// AD-10, AD-15).
 ///
-/// ## Régime DÉCLARÉ, liste de travail EN MÉMOIRE (AD-43 — LE point dur)
+/// ## Régime déclaré, liste de travail en mémoire
 ///
-/// Le régime d'édition est **DÉCLARÉ** ([ZEditingMode.draft]), jamais implicite.
-/// La liste de travail vit **entièrement en mémoire** : éditer / ajouter /
-/// supprimer / appliquer un champ commun / recevoir un lot généré **mute cette
-/// liste et RIEN d'autre**. Aucune persistance n'est possible depuis ce
-/// contrôleur : il **n'importe AUCUN** store/repository/adaptateur (la garde de
-/// pureté récursive `z_widgets_purity_test.dart` le verrouille — aucune ligne de
-/// code ne matche `Repository`/`LocalStore`/`RemoteStore`/`.save(`/`.persist(`).
-/// La **seule** frontière de persistance est le callback [commit] injecté — un
-/// **unique** franchissement portant l'intégralité de la liste (jamais une
-/// écriture par-carte).
+/// Le régime d'édition est déclaré ([ZEditingMode.draft]), jamais implicite.
+/// La liste de travail vit entièrement en mémoire : éditer / ajouter /
+/// supprimer / appliquer un champ commun / recevoir un lot généré mute cette
+/// liste et rien d'autre. Aucune persistance n'est possible depuis ce
+/// contrôleur : il n'importe aucun store/repository/adaptateur. La seule
+/// frontière de persistance est le callback [commit] injecté — un unique
+/// franchissement portant l'intégralité de la liste (jamais une écriture
+/// par-carte).
 ///
-/// ## Réactivité Flutter-native PURE (AD-2/AD-15, SM-1)
+/// ## Réactivité Flutter-native pure (invariants AD-2/AD-15)
 ///
 /// `ChangeNotifier` pur-Flutter exposant deux tranches `ValueListenable`
-/// **disjointes** :
-/// * [orderKeys] — tranche **STRUCTURELLE** (clés de travail ordonnées) : émise
-///   UNIQUEMENT sur ajout / suppression / lot généré / champ commun. Éditer un
-///   champ d'une carte **ne l'émet PAS** — la liste ne se reconstruit donc pas à
+/// disjointes :
+/// * [orderKeys] — tranche structurelle (clés de travail ordonnées) : émise
+///   uniquement sur ajout / suppression / lot généré / champ commun. Éditer un
+///   champ d'une carte ne l'émet pas — la liste ne se reconstruit donc pas à
 ///   la frappe (objectif produit n°1).
 /// * [isDirty] — canal `bool` dédié (divergence vs snapshot initial) : il ne
 ///   notifie que le garde `ZDiscardChangesGuard`, jamais les tranches de champ.
 ///
-/// L'identité d'une entrée de travail est une **clé LOCALE stable** ([ZDraftEntry.key],
-/// ex. `draft-3`) — **jamais** l'`id` persisté de la carte (qui reste `null` pour
-/// une carte éphémère, AD-37). La sélection multiple (`ZListSelectionController`)
-/// et les `ValueKey` de widget sont keyées par cette clé de travail : immunisées
-/// contre l'absence d'`id`.
+/// L'identité d'une entrée de travail est une clé locale stable
+/// ([ZDraftEntry.key], ex. `draft-3`) — jamais l'`id` persisté de la carte
+/// (qui reste `null` pour une carte éphémère). La sélection multiple
+/// (`ZListSelectionController`) et les `ValueKey` de widget sont keyées par
+/// cette clé de travail : immunisées contre l'absence d'`id`.
 library;
 
 import 'package:flutter/foundation.dart';
-// `Right`/`Unit`/`unit` sont RÉ-EXPORTÉS par `zcrud_core/domain.dart` (qui
+// `Right`/`Unit`/`unit` sont ré-exportés par `zcrud_core/domain.dart` (qui
 // re-export dartz) : aucune dépendance directe à `dartz` n'est ajoutée à
 // `zcrud_study` (arête pubspec unique = `zcrud_ui_kit`).
 import 'package:zcrud_core/domain.dart'
     show Left, Right, ZServerFailure, Unit, ZFailure, ZResult, unit;
 import 'package:zcrud_flashcard/zcrud_flashcard.dart' show ZFlashcard;
 
-/// Régime d'édition **DÉCLARÉ** (AD-43) — jamais implicite (enum, pas un `bool`).
+/// Régime d'édition déclaré — jamais implicite (enum, pas un `bool`).
 ///
 /// Un seul membre aujourd'hui ([draft]) : l'énumération rend le régime
-/// **explicite et falsifiable** (une surface qui persisterait ne serait pas
+/// explicite et falsifiable (une surface qui persisterait ne serait pas
 /// `draft`), et laisse la porte ouverte à un futur régime (ex. édition directe)
-/// **sans** transformer un booléen implicite en état impossible.
+/// sans transformer un booléen implicite en état impossible.
 enum ZEditingMode {
-  /// Brouillon : liste de travail EN MÉMOIRE, rien persisté avant [commit].
+  /// Brouillon : liste de travail en mémoire, rien persisté avant [commit].
   draft,
 }
 
-/// Une entrée de la liste de travail : une clé LOCALE stable + la carte courante.
+/// Une entrée de la liste de travail : une clé locale stable + la carte courante.
 ///
 /// [key] est l'identité de travail (jamais persistée, jamais l'`id` de la carte) :
 /// elle keye la sélection et les `ValueKey` de widget, restant valide même quand
-/// `card.id == null` (carte éphémère AD-37).
+/// `card.id == null` (carte éphémère).
 @immutable
 class ZDraftEntry {
   /// Construit une entrée de brouillon.
   const ZDraftEntry({required this.key, required this.card});
 
-  /// Identité de travail LOCALE stable (ex. `draft-3`) — jamais persistée.
+  /// Identité de travail locale stable (ex. `draft-3`) — jamais persistée.
   final String key;
 
   /// Carte courante (immuable ; une édition produit un nouveau [ZFlashcard]).
   final ZFlashcard card;
 }
 
-/// Contrôleur de brouillon EN MÉMOIRE (aucun store — AD-43).
+/// Contrôleur de brouillon en mémoire (aucun store).
 class ZMultiFlashcardDraftController extends ChangeNotifier {
   /// Construit le contrôleur autour d'un lot initial (souvent vide, ou un lot
-  /// rentré pour édition). Le lot initial devient le **snapshot** de référence
+  /// rentré pour édition). Le lot initial devient le snapshot de référence
   /// du calcul de divergence ([isDirty]).
   ZMultiFlashcardDraftController({
     List<ZFlashcard> initialCards = const <ZFlashcard>[],
@@ -86,7 +84,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     _isDirty = ValueNotifier<bool>(false);
   }
 
-  /// Régime d'édition **DÉCLARÉ** (AD-43) — toujours [ZEditingMode.draft] ici.
+  /// Régime d'édition déclaré — toujours [ZEditingMode.draft] ici.
   ZEditingMode get mode => ZEditingMode.draft;
 
   final List<String> _order = <String>[];
@@ -95,23 +93,23 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
   late List<ZFlashcard> _snapshot;
   bool _disposed = false;
 
-  /// Nombre de POSITIONS de la liste de travail qui divergent (par valeur) de leur
-  /// contrepartie du [_snapshot] — maintenu **incrémentalement** (FIX-9/SM-1). Vaut
+  /// Nombre de positions de la liste de travail qui divergent (par valeur) de
+  /// leur contrepartie du [_snapshot] — maintenu incrémentalement. Vaut
   /// `-1` (sentinelle) quand la longueur diverge (dirty structurel) : dans ce cas
   /// le décompte positionnel n'a pas de sens, le brouillon est dirty d'office.
   int _divergentCount = 0;
 
   late final ValueNotifier<List<String>> _orderKeys;
 
-  /// Tranche **STRUCTURELLE** : clés de travail ordonnées. Émise UNIQUEMENT sur
+  /// Tranche structurelle : clés de travail ordonnées. Émise uniquement sur
   /// changement de composition (ajout / suppression / lot généré / champ commun)
-  /// — **jamais** sur une édition de champ (SM-1 : la liste ne se reconstruit
-  /// pas à la frappe).
+  /// — jamais sur une édition de champ (invariant AD-2 : la liste ne se
+  /// reconstruit pas à la frappe).
   ValueListenable<List<String>> get orderKeys => _orderKeys;
 
   late final ValueNotifier<bool> _isDirty;
 
-  /// Canal `bool` de divergence vs snapshot initial (AC3). Ne notifie que le
+  /// Canal `bool` de divergence vs snapshot initial. Ne notifie que le
   /// garde anti-perte de saisie, jamais les tranches de champ.
   ValueListenable<bool> get isDirty => _isDirty;
 
@@ -124,7 +122,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
   /// Carte courante pour la clé de travail [key], ou `null` si absente.
   ZFlashcard? cardOf(String key) => _cards[key];
 
-  /// Instantané ORDONNÉ de la liste de travail (copie non modifiable).
+  /// Instantané ordonné de la liste de travail (copie non modifiable).
   List<ZFlashcard> get workingList =>
       List<ZFlashcard>.unmodifiable(_computeWorkingList());
 
@@ -133,8 +131,8 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
   List<ZFlashcard> _computeWorkingList() =>
       <ZFlashcard>[for (final k in _order) _cards[k]!];
 
-  /// Ajoute une carte **vierge/éphémère** (`card.id == null` attendu) à la fin de
-  /// la liste de travail (AC8). Retourne sa clé de travail. **Aucune écriture** —
+  /// Ajoute une carte vierge/éphémère (`card.id == null` attendu) à la fin de
+  /// la liste de travail. Retourne sa clé de travail. Aucune écriture —
   /// mutation en mémoire uniquement.
   String addBlank(ZFlashcard blank) {
     if (_disposed) return '';
@@ -145,9 +143,9 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     return key;
   }
 
-  /// **Ajoute** un lot généré (su-9) à la liste de travail pour revue (AC5). Les
-  /// cartes sont **éphémères** (`id == null`) et **jamais persistées** ici. No-op
-  /// si le lot est vide (échec/`Right([])` de génération ⇒ liste intacte, AC9).
+  /// Ajoute un lot généré à la liste de travail pour revue. Les
+  /// cartes sont éphémères (`id == null`) et jamais persistées ici. No-op
+  /// si le lot est vide (échec/`Right([])` de génération ⇒ liste intacte).
   void addGenerated(List<ZFlashcard> cards) {
     if (_disposed || cards.isEmpty) return;
     for (final card in cards) {
@@ -158,11 +156,11 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     _emitStructure();
   }
 
-  /// Retire en **lot** les entrées de [keys] de la liste de travail (AC8). Le
-  /// retrait est purement en mémoire : **aucune cascade AD-39**, **aucune
-  /// suppression persistée** (une carte déjà persistée rentrée pour édition n'est
+  /// Retire en lot les entrées de [keys] de la liste de travail. Le
+  /// retrait est purement en mémoire : aucune cascade, aucune
+  /// suppression persistée (une carte déjà persistée rentrée pour édition n'est
   /// matérialisée qu'au [commit] par l'appelant). Les échouées n'existent pas :
-  /// tout retrait mémoire réussit (AD-10 : résultat défini).
+  /// tout retrait mémoire réussit (invariant AD-10 : résultat défini).
   void removeKeys(Iterable<String> keys) {
     if (_disposed) return;
     var changed = false;
@@ -175,15 +173,16 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     if (changed) _emitStructure();
   }
 
-  /// Remplace la carte de la clé [key] par [card] — **édition IN MEMORY** (AC2).
+  /// Remplace la carte de la clé [key] par [card] — édition in memory.
   ///
-  /// **SM-1** : ne notifie **PAS** la tranche structurelle [orderKeys] (la
-  /// liste ne se reconstruit pas à la frappe) — il ne recalcule que [isDirty].
-  /// C'est la voie unique par laquelle l'éditeur de carte pousse ses édits.
+  /// Ne notifie pas la tranche structurelle [orderKeys] (invariant AD-2 :
+  /// la liste ne se reconstruit pas à la frappe) — il ne recalcule que
+  /// [isDirty]. C'est la voie unique par laquelle l'éditeur de carte pousse
+  /// ses édits.
   void updateCard(String key, ZFlashcard card) {
     if (_disposed || !_cards.containsKey(key)) return;
-    // FIX-9/SM-1 — chemin CHAUD (une frappe) : la composition ne change pas
-    // (même longueur, même ordre). On ajuste la divergence de façon INCRÉMENTALE
+    // Chemin chaud (une frappe) : la composition ne change pas
+    // (même longueur, même ordre). On ajuste la divergence de façon incrémentale
     // (une seule comparaison de valeur : la carte modifiée vs sa contrepartie de
     // snapshot) au lieu de reconstruire toute la liste de travail et de la
     // comparer élément par élément (O(N) par frappe = jank sur brouillon
@@ -205,12 +204,13 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     _recomputeDirtyFull();
   }
 
-  /// Seam d'écriture **IN MEMORY** passé à `applyCommonField` (AC7). L'appelant
+  /// Seam d'écriture in memory passé à `applyCommonField`. L'appelant
   /// capture le mapping champ→carte dans [apply] (dérivé de sa déclaration de
-  /// champ commun) ; ce seam se contente de **muter la liste de travail**, jamais
-  /// un store. Retourne toujours `Right(unit)` (AD-10 : une écriture mémoire ne
-  /// peut pas échouer) — les échecs éventuels de validation sont produits **en
-  /// amont** par `applyCommonField` (validateurs du `ZFieldSpec`, AD-44).
+  /// champ commun) ; ce seam se contente de muter la liste de travail, jamais
+  /// un store. Retourne toujours `Right(unit)` (invariant AD-10 : une écriture
+  /// mémoire ne peut pas échouer) — les échecs éventuels de validation sont
+  /// produits en amont par `applyCommonField` (validateurs du `ZFieldSpec`,
+  /// invariant AD-3).
   Future<ZResult<Unit>> writeRootInMemory(
     String key,
     ZFlashcard Function(ZFlashcard card) apply,
@@ -223,19 +223,20 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     return Right<ZFailure, Unit>(unit);
   }
 
-  /// **UNIQUE** franchissement de la frontière de persistance (AD-43/AC4) : remet
-  /// l'**intégralité** de la liste de travail à [onCommit] en **une seule**
+  /// Unique franchissement de la frontière de persistance : remet
+  /// l'intégralité de la liste de travail à [onCommit] en une seule
   /// invocation. En cas de succès (`Right`), le brouillon devient la nouvelle
-  /// base (plus *dirty*). En cas d'échec (`Left`), le brouillon est **préservé
-  /// tel quel** et reste *dirty* — **aucune perte, aucun vidage optimiste** (AC9).
+  /// base (plus dirty). En cas d'échec (`Left`), le brouillon est préservé
+  /// tel quel et reste dirty — aucune perte, aucun vidage optimiste.
   Future<ZResult<Unit>> commit(
     Future<ZResult<Unit>> Function(List<ZFlashcard> cards) onCommit,
   ) async {
     final list = _computeWorkingList();
-    // BUG-2/AD-10 — un `onCommit` injecté qui `throw` NE DOIT PAS traverser la
-    // surface : on le capte et on le convertit en `Left(ZServerFailure)` (même
-    // patron que `ZListSelectionController.batchApply`). Le brouillon reste alors
-    // *dirty* intact (aucune mise à jour du snapshot) — aucune perte (AC9).
+    // Un `onCommit` injecté qui `throw` ne doit pas traverser la
+    // surface (invariant AD-10) : on le capte et on le convertit en
+    // `Left(ZServerFailure)` (même patron que
+    // `ZListSelectionController.batchApply`). Le brouillon reste alors
+    // dirty intact (aucune mise à jour du snapshot) — aucune perte.
     ZResult<Unit> result;
     try {
       result = await onCommit(List<ZFlashcard>.unmodifiable(list));
@@ -253,7 +254,7 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
   }
 
   /// Restaure la liste de travail sur le snapshot de référence et nettoie le
-  /// *dirty* (utilisé par `onDiscard` du garde). Purement en mémoire.
+  /// dirty (utilisé par `onDiscard` du garde). Purement en mémoire.
   void discardToSnapshot() {
     if (_disposed) return;
     _order.clear();
@@ -272,11 +273,10 @@ class ZMultiFlashcardDraftController extends ChangeNotifier {
     _recomputeDirtyFull();
   }
 
-  /// Recalcul COMPLET de la divergence (positions × valeur) — emprunté seulement
-  /// sur les chemins FROIDS (changement de composition / commit / abandon), jamais
+  /// Recalcul complet de la divergence (positions × valeur) — emprunté seulement
+  /// sur les chemins froids (changement de composition / commit / abandon), jamais
   /// à la frappe (cf. `updateCard`). Rafraîchit le décompte incrémental
-  /// [_divergentCount] ET le canal [isDirty]. Sémantique IDENTIQUE à l'ancien
-  /// `_listEquals` (comparaison positionnelle par valeur, robuste aux clés).
+  /// [_divergentCount] et le canal [isDirty].
   void _recomputeDirtyFull() {
     if (_order.length != _snapshot.length) {
       _divergentCount = -1; // longueur divergente ⇒ dirty structurel.

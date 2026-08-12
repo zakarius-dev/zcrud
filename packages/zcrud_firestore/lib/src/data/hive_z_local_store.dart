@@ -85,8 +85,8 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         _fromMapSafe = fromMapSafe,
         _idFactory = idFactory ?? _defaultIdFactory,
         _log = logger ?? _noopLog,
-        // CR-LEX-36 : source de temps de la clé LWW. Défaut = horloge système
-        // (comportement historique). Un hôte peut injecter une horloge corrigée.
+        // Source de temps de la clé LWW. Défaut = horloge système.
+        // Un hôte peut injecter une horloge corrigée.
         _clock = clock ?? ZSystemClock.utc,
         _ownsBox = ownsBox;
 
@@ -127,25 +127,25 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final String Function() _idFactory;
   final ZLocalStoreLog _log;
-  /// CR-LEX-36 : source de temps de la clé LWW `updated_at`.
+  /// Source de temps de la clé LWW `updated_at`.
   final ZClock _clock;
   final bool _ownsBox;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
-  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  /// Alias de la définition machine unique.
   static const String _kIsDeleted = ZSyncMeta.kIsDeleted;
 
   /// Clé snake_case de l'horodatage LWW (`ZSyncMeta`, ISO-8601).
-  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  /// Alias de la définition machine unique.
   ///
-  /// **Immunité structurelle au vecteur M3 (Timestamp legacy)** : ce store
+  /// **Immunité structurelle au Timestamp legacy** : ce store
   /// persiste du **JSON** (`jsonEncode`/`jsonDecode`) — un `Timestamp` Firestore
   /// n'y est pas représentable (`jsonEncode` lèverait). Toute valeur relue de la
   /// box est donc un scalaire JSON, et `updated_at` y est **toujours** une String
   /// ISO-8601 écrite par [_encode]/[applyMerged]/[_setDeletedFlag]. La
-  /// normalisation `Timestamp → ISO` d'AD-19/M3 est **inutile ici** ; elle vit
+  /// normalisation `Timestamp → ISO` est **inutile ici** ; elle vit
   /// dans l'adapter Firestore (`firebase_z_repository_impl.dart` `_inject`), seul
-  /// chemin exposé aux documents legacy DODLP.
+  /// chemin exposé aux documents legacy.
   static const String _kUpdatedAt = ZSyncMeta.kUpdatedAt;
 
   /// Clé logique d'identité écrite dans le corps (invariant clé↔corps).
@@ -180,7 +180,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   Future<void>? get closedForTest => _closing;
 
   /// (Test-only) Nombre d'abonnements `box.watch()` encore VIVANTS — prouve
-  /// qu'un `onCancel` libère bien la souscription source (anti-fuite MEDIUM-1).
+  /// qu'un `onCancel` libère bien la souscription source (anti-fuite).
   @visibleForTesting
   int get activeSourceSubscriptions => _subs.length;
 
@@ -191,14 +191,15 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   // ───────────────────────── (Dé)codage ─────────────────────────────────────
 
   /// Encode [value] + fusionne les métadonnées `ZSyncMeta` (updated_at ISO-8601,
-  /// is_deleted=false) + écrit **toujours** le corps `id` (invariant clé↔corps,
-  /// MAJEUR-1). Jamais de `DateTime`/`Timestamp` brut (AD-5) : ISO-8601.
+  /// is_deleted=false) + écrit **toujours** le corps `id` (invariant clé↔corps).
+  /// Jamais de `DateTime`/`Timestamp` brut (AD-5) : ISO-8601.
   ///
-  /// **LOW-3 — `put` RESSUSCITE un soft-deleté (cohérent E5-1) :** `is_deleted`
-  /// est réécrit **inconditionnellement** à `false`. Re-`put` d'une entité
-  /// précédemment soft-deletée la **rend de nouveau visible** (invariant « save
-  /// ⇒ vivant »). Le merge Last-Write-Wins sur `updated_at` (préservation des
-  /// écritures concurrentes) reste la responsabilité d'**E5-3**.
+  /// **`put` RESSUSCITE un soft-deleté (cohérent avec [_encode] ci-dessus) :**
+  /// `is_deleted` est réécrit **inconditionnellement** à `false`. Re-`put` d'une
+  /// entité précédemment soft-deletée la **rend de nouveau visible** (invariant
+  /// « save ⇒ vivant »). Le merge Last-Write-Wins sur `updated_at` (préservation
+  /// des écritures concurrentes) reste la responsabilité de la couche de
+  /// synchronisation offline-first (hors de ce fichier).
   Map<String, dynamic> _encode(T value, String id) {
     final map = Map<String, dynamic>.of(_toMap(value));
     map[_kId] = id;
@@ -256,7 +257,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   }
 
   /// Une entrée est **VISIBLE** ssi `is_deleted == false` — sémantique appliquée
-  /// de façon **COHÉRENTE** sur getById / getAll / watchAll (MAJEUR-2). Un
+  /// de façon **COHÉRENTE** sur getById / getAll / watchAll. Un
   /// `is_deleted` **ABSENT** (entrée non-zcrud-native) OU `== true` (soft-deleted)
   /// est traité comme **non visible** sur TOUS les chemins (aucune divergence).
   bool _isVisible(Map<String, dynamic> map) => map[_kIsDeleted] == false;
@@ -307,12 +308,12 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
     return ZCacheFailure(e.toString());
   }
 
-  // ───────────────────────── Lectures (AC4/5/6/8/9) ──────────────────────────
+  // ───────────────────────── Lectures ──────────────────────────
 
   @override
   Stream<List<T>> watchAll() {
     late final StreamController<List<T>> controller;
-    // MEDIUM-1 : l'abonnement source `box.watch()` est capturé pour être ANNULÉ
+    // L'abonnement source `box.watch()` est capturé pour être ANNULÉ
     // à l'annulation du flux (`onCancel`) — pas seulement au `dispose()`. Sans
     // cela, chaque `watchAll()` empilerait un contrôleur + un abonnement vivants
     // (fuite non bornée sur un store à longue durée de vie).
@@ -323,7 +324,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
           controller.add(_snapshot()); // seed immédiat
           sub = _box.watch().listen(
             (_) {
-              // LOW-1 : une exception DANS le callback (ex. `_snapshot()` sur box
+              // Une exception DANS le callback (ex. `_snapshot()` sur box
               // fermée en cours de flux) est routée vers le canal d'erreur —
               // miroir du `onError` — au lieu de devenir une erreur asynchrone
               // non gérée qui contournerait le stream.
@@ -348,7 +349,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         }
       },
       onCancel: () async {
-        // MEDIUM-1 : libère la souscription source + le contrôleur dès que le
+        // Libère la souscription source + le contrôleur dès que le
         // consommateur annule (ex. `.first`, changement d'écran) — sans attendre
         // `dispose()`. Idempotent avec `dispose()` (retraits sur listes).
         _controllers.remove(controller);
@@ -403,9 +404,9 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, T>(entity);
       });
 
-  // ───────────────────────── Sync offline-first (E5-3) ───────────────────────
+  // ───────────────────────── Sync offline-first ───────────────────────
 
-  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : renvoie **toutes** les
+  /// **Voie de lecture de SYNCHRONISATION** : renvoie **toutes** les
   /// entrées **y compris soft-deletées** (tombstones), chacune appariée à son
   /// [ZSyncMeta]. **NE PASSE PAS** par [_isVisible] (contraste voulu avec
   /// [getAll], qui exclut les tombstones — indispensable au merge LWW pour
@@ -429,7 +430,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, List<ZSyncEntry<T>>>(out);
       });
 
-  /// **Écriture PRÉSERVANT la méta** (E5-3) : écrit l'entité **et** son
+  /// **Écriture PRÉSERVANT la méta** : écrit l'entité **et** son
   /// [ZSyncMeta] **verbatim** — `updated_at`/`is_deleted` **conservés tels quels**
   /// (jamais `now()`, contrairement à [put]). RÉSERVÉ à l'application d'un
   /// résultat de merge (défaire l'estampille `now()` casserait le LWW). Le corps
@@ -455,20 +456,19 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, Unit>(unit);
       });
 
-  // ───────────────────────── Écritures (AC6/7/9) ─────────────────────────────
+  // ───────────────────────── Écritures ─────────────────────────────
 
   /// Persiste [item] (écrasement JSON total keyé par son `id`) puis relit
-  /// l'entrée pour un round-trip fidèle. **LOW-3** : re-`put` d'une entité
-  /// soft-deletée la **RESSUSCITE** (`is_deleted` forcé à `false` par [_encode],
-  /// cohérent E5-1 ; merge LWW = E5-3).
+  /// l'entrée pour un round-trip fidèle. Note : re-`put` d'une entité
+  /// soft-deletée la **RESSUSCITE** (`is_deleted` forcé à `false` par [_encode]
+  /// — cohérent avec [putMerged], qui préserve le merge LWW).
   @override
   Future<ZResult<T>> put(T item) => _guard(() async {
         // Matérialisation de l'éphémère (AD-14, invariant porté par le store).
-        // CR-LEX-19 : consulter `isEphemeral`, pas `id == null`. Une entité
+        // Consulter `isEphemeral`, pas `id == null` : une entité
         // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
-        // id.isEmpty`) n'est jamais `null` : le test direct la déclarait
-        // matérialisée et écrivait un document de clé VIDE. Le contrat existait,
-        // les implémentations ne le consultaient pas.
+        // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
+        // tort matérialisée et écrirait un document de clé VIDE.
         final id = item.isEphemeral ? _idFactory() : item.id!;
         final map = _encode(item, id);
         await _box.put(id, jsonEncode(map));
@@ -484,7 +484,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
         return Right<ZFailure, T>(decoded);
       });
 
-  /// Écriture PRÉSERVANTE (CR-LEX-34) : fusionne la map de [item] PAR-DESSUS le
+  /// Écriture PRÉSERVANTE : fusionne la map de [item] PAR-DESSUS le
   /// document brut existant. Une clé présente en base mais absente de [item]
   /// (autre hôte, champ hors-codegen non relu) **survit**.
   ///
@@ -495,11 +495,10 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   /// par clé, l'existant-seul survit. Absent en base ⇒ création (= [put]).
   @override
   Future<ZResult<T>> putMerged(T item) => _guard(() async {
-        // CR-LEX-19 : consulter `isEphemeral`, pas `id == null`. Une entité
+        // Consulter `isEphemeral`, pas `id == null` : une entité
         // dont l'`id` est NON-NULLABLE (ex. `ZMindmap`, `isEphemeral =>
-        // id.isEmpty`) n'est jamais `null` : le test direct la déclarait
-        // matérialisée et écrivait un document de clé VIDE. Le contrat existait,
-        // les implémentations ne le consultaient pas.
+        // id.isEmpty`) n'est jamais `null` — le test direct la déclarerait à
+        // tort matérialisée et écrirait un document de clé VIDE.
         final id = item.isEphemeral ? _idFactory() : item.id!;
         final encoded = _encode(item, id);
         final existing = _rawMap(id, _box.get(id));
@@ -526,7 +525,7 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
   Future<ZResult<Unit>> restore(String id) =>
       _setDeletedFlag(id, deleted: false);
 
-  /// Purge physique par identité (CR-LEX-35) : `box.delete(id)`, **sans**
+  /// Purge physique par identité : `box.delete(id)`, **sans**
   /// tombstone. Idempotent — purger un `id` absent est un succès.
   @override
   Future<ZResult<Unit>> purge(String id) => _guard(() async {
@@ -536,7 +535,8 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché), réécrit
   /// `updated_at` (ISO-8601). `id` absent → `Left(ZNotFoundFailure)`. **Jamais**
-  /// de `box.delete` (soft-delete par drapeau — la propagation distante = E5-3).
+  /// de `box.delete` (soft-delete par drapeau — la propagation distante est
+  /// portée par la couche de synchronisation offline-first).
   Future<ZResult<Unit>> _setDeletedFlag(String id, {required bool deleted}) =>
       _guard(() async {
         if (!_box.containsKey(id)) {
@@ -564,10 +564,10 @@ class HiveZLocalStore<T extends ZEntity> extends ZLocalStore<T> {
 
   /// Libère TOUTES les ressources restantes : annule les abonnements `box.watch()`
   /// et ferme les `StreamController` encore vivants (ceux dont le flux a déjà été
-  /// annulé se sont auto-libérés via `onCancel`, MEDIUM-1), puis ferme la box si
+  /// annulé se sont auto-libérés via `onCancel`), puis ferme la box si
   /// elle est **possédée** ([_ownsBox], ouverte par [openBox]).
   ///
-  /// **LOW-2 — fermeture NON attendable (fire-and-forget) :** le contrat de port
+  /// **Fermeture NON attendable (fire-and-forget) :** le contrat de port
   /// [dispose] est `void` ; la fermeture de la box possédée (`_box.close()`,
   /// asynchrone) est donc lancée sans être attendue. Le Future correspondant est
   /// néanmoins capturé dans [closedForTest] pour permettre à un test de

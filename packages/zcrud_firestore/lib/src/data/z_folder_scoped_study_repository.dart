@@ -1,12 +1,12 @@
 /// Fabrique d'adapter **folder-scopé concret** `buildFolderScopedStudyRepository`
-/// (Story ES-10.2, AC3/AC4 — AD-5/AD-9/AD-10/AD-11) : la surface `zcrud_firestore`
-/// que `lex_douane` enregistrera au seam Riverpod pour la topologie **imbriquée**
-/// `users/{uid}/{parentCollection}/{folderId}/{collection}`.
+/// (invariants AD-5/AD-9/AD-10/AD-11) : la surface `zcrud_firestore`
+/// qu'un consommateur Riverpod enregistre au seam d'injection pour la topologie
+/// **imbriquée** `users/{uid}/{parentCollection}/{folderId}/{collection}`.
 ///
-/// ## Composition MINCE des briques ES-3 — rien de réimplémenté
+/// ## Composition MINCE des briques offline-first — rien de réimplémenté
 ///
 /// La fabrique se contente d'**assembler** en un appel les briques offline-first
-/// existantes (ES-3.2) :
+/// existantes :
 /// - une **règle** [ZFirestorePathRule.nestedUnderParent] (collection sous
 ///   `{parentCollection}/{parentId}`, elle-même sous `users/{userId}` si
 ///   [userScoped]) ;
@@ -21,7 +21,7 @@
 /// ## Générique-par-topologie — zéro couplage à un consommateur
 ///
 /// [collection]/[parentCollection] sont des `String` **paramètres** : aucun nom
-/// lex n'est codé en dur, aucune arête vers un package d'entité n'est introduite
+/// de consommateur n'est codé en dur, aucune arête vers un package d'entité n'est introduite
 /// dans `zcrud_firestore` (l'adapter reste générique). Le seul type
 /// `cloud_firestore` de la signature est le paramètre d'injection [firestore] —
 /// la SEULE couture backend voulue (AD-5) ; le **type de retour est le port
@@ -36,9 +36,9 @@
 /// explicite du resolver (nommant le `kind` et l'exigence `parentId`) — jamais un
 /// chemin silencieusement tronqué qui écrirait dans la mauvaise collection.
 ///
-/// ## DW-ES102-1 — câblage lex-side déféré (dette tracée)
+/// ## Câblage côté consommateur
 ///
-/// Exemple de câblage au `ProviderScope` lex (DÉFÉRÉ à la session `lex_douane`) :
+/// Exemple de câblage à un `ProviderScope` Riverpod côté application :
 /// ```dart
 /// zStudyDocumentRepositoryProvider.overrideWith(
 ///   (ref) => buildFolderScopedStudyRepository<ZStudyDocument>(
@@ -68,10 +68,10 @@ import 'z_offline_first_box_repository.dart';
 /// folder-scopée : une unique règle [ZFirestorePathRule.nestedUnderParent]
 /// ([collection] sous [parentCollection], user-scopée si [userScoped]).
 ///
-/// Extrait pour être `@visibleForTesting` : c'est l'**apport propre** d'ES-10.2
-/// (la composition `nestedUnderParent(collection, parentCollection)` que
-/// [buildFolderScopedStudyRepository] utilise en interne). Prouve, sans réseau, le
-/// chemin nested exact (AC3) et la propagation du `Left` folderId-manquant (AC4).
+/// Extrait pour être `@visibleForTesting` : c'est la partie **testable
+/// isolément** (la composition `nestedUnderParent(collection, parentCollection)`
+/// que [buildFolderScopedStudyRepository] utilise en interne). Prouve, sans
+/// réseau, le chemin nested exact et la propagation du `Left` folderId-manquant.
 /// Type NEUTRE (aucun `cloud_firestore`).
 @visibleForTesting
 ZFirestorePathResolver buildFolderScopedResolver({
@@ -99,11 +99,12 @@ ZFirestorePathResolver buildFolderScopedResolver({
 /// - [collection]/[parentCollection] : segments **littéraux** de la topologie
 ///   nested (génériques-par-topologie, aucun nom consommateur en dur) ;
 /// - [decode]/[encode] : (dé)sérialisation du corps métier (voie
-///   `ZcrudRegistry.decode` recommandée pour [decode], ES-3.0) ;
+///   `ZcrudRegistry.decode` recommandée pour [decode]) ;
 /// - [folderId] : identité du dossier parent (`parentId` de la topologie nested)
 ///   — vide ⇒ `Left` explicite à la résolution (AD-10) ;
 /// - [userId] : contexte user-scopé (requis si [userScoped]) ;
-/// - [userScoped] : préfixe `users/{userId}` (défaut `true`, topologie lex) ;
+/// - [userScoped] : préfixe `users/{userId}` (défaut `true`, topologie imbriquée
+///   usuelle) ;
 /// - [isConnected]/[logger]/[autoListen] : coutures optionnelles propagées à
 ///   [ZOfflineFirstBoxRepository].
 ///
@@ -147,7 +148,7 @@ ZStudyRepository<T> buildFolderScopedStudyRepository<T extends ZEntity>({
     );
 
 /// Résolveur **flat top-level** (topologie `flatTopLevel`) — jumeau exact de
-/// [buildFolderScopedResolver] pour une collection RACINE (CR-LEX-30).
+/// [buildFolderScopedResolver] pour une collection RACINE.
 @visibleForTesting
 ZFirestorePathResolver buildUserScopedResolver({
   required String kind,
@@ -163,7 +164,7 @@ ZFirestorePathResolver buildUserScopedResolver({
 
 /// Fabrique d'adapter **user-scopé concret** pour une collection **RACINE**
 /// (topologie `flatTopLevel`) — jumelle exacte de
-/// [buildFolderScopedStudyRepository] (CR-LEX-30).
+/// [buildFolderScopedStudyRepository].
 ///
 /// ## Pourquoi elle existe
 ///

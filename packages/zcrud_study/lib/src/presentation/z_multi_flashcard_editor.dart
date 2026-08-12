@@ -1,39 +1,35 @@
-/// `ZMultiFlashcardEditor` — édition d'un LOT de flashcards en régime BROUILLON
-/// avant un enregistrement groupé unique (me-2, FR-SU20 —
-/// AD-43/AD-44/AD-39/AD-45/AD-2/AD-15/AD-10/AD-13).
+/// `ZMultiFlashcardEditor` — édition d'un lot de flashcards en régime brouillon
+/// avant un enregistrement groupé unique (invariants AD-2, AD-10, AD-13, AD-15).
 ///
-/// ## Ce que ce widget COMPOSE (il ne réimplémente RIEN)
+/// ## Ce que ce widget compose (il ne réimplémente rien)
 ///
-/// - **Brouillon EN MÉMOIRE** : [ZMultiFlashcardDraftController] (régime
-///   [ZEditingMode.draft] DÉCLARÉ) — liste de travail pur-Flutter, **aucun store**
-///   (la garde de pureté récursive `z_widgets_purity_test.dart` couvre ce fichier
-///   AUTOMATIQUEMENT ; aucune ligne ne matche `Repository`/`LocalStore`/
-///   `RemoteStore`/`.save(`/`.persist(`).
-/// - **Sortie gardée** : `ZDiscardChangesGuard` **EXISTANT** (zcrud_ui_kit) —
-///   jamais une garde réécrite. me-2 alimente son `isDirty`
+/// - **Brouillon en mémoire** : [ZMultiFlashcardDraftController] (régime
+///   [ZEditingMode.draft]) — liste de travail pur-Flutter, aucun store (aucune
+///   écriture directe vers un repository ou un store local/distant).
+/// - **Sortie gardée** : `ZDiscardChangesGuard` existant (zcrud_ui_kit) — jamais
+///   une garde réécrite. Le brouillon alimente son `isDirty`
 ///   ([ZMultiFlashcardDraftController.isDirty]).
 /// - **Sélection + actions de lot** : `ZListSelectionController` + `ZBatchActionBar`
-///   + `applyCommonField` (validateurs DÉRIVÉS du `ZFieldSpec`, AD-44) du CŒUR
-///   (me-1) — le seam d'écriture est INJECTÉ et écrit la liste EN MÉMOIRE
+///   + `applyCommonField` (validateurs dérivés du `ZFieldSpec`, invariant AD-3) du
+///   cœur — le seam d'écriture est injecté et écrit la liste en mémoire
 ///   (`writeRootInMemory`), jamais un store. `clearSucceededFromSelection` reste
-///   au défaut **`false`** (édition in-place ⇒ sélection conservée) — **consommé,
-///   jamais redéclaré**.
-/// - **Aperçu** : `ZFlashcardReviewCard` (su-2) — **jamais** un rendu de contenu
-///   de carte parallèle (grep -qF négatif dans les tests).
+///   au défaut `false` (édition in-place ⇒ la sélection est conservée).
+/// - **Aperçu** : `ZFlashcardReviewCard` — jamais un rendu de contenu de carte
+///   parallèle.
 /// - **Génération IA** : `ZFlashcardGenerationSheet`/`ZFlashcardGenerationLauncher`
-///   (su-9) — `onGenerated` ajoute les cartes ÉPHÉMÈRES (`id == null`, AD-37) à la
-///   liste de travail, **jamais persistées**.
+///   — `onGenerated` ajoute les cartes éphémères (`id == null`) à la liste de
+///   travail, jamais persistées.
 /// - **Split-view** : `ZResponsiveLayout` (zcrud_responsive) — grand écran :
 ///   liste + formulaire simultanés ; mobile : navigation liste ↔ formulaire. Aucun
 ///   breakpoint réécrit.
 ///
-/// ## AD-43 (LE point dur) — RIEN persisté avant le commit unique
+/// ## Rien n'est persisté avant le commit unique
 ///
-/// La **seule** frontière de persistance est le callback [onCommit] injecté :
+/// La seule frontière de persistance est le callback [onCommit] injecté :
 /// éditer / ajouter / supprimer / appliquer un champ commun / recevoir un lot
-/// généré ne touche QUE la liste de travail. Le commit remet l'**intégralité** de
-/// la liste en **une seule** invocation ; un échec de commit préserve le brouillon
-/// *dirty* (aucun vidage optimiste, AC9).
+/// généré ne touche que la liste de travail. Le commit remet l'intégralité de
+/// la liste en une seule invocation ; un échec de commit préserve le brouillon
+/// dirty (aucun vidage optimiste).
 library;
 
 import 'package:flutter/material.dart';
@@ -63,23 +59,23 @@ import 'z_flashcard_generation_controller.dart';
 import 'z_flashcard_generation_sheet.dart';
 import 'z_multi_flashcard_editor_controller.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
+/// Cible de taille interactive minimale (invariant AD-13).
 const double _kMinTapTarget = 48.0;
 
-/// Signature du **commit unique** (AC4) : remet l'intégralité de la liste de
+/// Signature du commit unique : remet l'intégralité de la liste de
 /// travail à l'appelant. Retourne un `Either<ZFailure, Unit>` — un `Left` laisse
-/// le brouillon *dirty* intact (AC9), un `Right` valide le brouillon.
+/// le brouillon dirty intact, un `Right` valide le brouillon.
 typedef ZFlashcardBatchCommit = Future<ZResult<Unit>> Function(
   List<ZFlashcard> cards,
 );
 
-/// Un **champ commun** applicable à la sélection (AC7) — DÉCLARÉ en données.
+/// Un champ commun applicable à la sélection — déclaré en données.
 ///
 /// [spec] porte les validateurs (dérivés par `applyCommonField` via
-/// `ZValidatorCompiler.compile`, AD-44 : mêmes validateurs que le formulaire
-/// unitaire) ; [label] est le libellé LOCALISÉ INJECTÉ (i18n) ; [apply] mappe la
-/// valeur candidate sur la carte (édition IN MEMORY par `copyWith`, jamais un
-/// store).
+/// `ZValidatorCompiler.compile` — mêmes validateurs que le formulaire
+/// unitaire, invariant AD-3) ; [label] est le libellé localisé injecté (i18n) ;
+/// [apply] mappe la valeur candidate sur la carte (édition in memory par
+/// `copyWith`, jamais un store).
 @immutable
 class ZMultiFlashcardCommonField {
   /// Construit un champ commun applicable à la sélection.
@@ -89,7 +85,7 @@ class ZMultiFlashcardCommonField {
     required this.apply,
   });
 
-  /// Spec du champ (source UNIQUE des validateurs, AD-44).
+  /// Spec du champ (source unique des validateurs, invariant AD-3).
   final ZFieldSpec spec;
 
   /// Libellé LOCALISÉ INJECTÉ du champ (i18n).
@@ -99,8 +95,8 @@ class ZMultiFlashcardCommonField {
   final ZFlashcard Function(ZFlashcard card, String? value) apply;
 }
 
-/// Configuration OPTIONNELLE du flux de génération IA (su-9) intégré au
-/// multi-éditeur (AC5). Absente ⇒ l'option « Générer » est **ABSENTE de l'arbre**
+/// Configuration optionnelle du flux de génération IA intégré au
+/// multi-éditeur. Absente ⇒ l'option « Générer » est absente de l'arbre
 /// (jamais grisée — patron `ZFlashcardGenerationLauncher`).
 @immutable
 class ZMultiFlashcardGeneration {
@@ -117,7 +113,7 @@ class ZMultiFlashcardGeneration {
     this.initialModelId,
   });
 
-  /// Port advisory/faillible (injecté par l'app, AD-35).
+  /// Port advisory/faillible (injecté par l'application hôte).
   final ZFlashcardGenerationPort port;
 
   /// Messages d'échec injectés (transmis à la feuille).
@@ -145,8 +141,8 @@ class ZMultiFlashcardGeneration {
   final String? initialModelId;
 }
 
-/// Libellés LOCALISÉS INJECTÉS du multi-éditeur (i18n — AD-13/FR-26 : **aucun**
-/// libellé en dur, invisible à la garde de scan sinon).
+/// Libellés localisés injectés du multi-éditeur (i18n — invariant AD-13 /
+/// invariant FR-26 : aucun libellé en dur).
 @immutable
 class ZMultiFlashcardEditorLabels {
   /// Construit les libellés injectés.
@@ -242,19 +238,19 @@ class ZMultiFlashcardEditorLabels {
   final Map<ZFlashcardType, String> typeLabels;
 }
 
-/// Éditeur d'un LOT de flashcards en régime brouillon (me-2).
+/// Éditeur d'un lot de flashcards en régime brouillon.
 class ZMultiFlashcardEditor extends StatefulWidget {
   /// Construit le multi-éditeur.
   ///
   /// - [initialCards] : lot initial (souvent vide, ou un lot rentré pour édition) ;
-  /// - [onCommit] : **seul** franchissement de la frontière de persistance (AC4) ;
-  /// - [labels] : libellés LOCALISÉS injectés (i18n) ;
-  /// - [commonFields] : champs communs applicables à la sélection (AC7) ;
-  /// - [generation] : configuration OPTIONNELLE du flux de génération (AC5) ;
+  /// - [onCommit] : seul franchissement de la frontière de persistance ;
+  /// - [labels] : libellés localisés injectés (i18n) ;
+  /// - [commonFields] : champs communs applicables à la sélection ;
+  /// - [generation] : configuration optionnelle du flux de génération ;
   /// - [newCardBuilder] : fabrique de carte vierge (défaut : question vide,
-  ///   `id == null` ⇒ éphémère, AD-37) ;
-  /// - [selection] : contrôleur de sélection INJECTÉ (sinon créé et possédé —
-  ///   propriétaire UNIQUE AD-44) ;
+  ///   `id == null` ⇒ éphémère) ;
+  /// - [selection] : contrôleur de sélection injecté (sinon créé et possédé —
+  ///   propriétaire unique de son cycle de vie) ;
   /// - [rowContentBuilder] : slot de rendu du RÉSUMÉ de ligne (défaut : la
   ///   question thématisée) — hissé pour la garde SM-1 (compteur de builds).
   const ZMultiFlashcardEditor({
@@ -272,16 +268,16 @@ class ZMultiFlashcardEditor extends StatefulWidget {
   /// Lot initial (snapshot de référence du *dirty*).
   final List<ZFlashcard> initialCards;
 
-  /// Commit unique injecté (AC4).
+  /// Commit unique injecté.
   final ZFlashcardBatchCommit onCommit;
 
   /// Libellés LOCALISÉS injectés.
   final ZMultiFlashcardEditorLabels labels;
 
-  /// Champs communs applicables à la sélection (AC7).
+  /// Champs communs applicables à la sélection.
   final List<ZMultiFlashcardCommonField> commonFields;
 
-  /// Configuration OPTIONNELLE de génération IA (AC5).
+  /// Configuration optionnelle de génération IA.
   final ZMultiFlashcardGeneration? generation;
 
   /// Fabrique de carte vierge éphémère (défaut : question vide).
@@ -331,11 +327,11 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
   /// Index du champ commun sélectionné dans le panneau « appliquer ».
   late final ValueNotifier<int> _commonFieldIndex;
 
-  /// Controller STABLE de la valeur commune (créé une fois — AD-2).
+  /// Controller stable de la valeur commune (créé une fois — invariant AD-2).
   late final TextEditingController _commonValueController;
 
-  /// Garde de commit EN VOL (BUG-3/AC4) : un second tap pendant qu'un commit est
-  /// en cours est ignoré ⇒ **exactement une salve** par intention utilisateur.
+  /// Garde de commit en vol : un second tap pendant qu'un commit est
+  /// en cours est ignoré ⇒ exactement une salve par intention utilisateur.
   bool _isCommitting = false;
 
   @override
@@ -358,7 +354,8 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     _draft.orderKeys.addListener(_reconcileFocus);
   }
 
-  /// Si la carte focalisée a disparu (suppression), retombe sur « aucune » (AD-10).
+  /// Si la carte focalisée a disparu (suppression), retombe sur « aucune »
+  /// (invariant AD-10).
   void _reconcileFocus() {
     final key = _focusedKey.value;
     if (key != null && _draft.cardOf(key) == null) {
@@ -395,15 +392,15 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
   }
 
   Future<void> _commit() async {
-    // BUG-3 : garde de ré-entrance — un double-tap ne déclenche QU'UNE salve.
+    // Garde de ré-entrance — un double-tap ne déclenche qu'une salve.
     if (_isCommitting) return;
     _isCommitting = true;
     try {
       final result = await _draft.commit(widget.onCommit);
       if (!mounted) return;
-      // LOW #10 : message d'échec LOCALISÉ seul — on n'accole PAS la
+      // Message d'échec localisé seul — on n'accole pas la
       // `ZFailure.message` brute (non localisée, pouvant porter une trace
-      // technique, cf. BUG-2). Le contrôleur préserve la liste ⇒ aucune perte.
+      // technique). Le contrôleur préserve la liste ⇒ aucune perte.
       _statusMessage.value = result.fold(
         (failure) => widget.labels.commitFailed,
         (_) => widget.labels.commitSucceeded,
@@ -419,10 +416,10 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     final index = _commonFieldIndex.value.clamp(0, fields.length - 1);
     final field = fields[index];
     final value = _commonValueController.text;
-    // AD-44 : validateurs DÉRIVÉS du `ZFieldSpec` (source unique). Le seam
-    // `writeRoot` écrit la liste EN MÉMOIRE (jamais un store). Le défaut
-    // `clearSucceededFromSelection: false` est CONSOMMÉ (non redéclaré) : édition
-    // in-place ⇒ la sélection est conservée pour enchaîner un 2ᵉ champ.
+    // Validateurs dérivés du `ZFieldSpec` (source unique, invariant AD-3). Le
+    // seam `writeRoot` écrit la liste en mémoire (jamais un store). Le défaut
+    // `clearSucceededFromSelection: false` : édition in-place ⇒ la sélection
+    // est conservée pour enchaîner un deuxième champ.
     final report = await _selection.applyCommonField(
       field: field.spec,
       value: value,
@@ -452,8 +449,8 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
           existingTags: generation.existingTags,
           languageTag: generation.languageTag,
           initialModelId: generation.initialModelId,
-          // AC5 : le lot éphémère est AJOUTÉ à la liste de travail — jamais
-          // persisté. Un lot vide (échec / Right([])) est un no-op (AC9).
+          // Le lot éphémère est ajouté à la liste de travail — jamais
+          // persisté. Un lot vide (échec / Right([])) est un no-op.
           onGenerated: (cards, _) {
             _draft.addGenerated(cards);
             Navigator.of(sheetContext).pop();
@@ -465,11 +462,11 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
 
   @override
   Widget build(BuildContext context) {
-    // AC3 : sortie gardée par `ZDiscardChangesGuard` EXISTANT (jamais réécrit).
+    // Sortie gardée par `ZDiscardChangesGuard` existant (jamais réécrit).
     return ZDiscardChangesGuard(
       isDirty: _draft.isDirty,
       onDiscard: _draft.discardToSnapshot,
-      // AC1 : split-view responsive via `ZResponsiveLayout` (aucun breakpoint
+      // Split-view responsive via `ZResponsiveLayout` (aucun breakpoint
       // réécrit). Compact (< 600) : navigation liste ↔ formulaire ; medium/
       // expanded (≥ 600) : les deux volets simultanés.
       child: ZResponsiveLayout(
@@ -558,7 +555,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
           ),
         ),
         if (widget.generation != null)
-          // FIX-7/AD-13 : cible ≥ 48 dp comme les autres actions de la barre.
+          // Invariant AD-13 : cible ≥ 48 dp comme les autres actions de la barre.
           _minTarget(
             ZFlashcardGenerationLauncher(
               label: widget.generation!.launcherLabel,
@@ -671,11 +668,12 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     if (card == null) return const SizedBox.shrink();
     final content = widget.rowContentBuilder?.call(context, card) ??
         Text(card.question, textAlign: TextAlign.start);
-    // FIX-8/AD-13 : la ligne porte DEUX actionnables INDÉPENDANTS — la bascule
-    // de sélection (Checkbox) ET l'ouverture du volet détail (InkWell). On NE les
-    // FUSIONNE PAS (pas de `MergeSemantics`) : la fusion écrasait l'une des deux
-    // actions de tap au lecteur d'écran (une seule survivait). Chaque nœud reste
-    // annoncé et actionnable séparément. Le libellé de la case reste explicite.
+    // Invariant AD-13 : la ligne porte deux actionnables indépendants — la
+    // bascule de sélection (Checkbox) et l'ouverture du volet détail (InkWell).
+    // On ne les fusionne pas (pas de `MergeSemantics`) : la fusion masquerait
+    // l'une des deux actions de tap au lecteur d'écran (une seule survivrait).
+    // Chaque nœud reste annoncé et actionnable séparément. Le libellé de la
+    // case reste explicite.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _kMinTapTarget),
       child: Row(
@@ -708,7 +706,7 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
   }
 
   // ---------------------------------------------------------------------------
-  // Volet DÉTAIL (formulaire de carte + aperçu su-2).
+  // Volet détail (formulaire de carte + aperçu).
   // ---------------------------------------------------------------------------
 
   Widget _buildDetailPane(BuildContext context, {required bool showBack}) {
@@ -744,8 +742,8 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
                 // re-seedés) ; taper DANS une carte garde les controllers stables.
                 key: ValueKey<String>('z-card-form-$key'),
                 initialCard: card,
-                // BUG-1 : base VIVANTE relue à chaque `_rebuild` (jamais le
-                // snapshot figé `initialCard`). Un champ commun appliqué HORS
+                // Base vivante relue à chaque `_rebuild` (jamais le
+                // snapshot figé `initialCard`). Un champ commun appliqué hors
                 // formulaire (folderId/tags/type) mute `_draft.cardOf(key)` sans
                 // reconstruire ce volet ; sans cette relecture, la frappe suivante
                 // repartirait de la base périmée et écraserait la valeur appliquée.
@@ -768,9 +766,9 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
     ZMultiFlashcardEditorLabels labels,
     String key,
   ) {
-    // AC6 : l'aperçu réutilise `ZFlashcardReviewCard` (su-2) — JAMAIS un rendu
+    // L'aperçu réutilise `ZFlashcardReviewCard` — jamais un rendu
     // parallèle du contenu de carte. Rafraîchi au jeton (fin d'édition), pas à
-    // chaque frappe (SM-1).
+    // chaque frappe (invariant AD-2).
     return ValueListenableBuilder<int>(
       valueListenable: _previewTick,
       builder: (context, _, __) {
@@ -800,9 +798,10 @@ class _ZMultiFlashcardEditorState extends State<ZMultiFlashcardEditor> {
       );
 }
 
-/// Formulaire d'ÉDITION d'une carte (volet détail) — controllers STABLES (AD-2).
+/// Formulaire d'édition d'une carte (volet détail) — controllers stables
+/// (invariant AD-2).
 ///
-/// SM-1 : chaque `TextField` porte un `TextEditingController` créé UNE fois en
+/// Chaque `TextField` porte un `TextEditingController` créé une fois en
 /// `initState` (jamais recréé au rebuild) ⇒ taper ne perd jamais le focus. Le type
 /// est une tranche `ValueListenable` isolée (enum, pas un booléen). Aucune frappe
 /// ne reconstruit la liste (l'édition passe par `updateCard`, hors tranche
@@ -817,13 +816,14 @@ class _ZCardForm extends StatefulWidget {
     super.key,
   });
 
-  /// Carte de SEED des controllers (une seule fois, en `initState` — AD-2).
+  /// Carte de seed des controllers (une seule fois, en `initState` —
+  /// invariant AD-2).
   final ZFlashcard initialCard;
 
-  /// Lit la carte VIVANTE (base à jour) au moment de reconstruire l'édit. Sert de
+  /// Lit la carte vivante (base à jour) au moment de reconstruire l'édit. Sert de
   /// base au `copyWith` de `_rebuild` : préserve tout champ muté hors formulaire
-  /// (champ commun appliqué à la sélection — BUG-1). Ne re-seed JAMAIS les
-  /// controllers (stabilité AD-2 : le focus et la sélection ne sautent pas).
+  /// (champ commun appliqué à la sélection). Ne re-seed jamais les
+  /// controllers (stabilité invariant AD-2 : le focus et la sélection ne sautent pas).
   final ZFlashcard Function() baseCardOf;
 
   final ZMultiFlashcardEditorLabels labels;
@@ -862,10 +862,10 @@ class _ZCardFormState extends State<_ZCardForm> {
     super.dispose();
   }
 
-  /// Reconstruit la carte depuis les controllers (édition IN MEMORY, `id`
-  /// PRÉSERVÉ — une carte éphémère reste éphémère, une persistée garde son `id`).
+  /// Reconstruit la carte depuis les controllers (édition in memory, `id`
+  /// préservé — une carte éphémère reste éphémère, une persistée garde son `id`).
   ///
-  /// BUG-1 : la base est la carte VIVANTE ([ZMultiFlashcardEditor] la relit via
+  /// La base est la carte vivante ([ZMultiFlashcardEditor] la relit via
   /// `baseCardOf`), pas le snapshot figé — sinon un champ commun appliqué hors
   /// formulaire serait écrasé à la frappe suivante.
   ZFlashcard _rebuild() => widget.baseCardOf().copyWith(

@@ -40,7 +40,7 @@ import 'firebase_z_repository_impl.dart';
 /// sémantique de clé (corps `id`) et de soft-delete (`is_deleted`/`updated_at`
 /// hors-entité) que le repository sous-jacent.
 class FirestoreZRemoteStore<T extends ZEntity> extends ZRemoteStore<T> {
-  /// Construit le store distant par composition sur le [repository] E5-1.
+  /// Construit le store distant par composition sur le [repository].
   FirestoreZRemoteStore({
     required FirebaseZRepositoryImpl<T> repository,
   }) : _repository = repository;

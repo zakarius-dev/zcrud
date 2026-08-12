@@ -36,7 +36,7 @@ import 'z_folder_card.dart' show zResolveCardShadowDecoration;
 const double kZStudyToolsItemMinHeight = 48;
 
 /// Carte d'item d'étude à **slots** — primitive de base réutilisable par tout
-/// hôte du socle (CR-IFFD-16).
+/// hôte du socle.
 ///
 /// ```dart
 /// ZStudyToolsItemCard(
@@ -89,7 +89,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// lecteur d'écran sans lui).
   final String title;
 
-  /// Rendu **RICHE** du titre (**CR-IFFD-59**) — quand fourni, il REMPLACE le
+  /// Rendu **RICHE** du titre — quand fourni, il REMPLACE le
   /// `Text` de [title] dans la même position (même `Row`, même `Flexible`,
   /// même [badge] à sa suite). [title] reste la source sémantique (le widget
   /// est exclu de la sémantique comme l'était le `Text` : le `label` de la
@@ -102,9 +102,9 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// Icône ou vignette en tête de carte (`null` ⇒ aucun espace réservé).
   final Widget? leading;
 
-  /// Contenu rendu **AU-DESSUS de [title]**, dans la même colonne (**CR-IFFD-47**).
+  /// Contenu rendu **AU-DESSUS de [title]**, dans la même colonne.
   ///
-  /// Pendant EXACT de [belowSubtitle] (CR-LEX-75/CR-IFFD-37) : même type, même
+  /// Pendant EXACT de [belowSubtitle] : même type, même
   /// colonne, même espacement (`gapS`), même traitement sémantique (contenu
   /// d'hôte **non repris** dans le `label` de la carte, donc **non exclu** — le
   /// masquer le rendrait muet sans rien dédupliquer), et même **coût vertical
@@ -125,25 +125,25 @@ class ZStudyToolsItemCard extends StatelessWidget {
   final String? subtitle;
 
   /// Contenu secondaire rendu **sous [subtitle]**, dans la même colonne que
-  /// [title] (**CR-LEX-75**) : puce d'état, chip, méta-information.
+  /// [title] : puce d'état, chip, méta-information.
   ///
   /// **Pourquoi [progress] ne pouvait pas en tenir lieu**, pour deux raisons
   /// distinctes : (1) il est rendu dans la `Row` de tête, donc **à côté** du
   /// bloc titre/sous-titre et non dessous — l'y placer déplace la lecture de la
   /// carte ; (2) il est **borné à [progressMaxWidth]**, borne justifiée pour un
-  /// `LinearProgressIndicator` (CR-IFFD-20) mais qui **tronque un libellé** —
+  /// `LinearProgressIndicator` mais qui **tronque un libellé** —
   /// mesuré chez un hôte : `RenderFlex overflowed` de 41 px, et cette largeur
   /// **dépend de la locale** (7 langues, dont l'arabe) ⇒ aucune valeur codée en
   /// dur ne serait sûre. Ce slot n'impose donc **aucune contrainte de largeur**.
   ///
   /// Il se rend correctement que [subtitle] soit fourni ou non.
   ///
-  /// ♿ **Sa sémantique est PRÉSERVÉE**, comme celle de [badge] (CR-LEX-71) :
+  /// ♿ **Sa sémantique est PRÉSERVÉE**, comme celle de [badge] :
   /// le contenu vient de l'hôte et n'est **pas** repris dans le `label` de la
   /// carte, donc l'en exclure ne préviendrait aucune double annonce — cela le
   /// rendrait seulement muet.
   ///
-  /// 📐 **Coût vertical NUL en cellule contrainte (CR-IFFD-37)** : le slot
+  /// 📐 **Coût vertical NUL en cellule contrainte** : le slot
   /// **participe** à la hauteur allouée au lieu de s'y **ajouter** — espacement
   /// compris. Une grille dense (hauteur d'item fixe) débordait sur *chaque*
   /// carte dès que le slot était rempli ; désormais, toute hauteur où la carte
@@ -158,7 +158,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// Qualificatif court du contenu (type, extension, état). Le socle le pose et
   /// le met en forme ; **il n'en interprète jamais le contenu**.
   ///
-  /// ♿ **Sa sémantique est PRÉSERVÉE** (CR-LEX-71) : un `Semantics` posé ici
+  /// ♿ **Sa sémantique est PRÉSERVÉE** : un `Semantics` posé ici
   /// par l'hôte — un cadenas « lecture seule », par exemple — est réellement
   /// annoncé au lecteur d'écran, comme pour [leading] et [trailing]. Seuls
   /// [title] et [subtitle] sont exclus, parce qu'eux sont déjà portés par le
@@ -171,7 +171,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
 
   /// Indicateur de traitement en cours (téléversement, conversion, génération).
   ///
-  /// **Contrainte de layout (CR-IFFD-20)** : le slot est rendu dans une
+  /// **Contrainte de layout** : le slot est rendu dans une
   /// `Row`, donc dans un espace horizontal **non borné**. Un
   /// `LinearProgressIndicator` **nu** y lève *« unbounded width »* — un
   /// `CircularProgressIndicator`, qui s'auto-dimensionne, passe. La carte borne
@@ -186,7 +186,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// le défaut) plutôt que de produire une contrainte invalide (AD-10).
   final double progressMaxWidth;
 
-  /// Politique d'éviction de [trailing] pendant un traitement (**CR-IFFD-21**).
+  /// Politique d'éviction de [trailing] pendant un traitement.
   ///
   /// Le défaut `true` évince [trailing] : offrir des actions sur une ressource
   /// en cours de traitement invite à lancer une opération **concurrente**
@@ -199,7 +199,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// sont concurrentes. Passer `false` conserve [trailing] à côté de [progress] ;
   /// c'est alors à l'hôte de n'y laisser que le consultable.
   ///
-  /// **Piège du défaut `true` (CR-LEX-75)** : dès que [progress] est rempli,
+  /// **Piège du défaut `true`** : dès que [progress] est rempli,
   /// [trailing] — souvent un **menu contextuel** — **disparaît pendant tout le
   /// traitement**. Un hôte dont le trailing porte une action de
   /// **RÉCUPÉRATION** (annuler, supprimer un import bloqué) perd donc son seul
@@ -208,12 +208,13 @@ class ZStudyToolsItemCard extends StatelessWidget {
   final bool hidesTrailingWhileBusy;
 
   /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ carte non
-  /// interactive : **aucun** `InkWell`, et pas de rôle `button` annoncé (AD-45 :
-  /// l'absence de capacité est structurelle, pas un bouton désactivé).
+  /// interactive : **aucun** `InkWell`, et pas de rôle `button` annoncé
+  /// (invariant AD-4 : l'absence de capacité est structurelle, pas un
+  /// bouton désactivé).
   final VoidCallback? onTap;
 
-  /// Appui long sur la carte (**CR-IFFD-47**) — typiquement l'ouverture d'un
-  /// menu contextuel par l'hôte. `null` ⇒ capacité **ABSENTE** (AD-4).
+  /// Appui long sur la carte — typiquement l'ouverture d'un
+  /// menu contextuel par l'hôte. `null` ⇒ capacité **ABSENTE** (invariant AD-4).
   ///
   /// ♿ Un appui long est **inatteignable au lecteur d'écran** s'il n'est pas
   /// déclaré : il est donc porté par le **nœud sémantique de la carte**
@@ -225,40 +226,39 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// primaire, et l'annoncer comme telle mentirait sur la cible).
   final VoidCallback? onLongPress;
 
-  /// Contour explicite de la carte (**CR-IFFD-19**).
+  /// Contour explicite de la carte.
   ///
   /// `null` ⇒ la forme vient de `CardThemeData.shape` s'il est fourni, sinon du
   /// jeton `radiusM` — c'est-à-dire **exactement** le rendu antérieur. Ce slot
   /// est une capacité qui manquait, pas un changement de défaut.
   final BorderSide? borderSide;
 
-  /// Rayon d'angle EXPLICITE de la carte (**CR-IFFD-56**).
+  /// Rayon d'angle EXPLICITE de la carte.
   ///
   /// `null` ⇒ le rayon vient du jeton `radiusM` (ou de `CardThemeData.shape`
   /// s'il est fourni et qu'aucun [borderSide] n'est passé) — c'est-à-dire
   /// **exactement** le rendu antérieur. Ce slot est une capacité qui manquait
   /// (le rendu de référence des cartes d'étude exige un rayon de carte
   /// distinct du `radiusM` global), pas un changement de défaut — même motif
-  /// que [borderSide] (CR-IFFD-19).
+  /// que [borderSide].
   final Radius? borderRadius;
 
-  /// Fond EXPLICITE de la carte (**CR-IFFD-57**).
+  /// Fond EXPLICITE de la carte.
   ///
   /// `null` ⇒ le fond vient du `CardTheme`/`ColorScheme` de l'hôte, comme
   /// avant — **rendu strictement inchangé**. Ce slot est une capacité qui
   /// manquait (la carte de flashcard de référence pose son fond sur
   /// `scaffoldBackgroundColor`, pas sur la surface de `Card`), pas un
-  /// changement de défaut — même motif que [borderSide] (CR-IFFD-19).
+  /// changement de défaut — même motif que [borderSide].
   final Color? color;
 
-  /// Ombre de **REPLI** appliquée quand AUCUN jeton `cardShadow*` n'est fourni
-  /// (**CR-IFFD-57**).
+  /// Ombre de **REPLI** appliquée quand AUCUN jeton `cardShadow*` n'est fourni.
   ///
-  /// Priorité : jetons `ZcrudTheme.cardShadow*` (le canal EXISTANT, CR-IFFD-27)
-  /// > ce repli > ombre native de `Card`. `null` ⇒ rendu strictement inchangé.
+  /// Priorité : jetons `ZcrudTheme.cardShadow*` (le canal EXISTANT) > ce
+  /// repli > ombre native de `Card`. `null` ⇒ rendu strictement inchangé.
   /// Volontairement un **repli SOUS le thème** — et non un paramètre qui le
   /// primerait : l'ombre de référence d'une carte par défaut ne doit jamais
-  /// rendre les jetons d'ombre de l'hôte inatteignables (leçon CR-IFFD-19,
+  /// rendre les jetons d'ombre de l'hôte inatteignables (même leçon,
   /// inversée : ici c'est la carte par défaut qui fournit la valeur, l'hôte
   /// qui doit pouvoir la remplacer).
   final BoxDecoration? defaultShadow;
@@ -276,7 +276,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// plutôt que comme une suite de fragments.
   final String? semanticLabel;
 
-  /// Marge intérieure de la carte (**CR-LEX-70**).
+  /// Marge intérieure de la carte.
   ///
   /// Le jeton `gapM` servait à la fois de **padding de carte** et
   /// d'**espacement inter-slots** : deux rôles pour un seul token, donc aucune
@@ -285,42 +285,41 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// c'est-à-dire **exactement** le rendu antérieur.
   final EdgeInsetsGeometry? contentPadding;
 
-  /// Marge **extérieure** de la carte (**CR-LEX-73**).
+  /// Marge **extérieure** de la carte.
   ///
   /// Priorité : ce slot > `CardThemeData.margin` du thème de l'hôte >
   /// `EdgeInsets.zero` (le défaut historique, strictement préservé quand ni
-  /// l'un ni l'autre n'est fourni). Même motif que `CardThemeData.shape`
-  /// (CR-IFFD-19 / CR-LEX-61) : une marge écrite en dur rend la marge du thème
-  /// inatteignable et force chaque hôte à la réécrire dans un `Padding`
-  /// externe.
+  /// l'un ni l'autre n'est fourni). Même motif que `CardThemeData.shape` :
+  /// une marge écrite en dur rend la marge du thème inatteignable et force
+  /// chaque hôte à la réécrire dans un `Padding` externe.
   final EdgeInsetsGeometry? margin;
 
-  /// Style du [title] (**CR-LEX-72**). `null` ⇒ `textTheme.titleSmall`.
+  /// Style du [title]. `null` ⇒ `textTheme.titleSmall`.
   final TextStyle? titleStyle;
 
-  /// Style du [subtitle] (**CR-LEX-72**). `null` ⇒ `textTheme.bodySmall`.
+  /// Style du [subtitle]. `null` ⇒ `textTheme.bodySmall`.
   ///
-  /// Aucune couleur n'est imposée par le socle (FR-26) : un hôte qui veut
-  /// atténuer son sous-titre en `onSurfaceVariant` le fait par ce slot ou par
-  /// son `textTheme`.
+  /// Aucune couleur n'est imposée par le socle (invariant FR-26) : un hôte
+  /// qui veut atténuer son sous-titre en `onSurfaceVariant` le fait par ce
+  /// slot ou par son `textTheme`.
   final TextStyle? subtitleStyle;
 
-  /// Nombre maximal de lignes du [title] (**CR-LEX-72**). Défaut `1`, le
-  /// comportement historique ; une valeur ≤ 0 est ignorée et replie sur `1`
-  /// plutôt que de produire une contrainte invalide (AD-10).
+  /// Nombre maximal de lignes du [title]. Défaut `1`, le comportement
+  /// historique ; une valeur ≤ 0 est ignorée et replie sur `1` plutôt que de
+  /// produire une contrainte invalide (invariant AD-10).
   final int titleMaxLines;
 
-  /// Écart entre [leading] et la colonne de contenu (**CR-IFFD-61 ①**).
+  /// Écart entre [leading] et la colonne de contenu.
   ///
   /// `null` ⇒ `gapM` — **le rendu historique, strictement préservé**.
   ///
   /// **Pourquoi le défaut de la BASE ne devient PAS la valeur de référence
   /// (16)** : cette primitive n'est pas une carte par défaut. Des hôtes la
-  /// composent EUX-MÊMES (lex_douane, et le socle lui-même via les cartes de
-  /// flashcard) ; leur écart de tête vaut aujourd'hui `gapM`, jeton qu'ils
-  /// règlent. Y écrire 16 en dur changerait leur rendu **sans qu'ils l'aient
-  /// demandé** — exactement la classe d'erreur des handoffs v0.16/19.1/22
-  /// (affirmer une propriété sur l'hôte alors qu'on n'a vérifié que la sienne).
+  /// composent EUX-MÊMES, et le socle lui-même via les cartes de flashcard ;
+  /// leur écart de tête vaut aujourd'hui `gapM`, jeton qu'ils règlent. Y
+  /// écrire 16 en dur changerait leur rendu **sans qu'ils l'aient demandé** :
+  /// affirmer une propriété sur l'hôte alors qu'on n'a vérifié que la
+  /// sienne (cf. handoffs vers les apps consommatrices).
   ///
   /// La valeur de RÉFÉRENCE (16) est donc portée par le **chrome des cartes
   /// par défaut** (`zStudyCardChromeOf`, `ZStudyCardReference.leadingGap`),
@@ -329,33 +328,32 @@ class ZStudyToolsItemCard extends StatelessWidget {
   /// `gapM` — et peut demander autre chose par ce slot.
   final double? leadingGap;
 
-  /// Élévation Material de la carte (**CR-IFFD-61 ②**).
+  /// Élévation Material de la carte.
   ///
   /// `null` ⇒ comportement historique : élévation laissée au `CardTheme`/défaut
   /// Material (donc **1.0** en M3, ombre portée comprise) — sauf quand une
   /// ombre de jetons `cardShadow*`/[defaultShadow] est active, cas où
-  /// l'élévation native reste forcée à 0 (invariant CR-IFFD-27/57 : deux ombres
-  /// ne se superposent jamais).
+  /// l'élévation native reste forcée à 0 (deux ombres ne se superposent
+  /// jamais).
   ///
   /// Une ombre de jetons PRIME toujours : quand elle est active, cette
   /// valeur est ignorée et l'élévation native vaut 0. Sans quoi la carte
   /// porterait deux ombres.
   final double? elevation;
 
-  /// Alignement VERTICAL du contenu **dans le cadre reçu** (**CR-IFFD-62 ②**).
+  /// Alignement VERTICAL du contenu **dans le cadre reçu**.
   ///
   /// `null` ⇒ **rendu strictement inchangé** : la colonne de contenu se
   /// dimensionne sur son contenu (`MainAxisSize.min`) et la `Row` la centre —
   /// c'est le comportement historique, et il le reste pour tout hôte qui ne
   /// demande rien.
   ///
-  /// **Ce que la CR a mesuré, et que ce slot corrige** : une carte placée
-  /// dans un `SizedBox(height: 200)` occupait bien 200 dp, mais son CONTENU
-  /// restait centré au milieu — le pied (pastille de type) remontait contre le
-  /// texte et le bas du rail était dentelé. « Donner une hauteur » ne suffisait
+  /// **Ce que ce slot corrige** : une carte placée dans un
+  /// `SizedBox(height: 200)` occupait bien 200 dp, mais son CONTENU restait
+  /// centré au milieu — le pied (pastille de type) remontait contre le texte
+  /// et le bas du rail était dentelé. « Donner une hauteur » ne suffisait
   /// donc pas : il fallait que la carte soit construite en **contraintes
-  /// descendantes** (CR-IFFD-62 ⑤ : cadre imposé → corps qui remplit → pied en
-  /// bas).
+  /// descendantes** (cadre imposé → corps qui remplit → pied en bas).
   ///
   /// **Il n'a d'effet QUE sous une hauteur IMPOSÉE** (contrainte verticale
   /// TIGHT : `SizedBox(height:)`, `ZRailItem(height:)`, cellule de grille à
@@ -373,7 +371,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final busy = progress != null;
 
-    // CR-IFFD-62 ② — la bascule « cadre imposé » est MESURÉE sur les
+    // La bascule « cadre imposé » est MESURÉE sur les
     // contraintes réellement reçues, jamais déduite d'un paramètre. Sans
     // [contentAlignment], AUCUN `LayoutBuilder` n'est introduit : l'arbre reste
     // strictement celui d'avant.
@@ -410,25 +408,24 @@ class ZStudyToolsItemCard extends StatelessWidget {
     // (sans quoi `RenderFlex` répartit l'espace entre trois enfants flexibles
     // et **perd** le reliquat des enfants LOOSE — la colonne ne remplit alors
     // pas le cadre). Inflexibles, ils débordaient dès qu'un cadre était plus
-    // petit que le contenu : gardes CR-IFFD-47 §9 rouges, `RenderFlex
-    // overflowed by 82 pixels` sur une cellule 300 × 120 — exactement la
-    // régression que CR-IFFD-37 avait fermée (« le slot PARTICIPE à la
-    // hauteur, il ne s'y AJOUTE pas »).
+    // petit que le contenu : `RenderFlex overflowed by 82 pixels` mesuré sur
+    // une cellule 300 × 120 — exactement la régression que corrige le
+    // principe « le slot PARTICIPE à la hauteur, il ne s'y AJOUTE pas ».
     //
     // La forme retenue produit le MÊME rendu (en-tête en haut, énoncé
     // immédiatement dessous, pied en bas) en gardant les deux groupes
     // FLEXIBLES : sous pression, ils cèdent au lieu de déborder.
     final bool spread =
         filled && contentAlignment == ZStudyCardContentAlignment.spread;
-    // CR-LEX-70 — le padding de carte et l'espacement inter-slots sont deux
-    // rôles distincts : le premier est injectable, le second reste le jeton.
+    // Le padding de carte et l'espacement inter-slots sont deux rôles
+    // distincts : le premier est injectable, le second reste le jeton.
     return Padding(
       padding: contentPadding ?? EdgeInsetsDirectional.all(theme.gapM),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[
             leading!,
-            // CR-IFFD-61 ① — l'écart tuile→titre est ADRESSABLE. `null` ⇒
+            // L'écart tuile→titre est ADRESSABLE. `null` ⇒
             // `gapM`, le rendu historique (voir la dartdoc de [leadingGap]
             // pour l'arbitrage base vs cartes par défaut).
             SizedBox(width: leadingGap ?? theme.gapM),
@@ -440,29 +437,29 @@ class ZStudyToolsItemCard extends StatelessWidget {
           // l'hôte INATTEIGNABLE au lecteur d'écran — l'a11y qu'on prétend
           // apporter serait retirée d'une main pendant qu'on la donne de l'autre.
           //
-          // CR-LEX-71 — l'exclusion enveloppait la `Column` ENTIÈRE, donc aussi
-          // `badge` : un cadenas « lecture seule » posé par l'hôte était visible
-          // à l'œil et MUET au lecteur d'écran, à rebours de ce commentaire. La
-          // raison d'être de l'exclusion est la DOUBLE ANNONCE de `title`/
-          // `subtitle`, qui sont déjà dans le `label` de la carte ; `badge`, lui,
-          // n'y est PAS — l'en sortir ne peut donc rien dupliquer. L'exclusion
-          // est désormais posée sur les deux `Text` eux-mêmes : même layout,
-          // portée réellement conforme à la dartdoc.
+          // Une exclusion enveloppant la `Column` ENTIÈRE inclurait aussi
+          // `badge` : un cadenas « lecture seule » posé par l'hôte serait
+          // visible à l'œil et MUET au lecteur d'écran, à rebours de ce
+          // commentaire. La raison d'être de l'exclusion est la DOUBLE
+          // ANNONCE de `title`/`subtitle`, qui sont déjà dans le `label` de
+          // la carte ; `badge`, lui, n'y est PAS — l'en sortir ne peut donc
+          // rien dupliquer. L'exclusion est posée sur les deux `Text`
+          // eux-mêmes : même layout, portée conforme à la dartdoc.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              // CR-IFFD-62 ② — sous cadre imposé la colonne REMPLIT la hauteur
-              // reçue ; sans cadre elle reste `min` (rendu historique).
+              // Sous cadre imposé la colonne REMPLIT la hauteur reçue ; sans
+              // cadre elle reste `min` (rendu historique).
               mainAxisSize: filled ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: _mainAxisAlignment(filled),
               children: spread
                   ? _spreadChildren(theme, textTheme)
                   : <Widget>[
-                // CR-IFFD-47 — pendant EXACT de `belowSubtitle` : `Flexible`
-                // en fit LOOSE (espacement COMPRIS, d'où le `Padding` et non
-                // un `SizedBox` frère), pour que le slot PARTICIPE à la hauteur
-                // allouée en cellule contrainte au lieu de s'y AJOUTER (leçon
-                // CR-IFFD-37 : une grille dense débordait sur *chaque* carte).
+                // Pendant EXACT de `belowSubtitle` : `Flexible` en fit LOOSE
+                // (espacement COMPRIS, d'où le `Padding` et non un `SizedBox`
+                // frère), pour que le slot PARTICIPE à la hauteur allouée en
+                // cellule contrainte au lieu de s'y AJOUTER (sans quoi une
+                // grille dense déborderait sur *chaque* carte).
                 if (aboveTitle != null)
                   Flexible(
                     child: Padding(
@@ -480,18 +477,18 @@ class ZStudyToolsItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                // CR-LEX-75 — contenu secondaire SOUS le sous-titre, dans la
-                // `Column` et **sans borne de largeur** : `progress`, borné à
-                // 120 dp dans la `Row` de tête, tronquait toute puce d'état
-                // localisée (débordement mesuré de 41 px, variable selon la
-                // locale). Volontairement HORS `ExcludeSemantics`, comme
-                // `badge` (CR-LEX-71) : ce contenu n'est pas dans le `label` de
-                // la carte, l'exclure le rendrait muet sans rien dédupliquer.
+                // Contenu secondaire SOUS le sous-titre, dans la `Column` et
+                // **sans borne de largeur** : `progress`, borné à 120 dp dans
+                // la `Row` de tête, tronquerait toute puce d'état localisée
+                // (débordement mesuré de 41 px, variable selon la locale).
+                // Volontairement HORS `ExcludeSemantics`, comme `badge` : ce
+                // contenu n'est pas dans le `label` de la carte, l'exclure le
+                // rendrait muet sans rien dédupliquer.
                 //
-                // CR-IFFD-37 — le slot AJOUTAIT sa hauteur à la colonne au
-                // lieu d'y PARTICIPER : dans une cellule de hauteur fixe
-                // (grille dense), cette `Column` sizée au contenu et à enfants
-                // tous INFLEXIBLES débordait la hauteur que la `Row` lui prête
+                // Le slot doit PARTICIPER à la hauteur de la colonne, jamais
+                // s'y AJOUTER : dans une cellule de hauteur fixe (grille
+                // dense), une `Column` sizée au contenu et à enfants tous
+                // INFLEXIBLES déborderait la hauteur que la `Row` lui prête
                 // (`RenderFlex overflowed` mesuré dès 210 dp). Le `Flexible`
                 // (fit LOOSE) rend le slot — espacement COMPRIS, d'où le
                 // `Padding` en lieu et place du `SizedBox` — comptable de la
@@ -512,7 +509,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
               ],
             ),
           ),
-          // CR-IFFD-20 — le slot est BORNÉ par la carte. Sans cela un
+          // Le slot est BORNÉ par la carte. Sans cela un
           // `LinearProgressIndicator` nu lève « unbounded width » dans la `Row` :
           // une exigence de layout réelle, INVISIBLE depuis la signature du slot.
           if (busy) ...<Widget>[
@@ -524,7 +521,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
               child: progress,
             ),
           ],
-          // CR-IFFD-21 — l'éviction est une POLITIQUE, plus une fatalité.
+          // L'éviction est une POLITIQUE, pas une fatalité.
           if (trailing != null &&
               !(busy && hidesTrailingWhileBusy)) ...<Widget>[
             SizedBox(width: theme.gapM),
@@ -535,7 +532,7 @@ class ZStudyToolsItemCard extends StatelessWidget {
     );
   }
 
-  /// Alignement principal de la colonne de contenu (**CR-IFFD-62 ④**).
+  /// Alignement principal de la colonne de contenu.
   /// Hors cadre, ou sans [contentAlignment], c'est `start` — l'historique.
   MainAxisAlignment _mainAxisAlignment(bool filled) {
     if (!filled) return MainAxisAlignment.start;
@@ -551,14 +548,14 @@ class ZStudyToolsItemCard extends StatelessWidget {
     }
   }
 
-  /// Colonne de contenu en mode **`spread` sous cadre** (**CR-IFFD-62 ⑤**) :
-  /// DEUX groupes flexibles — « en-tête + énoncé » collé en haut, « pied »
-  /// collé en bas, tout l'espace libre entre les deux.
+  /// Colonne de contenu en mode **`spread` sous cadre** : DEUX groupes
+  /// flexibles — « en-tête + énoncé » collé en haut, « pied » collé en bas,
+  /// tout l'espace libre entre les deux.
   ///
   /// Les deux groupes restent `Flexible` (fit LOOSE) : c'est ce qui les
   /// fait CÉDER quand le cadre est plus petit que le contenu, au lieu de
-  /// déborder (invariant CR-IFFD-37, mesuré rouge sur une cellule 300 × 120
-  /// avec la variante `Expanded` + enfants inflexibles).
+  /// déborder (mesuré rouge sur une cellule 300 × 120 avec la variante
+  /// `Expanded` + enfants inflexibles).
   List<Widget> _spreadChildren(ZcrudTheme theme, TextTheme textTheme) =>
       <Widget>[
         Flexible(
@@ -600,9 +597,9 @@ class ZStudyToolsItemCard extends StatelessWidget {
   Widget _titleRow(ZcrudTheme theme, TextTheme textTheme) => Row(
         children: <Widget>[
           Flexible(
-            // CR-IFFD-59 — [titleWidget] remplace le `Text` à la MÊME
-            // position ; l'exclusion sémantique est identique (le `label` de
-            // la carte porte déjà [title]).
+            // [titleWidget] remplace le `Text` à la MÊME position ;
+            // l'exclusion sémantique est identique (le `label` de la carte
+            // porte déjà [title]).
             child: ExcludeSemantics(
               child: titleWidget ??
                   Text(
@@ -625,18 +622,18 @@ class ZStudyToolsItemCard extends StatelessWidget {
   Widget _buildCard(BuildContext context, ZcrudTheme theme, Widget content) {
     final tap = onTap;
     final longPress = onLongPress;
-    // CR-IFFD-19 — un `shape:` explicite l'emporte sur `CardThemeData.shape` :
-    // en le construisant en dur, la carte rendait TOUTE bordure d'hôte
-    // inatteignable — ni par le thème, ni par un slot. Le rayon venait bien d'un
-    // jeton, mais la FORME, elle, échappait au thème.
+    // Un `shape:` explicite l'emporte sur `CardThemeData.shape` : le
+    // construire en dur rendrait TOUTE bordure d'hôte inatteignable — ni
+    // par le thème, ni par un slot. Le rayon vient bien d'un jeton, mais la
+    // FORME, elle, échapperait au thème.
     //
     // Priorité : `side` du slot > `CardThemeData.shape` du thème > jeton `radiusM`
     // (le défaut historique, strictement préservé quand rien n'est fourni).
     final CardThemeData cardTheme = CardTheme.of(context);
     final themed = cardTheme.shape;
-    // CR-IFFD-56 — `borderRadius` explicite > `CardThemeData.shape` du thème
-    // (comme `borderSide` : un slot explicite prime le thème) > jeton
-    // `radiusM` (défaut historique, strictement préservé à `null`).
+    // `borderRadius` explicite > `CardThemeData.shape` du thème (comme
+    // `borderSide` : un slot explicite prime le thème) > jeton `radiusM`
+    // (défaut historique, strictement préservé à `null`).
     final Radius corner = borderRadius ?? theme.radiusM;
     final ShapeBorder shape = borderSide != null || borderRadius != null
         ? RoundedRectangleBorder(
@@ -648,13 +645,13 @@ class ZStudyToolsItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.all(corner),
               );
 
-    // CR-IFFD-27 — les jetons `ZcrudTheme.cardShadow*` n'étaient lus par AUCUN
-    // widget. La CR visait les DEUX cartes porteuses du défaut, pour ne pas le
-    // voir réapparaître sur une troisième. `null` (aucun jeton) ⇒ arbre et
-    // rendu STRICTEMENT identiques à l'historique.
-    // CR-IFFD-57 — les jetons `cardShadow*` PRIMENT le repli [defaultShadow] :
-    // l'ombre de référence d'une carte par défaut ne rend jamais le canal
-    // d'ombre de l'hôte inatteignable.
+    // Les jetons `ZcrudTheme.cardShadow*` sont lus ici par TOUTE carte de ce
+    // socle — pour éviter que le même défaut ne réapparaisse sur une carte
+    // isolée. `null` (aucun jeton) ⇒ arbre et rendu STRICTEMENT identiques à
+    // l'historique.
+    // Les jetons `cardShadow*` PRIMENT le repli [defaultShadow] : l'ombre de
+    // référence d'une carte par défaut ne rend jamais le canal d'ombre de
+    // l'hôte inatteignable.
     final BoxDecoration? shadow = zResolveCardShadowDecoration(
           context,
           shape: shape,
@@ -665,27 +662,27 @@ class ZStudyToolsItemCard extends StatelessWidget {
         margin ?? cardTheme.margin ?? EdgeInsets.zero;
 
     final Widget innerCard = Card(
-      // CR-LEX-73 — même motif que `shape` : une marge en dur rendait la
-      // marge du `CardTheme` de l'hôte inatteignable et l'obligeait à la
-      // réécrire dans un `Padding` externe.
+      // Même motif que `shape` : une marge en dur rendrait la marge du
+      // `CardTheme` de l'hôte inatteignable et l'obligerait à la réécrire
+      // dans un `Padding` externe.
       //
       // Quand l'ombre des jetons est active, la marge passe à un `Padding`
       // externe : la boîte ombrée doit épouser la carte, pas sa marge.
       margin: shadow == null ? cardMargin : EdgeInsets.zero,
-      // CR-IFFD-57 — fond explicite ; `null` ⇒ CardTheme/ColorScheme (inchangé).
+      // Fond explicite ; `null` ⇒ CardTheme/ColorScheme (inchangé).
       color: color,
       shape: shape,
       // Deux ombres ne se superposent pas : l'élévation native cède la place.
-      // CR-IFFD-61 ② — hors ombre de jetons, l'élévation est ADRESSABLE :
-      // `null` ⇒ `CardTheme`/défaut Material (rendu historique), une valeur
-      // fournie PRIME (les cartes par défaut y passent la référence, 0).
+      // Hors ombre de jetons, l'élévation est ADRESSABLE : `null` ⇒
+      // `CardTheme`/défaut Material (rendu historique), une valeur fournie
+      // PRIME (les cartes par défaut y passent la référence, 0).
       elevation: shadow == null ? elevation : 0,
       clipBehavior: Clip.antiAlias,
       child: tap == null && longPress == null
-          // AD-45 — pas d'`InkWell` inerte : l'absence d'activation est
-          // structurelle, elle ne se rend pas comme un bouton éteint.
-          // CR-IFFD-47 : la condition porte désormais sur les DEUX gestes —
-          // une carte qui n'a QUE l'appui long doit bien être activable.
+          // Pas d'`InkWell` inerte : l'absence d'activation est structurelle
+          // (invariant AD-4), elle ne se rend pas comme un bouton éteint. La
+          // condition porte sur les DEUX gestes — une carte qui n'a QUE
+          // l'appui long doit bien être activable.
           ? _withAccent(content)
           : InkWell(
               onTap: tap,
@@ -709,9 +706,9 @@ class ZStudyToolsItemCard extends StatelessWidget {
       // l'action tactile de l'`InkWell`. Sans ce `onTap`, la carte serait
       // annoncée « bouton » et resterait INACTIVABLE au lecteur d'écran.
       onTap: tap,
-      // CR-IFFD-47 — MÊME raison pour l'appui long : l'`InkWell` étant exclu de
-      // la sémantique, un `onLongPress` qui n'y serait pas déclaré serait
-      // INATTEIGNABLE au lecteur d'écran (AD-13).
+      // MÊME raison pour l'appui long : l'`InkWell` étant exclu de la
+      // sémantique, un `onLongPress` qui n'y serait pas déclaré serait
+      // INATTEIGNABLE au lecteur d'écran (invariant AD-13).
       onLongPress: longPress,
       label:
           semanticLabel ?? (subtitle == null ? title : '$title, ${subtitle!}'),

@@ -74,15 +74,16 @@ class ZOfflineFirstRepository<T extends ZEntity>
   // AD-9 : le local **fait autorité** offline-first — les lectures ne touchent
   // JAMAIS le distant. Le port [ZLocalStore] n'expose pas de requête filtrée ;
   // le `request` est donc appliqué au **snapshot local visible** (le local
-  // renvoie toutes les entités visibles — la traduction requête→backend local est
-  // hors périmètre E5-3, qui porte la composition offline-first + le merge LWW).
+  // renvoie toutes les entités visibles — la traduction requête→backend local
+  // reste hors du périmètre de ce dépôt, qui porte la composition offline-first
+  // + le merge LWW).
   // Les tombstones (soft-deletés) sont exclus par le store local de façon
-  // COHÉRENTE (get/getAll/watch), hérité E5-2.
+  // COHÉRENTE (get/getAll/watch), alignée sur les autres dépôts offline-first.
 
-  /// Message de dette EXPLICITE (MEDIUM-1) : le dépôt offline-first rend le
+  /// Message de dette EXPLICITE : le dépôt offline-first rend le
   /// **snapshot local complet** ; filtre/tri/pagination du [ZDataRequest] ne sont
   /// PAS traduits (le port [ZLocalStore] n'expose pas de requête). Le drop est
-  /// tracé — jamais silencieux — pour être repris en E9 (traduction requête→cache).
+  /// tracé — jamais silencieux — limitation connue (traduction requête→cache).
   static const String _requestDroppedNote =
       'ZOfflineFirstRepository: request (filtre/tri/pagination) NON appliqué — '
       'snapshot local complet renvoyé (dette E9, voir code-review-e5-3).';
@@ -123,7 +124,7 @@ class ZOfflineFirstRepository<T extends ZEntity>
     final localRes = await _local.put(item);
     // AD-9 fire-and-forget STRICT : on renvoie le résultat local DÈS son succès,
     // SANS attendre la propagation distante (`unawaited`). Attendre le distant
-    // bloquerait la méthode le temps d'un timeout réseau hors-ligne (MAJEUR-1).
+    // bloquerait la méthode le temps d'un timeout réseau hors-ligne.
     localRes.fold(
       (_) {}, // échec local : rien à propager (l'échec est renvoyé tel quel)
       (saved) => unawaited(_bestEffortRemote(

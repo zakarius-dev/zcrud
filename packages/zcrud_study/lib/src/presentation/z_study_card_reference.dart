@@ -1,25 +1,25 @@
-/// **CR-IFFD-56** — le RENDU DE RÉFÉRENCE des cartes d'item d'étude par
-/// défaut, centralisé en UN SEUL endroit (directive owner : « les valeurs de
-/// référence IFFD entrent comme DÉFAUTS de jetons/rôles documentés, jamais
-/// comme constantes éparpillées dans les widgets »).
+/// Rendu de référence des cartes d'item d'étude par défaut, centralisé en un
+/// seul endroit — les valeurs de référence entrent comme défauts de
+/// jetons/rôles documentés, jamais comme constantes éparpillées dans les
+/// widgets.
 ///
-/// ## La gouvernance (précédent CR-IFFD-41)
+/// ## La gouvernance
 ///
-/// Le design d'IFFD est la référence visuelle du socle : les trois cartes par
-/// défaut (document, note, carte mentale) doivent le répliquer **sans aucun
-/// réglage** — « un défaut se juge à ce qu'il donne sans aucun réglage ».
-/// Le rendu v0.43.0 (tuile colorée) reste **atteignable par réglage**
-/// ([ZStudyCardHierarchy.tintedTile]) et sa restitution exacte est gardée par
-/// test — mais c'est un réglage, plus un défaut.
+/// Le rendu de référence est la référence visuelle du socle : les trois
+/// cartes par défaut (document, note, carte mentale) doivent le répliquer
+/// sans aucun réglage — un défaut se juge à ce qu'il donne sans aucun
+/// réglage. Un rendu antérieur (tuile colorée) reste atteignable par réglage
+/// ([ZStudyCardHierarchy.tintedTile]) et sa restitution exacte est gardée
+/// par test — mais c'est un réglage, plus un défaut.
 ///
 /// ## Priorité de résolution, partout
 ///
-/// **paramètre de carte > jeton `ZcrudTheme.studyCard*` > défaut-référence**
+/// paramètre de carte > jeton `ZcrudTheme.studyCard*` > défaut-référence
 /// (les défauts-référence sont les constantes de [ZStudyCardReference]).
 ///
-/// ## FR-26 — matière en rôles, toujours (CR-48)
+/// ## Invariant FR-26 — matière en rôles, toujours
 ///
-/// AUCUNE couleur ici : les seules valeurs figées sont des DIMENSIONS et des
+/// Aucune couleur ici : les seules valeurs figées sont des dimensions et des
 /// scalaires (opacité, graisse). Chaque couleur du rendu de référence est un
 /// rôle du `ColorScheme` courant, résolu au rendu par [zStudyCardChromeOf] :
 /// tuile `surface`, glyphe neutre/sous-titre `onSurfaceVariant`, liseré
@@ -30,8 +30,9 @@ import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart'
     show ZStudyCardHierarchy, ZcrudTheme;
 
-/// Les valeurs de RÉFÉRENCE (mesurées chez IFFD, CR-IFFD-56) — le point
-/// d'audit unique. Modifier une valeur ici change le défaut des TROIS cartes.
+/// Les valeurs de référence (mesurées sur le rendu historique du socle) — le
+/// point d'audit unique. Modifier une valeur ici change le défaut des trois
+/// cartes.
 abstract final class ZStudyCardReference {
   /// Côté de la tuile d'icône de tête (48 dp).
   static const double iconTileSize = 48;
@@ -42,34 +43,34 @@ abstract final class ZStudyCardReference {
   /// Rayon de la carte (16).
   static const Radius cardRadius = Radius.circular(16);
 
-  /// Padding interne de la carte (12, directionnel — AD-13).
+  /// Padding interne de la carte (12, directionnel — invariant AD-13).
   static const EdgeInsetsGeometry contentPadding =
       EdgeInsetsDirectional.all(12);
 
-  /// Écart entre la tuile d'icône de tête et le titre (**16** —
-  /// `SizedBox(width: 16)` du legacy IFFD `_buildGridItemCard`, CR-IFFD-61 ①).
+  /// Écart entre la tuile d'icône de tête et le titre (16 — mesuré sur le
+  /// rendu historique).
   ///
-  /// **Distinct du padding de carte (12)** : c'est précisément le point de
-  /// la CR — les deux ridaient le MÊME jeton `gapM`, donc aucune valeur ne
-  /// pouvait satisfaire les deux. Mesuré : la carte par défaut rendait
-  /// `gapM` (8 en thème nu, 12 sous le thème IFFD) là où la référence pose 16.
+  /// Distinct du padding de carte (12) : les deux ridaient le même jeton
+  /// `gapM`, donc aucune valeur ne pouvait satisfaire les deux. Mesuré : la
+  /// carte par défaut rendait `gapM` (8 en thème nu, 12 sous un thème plus
+  /// dense) là où la référence pose 16.
   static const double leadingGap = 16;
 
-  /// Élévation Material de la carte (**0** — `Card(elevation: 0)` du legacy
-  /// IFFD, CR-IFFD-61 ②).
+  /// Élévation Material de la carte (0 — mesurée sur le rendu historique).
   ///
-  /// **Ce que ce défaut corrige, MESURÉ** : sans élévation explicite, `Card`
-  /// retombe sur le défaut Material 3 (**1.0**) et porte une **ombre portée**
+  /// Ce que ce défaut corrige, mesuré : sans élévation explicite, `Card`
+  /// retombe sur le défaut Material 3 (1.0) et porte une ombre portée
   /// que la référence n'a pas. Capture de pixels comparée (carte par défaut vs
-  /// réplique littérale du legacy) : les deux rendus étaient byte-identiques
-  /// SUR TOUTE la face de la carte — la seule divergence était la bande de
-  /// 1 dp juste HORS de la face, noire à la carte par défaut, transparente au
-  /// legacy. C'est cette ombre qui assombrit les pixels autour de la tête de
-  /// carte, et non un accent (l'accent n'existe QUE dans la hiérarchie
-  /// `tintedTile`, jamais au défaut — mesuré par absence de clé dans l'arbre).
+  /// réplique littérale du rendu historique) : les deux rendus étaient
+  /// byte-identiques sur toute la face de la carte — la seule divergence
+  /// était la bande de 1 dp juste hors de la face, noire à la carte par
+  /// défaut, transparente au rendu historique. C'est cette ombre qui
+  /// assombrit les pixels autour de la tête de carte, et non un accent
+  /// (l'accent n'existe que dans la hiérarchie `tintedTile`, jamais au
+  /// défaut — mesuré par absence de clé dans l'arbre).
   static const double cardElevation = 0;
 
-  /// Marge externe de la carte (4, directionnelle — AD-13).
+  /// Marge externe de la carte (4, directionnelle — invariant AD-13).
   static const EdgeInsetsGeometry margin = EdgeInsetsDirectional.all(4);
 
   /// Opacité du liseré `outlineVariant` (50 %).
@@ -84,27 +85,30 @@ abstract final class ZStudyCardReference {
   /// Graisse du titre (`w600`).
   static const FontWeight titleFontWeight = FontWeight.w600;
 
-  /// Nombre de lignes du titre (référence : UNE ligne).
+  /// Nombre de lignes du titre (référence : une ligne).
   static const int titleMaxLines = 1;
 
-  /// Taille du glyphe dans la tuile (28 — `kStudyToolsLeadingIconSize` du
-  /// legacy IFFD ; PAS la taille ambiante de 24).
+  /// Taille du glyphe dans la tuile (28 — mesurée sur le rendu historique ;
+  /// pas la taille ambiante de 24).
   static const double glyphSize = 28;
 
-  /// Padding du badge d'extension (4 / 2, directionnel — legacy IFFD).
+  /// Padding du badge d'extension (4 / 2, directionnel — mesuré sur le rendu
+  /// historique).
   static const EdgeInsetsGeometry badgePadding =
       EdgeInsetsDirectional.symmetric(horizontal: 4, vertical: 2);
 
-  /// Taille de fonte du badge d'extension (8, bold — legacy IFFD, appliquée
-  /// sur `labelSmall` pour hériter de la famille de l'hôte).
+  /// Taille de fonte du badge d'extension (8, bold — mesurée sur le rendu
+  /// historique, appliquée sur `labelSmall` pour hériter de la famille de
+  /// l'hôte).
   static const double badgeFontSize = 8;
 
-  /// Graisse du badge d'extension (`bold` — legacy IFFD).
+  /// Graisse du badge d'extension (`bold` — mesurée sur le rendu
+  /// historique).
   static const FontWeight badgeFontWeight = FontWeight.bold;
 }
 
-/// Chrome de référence RÉSOLU pour une carte d'étude par défaut : chaque champ
-/// applique la priorité **paramètre > jeton `studyCard*` > référence** et les
+/// Chrome de référence résolu pour une carte d'étude par défaut : chaque champ
+/// applique la priorité paramètre > jeton `studyCard*` > référence et les
 /// rôles du `ColorScheme` courant. Produit par [zStudyCardChromeOf].
 @immutable
 class ZStudyCardChrome {
@@ -150,10 +154,10 @@ class ZStudyCardChrome {
   /// Rayon effectif de la tuile d'icône.
   final Radius iconTileRadius;
 
-  /// Fond de la tuile NEUTRE (rôle `surface`).
+  /// Fond de la tuile neutre (rôle `surface`).
   final Color tileColor;
 
-  /// Premier plan d'un glyphe NEUTRE (rôle `onSurfaceVariant`).
+  /// Premier plan d'un glyphe neutre (rôle `onSurfaceVariant`).
   final Color neutralGlyphColor;
 
   /// Rayon effectif du badge d'extension (surimpression).
@@ -162,17 +166,18 @@ class ZStudyCardChrome {
   /// Taille effective du glyphe dans la tuile (référence : 28).
   final double glyphSize;
 
-  /// Écart effectif tuile→titre (**CR-IFFD-61 ①**, référence : 16).
+  /// Écart effectif tuile→titre (référence : 16).
   final double leadingGap;
 
-  /// Élévation Material effective de la carte (**CR-IFFD-61 ②**, référence :
-  /// 0 — aucune ombre portée, liseré seul).
+  /// Élévation Material effective de la carte (référence : 0 — aucune ombre
+  /// portée, liseré seul).
   final double elevation;
 }
 
 /// Résout le chrome de référence depuis le contexte (rôles du `ColorScheme`)
 /// et les jetons `ZcrudTheme.studyCard*`, avec surcharge ponctuelle par les
-/// paramètres de la carte. Toute couleur est un RÔLE dérivé (FR-26).
+/// paramètres de la carte. Toute couleur est un rôle dérivé (invariant
+/// FR-26).
 ZStudyCardChrome zStudyCardChromeOf(
   BuildContext context, {
   BorderSide? borderSide,
@@ -202,8 +207,8 @@ ZStudyCardChrome zStudyCardChromeOf(
     contentPadding: contentPadding ??
         theme.studyCardContentPadding ??
         ZStudyCardReference.contentPadding,
-    // Leçon CR-LEX-73 : la marge du `CardTheme` de l'hôte reste ATTEIGNABLE —
-    // elle s'intercale entre le jeton et le défaut-référence.
+    // La marge du `CardTheme` de l'hôte reste atteignable — elle s'intercale
+    // entre le jeton et le défaut-référence.
     margin: margin ??
         theme.studyCardMargin ??
         CardTheme.of(context).margin ??
@@ -225,17 +230,16 @@ ZStudyCardChrome zStudyCardChromeOf(
     neutralGlyphColor: scheme.onSurfaceVariant,
     badgeRadius: theme.studyCardBadgeRadius ?? theme.radiusS,
     glyphSize: theme.studyCardGlyphSize ?? ZStudyCardReference.glyphSize,
-    // CR-IFFD-61 ① — l'écart tuile→titre cesse de rider `gapM`. La primitive
-    // de BASE garde `gapM` (neutralité pour les hôtes qui la composent
-    // eux-mêmes) ; c'est le CHROME des cartes par défaut qui porte la
-    // référence, parce que « le défaut EST la référence » ne vaut que des
-    // cartes par défaut (CR-IFFD-56).
+    // L'écart tuile→titre cesse de rider `gapM`. La primitive de base garde
+    // `gapM` (neutralité pour les hôtes qui la composent eux-mêmes) ; c'est
+    // le chrome des cartes par défaut qui porte la référence, parce que
+    // « le défaut est la référence » ne vaut que des cartes par défaut.
     leadingGap: leadingGap ??
         theme.studyCardLeadingGap ??
         ZStudyCardReference.leadingGap,
-    // CR-IFFD-61 ② — élévation 0 = référence (liseré seul). Le défaut
-    // antérieur laissait `Card` retomber sur l'élévation M3 (1.0), donc sur une
-    // ombre portée absente du legacy.
+    // Élévation 0 = référence (liseré seul). Le défaut antérieur laissait
+    // `Card` retomber sur l'élévation M3 (1.0), donc sur une ombre portée
+    // absente du rendu historique.
     elevation: elevation ??
         theme.studyCardElevation ??
         ZStudyCardReference.cardElevation,

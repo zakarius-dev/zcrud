@@ -1,66 +1,65 @@
-/// `ZDefaultDocumentCard` — **carte de document PAR DÉFAUT** du socle
-/// (CR-IFFD-48, rendu de référence CR-IFFD-55/56).
+/// `ZDefaultDocumentCard` — carte de document par défaut du socle, au rendu
+/// de référence.
 ///
-/// ## Le DÉFAUT est le rendu de RÉFÉRENCE (CR-IFFD-56)
+/// ## Le défaut est le rendu de référence
 ///
-/// Gouvernance CR-41 : le design d'IFFD est la référence visuelle du socle.
-/// Sans aucun réglage, la carte rend : tuile d'icône **NEUTRE** (`surface`,
+/// Sans aucun réglage, la carte rend : tuile d'icône neutre (`surface`,
 /// jetons `studyCardIconTile*`, référence 48 dp / rayon 12), glyphe
-/// [zDefaultDocumentReferenceIcon] **TEINTÉ par la couleur résolue du
-/// format**, **badge d'extension en surimpression** bas-fin (fond = couleur du
+/// [zDefaultDocumentReferenceIcon] teinté par la couleur résolue du
+/// format, badge d'extension en surimpression bas-fin (fond = couleur du
 /// format, texte apparié inversé, rayon `studyCardBadgeRadius` repli `radiusS`),
 /// et le chrome commun de [ZStudyCardReference] (rayon de carte 16, padding 12,
 /// marge 4, liseré `outlineVariant` à 50 %, titre `titleMedium/w600/15` une
 /// ligne, sous-titre `bodySmall`/`onSurfaceVariant`).
 ///
-/// L'ancien rendu v0.43.0 (tuile colorée, glyphe apparié, puce de format en
-/// [ZStudyDocumentCard.metadata]) reste **atteignable par réglage** :
-/// [hierarchy] `=` [ZStudyCardHierarchy.tintedTile] (ou le jeton
-/// `ZcrudTheme.studyCardHierarchy`) — restitution EXACTE gardée par test.
+/// Un rendu antérieur (tuile colorée, glyphe apparié, puce de format en
+/// [ZStudyDocumentCard.metadata]) reste atteignable par réglage :
+/// [hierarchy] = [ZStudyCardHierarchy.tintedTile] (ou le jeton
+/// `ZcrudTheme.studyCardHierarchy`) — restitution exacte gardée par test.
 ///
-/// Priorité, partout : **paramètre > jeton `studyCard*` > défaut-référence**
+/// Priorité, partout : paramètre > jeton `studyCard*` > défaut-référence
 /// (résolution centralisée dans [zStudyCardChromeOf] — jamais une constante
 /// éparpillée ici).
 ///
-/// ## La COULEUR par format est injectable, comme le glyphe (CR-IFFD-55)
+/// ## La couleur par format est injectable, comme le glyphe
 ///
 /// [formatColors] est le symétrique exact de [formatIcons] : l'hôte exprime sa
-/// convention (« PDF rouge, tableur vert ») en **paires injectées**
+/// convention (« PDF rouge, tableur vert ») en paires injectées
 /// ([ZColorPair]) — le socle ne fige jamais « rouge = pdf ». Sans entrée
-/// injectée, la couleur reste le tirage de palette **stable par format**
-/// (`remapColorKey(seedTitle: formatKey)`) — mais elle teinte désormais le
-/// GLYPHE, plus la tuile.
+/// injectée, la couleur reste le tirage de palette stable par format
+/// (`remapColorKey(seedTitle: formatKey)`) — mais elle teinte le glyphe,
+/// plus la tuile.
 ///
-/// ## Pourquoi cette carte ne prend AUCUN type de domaine
+/// ## Pourquoi cette carte ne prend aucun type de domaine
 ///
-/// Le modèle `ZStudyDocument` vit dans `zcrud_document`, qui n'est **pas** une
-/// dépendance de `zcrud_study` (pubspec : « AUCUN autre satellite lourd
-/// (`zcrud_note`/`zcrud_document`) »). Une voie typée
+/// Le modèle `ZStudyDocument` vit dans `zcrud_document`, qui n'est pas une
+/// dépendance de `zcrud_study`. Une voie typée
 /// `ZStudyToolsSectionSpec.documents(documents: List<ZStudyDocument>)`
-/// exigerait donc une **nouvelle arête** — interdite ici (AD-1). La carte est
-/// donc **autonome sur des primitives** (`title`, `formatKey`, `formatLabel`) :
-/// l'hôte projette son modèle en trois chaînes, le socle dessine.
+/// exigerait donc une nouvelle arête — interdite ici (invariant AD-1). La
+/// carte est donc autonome sur des primitives (`title`, `formatKey`,
+/// `formatLabel`) : l'hôte projette son modèle en trois chaînes, le socle
+/// dessine.
 ///
-/// ## L'icône typée par format : un MAPPING OUVERT, jamais un enum fermé (AD-4)
+/// ## L'icône typée par format : un mapping ouvert, jamais un enum fermé
 ///
-/// Le « format » est une **clé opaque** ([formatKey] : extension `'pdf'`, type
+/// Le « format » est une clé opaque ([formatKey] : extension `'pdf'`, type
 /// MIME `'image/png'`, peu importe — le socle normalise, ne classifie pas).
-/// En hiérarchie de référence, le glyphe par défaut est UNIQUE
+/// En hiérarchie de référence, le glyphe par défaut est unique
 /// ([zDefaultDocumentReferenceIcon] — la différenciation par format passe par
-/// la COULEUR et le badge d'extension, comme chez IFFD) ; [icon] puis
-/// [formatIcons] priment. En hiérarchie `tintedTile`, la résolution v0.43.0
-/// est conservée à l'identique ([zResolveDocumentFormatIcon] : injecté →
+/// la couleur et le badge d'extension) ; [icon] puis [formatIcons] priment.
+/// En hiérarchie `tintedTile`, la résolution antérieure est conservée à
+/// l'identique ([zResolveDocumentFormatIcon] : injecté →
 /// [zDefaultDocumentFormatIcons] → repli).
 ///
 /// ## Invariants
 ///
-/// - **FR-26/NFR-S7** : aucun libellé en dur — « PDF » est un libellé VISIBLE,
-///   il arrive par [formatLabel]. `null` ⇒ badge/puce **absents** (AD-4).
-/// - **AD-13** : l'information portée par l'icône et la couleur est **aussi**
-///   en texte (badge d'extension ou puce de format) **et** dans le libellé
+/// - Invariant FR-26 : aucun libellé en dur — « PDF » est un libellé visible,
+///   il arrive par [formatLabel]. `null` ⇒ badge/puce absents (invariant AD-4).
+/// - Invariant AD-13 : l'information portée par l'icône et la couleur est
+///   aussi en texte (badge d'extension ou puce de format) et dans le libellé
 ///   sémantique par défaut ; insets/alignements directionnels ; la tuile
 ///   d'icône est décorative (`ExcludeSemantics`).
-/// - **AD-2/SM-1** : `StatelessWidget` pur, aucun état, aucun controller.
+/// - Invariant AD-2 : `StatelessWidget` pur, aucun état, aucun controller.
 /// - Composition : [ZStudyDocumentCard] (façade) → `ZStudyToolsItemCard` —
 ///   aucune carte réécrite.
 library;
@@ -74,20 +73,19 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'z_study_card_reference.dart';
 import 'z_study_document_card.dart';
 
-/// Côté de la tuile d'icône en hiérarchie `tintedTile` (rendu v0.43.0 —
-/// dimension de LAYOUT, jamais une couleur). En hiérarchie de référence, le
-/// côté vient de `studyCardIconTileSize` (repli
-/// [ZStudyCardReference.iconTileSize]).
+/// Côté de la tuile d'icône en hiérarchie `tintedTile` (dimension de layout,
+/// jamais une couleur). En hiérarchie de référence, le côté vient de
+/// `studyCardIconTileSize` (repli [ZStudyCardReference.iconTileSize]).
 const double kZDefaultDocumentIconTileSize = 40;
 
-/// Glyphe UNIQUE du rendu de référence (CR-IFFD-56) : la différenciation par
+/// Glyphe unique du rendu de référence : la différenciation par
 /// format passe par la couleur et le badge d'extension, pas par le glyphe.
 const IconData zDefaultDocumentReferenceIcon = Icons.description_outlined;
 
-/// Table PAR DÉFAUT `clé de format normalisée → glyphe` — **sensée, pas
-/// fermée** : elle couvre les familles courantes, et tout hôte la complète ou
-/// la remplace par [ZDefaultDocumentCard.formatIcons] (AD-4 — jamais un enum
-/// qui exigerait une CR par format nouveau).
+/// Table par défaut `clé de format normalisée → glyphe` — sensée, pas
+/// fermée : elle couvre les familles courantes, et tout hôte la complète ou
+/// la remplace par [ZDefaultDocumentCard.formatIcons] (invariant AD-4 —
+/// jamais un enum qui exigerait une évolution par format nouveau).
 ///
 /// Les clés sont **minuscules, sans point** ; [zResolveDocumentFormatIcon]
 /// normalise l'entrée (`'.PDF'`, `'application/pdf'`, `'image/png'`…).
@@ -121,16 +119,16 @@ const Map<String, IconData> zDefaultDocumentFormatIcons = <String, IconData>{
   'zip': Icons.folder_zip_outlined,
 };
 
-/// Glyphe de repli quand le format est inconnu ou absent (AD-10 — résolution
-/// TOTALE, jamais un trou dans la tuile).
+/// Glyphe de repli quand le format est inconnu ou absent (invariant AD-10 —
+/// résolution totale, jamais un trou dans la tuile).
 const IconData zDefaultDocumentFallbackIcon = Icons.insert_drive_file_outlined;
 
 /// Candidats de résolution de la clé de format OPAQUE [formatKey], normalisés
 /// (minuscules, point d'extension retiré ; un type MIME `'image/png'` produit
 /// la forme complète, le sous-type `'png'`, la famille `'image'`).
 ///
-/// Partagé par la résolution du GLYPHE ([zResolveDocumentFormatIcon]) et de la
-/// COULEUR ([zLookupDocumentFormatColor]) — CR-IFFD-55 : les deux portent la
+/// Partagé par la résolution du glyphe ([zResolveDocumentFormatIcon]) et de la
+/// couleur ([zLookupDocumentFormatColor]) : les deux portent la
 /// même information, ils se résolvent par la même normalisation.
 List<String> zDocumentFormatKeyCandidates(String? formatKey) {
   final String raw = (formatKey ?? '').trim().toLowerCase();
@@ -145,7 +143,8 @@ List<String> zDocumentFormatKeyCandidates(String? formatKey) {
   ];
 }
 
-/// Résout la clé de format OPAQUE [formatKey] en glyphe — **totale** (AD-10).
+/// Résout la clé de format opaque [formatKey] en glyphe — totale
+/// (invariant AD-10).
 ///
 /// Chaîne : [icons] (injecté, prioritaire) → [zDefaultDocumentFormatIcons] →
 /// [fallback]. Jamais `null`, jamais de throw.
@@ -163,11 +162,11 @@ IconData zResolveDocumentFormatIcon(
   return fallback;
 }
 
-/// Cherche une paire de couleurs **INJECTÉE** pour [formatKey] dans [colors]
-/// (mêmes candidats normalisés que le glyphe — CR-IFFD-55, symétrie
-/// glyphe/couleur). `null` ⇒ aucune entrée injectée : l'appelant retombe sur
-/// le tirage de palette stable par format — le socle ne fige **aucune**
-/// convention `format → couleur` (FR-26/CR-48).
+/// Cherche une paire de couleurs injectée pour [formatKey] dans [colors]
+/// (mêmes candidats normalisés que le glyphe, par symétrie glyphe/couleur).
+/// `null` ⇒ aucune entrée injectée : l'appelant retombe sur
+/// le tirage de palette stable par format — le socle ne fige aucune
+/// convention `format → couleur` (invariant FR-26).
 ZColorPair? zLookupDocumentFormatColor(
   String? formatKey,
   Map<String, ZColorPair>? colors,
@@ -180,16 +179,16 @@ ZColorPair? zLookupDocumentFormatColor(
   return null;
 }
 
-/// Carte de document **par défaut** du socle — autonome, sur primitives
-/// (CR-IFFD-48), au rendu de référence (CR-IFFD-56).
+/// Carte de document par défaut du socle — autonome, sur primitives,
+/// au rendu de référence.
 ///
 /// ```dart
 /// ZDefaultDocumentCard(
 ///   title: doc.name,
 ///   subtitle: l10n.modifiedAt(doc.updatedAt),
-///   formatKey: doc.mimeType,            // clé OPAQUE (mime, extension…)
-///   formatLabel: l10n.formatPdf,        // libellé VISIBLE ⇒ injecté (FR-26)
-///   formatColors: myFormatPairs,        // convention de l'hôte (CR-55)
+///   formatKey: doc.mimeType,            // clé opaque (mime, extension…)
+///   formatLabel: l10n.formatPdf,        // libellé visible ⇒ injecté (invariant FR-26)
+///   formatColors: myFormatPairs,        // convention de l'hôte
 ///   onTap: () => open(doc),
 /// )
 /// ```
@@ -231,30 +230,30 @@ class ZDefaultDocumentCard extends StatelessWidget {
   final String title;
 
   /// Méta-information secondaire (date, taille…), déjà localisée. `null` ⇒
-  /// **absente** de l'arbre (AD-4).
+  /// absente de l'arbre (invariant AD-4).
   final String? subtitle;
 
-  /// Clé de format **OPAQUE** (extension `'pdf'`, MIME `'image/png'`…). Elle
-  /// pilote le glyphe typé **et**, à défaut de [colorKey], la couleur du
+  /// Clé de format opaque (extension `'pdf'`, MIME `'image/png'`…). Elle
+  /// pilote le glyphe typé et, à défaut de [colorKey], la couleur du
   /// format (injectée par [formatColors], sinon tirage stable : deux documents
   /// du même format portent la même couleur). `null` ⇒ glyphe et accent de
   /// repli.
   final String? formatKey;
 
-  /// Libellé de format **VISIBLE et LOCALISÉ**, injecté (« PDF », « Image »…)
-  /// — jamais déduit de [formatKey] (le socle ne traduit pas, FR-26). `null` ⇒
-  /// badge d'extension (référence) ou puce de format (`tintedTile`)
-  /// **absents** (AD-4) ; le glyphe reste, décoratif.
+  /// Libellé de format visible et localisé, injecté (« PDF », « Image »…)
+  /// — jamais déduit de [formatKey] (le socle ne traduit pas, invariant
+  /// FR-26). `null` ⇒ badge d'extension (référence) ou puce de format
+  /// (`tintedTile`) absents (invariant AD-4) ; le glyphe reste, décoratif.
   final String? formatLabel;
 
-  /// Mapping `clé de format → glyphe` **injecté**, prioritaire sur le glyphe
+  /// Mapping `clé de format → glyphe` injecté, prioritaire sur le glyphe
   /// par défaut. `null` ⇒ défaut de la hiérarchie courante
   /// ([zDefaultDocumentReferenceIcon] en référence, table
   /// [zDefaultDocumentFormatIcons] en `tintedTile`).
   final Map<String, IconData>? formatIcons;
 
-  /// Mapping `clé de format → paire de couleurs` **injecté** (CR-IFFD-55) —
-  /// symétrique exact de [formatIcons]. Mêmes candidats normalisés (extension,
+  /// Mapping `clé de format → paire de couleurs` injecté — symétrique exact
+  /// de [formatIcons]. Mêmes candidats normalisés (extension,
   /// MIME complet, sous-type, famille). `null` ⇒ tirage de palette stable par
   /// format. [colorKey] (par item, plus spécifique) prime.
   final Map<String, ZColorPair>? formatColors;
@@ -262,56 +261,55 @@ class ZDefaultDocumentCard extends StatelessWidget {
   /// Glyphe EXPLICITE de la tuile — court-circuite toute résolution.
   final IconData? icon;
 
-  /// Palette **INJECTÉE** bornant la clé d'accent (patron `ZTagChips`).
+  /// Palette injectée bornant la clé d'accent (patron `ZTagChips`).
   final ZColorPalette palette;
 
-  /// Clé d'identité de l'accent (`String` **opaque**). `null` ⇒ couleur du
-  /// **format** ([formatColors] injecté, sinon tirage stable).
+  /// Clé d'identité de l'accent (`String` opaque). `null` ⇒ couleur du
+  /// format ([formatColors] injecté, sinon tirage stable).
   final String? colorKey;
 
-  /// Hiérarchie tuile/glyphe (CR-IFFD-56). `null` ⇒ jeton
+  /// Hiérarchie tuile/glyphe. `null` ⇒ jeton
   /// `ZcrudTheme.studyCardHierarchy`, puis [ZStudyCardHierarchy.tintedGlyph]
-  /// (le rendu de RÉFÉRENCE). [ZStudyCardHierarchy.tintedTile] restitue
-  /// exactement le rendu v0.43.0.
+  /// (le rendu de référence). [ZStudyCardHierarchy.tintedTile] restitue
+  /// exactement le rendu antérieur.
   final ZStudyCardHierarchy? hierarchy;
 
   /// Nombre maximal de lignes du titre. `null` ⇒ défaut de la hiérarchie :
   /// `1` en référence ([ZStudyCardReference.titleMaxLines]), `2` en
-  /// `tintedTile` (v0.43.0).
+  /// `tintedTile`.
   final int? titleMaxLines;
 
   /// Style du titre. `null` ⇒ jeton `studyCardTitleStyle`, puis référence
-  /// (`titleMedium/w600/15`) — en `tintedTile`, repli v0.43.0 (`titleSmall`).
+  /// (`titleMedium/w600/15`) — en `tintedTile`, repli `titleSmall`.
   final TextStyle? titleStyle;
 
   /// Style du sous-titre. `null` ⇒ jeton `studyCardSubtitleStyle`, puis
   /// référence (`bodySmall`/`onSurfaceVariant`) — en `tintedTile`, repli
-  /// v0.43.0 (`bodySmall`).
+  /// `bodySmall`.
   final TextStyle? subtitleStyle;
 
   /// Padding interne. `null` ⇒ jeton `studyCardContentPadding`, puis
-  /// référence (12) — en `tintedTile`, repli v0.43.0 (`gapM`).
+  /// référence (12) — en `tintedTile`, repli `gapM`.
   final EdgeInsetsGeometry? contentPadding;
 
   /// Marge externe. `null` ⇒ jeton `studyCardMargin`, puis `CardTheme.margin`
-  /// de l'hôte, puis référence (4) — en `tintedTile`, repli v0.43.0.
+  /// de l'hôte, puis référence (4) — en `tintedTile`, repli du rendu antérieur.
   final EdgeInsetsGeometry? margin;
 
   /// Liseré. `null` ⇒ jeton `studyCardBorderSide`, puis référence
-  /// (`outlineVariant` à 50 %) — en `tintedTile`, repli v0.43.0 (aucun).
+  /// (`outlineVariant` à 50 %) — en `tintedTile`, repli aucun.
   final BorderSide? borderSide;
 
   /// Rayon de carte. `null` ⇒ jeton `studyCardRadius`, puis référence (16) —
-  /// en `tintedTile`, repli v0.43.0 (`radiusM`).
+  /// en `tintedTile`, repli `radiusM`.
   final Radius? borderRadius;
 
   /// Créneau d'actions de fin de carte (menu de l'hôte). `null` ⇒ absent
-  /// (AD-4).
+  /// (invariant AD-4).
   final Widget? trailing;
 
-  /// Indicateur de traitement en cours — **relayé** à la carte de base
-  /// (CR-IFFD-56, « non mesuré » n°2 : le repli par item des hôtes n'est plus
-  /// nécessaire). Voir `ZStudyToolsItemCard.progress`.
+  /// Indicateur de traitement en cours — relayé à la carte de base.
+  /// Voir `ZStudyToolsItemCard.progress`.
   final Widget? progress;
 
   /// Largeur maximale du slot [progress]. Voir
@@ -322,21 +320,21 @@ class ZDefaultDocumentCard extends StatelessWidget {
   /// `ZStudyToolsItemCard.hidesTrailingWhileBusy`.
   final bool hidesTrailingWhileBusy;
 
-  /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ carte non
-  /// interactive (AD-45).
+  /// Activation de la carte. `null` et [onLongPress] `null` ⇒ carte non
+  /// interactive.
   final VoidCallback? onTap;
 
-  /// Appui long (menu contextuel). `null` ⇒ capacité **ABSENTE** (AD-4).
+  /// Appui long (menu contextuel). `null` ⇒ capacité absente (invariant AD-4).
   final VoidCallback? onLongPress;
 
   /// Libellé sémantique de la carte entière. Repli : [title], complété de
   /// [subtitle] et [formatLabel] — l'information portée par l'icône/couleur
-  /// est ainsi **annoncée** (AD-13).
+  /// est ainsi annoncée (invariant AD-13).
   final String? semanticLabel;
 
   ZColorPair _accent(BuildContext context) {
-    // CR-IFFD-55 — la couleur injectée par FORMAT prime sur le tirage, mais
-    // JAMAIS sur `colorKey` (réglage par item, plus spécifique).
+    // La couleur injectée par format prime sur le tirage, mais
+    // jamais sur `colorKey` (réglage par item, plus spécifique).
     if (colorKey == null) {
       final ZColorPair? injected =
           zLookupDocumentFormatColor(formatKey, formatColors);
@@ -364,7 +362,7 @@ class ZDefaultDocumentCard extends StatelessWidget {
     return _buildReference(context, theme, pair);
   }
 
-  // ── Hiérarchie de RÉFÉRENCE (défaut CR-IFFD-56) ───────────────────────────
+  // ── Hiérarchie de référence (défaut) ───────────────────────────
 
   Widget _buildReference(
     BuildContext context,
@@ -381,10 +379,10 @@ class ZDefaultDocumentCard extends StatelessWidget {
       subtitleStyle: subtitleStyle,
     );
     final String? label = formatLabel;
-    // Référence : glyphe UNIQUE par défaut ([zDefaultDocumentReferenceIcon] —
-    // la différenciation par format passe par la COULEUR et le badge). `icon`
-    // puis `formatIcons` INJECTÉS priment (AD-4 : mapping ouvert) ; la table
-    // v0.43.0 [zDefaultDocumentFormatIcons] ne s'applique PAS ici — elle
+    // Référence : glyphe unique par défaut ([zDefaultDocumentReferenceIcon] —
+    // la différenciation par format passe par la couleur et le badge). `icon`
+    // puis `formatIcons` injectés priment (invariant AD-4 : mapping ouvert) ;
+    // la table [zDefaultDocumentFormatIcons] ne s'applique pas ici — elle
     // rendrait `picture_as_pdf` là où la référence rend le glyphe unique.
     IconData? injected;
     final Map<String, IconData>? injectedIcons = formatIcons;
@@ -397,9 +395,9 @@ class ZDefaultDocumentCard extends StatelessWidget {
     final IconData glyph = icon ?? injected ?? zDefaultDocumentReferenceIcon;
 
     return ZStudyDocumentCard(
-      // Tuile NEUTRE, glyphe TEINTÉ par la couleur du format, badge
-      // d'extension en surimpression — DÉCORATIF (l'info est en texte dans le
-      // badge et dans le libellé sémantique, AD-13).
+      // Tuile neutre, glyphe teinté par la couleur du format, badge
+      // d'extension en surimpression — décoratif (l'info est en texte dans le
+      // badge et dans le libellé sémantique, invariant AD-13).
       leading: ExcludeSemantics(
         child: SizedBox(
           key: iconTileKey,
@@ -424,10 +422,9 @@ class ZDefaultDocumentCard extends StatelessWidget {
                 ),
               ),
               if (label != null)
-                // Surimpression bas-fin — géométrie LEGACY mesurée
-                // (`_iconeDocumentLegacy`) : le badge est épinglé au coin
-                // bas-fin du GLYPHE centré, donc DANS la tuile, à
-                // `(tuile − glyphe) / 2` du bord. Jamais un débord.
+                // Surimpression bas-fin — géométrie mesurée : le badge est
+                // épinglé au coin bas-fin du glyphe centré, donc dans la
+                // tuile, à `(tuile − glyphe) / 2` du bord. Jamais un débord.
                 PositionedDirectional(
                   bottom: (chrome.iconTileSize - chrome.glyphSize) / 2,
                   end: (chrome.iconTileSize - chrome.glyphSize) / 2,
@@ -446,8 +443,8 @@ class ZDefaultDocumentCard extends StatelessWidget {
       margin: chrome.margin,
       borderSide: chrome.borderSide,
       borderRadius: chrome.borderRadius,
-      // CR-IFFD-61 ①/② — l'écart tuile→titre (16) et l'élévation (0) de
-      // la RÉFÉRENCE, résolus par le chrome. Ils ne sont pas écrits en
+      // L'écart tuile→titre (16) et l'élévation (0) de
+      // la référence sont résolus par le chrome. Ils ne sont pas écrits en
       // dur dans la primitive de base : celle-ci garde `gapM` et
       // l'élévation du `CardTheme` pour ses hôtes directs.
       leadingGap: chrome.leadingGap,
@@ -463,7 +460,7 @@ class ZDefaultDocumentCard extends StatelessWidget {
   }
 
   /// Badge d'extension de la référence : fond = couleur du format, texte
-  /// APPARIÉ (« inversé »), rayon `studyCardBadgeRadius` (repli `radiusS`).
+  /// apparié (« inversé »), rayon `studyCardBadgeRadius` (repli `radiusS`).
   Widget _buildExtensionBadge(
     BuildContext context,
     ZStudyCardChrome chrome,
@@ -473,8 +470,8 @@ class ZDefaultDocumentCard extends StatelessWidget {
     return DecoratedBox(
       key: extensionBadgeKey,
       decoration: BoxDecoration(
-        // Fond = couleur du format ; texte APPARIÉ (« inversé ») — AD-13 :
-        // l'information couleur est AUSSI en texte, ici même.
+        // Fond = couleur du format ; texte apparié (« inversé ») — invariant
+        // AD-13 : l'information couleur est aussi en texte, ici même.
         color: pair.color,
         borderRadius: BorderRadius.all(chrome.badgeRadius),
       ),
@@ -486,8 +483,9 @@ class ZDefaultDocumentCard extends StatelessWidget {
           textAlign: TextAlign.start,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // Métriques LEGACY (8, bold) sur `labelSmall` : la FAMILLE vient de
-          // l'hôte, les métriques de la référence (FR-26 : pas une couleur).
+          // Métriques fixes (8, bold) sur `labelSmall` : la famille vient de
+          // l'hôte, les métriques de la référence (invariant FR-26 : pas une
+          // couleur).
           style: (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
               .copyWith(
                 color: pair.onColor,
@@ -499,13 +497,13 @@ class ZDefaultDocumentCard extends StatelessWidget {
     );
   }
 
-  // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
+  // ── Hiérarchie `tintedTile` — restitution exacte du rendu antérieur ──────
   //
-  // NE PAS « moderniser » ce chemin : il est gardé par un test de
-  // restitution aux valeurs POMPÉES depuis v0.43.0 (géométrie et couleurs
-  // mesurées) — un hôte qui a adopté ce rendu le retrouve à l'identique.
-  // Les paramètres de chrome restent NON-inertes (AD-4) : fournis, ils
-  // s'appliquent ; nuls, le rendu v0.43.0 est littéral.
+  // Ne pas « moderniser » ce chemin : il est gardé par un test de
+  // restitution aux valeurs mesurées du rendu antérieur (géométrie et
+  // couleurs) — un hôte qui a adopté ce rendu le retrouve à l'identique.
+  // Les paramètres de chrome restent non inertes (invariant AD-4) : fournis,
+  // ils s'appliquent ; nuls, le rendu antérieur est littéral.
 
   Widget _buildTintedTile(
     BuildContext context,
@@ -600,7 +598,7 @@ class ZDefaultDocumentCard extends StatelessWidget {
   static const ValueKey<String> formatChipKey =
       ValueKey<String>('zDefaultDocumentCard_formatChip');
 
-  /// Clé du **texte** de format `tintedTile` (testabilité — AD-13).
+  /// Clé du texte de format `tintedTile` (testabilité — invariant AD-13).
   static const ValueKey<String> formatLabelKey =
       ValueKey<String>('zDefaultDocumentCard_formatLabel');
 
@@ -608,7 +606,7 @@ class ZDefaultDocumentCard extends StatelessWidget {
   static const ValueKey<String> extensionBadgeKey =
       ValueKey<String>('zDefaultDocumentCard_extensionBadge');
 
-  /// Clé du **texte** du badge d'extension (testabilité — AD-13).
+  /// Clé du texte du badge d'extension (testabilité — invariant AD-13).
   static const ValueKey<String> extensionLabelKey =
       ValueKey<String>('zDefaultDocumentCard_extensionLabel');
 }

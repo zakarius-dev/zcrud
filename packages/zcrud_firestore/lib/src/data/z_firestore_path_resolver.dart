@@ -1,5 +1,5 @@
-/// Résolveur de **chemins Firestore bi-topologie** (invariants AD-5/AD-11/
-/// AD-20) — l'unique endroit du système qui décide *où* vit une collection,
+/// Résolveur de **chemins Firestore bi-topologie** (invariants AD-5/AD-11) —
+/// l'unique endroit du système qui décide *où* vit une collection,
 /// sans jamais coder un chemin en dur dans le domaine.
 ///
 /// ## Le doublon factorisé
@@ -13,7 +13,7 @@
 ///    topologie **globale** existe aussi (ex. des liens de partage, hors de
 ///    tout scope `users/{uid}`).
 ///
-/// ## Ce que ce résolveur garantit (invariants AD-20 / AD-5)
+/// ## Ce que ce résolveur garantit (invariant AD-5)
 ///
 /// - **Entrée NEUTRE, sortie `String`** : `resolveCollection`/`resolveDoc`
 ///   n'acceptent **aucun** type `cloud_firestore` (ni `CollectionReference`, ni
@@ -26,7 +26,7 @@
 ///   **jamais** dérivé de `T.toString()`/`runtimeType` : un CRUD quasi-réflexif
 ///   est **structurellement impossible ici** (le résolveur ne connaît **aucun**
 ///   type générique `T` — seulement des `String kind`).
-/// - **Aucun chemin en dur dans le domaine** (invariant AD-20) : le
+/// - **Aucun chemin en dur dans le domaine** : le
 ///   kernel/les entités n'importent **jamais** ce résolveur ; il vit dans
 ///   `zcrud_firestore`.
 ///
@@ -42,11 +42,11 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 /// Forme topologique d'un `kind` de collection.
 enum ZFirestoreTopology {
-  /// Collection **top-level par type** (IFFD). Optionnellement préfixée par
+  /// Collection **top-level par type**. Optionnellement préfixée par
   /// `users/{userId}` ([ZFirestorePathRule.userScoped]).
   flatTopLevel,
 
-  /// Collection **imbriquée sous un parent** (lex) :
+  /// Collection **imbriquée sous un parent** :
   /// `[users/{userId}/]{parentCollection}/{parentId}/{collection}`. Exige un
   /// `parentId` à la résolution.
   nestedUnderParent,
@@ -85,7 +85,8 @@ class ZFirestorePathRule {
 
   /// Collection [collection] **imbriquée** sous `{parentCollection}/{parentId}`,
   /// elle-même optionnellement sous `{userSegment}/{userId}` ([userScoped],
-  /// défaut `true` — topologie lex). Un `parentId` est **requis** à la résolution.
+  /// défaut `true` — topologie imbriquée usuelle). Un `parentId` est **requis**
+  /// à la résolution.
   const ZFirestorePathRule.nestedUnderParent({
     required String collection,
     required String parentCollection,
@@ -124,9 +125,9 @@ class ZFirestorePathRule {
 /// Résolveur **immuable** de chemins Firestore par `kind`, à partir d'une **table
 /// de topologie littérale** injectée à la construction.
 ///
-/// **Backend-agnostique (AD-5/AD-11/NFR-S8)** : ni entrée ni sortie n'expose un
+/// **Backend-agnostique (AD-5/AD-11)** : ni entrée ni sortie n'expose un
 /// type `cloud_firestore` ; la sortie est un chemin `String` (ou un
-/// `Left(ZDomainFailure)` explicite). **Anti-réflexion (AC11)** : aucune méthode ne
+/// `Left(ZDomainFailure)` explicite). **Anti-réflexion** : aucune méthode ne
 /// prend un `Type`/générique `T` ni n'appelle `.toString()`/`runtimeType` pour
 /// dériver un segment — chaque segment provient d'une [ZFirestorePathRule]
 /// littérale.
@@ -141,15 +142,15 @@ class ZFirestorePathResolver {
   /// Les `kind` déclarés dans la table de topologie.
   Iterable<String> get kinds => _rules.keys;
 
-  /// **Topologie déclarée** du [kind] (ES-3.3, point d'extension public ajouté) —
+  /// **Topologie déclarée** du [kind], point d'extension public —
   /// ou un `Left(ZDomainFailure)` explicite si [kind] est inconnu.
   ///
-  /// Sert au `ZFirestoreCascadeBatcher` (AD-21) à **choisir sa stratégie
+  /// Sert au `ZFirestoreCascadeBatcher` à **choisir sa stratégie
   /// d'énumération** sans coder aucun chemin : `nestedUnderParent` ⇒ tous les
   /// docs de la sous-collection sont enfants ; `flatTopLevel`/`globalTopLevel` ⇒
   /// filtrer par la FK déclarée sur l'arête (`where(childParentRef == parentId)`).
   /// La table de topologie littérale reste **l'unique source** de la différence
-  /// flat↔nested (AD-20/NFR-S8 : aucun `runtimeType`/`.toString()`).
+  /// flat↔nested (aucun `runtimeType`/`.toString()`).
   ZResult<ZFirestoreTopology> topologyOf(String kind) {
     final rule = _rules[kind];
     if (rule == null) {
@@ -221,7 +222,7 @@ class ZFirestorePathResolver {
   }
 
   /// Résout le chemin de la **collection PARENTE** d'un `kind` *nested*
-  /// (ex. `users/{uid}/study_folders`) — **CR-LEX-10**.
+  /// (ex. `users/{uid}/study_folders`).
   ///
   /// Rend un hôte capable d'**énumérer les parents existants** au lieu de devoir
   /// les deviner. Sans cela, un repository folder-scopé est figé sur un unique

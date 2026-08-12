@@ -124,9 +124,16 @@ Future<void> main(List<String> args) async {
 /// Lignes de CODE d'une source : commentaires retirés (ligne avant bloc,
 /// chaînes sautées), puis lignes vides éliminées et blancs normalisés — pour
 /// que l'insertion de dartdoc n'introduise aucune différence.
+///
+/// Les chaînes MULTI-LIGNES (`'''`/`"""`) sont suivies d'une ligne à l'autre :
+/// leur contenu est du CODE même quand il ressemble à un commentaire. Angle
+/// mort mesuré (chantier documentation) : le gabarit `///`-formé émis par
+/// `zcrud_model_generator.dart` avait été classé « commentaire » et une
+/// modification de l'output généré est passée sous le gate.
 List<String> _codeLines(String source) {
   final List<String> out = <String>[];
   bool inBlock = false;
+  String? inMultiline; // ''' ou """ ouvert sur une ligne précédente
   for (final String rawLine in source.split('\n')) {
     final String raw = rawLine.endsWith('\r')
         ? rawLine.substring(0, rawLine.length - 1)
@@ -136,6 +143,19 @@ List<String> _codeLines(String source) {
     while (i < raw.length) {
       final String c = raw[i];
       final String next = i + 1 < raw.length ? raw[i + 1] : '';
+      if (inMultiline != null) {
+        // Contenu de chaîne multi-ligne : du CODE, copié tel quel.
+        final String delim = inMultiline;
+        if (raw.startsWith(delim, i)) {
+          buf.write(delim);
+          i += delim.length;
+          inMultiline = null;
+        } else {
+          buf.write(c);
+          i++;
+        }
+        continue;
+      }
       if (inBlock) {
         if (c == '*' && next == '/') {
           inBlock = false;
@@ -152,6 +172,22 @@ List<String> _codeLines(String source) {
         continue;
       }
       if (c == "'" || c == '"') {
+        // Ouverture de chaîne multi-ligne ?
+        if (raw.startsWith(c * 3, i)) {
+          final String delim = c * 3;
+          buf.write(delim);
+          i += 3;
+          final int end = raw.indexOf(delim, i);
+          if (end < 0) {
+            buf.write(raw.substring(i));
+            inMultiline = delim;
+            i = raw.length;
+          } else {
+            buf.write(raw.substring(i, end + 3));
+            i = end + 3;
+          }
+          continue;
+        }
         final String quote = c;
         buf.write(c);
         i++;

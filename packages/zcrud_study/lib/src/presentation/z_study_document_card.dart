@@ -12,24 +12,19 @@ import 'z_study_tools_item_card.dart';
 /// chez l'hôte. Cette façade délègue intégralement le chrome et son accessibilité
 /// à [ZStudyToolsItemCard].
 ///
-/// ## C'est un **passe-plat**, et rien d'autre (CR-LEX-78)
+/// ## C'est un passe-plat, et rien d'autre
 ///
-/// Chaque paramètre est transmis **tel quel** à [ZStudyToolsItemCard] : aucune
+/// Chaque paramètre est transmis tel quel à [ZStudyToolsItemCard] : aucune
 /// logique, aucune valeur par défaut inventée ici. La seule valeur ajoutée est
 /// le repli de [semanticLabel] ([title], complété de [subtitle] quand il est
 /// fourni). Les défauts de [progressMaxWidth], [hidesTrailingWhileBusy] et
-/// [titleMaxLines] sont **recopiés à l'identique** de ceux du socle, pour que
+/// [titleMaxLines] sont recopiés à l'identique de ceux du socle, pour que
 /// passer par la façade et passer par la voie directe rendent la même chose.
 ///
-/// **Tout nouveau slot ajouté à [ZStudyToolsItemCard] DOIT être répercuté
-/// ici** — sinon la façade redevient **plus pauvre** que la voie directe, et
-/// l'hôte qui l'adopte perd silencieusement une capacité.
-///
-/// C'est exactement ce qui s'est produit entre CR-LEX-67 et CR-LEX-70..75 : la
-/// façade répondait à la demande telle qu'elle était écrite, les CR suivantes
-/// ont déplacé la cible, et personne n'est revenu vérifier que la première
-/// réponse tenait encore. Une garde de source (`cr_lex_78_*_test.dart`) compare
-/// désormais la surface des deux façades à celle du socle et **rougit** au
+/// Tout nouveau slot ajouté à [ZStudyToolsItemCard] doit être répercuté
+/// ici — sinon la façade redevient plus pauvre que la voie directe, et
+/// l'hôte qui l'adopte perd silencieusement une capacité. Une garde de
+/// source compare la surface des deux façades à celle du socle et rougit au
 /// premier slot oublié : ne la contourne pas, complète la façade.
 class ZStudyDocumentCard extends StatelessWidget {
   /// Construit une carte de document ; seul [title] est requis.
@@ -76,7 +71,7 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// Contenu rendu sous [subtitle]. Voir [ZStudyToolsItemCard.belowSubtitle].
   final Widget? belowSubtitle;
 
-  /// Contenu au-dessus du titre (CR-IFFD-47). Voir
+  /// Contenu au-dessus du titre. Voir
   /// [ZStudyToolsItemCard.aboveTitle] — passe-plat, aucun défaut local.
   final Widget? aboveTitle;
 
@@ -100,21 +95,21 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// Activation de la carte. Voir [ZStudyToolsItemCard.onTap].
   final VoidCallback? onTap;
 
-  /// Appui long (CR-IFFD-47). Voir [ZStudyToolsItemCard.onLongPress] —
+  /// Appui long. Voir [ZStudyToolsItemCard.onLongPress] —
   /// passe-plat, aucun défaut local.
   final VoidCallback? onLongPress;
 
   /// Contour explicite. Voir [ZStudyToolsItemCard.borderSide].
   final BorderSide? borderSide;
 
-  /// Rayon d'angle explicite (CR-IFFD-56). Voir
+  /// Rayon d'angle explicite. Voir
   /// [ZStudyToolsItemCard.borderRadius] — passe-plat, aucun défaut local.
   final Radius? borderRadius;
 
-  /// Passe-plat du fond explicite du socle (CR-IFFD-57 / CR-LEX-78).
+  /// Passe-plat du fond explicite du socle.
   final Color? color;
 
-  /// Passe-plat de l'ombre de repli du socle (CR-IFFD-57 / CR-LEX-78).
+  /// Passe-plat de l'ombre de repli du socle.
   final BoxDecoration? defaultShadow;
 
   /// Décor d'accent superposé. Voir [ZStudyToolsItemCard.accent].
@@ -133,8 +128,8 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// Style du titre. Voir [ZStudyToolsItemCard.titleStyle].
   final TextStyle? titleStyle;
 
-  /// Rendu RICHE du titre (passe-plat `ZStudyToolsItemCard.titleWidget`,
-  /// CR-IFFD-59) — `title` reste la source sémantique.
+  /// Rendu riche du titre (passe-plat `ZStudyToolsItemCard.titleWidget`)
+  /// — `title` reste la source sémantique.
   final Widget? titleWidget;
 
   /// Style du sous-titre. Voir [ZStudyToolsItemCard.subtitleStyle].
@@ -144,16 +139,16 @@ class ZStudyDocumentCard extends StatelessWidget {
   /// [ZStudyToolsItemCard.titleMaxLines].
   final int titleMaxLines;
 
-  /// Écart tuile→titre (CR-IFFD-61 ①). Voir
+  /// Écart tuile→titre. Voir
   /// [ZStudyToolsItemCard.leadingGap] — passe-plat, aucun défaut local.
   final double? leadingGap;
 
-  /// Élévation Material (CR-IFFD-61 ②). Voir
+  /// Élévation Material. Voir
   /// [ZStudyToolsItemCard.elevation] — passe-plat, aucun défaut local.
   final double? elevation;
 
-  /// [ZStudyToolsItemCard.contentAlignment] — passe-plat, aucun défaut local
-  /// (**CR-IFFD-62 ④**). `null` ⇒ rendu strictement inchangé ; sans hauteur
+  /// [ZStudyToolsItemCard.contentAlignment] — passe-plat, aucun défaut local.
+  /// `null` ⇒ rendu strictement inchangé ; sans hauteur
   /// imposée, ce slot n'a de toute façon aucun effet.
   final ZStudyCardContentAlignment? contentAlignment;
 

@@ -1,33 +1,20 @@
 /// Adaptateur **Firestore** du port neutre `ZAppFileResolver` (zcrud_core).
 ///
-/// origine (MESURÉ, pas supposé) : DODLP ne persiste PAS d'objets fichier dans
-/// ses documents métier, il persiste des **identifiants**. Mesures relevées en
-/// lecture seule sur `/home/zakarius/DEV/dodlp-otr` :
+/// Cible un motif legacy courant : une application ne persiste PAS d'objets
+/// fichier dans ses documents métier, elle persiste des **identifiants** (ou
+/// des URLs) qui référencent des documents fichier ailleurs. Ce résolveur
+/// traduit une liste de références opaques en `AppFile` :
 ///
-/// * `ShipHandling.shipDocumentsIds` — `Map<ShipDocumentType, List<String>>`
-///   (`lib/modules/bmd/domain/models/ship/ship_handling.dart:92`) et
-///   `ShipHandling.bondStorePhotosIds` — `List<String>` (`:59`) : **deux**
-///   champs du même patron, tous deux peuplés dans
-///   `ship_handlings_screen.dart` avec l'`id` d'un document `AppFile`.
-/// * La collection cible est **RACINE** et son nom vient du **repli**
-///   `FIREBASE_COLLECTION_NAMES[T] ?? T.toString()`
-///   (`lib/modules/data_crud/functions.dart:524`) — `AppFile` n'est PAS dans la
-///   table de mapping, donc le nom effectif est la chaîne `'AppFile'`, qui
-///   **n'apparaît nulle part en littéral** dans l'app. ⇒ [collectionPath] est
-///   **REQUIS** : ce paquet n'invente aucun nom de collection par défaut.
-/// * Champs du document (camelCase, `models/app_file.dart:170`) : `id`,
-///   `name`, `type` (`AppDocumentType` : pdf/word/excel/powerpoint/image/text),
-///   `content`, `contentLength`, `pageCount`, `status` (`AppDocumentStatus` :
-///   draft/uploading/uploaded/converting/converted/embedding/embedded),
-///   `cloudPath`, `cloudUrl`, `deleted`, `canBeDeleted`, `lastCrudOperation`.
-///   **Aucun** champ de taille en octets, **aucun** MIME, **aucun** `createdAt`.
-/// * L'app lit ces fichiers par **champ** (`where('id', whereIn: ids)`,
-///   `app_file_repository.dart:9`) — et parfois par `cloudUrl` (mêmes ids ou
-///   URLs mélangés : `streamFromIdsOrPaths`) — mais supprime par
-///   `FieldPath.documentId` (`ship_handlings_screen.dart:210`). Les deux
-///   marchent parce que le champ `id` **est** l'id du document.
-///   ⇒ [locations] est **paramétrable** et accepte **plusieurs** emplacements
-///   essayés dans l'ordre (voir [ZAppFileRefLocation]).
+/// * la collection des documents fichier n'a, chez un hôte legacy, souvent
+///   **aucun nom canonique déclaré nulle part en littéral** (dérivée par
+///   repli type-vers-nom) ⇒ [collectionPath] est **REQUIS** : ce paquet
+///   n'invente aucun nom de collection par défaut ;
+/// * un hôte peut lire ces fichiers par un **champ** (`where('id', whereIn:
+///   ids)`, parfois par une URL distante mélangée aux ids) mais supprimer
+///   par l'id du document lui-même — les deux fonctionnent quand le champ
+///   `id` **est** l'id du document. ⇒ [locations] est **paramétrable** et
+///   accepte **plusieurs** emplacements essayés dans l'ordre (voir
+///   [ZAppFileRefLocation]).
 ///
 /// **Ce que l'adaptateur ferme** : sans résolveur, un champ fichier migré
 /// s'affichait **VIDE** sur une donnée existante, sans erreur.
@@ -110,10 +97,10 @@ class ZAppFileResolveException implements Exception {
 /// surface (la traduction vers `FieldPath.documentId` est privée).
 ///
 /// * [ZAppFileRefLocation.documentId] — la référence **est** l'id du document
-///   (chemin de suppression mesuré chez DODLP) ;
+///   (chemin de suppression courant chez un hôte legacy) ;
 /// * [ZAppFileRefLocation.field] — la référence est la valeur d'un **champ**
-///   (chemin de lecture mesuré chez DODLP : `where('id', whereIn: …)`, et
-///   `where('cloudUrl', whereIn: …)` pour des références en forme d'URL).
+///   (chemin de lecture courant : `where('id', whereIn: …)`, ou une variante
+///   par URL distante pour des références en forme d'URL).
 class ZAppFileRefLocation {
   const ZAppFileRefLocation._(this.fieldName);
 
@@ -144,7 +131,7 @@ class ZAppFileRefLocation {
 /// l'ordre : le **premier** alias présent avec une valeur exploitable gagne.
 ///
 /// Les défauts couvrent la forme canonique zcrud (`snake_case`, cf.
-/// `AppFile.toMap`) **et** la forme DODLP **mesurée** (camelCase :
+/// `AppFile.toMap`) **et** une forme legacy courante (camelCase :
 /// `name`/`type`/`status`/`cloudUrl`/`cloudPath`). Rien d'autre n'est deviné :
 /// tout hôte au schéma différent passe ses propres alias (ou un
 /// [ZAppFileDocumentMapper] complet).
@@ -162,7 +149,7 @@ class ZAppFileFieldAliases {
     this.remoteUrl = const <String>[
       'remote_url',
       'remoteUrl',
-      // DODLP (mesuré) : URL de téléchargement Storage.
+      // URL de téléchargement Storage, alias legacy courant.
       'cloudUrl',
       'download_url',
       'downloadUrl',
@@ -171,15 +158,14 @@ class ZAppFileFieldAliases {
     this.uploadState = const <String>[
       'upload_state',
       'uploadState',
-      // DODLP (mesuré) : `AppDocumentStatus`.
+      // Alias legacy courant d'un statut de document.
       'status',
     ],
     this.documentType = const <String>[
       'document_type',
       'documentType',
-      // DODLP (mesuré) : `AppDocumentType` (pdf/word/excel/…), qui est un type
-      // de DOCUMENT, pas un MIME — d'où le mapping vers `documentType` et
-      // NON vers `mimeType`.
+      // Alias legacy courant d'un type de DOCUMENT (pdf/word/excel/…), pas un
+      // MIME — d'où le mapping vers `documentType` et NON vers `mimeType`.
       'type',
     ],
     this.deleted = const <String>['is_deleted', 'isDeleted', 'deleted'],
@@ -297,9 +283,9 @@ class ZFirestoreAppFileResolver extends ZAppFileResolver {
   /// - [firestore] : **seule** couture backend (même convention que
   ///   `FirebaseZRepositoryImpl`).
   /// - [collectionPath] : chemin de la collection des documents fichier.
-  ///   **Requis, sans défaut** — le nom effectif chez DODLP (`'AppFile'`) est
-  ///   produit par un repli `T.toString()` et n'existe en littéral nulle part :
-  ///   le coder ici serait inventer une convention.
+  ///   **Requis, sans défaut** — chez un hôte legacy typique, le nom effectif
+  ///   est produit par un repli `T.toString()` et n'existe en littéral nulle
+  ///   part : le coder ici serait inventer une convention.
   /// - [locations] : emplacements de la référence, essayés **dans l'ordre** ;
   ///   chaque emplacement ne requête que les références **encore** non
   ///   résolues. Défaut : `[ZAppFileRefLocation.documentId]`.
@@ -308,7 +294,7 @@ class ZFirestoreAppFileResolver extends ZAppFileResolver {
   ///   sur le mapper par défaut (AD-10) ; s'il rend `null`, la référence est
   ///   déclarée introuvable.
   /// - [uploadStateMapper] : mapping de **valeur** de l'état d'upload
-  ///   (confinement AD-27 : la connaissance des valeurs legacy vit dans
+  ///   (confinement : la connaissance des valeurs legacy vit dans
   ///   l'adaptateur, jamais dans le domaine). Défaut :
   ///   [mapDodlpDocumentStatus].
   /// - [batchSize] : taille de paquet, bornée à [kZFirestoreWhereInLimit].
@@ -317,7 +303,8 @@ class ZFirestoreAppFileResolver extends ZAppFileResolver {
   ///   différence **délibérée** avec `FirebaseZRepositoryImpl._isVisible`
   ///   (`is_deleted == false`) : ici un drapeau **absent** garde le document,
   ///   parce que la collection fichier d'un hôte n'est pas forcément
-  ///   zcrud-native (DODLP écrit `deleted`, pas `is_deleted`).
+  ///   zcrud-native (un hôte legacy écrit couramment `deleted`, pas
+  ///   `is_deleted`).
   /// - [resolveTimeout] : surcharge du [timeout] du port (défaut : celui du
   ///   port, 15 s). Appliqué **ici aussi** — le port dit que le consommateur le
   ///   pose, l'adaptateur ne s'en remet pas à lui pour ne jamais pendre.
@@ -603,10 +590,10 @@ class ZFirestoreAppFileResolver extends ZAppFileResolver {
     return value;
   }
 
-  /// Mapping de **valeur** `AppDocumentStatus` (DODLP, 7 valeurs mesurées) →
+  /// Mapping de **valeur** `AppDocumentStatus` legacy (7 valeurs) →
   /// `ZAppFileUploadState` (4 valeurs).
   ///
-  /// Confinement AD-27 : la connaissance des valeurs legacy vit **ici**, jamais
+  /// Confinement : la connaissance des valeurs legacy vit **ici**, jamais
   /// dans le domaine. Défensif (AD-10) : une valeur inconnue rend une chaîne
   /// inconnue, que `ZAppFileUploadState.fromName` replie sur `pending`.
   ///

@@ -1,42 +1,44 @@
-/// `ZExamEditor` — éditeur d'examen daté avec rappels (Story ES-9.2, AC1/AC2/AC3/
-/// AC6/AC7). ADAPTATEUR MINCE de PRÉSENTATION : il **COMPOSE** l'entité `ZExam`
-/// (ES-2.6, `zcrud_exam`, pur-Dart) — il ne réimplémente NI sa (dé)sérialisation NI
-/// sa validation (précédents `ZTagEditor` ES-8.1, `ZStudyMindmapSection` ES-7.1).
+/// `ZExamEditor` — éditeur d'examen daté avec rappels.
+/// ADAPTATEUR MINCE de PRÉSENTATION : il **COMPOSE** l'entité `ZExam`
+/// (`zcrud_exam`, pur-Dart) — il ne réimplémente NI sa (dé)sérialisation NI
+/// sa validation (même patron que `ZTagEditor`, `ZStudyMindmapSection`).
 ///
 /// Ce que l'éditeur POSSÈDE et PROUVE (lignes de prod PROPRES au widget) :
-/// - **PRÉSERVATION EXACTE de la saisie (AC1)** : `onSubmit` reçoit un `ZExam` dont
+/// - **PRÉSERVATION EXACTE de la saisie** : `onSubmit` reçoit un `ZExam` dont
 ///   CHAQUE champ saisi survit à l'identique (titre, date, `reminderEnabled`,
 ///   `reminderDaysBefore` ordre EXACT, `reminderTime`) — jamais un `ZExam` défaut,
-///   jamais un champ perdu. En création, `id == null` (AD-14 : matérialisé au
-///   repository, ES-3 — jamais par le widget).
-/// - **Heure TYPÉE `ZReminderTime` (AC2/AD-28)** : l'heure vit dans un
+///   jamais un champ perdu. En création, `id == null` : matérialisé au
+///   repository, jamais par le widget.
+/// - **Heure TYPÉE `ZReminderTime`** : l'heure vit dans un
 ///   `ValueNotifier<ZReminderTime?>` — jamais une `String` `'HH:mm'` flottante. Le
 ///   round-trip persistance (`ZExam.toMap` → `'08:05'`) est celui de `ZExam` (non
 ///   réimplémenté). Champ heure **EXPLICITE** (hors-codegen ⇒ aucun `ZFieldSpec`
-///   généré, cf. `z_exam.dart:196-199`).
-/// - **Seuils ordre + doublons PRÉSERVÉS (AC3)** : `reminderDaysBefore` est édité
+///   généré pour ce champ).
+/// - **Seuils ordre + doublons PRÉSERVÉS** : `reminderDaysBefore` est édité
 ///   dans un `ValueNotifier<List<int>>` — l'ajout APPEND (aucun `sort`, aucun
 ///   `toSet`), la sémantique `ZExam` est ordre-sensible.
-/// - **Réactivité Flutter-native (AC6/AD-2/AD-15, SM-1)** : le `TextEditingController`
-///   du titre POSSÉDÉ est créé en `initState` (jamais dans `build`) et disposé au
-///   `dispose` ; un controller INJECTÉ est utilisé tel quel et JAMAIS disposé. Chaque
-///   champ est une frontière de rebuild (`ValueListenableBuilder` + `ValueKey`) —
-///   aucun `setState` de page, aucun gestionnaire d'état importé (SM-1).
-/// - **Seam horloge/pickers INJECTÉS (AC5)** : le widget ne fait NI `DateTime.now()`
+/// - **Réactivité Flutter-native (invariant AD-2/AD-15)** : le
+///   `TextEditingController` du titre POSSÉDÉ est créé en `initState` (jamais
+///   dans `build`) et disposé au `dispose` ; un controller INJECTÉ est utilisé
+///   tel quel et JAMAIS disposé. Chaque champ est une frontière de rebuild
+///   (`ValueListenableBuilder` + `ValueKey`) — aucun `setState` de page,
+///   aucun gestionnaire d'état importé (objectif produit n°1).
+/// - **Seam horloge/pickers INJECTÉS** : le widget ne fait NI `DateTime.now()`
 ///   NI `showDatePicker`/`showTimePicker` en dur — la date et l'heure sont choisies
 ///   via les callbacks INJECTÉS [onPickDate]/[onPickTime] (l'app fournit son picker,
-///   avec SON horloge). Aucun plugin de notification / `Timer` (AD-26).
+///   avec SON horloge). Aucun plugin de notification / `Timer`.
 ///
-/// AD-13/FR-26 : `Semantics` non vides INJECTÉS (replis neutres documentés), cibles
-/// ≥ 48 dp, widgets DIRECTIONNELS (`EdgeInsetsDirectional`/`TextAlign.start`), thème
-/// via `ZcrudScope`/`ZcrudTheme` — aucune `Color`/label métier codé en dur.
+/// Invariant AD-13/FR-26 : `Semantics` non vides INJECTÉS (replis neutres
+/// documentés), cibles ≥ 48 dp, widgets DIRECTIONNELS
+/// (`EdgeInsetsDirectional`/`TextAlign.start`), thème via
+/// `ZcrudScope`/`ZcrudTheme` — aucune `Color`/label métier codé en dur.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:zcrud_core/zcrud_core.dart' show ZcrudTheme;
 import 'package:zcrud_exam/zcrud_exam.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
+/// Cible de taille interactive minimale (invariant AD-13).
 const double _kMinTapTarget = 48.0;
 
 /// Icône de REPLI du bouton d'ajout de seuil (défaut neutre documenté ; INJECTABLE).

@@ -1,17 +1,16 @@
 /// Condition de visibilité **déclarative** (`displayCondition`) d'un champ,
 /// portée par `@ZcrudField.condition` (authoring) et projetée dans
-/// `ZFieldSpec.condition` (runtime, E2-5).
+/// `ZFieldSpec.condition` (runtime).
 ///
-/// origine: `displayCondition` DODLP/IFFD — mais **jamais une closure**. Une
-/// closure `(item, state, crud) → bool` (patron lex/DODLP, cause historique du
-/// focus perdu, inventaire §4.1(a)) **ne peut ni être `const` ni être lue par
-/// `ConstantReader`** → proscrite dans l'annotation. Exprimée ici **en données**.
+/// Exprimée **en données**, jamais une closure : une closure
+/// `(item, state, crud) → bool` **ne peut ni être `const` ni être lue par
+/// `ConstantReader`** → proscrite dans l'annotation.
 ///
-/// **Frontière statique/runtime (AD-2)** : E2-4 livre la **structure** ;
-/// l'**évaluation** contre l'état de formulaire est **E3** (sélecteur de
-/// visibilité dédié — « seul un changement de visibilité reconstruit la LISTE,
-/// place stable pour les champs conditionnels »). Les cas irréductiblement
-/// dynamiques passent par une surcouche runtime (E3), jamais par l'annotation.
+/// **Frontière statique/runtime (AD-2)** : l'authoring livre la **structure** ;
+/// l'**évaluation** contre l'état de formulaire est portée par un sélecteur de
+/// visibilité dédié — seul un changement de visibilité reconstruit la LISTE,
+/// place stable pour les champs conditionnels. Les cas irréductiblement
+/// dynamiques passent par une surcouche runtime, jamais par l'annotation.
 library;
 
 /// **Source de valeur** d'une feuille de [ZCondition] (parité DODLP — DP-2, B3).

@@ -41,23 +41,23 @@ import 'z_flashcard_generation_controller.dart';
 import 'z_flashcard_preview.dart';
 import 'z_flashcard_tag_confirm_sheet.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
+/// Cible de taille interactive minimale (invariant AD-13).
 const double _kMinTapTarget = 48.0;
 
-/// Option de source SÉLECTIONNABLE (AC1). L'app la construit depuis
+/// Option de source SÉLECTIONNABLE. L'app la construit depuis
 /// `ZSourceRegistry` (document/pages, sujets, texte libre, article, note…) — la
 /// feuille reste registre-agnostique et EXTENSIBLE sans toucher zcrud.
 ///
-/// ## CR-IFFD-70 — sources du CONTEXTE COURANT, résolues À LA DEMANDE
+/// ## Sources du CONTEXTE COURANT, résolues À LA DEMANDE
 ///
 /// Passée à [ZFlashcardGenerationSheet.contextSources], l'option représente une
 /// source du contexte (document du dossier, note…) que l'utilisateur peut
 /// **choisir sur place** (multi-sélection — les sources sont composites). Son
 /// contenu n'est **jamais embarqué d'avance** : [resolveContent] est invoqué à
-/// la **soumission seulement** (SM-1 — un dossier de 50 documents s'ouvre sans
-/// rien charger). `resolveContent == null` + [provenance] non nulle ⇒ source
-/// **par référence** (l'impl du port extrait côté serveur — couvre le legacy
-/// `…FromWholeDocument`).
+/// la **soumission seulement** (objectif produit n°1 — un dossier de 50
+/// documents s'ouvre sans rien charger). `resolveContent == null` +
+/// [provenance] non nulle ⇒ source **par référence** (l'implémentation du
+/// port extrait le contenu côté serveur, à partir du document entier).
 @immutable
 class ZGenerationSourceOption {
   /// Construit une option. [provenance] `null` ⇒ « texte libre » (aucune source).
@@ -70,10 +70,10 @@ class ZGenerationSourceOption {
   /// Libellé INJECTÉ de l'option (i18n).
   final String label;
 
-  /// Provenance à estampiller dans les cartes (AC5) — issue de `ZSourceRegistry`.
+  /// Provenance à estampiller dans les cartes — issue de `ZSourceRegistry`.
   final ZFlashcardSource? provenance;
 
-  /// Résolveur À LA DEMANDE du contenu (CR-IFFD-70), ou `null`.
+  /// Résolveur À LA DEMANDE du contenu, ou `null`.
   ///
   /// `null` : comportement historique inchangé dans [ZFlashcardGenerationSheet.sources]
   /// (l'option n'est qu'un estampillage de provenance) ; dans
@@ -84,7 +84,7 @@ class ZGenerationSourceOption {
   final ZGenerationSourceResolver? resolveContent;
 }
 
-/// Geste d'**ACQUISITION** de source branché par l'hôte (CR-IFFD-70) —
+/// Geste d'**ACQUISITION** de source branché par l'hôte —
 /// « uploader », « scanner »… Libellé et icône INJECTÉS, jamais en dur.
 ///
 /// Le socle ne connaît ni le sélecteur de fichiers ni le scanner : il offre le
@@ -119,7 +119,7 @@ class ZSourceAcquisitionGesture {
   final Future<ZResult<ZGenerationSourceOption?>> Function() acquire;
 }
 
-/// Libellés INJECTÉS de la feuille de génération (i18n — AC12).
+/// Libellés INJECTÉS de la feuille de génération (i18n).
 @immutable
 class ZFlashcardGenerationLabels {
   /// Construit les libellés injectés.
@@ -204,15 +204,15 @@ class ZFlashcardGenerationLabels {
   /// Libellé sémantique INJECTÉ du bouton d'ajout de tag (transmis au [ZTagEditor]).
   final String tagAddSemanticLabel;
 
-  /// Titre INJECTÉ de la section « sources du contexte » (CR-IFFD-70), ou
-  /// `null` (aucun en-tête — champ ADDITIF et optionnel : les hôtes existants ne
-  /// changent pas leur construction).
+  /// Titre INJECTÉ de la section « sources du contexte », ou `null` (aucun
+  /// en-tête — champ ADDITIF et optionnel : les hôtes existants ne changent
+  /// pas leur construction).
   final String? contextSourcesLabel;
 }
 
 /// Feuille de génération IA d'un lot de flashcards.
 class ZFlashcardGenerationSheet extends StatefulWidget {
-  /// Construit la feuille autour d'un [port] advisory/faillible (AD-35).
+  /// Construit la feuille autour d'un [port] advisory/faillible.
   const ZFlashcardGenerationSheet({
     required this.port,
     required this.messages,
@@ -259,15 +259,16 @@ class ZFlashcardGenerationSheet extends StatefulWidget {
   /// `modelId` OPAQUE pré-rempli (AC2) — l'app peut proposer un défaut éditable.
   final String? initialModelId;
 
-  /// Sources du **CONTEXTE COURANT** présentées par l'hôte (CR-IFFD-70) —
-  /// documents du dossier, notes… Multi-sélection ; contenu résolu **à la
-  /// demande** à la soumission (jamais à l'ouverture — SM-1). Défaut `const []` :
-  /// **l'hôte passif ne voit rien changer** (aucune section rendue).
+  /// Sources du **CONTEXTE COURANT** présentées par l'hôte — documents du
+  /// dossier, notes… Multi-sélection ; contenu résolu **à la demande** à la
+  /// soumission (jamais à l'ouverture — objectif produit n°1). Défaut
+  /// `const []` : **l'hôte passif ne voit rien changer** (aucune section
+  /// rendue).
   final List<ZGenerationSourceOption> contextSources;
 
-  /// Gestes d'**acquisition** branchés par l'hôte (CR-IFFD-70) — « uploader »,
-  /// « scanner »… Défaut `const []` : aucun bouton rendu (jamais grisé — même
-  /// discipline qu'AC11).
+  /// Gestes d'**acquisition** branchés par l'hôte — « uploader », « scanner »…
+  /// Défaut `const []` : aucun bouton rendu (jamais grisé — même discipline
+  /// que pour les autres slots optionnels).
   final List<ZSourceAcquisitionGesture> acquisitionGestures;
 
   @override
@@ -286,7 +287,7 @@ class _ZFlashcardGenerationSheetState extends State<ZFlashcardGenerationSheet> {
   late final ValueNotifier<Set<ZFlashcardType>> _selectedTypes;
   late final ValueNotifier<int> _sourceIndex;
 
-  // CR-IFFD-70 — sources du contexte : tranches LOCALES granulaires (SM-1).
+  // Sources du contexte : tranches LOCALES granulaires (objectif produit n°1).
   // Sélection par IDENTITÉ d'option (survit à un changement de liste hôte via
   // didUpdateWidget) ; les sources ACQUISES vivent à part (jamais perdues quand
   // l'hôte repasse une nouvelle liste).

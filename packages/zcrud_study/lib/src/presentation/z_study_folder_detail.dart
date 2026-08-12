@@ -59,7 +59,7 @@ import 'z_subfolder_sidebar.dart';
 /// Diamètre de la pastille d'accent de l'en-tête (dimension de layout).
 const double _kHeaderAccentSize = 12.0;
 
-/// Hauteur **mesurée** de la bande `ZSubfolderNarrowNav` du socle — CR-IFFD-45.
+/// Hauteur **mesurée** de la bande `ZSubfolderNarrowNav` du socle.
 ///
 /// Ce n'est pas un littéral choisi : c'est le résultat d'une mesure sur
 /// disque des **deux** variantes, à 360 / 500 / 800 dp de large et avec le
@@ -177,12 +177,12 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Titre : `Widget` rendu tel quel, ou `String` emballé dans un `Text`.
   final Object title;
 
-  /// CR-IFFD-34 — sous-titre d'app-bar, **propagé tel quel** à
-  /// `ZPageScaffold.subtitle`. `null` (défaut) ⇒ absent de l'arbre : le rendu
-  /// est strictement celui d'avant la CR.
+  /// Sous-titre d'app-bar, **propagé tel quel** à `ZPageScaffold.subtitle`.
+  /// `null` (défaut) ⇒ absent de l'arbre : le rendu est strictement celui
+  /// sans ce slot.
   final Widget? subtitle;
 
-  /// CR-IFFD-34 — identité **opaque et persistante** du dossier ouvert (son id),
+  /// Identité **opaque et persistante** du dossier ouvert (son id),
   /// propagée à `ZPageScaffold.gradientKey` pour teinter l'en-tête de sa propre
   /// page comme `ZFolderCardGradientAccent` teinte sa carte — **même couture**
   /// (`zResolveGradient`), même clé.
@@ -287,7 +287,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Constructeur du corps de l'onglet Notebook (slot).
   final WidgetBuilder notebookBuilder;
 
-  /// CR-IFFD-33 — constructeur LIBRE du corps de l'onglet Progression, **au même
+  /// Constructeur LIBRE du corps de l'onglet Progression, **au même
   /// contrat que [notebookBuilder]** : un `WidgetBuilder` branché directement
   /// sur `ZPageTab.contentBuilder`, qui possède donc tout l'onglet.
   ///
@@ -316,12 +316,12 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// (message via label injecté). `null` ⇒ `SizedBox.shrink()` (jamais de throw).
   final Widget? progressEmptyState;
 
-  /// CR-IFFD-43 — créneau persistant rendu **sous le `TabBar` et au-dessus du
+  /// Créneau persistant rendu **sous le `TabBar` et au-dessus du
   /// `TabBarView`**, donc commun à tous les onglets.
   ///
-  /// **Chaînon CÂBLÉ, pas créé** : le créneau existait déjà côté socle
+  /// **Chaînon CÂBLÉ, pas créé** : le créneau existe déjà côté socle
   /// (`ZPageScaffold.aboveTabViews`, lui-même délégué à `ZPageShellBody` en mode
-  /// sliver) ; seule sa relève par cette façade manquait — comme
+  /// sliver) ; cette façade se contente de le relever — comme
   /// [persistentFooterButtons] et [bottomNavigationBar], déjà relayés.
   ///
   /// `null` (défaut) ⇒ slot ABSENT côté shell : aucun wrapper ajouté, rendu
@@ -341,13 +341,13 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// les vues d'onglets — parle.
   final Widget? aboveTabViews;
 
-  /// CR-IFFD-45 — créneau rendu **entre l'app-bar et la barre d'onglets**
+  /// Créneau rendu **entre l'app-bar et la barre d'onglets**
   /// (`ZPageScaffold.aboveTabBar`), donc **dans** l'app-bar, qui grandit
   /// réellement de la hauteur déclarée.
   ///
-  /// **Chaînon CÂBLÉ, pas créé** : le créneau vient d'être ouvert côté socle
-  /// (site unique `_zAppBarBottom`, partagé par le mode fixe et les modes
-  /// sliver) ; cette façade ne fait que le relever, comme [aboveTabViews].
+  /// **Chaînon CÂBLÉ, pas créé** : le créneau est ouvert côté socle (site
+  /// unique `_zAppBarBottom`, partagé par le mode fixe et les modes sliver) ;
+  /// cette façade ne fait que le relever, comme [aboveTabViews].
   ///
   /// `null` (défaut) ⇒ slot ABSENT côté shell — et la neutralité y est stricte
   /// : sans créneau, le socle rend le `TabBar` **tel quel**, sans `PreferredSize`
@@ -374,7 +374,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// déclarer l'un ne force jamais à redéclarer l'autre.
   final double? aboveTabBarHeight;
 
-  /// CR-IFFD-45 — hauteur **déclarée** de la bande de navigation hissée sous
+  /// Hauteur **déclarée** de la bande de navigation hissée sous
   /// [ZSubfolderNavPlacement.aboveTabBar].
   ///
   /// `null` (défaut) ⇒ [kZSubfolderNavBandHeight] (48 dp, **mesuré** sur les
@@ -398,7 +398,7 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Sans effet hors de [ZSubfolderNavPlacement.aboveTabBar].
   final double? subfolderNavBandHeight;
 
-  /// CR-IFFD-43 — **où** vit la navigation de fratrie. Défaut
+  /// **Où** vit la navigation de fratrie. Défaut
   /// [ZSubfolderNavPlacement.withinTab] ⇒ rendu strictement inchangé pour tout
   /// hôte existant. Voir [ZSubfolderNavPlacement.aboveTabs] pour l'arbitrage
   /// **mesuré** sur la forme large (aucune sidebar hissée).
@@ -407,10 +407,10 @@ class ZStudyFolderDetail extends StatefulWidget {
   /// Navigation de sous-dossiers (données + labels + bornes, tout injecté).
   final ZSubfolderNavSpec nav;
 
-  /// **Lot 2** — le hub d'ajout de contenu partagé par tous les `+` de la page.
+  /// Le hub d'ajout de contenu partagé par tous les `+` de la page.
   ///
   /// `null` (défaut) ⇒ capacité ABSENTE et **arbre STRICTEMENT identique** à
-  /// avant ce lot : aucun `ZContentHubScope` n'est inséré, [addAction] est
+  /// sans ce slot : aucun `ZContentHubScope` n'est inséré, [addAction] est
   /// projetée telle quelle, aucune section ne peut résoudre de hub. Garde
   /// dédiée (comparaison d'arbre, pas de simple absence d'exception).
   ///
@@ -437,7 +437,7 @@ class ZStudyFolderDetail extends StatefulWidget {
 
   /// Sélection initiale (`null` = item racine « Tous les sous-dossiers »).
   ///
-  /// **IGNORÉ quand `nav.selectionController` est fourni** (CR-IFFD-45) : le
+  /// **IGNORÉ quand `nav.selectionController` est fourni** : le
   /// contrôleur est alors le **propriétaire** de l'état, donc de son amorce
   /// (`initialValue`). Recopier cette valeur dedans au montage ferait écrire le
   /// socle dans l'état de l'hôte — et écraserait une sélection que l'hôte a pu
@@ -450,7 +450,7 @@ class ZStudyFolderDetail extends StatefulWidget {
 }
 
 class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
-  /// CR-IFFD-45 — liaison de sélection : **état interne par défaut**,
+  /// Liaison de sélection : **état interne par défaut**,
   /// contrôleur de l'hôte quand `nav.selectionController` est fourni.
   ///
   /// Ce n'est PAS un miroir (patron `ZDisplayState`, clause 2) : quand l'hôte
@@ -549,7 +549,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
 
     final Widget scaffold = ZPageScaffold(
       title: _titleWidget(context),
-      // CR-IFFD-34 — pass-through pur : `null` ⇒ slots absents côté shell.
+      // Pass-through pur : `null` ⇒ slots absents côté shell.
       subtitle: widget.subtitle,
       gradientKey: widget.gradientKey,
       leading: widget.leading,
@@ -567,10 +567,10 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
       extendBody: widget.extendBody,
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
-      // CR-IFFD-43 — relève du chaînon manquant (+ composition avec la
-      // navigation hissée). `null` ⇒ créneau structurellement absent.
+      // Relève du chaînon (+ composition avec la navigation hissée). `null`
+      // ⇒ créneau structurellement absent.
       aboveTabViews: _aboveTabViews(context),
-      // CR-IFFD-45 — créneau ENTRE l'app-bar et le `TabBar`. `null` ⇒ créneau
+      // Créneau ENTRE l'app-bar et le `TabBar`. `null` ⇒ créneau
       // structurellement absent côté shell (neutralité stricte du socle).
       aboveTabBar: _aboveTabBar(context),
       aboveTabBarHeight: _aboveTabBarHeight(context),
@@ -588,16 +588,16 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
         ZPageTab(
           label: widget.progressionTabLabel,
           icon: widget.progressionTabIcon,
-          // CR-IFFD-33 — même câblage que l'onglet Notebook : le builder INJECTÉ
-          // possède l'onglet ; absent ⇒ anneau historique (`_progressionTab`).
+          // Même câblage que l'onglet Notebook : le builder INJECTÉ possède
+          // l'onglet ; absent ⇒ anneau historique (`_progressionTab`).
           contentBuilder: widget.progressionBuilder ?? _progressionTab,
         ),
       ],
     );
 
-    // AD-4 — sans hub, AUCUN nœud n'est ajouté au-dessus du shell : l'arbre
-    // rendu est celui d'avant le lot 2, à l'identique (garde de comparaison
-    // d'arbre, pas une simple absence d'exception).
+    // Invariant AD-4 — sans hub, AUCUN nœud n'est ajouté au-dessus du shell :
+    // l'arbre rendu est celui sans ce slot, à l'identique (garde de
+    // comparaison d'arbre, pas une simple absence d'exception).
     if (hub == null) return scaffold;
     return ZContentHubScope(launcher: hub, child: scaffold);
   }
@@ -667,7 +667,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     );
   }
 
-  // --- CR-IFFD-43 : créneau AU-DESSUS des onglets ----------------------------
+  // --- Créneau AU-DESSUS des onglets -----------------------------------------
 
   /// Contenu du créneau `aboveTabViews` du shell.
   ///
@@ -686,7 +686,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// de page (AD-2/SM-1).
   Widget? _aboveTabViews(BuildContext context) {
     final Widget? hostSlot = widget.aboveTabViews;
-    // CR-IFFD-45 — ce créneau n'accueille la navigation QUE sous `aboveTabs` :
+    // Ce créneau n'accueille la navigation QUE sous `aboveTabs` :
     // `withinTab` la laisse dans l'onglet, `aboveTabBar` la hisse dans
     // l'app-bar. Dans les deux cas, pass-through pur du slot de l'hôte.
     if (widget.subfolderNavPlacement != ZSubfolderNavPlacement.aboveTabs) {
@@ -711,7 +711,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
     );
   }
 
-  // --- CR-IFFD-45 : créneau ENTRE l'app-bar et la barre d'onglets ------------
+  // --- Créneau ENTRE l'app-bar et la barre d'onglets -------------------------
 
   /// La bande de navigation hissée — **une seule** construction, partagée par
   /// les deux créneaux (`aboveTabViews` et `aboveTabBar`), donc **une seule**
@@ -794,8 +794,8 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   /// augmenté de la marge verticale de thème quand elle s'applique.
   ///
   /// La marge n'est ajoutée que pour [ZSubfolderNarrowMode.selector] : c'est la
-  /// seule surface qui pose `ZcrudTheme.subfolderBarPadding` (CR-IFFD-44) — la
-  /// rangée de puces n'en pose aucune, l'y compter réserverait du vide.
+  /// seule surface qui pose `ZcrudTheme.subfolderBarPadding` — la rangée de
+  /// puces n'en pose aucune, l'y compter réserverait du vide.
   double _navBandHeight(BuildContext context) {
     final double? declared = widget.subfolderNavBandHeight;
     if (declared != null) return declared;
@@ -813,7 +813,7 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
   // --- Onglet Matériel : nav adaptative + corps filtré -----------------------
 
   Widget _materialTab(BuildContext context) {
-    // CR-IFFD-43/45 — navigation hissée (dans l'un OU l'autre créneau) :
+    // Navigation hissée (dans l'un OU l'autre créneau) :
     // l'onglet ne rend QUE son corps filtré. C'est ce qui garantit qu'elle est
     // rendue **une seule fois** (pas de duplication bande + sidebar), et donc
     // que la sélection n'a qu'une source.
@@ -824,9 +824,9 @@ class _ZStudyFolderDetailState extends State<ZStudyFolderDetail> {
       // < 600 dp : sélecteur compact, AUCUNE sidebar dans l'arbre (AC7).
       compact: (context) => Column(
         children: <Widget>[
-          // CR-IFFD-40 — aiguillage : coquille de l'hôte (seam de SURFACE) →
-          // barre de sélection (DÉFAUT) → rangée de puces (`narrowMode:
-          // compact`, historique).
+          // Aiguillage : coquille de l'hôte (seam de SURFACE) → barre de
+          // sélection (DÉFAUT) → rangée de puces (`narrowMode: compact`,
+          // historique).
           ZSubfolderNarrowNav(
             spec: widget.nav,
             selected: _selected,

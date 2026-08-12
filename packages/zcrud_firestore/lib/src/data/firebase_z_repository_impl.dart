@@ -35,7 +35,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 
 /// Journal minimal **neutre** de l'adaptateur (type public sans dépendance
 /// Firestore). Un document non décodable ou une erreur de flux est **loggé** ici
-/// puis écarté (AD-10) — jamais avalé silencieusement (bug #3).
+/// puis écarté (AD-10) — jamais avalé silencieusement.
 ///
 /// Un port `ZLogger` de `zcrud_core` pourra s'y substituer additivement plus
 /// tard ; en attendant, l'adaptateur reste zéro-config (défaut : no-op).
@@ -193,7 +193,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
 
   /// Construit l'adaptateur en dérivant `fromMap`/`toMap` d'un [ZcrudRegistry]
   /// (voie stricte `decode`/`encode`). Le décodage reste **défensif** : la voie
-  /// stricte est enveloppée localement (option (a) de l'ambiguïté #1 — aucune
+  /// stricte est enveloppée localement (sans aucune
   /// modification du contrat gelé `ZcrudRegistry`). Un `fromMapSafe` explicite
   /// (ex. `ZModelAdapter.fromMapSafe`) peut être fourni pour une tolérance
   /// portée par le modèle.
@@ -203,7 +203,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///
   /// # La voie registre type `extension`/`source`
   ///
-  /// `fromRegistry` est la **voie recommandée**. Depuis ES-3.0, le [ZcrudRegistry]
+  /// `fromRegistry` est la **voie recommandée**. Le [ZcrudRegistry]
   /// porte un `ZDecodeContext` (câblé au bootstrap) que `registry.decode`/`.encode`
   /// **thread** aux `fromMap`/`toMap` d'entité extensible. La voie registre
   /// **résout donc désormais** :
@@ -215,8 +215,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///   le codec de l'app est **appliqué**, plus court-circuité.
   ///
   /// Le call-site est **INCHANGÉ** (`registry.decode(kind, map)`) : le contexte est
-  /// un **champ du registre**, pas un paramètre de `decode` (AD-10 additif, spike
-  /// R4 / AC10). Un `ZcrudRegistry()` **sans** contexte conserve le comportement
+  /// un **champ du registre**, pas un paramètre de `decode` (extension additive,
+  /// AD-10). Un `ZcrudRegistry()` **sans** contexte conserve le comportement
   /// historique (slot non typé / payload porté verbatim par `ZOpaqueNoteExtension`
   /// — jamais détruit, AD-10). Pour typer, câbler le contexte au bootstrap :
   ///
@@ -243,11 +243,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// throw, **jamais** une destruction.
   ///
   /// L'échappatoire `extra` (AD-4) reste **inconditionnellement** préservée sur
-  /// **TOUTES** les voies d'écriture (DW-ES22-3, assertion (i.1) du gate) avec un
-  /// `==` **profond** (DW-ES22-4, assertion (i.2)).
-  ///
-  /// Réf. : `architecture.md` § AD-19.1.c et § Deferred (DW-ES14-2 soldée) ;
-  /// `tool/reserved_keys_gate/` (assertion **(e)** + groupe « DW-ES14-2 » inversé).
+  /// **TOUTES** les voies d'écriture, vérifiée par égalité **profonde**.
   factory FirebaseZRepositoryImpl.fromRegistry({
     required FirebaseFirestore firestore,
     required String collectionPath,
@@ -281,19 +277,19 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   final T? Function(Map<String, dynamic> map)? _fromMapSafe;
   final ZFirestoreLog _log;
 
-  /// Sémantique de lecture du drapeau `is_deleted` (CR-DODLP 2026-08-11).
+  /// Sémantique de lecture du drapeau `is_deleted`.
   /// Défaut [ZDeletionSemantics.strict] = comportement historique inchangé.
   final ZDeletionSemantics _deletionSemantics;
 
   /// Clé **legacy** de soft-delete du parc préexistant (ex. `'deleted'`,
-  /// camelCase DODLP), ou `null`. Honorée **uniquement** en
+  /// camelCase), ou `null`. Honorée **uniquement** en
   /// [ZDeletionSemantics.absentMeansAlive] (filtrage client) : un document dont
   /// cette clé vaut `true` est traité comme supprimé (écarté d'`aliveOnly`,
   /// inclus dans `deletedOnly`).
   final String? _legacyDeletedKey;
 
   /// Clés persistées (corps d'entité) à encoder en `Timestamp` Firestore natif
-  /// plutôt qu'en String ISO-8601 (gap B14, parité DODLP). Fourni par l'artefact
+  /// plutôt qu'en String ISO-8601. Fourni par l'artefact
   /// généré neutre `$XxxTimestampFields` (`Set<String>`), câblé app-side. Vide par
   /// défaut ⇒ comportement historique **inchangé** (tout en ISO-8601).
   ///
@@ -301,7 +297,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// interne (`_encode`/[_inject]) ; la surface publique reste un `Set<String>`
   /// nu.
   ///
-  /// **Exclusion des clés réservées — GARDÉE PAR MACHINE (AD-19, M2)** :
+  /// **Exclusion des clés réservées — GARDÉE PAR MACHINE** :
   /// `updated_at`/`is_deleted` (`ZSyncMeta.reservedKeys`) sont **soustraits** de
   /// cet ensemble au constructeur (`difference`, effectif en release) et un
   /// `assert` échoue en debug/test si l'appelant les y met. Ce n'est **plus** une
@@ -314,17 +310,17 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   final Set<String> _timestampFields;
 
   /// Clé snake_case du drapeau de soft-delete (`ZSyncMeta`, hors-entité).
-  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  /// Alias de la définition machine unique.
   static const String _kIsDeleted = ZSyncMeta.kIsDeleted;
 
   /// Clé snake_case de l'horodatage LWW (`ZSyncMeta`, ISO-8601).
-  /// **AD-19** : alias de la définition machine unique (dette DW-ES13-1 soldée).
+  /// Alias de la définition machine unique.
   static const String _kUpdatedAt = ZSyncMeta.kUpdatedAt;
 
   /// Clé logique d'identité injectée dans la map avant décodage.
   static const String _kId = 'id';
 
-  /// Borne SÛRE d'écritures par `WriteBatch` (E5-3, AD-9) : la limite Firestore
+  /// Borne SÛRE d'écritures par `WriteBatch` (AD-9) : la limite Firestore
   /// est **500** ; la borne canonique retenue est **450** (marge de sécurité).
   /// Cette constante est **backend-spécifique** et vit donc **exclusivement** ici
   /// (`zcrud_firestore`), **jamais** dans `zcrud_core` (AD-5).
@@ -344,12 +340,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   CollectionReference<Map<String, dynamic>> _rawCollection([String? path]) =>
       _firestore.collection(path ?? _collectionPath);
 
-  /// Collection **typée** via `withConverter<T>` (AC1). `fromFirestore` re-décode
+  /// Collection **typée** via `withConverter<T>`. `fromFirestore` re-décode
   /// le document (injection de l'`id` du snapshot). Utilisée **UNIQUEMENT** pour
   /// la **relecture round-trip** de [save] (preuve `save`→lecture restitue
   /// l'entité égale).
   ///
-  /// **LOW-3 (acté)** : `toFirestore` n'est **jamais** invoqué — [save] écrit en
+  /// Note : `toFirestore` n'est **jamais** invoqué — [save] écrit en
   /// `Map` **brute** (`batch.set` + [_encode]) et [getById]/les listes/flux
   /// lisent en `Map` brute + [_decode] **DÉFENSIF**. C'est **délibéré** : un
   /// `withConverter` ne peut pas renvoyer `null` pour écarter un document corrompu
@@ -370,34 +366,32 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// connaît que `DateTime`/String via `_$asDateTime` — et `ZSyncMeta.fromJson` —
   /// dont le parse ISO n'accepte qu'une `String`). Une valeur déjà String (ancien
   /// document ISO) est laissée telle quelle : **tolérance bi-format**
-  /// (`Timestamp` OU String, comme DODLP ; AD-10, gap B14).
+  /// (`Timestamp` OU String ; AD-10).
   ///
   /// Deux ensembles de clés sont normalisés :
   /// 1. **[_timestampFields]** — les clés de **corps** hintées `persistAs:
-  ///    timestamp` (B14) ;
+  ///    timestamp` ;
   /// 2. **`ZSyncMeta.reservedKeys`** — les clés de **sync** (`updated_at`),
-  ///    normalisées **INCONDITIONNELLEMENT** (M3, ES-1.3). C'est le correctif du
-  ///    cas legacy **le plus probable du consommateur n°1** : un document
-  ///    réellement écrit par **DODLP** persiste ses dates en `Timestamp`
-  ///    Firestore natif, `updated_at` compris. Sans cette normalisation,
-  ///    `ZSyncMeta.fromJson` renvoyait `updatedAt: null` sur **toute** la donnée
-  ///    legacy ⇒ la **clé d'autorité du merge était perdue** et `ZLwwResolver`
-  ///    dégénérait en « le local gagne toujours » (écritures distantes écrasées),
-  ///    silencieusement. La méta **SURVIT** désormais au décodage d'un document
-  ///    legacy — et le miroir de compat `T.updatedAt` (AD-19.2) est peuplé du
-  ///    même coup.
+  ///    normalisées **INCONDITIONNELLEMENT**. C'est le correctif du
+  ///    cas legacy **le plus probable côté consommateur** : un document
+  ///    réellement écrit par une application legacy persiste ses dates en
+  ///    `Timestamp` Firestore natif, `updated_at` compris. Sans cette
+  ///    normalisation, `ZSyncMeta.fromJson` renverrait `updatedAt: null` sur
+  ///    **toute** la donnée legacy ⇒ la **clé d'autorité du merge serait perdue**
+  ///    et `ZLwwResolver` dégénérerait en « le local gagne toujours » (écritures
+  ///    distantes écrasées), silencieusement. La méta **SURVIT** au décodage
+  ///    d'un document legacy — et le miroir de compat `T.updatedAt` est peuplé
+  ///    du même coup.
   Map<String, dynamic> _inject(String id, Map<String, dynamic>? data) {
     final map = <String, dynamic>{...?data, _kId: id};
-    // CR-LEX-27 : normalisation UNIVERSELLE et RÉCURSIVE — alignée sur celle de
+    // Normalisation UNIVERSELLE et RÉCURSIVE — alignée sur celle de
     // `ZOfflineFirstBoxRepository._normalizeMetaIso`.
     //
-    // Elle ne portait auparavant que sur les clés de SYNC et les clés de corps
-    // explicitement HINTÉES (`persistAs: timestamp`). Une clé temporelle non
-    // hintée — `created_at` en est le cas type — traversait donc le décodage en
-    // `Timestamp` brut, là où l'autre implémentation du MÊME port la
-    // normalisait. Deux chemins, deux résultats : un hôte qui bascule de l'un à
-    // l'autre voyait sa donnée changer de forme sans qu'aucun contrat ne
-    // l'annonce, et sans pouvoir corriger côté appelant.
+    // La restreindre aux seules clés de SYNC et aux clés de corps
+    // explicitement HINTÉES (`persistAs: timestamp`) laisserait une clé
+    // temporelle non hintée — `created_at` en est le cas type — traverser le
+    // décodage en `Timestamp` brut, produisant une forme de donnée
+    // dépendante du chemin d'écriture, sans qu'aucun contrat ne l'annonce.
     //
     // L'argument de la dartdoc de `_normalizeMetaIso` vaut mot pour mot ici :
     // on ne convertit QUE les formes backend (`Timestamp`, `DateTime`,
@@ -415,13 +409,13 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// `throw`.
   ///
   /// Formes reconnues :
-  /// - `Timestamp` **natif** (SDK `cloud_firestore`) — cas prod/legacy DODLP ;
+  /// - `Timestamp` **natif** (SDK `cloud_firestore`) — cas prod/legacy ;
   /// - `DateTime` (certains backends/fakes désérialisent directement) ;
   /// - map `{_seconds, _nanoseconds}` — forme **sérialisée** d'un `Timestamp`
   ///   (export/REST, caches JSON), qui autrement traverserait le décodage en
   ///   silence.
-  /// Convertit RÉCURSIVEMENT tout horodatage backend en String ISO-8601
-  /// (CR-LEX-27). Valeur non temporelle ⇒ rendue **inchangée** (AD-10).
+  /// Convertit RÉCURSIVEMENT tout horodatage backend en String ISO-8601.
+  /// Valeur non temporelle ⇒ rendue **inchangée** (AD-10).
   Object? _normalizeTemporalDeep(Object? value) {
     if (value is Timestamp) {
       return value.toDate().toUtc().toIso8601String();
@@ -515,7 +509,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// selon [_deletionSemantics] :
   ///
   /// - **[ZDeletionSemantics.strict]** : sémantique historique **ALIGNÉE** sur
-  ///   les clauses serveur (MAJEUR-2). `aliveOnly` ⇔ `is_deleted == false` — un
+  ///   les clauses serveur. `aliveOnly` ⇔ `is_deleted == false` — un
   ///   champ **ABSENT** (document non-zcrud-native) OU `== true` est non
   ///   visible, de façon **COHÉRENTE** sur TOUS les chemins de lecture (getById
   ///   / getAll / watch) — voir la précondition « collection zcrud-native » du
@@ -552,7 +546,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// Décode une liste de documents en **écartant** les corrompus (défensif) et
   /// les hors-[scope]. En mode strict c'est du belt-and-suspenders (les clauses
   /// serveur excluent déjà — [_matchesScope] réaligne la couche applicative sur
-  /// la MÊME sémantique, MAJEUR-2) ; en mode `absentMeansAlive` c'est **LE**
+  /// la MÊME sémantique) ; en mode `absentMeansAlive` c'est **LE**
   /// filtre (lecture sans clause `is_deleted`, coût documenté sur
   /// [ZDeletionSemantics.absentMeansAlive]).
   List<T> _decodeDocs(
@@ -569,21 +563,21 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     return out;
   }
 
-  // ───────────────────────── Traduction ZDataRequest → Query (AC6/7/12) ──────
+  // ───────────────────────── Traduction ZDataRequest → Query ──────
 
   /// Requête de base pour un [scope] donné, selon [_deletionSemantics] :
   ///
   /// - **[ZDeletionSemantics.strict]** — clauses **serveur** :
-  ///   - `aliveOnly` : égalité `is_deleted == false` (ambiguïté #2 tranchée :
+  ///   - `aliveOnly` : égalité `is_deleted == false` (choix délibéré :
   ///     l'égalité — contrairement à `isNotEqualTo` — n'impose PAS de premier
   ///     `orderBy`, n'entre pas en conflit avec le tie-break `id`, et laisse
-  ///     `count()` fonctionner). **MAJEUR-2** : l'égalité Firestore **exige la
+  ///     `count()` fonctionner). L'égalité Firestore **exige la
   ///     présence** du champ — un document SANS `is_deleted` est exclu ICI
   ///     (serveur) ; la couche applicative [_matchesScope] applique la MÊME
   ///     sémantique (get/getAll/watch cohérents). Précondition « collection
   ///     zcrud-native » : tout document écrit par [save] porte
   ///     `is_deleted=false` (invariant exécutoire, cf. [_encode]).
-  ///   - `deletedOnly` : égalité `is_deleted == true` (corbeille, Lot 2a).
+  ///   - `deletedOnly` : égalité `is_deleted == true` (corbeille).
   ///   - `includeDeleted` : `whereIn: [false, true]` — exige la présence du
   ///     champ (l'absent reste exclu, cohérent avec strict). Firestore borne
   ///     le nombre de clauses `in` par requête : combiner `includeDeleted` avec
@@ -618,7 +612,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       _scopedQuery(ZDeletedScope.aliveOnly, path);
 
   /// Applique les [filters] par **chaînage IMMUABLE** (réaffectation
-  /// systématique — corrige le bug #1 : une `Query` est immuable, `where(...)`
+  /// systématique — une `Query` est immuable, `where(...)`
   /// retourne une NOUVELLE `Query`).
   Query<Map<String, dynamic>> _applyFilters(
     Query<Map<String, dynamic>> base,
@@ -640,8 +634,8 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         case ZFilterOp.gte:
           q = q.where(f.field, isGreaterThanOrEqualTo: f.value);
         case ZFilterOp.contains:
-          // Ambiguïté #4 : `arrayContains` (appartenance à un champ collection).
-          // La « sous-chaîne texte » n'est PAS supportée nativement (AC15).
+          // `arrayContains` (appartenance à un champ collection).
+          // La « sous-chaîne texte » n'est PAS supportée nativement.
           q = q.where(f.field, arrayContains: f.value);
         case ZFilterOp.isIn:
           q = q.where(
@@ -658,34 +652,35 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   }
 
   /// Construit la requête complète (filtres + tri + tie-break `id` + curseur +
-  /// limit) par **chaînage immuable** (AC7). Le tie-break final `orderBy(id)` sur
+  /// limit) par **chaînage immuable**. Le tie-break final `orderBy(id)` sur
   /// le **champ `id` logique** (stocké dans le corps de chaque document par
   /// [_encode]/[save]) garantit un ordre **total et stable** aux clés de tri
-  /// égales (AC12), cohérent avec `ZCursor` (départage par `id`).
+  /// égales, cohérent avec `ZCursor` (départage par `id`).
   ///
-  /// **MAJEUR-1 — choix (b) `id` de corps vs (a) `FieldPath.documentId`, PROUVÉ.**
-  /// L'option (a) (tie-break `orderBy(FieldPath.documentId)`, toujours présent en
-  /// prod, donc SANS exclusion silencieuse) a été **testée et écartée** : le
-  /// backend de test `fake_cloud_firestore` **REJETTE** `startAfter([...values,
-  /// id])` quand un `orderBy` porte sur `documentId` — son évaluation interne
-  /// appelle `doc.get(FieldPath.documentId)` et lève `Invalid argument(s): key
-  /// must be String or FieldPath but found FieldPathType`. La pagination AC12
-  /// devient donc infaisable en test sous (a). On retient (b) — champ `id` de
+  /// **Choix du champ `id` de corps comme tie-break, plutôt que
+  /// `FieldPath.documentId`, PROUVÉ.** L'alternative (tie-break
+  /// `orderBy(FieldPath.documentId)`, toujours présent en prod, donc SANS
+  /// exclusion silencieuse) a été **testée et écartée** : le backend de test
+  /// `fake_cloud_firestore` **REJETTE** `startAfter([...values, id])` quand un
+  /// `orderBy` porte sur `documentId` — son évaluation interne appelle
+  /// `doc.get(FieldPath.documentId)` et lève `Invalid argument(s): key must be
+  /// String or FieldPath but found FieldPathType`. La pagination devient donc
+  /// infaisable en test sous cette alternative. On retient le champ `id` de
   /// corps — sous la **précondition « collection zcrud-native »** (dartdoc de
   /// classe) : tout document écrit par [save] porte son `id` de corps (invariant
   /// exécutoire). En **prod**, `orderBy('id')` **exclut** tout document
-  /// dépourvu de corps `id` (documents non-zcrud → backfill d'onboarding E7). NB:
-  /// le fake N'imite PAS cette exclusion (il classe le champ absent comme `null`),
-  /// donc un test ne peut prouver l'exclusion prod — il prouve l'invariant
-  /// [save]-écrit-`id` qui la neutralise (voir tests MAJEUR-1).
+  /// dépourvu de corps `id` (documents non-zcrud → backfill d'onboarding requis).
+  /// Le fake N'imite PAS cette exclusion (il classe le champ absent comme
+  /// `null`), donc un test ne peut prouver l'exclusion prod — il prouve
+  /// l'invariant [save]-écrit-`id` qui la neutralise.
   ///
-  /// **LOW-5 — index composites requis EN PROD.** Une requête combinant un
+  /// **Index composites requis EN PROD.** Une requête combinant un
   /// `where` d'inégalité (`>`, `>=`, `<`, `<=`) OU un `where(is_deleted==false)`
   /// AVEC un `orderBy(champ)` + le tie-break `orderBy('id')` exige un **index
   /// composite** Firestore (`firestore.indexes.json`), sinon la prod lève
   /// `FAILED_PRECONDITION` → `ZServerFailure`. `fake_cloud_firestore` n'exige aucun
   /// index (faux vert). Les index sont à provisionner à l'intégration/déploiement
-  /// (E7) — non fournis par cette story (adaptateur backend-agnostique, AD-5).
+  /// — non fournis par cet adaptateur (backend-agnostique, AD-5).
   Query<Map<String, dynamic>> _buildQuery(
     Query<Map<String, dynamic>> base,
     ZDataRequest req,
@@ -699,7 +694,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       }
     }
     // Tie-break `id` systématique dès qu'un ordre est requis (tri OU pagination
-    // par curseur) — un `ZDataRequest()` vide reste SANS clause d'ordre (AC6).
+    // par curseur) — un `ZDataRequest()` vide reste SANS clause d'ordre.
     if (hasSorts || req.startAfter != null) {
       q = q.orderBy(_kId);
     }
@@ -719,12 +714,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     return q;
   }
 
-  // ───────────────────────── Enveloppe d'erreurs unique (AC9/10/11) ──────────
+  // ───────────────────────── Enveloppe d'erreurs unique ──────────
 
   /// Enveloppe **unique** de toute opération : `FirebaseException → ZServerFailure`
   /// ; un `ZFailure` levé volontairement est repropagé ; toute autre erreur →
-  /// `ZServerFailure` typé. **JAMAIS** de `catch(_){}` (bug #3). Le corps décide
-  /// lui-même des `Left`/`Right` métier (`null ≠ erreur` — bug #4).
+  /// `ZServerFailure` typé. **JAMAIS** de `catch(_){}`. Le corps décide
+  /// lui-même des `Left`/`Right` métier (`null ≠ erreur`).
   Future<ZResult<R>> _guard<R>(Future<ZResult<R>> Function() body) async {
     try {
       return await body();
@@ -740,7 +735,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     }
   }
 
-  // ───────────────────────── Lectures (AC2/3/4/10/11) ───────────────────────
+  // ───────────────────────── Lectures ───────────────────────
 
   @override
   Stream<List<T>> watchAll() =>
@@ -753,10 +748,10 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       );
 
   /// Flux **NU** (AD-11) : seed immédiat (état courant) puis mutations. Les
-  /// non-visibles/corrompus sont exclus. Une collection vide émet `[]` (AC10).
+  /// non-visibles/corrompus sont exclus. Une collection vide émet `[]`.
   /// L'abonnement upstream est tracé pour [dispose].
   ///
-  /// **MEDIUM-1 (AC9)** : la `Query` est construite par [build] **DANS**
+  /// La `Query` est construite par [build] **DANS**
   /// `onListen`, sous garde `try/catch`. Un throw **SYNCHRONE** à la construction
   /// (ex. `_firestore.collection(...)` lève une `FirebaseException`) ou à
   /// l'abonnement est **poussé dans le canal du stream** ([StreamController.
@@ -768,7 +763,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
     ZDeletedScope scope,
   ) {
     late final StreamController<List<T>> controller;
-    // MEDIUM-1 (parité E5-1) : l'abonnement source `snapshots()` est capturé
+    // L'abonnement source `snapshots()` est capturé
     // pour être ANNULÉ à l'annulation du flux (`onCancel`) — pas seulement au
     // `dispose()`. Sans cela, chaque `watch`/`watchAll` empilerait un contrôleur
     // + un abonnement vivants (fuite non bornée sur un repo à longue durée de
@@ -779,7 +774,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         try {
           sub = build().snapshots().listen(
             (snap) {
-              // LOW-1 (parité) : une exception DANS le callback (`_decodeDocs`)
+              // Une exception DANS le callback (`_decodeDocs`)
               // est routée vers le canal d'erreur — miroir du `onError` — au lieu
               // de devenir une erreur asynchrone non gérée.
               try {
@@ -799,14 +794,14 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
           _subs.add(sub!);
         } on Object catch (e, s) {
           // Throw SYNCHRONE à la construction/abonnement de la Query : converti
-          // en erreur de FLUX (jamais d'exception qui remonte à l'appelant, AC9).
+          // en erreur de FLUX (jamais d'exception qui remonte à l'appelant).
           _log('construction du flux firestore en erreur (kind=$_kind)',
               error: e, stackTrace: s);
           controller.addError(_toFailure(e));
         }
       },
       onCancel: () async {
-        // MEDIUM-1 (parité) : libère la souscription source + le contrôleur dès
+        // Libère la souscription source + le contrôleur dès
         // que le consommateur annule — sans attendre `dispose()`. Idempotent
         // avec `dispose()` (retraits sur listes).
         _controllers.remove(controller);
@@ -851,7 +846,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
           );
         }
         final data = snap.data() ?? <String, dynamic>{};
-        // MAJEUR-2 : visibilité ALIGNÉE sur getAll/watch (même prédicat
+        // Visibilité ALIGNÉE sur getAll/watch (même prédicat
         // `_matchesScope(…, aliveOnly)` selon la sémantique configurée) :
         // - strict : un `is_deleted` ABSENT (doc non-zcrud-native) est exclu
         //   ICI AUSSI, comme le filtre serveur l'exclut de getAll/watch ;
@@ -904,12 +899,12 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         return Right<ZFailure, int>(agg.count ?? 0);
       });
 
-  // ───────────────────────── Écritures (AC1/5/8/10) ─────────────────────────
+  // ───────────────────────── Écritures ─────────────────────────
 
   /// Persiste [item] en **écrasement TOTAL** (`batch.set`, JAMAIS un merge) puis
-  /// relit l'entité persistée (round-trip AC1).
+  /// relit l'entité persistée (round-trip).
   ///
-  /// **LOW-4 — comportement full-write E5-1, INTENTIONNEL :**
+  /// **Comportement full-write, INTENTIONNEL :**
   /// - [_encode] réécrit **inconditionnellement** `is_deleted:false` +
   ///   `updated_at=now` → re-sauver une entité **soft-deletée la RESSUSCITE**
   ///   (redevient visible). Assumé (invariant « save ⇒ vivant »).
@@ -918,24 +913,24 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   ///   méta concurrente.
   ///
   /// Le **merge Last-Write-Wins** sur `updated_at` (offline-first, préservation
-  /// des écritures concurrentes) est la responsabilité d'**E5-3** — hors de cette
-  /// story.
+  /// des écritures concurrentes) est la responsabilité de la couche de
+  /// synchronisation offline-first — hors du périmètre de cet adaptateur.
   @override
   Future<ZResult<T>> save(T item, {String? collectionId}) => _guard(() async {
         final collection = _rawCollection(collectionId);
         // Matérialisation de l'éphémère (AD-14, invariant porté par le repo).
-        // CR-LEX-19 : `isEphemeral` fait foi, pas `id == null`.
+        // `isEphemeral` fait foi, pas `id == null`.
         final id = item.isEphemeral ? collection.doc().id : item.id!;
-        // Le corps porte TOUJOURS son `id` logique (clé du tie-break AC12) en
+        // Le corps porte TOUJOURS son `id` logique (clé du tie-break) en
         // plus des métadonnées `ZSyncMeta` fusionnées par [_encode].
         final map = _encode(item)..[_kId] = id;
 
-        // Écriture ATOMIQUE via WriteBatch committé (AC8 — jamais partielle).
+        // Écriture ATOMIQUE via WriteBatch committé (jamais partielle).
         final batch = _firestore.batch();
         batch.set(collection.doc(id), map);
         await batch.commit();
 
-        // Round-trip fidèle (AC1) : relecture via la collection **typée**
+        // Round-trip fidèle : relecture via la collection **typée**
         // `withConverter<T>` — `fromFirestore` re-décode le document persisté.
         final snap = await _typedCollection(collectionId).doc(id).get();
         final decoded = snap.data();
@@ -956,7 +951,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
       _setDeletedFlag(id, deleted: false);
 
   /// Bascule `is_deleted` **hors-entité** (aucun champ métier touché) via un
-  /// `WriteBatch` committé (AC8). `id` inconnu → `Left(ZNotFoundFailure)` (AC10).
+  /// `WriteBatch` committé. `id` inconnu → `Left(ZNotFoundFailure)`.
   Future<ZResult<Unit>> _setDeletedFlag(String id, {required bool deleted}) =>
       _guard(() async {
         final doc = _rawCollection().doc(id);
@@ -975,9 +970,9 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         return Right<ZFailure, Unit>(unit);
       });
 
-  // ───────────────────────── Sync offline-first (E5-3) ───────────────────────
+  // ───────────────────────── Sync offline-first ───────────────────────
 
-  /// **Voie de lecture de SYNCHRONISATION** (E5-3) : lit **TOUS** les documents
+  /// **Voie de lecture de SYNCHRONISATION** : lit **TOUS** les documents
   /// **SANS** le filtre serveur `is_deleted == false` (tombstones **inclus**),
   /// chacun apparié à son [ZSyncMeta] (lu depuis le corps). Contraste voulu avec
   /// [getAll] (qui exclut les tombstones) — indispensable au merge LWW. Décodage
@@ -1000,7 +995,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         return Right<ZFailure, List<ZSyncEntry<T>>>(out);
       });
 
-  /// **Écriture PRÉSERVANT la méta** (E5-3) d'une **seule** [entry] : `batch.set`
+  /// **Écriture PRÉSERVANT la méta** d'une **seule** [entry] : `batch.set`
   /// committé (jamais partiel) écrivant le corps + `updated_at`/`is_deleted`
   /// **verbatim** (jamais `now()`, contrairement à [save]). Réservé au merge.
   Future<ZResult<Unit>> writeMerged(ZSyncEntry<T> entry) => _guard(() async {
@@ -1018,7 +1013,7 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
         return Right<ZFailure, Unit>(unit);
       });
 
-  /// **Propagation PAR LOT BORNÉE** (E5-3, AD-9) d'un changeset d'[entries],
+  /// **Propagation PAR LOT BORNÉE** (AD-9) d'un changeset d'[entries],
   /// chacune écrite **verbatim** (méta préservée, jamais `now()`). Le changeset
   /// est **découpé** en lots de ≤ [kMaxBatchWrites] (**450**), chaque lot étant un
   /// `WriteBatch` **committé atomiquement** (aucune écriture partielle non-commit).
@@ -1053,9 +1048,9 @@ class FirebaseZRepositoryImpl<T extends ZEntity> extends ZRepository<T> {
   /// Construit la map d'écriture d'un merge : corps [_toMap] + corps `id` +
   /// `updated_at`/`is_deleted` de la [entry] **verbatim** (jamais `now()`).
   ///
-  /// MAJEUR-1 (DP-11) : applique AUSSI le hint B14 (`_applyTimestampHints`) sur
+  /// Applique AUSSI le hint de type (`_applyTimestampHints`) sur
   /// cette voie d'écriture (sync/merge offline-first), pas seulement `_encode`
-  /// (save). Sinon `created_at` finit en types MIXTES sur disque (Timestamp pour
+  /// (save). Sinon `created_at` finirait en types MIXTES sur disque (Timestamp pour
   /// les save en ligne, String ISO pour les save resync) → `orderBy`/plage
   /// Firestore silencieusement incorrects. `_applyTimestampHints` est idempotent
   /// et n'affecte JAMAIS `ZSyncMeta` (`updated_at`/`is_deleted` ∉ `_timestampFields`).

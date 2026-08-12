@@ -1,42 +1,42 @@
-/// `ZDefaultNoteCard` — **carte de note PAR DÉFAUT** du socle (CR-IFFD-48,
-/// rendu de référence CR-IFFD-56).
+/// `ZDefaultNoteCard` — carte de note par défaut du socle, au rendu de
+/// référence.
 ///
-/// ## Le DÉFAUT est le rendu de RÉFÉRENCE (CR-IFFD-56)
+/// ## Le défaut est le rendu de référence
 ///
-/// Sans aucun réglage : tuile d'icône **NEUTRE** (`surface`, jetons
-/// `studyCardIconTile*`), glyphe [zDefaultNoteReferenceIcon] **neutre**
+/// Sans aucun réglage : tuile d'icône neutre (`surface`, jetons
+/// `studyCardIconTile*`), glyphe [zDefaultNoteReferenceIcon] neutre
 /// (`onSurfaceVariant`), et le chrome commun de [ZStudyCardReference] (rayon
 /// 16, padding 12, marge 4, liseré `outlineVariant` à 50 %, titre
 /// `titleMedium/w600/15` une ligne, sous-titre `bodySmall`/`onSurfaceVariant`).
-/// L'extrait et les balises restent des **OPTIONS** ([excerpt]/[tags] — `null`
-/// / vides ⇒ absents de l'arbre, AD-4) : ils se rendent dans les deux
-/// hiérarchies quand ils sont fournis.
+/// L'extrait et les balises restent des options ([excerpt]/[tags] — `null`
+/// / vides ⇒ absents de l'arbre, invariant AD-4) : ils se rendent dans les
+/// deux hiérarchies quand ils sont fournis.
 ///
-/// L'ancien rendu v0.43.0 (barre d'accent de tête, pas de tuile) reste
-/// **atteignable par réglage** : [hierarchy] `=`
+/// Un rendu antérieur (barre d'accent de tête, pas de tuile) reste
+/// atteignable par réglage : [hierarchy] =
 /// [ZStudyCardHierarchy.tintedTile] (ou le jeton
-/// `ZcrudTheme.studyCardHierarchy`) — restitution EXACTE gardée par test.
+/// `ZcrudTheme.studyCardHierarchy`) — restitution exacte gardée par test.
 ///
-/// Priorité, partout : **paramètre > jeton `studyCard*` > défaut-référence**
+/// Priorité, partout : paramètre > jeton `studyCard*` > défaut-référence
 /// (résolution centralisée dans [zStudyCardChromeOf]).
 ///
-/// ## Pourquoi cette carte ne prend AUCUN type de domaine
+/// ## Pourquoi cette carte ne prend aucun type de domaine
 ///
-/// Le modèle de note (`ZSmartNote`) vit dans `zcrud_note`, qui n'est **pas**
-/// une dépendance de `zcrud_study` (pubspec : « AUCUN autre satellite lourd
-/// (`zcrud_note`/`zcrud_document`) »). Une voie typée
+/// Le modèle de note (`ZSmartNote`) vit dans `zcrud_note`, qui n'est pas
+/// une dépendance de `zcrud_study`. Une voie typée
 /// `ZStudyToolsSectionSpec.notes(notes: List<ZSmartNote>)` exigerait une
-/// **nouvelle arête** — interdite ici (AD-1). La carte est donc **autonome sur
-/// des primitives** (`title`, `subtitle`, `excerpt`), l'hôte projette.
+/// nouvelle arête — interdite ici (invariant AD-1). La carte est donc
+/// autonome sur des primitives (`title`, `subtitle`, `excerpt`), l'hôte
+/// projette.
 ///
 /// ## Invariants
 ///
-/// - **FR-26/NFR-S7** : aucun libellé ni couleur en dur ; tout texte visible
-///   est injecté ; `null` ⇒ **absent** de l'arbre (AD-4).
-/// - **AD-13** : directionnel partout ; la tuile (référence) comme la barre
-///   d'accent (`tintedTile`) sont décoratives — aucune information n'est
-///   portée par la SEULE couleur.
-/// - **AD-2/SM-1** : `StatelessWidget` pur.
+/// - Invariant FR-26 : aucun libellé ni couleur en dur ; tout texte visible
+///   est injecté ; `null` ⇒ absent de l'arbre (invariant AD-4).
+/// - Invariant AD-13 : directionnel partout ; la tuile (référence) comme la
+///   barre d'accent (`tintedTile`) sont décoratives — aucune information
+///   n'est portée par la seule couleur.
+/// - Invariant AD-2 : `StatelessWidget` pur.
 /// - Composition : [ZStudyNoteCard] (façade) + [ZTagChips] — rien de réécrit.
 library;
 
@@ -50,23 +50,23 @@ import 'z_study_card_reference.dart';
 import 'z_study_note_card.dart';
 import 'z_tag_chips.dart';
 
-/// Épaisseur de la barre d'accent de tête en hiérarchie `tintedTile` (rendu
-/// v0.43.0 — dimension de LAYOUT).
+/// Épaisseur de la barre d'accent de tête en hiérarchie `tintedTile`
+/// (dimension de layout).
 const double kZDefaultNoteAccentHeight = 4;
 
-/// Glyphe du rendu de référence (CR-IFFD-56) — neutre, surchargable par
+/// Glyphe du rendu de référence — neutre, surchargable par
 /// [ZDefaultNoteCard.icon].
 const IconData zDefaultNoteReferenceIcon = Icons.note_outlined;
 
-/// Carte de note **par défaut** du socle — autonome, sur primitives
-/// (CR-IFFD-48), au rendu de référence (CR-IFFD-56).
+/// Carte de note par défaut du socle — autonome, sur primitives, au rendu
+/// de référence.
 ///
 /// ```dart
 /// ZDefaultNoteCard(
 ///   title: note.title,
-///   subtitle: l10n.editedAt(note.updatedAt),  // libellé LOCALISÉ ⇒ injecté
-///   excerpt: note.plainTextPreview,           // OPTION (AD-4)
-///   tags: tagsOf(note),                       // OPTION (AD-4)
+///   subtitle: l10n.editedAt(note.updatedAt),  // libellé localisé ⇒ injecté
+///   excerpt: note.plainTextPreview,           // option (invariant AD-4)
+///   tags: tagsOf(note),                       // option (invariant AD-4)
 ///   onTap: () => open(note),
 /// )
 /// ```
@@ -107,76 +107,76 @@ class ZDefaultNoteCard extends StatelessWidget {
           'une zone morte, pas un extrait).',
         );
 
-  /// Titre de la note (déjà localisé/résolu par l'hôte) — **seule** entrée
+  /// Titre de la note (déjà localisé/résolu par l'hôte) — seule entrée
   /// requise.
   final String title;
 
-  /// Méta-information (date d'édition…), déjà localisée. `null` ⇒ **absente**
-  /// (AD-4).
+  /// Méta-information (date d'édition…), déjà localisée. `null` ⇒ absente
+  /// (invariant AD-4).
   final String? subtitle;
 
   /// Extrait du contenu, en texte brut fourni par l'hôte (le socle ne parse
-  /// aucun rich-text ici) — **OPTION** (CR-IFFD-56 : plus jamais une mise en
-  /// page imposée). `null` ⇒ **absent** (AD-4).
+  /// aucun rich-text ici) — option, jamais une mise en page imposée.
+  /// `null` ⇒ absent (invariant AD-4).
   final String? excerpt;
 
   /// Nombre maximal de lignes de l'extrait. Défaut `2`.
   final int excerptMaxLines;
 
-  /// Balises **résolues par l'hôte** — **OPTION**. Vides ⇒ zone **absente**
-  /// (AD-4).
+  /// Balises résolues par l'hôte — option. Vides ⇒ zone absente
+  /// (invariant AD-4).
   final List<ZFlashcardTag> tags;
 
   /// Glyphe de la tuile (référence). `null` ⇒ [zDefaultNoteReferenceIcon].
-  /// Ignoré en `tintedTile` (le rendu v0.43.0 n'a pas de tuile — restitution
-  /// littérale).
+  /// Ignoré en `tintedTile` (le rendu antérieur n'a pas de tuile —
+  /// restitution littérale).
   final IconData? icon;
 
-  /// Palette **INJECTÉE** bornant la clé d'accent (patron [ZTagChips]).
+  /// Palette injectée bornant la clé d'accent (patron [ZTagChips]).
   final ZColorPalette palette;
 
-  /// Clé d'identité de l'accent (`String` **opaque**). `null` ⇒ dérivée du
-  /// **titre** — stable pour une même note, remap déterministe du kernel.
+  /// Clé d'identité de l'accent (`String` opaque). `null` ⇒ dérivée du
+  /// titre — stable pour une même note, remap déterministe du kernel.
   final String? colorKey;
 
-  /// Hiérarchie (CR-IFFD-56). `null` ⇒ jeton `ZcrudTheme.studyCardHierarchy`,
-  /// puis [ZStudyCardHierarchy.tintedGlyph] (RÉFÉRENCE).
-  /// [ZStudyCardHierarchy.tintedTile] restitue exactement v0.43.0 (barre
-  /// d'accent).
+  /// Hiérarchie. `null` ⇒ jeton `ZcrudTheme.studyCardHierarchy`,
+  /// puis [ZStudyCardHierarchy.tintedGlyph] (référence).
+  /// [ZStudyCardHierarchy.tintedTile] restitue exactement le rendu
+  /// antérieur (barre d'accent).
   final ZStudyCardHierarchy? hierarchy;
 
   /// Nombre maximal de lignes du titre. `null` ⇒ défaut de la hiérarchie :
-  /// `1` en référence, `2` en `tintedTile` (v0.43.0).
+  /// `1` en référence, `2` en `tintedTile`.
   final int? titleMaxLines;
 
   /// Style du titre. `null` ⇒ jeton `studyCardTitleStyle`, puis référence —
-  /// en `tintedTile`, repli v0.43.0 (`titleSmall`).
+  /// en `tintedTile`, repli `titleSmall`.
   final TextStyle? titleStyle;
 
   /// Style du sous-titre. `null` ⇒ jeton `studyCardSubtitleStyle`, puis
-  /// référence — en `tintedTile`, repli v0.43.0 (`bodySmall`).
+  /// référence — en `tintedTile`, repli `bodySmall`.
   final TextStyle? subtitleStyle;
 
   /// Padding interne. `null` ⇒ jeton, puis référence (12) — en `tintedTile`,
-  /// repli v0.43.0 (`gapM`).
+  /// repli `gapM`.
   final EdgeInsetsGeometry? contentPadding;
 
   /// Marge externe. `null` ⇒ jeton, puis `CardTheme.margin`, puis référence
-  /// (4) — en `tintedTile`, repli v0.43.0.
+  /// (4) — en `tintedTile`, repli du rendu antérieur.
   final EdgeInsetsGeometry? margin;
 
   /// Liseré. `null` ⇒ jeton, puis référence (`outlineVariant` à 50 %) — en
-  /// `tintedTile`, repli v0.43.0 (aucun).
+  /// `tintedTile`, repli aucun.
   final BorderSide? borderSide;
 
   /// Rayon de carte. `null` ⇒ jeton, puis référence (16) — en `tintedTile`,
-  /// repli v0.43.0 (`radiusM`).
+  /// repli `radiusM`.
   final Radius? borderRadius;
 
-  /// Créneau d'actions de fin de carte. `null` ⇒ absent (AD-4).
+  /// Créneau d'actions de fin de carte. `null` ⇒ absent (invariant AD-4).
   final Widget? trailing;
 
-  /// Indicateur de traitement — **relayé** à la carte de base (CR-IFFD-56).
+  /// Indicateur de traitement — relayé à la carte de base.
   final Widget? progress;
 
   /// Largeur maximale du slot [progress].
@@ -185,11 +185,11 @@ class ZDefaultNoteCard extends StatelessWidget {
   /// Politique d'éviction de [trailing] pendant un traitement.
   final bool hidesTrailingWhileBusy;
 
-  /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ non
-  /// interactive (AD-45).
+  /// Activation de la carte. `null` et [onLongPress] `null` ⇒ non
+  /// interactive.
   final VoidCallback? onTap;
 
-  /// Appui long. `null` ⇒ capacité **ABSENTE** (AD-4).
+  /// Appui long. `null` ⇒ capacité absente (invariant AD-4).
   final VoidCallback? onLongPress;
 
   /// Libellé sémantique de la carte entière. Repli : [title], complété de
@@ -217,7 +217,7 @@ class ZDefaultNoteCard extends StatelessWidget {
     return _buildReference(context);
   }
 
-  // ── Hiérarchie de RÉFÉRENCE (défaut CR-IFFD-56) ───────────────────────────
+  // ── Hiérarchie de référence (défaut) ───────────────────────────
 
   Widget _buildReference(BuildContext context) {
     final ZStudyCardChrome chrome = zStudyCardChromeOf(
@@ -231,8 +231,8 @@ class ZDefaultNoteCard extends StatelessWidget {
     );
 
     return ZStudyNoteCard(
-      // Tuile NEUTRE, glyphe NEUTRE — décorative (aucune information n'est
-      // portée par la seule couleur, AD-13).
+      // Tuile neutre, glyphe neutre — décorative (aucune information n'est
+      // portée par la seule couleur, invariant AD-13).
       leading: ExcludeSemantics(
         child: SizedBox(
           key: iconTileKey,
@@ -261,8 +261,8 @@ class ZDefaultNoteCard extends StatelessWidget {
       margin: chrome.margin,
       borderSide: chrome.borderSide,
       borderRadius: chrome.borderRadius,
-      // CR-IFFD-61 ①/② — l'écart tuile→titre (16) et l'élévation (0) de
-      // la RÉFÉRENCE, résolus par le chrome. Ils ne sont pas écrits en
+      // L'écart tuile→titre (16) et l'élévation (0) de
+      // la référence sont résolus par le chrome. Ils ne sont pas écrits en
       // dur dans la primitive de base : celle-ci garde `gapM` et
       // l'élévation du `CardTheme` pour ses hôtes directs.
       leadingGap: chrome.leadingGap,
@@ -278,11 +278,12 @@ class ZDefaultNoteCard extends StatelessWidget {
     );
   }
 
-  // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
+  // ── Hiérarchie `tintedTile` — restitution exacte du rendu antérieur ──────
   //
-  // NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
-  // valeurs POMPÉES depuis v0.43.0. Les paramètres de chrome restent
-  // NON-inertes (AD-4) : fournis, ils s'appliquent ; nuls, rendu littéral.
+  // Ne pas « moderniser » ce chemin : gardé par un test de restitution aux
+  // valeurs mesurées du rendu antérieur. Les paramètres de chrome restent
+  // non inertes (invariant AD-4) : fournis, ils s'appliquent ; nuls, rendu
+  // littéral.
 
   Widget _buildTintedTile(BuildContext context) {
     final ZColorPair pair = _accent(context);
@@ -314,9 +315,9 @@ class ZDefaultNoteCard extends StatelessWidget {
     );
   }
 
-  /// Extrait + balises, sous le sous-titre. `null` ⇒ slot **absent** (AD-4) —
-  /// jamais un `SizedBox.shrink()` inerte. Rendu dans les DEUX hiérarchies
-  /// quand fourni (CR-IFFD-56 : c'est une OPTION, pas un défaut).
+  /// Extrait + balises, sous le sous-titre. `null` ⇒ slot absent
+  /// (invariant AD-4) — jamais un `SizedBox.shrink()` inerte. Rendu dans les
+  /// deux hiérarchies quand fourni : c'est une option, pas un défaut.
   Widget? _buildBody(BuildContext context) {
     final String? preview = excerpt;
     final bool hasTags = tags.isNotEmpty;
@@ -335,15 +336,16 @@ class ZDefaultNoteCard extends StatelessWidget {
         ),
       if (hasTags)
         // Aucune rangée de puces réécrite : `ZTagChips` porte la palette
-        // filée, le titre textuel systématique (AD-13) et les cibles ≥ 48 dp.
+        // filée, le titre textuel systématique (invariant AD-13) et les
+        // cibles ≥ 48 dp.
         ZTagChips(key: tagsKey, tags: tags, palette: palette),
     ];
     if (children.length == 1) return children.single;
-    // MESURÉ (leçon CR-IFFD-37, rejouée ici) : avec des enfants INFLEXIBLES,
-    // cette colonne débordait de 156 px dans une cellule de rail 300 × 80 dp —
-    // le slot `belowSubtitle` est prêté en fit LOOSE par la carte de base, et
-    // un contenu rigide s'AJOUTE à la hauteur au lieu d'y PARTICIPER. Chaque
-    // bloc est donc `Flexible` (l'espacement COMPRIS, d'où le `Padding`).
+    // Mesuré : avec des enfants inflexibles, cette colonne débordait dans
+    // une cellule de rail étroite — le slot `belowSubtitle` est prêté en
+    // fit loose par la carte de base, et un contenu rigide s'ajoute à la
+    // hauteur au lieu d'y participer. Chaque bloc est donc `Flexible`
+    // (l'espacement compris, d'où le `Padding`).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

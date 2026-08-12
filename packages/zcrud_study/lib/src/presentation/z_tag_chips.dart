@@ -1,5 +1,5 @@
-/// `ZTagChips` — affichage d'une rangée de tags de flashcard sous forme de puces
-/// (Story ES-8.1, AC1/AC4/AC6). ADAPTATEUR MINCE de PRÉSENTATION : il COMPOSE des
+/// `ZTagChips` — affichage d'une rangée de tags de flashcard sous forme de
+/// puces. ADAPTATEUR MINCE de PRÉSENTATION : il COMPOSE des
 /// primitives de domaine DÉJÀ LIVRÉES (`ZFlashcardTag`, `remapColorKey`/
 /// `ZColorPalette` du kernel ; `zResolveColorKeyOrSlot`/`ZColorPair`/`ZcrudTheme`
 /// du cœur) — il n'en réimplémente AUCUNE.
@@ -162,15 +162,15 @@ class ZTagChips extends StatelessWidget {
               ),
             ),
             SizedBox(width: theme.gapS),
-            // AC6 — TITRE TEXTUEL TOUJOURS rendu (couleur jamais seul canal).
+            // TITRE TEXTUEL TOUJOURS rendu (couleur jamais seul canal).
             //
-            // **CR-IFFD-47 — `Flexible` MESURÉ, pas décoratif.** La `Row` a
-            // `mainAxisSize.min` et ce `Text` n'avait **aucune borne** : dans
-            // une colonne ÉTROITE (rail de 300 dp), un titre de balise un peu
-            // long faisait déborder la puce — `RenderFlex overflowed by 21
-            // pixels on the right`, mesuré. Le `Wrap` parent contraint pourtant
-            // bien ses enfants : c'est la puce elle-même qui refusait la
-            // contrainte. Le titre se tronque désormais proprement au lieu de
+            // **`Flexible` MESURÉ, pas décoratif.** La `Row` a
+            // `mainAxisSize.min` ; sans borne sur ce `Text`, dans une colonne
+            // ÉTROITE (rail de 300 dp), un titre de balise un peu long ferait
+            // déborder la puce — `RenderFlex overflowed by 21 pixels on the
+            // right`, mesuré. Le `Wrap` parent contraint pourtant bien ses
+            // enfants : c'est la puce elle-même qui refuserait la contrainte
+            // sans ce `Flexible`. Le titre se tronque proprement au lieu de
             // peindre une bannière de débordement — et reste **entier** dès que
             // la place existe (rendu inchangé en largeur confortable).
             Flexible(

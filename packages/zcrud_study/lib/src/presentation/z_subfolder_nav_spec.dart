@@ -54,7 +54,7 @@ typedef ZSubfolderItemBuilder = Widget Function(
 );
 
 /// Construit l'**action** d'un item de fratrie — slot TRAILING, distinct du
-/// contenu (CR-IFFD-41, point 8).
+/// contenu (point 8).
 ///
 /// **Mesuré avant d'ajouter** : ni [ZSubfolderItemBuilder] ni
 /// `ZSubfolderNavRenderer` ne servaient déjà ce besoin.
@@ -68,7 +68,8 @@ typedef ZSubfolderItemBuilder = Widget Function(
 ///   c'est une sortie de route.
 ///
 /// [refOrNull] `null` ⇒ item RACINE. Rendre `null` ⇒ **aucune action pour cet
-/// item** (AD-4) : c'est ainsi que la maquette IFFD n'en pose pas sur la racine.
+/// item** (invariant AD-4) : c'est ainsi que la maquette de référence n'en
+/// pose pas sur la racine.
 typedef ZSubfolderItemActionBuilder = Widget? Function(
   BuildContext context,
   ZSubfolderRef? refOrNull,
@@ -112,11 +113,10 @@ enum ZSubfolderLayoutMode {
       maybeOf(context) ?? ZSubfolderLayoutMode.compact;
 }
 
-/// **Quelle surface concrète** invoque un [ZSubfolderItemBuilder] — CR-IFFD-46,
-/// point 1.
+/// **Quelle surface concrète** invoque un [ZSubfolderItemBuilder] — point 1.
 ///
-/// **Le défaut que ce type ferme, et pourquoi [ZSubfolderLayoutMode] ne le
-/// fermait pas.** Avant CR-IFFD-46, la barre de sélection posait
+/// **Le défaut que ce type ferme, et pourquoi [ZSubfolderLayoutMode] seul ne
+/// le fermerait pas.** Sans lui, la barre de sélection poserait
 /// `ZSubfolderLayoutMode.compact` sur son DÉCLENCHEUR *et* sur sa FEUILLE, et
 /// `zBuildSubfolderItemContent` remettait la MÊME sentinelle
 /// (`ZSubfolderRef(id: '', label: …)`) dans les deux cas. Un `itemBuilder`
@@ -187,7 +187,7 @@ enum ZSubfolderSurface {
 /// tout le sous-arbre d'items. L'hôte n'a normalement pas à l'instancier : il
 /// lit `ZSubfolderLayoutMode.of(context)` / `ZSubfolderSurface.maybeOf(context)`.
 class ZSubfolderLayoutScope extends InheritedWidget {
-  /// Pose [mode] (et, depuis CR-IFFD-46, [surface]) sur tout [child].
+  /// Pose [mode] (et, optionnellement, [surface]) sur tout [child].
   const ZSubfolderLayoutScope({
     required this.mode,
     required super.child,
@@ -198,7 +198,7 @@ class ZSubfolderLayoutScope extends InheritedWidget {
   /// Côté du seuil rendu par la surface englobante.
   final ZSubfolderLayoutMode mode;
 
-  /// Surface concrète qui rend l'item (CR-IFFD-46, point 1).
+  /// Surface concrète qui rend l'item (point 1).
   ///
   /// Paramètre **optionnel** : un scope posé par du code existant (hôte
   /// compris) reste valide et rend `null` ici — aucune rupture d'API.
@@ -217,15 +217,13 @@ class ZSubfolderLayoutScope extends InheritedWidget {
       oldWidget.mode != mode || oldWidget.surface != surface;
 }
 
-/// Surface de navigation rendue SOUS le seuil de bascule (< 600 dp) —
-/// CR-IFFD-40.
+/// Surface de navigation rendue SOUS le seuil de bascule (< 600 dp).
 ///
 /// **Enum SÉPARÉ de [ZSubfolderLayoutMode], et c'est délibéré.** Ajouter une
-/// troisième valeur à [ZSubfolderLayoutMode] aurait cassé tout `switch`
+/// troisième valeur à [ZSubfolderLayoutMode] casserait tout `switch`
 /// exhaustif d'hôte sur ce type — or c'est **le patron que son dartdoc
-/// recommande** et qu'un test de ce dépôt exerce
-/// (`cr_iffd30_31_lex81_subfolder_nav_test.dart`, `switch (…of(context))` à deux
-/// bras). Deux axes distincts, deux types : [ZSubfolderLayoutMode] dit à
+/// recommande** et qu'une garde de ce dépôt exerce (`switch (…of(context))`
+/// à deux bras). Deux axes distincts, deux types : [ZSubfolderLayoutMode] dit à
 /// l'`itemBuilder` **quelles contraintes de layout** il subit ; ce type-ci dit
 /// **quelle surface** rend la navigation étroite.
 ///
@@ -238,42 +236,40 @@ enum ZSubfolderNarrowMode {
   /// aucun n'est sélectionné) avec un chevron ; la fratrie ne se déploie qu'à la
   /// demande.
   ///
-  /// Corrige le défaut CR-IFFD-40 : dans une rangée défilante, un seul balayage
-  /// sortait la sélection du champ visible et l'utilisateur perdait le « où
-  /// suis-je ». La question de l'utilisateur est « lequel est actif ? » **avant**
-  /// « lesquels existent ? ».
+  /// Évite le défaut d'une rangée défilante : dans une rangée défilante, un
+  /// seul balayage sort la sélection du champ visible et l'utilisateur perd
+  /// le « où suis-je ». La question de l'utilisateur est « lequel est actif ? »
+  /// **avant** « lesquels existent ? ».
   ///
-  /// **CR-IFFD-41 — CHANGEMENT DE COMPORTEMENT** (nom du mode inchangé, API
-  /// inchangée) : la fratrie se déploie désormais en **feuille modale** (≤ 80 %
-  /// de la hauteur d'écran), et non plus **en ligne** sous la barre comme en
-  /// v0.34.0. L'hôte de référence (IFFD) a explicitement repris la main sur la
-  /// forme, et il ne prétend PAS que le déploiement en ligne fût un défaut :
-  /// c'est un arbitrage de gouvernance visuelle, pas une correction.
+  /// La fratrie se déploie en **feuille modale** (≤ 80 % de la hauteur
+  /// d'écran), et non **en ligne** sous la barre : c'est un choix de
+  /// gouvernance visuelle tranché par le propriétaire du produit, retenu
+  /// comme référence du socle — pas la correction d'un défaut du
+  /// déploiement en ligne.
   ///
-  /// Conséquence pour un hôte qui vient d'adopter v0.34.0 : la fratrie n'est
-  /// plus poussée dans le flux de la page — elle flotte. Un hôte qui
-  /// **compensait** le déploiement en ligne (réserve de hauteur, `scrollTo`,
-  /// fermeture pilotée à la sélection) doit **RETIRER sa compensation**.
+  /// Conséquence : la fratrie n'est pas poussée dans le flux de la page —
+  /// elle flotte. Un hôte qui **compensait** un déploiement en ligne (réserve
+  /// de hauteur, `scrollTo`, fermeture pilotée à la sélection) doit
+  /// **RETIRER sa compensation**.
   selector,
 
-  /// Rangée de puces défilant horizontalement — comportement **historique**
-  /// (≤ v0.33.1), conservé à l'identique pour l'hôte qui le demande
-  /// explicitement. Aucune rupture d'API : la valeur reste valide et son rendu
-  /// est inchangé.
+  /// Rangée de puces défilant horizontalement — comportement **historique**,
+  /// conservé à l'identique pour l'hôte qui le demande explicitement. Aucune
+  /// rupture d'API : la valeur reste valide et son rendu est inchangé.
   compact,
 }
 
 /// **Où** la navigation de fratrie est rendue dans une page à onglets
-/// (`ZStudyFolderDetail`) — CR-IFFD-43.
+/// (`ZStudyFolderDetail`).
 ///
 /// **Axe INDÉPENDANT du point de rupture.** Ce jeton dit *à quel niveau de la
 /// page* vit la navigation ; [ZSubfolderNarrowMode] dit *quelle surface* est
 /// rendue sous le seuil. Déduire le placement de la largeur reproduirait, sur
-/// l'axe « onglet », l'erreur que CR-IFFD-40 a corrigée sur l'axe « largeur ».
+/// l'axe « onglet », le même défaut que sur l'axe « largeur ».
 enum ZSubfolderNavPlacement {
   /// **DÉFAUT** — la navigation est construite **dans** l'onglet Matériel, sous
   /// `ZResponsiveLayout` : sidebar ≥ 600 dp, surface étroite < 600 dp. Rendu
-  /// strictement identique à celui d'avant CR-IFFD-43.
+  /// strictement identique au comportement historique.
   ///
   /// Conséquence assumée (c'est le comportement historique) : la navigation
   /// **disparaît** sur les autres onglets.
@@ -310,7 +306,7 @@ enum ZSubfolderNavPlacement {
   aboveTabs,
 
   /// La navigation est rendue **une seule fois**, **entre l'app-bar et la barre
-  /// d'onglets** (créneau `ZPageScaffold.aboveTabBar`) — CR-IFFD-45.
+  /// d'onglets** (créneau `ZPageScaffold.aboveTabBar`).
   ///
   /// Ordre de lecture obtenu : **titre → contexte (la fratrie) → onglets →
   /// contenu**. Comme [aboveTabs], la navigation devient le contexte de la page
@@ -346,15 +342,15 @@ enum ZSubfolderNavPlacement {
   aboveTabBar,
 }
 
-/// **Où** l'affordance d'ajout de la barre de fratrie est offerte — CR-IFFD-44,
-/// manque 1.
+/// **Où** l'affordance d'ajout de la barre de fratrie est offerte.
 ///
-/// Avant CR-IFFD-44, `ZSubfolderNavSpec.addAction != null` commandait
+/// Sans ce jeton, `ZSubfolderNavSpec.addAction != null` commanderait
 /// **simultanément** le bouton `+` de la BARRE et le pied « Ajouter… » de la
 /// FEUILLE : un hôte dont la référence pose l'ajout à un seul des deux endroits
-/// n'avait que « les deux » ou « aucun » — et « aucun » **retire une action
-/// réelle**. Ce n'est donc pas un réglage de masquage : l'action est la même,
-/// sa cible est la même ; seul son **emplacement** devient adressable.
+/// n'aurait que « les deux » ou « aucun » — et « aucun » **retirerait une
+/// action réelle**. Ce n'est donc pas un réglage de masquage : l'action est
+/// la même, sa cible est la même ; seul son **emplacement** devient
+/// adressable.
 ///
 /// **Ce jeton vit dans la SPEC, pas dans le thème — et c'est mesuré, pas
 /// stylistique.** Trois raisons, dans l'ordre de force :
@@ -381,13 +377,13 @@ enum ZSubfolderNavPlacement {
 /// de remplaçante, ce qui est exactement ce que ce jeton refuse.
 enum ZSubfolderAddPlacement {
   /// **DÉFAUT** — l'ajout est offert **aux deux endroits** : bouton `+` de la
-  /// barre ET pied de la feuille. Rendu strictement identique à celui d'avant
-  /// CR-IFFD-44 ⇒ aucun hôte existant ne bouge.
+  /// barre ET pied de la feuille. Rendu strictement identique au comportement
+  /// historique ⇒ aucun hôte existant ne bouge.
   barAndSheet,
 
   /// L'ajout n'est offert que dans la **feuille** (pied). Le `+` de la barre est
-  /// **absent de l'arbre** (AD-4) — la barre gagne d'autant en largeur pour son
-  /// déclencheur.
+  /// **absent de l'arbre** (invariant AD-4) — la barre gagne d'autant en
+  /// largeur pour son déclencheur.
   sheetOnly,
 
   /// L'ajout n'est offert que sur la **barre** (`+`). Le pied de la feuille est
@@ -450,12 +446,12 @@ class ZSubfolderNavSpec {
   final List<ZSubfolderRef> subfolders;
 
   /// Libellé **injecté** de l'item racine « Tous les sous-dossiers »
-  /// (`id` de sélection `null`). Toujours présent en tête (AC8).
+  /// (`id` de sélection `null`). Toujours présent en tête.
   final String allSubfoldersLabel;
 
   /// Libellé **injecté** de la **LIGNE RACINE** des surfaces de liste
-  /// (CR-IFFD-46, point 1). `null` ⇒ repli sur [allSubfoldersLabel] ⇒ rendu
-  /// strictement inchangé.
+  /// (point 1). `null` ⇒ repli sur [allSubfoldersLabel] ⇒ rendu strictement
+  /// inchangé.
   ///
   /// **Deux surfaces, deux questions — c'est le défaut corrigé.**
   /// [allSubfoldersLabel] servait indistinctement :
@@ -478,8 +474,8 @@ class ZSubfolderNavSpec {
   /// [ZSubfolderSurface.maybeOf].
   final String? rootItemLabel;
 
-  /// Glyphe **injecté** de tête de la ligne racine (CR-IFFD-46, point 1, par
-  /// symétrie avec [rootItemLabel]). `null` ⇒ **absent de l'arbre** (AD-4).
+  /// Glyphe **injecté** de tête de la ligne racine (point 1, par symétrie
+  /// avec [rootItemLabel]). `null` ⇒ **absent de l'arbre** (invariant AD-4).
   ///
   /// Même portée que [rootItemLabel] : les surfaces de LISTE, jamais le
   /// déclencheur. Il occupe la place que la pastille d'accent tient sur un
@@ -490,10 +486,10 @@ class ZSubfolderNavSpec {
   /// propre contenu et décide seul (le socle n'a alors rien à surimposer).
   final IconData? rootItemIcon;
 
-  /// Nombre MAXIMAL de lignes du libellé d'item (CR-IFFD-46, point 3).
+  /// Nombre MAXIMAL de lignes du libellé d'item (point 3).
   ///
   /// `null` (**défaut**) ⇒ rendu strictement inchangé : `Text` sans `maxLines`,
-  /// **sans** `Flexible` — donc exactement l'arbre d'avant CR-IFFD-46.
+  /// **sans** `Flexible` — donc exactement le rendu historique.
   /// Non-null ⇒ le libellé est autorisé à revenir à la ligne jusqu'à cette
   /// borne, puis s'abrège en `…` ([TextOverflow.ellipsis]).
   ///
@@ -553,24 +549,24 @@ class ZSubfolderNavSpec {
   /// feuille elle-même et les items restent dans la liste défilante.
   final int? itemMaxLines;
 
-  /// Constructeur d'item **injectable** (défaut : rangée neutre thémée, D3).
+  /// Constructeur d'item **injectable** (défaut : rangée neutre thémée).
   final ZSubfolderItemBuilder? itemBuilder;
 
-  /// Slot d'**action par item** de la feuille de fratrie (CR-IFFD-41, point 8).
+  /// Slot d'**action par item** de la feuille de fratrie (point 8).
   ///
-  /// **`null` ⇒ capacité ABSENTE** (AD-4) : aucun élément trailing dans l'arbre,
-  /// rendu strictement inchangé. Cf. [ZSubfolderItemActionBuilder] pour la
-  /// mesure qui a justifié un slot dédié plutôt qu'un détournement de
+  /// **`null` ⇒ capacité ABSENTE** (invariant AD-4) : aucun élément trailing
+  /// dans l'arbre, rendu strictement inchangé. Cf. [ZSubfolderItemActionBuilder]
+  /// pour la mesure qui a justifié un slot dédié plutôt qu'un détournement de
   /// [itemBuilder].
   final ZSubfolderItemActionBuilder? itemActionBuilder;
 
-  /// Titre **injecté** de la feuille de fratrie (CR-IFFD-41, point 4).
+  /// Titre **injecté** de la feuille de fratrie (point 4).
   ///
-  /// **`null` ⇒ slot ABSENT** (AD-4). C'est un LIBELLÉ : il ne peut donc PAS
-  /// être un token de thème (FR-26/NFR-S7 — un paquet ne code aucune chaîne, et
-  /// une chaîne visible relève de la l10n de l'hôte). Le préréglage « façon
-  /// IFFD » le fournit depuis `example/`, seul endroit du dépôt où une valeur
-  /// décorative est admise.
+  /// **`null` ⇒ slot ABSENT** (invariant AD-4). C'est un LIBELLÉ : il ne
+  /// peut donc PAS être un token de thème (invariant FR-26 — un paquet ne
+  /// code aucune chaîne, et une chaîne visible relève de la l10n de
+  /// l'hôte). Un exemple de préréglage le fournit depuis `example/`, seul
+  /// endroit du dépôt où une valeur décorative est admise.
   ///
   /// zcrud ne pose dessus qu'une **typographie dérivée** (`titleLarge`) —
   /// aucune couleur.
@@ -578,7 +574,7 @@ class ZSubfolderNavSpec {
 
   /// Surface de navigation SOUS le seuil de bascule (< 600 dp).
   ///
-  /// **Défaut : [ZSubfolderNarrowMode.selector]** (CR-IFFD-40) — changement de
+  /// **Défaut : [ZSubfolderNarrowMode.selector]** — changement de
   /// COMPORTEMENT par défaut, **sans rupture d'API** : un hôte qui veut la
   /// rangée de puces historique la redemande en une ligne
   /// (`narrowMode: ZSubfolderNarrowMode.compact`) et retrouve un rendu
@@ -589,25 +585,26 @@ class ZSubfolderNavSpec {
 
   /// En-tête **injecté** de la sidebar (titre de panneau, p. ex. « Sous-dossiers »).
   ///
-  /// **`null` ⇒ slot ABSENT** (AD-4) : rendu strictement inchangé par défaut.
+  /// **`null` ⇒ slot ABSENT** (invariant AD-4) : rendu strictement inchangé
+  /// par défaut.
   ///
   /// Rendu UNIQUEMENT par `ZSubfolderSidebar` à l'état **déployé**, sous le
   /// contrôle de repli. Il **disparaît automatiquement à l'état replié** (56 dp)
   /// et n'existe pas dans le sélecteur compact : c'est précisément la décision
   /// qu'un hôte ne peut PAS prendre proprement de l'extérieur sans s'abonner
-  /// lui-même à l'état `collapsed`, donc sans rejouer une logique détenue par le
-  /// widget (CR-IFFD-30).
+  /// lui-même à l'état `collapsed`, donc sans rejouer une logique détenue par
+  /// le widget.
   ///
   /// Il vit dans la spec (et non en paramètre de `ZSubfolderSidebar`) pour
   /// traverser la façade `ZStudyFolderDetail`, qui instancie la sidebar
   /// elle-même : un paramètre de widget serait inatteignable pour l'hôte.
   ///
   /// zcrud ne pose AUCUN style dessus (ni typographie, ni gouttière, ni couleur
-  /// — FR-26) : l'hôte fournit un widget déjà habillé.
+  /// — invariant FR-26) : l'hôte fournit un widget déjà habillé.
   final Widget? sidebarHeader;
 
   /// Action d'ajout d'un sous-dossier. `null` ⇒ bouton « Ajouter » ABSENT
-  /// (AD-4), dans la sidebar comme dans le sélecteur compact (AC13).
+  /// (invariant AD-4), dans la sidebar comme dans le sélecteur compact.
   final VoidCallback? addAction;
 
   /// Libellé a11y/tooltip **injecté** du bouton « Ajouter » (repli : néant, le
@@ -619,12 +616,11 @@ class ZSubfolderNavSpec {
   /// widget — un `IconData` conventionnel, jamais un libellé).
   final IconData? addIcon;
 
-  /// **Où** l'affordance d'ajout est offerte sur la barre de sélection
-  /// (CR-IFFD-44, manque 1).
+  /// **Où** l'affordance d'ajout est offerte sur la barre de sélection.
   ///
   /// Défaut [ZSubfolderAddPlacement.barAndSheet] ⇒ **rendu strictement
   /// inchangé** pour tout hôte existant. Sans effet quand [addAction] est
-  /// `null` (aucune affordance nulle part, AD-4) ni hors de
+  /// `null` (aucune affordance nulle part, invariant AD-4) ni hors de
   /// [ZSubfolderNarrowMode.selector] — voir [ZSubfolderAddPlacement].
   final ZSubfolderAddPlacement addPlacement;
 
@@ -676,24 +672,22 @@ class ZSubfolderNavSpec {
 
   /// Callback **injecté** notifié à chaque redimensionnement stabilisé (fin de
   /// drag) avec la largeur **clampée**. **Aucune I/O dans le widget** : la
-  /// persistance (SharedPreferences/fichier/repo) est du ressort de l'hôte
-  /// (AC10).
+  /// persistance (SharedPreferences/fichier/repo) est du ressort de l'hôte.
   final ValueChanged<double>? onSidebarWidthChanged;
 
-  /// CR-IFFD-45 — **pilotage externe optionnel** de la sélection de fratrie
-  /// (patron `ZDisplayState` de `zcrud_core`, cf.
-  /// [ZSubfolderSelectionController]).
+  /// **Pilotage externe optionnel** de la sélection de fratrie (patron
+  /// `ZDisplayState` de `zcrud_core`, cf. [ZSubfolderSelectionController]).
   ///
-  /// * `null` (**défaut**) ⇒ la sélection vit dans `ZStudyFolderDetail` comme
-  ///   avant cette CR : rendu, cycle de vie et rebuilds **strictement
-  ///   inchangés** (AD-4) ;
+  /// * `null` (**défaut**) ⇒ la sélection vit dans `ZStudyFolderDetail` :
+  ///   rendu, cycle de vie et rebuilds **strictement inchangés** (invariant
+  ///   AD-4) ;
   /// * non-null ⇒ **le contrôleur EST la source de vérité**. La page ne garde
   ///   aucun miroir : la barre, la sidebar, le corps Matériel filtré et le
   ///   second chemin de l'hôte commandent tous le **même et unique** état.
   ///
   /// **PRÉCÉDENCE tranchée — le contrôleur PRIME sur
   /// `ZStudyFolderDetail.initialSelectedSubfolderId`, qui est alors IGNORÉ.**
-  /// C'est la clause 2 du patron appliquée sans exception : recopier l'amorce
+  /// C'est la clause 2 du patron : recopier l'amorce
   /// de la page dans le contrôleur reviendrait à ce que le socle **écrive**
   /// dans l'état de l'hôte au montage — donc à écraser, sans qu'il l'ait
   /// demandé, une sélection que l'hôte a pu restaurer d'un lien profond ou
@@ -709,8 +703,8 @@ class ZSubfolderNavSpec {
   /// lieu de l'industrialiser.
   final ZSubfolderSelectionController? selectionController;
 
-  /// CR-IFFD-45 — **notification** de changement de sélection (`null` = item
-  /// racine). `null` ⇒ capacité absente (AD-4), aucun listener installé.
+  /// **Notification** de changement de sélection (`null` = item racine).
+  /// `null` ⇒ capacité absente (invariant AD-4), aucun listener installé.
   ///
   /// C'est le pendant *observation* de [selectionController] : l'hôte qui n'a
   /// pas besoin de **commander** a tout de même besoin de **savoir** (clause 3

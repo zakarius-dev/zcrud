@@ -104,24 +104,23 @@ const double kZDefaultFlashcardAccentHeight =
 /// complète est `'$kZFlashcardTypeGradientKeyPrefix<type.name>'`.
 const String kZFlashcardTypeGradientKeyPrefix = 'flashcard.type.';
 
-/// Cible tactile minimale (AD-13/NFR-S6).
+/// Cible tactile minimale (invariant AD-13).
 const double _kMinTapTarget = 48.0;
 
 /// Teinte de type **LISIBLE** pour un premier plan (texte, glyphe) — dérivée
 /// de la couleur primaire du type par transformation HSL, **jamais** une
-/// couleur nouvelle (CR-IFFD-57, « non mesuré » n°1).
+/// couleur nouvelle.
 ///
-/// Port du `adjustTagColor` legacy IFFD (`flashcard_widgets.dart:32-58`),
-/// appliqué ici aux premiers plans TEINTÉS PAR LE TYPE : le legacy peignait le
-/// libellé de pied en `primaryColor` BRUT — mesuré chez nous à **2,30:1** sur
-/// thème clair (`#4facfe` sur blanc), sous le plancher WCAG AA (4,5:1) que la
-/// garde de contraste du package impose à tout ce qui est peint. La saturation
-/// est bornée en bas (≥ 0.4, la teinte reste identifiable) et la clarté est
-/// ramenée dans la fenêtre lisible de la luminosité courante (0.25-0.45 en
-/// clair, 0.55-0.75 en sombre). Les FONDS décoratifs (tuile à 15 %, pastille
-/// à 10 %) gardent la couleur brute — seul le premier plan est ajusté.
+/// Appliquée aux premiers plans TEINTÉS PAR LE TYPE : peindre le libellé de
+/// pied en `primaryColor` BRUT mesure **2,30:1** sur thème clair (`#4facfe`
+/// sur blanc), sous le plancher WCAG AA (4,5:1) que la garde de contraste du
+/// package impose à tout ce qui est peint. La saturation est bornée en bas
+/// (≥ 0.4, la teinte reste identifiable) et la clarté est ramenée dans la
+/// fenêtre lisible de la luminosité courante (0.25-0.45 en clair, 0.55-0.75
+/// en sombre). Les FONDS décoratifs (tuile à 15 %, pastille à 10 %) gardent
+/// la couleur brute — seul le premier plan est ajusté.
 ///
-/// ## CR-IFFD-64 — la fenêtre HSL ne GARANTIT rien, [surface] la garantit
+/// ## La fenêtre HSL ne GARANTIT rien, [surface] la garantit
 ///
 /// Mesuré sur pièces : la fenêtre de clarté ci-dessus est une bande de
 /// **clarté HSL**, pas de **luminance relative WCAG**. Sur une couleur
@@ -136,8 +135,7 @@ const double _kMinTapTarget = 48.0;
 /// **Rendu INCHANGÉ sur le jeu fermé des quatre types** : leurs contrastes
 /// mesurés valent 5.28 à 9.59 en clair et 7.49 à 13.00 en sombre — tous
 /// au-dessus de [kZTextMinContrast], donc la correction ne s'y applique pas et
-/// les quatre sorties RVB restent bit-identiques (garde
-/// `cr_iffd64_readable_tint_test.dart`).
+/// les quatre sorties RVB restent bit-identiques (garde dédiée).
 ///
 /// `surface == null` ⇒ comportement legacy STRICT, **sans garantie** : la
 /// fonction ne peut pas deviner la surface, et fabriquer une surface de repli
@@ -172,7 +170,7 @@ Color zReadableTypeTint(
 }
 
 /// Carte de flashcard **par défaut** du socle — autonome, sur le modèle
-/// [ZFlashcard] (CR-IFFD-47 ; rendu de référence CR-IFFD-57).
+/// [ZFlashcard] (rendu de référence).
 ///
 /// ```dart
 /// ZDefaultFlashcardCard(
@@ -246,7 +244,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// Activation de la zone de balises **vide** (ex. ouvrir l'éditeur de tags).
   ///
   /// `null` ⇒ l'appel à l'action reste **affiché** mais n'est pas un bouton
-  /// (AD-45 : pas de bouton inerte). Sans effet si [emptyTagsLabel] est `null`.
+  /// (invariant AD-4 : pas de bouton inerte). Sans effet si [emptyTagsLabel] est `null`.
   final VoidCallback? onTagsTap;
 
   /// Palette **INJECTÉE** bornant la clé d'accent (patron [ZTagChips]).
@@ -258,16 +256,16 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// (`card.type.name`) et l'axe TYPE ([typeColors] et sa chaîne) gouverne les
   /// surfaces colorées. **Non-null** ⇒ choix d'identité EXPLICITE de l'hôte :
   /// il PRIME l'axe type sur la bande, la tuile et la pastille (préséance
-  /// arbitrée CR-IFFD-57, cf. dartdoc de bibliothèque).
+  /// arbitrée, cf. dartdoc de bibliothèque).
   final String? colorKey;
 
-  /// Dégradés par type **INJECTÉS** (paramètre — l'axe TYPE, CR-IFFD-57).
+  /// Dégradés par type **INJECTÉS** (paramètre — l'axe TYPE).
   ///
-  /// Clé = `ZFlashcardType.name` opaque. Priorité de résolution (patron
-  /// `formatColors` CR-55/56, chaîne TOTALE — AD-10) :
+  /// Clé = `ZFlashcardType.name` opaque. Priorité de résolution (chaîne
+  /// TOTALE, invariant AD-10) :
   /// **ce paramètre** > jeton `ZcrudTheme.flashcardTypeGradients` > seam
   /// `ZcrudScope.gradientResolver` (clé `flashcard.type.<type.name>` — la
-  /// couture VIS existante, jamais un second mécanisme) >
+  /// couture EXISTANTE, jamais un second mécanisme) >
   /// [ZFlashcardCardReference.typeGradients] > accent uni dérivé de l'axe
   /// identité (clé de type inconnue de TOUTE la chaîne).
   final Map<String, ZGradientSpec>? typeColors;
@@ -275,28 +273,27 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// Glyphe de la tuile d'icône. `null` ⇒ [ZFlashcardCardReference.glyph].
   final IconData? icon;
 
-  /// Rendu de l'énoncé **INJECTABLE** (**CR-IFFD-59**) — l'hôte qui veut SON
-  /// moteur fournit ici son builder ; il gouverne AUSSI l'aperçu de réponse
-  /// (« l'aperçu riche suit le même rendu que l'énoncé »).
+  /// Rendu de l'énoncé **INJECTABLE** — l'hôte qui veut SON moteur fournit
+  /// ici son builder ; il gouverne AUSSI l'aperçu de réponse (« l'aperçu
+  /// riche suit le même rendu que l'énoncé »).
   ///
   /// `null` (défaut) ⇒ **rendu RICHE** par [ZFlashcardMarkdownContent]
   /// (markdown + LaTeX, `zcrud_flashcard` → `zcrud_markdown`, dépendances déjà
-  /// déclarées — AD-1 : aucune arête nouvelle). Un simple `Text` tronquait
-  /// silencieusement l'information mathématique — le point le plus grave du
-  /// tableau de la CR. Le style de référence (13/w600) est appliqué au défaut ;
-  /// un builder fourni porte son propre style.
+  /// déclarées — invariant AD-1 : aucune arête nouvelle). Un simple `Text`
+  /// tronquerait silencieusement l'information mathématique. Le style de
+  /// référence (13/w600) est appliqué au défaut ; un builder fourni porte
+  /// son propre style.
   ///
-  /// Remplace `questionMaxLines` (v0.46) : le rendu riche n'a pas de notion
-  /// de ligne — la borne legacy est une HAUTEUR ([questionMaxHeight]).
+  /// Le rendu riche n'a pas de notion de ligne — la borne de référence est
+  /// une HAUTEUR ([questionMaxHeight]), pas un nombre de lignes.
   final ZFlashcardContentBuilder? questionBuilder;
 
-  /// Hauteur maximale de l'énoncé (**CR-IFFD-59**, legacy
-  /// `kToolbarHeight × 0.65`). Défaut :
+  /// Hauteur maximale de l'énoncé. Défaut :
   /// [ZFlashcardCardReference.questionMaxHeight].
   final double questionMaxHeight;
 
   /// Étendue du **fondu de continuation** peint au bas de l'énoncé **quand il
-  /// déborde réellement** [questionMaxHeight] (**CR-IFFD-62 ③**).
+  /// déborde réellement** [questionMaxHeight].
   ///
   /// Défaut : [ZFlashcardCardReference.questionFadeExtent] (12 dp). `0` ⇒
   /// aucun fondu — l'énoncé est simplement écrêté, c'est-à-dire **exactement**
@@ -315,16 +312,15 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// carte porte l'énoncé INTÉGRAL (AD-13).
   final double questionFadeExtent;
 
-  /// Aperçu de réponse **en MODE** (**CR-IFFD-59** — le `isInGrid` legacy).
+  /// Aperçu de réponse **en MODE** (mode surface, ex. rail de sections).
   ///
-  /// `false` (défaut) ⇒ aperçu **ABSENT** (AD-4) — le rail de sections ne
-  /// l'affiche pas. `true` ⇒ `Divider` (hauteur
+  /// `false` (défaut) ⇒ aperçu **ABSENT** (invariant AD-4) — le rail de
+  /// sections ne l'affiche pas. `true` ⇒ `Divider` (hauteur
   /// [ZFlashcardCardReference.answerDividerHeight]) puis aperçu **teinté par
   /// type** : tampon « Vrai »/« Faux » pour `trueOrFalse` ([answerLabels]),
-  /// liste des choix (✓/✕) pour `multipleChoice` (fidélité legacy — leur code
-  /// dit plus que leur CR), réponse riche sinon. Une carte SANS donnée de
-  /// réponse (`answer`/`isTrue`/`choices` absents) ne rend NI divider NI
-  /// aperçu — jamais une donnée fabriquée (AD-10).
+  /// liste des choix (✓/✕) pour `multipleChoice`, réponse riche sinon. Une
+  /// carte SANS donnée de réponse (`answer`/`isTrue`/`choices` absents) ne
+  /// rend NI divider NI aperçu — jamais une donnée fabriquée (invariant AD-10).
   final bool showAnswerPreview;
 
   /// Libellés LOCALISÉS **INJECTÉS** du tampon Vrai/Faux (FR-26 — patron
@@ -337,10 +333,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   final Widget? trailing;
 
   /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ carte non
-  /// interactive (AD-45 — aucun `InkWell` inerte).
+  /// interactive (invariant AD-4 — aucun `InkWell` inerte).
   final VoidCallback? onTap;
 
-  /// Appui long (menu contextuel). `null` ⇒ capacité **ABSENTE** (AD-4).
+  /// Appui long (menu contextuel). `null` ⇒ capacité **ABSENTE** (invariant AD-4).
   final VoidCallback? onLongPress;
 
   /// Libellé sémantique de la carte entière. Repli : l'énoncé.
@@ -358,7 +354,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// `scaffoldBackgroundColor` de l'hôte (jamais un hex — FR-26).
   final Color? backgroundColor;
 
-  /// Hauteur FIXE de la carte (**CR-IFFD-57**, legacy `SizedBox(height: 200)`).
+  /// Hauteur FIXE de la carte.
   ///
   /// Défaut : [ZFlashcardCardReference.cardHeight] (200) — c'est la hauteur
   /// fixe qui rend la grille et le rail **réguliers** (toutes les cartes d'une
@@ -369,7 +365,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   /// débordement par construction.
   final double? height;
 
-  /// Alignement VERTICAL du contenu **dans le cadre** (**CR-IFFD-62 ②/④/⑤**).
+  /// Alignement VERTICAL du contenu **dans le cadre**.
   ///
   /// `null` ⇒ jeton `ZcrudTheme.studyCardContentAlignment`, puis la RÉFÉRENCE
   /// [ZFlashcardCardReference.contentAlignment] (`spread` : l'énoncé absorbe
@@ -401,21 +397,20 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     );
   }
 
-  /// Dégradé de l'axe TYPE — chaîne de résolution CR-IFFD-57 (cf. [typeColors]).
+  /// Dégradé de l'axe TYPE — chaîne de résolution (cf. [typeColors]).
   ///
   /// `null` ⇒ clé de type inconnue de TOUTE la chaîne, OU [colorKey] explicite
   /// (l'identité prime) : les surfaces replient sur l'accent uni.
   ZGradientSpec? _typeSpec(BuildContext context) {
     final String typeName = card.type.name;
-    // Préséance arbitrée (les DEUX axes posés ensemble — CR-IFFD-57) :
+    // Préséance arbitrée (les DEUX axes posés ensemble) :
     // 1. [typeColors] EXPLICITE pour ce type : le paramètre SPÉCIFIQUE à la
     //    surface gagne toujours — même face à un [colorKey] explicite.
     final ZGradientSpec? explicit = typeColors?[typeName];
     if (explicit != null) return explicit;
     // 2. [colorKey] EXPLICITE (sans entrée [typeColors]) : choix d'identité de
-    //    l'hôte — il prime les DÉFAUTS de l'axe type (jeton, seam, référence),
-    //    ce qui préserve exactement le rendu v0.42-v0.45 de ces hôtes. Sans
-    //    colorKey, les deux axes coïncident par construction (l'accent
+    //    l'hôte — il prime les DÉFAUTS de l'axe type (jeton, seam, référence).
+    //    Sans colorKey, les deux axes coïncident par construction (l'accent
     //    d'identité dérive de `card.type.name`) : aucun conflit mesurable.
     if (colorKey != null) return null;
     return ZcrudTheme.of(context).flashcardTypeGradients?[typeName] ??
@@ -432,8 +427,8 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     final ThemeData material = Theme.of(context);
     final ZColorPair pair = _identityPair(context);
     final ZGradientSpec? spec = _typeSpec(context);
-    // Couleur « primaire » du type : la PREMIÈRE couleur du dégradé (legacy :
-    // `gradientColors[0]`), repli sur l'accent d'identité (chaîne totale).
+    // Couleur « primaire » du type : la PREMIÈRE couleur du dégradé
+    // (`gradientColors[0]`), repli sur l'accent d'identité (chaîne totale).
     final Color primary = spec == null
         ? pair.color
         : (spec.gradient is LinearGradient
@@ -443,14 +438,14 @@ class ZDefaultFlashcardCard extends StatelessWidget {
 
     // Ombre douce de référence — REPLI sous les jetons `cardShadow*`
     // (`ZStudyToolsItemCard.defaultShadow`), rôle `shadow`, opacité par
-    // luminosité (0.06 clair / 0.2 sombre — legacy, scalaires de référence).
+    // luminosité (0.06 clair / 0.2 sombre, scalaires de référence).
     final bool isDark = material.brightness == Brightness.dark;
     // Premier plan teinté LISIBLE (texte/glyphe) — cf. [zReadableTypeTint] :
-    // la teinte brute mesurait 2,30:1 sur clair, sous le plancher AA.
-    // CR-IFFD-64 — la SURFACE réellement peinte sous ces premiers plans est
-    // passée : la fenêtre HSL seule ne borne pas le contraste (elle rendait
-    // 2.13:1 sur un jaune). Sur les quatre types de référence la correction ne
-    // mord pas (contrastes mesurés 5.28 à 13.00) : rendu bit-identique.
+    // la teinte brute mesure 2,30:1 sur clair, sous le plancher AA.
+    // La SURFACE réellement peinte sous ces premiers plans est passée : la
+    // fenêtre HSL seule ne borne pas le contraste (elle rendrait 2.13:1 sur
+    // un jaune). Sur les quatre types de référence la correction ne mord pas
+    // (contrastes mesurés 5.28 à 13.00) : rendu bit-identique.
     final Color cardSurface = backgroundColor ?? material.scaffoldBackgroundColor;
     final Color readable = zReadableTypeTint(
       primary,
@@ -475,14 +470,13 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     );
 
     final Widget cardWidget = ZStudyToolsItemCard(
-      // Chrome de référence CR-IFFD-57/59 (priorité paramètre > référence ;
-      // les couleurs sont des RÔLES ou DÉRIVÉES de la référence des dégradés,
-      // exception FR-26 encadrée).
+      // Chrome de référence (priorité paramètre > référence ; les couleurs
+      // sont des RÔLES ou DÉRIVÉES de la référence des dégradés, exception
+      // invariant FR-26 encadrée).
       borderRadius: corner,
-      // CR-IFFD-59 (complément owner) — liseré TEINTÉ PAR TYPE, très fin et
-      // léger (la bande épaisse de tête reste) : amélioration UX sur le
-      // `Colors.grey` legacy. Couleur DÉRIVÉE de la primaire du type (chaîne
-      // totale — jamais une couleur nouvelle), surchargeable par [borderSide].
+      // Liseré TEINTÉ PAR TYPE, très fin et léger (la bande épaisse de tête
+      // reste) : couleur DÉRIVÉE de la primaire du type (chaîne totale —
+      // jamais une couleur nouvelle), surchargeable par [borderSide].
       borderSide: borderSide ??
           BorderSide(
             color: primary.withValues(
@@ -504,24 +498,24 @@ class ZDefaultFlashcardCard extends StatelessWidget {
               : BoxDecoration(gradient: spec.gradient),
         ),
       ),
-      // ② + ③ Ligne d'EN-TÊTE de référence (CR-IFFD-59) : tuile d'icône ET
-      // zone de balises SUR LA MÊME LIGNE (+ le créneau d'actions de l'hôte,
-      // à la place du `more_horiz` legacy) — l'énoncé vient EN DESSOUS pleine
-      // largeur. C'est pourquoi la tuile ne passe PAS par `leading` (qui
-      // vivrait À CÔTÉ de toute la colonne) ni les actions par `trailing`.
+      // ② + ③ Ligne d'EN-TÊTE de référence : tuile d'icône ET zone de
+      // balises SUR LA MÊME LIGNE (+ le créneau d'actions de l'hôte) —
+      // l'énoncé vient EN DESSOUS pleine largeur. C'est pourquoi la tuile ne
+      // passe PAS par `leading` (qui vivrait À CÔTÉ de toute la colonne) ni
+      // les actions par `trailing`.
       aboveTitle: _buildHeaderRow(theme, primary, readable, tagsZone),
       // ④ Énoncé — [title] reste la SOURCE SÉMANTIQUE ; le rendu est RICHE
-      // (markdown + LaTeX) par défaut, borné à [questionMaxHeight] (legacy).
+      // (markdown + LaTeX) par défaut, borné à [questionMaxHeight].
       title: card.question,
       titleWidget: _buildQuestion(context),
-      // ⑤ Pied : aperçu de réponse EN MODE (divider + aperçu teinté par type,
-      // CR-IFFD-59) puis pastille de type — le type redit **en TEXTE**
-      // (AD-13 : la couleur n'est jamais le seul canal).
+      // ⑤ Pied : aperçu de réponse EN MODE (divider + aperçu teinté par
+      // type) puis pastille de type — le type redit **en TEXTE** (invariant
+      // AD-13 : la couleur n'est jamais le seul canal).
       belowSubtitle: _buildFooter(context, spec, primary, readable),
       onTap: onTap,
       onLongPress: onLongPress,
       semanticLabel: semanticLabel ?? card.question,
-      // CR-IFFD-62 ②/⑤ — la carte est construite en CONTRAINTES DESCENDANTES :
+      // La carte est construite en CONTRAINTES DESCENDANTES :
       // sous un cadre de hauteur (le sien, [height], ou celui d'un
       // `ZRailItem(height:)`/d'une cellule), le corps le REMPLIT et le pied
       // est poussé en bas. Priorité paramètre > jeton > référence (`spread`).
@@ -529,8 +523,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
           theme.studyCardContentAlignment ??
           ZFlashcardCardReference.contentAlignment,
     );
-    // CR-IFFD-57 (complément owner) — hauteur FIXE de référence (200,
-    // legacy `SizedBox(height: 200)`) : c'est elle qui rend grille et rail
+    // Hauteur FIXE de référence (200) : c'est elle qui rend grille et rail
     // réguliers. `height: null` EXPLICITE ⇒ hauteur intrinsèque ; sous des
     // contraintes serrées (cellule de grille), la contrainte du parent prime
     // (comportement `SizedBox` du SDK — la carte ne déborde pas sa cellule).
@@ -540,10 +533,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
         : SizedBox(height: fixedHeight, child: cardWidget);
   }
 
-  /// ② + ③ Ligne d'en-tête de référence (**CR-IFFD-59**) : tuile d'icône et
-  /// zone de balises **sur la même ligne** (l'énoncé vient en dessous, pleine
-  /// largeur) + le créneau [trailing] de l'hôte en fin de ligne (la place du
-  /// `more_horiz` legacy — sa sémantique est PRÉSERVÉE, patron CR-LEX-71).
+  /// ② + ③ Ligne d'en-tête de référence : tuile d'icône et zone de balises
+  /// **sur la même ligne** (l'énoncé vient en dessous, pleine largeur) + le
+  /// créneau [trailing] de l'hôte en fin de ligne — sa sémantique est
+  /// PRÉSERVÉE.
   Widget _buildHeaderRow(
     ZcrudTheme theme,
     Color primary,
@@ -564,14 +557,14 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       );
 
   /// ④ Énoncé — rendu RICHE par défaut ([questionBuilder] en surcharge),
-  /// borné en HAUTEUR ([questionMaxHeight], legacy `kToolbarHeight × 0.65`).
+  /// borné en HAUTEUR ([questionMaxHeight]).
   ///
-  /// Le débordement est ABSORBÉ **et SIGNALÉ** (CR-IFFD-62 ③) : la hauteur
-  /// rendue reste `min(contenu, borne)` — exactement le shrink-wrap du
-  /// défileur inerte qu'il remplace — mais un **fondu de continuation** est
-  /// peint sur les dernières [questionFadeExtent] dp **quand, et seulement
-  /// quand, le contenu déborde réellement**. Jamais un `RenderFlex overflowed`
-  /// par construction, jamais un contenu qui déborde la carte.
+  /// Le débordement est ABSORBÉ **et SIGNALÉ** : la hauteur rendue reste
+  /// `min(contenu, borne)` — la carte ne défile jamais elle-même — mais un
+  /// **fondu de continuation** est peint sur les dernières
+  /// [questionFadeExtent] dp **quand, et seulement quand, le contenu déborde
+  /// réellement**. Jamais un `RenderFlex overflowed` par construction, jamais
+  /// un contenu qui déborde la carte.
   Widget _buildQuestion(BuildContext context) {
     final ZFlashcardContentBuilder? custom = questionBuilder;
     final Widget content = custom != null
@@ -602,8 +595,8 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     );
   }
 
-  /// ⑤ Pied de carte : aperçu de réponse **en mode** (CR-IFFD-59) puis
-  /// pastille de type. Sans donnée de réponse, NI divider NI aperçu (AD-4).
+  /// ⑤ Pied de carte : aperçu de réponse **en mode** puis pastille de type.
+  /// Sans donnée de réponse, NI divider NI aperçu (invariant AD-4).
   Widget _buildFooter(
     BuildContext context,
     ZGradientSpec? spec,
@@ -641,12 +634,12 @@ class ZDefaultFlashcardCard extends StatelessWidget {
     );
   }
 
-  /// Aperçu de réponse **teinté par type** (CR-IFFD-59) — trois formes :
+  /// Aperçu de réponse **teinté par type** — trois formes :
   ///
   /// - `trueOrFalse` ⇒ **tampon** « Vrai »/« Faux » ([answerLabels], clés
-  ///   opaques) — vrai = teinte de type LISIBLE, faux = rôle `error` (le
-  ///   legacy peignait teal/rouge en dur ; l'information reste AUSSI en texte,
-  ///   AD-13). `isTrue` absent ⇒ aperçu ABSENT — jamais un « Faux » fabriqué
+  ///   opaques) — vrai = teinte de type LISIBLE, faux = rôle `error` (jamais
+  ///   de couleur codée en dur ; l'information reste AUSSI en texte,
+  ///   invariant AD-13). `isTrue` absent ⇒ aperçu ABSENT — jamais un « Faux » fabriqué
   ///   depuis `null` (écart assumé avec le legacy `isTrue ?? false`) ;
   /// - `multipleChoice` ⇒ liste des choix « ✓/✕ » (fidélité au CODE legacy,
   ///   qui dit plus que sa CR) — corrects en teinte de type, incorrects en
@@ -850,10 +843,10 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   }
 
   /// ⑤ Pastille de type de pied : point dégradé + libellé **en texte** teinté
-  /// par le type, sur un fond teinté à 10 % (référence CR-IFFD-57).
+  /// par le type, sur un fond teinté à 10 % (référence).
   ///
   /// Le point est **décoratif et MUET** ([ExcludeSemantics]) : l'information
-  /// est portée par le libellé texte, jamais par la couleur seule (AD-13).
+  /// est portée par le libellé texte, jamais par la couleur seule (invariant AD-13).
   Widget _buildTypePill(
     BuildContext context,
     ZGradientSpec? spec,
@@ -910,8 +903,8 @@ class ZDefaultFlashcardCard extends StatelessWidget {
                     // Taille depuis le thème (jamais un `fontSize:`
                     // littéral : a11y/`textScaler`) ; le premier plan est la
                     // teinte de type AJUSTÉE lisible ([zReadableTypeTint]) sur
-                    // le fond teinté à 10 % — le legacy peignait la couleur
-                    // brute, MESURÉE à 2,30:1 en clair (sous AA).
+                    // le fond teinté à 10 % — la couleur brute, non ajustée,
+                    // mesure 2,30:1 en clair (sous AA).
                     style: (Theme.of(context).textTheme.labelSmall ??
                             const TextStyle())
                         .copyWith(
@@ -931,14 +924,14 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   static const ValueKey<String> accentKey =
       ValueKey<String>('zDefaultFlashcardCard_accent');
 
-  /// Clé de la tuile d'icône de tête (testabilité — CR-IFFD-57).
+  /// Clé de la tuile d'icône de tête (testabilité).
   static const ValueKey<String> iconTileKey =
       ValueKey<String>('zDefaultFlashcardCard_iconTile');
 
   /// Clé du point de type de la pastille de pied (testabilité).
   ///
-  /// CR-IFFD-57 : le point vit désormais DANS la pastille de pied (forme de
-  /// référence) — il n'y a plus de pastille d'en-tête.
+  /// Le point vit DANS la pastille de pied (forme de référence) — il n'y a
+  /// pas de pastille d'en-tête.
   static const ValueKey<String> typeDotKey =
       ValueKey<String>('zDefaultFlashcardCard_typeDot');
 
@@ -958,23 +951,23 @@ class ZDefaultFlashcardCard extends StatelessWidget {
   static const ValueKey<String> emptyTagsKey =
       ValueKey<String>('zDefaultFlashcardCard_emptyTags');
 
-  /// Clé de la ligne d'en-tête tuile + balises (testabilité — CR-IFFD-59).
+  /// Clé de la ligne d'en-tête tuile + balises (testabilité).
   static const ValueKey<String> headerRowKey =
       ValueKey<String>('zDefaultFlashcardCard_headerRow');
 
-  /// Clé de l'énoncé borné (testabilité — CR-IFFD-59).
+  /// Clé de l'énoncé borné (testabilité).
   static const ValueKey<String> questionKey =
       ValueKey<String>('zDefaultFlashcardCard_question');
 
-  /// Clé du `Divider` de l'aperçu de réponse (testabilité — CR-IFFD-59).
+  /// Clé du `Divider` de l'aperçu de réponse (testabilité).
   static const ValueKey<String> answerDividerKey =
       ValueKey<String>('zDefaultFlashcardCard_answerDivider');
 
-  /// Clé de l'aperçu de réponse (testabilité — CR-IFFD-59).
+  /// Clé de l'aperçu de réponse (testabilité).
   static const ValueKey<String> answerPreviewKey =
       ValueKey<String>('zDefaultFlashcardCard_answerPreview');
 
-  /// Clé du tampon « Vrai »/« Faux » (testabilité — CR-IFFD-59).
+  /// Clé du tampon « Vrai »/« Faux » (testabilité).
   static const ValueKey<String> stampKey =
       ValueKey<String>('zDefaultFlashcardCard_stamp');
 
@@ -983,7 +976,7 @@ class ZDefaultFlashcardCard extends StatelessWidget {
       ValueKey<String>('zDefaultFlashcardCard_stampLabel');
 }
 
-/// Rendu **RICHE par défaut** d'un contenu de carte (**CR-IFFD-59**) —
+/// Rendu **RICHE par défaut** d'un contenu de carte —
 /// [ZFlashcardMarkdownContent] (markdown + LaTeX) ADAPTÉ au chrome d'une
 /// carte, mesures à l'appui :
 ///

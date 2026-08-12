@@ -20,7 +20,7 @@
 /// offline-first (la clé reste lisible localement, contrairement à un
 /// `FieldValue.serverTimestamp()` qui exigerait un aller-retour serveur).
 ///
-/// ⚠️ **Ce n'est PAS une autorité temporelle commune.** Sans horloge corrigée
+/// **Ce n'est PAS une autorité temporelle commune.** Sans horloge corrigée
 /// injectée, le défaut de convergence subsiste : la couture rend le skew
 /// **atténuable et TESTABLE**, elle ne l'élimine pas par elle-même. Le
 /// remède complet (estampille serveur-autoritaire) est un choix d'architecture

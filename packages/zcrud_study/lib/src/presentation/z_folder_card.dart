@@ -40,12 +40,12 @@ import 'package:zcrud_core/zcrud_core.dart'
 /// carte activable ne descend jamais en dessous, quel que soit son contenu.
 const double kZFolderCardMinHeight = 48;
 
-/// Teinte de fond par défaut d'une carte de dossier — parité lex
+/// Teinte de fond par défaut d'une carte de dossier
 /// (`accent.withValues(alpha: 0.12)`). Dimension d'opacité (pas une couleur) :
-/// exposée pour rester ajustable sans coder de couleur en dur (FR-26).
+/// exposée pour rester ajustable sans coder de couleur en dur (invariant FR-26).
 const double kZFolderCardTintAlpha = 0.12;
 
-/// Flou par défaut de l'ombre de carte **personnalisée** (CR-IFFD-27).
+/// Flou par défaut de l'ombre de carte **personnalisée**.
 ///
 /// N'entre en jeu que si AU MOINS un des trois jetons `ZcrudTheme.cardShadow*`
 /// est fourni : sans aucun d'eux, la carte garde l'ombre native de `Card`
@@ -54,21 +54,21 @@ const double kZFolderCardTintAlpha = 0.12;
 /// une ombre visible, pas un flou nul invisible.
 const double kZCardShadowBlurRadius = 8;
 
-/// Décalage par défaut de l'ombre de carte personnalisée (CR-IFFD-27).
+/// Décalage par défaut de l'ombre de carte personnalisée.
 /// Voir [kZCardShadowBlurRadius] pour la règle d'activation.
 const Offset kZCardShadowOffset = Offset(0, 2);
 
 /// Opacité par défaut de l'ombre de carte personnalisée, appliquée à la
-/// couleur d'ombre du thème (CR-IFFD-27) — jamais une couleur (FR-26).
+/// couleur d'ombre du thème — jamais une couleur (invariant FR-26).
 /// Voir [kZCardShadowBlurRadius] pour la règle d'activation.
 const double kZCardShadowAlpha = 0.12;
 
 /// Diamètre de la pastille d'accent (dimension de LAYOUT — jamais une couleur).
-/// Parité lex (`14×14`).
+/// Valeur de référence (`14×14`).
 const double _kPastilleSize = 14;
 
 /// Seuil de largeur (dp) au-delà duquel [ZFolderCardFooterPlacement.adaptive]
-/// rend le bas de carte **côte à côte** (**CR-IFFD-68**). Mesuré sur la largeur
+/// rend le bas de carte **côte à côte**. Mesuré sur la largeur
 /// RÉELLEMENT offerte au bas de carte — padding interne déjà retranché, pas la
 /// largeur de la carte.
 ///
@@ -94,14 +94,14 @@ const double _kPastilleSize = 14;
 /// seul, qui peut calibrer le seuil.
 const double kZFolderCardFooterBesideMinWidth = 740;
 
-/// Carte d'un dossier d'étude dans une grille (SUF-2).
+/// Carte d'un dossier d'étude dans une grille.
 ///
 /// ```dart
 /// ZFolderCard(
 ///   title: 'Chapitre 3 — Valeur en douane',
 ///   colorKey: 'secondary',                 // opaque : résolue par le cœur/bridge
 ///   headerDecoration: myAccent,             // slot : remplace la pastille historique
-///   counts: const Text('42 cartes'),        // slot : compteur lex OU badges IFFD
+///   counts: const Text('42 cartes'),        // slot : compteur simple OU badges
 ///   menu: myFolderMenu,                      // slot : le widget ignore son contenu
 ///   isArchived: true,
 ///   archivedLabel: 'Archivé',                // INJECTÉ (jamais de littéral)
@@ -111,7 +111,7 @@ const double kZFolderCardFooterBesideMinWidth = 740;
 /// ```
 ///
 /// La carte est la **cellule** ; la grille adaptative est posée par l'appelant
-/// (`ZAdaptiveGrid.builder`, D5) — jamais réimplémentée ici.
+/// (`ZAdaptiveGrid.builder`) — jamais réimplémentée ici.
 class ZFolderCard extends StatelessWidget {
   /// Construit une carte de dossier ; seuls [title] et [colorKey] sont requis.
   const ZFolderCard({
@@ -140,18 +140,18 @@ class ZFolderCard extends StatelessWidget {
   });
 
   /// Titre du dossier — rendu sur **2 lignes ellipsées**, ancré en bas de la
-  /// cellule (patron anti-overflow lex, cf. [build]).
+  /// cellule (patron anti-overflow, cf. [build]).
   final String title;
 
   /// Clé de couleur **opaque** (`String`) résolue par [zResolveColorKeyOrSlot]
   /// (seam hôte `ZcrudScope.colorKeyResolver` prioritaire, sinon repli du cœur,
   /// sinon slot déterminé par [colorSlotIndex]). Le widget n'en connaît aucune
-  /// valeur ; la dérivation d'index reste **côté app/bridge** (D2).
+  /// valeur ; la dérivation d'index reste **côté app/bridge**.
   final String colorKey;
 
   /// Index de repli déterministe passé tel quel à [zResolveColorKeyOrSlot] :
   /// utilisé **seulement** si [colorKey] reste inconnue du resolver (couleur
-  /// contrastée distincte par index — AD-10).
+  /// contrastée distincte par index — invariant AD-10).
   final int colorSlotIndex;
 
   /// Décoration d'en-tête injectée. Lorsqu'elle est fournie, elle remplace
@@ -167,12 +167,11 @@ class ZFolderCard extends StatelessWidget {
   final Widget? topAccent;
 
   /// Contenu secondaire rendu **directement sous le [title]**, dans la même
-  /// colonne (**CR-IFFD-28**) : classement du dossier (matière, cours,
-  /// catégorie, client, projet), puce d'état, méta-information.
+  /// colonne : classement du dossier (matière, cours, catégorie, client,
+  /// projet), puce d'état, méta-information.
   ///
   /// **Contrat IDENTIQUE** à `ZStudyToolsItemCard.belowSubtitle` et
-  /// `ZStudyNoteCard.belowSubtitle` (CR-LEX-75) — même nom, même type, même
-  /// position (sous le bloc de titre, dans la colonne de contenu), même
+  /// `ZStudyNoteCard.belowSubtitle` — même nom, même type, même
   /// espacement (`gapS`), même traitement sémantique. C'est délibérément une
   /// EXTENSION du slot existant et **pas une variante** : l'incohérence entre
   /// cartes sœurs d'une même famille était précisément le défaut signalé.
@@ -189,7 +188,7 @@ class ZFolderCard extends StatelessWidget {
   /// rendrait seulement muet. Il n'est donc PAS traité comme [topAccent] /
   /// [footer], qui sont, eux, des décors.
   ///
-  /// 📐 **Coût vertical NUL en cellule contrainte (CR-IFFD-37)** : le slot
+  /// 📐 **Coût vertical NUL en cellule contrainte** : le slot
   /// **participe** à la hauteur allouée au lieu de s'y **ajouter**. Livré, il
   /// était correct… et inutilisable à densité réelle — une grille en
   /// `childAspectRatio: itemWidth / 210` débordait sur *chaque* carte, quand le
@@ -201,9 +200,9 @@ class ZFolderCard extends StatelessWidget {
   /// `null` ⇒ **rendu strictement inchangé** (aucun nœud, aucun espacement).
   final Widget? belowSubtitle;
 
-  /// Slot compteur/badges rendu **verbatim**, ancré en bas (superset lex
-  /// compteur / IFFD badges — D3). `null` ⇒ **absent** de l'arbre (aucun espace
-  /// réservé). Le widget n'en interprète jamais le contenu.
+  /// Slot compteur/badges rendu **verbatim**, ancré en bas. `null` ⇒
+  /// **absent** de l'arbre (aucun espace réservé). Le widget n'en interprète
+  /// jamais le contenu.
   final Widget? counts;
 
   /// Slot de pied rendu sous le contenu. Par défaut il partage la même ligne
@@ -211,20 +210,20 @@ class ZFolderCard extends StatelessWidget {
   /// reste donc visible et n'est jamais remplacé. `null` ⇒ aucun espace
   /// réservé.
   ///
-  /// Voir [footerPlacement] pour l'**empiler sous** [counts] (**CR-IFFD-68**).
+  /// Voir [footerPlacement] pour l'**empiler sous** [counts].
   final Widget? footer;
 
   /// DISPOSITION du bas de carte : [counts] et [footer] côte à côte, empilés,
-  /// ou adaptatif (**CR-IFFD-68**).
+  /// ou adaptatif.
   ///
-  /// **Le défaut mesuré qui a fait exister ce slot** : les deux créneaux
-  /// étaient assemblés dans une même `Row`, chacun en `Expanded` — donc chacun
-  /// à la MOITIÉ de la largeur, sans aucun réglage pour en sortir. Mesuré chez
-  /// IFFD : une carte à quatre badges de compteur n'en montrait plus que
-  /// **deux**, et le pied venait s'accoler au dernier badge visible. Le seul
-  /// contournement possible était de recomposer soi-même le créneau [counts] —
-  /// ce qui **rend le rendu des badges à l'hôte**, donc lui fait perdre le
-  /// plancher de contraste garanti par `ZDefaultFolderCard` (CR-IFFD-64).
+  /// **Le défaut mesuré qui a fait exister ce slot** : sans lui, les deux
+  /// créneaux sont assemblés dans une même `Row`, chacun en `Expanded` — donc
+  /// chacun à la MOITIÉ de la largeur, sans aucun réglage pour en sortir. Une
+  /// carte à quatre badges de compteur n'en montre alors plus que **deux**,
+  /// et le pied vient s'accoler au dernier badge visible. Le seul
+  /// contournement possible serait de recomposer soi-même le créneau
+  /// [counts] — ce qui **rend le rendu des badges à l'hôte**, donc lui fait
+  /// perdre le plancher de contraste garanti par `ZDefaultFolderCard`.
   ///
   /// Priorité : ce paramètre > le jeton `ZcrudTheme.folderCardFooterPlacement`
   /// > [ZFolderCardFooterPlacement.beside] (rendu **historique** de la
@@ -247,7 +246,7 @@ class ZFolderCard extends StatelessWidget {
   /// doit rester atteignable au lecteur d'écran (patron `ZStudyToolsItemCard`).
   final Widget? menu;
 
-  /// Libellé du badge « Archivé » **INJECTÉ** (l10n) — jamais un littéral (D4).
+  /// Libellé du badge « Archivé » **INJECTÉ** (l10n) — jamais un littéral.
   /// Le badge n'apparaît que si [isArchived] **et** `archivedLabel != null`.
   final String? archivedLabel;
 
@@ -256,7 +255,7 @@ class ZFolderCard extends StatelessWidget {
   final bool isArchived;
 
   /// Activation principale. `null` **avec** [onLongPress] `null` ⇒ carte non
-  /// interactive : **aucun** `InkWell`, pas de rôle `button` (AD-45).
+  /// interactive : **aucun** `InkWell`, pas de rôle `button` (invariant AD-4).
   final VoidCallback? onTap;
 
   /// Activation par appui long (ex. feuille d'actions). Voir [onTap] pour la
@@ -269,23 +268,23 @@ class ZFolderCard extends StatelessWidget {
   final String? semanticLabel;
 
   /// Opacité de la teinte de fond dérivée de l'accent. Dimension d'opacité, pas
-  /// une couleur (FR-26).
+  /// une couleur (invariant FR-26).
   ///
-  /// Priorité : ce slot > le jeton `ZcrudTheme.cardTintAlpha` (**CR-IFFD-27** :
-  /// il n'était lu par aucun widget) > [kZFolderCardTintAlpha] (`0.12`, parité
-  /// lex). `null` **et** jeton absent ⇒ **rendu strictement inchangé**.
+  /// Priorité : ce slot > le jeton `ZcrudTheme.cardTintAlpha` >
+  /// [kZFolderCardTintAlpha] (`0.12`, valeur de référence). `null` **et**
+  /// jeton absent ⇒ **rendu strictement inchangé**.
   ///
-  /// **`tintAlpha: 0` ne rend plus la carte TRANSPARENTE** (**CR-IFFD-29**).
-  /// `0` exprimait « pas de teinte » ; le widget en faisait
-  /// `accent.withValues(alpha: 0)`, donc une carte à travers laquelle on voyait
-  /// le fond d'écran — jamais « carte de surface normale ». Une valeur ≤ 0 (ou
-  /// > 1, clampée) fait désormais retomber la couleur de fond sur
-  /// `CardThemeData.color` du thème de l'hôte, et à défaut sur le défaut
-  /// Material de `Card` (surface opaque) — **jamais** sur du transparent.
+  /// **`tintAlpha: 0` ne rend pas la carte TRANSPARENTE.** `0` exprime « pas
+  /// de teinte » ; en faire `accent.withValues(alpha: 0)` produirait une
+  /// carte à travers laquelle on voit le fond d'écran — jamais « carte de
+  /// surface normale ». Une valeur ≤ 0 (ou > 1, clampée) fait retomber la
+  /// couleur de fond sur `CardThemeData.color` du thème de l'hôte, et à
+  /// défaut sur le défaut Material de `Card` (surface opaque) — **jamais**
+  /// sur du transparent.
   ///
-  /// C'est le motif déjà retenu deux fois par le socle sur `shape`
-  /// (CR-LEX-61) et sur `margin` (CR-LEX-73) : *ne pas imposer une décision que
-  /// le `CardTheme` exprime déjà*. Les deux conventions de design coexistent —
+  /// C'est le motif déjà retenu deux fois par le socle sur `shape` et sur
+  /// `margin` : *ne pas imposer une décision que le `CardTheme` exprime
+  /// déjà*. Les deux conventions de design coexistent —
   /// carte teintée (le défaut, conservé) et carte neutre + accents (Material 3
   /// pour les surfaces de liste, et les interfaces denses où teinter chaque
   /// carte produit un damier) — et seule la seconde était inexprimable.
@@ -296,7 +295,7 @@ class ZFolderCard extends StatelessWidget {
   /// `CardTheme`.
   final double? tintAlpha;
 
-  /// Liseré du pourtour de la carte (**CR-IFFD-64**).
+  /// Liseré du pourtour de la carte.
   ///
   /// **Le manque que ce slot ferme** : la forme de la carte était construite
   /// sans `side:`, et aucun jeton de bordure ne la visait — le liseré fin
@@ -308,31 +307,31 @@ class ZFolderCard extends StatelessWidget {
   /// pas un second.
   ///
   /// Priorité : ce slot > le jeton `ZcrudTheme.folderCardBorderSide` >
-  /// `CardThemeData.shape` de l'hôte (CR-LEX-61/73 : *ne pas imposer une
-  /// décision que le `CardTheme` exprime déjà*) > forme historique sans
-  /// bordure. `null` **et** jeton absent ⇒ **rendu strictement inchangé**.
+  /// `CardThemeData.shape` de l'hôte (*ne pas imposer une décision que le
+  /// `CardTheme` exprime déjà*) > forme historique sans bordure. `null`
+  /// **et** jeton absent ⇒ **rendu strictement inchangé**.
   final BorderSide? borderSide;
 
-  /// Rayon de la carte (**CR-IFFD-64**). Priorité : ce slot > le jeton
+  /// Rayon de la carte. Priorité : ce slot > le jeton
   /// `ZcrudTheme.folderCardRadius` > `CardThemeData.shape` de l'hôte > jeton
   /// `radiusM` (défaut historique). `null` partout ⇒ **rendu inchangé**.
   ///
-  /// Comme sur `ZStudyToolsItemCard` (CR-IFFD-56), fournir [borderSide] **ou**
+  /// Comme sur `ZStudyToolsItemCard`, fournir [borderSide] **ou**
   /// [borderRadius] fait construire une forme explicite : un slot explicite
   /// prime le thème.
   final Radius? borderRadius;
 
-  /// Padding interne de la carte (**CR-IFFD-64**). Priorité : ce slot > le
-  /// jeton `ZcrudTheme.folderCardContentPadding` > `EdgeInsetsDirectional.all`
+  /// Padding interne de la carte. Priorité : ce slot > le jeton
+  /// `ZcrudTheme.folderCardContentPadding` > `EdgeInsetsDirectional.all`
   /// de `gapM` (défaut historique).
   ///
   /// **Pourquoi il fallait un slot** : la référence pose **12**, et `gapM`
-  /// vaut **8** en thème nu — sans ce slot, la carte par défaut ne pouvait
+  /// vaut **8** en thème nu — sans ce slot, la carte par défaut ne pourrait
   /// atteindre la référence qu'en ridant `gapM` pour TOUT le sous-arbre
-  /// (exactement le défaut corrigé par CR-IFFD-61 ① sur `leadingGap`).
+  /// (même défaut que sur `leadingGap`).
   final EdgeInsetsGeometry? contentPadding;
 
-  /// Ombre de **REPLI** (**CR-IFFD-64**, patron `ZStudyToolsItemCard`) :
+  /// Ombre de **REPLI** (patron `ZStudyToolsItemCard`) :
   /// utilisée lorsqu'aucun des trois jetons `ZcrudTheme.cardShadow*` n'est
   /// fourni. Les jetons de l'hôte **PRIMENT** toujours — l'ombre de référence
   /// d'une carte par défaut ne rend jamais le canal d'ombre de l'hôte
@@ -347,20 +346,20 @@ class ZFolderCard extends StatelessWidget {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     final TextTheme textTheme = Theme.of(context).textTheme;
 
-    // D2/AD-10 — accent DÉRIVÉ, jamais codé en dur : seam total du cœur.
+    // Accent DÉRIVÉ, jamais codé en dur (invariant AD-10).
     final ZColorPair pair = zResolveColorKeyOrSlot(
       context,
       colorKey,
       slotIndex: colorSlotIndex,
     );
-    // Résolution UNIQUE du `CardTheme` (CR-IFFD-29) : la teinte, la forme et la
-    // marge en dépendent toutes les trois — en ajouter une seconde lecture
-    // ferait diverger les trois décisions.
+    // Résolution UNIQUE du `CardTheme` : la teinte, la forme et la marge en
+    // dépendent toutes les trois — en ajouter une seconde lecture ferait
+    // diverger les trois décisions.
     final CardThemeData cardTheme = CardTheme.of(context);
 
-    // CR-IFFD-27 (`cardTintAlpha` inerte) + CR-IFFD-29 (`0` ⇒ transparent).
-    // Priorité slot > jeton > défaut lex ; ≤ 0 ⇒ surface NEUTRE du `CardTheme`,
-    // jamais une carte transparente. `null` partout ⇒ rendu inchangé.
+    // Priorité slot > jeton > valeur de référence ; ≤ 0 ⇒ surface NEUTRE du
+    // `CardTheme`, jamais une carte transparente. `null` partout ⇒ rendu
+    // inchangé.
     final double resolvedTintAlpha =
         tintAlpha ?? theme.cardTintAlpha ?? kZFolderCardTintAlpha;
     final Color? tint = resolvedTintAlpha <= 0
@@ -390,7 +389,7 @@ class ZFolderCard extends StatelessWidget {
     // ExcludeSemantics : le texte du badge est DÉJÀ porté par le `label` du
     // nœud de la carte (repli enrichi) — le répéter le ferait annoncer deux
     // fois. Le badge reste visuellement présent. Construit UNE fois : les deux
-    // dispositions le posent au même endroit sémantique (CR-IFFD-68).
+    // dispositions le posent au même endroit sémantique.
     final Widget? archivedBadge = showArchived
         ? ExcludeSemantics(child: _ArchivedBadge(label: archivedLabel!))
         : null;
@@ -411,7 +410,7 @@ class ZFolderCard extends StatelessWidget {
       ],
     ];
 
-    // ── CR-IFFD-68 — DISPOSITION du bas de carte ─────────────────────────────
+    // ── DISPOSITION du bas de carte ──────────────────────────────────────
     // Priorité paramètre > jeton > défaut HISTORIQUE (`beside`) : un hôte qui
     // ne déclare rien rend exactement le pixel d'avant.
     final ZFolderCardFooterPlacement placement =
@@ -491,13 +490,13 @@ class ZFolderCard extends StatelessWidget {
       ),
     );
 
-    // CR-IFFD-28 — le sous-titre est ancré AU TITRE (donc suit l'ancrage bas du
-    // patron anti-overflow), pas au pied de carte. `null` ⇒ l'arbre reste
-    // exactement `titleText`, sans colonne ni espacement supplémentaires.
+    // Le sous-titre est ancré AU TITRE (donc suit l'ancrage bas du patron
+    // anti-overflow), pas au pied de carte. `null` ⇒ l'arbre reste exactement
+    // `titleText`, sans colonne ni espacement supplémentaires.
     //
-    // CR-IFFD-37 — le slot AJOUTAIT sa hauteur au lieu d'y PARTICIPER.
-    // Mesuré chez IFFD : `RenderFlex overflowed` dès 210 dp de cellule, alors
-    // que le MÊME texte composé dans [counts] tient — parce que [counts] vit
+    // Le slot doit PARTICIPER à la hauteur, jamais s'y AJOUTER.
+    // Mesuré : `RenderFlex overflowed` dès 210 dp de cellule, alors que le
+    // MÊME texte composé dans [counts] tient — parce que [counts] vit
     // dans une zone DÉJÀ BORNÉE (`Expanded`), là où cette colonne, sizée au
     // contenu et à enfants tous INFLEXIBLES, débordait la hauteur résiduelle
     // que l'`Align` lui prête. Gouverner l'espacement (`gapS`) ne pouvait pas
@@ -561,22 +560,22 @@ class ZFolderCard extends StatelessWidget {
       );
     }
 
-    // D6 / AC9 vs AC6 — deux régimes selon la hauteur DISPONIBLE, décidés par un
+    // Deux régimes selon la hauteur DISPONIBLE, décidés par un
     // `LayoutBuilder` (jamais un layout de grille : la grille reste posée par
-    // l'appelant, D5) :
+    // l'appelant) :
     //   • hauteur BORNÉE (cellule de `ZAdaptiveGrid.builder`, hauteur pilotée par
-    //     `itemHeight`) ⇒ patron anti-overflow lex : `Expanded(Align(bottomStart))`
+    //     `itemHeight`) ⇒ patron anti-overflow : `Expanded(Align(bottomStart))`
     //     absorbe la hauteur résiduelle, le titre est ancré EN BAS puis ellipsé
     //     ⇒ JAMAIS d'overflow (contrairement à un `Spacer` + hauteurs fixes).
     //   • hauteur NON BORNÉE (usage autonome / min-content) ⇒ colonne
     //     `MainAxisSize.min` sizée au contenu, plancher assuré par le
-    //     `ConstrainedBox(minHeight: kZFolderCardMinHeight)` (AD-13) — un
-    //     `Expanded` y lèverait « unbounded height ».
+    //     `ConstrainedBox(minHeight: kZFolderCardMinHeight)` (invariant
+    //     AD-13) — un `Expanded` y lèverait « unbounded height ».
     final Widget content = LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool bounded = constraints.maxHeight.isFinite;
         return Padding(
-          // CR-IFFD-64 — priorité slot > jeton > défaut historique (`gapM`).
+          // Priorité slot > jeton > défaut historique (`gapM`).
           padding:
               contentPadding ??
               theme.folderCardContentPadding ??
@@ -589,8 +588,7 @@ class ZFolderCard extends StatelessWidget {
               // menu aligné en fin (RTL-safe).
               Row(
                 children: <Widget>[
-                  // CR-IFFD-27 — `iconContainerRadius` n'était lu par AUCUN
-                  // widget. Il pilote désormais la silhouette de la pastille
+                  // `iconContainerRadius` pilote la silhouette de la pastille
                   // d'accent : `null` conserve le disque de 14 dp à l'identique
                   // (rendu strictement inchangé), une valeur fournie donne un
                   // carré aux coins arrondis de ce rayon. La TAILLE reste
@@ -642,9 +640,9 @@ class ZFolderCard extends StatelessWidget {
     // lorsqu'il en fournit une. La même instance est donnée au `Card` et à
     // l'`InkWell` pour que le clip et l'encre restent parfaitement cohérents.
     //
-    // CR-IFFD-64 — le LISERÉ devient atteignable, par le MÊME patron que la
-    // famille sœur (`ZStudyToolsItemCard`, CR-IFFD-19/56) : un slot explicite
-    // (`borderSide`/`borderRadius`) ou son jeton construit la forme ; sinon
+    // Le LISERÉ est atteignable par le MÊME patron que la famille sœur
+    // (`ZStudyToolsItemCard`) : un slot explicite (`borderSide`/
+    // `borderRadius`) ou son jeton construit la forme ; sinon
     // `CardThemeData.shape` de l'hôte prime, inchangé ; sinon le rayon `radiusM`
     // historique. Aucun de ces deux slots ⇒ arbre et pixel STRICTEMENT
     // identiques à l'historique.
@@ -660,14 +658,13 @@ class ZFolderCard extends StatelessWidget {
                 borderRadius: BorderRadius.all(theme.radiusM),
               );
 
-    // Même traitement pour la MARGE (CR-LEX-73). Elle était figée à
-    // `EdgeInsets.zero`, si bien que chaque hôte la restituait par un `Padding`
-    // externe — lex l'a fait, et signale que « tout autre hôte devra la
-    // réécrire ». C'est le motif E3 déjà corrigé sur `shape` (CR-LEX-61) : un
-    // widget qui impose une décision que le `CardTheme` exprime déjà force
-    // l'hôte à la déclarer deux fois. La CR demandait la correction sur les
-    // DEUX widgets porteurs du défaut, pour ne pas la voir réapparaître sur un
-    // troisième — `ZStudyToolsItemCard` porte la même.
+    // Même traitement pour la MARGE : un widget qui imposerait une marge
+    // figée à `EdgeInsets.zero` forcerait chaque hôte à la restituer par un
+    // `Padding` externe, dupliquant la déclaration au lieu de la lire depuis
+    // le `CardTheme`. Un hôte qui compense de la sorte doit RETIRER son
+    // `Padding` externe : sinon les deux marges s'additionnent. Même motif
+    // que sur `shape`, et même correction sur `ZStudyToolsItemCard` — pour ne
+    // pas laisser le défaut réapparaître sur une troisième carte.
     // Défaut inchangé : sans `CardTheme.margin`, la marge reste nulle.
     final EdgeInsetsGeometry cardMargin = cardTheme.margin ?? EdgeInsets.zero;
 
@@ -688,10 +685,9 @@ class ZFolderCard extends StatelessWidget {
             },
           );
 
-    // CR-IFFD-27 — ombre pilotée par les jetons `cardShadow*`. `null` (aucun
-    // jeton) ⇒ chemin d'arbre STRICTEMENT identique à l'historique.
-    // CR-IFFD-64 — les jetons de l'hôte PRIMENT le repli [defaultShadow]
-    // (patron `ZStudyToolsItemCard`, CR-IFFD-57).
+    // Ombre pilotée par les jetons `cardShadow*`. `null` (aucun jeton) ⇒
+    // chemin d'arbre STRICTEMENT identique à l'historique. Les jetons de
+    // l'hôte PRIMENT le repli [defaultShadow] (patron `ZStudyToolsItemCard`).
     final BoxDecoration? shadow =
         zResolveCardShadowDecoration(context, shape: shape) ?? defaultShadow;
 
@@ -758,12 +754,11 @@ class ZFolderCard extends StatelessWidget {
   }
 }
 
-/// Ombre de carte **personnalisée** dérivée des jetons `ZcrudTheme.cardShadow*`
-/// (**CR-IFFD-27**).
+/// Ombre de carte **personnalisée** dérivée des jetons `ZcrudTheme.cardShadow*`.
 ///
-/// Ces trois jetons étaient déclarés, présents dans `copyWith`, interpolés dans
-/// `lerp`… et lus par AUCUN widget : un hôte les réglait et rien ne changeait,
-/// sans le moindre signal. *Un jeton que personne ne lit est un jeton qui ment.*
+/// Ces trois jetons sont déclarés, présents dans `copyWith`, interpolés dans
+/// `lerp`, et lus ici par ce widget : un hôte qui les règle voit un effet
+/// observable. *Un jeton que personne ne lit est un jeton qui ment.*
 ///
 /// **Pourquoi `Card.elevation` ne suffit pas** : Material DÉRIVE le flou et le
 /// décalage de l'élévation, sans permettre de les fixer. Tout hôte migrant
@@ -776,11 +771,11 @@ class ZFolderCard extends StatelessWidget {
 /// qu'un seul est fourni, les deux autres retombent sur
 /// [kZCardShadowBlurRadius] / [kZCardShadowOffset] / [kZCardShadowAlpha] — des
 /// valeurs volontairement NON neutres, pour que chacun des trois jetons ait un
-/// effet observable **seul** (un flou nul rendrait `cardShadowAlpha` inerte,
-/// c'est-à-dire le défaut même que cette CR corrige).
+/// effet observable **seul** (un flou nul rendrait `cardShadowAlpha` inerte —
+/// exactement le défaut qu'un jeton non lu produirait).
 ///
 /// La couleur vient du thème (`CardThemeData.shadowColor`, sinon
-/// `ThemeData.shadowColor`) : aucune couleur codée en dur (FR-26).
+/// `ThemeData.shadowColor`) : aucune couleur codée en dur (invariant FR-26).
 BoxDecoration? zResolveCardShadowDecoration(
   BuildContext context, {
   required ShapeBorder shape,
@@ -810,10 +805,9 @@ BoxDecoration? zResolveCardShadowDecoration(
   return BoxDecoration(borderRadius: radius, boxShadow: <BoxShadow>[shadow]);
 }
 
-/// Badge discret « Archivé » — parité lex `_ArchivedBadge` en NEUTRE : fond
-/// `surfaceContainerHighest`, texte `onSurfaceVariant`, rayon `badgeRadius` du
-/// thème (repli `radiusM`).
-/// Aucune couleur codée en dur (FR-26). Rendu **conditionnellement** par
+/// Badge discret « Archivé », en NEUTRE : fond `surfaceContainerHighest`,
+/// texte `onSurfaceVariant`, rayon `badgeRadius` du thème (repli `radiusM`).
+/// Aucune couleur codée en dur (invariant FR-26). Rendu **conditionnellement** par
 /// [ZFolderCard] (jamais un badge muet).
 class _ArchivedBadge extends StatelessWidget {
   const _ArchivedBadge({required this.label});

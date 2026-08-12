@@ -130,12 +130,13 @@ class ZFlashcardGenerationController extends ChangeNotifier {
 
   bool _disposed = false;
 
-  /// Lance une génération (AC7/AC8). Anti-double-tap : ignoré si déjà `generating`.
+  /// Lance une génération. Anti-double-tap : ignoré si déjà `generating`.
   ///
-  /// [sourceResolvers] (CR-IFFD-70, additif — défaut `const []` : aucun appelant
+  /// [sourceResolvers] (additif — défaut `const []` : aucun appelant
   /// existant ne change) : résolveurs **à la demande** des sources sélectionnées,
   /// invoqués ICI — donc SOUS l'anti-double-tap et le jeton de fraîcheur — et
-  /// **jamais avant** (SM-1 : ouvrir la feuille ne résout rien). Chaque `Left`
+  /// **jamais avant** (objectif produit n°1 : ouvrir la feuille ne résout
+  /// rien). Chaque `Left`
   /// (fichier illisible…) ⇒ `failed` avec le message du `ZFailure`, saisie
   /// préservée, feuille utilisable (AD-5/AD-10) ; un throw d'hôte est capté
   /// comme celui du port. Les sources résolues sont apposées à la requête via

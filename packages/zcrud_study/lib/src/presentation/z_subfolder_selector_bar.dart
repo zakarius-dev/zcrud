@@ -1,24 +1,24 @@
 /// `ZSubfolderSelectorBar` — surface de navigation de sous-dossiers par DÉFAUT
-/// sur petit écran (CR-IFFD-40, **forme fixée par CR-IFFD-41**).
+/// sur petit écran.
 ///
-/// ## Le défaut corrigé (CR-IFFD-40, inchangé)
+/// ## Le défaut évité
 ///
-/// La rangée de puces défilante (`ZSubfolderCompactSelector`) répondait à
+/// Une rangée de puces défilante (`ZSubfolderCompactSelector`) répond à
 /// « lesquels existent ? » avant « **lequel est actif ?** » : après un seul
-/// balayage, la pastille sélectionnée sortait du champ visible et l'utilisateur
-/// perdait le « où suis-je ». Rien n'était inaccessible — c'est la perte de
-/// l'ÉTAT COURANT qui était le défaut.
+/// balayage, la pastille sélectionnée sortirait du champ visible et
+/// l'utilisateur perdrait le « où suis-je ». Rien ne serait inaccessible —
+/// c'est la perte de l'ÉTAT COURANT qui serait le défaut.
 ///
 /// Les trois propriétés qui comptent restent : surface **pleine largeur**, ligne
 /// unique ≥ 48 dp ; **élément courant** toujours affiché avec repli explicite
-/// sur [ZSubfolderNavSpec.allSubfoldersLabel] (AD-10) ; affordance d'ouverture
-/// **visible**.
+/// sur [ZSubfolderNavSpec.allSubfoldersLabel] (invariant AD-10) ; affordance
+/// d'ouverture **visible**.
 ///
-/// ## CR-IFFD-41 — la référence visuelle appartient à l'hôte IFFD
+/// ## La référence visuelle du socle
 ///
-/// **La feuille modale REMPLACE le déploiement en ligne de v0.34.0.** Ce
-/// n'est pas un ajout et ce n'est pas la correction d'un défaut : le
-/// propriétaire a tranché que la maquette d'IFFD est la référence du socle
+/// **La feuille modale REMPLACE un déploiement en ligne.** Ce n'est pas un
+/// ajout et ce n'est pas la correction d'un défaut : c'est un choix de design
+/// tranché par le propriétaire du produit, retenu comme référence du socle
 /// partagé. Voir [ZSubfolderNarrowMode.selector] pour la note de migration.
 ///
 /// ### STRUCTURE — codée dans le socle (identique pour tous les hôtes)
@@ -41,7 +41,7 @@
 /// | 6 | `subfolderSelectedEmphasis` | `highlight` (rendu historique) |
 ///
 /// **Sans préréglage, le rendu de ces quatre points est strictement inchangé** :
-/// aucune couleur, aucun glyphe, aucun libellé n'est figé ici (FR-26/NFR-S7).
+/// aucune couleur, aucun glyphe, aucun libellé n'est figé ici (invariant FR-26).
 ///
 /// **AD-2/AD-15** : la SÉLECTION reste détenue par le parent (tranche
 /// `ValueListenable` injectée) ; le seul état local est l'ouverture de la
@@ -112,7 +112,7 @@ class ZSubfolderSelectorBar extends StatefulWidget {
   );
 
   /// Clé stable de la **feuille modale** (ABSENTE de l'arbre tant qu'elle n'est
-  /// pas ouverte). Portée par la liste des items — conservée depuis CR-IFFD-40.
+  /// pas ouverte). Portée par la liste des items.
   static const Key panelKey = ValueKey<String>('suf3:selector:panel');
 
   /// Clé stable de la racine de la feuille (colonne titre + liste + pied).
@@ -128,12 +128,12 @@ class ZSubfolderSelectorBar extends StatefulWidget {
   /// `addAction` nul **ou** sous [ZSubfolderAddPlacement.barOnly].
   static const Key footerAddKey = ValueKey<String>('suf3:selector:sheet:add');
 
-  /// Clé stable de l'enveloppe de **marge extérieure** (CR-IFFD-44, manque 2) —
-  /// **ABSENTE de l'arbre** tant que `ZcrudTheme.subfolderBarPadding` est `null`.
+  /// Clé stable de l'enveloppe de **marge extérieure** — **ABSENTE de
+  /// l'arbre** tant que `ZcrudTheme.subfolderBarPadding` est `null`.
   static const Key barPaddingKey = ValueKey<String>('suf3:selector:padding');
 
   /// Clé stable de l'enveloppe de **marge extérieure de la FEUILLE**
-  /// (CR-IFFD-46, point 4) — **ABSENTE de l'arbre** tant que
+  /// (point 4) — **ABSENTE de l'arbre** tant que
   /// `ZcrudTheme.subfolderSheetPadding` est `null`.
   static const Key sheetPaddingKey = ValueKey<String>(
     'suf3:selector:sheet:padding',
@@ -191,8 +191,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   ///
   /// Repli sur [ZSubfolderNavSpec.allSubfoldersLabel], **jamais** sur
   /// `rootItemLabel` : « aucun filtre » se dit « tous les sous-dossiers », alors
-  /// que la ligne racine de la feuille désigne le CONTENEUR (CR-IFFD-46,
-  /// point 1). Aucun `rootIcon` non plus, pour la même raison.
+  /// que la ligne racine de la feuille désigne le CONTENEUR (point 1). Aucun
+  /// `rootIcon` non plus, pour la même raison.
   Widget _triggerContent(
     BuildContext context,
     ZSubfolderRef? refOrNull,
@@ -224,10 +224,10 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     final ZcrudTheme theme = ZcrudTheme.of(context);
     // Scope de mode posé AU-DESSUS de tout le sous-arbre d'items : un
     // `itemBuilder` injecté observe `compact` ici comme dans la rangée de puces
-    // — un builder existant rend donc à l'identique (CR-IFFD-31/CR-IFFD-40).
+    // — un builder existant rend donc à l'identique.
     return ZSubfolderLayoutScope(
       mode: ZSubfolderLayoutMode.compact,
-      // CR-IFFD-46, point 1 — second axe : la surface CONCRÈTE. Le déclencheur
+      // Point 1 — second axe : la surface CONCRÈTE. Le déclencheur
       // et la feuille posent le même `mode` (leurs contraintes de layout sont
       // les mêmes) mais des `surface` DIFFÉRENTES : c'est ce qui rend les deux
       // surfaces enfin discernables pour un `itemBuilder` injecté.
@@ -270,17 +270,16 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
       children: <Widget>[
         Expanded(child: trigger),
         // Slot d'ajout — MÊME capacité que la rangée de puces et que la sidebar
-        // (AD-4 : `addAction` null ⇒ bouton ABSENT de l'arbre).
-        // CR-IFFD-44 — …et son EMPLACEMENT est désormais adressable : sous
-        // `sheetOnly`, l'action reste offerte (pied de la feuille) mais le `+`
-        // quitte l'arbre.
+        // (invariant AD-4 : `addAction` null ⇒ bouton ABSENT de l'arbre).
+        // Son EMPLACEMENT est adressable : sous `sheetOnly`, l'action reste
+        // offerte (pied de la feuille) mais le `+` quitte l'arbre.
         if (widget.spec.addAction != null && widget.spec.addPlacement.inBar)
           _addButton(context, theme),
       ],
     );
-    // CR-IFFD-44, manque 2 — marge EXTÉRIEURE adressable. `null` ⇒ AUCUNE
-    // enveloppe dans l'arbre : la neutralité est littérale (même arbre, pas
-    // seulement « même apparence »), comme pour `_triggerChrome`.
+    // Marge EXTÉRIEURE adressable. `null` ⇒ AUCUNE enveloppe dans l'arbre :
+    // la neutralité est littérale (même arbre, pas seulement « même
+    // apparence »), comme pour `_triggerChrome`.
     if (padding == null) return row;
     return Padding(
       key: ZSubfolderSelectorBar.barPaddingKey,
@@ -362,24 +361,23 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   }
 
   /// Point 1 — habillage du déclencheur, piloté par un token NULLABLE ;
-  /// **CR-IFFD-60** : trois attributs COMPOSABLES (fond, bordure, élévation).
+  /// trois attributs COMPOSABLES (fond, bordure, élévation).
   ///
-  /// ## Précédence (contrat CR-IFFD-60, gardé par test)
+  /// ## Précédence (contrat gardé par test)
   ///
-  /// `subfolderTriggerVariant` reste l'API publiée (v0.36.0) et décide par
-  /// défaut ; les jetons `subfolderTriggerFill` / `subfolderTriggerBorder` /
+  /// `subfolderTriggerVariant` reste l'API publiée et décide par défaut ;
+  /// les jetons `subfolderTriggerFill` / `subfolderTriggerBorder` /
   /// `subfolderTriggerElevation` la **raffinent attribut par attribut** :
   /// fourni, un jeton PRIME sur ce que la variante décide pour SON attribut —
   /// et seulement pour lui ; `null`, la variante décide. Les trois attributs
-  /// effectifs se COMPOSENT (fond + bordure + relief ensemble — c'était
-  /// l'exclusivité dénoncée par la CR).
+  /// effectifs se COMPOSENT (fond + bordure + relief ensemble, sans
+  /// exclusivité entre eux).
   ///
   /// `flat` + aucun jeton effectif ⇒ [child] rendu **tel quel**, aucun élément
   /// supplémentaire dans l'arbre : neutralité littérale (même arbre, pas
-  /// seulement même apparence) — la garde CR-IFFD-41 reste tenue. Même chose
-  /// quand tous les attributs effectifs sont retirés explicitement
-  /// (`fill: none` sur une variante `filled`, etc.) : rien à peindre ⇒ rien
-  /// dans l'arbre.
+  /// seulement même apparence). Même chose quand tous les attributs effectifs
+  /// sont retirés explicitement (`fill: none` sur une variante `filled`,
+  /// etc.) : rien à peindre ⇒ rien dans l'arbre.
   ///
   /// ## Élévation : TONALE M3, jamais d'ombre portée (MESURÉ)
   ///
@@ -387,8 +385,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   /// **bord à bord** au-dessus du `TabBar` (écart mesuré : 0 dp) et la zone
   /// n'est PAS rognée : une `BoxShadow` descendante (blur 8, offset (0, 4))
   /// repeint réellement la bande du `TabBar` (mesuré au pixel : 796 pixels
-  /// modifiés sur 3 lignes échantillonnées, delta max 254/255 — la sonde
-  /// CR-IFFD-60 versionnée dans le rapport). L'élévation est donc rendue en
+  /// modifiés sur 3 lignes échantillonnées, delta max 254/255 — mesuré par
+  /// garde dédiée). L'élévation est donc rendue en
   /// **voile tonal** ([ElevationOverlay.applySurfaceTint] —
   /// `ColorScheme.surfaceTint` gradué par l'élévation), calculé ICI et passé en
   /// fond : `Material.elevation` reste à 0 **par construction**, aucune ombre
@@ -593,21 +591,21 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
           final List<ZSubfolderRef> subfolders = widget.spec.subfolders;
           final String? title = widget.spec.sheetTitle;
           return SafeArea(
-            // CR-IFFD-46, point 4 — marge EXTÉRIEURE adressable, pendant exact
-            // de `subfolderBarPadding` : `null` ⇒ AUCUNE enveloppe dans l'arbre
+            // Point 4 — marge EXTÉRIEURE adressable, pendant exact de
+            // `subfolderBarPadding` : `null` ⇒ AUCUNE enveloppe dans l'arbre
             // (neutralité littérale, pas seulement « même apparence »).
             // Posée SOUS la `SafeArea` et AU-DESSUS de la gouttière interne :
             // elle s'AJOUTE à `gapM` au lieu de la remplacer — cf. le dartdoc
             // du token. Elle est aussi sous le `constraints` de
             // `showModalBottomSheet` : le plafond de 80 % de hauteur d'écran
-            // (v0.36.0) reste posé sur la feuille elle-même, cette marge ne
-            // peut donc pas le déborder — elle réduit la hauteur du CONTENU,
-            // que la liste `Flexible` absorbe.
+            // reste posé sur la feuille elle-même, cette marge ne peut donc
+            // pas le déborder — elle réduit la hauteur du CONTENU, que la
+            // liste `Flexible` absorbe.
             child: _sheetPadding(
               theme,
               Padding(
-                // CR-IFFD-61 ③ — la gouttière de la feuille cesse de rider
-                // `gapM`, que l'hôte règle déjà pour le padding de ses cartes
+                // La gouttière de la feuille est adressable, séparément de
+                // `gapM` que l'hôte règle déjà pour le padding de ses cartes
                 // (12) alors que sa feuille en demande 8 : aucune valeur de
                 // `gapM` ne pouvait satisfaire les deux. `null` ⇒ `gapM`, le
                 // rendu strictement historique.
@@ -620,13 +618,13 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                   // Point 4 — titre INJECTÉ ; `null` ⇒ absent de l'arbre (AD-4).
                   if (title != null)
                     Padding(
-                      // CR-IFFD-61 ③ — même jeton que la gouttière : le titre
-                      // fait partie de la STRUCTURE de la feuille.
+                      // Même jeton que la gouttière : le titre fait partie
+                      // de la STRUCTURE de la feuille.
                       padding: _sheetGutter(theme),
                       child: Text(
                         title,
                         key: ZSubfolderSelectorBar.sheetTitleKey,
-                        // CR-IFFD-46, point 2 — alignement ADRESSABLE.
+                        // Point 2 — alignement ADRESSABLE.
                         // `null` ⇒ `start`, rendu strictement inchangé.
                         // La `Column` est en `crossAxisAlignment: stretch` : le
                         // `Text` reçoit donc TOUTE la largeur, et l'alignement
@@ -655,9 +653,9 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
                   ),
                   // Point 9 — pied d'ajout CÂBLÉ sur les slots existants
                   // (`addAction`/`addLabel`/`addIcon`) : aucun nouveau champ.
-                  // CR-IFFD-44 — son emplacement est adressable : sous
-                  // `barOnly`, le pied quitte l'arbre et le `+` de la barre
-                  // reste la seule affordance.
+                  // Son emplacement est adressable : sous `barOnly`, le pied
+                  // quitte l'arbre et le `+` de la barre reste la seule
+                  // affordance.
                   if (widget.spec.addAction != null &&
                       widget.spec.addPlacement.inSheet)
                     _footerAdd(context, theme),
@@ -671,11 +669,11 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     );
   }
 
-  /// Point 4 de CR-IFFD-46 — enveloppe de marge extérieure de la FEUILLE.
+  /// Point 4 — enveloppe de marge extérieure de la FEUILLE.
   ///
   /// `null` ⇒ [child] rendu tel quel : aucun élément supplémentaire dans
-  /// l'arbre (AD-4), exactement comme `_triggerChrome` et l'enveloppe de la
-  /// barre.
+  /// l'arbre (invariant AD-4), exactement comme `_triggerChrome` et
+  /// l'enveloppe de la barre.
   Widget _sheetPadding(ZcrudTheme theme, Widget child) {
     final EdgeInsetsGeometry? padding = theme.subfolderSheetPadding;
     if (padding == null) return child;
@@ -688,13 +686,13 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     );
   }
 
-  /// Padding STRUCTUREL interne de la feuille (**CR-IFFD-61 ③**) : gouttière,
-  /// titre, pied « ajouter ».
+  /// Padding STRUCTUREL interne de la feuille : gouttière, titre, pied
+  /// « ajouter ».
   ///
   /// `null` ⇒ `EdgeInsetsDirectional.all(gapM)` — **rendu strictement
-  /// inchangé**. Motif identique à `contentPadding` de la carte (CR-LEX-70) et
-  /// à `leadingGap` (CR-IFFD-61 ①) : un jeton générique portait plusieurs
-  /// valeurs de référence incompatibles, on lui en retire une.
+  /// inchangé**. Motif identique à `contentPadding` de la carte et à
+  /// `leadingGap` : un jeton générique porterait plusieurs valeurs de
+  /// référence incompatibles, ce slot lui en retire une.
   ///
   /// NE couvre PAS le padding des ITEMS de la feuille (`_emphasis`), qui
   /// reste `gapM`/`gapS` : c'est un rôle d'ITEM, pas de structure de feuille.
@@ -727,16 +725,16 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   /// Un item de la feuille. [refOrNull] `null` ⇒ item racine (non indenté).
   Widget _item(BuildContext context, ZcrudTheme theme, ZSubfolderRef? ref) {
     final String? id = ref?.id;
-    // CR-IFFD-46, point 1 — l'ANNONCE a11y de l'item suit le libellé RENDU :
-    // les laisser diverger ferait dire au lecteur d'écran autre chose que ce
-    // que l'œil lit, ce qui est pire que l'absence du réglage (AD-13).
+    // Point 1 — l'ANNONCE a11y de l'item suit le libellé RENDU : les
+    // laisser diverger ferait dire au lecteur d'écran autre chose que ce
+    // que l'œil lit, ce qui est pire que l'absence du réglage (invariant AD-13).
     final String label = ref?.label ?? zSubfolderRootItemLabel(widget.spec);
     final Widget row = ValueListenableBuilder<String?>(
       valueListenable: widget.selected,
       builder: (context, current, _) {
         final bool isSelected = current == id;
         // Point 8 — slot d'action ; `null` (builder absent OU décision de
-        // l'hôte pour cet item) ⇒ AUCUN élément dans l'arbre (AD-4).
+        // l'hôte pour cet item) ⇒ AUCUN élément dans l'arbre (invariant AD-4).
         final Widget? action = widget.spec.itemActionBuilder?.call(
           context,
           ref,
@@ -752,11 +750,10 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
         return Row(
           children: <Widget>[
             Expanded(
-              // CR-IFFD-46, point 4 — MÊME arbitrage que CR-IFFD-44, même
-              // garde : sous marge de feuille, l'item est le seul élément
-              // élastique, et c'est sa LARGEUR qui rompt (mesuré jusqu'à 0 dp).
-              // Sans marge, la garde n'est PAS dans l'arbre : rendu strictement
-              // inchangé.
+              // Point 4 — même garde que sur la marge de la barre : sous
+              // marge de feuille, l'item est le seul élément élastique, et
+              // c'est sa LARGEUR qui rompt (mesuré jusqu'à 0 dp). Sans marge,
+              // la garde n'est PAS dans l'arbre : rendu strictement inchangé.
               child: _sheetTapGuard(
                 theme,
                 Semantics(
@@ -832,7 +829,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
   /// `inverseSurface` ET premier plan forcé à `onInverseSurface` via
   /// [ZInvertedSurface] (`zcrud_core`), de sorte qu'un `itemBuilder` injecté
   /// s'inverse lui aussi — **y compris** quand il se style depuis
-  /// `Theme.of(context).textTheme.*` (CR-IFFD-42). Un simple fond opaque
+  /// `Theme.of(context).textTheme.*`. Un simple fond opaque
   /// laisserait le texte de l'hôte illisible — c'est le contraste RÉEL qui est
   /// la capacité, pas la décoration.
   ///
@@ -863,7 +860,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
         child: Builder(builder: builder),
       );
     }
-    // CR-IFFD-42 — l'inversion est déléguée à l'enveloppe PARTAGÉE de
+    // L'inversion est déléguée à l'enveloppe PARTAGÉE de
     // `zcrud_core` : elle seule atteint le contenu stylé depuis
     // `Theme.of(context).textTheme.*` (chaque rôle porte sa propre couleur, qui
     // écrasait le `DefaultTextStyle` posé ici). Toute surface d'inversion à
@@ -885,7 +882,7 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
     final String? label = widget.spec.addLabel;
     final Icon icon = Icon(widget.spec.addIcon ?? _kAddFallbackIcon);
     return Padding(
-      // CR-IFFD-61 ③ — même jeton que la gouttière et le titre.
+      // Même jeton que la gouttière et le titre.
       padding: _sheetGutter(theme),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: _kMinTapTarget),
@@ -924,13 +921,13 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 }
 
 /// Dénonciation en DEBUG d'une cible tactile écrasée par la marge extérieure
-/// (CR-IFFD-44) — jamais une correction silencieuse.
+/// — jamais une correction silencieuse.
 ///
 /// ## L'arbitrage, et ce qui l'a décidé (MESURÉ, pas supposé)
 ///
-/// L'hôte a signalé n'avoir PAS mesuré l'effet d'une marge horizontale sur la
-/// cible du déclencheur en largeur contrainte. Mesures rejouées ici (écran
-/// 320 dp et 400 dp, `addAction` fourni donc `+` présent) :
+/// Une marge extérieure non bornée peut, à largeur contrainte, écraser la
+/// cible du déclencheur sans qu'aucun signal ne le révèle. Mesures rejouées
+/// ici (écran 320 dp et 400 dp, `addAction` fourni donc `+` présent) :
 ///
 /// | largeur | marge/côté | déclencheur rendu |
 /// |---|---|---|
@@ -955,9 +952,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 /// ## Pourquoi DÉNONCER plutôt que BORNER, ou que ne rien faire
 ///
 /// * **Borner** la marge ferait rendre au socle autre chose que ce que l'hôte a
-///   demandé, **en silence**. C'est précisément le grief que CR-IFFD-44 vient
-///   corriger (un socle qui décide à la place de l'hôte) : le remède ne peut
-///   pas rejouer le défaut.
+///   demandé, **en silence** — un socle qui déciderait à la place de l'hôte :
+///   le remède ne peut pas rejouer ce défaut.
 /// * **Ne rien faire** serait tenable si le cas était inatteignable — il ne
 ///   l'est pas : mesuré à 12 dp. Un plancher a11y rompu sans le moindre signal
 ///   est le pire des trois.
@@ -966,8 +962,8 @@ class _ZSubfolderSelectorBarState extends State<ZSubfolderSelectorBar> {
 ///   marge). Même idiome que `ZMenuEntryTile` / `RenderFlex overflowed`.
 ///
 /// La garde n'est posée QUE lorsque la marge est fournie : sans marge, l'arbre
-/// est strictement celui d'avant CR-IFFD-44.
-/// ## CR-IFFD-46, point 4 — la MÊME garde sert la marge de la FEUILLE
+/// est strictement celui d'avant l'existence de cette marge.
+/// ## Point 4 — la MÊME garde sert la marge de la FEUILLE
 ///
 /// Mesures rejouées (écran 320 × 800, 12 sous-dossiers, titre fourni) :
 ///

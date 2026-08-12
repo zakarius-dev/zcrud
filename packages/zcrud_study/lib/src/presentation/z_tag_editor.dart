@@ -1,32 +1,34 @@
-/// `ZTagEditor` — éditeur de tags de flashcard (Story ES-8.1, AC2/AC3/AC5/AC7).
+/// `ZTagEditor` — éditeur de tags de flashcard.
 /// ADAPTATEUR MINCE de PRÉSENTATION : il COMPOSE des primitives de domaine DÉJÀ
 /// LIVRÉES (`ZFlashcardTag`/`ZSuggestedTag`, `normalizeTagTitle`/
 /// `dedupeByNormalizedTitle`, `remapColorKey`/`ZColorPalette`, `orphanTagIds` —
 /// toutes `zcrud_study_kernel`) — il n'en réimplémente AUCUNE.
 ///
 /// Ce que l'éditeur POSSÈDE et PROUVE (lignes de prod PROPRES au widget) :
-/// - **Création (AC2)** : la GARDE anti-doublon au point de création — un titre
+/// - **Création** : la GARDE anti-doublon au point de création — un titre
 ///   dont la forme normalisée duplique un tag existant N'ÉMET PAS `onCreateTag` ;
 ///   il applique le tag EXISTANT (`onApplyExisting`).
-/// - **Intégrité référentielle STRUCTURELLE (AC3)** : la composition
+/// - **Intégrité référentielle STRUCTURELLE** : la composition
 ///   purge-sur-suppression — le modèle de références ÉMIS ne porte JAMAIS une
 ///   référence orpheline après suppression (`orphanTagIds(refsÉmises,
-///   existantsAprès) == {}`). La **purge PERSISTÉE** (retrait des `tagIds` côté
-///   store) est HORS PÉRIMÈTRE (repository ES-3, DW-ES81-2) : elle est déléguée à
-///   l'app via [onReferencesPurged].
-/// - **Réactivité Flutter-native (AC5)** : le `TextEditingController` de saisie
+///   existantsAprès) == {}`). La **purge PERSISTÉE** (retrait des `tagIds`
+///   côté store) est HORS PÉRIMÈTRE (délégation au repository) : elle est
+///   déléguée à l'app via [onReferencesPurged].
+/// - **Réactivité Flutter-native** : le `TextEditingController` de saisie
 ///   POSSÉDÉ est créé en `initState` (jamais dans `build`) et disposé au `dispose`
 ///   ; un controller INJECTÉ est utilisé tel quel et JAMAIS disposé (patron
-///   owned/injected d'`ZStudyMindmapSection` ES-7.1). L'état de saisie vit dans le
-///   controller ; l'état de la zone de suggestions dans un `ValueNotifier` LOCAL —
-///   aucun `setState` de page, aucun gestionnaire d'état (SM-1).
-/// - **Suggestion IA (AC7)** : une `ZSuggestedTag` n'est matérialisée qu'au geste
+///   owned/injected d'`ZStudyMindmapSection`). L'état de saisie vit dans le
+///   controller ; l'état de la zone de suggestions dans un `ValueNotifier`
+///   LOCAL — aucun `setState` de page, aucun gestionnaire d'état (objectif
+///   produit n°1).
+/// - **Suggestion IA** : une `ZSuggestedTag` n'est matérialisée qu'au geste
 ///   de confirmation explicite (jamais à l'affichage), routée par la MÊME garde de
 ///   dédup que la création.
 ///
-/// AD-1 : AUCUNE nouvelle arête (symboles de `zcrud_study_kernel`/`zcrud_core`
-/// DÉJÀ en dépendance). AD-14 : `onCreateTag` émet un `ZFlashcardTag` d'`id == null`
-/// — l'`id` est attribué par le repository (ES-3), jamais par le widget.
+/// Invariant AD-1 : AUCUNE nouvelle arête (symboles de
+/// `zcrud_study_kernel`/`zcrud_core` DÉJÀ en dépendance). `onCreateTag` émet
+/// un `ZFlashcardTag` d'`id == null` — l'`id` est attribué par le repository,
+/// jamais par le widget.
 library;
 
 import 'package:flutter/material.dart';
@@ -115,16 +117,16 @@ class ZTagEditor extends StatefulWidget {
   /// ⇒ on applique l'EXISTANT au lieu de créer un doublon (AC2/AC7). `null` = absent.
   final void Function(ZFlashcardTag tag)? onApplyExisting;
 
-  /// Émis à la suppression d'un tag (AC3). `null` = suppression ABSENTE (AD-4).
+  /// Émis à la suppression d'un tag. `null` = suppression ABSENTE (invariant AD-4).
   final void Function(ZFlashcardTag tag)? onDeleteTag;
 
   /// Fournit le modèle de références courant (les `tagIds` de chaque carte) — base
-  /// du calcul de purge STRUCTURELLE (AC3). `null` ⇒ aucune référence à purger.
+  /// du calcul de purge STRUCTURELLE. `null` ⇒ aucune référence à purger.
   final ZCardTagIdsProvider? cardTagIds;
 
   /// Émis avec le modèle de références NETTOYÉ (aucune référence orpheline) après
-  /// une suppression (AC3). La **persistance** de cette purge est déléguée à l'app/
-  /// au repository (ES-3, DW-ES81-2). `null` = purge non remontée.
+  /// une suppression. La **persistance** de cette purge est déléguée à
+  /// l'app/au repository. `null` = purge non remontée.
   final void Function(List<List<String>> purgedCardTagIds)? onReferencesPurged;
 
   /// Suggestions IA à présenter (value objects SANS `id`). Vide = zone ABSENTE.
@@ -275,7 +277,7 @@ class _ZTagEditorState extends State<ZTagEditor> {
       rawColorKey: rawColorKey,
       seedTitle: rawTitle,
     );
-    // AD-14 : `id` OMIS (null) — matérialisé par le repository (ES-3).
+    // `id` OMIS (null) — matérialisé par le repository.
     final created = ZFlashcardTag(title: rawTitle.trim(), colorKey: colorKey);
     (onNew ?? widget.onCreateTag)?.call(created);
   }

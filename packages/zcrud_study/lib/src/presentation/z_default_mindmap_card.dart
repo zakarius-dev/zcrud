@@ -1,40 +1,42 @@
-/// `ZDefaultMindmapCard` — **carte de carte mentale PAR DÉFAUT** du socle
-/// (CR-IFFD-48, rendu de référence CR-IFFD-56).
+/// `ZDefaultMindmapCard` — carte de carte mentale par défaut du socle, au
+/// rendu de référence.
 ///
-/// ## Le DÉFAUT est le rendu de RÉFÉRENCE (CR-IFFD-56)
+/// ## Le défaut est le rendu de référence
 ///
-/// Sans aucun réglage : tuile d'icône **NEUTRE** (`surface`, jetons
-/// `studyCardIconTile*`), glyphe [zDefaultMindmapReferenceIcon] **neutre**
+/// Sans aucun réglage : tuile d'icône neutre (`surface`, jetons
+/// `studyCardIconTile*`), glyphe [zDefaultMindmapReferenceIcon] neutre
 /// (`onSurfaceVariant`), et le chrome commun de [ZStudyCardReference] (rayon
 /// 16, padding 12, marge 4, liseré `outlineVariant` à 50 %, titre
 /// `titleMedium/w600/15` une ligne, sous-titre `bodySmall`/`onSurfaceVariant`).
-/// Le compteur de nœuds reste une **OPTION** ([nodeCountLabel] — `null` ⇒
-/// puce absente, AD-4/FR-26) : il se rend dans les deux hiérarchies quand le
-/// libellé est injecté.
+/// Le compteur de nœuds reste une option ([nodeCountLabel] — `null` ⇒
+/// puce absente, invariants AD-4/FR-26) : il se rend dans les deux
+/// hiérarchies quand le libellé est injecté.
 ///
-/// L'ancien rendu v0.43.0 (tuile colorée + **vignette structurelle** dessinée
-/// depuis [ZMindmap.nodes]) reste **atteignable par réglage** : [hierarchy]
-/// `=` [ZStudyCardHierarchy.tintedTile] (ou le jeton
-/// `ZcrudTheme.studyCardHierarchy`) — restitution EXACTE gardée par test.
+/// Un rendu antérieur (tuile colorée + vignette structurelle dessinée
+/// depuis [ZMindmap.nodes]) reste atteignable par réglage : [hierarchy]
+/// = [ZStudyCardHierarchy.tintedTile] (ou le jeton
+/// `ZcrudTheme.studyCardHierarchy`) — restitution exacte gardée par test.
 ///
-/// Priorité, partout : **paramètre > jeton `studyCard*` > défaut-référence**
+/// Priorité, partout : paramètre > jeton `studyCard*` > défaut-référence
 /// (résolution centralisée dans [zStudyCardChromeOf]).
 ///
-/// La voie typée est POSSIBLE ici : le modèle [ZMindmap] vit dans
-/// `zcrud_mindmap`, dépendance **déjà déclarée** de `zcrud_study` (arête
-/// ES-7.1) — aucune arête nouvelle (AD-1). Le pendant qui porte les données
-/// est `ZStudyToolsSectionSpec.mindmaps(maps:)` (parité gardée CR-48).
+/// La voie typée est possible ici : le modèle [ZMindmap] vit dans
+/// `zcrud_mindmap`, dépendance déjà déclarée de `zcrud_study` — aucune arête
+/// nouvelle (invariant AD-1). Le pendant qui porte les données est
+/// `ZStudyToolsSectionSpec.mindmaps(maps:)`.
 ///
 /// ## La vignette (`tintedTile`) : structurelle, pas un rendu du graphe
 ///
 /// Un vrai rendu `ZMindmapView` par carte serait un moteur de graphe complet
-/// par cellule de rail — à rebours de SM-1. La vignette est un **croquis
-/// déterministe** dessiné depuis la structure réelle ([ZMindmap.nodes]) : un
-/// nœud central + jusqu'à [kZDefaultMindmapVignetteMaxSatellites] satellites
-/// reliés, disposés **radialement** (donc neutres en RTL). Elle est
-/// **décorative** (`ExcludeSemantics`) : l'information (nombre de nœuds) est
-/// redite **EN TEXTE** par la puce [nodeCountLabel] (AD-13) — sans libellé
-/// injecté, la puce est **absente** (le socle ne traduit jamais, FR-26).
+/// par cellule de rail — à rebours de la réactivité granulaire attendue
+/// (invariant AD-2). La vignette est un croquis déterministe dessiné depuis
+/// la structure réelle ([ZMindmap.nodes]) : un nœud central + jusqu'à
+/// [kZDefaultMindmapVignetteMaxSatellites] satellites reliés, disposés
+/// radialement (donc neutres en RTL). Elle est décorative
+/// (`ExcludeSemantics`) : l'information (nombre de nœuds) est redite en
+/// texte par la puce [nodeCountLabel] (invariant AD-13) — sans libellé
+/// injecté, la puce est absente (le socle ne traduit jamais, invariant
+/// FR-26).
 library;
 
 import 'dart:math' as math;
@@ -49,12 +51,12 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 import 'z_study_card_reference.dart';
 import 'z_study_tools_item_card.dart';
 
-/// Côté de la vignette en hiérarchie `tintedTile` (rendu v0.43.0 — dimension
-/// de LAYOUT, jamais une couleur). En référence, le côté vient de
+/// Côté de la vignette en hiérarchie `tintedTile` (dimension de layout,
+/// jamais une couleur). En référence, le côté vient de
 /// `studyCardIconTileSize` (repli [ZStudyCardReference.iconTileSize]).
 const double kZDefaultMindmapVignetteSize = 40;
 
-/// Glyphe du rendu de référence (CR-IFFD-56) — neutre, surchargable par
+/// Glyphe du rendu de référence — neutre, surchargable par
 /// [ZDefaultMindmapCard.icon].
 const IconData zDefaultMindmapReferenceIcon = Icons.hub_outlined;
 
@@ -62,7 +64,7 @@ const IconData zDefaultMindmapReferenceIcon = Icons.hub_outlined;
 /// inventaire — l'inventaire exact passe par [ZDefaultMindmapCard.nodeCountLabel]).
 const int kZDefaultMindmapVignetteMaxSatellites = 6;
 
-/// Nombre TOTAL de nœuds de la forêt [nodes] (racines comprises) — parcours
+/// Nombre total de nœuds de la forêt [nodes] (racines comprises) — parcours
 /// itératif défensif (aucune récursion non bornée sur pile).
 int zMindmapNodeCount(List<ZMindmapNode> nodes) {
   int count = 0;
@@ -75,14 +77,13 @@ int zMindmapNodeCount(List<ZMindmapNode> nodes) {
   return count;
 }
 
-/// Carte de carte mentale **par défaut** du socle (CR-IFFD-48), au rendu de
-/// référence (CR-IFFD-56).
+/// Carte de carte mentale par défaut du socle, au rendu de référence.
 ///
 /// ```dart
 /// ZDefaultMindmapCard(
 ///   map: mindmap,
-///   untitledLabel: l10n.untitledMindmap,     // libellé VISIBLE ⇒ injecté
-///   nodeCountLabel: (n) => l10n.nodeCount(n), // OPTION (AD-4)
+///   untitledLabel: l10n.untitledMindmap,     // libellé visible ⇒ injecté
+///   nodeCountLabel: (n) => l10n.nodeCount(n), // option (invariant AD-4)
 ///   onTap: () => open(mindmap),
 /// )
 /// ```
@@ -116,69 +117,70 @@ class ZDefaultMindmapCard extends StatelessWidget {
           'titleMaxLines doit être ≥ 1 (le titre est le contenu principal).',
         );
 
-  /// Carte mentale rendue — **seule** entrée requise. Le dessin lit `title`,
+  /// Carte mentale rendue — seule entrée requise. Le dessin lit `title`,
   /// `description`, `nodes` et `id`.
   final ZMindmap map;
 
-  /// Libellé LOCALISÉ **INJECTÉ** pour une carte au titre vide. `null` ⇒ le
-  /// titre vide est rendu tel quel (le socle ne traduit **jamais** en dur).
+  /// Libellé localisé injecté pour une carte au titre vide. `null` ⇒ le
+  /// titre vide est rendu tel quel (le socle ne traduit jamais en dur).
   final String? untitledLabel;
 
-  /// Fabrique le libellé LOCALISÉ du nombre de nœuds (« 12 nœuds ») —
-  /// **OPTION** (CR-IFFD-56). `null` ⇒ puce **absente** (AD-4) — jamais un
+  /// Fabrique le libellé localisé du nombre de nœuds (« 12 nœuds ») —
+  /// option. `null` ⇒ puce absente (invariant AD-4) — jamais un
   /// nombre nu non localisé.
   final String Function(int nodeCount)? nodeCountLabel;
 
   /// Glyphe de la tuile (référence). `null` ⇒ [zDefaultMindmapReferenceIcon].
-  /// Ignoré en `tintedTile` (le rendu v0.43.0 dessine la vignette
+  /// Ignoré en `tintedTile` (le rendu antérieur dessine la vignette
   /// structurelle — restitution littérale).
   final IconData? icon;
 
-  /// Palette **INJECTÉE** bornant la clé d'accent.
+  /// Palette injectée bornant la clé d'accent.
   final ZColorPalette palette;
 
-  /// Clé d'identité de l'accent (`String` **opaque**). `null` ⇒ dérivée de
-  /// l'**identité** de la carte (`map.id`, repli titre) — stable, remap
+  /// Clé d'identité de l'accent (`String` opaque). `null` ⇒ dérivée de
+  /// l'identité de la carte (`map.id`, repli titre) — stable, remap
   /// déterministe du kernel.
   final String? colorKey;
 
-  /// Hiérarchie (CR-IFFD-56). `null` ⇒ jeton `ZcrudTheme.studyCardHierarchy`,
-  /// puis [ZStudyCardHierarchy.tintedGlyph] (RÉFÉRENCE).
-  /// [ZStudyCardHierarchy.tintedTile] restitue exactement v0.43.0 (vignette).
+  /// Hiérarchie. `null` ⇒ jeton `ZcrudTheme.studyCardHierarchy`,
+  /// puis [ZStudyCardHierarchy.tintedGlyph] (référence).
+  /// [ZStudyCardHierarchy.tintedTile] restitue exactement le rendu
+  /// antérieur (vignette).
   final ZStudyCardHierarchy? hierarchy;
 
   /// Nombre maximal de lignes du titre. `null` ⇒ défaut de la hiérarchie :
-  /// `1` en référence, `2` en `tintedTile` (v0.43.0).
+  /// `1` en référence, `2` en `tintedTile`.
   final int? titleMaxLines;
 
   /// Style du titre. `null` ⇒ jeton `studyCardTitleStyle`, puis référence —
-  /// en `tintedTile`, repli v0.43.0 (`titleSmall`).
+  /// en `tintedTile`, repli `titleSmall`.
   final TextStyle? titleStyle;
 
   /// Style du sous-titre. `null` ⇒ jeton `studyCardSubtitleStyle`, puis
-  /// référence — en `tintedTile`, repli v0.43.0 (`bodySmall`).
+  /// référence — en `tintedTile`, repli `bodySmall`.
   final TextStyle? subtitleStyle;
 
   /// Padding interne. `null` ⇒ jeton, puis référence (12) — en `tintedTile`,
-  /// repli v0.43.0 (`gapM`).
+  /// repli `gapM`.
   final EdgeInsetsGeometry? contentPadding;
 
   /// Marge externe. `null` ⇒ jeton, puis `CardTheme.margin`, puis référence
-  /// (4) — en `tintedTile`, repli v0.43.0.
+  /// (4) — en `tintedTile`, repli du rendu antérieur.
   final EdgeInsetsGeometry? margin;
 
   /// Liseré. `null` ⇒ jeton, puis référence (`outlineVariant` à 50 %) — en
-  /// `tintedTile`, repli v0.43.0 (aucun).
+  /// `tintedTile`, repli aucun.
   final BorderSide? borderSide;
 
   /// Rayon de carte. `null` ⇒ jeton, puis référence (16) — en `tintedTile`,
-  /// repli v0.43.0 (`radiusM`).
+  /// repli `radiusM`.
   final Radius? borderRadius;
 
-  /// Créneau d'actions de fin de carte. `null` ⇒ absent (AD-4).
+  /// Créneau d'actions de fin de carte. `null` ⇒ absent (invariant AD-4).
   final Widget? trailing;
 
-  /// Indicateur de traitement — **relayé** à la carte de base (CR-IFFD-56).
+  /// Indicateur de traitement — relayé à la carte de base.
   final Widget? progress;
 
   /// Largeur maximale du slot [progress].
@@ -187,16 +189,16 @@ class ZDefaultMindmapCard extends StatelessWidget {
   /// Politique d'éviction de [trailing] pendant un traitement.
   final bool hidesTrailingWhileBusy;
 
-  /// Activation de la carte. `null` **et** [onLongPress] `null` ⇒ non
-  /// interactive (AD-45).
+  /// Activation de la carte. `null` et [onLongPress] `null` ⇒ non
+  /// interactive.
   final VoidCallback? onTap;
 
-  /// Appui long. `null` ⇒ capacité **ABSENTE** (AD-4).
+  /// Appui long. `null` ⇒ capacité absente (invariant AD-4).
   final VoidCallback? onLongPress;
 
   /// Libellé sémantique de la carte entière. Repli : titre effectif, complété
   /// de la description et du libellé de compte (l'info de la vignette est
-  /// ainsi **annoncée** — AD-13).
+  /// ainsi annoncée — invariant AD-13).
   final String? semanticLabel;
 
   String get _effectiveTitle {
@@ -229,7 +231,7 @@ class ZDefaultMindmapCard extends StatelessWidget {
     return _buildReference(context, theme, pair, countText);
   }
 
-  // ── Hiérarchie de RÉFÉRENCE (défaut CR-IFFD-56) ───────────────────────────
+  // ── Hiérarchie de référence (défaut) ───────────────────────────
 
   Widget _buildReference(
     BuildContext context,
@@ -248,8 +250,8 @@ class ZDefaultMindmapCard extends StatelessWidget {
     );
 
     return ZStudyToolsItemCard(
-      // Tuile NEUTRE, glyphe NEUTRE — décorative (l'info est en texte via la
-      // puce de compte et le libellé sémantique, AD-13).
+      // Tuile neutre, glyphe neutre — décorative (l'info est en texte via la
+      // puce de compte et le libellé sémantique, invariant AD-13).
       leading: ExcludeSemantics(
         child: SizedBox(
           key: vignetteKey,
@@ -278,8 +280,8 @@ class ZDefaultMindmapCard extends StatelessWidget {
       margin: chrome.margin,
       borderSide: chrome.borderSide,
       borderRadius: chrome.borderRadius,
-      // CR-IFFD-61 ①/② — l'écart tuile→titre (16) et l'élévation (0) de
-      // la RÉFÉRENCE, résolus par le chrome. Ils ne sont pas écrits en
+      // L'écart tuile→titre (16) et l'élévation (0) de
+      // la référence sont résolus par le chrome. Ils ne sont pas écrits en
       // dur dans la primitive de base : celle-ci garde `gapM` et
       // l'élévation du `CardTheme` pour ses hôtes directs.
       leadingGap: chrome.leadingGap,
@@ -296,11 +298,12 @@ class ZDefaultMindmapCard extends StatelessWidget {
     );
   }
 
-  // ── Hiérarchie `tintedTile` — restitution EXACTE du rendu v0.43.0 ─────────
+  // ── Hiérarchie `tintedTile` — restitution exacte du rendu antérieur ──────
   //
-  // NE PAS « moderniser » ce chemin : gardé par un test de restitution aux
-  // valeurs POMPÉES depuis v0.43.0. Les paramètres de chrome restent
-  // NON-inertes (AD-4) : fournis, ils s'appliquent ; nuls, rendu littéral.
+  // Ne pas « moderniser » ce chemin : gardé par un test de restitution aux
+  // valeurs mesurées du rendu antérieur. Les paramètres de chrome restent
+  // non inertes (invariant AD-4) : fournis, ils s'appliquent ; nuls, rendu
+  // littéral.
 
   Widget _buildTintedTile(
     BuildContext context,
@@ -310,8 +313,9 @@ class ZDefaultMindmapCard extends StatelessWidget {
     String? countText,
   ) =>
       ZStudyToolsItemCard(
-        // Vignette structurelle — DÉCORATIVE : l'information est redite en
-        // texte (puce de compte) et dans le libellé sémantique (AD-13).
+        // Vignette structurelle — décorative : l'information est redite en
+        // texte (puce de compte) et dans le libellé sémantique (invariant
+        // AD-13).
         leading: ExcludeSemantics(
           child: SizedBox(
             key: vignetteKey,
@@ -324,7 +328,8 @@ class ZDefaultMindmapCard extends StatelessWidget {
               ),
               child: CustomPaint(
                 painter: _ZMindmapVignettePainter(
-                  // Satellites = nœuds au-delà du central (borné, ≥ 0 — AD-10).
+                  // Satellites = nœuds au-delà du central (borné, ≥ 0,
+                  // invariant AD-10).
                   satelliteCount: math.min(
                     math.max(count - 1, 0),
                     kZDefaultMindmapVignetteMaxSatellites,
@@ -370,8 +375,8 @@ class ZDefaultMindmapCard extends StatelessWidget {
   ) =>
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // `heightFactor: 1` — leçon MESURÉE de CR-47 : un `Align` sans
-        // facteur REMPLIT la hauteur disponible (carte gonflée à 854 dp).
+        // `heightFactor: 1` — leçon mesurée : un `Align` sans
+        // facteur remplit la hauteur disponible (carte gonflée).
         heightFactor: 1,
         child: DecoratedBox(
           key: countChipKey,
@@ -406,13 +411,13 @@ class ZDefaultMindmapCard extends StatelessWidget {
   static const ValueKey<String> countChipKey =
       ValueKey<String>('zDefaultMindmapCard_countChip');
 
-  /// Clé du **texte** de compte (testabilité — AD-13).
+  /// Clé du texte de compte (testabilité — invariant AD-13).
   static const ValueKey<String> countLabelKey =
       ValueKey<String>('zDefaultMindmapCard_countLabel');
 }
 
 /// Croquis radial déterministe : nœud central + satellites reliés. Les
-/// couleurs sont DÉRIVÉES ([ZColorPair]) ; la disposition radiale est neutre
+/// couleurs sont dérivées ([ZColorPair]) ; la disposition radiale est neutre
 /// en RTL (aucun biais gauche/droite porteur de sens).
 class _ZMindmapVignettePainter extends CustomPainter {
   const _ZMindmapVignettePainter({

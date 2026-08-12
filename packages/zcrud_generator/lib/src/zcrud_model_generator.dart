@@ -35,7 +35,7 @@ import 'package:zcrud_core/domain.dart';
 /// Sentinelle interne : marque « argument non fourni » dans `copyWith`.
 const _undefinedRef = '_\$undefined';
 
-/// `TypeChecker` (non-`reflectable`, par nom de type) des annotations E2-4.
+/// `TypeChecker` (non-`reflectable`, par nom de type) des annotations.
 const _fieldChecker =
     TypeChecker.typeNamed(ZcrudField, inPackage: 'zcrud_annotations');
 const _idChecker =
@@ -47,20 +47,20 @@ const _modelChecker =
 ///
 /// `isAssignableFrom` résout la hiérarchie **TRANSITIVEMENT** (super-classe,
 /// mixin d'un super-type, interface) : `class ZSmartNote extends ZBaseStudyEntity`
-/// où la base porte `with ZExtensible` est bien reconnue (prouvé par spike).
+/// où la base porte `with ZExtensible` est bien reconnue (vérifié).
 /// C'est ce qui distingue les classes qui ONT un slot `extra` — les seules pour
-/// lesquelles le contrat DW-ES14-1 a un sens.
+/// lesquelles le garde d'extensibilité a un sens.
 const _extensibleChecker =
     TypeChecker.typeNamed(ZExtensible, inPackage: 'zcrud_core');
 
-/// Clé de SONDE du garde runtime DW-ES14-1 (émis dans chaque `.g.dart`).
+/// Clé de SONDE du garde runtime d'extensibilité (émis dans chaque `.g.dart`).
 ///
 /// Volontairement improbable : elle n'est le nom persisté d'aucun champ de
 /// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`. Une
 /// entité conforme à AD-4 la fait donc **atterrir dans `extra`**.
 const _extraProbeKey = 'zz__zcrud_extra_probe__';
 
-/// **DW-ES14-2 (ES-3.0)** — présence des collaborateurs INJECTABLES qu'une entité
+/// Présence des collaborateurs INJECTABLES qu'une entité
 /// accepte, détectée sur l'AST de ses paramètres nommés. Pilote l'émission des
 /// variantes `fromMapWithContext`/`toMapWithContext` du registrar.
 class _ContextShape {
@@ -124,14 +124,14 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
 
     final fields = _collectFields(element, rename);
 
-    // DW-ES14-1 (AD-4) : le registrar DOIT décoder par la factory de DOMAINE.
-    // Contrat vérifié PAR MACHINE, jamais présumé (R1/R6).
+    // (AD-4) : le registrar DOIT décoder par la factory de DOMAINE.
+    // Contrat vérifié PAR MACHINE, jamais présumé.
     final isExtensible = _requireDomainFromMap(element, className);
 
-    // DW-ES14-2 (ES-3.0) : forme des collaborateurs INJECTABLES que la factory de
+    // Forme des collaborateurs INJECTABLES que la factory de
     // domaine accepte (`extensionParser`/`sourceRegistry`). Le registrar thread le
     // ZDecodeContext dans CES paramètres — plus jamais un tear-off nu qui les
-    // laisse `null`. Détecté sur l'AST des paramètres (jamais de regex — R5).
+    // laisse `null`. Détecté sur l'AST des paramètres (jamais de regex).
     final ctxShape = _contextShapeOf(element);
 
     final buffer = StringBuffer()
@@ -154,59 +154,61 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   // --------------------------------------------------------------------------
-  // Contrat DW-ES14-1 — factory de DOMAINE `Xxx.fromMap` obligatoire.
+  // Contrat — factory de DOMAINE `Xxx.fromMap` obligatoire.
   // --------------------------------------------------------------------------
 
   /// Exige que la classe annotée déclare un décodeur de **domaine**
   /// `Xxx.fromMap(Map<String, dynamic> map)` — factory **ou méthode statique**
-  /// (M2) — que [_emitRegister] câble sur le registre (`fromMap: Xxx.fromMap`).
+  /// — que [_emitRegister] câble sur le registre (`fromMap: Xxx.fromMap`).
   /// Retourne `true` si la classe est **`ZExtensible`** (transitivement).
   ///
-  /// ## Pourquoi un ÉCHEC DE BUILD, jamais un repli (R6, DW-ES14-1)
+  /// ## Pourquoi un ÉCHEC DE BUILD, jamais un repli
   ///
   /// Le repli « naturel » serait `_$XxxFromMap` — la factory du **codegen**, qui
   /// ne connaît QUE les champs `@ZcrudField` et ne peuple donc **NI `extra`, NI
   /// `extension`, NI `source`** (canaux **hors-codegen**, câblés à la main par la
-  /// factory de domaine). C'est **exactement** le défaut DW-ES14-1 : sur la voie
-  /// registre (`registry.decode`, `FirebaseZRepositoryImpl.fromRegistry`), toute
-  /// clé métier inconnue du schéma était **détruite** à chaque cycle
-  /// lecture → écriture (`toMap()` ne réémet que ce que `fromMap` a peuplé) —
-  /// violation d'**AD-4**, irréversible.
+  /// factory de domaine). Sur la voie registre (`registry.decode`,
+  /// `FirebaseZRepositoryImpl.fromRegistry`), toute clé métier inconnue du
+  /// schéma serait alors **détruite** à chaque cycle lecture → écriture
+  /// (`toMap()` ne réémet que ce que `fromMap` a peuplé) — violation d'**AD-4**,
+  /// irréversible.
   ///
-  /// ## ⚠️ H1 (code-review ES-2.0) — un contrat de SIGNATURE ne prouve RIEN
+  /// ## Un contrat de SIGNATURE seul ne prouve RIEN
   ///
-  /// La v1 de ce contrat validait **l'EXISTENCE** d'une signature, jamais le
-  /// **POUVOIR** de préserver `extra`… et son message d'erreur **prescrivait
-  /// littéralement la forme impotente** :
+  /// Valider **l'EXISTENCE** d'une signature ne garantit jamais le **POUVOIR**
+  /// de préserver `extra` — un message d'erreur qui se contenterait de
+  /// **prescrire la forme suivante** serait trompeur :
   ///
   /// ```dart
   /// factory Xxx.fromMap(Map<String, dynamic> map) => _$XxxFromMap(map); // ⛔
   /// ```
   ///
-  /// Sur une classe `ZExtensible`, **ce geste EST DW-ES14-1** : contrat
-  /// satisfait, build VERT, `extra` DÉTRUIT. *Le gate qui interdit la dette
-  /// enseignait la dette.* Trois corrections, toutes **par machine** :
+  /// Sur une classe `ZExtensible`, **ce geste détruit `extra`** tout en
+  /// satisfaisant un contrat de simple présence : build VERT, perte de données
+  /// silencieuse. D'où trois protections complémentaires, toutes **par
+  /// machine** :
   ///
-  /// 1. le message **prescrit la forme QUI MARCHE** (celle de `ZFlashcard`/
-  ///    `ZStudyFolder` : `extra: _extraFrom(map)` sur les clés non réservées) ;
+  /// 1. le message d'erreur **prescrit la forme QUI MARCHE** (celle de
+  ///    `ZFlashcard`/`ZStudyFolder` : `extra: _extraFrom(map)` sur les clés non
+  ///    réservées) ;
   /// 2. **BUILD ROUGE** si une classe `ZExtensible` délègue **NUEMENT** à
   ///    `_$XxxFromMap` — détecté sur l'**AST du corps** du décodeur
-  ///    (`package:analyzer`, jamais de regex — R5) ;
+  ///    (`package:analyzer`, jamais de regex) ;
   /// 3. **GARDE RUNTIME** émis dans le registrar de toute classe `ZExtensible`
   ///    ([_emitRegister]) : il **OBSERVE** le pouvoir (décode une sonde, exige la
   ///    clé inconnue dans `extra`) au lieu de juger une forme. C'est le seul
   ///    filet qui suive les packages **PUBLIÉS** chez un consommateur externe,
-  ///    lequel n'a **pas** le harnais `reserved_keys_gate` — trou hors-repo
-  ///    identifié par H1. Il attrape **toute** factory impotente, y compris
-  ///    celles que (2) ne peut pas voir (corps ré-écrit à la main sans `extra:`).
+  ///    lequel n'a **pas** le harnais `reserved_keys_gate` interne au dépôt. Il
+  ///    attrape **toute** factory impotente, y compris celles que (2) ne peut
+  ///    pas voir (corps ré-écrit à la main sans `extra:`).
   bool _requireDomainFromMap(ClassElement element, String className) {
     final extensible = _extensibleChecker.isAssignableFrom(element);
 
-    // M2 — un `fromMap` STATIQUE est un tear-off parfaitement valide
+    // Un `fromMap` STATIQUE est un tear-off parfaitement valide
     // (`Xxx.fromMap` s'assigne au registre exactement comme une factory) : il est
-    // ACCEPTÉ. La v1 ne regardait que `element.constructors` et affirmait
-    // « ne déclare AUCUNE factory fromMap » — message FAUX pour le mainteneur qui
-    // en avait bien une sous les yeux.
+    // ACCEPTÉ. Se limiter à `element.constructors` affirmerait à tort
+    // « ne déclare AUCUNE factory fromMap » pour un mainteneur qui en a bien une
+    // sous forme de méthode statique.
     final ExecutableElement? decoder = element.constructors
             .where((c) => c.name == 'fromMap')
             .cast<ExecutableElement?>()
@@ -234,9 +236,9 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     return extensible;
   }
 
-  /// **DW-ES14-2 (ES-3.0)** — forme des collaborateurs INJECTABLES de l'entité.
+  /// Forme des collaborateurs INJECTABLES de l'entité.
   ///
-  /// Inspecte l'AST des paramètres NOMMÉS (jamais de regex — R5) de la factory de
+  /// Inspecte l'AST des paramètres NOMMÉS (jamais de regex) de la factory de
   /// domaine `fromMap` (`extensionParser`/`sourceRegistry`) et de l'`operator`
   /// d'instance `toMap` (`sourceRegistry`). Ces paramètres sont **optionnels** —
   /// un tear-off nu les laisse `null`, ce qui DÉTRUIT le slot `extension` typé et
@@ -266,11 +268,10 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     );
   }
 
-  /// Le **geste correctif**, écrit dans la forme QUI MARCHE (H1 pt. 1).
+  /// Le **geste correctif**, écrit dans la forme QUI MARCHE.
   ///
   /// Une classe **`ZExtensible`** ne peut PAS se contenter de déléguer à
-  /// `_$XxxFromMap` : la prescription est donc **différente** selon le cas — et
-  /// c'est précisément ce que la v1 confondait.
+  /// `_$XxxFromMap` : la prescription est donc **différente** selon le cas.
   String _prescription(String className, {required bool extensible}) {
     if (!extensible) {
       return 'GESTE : $className n\'est pas `ZExtensible` (aucun slot `extra`) — '
@@ -305,15 +306,15 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   /// Signature compatible avec `T Function(Map<String, dynamic>)` — vérifiée sur
-  /// les **TYPES** (`TypeSystem`), jamais sur une chaîne d'affichage (M1).
+  /// les **TYPES** (`TypeSystem`), jamais sur une chaîne d'affichage.
   ///
-  /// La v1 comparait `type.getDisplayString() == 'Map<String, dynamic>'` : elle
-  /// **REJETAIT** (échec de build) des décodeurs légaux et **assignables** —
+  /// Comparer `type.getDisplayString() == 'Map<String, dynamic>'` **REJETTERAIT**
+  /// (échec de build) des décodeurs légaux et **assignables** —
   /// `Map<String, Object?>` (mutuellement sous-type en Dart), un typedef alias
   /// (`typedef JsonMap = Map<String, dynamic>` → `getDisplayString()` rend
   /// `JsonMap`), une forme préfixée par un import. Le critère RÉEL est
   /// l'assignabilité d'un `Map<String, dynamic>` au paramètre — c'est exactement
-  /// ce que le tear-off exige. (Prouvé par spike : les 3 formes passent.)
+  /// ce que le tear-off exige (vérifié : les 3 formes passent).
   void _requireCompatibleSignature(ExecutableElement decoder, String className) {
     final params = decoder.formalParameters;
     final positionalRequired =
@@ -351,20 +352,19 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     );
   }
 
-  /// **H1 pt. 2** — sur une classe `ZExtensible`, une **DÉLÉGATION NUE** à
-  /// `_$XxxFromMap` est un **ÉCHEC DE BUILD** : c'est *littéralement* DW-ES14-1
-  /// (le codegen ignore `extra`), et c'était le geste que l'ancien message
-  /// d'erreur **dictait**.
+  /// Sur une classe `ZExtensible`, une **DÉLÉGATION NUE** à
+  /// `_$XxxFromMap` est un **ÉCHEC DE BUILD** : le codegen ignore `extra`, donc
+  /// ce geste le détruirait silencieusement s'il était toléré.
   ///
   /// Lecture du **corps** par l'AST (`ParsedLibraryResult.getFragmentDeclaration`)
-  /// — **jamais de regex sur du Dart** (R5).
+  /// — **jamais de regex sur du Dart**.
   ///
-  /// ⚠️ **Ce contrôle est un filet de FORME** : il attrape le geste exact que le
-  /// message prescrivait, pas toute factory impotente (un corps ré-écrit à la
+  /// **Ce contrôle est un filet de FORME** : il attrape le geste précis d'une
+  /// délégation nue, pas toute factory impotente (un corps ré-écrit à la
   /// main qui « oublie » `extra:` lui échappe). Le filet de **POUVOIR** — celui
   /// qui observe vraiment — est le garde runtime émis par [_emitRegister]. Si
-  /// l'AST est indisponible (session absente), on ne **dégrade pas en silence**
-  /// (R6) : le garde runtime reste émis inconditionnellement et couvre ce cas.
+  /// l'AST est indisponible (session absente), on ne **dégrade pas en silence** :
+  /// le garde runtime reste émis inconditionnellement et couvre ce cas.
   void _rejectNakedCodegenDelegation(
     ExecutableElement decoder,
     String className,
@@ -479,7 +479,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final annoMultiple =
         reader != null && reader.read('multiple').boolValue;
 
-    // Hint B14 : lecture STATIQUE de `persistAs` (revive accessor == 'timestamp')
+    // Lecture STATIQUE de `persistAs` (revive accessor == 'timestamp')
     // — jamais d'exécution/`reflectable`. Absent/`iso8601` ⇒ `false` (aucun champ
     // collecté dans `$XxxTimestampFields`).
     final persistAsTimestamp = reader != null &&
@@ -503,7 +503,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   /// Classe un champ en catégorie de (dé)sérialisation + son `EditionFieldType`
-  /// inféré. Type non supporté → **échec explicite** (AD-3, AC9).
+  /// inféré. Type non supporté → **échec explicite** (AD-3).
   (
     _Cat category,
     String? elementTypeName,
@@ -539,7 +539,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     if (_typeName(type) == 'DateTime') {
       return (_Cat.dateTimeType, null, 'dateTime');
     }
-    // Plage de dates `ZDateRange` (AD-47) : (dé)sérialisation DÉFENSIVE via le
+    // Plage de dates `ZDateRange` : (dé)sérialisation DÉFENSIVE via le
     // helper `_$asDateRange` (bâti sur `ZDateRange.fromJsonSafe` → jamais de
     // throw) ; `toMap` via `.toJson()`. Patron strict de la branche `DateTime`.
     if (_typeName(type) == 'ZDateRange') {
@@ -657,12 +657,12 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // --------------------------------------------------------------------------
 
   String _emitExtension(String className, List<_Field> fields) {
-    // CR-LEX-31 : un miroir de clé RÉSERVÉE de sync (`updated_at`,
-    // `is_deleted` — possédées par la couche de sync, AD-19) n'est émis que
+    // Un miroir de clé RÉSERVÉE de sync (`updated_at`,
+    // `is_deleted` — possédées par la couche de sync) n'est émis que
     // s'il porte RÉELLEMENT une valeur.
     //
-    // Il était émis INCONDITIONNELLEMENT, `null` compris : l'avertissement de
-    // collision de zcrud se déclenchait donc à CHAQUE écriture, sur 100 % des
+    // L'émettre INCONDITIONNELLEMENT, `null` compris, déclencherait
+    // l'avertissement de collision de zcrud à CHAQUE écriture, sur 100 % des
     // entités concernées — zcrud avertissant contre lui-même, sans qu'aucun de
     // ces cas ne porte de signal. Omettre le `null` supprime exactement ce
     // bruit-là et **conserve** l'avertissement quand il est légitime : une
@@ -699,8 +699,8 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
         '}';
   }
 
-  /// Clés possédées par la couche de synchronisation (`ZSyncMeta`, AD-19) —
-  /// jamais réémises par le corps métier (CR-LEX-31). Miroir littéral de
+  /// Clés possédées par la couche de synchronisation (`ZSyncMeta`) —
+  /// jamais réémises par le corps métier. Miroir littéral de
   /// `ZSyncMeta.reservedKeys` : le générateur ne peut pas importer `zcrud_core`
   /// (il tournerait alors sur sa propre dépendance), d'où la duplication —
   /// gardée par un test qui compare les deux ensembles.
@@ -740,18 +740,18 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   // --------------------------------------------------------------------------
 
   /// Émet `$XxxPersistedKeys` — l'ensemble EXACT des clés que `toMap()` peut
-  /// produire, **champs nuls compris** (CR-LEX-28).
+  /// produire, **champs nuls compris**.
   ///
   /// ## À quoi ça sert
   ///
   /// Un hôte qui mappe son modèle vers une entité `Z` doit couvrir 100 % des
-  /// champs persistés, sous peine d'en détruire silencieusement (CR-LEX-34).
-  /// Cet inventaire devait être **tenu à la main** dans chaque descripteur : un
-  /// champ neuf ajouté par un tag futur restait **invisible** jusqu'à ce qu'une
+  /// champs persistés, sous peine d'en détruire silencieusement. Tenir cet
+  /// inventaire **à la main** dans chaque descripteur laisserait un
+  /// champ neuf ajouté par un tag futur **invisible** jusqu'à ce qu'une
   /// donnée disparaisse. Généré, il permet une garde d'exhaustivité **automatique**.
   ///
-  /// ⚠️ **« peut produire », pas « produit toujours »** : une clé réservée-miroir
-  /// n'est émise que si elle porte une valeur (CR-LEX-31), et un champ nul
+  /// **« peut produire », pas « produit toujours »** : une clé réservée-miroir
+  /// n'est émise que si elle porte une valeur, et un champ nul
   /// n'apparaît pas dans une map donnée. L'ensemble est donc le **surensemble**
   /// stable — c'est exactement ce qu'une garde d'exhaustivité doit comparer.
   String _emitPersistedKeys(String className, List<_Field> fields) {
@@ -798,13 +798,13 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
       }
       if (r.read('searchable').boolValue) parts.add('searchable: true');
       if (r.read('readOnly').boolValue) parts.add('readOnly: true');
-      // DP-13 : `showIfNull` a pour défaut `false` (côté annotation ET
+      // `showIfNull` a pour défaut `false` (côté annotation ET
       // `ZFieldSpec`). On n'émet donc que la valeur NON-défaut (`true`) — sinon le
       // flip du défaut serait silencieusement écrasé. `@ZcrudField()` (défaut
-      // false) ⇒ aucune émission ⇒ `ZFieldSpec` prend son défaut `false` (parité
-      // DODLP). Opt-in `@ZcrudField(showIfNull: true)` ⇒ `showIfNull: true` émis.
+      // false) ⇒ aucune émission ⇒ `ZFieldSpec` prend son défaut `false`.
+      // Opt-in `@ZcrudField(showIfNull: true)` ⇒ `showIfNull: true` émis.
       if (r.read('showIfNull').boolValue) parts.add('showIfNull: true');
-      // DP-12 : ornements déclaratifs (const AST re-émis 1:1) + hint/helper.
+      // Ornements déclaratifs (const AST re-émis 1:1) + hint/helper.
       if (!r.read('leading').isNull) {
         parts.add('leading: ${_emitConst(r.read('leading'))}');
       }
@@ -836,9 +836,9 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     required bool extensible,
     required _ContextShape ctx,
   }) {
-    // ⚠️ `fromMap: $className.fromMap` — le décodeur de **DOMAINE** (DW-ES14-1) :
+    // `fromMap: $className.fromMap` — le décodeur de **DOMAINE** :
     // lui seul peuple les canaux HORS-codegen (`extra` AD-4, `source`), là où
-    // `_$${className}FromMap` (codegen) les IGNORE — ce qui détruisait toute clé
+    // `_$${className}FromMap` (codegen) les IGNORE — ce qui détruirait toute clé
     // métier inconnue sur la voie `registry.decode`. Existence + compatibilité de
     // signature sont VÉRIFIÉES (`_requireDomainFromMap`) : jamais de repli.
     // Le tear-off reste assignable à `T Function(Map<String, dynamic>)` même si le
@@ -846,7 +846,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
     final doc = '/// Enregistre `$className` (kind "$kind") sur [registry] : '
         '(dé)sérialisation + schéma.\n';
 
-    // 🔴 DW-ES14-2 (ES-3.0) — variantes CONSCIENTES DU CONTEXTE. Le tear-off nu
+    // Variantes CONSCIENTES DU CONTEXTE. Le tear-off nu
     // `$className.fromMap` laisse `extensionParser`/`sourceRegistry` à `null` ⇒
     // slot `extension` NON typé + `ZSourceRegistry` court-circuité sur la voie
     // registre (la SEULE qu'un store emprunte). On thread donc le ZDecodeContext.
@@ -889,17 +889,17 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
           '${registerArgs('    ')});';
     }
 
-    // 🔴 H1 — GARDE EXÉCUTOIRE DW-ES14-1, émis pour toute classe `ZExtensible`.
+    // GARDE EXÉCUTOIRE, émis pour toute classe `ZExtensible`.
     //
     // Le contrat de BUILD ne vérifie qu'une SIGNATURE (et refuse la délégation
     // nue) : il ne peut pas prouver qu'une factory ré-écrite à la main peuple
     // vraiment `extra`. Ce garde, lui, l'OBSERVE — il décode une sonde portant
     // une clé inconnue et exige qu'elle atterrisse dans `extra`. Il vit dans le
     // `.g.dart`, donc il SUIT LES PACKAGES PUBLIÉS : un consommateur externe
-    // (DODLP, lex_douane) n'a pas `tool/reserved_keys_gate`, mais il a CE garde.
+    // n'a pas `tool/reserved_keys_gate`, mais il a CE garde.
     //
-    // ⚠️ Volontairement PAS sous `assert` : un `assert` s'évapore en release —
-    // ce serait la dégradation silencieuse que R6 interdit. Le coût est un
+    // Volontairement PAS sous `assert` : un `assert` s'évapore en release —
+    // ce serait une dégradation silencieuse. Le coût est un
     // décodage de sonde par kind, UNE FOIS, à l'enregistrement.
     return '${doc}void register$className(ZcrudRegistry registry) {\n'
         '  // DW-ES14-1 (AD-4) : POUVOIR observé, pas seulement signature vérifiée.\n'
@@ -915,7 +915,7 @@ class ZcrudModelGenerator extends GeneratorForAnnotation<ZcrudModel> {
   }
 
   // --------------------------------------------------------------------------
-  // Émission — artefact NEUTRE des clés persistées en Timestamp (gap B14).
+  // Émission — artefact NEUTRE des clés persistées en Timestamp.
   // --------------------------------------------------------------------------
 
   /// Émet `const Set<String> $XxxTimestampFields = <String>{ 'key', ... };`
@@ -1029,8 +1029,8 @@ String _toSnake(String s) {
 
 /// Helpers **partagés** émis une fois par bibliothèque (dédupliqués par
 /// source_gen). Parsing tolérant (AD-10) : `int|String`, enum par nom (jamais
-/// `byName` nu), date ISO tolérante ; sentinelle `copyWith` ; **garde exécutoire
-/// DW-ES14-1** (H1).
+/// `byName` nu), date ISO tolérante ; sentinelle `copyWith` ; **garde
+/// exécutoire d'extensibilité**.
 const _sharedHelpers = '''
 /// Sentinelle « argument non fourni » du `copyWith` généré (reset-null).
 const Object? _\$undefined = _ZUndefined();
@@ -1039,8 +1039,8 @@ const Object? _\$undefined = _ZUndefined();
 /// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
 const String _\$zExtraProbeKey = '$_extraProbeKey';
 
-/// 🔴 **GARDE EXÉCUTOIRE DW-ES14-1 / AD-4** — émis dans le `register…` de toute
-/// classe `ZExtensible` (H1, code-review ES-2.0).
+/// **GARDE EXÉCUTOIRE DW-ES14-1** (invariant AD-4) — émise dans le `register…`
+/// de toute classe `ZExtensible`.
 ///
 /// ## Ce qu'il fait, et pourquoi il existe
 ///
@@ -1056,7 +1056,7 @@ const String _\$zExtraProbeKey = '$_extraProbeKey';
 ///     du CODEGEN, qui ne connaît QUE les champs `@ZcrudField`) ou « oublie »
 ///     `extra:` en recopiant les champs ⇒ `extra` reste VIDE ;
 ///   - **(sortie)** `toMap` amnésique — n'étale pas `...extra` ⇒ ce qui avait été
-///     préservé au décodage n'est **jamais réémis**. ⚠️ Le `toMap()` **généré**
+///     préservé au décodage n'est **jamais réémis**. Attention : le `toMap()` **généré**
 ///     (extension `XxxZcrud`) n'étale PAS `extra` : une entité `ZExtensible` qui
 ///     ne définit pas son propre `toMap()` d'instance tombe dans ce cas.
 ///
@@ -1160,7 +1160,7 @@ DateTime? _\$asDateTime(Object? v) {
   return null;
 }
 
-/// Décode défensivement une plage `ZDateRange` (AD-10/AD-47) : délègue à
+/// Décode défensivement une plage `ZDateRange` (AD-10) : délègue à
 /// `ZDateRange.fromJsonSafe` — `null` sur TOUTE anomalie (non-map, clé absente,
 /// valeur non-`String`, date non-ISO, `start > end`), jamais de throw. Le parent
 /// survit toujours (champ corrompu → `null`).
@@ -1252,7 +1252,7 @@ class _Field {
   final String fieldType;
   final bool multiple;
 
-  /// Hint B14 : le champ doit être persisté en `Timestamp` natif côté Firestore
+  /// Le champ doit être persisté en `Timestamp` natif côté Firestore
   /// (clé collectée dans `$XxxTimestampFields`). Défaut `false` (ISO-8601).
   final bool persistAsTimestamp;
 }

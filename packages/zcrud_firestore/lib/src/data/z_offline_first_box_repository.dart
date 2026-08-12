@@ -1,29 +1,27 @@
-/// Base **offline-first bi-topologie** `ZOfflineFirstBoxRepository<T>` (ES-3.2,
-/// FR-S13) : implémentation du **point d'extension `persist`** du Template Method
-/// `ZStudyRepository<T>` (ES-3.1) — store local **autoritaire**, Firestore
+/// Base **offline-first bi-topologie** `ZOfflineFirstBoxRepository<T>` :
+/// implémentation du **point d'extension `persist`** du Template Method
+/// `ZStudyRepository<T>` — store local **autoritaire**, Firestore
 /// **fire-and-forget**, merge **Last-Write-Wins sur `updated_at` HORS-ENTITÉ**,
 /// filtrage `hasPendingWrites` des échos locaux, upload de rattrapage local-only,
 /// chemins résolus par [ZFirestorePathResolver] (flat / nested / global).
 ///
-/// origine: canonique §7 / AD-9 + les ~15 repositories offline-first quasi
-/// identiques de lex_core/lex_data (`study_folders_repository_impl.dart`,
-/// `mindmaps_repository_impl.dart`, `study_sharing_repository_impl.dart`) et le
-/// CRUD bi-topologie d'IFFD (`firebase_crud_repository_impl.dart`) — **factorisés
-/// une fois** et débarrassés du CRUD quasi-réflexif `T.toString()` (banni, AC11).
+/// Cette base factorise, en une seule implémentation, le motif offline-first
+/// répété par une quinzaine de dépôts quasi identiques dans les applications
+/// consommatrices — débarrassé du CRUD quasi-réflexif `T.toString()` (banni).
 ///
-/// ## D1 — étend le Template Method d'ES-3.1 (pas `ZSyncableRepository`)
+/// ## Étend le Template Method (pas `ZSyncableRepository`)
 ///
 /// `extends ZStudyRepository<T>` (kernel) : `save` (concret, `@nonVirtual`) est
 /// **hérité** — il appelle `validate(item)` PUIS, **seulement si `Right`**, le
 /// [persist] `@protected` implémenté ici. **On ne re-déclare JAMAIS `save`** (un
 /// override casserait la garde métier). Un `validate → Left` **bloque** l'écriture
-/// bout-en-bout (aucun `put` local, aucun push Firestore) — AC2.
+/// bout-en-bout (aucun `put` local, aucun push Firestore).
 ///
-/// ## D2 — COMPOSE la couche E5 (AD-4), n'en duplique rien
+/// ## COMPOSE la couche de stockage local (AD-4), n'en duplique rien
 ///
 /// Le store local ([ZLocalStore], défaut `HiveZLocalStore`) est **injecté** : tout
 /// le décodage défensif Hive / `_readEntry` / `_softDeleteInBox` vit **là**, pas
-/// ici (aucun `Box` brut re-détenu). Ce dépôt **ajoute** par-dessus E5-3 : (1) un
+/// ici (aucun `Box` brut re-détenu). Ce dépôt **ajoute** par-dessus : (1) un
 /// **listener temps réel** cross-device (`snapshots(includeMetadataChanges:true)`),
 /// (2) le **filtrage `hasPendingWrites`** des échos locaux, (3) le **résolveur
 /// bi-topologie**, (4) une **merge-key hors-entité** paramétrable pour les entités
@@ -37,26 +35,27 @@
 /// `ZResult<…>` / `Stream<List<T>>` **nues** / `String`. L'injection d'une
 /// instance `FirebaseFirestore` et d'un [ZLocalStore] est la SEULE couture.
 ///
-/// ## AD-9/AD-16/AD-19 — offline-first
+/// ## AD-9/AD-16 — offline-first
 ///
 /// Le **local fait autorité** : lectures et écritures passent d'abord par lui ; le
 /// résultat local est renvoyé **dès son succès** (`unawaited` sur la propagation
 /// distante — une panne réseau ne casse **jamais** le succès local). Le merge LWW
 /// lit `updated_at` **de la méta hors-entité** ([ZSyncMeta]), **jamais** un champ
-/// `T.updatedAt` interne (AC6). `is_deleted`/`updated_at` vivent **uniquement**
-/// dans l'enveloppe stockée, **jamais** dans le corps métier `toMap` (AC9).
+/// `T.updatedAt` interne. `is_deleted`/`updated_at` vivent **uniquement**
+/// dans l'enveloppe stockée, **jamais** dans le corps métier `toMap`.
 ///
-/// ## AD-10 + ES-3.0 — décodage cloud CONTEXTUALISÉ
+/// ## AD-10 — décodage cloud CONTEXTUALISÉ
 ///
 /// Le décodage des documents cloud (merge, listener, `sync`) passe par la fonction
 /// [decode] **threadée au [ZDecodeContext]** (voie `ZcrudRegistry.decode`) : le
 /// slot `extension` **typé** (ex. `ZNoteAudio`) et la provenance `source`
-/// **survivent** au round-trip cloud→merge→local (AC8, anti DW-ES14-2). Un
+/// **survivent** au round-trip cloud→merge→local. Un
 /// document corrompu est **écarté + loggé**, jamais un `throw` (AD-10).
 library;
 
 // `prefer_initializing_formals` : FAUX POSITIF (champ privé exposé en paramètre
-// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier comme E5-1/2/3.
+// nommé — `this._x` interdit par Dart). Désactivé au niveau fichier, comme sur
+// les autres dépôts offline-first du package.
 // ignore_for_file: prefer_initializing_formals
 
 import 'dart:async';
@@ -70,8 +69,8 @@ import 'z_firestore_path_resolver.dart';
 
 /// Journal minimal **neutre** (aucune dépendance backend). Un échec distant
 /// best-effort, un document corrompu ou une erreur de listener est **loggé** ici
-/// avant d'être avalé/écarté — jamais silencieux (AD-10/AD-11). Miroir des logs
-/// E5-1/E5-2/E5-3.
+/// avant d'être avalé/écarté — jamais silencieux (AD-10/AD-11). Même convention
+/// de journalisation que les autres dépôts offline-first du package.
 typedef ZOfflineFirstBoxLog = void Function(
   String message, {
   Object? error,
@@ -84,12 +83,12 @@ void _noopLog(String message, {Object? error, StackTrace? stackTrace}) {}
 ///
 /// **Injection** (aucun singleton — testabilité) :
 /// - [local] : le store local **autoritaire** ([ZLocalStore], défaut
-///   `HiveZLocalStore`) — source de `_readEntry`/décodage défensif (E5-2) ;
+///   `HiveZLocalStore`) — source de `_readEntry`/décodage défensif ;
 /// - [firestore] : l'instance `FirebaseFirestore` (SEULE couture backend) ;
 /// - [resolver] : la table de topologie ([ZFirestorePathResolver]) ;
 /// - [kind] : le discriminant de collection (clé de la table de topologie) ;
-/// - [decode] : décodage cloud **context-porté** (D7 — `registry.decode`) ;
-/// - [encode] : sérialisation du corps métier (sans clés réservées — AD-19) ;
+/// - [decode] : décodage cloud **context-porté** (`registry.decode`) ;
+/// - [encode] : sérialisation du corps métier (sans clés réservées) ;
 /// - [userId]/[parentId] : contexte de topologie (nested/user-scopé) ;
 /// - [isConnected] : couture de connectivité optionnelle (court-circuit `sync`) ;
 /// - [logger] : journal neutre optionnel ;
@@ -113,7 +112,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     ZClock? clock,
     bool autoListen = true,
   })  : _local = local,
-        // CR-LEX-36 : même source de temps que le store local, pour que le push
+        // Même source de temps que le store local, pour que le push
         // distant et l'écriture locale portent une estampille cohérente.
         _clock = clock ?? ZSystemClock.utc,
         _firestore = firestore,
@@ -129,7 +128,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   }
 
   final ZLocalStore<T> _local;
-  /// CR-LEX-36 : source de temps de la clé LWW `updated_at` du push distant.
+  /// Source de temps de la clé LWW `updated_at` du push distant.
   final ZClock _clock;
   final FirebaseFirestore _firestore;
   final ZFirestorePathResolver _resolver;
@@ -142,7 +141,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   final ZOfflineFirstBoxLog _log;
 
   /// Clé snake_case de l'identité logique écrite dans le corps (invariant
-  /// clé↔corps). Aligné E5-1/E5-2.
+  /// clé↔corps).
   static const String _kId = 'id';
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _listenerSub;
@@ -152,7 +151,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
 
   /// Résout le chemin de collection du [_kind] pour le contexte courant
   /// ([_userId]/[_parentId]). [collectionIdOverride] (le `collectionId?` du port
-  /// `persist`, Dev Notes #3) **remplace** le `parentId` (topologie nested) ; il
+  /// `persist`) **remplace** le `parentId` (topologie nested) ; il
   /// est **ignoré** par les topologies flat/global (le résolveur ne le lit pas).
   ZResult<String> _collectionPath({String? collectionIdOverride}) =>
       _resolver.resolveCollection(
@@ -165,7 +164,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       _firestore.collection(path);
 
   /// Énumère les **identifiants des parents** existants au cloud pour ce `kind`
-  /// *nested* (ex. les `folderId` de `users/{uid}/study_folders`) — **CR-LEX-10**.
+  /// *nested* (ex. les `folderId` de `users/{uid}/study_folders`).
   ///
   /// ## Le problème que cela résout
   ///
@@ -215,12 +214,12 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     }
   }
 
-  // ───────────────────────── (Dé)codage cloud (D7/D8, AD-10) ─────────────────
+  // ───────────────────────── (Dé)codage cloud (AD-10) ─────────────────
 
-  /// Décodage **DÉFENSIF + CONTEXTUALISÉ** (D7/AD-10) d'un document cloud : injecte
+  /// Décodage **DÉFENSIF + CONTEXTUALISÉ** (AD-10) d'un document cloud : injecte
   /// l'`id` du document, normalise `updated_at` (Timestamp→ISO) puis décode par la
   /// voie [_decode] **threadée au [ZDecodeContext]** (l'`extension`/`source` typée
-  /// survit — AC8). Un document non décodable → `null` (écarté + loggé), jamais un
+  /// survit). Un document non décodable → `null` (écarté + loggé), jamais un
   /// `throw`.
   T? _decodeCloud(String id, Map<String, dynamic> data) {
     final map = <String, dynamic>{...data, _kId: id};
@@ -236,18 +235,18 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
 
   /// Normalise en String ISO-8601 **TOUT** horodatage lu au format Firestore
   /// natif (`Timestamp`, `DateTime`, forme sérialisée `{_seconds,_nanoseconds}`)
-  /// — **pas seulement** la clé LWW (CR-LEX-8/CR-LEX-9).
+  /// — **pas seulement** la clé LWW.
   ///
   /// ## Pourquoi systématique, et non une liste de clés déclarée
   ///
-  /// Cette normalisation ne traitait auparavant que [ZSyncMeta.kUpdatedAt]. Tout
-  /// AUTRE champ porteur d'un `Timestamp` était transmis **brut** à [_decode] :
-  /// or les entités `Z*` sont **backend-agnostiques par conception** (AD-16 —
-  /// `Timestamp` est confiné à ce package), leur `fromMap` généré ne sait décoder
-  /// ni `Timestamp` ni `{_seconds,_nanoseconds}`, et le champ retombait
-  /// silencieusement à **`null`**. Un hôte dont la production écrit ses dates en
-  /// `Timestamp` natif perdait la date de TOUS ses enregistrements au cutover,
-  /// sans erreur ni avertissement.
+  /// Restreindre cette normalisation à la seule clé [ZSyncMeta.kUpdatedAt]
+  /// laisserait tout AUTRE champ porteur d'un `Timestamp` transmis **brut** à
+  /// [_decode] : or les entités `Z*` sont **backend-agnostiques par conception**
+  /// (AD-16 — `Timestamp` est confiné à ce package), leur `fromMap` généré ne
+  /// sait décoder ni `Timestamp` ni `{_seconds,_nanoseconds}`, et le champ
+  /// retomberait silencieusement à **`null`**. Un hôte dont la production écrit
+  /// ses dates en `Timestamp` natif perdrait alors la date de TOUS ses
+  /// enregistrements, sans erreur ni avertissement.
   ///
   /// Une liste `dateKeys` déclarée par l'hôte aurait été un second inventaire à
   /// tenir juste — et en oublier une clé reproduit exactement la perte. Ici
@@ -292,7 +291,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   /// Lit un horodatage **tolérant** (AD-10) : `Timestamp` natif, `DateTime`, forme
   /// sérialisée `{_seconds,_nanoseconds}` ou String ISO-8601 → `DateTime` UTC ;
   /// toute autre valeur → `null`. C'est **la** brique de comparaison LWW cloud
-  /// brute (D4). Jamais de `throw`.
+  /// brute. Jamais de `throw`.
   DateTime? _timeFromRaw(Object? value) {
     if (value is Timestamp) return value.toDate().toUtc();
     if (value is DateTime) return value.toUtc();
@@ -311,10 +310,10 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
 
   /// Construit la map d'écriture cloud : `id` + méta ([isoUpdatedAt]/[isDeleted])
   /// PUIS le corps métier — **stripé de ses clés réservées** ([ZSyncMeta.
-  /// stripReserved], AD-19/D8). Le strip est **LOAD-BEARING** : le corps est
+  /// stripReserved]). Le strip est **LOAD-BEARING** : le corps est
   /// épandu **en dernier**, donc sans strip une clé `updated_at`/`is_deleted`
-  /// **fuitée** par [_encode] écraserait la méta autoritaire (merge corrompu —
-  /// AC9/R3-g). Aucun `Timestamp` brut : `updated_at` reste ISO-8601 (AD-9).
+  /// **fuitée** par [_encode] écraserait la méta autoritaire (merge corrompu).
+  /// Aucun `Timestamp` brut : `updated_at` reste ISO-8601 (AD-9).
   Map<String, dynamic> _cloudMap({
     required T entity,
     required String id,
@@ -326,24 +325,24 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
         ZSyncMeta.kUpdatedAt: isoUpdatedAt,
         ZSyncMeta.kIsDeleted: isDeleted,
         // Corps métier épandu EN DERNIER, débarrassé des clés réservées : il ne
-        // peut donc PAS clobberer la méta ci-dessus (garde AD-19, D8/R3-g).
+        // peut donc PAS clobberer la méta ci-dessus.
         ...ZSyncMeta.stripReserved(_encode(entity)),
       };
 
-  // ───────────────────────── D5 — persist offline-first ──────────────────────
+  // ───────────────────────── persist offline-first ──────────────────────
 
-  /// Écriture protégée (point d'extension ES-3.1) **offline-first** : (1)
-  /// `local.put(item)` — **matérialise l'éphémère** (attribution d'`id` opaque,
-  /// AD-14) et réécrit `is_deleted:false`/`updated_at=now` ([ZSyncMeta]) ; (2)
-  /// renvoie le **résultat local DÈS son succès** ; (3) pousse au Firestore résolu
-  /// en **fire-and-forget** (`unawaited`) — un échec distant est **loggé** puis
-  /// **avalé** (AD-9), **jamais** propagé.
+  /// Écriture protégée (point d'extension du Template Method) **offline-first** :
+  /// (1) `local.put(item)` — **matérialise l'éphémère** (attribution d'`id`
+  /// opaque, AD-14) et réécrit `is_deleted:false`/`updated_at=now` ([ZSyncMeta]) ;
+  /// (2) renvoie le **résultat local DÈS son succès** ; (3) pousse au Firestore
+  /// résolu en **fire-and-forget** (`unawaited`) — un échec distant est **loggé**
+  /// puis **avalé** (AD-9), **jamais** propagé.
   ///
   /// **JAMAIS appelé si `validate → Left`** (garanti par le Template Method `save`
-  /// hérité d'ES-3.1) : un rejet métier bloque `put` local ET push (AC2).
+  /// hérité) : un rejet métier bloque `put` local ET push.
   ///
-  /// [collectionId] (compat port) **remplace** le `parentId` de topologie nested
-  /// (Dev Notes #3) ; ignoré par les topologies flat/global.
+  /// [collectionId] (compat port) **remplace** le `parentId` de topologie nested ;
+  /// ignoré par les topologies flat/global.
   @override
   Future<ZResult<T>> persist(T item, {String? collectionId}) async {
     final localRes = await _local.put(item);
@@ -359,7 +358,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     );
   }
 
-  /// Écriture protégée **PRÉSERVANTE** (CR-LEX-34) : identique à [persist] mais
+  /// Écriture protégée **PRÉSERVANTE** : identique à [persist] mais
   /// le store **fusionne** au lieu d'écraser ([ZLocalStore.putMerged]). Le push
   /// distant reste inchangé — il pousse l'entité fusionnée relue localement.
   ///
@@ -413,7 +412,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   }
 
   /// Propage un **tombstone** pour [id] en **AWAITANT** le push et en
-  /// **rapportant** son succès (CR-LEX-35 révisée).
+  /// **rapportant** son succès.
   ///
   /// Contrairement à [_bestEffortPushEntry], l'échec n'est PAS avalé : purger
   /// l'entrée locale sans savoir si le tombstone a atteint le cloud provoquerait
@@ -501,8 +500,9 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   Stream<List<T>> watchAll() => _local.watchAll();
 
   /// Le port [ZLocalStore] n'expose pas de requête filtrée : le [request] n'est
-  /// PAS traduit vers le cache (parité E5-3, dette E9). Le flux nu complet est
-  /// renvoyé — jamais un `Either` (AD-11).
+  /// PAS traduit vers le cache (limitation connue, alignée sur les autres dépôts
+  /// offline-first du package). Le flux nu complet est renvoyé — jamais un
+  /// `Either` (AD-11).
   @override
   Stream<List<T>> watch(ZDataRequest request) {
     _log('ZOfflineFirstBoxRepository: request non traduit vers le cache '
@@ -544,12 +544,12 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     return localRes;
   }
 
-  /// Expose la méta de sync **depuis le PORT** (CR-LEX-26) — délègue au store
+  /// Expose la méta de sync **depuis le PORT** — délègue au store
   /// local, source de vérité offline-first (AD-9). Inclut les tombstones.
   @override
   Future<ZResult<List<ZSyncEntry<T>>>> getAllWithMeta() => _local.syncEntries();
 
-  /// Purge locale APRÈS propagation d'un tombstone (CR-LEX-35 révisée).
+  /// Purge locale APRÈS propagation d'un tombstone.
   ///
   /// Séquence, et l'ordre est la correction :
   /// 1. `softDelete` **local** — crée la méta `is_deleted:true` à propager ;
@@ -606,7 +606,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     );
   }
 
-  // ───────────────────────── D4/D6/D7 — merge LWW + listener ──────────────────
+  // ───────────────────────── Merge LWW + listener ──────────────────
 
   /// Merge **Last-Write-Wins** cloud→local des [cloudDocs] (`id → corps cloud`).
   ///
@@ -646,11 +646,11 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       final map = doc.value;
       final entity = _decodeCloud(id, map);
       if (entity == null) continue; // corrompu → écarté + loggé (AD-10)
-      // CR-LEX-9 — `ZSyncMeta.fromJson` doit lire le map NORMALISÉ. Construit
-      // sur le map brut, `updatedAt` valait `null` quand le cloud portait un
-      // `Timestamp` — et c'est ce `null` qui était PERSISTÉ. La clé d'arbitrage
-      // LWW retombait donc à vide, exposant les cycles suivants à écraser la
-      // version la plus récente par la plus ancienne, silencieusement.
+      // `ZSyncMeta.fromJson` doit lire le map NORMALISÉ : construit sur le map
+      // brut, `updatedAt` vaudrait `null` quand le cloud porte un `Timestamp` —
+      // et ce `null` serait alors PERSISTÉ. La clé d'arbitrage LWW retomberait
+      // donc à vide, exposant les cycles suivants à écraser silencieusement la
+      // version la plus récente par la plus ancienne.
       // `_decodeCloud` normalise une COPIE : la normalisation est refaite ici.
       final normalized = <String, dynamic>{...map};
       _normalizeMetaIso(normalized);
@@ -659,9 +659,9 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       final localEntry = localById[id];
       final localTime = localEntry?.updatedAt;
 
-      // D4 : adopter SSI local absent OU cloud STRICTEMENT plus récent. La clé
-      // est TOUJOURS hors-entité (méta) — jamais un `T.updatedAt` (AC6). ★ R3-c :
-      // inverser `isAfter` fait adopter un cloud plus ANCIEN (régression LWW).
+      // Adopter SSI local absent OU cloud STRICTEMENT plus récent. La clé
+      // est TOUJOURS hors-entité (méta) — jamais un `T.updatedAt`. Attention :
+      // inverser `isAfter` ferait adopter un cloud plus ANCIEN (régression LWW).
       final adopt = localEntry == null ||
           (cloudTime != null &&
               (localTime == null || cloudTime.isAfter(localTime)));
@@ -673,8 +673,8 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
       }
     }
 
-    // Upload de rattrapage : entrées local-only, NON supprimées, absentes du cloud
-    // (parité lex `_mergeSnapshotWithLocal:541-552`). Best-effort (fire-and-forget).
+    // Upload de rattrapage : entrées local-only, NON supprimées, absentes du cloud.
+    // Best-effort (fire-and-forget).
     for (final e in localEntries) {
       final id = e.id;
       if (id != null && !e.isDeleted && !cloudIds.contains(id)) {
@@ -685,7 +685,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   }
 
   /// Traite un lot de documents cloud issus du **listener temps réel** : **skip**
-  /// tout écho local non confirmé serveur ([hasPendingWrites] `== true`, D6/AC7) —
+  /// tout écho local non confirmé serveur ([hasPendingWrites] `== true`) —
   /// sinon un merge ré-adopterait la donnée que le local vient de produire. Un
   /// snapshot **confirmé** déclenche le merge LWW. Erreur locale de merge → loggée
   /// (le flux ne throw jamais).
@@ -704,14 +704,14 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     List<MapEntry<String, Map<String, dynamic>>> cloudDocs, {
     required bool hasPendingWrites,
   }) async {
-    if (hasPendingWrites) return; // ★ R3-e : sans ce skip, l'écho local re-merge.
+    if (hasPendingWrites) return; // Sans ce skip, l'écho local re-merge.
     final res = await _mergeSnapshotWithLocal(cloudDocs);
     res.leftMap((f) => _log('merge listener : panne locale — ${f.message}'));
   }
 
   /// Démarre le listener temps réel `snapshots(includeMetadataChanges:true)` au
-  /// chemin résolu (D6). Le chemin non résolu / une erreur de flux est **loggée**
-  /// (jamais un `throw` non géré, parité E5-1). Idempotent (un seul abonnement).
+  /// chemin résolu. Le chemin non résolu / une erreur de flux est **loggée**
+  /// (jamais un `throw` non géré). Idempotent (un seul abonnement).
   void _startListener() {
     if (_listenerSub != null) return;
     final pathRes = _collectionPath();
@@ -744,7 +744,7 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
     );
   }
 
-  // ───────────────────────── AC12 — sync() best-effort one-shot ───────────────
+  // ───────────────────────── sync() best-effort one-shot ───────────────
 
   /// Synchronise **une fois** : pull du snapshot serveur au chemin résolu → merge
   /// LWW cloud→local + upload de rattrapage local-only → `Right(unit)`.
@@ -753,7 +753,8 @@ class ZOfflineFirstBoxRepository<T extends ZEntity>
   /// court-circuite ; une `FirebaseException` (ou un chemin non résolu) est
   /// assimilée à « offline » → `Right(unit)` (loggé), le local **intact**. Une
   /// **panne LOCALE** de merge reste une vraie erreur → `Left` (jamais avalée).
-  /// Le *quand*/débounce multi-dépôts reste ES-3.4.
+  /// Le *quand*/débounce multi-dépôts reste hors du périmètre de cette méthode
+  /// (orchestré en amont).
   @override
   Future<ZResult<Unit>> sync() async {
     final isConnected = _isConnected;

@@ -1,22 +1,21 @@
-/// `ZFlashcardTagConfirmSheet` — confirmation des tags suggérés post-génération
-/// (SU-9/AC9 — AD-4/AD-14/AD-37/AD-43).
+/// `ZFlashcardTagConfirmSheet` — confirmation des tags suggérés post-génération.
 ///
-/// ## Réutilise l'éditeur EXISTANT (jamais un second éditeur)
+/// ## Réutilise l'éditeur existant (jamais un second éditeur)
 ///
-/// COMPOSE [ZTagEditor] (ES-8.1) — il ne réinvente NI la garde anti-doublon, NI
-/// la matérialisation `id == null` (AD-14), NI les puces. Les tags suggérés
-/// (fournis par l'app, suggestion IA = app-side AD-15) sont **pré-cochés** :
+/// Compose [ZTagEditor] — il ne réinvente ni la garde anti-doublon, ni
+/// la matérialisation `id == null`, ni les puces. Les tags suggérés
+/// (fournis par l'app, suggestion IA = app-side) sont pré-cochés :
 /// matérialisés dans l'ensemble confirmé dès l'ouverture, l'utilisateur pouvant
-/// **décocher** (retrait d'une puce) ou **ajouter** (confirmer une suggestion
+/// décocher (retrait d'une puce) ou ajouter (confirmer une suggestion
 /// restante / créer un tag).
 ///
-/// ## Ne persiste RIEN (AD-37/AD-43 — AC5/AC6)
+/// ## Ne persiste rien
 ///
 /// La confirmation remet l'ensemble retenu à l'appelant via [onConfirmed] —
-/// **aucun** repository/store (grep négatif prouvé sur les lignes de code,
+/// aucun repository/store (grep négatif prouvé sur les lignes de code,
 /// commentaires exclus ⇒ RC=1 ; la garde `z_widgets_purity_test.dart` le
 /// verrouille par mutation). Les tags matérialisés ont
-/// `id == null` (matérialisés par le repository app-side, ES-8.1). L'annulation
+/// `id == null` (matérialisés par le repository app-side). L'annulation
 /// ([onCancel]) n'écrit rien.
 library;
 
@@ -27,15 +26,15 @@ import 'package:zcrud_study_kernel/zcrud_study_kernel.dart'
 
 import 'z_tag_editor.dart';
 
-/// Cible de taille interactive minimale (AD-13/NFR-S6).
+/// Cible de taille interactive minimale (invariant AD-13).
 const double _kMinTapTarget = 48.0;
 
 /// Feuille de confirmation des tags d'un lot généré — pré-cochage éditable.
 class ZFlashcardTagConfirmSheet extends StatefulWidget {
-  /// Construit la feuille. TOUS les libellés RENDUS sont INJECTÉS (i18n, AC12) —
+  /// Construit la feuille. Tous les libellés rendus sont injectés (i18n) —
   /// aucun défaut FR en dur : [title]/[confirmLabel]/[cancelLabel] et les libellés
-  /// de l'éditeur ([inputLabel]/[inputHint]/[addSemanticLabel]) sont REQUIS, de
-  /// sorte qu'une app anglaise ne peut PAS hériter de français par omission.
+  /// de l'éditeur ([inputLabel]/[inputHint]/[addSemanticLabel]) sont requis, de
+  /// sorte qu'une app anglaise ne peut pas hériter de français par omission.
   const ZFlashcardTagConfirmSheet({
     required this.title,
     required this.confirmLabel,
@@ -51,38 +50,38 @@ class ZFlashcardTagConfirmSheet extends StatefulWidget {
     super.key,
   });
 
-  /// Titre INJECTÉ de la feuille (i18n).
+  /// Titre injecté de la feuille (i18n).
   final String title;
 
-  /// Libellé INJECTÉ du bouton de confirmation (i18n).
+  /// Libellé injecté du bouton de confirmation (i18n).
   final String confirmLabel;
 
-  /// Libellé INJECTÉ du bouton d'annulation (i18n).
+  /// Libellé injecté du bouton d'annulation (i18n).
   final String cancelLabel;
 
-  /// Émis avec l'ensemble RETENU (tags confirmés) — canal de handoff (AC9).
+  /// Émis avec l'ensemble retenu (tags confirmés) — canal de handoff.
   /// Les tags peuvent porter `id == null` (matérialisés par le repository).
   final void Function(List<ZFlashcardTag> confirmedTags) onConfirmed;
 
-  /// Émis à l'annulation (fermeture sans confirmer) — n'écrit rien (AC6).
+  /// Émis à l'annulation (fermeture sans confirmer) — n'écrit rien.
   final VoidCallback? onCancel;
 
-  /// Tags suggérés par l'app (value objects sans `id`) — PRÉ-COCHÉS (AC9).
+  /// Tags suggérés par l'app (value objects sans `id`) — pré-cochés.
   final List<ZSuggestedTag> suggestedTags;
 
-  /// Tags existants (pour la garde anti-doublon de [ZTagEditor], AC9).
+  /// Tags existants (pour la garde anti-doublon de [ZTagEditor]).
   final List<ZFlashcardTag> existingTags;
 
-  /// Palette INJECTÉE bornant la couleur des tags matérialisés.
+  /// Palette injectée bornant la couleur des tags matérialisés.
   final ZColorPalette palette;
 
-  /// Libellé INJECTÉ du champ de saisie (transmis à [ZTagEditor]).
+  /// Libellé injecté du champ de saisie (transmis à [ZTagEditor]).
   final String inputLabel;
 
-  /// Indice INJECTÉ du champ de saisie (transmis à [ZTagEditor]).
+  /// Indice injecté du champ de saisie (transmis à [ZTagEditor]).
   final String inputHint;
 
-  /// Libellé sémantique INJECTÉ du bouton d'ajout (transmis à [ZTagEditor]).
+  /// Libellé sémantique injecté du bouton d'ajout (transmis à [ZTagEditor]).
   final String addSemanticLabel;
 
   @override
@@ -91,8 +90,8 @@ class ZFlashcardTagConfirmSheet extends StatefulWidget {
 }
 
 class _ZFlashcardTagConfirmSheetState extends State<ZFlashcardTagConfirmSheet> {
-  /// Ensemble RETENU (source de vérité unique). Pré-coché = les suggestions
-  /// matérialisées dès l'ouverture (AC9).
+  /// Ensemble retenu (source de vérité unique). Pré-coché = les suggestions
+  /// matérialisées dès l'ouverture.
   late List<ZFlashcardTag> _confirmed;
 
   @override
@@ -103,8 +102,8 @@ class _ZFlashcardTagConfirmSheetState extends State<ZFlashcardTagConfirmSheet> {
     ];
   }
 
-  /// Matérialise une suggestion en tag `id == null` (AD-14), couleur bornée par
-  /// la palette INJECTÉE (`remapColorKey`, jamais un clamp maison).
+  /// Matérialise une suggestion en tag `id == null`, couleur bornée par
+  /// la palette injectée (`remapColorKey`, jamais un clamp maison).
   ZFlashcardTag _materializeSuggested(ZSuggestedTag s) => ZFlashcardTag(
         title: s.title,
         colorKey: remapColorKey(

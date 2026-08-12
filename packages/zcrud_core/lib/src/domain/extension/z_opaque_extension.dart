@@ -34,7 +34,7 @@ import 'z_json_equality.dart';
 /// Jamais produite pour un payload non-`Map` (`42`, `'texte'`, `[]`) : il n'y a
 /// alors rien de structuré à préserver ⇒ `extension == null`.
 ///
-/// ⚠️ **Ce n'est PAS un type applicatif.** Une app ne doit jamais en dépendre
+/// **Ce n'est PAS un type applicatif.** Une app ne doit jamais en dépendre
 /// pour lire ses données — elle teste `entity.extension is MonType`. Sa seule
 /// raison d'être est de **ne pas détruire ce qu'on ne sait pas lire**.
 class ZOpaqueExtension implements ZExtension {
@@ -60,7 +60,7 @@ class ZOpaqueExtension implements ZExtension {
 
   /// Version déclarée par le payload (`format_version`), ou `0` si absente.
   ///
-  /// ⚠️ **Rapportée, jamais interprétée** : ce type ne prétend rien comprendre
+  /// **Rapportée, jamais interprétée** : ce type ne prétend rien comprendre
   /// au sous-schéma — c'est précisément pourquoi il le préserve au lieu de le
   /// juger.
   @override

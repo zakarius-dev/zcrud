@@ -1,7 +1,7 @@
 /// Égalité et hachage **PROFONDS** de valeurs JSON — **l'unique implémentation du
 /// dépôt pour le slot `extra`**.
 ///
-/// ⚠️ **Portée EXACTE** : « unique » vaut **pour le slot `extra`** des entités
+/// **Portée EXACTE** : « unique » vaut **pour le slot `extra`** des entités
 /// `ZExtensible`. `zcrud_core` conserve par ailleurs quelques `_mapEquals`/
 /// `_mapHash` superficiels **locaux**, qui comparent des maps de
 /// **configuration** (scalaires), **PAS** un slot `extra` extensible : ceux-ci

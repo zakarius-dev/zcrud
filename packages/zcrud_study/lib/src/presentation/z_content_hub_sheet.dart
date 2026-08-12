@@ -1,58 +1,54 @@
-/// `ZContentHubSheet` — feuille d'ajout de contenu PARAMÉTRIQUE (ES-5.3,
-/// AD-25), au **rendu de RÉFÉRENCE** depuis **CR-IFFD-65**.
+/// `ZContentHubSheet` — feuille d'ajout de contenu paramétrique, au rendu de
+/// référence.
 ///
-/// Remplace les monolithes IFFD `folder_content_creating_buttons.dart` (241 l.)
-/// / `folder_content_add_dialog_widget.dart` (550 l.) par une projection
+/// Remplace deux monolithes historiques par une projection
 /// présentation paramétrée : icône/label/hint/intitulé de section/libellé de
-/// badge sont **INJECTÉS** (i18n, AD-13/FR-26), jamais codés en dur. **Entrée
-/// désactivée** (`enabled == false`) **OU sans callback** (`onTap == null`) ⇒
-/// **non actionnable** (AD-4 — capacité absente, jamais un no-op silencieux).
+/// badge sont injectés (i18n, invariants AD-13/FR-26), jamais codés en dur.
+/// Entrée désactivée (`enabled == false`) ou sans callback (`onTap == null`)
+/// ⇒ non actionnable (invariant AD-4 — capacité absente, jamais un no-op
+/// silencieux).
 ///
-/// ## CR-IFFD-65 — le DÉFAUT a changé, et c'est une RUPTURE DE RENDU
+/// ## Le défaut a changé, et c'est une rupture de rendu
 ///
-/// La CR a mesuré quatre manques : pas de **groupement**, pas d'**identité
-/// visuelle** par entrée, pas de **mise en avant** (détournée par `hint` chez
-/// l'hôte, à contrecœur et déclaré), pas de **forme** réglable. Le propriétaire
-/// du socle a arbitré le **2026-08-05** que le rendu de référence legacy
-/// devienne le **DÉFAUT** — sections titrées, pastille circulaire teintée,
-/// badge, entrées en cartes, chevron, **hauteur d'item de référence assumée**,
-/// **défilement attendu**.
+/// Le rendu antérieur manquait de quatre choses : pas de groupement, pas
+/// d'identité visuelle par entrée, pas de mise en avant (détournée par `hint`
+/// chez l'hôte, à contrecœur et déclaré), pas de forme réglable. Le
+/// propriétaire du socle a arbitré que le rendu de référence historique
+/// devienne le défaut — sections titrées, pastille circulaire teintée,
+/// badge, entrées en cartes, chevron, hauteur d'item de référence assumée,
+/// défilement attendu.
 ///
-/// **Cette décision CONTREDIT délibérément la CR** (§ « ce que nous ne
-/// demandons PAS » : « la densité du socle est meilleure […] nous ne demandons
-/// pas de le défaire »). L'argument d'ÉCHELLE de la CR n'est **pas réfuté** —
-/// à douze types la mise en page de référence demande plusieurs écrans — il est
-/// répondu par le **réglage** : `density: ZContentHubDensity.compact`
+/// Cette décision contredit délibérément la densité compacte antérieure,
+/// jugée meilleure à grande échelle : à douze types la mise en page de
+/// référence demande plusieurs écrans. Ce n'est pas réfuté — c'est répondu
+/// par le réglage : `density: ZContentHubDensity.compact`
 /// (paramètre) ou `ZcrudTheme.contentHubDensity` (jeton) restitue exactement la
 /// densité d'avant. La densité n'a pas disparu ; elle a cessé d'être le défaut.
 ///
-/// **Tout hôte PASSIF voit son rendu changer** sans avoir rien demandé.
-/// C'est assumé et déclaré, au même titre que `studyCardElevation: 1` côté
-/// IFFD : *écart de conception, pas une parité*.
+/// Tout hôte passif voit son rendu changer sans avoir rien demandé. C'est
+/// assumé et déclaré : écart de conception, pas une parité.
 ///
 /// ## Priorité de résolution, partout
 ///
-/// **paramètre (feuille ou entrée) > jeton `ZcrudTheme.contentHub*` >
-/// [ZContentHubReference]**.
+/// paramètre (feuille ou entrée) > jeton `ZcrudTheme.contentHub*` >
+/// [ZContentHubReference].
 ///
 /// ## Invariants
 ///
-/// * **AD-2/AD-15/SM-1** : AUCUN gestionnaire d'état (réactivité Flutter-native
-///   pure) ; slivers **BUILDER** (jamais de liste matérialisée) ; `const`
-///   partout où c'est possible.
-/// * **AD-4** : un slot `null` (intitulé de section, badge, hint) est **ABSENT
-///   de l'arbre** — jamais un `SizedBox.shrink()` inerte (le legacy en pose un,
-///   `folder_content_add_dialog_widget.dart:467` — **non reproduit**).
-/// * **AD-10** : chaîne de repli **TOTALE** — une palette vide, un créneau
-///   inconnu, une section sans entrée ne font **jamais** échouer le rendu.
-/// * **AD-13** : insets/alignements **directionnels** (le legacy pose un
-///   `EdgeInsets.only(left: 8)`, converti ici), `Semantics` explicites, cible
-///   ≥ 48 dp, chevron **retourné en RTL** — et **la couleur n'est JAMAIS le
-///   seul canal** : le libellé porte l'information, la teinte n'en est qu'un
-///   rappel, la mise en avant est **textuelle donc lue** par un lecteur
-///   d'écran (ce qui rend inutile le détournement de `hint` déclaré par la CR).
-/// * **FR-26/NFR-S7** : aucune couleur ni libellé en dur ici — les teintes de
-///   référence vivent dans [ZContentHubReference] (exception FR-26 **encadrée**,
+/// * Invariants AD-2/AD-15 : aucun gestionnaire d'état (réactivité
+///   Flutter-native pure) ; slivers builder (jamais de liste matérialisée) ;
+///   `const` partout où c'est possible.
+/// * Invariant AD-4 : un slot `null` (intitulé de section, badge, hint) est
+///   absent de l'arbre — jamais un `SizedBox.shrink()` inerte.
+/// * Invariant AD-10 : chaîne de repli totale — une palette vide, un créneau
+///   inconnu, une section sans entrée ne font jamais échouer le rendu.
+/// * Invariant AD-13 : insets/alignements directionnels, `Semantics`
+///   explicites, cible ≥ 48 dp, chevron retourné en RTL — et la couleur
+///   n'est jamais le seul canal : le libellé porte l'information, la teinte
+///   n'en est qu'un rappel, la mise en avant est textuelle donc lue par un
+///   lecteur d'écran (ce qui rend inutile un détournement de `hint`).
+/// * Invariant FR-26 : aucune couleur ni libellé en dur ici — les teintes de
+///   référence vivent dans [ZContentHubReference] (exception FR-26 encadrée,
 ///   exemptée nominativement par la garde de source).
 library;
 
@@ -64,8 +60,9 @@ import 'z_readable_tint.dart';
 
 /// Une entrée du hub d'ajout — data-class de présentation immuable (`const`).
 ///
-/// [icon]/[label] sont INJECTÉS (jamais un glyphe/libellé codé en dur).
-/// [enabled] `false` OU [onTap] `null` ⇒ entrée NON actionnable (AD-4).
+/// [icon]/[label] sont injectés (jamais un glyphe/libellé codé en dur).
+/// [enabled] `false` ou [onTap] `null` ⇒ entrée non actionnable (invariant
+/// AD-4).
 @immutable
 class ZContentHubEntry {
   /// Construit une entrée du hub.
@@ -81,67 +78,67 @@ class ZContentHubEntry {
     this.badgeSemanticLabel,
   });
 
-  /// Glyphe INJECTÉ de l'entrée (jamais codé en dur).
+  /// Glyphe injecté de l'entrée (jamais codé en dur).
   final IconData icon;
 
-  /// Libellé LOCALISÉ INJECTÉ (i18n, AD-13/FR-23). **C'est lui qui porte
-  /// l'information** : la teinte d'identité n'en est qu'un rappel (AD-13 — la
-  /// couleur n'est jamais le seul canal).
+  /// Libellé localisé injecté (i18n, invariants AD-13/FR-26). C'est lui qui
+  /// porte l'information : la teinte d'identité n'en est qu'un rappel
+  /// (invariant AD-13 — la couleur n'est jamais le seul canal).
   final String label;
 
   /// Entrée actionnable (défaut `true`). `false` ⇒ tuile désactivée.
   final bool enabled;
 
-  /// Aide/indice LOCALISÉ INJECTÉ (optionnel). `null` ⇒ **absent** de l'arbre.
+  /// Aide/indice localisé injecté (optionnel). `null` ⇒ absent de l'arbre.
   ///
-  /// **Ce n'est PAS le créneau d'une mise en avant** : la CR déclarait
-  /// détourner `hint` pour y écrire « Recommandé », faute de mieux. Le créneau
-  /// existe désormais — [badgeLabel] — et le détournement est inutile.
+  /// Ce n'est pas le créneau d'une mise en avant : un rendu antérieur
+  /// détournait `hint` pour y écrire « Recommandé », faute de mieux. Le
+  /// créneau existe désormais — [badgeLabel] — et le détournement est
+  /// inutile.
   final String? hint;
 
-  /// Callback d'activation. `null` ⇒ entrée NON actionnable (AD-4).
+  /// Callback d'activation. `null` ⇒ entrée non actionnable (invariant AD-4).
   final VoidCallback? onTap;
 
-  /// Teinte d'IDENTITÉ **INJECTÉE** de l'entrée (CR-IFFD-65 ②) — le canal le
-  /// plus prioritaire. `null` ⇒ créneau **déterministe** de [colorKey] (à
+  /// Teinte d'identité injectée de l'entrée — le canal le
+  /// plus prioritaire. `null` ⇒ créneau déterministe de [colorKey] (à
   /// défaut de [label]) dans la palette de la feuille.
   ///
   /// Toute teinte peinte est portée au plancher de contraste par
-  /// `zReadableTintOn` : le legacy peignait la teinte brute, sans mesure ni
-  /// branche de luminosité.
+  /// `zReadableTintOn` : un rendu antérieur peignait la teinte brute, sans
+  /// mesure ni branche de luminosité.
   final Color? tint;
 
-  /// Clé d'identité **OPAQUE** et STABLE de l'entrée (`'flashcards.ai'`…), qui
+  /// Clé d'identité opaque et stable de l'entrée (`'flashcards.ai'`…), qui
   /// gouverne son créneau de teinte. `null` ⇒ dérivée du [label].
   ///
-  /// **Jamais un index d'affichage** : c'est ce qui rend la teinte STABLE
-  /// quand une application **insère un type au milieu** (« non mesuré » n°4 de
-  /// la CR). Une clé explicite la rend en outre stable **d'une langue à
-  /// l'autre**, ce que le repli par libellé ne garantit pas.
+  /// Jamais un index d'affichage : c'est ce qui rend la teinte stable
+  /// quand une application insère un type au milieu. Une clé explicite la
+  /// rend en outre stable d'une langue à l'autre, ce que le repli par
+  /// libellé ne garantit pas.
   final String? colorKey;
 
-  /// Libellé de **MISE EN AVANT** LOCALISÉ INJECTÉ (« Recommandé »…) —
-  /// CR-IFFD-65 ③. `null` ⇒ badge **ABSENT** de l'arbre (AD-4).
+  /// Libellé de mise en avant localisé injecté (« Recommandé »…). `null` ⇒
+  /// badge absent de l'arbre (invariant AD-4).
   ///
-  /// **Requis ou nullable, JAMAIS un défaut littéral** : `badgeLabel =
+  /// Requis ou nullable, jamais un défaut littéral : `badgeLabel =
   /// 'Recommandé'` fuirait en français dans une application anglaise sans voie
-  /// d'override (règle « défaut de constructeur en dur » de la garde de
-  /// source). Le canal est **textuel donc accessible** — c'est l'exigence
-  /// explicite de la CR.
+  /// d'override. Le canal est textuel donc accessible.
   final String? badgeLabel;
 
   /// Annonce alternative du badge. `null` ⇒ [badgeLabel] est annoncé tel quel.
   final String? badgeSemanticLabel;
 
-  /// `true` SSI l'entrée est activée ET porte un callback (AD-4).
+  /// `true` ssi l'entrée est activée et porte un callback (invariant AD-4).
   bool get isActionable => enabled && onTap != null;
 }
 
-/// Un **groupe titré** d'entrées du hub (CR-IFFD-65 ①).
+/// Un groupe titré d'entrées du hub.
 ///
-/// Le legacy titre quatre familles ; le hub rendait une liste plate. C'est un
-/// argument d'ÉCHELLE, pas de goût : le composant dont la raison d'être est
-/// d'accueillir de nouveaux types doit rester lisible quand on en accueille.
+/// Un rendu antérieur ne titrait pas les familles et rendait une liste
+/// plate. C'est un argument d'échelle, pas de goût : le composant dont la
+/// raison d'être est d'accueillir de nouveaux types doit rester lisible
+/// quand on en accueille.
 @immutable
 class ZContentHubSection {
   /// Construit une section ; seules les [entries] sont requises.
@@ -154,11 +151,11 @@ class ZContentHubSection {
   /// Entrées de la section, dans l'ordre voulu (aucun tri implicite).
   final List<ZContentHubEntry> entries;
 
-  /// Intitulé LOCALISÉ **INJECTÉ** de la section. `null` ⇒ section **sans
-  /// en-tête** : l'intitulé est **absent de l'arbre** (AD-4), jamais un texte
-  /// vide réservant de la place.
+  /// Intitulé localisé injecté de la section. `null` ⇒ section sans
+  /// en-tête : l'intitulé est absent de l'arbre (invariant AD-4), jamais un
+  /// texte vide réservant de la place.
   ///
-  /// Nullable **sans défaut littéral** (FR-26) — le socle ne connaît ni
+  /// Nullable sans défaut littéral (invariant FR-26) — le socle ne connaît ni
   /// « Flashcards » ni « Documents ».
   final String? title;
 
@@ -166,7 +163,7 @@ class ZContentHubSection {
   final String? semanticLabel;
 }
 
-/// Feuille d'ajout de contenu paramétrique, au rendu de référence CR-IFFD-65.
+/// Feuille d'ajout de contenu paramétrique, au rendu de référence.
 ///
 /// Testable en isolation (widget nu) ou présentée en modale via [show].
 ///
@@ -174,13 +171,13 @@ class ZContentHubSection {
 /// ZContentHubSheet(
 ///   sections: <ZContentHubSection>[
 ///     ZContentHubSection(
-///       title: l10n.flashcards,                       // INJECTÉ
+///       title: l10n.flashcards,                       // injecté
 ///       entries: <ZContentHubEntry>[
 ///         ZContentHubEntry(
 ///           icon: Icons.auto_awesome,
 ///           label: l10n.generateWithAi,
-///           colorKey: 'flashcards.ai',                 // teinte STABLE
-///           badgeLabel: l10n.recommended,              // mise en avant TEXTE
+///           colorKey: 'flashcards.ai',                 // teinte stable
+///           badgeLabel: l10n.recommended,              // mise en avant texte
 ///           onTap: fa.gate('flashcards.ai', _generate),
 ///         ),
 ///       ],
@@ -192,8 +189,8 @@ class ZContentHubSheet extends StatelessWidget {
   /// Construit la feuille.
   ///
   /// [entries] et [sections] coexistent : les [entries] forment une section
-  /// **sans intitulé** rendue EN TÊTE, puis viennent les [sections]. Rien
-  /// n'est jamais silencieusement perdu (AD-10).
+  /// sans intitulé rendue en tête, puis viennent les [sections]. Rien
+  /// n'est jamais silencieusement perdu (invariant AD-10).
   const ZContentHubSheet({
     this.entries = const <ZContentHubEntry>[],
     this.sections = const <ZContentHubSection>[],
@@ -216,20 +213,20 @@ class ZContentHubSheet extends StatelessWidget {
     super.key,
   });
 
-  /// Entrées NON groupées, dans l'ordre d'affichage voulu (aucun tri
-  /// implicite). Rendues comme une section **sans intitulé**, en tête.
+  /// Entrées non groupées, dans l'ordre d'affichage voulu (aucun tri
+  /// implicite). Rendues comme une section sans intitulé, en tête.
   final List<ZContentHubEntry> entries;
 
-  /// Sections titrées (CR-IFFD-65 ①). Vide ⇒ aucune section titrée.
+  /// Sections titrées. Vide ⇒ aucune section titrée.
   final List<ZContentHubSection> sections;
 
   /// Densité du rendu. `null` ⇒ jeton `contentHubDensity`, puis référence
-  /// ([ZContentHubDensity.comfortable] — le rendu legacy).
+  /// ([ZContentHubDensity.comfortable] — le rendu de référence).
   ///
-  /// [ZContentHubDensity.compact] **restitue la densité d'avant
-  /// CR-IFFD-65** : une entrée = une ligne au plancher de 48 dp, glyphe nu,
+  /// [ZContentHubDensity.compact] restitue la densité d'avant ce rendu de
+  /// référence : une entrée = une ligne au plancher de 48 dp, glyphe nu,
   /// ni carte ni chevron, une seule colonne. C'est la réponse à l'argument
-  /// d'échelle de la CR.
+  /// d'échelle.
   final ZContentHubDensity? density;
 
   /// Hauteur d'item de référence. `null` ⇒ jeton, puis référence (112).
@@ -241,8 +238,8 @@ class ZContentHubSheet extends StatelessWidget {
   /// Padding interne d'une carte. `null` ⇒ jeton, puis référence (8).
   final EdgeInsetsGeometry? itemPadding;
 
-  /// Opacité de la teinte de FOND d'une carte. `null` ⇒ jeton, puis référence
-  /// (**0** — carte neutre, mesuré sur le legacy).
+  /// Opacité de la teinte de fond d'une carte. `null` ⇒ jeton, puis référence
+  /// (0 — carte neutre, mesuré sur le rendu historique).
   final double? itemTintAlpha;
 
   /// Diamètre de la pastille d'identité. `null` ⇒ jeton, puis référence (40).
@@ -255,21 +252,21 @@ class ZContentHubSheet extends StatelessWidget {
   final double? glyphSize;
 
   /// Palette des teintes d'identité. `null` ⇒ jeton `contentHubAccents`, puis
-  /// [ZContentHubReference.accents]. Liste **VIDE** ⇒ aucune teinte
+  /// [ZContentHubReference.accents]. Liste vide ⇒ aucune teinte
   /// d'identité : le hub rend alors ses glyphes au rôle `onSurfaceVariant`
-  /// (chaîne totale, AD-10 — jamais un échec).
+  /// (chaîne totale, invariant AD-10 — jamais un échec).
   final List<Color>? accents;
 
   /// Teinte du badge de mise en avant. `null` ⇒ jeton, puis référence.
   final Color? badgeColor;
 
   /// Glyphe du chevron d'affordance. `null` ⇒ référence
-  /// (`arrow_forward_ios`). **Toujours rendu retourné en RTL**, quel que soit
+  /// (`arrow_forward_ios`). Toujours rendu retourné en RTL, quel que soit
   /// le glyphe (le socle force `matchTextDirection`).
   final IconData? chevronGlyph;
 
   /// Largeur à partir de laquelle le hub passe en grille. `null` ⇒ jeton, puis
-  /// référence (600 — **mesuré** dans le legacy).
+  /// référence (600 — mesuré sur le rendu historique).
   final double? gridBreakpoint;
 
   /// Nombre de colonnes au-delà de [gridBreakpoint]. `null` ⇒ jeton, puis
@@ -308,10 +305,10 @@ class ZContentHubSheet extends StatelessWidget {
     'zContentHubSheet_chevron',
   );
 
-  /// Clé du **retournement RTL de secours** du chevron (testabilité).
+  /// Clé du retournement RTL de secours du chevron (testabilité).
   ///
-  /// Présente UNIQUEMENT quand le glyphe injecté ne porte pas
-  /// `IconData.matchTextDirection` **et** que la direction est RTL — sans quoi
+  /// Présente uniquement quand le glyphe injecté ne porte pas
+  /// `IconData.matchTextDirection` et que la direction est RTL — sans quoi
   /// aucun nœud n'est ajouté à l'arbre. Le glyphe de référence n'en a jamais
   /// besoin (il porte déjà la propriété, mesuré dans le SDK).
   static const ValueKey<String> chevronMirrorKey = ValueKey<String>(
@@ -319,7 +316,7 @@ class ZContentHubSheet extends StatelessWidget {
   );
 
   /// Présente la feuille en modale (`showModalBottomSheet`) et se résout à sa
-  /// fermeture. Le contenu (icônes/libellés/intitulés INJECTÉS) est fourni par
+  /// fermeture. Le contenu (icônes/libellés/intitulés injectés) est fourni par
   /// l'appelant — jamais de contenu codé en dur ici.
   static Future<void> show(
     BuildContext context, {
@@ -337,9 +334,9 @@ class ZContentHubSheet extends StatelessWidget {
     );
   }
 
-  /// Groupes RÉELLEMENT rendus : les [entries] non groupées d'abord (section
-  /// sans intitulé), puis les [sections]. Une section **vide** est écartée —
-  /// elle ne laisserait qu'un intitulé orphelin (AD-4).
+  /// Groupes réellement rendus : les [entries] non groupées d'abord (section
+  /// sans intitulé), puis les [sections]. Une section vide est écartée —
+  /// elle ne laisserait qu'un intitulé orphelin (invariant AD-4).
   List<ZContentHubSection> _groups() => <ZContentHubSection>[
     if (entries.isNotEmpty) ZContentHubSection(entries: entries),
     for (final ZContentHubSection section in sections)
@@ -360,11 +357,11 @@ class ZContentHubSheet extends StatelessWidget {
         minContrast ??
         theme.contentHubMinContrast ??
         ZContentHubReference.minContrast;
-    // Surface sur laquelle la carte repose RÉELLEMENT — c'est contre elle que
+    // Surface sur laquelle la carte repose réellement — c'est contre elle que
     // le contraste se mesure, jamais contre une surface nominale. En thème
-    // sombre elle est sombre : c'est ce qui fait remonter la teinte, là où le
-    // legacy peint le même hex dans les deux luminosités (mesuré : aucune
-    // branche `Brightness` dans son fichier).
+    // sombre elle est sombre : c'est ce qui fait remonter la teinte, là où un
+    // rendu antérieur peignait le même hex dans les deux luminosités (mesuré :
+    // aucune branche `Brightness` dans son rendu).
     final Color baseSurface =
         CardTheme.of(context).color ?? material.colorScheme.surface;
 
@@ -425,10 +422,8 @@ class ZContentHubSheet extends StatelessWidget {
       container: true,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          // MESURÉ, contre un « non mesuré » de la CR : le legacy passe à
-          // DEUX colonnes dès 600 lp de large (`_buildContentGrid` l.376-377).
-          // La CR avait retiré l'écart de grille en le déclarant non comparé ;
-          // le code, lui, ne laisse aucune ambiguïté.
+          // Mesuré : le rendu historique passe à deux colonnes dès 600 lp de
+          // large.
           final double breakpoint =
               gridBreakpoint ??
               theme.contentHubGridBreakpoint ??
@@ -477,13 +472,13 @@ class ZContentHubSheet extends StatelessWidget {
                                 crossAxisCount: columns,
                                 mainAxisSpacing: chrome.spacing,
                                 crossAxisSpacing: chrome.spacing,
-                                // « Non mesuré » n°2 de la CR (facteur
-                                // d'échelle de texte) : une cellule de grille
-                                // a une hauteur IMPOSÉE — la figer à 112
-                                // déborderait dès que l'utilisateur agrandit
-                                // le texte. L'extent suit donc le `TextScaler`
-                                // ambiant. En colonne unique, c'est un simple
-                                // plancher, donc le problème ne se pose pas.
+                                // Facteur d'échelle de texte : une cellule de
+                                // grille a une hauteur imposée — la figer à
+                                // 112 déborderait dès que l'utilisateur
+                                // agrandit le texte. L'extent suit donc le
+                                // `TextScaler` ambiant. En colonne unique,
+                                // c'est un simple plancher, donc le problème
+                                // ne se pose pas.
                                 mainAxisExtent: MediaQuery.textScalerOf(
                                   context,
                                 ).scale(chrome.extent),
@@ -507,23 +502,22 @@ class ZContentHubSheet extends StatelessWidget {
   }
 }
 
-/// Enveloppe [child] de sorte que le glyphe [icon] soit **retourné en RTL**,
+/// Enveloppe [child] de sorte que le glyphe [icon] soit retourné en RTL,
 /// même s'il ne porte pas `IconData.matchTextDirection`.
 ///
-/// **MESURÉ, et il INFIRME le grief RTL porté contre le chevron legacy** :
-/// le widget `Icon` **n'a aucune** propriété `matchTextDirection` — elle vit
-/// sur `IconData`, et `Icons.arrow_forward_ios` la porte **déjà à `true`**
-/// (`icons.dart:2510-2514` du SDK, vérifié sur pièces). Le chevron legacy se
-/// retourne donc bien : il n'y a pas là de défaut RTL.
+/// Mesuré : le widget `Icon` n'a aucune propriété `matchTextDirection` —
+/// elle vit sur `IconData`, et `Icons.arrow_forward_ios` la porte déjà à
+/// `true` (vérifié sur pièces du SDK). Le chevron de référence se retourne
+/// donc déjà correctement : il n'y a pas là de défaut RTL.
 ///
 /// Le socle ne s'en remet pas au glyphe pour autant : un hôte peut injecter un
 /// chevron qui ne la porte pas, et l'affordance pointerait alors à l'envers en
 /// arabe. Ce repli le rattrape.
 ///
-/// **Pourquoi PAS reconstruire un `IconData`** : ses trois premiers
+/// Pourquoi pas reconstruire un `IconData` : ses trois premiers
 /// paramètres sont `@mustBeConst` dans le SDK — un `IconData` fabriqué à
-/// l'exécution **casse le tree-shaking des icônes** en release. La correction
-/// passe donc par une transformation de RENDU, jamais par un glyphe forgé.
+/// l'exécution casse le tree-shaking des icônes en release. La correction
+/// passe donc par une transformation de rendu, jamais par un glyphe forgé.
 Widget zMirrorIfNeeded(
   BuildContext context,
   IconData icon,
@@ -533,12 +527,12 @@ Widget zMirrorIfNeeded(
     ? child
     : Transform.flip(key: key, flipX: true, child: child);
 
-/// Créneau **DÉTERMINISTE** de [seed] dans une palette de [count] teintes.
+/// Créneau déterministe de [seed] dans une palette de [count] teintes.
 ///
-/// **Jamais un index d'affichage** — c'est toute la différence mesurée par
+/// Jamais un index d'affichage — c'est toute la différence mesurée par
 /// la garde d'insertion : ajouter un type au milieu de la liste ne doit
-/// **déplacer aucune teinte** des entrées voisines (« non mesuré » n°4 de la
-/// CR). Une fonction de la seule identité de l'entrée le garantit.
+/// déplacer aucune teinte des entrées voisines. Une fonction de la seule
+/// identité de l'entrée le garantit.
 int zAccentSlot(String seed, int count) {
   if (count <= 0) return 0;
   int hash = 0;
@@ -548,8 +542,9 @@ int zAccentSlot(String seed, int count) {
   return hash % count;
 }
 
-/// Chrome RÉSOLU du hub — calculé UNE fois par `build` et prêté à chaque tuile
-/// (SM-1 : aucune tuile ne refait la cascade paramètre > jeton > référence).
+/// Chrome résolu du hub — calculé une fois par `build` et prêté à chaque tuile
+/// (invariant AD-2 : aucune tuile ne refait la cascade paramètre > jeton >
+/// référence).
 @immutable
 class _ZContentHubChrome {
   const _ZContentHubChrome({
@@ -588,9 +583,9 @@ class _ZContentHubChrome {
   final BorderSide borderSide;
   final double spacing;
 
-  /// Teinte d'identité d'une entrée. `null` ⇒ **aucune** identité chromatique
-  /// (palette vide) : le glyphe retombe sur un rôle neutre — chaîne TOTALE
-  /// (AD-10), jamais un échec de rendu.
+  /// Teinte d'identité d'une entrée. `null` ⇒ aucune identité chromatique
+  /// (palette vide) : le glyphe retombe sur un rôle neutre — chaîne totale
+  /// (invariant AD-10), jamais un échec de rendu.
   Color? accentFor(ZContentHubEntry entry) {
     if (entry.tint != null) return entry.tint;
     if (palette.isEmpty) return null;
@@ -632,9 +627,9 @@ class _ZSectionHeader extends StatelessWidget {
 /// Une entrée rendue au dessin de référence — carte teintable, pastille
 /// circulaire, badge textuel, chevron d'affordance.
 ///
-/// **UN SEUL `InkWell` pour toute la carte** (patron legacy) : la pastille
-/// (40 dp) n'est **jamais** une cible tactile indépendante, elle passerait
-/// sinon sous le plancher de 48 dp (AD-13/NFR-S6).
+/// Un seul `InkWell` pour toute la carte : la pastille
+/// (40 dp) n'est jamais une cible tactile indépendante, elle passerait
+/// sinon sous le plancher de 48 dp (invariant AD-13).
 class _ZContentHubTile extends StatelessWidget {
   const _ZContentHubTile({required this.entry, required this.chrome});
 
@@ -647,8 +642,8 @@ class _ZContentHubTile extends StatelessWidget {
     final bool actionable = entry.isActionable;
     final Color? accent = chrome.accentFor(entry);
 
-    // Surface RÉELLEMENT peinte par la carte (neutre par défaut — mesuré : le
-    // legacy ne teinte PAS le fond de sa carte).
+    // Surface réellement peinte par la carte (neutre par défaut — mesuré : le
+    // rendu historique ne teinte pas le fond de sa carte).
     final Color itemSurface = (accent == null || chrome.tintAlpha <= 0)
         ? chrome.baseSurface
         : zCompositeOver(
@@ -660,16 +655,13 @@ class _ZContentHubTile extends StatelessWidget {
         ? _buildCard(context, material, accent, itemSurface)
         : _buildCompact(context, material, accent, itemSurface);
 
-    // **Pas de `MergeSemantics` ici, et c'est MESURÉ.** On en avait posé un
-    // « pour fusionner le badge dans le bouton » : injection R3 à l'appui, le
-    // retirer ne change **rien** au nœud rendu (même libellé annoncé, même
-    // `childrenCount`). Le badge n'est pas une FRONTIÈRE sémantique (aucun
-    // `container: true`) : son annotation se fond déjà dans celle de la tuile.
-    // Un `MergeSemantics` inerte donnerait l'illusion d'un mécanisme —
-    // exactement le piège de la garde qui défend le défaut. Ce qui est
-    // réellement garanti (et gardé) : le badge est ANNONCÉ **avec** le bouton,
-    // en un seul nœud — c'est ce qui rend le détournement de `hint` déclaré par
-    // la CR définitivement inutile.
+    // Pas de `MergeSemantics` ici, et c'est mesuré : le retirer ne change
+    // rien au nœud rendu (même libellé annoncé, même `childrenCount`). Le
+    // badge n'est pas une frontière sémantique (aucun `container: true`) :
+    // son annotation se fond déjà dans celle de la tuile. Un `MergeSemantics`
+    // inerte donnerait l'illusion d'un mécanisme. Ce qui est réellement
+    // garanti (et gardé) : le badge est annoncé avec le bouton, en un seul
+    // nœud — c'est ce qui rend inutile tout détournement de `hint`.
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: chrome.comfortable
@@ -702,7 +694,7 @@ class _ZContentHubTile extends StatelessWidget {
     );
   }
 
-  /// Rendu de RÉFÉRENCE (legacy) — pastille + badge + chevron, puis libellé.
+  /// Rendu de référence — pastille + badge + chevron, puis libellé.
   Widget _buildCard(
     BuildContext context,
     ThemeData material,
@@ -719,8 +711,9 @@ class _ZContentHubTile extends StatelessWidget {
           children: <Widget>[
             _buildAvatar(accent, itemSurface),
             const SizedBox(width: ZContentHubReference.labelGap),
-            // AD-4 — pas de badge ⇒ rien dans l'arbre à sa place, seulement
-            // l'espace élastique qui pousse le chevron en fin de ligne.
+            // Invariant AD-4 — pas de badge ⇒ rien dans l'arbre à sa place,
+            // seulement l'espace élastique qui pousse le chevron en fin de
+            // ligne.
             if (badge != null) Flexible(child: badge),
             const Spacer(),
             _buildChevron(context, material),
@@ -739,8 +732,9 @@ class _ZContentHubTile extends StatelessWidget {
     );
   }
 
-  /// Rendu COMPACT — **la densité d'avant CR-IFFD-65**, restituée par réglage :
-  /// glyphe nu, aucune carte, aucun chevron, une ligne au plancher de 48 dp.
+  /// Rendu compact — la densité d'avant ce rendu de référence, restituée par
+  /// réglage : glyphe nu, aucune carte, aucun chevron, une ligne au plancher
+  /// de 48 dp.
   Widget _buildCompact(
     BuildContext context,
     ThemeData material,
@@ -770,9 +764,10 @@ class _ZContentHubTile extends StatelessWidget {
     );
   }
 
-  /// Libellé (+ indice) — **le porteur de l'information** (AD-13 : la couleur
-  /// n'est jamais le seul canal). Exclu de la sémantique : il est déjà porté
-  /// par le `Semantics(label:)` de la tuile (pas de double annonce).
+  /// Libellé (+ indice) — le porteur de l'information (invariant AD-13 : la
+  /// couleur n'est jamais le seul canal). Exclu de la sémantique : il est
+  /// déjà porté par le `Semantics(label:)` de la tuile (pas de double
+  /// annonce).
   Widget _buildLabelBlock(ThemeData material) {
     final String? hint = entry.hint;
     return ExcludeSemantics(
@@ -791,7 +786,8 @@ class _ZContentHubTile extends StatelessWidget {
               ),
             ),
           ),
-          // AD-4 — pas d'indice ⇒ ABSENT de l'arbre, jamais un `Text('')`.
+          // Invariant AD-4 — pas d'indice ⇒ absent de l'arbre, jamais un
+          // `Text('')`.
           if (hint != null)
             Flexible(
               child: Text(
@@ -807,8 +803,8 @@ class _ZContentHubTile extends StatelessWidget {
     );
   }
 
-  /// Pastille circulaire d'identité — **décorative** : le libellé porte déjà
-  /// l'information, la teinte n'en est qu'un rappel (AD-13).
+  /// Pastille circulaire d'identité — décorative : le libellé porte déjà
+  /// l'information, la teinte n'en est qu'un rappel (invariant AD-13).
   Widget _buildAvatar(Color? accent, Color itemSurface) {
     final Color surface = accent == null
         ? itemSurface
@@ -816,7 +812,7 @@ class _ZContentHubTile extends StatelessWidget {
             accent.withValues(alpha: chrome.avatarTintAlpha.clamp(0.0, 1.0)),
             itemSurface,
           );
-    // Le glyphe se mesure contre la PASTILLE (déjà teintée), jamais contre la
+    // Le glyphe se mesure contre la pastille (déjà teintée), jamais contre la
     // carte : mesurer contre la carte surestimerait le contraste.
     final Color glyphColor = accent == null
         ? chrome.neutralColor
@@ -840,8 +836,8 @@ class _ZContentHubTile extends StatelessWidget {
     );
   }
 
-  /// Chevron d'affordance — décoratif, et **retourné en RTL** (AD-13), y
-  /// compris quand l'hôte injecte un glyphe qui ne porte pas
+  /// Chevron d'affordance — décoratif, et retourné en RTL (invariant AD-13),
+  /// y compris quand l'hôte injecte un glyphe qui ne porte pas
   /// `IconData.matchTextDirection` (cf. [zMirrorIfNeeded]).
   Widget _buildChevron(BuildContext context, ThemeData material) =>
       ExcludeSemantics(
@@ -858,8 +854,8 @@ class _ZContentHubTile extends StatelessWidget {
         ),
       );
 
-  /// Badge de mise en avant. `null` ⇒ **ABSENT** de l'arbre (AD-4) — le legacy
-  /// y pose un `SizedBox.shrink()` inerte, non reproduit.
+  /// Badge de mise en avant. `null` ⇒ absent de l'arbre (invariant AD-4) —
+  /// jamais un `SizedBox.shrink()` inerte.
   Widget? _buildBadge(
     BuildContext context,
     ThemeData material,
@@ -871,7 +867,7 @@ class _ZContentHubTile extends StatelessWidget {
       chrome.badgeColor.withValues(alpha: ZContentHubReference.badgeTintAlpha),
       itemSurface,
     );
-    // Le libellé d'un badge est du TEXTE : plancher 4.5, mesuré contre le fond
+    // Le libellé d'un badge est du texte : plancher 4.5, mesuré contre le fond
     // du badge (déjà teinté), jamais contre la carte.
     final Color onBadge = zReadableTintOn(
       chrome.badgeColor,

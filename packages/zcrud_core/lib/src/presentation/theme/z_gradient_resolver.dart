@@ -87,7 +87,7 @@ ZGradientSpec? zDerivedGradientResolver(
 /// n'est PAS dans cette chaîne : voir [zDerivedGradientResolver] pour
 /// l'arbitrage qui l'en exclut.
 ///
-/// ⚠️ **Limite explicite : une exception levée PAR LE RESOLVER DE L'HÔTE se
+/// **Limite explicite : une exception levée PAR LE RESOLVER DE L'HÔTE se
 /// propage** — elle n'est pas avalée. C'est délibéré, et c'est le comportement
 /// de [zResolveColorKey], la couture jumelle, qui appelle elle aussi le seam
 /// hôte sans protection. Deux raisons :

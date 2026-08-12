@@ -13,8 +13,8 @@ const Object? _$undefined = _ZUndefined();
 /// schéma, ni une clé réservée (`ZSyncMeta`), ni `source`/`extension`.
 const String _$zExtraProbeKey = 'zz__zcrud_extra_probe__';
 
-/// 🔴 **GARDE EXÉCUTOIRE DW-ES14-1 / AD-4** — émis dans le `register…` de toute
-/// classe `ZExtensible` (H1, code-review ES-2.0).
+/// **GARDE EXÉCUTOIRE DW-ES14-1** (invariant AD-4) — émise dans le `register…`
+/// de toute classe `ZExtensible`.
 ///
 /// ## Ce qu'il fait, et pourquoi il existe
 ///
@@ -30,7 +30,7 @@ const String _$zExtraProbeKey = 'zz__zcrud_extra_probe__';
 ///     du CODEGEN, qui ne connaît QUE les champs `@ZcrudField`) ou « oublie »
 ///     `extra:` en recopiant les champs ⇒ `extra` reste VIDE ;
 ///   - **(sortie)** `toMap` amnésique — n'étale pas `...extra` ⇒ ce qui avait été
-///     préservé au décodage n'est **jamais réémis**. ⚠️ Le `toMap()` **généré**
+///     préservé au décodage n'est **jamais réémis**. Attention : le `toMap()` **généré**
 ///     (extension `XxxZcrud`) n'étale PAS `extra` : une entité `ZExtensible` qui
 ///     ne définit pas son propre `toMap()` d'instance tombe dans ce cas.
 ///
@@ -134,7 +134,7 @@ DateTime? _$asDateTime(Object? v) {
   return null;
 }
 
-/// Décode défensivement une plage `ZDateRange` (AD-10/AD-47) : délègue à
+/// Décode défensivement une plage `ZDateRange` (AD-10) : délègue à
 /// `ZDateRange.fromJsonSafe` — `null` sur TOUTE anomalie (non-map, clé absente,
 /// valeur non-`String`, date non-ISO, `start > end`), jamais de throw. Le parent
 /// survit toujours (champ corrompu → `null`).

@@ -1,5 +1,5 @@
 /// Fabrique de **câblage** de l'orchestrateur de synchronisation d'étude
-/// (invariants AD-20 / AD-9) : un remplaçant neutre et portable d'une
+/// (invariant AD-9) : un remplaçant neutre et portable d'une
 /// implémentation applicative qui coderait ses dépôts en dur.
 ///
 /// **Le doublon éradiqué.** Une implémentation applicative code souvent en
@@ -40,7 +40,7 @@ import 'package:zcrud_core/zcrud_core.dart';
 /// aucun repo.
 ///
 /// - [repositories] : **LISTE INJECTÉE** par l'app (ses `ZOfflineFirstBoxRepository`
-///   flat IFFD *et* nested lex, transitivement des [ZSyncableRepository]). C'est la
+///   flat *et* nested, transitivement des [ZSyncableRepository]). C'est la
 ///   **seule** source de dépôts — aucun n'est importé/construit ici.
 /// - [debounce] : fenêtre de coalescence (défaut [kZSyncDefaultDebounce] = 400 ms).
 /// - [timerFactory] : couture de fabrique de timer (test → fake clock).

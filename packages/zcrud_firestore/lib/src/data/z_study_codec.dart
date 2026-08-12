@@ -1,30 +1,30 @@
-/// Codec/normaliseur **d'adaptateur** de documents d'étude LEGACY (ES-3.5,
-/// FR-S16, AD-27/AD-10/AD-3/AD-4).
+/// Codec/normaliseur **d'adaptateur** de documents d'étude Firestore
+/// historiques (invariants AD-10/AD-3/AD-4).
 ///
-/// origine: app IFFD (`FolderDocument`) — documents Firestore **historiques**
-/// écrits en **camelCase**, statuts d'un cycle de vie conversion/embedding à
-/// **6 valeurs**, dates en `Timestamp` natif **ou** en `int` (millisSinceEpoch),
-/// **aucune** métadonnée de sync `updated_at`/`is_deleted`. Ce codec les
-/// réconcilie avec la forme **canonique** zcrud (snake_case, enums camelCase à
-/// 4 valeurs, `ZSyncMeta` hors-entité) **sans perte ni exception**.
+/// Ces documents sont écrits en **camelCase**, portent un cycle de vie de
+/// conversion/embedding à **6 valeurs** de statut, des dates en `Timestamp`
+/// natif **ou** en `int` (millisecondsSinceEpoch), et **aucune** métadonnée de
+/// sync `updated_at`/`is_deleted`. Ce codec les réconcilie avec la forme
+/// **canonique** zcrud (snake_case, enums camelCase à 4 valeurs, `ZSyncMeta`
+/// hors-entité) **sans perte ni exception**.
 ///
-/// **Confinement AD-27 (CRUCIAL)** : le mapping de **casse** et de **valeur**
-/// (statut legacy) vit **EXCLUSIVEMENT** ici (`zcrud_firestore`) — jamais dans
-/// `zcrud_core`/kernel/entités (aucun `@JsonKey` camelCase, aucun renommage de
-/// domaine). Le domaine ignore la casse legacy.
+/// **Confinement du mapping legacy (CRUCIAL)** : le mapping de **casse** et de
+/// **valeur** (statut legacy) vit **EXCLUSIVEMENT** ici (`zcrud_firestore`) —
+/// jamais dans `zcrud_core`/kernel/entités (aucun `@JsonKey` camelCase, aucun
+/// renommage de domaine). Le domaine ignore la casse legacy.
 ///
 /// **Confinement AD-5** : signature publique = `Map<String, dynamic>`
 /// **UNIQUEMENT** — aucun type `cloud_firestore` (`Timestamp`/`Query`/
 /// `FirebaseException`) n'apparaît. L'interop `Timestamp` **natif** reste la
 /// responsabilité de l'adaptateur (`FirebaseZRepositoryImpl._normalizeIsoInPlace`,
-/// déjà en place) ; ce codec ne comble QUE le cas `int` millis (D6/DW-ES32-1).
+/// déjà en place) ; ce codec ne comble QUE le cas `int` millis.
 ///
 /// **DÉFENSIF partout (AD-10)** : [toCanonical]/[toLegacy] ne lèvent **JAMAIS**.
 /// Une clé/valeur inattendue est repliée ou passée telle quelle, jamais perdue,
 /// jamais propagée en exception.
 ///
-/// **Composition (D2)** — le codec se branche **EN AMONT** du décodage, au
-/// point de câblage DI (fabrique de l'app/intégration IFFD), SANS modifier
+/// **Composition** — le codec se branche **EN AMONT** du décodage, au point de
+/// câblage DI (fabrique de l'application consommatrice), SANS modifier
 /// `FirebaseZRepositoryImpl` :
 ///
 /// ```dart
@@ -69,15 +69,16 @@ class ZStudyLegacyCodec {
   ///   (avant remap) est conservée dans le corps canonique sous une clé de
   ///   survie `_legacy_<snake>` (AD-4 : zéro perte de granularité). Décodée, cette
   ///   clé inconnue retombe dans l'échappatoire `extra` de l'entité.
-  /// - [syncMetaKeyAliases] (**CR-IFFD-3**) : clé legacy → clé RÉSERVÉE
+  /// - [syncMetaKeyAliases] : clé legacy → clé RÉSERVÉE
   ///   ([ZSyncMeta.reservedKeys]) qu'elle désigne réellement. Sans cela, un hôte
-  ///   dont le soft-delete s'appelle autrement (IFFD : `deleted`) voit sa clé
+  ///   dont le soft-delete s'appelle autrement (ex. `deleted`) voit sa clé
   ///   traverser telle quelle — `camelToSnake('deleted')` == `'deleted'`, aucune
   ///   majuscule interne — puis `is_deleted:false` ajouté par le `putIfAbsent`
   ///   final : **tout document supprimé redevient visible**. La perte est
-  ///   silencieuse (le census R26 est satisfait, la clé étant préservée).
+  ///   silencieuse (la clé étant préservée, un contrôle d'exhaustivité naïf des
+  ///   champs ne la détecte pas).
   ///   Ex. `{'deleted': ZSyncMeta.kIsDeleted}`.
-  /// - [recurseNested] (**CR-IFFD-2**) : descend dans les `Map`/`List`
+  /// - [recurseNested] : descend dans les `Map`/`List`
   ///   imbriquées pour y renommer les clés et normaliser les dates. `false` par
   ///   défaut — la conversion en profondeur d'une charge utile TIERCE la
   ///   casserait (cf. [opaqueKeys]).
@@ -86,15 +87,15 @@ class ZStudyLegacyCodec {
   ///   `dashboard` (sérialisation `flutter_flow_chart`), dont les noms de champs
   ///   sont imposés par la bibliothèque : les renommer rendrait l'objet
   ///   indésérialisable.
-  /// - [keyAliases] (**CR-IFFD-5**) : clé legacy → clé **canonique métier**
+  /// - [keyAliases] : clé legacy → clé **canonique métier**
   ///   lorsqu'il s'agit d'un **renommage sémantique** que la conversion de casse
-  ///   ne peut pas deviner. Ex. IFFD `quality` → `last_quality` :
+  ///   ne peut pas deviner. Ex. `quality` → `last_quality` :
   ///   `camelToSnake('quality')` rend `quality`, donc sans alias le champ
   ///   traverse sous son nom legacy et `last_quality` reste **absent** — la
   ///   qualité de la dernière révision est silencieusement perdue.
   ///   À ne pas confondre avec [syncMetaKeyAliases], qui vise les clés
   ///   **réservées** hors-entité ; ici la cible est une clé **métier** ordinaire.
-  /// - [preserveAbsenceUnder] (**CR-IFFD-12**) : champs (nom canonique
+  /// - [preserveAbsenceUnder] : champs (nom canonique
   ///   snake_case **ou** legacy) dont l'**ABSENCE** doit survivre à la migration
   ///   vers un domaine qui ne sait pas la représenter. Cf. [kAbsentFieldsKey].
   const ZStudyLegacyCodec({
@@ -122,16 +123,16 @@ class ZStudyLegacyCodec {
   final Set<String> _opaqueKeys;
   final Set<String> _preserveAbsenceUnder;
 
-  /// Table de renommage sémantique de clés MÉTIER (CR-IFFD-5), exposée pour que
-  /// [ZLegacyStudyMigrator] puisse (a) créditer le census R26 sur la clé CIBLE —
-  /// sans quoi tout champ aliasé serait faussement déclaré **perdu** — et
-  /// (b) refuser de considérer comme « déjà canonique » un document portant
-  /// encore une clé source non renommée.
+  /// Table de renommage sémantique de clés MÉTIER, exposée pour que
+  /// [ZLegacyStudyMigrator] puisse (a) créditer le contrôle d'exhaustivité des
+  /// champs sur la clé CIBLE — sans quoi tout champ aliasé serait faussement
+  /// déclaré **perdu** — et (b) refuser de considérer comme « déjà canonique »
+  /// un document portant encore une clé source non renommée.
   Map<String, String> get keyAliases => _keyAliases;
 
-  /// Clés dont la valeur est une charge utile TIERCE, jamais convertie
-  /// (CR-IFFD-2), exposée pour que la **détection** de canonicité du migrateur
-  /// puisse les enjamber exactement comme la conversion le fait (CR-IFFD-7).
+  /// Clés dont la valeur est une charge utile TIERCE, jamais convertie,
+  /// exposée pour que la **détection** de canonicité du migrateur puisse les
+  /// enjamber exactement comme la conversion le fait.
   ///
   /// Sans cela, un sous-arbre opaque — qui conserve **par conception** ses clés
   /// camelCase — ferait échouer la détection à jamais : le document serait
@@ -150,7 +151,7 @@ class ZStudyLegacyCodec {
   /// rétrogradation des valeurs déjà remappées.
   bool get recurseNested => _recurseNested;
 
-  /// Clés legacy déclarées comme alias d'une clé de sync réservée (CR-IFFD-3).
+  /// Clés legacy déclarées comme alias d'une clé de sync réservée.
   ///
   /// Exposé pour que [ZLegacyStudyMigrator] puisse refuser de considérer comme
   /// « déjà canonique » un document qui en porte encore une — sans quoi une
@@ -161,14 +162,14 @@ class ZStudyLegacyCodec {
   static const String kLegacyPrefix = '_legacy_';
 
   /// Clé de survie journalisant les **cibles disputées** par plusieurs clés
-  /// sources (CR-IFFD-6). Présente **uniquement** en cas de collision : sa seule
+  /// sources. Présente **uniquement** en cas de collision : sa seule
   /// existence signale qu'un arbitrage a eu lieu et qu'un `_legacy_<source>`
   /// porte la ou les valeurs écartées. Une collision n'est ainsi jamais
   /// silencieuse — le silence était le pire des comportements possibles.
   static const String kAliasCollisionsKey = '${kLegacyPrefix}alias_collisions';
 
   /// Clé de survie listant les champs qui étaient **ABSENTS** (ou `null`) dans
-  /// le document legacy (**CR-IFFD-12**).
+  /// le document legacy.
   ///
   /// **Le motif générique** : toute migration d'un schéma legacy *permissif*
   /// vers un domaine *strict* perd une distinction que la cible ne porte pas.
@@ -190,10 +191,10 @@ class ZStudyLegacyCodec {
   /// plus `null` : recalculer la liste l'effacerait, et l'absence — que cette
   /// clé existe pour retenir — serait perdue au moment même où on la relit.
   /// [toCanonical] fusionne donc avec la liste déjà présente. C'est la même
-  /// classe de défaut que CR-IFFD-7 (la détection doit refléter la conversion).
+  /// exigence de symétrie entre détection et conversion.
   static const String kAbsentFieldsKey = '${kLegacyPrefix}absent_fields';
 
-  /// Priorité d'une clé source sur sa cible canonique (CR-IFFD-6). **0 gagne.**
+  /// Priorité d'une clé source sur sa cible canonique. **0 gagne.**
   ///
   /// Déterministe et **indépendante de l'ordre d'itération** — Firestore ne
   /// garantit pas l'ordre des clés d'un document, donc arbitrer au fil de la
@@ -214,23 +215,23 @@ class ZStudyLegacyCodec {
   /// Pour chaque entrée :
   /// - les clés **réservées** `ZSyncMeta.reservedKeys` (`updated_at`/`is_deleted`)
   ///   sont passées **telles quelles** (déjà snake, gérées par l'adaptateur —
-  ///   jamais remappées de casse ni de valeur, D3) ;
+  ///   jamais remappées de casse ni de valeur) ;
   /// - les clés de survie (`_legacy_…`) sont passées telles quelles ;
   /// - sinon la clé est transformée en snake_case ([camelToSnake]), la valeur
   ///   legacy exacte est éventuellement préservée (`preserveLegacyUnder`), puis
   ///   la valeur est remappée par [valueMappers] si applicable, sinon normalisée
-  ///   (interop dates `int` millis → ISO-8601, D6).
+  ///   (interop dates `int` millis → ISO-8601).
   ///
-  /// Enfin, `is_deleted:false` est **ajouté** de façon **ADDITIVE** (D3) si
+  /// Enfin, `is_deleted:false` est **ajouté** de façon **ADDITIVE** si
   /// absent — condition de visibilité de l'adaptateur (sans quoi le document
   /// legacy est exclu de TOUTES les lectures). `updated_at` est **laissé absent**
   /// (→ `ZSyncMeta.updatedAt: null`, défaut LWW « jamais synchronisé »).
   Map<String, dynamic> toCanonical(Map<String, dynamic> legacy) {
     final out = <String, dynamic>{};
     // Résultats des alias de clés de sync — appliqués APRÈS la boucle pour
-    // primer sur un passthrough de clé réservée (CR-IFFD-3, corpus partiel).
+    // primer sur un passthrough de clé réservée (corpus partiellement migré).
     final aliased = <String, Object?>{};
-    // CR-IFFD-6 — revendications de cible, résolues APRÈS la boucle pour être
+    // Revendications de cible, résolues APRÈS la boucle pour être
     // indépendantes de l'ordre des clés (non garanti par Firestore).
     final claims = <String, _Claim>{};
     final collisions = <String>{};
@@ -238,13 +239,13 @@ class ZStudyLegacyCodec {
       final key = entry.key;
       final value = entry.value;
 
-      // Clés réservées / de survie : passées telles quelles (D3/AD-4).
+      // Clés réservées / de survie : passées telles quelles (AD-4).
       if (ZSyncMeta.reservedKeys.contains(key) || key.startsWith(kLegacyPrefix)) {
         out[key] = value;
         continue;
       }
 
-      // CR-IFFD-3 — alias de clé de SYNC : la clé legacy DÉSIGNE une clé
+      // Alias de clé de SYNC : la clé legacy DÉSIGNE une clé
       // réservée. Elle est CONSOMMÉE (renommée), jamais dupliquée, et la valeur
       // brute est préservée sous `_legacy_<snake>` (AD-4, zéro perte).
       // Résolu APRÈS la boucle (cf. `aliased`) : sur un corpus PARTIELLEMENT
@@ -259,11 +260,11 @@ class ZStudyLegacyCodec {
         continue;
       }
 
-      // CR-IFFD-5 — renommage SÉMANTIQUE : l'alias remplace la conversion de
+      // Renommage SÉMANTIQUE : l'alias remplace la conversion de
       // casse, qui ne peut pas le deviner (`quality` → `last_quality`).
       final snakeKey = _keyAliases[key] ?? camelToSnake(key);
 
-      // CR-IFFD-6 — plusieurs sources peuvent viser la MÊME cible (ex. `quality`
+      // Plusieurs sources peuvent viser la MÊME cible (ex. `quality`
       // aliasée ET `lastQuality` qui snake vers `last_quality`). La résolution
       // est DIFFÉRÉE après la boucle : arbitrer au fil de l'itération rendait le
       // résultat dépendant de l'ORDRE DES CLÉS du document — or Firestore ne le
@@ -291,7 +292,7 @@ class ZStudyLegacyCodec {
       final value = e.value.value;
 
       // Préservation de la granularité legacy exacte AVANT tout remap (AD-4).
-      // CR-IFFD-7 (2ᵉ effet) — `putIfAbsent` et NON affectation : sur un
+      // `putIfAbsent` et NON affectation : sur un
       // document déjà porteur d'un `_legacy_<clé>`, réécrire l'écraserait par la
       // valeur DÉJÀ REMAPPÉE du passage précédent (`embedded` → `ready`), et la
       // granularité d'origine — seule raison d'être de cette clé — serait perdue
@@ -309,16 +310,16 @@ class ZStudyLegacyCodec {
       }
     }
 
-    // CR-IFFD-3 — les alias PRIMENT : la clé legacy porte l'intention réelle de
+    // Les alias PRIMENT : la clé legacy porte l'intention réelle de
     // l'utilisateur, une clé réservée déjà présente peut être le résultat d'un
     // passage antérieur défectueux.
     out.addAll(aliased);
 
-    // Ajout ADDITIF rétro-compatible (D3) : jamais d'écrasement d'une clé
+    // Ajout ADDITIF rétro-compatible : jamais d'écrasement d'une clé
     // déjà présente (putIfAbsent).
     out.putIfAbsent(ZSyncMeta.kIsDeleted, () => false);
 
-    // CR-IFFD-12 — préservation de l'ABSENCE. Un champ déclaré est « absent »
+    // Préservation de l'ABSENCE. Un champ déclaré est « absent »
     // s'il manque du document legacy OU s'il y vaut `null` : le domaine cible
     // le rendra `''` dans les deux cas, et la distinction serait perdue là.
     if (_preserveAbsenceUnder.isNotEmpty) {
@@ -344,7 +345,7 @@ class ZStudyLegacyCodec {
       }
     }
 
-    // CR-IFFD-6 — une collision d'alias n'est JAMAIS silencieuse : les cibles
+    // Une collision d'alias n'est JAMAIS silencieuse : les cibles
     // disputées sont journalisées sous une clé de survie dédiée, inspectable et
     // relevée par le rapport de migration.
     if (collisions.isNotEmpty) {
@@ -358,7 +359,7 @@ class ZStudyLegacyCodec {
   /// de survie (`_legacy_…`) restent **intactes** (elles n'ont pas de forme
   /// camelCase legacy — concern de store / survie codec).
   Map<String, dynamic> toLegacy(Map<String, dynamic> canonical) {
-    // CR-IFFD-12 — restitution de l'ABSENCE : les champs listés retrouvent
+    // Restitution de l'ABSENCE : les champs listés retrouvent
     // `null`, la valeur que le domaine strict avait dû rendre `''`.
     final absent = <String>{};
     final marker = canonical[kAbsentFieldsKey];
@@ -386,9 +387,9 @@ class ZStudyLegacyCodec {
 
   /// Normalise une **valeur** générique lors du passage legacy → canonique.
   ///
-  /// Seule interop appliquée (D6/DW-ES32-1) : une clé de **date** (convention
+  /// Seule interop appliquée : une clé de **date** (convention
   /// canonique : snake_case terminant par `_at`) portant un `int`
-  /// (millisecondsSinceEpoch, forme IFFD `createdAt: int`) est convertie en
+  /// (millisecondsSinceEpoch, forme legacy `createdAt: int`) est convertie en
   /// String ISO-8601 UTC — cas **NON** couvert par `_normalizeIsoInPlace` de
   /// l'adaptateur (qui gère `Timestamp`/`DateTime`/`{_seconds}` mais pas `int`).
   ///
@@ -399,7 +400,7 @@ class ZStudyLegacyCodec {
     if (value is int && snakeKey.endsWith('_at')) {
       return _millisToIsoOrNull(value) ?? value;
     }
-    // CR-IFFD-2 — descente RÉCURSIVE optionnelle. `opaqueKeys` protège les
+    // Descente RÉCURSIVE optionnelle. `opaqueKeys` protège les
     // charges utiles tierces (renommer leurs champs les rendrait illisibles
     // par la bibliothèque qui les a produites).
     if (_recurseNested && !_opaqueKeys.contains(snakeKey)) {
@@ -443,7 +444,7 @@ class ZStudyLegacyCodec {
   }
 
   /// Coercition DÉFENSIVE d'une valeur legacy vers le type attendu par une clé
-  /// de sync réservée (CR-IFFD-3). **Ne throw jamais.**
+  /// de sync réservée. **Ne throw jamais.**
   ///
   /// Pour [ZSyncMeta.kIsDeleted], le défaut est **FERMÉ** : une valeur
   /// ininterprétable (ni `bool`, ni `null`) est traitée comme **supprimée**.
@@ -480,12 +481,12 @@ class ZStudyLegacyCodec {
     }
   }
 
-  /// Mapping DÉTERMINISTE **6 → 4** du statut legacy IFFD `FolderDocumentStatus`
-  /// vers le nom d'enum canonique `ZDocumentStatus` (DW-ES21-1 — SOLDÉE).
+  /// Mapping DÉTERMINISTE **6 → 4** du statut legacy `FolderDocumentStatus`
+  /// vers le nom d'enum canonique `ZDocumentStatus`.
   ///
-  /// Table (dérivée des getters sémantiques IFFD `isProcessing`/`ready`) :
+  /// Table (dérivée des getters sémantiques legacy `isProcessing`/`ready`) :
   ///
-  /// | Legacy IFFD (6)              | Canonique (nom d'enum) |
+  /// | Legacy (6 valeurs)           | Canonique (nom d'enum) |
   /// |------------------------------|------------------------|
   /// | `uploading`                  | `uploading`            |
   /// | `converting`                 | `validating`           |
@@ -497,7 +498,7 @@ class ZStudyLegacyCodec {
   ///
   /// `uploading` est le **défaut défensif** = 1ʳᵉ constante `ZDocumentStatus`
   /// (`T.values.first`, AD-10) : ne ment ni ne détruit rien. `rejected` n'est
-  /// **jamais** produit (état transitoire jamais persisté côté IFFD). La
+  /// **jamais** produit (état transitoire jamais persisté côté legacy). La
   /// granularité exacte (`embedded`/`converted`…) est préservée par le codec dans
   /// `extra` (`preserveLegacyUnder`), zéro perte (AD-4).
   static String mapDocumentStatus(Object? legacy) {
@@ -555,7 +556,7 @@ class ZStudyLegacyCodec {
   }
 }
 
-/// Revendication d'une clé canonique par une clé source (CR-IFFD-6).
+/// Revendication d'une clé canonique par une clé source.
 ///
 /// [priority] arbitre de façon **déterministe** quand plusieurs sources visent
 /// la même cible — 0 gagne. L'ordre d'itération du document n'intervient jamais.
