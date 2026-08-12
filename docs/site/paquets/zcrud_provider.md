@@ -37,6 +37,6 @@ l'idiome `provider` (invariant [AD-15](../concepts/invariants.md#ad-15)).
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_provider/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_provider/README.md) — installation, démarrage rapide, API complète.
 - `zcrud_core` — `ZcrudScope`, `ZFormController`, `ZDependencyResolver`.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

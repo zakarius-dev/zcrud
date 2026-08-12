@@ -33,8 +33,8 @@ géo, téléphone, sous-listes, flashcards, mindmaps, chat).
 | Monter un premier écran CRUD | [Démarrage rapide](demarrage-rapide.md) |
 | Comprendre le schéma de champs | [Concept : ZFieldSpec](concepts/zfieldspec.md) |
 | Comprendre le découpage en paquets | [Concept : architecture hexagonale](concepts/architecture-hexagonale.md) |
-| Consommer le monorepo en dépendance git | [Recette de consommation](../private-git-consumption.md) |
-| La fiche d'un paquet précis | [Catalogue des paquets](paquets/) |
+| Consommer le monorepo en dépendance git | [Recette de consommation](https://github.com/zakarius-dev/zcrud/blob/main/docs/private-git-consumption.md) |
+| La fiche d'un paquet précis | [Catalogue des paquets](paquets/index.md) |
 | Les règles qui bornent tout le code | [Invariants AD-1…AD-16](concepts/invariants.md) |
 
 ## L'écosystème en un coup d'œil
@@ -56,9 +56,9 @@ vit sous `lib/src/` et n'est pas un contrat.
 
 ## Documentation
 
-- [Concepts](concepts/) — les modèles mentaux : schéma, couches, réactivité, offline,
-  invariants.
-- [Guides](guides/) — migration depuis un moteur legacy, recettes (cookbook).
-- [Catalogue des paquets](paquets/) — une fiche par paquet : rôle, quand l'utiliser,
+- [Concepts](concepts/invariants.md) — les modèles mentaux : schéma, couches, réactivité,
+  offline, invariants.
+- [Guides](guides/index.md) — migration depuis un moteur legacy, recettes (cookbook).
+- [Catalogue des paquets](paquets/index.md) — une fiche par paquet : rôle, quand l'utiliser,
   liens.
 - [Charte documentaire](charte.md) — comment cette documentation est écrite et vérifiée.

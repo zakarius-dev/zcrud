@@ -49,6 +49,6 @@ utilitaires de migration de corpus legacy.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_firestore/README.md) — installation, démarrage rapide, sémantiques de suppression détaillées, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_firestore/README.md) — installation, démarrage rapide, sémantiques de suppression détaillées, API complète.
 - `zcrud_core` — les ports neutres implémentés par ce paquet.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

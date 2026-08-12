@@ -90,3 +90,14 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# --- Site de documentation (Docusaurus, website/) ---
+# Toolchain Node et artefacts de build : jamais commités. Le site est
+# construit depuis le poste et publié sur la branche `gh-pages`
+# (la CI GitHub est à l'arrêt — cf. docs/site/charte.md § Publication).
+website/node_modules/
+website/build/
+website/.docusaurus/
+website/.cache-loader/
+# Référence d'API générée par `dart doc` (assemblée à la demande sous /api).
+website/static/api/

@@ -15,7 +15,7 @@ des paquets cités.
 Pour la migration d'un **champ géographique** legacy (format JSON polymorphe
 `point`/`circle`/`polygon`/`polyline`), une correspondance champ à champ détaillée
 existe déjà et n'est pas dupliquée ici : voir
-[`packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md`](../../../packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md).
+[`packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md`](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md).
 
 ## Le principe qui gouverne tout le reste
 
@@ -163,4 +163,4 @@ du code hôte sans perte.
 - [Offline-first](../concepts/offline-first.md) — la même discipline défensive
   appliquée à la synchronisation.
 - Migration géo détaillée :
-  [`packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md`](../../../packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md).
+  [`packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md`](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md).

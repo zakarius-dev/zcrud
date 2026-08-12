@@ -44,6 +44,6 @@ convention IFFD vers les événements typés du kernel
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_chat_syncfusion/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_chat_syncfusion/README.md) — installation, démarrage rapide, API complète.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
 - `zcrud_chat` — le socle Flutter dont ce paquet implémente le port `ZChatShellRenderer`.

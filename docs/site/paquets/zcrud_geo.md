@@ -27,7 +27,7 @@ jamais exposée par le barrel principal (invariant
   (`ZGeoMapView`), sans passer par un champ d'édition.
 - Pour lire des valeurs géo persistées par un format JSON historique
   polymorphe, sans script de migration (voir
-  [doc/migration-legacy-dodlp-geo.md](../../packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md)).
+  [doc/migration-legacy-dodlp-geo.md](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_geo/doc/migration-legacy-dodlp-geo.md)).
 
 ## Quand ne pas l'utiliser
 
@@ -49,7 +49,7 @@ jamais exposée par le barrel principal (invariant
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_geo/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_geo/README.md) — installation, démarrage rapide, API complète.
 - [`zcrud_geo_location`](./zcrud_geo_location.md) — resolver « ma position » clé en main pour ce paquet.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

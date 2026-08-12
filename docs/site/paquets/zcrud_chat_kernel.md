@@ -47,6 +47,6 @@ n'importe ni Flutter, ni aucun autre paquet `zcrud_*`.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_chat_kernel/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_chat_kernel/README.md) — installation, démarrage rapide, API complète.
 - [Architecture hexagonale](../concepts/architecture-hexagonale.md) — le patron kernel/satellite.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

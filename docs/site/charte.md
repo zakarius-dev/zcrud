@@ -103,3 +103,53 @@ Depuis la racine : `melos run doc:diff-gate` (RC=0) puis `melos run analyze` (RC
 `flutter test` **depuis le dossier** de chaque paquet touché. `public_member_api_docs` est
 activé dans l'`analysis_options.yaml` du paquet en fin de lot — l'exhaustivité dartdoc
 devient alors un invariant vérifié par l'analyse.
+
+## Publication du site
+
+Le site (contenu de `docs/site/` + référence d'API) est un **Docusaurus 3** construit et
+publié **depuis le poste**, sans aucun GitHub Actions : la CI du dépôt est à l'arrêt pour
+facturation (cf. `CLAUDE.md`), donc la publication n'est déclenchée par personne d'autre que
+la personne qui exécute le cycle ci-dessous.
+
+### Cycle de publication
+
+Depuis la racine, dans l'ordre, chaque étape devant réussir avant la suivante :
+
+```bash
+melos run doc:api     # dart doc sur chaque paquet -> website/static/api/<pkg>/
+melos run doc:site    # doc:api puis build Docusaurus -> website/build/
+melos run doc:deploy  # publie website/build sur la branche gh-pages (git worktree dédié)
+```
+
+`melos run doc:deploy` (`scripts/doc/deploy_site.dart`) refuse de publier si l'arbre de
+travail principal est sale (hors `pubspec.lock` racine) ou si `website/build` est absent ou
+vide, et n'exécute jamais `git checkout`/`git stash` sur l'arbre principal — seulement sur un
+`git worktree` temporaire dédié à `gh-pages`, nettoyé en fin d'exécution y compris en cas
+d'échec. Un `--dry-run` exécute tout le cycle sauf le push final, pour vérifier ce qui serait
+publié avant de le décider réellement.
+
+### Coupe de version
+
+Le versionnement de la documentation est **activé** (les hôtes épinglent des tags — un
+lecteur venu d'un tag ancien doit retrouver la doc de ce tag, pas la doc `main`). À
+**chaque tag publié** du dépôt, avant de reconstruire et publier le site, couper une
+nouvelle version depuis `website/` :
+
+```bash
+cd website
+npm run docusaurus docs:version <version>   # ex. v0.87.0 — reprend le tag publié
+```
+
+Cette commande fige l'état courant de `docs/site/` sous `website/versioned_docs/` et
+`website/versioned_sidebars/`, et ajoute l'entrée correspondante à
+`website/versions.json`. Elle se fait **après** que le contenu de `docs/site/` pour ce tag
+est stabilisé et **avant** `melos run doc:site` de ce cycle de publication — sinon la
+version coupée capture un contenu déjà en avance sur le tag qu'elle est censée figer.
+
+### Artefacts non commités
+
+`website/node_modules/`, `website/build/`, `website/.docusaurus/` et `website/static/api/`
+sont **gitignorés** : ce sont des artefacts régénérés par le cycle ci-dessus (toolchain Node,
+build Docusaurus, cache, référence d'API `dart doc`), jamais une source à committer. Seuls
+`website/versioned_docs/`, `website/versioned_sidebars/` et `website/versions.json` (produits
+par la coupe de version) sont des sources et suivent le dépôt normalement.

@@ -39,6 +39,6 @@ annoté reste la source unique de vérité (invariant
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_generator/README.md) — installation, contrat `fromMap`, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_generator/README.md) — installation, contrat `fromMap`, API complète.
 - `zcrud_annotations` — les annotations lues par ce générateur.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

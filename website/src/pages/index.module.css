@@ -1,0 +1,60 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--ifm-hero-background-color, var(--ifm-background-surface-color));
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem 1rem;
+  }
+}
+
+.heroTitle {
+  font-size: 3rem;
+}
+
+.heroSubtitle {
+  font-size: 1.25rem;
+  max-width: 42rem;
+  margin: 0 auto 2rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.features {
+  padding: 3rem 0;
+}
+
+.featureCard {
+  height: 100%;
+  padding: 1.5rem;
+  border-radius: var(--ifm-card-border-radius);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--ifm-background-surface-color);
+}
+
+.ecosystem {
+  padding: 3rem 0 4rem;
+  text-align: center;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.ecosystem p {
+  max-width: 48rem;
+  margin: 0 auto 2rem;
+}

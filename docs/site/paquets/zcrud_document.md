@@ -49,7 +49,7 @@ un moteur de rendu PDF concret.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_document/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_document/README.md) — installation, démarrage rapide, API complète.
 - [Architecture hexagonale](../concepts/architecture-hexagonale.md) — le patron kernel/satellite.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
 - [`zcrud_study_kernel`](./zcrud_study_kernel.md) — le kernel dont ce paquet dépend.

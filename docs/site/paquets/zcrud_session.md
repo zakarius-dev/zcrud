@@ -53,7 +53,7 @@ swipeable, rangée de notation SRS, dialog de filtres et écran de fin.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_session/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_session/README.md) — installation, démarrage rapide, API complète.
 - [`zcrud_flashcard`](./zcrud_flashcard.md) — modèle de carte, planificateur SM-2, sélection en amont.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Offline-first](../concepts/offline-first.md) — AD-9 en pratique (voie d'écriture SRS unique).

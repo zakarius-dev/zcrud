@@ -41,7 +41,7 @@ la sauvegarde cross-plateforme (`ZFileSaver`).
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_export_pdf/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_export_pdf/README.md) — installation, démarrage rapide, API complète.
 - [zcrud_export](zcrud_export.md) — façade combinée Excel + PDF.
 - [zcrud_export_ui](zcrud_export_ui.md) — implémentation concrète du rasteriseur LaTeX.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

@@ -51,7 +51,7 @@ Syncfusion, ni gestionnaire d'état).
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_chat/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_chat/README.md) — installation, démarrage rapide, API complète.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Architecture hexagonale](../concepts/architecture-hexagonale.md) — le patron kernel/satellite.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

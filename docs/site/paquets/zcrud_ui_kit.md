@@ -49,6 +49,6 @@ UI tierce.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_ui_kit/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_ui_kit/README.md) — installation, démarrage rapide, API complète.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

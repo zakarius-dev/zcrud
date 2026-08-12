@@ -39,7 +39,7 @@ re-décodage coûteux d'un Markdown reçu fragment par fragment.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_chat_markdown/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_chat_markdown/README.md) — installation, démarrage rapide, API complète.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
 - `zcrud_chat` — le socle Flutter dont ce paquet implémente le port `ZChatRenderer`.
 - `zcrud_markdown` — l'éditeur/lecteur Markdown neutre sur lequel ce paquet s'appuie.

@@ -44,6 +44,6 @@ cohérente pendant une migration.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_note/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_note/README.md) — installation, démarrage rapide, API complète.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
 - `zcrud_markdown` — l'éditeur/lecteur rich-text composé par la présentation de ce paquet.

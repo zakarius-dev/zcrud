@@ -6,8 +6,8 @@ sidebar_position: 1
 
 # Guides
 
-Les guides complètent les [concepts](../concepts/) (le modèle mental) et le
-[catalogue des paquets](../paquets/) (la référence par paquet) : ils partent d'un besoin
+Les guides complètent les [concepts](../concepts/invariants.md) (le modèle mental) et le
+[catalogue des paquets](../paquets/index.md) (la référence par paquet) : ils partent d'un besoin
 concret plutôt que d'une API.
 
 | Guide | Contenu |

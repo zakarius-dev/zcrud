@@ -39,6 +39,6 @@ pour émettre la (dé)sérialisation, le `ZFieldSpec[]` et l'enregistrement au
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_annotations/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_annotations/README.md) — installation, démarrage rapide, API complète.
 - `zcrud_generator` — le générateur qui lit ces annotations.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

@@ -38,7 +38,7 @@ description: Politique de présentation d'édition dérivée du breakpoint pour 
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_navigation/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_navigation/README.md) — installation, démarrage rapide, API complète.
 - Matrice de paramètres : `packages/zcrud_navigation/doc/parameter-matrix-z-adaptive-presenter.md`.
 - [zcrud_get](zcrud_get.md) — implémentation manager du port `ZFormPresenter`.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

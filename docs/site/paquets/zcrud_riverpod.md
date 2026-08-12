@@ -44,6 +44,6 @@ fournit aussi des providers génériques pour le domaine study.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_riverpod/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_riverpod/README.md) — installation, démarrage rapide, API complète.
 - `zcrud_core` — `ZcrudScope`, `ZFormController`, `ZDependencyResolver`.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

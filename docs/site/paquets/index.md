@@ -107,4 +107,4 @@ rédaction.
   capacités se répartissent en couches `domain`/`data`/`presentation`.
 - [Invariants d'architecture](../concepts/invariants.md) — les règles qui bornent chaque
   paquet, dont l'acyclicité du graphe ci-dessus.
-- [Guides](../guides/) — recettes qui combinent plusieurs de ces paquets.
+- [Guides](../guides/index.md) — recettes qui combinent plusieurs de ces paquets.

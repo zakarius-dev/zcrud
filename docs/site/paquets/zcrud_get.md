@@ -39,6 +39,6 @@ composition unique du registre de widgets, et la seule exception
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_get/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_get/README.md) — installation, démarrage rapide, API complète.
 - Matrice de paramètres de `ZGetFormPresenter` : `packages/zcrud_get/doc/parameter-matrix-z-get-form-presenter.md`.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

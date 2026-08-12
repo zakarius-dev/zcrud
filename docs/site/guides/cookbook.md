@@ -7,7 +7,7 @@ sidebar_position: 2
 # Cookbook
 
 Chaque recette résout **un** problème avec le **minimum** de code réel — extrait ou adapté
-de l'application de démonstration [`example/`](../../../example/README.md). Le code est
+de l'application de démonstration [`example/`](https://github.com/zakarius-dev/zcrud/blob/main/example/README.md). Le code est
 compilable contre les barrels publics ; les parties omises (thème, navigation…) sont
 signalées par un commentaire.
 
@@ -465,4 +465,4 @@ file et le verrou anti-double-célébration qu'un hôte réel doit reproduire.
 - [Concept : ZFieldSpec](../concepts/zfieldspec.md) — le schéma qui alimente chacune de
   ces recettes.
 - [Invariants d'architecture](../concepts/invariants.md) — les règles citées ci-dessus.
-- [Catalogue des paquets](../paquets/) — la fiche de chaque paquet mobilisé.
+- [Catalogue des paquets](../paquets/index.md) — la fiche de chaque paquet mobilisé.

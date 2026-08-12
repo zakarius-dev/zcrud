@@ -16,7 +16,7 @@ barrels publics — vous pouvez copier chaque bloc tel quel.
 zcrud n'est pas publié sur pub.dev : il se consomme en **dépendance git**, épinglée sur
 un tag de release. La recette complète — y compris le piège des dépendances
 inter-`zcrud_*` qui exige un `dependency_overrides` pour **chaque** paquet transitif —
-est décrite dans la [recette de consommation](../private-git-consumption.md). Pour ce
+est décrite dans la [recette de consommation](https://github.com/zakarius-dev/zcrud/blob/main/docs/private-git-consumption.md). Pour ce
 guide, votre `pubspec.yaml` a besoin au minimum de `zcrud_core` et `zcrud_annotations`
 en dépendance, et de `zcrud_generator` + `build_runner` en dev-dépendance :
 
@@ -242,7 +242,7 @@ class ArticleListScreen extends StatelessWidget {
 
 Le layout par défaut (omis ci-dessus, `ZListDataGridLayout`) délègue à un
 `ZListRenderer` injecté — c'est le backend `SfDataGrid` du paquet
-[`zcrud_list`](paquets/) qui l'implémente. Ajoutez cette dépendance (et sa propre
+[`zcrud_list`](paquets/index.md) qui l'implémente. Ajoutez cette dépendance (et sa propre
 entrée `dependency_overrides`) uniquement si vous voulez le rendu grille complet
 (tri/redimensionnement de colonnes) ; le layout `builder` ci-dessus reste une option
 Syncfusion-free à part entière, pas un simple repli de démonstration.
@@ -256,5 +256,5 @@ Syncfusion-free à part entière, pas un simple repli de démonstration.
 - [Architecture hexagonale](concepts/architecture-hexagonale.md) — où brancher un
   vrai dépôt (`ZRepository<T>`) derrière ce formulaire et cette liste, offline-first
   compris.
-- [Recette de consommation](../private-git-consumption.md) — la liste complète des
+- [Recette de consommation](https://github.com/zakarius-dev/zcrud/blob/main/docs/private-git-consumption.md) — la liste complète des
   paquets `zcrud_*` à surcharger dès que votre graphe de dépendances grandit.

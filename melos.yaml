@@ -118,6 +118,18 @@ scripts:
       dart run scripts/ci/gate_reserved_keys.dart && \
       ZCRUD_REQUIRE_SERIALIZATION_COMPAT=1 dart run scripts/ci/verify_serialization.dart
 
+  doc:api:
+    description: "Référence d'API : `dart doc` sur chaque paquet, assemblée sous `website/static/api/<pkg>/` (servie en /api par le site). Artefacts gitignorés — régénérés avant chaque publication."
+    run: dart run scripts/doc/build_api_docs.dart
+
+  doc:site:
+    description: "Construit le site Docusaurus (`website/`) après avoir régénéré la référence d'API. Exige Node ; n'est PAS un gate de merge."
+    run: melos run doc:api && dart run scripts/doc/build_site.dart
+
+  doc:deploy:
+    description: "Publie le site construit sur la branche `gh-pages` depuis le poste (aucun GitHub Actions requis — la CI est à l'arrêt). Refuse de publier un arbre sale ou une build absente."
+    run: dart run scripts/doc/deploy_site.dart
+
   doc:diff-gate:
     description: "Gate DOC-1 (chantier documentation) : le diff courant vs HEAD (ou <ref>/ZCRUD_DOC_BASE) se réduit à des commentaires et des fichiers documentaires — tout .dart de lib comparé APRÈS strip, .dart hors lib interdit, non-Dart sur liste blanche."
     run: dart run scripts/ci/doc_only_diff.dart

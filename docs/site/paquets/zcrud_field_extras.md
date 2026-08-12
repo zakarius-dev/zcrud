@@ -39,6 +39,6 @@ champs dégradent proprement plutôt que de planter.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_field_extras/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_field_extras/README.md) — installation, démarrage rapide, API complète.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

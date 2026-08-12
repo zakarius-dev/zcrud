@@ -38,6 +38,6 @@ HTML — aucun intermédiaire Delta.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_html/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_html/README.md) — installation, démarrage rapide, API complète.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.
 - `zcrud_markdown` — voie d'édition Delta/Markdown alternative, exclusive de ce paquet.

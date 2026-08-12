@@ -50,7 +50,7 @@ révision qui affiche les six types et bascule question/réponse par tap.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_flashcard/README.md) — installation,
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_flashcard/README.md) — installation,
   démarrage rapide, API complète.
 - [`zcrud_exam`](./zcrud_exam.md) — domaine voisin d'échéance d'étude.
 - [Invariants d'architecture](../concepts/invariants.md) — définitions

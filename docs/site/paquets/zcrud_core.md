@@ -55,7 +55,7 @@ ont besoin de rester transitivement pur-Dart.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_core/README.md) — installation, démarrage rapide, API complète.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_core/README.md) — installation, démarrage rapide, API complète.
 - [Réactivité granulaire](../concepts/reactivite-granulaire.md) — AD-2 en pratique.
 - [Architecture hexagonale](../concepts/architecture-hexagonale.md) — couches et ports.
 - [Offline-first](../concepts/offline-first.md) — AD-9 en pratique.

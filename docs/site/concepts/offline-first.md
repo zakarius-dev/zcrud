@@ -229,4 +229,4 @@ brancher un autre algorithme ne change ni `ZRepetitionInfo` ni
 - [Invariant AD-9](invariants.md#ad-9) — la définition canonique de la règle.
 - [Invariant AD-5](invariants.md#ad-5) — domaine backend-agnostique.
 - [Invariant AD-11](invariants.md#ad-11) — `Either`/`Stream` nus sur les contrats.
-- [Catalogue des paquets](../paquets/) — fiches `zcrud_firestore`, `zcrud_flashcard`.
+- [Catalogue des paquets](../paquets/index.md) — fiches `zcrud_firestore`, `zcrud_flashcard`.

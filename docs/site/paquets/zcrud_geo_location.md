@@ -43,6 +43,6 @@ paquet, jamais dans `zcrud_geo`).
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_geo_location/README.md) — installation, permissions plateforme, démarrage rapide.
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_geo_location/README.md) — installation, permissions plateforme, démarrage rapide.
 - [`zcrud_geo`](./zcrud_geo.md) — le champ géo dont ce paquet fournit le resolver « ma position ».
 - [Invariants d'architecture](../concepts/invariants.md) — définitions canoniques AD-1 à AD-16.

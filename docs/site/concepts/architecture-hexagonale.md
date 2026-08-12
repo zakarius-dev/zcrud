@@ -154,4 +154,4 @@ de développement ou un override temporaire — fait échouer le gate avant merg
   AD référencées ici.
 - [Réactivité granulaire](reactivite-granulaire.md) — comment la couche
   `presentation/` reste Flutter-native sans gestionnaire d'état imposé.
-- [Catalogue des paquets](../paquets/) — une fiche détaillée par paquet.
+- [Catalogue des paquets](../paquets/index.md) — une fiche détaillée par paquet.

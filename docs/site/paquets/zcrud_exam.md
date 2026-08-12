@@ -44,7 +44,7 @@ un paramètre explicite, jamais un `DateTime.now()` implicite.
 
 ## Voir aussi
 
-- [README du paquet](../../packages/zcrud_exam/README.md) — installation,
+- [README du paquet](https://github.com/zakarius-dev/zcrud/blob/main/packages/zcrud_exam/README.md) — installation,
   démarrage rapide, API complète.
 - [`zcrud_flashcard`](./zcrud_flashcard.md) — domaine voisin de répétition
   espacée.
