@@ -74,6 +74,13 @@
 <li>il est dans <code>policy.forceInclude</code> <strong>OU</strong> (<code>!field.isId</code> ET son <code>type</code> est
 dans <code>_tabularTypes</code>).</li>
 </ol>
+<p>⚠️ <strong>Escamotage silencieux</strong> : un champ dont le type n'est PAS dans la liste
+blanche tabulaire (ou qui est <code>isId</code>) est <strong>omis sans erreur ni log</strong> — un
+consommateur qui déclare une colonne et ne la voit pas apparaître doit
+chercher ici. Pour le <strong>constater</strong>, comparer le résultat au schéma
+(<code>columns.length</code> vs <code>schema.length</code>, ou l'absence du <code>name</code> attendu) ;
+pour l'<strong>inclure malgré tout</strong>, passer
+<code>ZColumnPolicy(forceInclude: {'monChamp'})</code>.</p>
 <p>L'<strong>ordre</strong> suit l'ordre du schéma (l'<code>order</code> = index d'origine dans <code>schema</code>,
 stable, indépendant du filtrage). Le <code>header</code> = <code>field.label ?? field.name</code>
 (clé non résolue). Le <a href="../zcrud_core/ZListColumn/format.html">ZListColumn.format</a> est dérivé PUR du <code>type</code>.</p>
@@ -132,7 +139,7 @@ stable, indépendant du filtrage). Le <code>header</code> = <code>field.label ??
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

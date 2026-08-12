@@ -65,6 +65,7 @@
 </ol>)?, </span></li>
 <li><span class="parameter" id="param-logger"><span class="type-annotation"><a href="../../zcrud_firestore/ZFirestoreLog.html">ZFirestoreLog</a>?</span> <span class="parameter-name">logger</span>, </span></li>
 <li><span class="parameter" id="param-timestampFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">timestampFields</span> = <span class="default-value">const &lt;String&gt;{}</span>, </span></li>
+<li><span class="parameter" id="param-omitNullFields"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">omitNullFields</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-deletionSemantics"><span class="type-annotation"><a href="../../zcrud_firestore/ZDeletionSemantics.html">ZDeletionSemantics</a></span> <span class="parameter-name">deletionSemantics</span> = <span class="default-value">ZDeletionSemantics.strict</span>, </span></li>
 <li><span class="parameter" id="param-legacyDeletedKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">legacyDeletedKey</span>, </span></li>
 </ol>})
@@ -87,6 +88,7 @@
   T? Function(Map&lt;String, dynamic&gt; map)? fromMapSafe,
   ZFirestoreLog? logger,
   Set&lt;String&gt; timestampFields = const &lt;String&gt;{},
+  bool omitNullFields = false,
   ZDeletionSemantics deletionSemantics = ZDeletionSemantics.strict,
   String? legacyDeletedKey,
 })  : assert(
@@ -118,6 +120,7 @@
       _toMap = toMap,
       _fromMapSafe = fromMapSafe,
       _log = logger ?? _noopLog,
+      _omitNullFields = omitNullFields,
       _deletionSemantics = deletionSemantics,
       _legacyDeletedKey = legacyDeletedKey,
       &#47;&#47; Garde EXÉCUTOIRE (pas seulement en debug) : les clés réservées sont
@@ -151,7 +154,7 @@
 <footer>
   <span class="no-break">
     zcrud_firestore
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

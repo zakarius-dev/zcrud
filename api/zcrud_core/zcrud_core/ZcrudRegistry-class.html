@@ -242,6 +242,41 @@ est <strong>univoque</strong>.
 
 </dd>
 
+        <dt id="kindOfInstance" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudRegistry/kindOfInstance.html">kindOfInstance</a></span><span class="signature">(<wbr><span class="parameter" id="kindOfInstance-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le <code>kind</code> sous lequel le type <strong>dynamique</strong> de <code>value</code> a été enregistré,
+si l'association est univoque — strictement équivalent à
+<code>kindOfType(value.runtimeType)</code>, mêmes trois cas de contrat que <a href="../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a>
+(<code>null</code> si absent, <a href="https://api.flutter.dev/flutter/dart-core/StateError-class.html">StateError</a> si ambigu).
+  
+
+</dd>
+
+        <dt id="kindOfType" class="callable">
+  <span class="name"><a href="../zcrud_core/ZcrudRegistry/kindOfType.html">kindOfType</a></span><span class="signature">(<wbr><span class="parameter" id="kindOfType-param-type"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span> <span class="parameter-name">type</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Le <code>kind</code> sous lequel le <code>type</code> <strong>réifié</strong> a été enregistré, si
+l'association est <strong>univoque</strong>. Variante de <a href="../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a> pour l'appelant qui
+tient un <code>Type</code> plutôt qu'un paramètre de type utilisable : typiquement un
+moteur générique <strong>non borné</strong> (<code>toMap&lt;T&gt;(T? item)</code>, où <code>T</code> est
+implicitement <code>Object?</code>), pour lequel <code>kindOf&lt;T&gt;()</code> ne compile pas
+(borne <code>T extends Object</code>). L'appelant passe alors <code>T</code> directement — ou
+<code>item.runtimeType</code> via <a href="../zcrud_core/ZcrudRegistry/kindOfInstance.html">kindOfInstance</a>.
+  
+
+</dd>
+
         <dt id="noSuchMethod" class="callable inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
@@ -361,7 +396,7 @@ son schéma déclaratif <code>fieldSpecs</code> (projeté depuis <code>@ZcrudFie
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

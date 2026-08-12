@@ -60,6 +60,7 @@
 <li><span class="parameter" id="param-categoryFilters"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../zcrud_core/ZFilter-class.html">ZFilter</a></span>&gt;</span></span> <span class="parameter-name">categoryFilters</span></span></li>
 </ol>), </span></li>
 <li><span class="parameter" id="category-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span></li>
+<li><span class="parameter" id="category-param-defaultItemBuilder"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">defaultItemBuilder</span>()?, </span></li>
 </ol>})
     </section>
     
@@ -68,6 +69,9 @@
 passés à <code>buildList</code>, qui les branche typiquement en <code>baseFilters</code> sur le
 <code>ZListController</code>/<code>ZSubListScreen</code> de l'onglet — la catégorie ne peut alors
 JAMAIS être écrasée par une recherche/un filtre utilisateur.</p>
+<p><code>defaultItemBuilder</code> optionnel : contexte de création de la catégorie
+(l'entité pré-remplie quand l'usager crée depuis cet onglet) — voir
+<a href="../../zcrud_core/ZListTab/defaultItemBuilder.html">ZListTab.defaultItemBuilder</a>.</p>
 </section>
 
 
@@ -80,10 +84,12 @@ JAMAIS être écrasée par une recherche/un filtre utilisateur.</p>
   required Widget Function(BuildContext context, List&lt;ZFilter&gt; categoryFilters)
       buildList,
   IconData? icon,
+  Object? Function()? defaultItemBuilder,
 }) {
   return ZListTab(
     labelKey: labelKey,
     icon: icon,
+    defaultItemBuilder: defaultItemBuilder,
     builder: (context) =&gt; buildList(context, filters),
   );
 }</code></pre>
@@ -114,7 +120,7 @@ JAMAIS être écrasée par une recherche/un filtre utilisateur.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

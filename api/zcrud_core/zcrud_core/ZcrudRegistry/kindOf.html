@@ -78,27 +78,16 @@ avec le <code>kind</code> explicite) — jamais un choix silencieux.</li>
 <p><code>T</code> doit être le type <strong>exact</strong> passé à <a href="../../zcrud_core/ZcrudRegistry/register.html">register</a> (celui émis par le
 registrar généré) : la résolution se fait sur le paramètre de type
 statique, pas sur le type dynamique d'une instance.</p>
+<p>Délègue à <a href="../../zcrud_core/ZcrudRegistry/kindOfType.html">kindOfType</a> (<code>kindOfType(T)</code>) — les trois variantes de
+résolution (<a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a>, <a href="../../zcrud_core/ZcrudRegistry/kindOfType.html">kindOfType</a>, <a href="../../zcrud_core/ZcrudRegistry/kindOfInstance.html">kindOfInstance</a>) partagent la même
+table et le même contrat, sans divergence possible.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String? kindOf&lt;T extends Object&gt;() {
-  final kinds = _kindsByType[T];
-  if (kinds == null || kinds.isEmpty) return null;
-  if (kinds.length &gt; 1) {
-    throw StateError(
-      &#39;ZcrudRegistry.kindOf&lt;$T&gt;() : le type &quot;$T&quot; est enregistré sous &#39;
-      &#39;${kinds.length} kinds distincts &#39;
-      &#39;(${kinds.map((String k) =&gt; &#39;&quot;$k&quot;&#39;).join(&#39;, &#39;)}). &#39;
-      &#39;L\&#39;association Type → kind n\&#39;est pas univoque : passez par la voie &#39;
-      &#39;par-kind — encode(&quot;&lt;kind&gt;&quot;, valeur) &#47; decode(&quot;&lt;kind&gt;&quot;, map) — pour &#39;
-      &#39;désigner explicitement la collection visée.&#39;,
-    );
-  }
-  return kinds.first;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">String? kindOf&lt;T extends Object&gt;() =&gt; kindOfType(T);</code></pre>
 </section>
 
 
@@ -126,7 +115,7 @@ statique, pas sur le type dynamique d'une instance.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

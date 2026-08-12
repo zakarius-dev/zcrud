@@ -65,7 +65,8 @@ puis le rendu dispatch sur <a href="../zcrud_core/DynamicList/layout.html">layou
 <li><code>dataGrid</code> (défaut) → délègue au <a href="../zcrud_core/DynamicList/renderer.html">renderer</a> injecté (paramètre) ou au seam
 <code>ZcrudScope.listRenderer</code> ; si AUCUN → <a href="../zcrud_core/ZScopeError-class.html">ZScopeError</a> actionnable orientée
 <code>zcrud_list</code> (chemin <code>dataGrid</code> <strong>uniquement</strong>) ;</li>
-<li><code>builder</code>/<code>custom</code> → rendu <strong>dans le cœur</strong>, aucun renderer requis.</li>
+<li><code>builder</code>/<code>grid</code>/<code>custom</code> → rendu <strong>dans le cœur</strong>, aucun renderer
+requis (<code>grid</code> = grille de cartes responsive, sans Syncfusion).</li>
 </ul>
 </li>
 <li>En présence d'une <a href="../zcrud_core/DynamicList/selection.html">selection</a> et/ou de <a href="../zcrud_core/DynamicList/rowActions.html">rowActions</a>, un
@@ -493,7 +494,7 @@ tools and by <a href="https://api.flutter.dev/flutter/foundation/DiagnosticsNode
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

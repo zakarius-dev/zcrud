@@ -75,6 +75,10 @@ nommant le type et les <code>kind</code> (contrat de <a href="../../zcrud_core/Z
 <p>Le contexte (<a href="../../zcrud_core/ZDecodeContext-class.html">ZDecodeContext</a>) est threadé exactement comme par
 <a href="../../zcrud_core/ZcrudRegistry/encode.html">encode</a>. <code>T</code> doit être le type exact passé à <a href="../../zcrud_core/ZcrudRegistry/register.html">register</a> (résolution
 statique — voir <a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a>).</p>
+<p><strong>Clés nulles émises</strong> — même contrat que <a href="../../zcrud_core/ZcrudRegistry/encode.html">encode</a> : en écriture
+fusionnée Firestore (<code>merge: true</code>), une clé nulle <strong>efface</strong> la valeur
+distante ; voir <code>omitNullFields</code> de <code>FirebaseZRepositoryImpl</code>
+(<code>zcrud_firestore</code>).</p>
 </section>
 
 
@@ -110,7 +114,7 @@ statique — voir <a href="../../zcrud_core/ZcrudRegistry/kindOf.html">kindOf</a
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

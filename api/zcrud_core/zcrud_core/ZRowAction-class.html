@@ -109,12 +109,34 @@ vers l'édition). Permission requise : <code>ZCrudAction.update</code>.
 l'item soft-deleted, AD-9). Permission requise : <code>ZCrudAction.restore</code>.
             <div class="constructor-modifier features">factory</div>
         </dd>
+        <dt id="ZRowAction.restoreWith" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.restoreWith.html">ZRowAction.restoreWith</a></span><span class="signature">(<span class="parameter" id="restoreWith-param-onInvoke"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onInvoke</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), {</span><span class="parameter" id="restoreWith-param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span> = <span class="default-value">&#39;restore&#39;</span>, </span><span class="parameter" id="restoreWith-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="restoreWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span> = <span class="default-value">&#39;restore&#39;</span></span>})</span>
+        </dt>
+        <dd>
+          Fabrique <strong>corbeille à callback</strong> : restore délégué au handler <code>onInvoke</code>
+fourni par l'app — <strong>aucun <code>ZRepository</code> requis</strong>. Même permission
+(<a href="../zcrud_core/ZCrudAction.html">ZCrudAction.restore</a>) et même filtrage <code>ZAcl</code> que <a href="../zcrud_core/ZRowAction/ZRowAction.restore.html">ZRowAction.restore</a>,
+qui reste le raccourci du cas nominal. Pendant symétrique de
+<a href="../zcrud_core/ZRowAction/ZRowAction.softDeleteWith.html">ZRowAction.softDeleteWith</a> (mêmes motivations, mêmes différences).
+            <div class="constructor-modifier features">factory</div>
+        </dd>
         <dt id="ZRowAction.softDelete" class="callable">
           <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.softDelete.html">ZRowAction.softDelete</a></span><span class="signature">(<span class="parameter" id="softDelete-param-repository"><span class="type-annotation"><a href="../zcrud_core/ZRepository-class.html">ZRepository</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">repository</span>, {</span><span class="parameter" id="softDelete-param-onFailure"><span class="type-annotation">void</span> <span class="parameter-name">onFailure</span>(<span class="parameter" id="param-failure"><span class="type-annotation"><a href="../zcrud_core/ZFailure-class.html">ZFailure</a></span> <span class="parameter-name">failure</span></span>)?, </span><span class="parameter" id="softDelete-param-onSuccess"><span class="type-annotation">void</span> <span class="parameter-name">onSuccess</span>()?, </span><span class="parameter" id="softDelete-param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span> = <span class="default-value">&#39;delete&#39;</span>, </span><span class="parameter" id="softDelete-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="softDelete-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span> = <span class="default-value">&#39;delete&#39;</span></span>})</span>
         </dt>
         <dd>
           Fabrique <strong>corbeille</strong> : soft-delete via <code>ZRepository.softDelete</code> (bascule
 <code>is_deleted</code> hors-entité, AD-9). Permission requise : <code>ZCrudAction.delete</code>.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+        <dt id="ZRowAction.softDeleteWith" class="callable">
+          <span class="name"><a href="../zcrud_core/ZRowAction/ZRowAction.softDeleteWith.html">ZRowAction.softDeleteWith</a></span><span class="signature">(<span class="parameter" id="softDeleteWith-param-onInvoke"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-async/FutureOr-class.html">FutureOr</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> <span class="parameter-name">onInvoke</span>(<span class="parameter" id="param-context"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/BuildContext-class.html">BuildContext</a></span> <span class="parameter-name">context</span>, </span><span class="parameter" id="param-entity"><span class="type-annotation">T</span> <span class="parameter-name">entity</span></span>), {</span><span class="parameter" id="softDeleteWith-param-labelKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">labelKey</span> = <span class="default-value">&#39;delete&#39;</span>, </span><span class="parameter" id="softDeleteWith-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/widgets/IconData-class.html">IconData</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="softDeleteWith-param-id"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">id</span> = <span class="default-value">&#39;delete&#39;</span></span>})</span>
+        </dt>
+        <dd>
+          Fabrique <strong>corbeille à callback</strong> : soft-delete dont l'écriture est
+entièrement déléguée au handler <code>onInvoke</code> fourni par l'app — <strong>aucun
+<code>ZRepository</code> requis</strong>. Même permission (<a href="../zcrud_core/ZCrudAction.html">ZCrudAction.delete</a>), même
+filtrage <code>ZAcl</code> et même style destructif que <a href="../zcrud_core/ZRowAction/ZRowAction.softDelete.html">ZRowAction.softDelete</a>,
+qui reste le <strong>raccourci</strong> du cas nominal (repository disponible).
             <div class="constructor-modifier features">factory</div>
         </dd>
     </dl>
@@ -322,7 +344,7 @@ neutre <a href="../zcrud_core/ZResolvedRowAction-class.html">ZResolvedRowAction<
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>

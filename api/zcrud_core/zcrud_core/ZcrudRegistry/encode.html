@@ -68,6 +68,12 @@
 enregistré, AD-3).</p>
 <p>Symétrique de <a href="../../zcrud_core/ZcrudRegistry/decode.html">decode</a> — le contexte (provenance <code>source</code>) est
 threadé si le codec porte une variante <code>toMapWithContext</code>.</p>
+<p><strong>Clés nulles émises telles quelles</strong> : la map rendue est celle du
+<code>toMap</code> du modèle, nulls compris — aucun retrait n'est appliqué ici. En
+écriture fusionnée Firestore (<code>merge: true</code>), une clé <strong>absente</strong> laisse
+la valeur distante intacte, mais une clé présente à <strong><code>null</code> l'EFFACE</strong> ;
+un consommateur qui écrit en fusion doit retirer les nulls en aval — voir
+<code>omitNullFields</code> de <code>FirebaseZRepositoryImpl</code> (<code>zcrud_firestore</code>).</p>
 </section>
 
 
@@ -108,7 +114,7 @@ threadé si le codec porte une variante <code>toMapWithContext</code>.</p>
 <footer>
   <span class="no-break">
     zcrud_core
-      0.90.0
+      0.91.0
   </span>
   
 </footer>
