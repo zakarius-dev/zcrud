@@ -94,6 +94,31 @@ void _checkCleanWorkingTree(Directory root) {
   }
 }
 
+/// Pousse si le commit local de la branche diffère de ce que porte le distant
+/// (branche distante absente comprise). Appelé lorsqu'il n'y avait rien à
+/// committer : sans cela, un état local en avance ne serait JAMAIS publié.
+void _pushIfAheadOfRemote(Directory root, Directory worktreeDir) {
+  final localSha = _git(['rev-parse', 'HEAD'], workingDirectory: worktreeDir.path);
+  final remoteRefs = _git(['ls-remote', '--heads', _remote, _branch], workingDirectory: root.path);
+  final remoteLine = (remoteRefs.stdout as String).trim();
+  final remoteSha = remoteLine.isEmpty ? '' : remoteLine.split(RegExp(r'\s+')).first;
+  if (remoteSha.isNotEmpty && remoteSha == (localSha.stdout as String).trim()) {
+    _info('$_remote/$_branch porte déjà exactement ce contenu — rien à publier.');
+    return;
+  }
+  _info(remoteSha.isEmpty
+      ? '$_remote/$_branch est ABSENT du distant — publication de la branche.'
+      : '$_remote/$_branch est en retard sur le local — publication.');
+  final push = _git(
+    ['push', _remote, 'HEAD:refs/heads/$_branch'],
+    workingDirectory: worktreeDir.path,
+  );
+  if (push.exitCode != 0) {
+    _fail('`git push` a échoué : ${(push.stderr as String).trim()}', code: 2);
+  }
+  _info('publié sur $_remote/$_branch.');
+}
+
 /// (b) Refuse une build absente ou vide.
 Directory _checkBuildDir(Directory root) {
   final buildDir = Directory('${root.path}/website/build');
@@ -189,6 +214,7 @@ void main(List<String> args) {
   final dryRun = args.contains('--dry-run');
   Directory? root;
   Directory? worktreeDir;
+  bool deleteBranchAfterCleanup = false;
 
   try {
     root = _repoRoot();
@@ -269,7 +295,17 @@ void main(List<String> args) {
 
     final diffCheck = _git(['diff', '--cached', '--quiet'], workingDirectory: worktreeDir.path);
     if (diffCheck.exitCode == 0) {
-      _info('aucun changement à publier — le contenu est identique à $_branch actuel.');
+      // Contenu identique au DERNIER COMMIT LOCAL de gh-pages — ce qui ne dit
+      // RIEN de ce qui est publié. Piège mesuré : un `--dry-run` antérieur
+      // avait laissé ce commit local, et la vraie exécution concluait « rien à
+      // faire » puis rapportait un succès SANS RIEN POUSSER (silence pris pour
+      // réussite). La publication se décide donc face au DISTANT.
+      _info('contenu identique au dernier commit local de $_branch — rien à committer.');
+      if (!dryRun) {
+        _pushIfAheadOfRemote(root, worktreeDir);
+      } else {
+        _info('--dry-run : push VOLONTAIREMENT SAUTÉ.');
+      }
     } else {
       final timestamp = DateTime.now().toUtc().toIso8601String();
       final shortSha = sha.length > 12 ? sha.substring(0, 12) : sha;
@@ -281,7 +317,19 @@ void main(List<String> args) {
       _info('commit créé sur $_branch : "$message".');
 
       if (dryRun) {
-        _info('--dry-run : push VOLONTAIREMENT SAUTÉ — rien n\'a été publié sur $_remote/$_branch.');
+        // Le commit de répétition reste sur la branche locale : on le DÉFAIT,
+        // sinon la prochaine exécution réelle ne verrait plus rien à committer
+        // (c'est exactement le piège rencontré en conditions réelles).
+        if (branchExists) {
+          _git(['reset', '--hard', 'HEAD~1'], workingDirectory: worktreeDir.path);
+        } else {
+          // Branche orpheline créée par CETTE répétition : `HEAD~1` n'existe
+          // pas. La branche entière est supprimée, après le retrait du
+          // worktree (git refuse de supprimer une branche encore montée).
+          deleteBranchAfterCleanup = true;
+        }
+        _info('--dry-run : push VOLONTAIREMENT SAUTÉ, commit de répétition annulé '
+            '— $_remote/$_branch est inchangé.');
       } else {
         final push = _git(
           ['push', _remote, 'HEAD:refs/heads/$_branch'],
@@ -295,6 +343,10 @@ void main(List<String> args) {
     }
 
     _cleanupWorktree(root, worktreeDir);
+    if (deleteBranchAfterCleanup) {
+      _git(['branch', '-D', _branch], workingDirectory: root.path);
+      _info('branche locale $_branch (créée par la répétition) supprimée.');
+    }
     _info('terminé.');
   } on _DeployFailure catch (e) {
     stderr.writeln('[doc:deploy] ÉCHEC : ${e.message}');
