@@ -15,8 +15,8 @@
 //   humaine, jamais automatique).
 //
 // Sûreté (chacune obligatoire) :
-//   (a) refuse si l'arbre de travail principal est sale, HORS `pubspec.lock`
-//       racine (les autres fichiers verrouillés — pubspec.yaml, melos.yaml,
+//   (a) refuse si l'arbre de travail principal est sale, HORS tout `pubspec.lock`
+//       du dépôt (les autres fichiers verrouillés — pubspec.yaml, melos.yaml,
 //       .gitignore… — doivent être commités ou annulés avant de publier) ;
 //   (b) refuse si `website/build` est absent ou vide (message : lancer
 //       `melos run doc:site`) ;
@@ -65,7 +65,7 @@ Directory _repoRoot() {
   return Directory((result.stdout as String).trim());
 }
 
-/// (a) Refuse un arbre de travail sale, hors `pubspec.lock` racine.
+/// (a) Refuse un arbre de travail sale, hors tout `pubspec.lock` du dépôt.
 void _checkCleanWorkingTree(Directory root) {
   final result = _git(['status', '--porcelain'], workingDirectory: root.path);
   if (result.exitCode != 0) {
@@ -79,11 +79,15 @@ void _checkCleanWorkingTree(Directory root) {
   // Format porcelain : 2 caractères de statut + un espace + le chemin.
   final dirty = lines.where((line) {
     final path = line.length > 3 ? line.substring(3) : line;
-    return path != 'pubspec.lock';
+    // TOUT `pubspec.lock` du dépôt, pas seulement celui de la racine : la
+    // convention de commit du dépôt les exclut tous (`:!*pubspec.lock`), et
+    // `example/pubspec.lock` reste durablement non suivi. N'exclure que la
+    // racine faisait échouer la publication sur un arbre pourtant conforme.
+    return !path.endsWith('pubspec.lock');
   }).toList();
   if (dirty.isNotEmpty) {
     _fail(
-      'l\'arbre de travail principal est sale (hors pubspec.lock racine) — '
+      'l\'arbre de travail principal est sale (hors pubspec.lock) — '
       'committez ou annulez avant de publier :\n'
       '${dirty.map((l) => '  $l').join('\n')}',
     );
